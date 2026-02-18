@@ -11,6 +11,7 @@ import argparse
 import os
 import queue
 import sys
+import threading
 from datetime import datetime
 from pathlib import Path
 
@@ -31,6 +32,26 @@ from .network import listener as net_listener
 console = Console()
 
 DATA_DIR = Path(__file__).parent.parent / "data"
+
+# ── Stdin thread ───────────────────────────────────────────────────────────────
+
+def _stdin_reader(stdin_queue: queue.Queue):
+    """
+    Daemon thread: reads stdin lines and pushes them into stdin_queue.
+    This unblocks the main loop so network messages are drained even
+    while waiting for human input.
+    """
+    while True:
+        try:
+            console.print("\n[bold green]You:[/] ", end="")
+            line = sys.stdin.readline()
+            if line == "":          # EOF (Ctrl-D)
+                stdin_queue.put(None)
+                break
+            stdin_queue.put(line.rstrip("\n"))
+        except (KeyboardInterrupt, EOFError):
+            stdin_queue.put(None)
+            break
 
 
 class Igor:
@@ -61,7 +82,16 @@ class Igor:
             console.print(f"\n[cyan]Igor-{instance_id} resumed. {self.cortex.total_count()} memories loaded.[/]")
 
     def run(self):
-        """Main REPL loop."""
+        """
+        Main event loop.
+
+        Two queues are polled every 0.5s:
+          - net_listener.incoming  : Discord, Gmail, etc.
+          - stdin_queue            : Human REPL input (from daemon thread)
+
+        Neither blocks the other. Network messages are processed promptly
+        even while waiting for the human to type.
+        """
         console.print("[dim]Type your message. /help for commands. /quit to exit.[/]\n")
 
         dashboard.render(
@@ -74,18 +104,31 @@ class Igor:
             last_action="Genesis state loaded",
         )
 
+        # Spin up stdin reader thread
+        stdin_queue: queue.Queue = queue.Queue()
+        t = threading.Thread(target=_stdin_reader, args=(stdin_queue,), daemon=True, name="stdin-reader")
+        t.start()
+
         while True:
-            # Drain any incoming network messages before blocking on user input
+            # ── Network messages ──────────────────────────────────────────────
             self._drain_network()
 
+            # ── Stdin (non-blocking check) ────────────────────────────────────
             try:
-                console.print()
-                user_input = console.input("[bold green]You:[/] ").strip()
-                if not user_input:
-                    continue
-            except (KeyboardInterrupt, EOFError):
+                user_input = stdin_queue.get_nowait()
+            except queue.Empty:
+                # Nothing typed yet - sleep briefly then loop
+                import time; time.sleep(0.5)
+                continue
+
+            # EOF / KeyboardInterrupt from stdin thread
+            if user_input is None:
                 self._shutdown()
                 break
+
+            user_input = user_input.strip()
+            if not user_input:
+                continue
 
             self._process(user_input)
 
