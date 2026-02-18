@@ -9,6 +9,7 @@ Usage:
 
 import argparse
 import os
+import queue
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -24,6 +25,7 @@ from .cognition import prefrontal_cortex as pfc
 from .cognition.reasoners.anthropic import AnthropicReasoner
 from .cognition.reasoners.ollama_reasoner import preparse, score_memories
 from .dashboard import terminal as dashboard
+from .network import discord_bot
 
 console = Console()
 
@@ -47,6 +49,9 @@ class Igor:
         self.last_roi = None
         self.session_cost = 0.0
 
+        # Start Discord bot if token is set
+        discord_bot.start()
+
         is_new = self.cortex.total_count() == 22  # Just genesis
         if is_new:
             console.print(f"\n[cyan]Igor-{instance_id} initialized from genesis state.[/]")
@@ -68,6 +73,9 @@ class Igor:
         )
 
         while True:
+            # Drain any incoming Discord messages before blocking on user input
+            self._drain_discord()
+
             try:
                 console.print()
                 user_input = console.input("[bold green]You:[/] ").strip()
@@ -178,6 +186,21 @@ class Igor:
             new_memories=new_memories,
             upstream_calls=self.upstream_calls,
         )
+
+    def _drain_discord(self):
+        """Process any queued Discord messages."""
+        while True:
+            try:
+                msg = discord_bot.incoming.get_nowait()
+            except queue.Empty:
+                break
+            console.print(f"\n[bold magenta][Discord] {msg.author} in #{msg.channel_name}:[/] {msg.content}")
+            # Build a context-rich input so Igor knows where to reply
+            synthetic_input = (
+                f"[Discord message from {msg.author} in #{msg.channel_name} "
+                f"on {msg.guild_name}, channel_id={msg.channel_id}]: {msg.content}"
+            )
+            self._process(synthetic_input)
 
     def _find_habit(self, parsed) -> Memory | None:
         """Check if any habit matches this input. Placeholder for basal ganglia."""
