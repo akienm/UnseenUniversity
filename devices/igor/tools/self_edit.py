@@ -20,6 +20,7 @@ from pathlib import Path
 from .registry import Tool, registry
 
 SOURCE_ROOT = Path(__file__).parent.parent  # wild_igor/igor/
+REPO_ROOT = SOURCE_ROOT.parent              # wild_igor/
 
 # Inertia map - files/dirs and their resistance to change
 INERTIA = {
@@ -67,6 +68,57 @@ def _inertia_warning(path: str, inertia: float, label: str) -> str:
     return ""
 
 
+def _git_commit_and_push(rel_path: str, reason: str) -> str:
+    """
+    Stage the changed file, commit with a meaningful message, and push.
+    Returns a status string to append to the edit result.
+    """
+    try:
+        # Check if we're inside a git repo
+        check = subprocess.run(
+            ["git", "rev-parse", "--is-inside-work-tree"],
+            cwd=REPO_ROOT,
+            capture_output=True, text=True
+        )
+        if check.returncode != 0:
+            return "\n⚠️  Git: not a git repo — skipping commit/push."
+
+        # Stage the file (path relative to repo root)
+        stage_path = f"igor/{rel_path}"
+        subprocess.run(
+            ["git", "add", stage_path],
+            cwd=REPO_ROOT, check=True, capture_output=True
+        )
+
+        # Commit
+        commit_msg = f"self-edit: igor/{rel_path}\n\n{reason}"
+        subprocess.run(
+            ["git", "commit", "-m", commit_msg],
+            cwd=REPO_ROOT, check=True, capture_output=True
+        )
+
+        # Push
+        push_result = subprocess.run(
+            ["git", "push"],
+            cwd=REPO_ROOT, capture_output=True, text=True
+        )
+        if push_result.returncode == 0:
+            return "\n✅ Git: committed and pushed to origin."
+        else:
+            return f"\n⚠️  Git: committed locally but push failed: {push_result.stderr.strip()}"
+
+    except subprocess.CalledProcessError as e:
+        stderr = e.stderr.decode() if isinstance(e.stderr, bytes) else (e.stderr or "")
+        # "nothing to commit" is not really an error
+        if "nothing to commit" in stderr:
+            return "\n✅ Git: nothing new to commit (file unchanged on disk?)."
+        return f"\n⚠️  Git error: {stderr.strip()}"
+    except FileNotFoundError:
+        return "\n⚠️  Git: git not found in PATH — skipping commit/push."
+    except Exception as e:
+        return f"\n⚠️  Git: unexpected error: {e}"
+
+
 def list_source_files(path: str = ".") -> str:
     """List Igor's source files with their inertia levels."""
     try:
@@ -109,6 +161,7 @@ def edit_source_file(path: str, content: str, reason: str) -> str:
     """
     Write new content to one of Igor's source files.
     Runs syntax check first. Records reason for the change.
+    Commits and pushes to git so all Igor instances stay in sync.
     Change takes effect on next restart.
     """
     try:
@@ -134,9 +187,13 @@ def edit_source_file(path: str, content: str, reason: str) -> str:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding="utf-8")
 
+        # Commit & push
+        git_status = _git_commit_and_push(path, reason)
+
         return (f"EDIT APPLIED: igor/{path}{warning}\n"
                 f"Reason: {reason}\n"
-                f"Backup: {path}.bak\n"
+                f"Backup: {path}.bak"
+                f"{git_status}\n"
                 f"⟳ Restart Igor for changes to take effect.")
 
     except PermissionError as e:
