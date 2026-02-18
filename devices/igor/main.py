@@ -26,6 +26,7 @@ from .cognition.reasoners.anthropic import AnthropicReasoner
 from .cognition.reasoners.ollama_reasoner import preparse, score_memories
 from .dashboard import terminal as dashboard
 from .network import discord_bot
+from .network import listener as net_listener
 
 console = Console()
 
@@ -49,8 +50,9 @@ class Igor:
         self.last_roi = None
         self.session_cost = 0.0
 
-        # Start Discord bot if token is set
+        # Start Discord bot, then unified network listener
         discord_bot.start()
+        net_listener.start()
 
         is_new = self.cortex.total_count() == 22  # Just genesis
         if is_new:
@@ -73,8 +75,8 @@ class Igor:
         )
 
         while True:
-            # Drain any incoming Discord messages before blocking on user input
-            self._drain_discord()
+            # Drain any incoming network messages before blocking on user input
+            self._drain_network()
 
             try:
                 console.print()
@@ -187,20 +189,32 @@ class Igor:
             upstream_calls=self.upstream_calls,
         )
 
-    def _drain_discord(self):
-        """Process any queued Discord messages."""
+    def _drain_network(self):
+        """Process any queued messages from any network source."""
         while True:
             try:
-                msg = discord_bot.incoming.get_nowait()
+                msg = net_listener.incoming.get_nowait()
             except queue.Empty:
                 break
-            console.print(f"\n[bold magenta][Discord] {msg.author} in #{msg.channel_name}:[/] {msg.content}")
-            # Build a context-rich input so Igor knows where to reply
-            synthetic_input = (
-                f"[Discord message from {msg.author} in #{msg.channel_name} "
-                f"on {msg.guild_name}, channel_id={msg.channel_id}]: {msg.content}"
-            )
-            self._process(synthetic_input)
+
+            console.print(f"\n[bold magenta][{msg.source.upper()}] {msg.author}:[/] {msg.content[:120]}")
+
+            if msg.source == "discord":
+                ri = msg.reply_info
+                synthetic = (
+                    f"[Discord message from {msg.author} in #{ri.get('channel_name', '?')} "
+                    f"on {ri.get('guild_name', '?')}, channel_id={ri.get('channel_id', 0)}]: {msg.content}"
+                )
+            elif msg.source == "gmail":
+                ri = msg.reply_info
+                synthetic = (
+                    f"[Email from {msg.author}, subject='{ri.get('subject', '')}', "
+                    f"reply_to='{ri.get('reply_to', msg.author)}']: {msg.content}"
+                )
+            else:
+                synthetic = f"[{msg.source} from {msg.author}]: {msg.content}"
+
+            self._process(synthetic)
 
     def _find_habit(self, parsed) -> Memory | None:
         """Check if any habit matches this input. Placeholder for basal ganglia."""
@@ -221,6 +235,7 @@ class Igor:
             "exit": self._cmd_quit,
             "restart": self._cmd_restart,
             "cost": self._cmd_cost,
+            "model": self._cmd_model,
         }
         fn = commands.get(command, self._cmd_unknown)
         fn(raw)
@@ -228,13 +243,15 @@ class Igor:
     def _cmd_help(self, _):
         console.print("""
 [bold]Igor Commands:[/]
-  /help      - This message
-  /memories  - List recent episodic memories
-  /core      - Show core patterns
-  /habits    - Show compiled habits
-  /cost      - Show session cost
-  /restart   - Save state and relaunch
-  /quit      - Exit
+  /help           - This message
+  /memories       - List recent episodic memories
+  /core           - Show core patterns
+  /habits         - Show compiled habits
+  /cost           - Show session cost
+  /model          - Show current reasoning model
+  /model <name>   - Switch model (sonnet, opus, haiku, or full model ID)
+  /restart        - Save state and relaunch
+  /quit           - Exit
 """)
 
     def _cmd_memories(self, _):
@@ -257,6 +274,18 @@ class Igor:
             console.print(f"\n[bold]Habits ({len(habits)}):[/]")
             for h in habits:
                 console.print(f"  [{h.id}] trigger: '{h.metadata.get('trigger')}' → {h.narrative[:50]}")
+
+    def _cmd_model(self, raw):
+        from .cognition.reasoners.anthropic import MODEL_ALIASES
+        parts = raw.strip().split(None, 1)
+        if len(parts) < 2:
+            console.print(f"\n[bold]Current model:[/] {self.reasoner.model}")
+            aliases = ", ".join(f"{k} → {v}" for k, v in MODEL_ALIASES.items())
+            console.print(f"[dim]Aliases: {aliases}[/]")
+            return
+        name = parts[1].strip()
+        resolved = self.reasoner.set_model(name)
+        console.print(f"\n[green]Model switched to:[/] {resolved}")
 
     def _cmd_cost(self, _):
         console.print(f"\n[bold]Session cost:[/] ${self.session_cost:.4f}")
