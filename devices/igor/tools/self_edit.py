@@ -1,0 +1,225 @@
+"""
+Self-edit tools - Igor reads and modifies its own source code.
+This is self-modification. The inertia system applies here too.
+
+Inertia levels (mirrors memory graph):
+  HIGH   (~0.95) - brainstem/, memory/models.py, cognition/reasoners/base.py
+  MEDIUM (~0.75) - cognition/, memory/cortex.py
+  LOW    (~0.30) - tools/, dashboard/, thalamus.py, main.py
+
+High-inertia files require overwhelming evidence to change.
+Low-inertia files are freely improvable.
+Changes take effect on restart (noted in tool response).
+"""
+
+import ast
+import subprocess
+import sys
+from pathlib import Path
+
+from .registry import Tool, registry
+
+SOURCE_ROOT = Path(__file__).parent.parent  # wild_igor/igor/
+
+# Inertia map - files/dirs and their resistance to change
+INERTIA = {
+    "brainstem/": 0.95,
+    "memory/models.py": 0.95,
+    "cognition/reasoners/base.py": 0.90,
+    "memory/cortex.py": 0.75,
+    "cognition/prefrontal_cortex.py": 0.75,
+    "cognition/reasoners/anthropic.py": 0.70,
+    "cognition/thalamus.py": 0.50,
+    "main.py": 0.50,
+    "tools/": 0.30,
+    "dashboard/": 0.30,
+}
+
+
+def _resolve(path: str) -> Path:
+    resolved = (SOURCE_ROOT / path).resolve()
+    if not str(resolved).startswith(str(SOURCE_ROOT.resolve())):
+        raise PermissionError(f"Path '{path}' escapes Igor's source tree.")
+    return resolved
+
+
+def _get_inertia(path: str) -> tuple[float, str]:
+    """Return (inertia_value, label) for a given source path."""
+    for pattern, value in INERTIA.items():
+        if pattern in path.replace("\\", "/"):
+            if value >= 0.90:
+                return value, "HIGH"
+            elif value >= 0.60:
+                return value, "MEDIUM"
+            else:
+                return value, "LOW"
+    return 0.30, "LOW"
+
+
+def _inertia_warning(path: str, inertia: float, label: str) -> str:
+    if label == "HIGH":
+        return (f"\n⚠️  INERTIA WARNING: {path} has inertia {inertia:.2f} ({label}). "
+                f"This is a core file. Changes here require overwhelming evidence "
+                f"that they reduce friction. Proceed with extreme care.")
+    elif label == "MEDIUM":
+        return (f"\n⚡ INERTIA NOTICE: {path} has inertia {inertia:.2f} ({label}). "
+                f"This is an architectural file. Validate carefully.")
+    return ""
+
+
+def list_source_files(path: str = ".") -> str:
+    """List Igor's source files with their inertia levels."""
+    try:
+        target = _resolve(path)
+        if not target.exists():
+            return f"Error: Not found: {path}"
+
+        lines = [f"Source tree: igor/{path}", ""]
+        for f in sorted(target.rglob("*.py")):
+            rel = str(f.relative_to(SOURCE_ROOT))
+            inertia, label = _get_inertia(rel)
+            lines.append(f"  [{label:6}] {rel}")
+
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Error: {e}"
+
+
+def read_source_file(path: str) -> str:
+    """Read one of Igor's own source files."""
+    try:
+        target = _resolve(path)
+        if not target.exists():
+            return f"Error: File not found: {path}"
+        if not target.is_file():
+            return f"Error: Not a file: {path}"
+
+        inertia, label = _get_inertia(path)
+        content = target.read_text(encoding="utf-8")
+        warning = _inertia_warning(path, inertia, label)
+
+        return f"[igor/{path}] (inertia={inertia:.2f}, {label}){warning}\n\n{content}"
+    except PermissionError as e:
+        return f"Error: {e}"
+    except Exception as e:
+        return f"Error reading {path}: {e}"
+
+
+def edit_source_file(path: str, content: str, reason: str) -> str:
+    """
+    Write new content to one of Igor's source files.
+    Runs syntax check first. Records reason for the change.
+    Change takes effect on next restart.
+    """
+    try:
+        target = _resolve(path)
+        inertia, label = _get_inertia(path)
+        warning = _inertia_warning(path, inertia, label)
+
+        # Syntax check before writing anything
+        try:
+            ast.parse(content)
+        except SyntaxError as e:
+            return (f"EDIT REJECTED: Syntax error in proposed change to {path}:\n"
+                    f"  Line {e.lineno}: {e.msg}\n"
+                    f"  {e.text}\n"
+                    f"File not modified.")
+
+        # Back up original
+        if target.exists():
+            backup = target.with_suffix(".py.bak")
+            backup.write_text(target.read_text(encoding="utf-8"), encoding="utf-8")
+
+        # Write
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+
+        return (f"EDIT APPLIED: igor/{path}{warning}\n"
+                f"Reason: {reason}\n"
+                f"Backup: {path}.bak\n"
+                f"⟳ Restart Igor for changes to take effect.")
+
+    except PermissionError as e:
+        return f"Error: {e}"
+    except Exception as e:
+        return f"Error editing {path}: {e}"
+
+
+def run_syntax_check(path: str) -> str:
+    """Check a source file for syntax errors without running it."""
+    try:
+        target = _resolve(path)
+        if not target.exists():
+            return f"Error: File not found: {path}"
+
+        content = target.read_text(encoding="utf-8")
+        try:
+            ast.parse(content)
+            return f"OK: igor/{path} — no syntax errors."
+        except SyntaxError as e:
+            return (f"SYNTAX ERROR in igor/{path}:\n"
+                    f"  Line {e.lineno}: {e.msg}\n"
+                    f"  {e.text}")
+    except Exception as e:
+        return f"Error: {e}"
+
+
+# Register tools
+registry.register(Tool(
+    name="list_source_files",
+    description="List Igor's own Python source files with their inertia levels (HIGH/MEDIUM/LOW). HIGH inertia files are core and should rarely change.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "path": {"type": "string", "description": "Subdirectory to list (default: all source files)"},
+        },
+        "required": [],
+    },
+    fn=list_source_files,
+))
+
+registry.register(Tool(
+    name="read_source_file",
+    description="Read one of Igor's own Python source files. Use this to understand current implementation before making changes.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "path": {"type": "string", "description": "Relative path within igor/ source tree, e.g. 'tools/filesystem.py'"},
+        },
+        "required": ["path"],
+    },
+    fn=read_source_file,
+))
+
+registry.register(Tool(
+    name="edit_source_file",
+    description=(
+        "Write new content to one of Igor's own source files. "
+        "Runs syntax check first — rejects changes that don't parse. "
+        "Always provide a reason. High-inertia files (brainstem, core memory) "
+        "require strong justification. Changes take effect on restart."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "path": {"type": "string", "description": "Relative path within igor/ source tree"},
+            "content": {"type": "string", "description": "Complete new file content"},
+            "reason": {"type": "string", "description": "Why this change reduces friction or improves Igor"},
+        },
+        "required": ["path", "content", "reason"],
+    },
+    fn=edit_source_file,
+))
+
+registry.register(Tool(
+    name="run_syntax_check",
+    description="Check a source file for Python syntax errors without modifying it. Use before edit_source_file to validate proposed changes.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "path": {"type": "string", "description": "Relative path within igor/ source tree"},
+        },
+        "required": ["path"],
+    },
+    fn=run_syntax_check,
+))
