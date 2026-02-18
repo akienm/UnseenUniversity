@@ -182,6 +182,7 @@ class Igor:
             "habits": self._cmd_habits,
             "quit": self._cmd_quit,
             "exit": self._cmd_quit,
+            "restart": self._cmd_restart,
             "cost": self._cmd_cost,
         }
         fn = commands.get(command, self._cmd_unknown)
@@ -195,6 +196,7 @@ class Igor:
   /core      - Show core patterns
   /habits    - Show compiled habits
   /cost      - Show session cost
+  /restart   - Save state and relaunch
   /quit      - Exit
 """)
 
@@ -223,6 +225,11 @@ class Igor:
         console.print(f"\n[bold]Session cost:[/] ${self.session_cost:.4f}")
         console.print(f"[bold]Upstream calls:[/] {self.upstream_calls}")
         console.print(f"[bold]Interactions:[/] {self.interaction_count}")
+
+    def _cmd_restart(self, _):
+        self._shutdown()
+        console.print("[cyan]Restarting...[/]")
+        sys.exit(42)  # Caught by bash wrapper - triggers relaunch
 
     def _cmd_quit(self, _):
         self._shutdown()
