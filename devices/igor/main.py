@@ -22,6 +22,7 @@ from .brainstem.core_patterns import initialize_genesis, get_core_patterns
 from .cognition import thalamus
 from .cognition import prefrontal_cortex as pfc
 from .cognition.reasoners.anthropic import AnthropicReasoner
+from .cognition.reasoners.ollama_reasoner import preparse, score_memories
 from .dashboard import terminal as dashboard
 
 console = Console()
@@ -90,14 +91,27 @@ class Igor:
             self._handle_command(parsed.command, user_input)
             return
 
-        # [SEARCH] Find relevant memories
-        relevant = self.cortex.search(" ".join(parsed.keywords))
-        if relevant:
-            dashboard.print_activated_memories(relevant)
+        # [SEARCH] Candidate memories via text search
+        candidates = self.cortex.search(" ".join(parsed.keywords))
 
-        # [BASAL GANGLIA] Check for habit triggers (placeholder - expand later)
-        habit = self._find_habit(parsed)
+        # [OLLAMA] Pre-parse: classify intent, score memories, check habit match
+        habits = self.cortex.get_habits()
+        console.print("[dim][OLLAMA] Pre-parsing...[/]")
+        pre = preparse(user_input, habits)
+
+        # Use Ollama-scored memory ranking if we have candidates
+        if candidates:
+            relevant = score_memories(user_input, candidates)
+        else:
+            relevant = []
+
+        if relevant:
+            dashboard.print_activated_memories(relevant, f"Relevant (intent={pre['intent']})")
+
         used_api = False
+
+        # [BASAL GANGLIA] Habit match from Ollama pre-parse
+        habit = pre["habit_match"] if pre["confidence"] >= 0.8 else self._find_habit(parsed)
 
         if habit:
             dashboard.print_habit_trigger(habit)
