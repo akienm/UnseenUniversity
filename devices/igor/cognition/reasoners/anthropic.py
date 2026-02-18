@@ -3,13 +3,24 @@ Anthropic API reasoner.
 Uses native tool_use protocol. Runs the full agentic tool loop.
 """
 
+import os
 from anthropic import Anthropic
 from ...memory.models import Memory
 from ...tools.registry import registry
 from ...tools import filesystem, web_search, self_edit, gmail, discord  # registers tools on import
 from .base import BaseReasoner
 
-MODEL = "claude-sonnet-4-6"
+DEFAULT_MODEL = "claude-sonnet-4-6"
+
+# Convenient short names → full model IDs
+MODEL_ALIASES: dict[str, str] = {
+    "sonnet":  "claude-sonnet-4-6",
+    "opus":    "claude-opus-4-6",
+    "haiku":   "claude-haiku-4-5-20251001",
+    "sonnet4": "claude-sonnet-4-6",
+    "opus4":   "claude-opus-4-6",
+    "haiku4":  "claude-haiku-4-5-20251001",
+}
 
 SYSTEM_PROMPT = """You are Igor, a learning AI agent with persistent memory and transparent reasoning.
 
@@ -28,16 +39,24 @@ Keep responses concise and useful."""
 
 class AnthropicReasoner(BaseReasoner):
 
-    def __init__(self):
+    def __init__(self, model: str | None = None):
         self._client = None
+        raw = model or os.getenv("IGOR_MODEL", DEFAULT_MODEL)
+        self.model = MODEL_ALIASES.get(raw, raw)
 
     def _get_client(self):
         if self._client is None:
             self._client = Anthropic()
         return self._client
 
+    def set_model(self, name: str) -> str:
+        """Switch model at runtime. Accepts aliases or full IDs. Returns resolved name."""
+        self.model = MODEL_ALIASES.get(name, name)
+        self._client = None   # Force new client on next call (picks up any env changes)
+        return self.model
+
     def name(self) -> str:
-        return f"Anthropic/{MODEL}"
+        return f"Anthropic/{self.model}"
 
     def reason(
         self,
@@ -57,7 +76,7 @@ class AnthropicReasoner(BaseReasoner):
 
         while True:
             response = self._get_client().messages.create(
-                model=MODEL,
+                model=self.model,
                 max_tokens=4096,
                 system=SYSTEM_PROMPT,
                 tools=tools,
