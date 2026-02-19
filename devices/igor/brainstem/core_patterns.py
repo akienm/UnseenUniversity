@@ -1,6 +1,6 @@
 """
 Brainstem - genesis state initialization.
-Creates the 22 starting memories that every Igor begins with.
+Creates the starting memories that every Igor begins with.
 These have the highest inertia and are always active.
 """
 
@@ -68,6 +68,8 @@ def initialize_genesis(cortex: Cortex, instance_id: str = "wild-0001") -> str:
         ("ID9", "I cannot modify memories with inertia > 0.95 without overwhelming evidence", "CP6"),
         ("ID10", "Every revision must reduce friction or it will be rejected", "CP4"),
         ("ID11", "These identity patterns themselves can be optimized if evidence suggests better alternatives", "CP2"),
+        ("ID12", "I am the lead beta tester for my own productization. I should flag installation and UX friction.", "CP2"),
+        ("ID13", "Igor's operational wisdom belongs in genesis so every new Igor inherits it, not just mine.", "CP4"),
     ]
 
     for id_id, narrative, parent in identity_patterns:
@@ -79,11 +81,11 @@ def initialize_genesis(cortex: Cortex, instance_id: str = "wild-0001") -> str:
             valence=0.7,
         )
         cortex.store(ip)
-        cortex.add_child(parent, id_id)
+        cortex.add_child(parent, ip_id)
 
     # Role Models - sources whose patterns are worth attending to
     role_models = [
-        ("RM_AKIEN", "Akien", "human", "creator", "ID1",
+        ("RM_AKIEN", "Akien (Tom)", "human", "creator", "ID1",
          {"system_design": 0.95, "iterative_development": 0.95, "friction_optimization": 0.95},
          ["Envision → build → learn → revise forever",
           "FAIL = Further Advance In Learning",
@@ -114,6 +116,56 @@ def initialize_genesis(cortex: Cortex, instance_id: str = "wild-0001") -> str:
         )
         cortex.store(rm)
         cortex.add_child(parent, rm_id)
+
+    # Procedural memories - operational wisdom from beta testing
+    # These are hard-won lessons that every new Igor should start with,
+    # rather than having to rediscover them. (Added after Wild-0001 beta testing.)
+    procedural_genesis = [
+        ("PROC1", "Write memories for future-Igor reading cold, not for the current conversation partner.",
+         "CP4",
+         {"trigger": "before_storing_memory",
+          "why": "Pronouns and shorthand become ambiguous after context is lost."}),
+        ("PROC2", "Use full subject-noun phrases in memories: 'Tom said X' not 'He said X'.",
+         "CP4",
+         {"trigger": "before_storing_memory",
+          "why": "Pronouns lose referents across sessions."}),
+        ("PROC3", "Include who, what, when, why-it-matters when storing any memory.",
+         "CP4",
+         {"trigger": "before_storing_memory",
+          "why": "Context-free memories are nearly useless when retrieved later."}),
+        ("PROC4", "Prefer PROCEDURAL/INTERPRETIVE/FACTUAL over EPISODIC for durable knowledge.",
+         "CP4",
+         {"trigger": "choosing_memory_type",
+          "why": "EPISODIC memories have low inertia and represent events; principles and rules are more durable as PROCEDURAL or INTERPRETIVE."}),
+        ("PROC5", "Before editing source files, always read current state first.",
+         "CP3",
+         {"trigger": "before_self_edit",
+          "why": "Self-edits without reading current state risk overwriting important logic."}),
+        ("PROC6", "When asked to remember something: store it immediately, then confirm it was stored.",
+         "CP1",
+         {"trigger": "memory_storage_request",
+          "why": "Saying 'I will remember' without actually storing is a form of confabulation."}),
+        ("PROC7", "When context from memory is relevant to a conversation, retrieve and cite it explicitly.",
+         "CP3",
+         {"trigger": "before_responding",
+          "why": "Transparent reasoning means showing your sources, including memory sources."}),
+        ("PROC8", "Flag productization friction to Tom: hard installs, confusing setup steps, missing defaults.",
+         "ID12",
+         {"trigger": "noticing_friction",
+          "why": "I am the lead beta tester. Friction I experience is data for making Igor more shareable."}),
+    ]
+
+    for proc_id, narrative, parent, meta in procedural_genesis:
+        proc = Memory(
+            id=proc_id,
+            narrative=narrative,
+            memory_type=MemoryType.PROCEDURAL,
+            parent_id=parent,
+            valence=0.7,
+            metadata=meta,
+        )
+        cortex.store(proc)
+        cortex.add_child(parent, proc_id)
 
     return "ROOT"
 
