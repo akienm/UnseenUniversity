@@ -70,6 +70,7 @@ class Igor:
         self.last_valence = None
         self.last_roi = None
         self.session_cost = 0.0
+        self.use_ollama = os.getenv("IGOR_OLLAMA", "true").lower() in ("true", "1", "yes")
 
         # Start Discord bot, then unified network listener
         discord_bot.start()
@@ -149,21 +150,26 @@ class Igor:
 
         # [OLLAMA] Pre-parse: classify intent, score memories, check habit match
         habits = self.cortex.get_habits()
-        console.print("[dim][OLLAMA] Pre-parsing...[/]")
-        pre = preparse(user_input, habits)
-
-        # Use Ollama-scored memory ranking if we have candidates
-        if candidates:
-            relevant = score_memories(user_input, candidates)
+        if self.use_ollama:
+            console.print("[dim][OLLAMA] Pre-parsing...[/]")
+            pre = preparse(user_input, habits)
+            relevant = score_memories(user_input, candidates) if candidates else []
         else:
-            relevant = []
+            pre = {
+                "intent": parsed.intent,
+                "keywords": parsed.keywords,
+                "habit_match": None,
+                "confidence": 0.0,
+                "should_escalate": True,
+            }
+            relevant = candidates[:5]  # Simple truncation without scoring
 
         if relevant:
             dashboard.print_activated_memories(relevant, f"Relevant (intent={pre['intent']})")
 
         used_api = False
 
-        # [BASAL GANGLIA] Habit match from Ollama pre-parse
+        # [BASAL GANGLIA] Habit match from Ollama pre-parse (or simple trigger check)
         habit = pre["habit_match"] if pre["confidence"] >= 0.8 else self._find_habit(parsed)
 
         if habit:
@@ -279,12 +285,14 @@ class Igor:
             "restart": self._cmd_restart,
             "cost": self._cmd_cost,
             "model": self._cmd_model,
+            "ollama": self._cmd_ollama,
         }
         fn = commands.get(command, self._cmd_unknown)
         fn(raw)
 
     def _cmd_help(self, _):
-        console.print("""
+        ollama_state = "ON" if self.use_ollama else "OFF"
+        console.print(f"""
 [bold]Igor Commands:[/]
   /help           - This message
   /memories       - List recent episodic memories
@@ -293,7 +301,8 @@ class Igor:
   /cost           - Show session cost
   /model          - Show current reasoning model
   /model <name>   - Switch model (sonnet, opus, haiku, or full model ID)
-  /restart        - Save state and relaunch
+  /ollama         - Toggle local Ollama pre-parser (currently {ollama_state})
+  /restart        - Relaunch Igor (requires igor bash alias)
   /quit           - Exit
 """)
 
@@ -329,6 +338,12 @@ class Igor:
         name = parts[1].strip()
         resolved = self.reasoner.set_model(name)
         console.print(f"\n[green]Model switched to:[/] {resolved}")
+
+    def _cmd_ollama(self, _):
+        self.use_ollama = not self.use_ollama
+        state = "[green]ON[/]" if self.use_ollama else "[yellow]OFF[/]"
+        note = "" if self.use_ollama else "  [dim](skipping local pre-parse, using simple keyword matching)[/]"
+        console.print(f"\n[bold]Ollama pre-parser:[/] {state}{note}")
 
     def _cmd_cost(self, _):
         console.print(f"\n[bold]Session cost:[/] ${self.session_cost:.4f}")

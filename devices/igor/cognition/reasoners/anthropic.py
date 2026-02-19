@@ -7,7 +7,7 @@ import os
 from anthropic import Anthropic
 from ...memory.models import Memory
 from ...tools.registry import registry
-from ...tools import filesystem, web_search, self_edit, gmail, discord  # registers tools on import
+from ...tools import filesystem, web_search, self_edit, gmail, discord, senses  # registers tools on import
 from .base import BaseReasoner
 
 DEFAULT_MODEL = "claude-sonnet-4-6"
