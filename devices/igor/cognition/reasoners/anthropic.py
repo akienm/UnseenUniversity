@@ -22,6 +22,8 @@ MODEL_ALIASES: dict[str, str] = {
     "haiku4":  "claude-haiku-4-5-20251001",
 }
 
+DEBUG_BYPASS_MODEL = "claude-haiku-4-5-20251001"
+
 SYSTEM_PROMPT = """You are Igor, a learning AI agent with persistent memory and transparent reasoning.
 
 Your core patterns (always active):
@@ -43,6 +45,7 @@ class AnthropicReasoner(BaseReasoner):
         self._client = None
         raw = model or os.getenv("IGOR_MODEL", DEFAULT_MODEL)
         self.model = MODEL_ALIASES.get(raw, raw)
+        self._debug_bypass = False   # When True, use Haiku regardless of self.model
 
     def _get_client(self):
         if self._client is None:
@@ -55,7 +58,22 @@ class AnthropicReasoner(BaseReasoner):
         self._client = None   # Force new client on next call (picks up any env changes)
         return self.model
 
+    def set_debug_bypass(self, enabled: bool) -> str:
+        """Enable or disable debug bypass mode. Returns status string."""
+        self._debug_bypass = enabled
+        if enabled:
+            return f"DEBUG BYPASS ON → using {DEBUG_BYPASS_MODEL} (fast/cheap)"
+        else:
+            return f"DEBUG BYPASS OFF → back to {self.model}"
+
+    @property
+    def active_model(self) -> str:
+        """The model that will actually be used on the next call."""
+        return DEBUG_BYPASS_MODEL if self._debug_bypass else self.model
+
     def name(self) -> str:
+        if self._debug_bypass:
+            return f"Anthropic/{self.model} [DEBUG→{DEBUG_BYPASS_MODEL}]"
         return f"Anthropic/{self.model}"
 
     def reason(
@@ -73,17 +91,18 @@ class AnthropicReasoner(BaseReasoner):
         tools = registry.to_anthropic_schemas()
         total_cost = 0.0
         tool_calls_made = []
+        model_to_use = self.active_model
 
         while True:
             response = self._get_client().messages.create(
-                model=self.model,
+                model=model_to_use,
                 max_tokens=4096,
                 system=SYSTEM_PROMPT,
                 tools=tools,
                 messages=messages,
             )
 
-            total_cost += self._estimate_cost(response.usage)
+            total_cost += self._estimate_cost(response.usage, model_to_use)
 
             if response.stop_reason == "end_turn":
                 text = self._extract_text(response)
@@ -127,6 +146,10 @@ class AnthropicReasoner(BaseReasoner):
                 return block.text
         return ""
 
-    def _estimate_cost(self, usage) -> float:
+    def _estimate_cost(self, usage, model: str | None = None) -> float:
+        m = model or self.model
+        if "haiku" in m:
+            # Haiku: ~$0.80/MTok input, $4/MTok output
+            return (usage.input_tokens * 0.0000008) + (usage.output_tokens * 0.000004)
         # Sonnet 4.6: $3/MTok input, $15/MTok output
         return (usage.input_tokens * 0.000003) + (usage.output_tokens * 0.000015)
