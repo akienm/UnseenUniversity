@@ -82,6 +82,18 @@ class Igor:
         else:
             console.print(f"\n[cyan]Igor-{instance_id} resumed. {self.cortex.total_count()} memories loaded.[/]")
 
+        # [RING] Surface recent context and restart notes on wakeup
+        restart_note = self.cortex.get_last_restart_note()
+        if restart_note:
+            console.print(f"\n[yellow]Last session note:[/] {restart_note['content']}")
+            console.print(f"[dim]  (at {restart_note['timestamp'][:16]})[/]")
+        ring = self.cortex.read_ring_memory(limit=10)
+        if ring:
+            console.print(f"\n[dim]── Recent context ({len(ring)} entries) ──[/]")
+            for entry in ring[-5:]:
+                ts = entry['timestamp'][11:16]
+                console.print(f"[dim]  {ts} [{entry['category']}] {entry['content'][:90]}[/]")
+
     def run(self):
         """
         Main event loop.
@@ -124,7 +136,7 @@ class Igor:
 
             # EOF / KeyboardInterrupt from stdin thread
             if user_input is None:
-                self._shutdown()
+                self._shutdown(reason="EOF/Ctrl-D")
                 break
 
             user_input = user_input.strip()
@@ -215,6 +227,12 @@ class Igor:
         self.cortex.store(ep)
         self.cortex.add_child("CP3", ep.id)
         new_memories += 1
+
+        # [RING] Write interaction summary to short-term memory
+        self.cortex.write_ring(
+            f"Q: {user_input[:60]} | A: {response_text[:80]} | intent={parsed.intent} friction={friction:.2f}",
+            category=parsed.intent,
+        )
 
         # Update metrics
         self.last_friction = friction
@@ -351,18 +369,21 @@ class Igor:
         console.print(f"[bold]Interactions:[/] {self.interaction_count}")
 
     def _cmd_restart(self, _):
-        self._shutdown()
+        self._shutdown(reason="restart via /restart")
         console.print("[cyan]Restarting...[/]")
         sys.exit(42)  # Caught by bash wrapper - triggers relaunch
 
     def _cmd_quit(self, _):
-        self._shutdown()
+        self._shutdown(reason="quit via /quit")
         sys.exit(0)
 
     def _cmd_unknown(self, raw):
         console.print(f"[yellow]Unknown command: {raw}[/]  (try /help)")
 
-    def _shutdown(self):
+    def _shutdown(self, reason: str = "shutdown"):
+        self.cortex.write_restart_note(
+            reason=f"{reason} — {self.interaction_count} interactions, ${self.session_cost:.4f}",
+        )
         console.print(f"\n[cyan]Igor-{self.instance_id} shutting down.[/]")
         console.print(f"Session: {self.interaction_count} interactions, ${self.session_cost:.4f} cost")
         console.print("[dim]Memories persisted to SQLite. See you next time.[/]")
