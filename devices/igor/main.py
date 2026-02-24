@@ -181,6 +181,17 @@ class Igor:
 
         used_api = False
 
+        # [RING] Build short-term context to include in reasoning
+        ring_entries = self.cortex.read_ring_memory(limit=15)
+        if ring_entries:
+            ring_lines = [
+                f"[{e['timestamp'][11:16]}] [{e['category']}] {e['content'][:120]}"
+                for e in ring_entries[-10:]
+            ]
+            ring_ctx = "\n\nRecent session context (short-term memory, newest last):\n" + "\n".join(ring_lines)
+        else:
+            ring_ctx = ""
+
         # [BASAL GANGLIA] Habit match from Ollama pre-parse (or simple trigger check)
         habit = pre["habit_match"] if pre["confidence"] >= 0.8 else self._find_habit(parsed)
 
@@ -192,8 +203,9 @@ class Igor:
             # [PREFRONTAL CORTEX] Upstream reasoning
             dashboard.print_reasoning(used_api=True)
             core = get_core_patterns(self.cortex)
+            augmented_input = user_input + ring_ctx
             try:
-                response_text, cost = pfc.reason(user_input, relevant, core, self.instance_id, self.reasoner)
+                response_text, cost = pfc.reason(augmented_input, relevant, core, self.instance_id, self.reasoner)
                 self.session_cost += cost
                 self.upstream_calls += 1
                 used_api = True
