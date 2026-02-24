@@ -26,6 +26,17 @@ class Tool:
             "input_schema": self.parameters,
         }
 
+    def to_openai_schema(self) -> dict:
+        """Convert to OpenAI function-calling format."""
+        return {
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": self.parameters,
+            },
+        }
+
     def to_text_description(self) -> str:
         """Plain text description for browser-based / text-only reasoners."""
         props = self.parameters.get("properties", {})
@@ -60,6 +71,9 @@ class ToolRegistry:
 
     def to_anthropic_schemas(self) -> list[dict]:
         return [t.to_anthropic_schema() for t in self.all()]
+
+    def to_openai_schemas(self) -> list[dict]:
+        return [t.to_openai_schema() for t in self.all()]
 
     def to_text_descriptions(self) -> str:
         """All tools described in plain text - for non-API reasoners."""
