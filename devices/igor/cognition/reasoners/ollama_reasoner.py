@@ -2,15 +2,58 @@
 Ollama local reasoner.
 Runs on-device. No API cost. Used for fast pre-parsing and habit matching,
 not for heavy reasoning (that stays with Anthropic).
+
+Call logging: every Ollama call writes a structured entry to ollama_calls.log
+with timing, token counts, and tokens/sec so we can tune model selection.
 """
 
 import json
+import logging
+import os
+import time
 import ollama as _ollama
 from ...memory.models import Memory
 from .base import BaseReasoner
 
 DEFAULT_MODEL = "llama3.2:1b"
 
+# ── Ollama call logger ──────────────────────────────────────────────────────
+_LOG_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "ollama_calls.log")
+_LOG_PATH = os.path.normpath(_LOG_PATH)
+
+_ollama_log = logging.getLogger("igor.ollama_calls")
+if not _ollama_log.handlers:
+    _ollama_log.setLevel(logging.DEBUG)
+    _fh = logging.FileHandler(_LOG_PATH, encoding="utf-8")
+    _fh.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
+    _ollama_log.addHandler(_fh)
+    _ollama_log.propagate = False  # don't bubble up to root logger
+
+
+def _log_call(fn_name: str, model: str, response, elapsed: float, error: str | None = None):
+    """
+    Write one structured log line per Ollama call.
+    Fields: function | model | elapsed_ms | tokens_in | tokens_out | tok_per_sec | ok | error
+    """
+    if error:
+        _ollama_log.info(
+            f"fn={fn_name} model={model} elapsed_ms={elapsed*1000:.1f} "
+            f"ok=False error={error!r}"
+        )
+        return
+
+    tokens_in  = getattr(response, "prompt_eval_count", None) or response.get("prompt_eval_count", 0)
+    tokens_out = getattr(response, "eval_count", None) or response.get("eval_count", 0)
+    tok_per_sec = round(tokens_out / elapsed, 1) if elapsed > 0 and tokens_out else 0.0
+
+    _ollama_log.info(
+        f"fn={fn_name} model={model} elapsed_ms={elapsed*1000:.1f} "
+        f"tokens_in={tokens_in} tokens_out={tokens_out} "
+        f"tok_per_sec={tok_per_sec} ok=True"
+    )
+
+
+# ── Reasoner class ──────────────────────────────────────────────────────────
 
 class OllamaReasoner(BaseReasoner):
     """Full reasoning via local Ollama model. Slow but free."""
@@ -34,12 +77,22 @@ class OllamaReasoner(BaseReasoner):
                 f"- {m.narrative}" for m in relevant_memories[:5]
             )
 
-        response = _ollama.chat(
-            model=self.model,
-            messages=[{"role": "user", "content": user_input + memory_context}],
-        )
-        return response["message"]["content"], 0.0  # Local = no cost
+        t0 = time.perf_counter()
+        try:
+            response = _ollama.chat(
+                model=self.model,
+                messages=[{"role": "user", "content": user_input + memory_context}],
+            )
+            elapsed = time.perf_counter() - t0
+            _log_call("OllamaReasoner.reason", self.model, response, elapsed)
+            return response["message"]["content"], 0.0  # Local = no cost
+        except Exception as exc:
+            elapsed = time.perf_counter() - t0
+            _log_call("OllamaReasoner.reason", self.model, None, elapsed, error=str(exc))
+            raise
 
+
+# ── preparse ────────────────────────────────────────────────────────────────
 
 def preparse(user_input: str, habits: list[Memory], model: str = DEFAULT_MODEL) -> dict:
     """
@@ -52,7 +105,6 @@ def preparse(user_input: str, habits: list[Memory], model: str = DEFAULT_MODEL) 
       - confidence: 0.0-1.0 how confident we are a habit covers this
       - should_escalate: bool - True means send to Anthropic API
     """
-    # Build habit descriptions for the prompt
     habit_desc = ""
     if habits:
         habit_desc = "\n\nAvailable habits:\n" + "\n".join(
@@ -74,15 +126,17 @@ JSON fields:
 Example output:
 {{"intent": "factual_question", "keywords": ["capital", "france"], "habit_id": null, "confidence": 0.0, "should_escalate": true}}"""
 
+    t0 = time.perf_counter()
     try:
         response = _ollama.chat(
             model=model,
             messages=[{"role": "user", "content": prompt}],
-            options={"temperature": 0.1},  # Low temp for consistent classification
+            options={"temperature": 0.1},
         )
-        text = response["message"]["content"].strip()
+        elapsed = time.perf_counter() - t0
+        _log_call("preparse", model, response, elapsed)
 
-        # Extract JSON even if model adds surrounding text
+        text = response["message"]["content"].strip()
         start = text.find("{")
         end = text.rfind("}") + 1
         if start >= 0 and end > start:
@@ -90,7 +144,6 @@ Example output:
         else:
             raise ValueError("No JSON found in response")
 
-        # Resolve habit_id to actual Memory object
         habit_match = None
         if parsed.get("habit_id") and habits:
             habit_match = next((h for h in habits if h.id == parsed["habit_id"]), None)
@@ -103,7 +156,9 @@ Example output:
             "should_escalate": bool(parsed.get("should_escalate", True)),
         }
 
-    except Exception:
+    except Exception as exc:
+        elapsed = time.perf_counter() - t0
+        _log_call("preparse", model, None, elapsed, error=str(exc))
         # If local model fails, escalate to API - never block on local failure
         return {
             "intent": "general",
@@ -114,7 +169,14 @@ Example output:
         }
 
 
-def score_memories(query: str, memories: list[Memory], model: str = DEFAULT_MODEL, top_n: int = 5) -> list[Memory]:
+# ── score_memories ──────────────────────────────────────────────────────────
+
+def score_memories(
+    query: str,
+    memories: list[Memory],
+    model: str = DEFAULT_MODEL,
+    top_n: int = 5,
+) -> list[Memory]:
     """
     Use local model to score memory relevance rather than naive text search.
     Returns top_n most relevant memories.
@@ -122,10 +184,9 @@ def score_memories(query: str, memories: list[Memory], model: str = DEFAULT_MODE
     if not memories:
         return []
 
-    # Build compact memory list for scoring
     mem_list = "\n".join(
         f"{i}: [{m.memory_type.value}] {m.narrative[:80]}"
-        for i, m in enumerate(memories[:20])  # Cap at 20 to keep prompt short
+        for i, m in enumerate(memories[:20])
     )
 
     prompt = f"""Given this query: "{query}"
@@ -135,12 +196,16 @@ Rate each memory's relevance (0-10). Reply with ONLY a JSON array of [index, sco
 Memories:
 {mem_list}"""
 
+    t0 = time.perf_counter()
     try:
         response = _ollama.chat(
             model=model,
             messages=[{"role": "user", "content": prompt}],
             options={"temperature": 0.1},
         )
+        elapsed = time.perf_counter() - t0
+        _log_call("score_memories", model, response, elapsed)
+
         text = response["message"]["content"].strip()
         start = text.find("[")
         end = text.rfind("]") + 1
@@ -155,5 +220,7 @@ Memories:
                 result.append(memories[idx])
         return result if result else memories[:top_n]
 
-    except Exception:
+    except Exception as exc:
+        elapsed = time.perf_counter() - t0
+        _log_call("score_memories", model, None, elapsed, error=str(exc))
         return memories[:top_n]
