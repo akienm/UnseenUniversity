@@ -5,6 +5,9 @@ Uses native tool_use protocol. Runs the full agentic tool loop.
 Deep thinking is now visible: each tool call and its result are printed
 to the console and optionally written to ring_memory. This satisfies the
 "show more during deep thinking" agreement with akienm.
+
+Short-term session context (ring memory) is injected into the prompt so
+Igor has continuity within a conversation, not just long-term memory hits.
 """
 
 import os
@@ -44,6 +47,9 @@ Your core patterns (always active):
 You are running as a Wild Igor - Python code on physical hardware with persistent SQLite memory.
 You have tools available. Use them when they help. Be honest about what you know and don't know.
 Keep responses concise and useful."""
+
+# How many ring entries to surface as session context
+RING_CONTEXT_LIMIT = 10
 
 
 class AnthropicReasoner(BaseReasoner):
@@ -93,10 +99,17 @@ class AnthropicReasoner(BaseReasoner):
     ) -> tuple[str, float]:
         """
         Run the full agentic tool loop.
-        cortex is optional — if provided, tool calls are written to ring_memory.
+        cortex is optional — if provided, tool calls are written to ring_memory
+        and the recent ring entries are injected as session context.
         """
         memory_context = self._build_memory_context(relevant_memories)
-        content = user_input + memory_context if memory_context else user_input
+        session_context = self._build_session_context(cortex)
+
+        content = user_input
+        if session_context:
+            content += session_context
+        if memory_context:
+            content += memory_context
 
         messages = [{"role": "user", "content": content}]
         tools = registry.to_anthropic_schemas()
@@ -181,6 +194,32 @@ class AnthropicReasoner(BaseReasoner):
                 vs = vs[:57] + "..."
             parts.append(f"{k}={vs!r}")
         return ", ".join(parts)
+
+    def _build_session_context(self, cortex) -> str:
+        """
+        Read recent ring memory entries and format them as a session context block.
+        Skips tool_trace entries (too noisy) and judgment entries (internal bookkeeping).
+        Returns empty string if cortex is None or ring is empty.
+        """
+        if cortex is None:
+            return ""
+
+        # Read recent entries, excluding internal-only categories
+        all_entries = cortex.read_ring_memory(limit=RING_CONTEXT_LIMIT * 3)
+        entries = [
+            e for e in all_entries
+            if e["category"] not in ("tool_trace", "judgment")
+        ][-RING_CONTEXT_LIMIT:]
+
+        if not entries:
+            return ""
+
+        lines = ["\n\nRecent session context (short-term memory, newest last):"]
+        for e in entries:
+            # Trim timestamp to HH:MM for readability
+            ts = e["timestamp"][11:16] if len(e["timestamp"]) >= 16 else e["timestamp"]
+            lines.append(f"[{ts}] {e['content']}")
+        return "\n".join(lines)
 
     def _build_memory_context(self, memories: list[Memory]) -> str:
         if not memories:
