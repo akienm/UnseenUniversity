@@ -1,14 +1,21 @@
 """
 Anthropic API reasoner.
 Uses native tool_use protocol. Runs the full agentic tool loop.
+
+Deep thinking is now visible: each tool call and its result are printed
+to the console and optionally written to ring_memory. This satisfies the
+"show more during deep thinking" agreement with akienm.
 """
 
 import os
 from anthropic import Anthropic
+from rich.console import Console
 from ...memory.models import Memory
 from ...tools.registry import registry
 from ... import tools as _tools  # noqa: F401 - imports all tools, registers them
 from .base import BaseReasoner
+
+console = Console()
 
 DEFAULT_MODEL = "claude-sonnet-4-6"
 
@@ -82,8 +89,12 @@ class AnthropicReasoner(BaseReasoner):
         relevant_memories: list[Memory],
         core_patterns: list[Memory],
         instance_id: str,
+        cortex=None,
     ) -> tuple[str, float]:
-
+        """
+        Run the full agentic tool loop.
+        cortex is optional — if provided, tool calls are written to ring_memory.
+        """
         memory_context = self._build_memory_context(relevant_memories)
         content = user_input + memory_context if memory_context else user_input
 
@@ -92,8 +103,10 @@ class AnthropicReasoner(BaseReasoner):
         total_cost = 0.0
         tool_calls_made = []
         model_to_use = self.active_model
+        turn = 0
 
         while True:
+            turn += 1
             response = self._get_client().messages.create(
                 model=model_to_use,
                 max_tokens=4096,
@@ -106,6 +119,8 @@ class AnthropicReasoner(BaseReasoner):
 
             if response.stop_reason == "end_turn":
                 text = self._extract_text(response)
+                if tool_calls_made:
+                    console.print(f"[dim][THINK] Done. Tools used: {', '.join(tool_calls_made)}[/]")
                 return text, total_cost
 
             elif response.stop_reason == "tool_use":
@@ -117,7 +132,29 @@ class AnthropicReasoner(BaseReasoner):
                 for block in response.content:
                     if block.type == "tool_use":
                         tool_calls_made.append(block.name)
+
+                        # ── DEEP THINKING VISIBILITY ──────────────────────────
+                        # Show what I'm about to do (truncate large inputs for readability)
+                        input_summary = self._summarize_input(block.input)
+                        console.print(
+                            f"[dim][THINK turn={turn}] ⚙ {block.name}({input_summary})[/]"
+                        )
+
                         result = registry.execute(block.name, block.input)
+
+                        # Show truncated result
+                        result_preview = str(result)[:120].replace("\n", " ")
+                        console.print(f"[dim][THINK turn={turn}]   → {result_preview}[/]")
+
+                        # Write to ring_memory if cortex available
+                        if cortex is not None:
+                            ring_entry = (
+                                f"TOOL:{block.name} "
+                                f"input={input_summary} "
+                                f"result={result_preview}"
+                            )
+                            cortex.write_ring(ring_entry, category="tool_trace")
+
                         tool_results.append({
                             "type": "tool_result",
                             "tool_use_id": block.id,
@@ -130,7 +167,20 @@ class AnthropicReasoner(BaseReasoner):
             else:
                 # Unexpected stop reason - return what we have
                 text = self._extract_text(response) or f"[Stopped: {response.stop_reason}]"
+                console.print(f"[yellow][THINK] Unexpected stop_reason={response.stop_reason}[/]")
                 return text, total_cost
+
+    def _summarize_input(self, inp: dict) -> str:
+        """Produce a short human-readable summary of tool input params."""
+        if not inp:
+            return ""
+        parts = []
+        for k, v in inp.items():
+            vs = str(v)
+            if len(vs) > 60:
+                vs = vs[:57] + "..."
+            parts.append(f"{k}={vs!r}")
+        return ", ".join(parts)
 
     def _build_memory_context(self, memories: list[Memory]) -> str:
         if not memories:
