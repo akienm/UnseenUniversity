@@ -6,7 +6,7 @@ Cannot read or write outside workspace/.
 from pathlib import Path
 from .registry import Tool, registry
 
-WORKSPACE = Path(__file__).parent.parent.parent / "workspace"
+WORKSPACE = Path("/home/akien")
 WORKSPACE.mkdir(exist_ok=True)
 
 
