@@ -8,6 +8,9 @@ to the console and optionally written to ring_memory. This satisfies the
 
 Short-term session context (ring memory) is injected into the prompt so
 Igor has continuity within a conversation, not just long-term memory hits.
+
+Budget tracking: before each API call, check remaining budget and warn/block
+if needed. After each call, record the cost. Interruptors run post-response.
 """
 
 import os
@@ -120,6 +123,21 @@ class AnthropicReasoner(BaseReasoner):
 
         while True:
             turn += 1
+
+            # ── BUDGET CHECK before each API call ─────────────────────────
+            try:
+                from ...tools.budget import check_before_call, record_spend
+                ok, budget_msg = check_before_call()
+                if not ok:
+                    console.print(f"[bold red][BUDGET] {budget_msg}[/]")
+                    # Run interruptors so TWM gets the alert
+                    self._run_interruptors(cortex)
+                    return budget_msg, 0.0
+                elif "critical" in budget_msg.lower() or "low" in budget_msg.lower():
+                    console.print(f"[yellow][BUDGET] {budget_msg}[/]")
+            except ImportError:
+                record_spend = None  # Budget module not available
+
             response = self._get_client().messages.create(
                 model=model_to_use,
                 max_tokens=4096,
@@ -128,12 +146,22 @@ class AnthropicReasoner(BaseReasoner):
                 messages=messages,
             )
 
-            total_cost += self._estimate_cost(response.usage, model_to_use)
+            call_cost = self._estimate_cost(response.usage, model_to_use)
+            total_cost += call_cost
+
+            # ── RECORD SPEND ──────────────────────────────────────────────
+            try:
+                from ...tools.budget import record_spend as _rs
+                _rs(call_cost, model=model_to_use, note=f"turn={turn}")
+            except Exception:
+                pass  # Budget tracker optional — don't crash reasoning
 
             if response.stop_reason == "end_turn":
                 text = self._extract_text(response)
                 if tool_calls_made:
                     console.print(f"[dim][THINK] Done. Tools used: {', '.join(tool_calls_made)}[/]")
+                # ── Run interruptors after final response ─────────────────
+                self._run_interruptors(cortex)
                 return text, total_cost
 
             elif response.stop_reason == "tool_use":
@@ -181,7 +209,18 @@ class AnthropicReasoner(BaseReasoner):
                 # Unexpected stop reason - return what we have
                 text = self._extract_text(response) or f"[Stopped: {response.stop_reason}]"
                 console.print(f"[yellow][THINK] Unexpected stop_reason={response.stop_reason}[/]")
+                self._run_interruptors(cortex)
                 return text, total_cost
+
+    def _run_interruptors(self, cortex):
+        """Run all interruptors. Alerts are written to TWM and printed to console."""
+        try:
+            from ...cognition.interruptors import run_all
+            alerts = run_all(cortex)
+            for alert in alerts:
+                console.print(f"[bold yellow][INTERRUPTOR] {alert}[/]")
+        except Exception:
+            pass  # Interruptors are advisory — never crash reasoning
 
     def _summarize_input(self, inp: dict) -> str:
         """Produce a short human-readable summary of tool input params."""
