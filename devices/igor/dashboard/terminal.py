@@ -1,6 +1,10 @@
 """
 Terminal dashboard - Rich-based display of Igor's internal state.
 Shows after every interaction. Everything visible.
+
+Interruptor alerts appear at the top of the TWM panel in bold yellow/red
+so they can't be missed. The TWM is now the canonical surface for pushed
+notifications from any Interruptor.
 """
 
 from datetime import datetime
@@ -33,9 +37,24 @@ def render(
 
     upstream_pct = _upstream_pct(interaction_count, upstream_calls)
 
+    # ── Interruptor alerts (read from TWM ring) ───────────────────────────────
+    alert_lines = _get_active_alerts(cortex)
+
+    # ── Budget summary ────────────────────────────────────────────────────────
+    budget_line = _get_budget_line()
+
     # Build dashboard
     lines = []
+
+    # Show interruptor alerts first — they demand attention
+    if alert_lines:
+        for al in alert_lines:
+            lines.append(f"[bold yellow]{al}[/]")
+        lines.append("")
+
     lines.append(f"[bold cyan]Igor-{instance_id}[/] · Interaction #{interaction_count}")
+    if budget_line:
+        lines.append(budget_line)
     lines.append("")
 
     # Memory counts
@@ -66,13 +85,55 @@ def render(
     lines.append("")
     lines.append(f"[bold]Recent:[/] {last_action}")
 
+    border = "red" if alert_lines else "cyan"
     panel = Panel(
         "\n".join(lines),
         box=box.DOUBLE,
-        border_style="cyan",
-        width=52,
+        border_style=border,
+        width=60,
     )
     console.print(panel)
+
+
+def _get_active_alerts(cortex: Cortex) -> list[str]:
+    """
+    Read recent interruptor alerts from ring_memory.
+    Only return the most recent alert per interruptor name to avoid spam.
+    """
+    try:
+        entries = cortex.read_ring_memory(limit=20, category="interruptor")
+        if not entries:
+            return []
+        # De-duplicate by interruptor name (keep most recent)
+        seen = {}
+        for e in reversed(entries):  # newest last → process newest first
+            content = e["content"]
+            # Content format: "[INTERRUPTOR:name] message"
+            name = content.split("]")[0].replace("[INTERRUPTOR:", "") if "]" in content else "unknown"
+            if name not in seen:
+                seen[name] = content
+        return list(seen.values())
+    except Exception:
+        return []
+
+
+def _get_budget_line() -> str:
+    """Return a compact budget status line, or empty string if unavailable."""
+    try:
+        from ..tools.budget import budget_status
+        s = budget_status()
+        remaining = s["remaining_usd"]
+        budget    = s["budget_usd"]
+        pct_left  = 100 - s["pct_used"]
+        if s["critical"] or remaining <= 0:
+            color = "red"
+        elif s["warn"]:
+            color = "yellow"
+        else:
+            color = "green"
+        return f"[bold]Claude Budget:[/] [{color}]${remaining:.2f} left[/] of ${budget:.2f} ({pct_left:.0f}% remaining)"
+    except Exception:
+        return ""
 
 
 def _upstream_pct(total_interactions: int, upstream_calls: int) -> int:
