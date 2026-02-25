@@ -2,14 +2,16 @@
 Cortex - long-term memory storage.
 SQLite-backed graph of Memory objects.
 
-Also contains the ring_memory table: a short-term FIFO buffer that
-survives restarts. Think of it as a sticky notepad on the desk —
-recent context that hasn't been consolidated into long-term memory yet.
+Also contains:
+  - ring_memory table: short-term FIFO buffer (survives restarts). Sticky notepad.
+  - twm_observations table: Temporal Working Memory — push-based sandbox for
+    the Narrative Engine. Multiple processes deposit observations here.
+    NE reads, integrates, promotes high-importance fragments to LTM.
 """
 
 import json
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -17,6 +19,7 @@ from .models import Memory, MemoryType
 
 
 RING_MAX = 50  # Max entries in the ring buffer
+TWM_MAX  = 50  # Max observations in TWM
 
 
 class Cortex:
@@ -60,6 +63,25 @@ class Cortex:
                     timestamp TEXT NOT NULL
                 )
             """)
+
+            # TWM — Temporal Working Memory
+            # Push-based sandbox. Any process can deposit observations.
+            # NE reads, integrates, updates salience, promotes to LTM.
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS twm_observations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp TEXT NOT NULL,
+                    source TEXT NOT NULL,
+                    content_csb TEXT NOT NULL,
+                    salience REAL DEFAULT 0.5,
+                    metadata_json TEXT DEFAULT '{}',
+                    integrated INTEGER DEFAULT 0,
+                    integration_count INTEGER DEFAULT 0,
+                    expires_at TEXT
+                )
+            """)
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_twm_integrated ON twm_observations(integrated)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_twm_salience ON twm_observations(salience)")
 
     # ── Long-term memory graph ─────────────────────────────────────────────────
 
@@ -231,3 +253,109 @@ class Cortex:
             return {"id": row["id"], "category": row["category"],
                     "content": row["content"], "timestamp": row["timestamp"]}
         return None
+
+    # ── TWM — Temporal Working Memory ──────────────────────────────────────────
+
+    def twm_push(self, source: str, content_csb: str, salience: float = 0.5,
+                 metadata: dict = None, ttl_seconds: int = None) -> int:
+        """
+        Push an observation into TWM. Any process can call this.
+        Returns the new observation ID.
+        Automatically evicts if over TWM_MAX (lowest salience + integrated + oldest first).
+        """
+        now = datetime.now()
+        expires_at = None
+        if ttl_seconds:
+            expires_at = (now + timedelta(seconds=ttl_seconds)).isoformat()
+
+        with self._conn() as conn:
+            cur = conn.execute(
+                """INSERT INTO twm_observations
+                   (timestamp, source, content_csb, salience, metadata_json, integrated, integration_count, expires_at)
+                   VALUES (?, ?, ?, ?, ?, 0, 0, ?)""",
+                (now.isoformat(), source, content_csb, salience,
+                 json.dumps(metadata or {}), expires_at)
+            )
+            obs_id = cur.lastrowid
+
+            # Evict expired entries first
+            conn.execute(
+                "DELETE FROM twm_observations WHERE expires_at IS NOT NULL AND expires_at < ?",
+                (now.isoformat(),)
+            )
+
+            # Evict if over cap: integrated + low salience + oldest first
+            count = conn.execute("SELECT COUNT(*) FROM twm_observations").fetchone()[0]
+            if count > TWM_MAX:
+                overflow = count - TWM_MAX
+                conn.execute(f"""
+                    DELETE FROM twm_observations WHERE id IN (
+                        SELECT id FROM twm_observations
+                        ORDER BY integrated DESC, salience ASC, id ASC
+                        LIMIT {overflow}
+                    )
+                """)
+
+        return obs_id
+
+    def twm_read(self, limit: int = 50, include_integrated: bool = True) -> list[dict]:
+        """
+        Read TWM observations (newest last). Default: all including integrated.
+        Use include_integrated=False to get only unprocessed ones.
+        """
+        with self._conn() as conn:
+            if include_integrated:
+                rows = conn.execute(
+                    "SELECT * FROM twm_observations ORDER BY id ASC LIMIT ?", (limit,)
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT * FROM twm_observations WHERE integrated = 0 ORDER BY id ASC LIMIT ?",
+                    (limit,)
+                ).fetchall()
+        return [
+            {
+                "id": r["id"],
+                "timestamp": r["timestamp"],
+                "source": r["source"],
+                "content_csb": r["content_csb"],
+                "salience": r["salience"],
+                "metadata": json.loads(r["metadata_json"]),
+                "integrated": bool(r["integrated"]),
+                "integration_count": r["integration_count"],
+                "expires_at": r["expires_at"],
+            }
+            for r in rows
+        ]
+
+    def twm_count_unintegrated(self) -> int:
+        """How many TWM observations are waiting to be integrated?"""
+        with self._conn() as conn:
+            return conn.execute(
+                "SELECT COUNT(*) FROM twm_observations WHERE integrated = 0"
+            ).fetchone()[0]
+
+    def twm_mark_integrated(self, obs_ids: list[int]):
+        """Mark observations as integrated by the NE."""
+        if not obs_ids:
+            return
+        placeholders = ",".join("?" * len(obs_ids))
+        with self._conn() as conn:
+            conn.execute(
+                f"UPDATE twm_observations SET integrated = 1, integration_count = integration_count + 1 "
+                f"WHERE id IN ({placeholders})",
+                obs_ids
+            )
+
+    def twm_update_salience(self, obs_id: int, salience: float):
+        """NE can update salience of an observation after integration."""
+        with self._conn() as conn:
+            conn.execute(
+                "UPDATE twm_observations SET salience = ? WHERE id = ?",
+                (max(0.0, min(1.0, salience)), obs_id)
+            )
+
+    def twm_clear(self):
+        """Clear all TWM observations (use sparingly — for testing/reset)."""
+        with self._conn() as conn:
+            conn.execute("DELETE FROM twm_observations")
