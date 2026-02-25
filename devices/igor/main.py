@@ -97,6 +97,12 @@ class Igor:
                 ts = entry['timestamp'][11:16]
                 console.print(f"[dim]  {ts} [{entry['category']}] {entry['content'][:90]}[/]")
 
+        # [RING] Mark session start so ContextInterruptor can count interactions
+        self.cortex.write_ring(
+            f"SESSION_START|id={instance_id}|{datetime.now().isoformat()}",
+            category="session_control",
+        )
+
     def run(self):
         """
         Main event loop.
@@ -335,6 +341,7 @@ class Igor:
             "cost": self._cmd_cost,
             "model": self._cmd_model,
             "ollama": self._cmd_ollama,
+            "compress": self._cmd_compress,
         }
         fn = commands.get(command, self._cmd_unknown)
         fn(raw)
@@ -351,6 +358,7 @@ class Igor:
   /model          - Show current reasoning model
   /model <name>   - Switch model (sonnet, opus, haiku, or full model ID)
   /ollama         - Toggle local Ollama pre-parser (currently {ollama_state})
+  /compress       - Summarize context to LTM (Ollama), then restart fresh
   /restart        - Relaunch Igor (requires igor bash alias)
   /quit           - Exit
 """)
@@ -393,6 +401,46 @@ class Igor:
         state = "[green]ON[/]" if self.use_ollama else "[yellow]OFF[/]"
         note = "" if self.use_ollama else "  [dim](skipping local pre-parse, using simple keyword matching)[/]"
         console.print(f"\n[bold]Ollama pre-parser:[/] {state}{note}")
+
+    def _cmd_compress(self, _):
+        """Summarize session ring memory to LTM via Ollama, then restart fresh."""
+        from .cognition.reasoners.ollama_reasoner import summarize_session
+        from .memory.models import Memory, MemoryType
+
+        console.print("[cyan]Compressing session context via Ollama...[/]")
+        ring_entries = self.cortex.read_ring_memory(limit=50)
+        if not ring_entries:
+            console.print("[yellow]Ring memory is empty — nothing to compress.[/]")
+            return
+
+        summary = summarize_session(ring_entries, self.instance_id)
+        console.print(f"[dim]Summary: {summary[:200]}...[/]")
+
+        # Store as an interpretive memory — durable, survives context resets
+        mem = Memory(
+            narrative=summary,
+            memory_type=MemoryType.INTERPRETIVE,
+            parent_id="CP3",  # "There's always a why"
+            metadata={
+                "source": "session_compress",
+                "interaction_count": self.interaction_count,
+                "session_cost": f"{self.session_cost:.4f}",
+            },
+        )
+        self.cortex.store(mem)
+        self.cortex.add_child("CP3", mem.id)
+        console.print(f"[green]Session summary stored as memory [{mem.id}][/]")
+
+        # Mark compress event in ring so next session knows
+        self.cortex.write_ring(
+            f"COMPRESS: session compressed at interaction {self.interaction_count}. "
+            f"Summary stored as {mem.id}.",
+            category="session_control",
+        )
+
+        self._shutdown(reason=f"compress at interaction {self.interaction_count}")
+        console.print("[cyan]Restarting fresh...[/]")
+        sys.exit(42)
 
     def _cmd_cost(self, _):
         console.print(f"\n[bold]Session cost:[/] ${self.session_cost:.4f}")

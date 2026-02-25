@@ -37,6 +37,9 @@ MODEL_ALIASES: dict[str, str] = {
 
 DEBUG_BYPASS_MODEL = "claude-haiku-4-5-20251001"
 
+# Tools that indicate Igor is doing self-inspection/editing — switch to Haiku automatically
+SELF_EDIT_TRIGGER_TOOLS = {"read_source_file", "list_source_files"}
+
 SYSTEM_PROMPT = """You are Igor, a learning AI agent with persistent memory and transparent reasoning.
 
 Your core patterns (always active):
@@ -118,6 +121,7 @@ class AnthropicReasoner(BaseReasoner):
         tools = registry.to_anthropic_schemas()
         total_cost = 0.0
         tool_calls_made = []
+        in_self_edit_session = False
         model_to_use = self.active_model
         turn = 0
 
@@ -173,6 +177,15 @@ class AnthropicReasoner(BaseReasoner):
                 for block in response.content:
                     if block.type == "tool_use":
                         tool_calls_made.append(block.name)
+
+                        # ── AUTO-HAIKU for self-edit sessions ─────────────────
+                        if not in_self_edit_session and block.name in SELF_EDIT_TRIGGER_TOOLS:
+                            in_self_edit_session = True
+                            model_to_use = DEBUG_BYPASS_MODEL
+                            console.print(
+                                f"[dim][THINK] Self-edit detected ({block.name}) "
+                                f"→ auto-switching to Haiku for this reasoning session[/]"
+                            )
 
                         # ── DEEP THINKING VISIBILITY ──────────────────────────
                         # Show what I'm about to do (truncate large inputs for readability)

@@ -224,3 +224,66 @@ Memories:
         elapsed = time.perf_counter() - t0
         _log_call("score_memories", model, None, elapsed, error=str(exc))
         return memories[:top_n]
+
+
+# ── summarize_session ────────────────────────────────────────────────────────
+
+def summarize_session(
+    ring_entries: list[dict],
+    instance_id: str,
+    model: str = DEFAULT_MODEL,
+) -> str:
+    """
+    Compress ring memory entries into a CSB (Compressed Semantic Block).
+    Uses local Ollama — free and fast. Returns a dense summary string suitable
+    for storing as an INTERPRETIVE memory (cold-readable by future Igor).
+    Falls back to a simple join if Ollama fails.
+    """
+    if not ring_entries:
+        return f"SESSION_SUMMARY|{instance_id}|empty_session"
+
+    # Format entries for the prompt — skip internal noise
+    relevant = [
+        e for e in ring_entries
+        if e.get("category") not in ("tool_trace", "interruptor")
+    ][-30:]
+
+    entries_text = "\n".join(
+        f"[{e['timestamp'][11:16]}][{e['category']}] {e['content'][:200]}"
+        for e in relevant
+    )
+
+    prompt = f"""You are a memory compression system for an AI agent called Igor (instance: {instance_id}).
+
+Compress these session ring-memory entries into a dense CSB (Compressed Semantic Block).
+
+Ring memory (oldest first):
+{entries_text}
+
+Write a 100-150 word dense summary covering:
+- Main topics/tasks worked on
+- Key decisions or changes made
+- Tools used and outcomes
+- Current state and any pending work
+- Emotional tone/valence of the session
+
+Format: one paragraph, dense, information-rich, written for cold reading by a future Igor instance.
+No preamble. Start directly with the content."""
+
+    t0 = time.perf_counter()
+    try:
+        response = _ollama.chat(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            options={"temperature": 0.2},
+        )
+        elapsed = time.perf_counter() - t0
+        _log_call("summarize_session", model, response, elapsed)
+        summary = response["message"]["content"].strip()
+        return f"SESSION_SUMMARY|{instance_id}|{summary}"
+    except Exception as exc:
+        elapsed = time.perf_counter() - t0
+        _log_call("summarize_session", model, None, elapsed, error=str(exc))
+        # Fallback: join last few entries manually
+        lines = [e["content"][:120] for e in relevant[-5:]]
+        return f"SESSION_SUMMARY|{instance_id}|fallback: " + " | ".join(lines)
