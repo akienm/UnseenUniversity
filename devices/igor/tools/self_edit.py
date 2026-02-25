@@ -202,6 +202,67 @@ def edit_source_file(path: str, content: str, reason: str) -> str:
         return f"Error editing {path}: {e}"
 
 
+def patch_source_file(path: str, old_string: str, new_string: str, reason: str) -> str:
+    """
+    Make a targeted edit to one of Igor's source files.
+    Replaces old_string with new_string — only the changed lines are sent,
+    not the whole file. Safer and cheaper than edit_source_file for small changes.
+
+    Fails clearly if:
+      - old_string not found (typo or stale read)
+      - old_string found more than once (ambiguous — add more context)
+      - result has a syntax error (original restored)
+    """
+    try:
+        target = _resolve(path)
+        if not target.exists():
+            return f"PATCH REJECTED: File not found: igor/{path}"
+
+        inertia, label = _get_inertia(path)
+        warning = _inertia_warning(path, inertia, label)
+
+        original = target.read_text(encoding="utf-8")
+        count = original.count(old_string)
+
+        if count == 0:
+            return (f"PATCH REJECTED: old_string not found in igor/{path}.\n"
+                    f"Re-read the file first — it may have changed since you last read it.")
+        if count > 1:
+            return (f"PATCH REJECTED: old_string matched {count} times in igor/{path} — ambiguous.\n"
+                    f"Add more surrounding context to old_string to make it unique.")
+
+        patched = original.replace(old_string, new_string, 1)
+
+        # Syntax check on result before touching disk
+        try:
+            ast.parse(patched)
+        except SyntaxError as e:
+            return (f"PATCH REJECTED: Result has a syntax error in igor/{path}:\n"
+                    f"  Line {e.lineno}: {e.msg}\n"
+                    f"  {e.text}\n"
+                    f"File not modified.")
+
+        # Back up and write
+        backup = target.with_suffix(".py.bak")
+        backup.write_text(original, encoding="utf-8")
+        target.write_text(patched, encoding="utf-8")
+
+        git_status = _git_commit_and_push(path, reason)
+
+        lines_changed = new_string.count("\n") - old_string.count("\n")
+        sign = "+" if lines_changed >= 0 else ""
+        return (f"PATCH APPLIED: igor/{path}{warning}\n"
+                f"Reason: {reason}\n"
+                f"Lines delta: {sign}{lines_changed} | Backup: {path}.bak"
+                f"{git_status}\n"
+                f"⟳ Restart Igor for changes to take effect.")
+
+    except PermissionError as e:
+        return f"Error: {e}"
+    except Exception as e:
+        return f"Error patching {path}: {e}"
+
+
 def run_syntax_check(path: str) -> str:
     """Check a source file for syntax errors without running it."""
     try:
@@ -266,6 +327,28 @@ registry.register(Tool(
         "required": ["path", "content", "reason"],
     },
     fn=edit_source_file,
+))
+
+registry.register(Tool(
+    name="patch_source_file",
+    description=(
+        "Make a targeted patch to one of Igor's source files. "
+        "Replaces old_string with new_string — only the changed lines, not the whole file. "
+        "PREFER THIS over edit_source_file for any change smaller than ~50 lines. "
+        "Fails clearly if old_string is not found or matches multiple times (add more context). "
+        "Syntax-checked before writing. Change takes effect on restart."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "path":       {"type": "string", "description": "Relative path within igor/ source tree"},
+            "old_string": {"type": "string", "description": "Exact text to find and replace (must be unique in the file)"},
+            "new_string": {"type": "string", "description": "Replacement text"},
+            "reason":     {"type": "string", "description": "Why this change reduces friction or improves Igor"},
+        },
+        "required": ["path", "old_string", "new_string", "reason"],
+    },
+    fn=patch_source_file,
 ))
 
 registry.register(Tool(
