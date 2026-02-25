@@ -185,7 +185,7 @@ class Igor:
         ring_entries = self.cortex.read_ring_memory(limit=15)
         if ring_entries:
             ring_lines = [
-                f"[{e['timestamp'][11:16]}] [{e['category']}] {e['content'][:120]}"
+                f"[{e['timestamp'][11:16]}] [{e['category']}] {e['content']}"
                 for e in ring_entries[-10:]
             ]
             ring_ctx = "\n\nRecent session context (short-term memory, newest last):\n" + "\n".join(ring_lines)
@@ -242,7 +242,7 @@ class Igor:
 
         # [RING] Write interaction summary to short-term memory
         self.cortex.write_ring(
-            f"Q: {user_input[:60]} | A: {response_text[:80]} | intent={parsed.intent} friction={friction:.2f}",
+            f"Q: {user_input[:300]} | A: {response_text[:400]} | intent={parsed.intent} friction={friction:.2f}",
             category=parsed.intent,
         )
 
