@@ -25,6 +25,8 @@ from .cognition import thalamus
 from .cognition import prefrontal_cortex as pfc
 from .cognition.reasoners.anthropic import AnthropicReasoner
 from .cognition.reasoners.ollama_reasoner import preparse, score_memories
+from .cognition.narrative_engine import NarrativeEngine
+from .cognition.push_sources import run_background_sources, user_input_source
 from .dashboard import terminal as dashboard
 from .network import discord_bot
 from .network import listener as net_listener
@@ -63,6 +65,7 @@ class Igor:
         self.cortex = Cortex(self.db_path)
         self.root_id = initialize_genesis(self.cortex, instance_id)
 
+        self.ne = NarrativeEngine(self.cortex, instance_id)
         self.reasoner = AnthropicReasoner()
         self.interaction_count = 0
         self.upstream_calls = 0
@@ -130,7 +133,9 @@ class Igor:
             try:
                 user_input = stdin_queue.get_nowait()
             except queue.Empty:
-                # Nothing typed yet - sleep briefly then loop
+                # Nothing typed yet — run background work then loop
+                run_background_sources(self.cortex)
+                self.ne.run(verbose=False)
                 import time; time.sleep(0.5)
                 continue
 
@@ -148,6 +153,12 @@ class Igor:
     def _process(self, user_input: str):
         self.interaction_count += 1
         new_memories = 0
+
+        # [TWM] Push incoming message as observation (non-command messages only)
+        if not user_input.startswith("/"):
+            user_input_source.push_message(
+                self.cortex, user_input, channel="repl", author="user"
+            )
 
         # [THALAMUS] Parse input
         parsed = thalamus.process(user_input)
@@ -277,6 +288,14 @@ class Igor:
                 break
 
             console.print(f"\n[bold magenta][{msg.source.upper()}] {msg.author}:[/] {msg.content[:120]}")
+
+            # [TWM] Push raw network message before wrapping it as synthetic input
+            ri = msg.reply_info or {}
+            channel_label = f"{msg.source}:{ri.get('channel_name', '?')}"
+            user_input_source.push_message(
+                self.cortex, msg.content,
+                channel=channel_label, author=msg.author,
+            )
 
             if msg.source == "discord":
                 ri = msg.reply_info
