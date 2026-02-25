@@ -74,6 +74,7 @@ class Igor:
         self.last_roi = None
         self.session_cost = 0.0
         self.use_ollama = os.getenv("IGOR_OLLAMA", "true").lower() in ("true", "1", "yes")
+        self._ne_thread: threading.Thread | None = None
 
         # Start Discord bot, then unified network listener
         discord_bot.start()
@@ -141,7 +142,7 @@ class Igor:
             except queue.Empty:
                 # Nothing typed yet — run background work then loop
                 run_background_sources(self.cortex)
-                self.ne.run(verbose=False)
+                self._run_ne_background()
                 import time; time.sleep(0.5)
                 continue
 
@@ -284,6 +285,26 @@ class Igor:
             new_memories=new_memories,
             upstream_calls=self.upstream_calls,
         )
+
+    def _run_ne_background(self):
+        """
+        Fire the Narrative Engine in a background daemon thread.
+        If NE is already running (Ollama is slow), skip — don't stack calls.
+        The NE is stateless between runs (all state in SQLite), so this is safe.
+        """
+        if self._ne_thread is not None and self._ne_thread.is_alive():
+            return  # Already running — Ollama is still thinking
+
+        def _ne_worker():
+            try:
+                self.ne.run(verbose=False)
+            except Exception:
+                pass  # FAIL = FAL — NE must never crash the loop
+
+        self._ne_thread = threading.Thread(
+            target=_ne_worker, daemon=True, name="ne-worker"
+        )
+        self._ne_thread.start()
 
     def _drain_network(self):
         """Process any queued messages from any network source."""
