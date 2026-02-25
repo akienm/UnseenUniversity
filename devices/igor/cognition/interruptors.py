@@ -91,11 +91,85 @@ class BudgetInterruptor(BaseInterruptor):
         return None  # All good, stay quiet
 
 
+class ContextInterruptor(BaseInterruptor):
+    """
+    Monitors session interaction count. Warns when context is getting long
+    and expensive to send on every API call.
+
+    Reads SESSION_START ring entry to count interactions since boot.
+    Fires at WARN_AT (soft nudge) and URGENT_AT (strong push to /compress).
+    Rate-limited so it doesn't fire every single interaction.
+    """
+
+    name = "context_length"
+    WARN_AT = 20
+    URGENT_AT = 30
+    COOLDOWN_INTERACTIONS = 5  # Don't re-fire within 5 interactions
+
+    def __init__(self):
+        self._last_fired_at: int | None = None
+
+    def check(self, cortex=None) -> str | None:
+        if cortex is None:
+            return None
+
+        session_count = self._count_session_interactions(cortex)
+        if session_count is None:
+            return None
+
+        # Cooldown: don't spam every interaction
+        if (self._last_fired_at is not None
+                and session_count - self._last_fired_at < self.COOLDOWN_INTERACTIONS):
+            return None
+
+        if session_count >= self.URGENT_AT:
+            msg = (
+                f"🔴 CONTEXT URGENT: {session_count} interactions this session. "
+                "Context window is large and each API call is expensive. "
+                "Type /compress to summarize and restart fresh."
+            )
+            self._write_alert(cortex, msg)
+            self._last_fired_at = session_count
+            return msg
+
+        if session_count >= self.WARN_AT:
+            msg = (
+                f"⚡ Context notice: {session_count} interactions this session. "
+                "Consider /compress to summarize context and restart fresh."
+            )
+            self._write_alert(cortex, msg)
+            self._last_fired_at = session_count
+            return msg
+
+        return None
+
+    def _count_session_interactions(self, cortex) -> int | None:
+        """
+        Count interactions since the SESSION_START ring entry.
+        Ring entries are oldest-first; we walk newest-to-oldest until we hit the marker.
+        Counts only Q/A summary entries (not tool traces or interruptor alerts).
+        """
+        try:
+            entries = cortex.read_ring_memory(limit=50)  # oldest-first
+            count = 0
+            for entry in reversed(entries):  # walk newest → oldest
+                cat = entry.get("category", "")
+                if cat == "session_control" and "SESSION_START" in entry.get("content", ""):
+                    return count
+                # Count only substantive interaction entries
+                if cat not in ("tool_trace", "interruptor", "session_control"):
+                    count += 1
+            return None  # No SESSION_START found
+        except Exception:
+            return None
+
+
 # ── Active interruptors ───────────────────────────────────────────────────────
 # Add new interruptors here. They'll be run automatically.
 
 ACTIVE_INTERRUPTORS: list[BaseInterruptor] = [
     BudgetInterruptor(),
+    ContextInterruptor(),
 ]
 
 
