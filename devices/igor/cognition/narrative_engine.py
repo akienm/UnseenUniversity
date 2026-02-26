@@ -56,6 +56,9 @@ class NarrativeEngine:
         """
         Returns (should_run, reason).
         Checks timing constraints and observation count.
+        
+        IMPORTANT: Don't force-run on max interval if observations are stale
+        (only low-salience timer/surfacer obs). Only force-run if truly stuck.
         """
         now = datetime.now()
 
@@ -65,14 +68,26 @@ class NarrativeEngine:
             if elapsed < NE_MIN_INTERVAL_SEC:
                 return False, f"too_soon({elapsed:.0f}s < {NE_MIN_INTERVAL_SEC}s)"
 
-        # Force run if max interval exceeded
-        if self._last_run is None or (now - self._last_run).total_seconds() >= NE_MAX_INTERVAL_SEC:
-            return True, "max_interval_exceeded"
-
-        # Run if enough unintegrated observations piled up
+        # Count unintegrated observations
         unintegrated = self.cortex.twm_count_unintegrated()
+
+        # Run if enough meaningful observations piled up
         if unintegrated >= NE_TRIGGER_OBS:
             return True, f"obs_threshold({unintegrated}>={NE_TRIGGER_OBS})"
+
+        # Force run only if truly max interval exceeded AND we have any meaningful observations
+        # (not just timer heartbeats or background surfacing)
+        if self._last_run is None or (now - self._last_run).total_seconds() >= NE_MAX_INTERVAL_SEC:
+            # Check if observations have meaningful sources (user_input, not just timer/surfacer)
+            obs_list = self.cortex.twm_read(limit=50, include_integrated=True)
+            has_meaningful = any(
+                o["source"] in ("user_input", "discord", "gmail", "narrative_engine")
+                or o["salience"] >= 0.6
+                for o in obs_list
+            )
+            if has_meaningful:
+                return True, "max_interval_exceeded_with_content"
+            return False, f"max_interval_quiet({unintegrated} obs, all stale)"
 
         return False, f"quiet({unintegrated} unintegrated)"
 
