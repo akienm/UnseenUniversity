@@ -176,9 +176,11 @@ class NarrativeEngine:
                 self.cortex.store(mem)
                 promoted += 1
 
-        # 4. Write narrative fragment to ring_memory for dashboard/context
+        # 4. Write narrative fragment to ring_memory ONLY if we promoted or got action impulses
+        # (don't spam ring with empty/stale narratives)
         summary = result.get("summary_csb", "")
-        if summary:
+        actions = result.get("action_impulses", [])
+        if summary and (promoted > 0 or actions):
             self.cortex.write_ring(
                 f"[NE#{self._run_count + 1}] {summary[:300]}",
                 category="narrative"
