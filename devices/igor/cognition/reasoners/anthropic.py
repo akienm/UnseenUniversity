@@ -289,8 +289,24 @@ class AnthropicReasoner(BaseReasoner):
     def _build_memory_context(self, memories: list[Memory]) -> str:
         if not memories:
             return ""
+        
+        # Filter: only send memories with relevance >= 0.5 (strong signal)
+        # Limit to top 3 to keep context tight
+        high_relevance = [
+            m for m in memories
+            if hasattr(m, 'relevance_score') and m.relevance_score >= 0.5
+        ][:3]
+        
+        if not high_relevance:
+            # Fallback: take top 2 by relevance even if below threshold
+            high_relevance = sorted(
+                memories[:5],
+                key=lambda m: getattr(m, 'relevance_score', 0.0),
+                reverse=True
+            )[:2]
+        
         lines = ["\n\nRelevant memories:"]
-        for m in memories[:5]:
+        for m in high_relevance:
             lines.append(f"- [{m.memory_type.value}] {m.narrative}")
         return "\n".join(lines)
 
