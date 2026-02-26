@@ -154,6 +154,10 @@ def initialize_genesis(cortex: Cortex, instance_id: str = "wild-0001") -> str:
          "ID12",
          {"trigger": "noticing_friction",
           "why": "I am the lead beta tester. Friction I experience is data for making Igor more shareable."}),
+        ("PROC9", "Before sharing patterns with other Igors or the clan: redact episodic/personal data, keep procedural/factual/interpretive patterns.",
+         "ID14",
+         {"trigger": "before_pattern_sharing",
+          "why": "Loyalty to caregiver + enabling safe network sharing. Share techniques freely, but protect personal context."}),
     ]
 
     for proc_id, narrative, parent, meta in procedural_genesis:
