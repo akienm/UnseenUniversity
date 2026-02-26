@@ -82,7 +82,7 @@ def initialize_genesis(cortex: Cortex, instance_id: str = "wild-0001") -> str:
             valence=0.7,
         )
         cortex.store(ip)
-        cortex.add_child(parent, ip_id)
+        cortex.add_child(parent, id_id)
 
     # Role Models - sources whose patterns are worth attending to
     role_models = [
