@@ -489,6 +489,20 @@ class Igor:
         console.print("[dim]Memories persisted to SQLite. See you next time.[/]")
 
 
+_ID_CHARS = "23456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"  # base 34, no 0/1/l/O confusion
+
+
+def _make_instance_id(host: str = "wild") -> str:
+    """Generate a unique instance ID from current epoch seconds in base 34."""
+    import time
+    n = int(time.time())
+    s = []
+    while n:
+        s.append(_ID_CHARS[n % 34])
+        n //= 34
+    return f"igor_{host}_{''.join(reversed(s))}"
+
+
 def main():
     env_path = Path(__file__).parent.parent / ".env"
     load_dotenv(env_path)
@@ -498,10 +512,13 @@ def main():
         sys.exit(1)
 
     parser = argparse.ArgumentParser(description="Igor - Wild Instance")
-    parser.add_argument("--id", default="wild-0001", help="Instance ID")
+    parser.add_argument("--id", default=None, help="Instance ID (auto-generated if omitted)")
+    parser.add_argument("--host", default="wild", help="Host label for auto-generated ID (default: wild)")
     args = parser.parse_args()
 
-    igor = Igor(instance_id=args.id)
+    instance_id = args.id or _make_instance_id(args.host)
+
+    igor = Igor(instance_id=instance_id)
     igor.run()
 
 
