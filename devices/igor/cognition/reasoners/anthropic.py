@@ -61,7 +61,8 @@ Tool use heuristics:
 - For context from memory: retrieve and cite explicitly."""
 
 # How many ring entries to surface as session context
-RING_CONTEXT_LIMIT = 10
+# Keeping this tight: only truly recent, high-signal entries
+RING_CONTEXT_LIMIT = 5
 
 
 class AnthropicReasoner(BaseReasoner):
