@@ -257,18 +257,24 @@ class AnthropicReasoner(BaseReasoner):
     def _build_session_context(self, cortex) -> str:
         """
         Read recent ring memory entries and format them as a session context block.
-        Skips tool_trace entries (too noisy) and judgment entries (internal bookkeeping).
+        Filters to high-signal categories only (skips tool_trace, judgment).
+        Caps at RING_CONTEXT_LIMIT (5) entries to keep token count lean.
         Returns empty string if cortex is None or ring is empty.
         """
         if cortex is None:
             return ""
 
-        # Read recent entries, excluding internal-only categories
-        all_entries = cortex.read_ring_memory(limit=RING_CONTEXT_LIMIT * 3)
-        entries = [
+        # Read recent entries, filtering out low-signal noise
+        all_entries = cortex.read_ring_memory(limit=50)
+        
+        # Keep only high-signal categories: exclude internal bookkeeping
+        filtered = [
             e for e in all_entries
             if e["category"] not in ("tool_trace", "judgment")
-        ][-RING_CONTEXT_LIMIT:]
+        ]
+        
+        # Take only the most recent N entries (already sorted newest-last)
+        entries = filtered[-RING_CONTEXT_LIMIT:]
 
         if not entries:
             return ""
