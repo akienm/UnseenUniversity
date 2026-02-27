@@ -296,6 +296,28 @@ class Igor:
             self._handle_command(parsed.command, user_input)
             return ""
 
+        # [ARBITER INTERCEPT] Conversational approve/deny when items are pending
+        _lower = user_input.strip().lower()
+        _approve_words = {"approve", "approved", "yes", "go ahead", "do it", "ok", "okay"}
+        _deny_words = {"deny", "denied", "no", "stop", "cancel", "abort", "don't", "dont"}
+        try:
+            from .arbiter import queue as _aq
+            _pending = _aq.get_pending()
+            if _pending:
+                if any(_lower == w or _lower.startswith(w + " ") for w in _approve_words):
+                    # Approve the oldest pending item
+                    _item = _pending[0]
+                    console.print(f"[dim](Arbiter intercept: treating '{_lower}' as /arbiter approve {_item.id})[/]")
+                    self._arbiter_resolve(_aq, _item.id, "approved")
+                    return ""
+                if any(_lower == w or _lower.startswith(w + " ") for w in _deny_words):
+                    _item = _pending[0]
+                    console.print(f"[dim](Arbiter intercept: treating '{_lower}' as /arbiter deny {_item.id})[/]")
+                    self._arbiter_resolve(_aq, _item.id, "denied")
+                    return ""
+        except Exception:
+            pass  # Intercept is advisory — never block normal processing
+
         # [SEARCH] Candidate memories via text search
         candidates = self.cortex.search(" ".join(parsed.keywords))
 
@@ -489,7 +511,7 @@ class Igor:
                 threshold_reason="NE action impulse contains irreversible/external keywords",
                 metadata={"obs_id": impulse["id"]},
             )
-            console.print(f"[yellow][IMPULSE→ARBITER] Queued as #{item_id} — awaiting akien approval[/]")
+            console.print(f"[yellow][IMPULSE→ARBITER] Queued as #{item_id} — type /arbiter approve {item_id} or /arbiter deny {item_id}[/]")
             self.cortex.write_ring(
                 f"IMPULSE_QUEUED|obs_id={impulse['id']}|arbiter_id={item_id}|{content[:200]}",
                 category="impulse_executed",
