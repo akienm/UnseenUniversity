@@ -171,11 +171,13 @@ class Igor:
         Live stats snapshot for the web dashboard (change.30 gateway pattern).
         Igor owns all state; web server calls this via stats_fn, never touches cortex directly.
         """
+        from .arbiter import queue as arbiter_queue
         return {
             "memory_count": self.cortex.total_count(),
             "session_cost": self.session_cost,
             "last_valence": self.last_valence,
             "last_friction": self.last_friction,
+            "arbiter_pending": arbiter_queue.count_pending(),
         }
 
     def _load_change_log(self):
@@ -477,6 +479,23 @@ class Igor:
 
         console.print(f"[dim][IMPULSE] {content[:100]}[/]")
 
+        # change.33: if impulse sounds irreversible, queue to arbiter instead of executing
+        from .arbiter import queue as arbiter_queue
+        if arbiter_queue.is_irreversible_impulse(content):
+            item_id = arbiter_queue.submit(
+                description=f"NE proposed action: {content[:200]}",
+                context="Proposed by Narrative Engine action impulse",
+                action_type="irreversible",
+                threshold_reason="NE action impulse contains irreversible/external keywords",
+                metadata={"obs_id": impulse["id"]},
+            )
+            console.print(f"[yellow][IMPULSE→ARBITER] Queued as #{item_id} — awaiting akien approval[/]")
+            self.cortex.write_ring(
+                f"IMPULSE_QUEUED|obs_id={impulse['id']}|arbiter_id={item_id}|{content[:200]}",
+                category="impulse_executed",
+            )
+            return
+
         # Route to _process() as a synthetic low-priority input
         synthetic = f"[NE action impulse]: {content}"
         response = self._process(synthetic)
@@ -620,6 +639,7 @@ class Igor:
             "ollama": self._cmd_ollama,
             "local": self._cmd_local,
             "compress": self._cmd_compress,
+            "arbiter": self._cmd_arbiter,
         }
         fn = commands.get(command, self._cmd_unknown)
         fn(raw)
@@ -634,6 +654,7 @@ class Igor:
   /memories       - List recent episodic memories
   /core           - Show core patterns
   /habits         - Show compiled habits (/habits list|pending|compile|explain <id>)
+  /arbiter        - Human-approval queue (/arbiter list|approve <N>|deny <N>|explain <N>)
   /cost           - Show session cost
   /model          - Show current reasoning model
   /model <name>   - Switch model (cloud: sonnet/opus/haiku; local: any Ollama model name)
@@ -755,6 +776,99 @@ class Igor:
         if mem.friction_history:
             avg = sum(mem.friction_history) / len(mem.friction_history)
             console.print(f"  Avg friction:{avg:.2f} ({len(mem.friction_history)} samples)")
+
+    # ── Arbiter commands (change.33) ──────────────────────────────────────────
+
+    def _cmd_arbiter(self, raw):
+        """Human-approval queue (change.33).
+        Subcommands: list | approve <N> | deny <N> | explain <N>
+        """
+        from .arbiter import queue as arbiter_queue
+        parts = raw.strip().split(None, 2)
+        sub = parts[1].lower() if len(parts) > 1 else "list"
+        arg = parts[2].strip() if len(parts) > 2 else ""
+
+        if sub == "list":
+            self._arbiter_list(arbiter_queue)
+        elif sub in ("approve", "deny") and arg.isdigit():
+            self._arbiter_resolve(arbiter_queue, int(arg), sub)
+        elif sub == "explain" and arg.isdigit():
+            self._arbiter_explain(arbiter_queue, int(arg))
+        else:
+            console.print("[yellow]Usage: /arbiter list | approve <N> | deny <N> | explain <N>[/]")
+
+    def _arbiter_list(self, arbiter_queue):
+        pending = arbiter_queue.get_pending()
+        if not pending:
+            console.print("\n[dim]Arbiter queue is empty — no pending approvals.[/]")
+            return
+        console.print(f"\n[bold]Arbiter queue — {len(pending)} pending:[/]")
+        for item in pending:
+            ts = item.timestamp[:16]
+            console.print(f"\n  [bold yellow]#{item.id}[/]  [{item.action_type}]  {ts}")
+            console.print(f"  {item.description[:100]}")
+            if item.threshold_reason:
+                console.print(f"  [dim]Reason: {item.threshold_reason[:80]}[/]")
+        console.print("\n[dim]/arbiter approve <N>  /arbiter deny <N>  /arbiter explain <N>[/]")
+
+    def _arbiter_resolve(self, arbiter_queue, item_id: int, status: str):
+        item = arbiter_queue.resolve(item_id, status)
+        if item is None:
+            console.print(f"[yellow]Arbiter item #{item_id} not found or already resolved.[/]")
+            return
+
+        verb = "Approved" if status == "approved" else "Denied"
+        color = "green" if status == "approved" else "red"
+        console.print(f"\n[bold {color}]{verb}: Arbiter #{item_id}[/]")
+        console.print(f"  {item.description[:100]}")
+
+        # Learning: store as EPISODIC memory so Igor recognises the pattern
+        valence = 0.7 if status == "approved" else -0.7
+        ep = Memory(
+            narrative=(
+                f"Akien {status} arbiter item #{item_id} "
+                f"[{item.action_type}]: {item.description[:120]}"
+            ),
+            memory_type=MemoryType.EPISODIC,
+            parent_id="CP4",
+            valence=valence,
+            metadata={
+                "arbiter_id": item_id,
+                "action_type": item.action_type,
+                "status": status,
+                "description": item.description[:200],
+                "threshold_reason": item.threshold_reason,
+            },
+        )
+        self.cortex.store(ep)
+        self.cortex.add_child("CP4", ep.id)
+        self.cortex.write_ring(
+            f"ARBITER_{status.upper()}|id={item_id}|type={item.action_type}|{item.description[:150]}",
+            category="arbiter",
+        )
+        console.print(f"[dim]Learning stored as {ep.id} (valence={valence:+.1f})[/]")
+
+        # If approved: offer to execute the queued action
+        if status == "approved":
+            console.print(
+                f"[dim]To execute: ask Igor to proceed with: {item.description[:80]}[/]"
+            )
+
+    def _arbiter_explain(self, arbiter_queue, item_id: int):
+        item = arbiter_queue.get_item(item_id)
+        if item is None:
+            console.print(f"[yellow]Arbiter item #{item_id} not found.[/]")
+            return
+        console.print(f"\n[bold]Arbiter #{item.id}  [{item.status}][/]")
+        console.print(f"  Type:      {item.action_type}")
+        console.print(f"  Time:      {item.timestamp[:16]}")
+        console.print(f"  Action:    {item.description}")
+        console.print(f"  Context:   {item.context or '(none)'}")
+        console.print(f"  Flagged:   {item.threshold_reason or '(none)'}")
+        if item.status != "pending":
+            console.print(f"  Resolved:  {item.resolution_ts[:16]}  ({item.resolution_note or '-'})")
+
+    # ── End arbiter commands ───────────────────────────────────────────────────
 
     def _cmd_local(self, raw):
         parts = raw.strip().split(None, 1)

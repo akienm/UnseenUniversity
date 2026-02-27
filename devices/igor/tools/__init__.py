@@ -4,3 +4,4 @@ Any reasoner that imports this gets all tools without knowing about Anthropic.
 """
 
 from . import filesystem, web_search, self_edit, gmail, discord, senses, runner, confluence, budget
+from ..arbiter import queue as _arbiter_queue  # noqa: F401 — registers arbiter_submit tool
