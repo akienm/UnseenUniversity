@@ -22,6 +22,10 @@ from .registry import Tool, registry
 SOURCE_ROOT = Path(__file__).parent.parent  # wild_igor/igor/
 REPO_ROOT = SOURCE_ROOT.parent              # wild_igor/
 
+# Paths Igor may READ but never WRITE (change.26).
+# Core patterns can only be changed by akien via Claude Code.
+WRITE_EXCLUDED = {"brainstem/"}
+
 # Inertia map - files/dirs and their resistance to change
 INERTIA = {
     "brainstem/": 0.95,
@@ -42,6 +46,25 @@ def _resolve(path: str) -> Path:
     if not str(resolved).startswith(str(SOURCE_ROOT.resolve())):
         raise PermissionError(f"Path '{path}' escapes Igor's source tree.")
     return resolved
+
+
+def _is_write_excluded(path: str) -> bool:
+    """Return True if path falls inside a WRITE_EXCLUDED directory (change.26)."""
+    norm = path.replace("\\", "/").lstrip("./")
+    return any(norm.startswith(excl) for excl in WRITE_EXCLUDED)
+
+
+def _log_blocked_edit(path: str):
+    """Append a blocked-write record to the instance log file (change.26)."""
+    from datetime import datetime
+    log_path = Path.home() / ".TheIgors" / "igor_wild_0001" / "blocked_edits.log"
+    try:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        entry = f"{datetime.now().isoformat()}|BLOCKED_WRITE|igor/{path}\n"
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(entry)
+    except Exception:
+        pass
 
 
 def _get_inertia(path: str) -> tuple[float, str]:
@@ -163,8 +186,18 @@ def edit_source_file(path: str, content: str, reason: str) -> str:
     Runs syntax check first. Records reason for the change.
     Commits and pushes to git so all Igor instances stay in sync.
     Change takes effect on next restart.
+    brainstem/ is read-only for Igor — writes are blocked (change.26).
     """
     try:
+        # change.26: hard write exclusion for brainstem/
+        if _is_write_excluded(path):
+            _log_blocked_edit(path)
+            return (
+                f"BLOCKED_EDIT: igor/{path} is in a write-protected directory.\n"
+                f"brainstem/ contains core patterns that only akien may modify via Claude Code.\n"
+                f"This attempt has been logged to blocked_edits.log."
+            )
+
         target = _resolve(path)
         inertia, label = _get_inertia(path)
         warning = _inertia_warning(path, inertia, label)
@@ -207,6 +240,7 @@ def patch_source_file(path: str, old_string: str, new_string: str, reason: str) 
     Make a targeted edit to one of Igor's source files.
     Replaces old_string with new_string — only the changed lines are sent,
     not the whole file. Safer and cheaper than edit_source_file for small changes.
+    brainstem/ is read-only for Igor — writes are blocked (change.26).
 
     Fails clearly if:
       - old_string not found (typo or stale read)
@@ -214,6 +248,15 @@ def patch_source_file(path: str, old_string: str, new_string: str, reason: str) 
       - result has a syntax error (original restored)
     """
     try:
+        # change.26: hard write exclusion for brainstem/
+        if _is_write_excluded(path):
+            _log_blocked_edit(path)
+            return (
+                f"BLOCKED_EDIT: igor/{path} is in a write-protected directory.\n"
+                f"brainstem/ contains core patterns that only akien may modify via Claude Code.\n"
+                f"This attempt has been logged to blocked_edits.log."
+            )
+
         target = _resolve(path)
         if not target.exists():
             return f"PATCH REJECTED: File not found: igor/{path}"
