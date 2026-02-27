@@ -37,6 +37,18 @@ NE_MIN_INTERVAL_SEC   = 30             # Minimum seconds between NE runs
 NE_MAX_INTERVAL_SEC   = 300            # Maximum seconds between NE runs (5 min)
 PROMOTE_THRESHOLD     = 0.7            # importance >= this → goes to LTM
 
+# change.20a.2: self-diagnostic content filter
+# Any memory candidate or summary containing these terms is operational noise —
+# route to ring(ne_diagnostic) only, never promote to LTM where MemorySurfacer
+# would re-surface it and restart the detection loop.
+_SELF_DIAG_KEYWORDS = ("loop", "stall", "recursive", "detecting own")
+
+# change.20a.3: hard prompt token cap
+# Rough estimate: 4 chars per token. Cap observation block at 1800 tokens of
+# budget (leaving ~200 tokens for static preamble + last_narrative overhead).
+# Oldest observations are dropped first (FIFO).
+NE_MAX_OBS_CHARS = 7200  # 1800 tokens × 4 chars/token
+
 
 class NarrativeEngine:
     """
@@ -117,6 +129,16 @@ class NarrativeEngine:
             self._last_run = datetime.now()
             return None
 
+        # Cap observation list to stay within prompt token budget (change.20a.3)
+        obs_list, dropped = self._cap_observations(obs_list)
+        if dropped > 0:
+            self.cortex.write_ring(
+                f"NE_OBS_CAPPED|dropped={dropped}|kept={len(obs_list)}",
+                category="ne_diagnostic",
+            )
+            if verbose:
+                print(f"[NE] Dropped {dropped} oldest obs (prompt token cap, kept {len(obs_list)})")
+
         if verbose:
             print(f"\n[NE] Running (reason={reason}, obs={len(obs_list)})...")
 
@@ -161,9 +183,21 @@ class NarrativeEngine:
         self.cortex.twm_mark_integrated(all_ids)
 
         # 3. Promote high-importance candidates to LTM
+        # change.20a.2: self-diagnostic content → ring(ne_diagnostic), never LTM
         promoted = 0
         for cand in result.get("memory_candidates", []):
             importance = float(cand.get("importance", 0.0))
+            content = cand.get("content_csb", "")
+
+            # Self-diagnostic content must not enter LTM — MemorySurfacer would
+            # re-surface it and restart the detection loop (change.20a.2)
+            if self._is_self_diagnostic(content):
+                self.cortex.write_ring(
+                    f"NE_DIAG|{content[:300]}",
+                    category="ne_diagnostic",
+                )
+                continue
+
             if importance >= PROMOTE_THRESHOLD:
                 mem_type_str = cand.get("memory_type", "episodic")
                 try:
@@ -172,7 +206,7 @@ class NarrativeEngine:
                     mem_type = MemoryType.EPISODIC
 
                 mem = Memory(
-                    narrative=cand["content_csb"],
+                    narrative=content,
                     memory_type=mem_type,
                     parent_id="CP3",  # "There's always a why" — NE always has a reason
                     valence=float(cand.get("valence", 0.0)),
@@ -188,13 +222,20 @@ class NarrativeEngine:
 
         # 4. Write narrative fragment to ring_memory ONLY if we promoted or got action impulses
         # (don't spam ring with empty/stale narratives)
+        # change.20a.2: if summary itself is self-diagnostic, use ne_diagnostic category
         summary = result.get("summary_csb", "")
         actions = result.get("action_impulses", [])
         if summary and (promoted > 0 or actions):
-            self.cortex.write_ring(
-                f"[NE#{self._run_count + 1}] {summary[:300]}",
-                category="narrative"
-            )
+            if self._is_self_diagnostic(summary):
+                self.cortex.write_ring(
+                    f"NE_DIAG|[NE#{self._run_count + 1}] {summary[:300]}",
+                    category="ne_diagnostic",
+                )
+            else:
+                self.cortex.write_ring(
+                    f"[NE#{self._run_count + 1}] {summary[:300]}",
+                    category="narrative"
+                )
 
         if verbose and (promoted > 0 or summary):
             print(f"[NE] promoted={promoted} to LTM | summary: {summary[:80]}...")
@@ -265,17 +306,40 @@ class NarrativeEngine:
 
     # ── Helpers ────────────────────────────────────────────────────────────────
 
+    def _is_self_diagnostic(self, text: str) -> bool:
+        """Return True if text contains NE operational/self-diagnostic keywords (change.20a.2)."""
+        low = text.lower()
+        return any(kw in low for kw in _SELF_DIAG_KEYWORDS)
+
+    def _format_obs_line(self, o: dict) -> str:
+        """Format one TWM observation as a CSB line (shared by _format_obs_csb and _cap_observations)."""
+        ts   = o["timestamp"][11:16]  # HH:MM only
+        src  = o["source"]
+        sal  = f"{o['salience']:.2f}"
+        intg = "✓" if o["integrated"] else "·"
+        csb  = o["content_csb"][:200]
+        return f"{intg} [{ts}] src={src} sal={sal} | {csb}"
+
     def _format_obs_csb(self, obs_list: list[dict]) -> str:
         """Format TWM observations as a compact CSB block for the LLM prompt."""
-        lines = []
-        for o in obs_list:
-            ts   = o["timestamp"][11:16]  # HH:MM only
-            src  = o["source"]
-            sal  = f"{o['salience']:.2f}"
-            intg = "✓" if o["integrated"] else "·"
-            csb  = o["content_csb"][:200]
-            lines.append(f"{intg} [{ts}] src={src} sal={sal} | {csb}")
-        return "\n".join(lines)
+        return "\n".join(self._format_obs_line(o) for o in obs_list)
+
+    def _cap_observations(self, obs_list: list[dict]) -> tuple[list[dict], int]:
+        """
+        Trim obs_list to fit within NE_MAX_OBS_CHARS (change.20a.3).
+        Drops oldest observations first (FIFO — list is sorted oldest-first).
+        Returns (capped_list, dropped_count).
+        """
+        total = 0
+        kept_reversed: list[dict] = []
+        for obs in reversed(obs_list):  # newest first
+            line_len = len(self._format_obs_line(obs))
+            if total + line_len > NE_MAX_OBS_CHARS:
+                break
+            kept_reversed.append(obs)
+            total += line_len
+        dropped = len(obs_list) - len(kept_reversed)
+        return list(reversed(kept_reversed)), dropped
 
     def _get_last_narrative(self) -> str:
         """Fetch the last NE narrative fragment from ring_memory for continuity."""
