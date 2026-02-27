@@ -85,6 +85,7 @@ class Igor:
         # Set IGOR_LOCAL=false in .env to default to cloud mode
         self.local_mode = os.getenv("IGOR_LOCAL", "true").lower() in ("true", "1", "yes")
         self._ne_thread: threading.Thread | None = None
+        self._context_flush_done: bool = False  # change.32: set after pre-compaction flush
 
         # Start Discord bot, unified network listener, web UI server, and model boot-check
         discord_bot.start()
@@ -418,6 +419,12 @@ class Igor:
             upstream_calls=self.upstream_calls,
         )
 
+        # [PRECOMPACT] Flush session summary to LTM before context window gets too large (change.32)
+        from .cognition.interruptors import ContextInterruptor
+        if (self.interaction_count >= ContextInterruptor.URGENT_AT
+                and not self._context_flush_done):
+            self._pre_compaction_flush()
+
         return response_text
 
     def _run_ne_background(self):
@@ -479,6 +486,77 @@ class Igor:
             f"IMPULSE_EXECUTED|obs_id={impulse['id']}|{content[:200]}",
             category="impulse_executed",
         )
+
+    def _pre_compaction_flush(self):
+        """
+        Write session summary to LTM when context approaches URGENT_AT (change.32).
+
+        Uses Ollama (free) to summarize the current ring memory into an INTERPRETIVE
+        memory before the context window gets expensive to carry. Logs to changes.log
+        and writes to ring so next session knows a flush happened.
+
+        Called at most once per session (guarded by _context_flush_done).
+        Does NOT restart Igor — that remains the user's choice via /compress.
+        """
+        from .cognition.reasoners.ollama_reasoner import summarize_session
+
+        ring_entries = self.cortex.read_ring_memory(limit=50)
+        if not ring_entries:
+            self._context_flush_done = True
+            return
+
+        console.print(
+            f"\n[cyan][PRECOMPACT] Context at {self.interaction_count} interactions — "
+            "flushing session summary to LTM...[/]"
+        )
+
+        try:
+            summary = summarize_session(ring_entries, self.instance_id)
+        except Exception as e:
+            console.print(f"[yellow][PRECOMPACT] Ollama summarize failed ({e}), using fallback.[/]")
+            summary = (
+                f"Session auto-flush at interaction {self.interaction_count}. "
+                f"Ring had {len(ring_entries)} entries. "
+                f"Session cost: ${self.session_cost:.4f}."
+            )
+
+        mem = Memory(
+            narrative=summary,
+            memory_type=MemoryType.INTERPRETIVE,
+            parent_id="CP3",
+            metadata={
+                "source": "precompact_flush",
+                "interaction_count": self.interaction_count,
+                "session_cost": f"{self.session_cost:.4f}",
+            },
+        )
+        self.cortex.store(mem)
+        self.cortex.add_child("CP3", mem.id)
+
+        # Ring entry so next session knows the flush happened
+        self.cortex.write_ring(
+            f"PRECOMPACT_FLUSH|stored={mem.id}|interactions={self.interaction_count}"
+            f"|{summary[:200]}",
+            category="session_control",
+        )
+
+        # Log to changes.log (CSB, newest-first)
+        try:
+            ts = datetime.now().strftime("%Y-%m-%dT%H:%M")
+            entry = (
+                f"PRECOMPACT_FLUSH|{ts}|instance={self.instance_id}"
+                f"|interactions={self.interaction_count}|memory_id={mem.id}"
+            )
+            existing = CHANGE_LOG_PATH.read_text(encoding="utf-8") if CHANGE_LOG_PATH.exists() else ""
+            CHANGE_LOG_PATH.write_text(entry + "\n" + existing, encoding="utf-8")
+        except Exception:
+            pass
+
+        console.print(
+            f"[cyan][PRECOMPACT] Done — stored as {mem.id}. "
+            "Run /compress when ready to restart fresh.[/]"
+        )
+        self._context_flush_done = True
 
     def _drain_network(self):
         """Process any queued messages from any network source."""
@@ -555,7 +633,7 @@ class Igor:
   /help           - This message
   /memories       - List recent episodic memories
   /core           - Show core patterns
-  /habits         - Show compiled habits
+  /habits         - Show compiled habits (/habits list|pending|compile|explain <id>)
   /cost           - Show session cost
   /model          - Show current reasoning model
   /model <name>   - Switch model (cloud: sonnet/opus/haiku; local: any Ollama model name)
@@ -581,14 +659,102 @@ class Igor:
         for p in patterns:
             console.print(f"  [{p.id}] {p.narrative}")
 
-    def _cmd_habits(self, _):
+    def _cmd_habits(self, raw):
+        """Habit visibility and compilation (change.34).
+        Subcommands: list | pending | compile | explain <id>
+        """
+        parts = raw.strip().split(None, 2)
+        sub = parts[1].lower() if len(parts) > 1 else "list"
+        arg = parts[2].strip() if len(parts) > 2 else ""
+
+        if sub == "list":
+            self._habits_list()
+        elif sub == "pending":
+            self._habits_pending()
+        elif sub == "compile":
+            self._habits_compile()
+        elif sub == "explain":
+            self._habits_explain(arg)
+        else:
+            self._habits_list()  # Default: list
+
+    def _habits_list(self):
         habits = self.cortex.get_habits()
         if not habits:
-            console.print("\n[dim]No habits compiled yet. Keep interacting...[/]")
+            console.print("\n[dim]No habits compiled yet. Use /habits pending to see candidates.[/]")
         else:
-            console.print(f"\n[bold]Habits ({len(habits)}):[/]")
+            console.print(f"\n[bold]Compiled habits ({len(habits)}):[/]")
             for h in habits:
-                console.print(f"  [{h.id}] trigger: '{h.metadata.get('trigger')}' → {h.narrative[:50]}")
+                trigger = h.metadata.get("trigger", "none")
+                action  = h.metadata.get("action", "")[:40]
+                console.print(f"  [{h.id}] trigger={trigger!r} → {action or h.narrative[:50]}")
+                console.print(f"         activations={h.activation_count}  parent={h.parent_id}")
+
+    def _habits_pending(self):
+        """Show EPISODIC memory clusters that may be ready for habit compilation."""
+        from collections import Counter
+        episodics = self.cortex.get_by_type(MemoryType.EPISODIC)
+        intent_counts = Counter(
+            m.metadata.get("intent", "general") for m in episodics
+            if m.metadata.get("intent")
+        )
+        candidates = [(intent, count) for intent, count in intent_counts.items() if count >= 3]
+        if not candidates:
+            console.print("\n[dim]No habit candidates yet — need 3+ similar interactions.[/]")
+            return
+        console.print(f"\n[bold]Habit candidates ({len(candidates)}) — 3+ episodes:[/]")
+        for intent, count in sorted(candidates, key=lambda x: x[1], reverse=True):
+            console.print(f"  intent={intent!r}  episodes={count}")
+        console.print("[dim]Use /habits compile to review and propose new habits.[/]")
+
+    def _habits_compile(self):
+        """Manually trigger hippocampus compilation pass — suggest habits from patterns."""
+        from collections import Counter
+        episodics = self.cortex.get_by_type(MemoryType.EPISODIC)
+        intent_groups: dict = {}
+        for m in episodics:
+            intent = m.metadata.get("intent", "general")
+            intent_groups.setdefault(intent, []).append(m)
+
+        candidates = [(i, mems) for i, mems in intent_groups.items() if len(mems) >= 3]
+        if not candidates:
+            console.print("\n[dim]No patterns with 3+ episodes. Keep interacting.[/]")
+            return
+
+        console.print(f"\n[bold]Habit compilation pass — {len(candidates)} candidate(s):[/]")
+        for intent, mems in sorted(candidates, key=lambda x: len(x[1]), reverse=True):
+            avg_friction = sum(m.metadata.get("friction", 0.5) for m in mems) / len(mems)
+            sample = mems[-1].metadata.get("user_input", "")[:60]
+            console.print(f"\n  [bold]{intent}[/]  ({len(mems)} episodes, avg_friction={avg_friction:.2f})")
+            console.print(f"  Sample: {sample!r}")
+            console.print(f"  [dim]To compile: ask Igor to store a PROCEDURAL habit for '{intent}'[/]")
+
+        self.cortex.write_ring(
+            f"HABITS_COMPILE_PASS|candidates={len(candidates)}"
+            f"|{','.join(i for i, _ in candidates[:5])}",
+            category="session_control",
+        )
+
+    def _habits_explain(self, habit_id: str):
+        """Show why a specific habit was compiled."""
+        if not habit_id:
+            console.print("[yellow]Usage: /habits explain <habit_id>[/]")
+            return
+        mem = self.cortex.get(habit_id)
+        if mem is None:
+            console.print(f"[yellow]Habit {habit_id!r} not found in memory.[/]")
+            return
+        console.print(f"\n[bold]Habit {mem.id}:[/]")
+        console.print(f"  Narrative:   {mem.narrative}")
+        console.print(f"  Type:        {mem.memory_type.value}")
+        console.print(f"  Parent:      {mem.parent_id}")
+        console.print(f"  Trigger:     {mem.metadata.get('trigger', 'none')!r}")
+        console.print(f"  Action:      {mem.metadata.get('action', 'none')!r}")
+        console.print(f"  Why:         {mem.metadata.get('why', 'no why recorded')}")
+        console.print(f"  Activations: {mem.activation_count}")
+        if mem.friction_history:
+            avg = sum(mem.friction_history) / len(mem.friction_history)
+            console.print(f"  Avg friction:{avg:.2f} ({len(mem.friction_history)} samples)")
 
     def _cmd_local(self, raw):
         parts = raw.strip().split(None, 1)
