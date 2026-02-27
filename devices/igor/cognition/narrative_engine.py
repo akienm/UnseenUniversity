@@ -79,9 +79,13 @@ class NarrativeEngine:
         # (not just timer heartbeats or background surfacing)
         if self._last_run is None or (now - self._last_run).total_seconds() >= NE_MAX_INTERVAL_SEC:
             # Check if observations have meaningful sources (user_input, not just timer/surfacer)
-            obs_list = self.cortex.twm_read(limit=50, include_integrated=True)
+            # Exclude NE-originated observations to prevent recursive self-detection loop
+            obs_list = [
+                o for o in self.cortex.twm_read(limit=50, include_integrated=True)
+                if o.get("source") != "narrative_engine"
+            ]
             has_meaningful = any(
-                o["source"] in ("user_input", "discord", "gmail", "narrative_engine")
+                o["source"] in ("user_input", "discord", "gmail")
                 or o["salience"] >= 0.6
                 for o in obs_list
             )
@@ -102,7 +106,13 @@ class NarrativeEngine:
         if not should:
             return None
 
-        obs_list = self.cortex.twm_read(limit=50, include_integrated=True)
+        # Filter out NE-originated observations — NE must not process its own output
+        # as new input (source="narrative_engine" pushes are action_impulses and
+        # promoted-LTM echoes; reading them back causes recursive self-detection)
+        obs_list = [
+            o for o in self.cortex.twm_read(limit=50, include_integrated=True)
+            if o.get("source") != "narrative_engine"
+        ]
         if not obs_list:
             self._last_run = datetime.now()
             return None
