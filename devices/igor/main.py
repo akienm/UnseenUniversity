@@ -112,6 +112,9 @@ class Igor:
         # [CHANGE LOG] Surface any completed change entries logged by Claude Code
         self._load_change_log()
 
+        # [CHANGE REQUEST] Surface pending change requests so Igor can act on them
+        self._load_change_request()
+
         # [RING] Mark session start so ContextInterruptor can count interactions
         self.cortex.write_ring(
             f"SESSION_START|id={instance_id}|{datetime.now().isoformat()}",
@@ -137,6 +140,28 @@ class Igor:
         # Write summary to ring so NE can integrate it
         self.cortex.write_ring(
             f"CHANGE_LOG_SURFACED: {lines[0][:300]}",
+            category="system_info",
+        )
+
+    def _load_change_request(self):
+        """Read change_request.txt on startup and surface pending changes to ring memory."""
+        if not CHANGE_REQUEST_PATH.exists():
+            return
+        try:
+            content = CHANGE_REQUEST_PATH.read_text(encoding="utf-8").strip()
+        except Exception:
+            return
+        if not content:
+            return
+        lines = [l for l in content.splitlines() if l.strip()]
+        console.print(f"\n[yellow]── Change request ({len(lines)} lines) ──[/]")
+        for line in lines[:5]:
+            console.print(f"[dim]  {line[:120]}[/]")
+        if len(lines) > 5:
+            console.print(f"[dim]  ... ({len(lines) - 5} more in {CHANGE_REQUEST_PATH})[/]")
+        # Write to ring so NE can see pending changes; truncated at 2000 chars
+        self.cortex.write_ring(
+            f"CHANGE_REQUEST: {content[:2000]}",
             category="system_info",
         )
 
@@ -235,17 +260,6 @@ class Igor:
 
         used_api = False
 
-        # [RING] Build short-term context to include in reasoning
-        ring_entries = self.cortex.read_ring_memory(limit=15)
-        if ring_entries:
-            ring_lines = [
-                f"[{e['timestamp'][11:16]}] [{e['category']}] {e['content']}"
-                for e in ring_entries[-10:]
-            ]
-            ring_ctx = "\n\nRecent session context (short-term memory, newest last):\n" + "\n".join(ring_lines)
-        else:
-            ring_ctx = ""
-
         # [BASAL GANGLIA] Habit match from Ollama pre-parse (or simple trigger check)
         habit = pre["habit_match"] if pre["confidence"] >= 0.8 else self._find_habit(parsed)
 
@@ -255,14 +269,15 @@ class Igor:
             self.cortex.record_activation(habit.id, 0.05)
         else:
             # [PREFRONTAL CORTEX] Upstream reasoning
+            # Ring context is injected by anthropic.py._build_session_context (D014)
+            # — do NOT also build ring_ctx here (would cause double injection)
             core = get_core_patterns(self.cortex)
-            augmented_input = user_input + ring_ctx
             if self.local_mode:
                 # Local-only: use Ollama pool (free, no cloud)
                 dashboard.print_reasoning(used_api=False)
                 try:
                     response_text, cost = self.local_pool.reason(
-                        augmented_input, relevant, core, self.instance_id
+                        user_input, relevant, core, self.instance_id
                     )
                     self.upstream_calls += 1
                     used_api = False
@@ -271,7 +286,7 @@ class Igor:
                     # Local pool failed — fall back to cloud
                     console.print(f"[yellow]Local pool failed ({e}), falling back to cloud...[/]")
                     try:
-                        response_text, cost = pfc.reason(augmented_input, relevant, core, self.instance_id, self.reasoner)
+                        response_text, cost = pfc.reason(user_input, relevant, core, self.instance_id, self.reasoner, cortex=self.cortex)
                         self.session_cost += cost
                         self.upstream_calls += 1
                         used_api = True
@@ -283,7 +298,7 @@ class Igor:
                 # Cloud mode: use Anthropic API
                 dashboard.print_reasoning(used_api=True)
                 try:
-                    response_text, cost = pfc.reason(augmented_input, relevant, core, self.instance_id, self.reasoner)
+                    response_text, cost = pfc.reason(user_input, relevant, core, self.instance_id, self.reasoner, cortex=self.cortex)
                     self.session_cost += cost
                     self.upstream_calls += 1
                     used_api = True

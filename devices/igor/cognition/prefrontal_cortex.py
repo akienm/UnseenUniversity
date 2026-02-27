@@ -17,17 +17,18 @@ def reason(
     core_patterns: list[Memory],
     instance_id: str,
     reasoner: BaseReasoner = None,
+    cortex=None,
 ) -> tuple[str, float]:
     """
     Call the active reasoner. Returns (response_text, cost).
+    cortex is forwarded to the reasoner so it can inject ring context directly.
     If no reasoner is provided, uses Anthropic by default.
-    Eventually: when habits cover everything, this won't be called at all.
     """
     if reasoner is None:
         from .reasoners.anthropic import AnthropicReasoner
         reasoner = AnthropicReasoner()
 
-    return reasoner.reason(user_input, relevant_memories, core_patterns, instance_id)
+    return reasoner.reason(user_input, relevant_memories, core_patterns, instance_id, cortex=cortex)
 
 
 def _log_judgment(cortex, judgment_type: str, inputs: dict, result, reasoning: str):

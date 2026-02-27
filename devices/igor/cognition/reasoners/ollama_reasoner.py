@@ -15,7 +15,7 @@ import ollama as _ollama
 from ...memory.models import Memory
 from .base import BaseReasoner
 
-DEFAULT_MODEL = "llama3.2:1b"
+DEFAULT_MODEL = "gemma3:27b"
 
 # ── Ollama call logger ──────────────────────────────────────────────────────
 _LOG_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "ollama_calls.log")
