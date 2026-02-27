@@ -94,8 +94,14 @@ class Igor:
         boot_check.start(cortex=self.cortex)
 
         is_new = self.cortex.total_count() == 22  # Just genesis
+
+        # change.36: export portable identity files on every boot
+        self._export_portable_identity()
+
         if is_new:
             console.print(f"\n[cyan]Igor-{instance_id} initialized from genesis state.[/]")
+            # First-boot: announce to Discord and self-register in machines.csv
+            self._announce_first_boot()
         else:
             console.print(f"\n[cyan]Igor-{instance_id} resumed. {self.cortex.total_count()} memories loaded.[/]")
 
@@ -165,6 +171,122 @@ class Igor:
             "[dim]Check ~/.TheIgors/igor_wild_0001/ for backup files.[/]"
         )
         sys.exit(1)
+
+    # ── change.36 — Portable Identity ──────────────────────────────────────────
+
+    def _export_portable_identity(self):
+        """
+        Export SOUL.md (CP1-CP6) and IDENTITY.md (ID1-ID14) from the live DB.
+
+        SOUL.md  → ~/.TheIgors/SOUL.md              (shared; same for all instances)
+        IDENTITY.md → ~/.TheIgors/<instance_dir>/IDENTITY.md  (instance-specific)
+
+        Written on every boot so files reflect current DB state.
+        """
+        from .brainstem.core_patterns import get_core_patterns
+        from .memory.models import MemoryType
+
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M")
+        theigors_dir = Path.home() / ".TheIgors"
+        theigors_dir.mkdir(parents=True, exist_ok=True)
+
+        # ── SOUL.md — CP1-CP6 ────────────────────────────────────────────────
+        core = get_core_patterns(self.cortex)
+        soul_lines = [
+            "# SOUL.md — Igor Canonical Core Patterns",
+            f"# Generated: {ts}  Source: {self.instance_id}",
+            "# Shared across all Igor instances. Read-only.",
+            "",
+        ]
+        for cp in sorted(core, key=lambda m: m.id):
+            soul_lines.append(f"## {cp.id}")
+            soul_lines.append(f"**{cp.narrative}**")
+            why = cp.metadata.get("why", "")
+            if why:
+                soul_lines.append(f"*{why}*")
+            soul_lines.append("")
+
+        try:
+            (theigors_dir / "SOUL.md").write_text("\n".join(soul_lines), encoding="utf-8")
+        except Exception as e:
+            console.print(f"[dim][IDENTITY] SOUL.md write failed: {e}[/]")
+
+        # ── IDENTITY.md — ID1-ID14 ───────────────────────────────────────────
+        instance_dir_name = f"igor_{self.instance_id.replace('-', '_')}"
+        instance_dir = theigors_dir / instance_dir_name
+        instance_dir.mkdir(parents=True, exist_ok=True)
+
+        ids = self.cortex.get_by_type(MemoryType.IDENTITY)
+        id_lines = [
+            f"# IDENTITY.md — Igor Instance Identity Patterns",
+            f"# Instance: {self.instance_id}",
+            f"# Generated: {ts}",
+            "",
+        ]
+        for ip in sorted(ids, key=lambda m: m.id):
+            id_lines.append(f"## {ip.id}  (parent: {ip.parent_id})")
+            id_lines.append(ip.narrative)
+            id_lines.append("")
+
+        try:
+            (instance_dir / "IDENTITY.md").write_text("\n".join(id_lines), encoding="utf-8")
+        except Exception as e:
+            console.print(f"[dim][IDENTITY] IDENTITY.md write failed: {e}[/]")
+
+        console.print(f"[dim][IDENTITY] SOUL.md + IDENTITY.md exported.[/]")
+
+    def _announce_first_boot(self):
+        """
+        First-boot only: announce on Discord, self-register in machines.csv.
+        Runs when total_count()==22 (just genesis — fresh instance).
+        """
+        import platform
+        import socket
+        from pathlib import Path as _Path
+
+        hostname = platform.node()
+        try:
+            ip = socket.gethostbyname(hostname)
+        except Exception:
+            ip = "unknown"
+
+        # ── Discord announcement ─────────────────────────────────────────────
+        try:
+            channel_id = os.getenv("DISCORD_CHANNEL_ID", "")
+            if channel_id:
+                discord_bot.send(
+                    channel_id,
+                    f"🟢 igor_{self.instance_id} online at {hostname} ({ip}) — first boot",
+                )
+                console.print(f"[cyan][FIRST BOOT] Announced on Discord.[/]")
+        except Exception as e:
+            console.print(f"[dim][FIRST BOOT] Discord announce failed: {e}[/]")
+
+        # ── machines.csv self-registration ───────────────────────────────────
+        machines_csv = _Path.home() / ".TheIgors" / "local" / "machines.csv"
+        try:
+            if machines_csv.exists():
+                existing = machines_csv.read_text(encoding="utf-8")
+                if hostname not in existing:
+                    new_row = (
+                        f"\n{hostname:<14}, {ip:<9}, unknown"
+                        f"                           , ?   , unknown        , No GPU, unknown  "
+                        f", unknown              , Auto-registered at first boot , priority.batch     "
+                        f", embedding,reasoning"
+                    )
+                    with machines_csv.open("a", encoding="utf-8") as f:
+                        f.write(new_row)
+                    console.print(f"[cyan][FIRST BOOT] Registered {hostname} in machines.csv.[/]")
+                else:
+                    console.print(f"[dim][FIRST BOOT] {hostname} already in machines.csv.[/]")
+        except Exception as e:
+            console.print(f"[dim][FIRST BOOT] machines.csv self-register failed: {e}[/]")
+
+        # ── Ring note ────────────────────────────────────────────────────────
+        self.cortex.write_ring(
+            f"FIRST_BOOT|instance={self.instance_id}|host={hostname}|ip={ip}",
+            category="session_control",
+        )
 
     def get_stats(self) -> dict:
         """
@@ -845,6 +967,7 @@ class Igor:
         console.print(f"  {item.description[:100]}")
 
         # Learning: store as EPISODIC memory so Igor recognises the pattern
+        # intent field uses action_type so /habits pending/compile can find clusters (verify.1)
         valence = 0.7 if status == "approved" else -0.7
         ep = Memory(
             narrative=(
@@ -857,6 +980,7 @@ class Igor:
             metadata={
                 "arbiter_id": item_id,
                 "action_type": item.action_type,
+                "intent": item.action_type,       # verify.1: enables /habits pending clustering
                 "status": status,
                 "description": item.description[:200],
                 "threshold_reason": item.threshold_reason,

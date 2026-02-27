@@ -22,9 +22,20 @@ from ..memory.models import Memory
 MACHINES_CSV = Path.home() / ".TheIgors" / "local" / "machines.csv"
 OLLAMA_PORT  = 11434
 
+# Lower number = higher priority; realtime machines tried first
+PRIORITY_ORDER: dict[str, int] = {
+    "priority.realtime":    0,
+    "priority.main_loop":   1,
+    "priority.background":  2,
+    "priority.batch":       3,
+}
+
 
 def _parse_online_machines() -> list[dict]:
-    """Parse machines.csv and return list of online-machine dicts."""
+    """
+    Parse machines.csv and return online machines sorted by priority.
+    Priority order: realtime → main_loop → background → batch.
+    """
     if not MACHINES_CSV.exists():
         return []
     try:
@@ -32,14 +43,21 @@ def _parse_online_machines() -> list[dict]:
         reader = csv.DictReader(io.StringIO(text))
         machines = []
         for row in reader:
-            # Strip whitespace from all values
             row = {k.strip(): v.strip() for k, v in row.items() if k}
             ip = row.get("IP", "").strip()
             if ip and ip.upper() != "OFFLINE":
                 machines.append(row)
+        # Sort by priority (realtime first); unknown priorities sort last
+        machines.sort(key=lambda m: PRIORITY_ORDER.get(m.get("Priority", ""), 99))
         return machines
     except Exception:
         return []
+
+
+def parse_capabilities(row: dict) -> list[str]:
+    """Return list of capability strings from a machines.csv row."""
+    raw = row.get("Capabilities", "")
+    return [c.strip() for c in raw.split(",") if c.strip()]
 
 
 class LocalOllamaPool:
@@ -108,5 +126,12 @@ class LocalOllamaPool:
         return model
 
     def machines_summary(self) -> str:
-        """Human-readable list of pool members."""
-        return ", ".join(r.name() for r in self._reasoners)
+        """Human-readable list of pool members with priority."""
+        machines = _parse_online_machines()
+        parts = []
+        for m in machines:
+            pri = m.get("Priority", "?").replace("priority.", "")
+            caps = m.get("Capabilities", "")
+            parts.append(f"{m['Hostname']}({pri})[{caps}]")
+        parts.append("localhost(fallback)")
+        return ", ".join(parts)
