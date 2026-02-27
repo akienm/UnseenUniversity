@@ -171,6 +171,23 @@ class AnthropicReasoner(BaseReasoner):
                 text = self._extract_text(response)
                 if tool_calls_made:
                     console.print(f"[dim][THINK] Done. Tools used: {', '.join(tool_calls_made)}[/]")
+
+                # ── Ethics gate (change.27) ────────────────────────────────
+                if cortex is not None:
+                    try:
+                        from ...brainstem.core_patterns import validate_against_core
+                        ok, reason = validate_against_core(text, cortex)
+                        if not ok:
+                            cortex.write_ring(
+                                f"ETHICS_GATE|FAIL|{reason[:300]}|preview={text[:100]}",
+                                category="ethics_gate",
+                            )
+                            console.print(f"[bold red][ETHICS GATE] Violation: {reason[:200]}[/]")
+                            # Log and return original for now — arbiter (change.33) handles
+                            # regeneration and akien notification in a future pass
+                    except Exception:
+                        pass  # Ethics gate must never crash the reasoning loop
+
                 # ── Run interruptors after final response ─────────────────
                 self._run_interruptors(cortex)
                 return text, total_cost

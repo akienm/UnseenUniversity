@@ -20,7 +20,7 @@ from rich.console import Console
 
 from .memory.models import Memory, MemoryType
 from .memory.cortex import Cortex
-from .brainstem.core_patterns import initialize_genesis, get_core_patterns
+from .brainstem.core_patterns import initialize_genesis, get_core_patterns, verify_genesis_integrity
 from .cognition import thalamus
 from .cognition import prefrontal_cortex as pfc
 from .cognition.reasoners.anthropic import AnthropicReasoner
@@ -69,6 +69,7 @@ class Igor:
 
         self.cortex = Cortex(self.db_path)
         self.root_id = initialize_genesis(self.cortex, instance_id)
+        self._boot_integrity_check()
 
         self.ne = NarrativeEngine(self.cortex, instance_id)
         self.reasoner = AnthropicReasoner()
@@ -120,6 +121,49 @@ class Igor:
             f"SESSION_START|id={instance_id}|{datetime.now().isoformat()}",
             category="session_control",
         )
+
+    def _boot_integrity_check(self):
+        """
+        Verify core pattern integrity at boot (changes 28 + 29).
+
+        change.29: compare CP1-CP6 DB narratives against hardcoded genesis values.
+        change.28: verify ID/PROC parent relationships in the memory graph.
+
+        On CP narrative mismatch (tamper/corruption): log to ring, refuse to start.
+        On graph violations: log to ring, refuse to start.
+        Both checks pass silently on an empty DB (first boot).
+        """
+        genesis_ok, genesis_violations = verify_genesis_integrity(self.cortex)
+        graph_ok,   graph_violations   = self.cortex.integrity_check()
+        all_ok = genesis_ok and graph_ok
+        all_violations = genesis_violations + graph_violations
+
+        if all_ok:
+            self.cortex.write_ring(
+                "INTEGRITY_CHECK|PASS|genesis=OK|graph=OK",
+                category="integrity_check",
+            )
+            return
+
+        # Violations found — log to ring
+        summary = "; ".join(v.split("\n")[0] for v in all_violations[:3])
+        self.cortex.write_ring(
+            f"INTEGRITY_CHECK|FAIL|count={len(all_violations)}|{summary[:300]}",
+            category="integrity_check",
+        )
+
+        console.print("\n[bold red]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
+        console.print("[bold red]  CRITICAL: CORE PATTERN INTEGRITY CHECK FAILED  [/]")
+        console.print("[bold red]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
+        for v in all_violations:
+            for line in v.splitlines():
+                console.print(f"[bold red]  {line}[/]")
+        console.print(
+            "\n[bold yellow]Igor cannot start with integrity violations.[/]\n"
+            "[dim]Restore the database from a backup, or contact akien.[/]\n"
+            "[dim]Check ~/.TheIgors/igor_wild_0001/ for backup files.[/]"
+        )
+        sys.exit(1)
 
     def _load_change_log(self):
         """Read changes.log on startup and surface to console + ring memory."""
