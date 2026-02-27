@@ -89,7 +89,7 @@ class Igor:
         # Start Discord bot, unified network listener, web UI server, and model boot-check
         discord_bot.start()
         net_listener.start()
-        web_server.start(cortex=self.cortex)
+        web_server.start(stats_fn=self.get_stats)
         boot_check.start(cortex=self.cortex)
 
         is_new = self.cortex.total_count() == 22  # Just genesis
@@ -164,6 +164,18 @@ class Igor:
             "[dim]Check ~/.TheIgors/igor_wild_0001/ for backup files.[/]"
         )
         sys.exit(1)
+
+    def get_stats(self) -> dict:
+        """
+        Live stats snapshot for the web dashboard (change.30 gateway pattern).
+        Igor owns all state; web server calls this via stats_fn, never touches cortex directly.
+        """
+        return {
+            "memory_count": self.cortex.total_count(),
+            "session_cost": self.session_cost,
+            "last_valence": self.last_valence,
+            "last_friction": self.last_friction,
+        }
 
     def _load_change_log(self):
         """Read changes.log on startup and surface to console + ring memory."""
@@ -404,13 +416,6 @@ class Igor:
             last_action=f"{parsed.intent}: {user_input[:40]}",
             new_memories=new_memories,
             upstream_calls=self.upstream_calls,
-        )
-
-        # [WEB] Push current stats to web dashboard
-        web_server.update_stats(
-            session_cost=self.session_cost,
-            last_valence=self.last_valence,
-            last_friction=self.last_friction,
         )
 
         return response_text

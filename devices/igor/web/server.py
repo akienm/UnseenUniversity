@@ -55,8 +55,7 @@ _client_lock = threading.Lock()
 _loop: Optional[asyncio.AbstractEventLoop] = None
 
 # ── Shared state ──────────────────────────────────────────────────────────────
-_cortex = None   # set by start()
-_stats: dict = {}  # updated by update_stats(); read by /api/dashboard
+_stats_fn = None  # callable → dict; set by start(); Igor class owns all state (change.30)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -80,10 +79,6 @@ def send(text: str):
         "ts": _ts(),
     }))
 
-
-def update_stats(**kwargs):
-    """Update the shared stats dict read by /api/dashboard. Thread-safe via GIL."""
-    _stats.update(kwargs)
 
 
 def _broadcast(payload: str):
@@ -144,10 +139,10 @@ async def _api_outbox_download(request: Request):
 
 
 async def _api_dashboard(request: Request):
-    data: dict = dict(_stats)
-    if _cortex is not None:
+    data: dict = {}
+    if _stats_fn is not None:
         try:
-            data["memory_count"] = _cortex.total_count()
+            data = dict(_stats_fn())
         except Exception:
             pass
     data["ts"] = _ts()
@@ -236,10 +231,14 @@ def _make_app() -> Starlette:
 _server_thread: Optional[threading.Thread] = None
 
 
-def start(cortex=None):
-    """Start the web server in a background daemon thread. Non-blocking."""
-    global _server_thread, _cortex
-    _cortex = cortex
+def start(stats_fn=None):
+    """Start the web server in a background daemon thread. Non-blocking.
+
+    stats_fn: callable () → dict — Igor.get_stats(); called by /api/dashboard.
+    Igor owns all state; web server owns none (change.30 gateway pattern).
+    """
+    global _server_thread, _stats_fn
+    _stats_fn = stats_fn
     _ensure_dirs()
 
     if _server_thread and _server_thread.is_alive():
