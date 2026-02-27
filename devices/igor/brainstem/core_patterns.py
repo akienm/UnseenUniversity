@@ -158,6 +158,13 @@ def initialize_genesis(cortex: Cortex, instance_id: str = "wild-0001") -> str:
          "ID14",
          {"trigger": "before_pattern_sharing",
           "why": "Loyalty to caregiver + enabling safe network sharing. Share techniques freely, but protect personal context."}),
+        ("PROC10",
+         "Change requests go in ~/.TheIgors/claudecode/change_request.txt (Igor and Akien both write here). "
+         "Completed changes are logged to ~/.TheIgors/claudecode/changes.log in CSB format, newest first. "
+         "Use write_file tool with path '.TheIgors/claudecode/change_request.txt' to append requests.",
+         "CP3",
+         {"trigger": "before_requesting_changes",
+          "why": "Shared inbox for change coordination between Igor, Akien, and Claude Code."}),
     ]
 
     for proc_id, narrative, parent, meta in procedural_genesis:

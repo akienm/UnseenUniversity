@@ -11,7 +11,11 @@ All push via cortex.twm_push(). None of them block or crash the main loop.
 
 from collections import Counter
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
+
+MACHINES_CSV = Path.home() / ".TheIgors" / "local" / "machines.csv"
+INBOX_DIR    = Path.home() / ".TheIgors" / "igor_wild_0001" / "inbox"
 
 
 # ── Base ──────────────────────────────────────────────────────────────────────
@@ -163,11 +167,121 @@ class UserInputSource(BasePushSource):
         return obs_id
 
 
+# ── MachinesWatcher ───────────────────────────────────────────────────────────
+
+class MachinesWatcher(BasePushSource):
+    """
+    Watches ~/.TheIgors/local/machines.csv for changes.
+
+    Pushes a high-salience TWM observation on first run (so Igor always
+    knows the current machine inventory) and again whenever the file's
+    modification time changes (e.g. a machine comes online/offline).
+    """
+    name = "machines_watcher"
+    CHECK_INTERVAL_SEC = 30  # Check every 30 seconds
+
+    def __init__(self):
+        self._last_check: Optional[datetime] = None
+        self._last_mtime: Optional[float] = None  # None = not yet read
+
+    def push(self, cortex) -> list[int]:
+        now = datetime.now()
+        if (self._last_check is not None
+                and (now - self._last_check).total_seconds() < self.CHECK_INTERVAL_SEC):
+            return []
+        self._last_check = now
+
+        if not MACHINES_CSV.exists():
+            return []
+
+        try:
+            current_mtime = MACHINES_CSV.stat().st_mtime
+        except OSError:
+            return []
+
+        first_run = self._last_mtime is None
+        changed = first_run or (current_mtime != self._last_mtime)
+        self._last_mtime = current_mtime
+
+        if not changed:
+            return []
+
+        try:
+            csv_text = MACHINES_CSV.read_text(encoding="utf-8").strip()
+        except OSError:
+            return []
+
+        reason = "initial_load" if first_run else "file_changed"
+        csb = f"MACHINES_CSV|{reason}|{now.strftime('%Y-%m-%dT%H:%M')}|{csv_text[:600]}"
+        obs_id = cortex.twm_push(
+            source=self.name,
+            content_csb=csb,
+            salience=0.8,
+            metadata={"path": str(MACHINES_CSV), "mtime": current_mtime, "reason": reason},
+            ttl_seconds=3600,
+        )
+        return [obs_id]
+
+
+# ── InboxWatcher ──────────────────────────────────────────────────────────────
+
+class InboxWatcher(BasePushSource):
+    """
+    Watches the inbox directory for new files every CHECK_INTERVAL_SEC seconds.
+
+    Pushes a high-salience TWM observation (0.9) when new files appear,
+    whether dropped via the web UI or copied there by other means.
+    """
+    name = "inbox_watcher"
+    CHECK_INTERVAL_SEC = 5
+
+    def __init__(self):
+        self._last_check: Optional[datetime] = None
+        self._known_files: set = set()
+
+    def push(self, cortex) -> list[int]:
+        now = datetime.now()
+        if (self._last_check is not None
+                and (now - self._last_check).total_seconds() < self.CHECK_INTERVAL_SEC):
+            return []
+        self._last_check = now
+
+        if not INBOX_DIR.exists():
+            return []
+
+        try:
+            current = {p.name for p in INBOX_DIR.iterdir() if p.is_file()}
+        except OSError:
+            return []
+
+        new_files = current - self._known_files
+        self._known_files = current
+
+        if not new_files:
+            return []
+
+        pushed = []
+        for filename in sorted(new_files):
+            csb = f"INBOX_FILE|{filename}|{now.strftime('%Y-%m-%dT%H:%M')}"
+            obs_id = cortex.twm_push(
+                source=self.name,
+                content_csb=csb,
+                salience=0.9,
+                metadata={"filename": filename, "inbox": str(INBOX_DIR)},
+                ttl_seconds=3600,
+            )
+            pushed.append(obs_id)
+
+        return pushed
+
+
 # ── Module singletons + convenience runner ────────────────────────────────────
 
 memory_surfacer   = MemorySurfacer()
 timer_sentinel    = TimerSentinel()
 user_input_source = UserInputSource()
+machines_watcher  = MachinesWatcher()
+inbox_watcher     = InboxWatcher()
 
 
 def run_background_sources(cortex) -> int:
@@ -177,7 +291,7 @@ def run_background_sources(cortex) -> int:
     Exceptions are swallowed — a broken source must not crash the loop.
     """
     pushed = 0
-    for src in (timer_sentinel, memory_surfacer):
+    for src in (timer_sentinel, memory_surfacer, machines_watcher, inbox_watcher):
         try:
             ids = src.push(cortex)
             pushed += len(ids)

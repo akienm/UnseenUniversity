@@ -24,16 +24,21 @@ from .brainstem.core_patterns import initialize_genesis, get_core_patterns
 from .cognition import thalamus
 from .cognition import prefrontal_cortex as pfc
 from .cognition.reasoners.anthropic import AnthropicReasoner
-from .cognition.reasoners.ollama_reasoner import preparse, score_memories
+from .cognition.reasoners.ollama_reasoner import preparse, score_memories, OllamaReasoner
+from .cognition.local_pool import LocalOllamaPool
 from .cognition.narrative_engine import NarrativeEngine
 from .cognition.push_sources import run_background_sources, user_input_source
 from .dashboard import terminal as dashboard
 from .network import discord_bot
 from .network import listener as net_listener
+from .web import server as web_server
+from . import boot_check
 
 console = Console()
 
 DATA_DIR = Path(__file__).parent.parent / "data"
+CHANGE_LOG_PATH    = Path.home() / ".TheIgors" / "claudecode" / "changes.log"
+CHANGE_REQUEST_PATH = Path.home() / ".TheIgors" / "claudecode" / "change_request.txt"
 
 # ── Stdin thread ───────────────────────────────────────────────────────────────
 
@@ -67,6 +72,7 @@ class Igor:
 
         self.ne = NarrativeEngine(self.cortex, instance_id)
         self.reasoner = AnthropicReasoner()
+        self.local_pool = LocalOllamaPool()
         self.interaction_count = 0
         self.upstream_calls = 0
         self.last_friction = None
@@ -74,11 +80,16 @@ class Igor:
         self.last_roi = None
         self.session_cost = 0.0
         self.use_ollama = os.getenv("IGOR_OLLAMA", "true").lower() in ("true", "1", "yes")
+        # local_mode: default True — use Ollama pool for all general reasoning
+        # Set IGOR_LOCAL=false in .env to default to cloud mode
+        self.local_mode = os.getenv("IGOR_LOCAL", "true").lower() in ("true", "1", "yes")
         self._ne_thread: threading.Thread | None = None
 
-        # Start Discord bot, then unified network listener
+        # Start Discord bot, unified network listener, web UI server, and model boot-check
         discord_bot.start()
         net_listener.start()
+        web_server.start(cortex=self.cortex)
+        boot_check.start(cortex=self.cortex)
 
         is_new = self.cortex.total_count() == 22  # Just genesis
         if is_new:
@@ -98,10 +109,35 @@ class Igor:
                 ts = entry['timestamp'][11:16]
                 console.print(f"[dim]  {ts} [{entry['category']}] {entry['content'][:90]}[/]")
 
+        # [CHANGE LOG] Surface any completed change entries logged by Claude Code
+        self._load_change_log()
+
         # [RING] Mark session start so ContextInterruptor can count interactions
         self.cortex.write_ring(
             f"SESSION_START|id={instance_id}|{datetime.now().isoformat()}",
             category="session_control",
+        )
+
+    def _load_change_log(self):
+        """Read changes.log on startup and surface to console + ring memory."""
+        if not CHANGE_LOG_PATH.exists():
+            return
+        try:
+            log_content = CHANGE_LOG_PATH.read_text(encoding="utf-8").strip()
+        except Exception:
+            return
+        if not log_content:
+            return
+        lines = log_content.splitlines()
+        console.print(f"\n[yellow]── Change log ({len(lines)} entries) ──[/]")
+        for line in lines[:5]:  # Show newest 5 (log is newest-first)
+            console.print(f"[dim]  {line[:120]}[/]")
+        if len(lines) > 5:
+            console.print(f"[dim]  ... ({len(lines) - 5} more in {CHANGE_LOG_PATH})[/]")
+        # Write summary to ring so NE can integrate it
+        self.cortex.write_ring(
+            f"CHANGE_LOG_SURFACED: {lines[0][:300]}",
+            category="system_info",
         )
 
     def run(self):
@@ -157,7 +193,7 @@ class Igor:
 
             self._process(user_input)
 
-    def _process(self, user_input: str):
+    def _process(self, user_input: str) -> str:
         self.interaction_count += 1
         new_memories = 0
 
@@ -173,7 +209,7 @@ class Igor:
         # Handle commands
         if parsed.is_command:
             self._handle_command(parsed.command, user_input)
-            return
+            return ""
 
         # [SEARCH] Candidate memories via text search
         candidates = self.cortex.search(" ".join(parsed.keywords))
@@ -219,18 +255,42 @@ class Igor:
             self.cortex.record_activation(habit.id, 0.05)
         else:
             # [PREFRONTAL CORTEX] Upstream reasoning
-            dashboard.print_reasoning(used_api=True)
             core = get_core_patterns(self.cortex)
             augmented_input = user_input + ring_ctx
-            try:
-                response_text, cost = pfc.reason(augmented_input, relevant, core, self.instance_id, self.reasoner)
-                self.session_cost += cost
-                self.upstream_calls += 1
-                used_api = True
-                console.print(f"[dim](cost: ${cost:.4f} | session: ${self.session_cost:.4f})[/]")
-            except Exception as e:
-                response_text = f"[Upstream reasoning failed: {e}]"
-                console.print(f"[red]API error: {e}[/]")
+            if self.local_mode:
+                # Local-only: use Ollama pool (free, no cloud)
+                dashboard.print_reasoning(used_api=False)
+                try:
+                    response_text, cost = self.local_pool.reason(
+                        augmented_input, relevant, core, self.instance_id
+                    )
+                    self.upstream_calls += 1
+                    used_api = False
+                    console.print(f"[dim](local | session_cost: ${self.session_cost:.4f})[/]")
+                except Exception as e:
+                    # Local pool failed — fall back to cloud
+                    console.print(f"[yellow]Local pool failed ({e}), falling back to cloud...[/]")
+                    try:
+                        response_text, cost = pfc.reason(augmented_input, relevant, core, self.instance_id, self.reasoner)
+                        self.session_cost += cost
+                        self.upstream_calls += 1
+                        used_api = True
+                        console.print(f"[dim](cloud fallback: ${cost:.4f} | session: ${self.session_cost:.4f})[/]")
+                    except Exception as e2:
+                        response_text = f"[Reasoning failed: {e2}]"
+                        console.print(f"[red]API error: {e2}[/]")
+            else:
+                # Cloud mode: use Anthropic API
+                dashboard.print_reasoning(used_api=True)
+                try:
+                    response_text, cost = pfc.reason(augmented_input, relevant, core, self.instance_id, self.reasoner)
+                    self.session_cost += cost
+                    self.upstream_calls += 1
+                    used_api = True
+                    console.print(f"[dim](cost: ${cost:.4f} | session: ${self.session_cost:.4f})[/]")
+                except Exception as e:
+                    response_text = f"[Upstream reasoning failed: {e}]"
+                    console.print(f"[red]API error: {e}[/]")
 
         # [MOTOR CORTEX] Output response
         console.print(f"\n[bold blue]Igor:[/] {response_text}\n")
@@ -286,6 +346,15 @@ class Igor:
             upstream_calls=self.upstream_calls,
         )
 
+        # [WEB] Push current stats to web dashboard
+        web_server.update_stats(
+            session_cost=self.session_cost,
+            last_valence=self.last_valence,
+            last_friction=self.last_friction,
+        )
+
+        return response_text
+
     def _run_ne_background(self):
         """
         Fire the Narrative Engine in a background daemon thread.
@@ -336,10 +405,14 @@ class Igor:
                     f"[Email from {msg.author}, subject='{ri.get('subject', '')}', "
                     f"reply_to='{ri.get('reply_to', msg.author)}']: {msg.content}"
                 )
+            elif msg.source == "web":
+                synthetic = f"[Web message from {msg.author}]: {msg.content}"
             else:
                 synthetic = f"[{msg.source} from {msg.author}]: {msg.content}"
 
-            self._process(synthetic)
+            response = self._process(synthetic)
+            if msg.source == "web" and response:
+                web_server.send(response)
 
     def _find_habit(self, parsed) -> Memory | None:
         """Check if any habit matches this input. Placeholder for basal ganglia."""
@@ -362,6 +435,7 @@ class Igor:
             "cost": self._cmd_cost,
             "model": self._cmd_model,
             "ollama": self._cmd_ollama,
+            "local": self._cmd_local,
             "compress": self._cmd_compress,
         }
         fn = commands.get(command, self._cmd_unknown)
@@ -369,6 +443,8 @@ class Igor:
 
     def _cmd_help(self, _):
         ollama_state = "ON" if self.use_ollama else "OFF"
+        local_state  = "ON" if self.local_mode  else "OFF"
+        web_port     = os.getenv("IGOR_WEB_PORT", "8080")
         console.print(f"""
 [bold]Igor Commands:[/]
   /help           - This message
@@ -377,11 +453,15 @@ class Igor:
   /habits         - Show compiled habits
   /cost           - Show session cost
   /model          - Show current reasoning model
-  /model <name>   - Switch model (sonnet, opus, haiku, or full model ID)
+  /model <name>   - Switch model (cloud: sonnet/opus/haiku; local: any Ollama model name)
   /ollama         - Toggle local Ollama pre-parser (currently {ollama_state})
+  /local          - Toggle local-only mode (currently {local_state})
+  /local on|off   - Explicitly set local mode
   /compress       - Summarize context to LTM (Ollama), then restart fresh
   /restart        - Relaunch Igor (requires igor bash alias)
   /quit           - Exit
+
+[bold]Web UI:[/] http://localhost:{web_port}   (set IGOR_WEB_PORT to change)
 """)
 
     def _cmd_memories(self, _):
@@ -405,17 +485,43 @@ class Igor:
             for h in habits:
                 console.print(f"  [{h.id}] trigger: '{h.metadata.get('trigger')}' → {h.narrative[:50]}")
 
+    def _cmd_local(self, raw):
+        parts = raw.strip().split(None, 1)
+        arg = parts[1].strip().lower() if len(parts) > 1 else None
+        if arg == "on":
+            self.local_mode = True
+        elif arg == "off":
+            self.local_mode = False
+        else:
+            self.local_mode = not self.local_mode  # toggle
+
+        state = "[green]ON[/]" if self.local_mode else "[yellow]OFF[/]"
+        if self.local_mode:
+            self.local_pool._refresh()  # Re-read machines.csv
+            console.print(f"\n[bold]Local mode:[/] {state}")
+            console.print(f"[dim]Pool: {self.local_pool.machines_summary()}[/]")
+        else:
+            console.print(f"\n[bold]Local mode:[/] {state}  [dim](using cloud: {self.reasoner.model})[/]")
+
     def _cmd_model(self, raw):
         from .cognition.reasoners.anthropic import MODEL_ALIASES
         parts = raw.strip().split(None, 1)
         if len(parts) < 2:
-            console.print(f"\n[bold]Current model:[/] {self.reasoner.model}")
-            aliases = ", ".join(f"{k} → {v}" for k, v in MODEL_ALIASES.items())
-            console.print(f"[dim]Aliases: {aliases}[/]")
+            if self.local_mode:
+                console.print(f"\n[bold]Current model (local):[/] {self.local_pool.model}")
+                console.print(f"[dim]Pool: {self.local_pool.machines_summary()}[/]")
+            else:
+                console.print(f"\n[bold]Current model (cloud):[/] {self.reasoner.model}")
+                aliases = ", ".join(f"{k} → {v}" for k, v in MODEL_ALIASES.items())
+                console.print(f"[dim]Aliases: {aliases}[/]")
             return
         name = parts[1].strip()
-        resolved = self.reasoner.set_model(name)
-        console.print(f"\n[green]Model switched to:[/] {resolved}")
+        if self.local_mode:
+            self.local_pool.set_model(name)
+            console.print(f"\n[green]Ollama model switched to:[/] {name}")
+        else:
+            resolved = self.reasoner.set_model(name)
+            console.print(f"\n[green]Cloud model switched to:[/] {resolved}")
 
     def _cmd_ollama(self, _):
         self.use_ollama = not self.use_ollama
@@ -516,7 +622,18 @@ def main():
     parser.add_argument("--host", default="wild", help="Host label for auto-generated ID (default: wild)")
     args = parser.parse_args()
 
-    instance_id = args.id or _make_instance_id(args.host)
+    if args.id:
+        instance_id = args.id
+    else:
+        # Resume the most recently used DB rather than always spawning a new one.
+        # A fresh ID is only generated if no DB exists at all.
+        DATA_DIR.mkdir(exist_ok=True)
+        existing_dbs = sorted(DATA_DIR.glob("igor_wild_*.db"), key=lambda p: p.stat().st_mtime, reverse=True)
+        if existing_dbs:
+            instance_id = existing_dbs[0].stem
+            console.print(f"[dim]Resuming existing instance: {instance_id}[/]")
+        else:
+            instance_id = _make_instance_id(args.host)
 
     igor = Igor(instance_id=instance_id)
     igor.run()
