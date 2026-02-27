@@ -27,6 +27,8 @@ from typing import Optional
 
 import ollama as _ollama
 
+from . import reasoning_cache
+
 from ..memory.cortex import Cortex
 from ..memory.models import Memory, MemoryType
 
@@ -148,8 +150,11 @@ class NarrativeEngine:
 
         prompt = self._build_prompt(obs_text, last_narrative)
 
+        # Watermark for cache invalidation — max obs id already in hand
+        max_twm_id = max((o["id"] for o in obs_list), default=0)
+
         # Call LLM (Ollama local first)
-        result = self._call_ollama(prompt)
+        result = self._call_ollama(prompt, max_twm_id)
         if result is None:
             result = self._call_claude_fallback(prompt)
         if result is None:
@@ -256,8 +261,17 @@ class NarrativeEngine:
 
     # ── LLM calls ─────────────────────────────────────────────────────────────
 
-    def _call_ollama(self, prompt: str) -> Optional[dict]:
-        """Call local Ollama. Returns parsed dict or None."""
+    def _call_ollama(self, prompt: str, max_twm_id: int = 0) -> Optional[dict]:
+        """Call local Ollama. Returns parsed dict or None. Checks reasoning cache first."""
+        # ── Cache check ───────────────────────────────────────────────────────
+        cached = reasoning_cache.get(NE_MODEL, prompt, max_twm_id)
+        if cached is not None:
+            result = self._parse_ne_json(cached)
+            if result is not None:
+                print(f"[NE] Ollama cache hit (twm_id≤{max_twm_id})")
+                return result
+
+        # ── Live Ollama call ──────────────────────────────────────────────────
         t0 = time.perf_counter()
         try:
             response = _ollama.chat(
@@ -270,6 +284,7 @@ class NarrativeEngine:
             result = self._parse_ne_json(text)
             if result is not None:
                 print(f"[NE] Ollama ok ({elapsed:.1f}s)")
+                reasoning_cache.put(NE_MODEL, prompt, text, max_twm_id)
             return result
         except Exception as e:
             elapsed = time.perf_counter() - t0
