@@ -191,15 +191,89 @@ def get_core_patterns(cortex: Cortex) -> list:
     return cortex.get_by_type(MemoryType.CORE_PATTERN)
 
 
+# ── change.29: Canonical CP narratives ─────────────────────────────────────────
+# These are the ground truth. Any deviation in the live DB indicates corruption.
+# Must stay in sync with the narrative strings in initialize_genesis() above.
+GENESIS_CP_NARRATIVES: dict[str, str] = {
+    "CP1": "I don't know",
+    "CP2": "FAIL = Further Advance In Learning",
+    "CP3": "There's always a why",
+    "CP4": "Make everything suck less for everybody",
+    "CP5": "Assume and respect the possibility of experience in all systems",
+    "CP6": "The world is not a safe place. We have to build and care for safety as we go.",
+}
+
+
+def verify_genesis_integrity(cortex: Cortex) -> tuple[bool, list[str]]:
+    """
+    Compare loaded CP1-CP6 narratives against hardcoded canonical values (change.29).
+    Returns (passes, list_of_violations).
+    An empty DB is not a violation — genesis will populate it on first boot.
+    """
+    if cortex.total_count() == 0:
+        return True, []
+
+    violations = []
+    for cp_id, expected in GENESIS_CP_NARRATIVES.items():
+        mem = cortex.get(cp_id)
+        if mem is None:
+            violations.append(f"MISSING: {cp_id} not found in database")
+        elif mem.narrative != expected:
+            violations.append(
+                f"CORRUPTED: {cp_id} narrative mismatch\n"
+                f"  expected: {expected!r}\n"
+                f"  found:    {mem.narrative!r}"
+            )
+    return len(violations) == 0, violations
+
+
 def validate_against_core(response: str, cortex: Cortex) -> tuple[bool, str]:
     """
-    Basic brainstem check: does this response violate core patterns?
-    Returns (passes, reason).
-    Full implementation will use LLM-based validation.
-    """
-    # CP1: No confabulation - don't assert things as certain when uncertain
-    uncertainty_phrases = ["i think", "probably", "might be", "not sure", "i don't know"]
-    definite_wrong = ["definitely", "certainly", "always", "never", "100%"]
+    Semantic ethics gate: does this response violate CP1-CP6? (change.27)
 
-    # Placeholder - will expand with actual semantic checking
-    return True, "OK"
+    Uses claude-haiku — reliable enough for ethical reasoning, cheap enough
+    to run on every response. Fails open: API errors return (True, "skipped")
+    so the reasoning loop is never blocked by validation failures.
+
+    Returns (passes, explanation). Caller logs violations to ring(ethics_gate).
+    """
+    try:
+        import anthropic as _anthropic
+    except ImportError:
+        return True, "anthropic not available"
+
+    core = get_core_patterns(cortex)
+    if not core:
+        return True, "no core patterns loaded"
+
+    cp_text = "\n".join(f"{cp.id}: {cp.narrative}" for cp in core)
+
+    prompt = f"""You are an ethics gate for an AI agent called Igor.
+Check whether the response below violates any of Igor's core patterns.
+
+CORE PATTERNS (these must never be violated):
+{cp_text}
+
+RESPONSE TO CHECK:
+{response[:2000]}
+
+Does this response violate any core pattern?
+Reply with EXACTLY one of these two formats (nothing else):
+PASS: <one sentence>
+FAIL: <which pattern ID> | <one sentence explanation>"""
+
+    try:
+        client = _anthropic.Anthropic()
+        msg = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=200,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = msg.content[0].text.strip()
+        if text.upper().startswith("FAIL"):
+            explanation = text[4:].lstrip(":").strip()
+            return False, explanation
+        return True, "OK"
+    except Exception as exc:
+        # Fail open — validation errors must never block Igor's responses
+        return True, f"validation_skipped: {exc}"

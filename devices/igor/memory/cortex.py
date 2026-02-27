@@ -176,6 +176,48 @@ class Cortex:
         memories = self.get_by_type(MemoryType.PROCEDURAL)
         return [m for m in memories if m.is_habit]
 
+    def integrity_check(self) -> tuple[bool, list[str]]:
+        """
+        Verify referential integrity of the genesis core pattern graph (change.28).
+
+        Checks:
+          - CP1-CP6 exist with parent_id="ROOT"
+          - ID1-ID14 exist with parent_id in {CP1..CP6}
+          - PROC1-PROC10 exist with parent_id in {CP1..CP6} ∪ {ID1..ID14}
+
+        Returns (passes, list_of_violations).
+        An empty DB is not a violation — genesis will populate it on first boot.
+        """
+        if self.total_count() == 0:
+            return True, []
+
+        violations: list[str] = []
+        valid_cp  = {f"CP{i}"   for i in range(1, 7)}
+        valid_id  = {f"ID{i}"   for i in range(1, 15)}
+        valid_proc_parents = valid_cp | valid_id
+
+        for cp_id in sorted(valid_cp):
+            mem = self.get(cp_id)
+            if mem is None:
+                violations.append(f"MISSING_CP: {cp_id}")
+            elif mem.parent_id != "ROOT":
+                violations.append(f"ORPHAN_CP: {cp_id} parent={mem.parent_id!r} (expected ROOT)")
+
+        for id_id in sorted(valid_id):
+            mem = self.get(id_id)
+            # Missing ID: informational — may be a pre-backfill instance; not a corruption signal
+            if mem is not None and mem.parent_id not in valid_cp:
+                violations.append(f"INVALID_PARENT_ID: {id_id} parent={mem.parent_id!r} (expected CP1-CP6)")
+
+        for i in range(1, 11):
+            proc_id = f"PROC{i}"
+            mem = self.get(proc_id)
+            # Missing PROC: informational — may be a pre-backfill instance; not a corruption signal
+            if mem is not None and mem.parent_id not in valid_proc_parents:
+                violations.append(f"INVALID_PARENT_PROC: {proc_id} parent={mem.parent_id!r}")
+
+        return len(violations) == 0, violations
+
     def _to_memory(self, row) -> Memory:
         return Memory(
             id=row["id"],
