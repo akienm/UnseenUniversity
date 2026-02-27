@@ -388,10 +388,12 @@ _FALLBACK_HTML = """<!DOCTYPE html>
         const r = await fetch('/api/dashboard');
         const d = await r.json();
         const parts = [];
-        if (d.memory_count !== undefined) parts.push('mem:' + d.memory_count);
-        if (d.session_cost  !== undefined) parts.push('cost:$' + Number(d.session_cost).toFixed(4));
-        if (d.last_valence  !== undefined) parts.push('val:' + (d.last_valence >= 0 ? '+' : '') + Number(d.last_valence).toFixed(2));
-        if (d.last_friction !== undefined) parts.push('f:' + Number(d.last_friction).toFixed(2));
+        if (d.memory_count    !== undefined) parts.push('mem:' + d.memory_count);
+        if (d.session_cost    !== undefined) parts.push('cost:$' + Number(d.session_cost).toFixed(4));
+        if (d.last_valence    !== undefined) parts.push('val:' + (d.last_valence >= 0 ? '+' : '') + Number(d.last_valence).toFixed(2));
+        if (d.last_friction   !== undefined) parts.push('f:' + Number(d.last_friction).toFixed(2));
+        if (d.arbiter_pending !== undefined && d.arbiter_pending > 0)
+          parts.push('⚠ arbiter:' + d.arbiter_pending);
         dash.innerHTML = parts.length ? parts.map(p => '<span>' + p + '</span>').join('') : '<span>Igor online</span>';
       } catch(e) {}
     }

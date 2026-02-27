@@ -183,8 +183,18 @@ class AnthropicReasoner(BaseReasoner):
                                 category="ethics_gate",
                             )
                             console.print(f"[bold red][ETHICS GATE] Violation: {reason[:200]}[/]")
-                            # Log and return original for now — arbiter (change.33) handles
-                            # regeneration and akien notification in a future pass
+                            # change.33: submit to arbiter for akien's awareness (non-blocking)
+                            try:
+                                from ...arbiter import queue as arbiter_queue
+                                arbiter_queue.submit(
+                                    description=f"Response flagged by ethics gate: {text[:200]}",
+                                    context=f"Violation: {reason[:300]}",
+                                    action_type="ethics_flag",
+                                    threshold_reason=reason[:200],
+                                    metadata={"response_preview": text[:200]},
+                                )
+                            except Exception:
+                                pass  # Arbiter submit must never block reasoning
                     except Exception:
                         pass  # Ethics gate must never crash the reasoning loop
 
