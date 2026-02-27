@@ -7,6 +7,13 @@ Also contains:
   - twm_observations table: Temporal Working Memory — push-based sandbox for
     the Narrative Engine. Multiple processes deposit observations here.
     NE reads, integrates, promotes high-importance fragments to LTM.
+
+change.37: memories table now has an `embedding` column (TEXT, nullable JSON).
+  search() uses a hybrid approach:
+    1. Text search → candidate set (fast, always works)
+    2. Embedding re-rank → sort candidates by cosine similarity (if Ollama up)
+  Embeddings are computed lazily for candidates that lack them and stored back.
+  Cache at ~/.TheIgors/cache/embeddings/ avoids repeat Ollama calls.
 """
 
 import json
@@ -53,6 +60,12 @@ class Cortex:
             """)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_parent ON memories(parent_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_type ON memories(memory_type)")
+
+            # change.37: embedding column — added via migration so existing DBs are not broken
+            try:
+                conn.execute("ALTER TABLE memories ADD COLUMN embedding TEXT DEFAULT NULL")
+            except Exception:
+                pass  # Column already exists
 
             # Short-term ring buffer — survives restarts, FIFO capped at RING_MAX
             conn.execute("""
@@ -142,24 +155,97 @@ class Cortex:
             self.store(memory)
 
     def search(self, query: str, limit: int = 10) -> list:
-        """Naive text search. Spreading activation comes later."""
+        """
+        Hybrid search (change.37): text candidates → embedding re-rank.
+
+        Phase 1 (always runs): naive text search over the memory graph.
+          Filters out ROOT/CORE_PATTERN/IDENTITY/ROLE_MODEL (same as before).
+          Returns up to limit×2 candidates sorted by keyword hit count.
+
+        Phase 2 (runs when Ollama is available): embed the query and each
+          candidate; sort by cosine similarity. Candidates that lack a stored
+          embedding are computed on-the-fly and written back to the DB so the
+          next call is cached. Sets m.relevance_score on each result.
+
+        Falls back silently to Phase 1 if nomic-embed-text is unavailable.
+        """
         terms = query.lower().split()
         with self._conn() as conn:
             rows = conn.execute(
-                "SELECT * FROM memories WHERE memory_type NOT IN (?, ?, ?, ?) ORDER BY activation_count DESC",
+                "SELECT * FROM memories WHERE memory_type NOT IN (?, ?, ?, ?) "
+                "ORDER BY activation_count DESC",
                 (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value,
                  MemoryType.IDENTITY.value, MemoryType.ROLE_MODEL.value)
             ).fetchall()
 
-        memories = [self._to_memory(r) for r in rows]
-        scored = []
-        for m in memories:
+        all_memories = [self._to_memory(r) for r in rows]
+
+        # Phase 1: text scoring
+        text_scored = []
+        for m in all_memories:
             score = sum(1 for t in terms if t in m.narrative.lower())
             if score > 0:
-                scored.append((score, m))
+                text_scored.append((score, m))
+        text_scored.sort(key=lambda x: x[0], reverse=True)
 
-        scored.sort(key=lambda x: x[0], reverse=True)
-        return [m for _, m in scored[:limit]]
+        # Candidate pool — wider than limit to give embedding re-ranker room
+        candidates = [m for _, m in text_scored[: limit * 2]]
+
+        if not candidates:
+            return []
+
+        # Phase 2: embedding re-rank
+        try:
+            from ..cognition.embedder import embed, cosine_similarity
+            query_vec = embed(query)
+            if query_vec:
+                scored = []
+                for m in candidates:
+                    mem_vec = self._get_or_compute_embedding(m)
+                    sim = cosine_similarity(query_vec, mem_vec) if mem_vec else 0.0
+                    m.relevance_score = sim  # type: ignore[attr-defined]
+                    scored.append((sim, m))
+                scored.sort(key=lambda x: x[0], reverse=True)
+                return [m for _, m in scored[:limit]]
+        except Exception:
+            pass  # Embedding unavailable — fall through to text results
+
+        # Phase 1 fallback: attach normalised relevance score and return
+        max_terms = max(1, len(terms))
+        for score, m in text_scored[:limit]:
+            m.relevance_score = score / max_terms  # type: ignore[attr-defined]
+        return [m for _, m in text_scored[:limit]]
+
+    def _get_or_compute_embedding(self, memory) -> Optional[list]:
+        """
+        Return the stored embedding for a memory, computing and caching it
+        if missing. Returns None if Ollama is unavailable.
+        """
+        # Check DB first
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT embedding FROM memories WHERE id = ?", (memory.id,)
+            ).fetchone()
+        if row and row["embedding"]:
+            try:
+                return json.loads(row["embedding"])
+            except Exception:
+                pass
+
+        # Not in DB — compute via embedder and store back
+        try:
+            from ..cognition.embedder import embed
+            vec = embed(memory.narrative)
+            if vec:
+                with self._conn() as conn:
+                    conn.execute(
+                        "UPDATE memories SET embedding = ? WHERE id = ?",
+                        (json.dumps(vec), memory.id),
+                    )
+                return vec
+        except Exception:
+            pass
+        return None
 
     def count_by_type(self) -> dict:
         with self._conn() as conn:
