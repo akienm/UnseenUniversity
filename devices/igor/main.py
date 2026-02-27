@@ -204,6 +204,7 @@ class Igor:
                 # Nothing typed yet — run background work then loop
                 run_background_sources(self.cortex)
                 self._run_ne_background()
+                self._drain_action_impulses()
                 import time; time.sleep(0.5)
                 continue
 
@@ -389,6 +390,46 @@ class Igor:
             target=_ne_worker, daemon=True, name="ne-worker"
         )
         self._ne_thread.start()
+
+    def _drain_action_impulses(self):
+        """
+        Consume pending NE action_impulses from TWM (change.25).
+
+        Reads unintegrated TWM observations where source="narrative_engine"
+        and content_csb contains "ACTION_IMPULSE". Processes at most one per
+        tick to avoid monopolising the loop. Marks each impulse integrated
+        immediately before routing so it is never re-processed.
+
+        Respects change.20a: NE will not re-read these as input because
+        the consumer marks them integrated AND NE filters source="narrative_engine".
+        """
+        obs = self.cortex.twm_read(limit=20, include_integrated=False)
+        impulses = [
+            o for o in obs
+            if o.get("source") == "narrative_engine"
+            and "ACTION_IMPULSE" in o.get("content_csb", "")
+        ]
+        if not impulses:
+            return
+
+        # Process at most 1 per tick — impulses are low-priority background work
+        impulse = impulses[0]
+        content = impulse["content_csb"]
+
+        # Mark integrated immediately so NE and this consumer don't re-process it
+        self.cortex.twm_mark_integrated([impulse["id"]])
+
+        console.print(f"[dim][IMPULSE] {content[:100]}[/]")
+
+        # Route to _process() as a synthetic low-priority input
+        synthetic = f"[NE action impulse]: {content}"
+        response = self._process(synthetic)
+
+        # Log execution to ring
+        self.cortex.write_ring(
+            f"IMPULSE_EXECUTED|obs_id={impulse['id']}|{content[:200]}",
+            category="impulse_executed",
+        )
 
     def _drain_network(self):
         """Process any queued messages from any network source."""
