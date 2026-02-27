@@ -250,14 +250,14 @@ class Igor:
         t.start()
 
         while True:
-            # ── Network messages ──────────────────────────────────────────────
-            self._drain_network()
-
-            # ── Stdin (non-blocking check) ────────────────────────────────────
+            # ── Stdin first — commands like /quit must be responsive ──────────
+            # Checked before any blocking work so a queued /quit is picked up
+            # within one tick (≤0.5s) rather than after a long API call.
             try:
                 user_input = stdin_queue.get_nowait()
             except queue.Empty:
-                # Nothing typed yet — run background work then loop
+                # ── Nothing typed — drain network then do background work ─────
+                self._drain_network()
                 run_background_sources(self.cortex)
                 self._run_ne_background()
                 self._drain_action_impulses()
