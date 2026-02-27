@@ -7,6 +7,7 @@ normalizes everything into one incoming queue for Igor's main loop.
 Current sources:
   - Discord  (drains discord_bot.incoming every 0.5s - fast, websocket-backed)
   - Gmail    (polls IMAP for UNSEEN every GMAIL_POLL_INTERVAL seconds)
+  - Web      (drains web server.incoming — browser chat messages)
 
 Adding a new source:
   1. Write a _poll_<source>() function that puts NetworkMessage objects into `incoming`
@@ -29,6 +30,7 @@ from email.header import decode_header as _imap_decode
 from typing import Any
 
 from . import discord_bot
+from ..web import server as web_server
 
 # ── Unified queue ─────────────────────────────────────────────────────────────
 incoming: queue.Queue = queue.Queue()   # All sources → Igor
@@ -70,6 +72,21 @@ def _poll_discord():
                     "message_id":   msg.message_id,
                 },
                 raw=msg,
+            ))
+        except queue.Empty:
+            break
+
+
+def _poll_web():
+    """Drain web_server.incoming into unified queue. Non-blocking."""
+    while True:
+        try:
+            msg = web_server.incoming.get_nowait()
+            incoming.put(NetworkMessage(
+                source="web",
+                content=msg["content"],
+                author=msg.get("author", "web-user"),
+                reply_info={"client_id": msg.get("client_id")},
             ))
         except queue.Empty:
             break
@@ -142,6 +159,7 @@ def _run_loop():
 
     while True:
         _poll_discord()
+        _poll_web()
 
         now = time.monotonic()
         if now - last_gmail >= GMAIL_POLL_INTERVAL:

@@ -56,13 +56,16 @@ def _log_call(fn_name: str, model: str, response, elapsed: float, error: str | N
 # ── Reasoner class ──────────────────────────────────────────────────────────
 
 class OllamaReasoner(BaseReasoner):
-    """Full reasoning via local Ollama model. Slow but free."""
+    """Full reasoning via local or remote Ollama model. Slow but free."""
 
-    def __init__(self, model: str = DEFAULT_MODEL):
+    def __init__(self, model: str = DEFAULT_MODEL, host: str | None = None):
         self.model = model
+        self.host = host  # None = localhost; e.g. "http://10.0.0.99:11434" for remote
+        self._client = _ollama.Client(host=host) if host else _ollama
 
     def name(self) -> str:
-        return f"Ollama/{self.model}"
+        label = self.host or "local"
+        return f"Ollama/{self.model}@{label}"
 
     def reason(
         self,
@@ -79,7 +82,7 @@ class OllamaReasoner(BaseReasoner):
 
         t0 = time.perf_counter()
         try:
-            response = _ollama.chat(
+            response = self._client.chat(
                 model=self.model,
                 messages=[{"role": "user", "content": user_input + memory_context}],
             )
