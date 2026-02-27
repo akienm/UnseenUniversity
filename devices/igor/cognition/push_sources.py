@@ -1,10 +1,14 @@
 """
 Push Sources — processes that deposit observations into TWM proactively.
 
-Three sources:
+Sources:
+  HeartbeatSource — Igor's anterior cingulate on a clock (change.31).
+                    Replaces TimerSentinel. Checks time, budget, HEARTBEAT
+                    procedural memories, and fires proactive Discord alerts.
   MemorySurfacer  — surfaces relevant LTM memories into TWM as background context
-  TimerSentinel   — pushes temporal heartbeats so Igor stays time-aware
   UserInputSource — wraps incoming messages as TWM observations (explicit call)
+  MachinesWatcher — watches machines.csv for cluster state changes
+  InboxWatcher    — watches inbox directory for new files (5s)
 
 All push via cortex.twm_push(). None of them block or crash the main loop.
 """
@@ -98,45 +102,141 @@ class MemorySurfacer(BasePushSource):
         return pushed
 
 
-# ── TimerSentinel ─────────────────────────────────────────────────────────────
+# ── HeartbeatSource ───────────────────────────────────────────────────────────
 
-class TimerSentinel(BasePushSource):
+class HeartbeatSource(BasePushSource):
     """
-    Pushes temporal heartbeat observations into TWM.
+    Igor's anterior cingulate running on a clock (change.31).
+    Replaces TimerSentinel. Every MIN_INTERVAL_SEC seconds:
 
-    Gives Igor time-awareness: what time it is, how long the session
-    has been running, what day it is.
-    Rate-limited to MIN_INTERVAL_SEC.
+      1. Pushes time/session tick to TWM at salience 0.4.
+      2. Checks budget — if warn/critical, pushes high-salience alert.
+      3. Scans for PROCEDURAL memories with trigger='heartbeat_check'
+         and includes their conditions as context.
+      4. Sends proactive Discord alert for CRITICAL/EXHAUSTED budget
+         (once per level per session to avoid spam).
+      5. TODO change.33: check arbiter pending items.
     """
-    name = "timer_sentinel"
-    MIN_INTERVAL_SEC = 300  # At most every 5 minutes
+    name = "heartbeat"
+    MIN_INTERVAL_SEC = 300  # 5 minutes
 
     def __init__(self):
         self._last_run: Optional[datetime] = None
         self._session_start: datetime = datetime.now()
+        self._discord_alerted: set = set()  # prevent repeat alerts same session
 
     def push(self, cortex) -> list[int]:
         now = datetime.now()
         if (self._last_run is not None
                 and (now - self._last_run).total_seconds() < self.MIN_INTERVAL_SEC):
             return []
-
         self._last_run = now
-        session_mins = int((now - self._session_start).total_seconds() / 60)
 
+        session_mins = int((now - self._session_start).total_seconds() / 60)
+        pushed = []
+
+        # 1. Time/session tick (salience 0.4 — NE should notice, not just log)
         csb = (
-            f"TIME|{now.strftime('%Y-%m-%dT%H:%M')}|"
+            f"HEARTBEAT|{now.strftime('%Y-%m-%dT%H:%M')}|"
             f"day={now.strftime('%A')}|"
             f"session_age={session_mins}min"
         )
         obs_id = cortex.twm_push(
             source=self.name,
             content_csb=csb,
-            salience=0.2,
+            salience=0.4,
             metadata={"session_minutes": session_mins},
             ttl_seconds=600,
         )
+        pushed.append(obs_id)
+
+        # 2. Budget status check
+        pushed.extend(self._check_budget(cortex))
+
+        # 3. HEARTBEAT procedural memories (user-defined conditions)
+        pushed.extend(self._check_heartbeat_memories(cortex, now))
+
+        # TODO change.33: check arbiter pending items and push as high-salience obs
+
+        return pushed
+
+    def _check_budget(self, cortex) -> list[int]:
+        """Push high-salience budget alert if warn/critical. Fire Discord once per level."""
+        try:
+            from ..tools.budget import budget_status
+            s = budget_status()
+        except Exception:
+            return []
+
+        remaining = s["remaining_usd"]
+        if remaining > s["budget_usd"] * 0.20 and not s["critical"]:
+            return []  # Budget fine — stay quiet
+
+        if remaining <= 0:
+            level, salience = "EXHAUSTED", 1.0
+            msg = (f"Budget EXHAUSTED: spent ${s['spent_usd']:.2f} of "
+                   f"${s['budget_usd']:.2f}. Claude calls blocked.")
+        elif s["critical"]:
+            level, salience = "CRITICAL", 0.9
+            msg = (f"Budget CRITICAL: ${remaining:.2f} remaining of "
+                   f"${s['budget_usd']:.2f}.")
+        else:
+            level, salience = "LOW", 0.7
+            msg = (f"Budget LOW: ${remaining:.2f} remaining "
+                   f"({100 - s['pct_used']:.0f}% left).")
+
+        obs_id = cortex.twm_push(
+            source=self.name,
+            content_csb=f"BUDGET_{level}|{msg}",
+            salience=salience,
+            metadata={"level": level, "remaining_usd": remaining},
+            ttl_seconds=600,
+        )
+
+        # Proactive Discord ping for CRITICAL/EXHAUSTED (once per session per level)
+        if level in ("CRITICAL", "EXHAUSTED") and level not in self._discord_alerted:
+            self._alert_discord(f"[Igor heartbeat] {msg}")
+            self._discord_alerted.add(level)
+
         return [obs_id]
+
+    def _check_heartbeat_memories(self, cortex, now: datetime) -> list[int]:
+        """Push any PROCEDURAL memories with trigger='heartbeat_check' as context."""
+        try:
+            from ..memory.models import MemoryType
+            mems = cortex.get_by_type(MemoryType.PROCEDURAL)
+            hb_mems = [m for m in mems if m.metadata.get("trigger") == "heartbeat_check"]
+        except Exception:
+            return []
+
+        if not hb_mems:
+            return []
+
+        lines = [f"HEARTBEAT_CONDITIONS|{now.strftime('%H:%M')}|count={len(hb_mems)}"]
+        for m in hb_mems:
+            lines.append(f"  CHECK|{m.id}|{m.narrative[:150]}")
+        csb = "\n".join(lines)
+
+        obs_id = cortex.twm_push(
+            source=self.name,
+            content_csb=csb,
+            salience=0.5,
+            metadata={"type": "heartbeat_conditions", "count": len(hb_mems)},
+            ttl_seconds=600,
+        )
+        return [obs_id]
+
+    def _alert_discord(self, message: str):
+        """Best-effort proactive Discord alert. Silently ignores all errors."""
+        try:
+            import os
+            channel_id_str = os.getenv("DISCORD_CHANNEL_ID", "").strip()
+            if not channel_id_str:
+                return
+            from ..network import discord_bot
+            discord_bot.send(int(channel_id_str), message)
+        except Exception:
+            pass
 
 
 # ── UserInputSource ───────────────────────────────────────────────────────────
@@ -278,7 +378,7 @@ class InboxWatcher(BasePushSource):
 # ── Module singletons + convenience runner ────────────────────────────────────
 
 memory_surfacer   = MemorySurfacer()
-timer_sentinel    = TimerSentinel()
+heartbeat_source  = HeartbeatSource()
 user_input_source = UserInputSource()
 machines_watcher  = MachinesWatcher()
 inbox_watcher     = InboxWatcher()
@@ -291,7 +391,7 @@ def run_background_sources(cortex) -> int:
     Exceptions are swallowed — a broken source must not crash the loop.
     """
     pushed = 0
-    for src in (timer_sentinel, memory_surfacer, machines_watcher, inbox_watcher):
+    for src in (heartbeat_source, memory_surfacer, machines_watcher, inbox_watcher):
         try:
             ids = src.push(cortex)
             pushed += len(ids)
