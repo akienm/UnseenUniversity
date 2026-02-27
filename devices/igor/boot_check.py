@@ -3,7 +3,7 @@ boot_check.py — Verify required Ollama models are present on all online machin
 
 Required models:
   nomic-embed-text  — universal embedding model; must be identical across cluster
-  gemma3:270B       — standard reasoning model for NE orchestration (target)
+  gemma3:270M       — standard reasoning model for NE orchestration (291MB, ~270M params)
 
 Runs in a daemon thread at startup so Igor is not blocked.
 Logs results to ~/.TheIgors/claudecode/changes.log (CSB format, newest first)
@@ -23,7 +23,7 @@ from urllib.error import URLError
 MACHINES_CSV    = Path.home() / ".TheIgors" / "local" / "machines.csv"
 CHANGES_LOG     = Path.home() / ".TheIgors" / "claudecode" / "changes.log"
 OLLAMA_PORT     = 11434
-REQUIRED_MODELS = ["nomic-embed-text", "gemma3:27b"]
+REQUIRED_MODELS = ["nomic-embed-text", "gemma3:270M"]
 CHECK_TIMEOUT   = 5    # seconds per reachability probe
 PULL_TIMEOUT    = 600  # seconds — model pull can take a while on first run
 
