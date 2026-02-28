@@ -40,17 +40,38 @@ NE_MIN_INTERVAL_SEC   = 30             # Minimum seconds between NE runs
 NE_MAX_INTERVAL_SEC   = 300            # Maximum seconds between NE runs (5 min)
 PROMOTE_THRESHOLD     = 0.7            # importance >= this → goes to LTM
 
-# change.20a.2: self-diagnostic content filter
-# Any memory candidate or summary containing these terms is operational noise —
-# route to ring(ne_diagnostic) only, never promote to LTM where MemorySurfacer
-# would re-surface it and restart the detection loop.
-_SELF_DIAG_KEYWORDS = ("loop", "stall", "recursive", "detecting own", "consolidation")
+# WO7: NE loop prevention — comprehensive guards
 
-# change.20a.3: hard prompt token cap
-# Rough estimate: 4 chars per token. Cap observation block at 1800 tokens of
-# budget (leaving ~200 tokens for static preamble + last_narrative overhead).
-# Oldest observations are dropped first (FIFO).
-NE_MAX_OBS_CHARS = 7200  # 1800 tokens × 4 chars/token
+# source_filter: sources whose TWM entries NE must never re-process
+# (NE's own output chain — re-reading would cause recursive self-detection)
+_NE_EXCLUDED_SOURCES = frozenset({
+    "narrative_engine",   # direct NE TWM pushes (action impulses, promoted echoes)
+    "ne_loop_guard",      # reserved for any future loop-guard writes
+})
+
+# content_filter: content prefixes that identify NE's own output echoing back
+# through TWM (even if source field was overwritten or re-surfaced by other agents)
+_NE_CONTENT_PREFIXES = (
+    "ACTION_IMPULSE|",
+    "IMPULSE_QUEUED|",
+    "IMPULSE_EXECUTED|",
+    "NE_DIAG|",
+    "[NE#",
+    "NE_OBS_CAPPED|",
+)
+
+# diagnostic_filter: keywords that mark self-referential/operational noise
+# (change.20a.2, expanded in WO7)
+_SELF_DIAG_KEYWORDS = (
+    "loop", "stall", "recursive", "detecting own", "consolidation",
+    "narrative engine", "ne run", "ne_run",
+    "action impulse", "action_impulse",
+    "self-detect", "self_detect",
+)
+
+# token_cap 2000 (WO7): cap observation block at 2000 tokens
+# Rough estimate: 4 chars per token. Oldest observations are dropped first (FIFO).
+NE_MAX_OBS_CHARS = 8000  # 2000 tokens × 4 chars/token
 
 
 class NarrativeEngine:
@@ -93,12 +114,9 @@ class NarrativeEngine:
         # Force run only if truly max interval exceeded AND we have any meaningful observations
         # (not just timer heartbeats or background surfacing)
         if self._last_run is None or (now - self._last_run).total_seconds() >= NE_MAX_INTERVAL_SEC:
-            # Check if observations have meaningful sources (user_input, not just timer/surfacer)
-            # Exclude NE-originated observations to prevent recursive self-detection loop
-            obs_list = [
-                o for o in self.cortex.twm_read(limit=50, include_integrated=True)
-                if o.get("source") != "narrative_engine"
-            ]
+            # WO7: use _filter_obs() — excludes NE-originated sources AND content prefixes
+            raw = self.cortex.twm_read(limit=50, include_integrated=True)
+            obs_list = self._filter_obs(raw)
             has_meaningful = any(
                 o["source"] in ("user_input", "discord", "gmail")
                 or o["salience"] >= 0.6
@@ -122,13 +140,10 @@ class NarrativeEngine:
         if not should:
             return None
 
-        # Filter out NE-originated observations — NE must not process its own output
-        # as new input (source="narrative_engine" pushes are action_impulses and
-        # promoted-LTM echoes; reading them back causes recursive self-detection)
-        obs_list = [
-            o for o in self.cortex.twm_read(limit=50, include_integrated=True)
-            if o.get("source") != "narrative_engine"
-        ]
+        # WO7: filter out NE's own output on all axes (source + content prefix)
+        obs_list = self._filter_obs(
+            self.cortex.twm_read(limit=50, include_integrated=True)
+        )
         if not obs_list:
             self._last_run = datetime.now()
             return None
@@ -337,8 +352,21 @@ class NarrativeEngine:
 
     # ── Helpers ────────────────────────────────────────────────────────────────
 
+    def _filter_obs(self, obs_list: list[dict]) -> list[dict]:
+        """
+        WO7: dual-axis NE loop guard.
+        source_filter: drop entries whose source is in _NE_EXCLUDED_SOURCES.
+        content_filter: drop entries whose content starts with an _NE_CONTENT_PREFIXES marker.
+        Both axes are required — source field can be absent or overwritten by re-surfacing.
+        """
+        return [
+            o for o in obs_list
+            if o.get("source") not in _NE_EXCLUDED_SOURCES
+            and not any(o.get("content_csb", "").startswith(p) for p in _NE_CONTENT_PREFIXES)
+        ]
+
     def _is_self_diagnostic(self, text: str) -> bool:
-        """Return True if text contains NE operational/self-diagnostic keywords (change.20a.2)."""
+        """Return True if text contains NE operational/self-diagnostic keywords (WO7, change.20a.2)."""
         low = text.lower()
         return any(kw in low for kw in _SELF_DIAG_KEYWORDS)
 
@@ -381,6 +409,10 @@ class NarrativeEngine:
 
     def _build_prompt(self, obs_text: str, last_narrative: str) -> str:
         return f"""You are Igor's Narrative Engine. Your job: make sense of what's happening.
+
+SELF-REF GUARD (WO7): Focus ONLY on external events, user interactions, and Igor's goals.
+Do NOT generate content describing your own NE process, loops, recursion, or self-observation.
+Do NOT produce action_impulses about the NE itself, its loop detection, or its own operation.
 
 LAST NARRATIVE:
 {last_narrative}
