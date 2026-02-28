@@ -43,9 +43,7 @@ DEBUG_BYPASS_MODEL = "claude-haiku-4-5-20251001"
 # Tools that indicate Igor is doing self-inspection/editing — switch to Haiku automatically
 SELF_EDIT_TRIGGER_TOOLS = {"read_source_file", "list_source_files"}
 
-# How many ring entries to surface as session context
-# Keeping this tight: only truly recent, high-signal entries
-RING_CONTEXT_LIMIT = 5
+# _build_session_context and _build_memory_context live in BaseReasoner (WO8)
 
 
 class AnthropicReasoner(BaseReasoner):
@@ -295,62 +293,6 @@ class AnthropicReasoner(BaseReasoner):
                 vs = vs[:57] + "..."
             parts.append(f"{k}={vs!r}")
         return ", ".join(parts)
-
-    def _build_session_context(self, cortex) -> str:
-        """
-        Read recent ring memory entries and format them as a session context block.
-        Filters to high-signal categories only (skips tool_trace, judgment).
-        Caps at RING_CONTEXT_LIMIT (5) entries to keep token count lean.
-        Returns empty string if cortex is None or ring is empty.
-        """
-        if cortex is None:
-            return ""
-
-        # Read recent entries, filtering out low-signal noise
-        all_entries = cortex.read_ring_memory(limit=50)
-        
-        # Keep only high-signal categories: exclude internal bookkeeping and NE noise
-        filtered = [
-            e for e in all_entries
-            if e["category"] not in ("tool_trace", "judgment", "action_impulse", "ne_diagnostic")
-        ]
-        
-        # Take only the most recent N entries (already sorted newest-last)
-        entries = filtered[-RING_CONTEXT_LIMIT:]
-
-        if not entries:
-            return ""
-
-        lines = ["\n\nRecent session context (short-term memory, newest last):"]
-        for e in entries:
-            # Trim timestamp to HH:MM for readability
-            ts = e["timestamp"][11:16] if len(e["timestamp"]) >= 16 else e["timestamp"]
-            lines.append(f"[{ts}] {e['content']}")
-        return "\n".join(lines)
-
-    def _build_memory_context(self, memories: list[Memory]) -> str:
-        if not memories:
-            return ""
-        
-        # Filter: only send memories with relevance >= 0.5 (strong signal)
-        # Limit to top 3 to keep context tight
-        high_relevance = [
-            m for m in memories
-            if hasattr(m, 'relevance_score') and m.relevance_score >= 0.5
-        ][:3]
-        
-        if not high_relevance:
-            # Fallback: take top 2 by relevance even if below threshold
-            high_relevance = sorted(
-                memories[:5],
-                key=lambda m: getattr(m, 'relevance_score', 0.0),
-                reverse=True
-            )[:2]
-        
-        lines = ["\n\nRelevant memories:"]
-        for m in high_relevance:
-            lines.append(f"- [{m.memory_type.value}] {m.narrative}")
-        return "\n".join(lines)
 
     def _extract_text(self, response) -> str:
         for block in response.content:

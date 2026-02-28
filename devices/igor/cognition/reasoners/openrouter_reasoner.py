@@ -30,9 +30,7 @@ DEFAULT_MODEL      = "anthropic/claude-sonnet-4-6"
 OPENROUTER_BASE    = "https://openrouter.ai/api/v1"
 OPENROUTER_REFERER = "https://github.com/akienm/TheIgors"
 
-# Ring context: same excluded categories as AnthropicReasoner (URGENT.1)
-_RING_EXCLUDE = ("tool_trace", "judgment", "action_impulse", "ne_diagnostic")
-RING_CONTEXT_LIMIT = 5
+# _build_session_context and _build_memory_context live in BaseReasoner (WO8)
 
 
 class OpenRouterReasoner(BaseReasoner):
@@ -187,37 +185,6 @@ class OpenRouterReasoner(BaseReasoner):
         except urllib.error.HTTPError as e:
             err_text = e.read().decode()[:300]
             raise RuntimeError(f"OpenRouter API error {e.code}: {err_text}")
-
-    def _build_session_context(self, cortex) -> str:
-        if cortex is None:
-            return ""
-        entries = cortex.read_ring_memory(limit=50)
-        filtered = [e for e in entries if e["category"] not in _RING_EXCLUDE]
-        entries = filtered[-RING_CONTEXT_LIMIT:]
-        if not entries:
-            return ""
-        lines = ["\n\nRecent session context (newest last):"]
-        for e in entries:
-            ts = e["timestamp"][11:16] if len(e["timestamp"]) >= 16 else e["timestamp"]
-            lines.append(f"[{ts}] {e['content']}")
-        return "\n".join(lines)
-
-    def _build_memory_context(self, memories: list[Memory]) -> str:
-        if not memories:
-            return ""
-        high_rel = [m for m in memories if getattr(m, "relevance_score", 0.0) >= 0.5][:3]
-        if not high_rel:
-            high_rel = sorted(
-                memories[:5],
-                key=lambda m: getattr(m, "relevance_score", 0.0),
-                reverse=True,
-            )[:2]
-        if not high_rel:
-            return ""
-        lines = ["\n\nRelevant memories:"]
-        for m in high_rel:
-            lines.append(f"- [{m.memory_type.value}] {m.narrative}")
-        return "\n".join(lines)
 
     def _estimate_cost(self, usage: dict) -> float:
         """Best-effort cost estimate based on model name."""
