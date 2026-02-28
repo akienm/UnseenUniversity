@@ -294,10 +294,10 @@ class AnthropicReasoner(BaseReasoner):
         # Read recent entries, filtering out low-signal noise
         all_entries = cortex.read_ring_memory(limit=50)
         
-        # Keep only high-signal categories: exclude internal bookkeeping
+        # Keep only high-signal categories: exclude internal bookkeeping and NE noise
         filtered = [
             e for e in all_entries
-            if e["category"] not in ("tool_trace", "judgment")
+            if e["category"] not in ("tool_trace", "judgment", "action_impulse", "ne_diagnostic")
         ]
         
         # Take only the most recent N entries (already sorted newest-last)

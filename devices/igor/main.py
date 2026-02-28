@@ -28,6 +28,8 @@ from .cognition.reasoners.ollama_reasoner import preparse, score_memories, Ollam
 from .cognition.local_pool import LocalOllamaPool
 from .cognition.narrative_engine import NarrativeEngine
 from .cognition.push_sources import run_background_sources, user_input_source
+from .cognition.multi_upstream import query_multiple, compare_responses
+from .cognition.relay import RelaySession, send_to_claude_code
 from .dashboard import terminal as dashboard
 from .network import discord_bot
 from .network import listener as net_listener
@@ -81,11 +83,28 @@ class Igor:
         self.last_roi = None
         self.session_cost = 0.0
         self.use_ollama = os.getenv("IGOR_OLLAMA", "true").lower() in ("true", "1", "yes")
-        # local_mode: default True — use Ollama pool for all general reasoning
-        # Set IGOR_LOCAL=false in .env to default to cloud mode
-        self.local_mode = os.getenv("IGOR_LOCAL", "true").lower() in ("true", "1", "yes")
+        # local_mode: default False — use cloud (Anthropic) for general reasoning.
+        # Set IGOR_LOCAL=true in .env to default to local Ollama pool mode.
+        self.local_mode = os.getenv("IGOR_LOCAL", "false").lower() in ("true", "1", "yes")
         self._ne_thread: threading.Thread | None = None
         self._context_flush_done: bool = False  # change.32: set after pre-compaction flush
+
+        # change.39: OpenRouter as secondary reasoner (Anthropic→OpenRouter→Local failover)
+        self.openrouter_reasoner = None
+        if os.getenv("OPENROUTER_API_KEY", "").strip():
+            try:
+                from .cognition.reasoners.openrouter_reasoner import OpenRouterReasoner
+                self.openrouter_reasoner = OpenRouterReasoner()
+                console.print(f"[dim]OpenRouter ready: {self.openrouter_reasoner.model}[/]")
+            except Exception as _e:
+                console.print(f"[yellow]OpenRouter init failed: {_e}[/]")
+
+        # change.40: extra reasoners for /upstream multi-query
+        self._extra_reasoners: dict = {}   # name → BaseReasoner
+        self._upstream_tag_on: bool = True  # show [model] prefix in upstream responses
+
+        # change.41: relay state
+        self._relay_session: RelaySession | None = None
 
         # Start Discord bot, unified network listener, web UI server, and model boot-check
         discord_bot.start()
@@ -400,12 +419,51 @@ class Igor:
 
             self._process(user_input)
 
-    def _process(self, user_input: str) -> str:
+    def _reason_with_failover(
+        self,
+        user_input: str,
+        relevant: list,
+        core: list,
+    ) -> tuple[str, float, bool]:
+        """
+        Anthropic → OpenRouter → Local failover chain (change.39).
+        Returns (response_text, cost_usd, used_cloud_api).
+        """
+        # ── 1. Anthropic ──────────────────────────────────────────────────────
+        try:
+            text, cost = self.reasoner.reason(
+                user_input, relevant, core, self.instance_id, cortex=self.cortex
+            )
+            self.upstream_calls += 1
+            console.print(f"[dim](anthropic | session_cost: ${self.session_cost + cost:.4f})[/]")
+            return text, cost, True
+        except Exception as e:
+            console.print(f"[yellow]Anthropic failed ({e}), trying OpenRouter...[/]")
+
+        # ── 2. OpenRouter (if configured) ─────────────────────────────────────
+        if self.openrouter_reasoner is not None:
+            try:
+                text, cost = self.openrouter_reasoner.reason(
+                    user_input, relevant, core, self.instance_id, cortex=self.cortex
+                )
+                self.upstream_calls += 1
+                console.print(f"[dim](openrouter | session_cost: ${self.session_cost + cost:.4f})[/]")
+                return text, cost, True
+            except Exception as e:
+                console.print(f"[yellow]OpenRouter failed ({e}), falling back to local...[/]")
+
+        # ── 3. Local Ollama pool ───────────────────────────────────────────────
+        text, cost = self.local_pool.reason(user_input, relevant, core, self.instance_id)
+        self.upstream_calls += 1
+        console.print(f"[dim](local-fallback | session_cost: ${self.session_cost + cost:.4f})[/]")
+        return text, cost, False
+
+    def _process(self, user_input: str, is_impulse: bool = False) -> str:
         self.interaction_count += 1
         new_memories = 0
 
-        # [TWM] Push incoming message as observation (non-command messages only)
-        if not user_input.startswith("/"):
+        # [TWM] Push incoming message as observation (non-command, non-impulse messages only)
+        if not is_impulse and not user_input.startswith("/"):
             user_input_source.push_message(
                 self.cortex, user_input, channel="repl", author="user"
             )
@@ -439,6 +497,12 @@ class Igor:
                     return ""
         except Exception:
             pass  # Intercept is advisory — never block normal processing
+
+        # [RELAY] change.41 — pass-through mode: forward directly to relay model
+        if self._relay_session is not None and not is_impulse:
+            response = self._relay_session.send(user_input)
+            console.print(f"\n[bold magenta][relay: {self._relay_session.model_name}][/] {response}\n")
+            return response
 
         # [SEARCH] Candidate memories via text search
         candidates = self.cortex.search(" ".join(parsed.keywords))
@@ -487,29 +551,13 @@ class Igor:
                     used_api = False
                     console.print(f"[dim](local | session_cost: ${self.session_cost:.4f})[/]")
                 except Exception as e:
-                    # Local pool failed — fall back to cloud
-                    console.print(f"[yellow]Local pool failed ({e}), falling back to cloud...[/]")
-                    try:
-                        response_text, cost = pfc.reason(user_input, relevant, core, self.instance_id, self.reasoner, cortex=self.cortex)
-                        self.session_cost += cost
-                        self.upstream_calls += 1
-                        used_api = True
-                        console.print(f"[dim](cloud fallback: ${cost:.4f} | session: ${self.session_cost:.4f})[/]")
-                    except Exception as e2:
-                        response_text = f"[Reasoning failed: {e2}]"
-                        console.print(f"[red]API error: {e2}[/]")
+                    # Local pool failed — try cloud failover chain
+                    console.print(f"[yellow]Local pool failed ({e}), trying cloud...[/]")
+                    response_text, cost, used_api = self._reason_with_failover(user_input, relevant, core)
             else:
-                # Cloud mode: use Anthropic API
+                # Cloud mode: Anthropic → OpenRouter → Local (change.39 failover chain)
                 dashboard.print_reasoning(used_api=True)
-                try:
-                    response_text, cost = pfc.reason(user_input, relevant, core, self.instance_id, self.reasoner, cortex=self.cortex)
-                    self.session_cost += cost
-                    self.upstream_calls += 1
-                    used_api = True
-                    console.print(f"[dim](cost: ${cost:.4f} | session: ${self.session_cost:.4f})[/]")
-                except Exception as e:
-                    response_text = f"[Upstream reasoning failed: {e}]"
-                    console.print(f"[red]API error: {e}[/]")
+                response_text, cost, used_api = self._reason_with_failover(user_input, relevant, core)
 
         # [MOTOR CORTEX] Output response
         console.print(f"\n[bold blue]Igor:[/] {response_text}\n")
@@ -520,22 +568,23 @@ class Igor:
         # [ANTERIOR CINGULATE] Measure friction
         friction = pfc.measure_friction(used_api=used_api)
 
-        # [HIPPOCAMPUS] Store episodic memory
-        ep = Memory(
-            narrative=f"User: {user_input[:80]} → Igor responded about {parsed.intent}",
-            memory_type=MemoryType.EPISODIC,
-            parent_id="CP3",  # "There's always a why"
-            valence=valence,
-            metadata={
-                "user_input": user_input,
-                "intent": parsed.intent,
-                "friction": friction,
-                "used_api": used_api,
-            }
-        )
-        self.cortex.store(ep)
-        self.cortex.add_child("CP3", ep.id)
-        new_memories += 1
+        # [HIPPOCAMPUS] Store episodic memory — skip for NE impulses (TWM-only until consumed)
+        if not is_impulse:
+            ep = Memory(
+                narrative=f"User: {user_input[:80]} → Igor responded about {parsed.intent}",
+                memory_type=MemoryType.EPISODIC,
+                parent_id="CP3",  # "There's always a why"
+                valence=valence,
+                metadata={
+                    "user_input": user_input,
+                    "intent": parsed.intent,
+                    "friction": friction,
+                    "used_api": used_api,
+                }
+            )
+            self.cortex.store(ep)
+            self.cortex.add_child("CP3", ep.id)
+            new_memories += 1
 
         # [RING] Write interaction summary to short-term memory
         self.cortex.write_ring(
@@ -640,9 +689,9 @@ class Igor:
             )
             return
 
-        # Route to _process() as a synthetic low-priority input
+        # Route to _process() as a synthetic low-priority input (impulse — no episodic store)
         synthetic = f"[NE action impulse]: {content}"
-        response = self._process(synthetic)
+        response = self._process(synthetic, is_impulse=True)
 
         # Log execution to ring
         self.cortex.write_ring(
@@ -784,6 +833,9 @@ class Igor:
             "local": self._cmd_local,
             "compress": self._cmd_compress,
             "arbiter": self._cmd_arbiter,
+            "orders": self._cmd_orders,       # change.38
+            "upstream": self._cmd_upstream,   # change.40
+            "relay": self._cmd_relay,         # change.41
         }
         fn = commands.get(command, self._cmd_unknown)
         fn(raw)
@@ -808,6 +860,25 @@ class Igor:
   /compress       - Summarize context to LTM (Ollama), then restart fresh
   /restart        - Relaunch Igor (requires igor bash alias)
   /quit           - Exit
+
+[bold]Work Orders (change.38):[/]
+  /orders           - List last 10 open work orders
+  /orders all       - Last 10 any status
+  /orders N         - Detail on work order N
+
+[bold]Multi-Upstream (change.40):[/]
+  /upstream list            - Show available reasoners + status
+  /upstream add MODEL       - Add OpenRouter model (e.g. openrouter/mistral-7b)
+  /upstream remove NAME     - Remove a previously added reasoner
+  /upstream query all MSG   - Send MSG to all reasoners, compare responses
+  /upstream query NAME MSG  - Send MSG to specific reasoner
+  /upstream tag on|off      - Show/hide [model] prefix in responses
+
+[bold]Relay (change.41):[/]
+  /relay start MODEL  - Enter relay mode with specified model
+  /relay end          - Exit relay, store transcript
+  /relay extract      - Pull last code/work-order block from relay
+  /relay send claudecode - Send extracted block to Claude Code CLI
 
 [bold]Web UI:[/] http://localhost:{web_port}   (set IGOR_WEB_PORT to change)
 """)
@@ -1015,6 +1086,200 @@ class Igor:
             console.print(f"  Resolved:  {item.resolution_ts[:16]}  ({item.resolution_note or '-'})")
 
     # ── End arbiter commands ───────────────────────────────────────────────────
+
+    # ── change.38: GitHub work orders ─────────────────────────────────────────
+
+    def _cmd_orders(self, raw):
+        """List or detail GitHub work orders. /orders [N]"""
+        from .tools.github import list_work_orders, get_work_order
+        parts = raw.strip().split(None, 1)
+        arg = parts[1].strip() if len(parts) > 1 else ""
+        if arg.isdigit():
+            result = get_work_order(int(arg))
+        else:
+            result = list_work_orders()
+        console.print(f"\n{result}\n")
+
+    # ── change.40: multi-upstream query ───────────────────────────────────────
+
+    def _cmd_upstream(self, raw):
+        """Multi-upstream reasoner query. Subcommands: list|add|remove|query|tag"""
+        parts = raw.strip().split(None, 2)
+        sub = parts[1].lower() if len(parts) > 1 else "list"
+        arg = parts[2].strip() if len(parts) > 2 else ""
+        if sub == "list":
+            self._upstream_list()
+        elif sub == "add":
+            self._upstream_add(arg)
+        elif sub == "remove":
+            self._upstream_remove(arg)
+        elif sub == "query":
+            self._upstream_query(arg)
+        elif sub == "tag":
+            if arg in ("on", "off"):
+                self._upstream_tag_on = (arg == "on")
+                console.print(f"[dim]Model tags: {'on' if self._upstream_tag_on else 'off'}[/]")
+            else:
+                console.print("[yellow]Usage: /upstream tag on|off[/]")
+        else:
+            console.print("[yellow]Usage: /upstream list|add|remove|query|tag[/]")
+
+    def _upstream_list(self):
+        reasoners = self._all_upstream_reasoners()
+        if not reasoners:
+            console.print("\n[dim]No upstream reasoners configured.[/]")
+            return
+        console.print(f"\n[bold]Upstream reasoners ({len(reasoners)}):[/]")
+        for name, r in reasoners.items():
+            console.print(f"  [cyan]{name}[/]  {r.name()}")
+
+    def _upstream_add(self, model: str):
+        if not model:
+            console.print("[yellow]Usage: /upstream add MODEL  (e.g. openai/gpt-4o-mini)[/]")
+            return
+        if not os.getenv("OPENROUTER_API_KEY", "").strip():
+            console.print("[red]OPENROUTER_API_KEY not set — cannot add OpenRouter models.[/]")
+            return
+        try:
+            from .cognition.reasoners.openrouter_reasoner import OpenRouterReasoner
+            r = OpenRouterReasoner(model=model, show_model_tag=self._upstream_tag_on)
+            name = model.split("/")[-1]
+            self._extra_reasoners[name] = r
+            console.print(f"[green]Added:[/] {name} → {r.name()}")
+        except Exception as e:
+            console.print(f"[red]Failed to add {model}: {e}[/]")
+
+    def _upstream_remove(self, name: str):
+        if name in self._extra_reasoners:
+            del self._extra_reasoners[name]
+            console.print(f"[dim]Removed: {name}[/]")
+        else:
+            console.print(f"[yellow]No reasoner named '{name}'. Use /upstream list to see names.[/]")
+
+    def _upstream_query(self, arg: str):
+        parts = arg.split(None, 1)
+        if len(parts) < 2:
+            console.print("[yellow]Usage: /upstream query all|NAME MESSAGE[/]")
+            return
+        target, msg = parts[0].lower(), parts[1]
+        mems = self.cortex.search(msg, limit=5)
+        core = get_core_patterns(self.cortex)
+        if target == "all":
+            reasoners = self._all_upstream_reasoners()
+            if not reasoners:
+                console.print("[yellow]No upstream reasoners configured.[/]")
+                return
+            results = query_multiple(msg, mems, core, self.instance_id, reasoners, self.cortex)
+            console.print("\n" + compare_responses(results) + "\n")
+            self.session_cost += sum(c for _, _, c in results)
+        else:
+            reasoners = self._all_upstream_reasoners()
+            if target not in reasoners:
+                console.print(f"[yellow]No reasoner '{target}'. Use /upstream list to see names.[/]")
+                return
+            r = reasoners[target]
+            text, cost = r.reason(msg, mems, core, self.instance_id, cortex=self.cortex)
+            console.print(f"\n[bold magenta][{r.name()}][/] {text}\n")
+            self.session_cost += cost
+
+    def _all_upstream_reasoners(self) -> dict:
+        result = {}
+        if self.openrouter_reasoner:
+            result["openrouter"] = self.openrouter_reasoner
+        result.update(self._extra_reasoners)
+        return result
+
+    # ── change.41: relay ───────────────────────────────────────────────────────
+
+    def _cmd_relay(self, raw):
+        """Pass-through relay to upstream model. Subcommands: start|end|extract|send"""
+        parts = raw.strip().split(None, 2)
+        sub = parts[1].lower() if len(parts) > 1 else ""
+        arg = parts[2].strip() if len(parts) > 2 else ""
+        if sub == "start":
+            self._relay_start(arg)
+        elif sub == "end":
+            self._relay_end()
+        elif sub == "extract":
+            self._relay_extract()
+        elif sub == "send" and arg.lower() == "claudecode":
+            self._relay_send_claudecode()
+        else:
+            console.print("[yellow]Usage: /relay start MODEL | end | extract | send claudecode[/]")
+
+    def _relay_start(self, model: str):
+        if self._relay_session is not None:
+            console.print(f"[yellow]Already in relay with {self._relay_session.model_name}. Use /relay end first.[/]")
+            return
+        if not model:
+            console.print("[yellow]Usage: /relay start MODEL[/]")
+            return
+        reasoners = self._all_upstream_reasoners()
+        short = model.split("/")[-1]
+        if short in reasoners:
+            r = reasoners[short]
+        elif os.getenv("OPENROUTER_API_KEY", "").strip():
+            try:
+                from .cognition.reasoners.openrouter_reasoner import OpenRouterReasoner
+                r = OpenRouterReasoner(model=model, show_model_tag=False)
+            except Exception as e:
+                console.print(f"[red]Failed to create relay reasoner: {e}[/]")
+                return
+        else:
+            console.print(f"[red]No reasoner for '{model}'. Set OPENROUTER_API_KEY or use /upstream add first.[/]")
+            return
+        self._relay_session = RelaySession(model_name=model, reasoner=r)
+        console.print(f"\n[bold magenta]── Relay started: {model} ──[/]")
+        console.print("[dim]Your messages go directly to the model. /relay end to stop.[/]\n")
+
+    def _relay_end(self):
+        if self._relay_session is None:
+            console.print("[yellow]No active relay session.[/]")
+            return
+        session = self._relay_session
+        self._relay_session = None
+        console.print(f"\n[bold magenta]── Relay ended ──[/]")
+        console.print(session.summary())
+        transcript = session.transcript_csb()
+        ep = Memory(
+            narrative=f"Relay session with {session.model_name}: {transcript[:300]}",
+            memory_type=MemoryType.EPISODIC,
+            parent_id="CP4",
+            valence=0.3,
+            metadata={"relay_model": session.model_name, "transcript": transcript[:1000]},
+        )
+        self.cortex.store(ep)
+        self.cortex.add_child("CP4", ep.id)
+        self.cortex.write_ring(
+            f"RELAY_END|model={session.model_name}|turns={sum(1 for m in session.messages if m['role']=='user')}",
+            category="relay",
+        )
+        console.print(f"[dim]Transcript stored as {ep.id}[/]")
+
+    def _relay_extract(self):
+        if self._relay_session is None:
+            console.print("[yellow]No active relay session. Start one with /relay start MODEL.[/]")
+            return
+        block = self._relay_session.extract_last_block()
+        if block is None:
+            console.print("[yellow]No code or JSON block found in relay transcript.[/]")
+            return
+        console.print(f"\n[bold]Extracted block:[/]\n{block}\n")
+        console.print("[dim]/relay send claudecode — to forward this to Claude Code CLI[/]")
+
+    def _relay_send_claudecode(self):
+        if self._relay_session is None:
+            console.print("[yellow]No active relay session.[/]")
+            return
+        block = self._relay_session.last_extract
+        if block is None:
+            block = self._relay_session.extract_last_block()
+        if block is None:
+            console.print("[yellow]Nothing to send — use /relay extract first.[/]")
+            return
+        console.print("[dim]Sending to Claude Code CLI...[/]")
+        output = send_to_claude_code(block)
+        console.print(f"\n[bold]Claude Code response:[/]\n{output}\n")
 
     def _cmd_local(self, raw):
         parts = raw.strip().split(None, 1)
