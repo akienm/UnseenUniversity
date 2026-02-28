@@ -24,7 +24,7 @@ from ..system_prompt import build_system_prompt
 
 console = Console()
 
-DEFAULT_MODEL      = "openai/gpt-4o-mini"
+DEFAULT_MODEL      = "anthropic/claude-sonnet-4-6"
 OPENROUTER_BASE    = "https://openrouter.ai/api/v1"
 OPENROUTER_REFERER = "https://github.com/akienm/TheIgors"
 
@@ -202,12 +202,17 @@ class OpenRouterReasoner(BaseReasoner):
         inp  = usage.get("prompt_tokens", 0)
         out  = usage.get("completion_tokens", 0)
         m = self.model.lower()
+        if "claude-sonnet-4" in m or "claude-sonnet-4-6" in m:
+            # OpenRouter adds ~5% margin over Anthropic direct
+            return inp * 0.00000315 + out * 0.00001575
+        if "claude-haiku" in m or "haiku" in m:
+            return inp * 0.00000084 + out * 0.0000042
+        if "claude-opus" in m:
+            return inp * 0.0000159 + out * 0.0000795
         if "gpt-4o-mini" in m:
             return inp * 0.00000015 + out * 0.0000006
         if "gpt-4o" in m:
             return inp * 0.0000025 + out * 0.00001
-        if "claude-3-haiku" in m:
-            return inp * 0.00000025 + out * 0.00000125
         if "mistral" in m or "mixtral" in m:
             return inp * 0.0000002 + out * 0.0000006
         # Generic estimate for unknown models
