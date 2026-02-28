@@ -36,7 +36,7 @@ RING_CONTEXT_LIMIT = 5
 class OpenRouterReasoner(BaseReasoner):
     """Reason via any model accessible through OpenRouter's OpenAI-compatible API."""
 
-    def __init__(self, model: str | None = None, show_model_tag: bool = True):
+    def __init__(self, model: str | None = None, show_model_tag: bool = False):
         raw = model or os.getenv("OPENROUTER_DEFAULT_MODEL", DEFAULT_MODEL)
         self.model = raw
         self.show_model_tag = show_model_tag
