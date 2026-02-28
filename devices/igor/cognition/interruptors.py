@@ -88,7 +88,9 @@ class BudgetInterruptor(BaseInterruptor):
             self._write_alert(cortex, msg)
             return msg
 
-        return None  # All good, stay quiet
+        # Budget is fine — write a CLEARED entry so old alert is superseded in ring
+        self._write_alert(cortex, f"✅ CLEARED: Budget OK — ${remaining:.2f} of ${budget:.2f} remaining.")
+        return None  # Don't show in console — but ring entry supersedes old alert
 
 
 class ContextInterruptor(BaseInterruptor):
