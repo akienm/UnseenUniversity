@@ -180,6 +180,17 @@ class Cortex:
 
         all_memories = [self._to_memory(r) for r in rows]
 
+        # Filter out NE diagnostic memories — operational noise from consolidation/stall loops
+        # that may have entered LTM before the self-diagnostic filter was in place (URGENT.3)
+        _NE_DIAG = ("consolidation", "stall", "loop detected", "recursive", "ne_diag")
+        all_memories = [
+            m for m in all_memories
+            if not (
+                m.metadata.get("source") == "narrative_engine"
+                and any(kw in m.narrative.lower() for kw in _NE_DIAG)
+            )
+        ]
+
         # Phase 1: text scoring
         text_scored = []
         for m in all_memories:

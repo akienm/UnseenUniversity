@@ -43,7 +43,7 @@ PROMOTE_THRESHOLD     = 0.7            # importance >= this → goes to LTM
 # Any memory candidate or summary containing these terms is operational noise —
 # route to ring(ne_diagnostic) only, never promote to LTM where MemorySurfacer
 # would re-surface it and restart the detection loop.
-_SELF_DIAG_KEYWORDS = ("loop", "stall", "recursive", "detecting own")
+_SELF_DIAG_KEYWORDS = ("loop", "stall", "recursive", "detecting own", "consolidation")
 
 # change.20a.3: hard prompt token cap
 # Rough estimate: 4 chars per token. Cap observation block at 1800 tokens of
