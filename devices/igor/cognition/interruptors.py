@@ -45,52 +45,53 @@ class BaseInterruptor(ABC):
 
 class BudgetInterruptor(BaseInterruptor):
     """
-    Monitors Claude API spend. Fires when:
-      - Budget is critical (< $2 remaining): loud warning.
-      - Budget is low (< 20% remaining): softer heads-up.
-      - Budget is exhausted: blocker.
+    Monitors OpenRouter spend. Fires when:
+      - Balance is critical (< $2 remaining): loud warning.
+      - Balance is low (< 20% remaining): softer heads-up.
+      - Balance is exhausted: blocker.
     """
 
-    name = "claude_budget"
+    name = "openrouter_budget"
 
     def check(self, cortex=None) -> str | None:
         try:
             from ..tools.budget import budget_status
             s = budget_status()
-        except Exception as e:
+        except Exception:
             return None  # Budget tracker not available — don't crash
 
         remaining = s["remaining_usd"]
-        budget    = s["budget_usd"]
-        spent     = s["spent_usd"]
+        total     = s.get("purchased_usd") or s.get("spending_cap", 0)
+        spent     = s.get("used_usd") or s.get("local_spent", 0)
+        src       = s.get("source", "local_tracking")
 
         if remaining <= 0:
             msg = (
-                f"⛔ BUDGET EXHAUSTED! Spent ${spent:.2f} of ${budget:.2f}. "
-                "Claude calls will be blocked. Akien needs to top up!"
+                f"⛔ BALANCE EXHAUSTED ({src})! Used ${spent:.2f} of ${total:.2f}. "
+                "OpenRouter calls blocked. Let Akien know!"
             )
             self._write_alert(cortex, msg)
             return msg
 
         if s["critical"]:
             msg = (
-                f"⚠️  BUDGET CRITICAL: Only ${remaining:.2f} left of ${budget:.2f}. "
-                "Keep Claude calls minimal until Akien can add more funds!"
+                f"⚠️  BALANCE CRITICAL ({src}): Only ${remaining:.2f} left of ${total:.2f}. "
+                "Keep upstream calls minimal!"
             )
             self._write_alert(cortex, msg)
             return msg
 
         if s["warn"]:
             msg = (
-                f"⚡ Budget low: ${remaining:.2f} remaining "
-                f"({100 - s['pct_used']:.0f}% of ${budget:.2f} budget left)."
+                f"⚡ Balance low ({src}): ${remaining:.2f} remaining "
+                f"({100 - s['pct_used']:.0f}% of ${total:.2f} left)."
             )
             self._write_alert(cortex, msg)
             return msg
 
-        # Budget is fine — write a CLEARED entry so old alert is superseded in ring
-        self._write_alert(cortex, f"✅ CLEARED: Budget OK — ${remaining:.2f} of ${budget:.2f} remaining.")
-        return None  # Don't show in console — but ring entry supersedes old alert
+        # Balance fine — write CLEARED so old alert is superseded in ring
+        self._write_alert(cortex, f"✅ CLEARED: Balance OK — ${remaining:.2f} remaining ({src}).")
+        return None
 
 
 class ContextInterruptor(BaseInterruptor):

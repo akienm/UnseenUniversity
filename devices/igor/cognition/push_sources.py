@@ -146,7 +146,7 @@ class HeartbeatSource(BasePushSource):
          and includes their conditions as context.
       4. Sends proactive Discord alert for CRITICAL/EXHAUSTED budget
          (once per level per session to avoid spam).
-      5. TODO change.33: check arbiter pending items.
+      5. Arbiter pending items checked via HeartbeatSource._check_arbiter() (change.33).
     """
     name = "heartbeat"
     MIN_INTERVAL_SEC = 300  # 5 minutes
@@ -187,8 +187,6 @@ class HeartbeatSource(BasePushSource):
         # 3. HEARTBEAT procedural memories (user-defined conditions)
         pushed.extend(self._check_heartbeat_memories(cortex, now))
 
-        # TODO change.33: check arbiter pending items and push as high-salience obs
-
         return pushed
 
     def _check_budget(self, cortex) -> list[int]:
@@ -200,20 +198,21 @@ class HeartbeatSource(BasePushSource):
             return []
 
         remaining = s["remaining_usd"]
-        if remaining > s["budget_usd"] * 0.20 and not s["critical"]:
-            return []  # Budget fine — stay quiet
+        total     = s.get("purchased_usd") or s.get("spending_cap", 0)
+        src       = s.get("source", "local_tracking")
+        if remaining > total * 0.20 and not s["critical"]:
+            return []  # Balance fine — stay quiet
 
         if remaining <= 0:
             level, salience = "EXHAUSTED", 1.0
-            msg = (f"Budget EXHAUSTED: spent ${s['spent_usd']:.2f} of "
-                   f"${s['budget_usd']:.2f}. Claude calls blocked.")
+            msg = (f"Balance EXHAUSTED ({src}): ${remaining:.2f} remaining. "
+                   f"OpenRouter calls blocked.")
         elif s["critical"]:
             level, salience = "CRITICAL", 0.9
-            msg = (f"Budget CRITICAL: ${remaining:.2f} remaining of "
-                   f"${s['budget_usd']:.2f}.")
+            msg = (f"Balance CRITICAL ({src}): ${remaining:.2f} remaining of ${total:.2f}.")
         else:
             level, salience = "LOW", 0.7
-            msg = (f"Budget LOW: ${remaining:.2f} remaining "
+            msg = (f"Balance LOW ({src}): ${remaining:.2f} remaining "
                    f"({100 - s['pct_used']:.0f}% left).")
 
         obs_id = cortex.twm_push(

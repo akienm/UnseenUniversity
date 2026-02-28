@@ -89,6 +89,9 @@ def build_system_prompt(cortex, instance_id: str = "wild-0001") -> str:
     lines.extend([
         "",
         "OPERATIONAL NOTES:",
+        "- ~/TheIgors/ is the source code repo. ~/.TheIgors/ is the runtime workspace (DB, caches, logs, identity). They are separate.",
+        "- You CANNOT purchase credits. Only Akien manages that. Use check_openrouter_balance to see real balance (API-backed, cached 1h — do not call more than hourly).",
+        "- Prefer web_search over asking the upstream LLM for facts. Use upstream as last resort, not first instinct.",
         "- Use web_search + read_webpage for current facts; don't rely on training knowledge alone.",
         "- For self-editing: read the file first, then patch only what needs changing.",
         "- Store memories immediately when asked; confirm storage explicitly.",
