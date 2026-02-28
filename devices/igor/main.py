@@ -89,13 +89,20 @@ class Igor:
         self._ne_thread: threading.Thread | None = None
         self._context_flush_done: bool = False  # change.32: set after pre-compaction flush
 
-        # change.39: OpenRouter as secondary reasoner (Anthropic→OpenRouter→Local failover)
+        # WO4/WO5: OpenRouter — cheap (tier.3) and claude (tier.4)
+        self.openrouter_cheap_reasoner = None
         self.openrouter_reasoner = None
         if os.getenv("OPENROUTER_API_KEY", "").strip():
             try:
                 from .cognition.reasoners.openrouter_reasoner import OpenRouterReasoner
+                cheap_model = os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
+                self.openrouter_cheap_reasoner = OpenRouterReasoner(model=cheap_model)
                 self.openrouter_reasoner = OpenRouterReasoner()
-                console.print(f"[dim]OpenRouter ready: {self.openrouter_reasoner.model}[/]")
+                console.print(
+                    f"[dim]OpenRouter ready: "
+                    f"tier.3={self.openrouter_cheap_reasoner.model} | "
+                    f"tier.4={self.openrouter_reasoner.model}[/]"
+                )
             except Exception as _e:
                 console.print(f"[yellow]OpenRouter init failed: {_e}[/]")
 
@@ -426,39 +433,73 @@ class Igor:
         core: list,
     ) -> tuple[str, float, bool]:
         """
-        OpenRouter → Anthropic (fallback) → Local failover chain (WO4).
-        OpenRouter is primary: same model at lower cost, separate budget.
-        Anthropic direct is fallback only (budget ~exhausted).
+        WO5 priority escalation ladder (tiers 3-6).
+        tier.1 habit and tier.2 local are handled in _process() before this call.
+        tier.3: OR cheap model (gpt-4o-mini, fast/cheap)
+        tier.4: OR claude (anthropic/claude-sonnet-4-6 via OpenRouter)
+        tier.5: Anthropic direct (separate budget, always last cloud)
+        tier.6: arbiter alert + offline message when all cloud fails
         Returns (response_text, cost_usd, used_cloud_api).
         """
-        # ── 1. OpenRouter (primary — cheaper, separate budget) ────────────────
+        last_error: str = ""
+
+        # ── tier.3: OR cheap model ──────────────────────────────────────────────
+        if self.openrouter_cheap_reasoner is not None:
+            try:
+                text, cost = self.openrouter_cheap_reasoner.reason(
+                    user_input, relevant, core, self.instance_id, cortex=self.cortex
+                )
+                self.upstream_calls += 1
+                console.print(f"[dim](tier.3/or-cheap | session_cost: ${self.session_cost + cost:.4f})[/]")
+                return text, cost, True
+            except Exception as e:
+                last_error = str(e)
+                console.print(f"[yellow]tier.3 OR-cheap failed ({e}), trying OR-claude...[/]")
+
+        # ── tier.4: OR claude ───────────────────────────────────────────────────
         if self.openrouter_reasoner is not None:
             try:
                 text, cost = self.openrouter_reasoner.reason(
                     user_input, relevant, core, self.instance_id, cortex=self.cortex
                 )
                 self.upstream_calls += 1
-                console.print(f"[dim](openrouter | session_cost: ${self.session_cost + cost:.4f})[/]")
+                console.print(f"[dim](tier.4/or-claude | session_cost: ${self.session_cost + cost:.4f})[/]")
                 return text, cost, True
             except Exception as e:
-                console.print(f"[yellow]OpenRouter failed ({e}), trying Anthropic direct...[/]")
+                last_error = str(e)
+                console.print(f"[yellow]tier.4 OR-claude failed ({e}), trying Anthropic direct...[/]")
 
-        # ── 2. Anthropic direct (fallback — budget may be low) ─────────────────
+        # ── tier.5: Anthropic direct ────────────────────────────────────────────
         try:
             text, cost = self.reasoner.reason(
                 user_input, relevant, core, self.instance_id, cortex=self.cortex
             )
             self.upstream_calls += 1
-            console.print(f"[dim](anthropic | session_cost: ${self.session_cost + cost:.4f})[/]")
+            console.print(f"[dim](tier.5/anthropic | session_cost: ${self.session_cost + cost:.4f})[/]")
             return text, cost, True
         except Exception as e:
-            console.print(f"[yellow]Anthropic failed ({e}), falling back to local...[/]")
+            last_error = str(e)
+            console.print(f"[yellow]tier.5 Anthropic failed ({e}), escalating to arbiter...[/]")
 
-        # ── 3. Local Ollama pool (free, always last resort) ────────────────────
-        text, cost = self.local_pool.reason(user_input, relevant, core, self.instance_id)
-        self.upstream_calls += 1
-        console.print(f"[dim](local-fallback | session_cost: ${self.session_cost + cost:.4f})[/]")
-        return text, cost, False
+        # ── tier.6: arbiter alert — all cloud upstreams exhausted ──────────────
+        try:
+            from .arbiter import queue as arbiter_queue
+            item_id = arbiter_queue.submit(
+                description="All reasoning upstreams failed — Igor offline",
+                context=f"Last error: {last_error[:200]}",
+                action_type="system_alert",
+                threshold_reason="Total upstream failure (tiers 3-5 all failed)",
+                metadata={"tier_failures": ["tier.3", "tier.4", "tier.5"]},
+            )
+            console.print(f"[bold red][tier.6] All upstreams failed. Arbiter alert #{item_id} queued.[/]")
+        except Exception:
+            console.print("[bold red][tier.6] All upstreams failed and arbiter unavailable.[/]")
+        return (
+            "⚠ All reasoning upstreams are currently unavailable. "
+            "I've queued a notification for akien.",
+            0.0,
+            False,
+        )
 
     def _process(self, user_input: str, is_impulse: bool = False) -> str:
         self.interaction_count += 1
@@ -556,8 +597,22 @@ class Igor:
                     # Local pool failed — try cloud failover chain
                     console.print(f"[yellow]Local pool failed ({e}), trying cloud...[/]")
                     response_text, cost, used_api = self._reason_with_failover(user_input, relevant, core)
+            elif self.use_ollama and not pre["should_escalate"]:
+                # tier.2 (WO5): preparse says simple — try local before paying for cloud
+                dashboard.print_reasoning(used_api=False)
+                try:
+                    response_text, cost = self.local_pool.reason(
+                        user_input, relevant, core, self.instance_id
+                    )
+                    self.upstream_calls += 1
+                    used_api = False
+                    console.print(f"[dim](tier.2/local | session_cost: ${self.session_cost:.4f})[/]")
+                except Exception as e:
+                    console.print(f"[yellow]tier.2 local failed ({e}), escalating to cloud...[/]")
+                    dashboard.print_reasoning(used_api=True)
+                    response_text, cost, used_api = self._reason_with_failover(user_input, relevant, core)
             else:
-                # Cloud mode: Anthropic → OpenRouter → Local (change.39 failover chain)
+                # tier.3+: cloud chain (should_escalate=True or ollama disabled)
                 dashboard.print_reasoning(used_api=True)
                 response_text, cost, used_api = self._reason_with_failover(user_input, relevant, core)
 
