@@ -907,7 +907,7 @@ class Igor:
   /memories       - List recent episodic memories
   /core           - Show core patterns
   /habits         - Show compiled habits (/habits list|pending|compile|explain <id>)
-  /arbiter        - Human-approval queue (/arbiter list|approve <N>|deny <N>|explain <N>)
+  /arbiter        - Human-approval queue (/arbiter list|approve <N>|all|deny <N>|all|explain <N>)
   /cost           - Show session cost
   /model          - Show current reasoning model
   /model <name>   - Switch model (cloud: sonnet/opus/haiku; local: any Ollama model name)
@@ -1053,7 +1053,7 @@ class Igor:
 
     def _cmd_arbiter(self, raw):
         """Human-approval queue (change.33).
-        Subcommands: list | approve <N> | deny <N> | explain <N>
+        Subcommands: list | approve <N>|all | deny <N>|all | explain <N>
         """
         from .arbiter import queue as arbiter_queue
         parts = raw.strip().split(None, 2)
@@ -1062,12 +1062,20 @@ class Igor:
 
         if sub == "list":
             self._arbiter_list(arbiter_queue)
+        elif sub in ("approve", "deny") and arg == "all":
+            pending = arbiter_queue.get_pending()
+            if not pending:
+                console.print("[dim]Arbiter queue is empty — nothing to resolve.[/]")
+                return
+            console.print(f"\n[bold]{'Approving' if sub == 'approve' else 'Denying'} all {len(pending)} pending items...[/]")
+            for item in pending:
+                self._arbiter_resolve(arbiter_queue, item.id, sub)
         elif sub in ("approve", "deny") and arg.isdigit():
             self._arbiter_resolve(arbiter_queue, int(arg), sub)
         elif sub == "explain" and arg.isdigit():
             self._arbiter_explain(arbiter_queue, int(arg))
         else:
-            console.print("[yellow]Usage: /arbiter list | approve <N> | deny <N> | explain <N>[/]")
+            console.print("[yellow]Usage: /arbiter list | approve <N>|all | deny <N>|all | explain <N>[/]")
 
     def _arbiter_list(self, arbiter_queue):
         pending = arbiter_queue.get_pending()
@@ -1081,7 +1089,7 @@ class Igor:
             console.print(f"  {item.description[:100]}")
             if item.threshold_reason:
                 console.print(f"  [dim]Reason: {item.threshold_reason[:80]}[/]")
-        console.print("\n[dim]/arbiter approve <N>  /arbiter deny <N>  /arbiter explain <N>[/]")
+        console.print("\n[dim]/arbiter approve <N>|all  /arbiter deny <N>|all  /arbiter explain <N>[/]")
 
     def _arbiter_resolve(self, arbiter_queue, item_id: int, status: str):
         item = arbiter_queue.resolve(item_id, status)
