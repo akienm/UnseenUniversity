@@ -28,12 +28,13 @@ from typing import Optional
 import ollama as _ollama
 
 from . import reasoning_cache
+from .forensic_logger import log_ne_run
 
 from ..memory.cortex import Cortex
 from ..memory.models import Memory, MemoryType
 
 # ── Config ─────────────────────────────────────────────────────────────────────
-NE_MODEL              = "gemma3:270M"   # Standard cluster reasoning model (D013)
+NE_MODEL              = "gemma3:1b"     # Standard cluster reasoning model (D013, WO2)
 NE_TRIGGER_OBS        = 5              # Run if >= this many unintegrated obs
 NE_MIN_INTERVAL_SEC   = 30             # Minimum seconds between NE runs
 NE_MAX_INTERVAL_SEC   = 300            # Maximum seconds between NE runs (5 min)
@@ -116,6 +117,7 @@ class NarrativeEngine:
         Run the Narrative Engine. Returns the NE output dict, or None on failure.
         Side effects: marks TWM entries integrated, updates salience, promotes to LTM.
         """
+        t0 = time.perf_counter()
         should, reason = self.should_run()
         if not should:
             return None
@@ -164,17 +166,27 @@ class NarrativeEngine:
             return None
 
         # Process NE output
-        self._apply_output(result, obs_list, verbose=verbose)
+        promoted, impulses = self._apply_output(result, obs_list, verbose=verbose)
 
         self._last_run = datetime.now()
         self._run_count += 1
+
+        log_ne_run(
+            obs_count=len(obs_list),
+            integrated=len(obs_list),
+            promoted=promoted,
+            impulses=impulses,
+            model=NE_MODEL,
+            elapsed_ms=int((time.perf_counter() - t0) * 1000),
+        )
 
         return result
 
     # ── Output processing ──────────────────────────────────────────────────────
 
-    def _apply_output(self, result: dict, obs_list: list[dict], verbose: bool = True):
-        """Apply NE output: update salience, mark integrated, promote to LTM."""
+    def _apply_output(self, result: dict, obs_list: list[dict], verbose: bool = True) -> tuple[int, int]:
+        """Apply NE output: update salience, mark integrated, promote to LTM.
+        Returns (promoted_count, impulse_count) for forensic logging."""
 
         # 1. Update salience for any obs the NE re-scored
         for update in result.get("salience_updates", []):
@@ -246,6 +258,7 @@ class NarrativeEngine:
             print(f"[NE] promoted={promoted} to LTM | summary: {summary[:80]}...")
 
         # 5. Push action impulses back into TWM so they can be acted on
+        impulse_count = 0
         for impulse in result.get("action_impulses", []):
             urgency = float(impulse.get("urgency", 0.3))
             action  = impulse.get("action", "")
@@ -258,6 +271,9 @@ class NarrativeEngine:
                     metadata={"type": "action_impulse", "action": action, "why": why},
                     ttl_seconds=300,  # impulses expire in 5 min if unacted
                 )
+                impulse_count += 1
+
+        return promoted, impulse_count
 
     # ── LLM calls ─────────────────────────────────────────────────────────────
 

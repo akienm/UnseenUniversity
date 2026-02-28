@@ -11,6 +11,7 @@ Prefix responses with [model-name] when show_model_tag=True.
 
 import json
 import os
+import time
 import urllib.request
 import urllib.error
 
@@ -21,6 +22,7 @@ from ...tools.registry import registry
 from ... import tools as _tools  # noqa: F401 — registers all tools
 from .base import BaseReasoner
 from ..system_prompt import build_system_prompt
+from ..forensic_logger import log_reasoning_call, log_tool_call
 
 console = Console()
 
@@ -57,6 +59,8 @@ class OpenRouterReasoner(BaseReasoner):
         cortex=None,
     ) -> tuple[str, float]:
         """Run full agentic tool loop via OpenRouter."""
+        t0 = time.perf_counter()
+
         # WO1: dynamic system prompt from cortex memories
         system = build_system_prompt(cortex, instance_id)
 
@@ -87,6 +91,15 @@ class OpenRouterReasoner(BaseReasoner):
                 text = msg.get("content") or ""
                 if self.show_model_tag:
                     text = f"[{self.model}] {text}"
+                usage = response.get("usage", {})
+                log_reasoning_call(
+                    provider="openrouter", model=self.model,
+                    input_tokens=usage.get("prompt_tokens", 0),
+                    output_tokens=usage.get("completion_tokens", 0),
+                    cost_usd=total_cost,
+                    elapsed_ms=int((time.perf_counter() - t0) * 1000),
+                    turns=turn, response_summary=text[:120],
+                )
                 return text, total_cost
 
             elif finish_reason == "tool_calls" or msg.get("tool_calls"):
@@ -109,9 +122,18 @@ class OpenRouterReasoner(BaseReasoner):
                         f"{k}={str(v)[:40]!r}" for k, v in kwargs.items()
                     )
                     console.print(f"[dim][OR turn={turn}] ⚙ {tool_name}({input_summary})[/]")
+                    t_tool = time.perf_counter()
                     result = registry.execute(tool_name, kwargs)
+                    tool_elapsed = int((time.perf_counter() - t_tool) * 1000)
                     result_preview = str(result)[:120].replace("\n", " ")
                     console.print(f"[dim][OR turn={turn}]   → {result_preview}[/]")
+                    log_tool_call(
+                        tool_name=tool_name,
+                        args_summary=input_summary,
+                        result_summary=result_preview,
+                        success=not result_preview.startswith("Error"),
+                        elapsed_ms=tool_elapsed,
+                    )
 
                     if cortex is not None:
                         cortex.write_ring(

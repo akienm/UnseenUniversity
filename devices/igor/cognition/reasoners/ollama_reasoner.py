@@ -16,7 +16,7 @@ from ...memory.models import Memory
 from .base import BaseReasoner
 from ..system_prompt import build_system_prompt
 
-DEFAULT_MODEL = "gemma3:270M"
+DEFAULT_MODEL = "gemma3:1b"
 
 # ── Ollama call logger ──────────────────────────────────────────────────────
 _LOG_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "ollama_calls.log")
