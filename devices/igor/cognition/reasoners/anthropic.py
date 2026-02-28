@@ -125,9 +125,9 @@ class AnthropicReasoner(BaseReasoner):
                 ok, budget_msg = check_before_call()
                 if not ok:
                     console.print(f"[bold red][BUDGET] {budget_msg}[/]")
-                    # Run interruptors so TWM gets the alert
                     self._run_interruptors(cortex)
-                    return budget_msg, 0.0
+                    # Raise so failover chain in main.py can try OpenRouter/local
+                    raise RuntimeError(f"Budget exhausted: {budget_msg}")
                 elif "critical" in budget_msg.lower() or "low" in budget_msg.lower():
                     console.print(f"[yellow][BUDGET] {budget_msg}[/]")
             except ImportError:

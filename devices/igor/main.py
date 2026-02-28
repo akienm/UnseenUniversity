@@ -426,21 +426,12 @@ class Igor:
         core: list,
     ) -> tuple[str, float, bool]:
         """
-        Anthropic → OpenRouter → Local failover chain (change.39).
+        OpenRouter → Anthropic (fallback) → Local failover chain (WO4).
+        OpenRouter is primary: same model at lower cost, separate budget.
+        Anthropic direct is fallback only (budget ~exhausted).
         Returns (response_text, cost_usd, used_cloud_api).
         """
-        # ── 1. Anthropic ──────────────────────────────────────────────────────
-        try:
-            text, cost = self.reasoner.reason(
-                user_input, relevant, core, self.instance_id, cortex=self.cortex
-            )
-            self.upstream_calls += 1
-            console.print(f"[dim](anthropic | session_cost: ${self.session_cost + cost:.4f})[/]")
-            return text, cost, True
-        except Exception as e:
-            console.print(f"[yellow]Anthropic failed ({e}), trying OpenRouter...[/]")
-
-        # ── 2. OpenRouter (if configured) ─────────────────────────────────────
+        # ── 1. OpenRouter (primary — cheaper, separate budget) ────────────────
         if self.openrouter_reasoner is not None:
             try:
                 text, cost = self.openrouter_reasoner.reason(
@@ -450,9 +441,20 @@ class Igor:
                 console.print(f"[dim](openrouter | session_cost: ${self.session_cost + cost:.4f})[/]")
                 return text, cost, True
             except Exception as e:
-                console.print(f"[yellow]OpenRouter failed ({e}), falling back to local...[/]")
+                console.print(f"[yellow]OpenRouter failed ({e}), trying Anthropic direct...[/]")
 
-        # ── 3. Local Ollama pool ───────────────────────────────────────────────
+        # ── 2. Anthropic direct (fallback — budget may be low) ─────────────────
+        try:
+            text, cost = self.reasoner.reason(
+                user_input, relevant, core, self.instance_id, cortex=self.cortex
+            )
+            self.upstream_calls += 1
+            console.print(f"[dim](anthropic | session_cost: ${self.session_cost + cost:.4f})[/]")
+            return text, cost, True
+        except Exception as e:
+            console.print(f"[yellow]Anthropic failed ({e}), falling back to local...[/]")
+
+        # ── 3. Local Ollama pool (free, always last resort) ────────────────────
         text, cost = self.local_pool.reason(user_input, relevant, core, self.instance_id)
         self.upstream_calls += 1
         console.print(f"[dim](local-fallback | session_cost: ${self.session_cost + cost:.4f})[/]")
