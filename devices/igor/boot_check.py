@@ -23,7 +23,7 @@ from urllib.error import URLError
 MACHINES_CSV    = Path.home() / ".TheIgors" / "local" / "machines.csv"
 CHANGES_LOG     = Path.home() / ".TheIgors" / "claudecode" / "changes.log"
 OLLAMA_PORT     = 11434
-REQUIRED_MODELS = ["nomic-embed-text", "gemma3:270M"]
+REQUIRED_MODELS = ["nomic-embed-text", "gemma3:1b"]
 CHECK_TIMEOUT   = 5    # seconds per reachability probe
 PULL_TIMEOUT    = 600  # seconds — model pull can take a while on first run
 

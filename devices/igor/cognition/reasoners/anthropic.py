@@ -14,6 +14,7 @@ if needed. After each call, record the cost. Interruptors run post-response.
 """
 
 import os
+import time
 from anthropic import Anthropic
 from rich.console import Console
 from ...memory.models import Memory
@@ -21,6 +22,7 @@ from ...tools.registry import registry
 from ... import tools as _tools  # noqa: F401 - imports all tools, registers them
 from .base import BaseReasoner
 from ..system_prompt import build_system_prompt
+from ..forensic_logger import log_reasoning_call, log_tool_call
 
 console = Console()
 
@@ -96,6 +98,10 @@ class AnthropicReasoner(BaseReasoner):
         cortex is optional — if provided, tool calls are written to ring_memory
         and the recent ring entries are injected as session context.
         """
+        t0 = time.perf_counter()
+        total_input_tokens = 0
+        total_output_tokens = 0
+
         memory_context = self._build_memory_context(relevant_memories)
         session_context = self._build_session_context(cortex)
 
@@ -143,6 +149,8 @@ class AnthropicReasoner(BaseReasoner):
 
             call_cost = self._estimate_cost(response.usage, model_to_use)
             total_cost += call_cost
+            total_input_tokens  += getattr(response.usage, "input_tokens", 0)
+            total_output_tokens += getattr(response.usage, "output_tokens", 0)
 
             # ── RECORD SPEND ──────────────────────────────────────────────
             try:
@@ -155,6 +163,12 @@ class AnthropicReasoner(BaseReasoner):
                 text = self._extract_text(response)
                 if tool_calls_made:
                     console.print(f"[dim][THINK] Done. Tools used: {', '.join(tool_calls_made)}[/]")
+                log_reasoning_call(
+                    provider="anthropic", model=model_to_use,
+                    input_tokens=total_input_tokens, output_tokens=total_output_tokens,
+                    cost_usd=total_cost, elapsed_ms=int((time.perf_counter() - t0) * 1000),
+                    turns=turn, response_summary=text[:120],
+                )
 
                 # ── Ethics gate (change.27) ────────────────────────────────
                 if cortex is not None:
@@ -212,11 +226,21 @@ class AnthropicReasoner(BaseReasoner):
                             f"[dim][THINK turn={turn}] ⚙ {block.name}({input_summary})[/]"
                         )
 
+                        t_tool = time.perf_counter()
                         result = registry.execute(block.name, block.input)
+                        tool_elapsed = int((time.perf_counter() - t_tool) * 1000)
 
                         # Show truncated result
                         result_preview = str(result)[:120].replace("\n", " ")
                         console.print(f"[dim][THINK turn={turn}]   → {result_preview}[/]")
+
+                        log_tool_call(
+                            tool_name=block.name,
+                            args_summary=input_summary,
+                            result_summary=result_preview,
+                            success=not result_preview.startswith("Error"),
+                            elapsed_ms=tool_elapsed,
+                        )
 
                         # Write to ring_memory if cortex available
                         if cortex is not None:
@@ -240,6 +264,13 @@ class AnthropicReasoner(BaseReasoner):
                 # Unexpected stop reason - return what we have
                 text = self._extract_text(response) or f"[Stopped: {response.stop_reason}]"
                 console.print(f"[yellow][THINK] Unexpected stop_reason={response.stop_reason}[/]")
+                log_reasoning_call(
+                    provider="anthropic", model=model_to_use,
+                    input_tokens=total_input_tokens, output_tokens=total_output_tokens,
+                    cost_usd=total_cost, elapsed_ms=int((time.perf_counter() - t0) * 1000),
+                    turns=turn, response_summary=text[:120],
+                    escalation_reason=f"stop={response.stop_reason}",
+                )
                 self._run_interruptors(cortex)
                 return text, total_cost
 

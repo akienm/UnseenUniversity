@@ -20,6 +20,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .registry import Tool, registry
+from ..cognition.forensic_logger import log_self_edit
 
 SOURCE_ROOT = Path(__file__).parent.parent  # wild_igor/igor/
 REPO_ROOT = SOURCE_ROOT.parent              # wild_igor/
@@ -222,11 +223,13 @@ def edit_source_file(path: str, content: str, reason: str) -> str:
         # WO6: self-edit disabled during cognition stabilization
         if not _is_self_edit_enabled():
             _log_blocked_self_edit_attempt(path)
+            log_self_edit(file=path, blocked=True, block_reason="IGOR_SELF_EDIT_ENABLED=false")
             return _SELF_EDIT_DISABLED_MSG
 
         # change.26: hard write exclusion for brainstem/
         if _is_write_excluded(path):
             _log_blocked_edit(path)
+            log_self_edit(file=path, blocked=True, block_reason="write_excluded(brainstem)")
             return (
                 f"BLOCKED_EDIT: igor/{path} is in a write-protected directory.\n"
                 f"brainstem/ contains core patterns that only akien may modify via Claude Code.\n"
@@ -241,6 +244,7 @@ def edit_source_file(path: str, content: str, reason: str) -> str:
         try:
             ast.parse(content)
         except SyntaxError as e:
+            log_self_edit(file=path, syntax_ok=False, reason=reason, change_summary=f"SyntaxError L{e.lineno}: {e.msg}")
             return (f"EDIT REJECTED: Syntax error in proposed change to {path}:\n"
                     f"  Line {e.lineno}: {e.msg}\n"
                     f"  {e.text}\n"
@@ -257,6 +261,15 @@ def edit_source_file(path: str, content: str, reason: str) -> str:
 
         # Commit & push
         git_status = _git_commit_and_push(path, reason)
+
+        # Extract git hash from status message
+        git_hash = ""
+        for part in git_status.split():
+            if len(part) == 7 and all(c in "0123456789abcdef" for c in part):
+                git_hash = part
+                break
+        log_self_edit(file=path, syntax_ok=True, reason=reason,
+                      change_summary=f"full_rewrite({len(content)} chars)", git_hash=git_hash)
 
         return (f"EDIT APPLIED: igor/{path}{warning}\n"
                 f"Reason: {reason}\n"
@@ -287,11 +300,13 @@ def patch_source_file(path: str, old_string: str, new_string: str, reason: str) 
         # WO6: self-edit disabled during cognition stabilization
         if not _is_self_edit_enabled():
             _log_blocked_self_edit_attempt(path)
+            log_self_edit(file=path, blocked=True, block_reason="IGOR_SELF_EDIT_ENABLED=false")
             return _SELF_EDIT_DISABLED_MSG
 
         # change.26: hard write exclusion for brainstem/
         if _is_write_excluded(path):
             _log_blocked_edit(path)
+            log_self_edit(file=path, blocked=True, block_reason="write_excluded(brainstem)")
             return (
                 f"BLOCKED_EDIT: igor/{path} is in a write-protected directory.\n"
                 f"brainstem/ contains core patterns that only akien may modify via Claude Code.\n"
@@ -321,6 +336,8 @@ def patch_source_file(path: str, old_string: str, new_string: str, reason: str) 
         try:
             ast.parse(patched)
         except SyntaxError as e:
+            log_self_edit(file=path, syntax_ok=False, reason=reason,
+                          change_summary=f"patch SyntaxError L{e.lineno}: {e.msg}")
             return (f"PATCH REJECTED: Result has a syntax error in igor/{path}:\n"
                     f"  Line {e.lineno}: {e.msg}\n"
                     f"  {e.text}\n"
@@ -333,8 +350,16 @@ def patch_source_file(path: str, old_string: str, new_string: str, reason: str) 
 
         git_status = _git_commit_and_push(path, reason)
 
+        git_hash = ""
+        for part in git_status.split():
+            if len(part) == 7 and all(c in "0123456789abcdef" for c in part):
+                git_hash = part
+                break
         lines_changed = new_string.count("\n") - old_string.count("\n")
         sign = "+" if lines_changed >= 0 else ""
+        log_self_edit(file=path, syntax_ok=True, reason=reason,
+                      change_summary=f"patch({sign}{lines_changed} lines)", git_hash=git_hash)
+
         return (f"PATCH APPLIED: igor/{path}{warning}\n"
                 f"Reason: {reason}\n"
                 f"Lines delta: {sign}{lines_changed} | Backup: {path}.bak"
