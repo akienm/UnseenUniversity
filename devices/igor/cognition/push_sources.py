@@ -44,9 +44,13 @@ class MemorySurfacer(BasePushSource):
     Reads recent ring entries for keywords, searches LTM, pushes
     matches as background context (salience 0.3-0.6).
     Rate-limited to MIN_INTERVAL_SEC so it doesn't spam.
+
+    change.43: deduplication — tracks recently surfaced memory IDs
+    to avoid repetition cycles when ring context is static.
     """
     name = "memory_surfacer"
     MIN_INTERVAL_SEC = 120  # At most every 2 minutes
+    SURFACE_WINDOW = 10     # Remember last N surface runs to deduplicate (change.43)
 
     _STOP = {
         "from", "that", "with", "this", "have", "been", "will", "were",
@@ -57,6 +61,8 @@ class MemorySurfacer(BasePushSource):
 
     def __init__(self):
         self._last_run: Optional[datetime] = None
+        self._last_ring_snapshot: Optional[str] = None  # Detect stale ring (change.43)
+        self._recent_surfaced: list[set] = []  # Dedup window: [set(mem_ids), ...] (change.43)
 
     def push(self, cortex) -> list[int]:
         now = datetime.now()
@@ -72,6 +78,14 @@ class MemorySurfacer(BasePushSource):
             return []
 
         combined = " ".join(e["content"] for e in ring)
+        
+        # change.43: detect stale ring — if unchanged since last run, skip push
+        # (avoids repetition cycle when human is idle)
+        ring_snapshot = combined[:500]
+        if ring_snapshot == self._last_ring_snapshot:
+            return []  # Ring hasn't changed — no new context to surface
+        self._last_ring_snapshot = ring_snapshot
+
         words = [w.lower() for w in combined.split() if len(w) > 4]
         keywords = [w for w in words if w not in self._STOP]
         if not keywords:
@@ -82,8 +96,19 @@ class MemorySurfacer(BasePushSource):
         if not candidates:
             return []
 
+        # change.43: dedup — skip memories surfaced in recent window
+        recently_surfaced = set()
+        for mem_ids_set in self._recent_surfaced:
+            recently_surfaced.update(mem_ids_set)
+        
+        # Filter out recently surfaced candidates
+        new_candidates = [m for m in candidates if m.id not in recently_surfaced]
+        if not new_candidates:
+            return []  # All candidates were just surfaced — stay quiet
+
+        pushed_ids = set()
         pushed = []
-        for mem in candidates:
+        for mem in new_candidates:
             csb = (
                 f"LTM|{mem.memory_type.value}|id={mem.id}|"
                 f"inertia={mem.inertia:.2f}|act={mem.activation_count}|"
@@ -98,6 +123,12 @@ class MemorySurfacer(BasePushSource):
                 ttl_seconds=600,
             )
             pushed.append(obs_id)
+            pushed_ids.add(mem.id)
+
+        # change.43: record this run's surfaced IDs and trim window
+        self._recent_surfaced.append(pushed_ids)
+        while len(self._recent_surfaced) > self.SURFACE_WINDOW:
+            self._recent_surfaced.pop(0)
 
         return pushed
 
