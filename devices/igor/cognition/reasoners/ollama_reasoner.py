@@ -14,6 +14,7 @@ import time
 import ollama as _ollama
 from ...memory.models import Memory
 from .base import BaseReasoner
+from ..system_prompt import build_system_prompt
 
 DEFAULT_MODEL = "gemma3:270M"
 
@@ -73,7 +74,11 @@ class OllamaReasoner(BaseReasoner):
         relevant_memories: list[Memory],
         core_patterns: list[Memory],
         instance_id: str,
+        cortex=None,
     ) -> tuple[str, float]:
+        # WO1: dynamic system prompt from cortex memories
+        system = build_system_prompt(cortex, instance_id)
+
         memory_context = ""
         if relevant_memories:
             memory_context = "\n\nRelevant memories:\n" + "\n".join(
@@ -84,7 +89,10 @@ class OllamaReasoner(BaseReasoner):
         try:
             response = self._client.chat(
                 model=self.model,
-                messages=[{"role": "user", "content": user_input + memory_context}],
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user_input + memory_context},
+                ],
             )
             elapsed = time.perf_counter() - t0
             _log_call("OllamaReasoner.reason", self.model, response, elapsed)
