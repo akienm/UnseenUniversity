@@ -13,8 +13,10 @@ Changes take effect on restart (noted in tool response).
 """
 
 import ast
+import os
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from .registry import Tool, registry
@@ -39,6 +41,33 @@ INERTIA = {
     "tools/": 0.30,
     "dashboard/": 0.30,
 }
+
+
+_SELF_EDIT_DISABLED_MSG = (
+    "Self-edit is currently disabled (IGOR_SELF_EDIT_ENABLED=false).\n"
+    "Cognition stabilization is in progress — all edits are handled by Claude Code externally.\n"
+    "To request this change: use create_work_order to file a GitHub work order, "
+    "or contact akien directly.\n"
+    "You can still READ source files with list_source_files and read_source_file."
+)
+
+
+def _is_self_edit_enabled() -> bool:
+    """Return True if Igor is allowed to write source files."""
+    val = os.getenv("IGOR_SELF_EDIT_ENABLED", "false").strip().lower()
+    return val in ("true", "1", "yes")
+
+
+def _log_blocked_self_edit_attempt(path: str) -> None:
+    """Write a blocked-self-edit record to the instance log file."""
+    log_path = Path.home() / ".TheIgors" / "igor_wild_0001" / "blocked_edits.log"
+    try:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        entry = f"{datetime.now().isoformat()}|SELF_EDIT_DISABLED|igor/{path}\n"
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(entry)
+    except Exception:
+        pass
 
 
 def _resolve(path: str) -> Path:
@@ -187,8 +216,14 @@ def edit_source_file(path: str, content: str, reason: str) -> str:
     Commits and pushes to git so all Igor instances stay in sync.
     Change takes effect on next restart.
     brainstem/ is read-only for Igor — writes are blocked (change.26).
+    Disabled entirely when IGOR_SELF_EDIT_ENABLED=false (WO6).
     """
     try:
+        # WO6: self-edit disabled during cognition stabilization
+        if not _is_self_edit_enabled():
+            _log_blocked_self_edit_attempt(path)
+            return _SELF_EDIT_DISABLED_MSG
+
         # change.26: hard write exclusion for brainstem/
         if _is_write_excluded(path):
             _log_blocked_edit(path)
@@ -241,6 +276,7 @@ def patch_source_file(path: str, old_string: str, new_string: str, reason: str) 
     Replaces old_string with new_string — only the changed lines are sent,
     not the whole file. Safer and cheaper than edit_source_file for small changes.
     brainstem/ is read-only for Igor — writes are blocked (change.26).
+    Disabled entirely when IGOR_SELF_EDIT_ENABLED=false (WO6).
 
     Fails clearly if:
       - old_string not found (typo or stale read)
@@ -248,6 +284,11 @@ def patch_source_file(path: str, old_string: str, new_string: str, reason: str) 
       - result has a syntax error (original restored)
     """
     try:
+        # WO6: self-edit disabled during cognition stabilization
+        if not _is_self_edit_enabled():
+            _log_blocked_self_edit_attempt(path)
+            return _SELF_EDIT_DISABLED_MSG
+
         # change.26: hard write exclusion for brainstem/
         if _is_write_excluded(path):
             _log_blocked_edit(path)

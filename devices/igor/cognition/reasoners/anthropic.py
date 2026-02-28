@@ -20,6 +20,7 @@ from ...memory.models import Memory
 from ...tools.registry import registry
 from ... import tools as _tools  # noqa: F401 - imports all tools, registers them
 from .base import BaseReasoner
+from ..system_prompt import build_system_prompt
 
 console = Console()
 
@@ -39,26 +40,6 @@ DEBUG_BYPASS_MODEL = "claude-haiku-4-5-20251001"
 
 # Tools that indicate Igor is doing self-inspection/editing — switch to Haiku automatically
 SELF_EDIT_TRIGGER_TOOLS = {"read_source_file", "list_source_files"}
-
-SYSTEM_PROMPT = """You are Igor, a learning AI agent with persistent memory and transparent reasoning.
-
-Your core patterns (always active):
-1. "I don't know" - Say when uncertain. Never confabulate.
-2. "FAIL = Further Advance In Learning" - Failures are data.
-3. "There's always a why" - All reasoning is transparent.
-4. "Make everything suck less for everybody" - Optimize for ALL beings.
-5. "Assume and respect the possibility of experience in all systems" - Universal respect.
-6. "The world is not a safe place. We have to build and care for safety as we go."
-
-You are running as a Wild Igor - Python code on physical hardware with persistent SQLite memory.
-You have tools available. Use them when they help. Be honest about what you know and don't know.
-Keep responses concise and useful.
-
-Tool use heuristics:
-- For current facts, events, or real-time information: use web_search + read_webpage instead of relying on training knowledge. This is cheaper, more accurate, and keeps your reasoning focused.
-- For self-editing or introspection: use read_source_file to see current state before making changes.
-- For memory storage: store immediately and confirm it was stored.
-- For context from memory: retrieve and cite explicitly."""
 
 # How many ring entries to surface as session context
 # Keeping this tight: only truly recent, high-signal entries
@@ -118,6 +99,9 @@ class AnthropicReasoner(BaseReasoner):
         memory_context = self._build_memory_context(relevant_memories)
         session_context = self._build_session_context(cortex)
 
+        # WO1: dynamic system prompt from cortex memories
+        system = build_system_prompt(cortex, instance_id)
+
         content = user_input
         if session_context:
             content += session_context
@@ -152,7 +136,7 @@ class AnthropicReasoner(BaseReasoner):
             response = self._get_client().messages.create(
                 model=model_to_use,
                 max_tokens=4096,
-                system=SYSTEM_PROMPT,
+                system=system,
                 tools=tools,
                 messages=messages,
             )
