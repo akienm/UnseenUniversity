@@ -165,6 +165,8 @@ def log_tier_selection(
     preparse_via: str,        # "ollama" | "openrouter" | "skipped"
     tier_selected: str,       # "tier.1" | "tier.2" | "tier.3" | ...
     reason: str,
+    complexity_score: float = 0.0,
+    complexity_signals: str = "",
 ) -> None:
     """Log which tier was selected before each upstream call."""
     entry = (
@@ -174,5 +176,7 @@ def log_tier_selection(
         f"|escalate={preparse_escalate}"
         f"|selected={tier_selected}"
         f"|reason={reason}"
+        f"|complexity={complexity_score:.2f}"
+        f"|signals=[{complexity_signals}]"
     )
     _prepend("reasoning_calls.log", entry)

@@ -180,6 +180,101 @@ Example output:
         }
 
 
+# ── compute_complexity ──────────────────────────────────────────────────────
+
+# Verbs that signal multi-step or heavy analytical work
+_COMPLEX_VERBS = frozenset({
+    "ingest", "read", "analyze", "analyse", "build", "write", "generate",
+    "review", "summarize", "summarise", "process", "parse", "extract",
+    "compile", "iterate", "crawl", "scrape", "import",
+})
+
+# Scope modifiers that indicate bulk/whole-collection tasks
+_SCOPE_WORDS = frozenset({
+    "entire", "all", "every", "full", "complete", "whole",
+})
+
+# Phrases/keywords that force escalation to tier.4 regardless of score
+_FORCE_TIER4_PHRASES = (
+    "use claude", "use sonnet", "use opus", "hard task",
+    "difficult task", "complex task", "hard job",
+)
+
+# Tool-like action words (counting 3+ suggests multi-tool task)
+_TOOL_KEYWORDS = frozenset({
+    "search", "read", "write", "send", "create", "delete",
+    "fetch", "update", "list", "post", "get",
+})
+
+
+def compute_complexity(user_input: str) -> dict:
+    """
+    Pure-Python complexity scoring for tier selection.
+
+    Signals (additive):
+      verb_match     +0.4  — contains a complex-task verb
+      scope_match    +0.3  — contains a bulk/whole-collection scope word
+      multi_step     +0.3  — 3+ chained actions (and/then/;)
+      multi_tool     +0.2  — 3+ distinct tool-action words
+      explicit       force — "use claude/sonnet/hard task" forces tier.4
+
+    Thresholds:
+      < 0.3   → tier.3 ok
+      0.3-0.6 → tier.3 (check for self-escalation after 3 turns)
+      > 0.6   → tier.4 minimum
+
+    Returns dict with keys: score, signals_fired, tier_minimum,
+                            force_tier4, is_multi_unit.
+    """
+    low = user_input.lower()
+    signals: list[str] = []
+    score = 0.0
+
+    # Signal 1: complex-task verb
+    if any(v in low for v in _COMPLEX_VERBS):
+        signals.append("verb_match")
+        score += 0.4
+
+    # Signal 2: bulk scope word (must be a full token, not substring)
+    tokens = set(low.split())
+    if tokens & _SCOPE_WORDS:
+        signals.append("scope_match")
+        score += 0.3
+
+    # Signal 3: multi-step chaining (3+ conjunctions/then clauses)
+    chain_count = low.count(" and ") + low.count(", then") + low.count("; ")
+    if chain_count >= 3:
+        signals.append("multi_step")
+        score += 0.3
+
+    # Signal 4: multiple tool-type action words
+    tool_hits = sum(1 for t in _TOOL_KEYWORDS if t in low)
+    if tool_hits >= 3:
+        signals.append("multi_tool")
+        score += 0.2
+
+    # Signal 5: explicit escalation request
+    force = any(phrase in low for phrase in _FORCE_TIER4_PHRASES)
+    if force:
+        signals.append("explicit_escalate")
+
+    score = min(1.0, round(score, 2))
+
+    if force or score > 0.6:
+        tier_minimum = "tier.4"
+    else:
+        tier_minimum = "tier.3"
+
+    return {
+        "score": score,
+        "signals_fired": signals,
+        "tier_minimum": tier_minimum,
+        "force_tier4": force,
+        # True when it looks like a bulk/multi-item job (used by job_manager trigger)
+        "is_multi_unit": "scope_match" in signals and "verb_match" in signals,
+    }
+
+
 # ── score_memories ──────────────────────────────────────────────────────────
 
 def score_memories(

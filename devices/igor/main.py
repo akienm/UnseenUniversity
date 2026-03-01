@@ -24,7 +24,7 @@ from .brainstem.core_patterns import initialize_genesis, get_core_patterns, veri
 from .cognition import thalamus
 from .cognition import prefrontal_cortex as pfc
 from .cognition.reasoners.anthropic import AnthropicReasoner
-from .cognition.reasoners.ollama_reasoner import preparse, score_memories, OllamaReasoner
+from .cognition.reasoners.ollama_reasoner import preparse, score_memories, OllamaReasoner, compute_complexity
 from .cognition.reasoners.openrouter_reasoner import preparse_via_openrouter
 from .cognition.forensic_logger import log_tier_selection
 from .cognition.local_pool import LocalOllamaPool
@@ -37,6 +37,7 @@ from .network import discord_bot
 from .network import listener as net_listener
 from .web import server as web_server
 from . import boot_check
+from .cognition.job_manager import JobManager
 
 console = Console()
 
@@ -90,6 +91,18 @@ class Igor:
         self.local_mode = os.getenv("IGOR_LOCAL", "false").lower() in ("true", "1", "yes")
         self._ne_thread: threading.Thread | None = None
         self._context_flush_done: bool = False  # change.32: set after pre-compaction flush
+
+        # NE failure backoff (pass.3): track consecutive tool/response failures for impulses
+        self._consecutive_impulse_failures: int = 0
+        self._failure_report_pushed: bool = False   # prevent duplicate report_failure impulses
+        self._failure_escalated: bool = False       # prevent duplicate escalate_to_human impulses
+
+        # Long-running job support (pass.4)
+        self.job_manager = JobManager()
+        if self.job_manager.active_count() > 0:
+            console.print(
+                f"[dim][JOBS] {self.job_manager.active_count()} pending/running job(s) loaded.[/]"
+            )
 
         # WO4/WO5: OpenRouter — cheap (tier.3) and claude (tier.4)
         self.openrouter_cheap_reasoner = None
@@ -433,6 +446,7 @@ class Igor:
         user_input: str,
         relevant: list,
         core: list,
+        skip_to: str = "tier.3",
     ) -> tuple[str, float, bool]:
         """
         WO5 priority escalation ladder (tiers 3-6).
@@ -441,12 +455,16 @@ class Igor:
         tier.4: OR claude (anthropic/claude-sonnet-4-6 via OpenRouter)
         tier.5: Anthropic direct (separate budget, always last cloud)
         tier.6: arbiter alert + offline message when all cloud fails
+
+        skip_to: minimum tier to start at ("tier.3"|"tier.4"|"tier.5").
+                 Used by complexity heuristic to bypass cheap model for hard tasks.
+
         Returns (response_text, cost_usd, used_cloud_api).
         """
         last_error: str = ""
 
         # ── tier.3: OR cheap model ──────────────────────────────────────────────
-        if self.openrouter_cheap_reasoner is not None:
+        if self.openrouter_cheap_reasoner is not None and skip_to == "tier.3":
             try:
                 text, cost = self.openrouter_cheap_reasoner.reason(
                     user_input, relevant, core, self.instance_id, cortex=self.cortex
@@ -564,6 +582,36 @@ class Igor:
             pre = preparse_via_openrouter(user_input, habits)
             relevant = candidates[:5]
 
+        # [COMPLEXITY] Pure-Python heuristic — gates tier minimum (pass.2)
+        complexity = compute_complexity(user_input)
+        _skip_to = complexity["tier_minimum"]  # "tier.3" or "tier.4"
+        if complexity["signals_fired"]:
+            console.print(
+                f"[dim][COMPLEXITY] score={complexity['score']:.2f} "
+                f"signals={complexity['signals_fired']} → {_skip_to}[/]"
+            )
+
+        # [JOB TRIGGER] pass.4: create a long-running job when task looks multi-unit
+        # Only for non-impulse user messages; only if complexity qualifies
+        if (
+            not is_impulse
+            and complexity["score"] > 0.6
+            and complexity["is_multi_unit"]
+        ):
+            new_job = self.job_manager.create(
+                title=user_input[:80],
+                notes=f"signals={complexity['signals_fired']}",
+            )
+            console.print(
+                f"\n[cyan][JOBS] This looks like a long-running job. "
+                f"Created Job #{new_job.job_id}: '{new_job.title[:60]}'. "
+                f"Track with /jobs status {new_job.job_id}[/]\n"
+            )
+            self.cortex.write_ring(
+                f"JOB_CREATED|id={new_job.job_id}|complexity={complexity['score']:.2f}|{new_job.title[:80]}",
+                category="system_info",
+            )
+
         # Forensic: log tier selection decision (WO_escalation_gate)
         _tiers_available = ["tier.1"]  # habits always available
         if self.use_ollama:
@@ -583,6 +631,9 @@ class Igor:
         elif not pre["should_escalate"] and self.use_ollama:
             _tier_hint = "tier.2"
             _reason = "preparse=simple"
+        elif _skip_to == "tier.4":
+            _tier_hint = "tier.4"
+            _reason = f"complexity={complexity['score']:.2f}|signals={','.join(complexity['signals_fired'])}"
         else:
             _tier_hint = "tier.3+"
             _reason = "preparse=escalate" if pre["should_escalate"] else "ollama_off"
@@ -593,6 +644,8 @@ class Igor:
             preparse_via=_preparse_via,
             tier_selected=_tier_hint,
             reason=_reason,
+            complexity_score=complexity["score"],
+            complexity_signals=",".join(complexity["signals_fired"]),
         )
 
         if relevant:
@@ -625,7 +678,9 @@ class Igor:
                 except Exception as e:
                     # Local pool failed — try cloud failover chain
                     console.print(f"[yellow]Local pool failed ({e}), trying cloud...[/]")
-                    response_text, cost, used_api = self._reason_with_failover(user_input, relevant, core)
+                    response_text, cost, used_api = self._reason_with_failover(
+                        user_input, relevant, core, skip_to=_skip_to
+                    )
             elif self.use_ollama and not pre["should_escalate"]:
                 # tier.2 (WO5): preparse says simple — try local before paying for cloud
                 dashboard.print_reasoning(used_api=False)
@@ -639,11 +694,15 @@ class Igor:
                 except Exception as e:
                     console.print(f"[yellow]tier.2 local failed ({e}), escalating to cloud...[/]")
                     dashboard.print_reasoning(used_api=True)
-                    response_text, cost, used_api = self._reason_with_failover(user_input, relevant, core)
+                    response_text, cost, used_api = self._reason_with_failover(
+                        user_input, relevant, core, skip_to=_skip_to
+                    )
             else:
                 # tier.3+: cloud chain (should_escalate=True or ollama disabled)
                 dashboard.print_reasoning(used_api=True)
-                response_text, cost, used_api = self._reason_with_failover(user_input, relevant, core)
+                response_text, cost, used_api = self._reason_with_failover(
+                    user_input, relevant, core, skip_to=_skip_to
+                )
 
         # [MOTOR CORTEX] Output response
         console.print(f"\n[bold blue]Igor:[/] {response_text}\n")
@@ -728,6 +787,12 @@ class Igor:
         )
         self._ne_thread.start()
 
+    # Keywords indicating a response is a failure/error (pass.3 NE backoff)
+    _FAILURE_KEYWORDS = (
+        "error", "exception", "failed", "unable", "cannot", "no such",
+        "traceback", "not found", "invalid", "timed out", "connection refused",
+    )
+
     def _drain_action_impulses(self):
         """
         Consume pending NE action_impulses from TWM (change.25).
@@ -739,6 +804,10 @@ class Igor:
 
         Respects change.20a: NE will not re-read these as input because
         the consumer marks them integrated AND NE filters source="narrative_engine".
+
+        pass.3: NE failure backoff — tracks consecutive failures; at >= 3 pushes
+        report_failure_to_user; at >= 5 suppresses continue_* entirely and
+        pushes escalate_to_human.
         """
         obs = self.cortex.twm_read(limit=20, include_integrated=False)
         impulses = [
@@ -752,6 +821,34 @@ class Igor:
         # Process at most 1 per tick — impulses are low-priority background work
         impulse = impulses[0]
         content = impulse["content_csb"]
+
+        # ── pass.3: failure-backoff gates ──────────────────────────────────────
+        # Detect "continue_*" impulses (NE busy-loop pattern)
+        _is_continue = (
+            "|continue_" in content.lower()
+            or "|continue " in content.lower()
+            or "continue_task" in content.lower()
+        )
+
+        if _is_continue and self._consecutive_impulse_failures >= 5:
+            # Hard suppress — NE is spinning; mark integrated and skip
+            self.cortex.twm_mark_integrated([impulse["id"]])
+            self.cortex.write_ring(
+                f"IMPULSE_SUPPRESSED|failure_backoff_5|count={self._consecutive_impulse_failures}|{content[:100]}",
+                category="impulse_executed",
+            )
+            console.print(
+                f"[yellow][BACKOFF] Suppressed continue_* impulse "
+                f"(consecutive_failures={self._consecutive_impulse_failures})[/]"
+            )
+            return
+
+        if _is_continue and self._consecutive_impulse_failures >= 3:
+            # Downgrade: execute but log that we're operating in backoff mode
+            console.print(
+                f"[yellow][BACKOFF] Executing continue_* at reduced priority "
+                f"(failure_count={self._consecutive_impulse_failures})[/]"
+            )
 
         # Mark integrated immediately so NE and this consumer don't re-process it
         self.cortex.twm_mark_integrated([impulse["id"]])
@@ -778,6 +875,77 @@ class Igor:
         # Route to _process() as a synthetic low-priority input (impulse — no episodic store)
         synthetic = f"[NE action impulse]: {content}"
         response = self._process(synthetic, is_impulse=True)
+
+        # ── pass.3: update failure counter based on response ───────────────────
+        response_lower = (response or "").lower()
+        response_is_failure = any(kw in response_lower for kw in self._FAILURE_KEYWORDS)
+
+        if response_is_failure:
+            self._consecutive_impulse_failures += 1
+            self.cortex.write_ring(
+                f"IMPULSE_FAILURE|count={self._consecutive_impulse_failures}|{content[:80]}",
+                category="impulse_executed",
+            )
+            console.print(
+                f"[yellow][BACKOFF] Failure #{self._consecutive_impulse_failures} "
+                f"detected in impulse response.[/]"
+            )
+
+            # At exactly 3: push report_failure_to_user (once)
+            if self._consecutive_impulse_failures == 3 and not self._failure_report_pushed:
+                self._failure_report_pushed = True
+                self.cortex.twm_push(
+                    source="failure_backoff",
+                    content_csb=(
+                        f"ACTION_IMPULSE|urgency=0.95|report_failure_to_user|"
+                        f"why:consecutive_impulse_failures={self._consecutive_impulse_failures}|"
+                        f"last_error={response_lower[:80]}"
+                    ),
+                    salience=0.95,
+                    metadata={
+                        "type": "action_impulse",
+                        "action": "report_failure_to_user",
+                        "failure_count": self._consecutive_impulse_failures,
+                    },
+                    ttl_seconds=300,
+                )
+                self.cortex.write_ring(
+                    "FAILURE_BACKOFF_TRIGGERED|threshold=3|pushing_report_failure",
+                    category="impulse_executed",
+                )
+
+            # At 5: push escalate_to_human (once)
+            elif self._consecutive_impulse_failures == 5 and not self._failure_escalated:
+                self._failure_escalated = True
+                self.cortex.twm_push(
+                    source="failure_backoff",
+                    content_csb=(
+                        f"ACTION_IMPULSE|urgency=1.0|escalate_to_human|"
+                        f"why:consecutive_impulse_failures={self._consecutive_impulse_failures}|"
+                        f"all_continue_impulses_suppressed"
+                    ),
+                    salience=1.0,
+                    metadata={
+                        "type": "action_impulse",
+                        "action": "escalate_to_human",
+                        "failure_count": self._consecutive_impulse_failures,
+                    },
+                    ttl_seconds=600,
+                )
+                self.cortex.write_ring(
+                    "FAILURE_BACKOFF_TRIGGERED|threshold=5|escalating_to_human",
+                    category="impulse_executed",
+                )
+        else:
+            # Success — reset failure counter
+            if self._consecutive_impulse_failures > 0:
+                console.print(
+                    f"[dim][BACKOFF] Impulse succeeded — resetting failure counter "
+                    f"(was {self._consecutive_impulse_failures})[/]"
+                )
+            self._consecutive_impulse_failures = 0
+            self._failure_report_pushed = False
+            self._failure_escalated = False
 
         # Log execution to ring
         self.cortex.write_ring(
@@ -922,6 +1090,7 @@ class Igor:
             "orders": self._cmd_orders,       # change.38
             "upstream": self._cmd_upstream,   # change.40
             "relay": self._cmd_relay,         # change.41
+            "jobs": self._cmd_jobs,           # pass.4
         }
         fn = commands.get(command, self._cmd_unknown)
         fn(raw)
@@ -951,6 +1120,14 @@ class Igor:
   /orders           - List last 10 open work orders
   /orders all       - Last 10 any status
   /orders N         - Detail on work order N
+
+[bold]Long-running Jobs (pass.4):[/]
+  /jobs             - List active jobs
+  /jobs all         - List all jobs (including completed)
+  /jobs status ID   - Detailed status for job ID
+  /jobs pause ID    - Pause a running job
+  /jobs resume ID   - Resume a paused job
+  /jobs cancel ID   - Cancel a job
 
 [bold]Multi-Upstream (change.40):[/]
   /upstream list            - Show available reasoners + status
@@ -1193,6 +1370,72 @@ class Igor:
         else:
             result = list_work_orders()
         console.print(f"\n{result}\n")
+
+    # ── pass.4: long-running job management ───────────────────────────────────
+
+    def _cmd_jobs(self, raw):
+        """Long-running job management. Subcommands: list|status ID|pause ID|resume ID|cancel ID"""
+        parts = raw.strip().split(None, 2)
+        sub = parts[1].lower() if len(parts) > 1 else "list"
+        arg = parts[2].strip() if len(parts) > 2 else ""
+
+        if sub == "list":
+            jobs = self.job_manager.list_jobs(include_closed=False)
+            if not jobs:
+                console.print("\n[dim]No active jobs.[/]")
+            else:
+                console.print(f"\n[bold]Active jobs ({len(jobs)}):[/]")
+                for j in jobs:
+                    console.print(f"  {j.summary()}")
+            console.print()
+
+        elif sub == "all":
+            jobs = self.job_manager.list_jobs(include_closed=True)
+            if not jobs:
+                console.print("\n[dim]No jobs found.[/]")
+            else:
+                console.print(f"\n[bold]All jobs ({len(jobs)}):[/]")
+                for j in jobs[:20]:
+                    console.print(f"  {j.summary()}")
+            console.print()
+
+        elif sub == "status":
+            if not arg:
+                console.print("[yellow]Usage: /jobs status <ID>[/]")
+                return
+            j = self.job_manager.get(arg)
+            if not j:
+                console.print(f"[yellow]Job '{arg}' not found.[/]")
+                return
+            console.print(f"\n[bold]Job details:[/]")
+            console.print(f"  ID:          {j.job_id}")
+            console.print(f"  Title:       {j.title}")
+            console.print(f"  Status:      {j.status}")
+            console.print(f"  Progress:    {j.completed_units}/{j.total_units} ({j.progress_pct():.0f}%)")
+            console.print(f"  Failed:      {j.failed_units}")
+            console.print(f"  Checkpoint:  {j.checkpoint or '(none)'}")
+            console.print(f"  Created:     {j.created_at[:16]}")
+            console.print(f"  Updated:     {j.updated_at[:16]}")
+            if j.github_issue:
+                console.print(f"  GitHub WO:   #{j.github_issue}")
+            if j.notes:
+                console.print(f"  Notes:       {j.notes[:80]}")
+            console.print()
+
+        elif sub == "pause":
+            j = self.job_manager.pause(arg)
+            console.print(f"[dim]Job '{arg}': {j.status if j else 'not found'}[/]")
+
+        elif sub == "resume":
+            j = self.job_manager.resume(arg)
+            console.print(f"[dim]Job '{arg}': {j.status if j else 'not found'}[/]")
+
+        elif sub == "cancel":
+            j = self.job_manager.cancel(arg)
+            console.print(f"[dim]Job '{arg}' cancelled.[/]" if j else f"[yellow]Job '{arg}' not found.[/]")
+
+        else:
+            console.print("[yellow]Usage: /jobs list|all|status ID|pause ID|resume ID|cancel ID[/]")
 
     # ── change.40: multi-upstream query ───────────────────────────────────────
 
