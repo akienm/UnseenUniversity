@@ -156,3 +156,23 @@ def log_memory_op(
         f"|why={why[:60]}"
     )
     _prepend("memory_ops.log", entry)
+
+
+def log_tier_selection(
+    *,
+    tiers_available: list,
+    preparse_escalate: bool,
+    preparse_via: str,        # "ollama" | "openrouter" | "skipped"
+    tier_selected: str,       # "tier.1" | "tier.2" | "tier.3" | ...
+    reason: str,
+) -> None:
+    """Log which tier was selected before each upstream call."""
+    entry = (
+        f"{_ts()}|tier_select"
+        f"|available={','.join(tiers_available)}"
+        f"|preparse_via={preparse_via}"
+        f"|escalate={preparse_escalate}"
+        f"|selected={tier_selected}"
+        f"|reason={reason}"
+    )
+    _prepend("reasoning_calls.log", entry)
