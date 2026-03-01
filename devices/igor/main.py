@@ -25,6 +25,8 @@ from .cognition import thalamus
 from .cognition import prefrontal_cortex as pfc
 from .cognition.reasoners.anthropic import AnthropicReasoner
 from .cognition.reasoners.ollama_reasoner import preparse, score_memories, OllamaReasoner
+from .cognition.reasoners.openrouter_reasoner import preparse_via_openrouter
+from .cognition.forensic_logger import log_tier_selection
 from .cognition.local_pool import LocalOllamaPool
 from .cognition.narrative_engine import NarrativeEngine
 from .cognition.push_sources import run_background_sources, user_input_source
@@ -557,14 +559,41 @@ class Igor:
             pre = preparse(user_input, habits)
             relevant = score_memories(user_input, candidates) if candidates else []
         else:
-            pre = {
-                "intent": parsed.intent,
-                "keywords": parsed.keywords,
-                "habit_match": None,
-                "confidence": 0.0,
-                "should_escalate": True,
-            }
-            relevant = candidates[:5]  # Simple truncation without scoring
+            # Preparse must always run — use tier.3 backend when Ollama off (WO_escalation_gate)
+            console.print("[dim][PREPARSE] Ollama off — classifying via tier.3 (gpt-4o-mini)...[/]")
+            pre = preparse_via_openrouter(user_input, habits)
+            relevant = candidates[:5]
+
+        # Forensic: log tier selection decision (WO_escalation_gate)
+        _tiers_available = ["tier.1"]  # habits always available
+        if self.use_ollama:
+            _tiers_available.append("tier.2")
+        if self.openrouter_cheap_reasoner is not None:
+            _tiers_available.append("tier.3")
+        if self.openrouter_reasoner is not None:
+            _tiers_available.append("tier.4")
+        if self.reasoner is not None:
+            _tiers_available.append("tier.5")
+        _tiers_available.append("tier.6")  # arbiter always last resort
+
+        _preparse_via = "ollama" if self.use_ollama else "openrouter"
+        if self.local_mode:
+            _tier_hint = "tier.2"
+            _reason = "local_mode=true"
+        elif not pre["should_escalate"] and self.use_ollama:
+            _tier_hint = "tier.2"
+            _reason = "preparse=simple"
+        else:
+            _tier_hint = "tier.3+"
+            _reason = "preparse=escalate" if pre["should_escalate"] else "ollama_off"
+
+        log_tier_selection(
+            tiers_available=_tiers_available,
+            preparse_escalate=pre["should_escalate"],
+            preparse_via=_preparse_via,
+            tier_selected=_tier_hint,
+            reason=_reason,
+        )
 
         if relevant:
             dashboard.print_activated_memories(relevant, f"Relevant (intent={pre['intent']})")
