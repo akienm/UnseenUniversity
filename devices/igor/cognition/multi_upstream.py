@@ -63,7 +63,7 @@ def compare_responses(responses: list[tuple[str, str, float]]) -> str:
             prompt_parts.append(f"{name}:\n{text[:300]}\n\n")
         prompt = "".join(prompt_parts)
         resp = _ollama.chat(
-            model="gemma3:270M",
+            model="gemma3:1b",  # Ollama fallback; primary path uses KoboldCpp
             messages=[{"role": "user", "content": prompt}],
             options={"temperature": 0.2},
         )

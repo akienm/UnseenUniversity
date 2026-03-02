@@ -27,6 +27,7 @@ from .cognition.reasoners.anthropic import AnthropicReasoner
 from .cognition.reasoners.ollama_reasoner import preparse, score_memories, OllamaReasoner, compute_complexity
 from .cognition.reasoners.openrouter_reasoner import preparse_via_openrouter
 from .cognition.forensic_logger import log_tier_selection
+from .cognition.system_prompt import build_boot_message, invalidate_cache
 from .cognition.local_pool import LocalOllamaPool
 from .cognition import observer
 from .cognition.narrative_engine import NarrativeEngine
@@ -146,7 +147,7 @@ class Igor:
         web_server.start(stats_fn=self.get_stats)
         boot_check.start(cortex=self.cortex)
 
-        is_new = self.cortex.total_count() == 22  # Just genesis
+        is_new = self.cortex.total_count() == 44  # Just genesis (Changes 5-7 added 9 PROCs: 35→44)
 
         # change.36: export portable identity files on every boot
         self._export_portable_identity()
@@ -159,7 +160,26 @@ class Igor:
             console.print(f"\n[cyan]Igor-{instance_id} resumed. {self.cortex.total_count()} memories loaded.[/]")
 
         # [WARM CONTEXT] Reload warm working memory from previous session
-        self._load_warm_context()
+        warm_ctx = self._load_warm_context()
+
+        # [BOOT MESSAGE] Synthetic first-turn orientation — Igor reads this before any input
+        try:
+            boot_msg = build_boot_message(
+                cortex=self.cortex,
+                instance_id=self.instance_id,
+                warm_context=warm_ctx,
+            )
+            self.cortex.write_ring(boot_msg[:800], category="session_control")
+            self.cortex.twm_push(
+                source="boot_sequence",
+                content_csb=boot_msg[:500],
+                salience=0.9,
+                urgency=0.9,
+                metadata={"type": "boot_orientation"},
+                ttl_seconds=1800,
+            )
+        except Exception as _e:
+            console.print(f"[dim][BOOT] boot message failed: {_e}[/]")
 
         # [RING] Surface recent context and restart notes on wakeup
         restart_note = self.cortex.get_last_restart_note()
@@ -289,12 +309,25 @@ class Igor:
         except Exception as e:
             console.print(f"[dim][IDENTITY] IDENTITY.md write failed: {e}[/]")
 
+        # ── boot_notes.md — install if not already present ───────────────────
+        # Source: wild_igor/igor/cognition/boot_notes.md (static, update manually)
+        # Dest: ~/.TheIgors/<instance_dir>/boot_notes.md (read by build_boot_message)
+        boot_notes_src = Path(__file__).parent / "cognition" / "boot_notes.md"
+        boot_notes_dst = instance_dir / "boot_notes.md"
+        if boot_notes_src.exists() and not boot_notes_dst.exists():
+            try:
+                import shutil
+                shutil.copy(boot_notes_src, boot_notes_dst)
+                console.print(f"[dim][IDENTITY] boot_notes.md installed.[/]")
+            except Exception as e:
+                console.print(f"[dim][IDENTITY] boot_notes.md install failed: {e}[/]")
+
         console.print(f"[dim][IDENTITY] SOUL.md + IDENTITY.md exported.[/]")
 
     def _announce_first_boot(self):
         """
         First-boot only: announce on Discord, self-register in machines.csv.
-        Runs when total_count()==22 (just genesis — fresh instance).
+        Runs when total_count()==44 (just genesis — fresh instance).
         """
         import platform
         import socket
@@ -506,7 +539,7 @@ class Igor:
 
         if ctx is None:
             console.print("[dim][WARM] no warm context found, starting cold[/]")
-            return
+            return None
 
         # Parse and check TTL
         try:
@@ -531,7 +564,7 @@ class Igor:
                 f"[dim][WARM] warm context expired ({age_hours:.1f}h > {ttl_hours}h TTL), "
                 f"starting cold[/]"
             )
-            return
+            return None
 
         # ── Fresh enough — restore ────────────────────────────────────────────
 
@@ -590,6 +623,7 @@ class Igor:
             f"|twm={twm_restored}|{summary[:100]}",
             category="session_control",
         )
+        return ctx
 
     def run(self):
         """
@@ -928,7 +962,21 @@ class Igor:
 
         if habit:
             dashboard.print_habit_trigger(habit)
-            response_text = habit.metadata.get("action", "Habit executed.")
+            code_ref = habit.metadata.get("code_ref")
+            if code_ref:
+                # Change 6 / D030: resolve code_ref to builtin tool via registry (POC)
+                # Full argument extraction from user input is future work.
+                from .tools.registry import registry as _tool_registry
+                tool_name = code_ref.split(":")[-1]
+                tool = _tool_registry.get(tool_name)
+                response_text = (
+                    f"[HABIT→TOOL] Matched habit {habit.id} maps to builtin '{tool_name}' "
+                    f"(code_ref={code_ref}). "
+                    + ("Tool found in registry — provide arguments to invoke." if tool
+                       else "Tool not found in registry.")
+                )
+            else:
+                response_text = habit.metadata.get("action", "Habit executed.")
             self.cortex.record_activation(habit.id, 0.05)
         else:
             # [PREFRONTAL CORTEX] Upstream reasoning
@@ -989,6 +1037,9 @@ class Igor:
 
         # [HIPPOCAMPUS] Store episodic memory — skip for NE impulses (TWM-only until consumed)
         if not is_impulse:
+            # Change 7 / D031: include routing decision in episodic metadata
+            # This builds the audit trail for future routing habit compilation.
+            _routing_proc_id = "PROC_ROUTING_LOCAL" if not used_api else "PROC_ROUTING_ESCALATE"
             ep = Memory(
                 narrative=f"User: {user_input[:80]} → Igor responded about {parsed.intent}",
                 memory_type=MemoryType.EPISODIC,
@@ -999,6 +1050,9 @@ class Igor:
                     "intent": parsed.intent,
                     "friction": friction,
                     "used_api": used_api,
+                    "tier_hint": _tier_hint,
+                    "complexity_score": complexity["score"],
+                    "routing_proc_id": _routing_proc_id,
                 }
             )
             self.cortex.store(ep)
@@ -1306,6 +1360,7 @@ class Igor:
             f"[cyan][PRECOMPACT] Done — stored as {mem.id}. "
             "Run /compress when ready to restart fresh.[/]"
         )
+        invalidate_cache()  # Refresh system prompt on next call
         self._context_flush_done = True
 
     def _drain_network(self):
@@ -1348,7 +1403,13 @@ class Igor:
                 web_server.send(response)
 
     def _find_habit(self, parsed) -> Memory | None:
-        """Check if any habit matches this input. Placeholder for basal ganglia."""
+        """
+        Check if any habit matches this input. Placeholder for basal ganglia.
+
+        Change 6 / D030: habits with metadata.code_ref map to builtin tool functions.
+        Execution is handled in _process_inner() via registry lookup.
+        Full argument extraction from parsed.raw is future work.
+        """
         habits = self.cortex.get_habits()
         for habit in habits:
             trigger = habit.metadata.get("trigger", "")
@@ -1619,6 +1680,7 @@ class Igor:
             category="arbiter",
         )
         console.print(f"[dim]Learning stored as {ep.id} (valence={valence:+.1f})[/]")
+        invalidate_cache()  # Arbiter decisions may affect activation counts in CP/ID/PROC
 
         # If approved: offer to execute the queued action
         if status == "approved":

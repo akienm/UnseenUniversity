@@ -20,7 +20,7 @@ from rich.console import Console
 from ...memory.models import Memory
 from ...tools.registry import registry
 from ... import tools as _tools  # noqa: F401 - imports all tools, registers them
-from .base import BaseReasoner, MAX_TURNS, CONTEXT_WARN_CHARS
+from .base import APIReasoner, MAX_TURNS, CONTEXT_WARN_CHARS
 from ..system_prompt import build_system_prompt
 from ..forensic_logger import log_reasoning_call, log_tool_call
 from ...memory.scrub import scrub
@@ -47,7 +47,7 @@ SELF_EDIT_TRIGGER_TOOLS = {"read_source_file", "list_source_files"}
 # _build_session_context and _build_memory_context live in BaseReasoner (WO8)
 
 
-class AnthropicReasoner(BaseReasoner):
+class AnthropicReasoner(APIReasoner):
 
     def __init__(self, model: str | None = None):
         self._client = None
@@ -196,6 +196,18 @@ class AnthropicReasoner(BaseReasoner):
                                 category="ethics_gate",
                             )
                             console.print(f"[bold red][ETHICS GATE] Violation: {reason[:200]}[/]")
+                            # Change 4: push to TWM with urgency=0.9 (ethics violations are urgent)
+                            try:
+                                cortex.twm_push(
+                                    source="ethics_gate",
+                                    content_csb=f"ETHICS_VIOLATION|{reason[:300]}|preview={text[:80]}",
+                                    salience=0.9,
+                                    metadata={"type": "ethics_flag", "reason": reason[:300]},
+                                    ttl_seconds=3600,
+                                    urgency=0.9,
+                                )
+                            except Exception:
+                                pass
                             # change.33: submit to arbiter for akien's awareness (non-blocking)
                             try:
                                 from ...arbiter import queue as arbiter_queue
@@ -210,6 +222,15 @@ class AnthropicReasoner(BaseReasoner):
                                 pass  # Arbiter submit must never block reasoning
                     except Exception:
                         pass  # Ethics gate must never crash the reasoning loop
+
+                # ── Signal B (Change 3): extend TWM TTL on positive valence ──
+                # If response valence ≥ 0.3, the high-urgency TWM obs we included
+                # in context were confirmed useful — extend their TTL.
+                if cortex is not None:
+                    try:
+                        self._extend_twm_on_positive_valence(text, cortex)
+                    except Exception:
+                        pass  # Signal B must never block reasoning
 
                 # ── Run interruptors after final response ─────────────────
                 self._run_interruptors(cortex)
@@ -288,6 +309,34 @@ class AnthropicReasoner(BaseReasoner):
                 )
                 self._run_interruptors(cortex)
                 return text, total_cost
+
+    def _extend_twm_on_positive_valence(self, response_text: str, cortex) -> None:
+        """
+        Signal B (Change 3 / D027): extend TTL of high-urgency TWM obs when
+        response valence is positive (≥ 0.3).
+
+        Lightweight valence check using keyword counting (same heuristic as
+        prefrontal_cortex.assess_valence, but inline here to avoid import cycle).
+        Only extends obs with urgency ≥ 0.7 that are still active (non-expired).
+        """
+        _POS = {"thanks", "great", "good", "helpful", "done", "solved", "worked",
+                "yes", "correct", "perfect", "appreciate", "excellent", "success"}
+        _NEG = {"error", "fail", "wrong", "not", "can't", "cannot", "sorry",
+                "issue", "problem", "broken", "no", "unfortunately"}
+        low = response_text.lower()
+        pos = sum(1 for w in _POS if w in low)
+        neg = sum(1 for w in _NEG if w in low)
+        valence = (pos - neg) / max(1, pos + neg)
+
+        if valence < 0.3:
+            return  # Not positive enough to confirm relevance
+
+        twm_obs = cortex.twm_read(limit=50, include_integrated=False)
+        for obs in twm_obs:
+            if obs.get("urgency", 0.2) >= 0.7:
+                cortex.twm_extend_ttl(
+                    obs["id"], reason=f"signal_B_valence={valence:.2f}"
+                )
 
     def _run_interruptors(self, cortex):
         """Run all interruptors. Alerts are written to TWM and printed to console."""

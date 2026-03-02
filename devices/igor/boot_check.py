@@ -1,9 +1,15 @@
 """
-boot_check.py — Verify required Ollama models are present on all online machines.
+boot_check.py — Verify KoboldCpp health + required Ollama models on cluster machines.
 
-Required models:
+All cluster machines run KoboldCpp (port 5001) with Llama-3.2-1B-Instruct-Q4_K_M-GGUF.
+KoboldCpp is the primary local inference backend for NE and preparse.
+Ollama is retained for embeddings only (nomic-embed-text).
+
+Required Ollama models:
   nomic-embed-text  — universal embedding model; must be identical across cluster
-  gemma3:270M       — standard reasoning model for NE orchestration (291MB, ~270M params)
+
+KoboldCpp health checked via GET /api/v1/info on koboldcpp_port
+(read from machines.csv; defaults to 5001 if column present but empty).
 
 Runs in a daemon thread at startup so Igor is not blocked.
 Logs results to ~/.TheIgors/claudecode/changes.log (CSB format, newest first)
@@ -20,12 +26,13 @@ from typing import Optional
 from urllib.request import urlopen, Request
 from urllib.error import URLError
 
-MACHINES_CSV    = Path.home() / ".TheIgors" / "local" / "machines.csv"
-CHANGES_LOG     = Path.home() / ".TheIgors" / "claudecode" / "changes.log"
-OLLAMA_PORT     = 11434
-REQUIRED_MODELS = ["nomic-embed-text", "gemma3:1b"]
-CHECK_TIMEOUT   = 5    # seconds per reachability probe
-PULL_TIMEOUT    = 600  # seconds — model pull can take a while on first run
+MACHINES_CSV       = Path.home() / ".TheIgors" / "local" / "machines.csv"
+CHANGES_LOG        = Path.home() / ".TheIgors" / "claudecode" / "changes.log"
+OLLAMA_PORT        = 11434
+KOBOLDCPP_PORT_DEFAULT = 5001
+REQUIRED_MODELS    = ["nomic-embed-text"]   # embeddings only; KoboldCpp handles reasoning
+CHECK_TIMEOUT      = 5    # seconds per reachability probe
+PULL_TIMEOUT       = 600  # seconds — model pull can take a while on first run
 
 
 # ── Internal helpers ───────────────────────────────────────────────────────────
@@ -46,6 +53,22 @@ def _parse_online_machines() -> list[dict]:
         return machines
     except Exception:
         return []
+
+
+def _check_koboldcpp(ip: str, port: int = KOBOLDCPP_PORT_DEFAULT) -> Optional[bool]:
+    """
+    Probe KoboldCpp health endpoint GET /api/v1/info on the given machine.
+    Returns True if healthy, False if reachable but unhealthy, None if unreachable.
+    """
+    url = f"http://{ip}:{port}/api/v1/info"
+    try:
+        with urlopen(url, timeout=CHECK_TIMEOUT) as resp:
+            data = json.loads(resp.read().decode())
+        return bool(data)
+    except (URLError, OSError):
+        return None
+    except (json.JSONDecodeError, ValueError):
+        return False
 
 
 def _get_available_models(ip: str) -> Optional[list[str]]:
@@ -109,9 +132,25 @@ def run(cortex=None):
         ip       = machine.get("IP", "")
         priority = machine.get("Priority", "unknown")
 
+        # ── KoboldCpp health check (Change 1) ─────────────────────────────
+        kcc_port_str = machine.get("koboldcpp_port", "").strip()
+        if kcc_port_str:
+            try:
+                kcc_port = int(kcc_port_str)
+            except ValueError:
+                kcc_port = KOBOLDCPP_PORT_DEFAULT
+            kcc_status = _check_koboldcpp(ip, kcc_port)
+            if kcc_status is True:
+                results.append(f"BOOT_CHECK|{ts}|{hostname}|{ip}|koboldcpp:{kcc_port}|healthy")
+            elif kcc_status is False:
+                results.append(f"BOOT_CHECK|{ts}|{hostname}|{ip}|koboldcpp:{kcc_port}|unhealthy")
+            else:
+                results.append(f"BOOT_CHECK|{ts}|{hostname}|{ip}|koboldcpp:{kcc_port}|unreachable")
+
+        # ── Ollama model checks (existing; retained as fallback) ───────────
         available = _get_available_models(ip)
         if available is None:
-            results.append(f"BOOT_CHECK|{ts}|{hostname}|{ip}|{priority}|unreachable")
+            results.append(f"BOOT_CHECK|{ts}|{hostname}|{ip}|{priority}|ollama_unreachable")
             continue
 
         for model in REQUIRED_MODELS:

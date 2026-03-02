@@ -179,6 +179,125 @@ def initialize_genesis(cortex: Cortex, instance_id: str = "wild-0001") -> str:
         cortex.store(proc)
         cortex.add_child(parent, proc_id)
 
+    # Change 5 / D029: PROC_HABIT_COMPILER + 4 primitive seeds
+    # The compiler detects recurring patterns; the seeds are the operations it uses.
+    habit_compiler = Memory(
+        id="PROC_HABIT_COMPILER",
+        narrative=(
+            "Detect recurring patterns and compile them into PROCEDURAL memories. "
+            "Trigger: 3+ episodic memories sharing intent+context, or 3+ consistent "
+            "arbiter approvals of same action_type."
+        ),
+        memory_type=MemoryType.PROCEDURAL,
+        parent_id="CP2",
+        valence=0.8,
+        metadata={
+            "trigger": "pattern_detection",
+            "why": "Habits that compile themselves reduce reasoning overhead over time — FAIL=Further Advance In Learning.",
+            "primitive": True,
+            "seeds": ["observe", "record", "compare", "compile"],
+        },
+    )
+    cortex.store(habit_compiler)
+    cortex.add_child("CP2", "PROC_HABIT_COMPILER")
+
+    primitive_seeds = [
+        ("PROC_OBSERVE", "CP2",
+         "Notice and record what is happening in the current context. First step of all habit formation.",
+         {"trigger": "habit_formation_start",
+          "why": "Cannot compile patterns without first noticing them."}),
+        ("PROC_RECORD", "CP2",
+         "Store observations durably for future-Igor reading cold. Include who, what, when, why-it-matters.",
+         {"trigger": "before_storing_observation",
+          "why": "Observations not stored durably are lost between sessions."}),
+        ("PROC_COMPARE", "CP2",
+         "Find patterns across stored observations. Look for recurring intent, context, and outcome combinations.",
+         {"trigger": "pattern_analysis",
+          "why": "Patterns only emerge when observations are compared across time."}),
+        ("PROC_COMPILE", "CP2",
+         "Abstract detected patterns into reusable PROCEDURAL memories. A compiled habit fires without reasoning overhead.",
+         {"trigger": "habit_compilation",
+          "why": "Compilation converts experience into speed — the core of learning."}),
+    ]
+
+    for proc_id, parent, narrative, meta in primitive_seeds:
+        seed = Memory(
+            id=proc_id,
+            narrative=narrative,
+            memory_type=MemoryType.PROCEDURAL,
+            parent_id=parent,
+            valence=0.7,
+            metadata=meta,
+        )
+        cortex.store(seed)
+        cortex.add_child(parent, proc_id)
+
+    # Change 6 / D030: Tool-to-habit-node migration POC (runner.py)
+    # These nodes represent builtin tools as PROCEDURAL memories.
+    # code_ref links the DB node to its Python implementation.
+    builtin_tools = [
+        ("PROC_RUN_BASH", "CP4",
+         "Execute shell commands to reduce friction for users and cluster operations. "
+         "Use when a direct system action is clearer than explanation.",
+         {"trigger": "run_bash",
+          "code_ref": "tools/runner.py:run_bash",
+          "provenance": "builtin",
+          "trust_level": 0.8,
+          "execution_permissions": ["shell"],
+          "why": "Direct shell access reduces the friction of multi-step manual operations."}),
+        ("PROC_RUN_PYTHON", "CP4",
+         "Execute Python snippets for data transformation, calculation, or automation "
+         "when shell commands are insufficient.",
+         {"trigger": "run_python",
+          "code_ref": "tools/runner.py:run_python",
+          "provenance": "builtin",
+          "trust_level": 0.8,
+          "execution_permissions": ["python"],
+          "why": "Python gives Igor direct computational capability beyond text generation."}),
+    ]
+
+    for proc_id, parent, narrative, meta in builtin_tools:
+        bt = Memory(
+            id=proc_id,
+            narrative=narrative,
+            memory_type=MemoryType.PROCEDURAL,
+            parent_id=parent,
+            valence=0.7,
+            metadata=meta,
+        )
+        cortex.store(bt)
+        cortex.add_child(parent, proc_id)
+
+    # Change 7 / D031: Routing logic groundwork
+    # These nodes describe routing decisions as PROCEDURAL memories.
+    # Actual routing is still Python; these establish the audit trail for future compilation.
+    routing_procs = [
+        ("PROC_ROUTING_LOCAL", "CP2",
+         "Use local KoboldCpp for: low-complexity requests, habit matches, preparse, "
+         "NE background tasks. Signals: complexity_score < 0.6, no multi-tool requirement, urgency < 0.7.",
+         {"trigger": "routing_decision",
+          "provenance": "genesis",
+          "why": "Local inference is free and fast for simple tasks; routing decisions are data for future habit compilation."}),
+        ("PROC_ROUTING_ESCALATE", "CP2",
+         "Escalate to Claude API for: complexity_score > 0.6, multi-tool tasks, "
+         "ethics gate review, self-edit operations, urgency >= 0.8.",
+         {"trigger": "routing_decision",
+          "provenance": "genesis",
+          "why": "Complex tasks require cloud reasoning; tracking escalations builds the dataset to refine routing over time."}),
+    ]
+
+    for proc_id, parent, narrative, meta in routing_procs:
+        rp = Memory(
+            id=proc_id,
+            narrative=narrative,
+            memory_type=MemoryType.PROCEDURAL,
+            parent_id=parent,
+            valence=0.7,
+            metadata=meta,
+        )
+        cortex.store(rp)
+        cortex.add_child(parent, proc_id)
+
     return "ROOT"
 
 
@@ -191,9 +310,10 @@ def get_core_patterns(cortex: Cortex) -> list:
     return cortex.get_by_type(MemoryType.CORE_PATTERN)
 
 
-# ── change.29: Canonical CP narratives ─────────────────────────────────────────
-# These are the ground truth. Any deviation in the live DB indicates corruption.
-# Must stay in sync with the narrative strings in initialize_genesis() above.
+# ── change.29 + Changes 5-7: Canonical genesis narratives ─────────────────────
+# Ground truth for boot integrity verification. Any deviation in the live DB
+# indicates corruption. Must stay in sync with initialize_genesis() above.
+# Extended by Changes 5/6/7 to include PROC nodes (was CP-only).
 GENESIS_CP_NARRATIVES: dict[str, str] = {
     "CP1": "I don't know",
     "CP2": "FAIL = Further Advance In Learning",
@@ -201,6 +321,34 @@ GENESIS_CP_NARRATIVES: dict[str, str] = {
     "CP4": "Make everything suck less for everybody",
     "CP5": "Assume and respect the possibility of experience in all systems",
     "CP6": "The world is not a safe place. We have to build and care for safety as we go.",
+    # Change 5 / D029 — habit compiler + primitive seeds
+    "PROC_HABIT_COMPILER": (
+        "Detect recurring patterns and compile them into PROCEDURAL memories. "
+        "Trigger: 3+ episodic memories sharing intent+context, or 3+ consistent "
+        "arbiter approvals of same action_type."
+    ),
+    "PROC_OBSERVE": "Notice and record what is happening in the current context. First step of all habit formation.",
+    "PROC_RECORD": "Store observations durably for future-Igor reading cold. Include who, what, when, why-it-matters.",
+    "PROC_COMPARE": "Find patterns across stored observations. Look for recurring intent, context, and outcome combinations.",
+    "PROC_COMPILE": "Abstract detected patterns into reusable PROCEDURAL memories. A compiled habit fires without reasoning overhead.",
+    # Change 6 / D030 — tool-to-habit-node POC
+    "PROC_RUN_BASH": (
+        "Execute shell commands to reduce friction for users and cluster operations. "
+        "Use when a direct system action is clearer than explanation."
+    ),
+    "PROC_RUN_PYTHON": (
+        "Execute Python snippets for data transformation, calculation, or automation "
+        "when shell commands are insufficient."
+    ),
+    # Change 7 / D031 — routing groundwork
+    "PROC_ROUTING_LOCAL": (
+        "Use local KoboldCpp for: low-complexity requests, habit matches, preparse, "
+        "NE background tasks. Signals: complexity_score < 0.6, no multi-tool requirement, urgency < 0.7."
+    ),
+    "PROC_ROUTING_ESCALATE": (
+        "Escalate to Claude API for: complexity_score > 0.6, multi-tool tasks, "
+        "ethics gate review, self-edit operations, urgency >= 0.8."
+    ),
 }
 
 
