@@ -20,9 +20,10 @@ from rich.console import Console
 from ...memory.models import Memory
 from ...tools.registry import registry
 from ... import tools as _tools  # noqa: F401 - imports all tools, registers them
-from .base import BaseReasoner
+from .base import BaseReasoner, MAX_TURNS, CONTEXT_WARN_CHARS
 from ..system_prompt import build_system_prompt
 from ..forensic_logger import log_reasoning_call, log_tool_call
+from ...memory.scrub import scrub
 
 console = Console()
 
@@ -111,6 +112,7 @@ class AnthropicReasoner(BaseReasoner):
             content += session_context
         if memory_context:
             content += memory_context
+        content = scrub(content)
 
         messages = [{"role": "user", "content": content}]
         tools = registry.to_anthropic_schemas()
@@ -122,6 +124,21 @@ class AnthropicReasoner(BaseReasoner):
 
         while True:
             turn += 1
+
+            # ── TURN LIMIT — break runaway tool loops ─────────────────────
+            if turn > MAX_TURNS:
+                console.print(
+                    f"[yellow][THINK] MAX_TURNS ({MAX_TURNS}) reached — stopping tool loop.[/]"
+                )
+                break
+
+            # ── CONTEXT SIZE WARNING ───────────────────────────────────────
+            ctx_chars = self._messages_total_chars(messages)
+            if ctx_chars > CONTEXT_WARN_CHARS:
+                console.print(
+                    f"[yellow][THINK] context ~{ctx_chars // 1000}K chars at turn {turn} "
+                    f"— consider breaking into smaller steps[/]"
+                )
 
             # ── BUDGET CHECK before each API call ─────────────────────────
             try:
@@ -252,7 +269,7 @@ class AnthropicReasoner(BaseReasoner):
                         tool_results.append({
                             "type": "tool_result",
                             "tool_use_id": block.id,
-                            "content": result,
+                            "content": self._cap_tool_result(str(result)),
                         })
 
                 # Feed results back and loop

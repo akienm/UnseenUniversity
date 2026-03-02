@@ -12,6 +12,15 @@ from ...memory.models import Memory
 _RING_EXCLUDE = frozenset({"tool_trace", "judgment", "action_impulse", "ne_diagnostic"})
 _RING_CONTEXT_LIMIT = 5
 
+# ── Token economy (shared across all reasoners) ────────────────────────────────
+# Each tool result is capped before it enters the message history.
+# This prevents a single large command output (find, cat big file, etc.) from
+# blowing up the context window.  Big tasks should be decomposed, not ingested
+# in one shot.
+TOOL_RESULT_MAX_CHARS = 20_000   # ~5 K tokens — generous for real data
+MAX_TURNS = 25                   # hard limit on tool-call rounds per session
+CONTEXT_WARN_CHARS = 100_000     # ~25 K tokens total messages — emit a warning
+
 
 class BaseReasoner(ABC):
     """
@@ -41,6 +50,42 @@ class BaseReasoner(ABC):
     def name(self) -> str:
         """Human-readable name for this reasoner."""
         ...
+
+    # ── Token economy ─────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _cap_tool_result(result: str) -> str:
+        """
+        Truncate a tool result to TOOL_RESULT_MAX_CHARS.
+
+        Appends a visible truncation notice so the model knows output was cut.
+        Big outputs (find trees, large files) must be broken into smaller steps,
+        not ingested whole — this cap enforces that discipline.
+        """
+        if len(result) <= TOOL_RESULT_MAX_CHARS:
+            return result
+        dropped = len(result) - TOOL_RESULT_MAX_CHARS
+        return (
+            result[:TOOL_RESULT_MAX_CHARS]
+            + f"\n[TRUNCATED — {dropped} more chars not shown. "
+            f"Break large tasks into smaller steps rather than reading everything at once.]"
+        )
+
+    @staticmethod
+    def _messages_total_chars(messages: list) -> int:
+        """Rough char count of all message content — used for context size warnings."""
+        total = 0
+        for m in messages:
+            c = m.get("content") or ""
+            if isinstance(c, str):
+                total += len(c)
+            elif isinstance(c, list):
+                for block in c:
+                    if isinstance(block, dict):
+                        total += len(str(block.get("text", "") or block.get("content", "")))
+                    else:
+                        total += len(str(block))
+        return total
 
     # ── Shared context builders (WO8) ─────────────────────────────────────────
 

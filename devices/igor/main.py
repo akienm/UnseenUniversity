@@ -28,6 +28,7 @@ from .cognition.reasoners.ollama_reasoner import preparse, score_memories, Ollam
 from .cognition.reasoners.openrouter_reasoner import preparse_via_openrouter
 from .cognition.forensic_logger import log_tier_selection
 from .cognition.local_pool import LocalOllamaPool
+from .cognition import observer
 from .cognition.narrative_engine import NarrativeEngine
 from .cognition.push_sources import run_background_sources, user_input_source
 from .cognition.multi_upstream import query_multiple, compare_responses
@@ -73,6 +74,7 @@ class Igor:
         DATA_DIR.mkdir(exist_ok=True)
 
         self.cortex = Cortex(self.db_path)
+        observer.init(self.cortex)
         self.root_id = initialize_genesis(self.cortex, instance_id)
         self._boot_integrity_check()
 
@@ -96,6 +98,16 @@ class Igor:
         self._consecutive_impulse_failures: int = 0
         self._failure_report_pushed: bool = False   # prevent duplicate report_failure impulses
         self._failure_escalated: bool = False       # prevent duplicate escalate_to_human impulses
+
+        # Part C — routing signal tracking
+        self._last_response_time: float = 0.0      # epoch seconds of last response
+        self._consecutive_slow: int = 0             # consecutive responses over latency budget
+
+        # Dashboard live activity state (#18)
+        self._current_action: str = "idle"
+        self._is_processing: bool = False
+        self._last_input_preview: str = ""
+        self._current_tier: str = ""
 
         # Long-running job support (pass.4)
         self.job_manager = JobManager()
@@ -145,6 +157,9 @@ class Igor:
             self._announce_first_boot()
         else:
             console.print(f"\n[cyan]Igor-{instance_id} resumed. {self.cortex.total_count()} memories loaded.[/]")
+
+        # [WARM CONTEXT] Reload warm working memory from previous session
+        self._load_warm_context()
 
         # [RING] Surface recent context and restart notes on wakeup
         restart_note = self.cortex.get_last_restart_note()
@@ -329,6 +344,22 @@ class Igor:
             category="session_control",
         )
 
+    def _instance_dir(self) -> Path:
+        """~/.TheIgors/igor_{instance_id}/ — consistent with _export_portable_identity."""
+        name = f"igor_{self.instance_id.replace('-', '_')}"
+        d = Path.home() / ".TheIgors" / name
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+
+    def _activity_state(self) -> dict:
+        """Current activity state dict for broadcast_activity and get_stats."""
+        return {
+            "action": self._current_action,
+            "tier":   self._current_tier,
+            "input":  self._last_input_preview,
+            "busy":   self._is_processing,
+        }
+
     def get_stats(self) -> dict:
         """
         Live stats snapshot for the web dashboard (change.30 gateway pattern).
@@ -341,6 +372,7 @@ class Igor:
             "last_valence": self.last_valence,
             "last_friction": self.last_friction,
             "arbiter_pending": arbiter_queue.count_pending(),
+            **self._activity_state(),
         }
 
     def _load_change_log(self):
@@ -385,6 +417,178 @@ class Igor:
         self.cortex.write_ring(
             f"CHANGE_REQUEST: {content[:2000]}",
             category="system_info",
+        )
+
+    # ── Warm context — shutdown serialization / boot reload ────────────────────
+
+    def _save_warm_context(self):
+        """
+        Serialize warm working memory to disk before shutdown.
+
+        Writes ~/.TheIgors/<instance_dir>/warm_context.0.json.
+        Rotates: .0 → .1 before writing so the previous save is never clobbered.
+        Worst case (crash mid-write): lose current session; prior session in .1.
+        """
+        import json
+
+        instance_dir = self._instance_dir()
+        wc_0 = instance_dir / "warm_context.0.json"
+        wc_1 = instance_dir / "warm_context.1.json"
+
+        # Rotate: .0 → .1 so we never lose the previous good save
+        try:
+            if wc_0.exists():
+                wc_0.replace(wc_1)
+        except Exception:
+            pass  # rotation failure is not fatal
+
+        # Collect state
+        twm_items = self.cortex.twm_read(limit=50, include_integrated=True)
+        ring_tail  = self.cortex.read_ring_memory(limit=20)
+        ne_state   = self.ne._get_last_narrative()
+
+        active_jobs  = self.job_manager.list_jobs()
+        current_job  = active_jobs[0].job_id if active_jobs else None
+
+        last_ring_content = ring_tail[-1]["content"] if ring_tail else ""
+        session_summary   = (
+            f"{self.interaction_count} interactions, ${self.session_cost:.4f} — "
+            f"{last_ring_content[:120]}"
+        )
+
+        ctx = {
+            "timestamp":       datetime.now().isoformat(),
+            "instance_id":     self.instance_id,
+            "session_summary": session_summary,
+            "ne_state":        ne_state,
+            "current_job":     current_job,
+            "ring_tail":       ring_tail,
+            "twm_contents":    twm_items,
+        }
+
+        try:
+            wc_0.write_text(json.dumps(ctx, indent=2, default=str), encoding="utf-8")
+            console.print(
+                f"[dim]warm context serialized, {len(twm_items)} TWM items saved "
+                f"→ warm_context.0.json[/]"
+            )
+        except Exception as e:
+            console.print(f"[dim][WARM] warm context save failed: {e}[/]")
+
+    def _load_warm_context(self):
+        """
+        Reload warm working memory from the previous session on boot.
+
+        Load order: warm_context.0.json → .1 (fallback if .0 corrupted).
+        TTL: WARM_CONTEXT_TTL_HOURS (default 4h).  If expired, archive + start cold.
+        De-duplication: ring_tail and TWM only injected when the DB is fresh
+        (ring empty / TWM empty) to avoid duplicating data that already persists
+        in SQLite.  session_summary and ne_state are always surfaced.
+        """
+        import json
+
+        ttl_hours   = float(os.getenv("WARM_CONTEXT_TTL_HOURS", "4"))
+        instance_dir = self._instance_dir()
+
+        ctx         = None
+        loaded_slot = None
+
+        for slot, fname in enumerate(["warm_context.0.json", "warm_context.1.json"]):
+            path = instance_dir / fname
+            if not path.exists():
+                continue
+            try:
+                ctx         = json.loads(path.read_text(encoding="utf-8"))
+                loaded_slot = slot
+                break
+            except Exception:
+                console.print(f"[dim][WARM] {fname} corrupted, trying fallback...[/]")
+
+        if ctx is None:
+            console.print("[dim][WARM] no warm context found, starting cold[/]")
+            return
+
+        # Parse and check TTL
+        try:
+            saved_ts = datetime.fromisoformat(ctx["timestamp"])
+        except Exception:
+            console.print("[dim][WARM] warm context has invalid timestamp, starting cold[/]")
+            return
+
+        age_hours = (datetime.now() - saved_ts).total_seconds() / 3600
+
+        if age_hours > ttl_hours:
+            # Archive expired files and start cold
+            ts_str = saved_ts.strftime("%Y%m%d_%H%M%S")
+            for slot_n, fname in enumerate(["warm_context.0.json", "warm_context.1.json"]):
+                src = instance_dir / fname
+                if src.exists():
+                    try:
+                        src.rename(instance_dir / f"warm_context.{ts_str}.{slot_n}.json")
+                    except Exception:
+                        pass
+            console.print(
+                f"[dim][WARM] warm context expired ({age_hours:.1f}h > {ttl_hours}h TTL), "
+                f"starting cold[/]"
+            )
+            return
+
+        # ── Fresh enough — restore ────────────────────────────────────────────
+
+        # 1. Session summary — always inject so it surfaces at top of ring context
+        summary = ctx.get("session_summary", "")
+        if summary:
+            self.cortex.write_ring(
+                f"WARM_CONTEXT: {summary}", category="session_control"
+            )
+
+        # 2. NE state — seed ring with previous narrative only if no recent one exists
+        ne_state = ctx.get("ne_state", "")
+        if ne_state and ne_state != "(none — first NE run)":
+            recent_ne = self.cortex.read_ring_memory(limit=5, category="narrative")
+            if not recent_ne:
+                self.cortex.write_ring(
+                    f"[warm] {ne_state[:400]}", category="narrative"
+                )
+
+        # 3. Ring tail — only inject if ring is effectively empty (new instance)
+        ring_tail = ctx.get("ring_tail") or []
+        existing_ring = self.cortex.read_ring_memory(limit=5)
+        if not existing_ring and ring_tail:
+            for entry in ring_tail:
+                try:
+                    self.cortex.write_ring(
+                        entry["content"], category=entry.get("category", "note")
+                    )
+                except Exception:
+                    pass
+
+        # 4. TWM — only inject if TWM is empty (new instance or all expired)
+        twm_items   = ctx.get("twm_contents") or []
+        twm_live    = self.cortex.twm_count_unintegrated()
+        ttl_seconds = int(ttl_hours * 3600)
+        if twm_live == 0 and twm_items:
+            for obs in twm_items:
+                try:
+                    self.cortex.twm_push(
+                        source="warm_context",
+                        content_csb=obs["content_csb"],
+                        salience=min(obs.get("salience", 0.3), 0.4),  # lower inertia
+                        ttl_seconds=ttl_seconds,
+                    )
+                except Exception:
+                    pass
+
+        twm_restored = len(twm_items) if twm_live == 0 else 0
+        console.print(
+            f"[dim][WARM] warm context restored from {saved_ts.strftime('%H:%M')} "
+            f"via warm_context.{loaded_slot}.json "
+            f"({twm_restored} TWM items, {age_hours:.1f}h ago)[/]"
+        )
+        self.cortex.write_ring(
+            f"WARM_CONTEXT_RESTORED|slot={loaded_slot}|age_h={age_hours:.1f}"
+            f"|twm={twm_restored}|{summary[:100]}",
+            category="session_control",
         )
 
     def run(self):
@@ -465,6 +669,8 @@ class Igor:
 
         # ── tier.3: OR cheap model ──────────────────────────────────────────────
         if self.openrouter_cheap_reasoner is not None and skip_to == "tier.3":
+            self._current_action = "reasoning"; self._current_tier = "tier.3"
+            web_server.broadcast_activity(self._activity_state())
             try:
                 text, cost = self.openrouter_cheap_reasoner.reason(
                     user_input, relevant, core, self.instance_id, cortex=self.cortex
@@ -478,6 +684,8 @@ class Igor:
 
         # ── tier.4: OR claude ───────────────────────────────────────────────────
         if self.openrouter_reasoner is not None:
+            self._current_action = "reasoning"; self._current_tier = "tier.4"
+            web_server.broadcast_activity(self._activity_state())
             try:
                 text, cost = self.openrouter_reasoner.reason(
                     user_input, relevant, core, self.instance_id, cortex=self.cortex
@@ -490,6 +698,8 @@ class Igor:
                 console.print(f"[yellow]tier.4 OR-claude failed ({e}), trying Anthropic direct...[/]")
 
         # ── tier.5: Anthropic direct ────────────────────────────────────────────
+        self._current_action = "reasoning"; self._current_tier = "tier.5"
+        web_server.broadcast_activity(self._activity_state())
         try:
             text, cost = self.reasoner.reason(
                 user_input, relevant, core, self.instance_id, cortex=self.cortex
@@ -523,8 +733,25 @@ class Igor:
 
     def _process(self, user_input: str, is_impulse: bool = False) -> str:
         self.interaction_count += 1
-        new_memories = 0
 
+        # [DASHBOARD] Signal processing start (#18)
+        self._is_processing = True
+        self._last_input_preview = user_input[:60]
+        self._current_action = "parsing"
+        self._current_tier = ""
+        web_server.broadcast_activity(self._activity_state())
+
+        try:
+            return self._process_inner(user_input, is_impulse)
+        finally:
+            # [DASHBOARD] Always reset to idle on exit (#18)
+            self._is_processing = False
+            self._current_action = "idle"
+            self._current_tier = ""
+            web_server.broadcast_activity(self._activity_state())
+
+    def _process_inner(self, user_input: str, is_impulse: bool) -> str:
+        new_memories = 0
         # [TWM] Push incoming message as observation (non-command, non-impulse messages only)
         if not is_impulse and not user_input.startswith("/"):
             user_input_source.push_message(
@@ -567,12 +794,55 @@ class Igor:
             console.print(f"\n[bold magenta][relay: {self._relay_session.model_name}][/] {response}\n")
             return response
 
+        # ── Part C — Routing signal detection ──────────────────────────────────
+        # Detect speed/cost/quality pressure signals from text + timing.
+        # Adjustments apply to the current session only; weights reset on next boot.
+        if not is_impulse:
+            import time as _t
+            _now = _t.time()
+            _lower_input = user_input.lower()
+
+            # Speed pressure: user typing very quickly after last response
+            if self._last_response_time > 0 and (_now - self._last_response_time) < 30:
+                self.local_pool.weights.adjust("speed_pressure")
+                observer.observe("routing_signal", "speed_pressure",
+                                 {"reason": "quick_followup",
+                                  "gap_s": round(_now - self._last_response_time, 1)})
+
+            # Speed pressure: explicit user words
+            _speed_words = ("faster", "too slow", "hurry", "speed up", "quicker")
+            if any(w in _lower_input for w in _speed_words):
+                self.local_pool.weights.adjust("speed_pressure")
+                observer.observe("routing_signal", "speed_pressure", {"reason": "user_words"})
+
+            # Speed pressure: consecutive slow responses tracked in local_pool
+            if self._consecutive_slow >= 3:
+                self.local_pool.weights.adjust("speed_pressure")
+                observer.observe("routing_signal", "speed_pressure",
+                                 {"reason": "consecutive_slow",
+                                  "count": self._consecutive_slow})
+                self._consecutive_slow = 0  # reset after acting
+
+            # Cost pressure: explicit user words
+            _cost_words = ("save budget", "be careful", "use cheap", "save money", "conserve")
+            if any(w in _lower_input for w in _cost_words):
+                self.local_pool.weights.adjust("cost_pressure")
+                observer.observe("routing_signal", "cost_pressure", {"reason": "user_words"})
+
+            # Quality pressure: explicit user request for better model
+            _quality_words = ("use claude", "take your time", "hard task", "be thorough")
+            if any(w in _lower_input for w in _quality_words):
+                # No weight adjustment — quality is handled by complexity skip_to=tier.4
+                observer.observe("routing_signal", "quality_pressure", {"reason": "user_words"})
+
         # [SEARCH] Candidate memories via text search
         candidates = self.cortex.search(" ".join(parsed.keywords))
 
         # [OLLAMA] Pre-parse: classify intent, score memories, check habit match
         habits = self.cortex.get_habits()
         if self.use_ollama:
+            self._current_action = "preparse"
+            web_server.broadcast_activity(self._activity_state())
             console.print("[dim][OLLAMA] Pre-parsing...[/]")
             pre = preparse(user_input, habits)
             relevant = score_memories(user_input, candidates) if candidates else []
@@ -667,6 +937,8 @@ class Igor:
             core = get_core_patterns(self.cortex)
             if self.local_mode:
                 # Local-only: use Ollama pool (free, no cloud)
+                self._current_action = "reasoning"; self._current_tier = "local"
+                web_server.broadcast_activity(self._activity_state())
                 dashboard.print_reasoning(used_api=False)
                 try:
                     response_text, cost = self.local_pool.reason(
@@ -683,6 +955,8 @@ class Igor:
                     )
             elif self.use_ollama and not pre["should_escalate"]:
                 # tier.2 (WO5): preparse says simple — try local before paying for cloud
+                self._current_action = "reasoning"; self._current_tier = "tier.2"
+                web_server.broadcast_activity(self._activity_state())
                 dashboard.print_reasoning(used_api=False)
                 try:
                     response_text, cost = self.local_pool.reason(
@@ -764,6 +1038,16 @@ class Igor:
         if (self.interaction_count >= ContextInterruptor.URGENT_AT
                 and not self._context_flush_done):
             self._pre_compaction_flush()
+
+        # Part C — stamp response time; track consecutive slow responses
+        import time as _t
+        _response_elapsed = _t.time() - (self._last_response_time if self._last_response_time > 0 else _t.time())
+        self._last_response_time = _t.time()
+        _budget = float(os.getenv("LATENCY_BUDGET_SECONDS", "8"))
+        if _response_elapsed > _budget and not is_impulse:
+            self._consecutive_slow += 1
+        elif not is_impulse:
+            self._consecutive_slow = max(0, self._consecutive_slow - 1)
 
         return response_text
 
@@ -1723,6 +2007,7 @@ class Igor:
         self.cortex.write_restart_note(
             reason=f"{reason} — {self.interaction_count} interactions, ${self.session_cost:.4f}",
         )
+        self._save_warm_context()
         console.print(f"\n[cyan]Igor-{self.instance_id} shutting down.[/]")
         console.print(f"Session: {self.interaction_count} interactions, ${self.session_cost:.4f} cost")
         console.print("[dim]Memories persisted to SQLite. See you next time.[/]")

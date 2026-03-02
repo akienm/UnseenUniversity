@@ -359,22 +359,19 @@ def summarize_session(
         for e in relevant
     )
 
-    prompt = f"""You are a memory compression system for an AI agent called Igor (instance: {instance_id}).
+    prompt = f"""You are a memory compression system. Fill in each labeled field below using the session data.
+Rules: fragments only, no full sentences, max 20 words per field, no preamble, no explanation.
 
-Compress these session ring-memory entries into a dense CSB (Compressed Semantic Block).
-
-Ring memory (oldest first):
+SESSION DATA (oldest first):
 {entries_text}
 
-Write a 100-150 word dense summary covering:
-- Main topics/tasks worked on
-- Key decisions or changes made
-- Tools used and outcomes
-- Current state and any pending work
-- Emotional tone/valence of the session
+Fill in each field exactly as shown. Replace <...> with your answer:
 
-Format: one paragraph, dense, information-rich, written for cold reading by a future Igor instance.
-No preamble. Start directly with the content."""
+TASKS: <what was worked on, comma-separated>
+CHANGES: <decisions or code/config changes made, comma-separated>
+TOOLS: <tool names used and outcome, pipe-separated>
+STATE: <current state and pending work>
+VALENCE: <positive|neutral|negative>"""
 
     t0 = time.perf_counter()
     try:

@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Optional
 
 from .models import Memory, MemoryType
+from .scrub import scrub
 
 
 RING_MAX = 50  # Max entries in the ring buffer
@@ -99,6 +100,7 @@ class Cortex:
     # ── Long-term memory graph ─────────────────────────────────────────────────
 
     def store(self, memory: Memory) -> Memory:
+        memory.narrative = scrub(memory.narrative)
         with self._conn() as conn:
             conn.execute("""
                 INSERT OR REPLACE INTO memories
@@ -337,6 +339,7 @@ class Cortex:
         Write an entry to the short-term ring buffer.
         Automatically trims to RING_MAX entries (oldest first).
         """
+        content = scrub(content)
         now = datetime.now().isoformat()
         with self._conn() as conn:
             conn.execute(
@@ -402,6 +405,7 @@ class Cortex:
         Returns the new observation ID.
         Automatically evicts if over TWM_MAX (lowest salience + integrated + oldest first).
         """
+        content_csb = scrub(content_csb)
         now = datetime.now()
         expires_at = None
         if ttl_seconds:
