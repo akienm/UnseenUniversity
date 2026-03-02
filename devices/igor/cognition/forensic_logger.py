@@ -158,6 +158,32 @@ def log_memory_op(
     _prepend("memory_ops.log", entry)
 
 
+def log_routing_decision(
+    *,
+    est_latency_s: float | None,
+    actual_latency_s: float | None = None,
+    budget_s: float,
+    tier_selected: str,
+    cost_score: float = 0.0,
+    speed_score: float = 0.0,
+    tier_score: float = 0.0,
+    escalated: bool = False,
+    weights: str = "",
+) -> None:
+    """Log one routing decision: estimated vs actual latency, scores, outcome."""
+    entry = (
+        f"{_ts()}|routing"
+        f"|tier={tier_selected}"
+        f"|est={f'{est_latency_s:.1f}s' if est_latency_s is not None else 'none'}"
+        f"|actual={f'{actual_latency_s:.1f}s' if actual_latency_s is not None else 'none'}"
+        f"|budget={budget_s}s"
+        f"|cost_score={cost_score:.2f}|speed_score={speed_score:.2f}|tier_score={tier_score:.2f}"
+        f"|escalated={escalated}"
+        + (f"|{weights}" if weights else "")
+    )
+    _prepend("reasoning_calls.log", entry)
+
+
 def log_tier_selection(
     *,
     tiers_available: list,

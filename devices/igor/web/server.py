@@ -80,6 +80,22 @@ def send(text: str):
     }))
 
 
+def broadcast_activity(state: dict):
+    """Broadcast a live activity state update to all connected WebSocket clients.
+
+    state dict keys (all optional):
+        action  — human-readable description of what Igor is doing right now
+        tier    — current reasoning tier ("tier.2", "tier.3", etc.) or ""
+        input   — first 60 chars of the current user input
+        busy    — bool: True while processing, False when idle
+    """
+    _broadcast(json.dumps({
+        "type": "activity",
+        "ts": _ts(),
+        **state,
+    }))
+
+
 
 def _broadcast(payload: str):
     """Fan out a JSON payload to every connected WebSocket client."""
@@ -288,6 +304,10 @@ _FALLBACK_HTML = """<!DOCTYPE html>
     button { background: #4a4a8a; color: #fff; border: none;
              padding: 0.5rem 1rem; cursor: pointer; font-family: monospace; }
     button:hover { background: #6a6aaa; }
+    #status-bar { padding: 0.2rem 1rem; background: #0a0a18;
+                  font-size: 0.78rem; color: #aaa; border-top: 1px solid #1a1a30;
+                  min-height: 1.4em; transition: color 0.3s; }
+    #status-bar.busy { color: #7ec8e3; }
     #dashboard { padding: 0.3rem 1rem; background: #0f0f1e;
                  font-size: 0.8rem; color: #888; border-top: 1px solid #222;
                  display: flex; gap: 1rem; }
@@ -301,6 +321,7 @@ _FALLBACK_HTML = """<!DOCTYPE html>
 <body>
   <div id="drop-overlay">Drop file to send to Igor</div>
   <div id="chat"></div>
+  <div id="status-bar">●  idle</div>
   <div id="input-row">
     <input id="input" type="text" placeholder="Message Igor..." autocomplete="off">
     <button onclick="sendMsg()">Send</button>
@@ -312,8 +333,17 @@ _FALLBACK_HTML = """<!DOCTYPE html>
     const chat    = document.getElementById('chat');
     const input   = document.getElementById('input');
     const dash    = document.getElementById('dashboard');
+    const status  = document.getElementById('status-bar');
     const overlay = document.getElementById('drop-overlay');
     let ws, dragDepth = 0;
+
+    function updateStatus(m) {
+      const busy = m.busy === true;
+      status.className = busy ? 'busy' : '';
+      const tier  = m.tier  ? ' [' + m.tier + ']' : '';
+      const input = m.input ? ' — "' + m.input + '"' : '';
+      status.textContent = (busy ? '⚙ ' : '● ') + (m.action || (busy ? 'processing' : 'idle')) + tier + input;
+    }
 
     function addMsg(cls, author, content) {
       const d = document.createElement('div');
@@ -342,6 +372,8 @@ _FALLBACK_HTML = """<!DOCTYPE html>
           addMsg(m.author === 'igor' ? 'igor' : 'user', m.author === 'igor' ? 'Igor' : 'You', m.content);
         else if (m.type === 'file_dropped')
           addMsg('system', '', '📎 ' + m.filename + ' received in inbox');
+        else if (m.type === 'activity')
+          updateStatus(m);
       };
     }
 
