@@ -121,6 +121,7 @@ class MemorySurfacer(BasePushSource):
                 salience=salience,
                 metadata={"memory_id": mem.id, "memory_type": mem.memory_type.value},
                 ttl_seconds=600,
+                urgency=0.1,  # Change 4: background LTM surfacing — lowest time-sensitivity
             )
             pushed.append(obs_id)
             pushed_ids.add(mem.id)
@@ -178,6 +179,7 @@ class HeartbeatSource(BasePushSource):
             salience=0.4,
             metadata={"session_minutes": session_mins},
             ttl_seconds=600,
+            urgency=0.3,  # Change 4: HeartbeatSource — scheduled, not time-critical
         )
         pushed.append(obs_id)
 
@@ -215,12 +217,14 @@ class HeartbeatSource(BasePushSource):
             msg = (f"Balance LOW ({src}): ${remaining:.2f} remaining "
                    f"({100 - s['pct_used']:.0f}% left).")
 
+        budget_urgency = {"EXHAUSTED": 0.9, "CRITICAL": 0.9, "LOW": 0.5}.get(level, 0.3)
         obs_id = cortex.twm_push(
             source=self.name,
             content_csb=f"BUDGET_{level}|{msg}",
             salience=salience,
             metadata={"level": level, "remaining_usd": remaining},
             ttl_seconds=600,
+            urgency=budget_urgency,  # Change 4: budget alerts scale with severity
         )
 
         # Proactive Discord ping for CRITICAL/EXHAUSTED (once per session per level)
@@ -253,6 +257,7 @@ class HeartbeatSource(BasePushSource):
             salience=0.5,
             metadata={"type": "heartbeat_conditions", "count": len(hb_mems)},
             ttl_seconds=600,
+            urgency=0.3,  # Change 4: heartbeat procedural check — not time-critical
         )
         return [obs_id]
 
@@ -293,6 +298,7 @@ class UserInputSource(BasePushSource):
             salience=0.7,
             metadata={"channel": channel, "author": author},
             ttl_seconds=1800,  # messages stay relevant for 30 min
+            urgency=0.7,  # Change 4: user input is time-sensitive
         )
         return obs_id
 
@@ -348,6 +354,7 @@ class MachinesWatcher(BasePushSource):
             content_csb=csb,
             salience=0.8,
             metadata={"path": str(MACHINES_CSV), "mtime": current_mtime, "reason": reason},
+            urgency=0.5,  # Change 4: cluster state change is relevant but not urgent-urgent
             ttl_seconds=3600,
         )
         return [obs_id]
@@ -399,6 +406,7 @@ class InboxWatcher(BasePushSource):
                 salience=0.9,
                 metadata={"filename": filename, "inbox": str(INBOX_DIR)},
                 ttl_seconds=3600,
+                urgency=0.8,  # Change 4: new inbox file — Igor should act on this soon
             )
             pushed.append(obs_id)
 

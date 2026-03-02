@@ -27,11 +27,13 @@ from pathlib import Path
 from typing import Iterator
 
 from .reasoners.ollama_reasoner import OllamaReasoner, DEFAULT_MODEL
+from .reasoners.koboldcpp_reasoner import KoboldCppReasoner, DEFAULT_HOST as KCC_DEFAULT_HOST
 from ..memory.models import Memory
 
-MACHINES_CSV   = Path.home() / ".TheIgors" / "local" / "machines.csv"
-BENCHMARK_DIR  = Path.home() / ".TheIgors" / "benchmarks"
-OLLAMA_PORT    = 11434
+MACHINES_CSV        = Path.home() / ".TheIgors" / "local" / "machines.csv"
+BENCHMARK_DIR       = Path.home() / ".TheIgors" / "benchmarks"
+OLLAMA_PORT         = 11434
+KOBOLDCPP_PORT_DEFAULT = 5001
 
 BENCHMARK_TTL_HOURS     = 24
 _DEFAULT_LATENCY_BUDGET = 8.0    # seconds; overridden by LATENCY_BUDGET_SECONDS
@@ -266,13 +268,34 @@ class LocalOllamaPool:
         self._benchmark = result
 
     def _refresh(self):
-        """Rebuild reasoner list from machines.csv."""
+        """Rebuild reasoner list from machines.csv.
+
+        Change 1 (D025): KoboldCpp tried first for each machine when koboldcpp_port
+        is present in the CSV row.  Ollama retained as fallback.
+        """
         machines = _parse_online_machines()
         reasoners = []
         for m in machines:
-            ip   = m.get("IP", "")
-            host = f"http://{ip}:{OLLAMA_PORT}"
-            reasoners.append(OllamaReasoner(model=self.model, host=host))
+            ip = m.get("IP", "")
+            # KoboldCpp first (Change 1)
+            kcc_port_str = m.get("koboldcpp_port", "").strip()
+            if kcc_port_str:
+                try:
+                    kcc_port = int(kcc_port_str)
+                except ValueError:
+                    kcc_port = KOBOLDCPP_PORT_DEFAULT
+                kcc_host = f"http://{ip}:{kcc_port}"
+                reasoners.append(KoboldCppReasoner(host=kcc_host))
+            # Ollama fallback for this machine
+            ollama_host = f"http://{ip}:{OLLAMA_PORT}"
+            reasoners.append(OllamaReasoner(model=self.model, host=ollama_host))
+
+        # Local KoboldCpp last-resort (if running on localhost)
+        import os as _os
+        local_kcc_host = _os.getenv("KOBOLDCPP_HOST", "")
+        if local_kcc_host:
+            reasoners.append(KoboldCppReasoner(host=local_kcc_host))
+        # Always include local Ollama as final fallback
         reasoners.append(OllamaReasoner(model=self.model, host=None))
         self._reasoners = reasoners
         self._index     = 0
@@ -329,6 +352,7 @@ class LocalOllamaPool:
                     tier_score=tier_score,
                     escalated=True,
                     weights=repr(self.weights),
+                    proc_id="PROC_ROUTING_ESCALATE",  # Change 7 / D031
                 )
                 raise RuntimeError(
                     f"Estimated local latency {est_latency:.1f}s > budget {budget}s "
@@ -353,6 +377,7 @@ class LocalOllamaPool:
                     tier_score=tier_score,
                     escalated=False,
                     weights=repr(self.weights),
+                    proc_id="PROC_ROUTING_LOCAL",   # Change 7 / D031
                 )
                 return result
             except Exception as exc:

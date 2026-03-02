@@ -1,6 +1,22 @@
 """
-Base reasoner interface.
-All reasoning adapters implement this - Anthropic API, browser-based AIs, local models.
+Base reasoner interface — two-level hierarchy (Change 2 / D026).
+
+Level 1 — transport base classes:
+  BaseReasoner (abstract)
+  ├── LocalReasoner(BaseReasoner)   — no cost, latency variance, no tools
+  ├── APIReasoner(BaseReasoner)     — budget tracking, rate limits, reliable tools
+  └── BrowserReasoner(BaseReasoner) — zero cost, session-fragile, no tools (DECLARED ONLY)
+
+Level 2 — model family classes:
+  ModelFamily(BaseReasoner)           — groups by model identity; handles failover
+  └── ClaudeFamily(ModelFamily)
+
+Concrete implementations:
+  AnthropicReasoner(APIReasoner)    — Anthropic API
+  OpenRouterReasoner(APIReasoner)   — OpenRouter API
+  OllamaReasoner(LocalReasoner)     — local Ollama
+  KoboldCppReasoner(LocalReasoner)  — local KoboldCpp
+
 Eventually: no upstream at all. Pure habit execution replaces reasoning entirely.
 """
 
@@ -90,15 +106,40 @@ class BaseReasoner(ABC):
     # ── Shared context builders (WO8) ─────────────────────────────────────────
 
     def _build_session_context(self, cortex) -> str:
-        """Recent ring memory as session context block. Empty string if nothing relevant."""
+        """
+        Recent ring memory as session context block. Empty string if nothing relevant.
+
+        Change 4 (D028): high-urgency TWM obs (urgency ≥ 0.7) are flagged distinctly
+        at the top of the context injection so the model notices them first.
+        """
         if cortex is None:
             return ""
         all_entries = cortex.read_ring_memory(limit=50)
         filtered = [e for e in all_entries if e["category"] not in _RING_EXCLUDE]
         entries = filtered[-_RING_CONTEXT_LIMIT:]
+
+        lines = []
+
+        # ── Change 4: inject high-urgency TWM observations first ──────────────
+        try:
+            twm_obs = cortex.twm_read(limit=50, include_integrated=False)
+            urgent = [
+                o for o in twm_obs
+                if o.get("urgency", 0.2) >= 0.7
+                and o.get("source") not in ("narrative_engine", "ne_loop_guard")
+            ]
+            if urgent:
+                lines.append("\n\n⚠ URGENT observations (act on these):")
+                for o in sorted(urgent, key=lambda x: x.get("urgency", 0.2), reverse=True)[:5]:
+                    urg = o.get("urgency", 0.2)
+                    lines.append(f"  [urgency={urg:.1f}] {o['content_csb'][:150]}")
+        except Exception:
+            pass  # Never block context building
+
         if not entries:
-            return ""
-        lines = ["\n\nRecent session context (newest last):"]
+            return "\n".join(lines) if lines else ""
+
+        lines.append("\n\nRecent session context (newest last):")
         for e in entries:
             ts = e["timestamp"][11:16] if len(e["timestamp"]) >= 16 else e["timestamp"]
             lines.append(f"[{ts}] {e['content']}")
@@ -121,3 +162,104 @@ class BaseReasoner(ABC):
         for m in high_rel:
             lines.append(f"- [{m.memory_type.value}] {m.narrative}")
         return "\n".join(lines)
+
+
+# ── Level 1 — Transport base classes (Change 2 / D026) ────────────────────────
+
+class LocalReasoner(BaseReasoner):
+    """
+    Base for all local-hardware reasoners (Ollama, KoboldCpp).
+    No API cost. Latency varies with hardware. No tool support.
+    """
+    supports_tools: bool = False
+    response_format: str = "unstructured"
+    cost_model: str = "free"
+    reliability: str = "medium"
+    supports_context_param: bool = False
+
+
+class APIReasoner(BaseReasoner):
+    """
+    Base for all cloud API reasoners (Anthropic, OpenRouter).
+    Has budget tracking, rate limits, and reliable tool support.
+    Subclasses are expected to call record_spend() and check_before_call().
+    """
+    supports_tools: bool = True
+    response_format: str = "structured"
+    cost_model: str = "per_token"
+    reliability: str = "high"
+    supports_context_param: bool = False
+
+
+class BrowserReasoner(BaseReasoner):
+    """
+    Placeholder for future browser-session AI access.
+    Zero cost. Session-fragile. No tools. NOT IMPLEMENTED.
+    Declared here to reserve the interface and document the capability model.
+    """
+    supports_tools: bool = False
+    response_format: str = "unstructured"
+    cost_model: str = "free"
+    reliability: str = "low"
+    supports_context_param: bool = False
+
+    def reason(self, user_input, relevant_memories, core_patterns, instance_id,
+               cortex=None):
+        raise NotImplementedError("BrowserReasoner is not yet implemented.")
+
+    def name(self) -> str:
+        return "BrowserReasoner(not_implemented)"
+
+
+# ── Level 2 — Model family classes (Change 2 / D026) ─────────────────────────
+
+class ModelFamily(BaseReasoner):
+    """
+    Groups multiple channels by model identity. Handles failover across channels.
+    Tries channels in order; moves to next on budget exhaustion or unavailability.
+    Logs which channel was used and why fallback triggered.
+    """
+
+    channels: list[BaseReasoner] = []
+
+    def reason(
+        self,
+        user_input: str,
+        relevant_memories: list,
+        core_patterns: list,
+        instance_id: str,
+        cortex=None,
+    ) -> tuple[str, float]:
+        last_exc = None
+        for channel in self.channels:
+            try:
+                return channel.reason(
+                    user_input, relevant_memories, core_patterns, instance_id,
+                    cortex=cortex
+                )
+            except Exception as exc:
+                last_exc = exc
+                continue
+        raise RuntimeError(
+            f"{self.name()} all channels failed. Last: {last_exc}"
+        )
+
+    def name(self) -> str:
+        return f"ModelFamily({', '.join(c.name() for c in self.channels)})"
+
+
+class ClaudeFamily(ModelFamily):
+    """
+    Claude model family across all available channels:
+      1. AnthropicReasoner (direct API — fastest, most reliable)
+      2. OpenRouterReasoner pointing at claude-sonnet (OR budget)
+      3. BrowserReasoner (declared only; not yet implemented)
+
+    Channels are populated at runtime from available credentials.
+    Per-channel spend is tracked independently; combined Claude spend is the sum.
+    """
+
+    def name(self) -> str:
+        if self.channels:
+            return f"ClaudeFamily({', '.join(c.name() for c in self.channels)})"
+        return "ClaudeFamily(no_channels)"

@@ -29,6 +29,12 @@ from .scrub import scrub
 RING_MAX = 50  # Max entries in the ring buffer
 TWM_MAX  = 50  # Max observations in TWM
 
+# Change 4: urgency — distinct from salience (time-sensitivity vs importance)
+# Change 3: TTL extension on confirmed relevance (not mere access)
+TWM_TTL_EXTENSION_SECONDS = int(
+    __import__("os").getenv("TWM_TTL_EXTENSION_SECONDS", "1800")
+)
+
 
 class Cortex:
     """SQLite-backed memory graph."""
@@ -96,6 +102,16 @@ class Cortex:
             """)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_twm_integrated ON twm_observations(integrated)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_twm_salience ON twm_observations(salience)")
+
+            # Change 4: urgency column (idempotent migration)
+            # Urgency = time-sensitivity (0-1); distinct from salience (importance).
+            # Noise expires on schedule; urgent items demand faster attention.
+            try:
+                conn.execute(
+                    "ALTER TABLE twm_observations ADD COLUMN urgency REAL DEFAULT 0.2"
+                )
+            except Exception:
+                pass  # Column already exists
 
     # ── Long-term memory graph ─────────────────────────────────────────────────
 
@@ -219,6 +235,23 @@ class Cortex:
                     m.relevance_score = sim  # type: ignore[attr-defined]
                     scored.append((sim, m))
                 scored.sort(key=lambda x: x[0], reverse=True)
+
+                # Signal C (Change 3): extend TTL for high-relevance TWM observations.
+                # A search hitting relevance >= 0.6 confirms the obs is useful context.
+                _high_rel = {m.id for sim, m in scored if sim >= 0.6}
+                if _high_rel:
+                    try:
+                        _twm_rows = self.twm_read(limit=50, include_integrated=True)
+                        for obs in _twm_rows:
+                            # Extend TTL if the obs references any high-relevance memory
+                            meta = obs.get("metadata", {})
+                            if meta.get("memory_id") in _high_rel:
+                                self.twm_extend_ttl(
+                                    obs["id"], reason="search_signal_C_relevance>=0.6"
+                                )
+                    except Exception:
+                        pass  # Signal C must never block search
+
                 return [m for _, m in scored[:limit]]
         except Exception:
             pass  # Embedding unavailable — fall through to text results
@@ -399,13 +432,19 @@ class Cortex:
     # ── TWM — Temporal Working Memory ──────────────────────────────────────────
 
     def twm_push(self, source: str, content_csb: str, salience: float = 0.5,
-                 metadata: dict = None, ttl_seconds: int = None) -> int:
+                 metadata: dict = None, ttl_seconds: int = None,
+                 urgency: float = 0.2) -> int:
         """
         Push an observation into TWM. Any process can call this.
         Returns the new observation ID.
         Automatically evicts if over TWM_MAX (lowest salience + integrated + oldest first).
+
+        urgency: 0.0-1.0 — time-sensitivity of this observation (distinct from salience/importance).
+          0.9 = ethics violation / inbox file; 0.8 = new inbox item;
+          0.7 = user input; 0.5 = machines change; 0.3 = heartbeat; 0.1 = surfaced memory.
         """
         content_csb = scrub(content_csb)
+        urgency = max(0.0, min(1.0, urgency))
         now = datetime.now()
         expires_at = None
         if ttl_seconds:
@@ -414,10 +453,11 @@ class Cortex:
         with self._conn() as conn:
             cur = conn.execute(
                 """INSERT INTO twm_observations
-                   (timestamp, source, content_csb, salience, metadata_json, integrated, integration_count, expires_at)
-                   VALUES (?, ?, ?, ?, ?, 0, 0, ?)""",
+                   (timestamp, source, content_csb, salience, metadata_json,
+                    integrated, integration_count, expires_at, urgency)
+                   VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?)""",
                 (now.isoformat(), source, content_csb, salience,
-                 json.dumps(metadata or {}), expires_at)
+                 json.dumps(metadata or {}), expires_at, urgency)
             )
             obs_id = cur.lastrowid
 
@@ -463,6 +503,7 @@ class Cortex:
                 "source": r["source"],
                 "content_csb": r["content_csb"],
                 "salience": r["salience"],
+                "urgency": r["urgency"] if "urgency" in r.keys() else 0.2,
                 "metadata": json.loads(r["metadata_json"]),
                 "integrated": bool(r["integrated"]),
                 "integration_count": r["integration_count"],
@@ -502,3 +543,42 @@ class Cortex:
         """Clear all TWM observations (use sparingly — for testing/reset)."""
         with self._conn() as conn:
             conn.execute("DELETE FROM twm_observations")
+
+    def twm_extend_ttl(self, obs_id: int, extension_seconds: int = None, reason: str = "") -> None:
+        """
+        Extend TWM TTL on confirmed relevance (Change 3 — Signal A/B/C).
+
+        TTL extends to MAX(current expires_at, now + extension_seconds).
+        Only extends — never shrinks. Noise expires on schedule; confirmed-relevant
+        observations survive longer.
+
+        Logs to ring(twm_ttl_extension) with reason. Never raises.
+        """
+        if extension_seconds is None:
+            extension_seconds = TWM_TTL_EXTENSION_SECONDS
+        try:
+            now = datetime.now()
+            new_expiry = (now + timedelta(seconds=extension_seconds)).isoformat()
+            with self._conn() as conn:
+                # Fetch current expiry
+                row = conn.execute(
+                    "SELECT expires_at FROM twm_observations WHERE id = ?", (obs_id,)
+                ).fetchone()
+                if row is None:
+                    return  # Observation already evicted
+                current_expiry = row["expires_at"]
+                # Take the later of current and new expiry
+                if current_expiry and current_expiry > new_expiry:
+                    final_expiry = current_expiry
+                else:
+                    final_expiry = new_expiry
+                conn.execute(
+                    "UPDATE twm_observations SET expires_at = ? WHERE id = ?",
+                    (final_expiry, obs_id),
+                )
+            self.write_ring(
+                f"TWM_TTL_EXT|obs={obs_id}|ext={extension_seconds}s|reason={reason[:80]}",
+                category="twm_ttl_extension",
+            )
+        except Exception:
+            pass  # TTL extension must never crash callers

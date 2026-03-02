@@ -13,7 +13,7 @@ import os
 import time
 import ollama as _ollama
 from ...memory.models import Memory
-from .base import BaseReasoner
+from .base import BaseReasoner, LocalReasoner
 from ..system_prompt import build_system_prompt
 
 DEFAULT_MODEL = "gemma3:1b"
@@ -56,7 +56,7 @@ def _log_call(fn_name: str, model: str, response, elapsed: float, error: str | N
 
 # ── Reasoner class ──────────────────────────────────────────────────────────
 
-class OllamaReasoner(BaseReasoner):
+class OllamaReasoner(LocalReasoner):
     """Full reasoning via local or remote Ollama model. Slow but free."""
 
     def __init__(self, model: str = DEFAULT_MODEL, host: str | None = None):

@@ -169,8 +169,13 @@ def log_routing_decision(
     tier_score: float = 0.0,
     escalated: bool = False,
     weights: str = "",
+    proc_id: str = "",
 ) -> None:
-    """Log one routing decision: estimated vs actual latency, scores, outcome."""
+    """Log one routing decision: estimated vs actual latency, scores, outcome.
+
+    proc_id (Change 7 / D031): the PROC_ROUTING_* memory that governed this decision.
+    Enables future compilation of routing patterns into updated PROCEDURAL memories.
+    """
     entry = (
         f"{_ts()}|routing"
         f"|tier={tier_selected}"
@@ -180,6 +185,7 @@ def log_routing_decision(
         f"|cost_score={cost_score:.2f}|speed_score={speed_score:.2f}|tier_score={tier_score:.2f}"
         f"|escalated={escalated}"
         + (f"|{weights}" if weights else "")
+        + (f"|proc_id={proc_id}" if proc_id else "")
     )
     _prepend("reasoning_calls.log", entry)
 

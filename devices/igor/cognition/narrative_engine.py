@@ -34,7 +34,7 @@ from ..memory.cortex import Cortex
 from ..memory.models import Memory, MemoryType
 
 # ── Config ─────────────────────────────────────────────────────────────────────
-NE_MODEL              = "gemma3:1b"     # Standard cluster reasoning model (D013, WO2)
+NE_MODEL              = "gemma3:1b"     # Ollama fallback model (legacy; primary is KoboldCpp via _call_local())
 NE_TRIGGER_OBS        = 5              # Run if >= this many unintegrated obs
 NE_MIN_INTERVAL_SEC   = 30             # Minimum seconds between NE runs
 NE_MAX_INTERVAL_SEC   = 300            # Maximum seconds between NE runs (5 min)
@@ -141,9 +141,17 @@ class NarrativeEngine:
             return None
 
         # WO7: filter out NE's own output on all axes (source + content prefix)
-        obs_list = self._filter_obs(
+        raw_obs = self._filter_obs(
             self.cortex.twm_read(limit=50, include_integrated=True)
         )
+
+        # Change 4: sort by urgency * salience — urgent + important items processed first
+        obs_list = sorted(
+            raw_obs,
+            key=lambda o: o.get("urgency", 0.2) * o.get("salience", 0.5),
+            reverse=True,
+        )
+
         if not obs_list:
             self._last_run = datetime.now()
             return None
@@ -170,8 +178,8 @@ class NarrativeEngine:
         # Watermark for cache invalidation — max obs id already in hand
         max_twm_id = max((o["id"] for o in obs_list), default=0)
 
-        # Call LLM (Ollama local first)
-        result = self._call_ollama(prompt, max_twm_id)
+        # Call LLM (KoboldCpp preferred, Ollama fallback, Claude last resort)
+        result = self._call_local(prompt, max_twm_id)
         if result is None:
             result = self._call_claude_fallback(prompt)
         if result is None:
@@ -237,6 +245,9 @@ class NarrativeEngine:
                 except ValueError:
                     mem_type = MemoryType.EPISODIC
 
+                # Track source obs IDs for Signal A TTL extension
+                source_obs_id = cand.get("source_obs_id")
+
                 mem = Memory(
                     narrative=content,
                     memory_type=mem_type,
@@ -251,6 +262,14 @@ class NarrativeEngine:
                 )
                 self.cortex.store(mem)
                 promoted += 1
+
+                # Signal A (Change 3): extend TTL of source TWM obs when importance >= 0.7
+                # The observation was confirmed relevant enough to persist in LTM.
+                if source_obs_id is not None:
+                    self.cortex.twm_extend_ttl(
+                        source_obs_id,
+                        reason=f"ne_promoted_importance={importance:.2f}"
+                    )
 
         # 4. Write narrative fragment to ring_memory ONLY if we promoted or got action impulses
         # (don't spam ring with empty/stale narratives)
@@ -275,16 +294,17 @@ class NarrativeEngine:
         # 5. Push action impulses back into TWM so they can be acted on
         impulse_count = 0
         for impulse in result.get("action_impulses", []):
-            urgency = float(impulse.get("urgency", 0.3))
-            action  = impulse.get("action", "")
-            why     = impulse.get("why", "")
+            imp_urgency = float(impulse.get("urgency", 0.3))
+            action      = impulse.get("action", "")
+            why         = impulse.get("why", "")
             if action:
                 self.cortex.twm_push(
                     source="narrative_engine",
-                    content_csb=f"ACTION_IMPULSE|urgency={urgency:.2f}|{action}|why:{why}",
-                    salience=urgency,
+                    content_csb=f"ACTION_IMPULSE|urgency={imp_urgency:.2f}|{action}|why:{why}",
+                    salience=imp_urgency,
                     metadata={"type": "action_impulse", "action": action, "why": why},
                     ttl_seconds=300,  # impulses expire in 5 min if unacted
+                    urgency=0.6,  # Change 4: NE action impulses — moderately urgent
                 )
                 impulse_count += 1
 
@@ -292,17 +312,45 @@ class NarrativeEngine:
 
     # ── LLM calls ─────────────────────────────────────────────────────────────
 
-    def _call_ollama(self, prompt: str, max_twm_id: int = 0) -> Optional[dict]:
-        """Call local Ollama. Returns parsed dict or None. Checks reasoning cache first."""
+    def _call_local(self, prompt: str, max_twm_id: int = 0) -> Optional[dict]:
+        """
+        Call local inference: KoboldCpp preferred, Ollama fallback (Change 1 / D025).
+        Checks reasoning cache first.
+        """
         # ── Cache check ───────────────────────────────────────────────────────
         cached = reasoning_cache.get(NE_MODEL, prompt, max_twm_id)
         if cached is not None:
             result = self._parse_ne_json(cached)
             if result is not None:
-                print(f"[NE] Ollama cache hit (twm_id≤{max_twm_id})")
+                print(f"[NE] local cache hit (twm_id≤{max_twm_id})")
                 return result
 
-        # ── Live Ollama call ──────────────────────────────────────────────────
+        # ── KoboldCpp preferred (Change 1) ────────────────────────────────────
+        import os as _os
+        kcc_host = _os.getenv("KOBOLDCPP_HOST", "").strip()
+        if kcc_host:
+            t0 = time.perf_counter()
+            try:
+                from .reasoners.koboldcpp_reasoner import KoboldCppReasoner
+                kcc = KoboldCppReasoner(host=kcc_host)
+                text, _ = kcc.reason(
+                    user_input=prompt,
+                    relevant_memories=[],
+                    core_patterns=[],
+                    instance_id=self.instance_id,
+                    cortex=self.cortex,
+                )
+                elapsed = time.perf_counter() - t0
+                result = self._parse_ne_json(text)
+                if result is not None:
+                    print(f"[NE] KoboldCpp ok ({elapsed:.1f}s)")
+                    reasoning_cache.put(NE_MODEL, prompt, text, max_twm_id)
+                    return result
+            except Exception as e:
+                elapsed = time.perf_counter() - t0
+                print(f"[NE] KoboldCpp failed ({elapsed:.1f}s): {e} — falling back to Ollama")
+
+        # ── Ollama fallback ───────────────────────────────────────────────────
         t0 = time.perf_counter()
         try:
             response = _ollama.chat(
@@ -321,6 +369,11 @@ class NarrativeEngine:
             elapsed = time.perf_counter() - t0
             print(f"[NE] Ollama failed ({elapsed:.1f}s): {e}")
             return None
+
+    # Keep _call_ollama as alias for backwards compatibility
+    def _call_ollama(self, prompt: str, max_twm_id: int = 0) -> Optional[dict]:
+        """Alias for _call_local (KoboldCpp preferred, Ollama fallback)."""
+        return self._call_local(prompt, max_twm_id)
 
     def _call_claude_fallback(self, prompt: str) -> Optional[dict]:
         """Fall back to Claude if Ollama fails and budget allows."""
