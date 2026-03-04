@@ -24,11 +24,11 @@ from .brainstem.core_patterns import initialize_genesis, get_core_patterns, veri
 from .cognition import thalamus
 from .cognition import prefrontal_cortex as pfc
 from .cognition.reasoners.anthropic import AnthropicReasoner
-from .cognition.reasoners.ollama_reasoner import preparse, score_memories, OllamaReasoner, compute_complexity
+from .cognition.reasoners.koboldcpp_reasoner import preparse, score_memories, compute_complexity
 from .cognition.reasoners.openrouter_reasoner import preparse_via_openrouter
 from .cognition.forensic_logger import log_tier_selection
 from .cognition.system_prompt import build_boot_message, invalidate_cache
-from .cognition.local_pool import LocalOllamaPool
+from .cognition.local_pool import LocalKoboldPool
 from .cognition import observer
 from .cognition.narrative_engine import NarrativeEngine
 from .cognition.push_sources import run_background_sources, user_input_source
@@ -81,14 +81,14 @@ class Igor:
 
         self.ne = NarrativeEngine(self.cortex, instance_id)
         self.reasoner = AnthropicReasoner()
-        self.local_pool = LocalOllamaPool()
+        self.local_pool = LocalKoboldPool()
         self.interaction_count = 0
         self.upstream_calls = 0
         self.last_friction = None
         self.last_valence = None
         self.last_roi = None
         self.session_cost = 0.0
-        self.use_ollama = os.getenv("IGOR_OLLAMA", "true").lower() in ("true", "1", "yes")
+        self.use_local_preparse = os.getenv("IGOR_LOCAL_PREPARSE", "true").lower() in ("true", "1", "yes")
         # local_mode: default False — use cloud (Anthropic) for general reasoning.
         # Set IGOR_LOCAL=true in .env to default to local Ollama pool mode.
         self.local_mode = os.getenv("IGOR_LOCAL", "false").lower() in ("true", "1", "yes")
@@ -874,15 +874,15 @@ class Igor:
 
         # [OLLAMA] Pre-parse: classify intent, score memories, check habit match
         habits = self.cortex.get_habits()
-        if self.use_ollama:
+        if self.use_local_preparse:
             self._current_action = "preparse"
             web_server.broadcast_activity(self._activity_state())
-            console.print("[dim][OLLAMA] Pre-parsing...[/]")
+            console.print("[dim][LOCAL] Pre-parsing via KoboldCpp...[/]")
             pre = preparse(user_input, habits)
             relevant = score_memories(user_input, candidates) if candidates else []
         else:
-            # Preparse must always run — use tier.3 backend when Ollama off (WO_escalation_gate)
-            console.print("[dim][PREPARSE] Ollama off — classifying via tier.3 (gpt-4o-mini)...[/]")
+            # Preparse must always run — use tier.3 backend when local preparse is off
+            console.print("[dim][PREPARSE] Local preparse off — classifying via tier.3 (gpt-4o-mini)...[/]")
             pre = preparse_via_openrouter(user_input, habits)
             relevant = candidates[:5]
 
@@ -1001,8 +1001,8 @@ class Igor:
                     response_text, cost, used_api = self._reason_with_failover(
                         user_input, relevant, core, skip_to=_skip_to
                     )
-            elif self.use_ollama and not pre["should_escalate"]:
-                # tier.2 (WO5): preparse says simple — try local before paying for cloud
+            elif self.use_local_preparse and not pre["should_escalate"]:
+                # tier.2: preparse says simple — try local before paying for cloud
                 self._current_action = "reasoning"; self._current_tier = "tier.2"
                 web_server.broadcast_activity(self._activity_state())
                 dashboard.print_reasoning(used_api=False)
@@ -2003,10 +2003,10 @@ class Igor:
             console.print(f"\n[green]Cloud model switched to:[/] {resolved}")
 
     def _cmd_ollama(self, _):
-        self.use_ollama = not self.use_ollama
-        state = "[green]ON[/]" if self.use_ollama else "[yellow]OFF[/]"
-        note = "" if self.use_ollama else "  [dim](skipping local pre-parse, using simple keyword matching)[/]"
-        console.print(f"\n[bold]Ollama pre-parser:[/] {state}{note}")
+        self.use_local_preparse = not self.use_local_preparse
+        state = "[green]ON[/]" if self.use_local_preparse else "[yellow]OFF[/]"
+        note = "" if self.use_local_preparse else "  [dim](skipping local pre-parse, using simple keyword matching)[/]"
+        console.print(f"\n[bold]Local pre-parser:[/] {state}{note}")
 
     def _cmd_compress(self, _):
         """Summarize session ring memory to LTM via Ollama, then restart fresh."""
