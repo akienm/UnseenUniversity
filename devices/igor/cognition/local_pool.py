@@ -33,7 +33,6 @@ import json
 from datetime import datetime
 from pathlib import Path
 from .reasoners.koboldcpp_reasoner import KoboldCppReasoner, DEFAULT_HOST as KCC_DEFAULT_HOST
-from .reasoners.ollama_reasoner import OllamaReasoner, DEFAULT_MODEL
 from .reasoners.koboldcpp_reasoner import KoboldCppReasoner, DEFAULT_HOST as KCC_DEFAULT_HOST
 from ..memory.models import Memory
 
@@ -265,9 +264,8 @@ class LocalKoboldPool:
     Part C: self.weights adjusted by signal observations from main.py
     """
 
-    def __init__(self, model: str = DEFAULT_MODEL):
-        self.model        = model
-        self._reasoners:  list[OllamaReasoner] = []
+    def __init__(self):
+        self._reasoners:  list[KoboldCppReasoner] = []
         self._index       = 0
         self._benchmark:  dict | None = None
         self.weights      = RoutingWeights()
@@ -296,17 +294,11 @@ class LocalKoboldPool:
                     kcc_port = KOBOLDCPP_PORT_DEFAULT
                 kcc_host = f"http://{ip}:{kcc_port}"
                 reasoners.append(KoboldCppReasoner(host=kcc_host))
-            # Ollama fallback for this machine
-            ollama_host = f"http://{ip}:{OLLAMA_PORT}"
-            reasoners.append(OllamaReasoner(model=self.model, host=ollama_host))
-
-        # Local KoboldCpp last-resort (if running on localhost)
-        import os as _os
-        local_kcc_host = _os.getenv("KOBOLDCPP_HOST", "")
-        if local_kcc_host:
-            reasoners.append(KoboldCppReasoner(host=local_kcc_host))
-        # Always include local Ollama as final fallback
-        reasoners.append(OllamaReasoner(model=self.model, host=None))
+            # Add local KoboldCpp as final fallback
+            import os as _os
+            local_kcc_host = _os.getenv("KOBOLDCPP_HOST", "")
+            if local_kcc_host:
+                reasoners.append(KoboldCppReasoner(host=local_kcc_host))
         self._reasoners = reasoners
         self._index     = 0
 

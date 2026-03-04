@@ -146,9 +146,10 @@ def _run_benchmark(hostname: str, task: str) -> str:
     try:
         if task == "pre_parsing":
             # Use KoboldCpp's basic completion for speed test
-            result = KoboldCppReasoner(host=f"http://{hostname}:5001").reason(
-                test_prompt, [], [], "benchmark"
-            )
+            port = KOBOLDCPP_PORT_DEFAULT
+            host = f"http://{hostname}:{port}"
+            reasoner = KoboldCppReasoner(host=host)
+            result = reasoner.reason(test_prompt, [], [], "benchmark")
         else:
             raise ValueError(f"Unknown benchmark task: {task}")
             
