@@ -13,16 +13,6 @@ class Thalamus:
         self.pool = LocalKoboldPool()
         self.preparse_host = self.pool.select_preparse_host()
 
-@dataclass
-class ParsedInput:
-    raw: str
-    intent: str
-    keywords: list
-    tone: str          # friendly, neutral, frustrated, curious, urgent
-    is_command: bool   # starts with / or is a system command
-    command: str | None = None
-
-
     def process(self, raw_input: str) -> "ParsedInput":
         text = raw_input.strip()
 
@@ -47,6 +37,16 @@ class ParsedInput:
             is_command=is_command,
             command=command,
         )
+
+
+@dataclass
+class ParsedInput:
+    raw: str
+    intent: str
+    keywords: list
+    tone: str          # friendly, neutral, frustrated, curious, urgent
+    is_command: bool   # starts with / or is a system command
+    command: str | None = None
 
 
 def _extract_keywords(text: str) -> list:

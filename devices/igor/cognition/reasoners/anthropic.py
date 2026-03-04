@@ -91,11 +91,13 @@ class AnthropicReasoner(APIReasoner):
         core_patterns: list[Memory],
         instance_id: str,
         cortex=None,
+        preparse_csb: str = "",
     ) -> tuple[str, float]:
         """
         Run the full agentic tool loop.
         cortex is optional — if provided, tool calls are written to ring_memory
         and the recent ring entries are injected as session context.
+        preparse_csb: structured PARSED_INPUT block prepended to user content.
         """
         t0 = time.perf_counter()
         total_input_tokens = 0
@@ -108,6 +110,8 @@ class AnthropicReasoner(APIReasoner):
         system = build_system_prompt(cortex, instance_id)
 
         content = user_input
+        if preparse_csb:
+            content = preparse_csb + "\n\n" + content
         if session_context:
             content += session_context
         if memory_context:

@@ -78,7 +78,11 @@ def _parse_online_machines() -> list[dict]:
             ip = row.get("IP", "").strip()
             if ip and ip.upper() != "OFFLINE":
                 machines.append(row)
-        machines.sort(key=lambda m: PRIORITY_ORDER.get(m.get("Priority", ""), 99))
+        # Wired before wifi within same priority tier (lower latency, more reliable)
+        machines.sort(key=lambda m: (
+            PRIORITY_ORDER.get(m.get("Priority", ""), 99),
+            0 if m.get("Network", "").strip().lower() == "wired" else 1,
+        ))
         return machines
     except Exception:
         return []
@@ -295,11 +299,9 @@ class LocalKoboldPool:
                     kcc_port = KOBOLDCPP_PORT_DEFAULT
                 kcc_host = f"http://{ip}:{kcc_port}"
                 reasoners.append(KoboldCppReasoner(host=kcc_host))
-            # Add local KoboldCpp as final fallback
-            import os as _os
-            local_kcc_host = _os.getenv("KOBOLDCPP_HOST", "")
-            if local_kcc_host:
-                reasoners.append(KoboldCppReasoner(host=local_kcc_host))
+        # Always include local KoboldCpp (env override or default localhost:5001)
+        local_kcc_host = os.getenv("KOBOLDCPP_HOST", KCC_DEFAULT_HOST)
+        reasoners.append(KoboldCppReasoner(host=local_kcc_host))
         self._reasoners = reasoners
         self._index     = 0
 
@@ -323,6 +325,11 @@ class LocalKoboldPool:
         })
         
         bench_file.write_text(json.dumps(data, indent=2))
+
+    def _next_reasoner(self) -> Iterator[KoboldCppReasoner]:
+        n = len(self._reasoners)
+        for i in range(n):
+            yield self._reasoners[(self._index + i) % n]
 
     def select_preparse_host(self) -> dict:
         """Select the best host for pre-parsing based on capabilities and benchmarks."""
@@ -371,6 +378,7 @@ class LocalKoboldPool:
         relevant_memories: list[Memory],
         core_patterns: list[Memory],
         instance_id: str,
+        preparse_csb: str = "",
     ) -> tuple[str, float]:
         """
         Try each machine in round-robin order; fall back on failure.

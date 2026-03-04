@@ -24,7 +24,7 @@ from .brainstem.core_patterns import initialize_genesis, get_core_patterns, veri
 from .cognition import thalamus
 from .cognition import prefrontal_cortex as pfc
 from .cognition.reasoners.anthropic import AnthropicReasoner
-from .cognition.reasoners.koboldcpp_reasoner import preparse, score_memories, compute_complexity
+from .cognition.reasoners.koboldcpp_reasoner import preparse, parse_preparse_csb, score_memories, _rule_based_csb
 from .cognition.reasoners.openrouter_reasoner import preparse_via_openrouter
 from .cognition.forensic_logger import log_tier_selection
 from .cognition.system_prompt import build_boot_message, invalidate_cache
@@ -82,6 +82,7 @@ class Igor:
         self.ne = NarrativeEngine(self.cortex, instance_id)
         self.reasoner = AnthropicReasoner()
         self.local_pool = LocalKoboldPool()
+        self.thalamus = thalamus.Thalamus()
         self.interaction_count = 0
         self.upstream_calls = 0
         self.last_friction = None
@@ -89,6 +90,7 @@ class Igor:
         self.last_roi = None
         self.session_cost = 0.0
         self.use_local_preparse = os.getenv("IGOR_LOCAL_PREPARSE", "true").lower() in ("true", "1", "yes")
+        self.use_ollama = os.getenv("IGOR_OLLAMA", "true").lower() in ("true", "1", "yes")
         # local_mode: default False — use cloud (Anthropic) for general reasoning.
         # Set IGOR_LOCAL=true in .env to default to local Ollama pool mode.
         self.local_mode = os.getenv("IGOR_LOCAL", "false").lower() in ("true", "1", "yes")
@@ -685,6 +687,7 @@ class Igor:
         relevant: list,
         core: list,
         skip_to: str = "tier.3",
+        preparse_csb: str = "",
     ) -> tuple[str, float, bool]:
         """
         WO5 priority escalation ladder (tiers 3-6).
@@ -707,7 +710,8 @@ class Igor:
             web_server.broadcast_activity(self._activity_state())
             try:
                 text, cost = self.openrouter_cheap_reasoner.reason(
-                    user_input, relevant, core, self.instance_id, cortex=self.cortex
+                    user_input, relevant, core, self.instance_id,
+                    cortex=self.cortex, preparse_csb=preparse_csb
                 )
                 self.upstream_calls += 1
                 console.print(f"[dim](tier.3/or-cheap | session_cost: ${self.session_cost + cost:.4f})[/]")
@@ -722,7 +726,8 @@ class Igor:
             web_server.broadcast_activity(self._activity_state())
             try:
                 text, cost = self.openrouter_reasoner.reason(
-                    user_input, relevant, core, self.instance_id, cortex=self.cortex
+                    user_input, relevant, core, self.instance_id,
+                    cortex=self.cortex, preparse_csb=preparse_csb
                 )
                 self.upstream_calls += 1
                 console.print(f"[dim](tier.4/or-claude | session_cost: ${self.session_cost + cost:.4f})[/]")
@@ -736,7 +741,8 @@ class Igor:
         web_server.broadcast_activity(self._activity_state())
         try:
             text, cost = self.reasoner.reason(
-                user_input, relevant, core, self.instance_id, cortex=self.cortex
+                user_input, relevant, core, self.instance_id,
+                cortex=self.cortex, preparse_csb=preparse_csb
             )
             self.upstream_calls += 1
             console.print(f"[dim](tier.5/anthropic | session_cost: ${self.session_cost + cost:.4f})[/]")
@@ -775,6 +781,9 @@ class Igor:
         self._current_tier = ""
         web_server.broadcast_activity(self._activity_state())
 
+        if not is_impulse and not user_input.startswith("/"):
+            console.print("[dim]Thinking...[/]")
+
         try:
             return self._process_inner(user_input, is_impulse)
         finally:
@@ -793,8 +802,7 @@ class Igor:
             )
 
         # [THALAMUS] Parse input
-        thal = thalamus.Thalamus()
-        parsed = thal.process(user_input)
+        parsed = self.thalamus.process(user_input)
 
         # Handle commands
         if parsed.is_command:
@@ -870,26 +878,49 @@ class Igor:
                 # No weight adjustment — quality is handled by complexity skip_to=tier.4
                 observer.observe("routing_signal", "quality_pressure", {"reason": "user_words"})
 
-        # [SEARCH] Candidate memories via text search
-        candidates = self.cortex.search(" ".join(parsed.keywords))
-
-        # [OLLAMA] Pre-parse: classify intent, score memories, check habit match
+        # [SEARCH + PREPARSE] Run in parallel — both are I/O-bound
+        # Fast-path: skip LLM preparse for greetings and habit triggers already
+        # caught by thalamus rules — rule-based CSB is instant.
         habits = self.cortex.get_habits()
-        if self.use_local_preparse:
-            self._current_action = "preparse"
-            web_server.broadcast_activity(self._activity_state())
-            console.print("[dim][LOCAL] Pre-parsing via KoboldCpp...[/]")
-            pre = preparse(user_input, habits)
+        _fast_path_intents = {"greeting", "command"}
+        _thalamus_habit = self._find_habit(parsed)
+        _skip_llm_preparse = (
+            parsed.intent in _fast_path_intents
+            or _thalamus_habit is not None
+            or not parsed.keywords  # empty input
+        )
+
+        candidates: list = []
+        pre_csb: str = ""
+
+        if _skip_llm_preparse:
+            # No I/O needed — build CSB from thalamus result instantly
+            pre_csb = _rule_based_csb(user_input, habits)
+            if parsed.intent != "command":  # commands don't need memory search
+                candidates = self.cortex.search(" ".join(parsed.keywords))
             relevant = score_memories(user_input, candidates) if candidates else []
         else:
-            # Preparse must always run — use tier.3 backend when local preparse is off
-            console.print("[dim][PREPARSE] Local preparse off — classifying via tier.3 (gpt-4o-mini)...[/]")
-            pre = preparse_via_openrouter(user_input, habits)
-            relevant = candidates[:5]
+            # Parallel: memory search + LLM preparse
+            import concurrent.futures as _cf
+            self._current_action = "preparse"
+            web_server.broadcast_activity(self._activity_state())
+            if self.use_local_preparse:
+                console.print("[dim][LOCAL] Pre-parsing via KoboldCpp...[/]")
+                _preparse_fn = lambda: preparse(user_input, habits)
+            else:
+                console.print("[dim][PREPARSE] Local preparse off — classifying via tier.3...[/]")
+                _preparse_fn = lambda: preparse_via_openrouter(user_input, habits)
 
-        # [COMPLEXITY] Pure-Python heuristic — gates tier minimum (pass.2)
-        complexity = compute_complexity(user_input)
-        _skip_to = complexity["tier_minimum"]  # "tier.3" or "tier.4"
+            with _cf.ThreadPoolExecutor(max_workers=2) as _pool:
+                _pre_fut  = _pool.submit(_preparse_fn)
+                _cand_fut = _pool.submit(self.cortex.search, " ".join(parsed.keywords))
+                pre_csb   = _pre_fut.result()
+                candidates = _cand_fut.result()
+            relevant = score_memories(user_input, candidates) if candidates else []
+
+        pre = parse_preparse_csb(pre_csb, habits)
+        complexity = pre["complexity"]
+        _skip_to = complexity["tier_minimum"]
         if complexity["signals_fired"]:
             console.print(
                 f"[dim][COMPLEXITY] score={complexity['score']:.2f} "
@@ -1000,7 +1031,7 @@ class Igor:
                     # Local pool failed — try cloud failover chain
                     console.print(f"[yellow]Local pool failed ({e}), trying cloud...[/]")
                     response_text, cost, used_api = self._reason_with_failover(
-                        user_input, relevant, core, skip_to=_skip_to
+                        user_input, relevant, core, skip_to=_skip_to, preparse_csb=pre_csb
                     )
             elif self.use_local_preparse and not pre["should_escalate"]:
                 # tier.2: preparse says simple — try local before paying for cloud
@@ -1018,13 +1049,13 @@ class Igor:
                     console.print(f"[yellow]tier.2 local failed ({e}), escalating to cloud...[/]")
                     dashboard.print_reasoning(used_api=True)
                     response_text, cost, used_api = self._reason_with_failover(
-                        user_input, relevant, core, skip_to=_skip_to
+                        user_input, relevant, core, skip_to=_skip_to, preparse_csb=pre_csb
                     )
             else:
                 # tier.3+: cloud chain (should_escalate=True or ollama disabled)
                 dashboard.print_reasoning(used_api=True)
                 response_text, cost, used_api = self._reason_with_failover(
-                    user_input, relevant, core, skip_to=_skip_to
+                    user_input, relevant, core, skip_to=_skip_to, preparse_csb=pre_csb
                 )
 
         # [MOTOR CORTEX] Output response
@@ -1116,6 +1147,13 @@ class Igor:
             return  # Already running — Ollama is still thinking
 
         def _ne_worker():
+            # Yield to interactive turn — if main loop is actively processing,
+            # wait briefly rather than competing for KoboldCpp
+            import time as _t
+            _waited = 0.0
+            while self._is_processing and _waited < 10.0:
+                _t.sleep(0.5)
+                _waited += 0.5
             try:
                 self.ne.run(verbose=False)
             except Exception:

@@ -38,43 +38,30 @@ def preparse_via_openrouter(
     user_input: str,
     habits: list,
     model: str = "openai/gpt-4o-mini",
-) -> dict:
+) -> str:
     """
-    Run preparse classification via OpenRouter when Ollama is unavailable.
-    Same prompt/output contract as preparse() in ollama_reasoner.py.
-    Falls back to should_escalate=True on any error.
+    Run preparse via OpenRouter → PARSED_INPUT CSB block.
+    Falls back to rule-based CSB on any error.
+    Returns a CSB string (always — never raises).
     """
+    from .koboldcpp_reasoner import _PREPARSE_PROMPT, _rule_based_csb
+    from ...memory.models import Memory as _Memory
+
     api_key = os.getenv("OPENROUTER_API_KEY", "")
     if not api_key:
-        return {"intent": "general", "keywords": [], "habit_match": None,
-                "confidence": 0.0, "should_escalate": True}
+        return _rule_based_csb(user_input, habits)
 
-    habit_desc = ""
-    if habits:
-        habit_desc = "\n\nAvailable habits:\n" + "\n".join(
-            f"- ID={h.id}: trigger='{h.metadata.get('trigger', '')}' desc='{h.narrative[:60]}'"
-            for h in habits
-        )
+    habit_desc = ", ".join(
+        f"{h.id}:{h.metadata.get('trigger','')}" for h in habits if h.metadata.get("trigger")
+    ) or "none"
 
-    prompt = f"""Classify this user input. Reply with ONLY a JSON object, no other text.
-
-User input: "{user_input}"{habit_desc}
-
-JSON fields:
-- intent: one word from: greeting, meta_question, factual_question, action_request, memory_instruction, general
-- keywords: array of 2-4 important words from the input
-- habit_id: the habit ID string if a habit matches, or null
-- confidence: number from 0.0 to 1.0 for how well a habit matches
-- should_escalate: true if needs deep reasoning, false if simple
-
-Example output:
-{{"intent": "factual_question", "keywords": ["capital", "france"], "habit_id": null, "confidence": 0.0, "should_escalate": true}}"""
+    prompt = _PREPARSE_PROMPT.format(text=user_input[:300], habits=habit_desc[:200])
 
     payload = json.dumps({
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.1,
-        "max_tokens": 200,
+        "max_tokens": 120,
     }).encode()
     req = urllib.request.Request(
         f"{OPENROUTER_BASE}/chat/completions",
@@ -91,27 +78,12 @@ Example output:
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read())
         text = data["choices"][0]["message"]["content"].strip()
-        start, end = text.find("{"), text.rfind("}") + 1
-        if start >= 0 and end > start:
-            parsed = json.loads(text[start:end])
-        else:
-            raise ValueError("No JSON in response")
-
-        habit_match = None
-        if parsed.get("habit_id") and habits:
-            habit_match = next((h for h in habits if h.id == parsed["habit_id"]), None)
-
-        return {
-            "intent": parsed.get("intent", "general"),
-            "keywords": parsed.get("keywords", []),
-            "habit_match": habit_match,
-            "confidence": float(parsed.get("confidence", 0.0)),
-            "should_escalate": bool(parsed.get("should_escalate", True)),
-        }
+        if "[PARSED_INPUT]" in text:
+            return text
     except Exception as exc:
-        console.print(f"[yellow][PREPARSE] OR preparse failed ({exc}), defaulting to escalate[/]")
-        return {"intent": "general", "keywords": [], "habit_match": None,
-                "confidence": 0.0, "should_escalate": True}
+        console.print(f"[yellow][PREPARSE] OR preparse failed ({exc}), using rule-based fallback[/]")
+
+    return _rule_based_csb(user_input, habits)
 
 
 class OpenRouterReasoner(BaseReasoner):
@@ -136,6 +108,7 @@ class OpenRouterReasoner(BaseReasoner):
         core_patterns: list[Memory],
         instance_id: str,
         cortex=None,
+        preparse_csb: str = "",
     ) -> tuple[str, float]:
         """Run full agentic tool loop via OpenRouter."""
         t0 = time.perf_counter()
@@ -144,6 +117,8 @@ class OpenRouterReasoner(BaseReasoner):
         system = build_system_prompt(cortex, instance_id)
 
         content = user_input
+        if preparse_csb:
+            content = preparse_csb + "\n\n" + content
         session_ctx = self._build_session_context(cortex)
         mem_ctx = self._build_memory_context(relevant_memories)
         if session_ctx:
