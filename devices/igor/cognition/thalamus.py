@@ -23,30 +23,30 @@ class ParsedInput:
     command: str | None = None
 
 
-def process(self, raw_input: str) -> ParsedInput:
-    text = raw_input.strip()
+    def process(self, raw_input: str) -> ParsedInput:
+        text = raw_input.strip()
 
-    # Command detection
-    is_command = text.startswith("/")
-    command = text[1:].split()[0].lower() if is_command else None
+        # Command detection
+        is_command = text.startswith("/")
+        command = text[1:].split()[0].lower() if is_command else None
 
-    # Keyword extraction (simple - improve with NLP later)
-    keywords = _extract_keywords(text)
+        # Keyword extraction (simple - improve with NLP later)
+        keywords = _extract_keywords(text)
 
-    # Intent classification (simple rules - improve with LLM later)
-    intent = _classify_intent(text, keywords)
+        # Intent classification (simple rules - improve with LLM later)
+        intent = _classify_intent(text, keywords)
 
-    # Tone detection
-    tone = _detect_tone(text)
+        # Tone detection
+        tone = _detect_tone(text)
 
-    return ParsedInput(
-        raw=text,
-        intent=intent,
-        keywords=keywords,
-        tone=tone,
-        is_command=is_command,
-        command=command,
-    )
+        return ParsedInput(
+            raw=text,
+            intent=intent,
+            keywords=keywords,
+            tone=tone,
+            is_command=is_command,
+            command=command,
+        )
 
 
 def _extract_keywords(text: str) -> list:
