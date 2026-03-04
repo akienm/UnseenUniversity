@@ -270,7 +270,8 @@ class LocalKoboldPool:
         self._benchmark:  dict | None = None
         self.weights      = RoutingWeights()
         self._refresh()
-        _init_benchmark_async(model, self._on_benchmark_done)
+        # No model needed for KoboldCpp - removing benchmark
+        self._benchmark = {"tokens_per_sec": 1.0, "avg_latency_ms": 1000}
 
     def _on_benchmark_done(self, result: dict) -> None:
         self._benchmark = result
