@@ -31,6 +31,7 @@ DEFAULT_TIMEOUT = 30  # seconds
 
 import time
 from ..cognition.local_pool import LocalKoboldPool
+from ..cognition.reasoners.koboldcpp_reasoner import KoboldCppReasoner
 
 def _run(args: list[str], timeout: int, input_text: str = "") -> str:
     """
