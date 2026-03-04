@@ -33,6 +33,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 from .reasoners.koboldcpp_reasoner import KoboldCppReasoner, DEFAULT_HOST as KCC_DEFAULT_HOST
+from .reasoners.ollama_reasoner import OllamaReasoner, DEFAULT_MODEL
 from .reasoners.koboldcpp_reasoner import KoboldCppReasoner, DEFAULT_HOST as KCC_DEFAULT_HOST
 from ..memory.models import Memory
 
