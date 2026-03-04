@@ -1,16 +1,19 @@
 """
-LocalOllamaPool — distributes reasoning across available local-network Ollama instances.
+LocalKoboldPool — distributes reasoning across available local-network KoboldCpp instances.
 
-Reads ~/.TheIgors/local/machines.csv to discover online machines, creates an
-OllamaReasoner for each, and round-robins requests across them. Falls back to
-the local instance if all remotes fail.
+Reads ~/.TheIgors/local/machines.csv to discover online machines, creates a
+KoboldCppReasoner for each, and selects the optimal instance based on capabilities
+and benchmark data. Falls back to cloud reasoning if all local instances fail.
 
-Machine selection: machines with a valid IP (not "OFFLINE") are treated as candidates.
-Own machine (akiendelllinux / 127.0.0.1) is always included as the last fallback.
+Machine selection: 
+- Reads capabilities from machines.csv ("pre_parsing", "reasoning", etc)
+- Uses benchmark data from ~/.TheIgors/benchmarks/{hostname}.json
+- Selects fastest machine with required capability
+- Falls back to next best option if preferred host is offline
 
-Part A: boot benchmarking — measures tokens/sec per model per machine; cached 24h.
-Part B: latency budget — estimates local latency before committing; escalates if over.
-Part C: RoutingWeights — session-scoped cost/speed weights adjusted by observed signals.
+Part A: Dynamic resource selection based on capabilities and benchmarks
+Part B: Latency budget enforcement with cloud escalation
+Part C: Benchmark tracking and performance optimization
 """
 
 from __future__ import annotations
@@ -26,7 +29,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterator
 
-from .reasoners.ollama_reasoner import OllamaReasoner, DEFAULT_MODEL
+import json
+from datetime import datetime
+from pathlib import Path
+from .reasoners.koboldcpp_reasoner import KoboldCppReasoner, DEFAULT_HOST as KCC_DEFAULT_HOST
 from .reasoners.koboldcpp_reasoner import KoboldCppReasoner, DEFAULT_HOST as KCC_DEFAULT_HOST
 from ..memory.models import Memory
 
@@ -246,7 +252,10 @@ class RoutingWeights:
 
 # ── Pool ───────────────────────────────────────────────────────────────────────
 
-class LocalOllamaPool:
+BENCHMARK_DIR = Path.home() / ".TheIgors" / "benchmarks"
+BENCHMARK_TTL_HOURS = 24
+
+class LocalKoboldPool:
     """
     Round-robin pool of OllamaReasoner instances across network machines.
 
@@ -300,10 +309,53 @@ class LocalOllamaPool:
         self._reasoners = reasoners
         self._index     = 0
 
-    def _next_reasoner(self) -> Iterator[OllamaReasoner]:
-        n = len(self._reasoners)
-        for i in range(n):
-            yield self._reasoners[(self._index + i) % n]
+    def record_benchmark(self, hostname: str, task: str, latency: float) -> None:
+        """Store benchmark results for a specific host/task combination."""
+        BENCHMARK_DIR.mkdir(parents=True, exist_ok=True)
+        bench_file = BENCHMARK_DIR / f"{hostname}.json"
+        
+        try:
+            data = json.loads(bench_file.read_text()) if bench_file.exists() else {}
+        except Exception:
+            data = {}
+            
+        if task not in data:
+            data[task] = {}
+            
+        data[task].update({
+            "last_latency": latency,
+            "last_update": datetime.now().isoformat(),
+            "avg": (data[task].get("avg", latency) + latency) / 2
+        })
+        
+        bench_file.write_text(json.dumps(data, indent=2))
+
+    def select_preparse_host(self) -> dict:
+        """Select the best host for pre-parsing based on capabilities and benchmarks."""
+        machines = _parse_online_machines()
+        if not machines:
+            return None
+
+        # Filter for machines with pre_parsing capability
+        capable_hosts = [
+            m for m in machines 
+            if "pre_parsing" in parse_capabilities(m)
+        ]
+        
+        if not capable_hosts:
+            return machines[0]  # Fallback to first available
+
+        # Load benchmark data for each capable host
+        for host in capable_hosts:
+            bench_file = BENCHMARK_DIR / f"{host['Hostname']}.json"
+            try:
+                data = json.loads(bench_file.read_text())
+                host["benchmark"] = data.get("preparse", {}).get("avg", 10.0)
+            except Exception:
+                host["benchmark"] = 10.0  # Default/slow score
+                
+        # Return fastest host
+        return min(capable_hosts, key=lambda x: x["benchmark"])
 
     def _estimate_latency(self, user_input: str) -> float | None:
         """
