@@ -23,7 +23,7 @@ class ParsedInput:
     command: str | None = None
 
 
-def process(self, raw_input: str) -> "ParsedInput":
+    def process(self, raw_input: str) -> "ParsedInput":
         text = raw_input.strip()
 
         # Command detection
