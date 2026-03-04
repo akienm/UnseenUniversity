@@ -793,7 +793,8 @@ class Igor:
             )
 
         # [THALAMUS] Parse input
-        parsed = thalamus.process(user_input)
+        thal = thalamus.Thalamus()
+        parsed = thal.process(user_input)
 
         # Handle commands
         if parsed.is_command:
