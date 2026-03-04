@@ -26,9 +26,84 @@ from typing import Optional
 from urllib.request import urlopen, Request
 from urllib.error import URLError
 
+import re
+from typing import List
 from ...memory.models import Memory
 from .base import LocalReasoner
 from ..system_prompt import build_system_prompt
+
+def preparse(user_input: str, habits: List[Memory]) -> dict:
+    """Pre-parse user input to detect intent, habits, etc."""
+    # Simple keyword-based intent detection as fallback
+    intent = "general"
+    text = user_input.lower()
+    
+    if any(w in text for w in ["hello", "hi", "hey", "morning", "evening"]):
+        intent = "greeting"
+    elif any(w in text for w in ["how do you", "what are you", "who are you"]):
+        intent = "meta_question"
+    elif any(w in text for w in ["why", "explain", "how come"]):
+        intent = "explanation"
+    elif any(w in text for w in ["remember", "note", "save"]):
+        intent = "memory_store"
+        
+    # Check for habit matches
+    habit_match = None
+    for habit in habits:
+        trigger = habit.metadata.get("trigger", "").lower()
+        if trigger and trigger in text:
+            habit_match = habit
+            break
+            
+    return {
+        "intent": intent,
+        "should_escalate": "complex" in text or len(user_input.split()) > 50,
+        "habit_match": habit_match,
+        "confidence": 0.8 if habit_match else 0.6
+    }
+
+def score_memories(user_input: str, candidates: List[Memory]) -> List[Memory]:
+    """Score candidate memories for relevance to input. Returns sorted list."""
+    if not candidates:
+        return []
+        
+    # Simple keyword matching for now
+    keywords = set(re.findall(r'\b\w+\b', user_input.lower()))
+    
+    def score(mem: Memory) -> float:
+        mem_keywords = set(re.findall(r'\b\w+\b', mem.narrative.lower()))
+        overlap = len(keywords & mem_keywords)
+        return overlap / max(len(keywords), len(mem_keywords))
+        
+    scored = [(score(m), m) for m in candidates]
+    scored.sort(reverse=True)
+    return [m for _, m in scored if _ > 0.1]  # Only return reasonable matches
+
+def compute_complexity(user_input: str) -> dict:
+    """Estimate task complexity to guide tier selection."""
+    text = user_input.lower()
+    words = text.split()
+    
+    signals = []
+    if len(words) > 50:
+        signals.append("long_input")
+    if "?" in text and text.count("?") > 1:
+        signals.append("multiple_questions")
+    if any(w in text for w in ["complex", "complicated", "difficult"]):
+        signals.append("self_declared_complex")
+    if text.count(",") > 3 or text.count(";") > 1:
+        signals.append("complex_structure")
+    if any(w in text for w in ["code", "function", "class", "algorithm"]):
+        signals.append("code_related")
+        
+    score = len(signals) * 0.2  # 0.0 to 1.0
+    
+    return {
+        "score": min(1.0, score),
+        "signals_fired": signals,
+        "tier_minimum": "tier.4" if score > 0.4 else "tier.3",
+        "is_multi_unit": score > 0.6
+    }
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 
