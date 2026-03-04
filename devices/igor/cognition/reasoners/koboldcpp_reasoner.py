@@ -17,77 +17,118 @@ Config:
 Logging: every call → koboldcpp_calls.log (same format as ollama_calls.log)
 """
 
+import http.client
 import json
 import logging
 import os
+import re
+import threading
 import time
 from pathlib import Path
-from typing import Optional
-from urllib.request import urlopen, Request
+from typing import List, Optional
 from urllib.error import URLError
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
-import re
-from typing import List
 from ...memory.models import Memory
-from .base import LocalReasoner
 from ..system_prompt import build_system_prompt
+from .base import LocalReasoner
 
-def preparse(user_input: str, habits: List[Memory]) -> dict:
-    """Pre-parse user input to detect intent, habits, etc."""
-    # Simple keyword-based intent detection as fallback
-    intent = "general"
-    text = user_input.lower()
-    
-    if any(w in text for w in ["hello", "hi", "hey", "morning", "evening"]):
-        intent = "greeting"
-    elif any(w in text for w in ["how do you", "what are you", "who are you"]):
-        intent = "meta_question"
-    elif any(w in text for w in ["why", "explain", "how come"]):
-        intent = "explanation"
-    elif any(w in text for w in ["remember", "note", "save"]):
-        intent = "memory_store"
-        
-    # Check for habit matches
-    habit_match = None
-    for habit in habits:
-        trigger = habit.metadata.get("trigger", "").lower()
-        if trigger and trigger in text:
-            habit_match = habit
-            break
-            
-    return {
-        "intent": intent,
-        "should_escalate": "complex" in text or len(user_input.split()) > 50,
-        "habit_match": habit_match,
-        "confidence": 0.8 if habit_match else 0.6
-    }
+# ── Per-host HTTP connection pool (keep-alive, one connection per host) ────────
+_conn_lock = threading.Lock()
+_conn_pool: dict[str, http.client.HTTPConnection] = {}
 
-def score_memories(user_input: str, candidates: List[Memory]) -> List[Memory]:
-    """Score candidate memories for relevance to input. Returns sorted list."""
-    if not candidates:
-        return []
-        
-    # Simple keyword matching for now
-    keywords = set(re.findall(r'\b\w+\b', user_input.lower()))
-    
-    def score(mem: Memory) -> float:
-        mem_keywords = set(re.findall(r'\b\w+\b', mem.narrative.lower()))
-        overlap = len(keywords & mem_keywords)
-        return overlap / max(len(keywords), len(mem_keywords))
-        
-    scored = [(score(m), m) for m in candidates]
-    scored.sort(reverse=True)
-    return [m for _, m in scored if _ > 0.1]  # Only return reasonable matches
 
-def compute_complexity(user_input: str) -> dict:
-    """Estimate task complexity to guide tier selection."""
+def _post_json(host: str, path: str, payload: dict, timeout: int) -> dict:
+    """POST JSON to host/path, reusing keep-alive connection where possible."""
+    parsed = urlparse(host)
+    netloc  = parsed.netloc  # e.g. "localhost:5001"
+    use_ssl = parsed.scheme == "https"
+
+    with _conn_lock:
+        conn = _conn_pool.get(netloc)
+        if conn is None:
+            conn = (http.client.HTTPSConnection if use_ssl else http.client.HTTPConnection)(
+                netloc, timeout=timeout
+            )
+            _conn_pool[netloc] = conn
+
+    body = json.dumps(payload).encode("utf-8")
+    headers = {"Content-Type": "application/json", "Connection": "keep-alive"}
+
+    try:
+        conn.request("POST", path, body=body, headers=headers)
+        resp = conn.getresponse()
+        data = json.loads(resp.read().decode())
+        return data
+    except Exception:
+        # Connection stale — drop and retry once with a fresh connection
+        with _conn_lock:
+            _conn_pool.pop(netloc, None)
+            conn = (http.client.HTTPSConnection if use_ssl else http.client.HTTPConnection)(
+                netloc, timeout=timeout
+            )
+            _conn_pool[netloc] = conn
+        conn.request("POST", path, body=body, headers=headers)
+        resp = conn.getresponse()
+        return json.loads(resp.read().decode())
+
+PREPARSE_TIMEOUT = 8   # seconds — fast extraction only, not reasoning
+
+_PREPARSE_PROMPT = """\
+Parse this input. Output ONLY the block below with fields filled in — no other text.
+
+[PARSED_INPUT]
+intent: <greeting|question|task|memory_op|command|general>
+tone: <friendly|neutral|urgent|frustrated|curious>
+complexity: <low|medium|high>
+entities: <comma-separated names/things, or none>
+requires_tools: <true|false>
+memory_hints: <comma-separated keywords relevant to memory search, or none>
+habit_id: <matching habit ID from list below, or null>
+should_escalate: <true|false>
+
+Input: "{text}"
+Habits: {habits}
+"""
+
+
+def _rule_based_csb(user_input: str, habits: List[Memory]) -> str:
+    """Fallback: produce PARSED_INPUT CSB block using pure Python rules."""
     text = user_input.lower()
     words = text.split()
-    
+
+    # Intent
+    if any(w in text for w in ["hello", "hi ", "hey ", "good morning", "good evening"]):
+        intent = "greeting"
+    elif any(w in text for w in ["remember", "note that", "save", "learn that"]):
+        intent = "memory_op"
+    elif text.startswith("/"):
+        intent = "command"
+    elif "?" in text:
+        intent = "question"
+    elif any(w in text for w in ["do ", "run ", "execute", "search", "find", "browse"]):
+        intent = "task"
+    else:
+        intent = "general"
+
+    # Tone
+    if any(w in text for w in ["urgent", "asap", "immediately", "!"]):
+        tone = "urgent"
+    elif any(w in text for w in ["frustrated", "annoyed", "broken", "wrong"]):
+        tone = "frustrated"
+    elif any(w in text for w in ["hello", "hi", "hey", "thanks", "please"]):
+        tone = "friendly"
+    elif "?" in text:
+        tone = "curious"
+    else:
+        tone = "neutral"
+
+    # Complexity signals
     signals = []
     if len(words) > 50:
         signals.append("long_input")
-    if "?" in text and text.count("?") > 1:
+    if text.count("?") > 1:
         signals.append("multiple_questions")
     if any(w in text for w in ["complex", "complicated", "difficult"]):
         signals.append("self_declared_complex")
@@ -95,23 +136,140 @@ def compute_complexity(user_input: str) -> dict:
         signals.append("complex_structure")
     if any(w in text for w in ["code", "function", "class", "algorithm"]):
         signals.append("code_related")
-        
-    score = len(signals) * 0.2  # 0.0 to 1.0
-    
-    return {
-        "score": min(1.0, score),
-        "signals_fired": signals,
-        "tier_minimum": "tier.4" if score > 0.4 else "tier.3",
-        "is_multi_unit": score > 0.6
+    complexity = "high" if len(signals) >= 3 else "medium" if len(signals) >= 1 else "low"
+    should_escalate = len(signals) >= 2
+
+    # Habit match
+    habit_id = "null"
+    for h in habits:
+        trigger = h.metadata.get("trigger", "").lower()
+        if trigger and trigger in text:
+            habit_id = h.id
+            break
+
+    requires_tools = intent in ("task", "command") or any(
+        w in text for w in ["search", "run", "execute", "file", "browse", "read"]
+    )
+
+    stop_words = {"the","a","an","is","are","was","i","you","it","in","on","at","to","for","of","and","or"}
+    keywords = [w for w in re.findall(r'\b[a-zA-Z]{4,}\b', text) if w not in stop_words]
+    memory_hints = ", ".join(keywords[:4]) if keywords else "none"
+
+    return (
+        f"[PARSED_INPUT]\n"
+        f"intent: {intent}\n"
+        f"tone: {tone}\n"
+        f"complexity: {complexity}\n"
+        f"entities: none\n"
+        f"requires_tools: {str(requires_tools).lower()}\n"
+        f"memory_hints: {memory_hints}\n"
+        f"habit_id: {habit_id}\n"
+        f"should_escalate: {str(should_escalate).lower()}\n"
+    )
+
+
+def preparse(user_input: str, habits: List[Memory], host: str = "") -> str:
+    """
+    Pre-parse user input via KoboldCpp LLM → PARSED_INPUT CSB block.
+    Falls back to rule-based CSB on timeout or error.
+    Returns a CSB string (always — never raises).
+    """
+    habit_desc = ", ".join(
+        f"{h.id}:{h.metadata.get('trigger','')}" for h in habits if h.metadata.get("trigger")
+    ) or "none"
+
+    _host = host or DEFAULT_HOST
+    prompt = _PREPARSE_PROMPT.format(
+        text=user_input[:300],
+        habits=habit_desc[:200],
+    )
+
+    payload = {
+        "model": os.getenv("KOBOLDCPP_MODEL", "hugging-quants/Llama-3.2-1B-Instruct-Q4_K_M-GGUF"),
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 120,
+        "temperature": 0.1,
+        "cache_prompt": True,
     }
+    try:
+        data = _post_json(_host, CHAT_ENDPOINT, payload, PREPARSE_TIMEOUT)
+        text = data["choices"][0]["message"]["content"]
+        if "[PARSED_INPUT]" in text:
+            return text.strip()
+    except Exception:
+        pass
+
+    return _rule_based_csb(user_input, habits)
+
+
+def parse_preparse_csb(csb: str, habits: List[Memory]) -> dict:
+    """
+    Extract routing dict from a PARSED_INPUT CSB block.
+    Returns keys compatible with existing main.py routing logic.
+    Always returns a valid dict — never raises.
+    """
+    fields: dict = {}
+    for line in csb.splitlines():
+        if ":" in line and not line.startswith("["):
+            key, _, val = line.partition(":")
+            fields[key.strip()] = val.strip()
+
+    intent       = fields.get("intent", "general")
+    complexity   = fields.get("complexity", "low")
+    should_esc   = fields.get("should_escalate", "false").lower() == "true"
+    requires_tools = fields.get("requires_tools", "false").lower() == "true"
+    habit_id_str = fields.get("habit_id", "null").strip()
+
+    # Derive numeric complexity score for existing callers
+    score = {"low": 0.1, "medium": 0.4, "high": 0.8}.get(complexity, 0.1)
+    is_multi_unit = score > 0.6 or requires_tools
+    tier_minimum  = "tier.4" if score > 0.4 else "tier.3"
+
+    # Resolve habit
+    habit_match = None
+    if habit_id_str and habit_id_str != "null" and habits:
+        habit_match = next((h for h in habits if str(h.id) == habit_id_str), None)
+
+    confidence = 0.9 if habit_match else (0.5 if should_esc else 0.8)
+
+    return {
+        "intent":           intent,
+        "should_escalate":  should_esc,
+        "habit_match":      habit_match,
+        "confidence":       confidence,
+        "complexity": {
+            "score":         score,
+            "signals_fired": [complexity] if complexity != "low" else [],
+            "tier_minimum":  tier_minimum,
+            "is_multi_unit": is_multi_unit,
+        },
+        "_csb": csb,
+    }
+
+
+def score_memories(user_input: str, candidates: List[Memory]) -> List[Memory]:
+    """Score candidate memories for relevance to input. Returns sorted list."""
+    if not candidates:
+        return []
+
+    keywords = set(re.findall(r'\b\w+\b', user_input.lower()))
+
+    def score(mem: Memory) -> float:
+        mem_keywords = set(re.findall(r'\b\w+\b', mem.narrative.lower()))
+        overlap = len(keywords & mem_keywords)
+        return overlap / max(len(keywords), len(mem_keywords))
+
+    scored = [(score(m), m) for m in candidates]
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [m for _, m in scored if _ > 0.1]
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 
 DEFAULT_HOST         = os.getenv("KOBOLDCPP_HOST", "http://localhost:5001")
 DEFAULT_CONTEXT_SIZE = int(os.getenv("KOBOLDCPP_CONTEXT_SIZE", "8192"))
-HEALTH_ENDPOINT      = "/api/v1/info"           # KoboldCpp status endpoint
+HEALTH_ENDPOINT      = "/api/extra/version"     # KoboldCpp status endpoint
 CHAT_ENDPOINT        = "/v1/chat/completions"   # OpenAI-compat endpoint
-TIMEOUT              = 120                      # seconds per request
+TIMEOUT              = 30                       # seconds per request
 
 # ── Call logger ────────────────────────────────────────────────────────────────
 
@@ -205,6 +363,7 @@ class KoboldCppReasoner(LocalReasoner):
         instance_id: str,
         cortex=None,
         context_size: Optional[int] = None,
+        preparse_csb: str = "",
     ) -> tuple[str, float]:
         """
         Generate a response via KoboldCpp's /v1/chat/completions endpoint.
@@ -229,22 +388,14 @@ class KoboldCppReasoner(LocalReasoner):
             ],
             "max_tokens": min(512, ctx_size // 4),
             "temperature": 0.3,
-            # KoboldCpp extension: pass context size so it can allocate the KV cache
-            "context_size": ctx_size,
+            # KoboldCpp extensions
+            "context_size": ctx_size,  # per-request KV cache allocation
+            "cache_prompt": True,      # reuse KV state for common system prompt prefix
         }
-
-        url  = self.host + CHAT_ENDPOINT
-        body = json.dumps(payload).encode("utf-8")
-        req  = Request(
-            url, data=body,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
 
         t0 = time.perf_counter()
         try:
-            with urlopen(req, timeout=TIMEOUT) as resp:
-                data     = json.loads(resp.read().decode())
+            data       = _post_json(self.host, CHAT_ENDPOINT, payload, TIMEOUT)
             elapsed    = time.perf_counter() - t0
             text       = data["choices"][0]["message"]["content"]
             usage      = data.get("usage", {})

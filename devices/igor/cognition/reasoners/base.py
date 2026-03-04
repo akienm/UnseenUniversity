@@ -55,10 +55,12 @@ class BaseReasoner(ABC):
         relevant_memories: list[Memory],
         core_patterns: list[Memory],
         instance_id: str,
+        preparse_csb: str = "",
     ) -> tuple[str, float]:
         """
         Generate a response.
         Returns (response_text, cost_in_usd).
+        preparse_csb: structured PARSED_INPUT block injected into context for cloud reasoners.
         """
         ...
 
@@ -122,7 +124,7 @@ class BaseReasoner(ABC):
 
         # ── Change 4: inject high-urgency TWM observations first ──────────────
         try:
-            twm_obs = cortex.twm_read(limit=50, include_integrated=False)
+            twm_obs = cortex.twm_read(limit=15, include_integrated=False)
             urgent = [
                 o for o in twm_obs
                 if o.get("urgency", 0.2) >= 0.7
@@ -130,7 +132,7 @@ class BaseReasoner(ABC):
             ]
             if urgent:
                 lines.append("\n\n⚠ URGENT observations (act on these):")
-                for o in sorted(urgent, key=lambda x: x.get("urgency", 0.2), reverse=True)[:5]:
+                for o in sorted(urgent, key=lambda x: x.get("urgency", 0.2) * x.get("salience", 0.5), reverse=True)[:5]:
                     urg = o.get("urgency", 0.2)
                     lines.append(f"  [urgency={urg:.1f}] {o['content_csb'][:150]}")
         except Exception:
