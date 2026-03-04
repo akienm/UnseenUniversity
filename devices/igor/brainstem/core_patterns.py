@@ -8,6 +8,106 @@ from ..memory.models import Memory, MemoryType
 from ..memory.cortex import Cortex
 
 
+def _patch_genesis_procs(cortex: Cortex) -> None:
+    """
+    Migration: insert any genesis PROC nodes missing from an existing DB.
+    Safe to call on any DB — skips nodes that already exist.
+    Covers Changes 5-7 (D029-D031) which were added after many DBs were already seeded.
+    """
+    new_procs = [
+        # Change 5 / D029: habit compiler
+        (
+            "PROC_HABIT_COMPILER", "CP2", MemoryType.PROCEDURAL, 0.8,
+            (
+                "Detect recurring patterns and compile them into PROCEDURAL memories. "
+                "Trigger: 3+ episodic memories sharing intent+context, or 3+ consistent "
+                "arbiter approvals of same action_type."
+            ),
+            {"trigger": "pattern_detection",
+             "why": "Habits that compile themselves reduce reasoning overhead over time — FAIL=Further Advance In Learning.",
+             "primitive": True,
+             "seeds": ["observe", "record", "compare", "compile"]},
+        ),
+        (
+            "PROC_OBSERVE", "CP2", MemoryType.PROCEDURAL, 0.7,
+            "Notice and record what is happening in the current context. First step of all habit formation.",
+            {"trigger": "habit_formation_start",
+             "why": "Cannot compile patterns without first noticing them."},
+        ),
+        (
+            "PROC_RECORD", "CP2", MemoryType.PROCEDURAL, 0.7,
+            "Store observations durably for future-Igor reading cold. Include who, what, when, why-it-matters.",
+            {"trigger": "before_storing_observation",
+             "why": "Observations not stored durably are lost between sessions."},
+        ),
+        (
+            "PROC_COMPARE", "CP2", MemoryType.PROCEDURAL, 0.7,
+            "Find patterns across stored observations. Look for recurring intent, context, and outcome combinations.",
+            {"trigger": "pattern_analysis",
+             "why": "Patterns only emerge when observations are compared across time."},
+        ),
+        (
+            "PROC_COMPILE", "CP2", MemoryType.PROCEDURAL, 0.7,
+            "Abstract detected patterns into reusable PROCEDURAL memories. A compiled habit fires without reasoning overhead.",
+            {"trigger": "habit_compilation",
+             "why": "Compilation converts experience into speed — the core of learning."},
+        ),
+        # Change 6 / D030: builtin tool nodes
+        (
+            "PROC_RUN_BASH", "CP4", MemoryType.PROCEDURAL, 0.7,
+            ("Execute shell commands to reduce friction for users and cluster operations. "
+             "Use when a direct system action is clearer than explanation."),
+            {"trigger": "run_bash",
+             "code_ref": "tools/runner.py:run_bash",
+             "provenance": "builtin",
+             "trust_level": 0.8,
+             "execution_permissions": ["shell"],
+             "why": "Direct shell access reduces the friction of multi-step manual operations."},
+        ),
+        (
+            "PROC_RUN_PYTHON", "CP4", MemoryType.PROCEDURAL, 0.7,
+            ("Execute Python snippets for data transformation, calculation, or automation "
+             "when shell commands are insufficient."),
+            {"trigger": "run_python",
+             "code_ref": "tools/runner.py:run_python",
+             "provenance": "builtin",
+             "trust_level": 0.8,
+             "execution_permissions": ["python"],
+             "why": "Python gives Igor direct computational capability beyond text generation."},
+        ),
+        # Change 7 / D031: routing groundwork
+        (
+            "PROC_ROUTING_LOCAL", "CP2", MemoryType.PROCEDURAL, 0.7,
+            ("Use local KoboldCpp for: low-complexity requests, habit matches, preparse, "
+             "NE background tasks. Signals: complexity_score < 0.6, no multi-tool requirement, urgency < 0.7."),
+            {"trigger": "routing_decision",
+             "provenance": "genesis",
+             "why": "Local inference is free and fast for simple tasks; routing decisions are data for future habit compilation."},
+        ),
+        (
+            "PROC_ROUTING_ESCALATE", "CP2", MemoryType.PROCEDURAL, 0.7,
+            ("Escalate to Claude API for: complexity_score > 0.6, multi-tool tasks, "
+             "ethics gate review, self-edit operations, urgency >= 0.8."),
+            {"trigger": "routing_decision",
+             "provenance": "genesis",
+             "why": "Complex tasks require cloud reasoning; tracking escalations builds the dataset to refine routing over time."},
+        ),
+    ]
+
+    for proc_id, parent, mem_type, valence, narrative, meta in new_procs:
+        if cortex.get(proc_id) is None:
+            mem = Memory(
+                id=proc_id,
+                narrative=narrative,
+                memory_type=mem_type,
+                parent_id=parent,
+                valence=valence,
+                metadata=meta,
+            )
+            cortex.store(mem)
+            cortex.add_child(parent, proc_id)
+
+
 def initialize_genesis(cortex: Cortex, instance_id: str = "wild-0001") -> str:
     """
     Initialize Igor from genesis state.
@@ -15,6 +115,7 @@ def initialize_genesis(cortex: Cortex, instance_id: str = "wild-0001") -> str:
     Only runs if the database is empty.
     """
     if cortex.total_count() > 0:
+        _patch_genesis_procs(cortex)
         return _get_root_id(cortex)
 
     # ROOT
