@@ -2093,8 +2093,8 @@ def main():
     env_path = Path(__file__).parent.parent / ".env"
     load_dotenv(env_path)
 
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        console.print("[red]Error: ANTHROPIC_API_KEY not set. Create a .env file.[/]")
+    if not os.getenv("ANTHROPIC_API_KEY") and not os.getenv("ANTHROPIC_AUTH_TOKEN"):
+        console.print("[red]Error: ANTHROPIC_API_KEY or ANTHROPIC_AUTH_TOKEN not set. Create a .env file.[/]")
         sys.exit(1)
 
     parser = argparse.ArgumentParser(description="Igor - Wild Instance")
