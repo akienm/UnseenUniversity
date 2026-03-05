@@ -29,10 +29,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterator
 
-import json
-from datetime import datetime
-from pathlib import Path
-from .reasoners.koboldcpp_reasoner import KoboldCppReasoner, DEFAULT_HOST as KCC_DEFAULT_HOST
 from .reasoners.koboldcpp_reasoner import KoboldCppReasoner, DEFAULT_HOST as KCC_DEFAULT_HOST
 from ..memory.models import Memory
 
