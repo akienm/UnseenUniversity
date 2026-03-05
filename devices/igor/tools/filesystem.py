@@ -1,6 +1,13 @@
 """
-Filesystem tools - sandboxed to Igor's workspace.
-Cannot read or write outside workspace/.
+Filesystem tools - sandboxed to /home/akien (Igor's workspace root).
+
+Accessible paths (relative to workspace root /home/akien):
+  TheIgors/thoughts/       - Research notes, design thoughts (read/write)
+  TheIgors/design_docs/    - Architecture CSB docs (read/write)
+  TheIgors/wild_igor/      - Source code (read; writes via self_edit tools)
+  TheIgors/data/           - SQLite DB etc. (read only recommended)
+
+Cannot read or write outside /home/akien.
 """
 
 from pathlib import Path
@@ -88,11 +95,15 @@ def list_directory(path: str = ".") -> str:
 # Register tools
 registry.register(Tool(
     name="read_file",
-    description="Read a file from Igor's workspace. Paths are relative to the workspace root.",
+    description=(
+        "Read a file. Paths are relative to workspace root /home/akien. "
+        "Examples: 'TheIgors/thoughts/filename.md', 'TheIgors/design_docs/decisions_log.csb.txt'. "
+        "Use list_directory to discover what's available."
+    ),
     parameters={
         "type": "object",
         "properties": {
-            "path": {"type": "string", "description": "Relative path to the file"},
+            "path": {"type": "string", "description": "Relative path from /home/akien"},
         },
         "required": ["path"],
     },
@@ -101,11 +112,16 @@ registry.register(Tool(
 
 registry.register(Tool(
     name="write_file",
-    description="Write content to a file in Igor's workspace. Creates directories as needed.",
+    description=(
+        "Write content to a file. Paths are relative to workspace root /home/akien. "
+        "Can write to TheIgors/thoughts/ and TheIgors/design_docs/ — use this to update "
+        "design documents, capture thoughts, or reorganize the thoughts folder. "
+        "Creates directories as needed."
+    ),
     parameters={
         "type": "object",
         "properties": {
-            "path": {"type": "string", "description": "Relative path for the file"},
+            "path": {"type": "string", "description": "Relative path from /home/akien"},
             "content": {"type": "string", "description": "Content to write"},
         },
         "required": ["path", "content"],
@@ -115,7 +131,10 @@ registry.register(Tool(
 
 registry.register(Tool(
     name="list_directory",
-    description="List contents of a directory in Igor's workspace.",
+    description=(
+        "List contents of a directory. Paths are relative to workspace root /home/akien. "
+        "Try 'TheIgors/thoughts' or 'TheIgors/design_docs' to see available documents."
+    ),
     parameters={
         "type": "object",
         "properties": {
