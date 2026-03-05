@@ -496,9 +496,9 @@ Reply with ONLY a JSON object — no other text:
   "salience_updates": [{{"obs_id": <int>, "new_salience": <0.0-1.0>}}],
   "memory_candidates": [
     {{
-      "content_csb": "<dense CSB text>",
+      "content_csb": "<key points only — what happened, what it means, enough to find more later; NOT verbatim; max 2 sentences>",
       "importance": <0.0-1.0>,
-      "memory_type": "<episodic|semantic|procedural>",
+      "memory_type": "<episodic|interpretive|procedural|factual>",
       "valence": <-1.0 to 1.0>
     }}
   ],
