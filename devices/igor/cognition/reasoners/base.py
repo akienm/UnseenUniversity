@@ -105,6 +105,19 @@ class BaseReasoner(ABC):
                         total += len(str(block))
         return total
 
+    # ── Shared tool-call display (#34) ────────────────────────────────────────
+
+    @staticmethod
+    def print_tool_call(tag: str, turn: int, name: str, args_summary: str, result_preview: str):
+        """
+        Uniform tool-call display across all reasoners.
+        tag: short reasoner label, e.g. "THINK" or "OR"
+        """
+        from rich.console import Console as _Console
+        _c = _Console()
+        _c.print(f"[dim][{tag} turn={turn}] ⚙ {name}({args_summary})[/]")
+        _c.print(f"[dim][{tag} turn={turn}]   → {result_preview}[/]")
+
     # ── Shared context builders (WO8) ─────────────────────────────────────────
 
     def _build_session_context(self, cortex) -> str:

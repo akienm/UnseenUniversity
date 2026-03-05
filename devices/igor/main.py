@@ -123,18 +123,22 @@ class Igor:
                 f"[dim][JOBS] {self.job_manager.active_count()} pending/running job(s) loaded.[/]"
             )
 
-        # WO4/WO5: OpenRouter — cheap (tier.3) and claude (tier.4)
+        # WO4/WO5: OpenRouter — cheap (tier.3), interactive/persona (tier.3.5), claude (tier.4)
         self.openrouter_cheap_reasoner = None
+        self.openrouter_interactive_reasoner = None
         self.openrouter_reasoner = None
         if os.getenv("OPENROUTER_API_KEY", "").strip():
             try:
                 from .cognition.reasoners.openrouter_reasoner import OpenRouterReasoner
                 cheap_model = os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
+                interactive_model = os.getenv("OPENROUTER_INTERACTIVE_MODEL", "deepseek/deepseek-chat")
                 self.openrouter_cheap_reasoner = OpenRouterReasoner(model=cheap_model)
+                self.openrouter_interactive_reasoner = OpenRouterReasoner(model=interactive_model)
                 self.openrouter_reasoner = OpenRouterReasoner()
                 console.print(
                     f"[dim]OpenRouter ready: "
                     f"tier.3={self.openrouter_cheap_reasoner.model} | "
+                    f"tier.3.5={self.openrouter_interactive_reasoner.model} | "
                     f"tier.4={self.openrouter_reasoner.model}[/]"
                 )
             except Exception as _e:
@@ -696,13 +700,14 @@ class Igor:
         """
         WO5 priority escalation ladder (tiers 3-6).
         tier.1 habit and tier.2 local are handled in _process() before this call.
-        tier.3: OR cheap model (gpt-4o-mini, fast/cheap)
-        tier.4: OR claude (anthropic/claude-sonnet-4-6 via OpenRouter)
-        tier.5: Anthropic direct (separate budget, always last cloud)
-        tier.6: arbiter alert + offline message when all cloud fails
+        tier.3:   OR cheap model (gpt-4o-mini) — background/preparse/NE impulses only
+        tier.3.5: OR interactive model (deepseek/deepseek-chat) — human turns, persona-capable
+        tier.4:   OR claude (anthropic/claude-sonnet-4-6) — complex reasoning, tools, multi-step
+        tier.5:   Anthropic direct (separate budget, always last cloud)
+        tier.6:   arbiter alert + offline message when all cloud fails
 
-        skip_to: minimum tier to start at ("tier.3"|"tier.4"|"tier.5").
-                 Used by complexity heuristic to bypass cheap model for hard tasks.
+        skip_to: minimum tier to start at ("tier.3"|"tier.3.5"|"tier.4"|"tier.5").
+                 Interactive human turns default to "tier.3.5" (D035).
 
         Returns (response_text, cost_usd, used_cloud_api).
         """
@@ -722,7 +727,23 @@ class Igor:
                 return text, cost, True
             except Exception as e:
                 last_error = str(e)
-                console.print(f"[yellow]tier.3 OR-cheap failed ({e}), trying OR-claude...[/]")
+                console.print(f"[yellow]tier.3 OR-cheap failed ({e}), trying tier.3.5...[/]")
+
+        # ── tier.3.5: OR interactive/persona model ─────────────────────────────
+        if self.openrouter_interactive_reasoner is not None and skip_to in ("tier.3", "tier.3.5"):
+            self._current_action = "reasoning"; self._current_tier = "tier.3.5"
+            web_server.broadcast_activity(self._activity_state())
+            try:
+                text, cost = self.openrouter_interactive_reasoner.reason(
+                    user_input, relevant, core, self.instance_id,
+                    cortex=self.cortex, preparse_csb=preparse_csb
+                )
+                self.upstream_calls += 1
+                console.print(f"[dim](tier.3.5/or-interactive | session_cost: ${self.session_cost + cost:.4f})[/]")
+                return text, cost, True
+            except Exception as e:
+                last_error = str(e)
+                console.print(f"[yellow]tier.3.5 OR-interactive failed ({e}), trying OR-claude...[/]")
 
         # ── tier.4: OR claude ───────────────────────────────────────────────────
         if self.openrouter_reasoner is not None:
@@ -784,9 +805,6 @@ class Igor:
         self._current_action = "parsing"
         self._current_tier = ""
         web_server.broadcast_activity(self._activity_state())
-
-        if not is_impulse and not user_input.startswith("/"):
-            console.print("[dim]Thinking...[/]")
 
         try:
             return self._process_inner(user_input, is_impulse)
@@ -926,6 +944,10 @@ class Igor:
         pre = parse_preparse_csb(pre_csb, habits)
         complexity = pre["complexity"]
         _skip_to = complexity["tier_minimum"]
+        # D035: interactive human turns need persona-capable model (min tier.3.5).
+        # Impulses/background stay at tier.3 (cheap/fast, no persona needed).
+        if not is_impulse and _skip_to == "tier.3":
+            _skip_to = "tier.3.5"
         if complexity["signals_fired"]:
             console.print(
                 f"[dim][COMPLEXITY] score={complexity['score']:.2f} "

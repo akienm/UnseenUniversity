@@ -260,19 +260,12 @@ class AnthropicReasoner(APIReasoner):
                             )
 
                         # ── DEEP THINKING VISIBILITY ──────────────────────────
-                        # Show what I'm about to do (truncate large inputs for readability)
                         input_summary = self._summarize_input(block.input)
-                        console.print(
-                            f"[dim][THINK turn={turn}] ⚙ {block.name}({input_summary})[/]"
-                        )
-
                         t_tool = time.perf_counter()
                         result = registry.execute(block.name, block.input)
                         tool_elapsed = int((time.perf_counter() - t_tool) * 1000)
-
-                        # Show truncated result
                         result_preview = str(result)[:120].replace("\n", " ")
-                        console.print(f"[dim][THINK turn={turn}]   → {result_preview}[/]")
+                        self.print_tool_call("THINK", turn, block.name, input_summary, result_preview)
 
                         log_tool_call(
                             tool_name=block.name,

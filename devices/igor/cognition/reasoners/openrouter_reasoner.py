@@ -192,12 +192,11 @@ class OpenRouterReasoner(BaseReasoner):
                     input_summary = ", ".join(
                         f"{k}={str(v)[:40]!r}" for k, v in kwargs.items()
                     )
-                    console.print(f"[dim][OR turn={turn}] ⚙ {tool_name}({input_summary})[/]")
                     t_tool = time.perf_counter()
                     result = registry.execute(tool_name, kwargs)
                     tool_elapsed = int((time.perf_counter() - t_tool) * 1000)
                     result_preview = str(result)[:120].replace("\n", " ")
-                    console.print(f"[dim][OR turn={turn}]   → {result_preview}[/]")
+                    self.print_tool_call("OR", turn, tool_name, input_summary, result_preview)
                     log_tool_call(
                         tool_name=tool_name,
                         args_summary=input_summary,
@@ -275,6 +274,8 @@ class OpenRouterReasoner(BaseReasoner):
             return inp * 0.00000015 + out * 0.0000006
         if "gpt-4o" in m:
             return inp * 0.0000025 + out * 0.00001
+        if "deepseek" in m:
+            return inp * 0.00000014 + out * 0.00000028
         if "mistral" in m or "mixtral" in m:
             return inp * 0.0000002 + out * 0.0000006
         # Generic estimate for unknown models
