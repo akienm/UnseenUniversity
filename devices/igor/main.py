@@ -678,6 +678,21 @@ class Igor:
                 user_input = stdin_queue.get_nowait()
             except queue.Empty:
                 # ── Nothing typed — drain network then do background work ─────
+                # #64: check restart flag before anything else — no LLM, no arbiter
+                _restart_flag = (
+                    Path(os.path.expanduser("~/.TheIgors"))
+                    / f"igor_{self.instance_id}"
+                    / "restart.flag"
+                )
+                if _restart_flag.exists():
+                    try:
+                        _restart_flag.unlink()
+                    except Exception:
+                        pass
+                    console.print("[cyan][EXTERNAL] Restart flag detected — restarting...[/]")
+                    self._shutdown(reason="restart flag (external)")
+                    sys.exit(42)
+
                 self._drain_network()
                 run_background_sources(self.cortex)
                 self._run_ne_background()
