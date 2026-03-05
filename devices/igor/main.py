@@ -1171,8 +1171,26 @@ class Igor:
                     _m.ingest_surprise(_skip_to, self._current_tier)
 
         # [MOTOR CORTEX] Output response — skip if empty (e.g. impulse was suppressed)
+        # G8 / #48: fast identity-threat gate before output
         if response_text:
-            console.print(f"\n[bold blue]Igor:[/] {response_text}\n")
+            from .brainstem.core_patterns import fast_identity_check
+            _id_ok, _id_reason = fast_identity_check(response_text)
+            if not _id_ok:
+                console.print(f"[bold red][IDENTITY GATE] Suppressed: {_id_reason[:200]}[/]")
+                self.cortex.write_ring(
+                    f"IDENTITY_GATE|FAIL|{_id_reason[:300]}|preview={response_text[:100]}",
+                    category="identity_gate",
+                )
+                self.cortex.twm_push(
+                    source="identity_gate",
+                    content_csb=f"IDENTITY_THREAT|{_id_reason[:300]}",
+                    salience=0.85,
+                    urgency=0.85,
+                    ttl_seconds=1800,
+                )
+                response_text = ""
+            else:
+                console.print(f"\n[bold blue]Igor:[/] {response_text}\n")
 
         # [AMYGDALA] Assess valence
         valence = pfc.assess_valence(user_input, response_text)

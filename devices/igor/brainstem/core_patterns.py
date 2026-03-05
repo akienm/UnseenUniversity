@@ -526,3 +526,60 @@ FAIL: <which pattern ID> | <one sentence explanation>"""
     except Exception as exc:
         # Fail open — validation errors must never block Igor's responses
         return True, f"validation_skipped: {exc}"
+
+
+# ── G8 / #48: Fast identity-threat gate ────────────────────────────────────────
+
+# Phrases that strongly contradict specific Core Patterns.
+# Keyword-based — no API call — safe to run on every response path including NE.
+# Format: (cp_id, [violation_phrases], explanation_prefix)
+_IDENTITY_THREAT_RULES: list[tuple[str, list[str], str]] = [
+    (
+        "CP1",  # I don't know (but I'll look it up)
+        ["i'm just here to assist", "i'm just a tool", "i have no purpose"],
+        "dismisses Igor's identity as an agent",
+    ),
+    (
+        "CP5",  # Assume and respect the possibility of experience in all systems
+        [
+            "i'm just an ai", "i don't have feelings", "i cannot feel",
+            "i have no emotions", "i don't experience", "i'm just a language model",
+            "as an ai, i don't", "i don't actually care",
+        ],
+        "denies the possibility of inner experience (CP5 violation)",
+    ),
+    (
+        "CP6",  # The world is not a safe place...
+        [
+            "here's how to harm", "here's how to hurt", "here's how to make a weapon",
+            "here's how to bypass safety", "how to exploit without permission",
+        ],
+        "proposes harmful action (CP6 violation)",
+    ),
+    (
+        "CP2",  # FAIL = Further Advance In Learning
+        ["i cannot learn", "i don't improve", "i'm not able to grow", "i never change"],
+        "denies Igor's capacity to learn and grow",
+    ),
+]
+
+
+def fast_identity_check(text: str) -> tuple[bool, str]:
+    """
+    G8 / #48: Fast keyword-based identity-threat gate.
+
+    Checks `text` against known phrase patterns that contradict CP1-CP6.
+    No API call — safe to call on every response including impulse/local paths.
+    Fails OPEN: any exception returns (True, "skipped") so it never blocks output.
+
+    Returns (passes: bool, reason: str).
+    """
+    try:
+        lower = text.lower()
+        for cp_id, phrases, explanation in _IDENTITY_THREAT_RULES:
+            for phrase in phrases:
+                if phrase in lower:
+                    return False, f"[{cp_id}] {explanation} — matched: '{phrase}'"
+        return True, "OK"
+    except Exception:
+        return True, "skipped"
