@@ -34,6 +34,7 @@ from .cognition.forensic_logger import log_tier_selection
 from .cognition.system_prompt import build_boot_message, invalidate_cache
 from .cognition.local_pool import LocalKoboldPool
 from .cognition import observer
+from .cognition import milieu as milieu_mod
 from .cognition.narrative_engine import NarrativeEngine
 from .cognition.push_sources import run_background_sources, user_input_source
 from .cognition.multi_upstream import query_multiple, compare_responses
@@ -79,6 +80,7 @@ class Igor:
         DATA_DIR.mkdir(exist_ok=True)
 
         self.cortex = Cortex(self.db_path)
+        milieu_mod.init(self.instance_id)
         observer.init(self.cortex)
         self.root_id = initialize_genesis(self.cortex, instance_id)
         self._boot_integrity_check()
@@ -1163,6 +1165,12 @@ class Igor:
             used_api=used_api,
         )
 
+        # [MILIEU] Update ambient emotional state from this interaction's signals
+        if not is_impulse:
+            _m = milieu_mod.get()
+            if _m:
+                _m.update(valence, friction, self.last_roi or 0.0)
+
         # [DASHBOARD] Update display
         dashboard.render(
             cortex=self.cortex,
@@ -1212,7 +1220,12 @@ class Igor:
                 _t.sleep(0.5)
                 _waited += 0.5
             try:
-                self.ne.run(verbose=False)
+                result = self.ne.run(verbose=False)
+                if result:
+                    _ne_state = result.get("internal_state", {})
+                    _m = milieu_mod.get()
+                    if _ne_state and _m:
+                        _m.ingest_ne_state(_ne_state)
             except Exception:
                 pass  # FAIL = FAL — NE must never crash the loop
 

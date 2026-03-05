@@ -9,6 +9,7 @@ Sources:
   UserInputSource — wraps incoming messages as TWM observations (explicit call)
   MachinesWatcher — watches machines.csv for cluster state changes
   InboxWatcher    — watches inbox directory for new files (5s)
+  MilieuSource    — pushes ambient emotional state into TWM (60s timer)
 
 All push via cortex.twm_push(). None of them block or crash the main loop.
 """
@@ -413,6 +414,65 @@ class InboxWatcher(BasePushSource):
         return pushed
 
 
+# ── MilieuSource ──────────────────────────────────────────────────────────────
+
+class MilieuSource(BasePushSource):
+    """
+    Pushes ambient emotional state into TWM as low-salience background context.
+    Runs every 60 seconds. Also applies natural decay each tick so mood drifts
+    toward neutral even during idle periods.
+    """
+
+    name = "milieu"
+    MIN_INTERVAL_SEC = 60
+
+    def __init__(self):
+        self._last_run: Optional[datetime] = None
+        self._prev_snapshot = None  # MilieuState snapshot for delta check
+
+    def push(self, cortex) -> list[int]:
+        from . import milieu as milieu_mod
+
+        now = datetime.now()
+        if (self._last_run is not None
+                and (now - self._last_run).total_seconds() < self.MIN_INTERVAL_SEC):
+            return []
+        self._last_run = now
+
+        m = milieu_mod.get()
+        if m is None:
+            return []  # Not yet initialized
+
+        # Natural decay — mood drifts toward neutral without new signals
+        m.tick()
+
+        state = m.get_state()
+        prev  = self._prev_snapshot
+
+        # Decide whether to push: significant change OR extreme state
+        should_push = (
+            prev is None
+            or m.delta(prev) > milieu_mod.PUSH_DELTA
+            or state.arousal  >  0.6
+            or state.valence  < -0.4
+        )
+
+        if not should_push:
+            self._prev_snapshot = m.snapshot()
+            return []
+
+        obs_id = cortex.twm_push(
+            source=self.name,
+            content_csb=m.state_csb(),
+            salience=0.4,
+            urgency=0.3,   # Background context; not urgent unless NE decides it is
+            ttl_seconds=600,
+            metadata={"type": "milieu", "tick": state.tick},
+        )
+        self._prev_snapshot = m.snapshot()
+        return [obs_id]
+
+
 # ── Module singletons + convenience runner ────────────────────────────────────
 
 memory_surfacer   = MemorySurfacer()
@@ -420,6 +480,7 @@ heartbeat_source  = HeartbeatSource()
 user_input_source = UserInputSource()
 machines_watcher  = MachinesWatcher()
 inbox_watcher     = InboxWatcher()
+milieu_source     = MilieuSource()
 
 
 def run_background_sources(cortex) -> int:
@@ -429,7 +490,8 @@ def run_background_sources(cortex) -> int:
     Exceptions are swallowed — a broken source must not crash the loop.
     """
     pushed = 0
-    for src in (heartbeat_source, memory_surfacer, machines_watcher, inbox_watcher):
+    for src in (heartbeat_source, memory_surfacer, machines_watcher, inbox_watcher,
+                milieu_source):
         try:
             ids = src.push(cortex)
             pushed += len(ids)
