@@ -49,9 +49,15 @@ class BudgetInterruptor(BaseInterruptor):
       - Balance is critical (< $2 remaining): loud warning.
       - Balance is low (< 20% remaining): softer heads-up.
       - Balance is exhausted: blocker.
+
+    Writes to ring only on state changes (alert→OK or OK→alert) to avoid
+    flooding the ring with repeated identical entries.
     """
 
     name = "openrouter_budget"
+
+    def __init__(self):
+        self._was_alerting: bool = False
 
     def check(self, cortex=None) -> str | None:
         try:
@@ -70,6 +76,7 @@ class BudgetInterruptor(BaseInterruptor):
                 f"⛔ BALANCE EXHAUSTED ({src})! Used ${spent:.2f} of ${total:.2f}. "
                 "OpenRouter calls blocked. Let Akien know!"
             )
+            self._was_alerting = True
             self._write_alert(cortex, msg)
             return msg
 
@@ -78,6 +85,7 @@ class BudgetInterruptor(BaseInterruptor):
                 f"⚠️  BALANCE CRITICAL ({src}): Only ${remaining:.2f} left of ${total:.2f}. "
                 "Keep upstream calls minimal!"
             )
+            self._was_alerting = True
             self._write_alert(cortex, msg)
             return msg
 
@@ -86,11 +94,15 @@ class BudgetInterruptor(BaseInterruptor):
                 f"⚡ Balance low ({src}): ${remaining:.2f} remaining "
                 f"({100 - s['pct_used']:.0f}% of ${total:.2f} left)."
             )
+            self._was_alerting = True
             self._write_alert(cortex, msg)
             return msg
 
-        # Balance fine — write CLEARED so old alert is superseded in ring
-        self._write_alert(cortex, f"✅ CLEARED: Balance OK — ${remaining:.2f} remaining ({src}).")
+        # Balance is fine.
+        if self._was_alerting:
+            # Write CLEARED once to supersede prior alert in the ring, then go silent.
+            self._write_alert(cortex, f"✅ CLEARED: Balance OK — ${remaining:.2f} remaining ({src}).")
+            self._was_alerting = False
         return None
 
 
