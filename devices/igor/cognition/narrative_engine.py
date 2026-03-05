@@ -178,10 +178,20 @@ class NarrativeEngine:
         # Watermark for cache invalidation — max obs id already in hand
         max_twm_id = max((o["id"] for o in obs_list), default=0)
 
-        # Call LLM (KoboldCpp preferred, Ollama fallback, Claude last resort)
+        # Call LLM (KoboldCpp preferred, Ollama fallback, Claude only if service is down)
         result = self._call_local(prompt, max_twm_id)
         if result is None:
-            result = self._call_claude_fallback(prompt)
+            # Only escalate to cloud if KoboldCpp service is actually down (not just slow).
+            # A slow response that returns None means parse failure, not service failure —
+            # never pay cloud cost just because local 1B produced bad JSON.
+            from .reasoners.koboldcpp_reasoner import is_healthy as _kcc_healthy
+            import os as _os
+            _kcc_host = _os.getenv("KOBOLDCPP_HOST", "http://localhost:5001")
+            if not _kcc_healthy(_kcc_host, timeout=3):
+                result = self._call_claude_fallback(prompt)
+            else:
+                if verbose:
+                    print("[NE] KoboldCpp is up but result unparseable — skipping cloud fallback.")
         if result is None:
             if verbose:
                 print("[NE] Both Ollama and Claude failed — skipping this cycle.")
@@ -332,7 +342,8 @@ class NarrativeEngine:
             t0 = time.perf_counter()
             try:
                 from .reasoners.koboldcpp_reasoner import KoboldCppReasoner
-                kcc = KoboldCppReasoner(host=kcc_host)
+                # NE is background — take as long as needed (120s), never escalate for speed
+                kcc = KoboldCppReasoner(host=kcc_host, timeout=120)
                 text, _ = kcc.reason(
                     user_input=prompt,
                     relevant_memories=[],

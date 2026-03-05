@@ -17,6 +17,10 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from rich.console import Console
+from rich.live import Live
+from rich.spinner import Spinner
+from rich.traceback import install as _install_rich_tb
+_install_rich_tb(show_locals=False, width=120)
 
 from .memory.models import Memory, MemoryType
 from .memory.cortex import Cortex
@@ -888,6 +892,7 @@ class Igor:
             parsed.intent in _fast_path_intents
             or _thalamus_habit is not None
             or not parsed.keywords  # empty input
+            or is_impulse  # background work — rule-based CSB is instant; never wait on LLM
         )
 
         candidates: list = []
@@ -1016,7 +1021,7 @@ class Igor:
             # — do NOT also build ring_ctx here (would cause double injection)
             core = get_core_patterns(self.cortex)
             if self.local_mode:
-                # Local-only: use Ollama pool (free, no cloud)
+                # Local-only override — never use cloud
                 self._current_action = "reasoning"; self._current_tier = "local"
                 web_server.broadcast_activity(self._activity_state())
                 dashboard.print_reasoning(used_api=False)
@@ -1028,35 +1033,37 @@ class Igor:
                     used_api = False
                     console.print(f"[dim](local | session_cost: ${self.session_cost:.4f})[/]")
                 except Exception as e:
-                    # Local pool failed — try cloud failover chain
                     console.print(f"[yellow]Local pool failed ({e}), trying cloud...[/]")
                     response_text, cost, used_api = self._reason_with_failover(
                         user_input, relevant, core, skip_to=_skip_to, preparse_csb=pre_csb
                     )
-            elif self.use_local_preparse and not pre["should_escalate"]:
-                # tier.2: preparse says simple — try local before paying for cloud
-                self._current_action = "reasoning"; self._current_tier = "tier.2"
+            elif is_impulse:
+                # Background NE impulse — always local, take as long as needed, never escalate.
+                # Background work has no UX latency requirement; cost must be zero.
+                self._current_action = "reasoning"; self._current_tier = "tier.2/impulse"
                 web_server.broadcast_activity(self._activity_state())
-                dashboard.print_reasoning(used_api=False)
                 try:
                     response_text, cost = self.local_pool.reason(
                         user_input, relevant, core, self.instance_id
                     )
-                    self.upstream_calls += 1
                     used_api = False
-                    console.print(f"[dim](tier.2/local | session_cost: ${self.session_cost:.4f})[/]")
+                    console.print(f"[dim][IMPULSE] local ok[/]")
                 except Exception as e:
-                    console.print(f"[yellow]tier.2 local failed ({e}), escalating to cloud...[/]")
-                    dashboard.print_reasoning(used_api=True)
+                    console.print(f"[dim][IMPULSE] Local failed ({e}) — skipping[/]")
+                    response_text = ""
+                    cost = 0.0
+            else:
+                # Interactive human turn — tier.3+ directly (D032).
+                # Local 1B is too slow/weak for conversational UX on no-GPU hardware.
+                # Cloud cheap (gpt-4o-mini ~$0.001/turn) is the correct default.
+                dashboard.print_reasoning(used_api=True)
+                self._current_action = "reasoning"
+                web_server.broadcast_activity(self._activity_state())
+                with Live(Spinner("dots", text=" Thinking..."), console=console,
+                          transient=True, refresh_per_second=8):
                     response_text, cost, used_api = self._reason_with_failover(
                         user_input, relevant, core, skip_to=_skip_to, preparse_csb=pre_csb
                     )
-            else:
-                # tier.3+: cloud chain (should_escalate=True or ollama disabled)
-                dashboard.print_reasoning(used_api=True)
-                response_text, cost, used_api = self._reason_with_failover(
-                    user_input, relevant, core, skip_to=_skip_to, preparse_csb=pre_csb
-                )
 
         # [MOTOR CORTEX] Output response
         console.print(f"\n[bold blue]Igor:[/] {response_text}\n")

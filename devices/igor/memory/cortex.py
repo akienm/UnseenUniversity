@@ -117,6 +117,12 @@ class Cortex:
 
     def store(self, memory: Memory) -> Memory:
         memory.narrative = scrub(memory.narrative)
+        # Scrub string values in metadata to prevent credential leakage (#19)
+        if memory.metadata:
+            memory.metadata = {
+                k: scrub(v) if isinstance(v, str) else v
+                for k, v in memory.metadata.items()
+            }
         with self._conn() as conn:
             conn.execute("""
                 INSERT OR REPLACE INTO memories
