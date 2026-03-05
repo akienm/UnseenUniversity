@@ -150,7 +150,8 @@ async def _run_browser_agent(
 
     initial_actions = None
     if url and url not in ("about:blank", ""):
-        initial_actions = [{"go_to_url": {"url": url}}]
+        # browser_use 0.11.x renamed go_to_url → navigate
+        initial_actions = [{"navigate": {"url": url}}]
 
     try:
         agent = Agent(
