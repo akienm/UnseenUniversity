@@ -954,6 +954,22 @@ class Igor:
         # Impulses/background stay at tier.3 (cheap/fast, no persona needed).
         if not is_impulse and _skip_to == "tier.3":
             _skip_to = "tier.3.5"
+
+        # G1 / #59: milieu.dominance modulates escalation threshold.
+        # Low dominance (feeling out of control) → escalate sooner (more capable model).
+        # Only for interactive turns — impulses stay cheap regardless.
+        if not is_impulse and _milieu_state is not None:
+            _dom = _milieu_state.dominance
+            _TIER_UP = {"tier.3": "tier.3.5", "tier.3.5": "tier.4", "tier.4": "tier.4"}
+            if _dom < -0.3:
+                # Significantly low dominance: bump two tiers
+                _skip_to = _TIER_UP.get(_TIER_UP.get(_skip_to, _skip_to), _skip_to)
+                console.print(f"[dim][MILIEU] dominance={_dom:.2f} (very low) → escalation bumped to {_skip_to}[/]")
+            elif _dom < 0.0:
+                # Mildly low dominance: bump one tier
+                _skip_to = _TIER_UP.get(_skip_to, _skip_to)
+                console.print(f"[dim][MILIEU] dominance={_dom:.2f} (low) → escalation bumped to {_skip_to}[/]")
+
         if complexity["signals_fired"]:
             console.print(
                 f"[dim][COMPLEXITY] score={complexity['score']:.2f} "
@@ -1117,6 +1133,10 @@ class Igor:
                     response_text, cost, used_api = self._reason_with_failover(
                         user_input, relevant, core, skip_to=_skip_to, preparse_csb=pre_csb
                     )
+                # G5 / #42: prediction signal — did we need a higher tier than expected?
+                _m = milieu_mod.get()
+                if _m is not None:
+                    _m.ingest_surprise(_skip_to, self._current_tier)
 
         # [MOTOR CORTEX] Output response — skip if empty (e.g. impulse was suppressed)
         if response_text:
