@@ -33,8 +33,12 @@ from typing import Optional
 
 ALPHA_UP   = 0.25   # fast rise toward new signal
 ALPHA_DOWN = 0.05   # slow fall away from signal
-DECAY      = 0.98   # passive drift toward neutral per tick() call
 PUSH_DELTA = 0.08   # min per-dim change required to push a TWM update
+
+# G12 / #55: per-dimension asymmetric decay rates (faster for volatile dims)
+DECAY_VALENCE   = 0.96   # fastest — mood is volatile, fades quickly
+DECAY_AROUSAL   = 0.97   # medium — activation persists somewhat longer
+DECAY_DOMINANCE = 0.99   # slowest — sense of control is most stable
 
 # NE's self-assessment is a softer hint than direct interaction signals
 NE_ALPHA_UP   = 0.10
@@ -176,14 +180,53 @@ class Milieu:
         """
         Natural decay toward neutral. Called by MilieuSource timer even when
         there are no new interactions — mood gradually normalizes with time.
+
+        G12 / #55: per-dimension rates — valence fastest (volatile), dominance slowest (stable).
         """
         s = self._state
-        s.valence   *= DECAY
-        s.arousal   *= DECAY
-        s.dominance  = s.dominance * DECAY + (0.3 * (1.0 - DECAY))  # decays toward +0.3, not 0
+        s.valence   *= DECAY_VALENCE
+        s.arousal   *= DECAY_AROUSAL
+        s.dominance  = s.dominance * DECAY_DOMINANCE + (0.3 * (1.0 - DECAY_DOMINANCE))
         s.last_update = time.time()
         self._save()
         return s
+
+    def ingest_surprise(self, predicted_tier: str, actual_tier: str) -> None:
+        """
+        Dopamine-analog prediction signal (G5 / #42).
+
+        Compare predicted tier (minimum Igor expected to need) vs actual tier used.
+        Exceeding prediction (had to escalate further than expected) → dominance hit + arousal spike.
+        Meeting or beating prediction → mild dominance restoration.
+
+        This closes the prediction loop: repeated escalation-surprises erode dominance
+        (Igor loses confidence); consistent local resolution gradually rebuilds it.
+        """
+        _TIER_ORDER: dict[str, float] = {
+            "tier.1": 1.0, "tier.2": 2.0, "tier.3": 3.0,
+            "tier.3.5": 3.5, "tier.4": 4.0, "tier.5": 5.0, "tier.6": 6.0,
+        }
+        pred_n = _TIER_ORDER.get(predicted_tier, 3.5)
+        actual_n = _TIER_ORDER.get(actual_tier, 3.5)
+
+        s = self._state
+        if actual_n > pred_n:
+            # Had to escalate further — prediction failed → dominance erodes, arousal spikes
+            magnitude = min(0.5, (actual_n - pred_n) * 0.25)
+            dom_signal = self._clamp(s.dominance - magnitude)
+            s.dominance = self._clamp(self._blend(s.dominance, dom_signal,
+                                                   alpha_up=0.20, alpha_down=0.05))
+            aro_signal = self._clamp(s.arousal + 0.15)
+            s.arousal = self._clamp(self._blend(s.arousal, aro_signal,
+                                                 alpha_up=0.20, alpha_down=0.05))
+        else:
+            # Succeeded at or below predicted tier — mild confidence restoration
+            dom_signal = self._clamp(s.dominance + 0.08)
+            s.dominance = self._clamp(self._blend(s.dominance, dom_signal,
+                                                   alpha_up=0.10, alpha_down=0.02))
+
+        s.last_update = time.time()
+        self._save()
 
     def get_state(self) -> MilieuState:
         """Return current state (read-only view)."""
