@@ -9,15 +9,12 @@ Required Ollama models:
   nomic-embed-text  — universal embedding model; must be identical across cluster
 
 KoboldCpp health checked via GET /api/v1/info on koboldcpp_port
-(read from machines.csv; defaults to 5001 if column present but empty).
+(read from machines.json; defaults to 5001 if field absent).
 
 Runs in a daemon thread at startup so Igor is not blocked.
 Logs results to ~/.TheIgors/claudecode/changes.log (CSB format, newest first)
 and writes a summary to ring memory for NE integration.
 """
-
-import csv
-import io
 import json
 import threading
 from datetime import datetime
@@ -26,7 +23,7 @@ from typing import Optional
 from urllib.request import urlopen, Request
 from urllib.error import URLError
 
-MACHINES_CSV       = Path.home() / ".TheIgors" / "local" / "machines.csv"
+MACHINES_JSON      = Path.home() / ".TheIgors" / "local" / "machines.json"
 CHANGES_LOG        = Path.home() / ".TheIgors" / "claudecode" / "changes.log"
 OLLAMA_PORT        = 11434
 KOBOLDCPP_PORT_DEFAULT = 5001
@@ -38,18 +35,16 @@ PULL_TIMEOUT       = 600  # seconds — model pull can take a while on first run
 # ── Internal helpers ───────────────────────────────────────────────────────────
 
 def _parse_online_machines() -> list[dict]:
-    """Parse machines.csv; return dicts for machines with non-OFFLINE IPs."""
-    if not MACHINES_CSV.exists():
+    """Parse machines.json; return dicts for machines with non-null/non-offline IPs."""
+    if not MACHINES_JSON.exists():
         return []
     try:
-        text = MACHINES_CSV.read_text(encoding="utf-8")
-        reader = csv.DictReader(io.StringIO(text))
+        data = json.loads(MACHINES_JSON.read_text(encoding="utf-8"))
         machines = []
-        for row in reader:
-            row = {k.strip(): v.strip() for k, v in row.items() if k}
-            ip = row.get("IP", "").strip()
-            if ip and ip.upper() != "OFFLINE":
-                machines.append(row)
+        for m in data.get("machines", []):
+            ip = m.get("ip") or ""
+            if ip and m.get("status", "online") != "offline":
+                machines.append(m)
         return machines
     except Exception:
         return []
@@ -128,9 +123,9 @@ def run(cortex=None):
     results: list[str] = []
 
     for machine in machines:
-        hostname = machine.get("Hostname", "unknown")
-        ip       = machine.get("IP", "")
-        priority = machine.get("Priority", "unknown")
+        hostname = machine.get("hostname", "unknown")
+        ip       = machine.get("ip", "")
+        priority = machine.get("priority", "unknown")
 
         # ── KoboldCpp health check (Change 1) ─────────────────────────────
         kcc_port_str = machine.get("koboldcpp_port", "").strip()

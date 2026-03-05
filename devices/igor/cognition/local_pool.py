@@ -1,12 +1,12 @@
 """
 LocalKoboldPool — distributes reasoning across available local-network KoboldCpp instances.
 
-Reads ~/.TheIgors/local/machines.csv to discover online machines, creates a
+Reads ~/.TheIgors/local/machines.json to discover online machines, creates a
 KoboldCppReasoner for each, and selects the optimal instance based on capabilities
 and benchmark data. Falls back to cloud reasoning if all local instances fail.
 
-Machine selection: 
-- Reads capabilities from machines.csv ("pre_parsing", "reasoning", etc)
+Machine selection:
+- Reads capabilities from machines.json ("pre_parsing", "reasoning", etc)
 - Uses benchmark data from ~/.TheIgors/benchmarks/{hostname}.json
 - Selects fastest machine with required capability
 - Falls back to next best option if preferred host is offline
@@ -18,8 +18,6 @@ Part C: Benchmark tracking and performance optimization
 
 from __future__ import annotations
 
-import csv
-import io
 import json
 import os
 import platform
@@ -32,7 +30,7 @@ from typing import Iterator
 from .reasoners.koboldcpp_reasoner import KoboldCppReasoner, DEFAULT_HOST as KCC_DEFAULT_HOST
 from ..memory.models import Memory
 
-MACHINES_CSV        = Path.home() / ".TheIgors" / "local" / "machines.csv"
+MACHINES_JSON       = Path.home() / ".TheIgors" / "local" / "machines.json"
 BENCHMARK_DIR       = Path.home() / ".TheIgors" / "benchmarks"
 OLLAMA_PORT         = 11434
 KOBOLDCPP_PORT_DEFAULT = 5001
@@ -60,24 +58,22 @@ _BENCH_PROMPTS = [
 
 def _parse_online_machines() -> list[dict]:
     """
-    Parse machines.csv and return online machines sorted by priority.
+    Parse machines.json and return online machines sorted by priority.
     Priority order: realtime → main_loop → background → batch.
     """
-    if not MACHINES_CSV.exists():
+    if not MACHINES_JSON.exists():
         return []
     try:
-        text = MACHINES_CSV.read_text(encoding="utf-8")
-        reader = csv.DictReader(io.StringIO(text))
+        data = json.loads(MACHINES_JSON.read_text(encoding="utf-8"))
         machines = []
-        for row in reader:
-            row = {k.strip(): v.strip() for k, v in row.items() if k}
-            ip = row.get("IP", "").strip()
-            if ip and ip.upper() != "OFFLINE":
-                machines.append(row)
+        for m in data.get("machines", []):
+            ip = m.get("ip") or ""
+            if ip and m.get("status", "online") != "offline":
+                machines.append(m)
         # Wired before wifi within same priority tier (lower latency, more reliable)
         machines.sort(key=lambda m: (
-            PRIORITY_ORDER.get(m.get("Priority", ""), 99),
-            0 if m.get("Network", "").strip().lower() == "wired" else 1,
+            PRIORITY_ORDER.get(m.get("priority", ""), 99),
+            0 if m.get("network", "").lower() == "wired" else 1,
         ))
         return machines
     except Exception:
@@ -85,9 +81,11 @@ def _parse_online_machines() -> list[dict]:
 
 
 def parse_capabilities(row: dict) -> list[str]:
-    """Return list of capability strings from a machines.csv row."""
-    raw = row.get("Capabilities", "")
-    return [c.strip() for c in raw.split(",") if c.strip()]
+    """Return list of capability strings from a machines.json entry."""
+    caps = row.get("capabilities", [])
+    if isinstance(caps, list):
+        return caps
+    return [c.strip() for c in str(caps).split(",") if c.strip()]
 
 
 # ── Part A — Boot benchmarking ─────────────────────────────────────────────────
@@ -280,12 +278,12 @@ class LocalKoboldPool:
         """Rebuild reasoner list from machines.csv.
 
         Change 1 (D025): KoboldCpp tried first for each machine when koboldcpp_port
-        is present in the CSV row.  Ollama retained as fallback.
+        is present in the JSON entry. Ollama retained as fallback.
         """
         machines = _parse_online_machines()
         reasoners = []
         for m in machines:
-            ip = m.get("IP", "")
+            ip = m.get("ip", "")
             # KoboldCpp first (Change 1)
             kcc_port_str = m.get("koboldcpp_port", "").strip()
             if kcc_port_str:
@@ -454,9 +452,9 @@ class LocalKoboldPool:
         machines = _parse_online_machines()
         parts = []
         for m in machines:
-            pri  = m.get("Priority", "?").replace("priority.", "")
-            caps = m.get("Capabilities", "")
-            parts.append(f"{m['Hostname']}({pri})[{caps}]")
+            pri  = m.get("priority", "?").replace("priority.", "")
+            caps = ",".join(m.get("capabilities", []))
+            parts.append(f"{m['hostname']}({pri})[{caps}]")
         parts.append("localhost(fallback)")
         if self._benchmark:
             parts.append(f"bench={self._benchmark['tokens_per_sec']}tok/s")

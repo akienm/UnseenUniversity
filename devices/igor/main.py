@@ -169,7 +169,7 @@ class Igor:
 
         if is_new:
             console.print(f"\n[cyan]Igor-{instance_id} initialized from genesis state.[/]")
-            # First-boot: announce to Discord and self-register in machines.csv
+            # First-boot: announce to Discord and self-register in machines.json
             self._announce_first_boot()
         else:
             console.print(f"\n[cyan]Igor-{instance_id} resumed. {self.cortex.total_count()} memories loaded.[/]")
@@ -341,7 +341,7 @@ class Igor:
 
     def _announce_first_boot(self):
         """
-        First-boot only: announce on Discord, self-register in machines.csv.
+        First-boot only: announce on Discord, self-register in machines.json.
         Runs when total_count()==44 (just genesis — fresh instance).
         """
         import platform
@@ -366,25 +366,34 @@ class Igor:
         except Exception as e:
             console.print(f"[dim][FIRST BOOT] Discord announce failed: {e}[/]")
 
-        # ── machines.csv self-registration ───────────────────────────────────
-        machines_csv = _Path.home() / ".TheIgors" / "local" / "machines.csv"
+        # ── machines.json self-registration ──────────────────────────────────
+        machines_json = _Path.home() / ".TheIgors" / "local" / "machines.json"
         try:
-            if machines_csv.exists():
-                existing = machines_csv.read_text(encoding="utf-8")
-                if hostname not in existing:
-                    new_row = (
-                        f"\n{hostname:<14}, {ip:<9}, unknown"
-                        f"                           , ?   , unknown        , No GPU, unknown  "
-                        f", unknown              , Auto-registered at first boot , priority.batch     "
-                        f", embedding,reasoning"
-                    )
-                    with machines_csv.open("a", encoding="utf-8") as f:
-                        f.write(new_row)
-                    console.print(f"[cyan][FIRST BOOT] Registered {hostname} in machines.csv.[/]")
+            import json as _json
+            if machines_json.exists():
+                data = _json.loads(machines_json.read_text(encoding="utf-8"))
+                hostnames = [m.get("hostname", "") for m in data.get("machines", [])]
+                if hostname not in hostnames:
+                    data.setdefault("machines", []).append({
+                        "hostname": hostname,
+                        "ip": ip,
+                        "cpu": "unknown",
+                        "ram_gb": None,
+                        "gpu": None,
+                        "storage": "unknown",
+                        "model": "unknown",
+                        "notes": "Auto-registered at first boot",
+                        "priority": "batch",
+                        "capabilities": ["embedding", "reasoning"],
+                        "network": "unknown",
+                        "status": "online",
+                    })
+                    machines_json.write_text(_json.dumps(data, indent=2), encoding="utf-8")
+                    console.print(f"[cyan][FIRST BOOT] Registered {hostname} in machines.json.[/]")
                 else:
-                    console.print(f"[dim][FIRST BOOT] {hostname} already in machines.csv.[/]")
+                    console.print(f"[dim][FIRST BOOT] {hostname} already in machines.json.[/]")
         except Exception as e:
-            console.print(f"[dim][FIRST BOOT] machines.csv self-register failed: {e}[/]")
+            console.print(f"[dim][FIRST BOOT] machines.json self-register failed: {e}[/]")
 
         # ── Ring note ────────────────────────────────────────────────────────
         self.cortex.write_ring(
@@ -2201,7 +2210,7 @@ class Igor:
 
         state = "[green]ON[/]" if self.local_mode else "[yellow]OFF[/]"
         if self.local_mode:
-            self.local_pool._refresh()  # Re-read machines.csv
+            self.local_pool._refresh()  # Re-read machines.json
             console.print(f"\n[bold]Local mode:[/] {state}")
             console.print(f"[dim]Pool: {self.local_pool.machines_summary()}[/]")
         else:

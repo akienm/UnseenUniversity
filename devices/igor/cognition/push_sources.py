@@ -7,7 +7,7 @@ Sources:
                     procedural memories, and fires proactive Discord alerts.
   MemorySurfacer  — surfaces relevant LTM memories into TWM as background context
   UserInputSource — wraps incoming messages as TWM observations (explicit call)
-  MachinesWatcher — watches machines.csv for cluster state changes
+  MachinesWatcher — watches machines.json for cluster state changes
   InboxWatcher    — watches inbox directory for new files (5s)
   MilieuSource    — pushes ambient emotional state into TWM (60s timer)
 
@@ -19,7 +19,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-MACHINES_CSV = Path.home() / ".TheIgors" / "local" / "machines.csv"
+MACHINES_JSON = Path.home() / ".TheIgors" / "local" / "machines.json"
 INBOX_DIR    = Path.home() / ".TheIgors" / "igor_wild_0001" / "inbox"
 
 
@@ -308,7 +308,7 @@ class UserInputSource(BasePushSource):
 
 class MachinesWatcher(BasePushSource):
     """
-    Watches ~/.TheIgors/local/machines.csv for changes.
+    Watches ~/.TheIgors/local/machines.json for changes.
 
     Pushes a high-salience TWM observation on first run (so Igor always
     knows the current machine inventory) and again whenever the file's
@@ -328,11 +328,11 @@ class MachinesWatcher(BasePushSource):
             return []
         self._last_check = now
 
-        if not MACHINES_CSV.exists():
+        if not MACHINES_JSON.exists():
             return []
 
         try:
-            current_mtime = MACHINES_CSV.stat().st_mtime
+            current_mtime = MACHINES_JSON.stat().st_mtime
         except OSError:
             return []
 
@@ -344,18 +344,18 @@ class MachinesWatcher(BasePushSource):
             return []
 
         try:
-            csv_text = MACHINES_CSV.read_text(encoding="utf-8").strip()
+            raw = MACHINES_JSON.read_text(encoding="utf-8").strip()
         except OSError:
             return []
 
         reason = "initial_load" if first_run else "file_changed"
-        csb = f"MACHINES_CSV|{reason}|{now.strftime('%Y-%m-%dT%H:%M')}|{csv_text[:600]}"
+        csb = f"MACHINES_JSON|{reason}|{now.strftime('%Y-%m-%dT%H:%M')}|{raw[:600]}"
         obs_id = cortex.twm_push(
             source=self.name,
             content_csb=csb,
             salience=0.8,
-            metadata={"path": str(MACHINES_CSV), "mtime": current_mtime, "reason": reason},
-            urgency=0.5,  # Change 4: cluster state change is relevant but not urgent-urgent
+            metadata={"path": str(MACHINES_JSON), "mtime": current_mtime, "reason": reason},
+            urgency=0.5,
             ttl_seconds=3600,
         )
         return [obs_id]
