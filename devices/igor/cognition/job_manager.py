@@ -18,11 +18,13 @@ Trigger (called from main._process()):
 from __future__ import annotations
 
 import json
+import threading
 import uuid
+from collections import deque
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 JOBS_DIR = Path.home() / ".TheIgors" / "jobs"
 
@@ -212,3 +214,49 @@ class JobManager:
             return False
         batches_done = job.completed_units // job.batch_size
         return batches_done > 0 and (job.completed_units % (job.batch_size * 10)) == 0
+
+    # ── Async background execution (G4 / #27) ─────────────────────────────────
+
+    def submit_background(
+        self,
+        fn: Callable[[], str],
+        title: str,
+        completions_queue: deque,
+        job_id: Optional[str] = None,
+    ) -> str:
+        """
+        Run `fn` in a daemon thread. When it completes, push
+        {"job_id": ..., "title": ..., "result": ...} onto completions_queue.
+
+        Returns the job_id (8-char UUID prefix).
+        If job_id is provided it must already exist in self._jobs; otherwise a
+        new Job record is created automatically.
+
+        The caller owns completions_queue — typically IgorAgent._job_completions.
+        """
+        if job_id is None:
+            job = self.create(title=title)
+            job_id = job.job_id
+        else:
+            job = self.get(job_id)
+            if job is None:
+                job = self.create(title=title)
+                job_id = job.job_id
+
+        self.start(job_id)
+
+        def _worker():
+            try:
+                result = fn()
+            except Exception as exc:
+                result = f"[ERROR] {exc}"
+            self.complete(job_id)
+            completions_queue.append({
+                "job_id": job_id,
+                "title": title,
+                "result": result,
+            })
+
+        t = threading.Thread(target=_worker, daemon=True, name=f"igor-job-{job_id}")
+        t.start()
+        return job_id
