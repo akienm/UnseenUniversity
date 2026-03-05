@@ -188,7 +188,7 @@ class Cortex:
             memory.friction_history.append(friction)
             self.store(memory)
 
-    def search(self, query: str, limit: int = 10) -> list:
+    def search(self, query: str, limit: int = 10, emotional_context=None) -> list:
         """
         Hybrid search (change.37): text candidates → embedding re-rank.
 
@@ -267,6 +267,15 @@ class Cortex:
                                 )
                     except Exception:
                         pass  # Signal C must never block search
+
+                # #66: affect-weighted retrieval — memories encoded in similar
+                # emotional state get a small relevance boost (state-dependent recall)
+                if emotional_context is not None:
+                    for sim, m in scored:
+                        v_sim = 1.0 - abs(getattr(m, "valence", 0.0) - emotional_context.valence) / 2.0
+                        a_sim = 1.0 - abs(getattr(m, "arousal", 0.0) - emotional_context.arousal) / 2.0
+                        m.relevance_score = sim * (1.0 + 0.15 * v_sim * a_sim)
+                    scored.sort(key=lambda x: getattr(x[1], "relevance_score", x[0]), reverse=True)
 
                 result = [m for _, m in scored[:limit]]
                 # G9: spreading activation — boost graph neighbors

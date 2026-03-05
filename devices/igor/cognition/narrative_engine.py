@@ -258,16 +258,30 @@ class NarrativeEngine:
                 # Track source obs IDs for Signal A TTL extension
                 source_obs_id = cand.get("source_obs_id")
 
+                # #66: amygdala analog — tag high-importance memories with current milieu
+                _milieu = __import__(
+                    "igor.cognition.milieu", fromlist=["get"]
+                ).get() if True else None
+                try:
+                    _ms = _milieu.get_state() if _milieu else None
+                except Exception:
+                    _ms = None
+                _arousal = _ms.arousal if _ms else 0.0
+                _valence_enc = _ms.valence if _ms else float(cand.get("valence", 0.0))
+                _emotionally_charged = importance >= 0.85 and abs(_arousal) > 0.4
+
                 mem = Memory(
                     narrative=content,
                     memory_type=mem_type,
                     parent_id="CP3",  # "There's always a why" — NE always has a reason
                     valence=float(cand.get("valence", 0.0)),
+                    arousal=_arousal,
                     metadata={
                         "source": "narrative_engine",
                         "importance": importance,
                         "ne_run": self._run_count + 1,
                         "promoted_at": datetime.now().isoformat(),
+                        **({"emotionally_charged": True} if _emotionally_charged else {}),
                     }
                 )
                 self.cortex.store(mem)
