@@ -279,7 +279,7 @@ def is_running() -> bool:
 # ── Fallback HTML (when Svelte UI not yet built) ───────────────────────────────
 # Fully functional single-page chat UI — no npm required to use Igor via browser.
 
-_FALLBACK_HTML = """<!DOCTYPE html>
+_FALLBACK_HTML = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -291,12 +291,28 @@ _FALLBACK_HTML = """<!DOCTYPE html>
            height: 100vh; display: flex; flex-direction: column; }
     #chat { flex: 1; overflow-y: auto; padding: 1rem;
             display: flex; flex-direction: column; gap: 0.4rem; }
-    .msg { font-size: 0.95rem; line-height: 1.4; }
+    .msg { font-size: 0.95rem; line-height: 1.5; }
     .msg-user   .author { color: #7ec8e3; font-weight: bold; }
     .msg-igor   .author { color: #90ee90; font-weight: bold; }
     .msg-system { color: #888; font-style: italic; }
     .author { margin-right: 0.4rem; }
     .content { white-space: pre-wrap; }
+    /* Markdown rendering for Igor messages */
+    .md p { margin: 0.3em 0; }
+    .md p:first-child { margin-top: 0; }
+    .md h1, .md h2, .md h3 { color: #90ee90; margin: 0.5em 0 0.2em; font-size: 1em; }
+    .md strong { color: #e8e8f0; font-weight: bold; }
+    .md em { font-style: italic; color: #c8c8d8; }
+    .md ul, .md ol { margin: 0.3em 0 0.3em 1.4em; padding: 0; }
+    .md li { margin: 0.1em 0; }
+    .md code { background: #2a2a4a; padding: 0.1em 0.3em; border-radius: 2px;
+               font-family: monospace; font-size: 0.9em; color: #aaddff; }
+    .md pre { background: #2a2a4a; padding: 0.6em; margin: 0.4em 0;
+              overflow-x: auto; border-left: 2px solid #4a4a8a; }
+    .md pre code { background: none; padding: 0; color: #cce; }
+    .md hr { border: none; border-top: 1px solid #333; margin: 0.5em 0; }
+    .md blockquote { border-left: 2px solid #555; margin: 0.3em 0;
+                     padding-left: 0.7em; color: #aaa; }
     #input-row { display: flex; gap: 0.5rem; padding: 0.5rem;
                  border-top: 1px solid #333; }
     #input { flex: 1; background: #2a2a3e; color: #e0e0e0;
@@ -346,6 +362,56 @@ _FALLBACK_HTML = """<!DOCTYPE html>
       status.textContent = (busy ? '⚙ ' : '● ') + (m.action || (busy ? 'processing' : 'idle')) + tier + input;
     }
 
+    function esc(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function parseMarkdown(raw) {
+      // Protect code blocks first, replace last
+      const blocks = [];
+      let s = raw.replace(/```([^\n]*)\n([^]*?)```/g, (_, lang, code) => {
+        blocks.push('<pre><code>' + esc(code.replace(/\n$/,'')) + '</code></pre>');
+        return '\x00BLOCK' + (blocks.length-1) + '\x00';
+      });
+      // Inline code
+      s = s.replace(/`([^`\n]+)`/g, (_, c) => '<code>' + esc(c) + '</code>');
+      // Escape remaining HTML (except our placeholders)
+      s = s.split('\x00').map((seg, i) =>
+        seg.startsWith('BLOCK') ? '\x00' + seg + '\x00' : esc(seg)
+      ).join('');
+      // Headers
+      s = s.replace(/^#{3} (.+)$/gm, '<h3>$1</h3>');
+      s = s.replace(/^#{2} (.+)$/gm, '<h2>$1</h2>');
+      s = s.replace(/^# (.+)$/gm,    '<h1>$1</h1>');
+      // Bold + italic
+      s = s.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+      s = s.replace(/\*\*(.+?)\*\*/g,     '<strong>$1</strong>');
+      s = s.replace(/\*([^*\n]+)\*/g,     '<em>$1</em>');
+      // HR
+      s = s.replace(/^---+$/gm, '<hr>');
+      // Blockquote
+      s = s.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+      // Lists — collect consecutive list lines into ul/ol
+      s = s.replace(/((?:^[ \t]*[-*] .+\n?)+)/gm, m => {
+        const items = m.replace(/^[ \t]*[-*] (.+)$/gm, '<li>$1</li>');
+        return '<ul>' + items.replace(/\n/g,'') + '</ul>';
+      });
+      s = s.replace(/((?:^\d+\. .+\n?)+)/gm, m => {
+        const items = m.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+        return '<ol>' + items.replace(/\n/g,'') + '</ol>';
+      });
+      // Paragraphs — split on blank lines
+      s = s.split(/\n\n+/).map(p => {
+        p = p.trim();
+        if (!p) return '';
+        if (/^<(h[1-6]|ul|ol|pre|hr|blockquote)/.test(p)) return p;
+        return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
+      }).join('\n');
+      // Restore code blocks
+      blocks.forEach((b, i) => { s = s.replace('\x00BLOCK' + i + '\x00', b); });
+      return s;
+    }
+
     function addMsg(cls, author, content) {
       const d = document.createElement('div');
       d.className = 'msg msg-' + cls;
@@ -356,8 +422,13 @@ _FALLBACK_HTML = """<!DOCTYPE html>
         d.appendChild(s);
       }
       const c = document.createElement('span');
-      c.className = 'content';
-      c.textContent = content;
+      if (cls === 'igor') {
+        c.className = 'content md';
+        c.innerHTML = parseMarkdown(content);
+      } else {
+        c.className = 'content';
+        c.textContent = content;
+      }
       d.appendChild(c);
       chat.appendChild(d);
       chat.scrollTop = chat.scrollHeight;
