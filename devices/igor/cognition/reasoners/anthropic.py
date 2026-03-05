@@ -20,7 +20,7 @@ from rich.console import Console
 from ...memory.models import Memory
 from ...tools.registry import registry
 from ... import tools as _tools  # noqa: F401 - imports all tools, registers them
-from .base import APIReasoner, MAX_TURNS, CONTEXT_WARN_CHARS
+from .base import APIReasoner, MAX_TURNS, CONTEXT_WARN_CHARS, CONTEXT_HARD_CAP_CHARS
 from ..system_prompt import build_system_prompt
 from ..forensic_logger import log_reasoning_call, log_tool_call
 from ...memory.scrub import scrub
@@ -136,9 +136,15 @@ class AnthropicReasoner(APIReasoner):
                 )
                 break
 
-            # ── CONTEXT SIZE WARNING ───────────────────────────────────────
+            # ── CONTEXT SIZE WARNING + HARD CAP (#26) ─────────────────────
             ctx_chars = self._messages_total_chars(messages)
-            if ctx_chars > CONTEXT_WARN_CHARS:
+            if ctx_chars > CONTEXT_HARD_CAP_CHARS:
+                messages = self._trim_messages(messages)
+                ctx_chars = self._messages_total_chars(messages)
+                console.print(
+                    f"[yellow][THINK] context trimmed to ~{ctx_chars // 1000}K chars at turn {turn}[/]"
+                )
+            elif ctx_chars > CONTEXT_WARN_CHARS:
                 console.print(
                     f"[yellow][THINK] context ~{ctx_chars // 1000}K chars at turn {turn} "
                     f"— consider breaking into smaller steps[/]"

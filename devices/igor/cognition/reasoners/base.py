@@ -36,6 +36,7 @@ _RING_CONTEXT_LIMIT = 5
 TOOL_RESULT_MAX_CHARS = 20_000   # ~5 K tokens — generous for real data
 MAX_TURNS = 25                   # hard limit on tool-call rounds per session
 CONTEXT_WARN_CHARS = 100_000     # ~25 K tokens total messages — emit a warning
+CONTEXT_HARD_CAP_CHARS = 150_000 # hard trim threshold — drop oldest tool results above this
 
 
 class BaseReasoner(ABC):
@@ -104,6 +105,37 @@ class BaseReasoner(ABC):
                     else:
                         total += len(str(block))
         return total
+
+    @staticmethod
+    def _trim_messages(messages: list) -> list:
+        """
+        Hard context cap (#26): if total message chars exceed CONTEXT_HARD_CAP_CHARS,
+        drop middle messages (oldest tool results) while preserving:
+          - messages[0]: the initial user message with all injected context
+          - messages[-4:]: the 4 most recent messages (current tool round)
+
+        Inserts a visible placeholder so the model knows history was trimmed.
+        Returns the trimmed list (or the original if under cap).
+        """
+        if len(messages) <= 3:
+            return messages
+
+        total = BaseReasoner._messages_total_chars(messages)
+        if total <= CONTEXT_HARD_CAP_CHARS:
+            return messages
+
+        # Keep first (initial context) + last 4 (most recent reasoning)
+        keep_tail = min(4, len(messages) - 1)
+        dropped = messages[1 : len(messages) - keep_tail]
+        dropped_chars = BaseReasoner._messages_total_chars(dropped)
+        trimmed = (
+            [messages[0]]
+            + [{"role": "user", "content":
+                f"[CONTEXT TRIMMED: {len(dropped)} older messages ({dropped_chars // 1000}K chars) "
+                f"dropped to stay within context limit. Ask me to recap if needed.]"}]
+            + messages[len(messages) - keep_tail :]
+        )
+        return trimmed
 
     # ── Shared tool-call display (#34) ────────────────────────────────────────
 
