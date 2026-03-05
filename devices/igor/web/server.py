@@ -296,6 +296,7 @@ _FALLBACK_HTML = """<!DOCTYPE html>
     .msg-igor   .author { color: #90ee90; font-weight: bold; }
     .msg-system { color: #888; font-style: italic; }
     .author { margin-right: 0.4rem; }
+    .content { white-space: pre-wrap; }
     #input-row { display: flex; gap: 0.5rem; padding: 0.5rem;
                  border-top: 1px solid #333; }
     #input { flex: 1; background: #2a2a3e; color: #e0e0e0;
