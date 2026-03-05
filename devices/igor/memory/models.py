@@ -20,6 +20,7 @@ class MemoryType(Enum):
     INTERPRETIVE = "INTERPRETIVE"  # What things mean
     EXPERIENTIAL = "EXPERIENTIAL"  # Sequential emotional experiences
     FACTUAL = "FACTUAL"         # Objective information
+    REFERENCE = "REFERENCE"     # #65: tagged blob — brief narrative + full content in memory_blobs
 
 
 # Base inertia by type - network position, activation, and friction adjust these
@@ -33,6 +34,7 @@ BASE_INERTIA = {
     MemoryType.INTERPRETIVE: 0.25,
     MemoryType.EXPERIENTIAL: 0.20,
     MemoryType.FACTUAL: 0.25,
+    MemoryType.REFERENCE: 0.40,  # blobs are intentionally stored — higher base inertia
 }
 
 
