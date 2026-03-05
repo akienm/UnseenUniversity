@@ -74,6 +74,13 @@ class Cortex:
             except Exception:
                 pass  # Column already exists
 
+            # G14 / #52: emotional profile columns (arousal + dominance)
+            for _col in ("arousal REAL DEFAULT 0.0", "dominance REAL DEFAULT 0.0"):
+                try:
+                    conn.execute(f"ALTER TABLE memories ADD COLUMN {_col}")
+                except Exception:
+                    pass  # Column already exists
+
             # Short-term ring buffer — survives restarts, FIFO capped at RING_MAX
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS ring_memory (
@@ -127,8 +134,9 @@ class Cortex:
             conn.execute("""
                 INSERT OR REPLACE INTO memories
                 (id, narrative, memory_type, parent_id, children_ids, link_ids,
-                 valence, activation_count, friction_history, timestamp, metadata)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 valence, arousal, dominance,
+                 activation_count, friction_history, timestamp, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 memory.id,
                 memory.narrative,
@@ -137,6 +145,8 @@ class Cortex:
                 json.dumps(memory.children_ids),
                 json.dumps(memory.link_ids),
                 memory.valence,
+                memory.arousal,
+                memory.dominance,
                 memory.activation_count,
                 json.dumps(memory.friction_history),
                 memory.timestamp.isoformat(),
@@ -440,7 +450,9 @@ class Cortex:
             parent_id=row["parent_id"],
             children_ids=json.loads(row["children_ids"]),
             link_ids=json.loads(row["link_ids"]),
-            valence=row["valence"],
+            valence=row["valence"] or 0.0,
+            arousal=row["arousal"] if "arousal" in row.keys() else 0.0,
+            dominance=row["dominance"] if "dominance" in row.keys() else 0.0,
             activation_count=row["activation_count"],
             friction_history=json.loads(row["friction_history"]),
             timestamp=datetime.fromisoformat(row["timestamp"]),

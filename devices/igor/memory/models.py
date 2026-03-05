@@ -45,6 +45,8 @@ class Memory:
     children_ids: list = field(default_factory=list)
     link_ids: list = field(default_factory=list)
     valence: float = 0.0
+    arousal: float = 0.0      # G14 / #52: emotional profile — [-1,1] activated vs deactivated
+    dominance: float = 0.0    # G14 / #52: emotional profile — [-1,1] in-control vs overwhelmed
     activation_count: int = 0
     friction_history: list = field(default_factory=list)
     timestamp: datetime = field(default_factory=datetime.now)

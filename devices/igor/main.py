@@ -1185,11 +1185,15 @@ class Igor:
             # Change 7 / D031: include routing decision in episodic metadata
             # This builds the audit trail for future routing habit compilation.
             _routing_proc_id = "PROC_ROUTING_LOCAL" if not used_api else "PROC_ROUTING_ESCALATE"
+            # G14 / #52: tag episodic memories with ambient emotional state at time of creation
+            _ep_milieu = milieu_mod.get().get_state() if milieu_mod.get() else None
             ep = Memory(
                 narrative=f"User: {user_input[:80]} → Igor responded about {parsed.intent}",
                 memory_type=MemoryType.EPISODIC,
                 parent_id="CP3",  # "There's always a why"
                 valence=valence,
+                arousal=_ep_milieu.arousal if _ep_milieu else 0.0,
+                dominance=_ep_milieu.dominance if _ep_milieu else 0.0,
                 metadata={
                     "user_input": user_input,
                     "intent": parsed.intent,
