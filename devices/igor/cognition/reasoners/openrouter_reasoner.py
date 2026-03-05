@@ -51,11 +51,7 @@ def preparse_via_openrouter(
     if not api_key:
         return _rule_based_csb(user_input, habits)
 
-    habit_desc = ", ".join(
-        f"{h.id}:{h.metadata.get('trigger','')}" for h in habits if h.metadata.get("trigger")
-    ) or "none"
-
-    prompt = _PREPARSE_PROMPT.format(text=user_input[:300], habits=habit_desc[:200])
+    prompt = _PREPARSE_PROMPT.format(text=user_input[:300])
 
     payload = json.dumps({
         "model": model,

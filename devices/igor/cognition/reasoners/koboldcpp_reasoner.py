@@ -85,11 +85,9 @@ complexity: <low|medium|high>
 entities: <comma-separated names/things, or none>
 requires_tools: <true|false>
 memory_hints: <comma-separated keywords relevant to memory search, or none>
-habit_id: <matching habit ID from list below, or null>
 should_escalate: <true|false>
 
 Input: "{text}"
-Habits: {habits}
 """
 
 
@@ -139,14 +137,6 @@ def _rule_based_csb(user_input: str, habits: List[Memory]) -> str:
     complexity = "high" if len(signals) >= 3 else "medium" if len(signals) >= 1 else "low"
     should_escalate = len(signals) >= 2
 
-    # Habit match
-    habit_id = "null"
-    for h in habits:
-        trigger = h.metadata.get("trigger", "").lower()
-        if trigger and trigger in text:
-            habit_id = h.id
-            break
-
     requires_tools = intent in ("task", "command") or any(
         w in text for w in ["search", "run", "execute", "file", "browse", "read"]
     )
@@ -163,7 +153,6 @@ def _rule_based_csb(user_input: str, habits: List[Memory]) -> str:
         f"entities: none\n"
         f"requires_tools: {str(requires_tools).lower()}\n"
         f"memory_hints: {memory_hints}\n"
-        f"habit_id: {habit_id}\n"
         f"should_escalate: {str(should_escalate).lower()}\n"
     )
 
@@ -174,15 +163,8 @@ def preparse(user_input: str, habits: List[Memory], host: str = "") -> str:
     Falls back to rule-based CSB on timeout or error.
     Returns a CSB string (always — never raises).
     """
-    habit_desc = ", ".join(
-        f"{h.id}:{h.metadata.get('trigger','')}" for h in habits if h.metadata.get("trigger")
-    ) or "none"
-
     _host = host or DEFAULT_HOST
-    prompt = _PREPARSE_PROMPT.format(
-        text=user_input[:300],
-        habits=habit_desc[:200],
-    )
+    prompt = _PREPARSE_PROMPT.format(text=user_input[:300])
 
     payload = {
         "model": os.getenv("KOBOLDCPP_MODEL", "hugging-quants/Llama-3.2-1B-Instruct-Q4_K_M-GGUF"),
@@ -215,28 +197,21 @@ def parse_preparse_csb(csb: str, habits: List[Memory]) -> dict:
             fields[key.strip()] = val.strip()
 
     intent       = fields.get("intent", "general")
-    complexity   = fields.get("complexity", "low")
-    should_esc   = fields.get("should_escalate", "false").lower() == "true"
+    complexity     = fields.get("complexity", "low")
+    should_esc     = fields.get("should_escalate", "false").lower() == "true"
     requires_tools = fields.get("requires_tools", "false").lower() == "true"
-    habit_id_str = fields.get("habit_id", "null").strip()
 
     # Derive numeric complexity score for existing callers
     score = {"low": 0.1, "medium": 0.4, "high": 0.8}.get(complexity, 0.1)
     is_multi_unit = score > 0.6 or requires_tools
     tier_minimum  = "tier.4" if score > 0.4 else "tier.3"
 
-    # Resolve habit
-    habit_match = None
-    if habit_id_str and habit_id_str != "null" and habits:
-        habit_match = next((h for h in habits if str(h.id) == habit_id_str), None)
-
-    confidence = 0.9 if habit_match else (0.5 if should_esc else 0.8)
-
+    # habit_match is always None here — _find_habit() in main.py owns habit matching
     return {
         "intent":           intent,
         "should_escalate":  should_esc,
-        "habit_match":      habit_match,
-        "confidence":       confidence,
+        "habit_match":      None,
+        "confidence":       0.0,
         "complexity": {
             "score":         score,
             "signals_fired": [complexity] if complexity != "low" else [],
