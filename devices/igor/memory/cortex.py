@@ -258,7 +258,9 @@ class Cortex:
                     except Exception:
                         pass  # Signal C must never block search
 
-                return [m for _, m in scored[:limit]]
+                result = [m for _, m in scored[:limit]]
+                # G9: spreading activation — boost graph neighbors
+                return self._spread_activation(result, {}, limit)
         except Exception:
             pass  # Embedding unavailable — fall through to text results
 
@@ -266,7 +268,81 @@ class Cortex:
         max_terms = max(1, len(terms))
         for score, m in text_scored[:limit]:
             m.relevance_score = score / max_terms  # type: ignore[attr-defined]
-        return [m for _, m in text_scored[:limit]]
+        result = [m for _, m in text_scored[:limit]]
+        # G9: spreading activation — boost graph neighbors
+        return self._spread_activation(result, {}, limit)
+
+    # G9 / #60: spreading activation ──────────────────────────────────────────
+
+    _SA_DECAY = 0.4   # neighbor relevance = parent_relevance * _SA_DECAY
+
+    def _spread_activation(
+        self,
+        activated: list,
+        all_memories: dict,
+        limit: int,
+    ) -> list:
+        """
+        Given a list of activated Memory objects (with .relevance_score set),
+        find their graph neighbors (parent_id, children_ids, link_ids) and give
+        them a decay-weighted partial activation boost.
+
+        Neighbors already in `activated` get a small relevance bump.
+        New neighbors below the original activation threshold are appended
+        at decayed relevance and sorted back into the result.
+
+        Returns the merged list (max `limit` items).
+        """
+        activated_ids = {m.id for m in activated}
+        neighbor_scores: dict[str, float] = {}
+
+        for m in activated:
+            base = getattr(m, "relevance_score", 0.1) or 0.1
+            spread = base * self._SA_DECAY
+
+            # Gather adjacent node IDs
+            adjacent_ids: list[str] = []
+            if getattr(m, "parent_id", None):
+                adjacent_ids.append(m.parent_id)
+            adjacent_ids.extend(getattr(m, "children_ids", []) or [])
+            adjacent_ids.extend(getattr(m, "link_ids", []) or [])
+
+            for adj_id in adjacent_ids:
+                if adj_id in activated_ids:
+                    # Already activated — small boost only
+                    existing = next((x for x in activated if x.id == adj_id), None)
+                    if existing:
+                        existing.relevance_score = min(  # type: ignore[attr-defined]
+                            1.0, getattr(existing, "relevance_score", 0.0) + spread * 0.3
+                        )
+                else:
+                    # New neighbor — record best spread score
+                    if adj_id not in neighbor_scores or neighbor_scores[adj_id] < spread:
+                        neighbor_scores[adj_id] = spread
+
+        # Fetch new neighbors from DB; skip infrastructure types
+        _SKIP_TYPES = {
+            MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value,
+            MemoryType.IDENTITY.value, MemoryType.ROLE_MODEL.value,
+        }
+        new_neighbors: list = []
+        if neighbor_scores:
+            with self._conn() as conn:
+                placeholders = ",".join("?" * len(neighbor_scores))
+                rows = conn.execute(
+                    f"SELECT * FROM memories WHERE id IN ({placeholders})",
+                    list(neighbor_scores.keys()),
+                ).fetchall()
+            for row in rows:
+                m = self._to_memory(row)
+                if m.memory_type in _SKIP_TYPES:
+                    continue
+                m.relevance_score = neighbor_scores[m.id]  # type: ignore[attr-defined]
+                new_neighbors.append(m)
+
+        merged = activated + new_neighbors
+        merged.sort(key=lambda m: getattr(m, "relevance_score", 0.0), reverse=True)
+        return merged[:limit]
 
     def _get_or_compute_embedding(self, memory) -> Optional[list]:
         """
@@ -455,6 +531,30 @@ class Cortex:
         expires_at = None
         if ttl_seconds:
             expires_at = (now + timedelta(seconds=ttl_seconds)).isoformat()
+
+        # G6 / #44: Habituation — repeated identical observations get reduced salience.
+        # Match on first 120 chars of content (enough to identify the signal type + key).
+        # Each repeat halves the effective salience (floor 0.05). Count stored in metadata.
+        _sig = content_csb[:120]
+        _repeat_count = 0
+        metadata = dict(metadata or {})
+        with self._conn() as conn:
+            _existing = conn.execute(
+                "SELECT id, metadata_json FROM twm_observations "
+                "WHERE SUBSTR(content_csb, 1, 120) = ? AND integrated = 0 "
+                "LIMIT 1",
+                (_sig,),
+            ).fetchone()
+        if _existing:
+            try:
+                _prev_meta = json.loads(_existing["metadata_json"] or "{}")
+                _repeat_count = _prev_meta.get("repeat_count", 0) + 1
+            except Exception:
+                _repeat_count = 1
+            # Decay: each repeat halves salience; floor at 0.05
+            salience = max(0.05, salience * (0.5 ** min(_repeat_count, 6)))
+            metadata["repeat_count"] = _repeat_count
+            metadata["habituated"] = True
 
         with self._conn() as conn:
             cur = conn.execute(
