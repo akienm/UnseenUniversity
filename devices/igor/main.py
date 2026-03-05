@@ -1111,8 +1111,9 @@ class Igor:
                         user_input, relevant, core, skip_to=_skip_to, preparse_csb=pre_csb
                     )
 
-        # [MOTOR CORTEX] Output response
-        console.print(f"\n[bold blue]Igor:[/] {response_text}\n")
+        # [MOTOR CORTEX] Output response — skip if empty (e.g. impulse was suppressed)
+        if response_text:
+            console.print(f"\n[bold blue]Igor:[/] {response_text}\n")
 
         # [AMYGDALA] Assess valence
         valence = pfc.assess_valence(user_input, response_text)
@@ -1145,10 +1146,13 @@ class Igor:
             new_memories += 1
 
         # [RING] Write interaction summary to short-term memory
-        self.cortex.write_ring(
-            f"Q: {user_input[:300]} | A: {response_text[:400]} | intent={parsed.intent} friction={friction:.2f}",
-            category=parsed.intent,
-        )
+        # Skip impulse turns — their keywords would pollute push_sources memory surfacing
+        # and their content adds no value to human-turn context.
+        if not is_impulse:
+            self.cortex.write_ring(
+                f"Q: {user_input[:300]} | A: {response_text[:400]} | intent={parsed.intent} friction={friction:.2f}",
+                category=parsed.intent,
+            )
 
         # Update metrics
         self.last_friction = friction
