@@ -113,7 +113,10 @@ async def _index(request: Request):
     index_file = _DIST_DIR / "index.html"
     if index_file.exists():
         return FileResponse(str(index_file))
-    return HTMLResponse(_FALLBACK_HTML)
+    return HTMLResponse(
+        _FALLBACK_HTML,
+        headers={"Cache-Control": "no-store, no-cache, must-revalidate"},
+    )
 
 
 async def _api_upload(request: Request):
@@ -463,7 +466,8 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
         s.textContent = author + ':';
         d.appendChild(s);
       }
-      const c = document.createElement('span');
+      // Igor messages use <div> (block elements inside <span> is invalid HTML)
+      const c = document.createElement(cls === 'igor' ? 'div' : 'span');
       if (cls === 'igor') {
         c.className = 'content md';
         c.innerHTML = parseMarkdown(content);
