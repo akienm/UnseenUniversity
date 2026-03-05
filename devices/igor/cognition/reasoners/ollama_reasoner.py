@@ -76,8 +76,9 @@ class OllamaReasoner(LocalReasoner):
         instance_id: str,
         cortex=None,
     ) -> tuple[str, float]:
-        # WO1: dynamic system prompt from cortex memories
-        system = build_system_prompt(cortex, instance_id)
+        # Local model cannot embody Igor's persona from the full system prompt.
+        # Use a minimal task instruction instead (#41). Persona belongs to Claude only.
+        system = "Answer briefly and directly. Use the context provided. Say 'I don't know' when uncertain."
 
         memory_context = ""
         if relevant_memories:
