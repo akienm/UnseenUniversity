@@ -167,12 +167,68 @@ class ContextInterruptor(BaseInterruptor):
             return None
 
 
+class MilieuInterruptor(BaseInterruptor):
+    """
+    Fires when Igor's ambient emotional state reaches sustained extremes.
+    Writes to ring and returns alert string — NE and human can act on it.
+
+    Thresholds are deliberately high: milieu drifts slowly, so if arousal
+    exceeds 0.7 or valence stays below -0.5 it's a genuine signal, not noise.
+    """
+
+    name = "milieu"
+    AROUSAL_HIGH    = 0.70
+    VALENCE_LOW     = -0.50
+    COOLDOWN_TICKS  = 10   # don't re-fire within 10 milieu ticks (~10 interactions)
+
+    def __init__(self):
+        self._last_fired_tick: int | None = None
+
+    def check(self, cortex=None) -> str | None:
+        try:
+            from . import milieu as milieu_mod
+            m = milieu_mod.get()
+            if m is None:
+                return None
+
+            state = m.get_state()
+
+            # Cooldown — don't spam
+            if (self._last_fired_tick is not None
+                    and state.tick - self._last_fired_tick < self.COOLDOWN_TICKS):
+                return None
+
+            if state.arousal > self.AROUSAL_HIGH:
+                msg = (
+                    f"High arousal ({state.arousal:.2f}) — sustained activation state. "
+                    "Consider pacing: fewer tool calls, shorter responses."
+                )
+                self._write_alert(cortex, msg)
+                self._last_fired_tick = state.tick
+                return msg
+
+            if state.valence < self.VALENCE_LOW:
+                msg = (
+                    f"Sustained negative valence ({state.valence:.2f}) — mood trending low. "
+                    "May indicate repeated friction or unresolved failures."
+                )
+                self._write_alert(cortex, msg)
+                self._last_fired_tick = state.tick
+                return msg
+
+        except Exception:
+            pass  # Milieu interruptor must never crash reasoning
+
+        return None
+
+
 # ── Active interruptors ───────────────────────────────────────────────────────
 # Add new interruptors here. They'll be run automatically.
 
 ACTIVE_INTERRUPTORS: list[BaseInterruptor] = [
     BudgetInterruptor(),
     ContextInterruptor(),
+    MilieuInterruptor(),
 ]
 
 
