@@ -90,14 +90,33 @@ class JobManager:
 
     # ── Boot ──────────────────────────────────────────────────────────────────
 
+    # Pending jobs older than this are auto-cancelled at startup (never started = orphan)
+    _STALE_PENDING_HOURS = 4
+
     def _load_active(self) -> None:
-        """Load pending/running/paused jobs from disk on startup."""
+        """
+        Load pending/running/paused jobs from disk on startup.
+        Auto-cancels 'pending' jobs older than _STALE_PENDING_HOURS — these
+        were created but never dispatched (pre-G4 orphans or interrupted sessions).
+        'running' jobs are kept; they may be resumable.
+        """
         if not JOBS_DIR.exists():
             return
+        now = datetime.now()
         for path in sorted(JOBS_DIR.glob("*.json")):
             try:
                 data = json.loads(path.read_text(encoding="utf-8"))
                 j = Job(**data)
+                if j.status == "pending":
+                    # Auto-cancel stale pending jobs
+                    age_hours = (
+                        now - datetime.fromisoformat(j.updated_at)
+                    ).total_seconds() / 3600
+                    if age_hours > self._STALE_PENDING_HOURS:
+                        j.status = "cancelled"
+                        j.notes = (j.notes + " | auto-cancelled: stale pending at startup").strip()
+                        j.save()
+                        continue
                 if j.status in _STATUS_ACTIVE:
                     self._jobs[j.job_id] = j
             except Exception:
