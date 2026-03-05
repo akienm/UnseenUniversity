@@ -74,7 +74,9 @@ def render(
     lines.append(f"  Factual:          {counts.get(MemoryType.FACTUAL.value, 0)}")
     lines.append("")
 
-    lines.append(f"[bold]Habits:[/] {len(habits)}   [bold]TWM depth:[/] {twm_depth}")
+    blob_count = _get_blob_count(cortex)
+    blob_str = f"   [bold]Blobs:[/] {blob_count}" if blob_count else ""
+    lines.append(f"[bold]Habits:[/] {len(habits)}   [bold]TWM depth:[/] {twm_depth}{blob_str}")
     lines.append(f"[bold]Upstream Dependency:[/] {upstream_pct}%")
     if active_jobs:
         lines.append(f"[bold yellow]Active jobs:[/] {active_jobs}")
@@ -153,6 +155,16 @@ def _get_budget_line() -> str:
         return f"[bold]OpenRouter Budget:[/] [{color}]${remaining:.2f} left[/] of ${budget:.2f} ({pct_left:.0f}% remaining)"
     except Exception:
         return ""
+
+
+def _get_blob_count(cortex: Cortex) -> int:
+    """Count stored reference blobs."""
+    try:
+        with cortex._conn() as conn:
+            row = conn.execute("SELECT COUNT(*) FROM memory_blobs").fetchone()
+            return row[0] if row else 0
+    except Exception:
+        return 0
 
 
 def _get_twm_depth(cortex: Cortex) -> int:

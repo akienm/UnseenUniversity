@@ -81,6 +81,20 @@ class Cortex:
                 except Exception:
                     pass  # Column already exists
 
+            # #65: tagged blob storage — full-content reference documents
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS memory_blobs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    memory_id TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    tags TEXT DEFAULT '[]',
+                    created_at TEXT NOT NULL
+                )
+            """)
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_blob_memory ON memory_blobs(memory_id)"
+            )
+
             # Short-term ring buffer — survives restarts, FIFO capped at RING_MAX
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS ring_memory (
@@ -187,6 +201,102 @@ class Cortex:
             memory.activation_count += 1
             memory.friction_history.append(friction)
             self.store(memory)
+
+    # ── #65: Tagged blob storage ───────────────────────────────────────────────
+
+    def store_blob(
+        self,
+        narrative: str,
+        content: str,
+        tags: list[str],
+        parent_id: str = "CP3",
+        valence: float = 0.0,
+    ) -> Memory:
+        """
+        Store a reference document: brief narrative in memories (searchable),
+        full content in memory_blobs (retrievable by tag).
+
+        Returns the Memory record (use .id to retrieve blob later).
+        """
+        tags = [t.lower().strip() for t in tags if t.strip()]
+        mem = Memory(
+            narrative=scrub(narrative[:500]),
+            memory_type=MemoryType.REFERENCE,
+            parent_id=parent_id,
+            valence=valence,
+            metadata={"tags": tags, "has_blob": True},
+        )
+        self.store(mem)
+        with self._conn() as conn:
+            conn.execute(
+                "INSERT INTO memory_blobs (memory_id, content, tags, created_at) "
+                "VALUES (?, ?, ?, ?)",
+                (mem.id, scrub(content), json.dumps(tags), datetime.now().isoformat()),
+            )
+        return mem
+
+    def get_blob(self, memory_id: str) -> Optional[str]:
+        """Fetch full blob content for a REFERENCE memory. Returns None if not found."""
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT content FROM memory_blobs WHERE memory_id = ?", (memory_id,)
+            ).fetchone()
+        return row["content"] if row else None
+
+    def search_by_tags(self, tags: list[str], match_all: bool = False) -> list[dict]:
+        """
+        Search blob memories by tag.
+
+        match_all=False (default): return blobs matching ANY of the tags.
+        match_all=True: return only blobs matching ALL tags.
+
+        Returns list of dicts: {memory_id, narrative, tags, content_preview, created_at}.
+        """
+        tags = [t.lower().strip() for t in tags if t.strip()]
+        if not tags:
+            return []
+
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT b.memory_id, b.tags, b.content, b.created_at, m.narrative "
+                "FROM memory_blobs b "
+                "JOIN memories m ON m.id = b.memory_id "
+                "ORDER BY b.created_at DESC"
+            ).fetchall()
+
+        results = []
+        for row in rows:
+            try:
+                blob_tags = json.loads(row["tags"] or "[]")
+            except Exception:
+                blob_tags = []
+            matched = [t for t in tags if t in blob_tags]
+            if match_all and len(matched) < len(tags):
+                continue
+            if not match_all and not matched:
+                continue
+            results.append({
+                "memory_id": row["memory_id"],
+                "narrative": row["narrative"],
+                "tags": blob_tags,
+                "matched_tags": matched,
+                "content_preview": row["content"][:200],
+                "created_at": row["created_at"],
+            })
+        return results
+
+    def list_blob_tags(self) -> dict[str, int]:
+        """Return all tags with counts, sorted by frequency."""
+        with self._conn() as conn:
+            rows = conn.execute("SELECT tags FROM memory_blobs").fetchall()
+        counts: dict[str, int] = {}
+        for row in rows:
+            try:
+                for tag in json.loads(row["tags"] or "[]"):
+                    counts[tag] = counts.get(tag, 0) + 1
+            except Exception:
+                pass
+        return dict(sorted(counts.items(), key=lambda x: x[1], reverse=True))
 
     def search(self, query: str, limit: int = 10, emotional_context=None) -> list:
         """
