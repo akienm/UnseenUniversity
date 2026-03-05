@@ -1017,10 +1017,19 @@ class Igor:
         used_api = False
 
         # [BASAL GANGLIA] Habit match from Ollama pre-parse (or simple trigger check)
-        habit = pre["habit_match"] if pre["confidence"] >= 0.8 else self._find_habit(parsed)
+        # Cross-validate LLM habit matches: the trigger must appear in the raw input.
+        # This prevents 1B hallucinations from firing habits on unrelated inputs.
+        _llm_habit = pre["habit_match"] if pre["confidence"] >= 0.8 else None
+        if _llm_habit is not None:
+            _trigger = _llm_habit.metadata.get("trigger", "")
+            if _trigger and _trigger.lower() not in parsed.raw.lower():
+                _llm_habit = None  # reject — trigger phrase not present in input
+        habit = _llm_habit or self._find_habit(parsed)
 
         if habit:
             dashboard.print_habit_trigger(habit)
+            _habit_trigger = habit.metadata.get("trigger", "")
+            _habit_source = "llm" if _llm_habit is not None else "thalamus"
             code_ref = habit.metadata.get("code_ref")
             if code_ref:
                 # Change 6 / D030: resolve code_ref to builtin tool via registry (POC)
@@ -1037,6 +1046,21 @@ class Igor:
             else:
                 response_text = habit.metadata.get("action", "Habit executed.")
             self.cortex.record_activation(habit.id, 0.05)
+            # Log habit execution to ring + forensic log for auditability
+            self.cortex.write_ring(
+                f"HABIT_EXEC|id={habit.id}|trigger={_habit_trigger!r}|"
+                f"source={_habit_source}|input={user_input[:80]!r}|"
+                f"action={str(response_text)[:80]!r}",
+                category="habit_trace",
+            )
+            from .cognition.forensic_logger import log_tool_call as _log_tc
+            _log_tc(
+                tool_name=f"habit:{habit.id}",
+                args_summary=f"trigger={_habit_trigger!r} source={_habit_source}",
+                result_summary=str(response_text)[:120],
+                success=True,
+                elapsed_ms=0,
+            )
         else:
             # [PREFRONTAL CORTEX] Upstream reasoning
             # Ring context is injected by anthropic.py._build_session_context (D014)
