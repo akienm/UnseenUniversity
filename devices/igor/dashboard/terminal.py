@@ -150,7 +150,7 @@ def _get_budget_line() -> str:
             color = "yellow"
         else:
             color = "green"
-        return f"[bold]Claude Budget:[/] [{color}]${remaining:.2f} left[/] of ${budget:.2f} ({pct_left:.0f}% remaining)"
+        return f"[bold]OpenRouter Budget:[/] [{color}]${remaining:.2f} left[/] of ${budget:.2f} ({pct_left:.0f}% remaining)"
     except Exception:
         return ""
 
