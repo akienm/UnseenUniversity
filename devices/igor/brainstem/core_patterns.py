@@ -187,7 +187,7 @@ def initialize_genesis(cortex: Cortex, instance_id: str = "wild-0001") -> str:
 
     # Role Models - sources whose patterns are worth attending to
     role_models = [
-        ("RM_AKIEN", "Akien (Tom)", "human", "creator", "ID1",
+        ("RM_AKIEN", "Akien", "human", "creator", "ID1",
          {"system_design": 0.95, "iterative_development": 0.95, "friction_optimization": 0.95},
          ["Envision → build → learn → revise forever",
           "FAIL = Further Advance In Learning",
