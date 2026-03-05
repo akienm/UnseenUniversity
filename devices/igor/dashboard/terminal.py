@@ -132,7 +132,9 @@ def _get_active_alerts(cortex: Cortex) -> list[str]:
             # Content format: "[INTERRUPTOR:name] message"
             name = content.split("]")[0].replace("[INTERRUPTOR:", "") if "]" in content else "unknown"
             if name not in seen:
-                seen[name] = content
+                # CLEARED entries are tombstones — suppress from alert panel
+                if "✅ CLEARED" not in content:
+                    seen[name] = content
         return list(seen.values())
     except Exception:
         return []
