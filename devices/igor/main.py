@@ -125,6 +125,8 @@ class Igor:
             console.print(
                 f"[dim][JOBS] {self.job_manager.active_count()} pending/running job(s) loaded.[/]"
             )
+        # G4 / #27: async job completion queue
+        self._job_completions: "collections.deque" = __import__("collections").deque()
 
         # WO4/WO5: OpenRouter — cheap (tier.3), interactive/persona (tier.3.5), claude (tier.4)
         self.openrouter_cheap_reasoner = None
@@ -659,6 +661,8 @@ class Igor:
             last_valence=self.last_valence,
             last_roi=self.last_roi,
             last_action="Genesis state loaded",
+            milieu_state=milieu_mod.get().get_state() if milieu_mod.get() else None,
+            active_jobs=self.job_manager.active_count(),
         )
 
         # Spin up stdin reader thread
@@ -677,6 +681,7 @@ class Igor:
                 self._drain_network()
                 run_background_sources(self.cortex)
                 self._run_ne_background()
+                self._announce_completed_jobs()
                 self._drain_action_impulses()
                 import time; time.sleep(0.5)
                 continue
@@ -691,6 +696,28 @@ class Igor:
                 continue
 
             self._process(user_input)
+
+    def _bg_reason(
+        self,
+        user_input: str,
+        relevant: list,
+        skip_to: str,
+        preparse_csb: str,
+    ) -> str:
+        """
+        G4 / #27: Thread-safe reasoning wrapper for background jobs.
+        Called from job_manager background threads — must not write shared agent state.
+        Returns response text (or error string).
+        """
+        try:
+            from .brainstem.core_patterns import get_core_patterns
+            core = get_core_patterns(self.cortex)
+            response_text, _cost, _used = self._reason_with_failover(
+                user_input, relevant, core, skip_to=skip_to, preparse_csb=preparse_csb
+            )
+            return response_text or "(no response)"
+        except Exception as exc:
+            return f"[ERROR in background job] {exc}"
 
     def _reason_with_failover(
         self,
@@ -978,24 +1005,29 @@ class Igor:
 
         # [JOB TRIGGER] pass.4: create a long-running job when task looks multi-unit
         # Only for non-impulse user messages; only if complexity qualifies
+        # G4 / #27: multi-unit jobs now run async — Igor returns immediately.
+        _async_job_id: str | None = None
         if (
             not is_impulse
             and complexity["score"] > 0.6
             and complexity["is_multi_unit"]
         ):
-            new_job = self.job_manager.create(
+            _async_job_id = self.job_manager.submit_background(
+                fn=lambda _ui=user_input, _rel=list(relevant), _sk=_skip_to, _pc=pre_csb: (
+                    self._bg_reason(_ui, _rel, _sk, _pc)
+                ),
                 title=user_input[:80],
-                notes=f"signals={complexity['signals_fired']}",
+                completions_queue=self._job_completions,
             )
             console.print(
-                f"\n[cyan][JOBS] This looks like a long-running job. "
-                f"Created Job #{new_job.job_id}: '{new_job.title[:60]}'. "
-                f"Track with /jobs status {new_job.job_id}[/]\n"
+                f"\n[cyan][JOBS] Long-running job started in background (#{_async_job_id}). "
+                f"I'll let you know when it's done.[/]\n"
             )
             self.cortex.write_ring(
-                f"JOB_CREATED|id={new_job.job_id}|complexity={complexity['score']:.2f}|{new_job.title[:80]}",
+                f"JOB_CREATED|id={_async_job_id}|async=true|complexity={complexity['score']:.2f}|{user_input[:80]}",
                 category="system_info",
             )
+            return f"Started background job #{_async_job_id}. I'll notify you when complete."
 
         # Forensic: log tier selection decision (WO_escalation_gate)
         _tiers_available = ["tier.1"]  # habits always available
@@ -1207,6 +1239,9 @@ class Igor:
             last_action=f"{parsed.intent}: {user_input[:40]}",
             new_memories=new_memories,
             upstream_calls=self.upstream_calls,
+            milieu_state=milieu_mod.get().get_state() if milieu_mod.get() else None,
+            last_tier=getattr(self, "_current_tier", ""),
+            active_jobs=self.job_manager.active_count() if hasattr(self, "job_manager") and self.job_manager else 0,
         )
 
         # [PRECOMPACT] Flush session summary to LTM before context window gets too large (change.32)
@@ -1264,6 +1299,40 @@ class Igor:
         "error", "exception", "failed", "unable", "cannot", "no such",
         "traceback", "not found", "invalid", "timed out", "connection refused",
     )
+
+    def _announce_completed_jobs(self):
+        """
+        G4 / #27: Drain the async job completions queue and push each result
+        into the interaction loop as an impulse so Igor can narrate the outcome.
+
+        Called each tick of the main loop alongside _drain_network and
+        _drain_action_impulses. Each completion becomes an ACTION_IMPULSE in TWM
+        so the NE picks it up and Igor synthesises a response to the user.
+        """
+        while self._job_completions:
+            item = self._job_completions.popleft()
+            job_id = item.get("job_id", "?")
+            title = item.get("title", "")
+            result = item.get("result", "")
+            # Truncate result for TWM — full result goes to ring memory
+            result_preview = result[:300] if result else "(no output)"
+            self.cortex.twm_push(
+                content_csb=(
+                    f"ACTION_IMPULSE|source=job_completion|job_id={job_id}|"
+                    f"title={title[:60]}|result={result_preview}"
+                ),
+                source="job_manager",
+                salience=0.8,
+                urgency=0.7,
+                ttl_seconds=300,
+            )
+            self.cortex.write_ring(
+                f"JOB_COMPLETED|id={job_id}|title={title[:60]}|result={result[:200]}",
+                category="system_info",
+            )
+            console.print(
+                f"\n[green][JOBS] Job #{job_id} '{title[:50]}' completed.[/]\n"
+            )
 
     def _drain_action_impulses(self):
         """

@@ -30,10 +30,14 @@ def render(
     last_action: str,
     new_memories: int = 0,
     upstream_calls: int = 0,
+    milieu_state=None,
+    last_tier: str = "",
+    active_jobs: int = 0,
 ):
     counts = cortex.count_by_type()
     total = cortex.total_count()
     habits = cortex.get_habits()
+    twm_depth = _get_twm_depth(cortex)
 
     upstream_pct = _upstream_pct(interaction_count, upstream_calls)
 
@@ -70,8 +74,12 @@ def render(
     lines.append(f"  Factual:          {counts.get(MemoryType.FACTUAL.value, 0)}")
     lines.append("")
 
-    lines.append(f"[bold]Habits:[/] {len(habits)}")
+    lines.append(f"[bold]Habits:[/] {len(habits)}   [bold]TWM depth:[/] {twm_depth}")
     lines.append(f"[bold]Upstream Dependency:[/] {upstream_pct}%")
+    if active_jobs:
+        lines.append(f"[bold yellow]Active jobs:[/] {active_jobs}")
+    if last_tier:
+        lines.append(f"[bold]Last tier:[/] {last_tier}")
     lines.append("")
 
     # Metrics
@@ -82,6 +90,17 @@ def render(
     lines.append(f"[bold]Emotional Valence:[/] {valence_str}")
     lines.append(f"[bold]Friction (last):[/]   {friction_str}")
     lines.append(f"[bold]ROI:[/]               {roi_str}")
+
+    # G10 / #35: milieu ambient state with VAD bars
+    if milieu_state is not None:
+        lines.append("")
+        lines.append(f"[bold]Milieu[/]  (v/a/d — ambient affect):")
+        lines.append(
+            f"  V {milieu_state.valence:+.2f} {_vad_bar(milieu_state.valence)}  "
+            f"A {milieu_state.arousal:+.2f} {_vad_bar(milieu_state.arousal)}  "
+            f"D {milieu_state.dominance:+.2f} {_vad_bar(milieu_state.dominance)}"
+        )
+
     lines.append("")
     lines.append(f"[bold]Recent:[/] {last_action}")
 
@@ -90,7 +109,7 @@ def render(
         "\n".join(lines),
         box=box.DOUBLE,
         border_style=border,
-        width=60,
+        width=62,
     )
     console.print(panel)
 
@@ -134,6 +153,21 @@ def _get_budget_line() -> str:
         return f"[bold]Claude Budget:[/] [{color}]${remaining:.2f} left[/] of ${budget:.2f} ({pct_left:.0f}% remaining)"
     except Exception:
         return ""
+
+
+def _get_twm_depth(cortex: Cortex) -> int:
+    """Count active (non-integrated) TWM observations."""
+    try:
+        return len(cortex.twm_read(limit=50, include_integrated=False))
+    except Exception:
+        return 0
+
+
+def _vad_bar(value: float, width: int = 5) -> str:
+    """Render a [-1,1] value as a short filled/empty bar. e.g. ▓▓▓░░"""
+    filled = round((value + 1.0) / 2.0 * width)
+    filled = max(0, min(width, filled))
+    return "▓" * filled + "░" * (width - filled)
 
 
 def _upstream_pct(total_interactions: int, upstream_calls: int) -> int:
