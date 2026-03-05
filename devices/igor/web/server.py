@@ -367,49 +367,91 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     }
 
     function parseMarkdown(raw) {
-      // Protect code blocks first, replace last
-      const blocks = [];
-      let s = raw.replace(/```([^\n]*)\n([^]*?)```/g, (_, lang, code) => {
-        blocks.push('<pre><code>' + esc(code.replace(/\n$/,'')) + '</code></pre>');
-        return '\x00BLOCK' + (blocks.length-1) + '\x00';
-      });
-      // Inline code
-      s = s.replace(/`([^`\n]+)`/g, (_, c) => '<code>' + esc(c) + '</code>');
-      // Escape remaining HTML (except our placeholders)
-      s = s.split('\x00').map((seg, i) =>
-        seg.startsWith('BLOCK') ? '\x00' + seg + '\x00' : esc(seg)
-      ).join('');
-      // Headers
-      s = s.replace(/^#{3} (.+)$/gm, '<h3>$1</h3>');
-      s = s.replace(/^#{2} (.+)$/gm, '<h2>$1</h2>');
-      s = s.replace(/^# (.+)$/gm,    '<h1>$1</h1>');
-      // Bold + italic
-      s = s.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-      s = s.replace(/\*\*(.+?)\*\*/g,     '<strong>$1</strong>');
-      s = s.replace(/\*([^*\n]+)\*/g,     '<em>$1</em>');
-      // HR
-      s = s.replace(/^---+$/gm, '<hr>');
-      // Blockquote
-      s = s.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
-      // Lists — collect consecutive list lines into ul/ol
-      s = s.replace(/((?:^[ \t]*[-*] .+\n?)+)/gm, m => {
-        const items = m.replace(/^[ \t]*[-*] (.+)$/gm, '<li>$1</li>');
-        return '<ul>' + items.replace(/\n/g,'') + '</ul>';
-      });
-      s = s.replace(/((?:^\d+\. .+\n?)+)/gm, m => {
-        const items = m.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
-        return '<ol>' + items.replace(/\n/g,'') + '</ol>';
-      });
-      // Paragraphs — split on blank lines
-      s = s.split(/\n\n+/).map(p => {
-        p = p.trim();
-        if (!p) return '';
-        if (/^<(h[1-6]|ul|ol|pre|hr|blockquote)/.test(p)) return p;
-        return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
-      }).join('\n');
-      // Restore code blocks
-      blocks.forEach((b, i) => { s = s.replace('\x00BLOCK' + i + '\x00', b); });
-      return s;
+      // Line-by-line parser — handles mixed block/inline without regex paragraph confusion
+      function fmt(s) {
+        // Inline formatting on already-escaped text
+        s = s.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+        s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+        return s;
+      }
+      const lines = raw.split('\n');
+      const out = [];
+      let inCode = false, codeLang = '', codeLines = [];
+      let inUl = false, inOl = false;
+      let paraLines = [];
+
+      function flushPara() {
+        if (!paraLines.length) return;
+        out.push('<p>' + paraLines.join('<br>') + '</p>');
+        paraLines = [];
+      }
+      function flushList() {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        if (inOl) { out.push('</ol>'); inOl = false; }
+      }
+
+      for (const line of lines) {
+        // ── Code block ──────────────────────────────────────────────────────
+        if (line.startsWith('```')) {
+          if (inCode) {
+            out.push('<pre><code>' + esc(codeLines.join('\n')) + '</code></pre>');
+            codeLines = []; inCode = false;
+          } else {
+            flushPara(); flushList();
+            codeLang = line.slice(3).trim();
+            inCode = true;
+          }
+          continue;
+        }
+        if (inCode) { codeLines.push(line); continue; }
+
+        // ── Blank line ──────────────────────────────────────────────────────
+        if (!line.trim()) { flushPara(); flushList(); continue; }
+
+        // ── Heading ─────────────────────────────────────────────────────────
+        const hm = line.match(/^(#{1,3}) (.+)$/);
+        if (hm) {
+          flushPara(); flushList();
+          const lv = hm[1].length;
+          out.push('<h' + lv + '>' + fmt(esc(hm[2])) + '</h' + lv + '>');
+          continue;
+        }
+
+        // ── HR ───────────────────────────────────────────────────────────────
+        if (/^---+$/.test(line)) { flushPara(); flushList(); out.push('<hr>'); continue; }
+
+        // ── Blockquote ───────────────────────────────────────────────────────
+        const bq = line.match(/^> (.+)$/);
+        if (bq) { flushPara(); flushList(); out.push('<blockquote>' + fmt(esc(bq[1])) + '</blockquote>'); continue; }
+
+        // ── Unordered list item ──────────────────────────────────────────────
+        const ul = line.match(/^[ \t]*[-*] (.+)$/);
+        if (ul) {
+          flushPara();
+          if (!inUl) { flushList(); out.push('<ul>'); inUl = true; }
+          out.push('<li>' + fmt(esc(ul[1])) + '</li>');
+          continue;
+        }
+
+        // ── Ordered list item ────────────────────────────────────────────────
+        const ol = line.match(/^\d+\. (.+)$/);
+        if (ol) {
+          flushPara();
+          if (!inOl) { flushList(); out.push('<ol>'); inOl = true; }
+          out.push('<li>' + fmt(esc(ol[1])) + '</li>');
+          continue;
+        }
+
+        // ── Plain text — accumulate into paragraph ───────────────────────────
+        flushList();
+        paraLines.push(fmt(esc(line)));
+      }
+
+      flushPara(); flushList();
+      if (inCode) out.push('<pre><code>' + esc(codeLines.join('\n')) + '</code></pre>');
+      return out.join('\n');
     }
 
     function addMsg(cls, author, content) {
