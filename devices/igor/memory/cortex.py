@@ -26,6 +26,14 @@ from .models import Memory, MemoryType
 from .scrub import scrub
 
 
+def _safe_memory_type(value: str) -> MemoryType:
+    """Return MemoryType for value, falling back to FACTUAL for unknown types."""
+    try:
+        return MemoryType(value)
+    except ValueError:
+        return MemoryType.FACTUAL
+
+
 RING_MAX = 50  # Max entries in the ring buffer
 TWM_MAX  = 50  # Max observations in TWM
 
@@ -565,7 +573,7 @@ class Cortex:
         return Memory(
             id=row["id"],
             narrative=row["narrative"],
-            memory_type=MemoryType(row["memory_type"]),
+            memory_type=_safe_memory_type(row["memory_type"]),
             parent_id=row["parent_id"],
             children_ids=json.loads(row["children_ids"]),
             link_ids=json.loads(row["link_ids"]),
