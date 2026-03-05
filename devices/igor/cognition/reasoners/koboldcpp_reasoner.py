@@ -343,9 +343,11 @@ class KoboldCppReasoner(LocalReasoner):
         host: str = DEFAULT_HOST,
         context_size: int = DEFAULT_CONTEXT_SIZE,
         model_label: str = "",
+        timeout: int = TIMEOUT,
     ):
         self.host         = host.rstrip("/")
         self.context_size = context_size
+        self.timeout      = timeout
         # model_label is informational — the actual model is managed inside KoboldCpp
         self._model_label = model_label or os.getenv(
             "KOBOLDCPP_MODEL",
@@ -395,7 +397,7 @@ class KoboldCppReasoner(LocalReasoner):
 
         t0 = time.perf_counter()
         try:
-            data       = _post_json(self.host, CHAT_ENDPOINT, payload, TIMEOUT)
+            data       = _post_json(self.host, CHAT_ENDPOINT, payload, self.timeout)
             elapsed    = time.perf_counter() - t0
             text       = data["choices"][0]["message"]["content"]
             usage      = data.get("usage", {})
