@@ -953,7 +953,7 @@ class Igor:
             # No I/O needed — build CSB from thalamus result instantly
             pre_csb = _rule_based_csb(user_input, habits)
             if parsed.intent != "command":  # commands don't need memory search
-                candidates = self.cortex.search(" ".join(parsed.keywords))
+                candidates = self.cortex.search(" ".join(parsed.keywords), emotional_context=_milieu_state)
             relevant = score_memories(user_input, candidates) if candidates else []
         else:
             # Parallel: memory search + LLM preparse
@@ -969,7 +969,7 @@ class Igor:
 
             with _cf.ThreadPoolExecutor(max_workers=2) as _pool:
                 _pre_fut  = _pool.submit(_preparse_fn)
-                _cand_fut = _pool.submit(self.cortex.search, " ".join(parsed.keywords))
+                _cand_fut = _pool.submit(self.cortex.search, " ".join(parsed.keywords), 10, _milieu_state)
                 pre_csb   = _pre_fut.result()
                 candidates = _cand_fut.result()
             relevant = score_memories(user_input, candidates) if candidates else []

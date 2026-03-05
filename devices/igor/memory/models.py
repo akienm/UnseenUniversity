@@ -63,7 +63,12 @@ class Memory:
             friction_boost = max(0.0, (1.0 - avg) * 0.05)
         else:
             friction_boost = 0.0
-        return min(1.0, base + usage_boost + children_boost + friction_boost)
+        # #66: amygdala analog — high arousal or strong valence at encoding → more durable
+        # abs(arousal) > 0.5 adds up to +0.08; emotionally_charged flag adds +0.05
+        arousal_boost = min(0.08, abs(self.arousal) * 0.16) if abs(self.arousal) > 0.3 else 0.0
+        charged_boost = 0.05 if self.metadata.get("emotionally_charged") else 0.0
+        return min(1.0, base + usage_boost + children_boost + friction_boost
+                   + arousal_boost + charged_boost)
 
     @property
     def avg_friction(self) -> Optional[float]:
