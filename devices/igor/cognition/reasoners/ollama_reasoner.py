@@ -107,35 +107,28 @@ class OllamaReasoner(LocalReasoner):
 
 def preparse(user_input: str, habits: list[Memory], model: str = DEFAULT_MODEL) -> dict:
     """
-    Use local 1B model to cheaply preprocess input before touching the API.
+    Use local 1B model to cheaply classify input before touching the API.
+    Habit matching is intentionally excluded — _find_habit() handles that
+    via deterministic trigger substring matching (1B is unreliable for it).
 
     Returns a dict with:
       - intent: classified intent string
       - keywords: list of key terms
-      - habit_match: Memory or None if a habit likely applies
-      - confidence: 0.0-1.0 how confident we are a habit covers this
-      - should_escalate: bool - True means send to Anthropic API
+      - habit_match: always None (habit matching done by _find_habit in main.py)
+      - confidence: always 0.0
+      - should_escalate: bool - True means send to cloud API
     """
-    habit_desc = ""
-    if habits:
-        habit_desc = "\n\nAvailable habits:\n" + "\n".join(
-            f"- ID={h.id}: trigger='{h.metadata.get('trigger', '')}' desc='{h.narrative[:60]}'"
-            for h in habits
-        )
-
     prompt = f"""Classify this user input. Reply with ONLY a JSON object, no other text.
 
-User input: "{user_input}"{habit_desc}
+User input: "{user_input}"
 
 JSON fields:
 - intent: one word from this list only: greeting, meta_question, factual_question, action_request, memory_instruction, general
 - keywords: array of 2-4 important words from the input
-- habit_id: the habit ID string if a habit matches, or null
-- confidence: number from 0.0 to 1.0 for how well a habit matches
 - should_escalate: true if needs deep reasoning, false if simple
 
 Example output:
-{{"intent": "factual_question", "keywords": ["capital", "france"], "habit_id": null, "confidence": 0.0, "should_escalate": true}}"""
+{{"intent": "factual_question", "keywords": ["capital", "france"], "should_escalate": true}}"""
 
     t0 = time.perf_counter()
     try:
@@ -155,22 +148,17 @@ Example output:
         else:
             raise ValueError("No JSON found in response")
 
-        habit_match = None
-        if parsed.get("habit_id") and habits:
-            habit_match = next((h for h in habits if h.id == parsed["habit_id"]), None)
-
         return {
             "intent": parsed.get("intent", "general"),
             "keywords": parsed.get("keywords", []),
-            "habit_match": habit_match,
-            "confidence": float(parsed.get("confidence", 0.0)),
+            "habit_match": None,
+            "confidence": 0.0,
             "should_escalate": bool(parsed.get("should_escalate", True)),
         }
 
     except Exception as exc:
         elapsed = time.perf_counter() - t0
         _log_call("preparse", model, None, elapsed, error=str(exc))
-        # If local model fails, escalate to API - never block on local failure
         return {
             "intent": "general",
             "keywords": [],
