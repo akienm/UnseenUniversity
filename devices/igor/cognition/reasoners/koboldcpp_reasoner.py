@@ -347,7 +347,9 @@ class KoboldCppReasoner(LocalReasoner):
         context_size can be overridden per call; defaults to self.context_size.
         Returns (response_text, 0.0) — local inference has no API cost.
         """
-        system = build_system_prompt(cortex, instance_id)
+        # Local 1B model cannot embody Igor's persona from the full system prompt.
+        # Use a minimal task instruction instead (#41). Persona belongs to Claude only.
+        system = "Answer briefly and directly. Use the context provided. Say 'I don't know' when uncertain."
 
         memory_context = ""
         if relevant_memories:

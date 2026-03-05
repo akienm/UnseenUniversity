@@ -1501,11 +1501,34 @@ class Igor:
         Change 6 / D030: habits with metadata.code_ref map to builtin tool functions.
         Execution is handled in _process_inner() via registry lookup.
         Full argument extraction from parsed.raw is future work.
+
+        #46: natural language habit-compilation phrases are checked first,
+        routing to PROC_HABIT_COMPILER before scanning individual habit triggers.
         """
+        _raw = parsed.raw.lower()
+
+        # #46: detect natural language habit-compilation requests
+        _compile_phrases = (
+            "build a habit",
+            "make a habit",
+            "remember to always",
+            "whenever ",  # "whenever X happens, you should..."
+            "every time ",
+            "from now on",
+            "you should always",
+        )
+        if any(p in _raw for p in _compile_phrases):
+            habits = self.cortex.get_habits()
+            compiler = next(
+                (h for h in habits if h.id == "PROC_HABIT_COMPILER"), None
+            )
+            if compiler:
+                return compiler
+
         habits = self.cortex.get_habits()
         for habit in habits:
             trigger = habit.metadata.get("trigger", "")
-            if trigger and trigger.lower() in parsed.raw.lower():
+            if trigger and trigger.lower() in _raw:
                 return habit
         return None
 
