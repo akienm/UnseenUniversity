@@ -49,7 +49,8 @@ from .cognition.job_manager import JobManager
 
 console = Console()
 
-DATA_DIR = Path(__file__).parent.parent / "data"
+_IGOR_DB_ENV = os.getenv("IGOR_DB_PATH")
+DATA_DIR = Path(_IGOR_DB_ENV).expanduser().parent if _IGOR_DB_ENV else Path(__file__).parent.parent / "data"
 CHANGE_LOG_PATH    = Path.home() / ".TheIgors" / "claudecode" / "changes.log"
 CHANGE_REQUEST_PATH = Path.home() / ".TheIgors" / "claudecode" / "change_request.txt"
 
@@ -77,8 +78,11 @@ def _stdin_reader(stdin_queue: queue.Queue):
 class Igor:
     def __init__(self, instance_id: str):
         self.instance_id = instance_id
-        self.db_path = DATA_DIR / f"{instance_id}.db"
-        DATA_DIR.mkdir(exist_ok=True)
+        if _IGOR_DB_ENV:
+            self.db_path = Path(_IGOR_DB_ENV).expanduser()
+        else:
+            self.db_path = DATA_DIR / f"{instance_id}.db"
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
 
         self.cortex = Cortex(self.db_path)
         milieu_mod.init(self.instance_id)
@@ -2341,13 +2345,18 @@ def main():
     else:
         # Resume the most recently used DB rather than always spawning a new one.
         # A fresh ID is only generated if no DB exists at all.
-        DATA_DIR.mkdir(exist_ok=True)
-        existing_dbs = sorted(DATA_DIR.glob("igor_wild_*.db"), key=lambda p: p.stat().st_mtime, reverse=True)
-        if existing_dbs:
-            instance_id = existing_dbs[0].stem
-            console.print(f"[dim]Resuming existing instance: {instance_id}[/]")
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        if _IGOR_DB_ENV:
+            # IGOR_DB_PATH set — instance_id derived from filename
+            instance_id = Path(_IGOR_DB_ENV).expanduser().stem
+            console.print(f"[dim]Using IGOR_DB_PATH: {_IGOR_DB_ENV}[/]")
         else:
-            instance_id = _make_instance_id(args.host)
+            existing_dbs = sorted(DATA_DIR.glob("igor_wild_*.db"), key=lambda p: p.stat().st_mtime, reverse=True)
+            if existing_dbs:
+                instance_id = existing_dbs[0].stem
+                console.print(f"[dim]Resuming existing instance: {instance_id}[/]")
+            else:
+                instance_id = _make_instance_id(args.host)
 
     igor = Igor(instance_id=instance_id)
     igor.run()
