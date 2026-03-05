@@ -35,6 +35,7 @@ from .cognition.system_prompt import build_boot_message, invalidate_cache
 from .cognition.local_pool import LocalKoboldPool
 from .cognition import observer
 from .cognition import milieu as milieu_mod
+from .cognition import basal_ganglia
 from .cognition.narrative_engine import NarrativeEngine
 from .cognition.push_sources import run_background_sources, user_input_source
 from .cognition.multi_upstream import query_multiple, compare_responses
@@ -906,8 +907,11 @@ class Igor:
         # Fast-path: skip LLM preparse for greetings and habit triggers already
         # caught by thalamus rules — rule-based CSB is instant.
         habits = self.cortex.get_habits()
+        _milieu_state = milieu_mod.get().get_state() if milieu_mod.get() else None
         _fast_path_intents = {"greeting", "command"}
-        _thalamus_habit = self._find_habit(parsed)
+        _thalamus_habit, _thalamus_confidence = basal_ganglia.select_habit(
+            parsed, habits, milieu_state=_milieu_state
+        )
         _skip_llm_preparse = (
             parsed.intent in _fast_path_intents
             or _thalamus_habit is not None
@@ -1026,7 +1030,7 @@ class Igor:
             _trigger = _llm_habit.metadata.get("trigger", "")
             if _trigger and _trigger.lower() not in parsed.raw.lower():
                 _llm_habit = None  # reject — trigger phrase not present in input
-        habit = _llm_habit or self._find_habit(parsed)
+        habit = _llm_habit or _thalamus_habit
 
         if habit:
             dashboard.print_habit_trigger(habit)
@@ -1049,10 +1053,11 @@ class Igor:
                 response_text = habit.metadata.get("action", "Habit executed.")
             self.cortex.record_activation(habit.id, 0.05)
             # Log habit execution to ring + forensic log for auditability
+            _habit_score = _thalamus_confidence if _habit_source == "thalamus" else pre["confidence"]
             self.cortex.write_ring(
-                f"HABIT_EXEC|id={habit.id}|trigger={_habit_trigger!r}|"
-                f"source={_habit_source}|input={user_input[:80]!r}|"
-                f"action={str(response_text)[:80]!r}",
+                f"HABIT_EXEC|id={habit.id}|score={_habit_score:.2f}|"
+                f"trigger={_habit_trigger!r}|source={_habit_source}|"
+                f"input={user_input[:80]!r}|action={str(response_text)[:80]!r}",
                 category="habit_trace",
             )
             from .cognition.forensic_logger import log_tool_call as _log_tc
@@ -1510,44 +1515,6 @@ class Igor:
             response = self._process(synthetic)
             if msg.source == "web" and response:
                 web_server.send(response)
-
-    def _find_habit(self, parsed) -> Memory | None:
-        """
-        Check if any habit matches this input. Placeholder for basal ganglia.
-
-        Change 6 / D030: habits with metadata.code_ref map to builtin tool functions.
-        Execution is handled in _process_inner() via registry lookup.
-        Full argument extraction from parsed.raw is future work.
-
-        #46: natural language habit-compilation phrases are checked first,
-        routing to PROC_HABIT_COMPILER before scanning individual habit triggers.
-        """
-        _raw = parsed.raw.lower()
-
-        # #46: detect natural language habit-compilation requests
-        _compile_phrases = (
-            "build a habit",
-            "make a habit",
-            "remember to always",
-            "whenever ",  # "whenever X happens, you should..."
-            "every time ",
-            "from now on",
-            "you should always",
-        )
-        if any(p in _raw for p in _compile_phrases):
-            habits = self.cortex.get_habits()
-            compiler = next(
-                (h for h in habits if h.id == "PROC_HABIT_COMPILER"), None
-            )
-            if compiler:
-                return compiler
-
-        habits = self.cortex.get_habits()
-        for habit in habits:
-            trigger = habit.metadata.get("trigger", "")
-            if trigger and trigger.lower() in _raw:
-                return habit
-        return None
 
     def _handle_command(self, command: str, raw: str):
         commands = {
