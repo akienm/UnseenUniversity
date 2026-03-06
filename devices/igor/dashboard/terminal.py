@@ -68,7 +68,15 @@ def render(
     lines.append(f"  Identity:         {counts.get(MemoryType.IDENTITY.value, 0)}")
     lines.append(f"  Role Models:      {counts.get(MemoryType.ROLE_MODEL.value, 0)}")
     lines.append(f"  Episodic:         {counts.get(MemoryType.EPISODIC.value, 0)}")
-    lines.append(f"  Procedural:       {counts.get(MemoryType.PROCEDURAL.value, 0)}")
+    proc_count = counts.get(MemoryType.PROCEDURAL.value, 0)
+    proc_ratio = (proc_count / total * 100) if total else 0.0
+    if proc_ratio >= 10.0:
+        proc_color = "green"
+    elif proc_ratio >= 5.0:
+        proc_color = "yellow"
+    else:
+        proc_color = "red"
+    lines.append(f"  Procedural:       {proc_count}  [{proc_color}]({proc_ratio:.1f}% — METRIC_3 target ≥10%)[/]")
     lines.append(f"  Interpretive:     {counts.get(MemoryType.INTERPRETIVE.value, 0)}")
     lines.append(f"  Experiential:     {counts.get(MemoryType.EXPERIENTIAL.value, 0)}")
     lines.append(f"  Factual:          {counts.get(MemoryType.FACTUAL.value, 0)}")
