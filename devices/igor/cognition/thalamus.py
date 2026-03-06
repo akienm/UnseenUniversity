@@ -29,6 +29,8 @@ class Thalamus:
         # Tone detection
         tone = _detect_tone(text)
 
+        routing_directive = _detect_routing_directive(text)
+
         return ParsedInput(
             raw=text,
             intent=intent,
@@ -36,6 +38,7 @@ class Thalamus:
             tone=tone,
             is_command=is_command,
             command=command,
+            routing_directive=routing_directive,
         )
 
 
@@ -47,6 +50,21 @@ class ParsedInput:
     tone: str          # friendly, neutral, frustrated, curious, urgent
     is_command: bool   # starts with / or is a system command
     command: str | None = None
+    routing_directive: str = ""  # "local_only" | "" — from user instruction (#90)
+
+
+_LOCAL_ONLY_PHRASES = (
+    "local only", "local-only", "using only local", "no cloud",
+    "local resources only", "stay local", "offline mode",
+)
+
+
+def _detect_routing_directive(text: str) -> str:
+    """Detect explicit routing constraints in natural language (#90)."""
+    t = text.lower()
+    if any(p in t for p in _LOCAL_ONLY_PHRASES):
+        return "local_only"
+    return ""
 
 
 def _extract_keywords(text: str) -> list:
@@ -59,6 +77,7 @@ def _extract_keywords(text: str) -> list:
         "who", "how", "when", "where", "why", "that", "this", "these",
         "those", "and", "or", "but", "in", "on", "at", "to", "for",
         "of", "with", "by", "from", "about", "as", "into", "through",
+        # NOTE: 'igor' and 'akien' intentionally excluded (#85) — highest-signal terms
     }
     words = re.findall(r'\b[a-zA-Z]{3,}\b', text.lower())
     return [w for w in words if w not in stop_words]

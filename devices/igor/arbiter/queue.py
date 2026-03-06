@@ -104,6 +104,14 @@ def submit(
         _save(items)
 
     _ping_discord(new_id, description)
+    # #105: alert CC if queue is building up
+    pending_count = count_pending()
+    if pending_count > 3:
+        try:
+            from ..cognition.forensic_logger import log_anomaly as _la
+            _la(kind="ARBITER_BUILDUP", detail=f"pending={pending_count}|newest={description[:80]}")
+        except Exception:
+            pass
     return new_id
 
 

@@ -146,6 +146,11 @@ class OpenRouterReasoner(BaseReasoner):
                 console.print(
                     f"[yellow][OR] context trimmed to ~{ctx_chars // 1000}K chars at turn {turn}[/]"
                 )
+                try:
+                    from ..forensic_logger import log_anomaly as _la
+                    _la(kind="CONTEXT_OVERFLOW", detail=f"model={self._model()}|turn={turn}|trimmed_to={ctx_chars}")
+                except Exception:
+                    pass
             elif ctx_chars > CONTEXT_WARN_CHARS:
                 console.print(
                     f"[yellow][OR] context ~{ctx_chars // 1000}K chars at turn {turn} "
