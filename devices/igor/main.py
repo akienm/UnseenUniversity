@@ -1677,7 +1677,7 @@ class Igor:
             elif msg.source == "web" and msg.author == "claude-code":
                 # CC→Igor machine-to-machine channel: always respond inline, no background jobs
                 synthetic = (
-                    f"[CC_DIRECT|from=claude-code|routing=direct]: {msg.content}\n"
+                    f"CC: {msg.content}\n"
                     f"[Routing directive: respond inline — no async background jobs for this turn]"
                 )
             elif msg.source == "web":
