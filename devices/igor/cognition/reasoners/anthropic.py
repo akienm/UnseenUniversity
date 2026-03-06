@@ -126,6 +126,10 @@ class AnthropicReasoner(APIReasoner):
         model_to_use = self.active_model
         turn = 0
 
+        # GitHub #82: per-turn rate limiter — fresh each reasoning session
+        from ...tools.rate_limiter import TurnRateLimiter
+        _turn_limiter = TurnRateLimiter()
+
         while True:
             turn += 1
 
@@ -265,10 +269,22 @@ class AnthropicReasoner(APIReasoner):
                                 f"→ auto-switching to Haiku for this reasoning session[/]"
                             )
 
+                        # ── RATE LIMIT CHECK (GitHub #82) ─────────────────────
+                        _rate_msg = _turn_limiter.check(block.name)
+                        if _rate_msg:
+                            console.print(f"[yellow][RATE_LIMIT] {block.name}: {_rate_msg[:80]}[/]")
+                            tool_results.append({
+                                "type": "tool_result",
+                                "tool_use_id": block.id,
+                                "content": _rate_msg,
+                            })
+                            continue
+
                         # ── DEEP THINKING VISIBILITY ──────────────────────────
                         input_summary = self._summarize_input(block.input)
                         t_tool = time.perf_counter()
                         result = registry.execute(block.name, block.input)
+                        _turn_limiter.record(block.name)
                         tool_elapsed = int((time.perf_counter() - t_tool) * 1000)
                         result_preview = str(result)[:120].replace("\n", " ")
                         self.print_tool_call("THINK", turn, block.name, input_summary, result_preview)
