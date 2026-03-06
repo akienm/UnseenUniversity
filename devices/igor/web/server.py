@@ -184,12 +184,14 @@ async def _ws_endpoint(ws: WebSocket):
                     continue
                 if msg.get("type") == "message":
                     content = msg.get("content", "").strip()
+                    # Allow client to self-identify (e.g. "claude-code"); default "web-user"
+                    author = msg.get("author", "web-user")
                     if content:
-                        incoming.put({"content": content, "author": "web-user", "client_id": id(ws)})
+                        incoming.put({"content": content, "author": author, "client_id": id(ws)})
                         # Echo user message to all clients so multi-tab works
                         _broadcast(json.dumps({
                             "type": "message",
-                            "author": "user",
+                            "author": author,
                             "content": content,
                             "ts": _ts(),
                         }))
