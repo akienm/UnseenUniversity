@@ -89,6 +89,12 @@ class Cortex:
                 except Exception:
                     pass  # Column already exists
 
+            # #71: portability flag — 1=portable (default), 0=instance-local
+            try:
+                conn.execute("ALTER TABLE memories ADD COLUMN portable INTEGER DEFAULT 1")
+            except Exception:
+                pass  # Column already exists
+
             # #65: tagged blob storage — full-content reference documents
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS memory_blobs (
@@ -157,8 +163,8 @@ class Cortex:
                 INSERT OR REPLACE INTO memories
                 (id, narrative, memory_type, parent_id, children_ids, link_ids,
                  valence, arousal, dominance,
-                 activation_count, friction_history, timestamp, metadata)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 activation_count, friction_history, timestamp, metadata, portable)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 memory.id,
                 memory.narrative,
@@ -173,6 +179,7 @@ class Cortex:
                 json.dumps(memory.friction_history),
                 memory.timestamp.isoformat(),
                 json.dumps(memory.metadata),
+                1 if memory.portable else 0,
             ))
         return memory
 
@@ -182,6 +189,19 @@ class Cortex:
                 "SELECT * FROM memories WHERE id = ?", (memory_id,)
             ).fetchone()
         return self._to_memory(row) if row else None
+
+    def get_portable(self) -> list:
+        """
+        #71: Return all portable=True memories — the set an offspring instance should inherit.
+        Excludes EPISODIC, CREDENTIAL_REF, and any memory explicitly marked portable=False.
+        """
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT * FROM memories WHERE portable = 1 "
+                "AND memory_type NOT IN ('EPISODIC', 'CREDENTIAL_REF') "
+                "ORDER BY id"
+            ).fetchall()
+        return [self._to_memory(r) for r in rows]
 
     def get_children(self, parent_id: str) -> list:
         with self._conn() as conn:
@@ -569,6 +589,7 @@ class Cortex:
         return len(violations) == 0, violations
 
     def _to_memory(self, row) -> Memory:
+        keys = row.keys()
         return Memory(
             id=row["id"],
             narrative=row["narrative"],
@@ -577,12 +598,13 @@ class Cortex:
             children_ids=json.loads(row["children_ids"]),
             link_ids=json.loads(row["link_ids"]),
             valence=row["valence"] or 0.0,
-            arousal=row["arousal"] if "arousal" in row.keys() else 0.0,
-            dominance=row["dominance"] if "dominance" in row.keys() else 0.0,
+            arousal=row["arousal"] if "arousal" in keys else 0.0,
+            dominance=row["dominance"] if "dominance" in keys else 0.0,
             activation_count=row["activation_count"],
             friction_history=json.loads(row["friction_history"]),
             timestamp=datetime.fromisoformat(row["timestamp"]),
             metadata=json.loads(row["metadata"]),
+            portable=bool(row["portable"]) if "portable" in keys else True,
         )
 
     # ── Ring memory (short-term, survives restarts) ────────────────────────────

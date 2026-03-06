@@ -88,6 +88,7 @@ class Igor:
         milieu_mod.init(self.instance_id)
         observer.init(self.cortex)
         self.root_id = initialize_genesis(self.cortex, instance_id)
+        self._inject_credential_refs()
         self._boot_integrity_check()
 
         self.ne = NarrativeEngine(self.cortex, instance_id)
@@ -230,6 +231,34 @@ class Igor:
             f"SESSION_START|id={instance_id}|{datetime.now().isoformat()}",
             category="session_control",
         )
+
+    def _inject_credential_refs(self) -> None:
+        """
+        #71: Upsert CREDENTIAL_REF memories from current .env at boot.
+
+        Each known credential gets a portable=False FACTUAL pointer: what it is
+        and where to find it — never the value itself. Offspring instances read
+        their own .env and get their own CREDENTIAL_REF memories.
+        """
+        import os
+        _CRED_MAP = {
+            "OPENROUTER_API_KEY":  ("openrouter_key",  "OpenRouter API key — in .env OPENROUTER_API_KEY"),
+            "ANTHROPIC_API_KEY":   ("anthropic_key",   "Anthropic API key — in .env ANTHROPIC_API_KEY"),
+            "CONFLUENCE_EMAIL":    ("confluence_email","Confluence login email — in .env CONFLUENCE_EMAIL"),
+            "CONFLUENCE_API_TOKEN":("confluence_token","Confluence API token — in .env CONFLUENCE_API_TOKEN"),
+            "DISCORD_BOT_TOKEN":   ("discord_token",   "Discord bot token — in .env DISCORD_BOT_TOKEN"),
+            "GMAIL_CLIENT_ID":     ("gmail_client",    "Gmail OAuth client ID — in .env GMAIL_CLIENT_ID"),
+        }
+        from .memory.models import Memory, MemoryType
+        for env_key, (mem_id, narrative) in _CRED_MAP.items():
+            if os.getenv(env_key):
+                self.cortex.store(Memory(
+                    id=f"CRED_{mem_id.upper()}",
+                    narrative=narrative,
+                    memory_type=MemoryType.CREDENTIAL_REF,
+                    portable=False,
+                    metadata={"env_key": env_key, "present": True},
+                ))
 
     def _boot_integrity_check(self):
         """
