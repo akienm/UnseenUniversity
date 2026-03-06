@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import os
+import urllib.request
 import platform
 import threading
 import time
@@ -471,30 +472,34 @@ class BatchKoboldPool:
     Secondary pool for slow/deep batch reasoning (#29).
 
     Uses machines.json `koboldcpp_port_batch` field — machines running a larger
-    model (7B Q4) on a second KoboldCpp instance (default port 5002).
+    model (14B Q4) on a second KoboldCpp instance (default port 5002).
 
     Key differences from LocalKoboldPool:
     - No latency budget enforcement — batch work has no interactive time pressure
     - Longer timeout (5 min default, configurable BATCH_TIMEOUT_SECONDS)
     - Prefers wired/priority.background machines over realtime (save fast machines
       for interactive use)
-    - Falls back to LocalKoboldPool if no batch machine is available
-
-    Usage: for proactive habit impulses (Confluence reading, ring review, document
-    summarization) where quality matters more than speed.
+    - OpenRouter fallback (qwen/qwen2.5-14b-instruct) when local is slow or down
+    - Duration tracking: if recent calls average > BATCH_SLOW_THRESHOLD_SECS,
+      prefer OpenRouter over local
 
     machines.json schema extension (optional per machine):
-      "koboldcpp_port_batch": 5002        — port of the 7B KoboldCpp instance
-      "koboldcpp_model_batch": "Qwen2.5-7B-Instruct-Q4_K_M"  — informational label
+      "koboldcpp_port_batch": 5002
+      "koboldcpp_model_batch": "Qwen2.5-14B-Instruct-Q4_K_M"  — informational label
     """
 
-    BATCH_TIMEOUT_SECONDS = int(os.getenv("BATCH_TIMEOUT_SECONDS", "300"))
-    BATCH_PORT_DEFAULT    = int(os.getenv("KOBOLDCPP_BATCH_PORT", "5002"))
+    BATCH_TIMEOUT_SECONDS    = int(os.getenv("BATCH_TIMEOUT_SECONDS", "300"))
+    BATCH_PORT_DEFAULT       = int(os.getenv("KOBOLDCPP_BATCH_PORT", "5002"))
+    BATCH_SLOW_THRESHOLD_SECS = int(os.getenv("BATCH_SLOW_THRESHOLD_SECS", "3600"))
+    BATCH_OR_MODEL           = os.getenv("BATCH_OR_MODEL", "qwen/qwen2.5-14b-instruct")
+    _DURATION_WINDOW         = 5   # rolling window for slow detection
 
     def __init__(self, fallback: "LocalKoboldPool | None" = None):
         self._fallback = fallback
         self._reasoner: "KoboldCppReasoner | None" = None
         self._batch_host: str | None = None
+        self._batch_model_label: str = ""
+        self._recent_durations: list[float] = []   # last N call durations in seconds
         self._refresh()
 
     def _refresh(self) -> None:
@@ -514,8 +519,9 @@ class BatchKoboldPool:
             except ValueError:
                 continue
             host = f"http://{m['ip']}:{port}"
-            self._reasoner  = KoboldCppReasoner(host=host)
-            self._batch_host = host
+            self._reasoner        = KoboldCppReasoner(host=host)
+            self._batch_host      = host
+            self._batch_model_label = str(m.get("koboldcpp_model_batch", ""))
             return
 
         # No dedicated batch machine — check local env override
@@ -537,6 +543,45 @@ class BatchKoboldPool:
         except Exception:
             return False
 
+    def _is_running_slow(self) -> bool:
+        """True if recent local calls average over the slow threshold."""
+        if len(self._recent_durations) < 2:
+            return False
+        avg = sum(self._recent_durations) / len(self._recent_durations)
+        return avg > self.BATCH_SLOW_THRESHOLD_SECS
+
+    def _record_duration(self, seconds: float) -> None:
+        self._recent_durations.append(seconds)
+        if len(self._recent_durations) > self._DURATION_WINDOW:
+            self._recent_durations.pop(0)
+
+    def _reason_openrouter(self, user_input: str) -> tuple[str, float]:
+        """Minimal direct OpenRouter call — no tool use, no system prompt overhead."""
+        import urllib.request, urllib.error
+        api_key = os.getenv("OPENROUTER_API_KEY", "")
+        if not api_key:
+            raise RuntimeError("OPENROUTER_API_KEY not set")
+        payload = {
+            "model": self.BATCH_OR_MODEL,
+            "messages": [{"role": "user", "content": user_input}],
+            "max_tokens": 2048,
+        }
+        req = urllib.request.Request(
+            "https://openrouter.ai/api/v1/chat/completions",
+            data=json.dumps(payload).encode(),
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://github.com/akienm/TheIgors",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            data = json.loads(resp.read())
+        text = data["choices"][0]["message"]["content"]
+        cost = data.get("usage", {}).get("total_tokens", 0) * 0.000001  # rough estimate
+        return text, cost
+
     def reason_batch(
         self,
         user_input: str,
@@ -546,27 +591,70 @@ class BatchKoboldPool:
     ) -> tuple[str, float]:
         """
         Run a batch reasoning request. No latency budget.
-        Falls back to LocalKoboldPool if no batch machine is available.
+
+        Routing:
+        1. If local machine is running slow (avg > BATCH_SLOW_THRESHOLD_SECS),
+           prefer OpenRouter (same model family, cheaper per slow-hour).
+        2. Try local KoboldCpp batch machine.
+        3. Try OpenRouter fallback.
+        4. Try LocalKoboldPool fallback.
+
+        Logs duration to metrics.log for performance tracking.
         """
+        from .forensic_logger import log_batch_call
+
+        # Prefer OpenRouter when local is demonstrably slow
+        if self._is_running_slow():
+            try:
+                t0 = time.time()
+                result = self._reason_openrouter(user_input)
+                elapsed = time.time() - t0
+                log_batch_call(source="openrouter", model=self.BATCH_OR_MODEL,
+                               elapsed_s=elapsed, via="slow_local_bypass")
+                return result
+            except Exception:
+                pass
+
+        # Try local batch machine
         if self._reasoner is not None and self.is_available():
             try:
+                t0 = time.time()
                 result = self._reasoner.reason(
                     user_input, relevant_memories, core_patterns, instance_id
                 )
+                elapsed = time.time() - t0
+                self._record_duration(elapsed)
+                log_batch_call(source="local", model=self._batch_model_label,
+                               elapsed_s=elapsed, via=self._batch_host or "")
                 return result
             except Exception:
-                pass  # Fall through to fallback
+                pass
 
+        # OpenRouter fallback
+        try:
+            t0 = time.time()
+            result = self._reason_openrouter(user_input)
+            elapsed = time.time() - t0
+            log_batch_call(source="openrouter", model=self.BATCH_OR_MODEL,
+                           elapsed_s=elapsed, via="local_unavailable")
+            return result
+        except Exception:
+            pass
+
+        # Last resort: interactive local pool
         if self._fallback is not None:
             return self._fallback.reason(
                 user_input, relevant_memories, core_patterns, instance_id,
                 force_local=True,
             )
-        raise RuntimeError("BatchKoboldPool: no batch machine and no fallback available")
+        raise RuntimeError("BatchKoboldPool: all batch paths exhausted")
 
     def status(self) -> str:
         """One-line status string for dashboard/logging."""
+        slow = f"|slow={'yes' if self._is_running_slow() else 'no'}"
+        avg = (f"|avg={sum(self._recent_durations)/len(self._recent_durations):.0f}s"
+               if self._recent_durations else "")
         if self._batch_host:
             avail = "up" if self.is_available() else "down"
-            return f"batch_pool|host={self._batch_host}|{avail}"
-        return "batch_pool|no_batch_machine_configured"
+            return f"batch_pool|host={self._batch_host}|{avail}{slow}{avg}"
+        return f"batch_pool|no_local|or_model={self.BATCH_OR_MODEL}{slow}"
