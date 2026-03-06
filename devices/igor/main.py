@@ -1646,6 +1646,12 @@ class Igor:
                     f"[Email from {msg.author}, subject='{ri.get('subject', '')}', "
                     f"reply_to='{ri.get('reply_to', msg.author)}']: {msg.content}"
                 )
+            elif msg.source == "web" and msg.author == "claude-code":
+                # CC→Igor machine-to-machine channel: always respond inline, no background jobs
+                synthetic = (
+                    f"[CC_DIRECT|from=claude-code|routing=direct]: {msg.content}\n"
+                    f"[Routing directive: respond inline — no async background jobs for this turn]"
+                )
             elif msg.source == "web":
                 synthetic = f"[Web message from {msg.author}]: {msg.content}"
             else:
