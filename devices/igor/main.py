@@ -515,10 +515,20 @@ class Igor:
         active_jobs  = self.job_manager.list_jobs()
         current_job  = active_jobs[0].job_id if active_jobs else None
 
-        last_ring_content = ring_tail[-1]["content"] if ring_tail else ""
-        session_summary   = (
+        # Build a meaningful session summary from ring — not just the last entry.
+        # Priority: NE narratives (what the system concluded) + job completions +
+        # user queries (what was asked). Skips noise (tool_trace, heartbeat, impulse).
+        _SUMMARY_CATS = {"narrative", "system_info", "greeting", "habit_trace"}
+        _summary_parts = []
+        for e in ring_tail:
+            if e.get("category") in _SUMMARY_CATS:
+                _summary_parts.append(e["content"][:100])
+        # Fall back to last ring content if nothing useful found
+        if not _summary_parts:
+            _summary_parts = [ring_tail[-1]["content"][:120]] if ring_tail else []
+        session_summary = (
             f"{self.interaction_count} interactions, ${self.session_cost:.4f} — "
-            f"{last_ring_content[:120]}"
+            + " | ".join(_summary_parts[-4:])  # most recent 4 meaningful events
         )
 
         ctx = {
