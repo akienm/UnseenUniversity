@@ -236,8 +236,28 @@ def edit_source_file(path: str, content: str, reason: str) -> str:
                 f"This attempt has been logged to blocked_edits.log."
             )
 
-        target = _resolve(path)
+        # GitHub #69: HIGH inertia gate — files at >=0.90 require human approval via arbiter
         inertia, label = _get_inertia(path)
+        if label == "HIGH":
+            from ..arbiter import queue as _arbiter_queue
+            arbiter_id = _arbiter_queue.submit(
+                description=f"HIGH-inertia self-edit request: igor/{path}",
+                context=reason,
+                action_type="high_inertia_edit",
+                threshold_reason=f"inertia={inertia:.2f} — gate requires human approval (GitHub #69)",
+                metadata={"path": path, "inertia": inertia},
+            )
+            _log_blocked_edit(path)
+            log_self_edit(file=path, blocked=True, block_reason=f"HIGH_INERTIA_GATE|arbiter#{arbiter_id}")
+            return (
+                f"BLOCKED_HIGH_INERTIA: igor/{path} (inertia={inertia:.2f}).\n"
+                f"Self-edits to HIGH-inertia files require human approval (GitHub #69).\n"
+                f"Submitted to arbiter queue as item #{arbiter_id}. "
+                f"Akien will review via /arbiter or the web dashboard.\n"
+                f"Reason: {reason}"
+            )
+
+        target = _resolve(path)
         warning = _inertia_warning(path, inertia, label)
 
         # Syntax check before writing anything
@@ -313,11 +333,31 @@ def patch_source_file(path: str, old_string: str, new_string: str, reason: str) 
                 f"This attempt has been logged to blocked_edits.log."
             )
 
+        # GitHub #69: HIGH inertia gate — files at >=0.90 require human approval via arbiter
+        inertia, label = _get_inertia(path)
+        if label == "HIGH":
+            from ..arbiter import queue as _arbiter_queue
+            arbiter_id = _arbiter_queue.submit(
+                description=f"HIGH-inertia self-edit request: igor/{path}",
+                context=reason,
+                action_type="high_inertia_edit",
+                threshold_reason=f"inertia={inertia:.2f} — gate requires human approval (GitHub #69)",
+                metadata={"path": path, "inertia": inertia},
+            )
+            _log_blocked_edit(path)
+            log_self_edit(file=path, blocked=True, block_reason=f"HIGH_INERTIA_GATE|arbiter#{arbiter_id}")
+            return (
+                f"BLOCKED_HIGH_INERTIA: igor/{path} (inertia={inertia:.2f}).\n"
+                f"Self-edits to HIGH-inertia files require human approval (GitHub #69).\n"
+                f"Submitted to arbiter queue as item #{arbiter_id}. "
+                f"Akien will review via /arbiter or the web dashboard.\n"
+                f"Reason: {reason}"
+            )
+
         target = _resolve(path)
         if not target.exists():
             return f"PATCH REJECTED: File not found: igor/{path}"
 
-        inertia, label = _get_inertia(path)
         warning = _inertia_warning(path, inertia, label)
 
         original = target.read_text(encoding="utf-8")
