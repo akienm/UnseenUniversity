@@ -33,10 +33,10 @@ _RING_CONTEXT_LIMIT = 5
 # This prevents a single large command output (find, cat big file, etc.) from
 # blowing up the context window.  Big tasks should be decomposed, not ingested
 # in one shot.
-TOOL_RESULT_MAX_CHARS = 20_000   # ~5 K tokens — generous for real data
+TOOL_RESULT_MAX_CHARS = 8_000    # ~2 K tokens — enough for real data; trim forces decomposition
 MAX_TURNS = 25                   # hard limit on tool-call rounds per session
-CONTEXT_WARN_CHARS = 100_000     # ~25 K tokens total messages — emit a warning
-CONTEXT_HARD_CAP_CHARS = 150_000 # hard trim threshold — drop oldest tool results above this
+CONTEXT_WARN_CHARS = 80_000      # ~20 K tokens — warn earlier, prompt breaking into steps
+CONTEXT_HARD_CAP_CHARS = 120_000 # hard trim — drop oldest tool results above this
 
 
 class BaseReasoner(ABC):
