@@ -559,6 +559,98 @@ class MilieuSource(BasePushSource):
         return [obs_id]
 
 
+# ── ProactiveHabitSource ──────────────────────────────────────────────────────
+
+class ProactiveHabitSource(BasePushSource):
+    """
+    Fires proactive PROC habits at scheduled intervals (#73/#101).
+
+    PROC memories with metadata habit_type="proactive" may declare a schedule:
+      - "session_start"  — fires once per session on first push() call
+      - "interval:N"     — fires every N seconds (N is an integer)
+
+    Fires by pushing ACTION_IMPULSE to TWM with source="proactive_habit".
+    The main loop's _drain_action_impulses() consumes these and routes them
+    through _process() as synthetic impulses, so Igor acts without being asked.
+
+    Example: a "go read confluence" habit with schedule="session_start" will
+    trigger Igor to absorb new Confluence content every time he wakes up.
+    """
+    name = "proactive_habit"
+    CHECK_INTERVAL_SEC = 60  # Check schedules every minute
+
+    def __init__(self):
+        self._last_check: Optional[datetime] = None
+        self._session_fired: set = set()   # habit IDs already fired this session
+        self._interval_last: dict = {}     # habit_id → datetime last fired
+
+    def push(self, cortex) -> list[int]:
+        now = datetime.now()
+        if (self._last_check is not None
+                and (now - self._last_check).total_seconds() < self.CHECK_INTERVAL_SEC):
+            return []
+        self._last_check = now
+
+        try:
+            from ..memory.models import MemoryType
+            habits = cortex.get_by_type(MemoryType.PROCEDURAL)
+        except Exception:
+            return []
+
+        proactive = [h for h in habits if h.metadata.get("habit_type") == "proactive"]
+        if not proactive:
+            return []
+
+        pushed = []
+        for habit in proactive:
+            action = habit.metadata.get("action", "")
+            if not action:
+                continue  # nothing to do
+
+            schedule = habit.metadata.get("schedule", "session_start")
+            if schedule == "session_start":
+                if habit.id in self._session_fired:
+                    continue
+                should_fire = True
+            elif schedule.startswith("interval:"):
+                try:
+                    interval_sec = int(schedule.split(":", 1)[1])
+                except ValueError:
+                    continue
+                last = self._interval_last.get(habit.id)
+                should_fire = (
+                    last is None
+                    or (now - last).total_seconds() >= interval_sec
+                )
+            else:
+                continue  # unknown schedule type — skip
+
+            if not should_fire:
+                continue
+
+            csb = (
+                f"ACTION_IMPULSE|PROACTIVE_HABIT|id={habit.id}"
+                f"|schedule={schedule}"
+                f"|action={action[:200]}"
+            )
+            obs_id = cortex.twm_push(
+                source=self.name,
+                content_csb=csb,
+                salience=0.6,
+                urgency=0.4,
+                ttl_seconds=1800,
+                metadata={"habit_id": habit.id, "habit_type": "proactive"},
+            )
+            pushed.append(obs_id)
+
+            if schedule == "session_start":
+                self._session_fired.add(habit.id)
+            else:
+                self._interval_last[habit.id] = now
+
+        return pushed
+
+
 # ── Module singletons + convenience runner ────────────────────────────────────
 
 memory_surfacer        = MemorySurfacer()
@@ -568,6 +660,7 @@ machines_watcher       = MachinesWatcher()
 inbox_watcher          = InboxWatcher()
 milieu_source          = MilieuSource()
 habit_candidate_source = HabitCandidateSource()
+proactive_habit_source = ProactiveHabitSource()
 
 
 def run_background_sources(cortex) -> int:
@@ -578,7 +671,7 @@ def run_background_sources(cortex) -> int:
     """
     pushed = 0
     for src in (heartbeat_source, memory_surfacer, machines_watcher, inbox_watcher,
-                milieu_source, habit_candidate_source):
+                milieu_source, habit_candidate_source, proactive_habit_source):
         try:
             ids = src.push(cortex)
             pushed += len(ids)
