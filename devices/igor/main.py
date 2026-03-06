@@ -32,7 +32,7 @@ from .cognition.reasoners.koboldcpp_reasoner import preparse, parse_preparse_csb
 from .cognition.reasoners.openrouter_reasoner import preparse_via_openrouter
 from .cognition.forensic_logger import log_tier_selection
 from .cognition.system_prompt import build_boot_message, invalidate_cache
-from .cognition.local_pool import LocalKoboldPool
+from .cognition.local_pool import LocalKoboldPool, BatchKoboldPool
 from .cognition import observer
 from .cognition import milieu as milieu_mod
 from .cognition import basal_ganglia
@@ -92,7 +92,8 @@ class Igor:
 
         self.ne = NarrativeEngine(self.cortex, instance_id)
         self.reasoner = AnthropicReasoner()
-        self.local_pool = LocalKoboldPool()
+        self.local_pool  = LocalKoboldPool()
+        self.batch_pool  = BatchKoboldPool(fallback=self.local_pool)
         self.thalamus = thalamus.Thalamus()
         self.interaction_count = 0
         self.upstream_calls = 0
@@ -1263,16 +1264,25 @@ class Igor:
                         local_only=_local_only,
                     )
             elif is_impulse:
-                # Background NE impulse — always local, take as long as needed, never escalate.
-                # Background work has no UX latency requirement; cost must be zero.
-                self._current_action = "reasoning"; self._current_tier = "tier.2/impulse"
+                # Background impulse — no UX latency requirement; cost must be zero.
+                # #29: PROACTIVE_HABIT impulses (document/batch work) use batch_pool
+                # (7B on port 5002) for better quality. NE impulses use local_pool (1B).
+                _is_batch_impulse = "PROACTIVE_HABIT" in user_input
+                _impulse_pool = self.batch_pool if _is_batch_impulse else self.local_pool
+                _tier_label   = "tier.2/batch" if _is_batch_impulse else "tier.2/impulse"
+                self._current_action = "reasoning"; self._current_tier = _tier_label
                 web_server.broadcast_activity(self._activity_state())
                 try:
-                    response_text, cost = self.local_pool.reason(
-                        user_input, relevant, core, self.instance_id
-                    )
+                    if _is_batch_impulse:
+                        response_text, cost = _impulse_pool.reason_batch(
+                            user_input, relevant, core, self.instance_id
+                        )
+                    else:
+                        response_text, cost = _impulse_pool.reason(
+                            user_input, relevant, core, self.instance_id
+                        )
                     used_api = False
-                    console.print(f"[dim][IMPULSE] local ok[/]")
+                    console.print(f"[dim][IMPULSE/{_tier_label}] local ok[/]")
                 except Exception as e:
                     console.print(f"[dim][IMPULSE] Local failed ({e}) — skipping[/]")
                     response_text = ""

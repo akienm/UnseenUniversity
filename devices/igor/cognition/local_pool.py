@@ -462,3 +462,111 @@ class LocalKoboldPool:
         if self._benchmark:
             parts.append(f"bench={self._benchmark['tokens_per_sec']}tok/s")
         return ", ".join(parts)
+
+
+# ── BatchKoboldPool ────────────────────────────────────────────────────────────
+
+class BatchKoboldPool:
+    """
+    Secondary pool for slow/deep batch reasoning (#29).
+
+    Uses machines.json `koboldcpp_port_batch` field — machines running a larger
+    model (7B Q4) on a second KoboldCpp instance (default port 5002).
+
+    Key differences from LocalKoboldPool:
+    - No latency budget enforcement — batch work has no interactive time pressure
+    - Longer timeout (5 min default, configurable BATCH_TIMEOUT_SECONDS)
+    - Prefers wired/priority.background machines over realtime (save fast machines
+      for interactive use)
+    - Falls back to LocalKoboldPool if no batch machine is available
+
+    Usage: for proactive habit impulses (Confluence reading, ring review, document
+    summarization) where quality matters more than speed.
+
+    machines.json schema extension (optional per machine):
+      "koboldcpp_port_batch": 5002        — port of the 7B KoboldCpp instance
+      "koboldcpp_model_batch": "Qwen2.5-7B-Instruct-Q4_K_M"  — informational label
+    """
+
+    BATCH_TIMEOUT_SECONDS = int(os.getenv("BATCH_TIMEOUT_SECONDS", "300"))
+    BATCH_PORT_DEFAULT    = int(os.getenv("KOBOLDCPP_BATCH_PORT", "5002"))
+
+    def __init__(self, fallback: "LocalKoboldPool | None" = None):
+        self._fallback = fallback
+        self._reasoner: "KoboldCppReasoner | None" = None
+        self._batch_host: str | None = None
+        self._refresh()
+
+    def _refresh(self) -> None:
+        """Find the best batch-capable machine and build a reasoner for it."""
+        machines = _parse_online_machines()
+        # Prefer wired background/batch machines (save realtime for interactive)
+        batch_order = sorted(machines, key=lambda m: (
+            0 if m.get("network", "").lower() == "wired" else 1,
+            PRIORITY_ORDER.get(m.get("priority", ""), 99),
+        ))
+        for m in batch_order:
+            port_str = str(m.get("koboldcpp_port_batch", "")).strip()
+            if not port_str:
+                continue
+            try:
+                port = int(port_str)
+            except ValueError:
+                continue
+            host = f"http://{m['ip']}:{port}"
+            self._reasoner  = KoboldCppReasoner(host=host)
+            self._batch_host = host
+            return
+
+        # No dedicated batch machine — check local env override
+        local_batch = os.getenv("KOBOLDCPP_BATCH_HOST", "")
+        if local_batch:
+            self._reasoner   = KoboldCppReasoner(host=local_batch)
+            self._batch_host = local_batch
+        else:
+            self._reasoner   = None
+            self._batch_host = None
+
+    def is_available(self) -> bool:
+        """Return True if a batch KoboldCpp instance is reachable."""
+        if self._reasoner is None:
+            return False
+        from .reasoners.koboldcpp_reasoner import is_healthy
+        try:
+            return is_healthy(self._batch_host, timeout=3)
+        except Exception:
+            return False
+
+    def reason_batch(
+        self,
+        user_input: str,
+        relevant_memories: list,
+        core_patterns: list,
+        instance_id: str,
+    ) -> tuple[str, float]:
+        """
+        Run a batch reasoning request. No latency budget.
+        Falls back to LocalKoboldPool if no batch machine is available.
+        """
+        if self._reasoner is not None and self.is_available():
+            try:
+                result = self._reasoner.reason(
+                    user_input, relevant_memories, core_patterns, instance_id
+                )
+                return result
+            except Exception:
+                pass  # Fall through to fallback
+
+        if self._fallback is not None:
+            return self._fallback.reason(
+                user_input, relevant_memories, core_patterns, instance_id,
+                force_local=True,
+            )
+        raise RuntimeError("BatchKoboldPool: no batch machine and no fallback available")
+
+    def status(self) -> str:
+        """One-line status string for dashboard/logging."""
+        if self._batch_host:
+            avail = "up" if self.is_available() else "down"
+            return f"batch_pool|host={self._batch_host}|{avail}"
+        return "batch_pool|no_batch_machine_configured"
