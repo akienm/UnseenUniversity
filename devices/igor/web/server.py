@@ -318,11 +318,16 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     .md hr { border: none; border-top: 1px solid #333; margin: 0.5em 0; }
     .md blockquote { border-left: 2px solid #555; margin: 0.3em 0;
                      padding-left: 0.7em; color: #aaa; }
-    #input-row { display: flex; gap: 0.5rem; padding: 0.5rem;
-                 border-top: 1px solid #333; }
+    #name-row { display: flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.5rem 0;
+                border-top: 1px solid #333; font-size: 0.78rem; color: #888; }
+    #sender-name { width: 7em; background: #1e1e30; color: #aaa; border: 1px solid #444;
+                   padding: 0.2rem 0.4rem; font-family: monospace; font-size: 0.78rem; }
+    #input-row { display: flex; gap: 0.5rem; padding: 0.3rem 0.5rem 0.5rem; }
     #input { flex: 1; background: #2a2a3e; color: #e0e0e0;
              border: 1px solid #555; padding: 0.5rem;
-             font-family: monospace; font-size: 1rem; }
+             font-family: monospace; font-size: 1rem;
+             resize: vertical; min-height: 2.2em; max-height: 30vh;
+             overflow-y: auto; }
     button { background: #4a4a8a; color: #fff; border: none;
              padding: 0.5rem 1rem; cursor: pointer; font-family: monospace; }
     button:hover { background: #6a6aaa; }
@@ -354,8 +359,12 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
   <div id="drop-overlay">Drop file to send to Igor</div>
   <div id="chat"></div>
   <div id="status-bar">●  idle</div>
+  <div id="name-row">
+    <label for="sender-name">Your name:</label>
+    <input id="sender-name" type="text" value="akien" maxlength="32" autocomplete="off">
+  </div>
   <div id="input-row">
-    <input id="input" type="text" placeholder="Message Igor..." autocomplete="off">
+    <textarea id="input" placeholder="Message Igor..." autocomplete="off" rows="1"></textarea>
     <button onclick="sendMsg()">Send</button>
     <button onclick="document.getElementById('file-input').click()">📎</button>
     <input id="file-input" type="file" style="display:none" onchange="uploadFile(this)">
@@ -363,14 +372,20 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
   <div id="dashboard"><span>Connecting...</span><span id="ring-toggle" onclick="toggleRing()" title="Toggle ring feed">▼ ring</span></div>
   <div id="ring-feed"><table id="ring-table"><tr><td colspan="2">loading…</td></tr></table></div>
   <script>
-    const chat    = document.getElementById('chat');
-    const input   = document.getElementById('input');
-    const dash    = document.getElementById('dashboard');
-    const status  = document.getElementById('status-bar');
-    const overlay = document.getElementById('drop-overlay');
-    const ringFeed = document.getElementById('ring-feed');
-    const ringTable = document.getElementById('ring-table');
+    const chat       = document.getElementById('chat');
+    const input      = document.getElementById('input');
+    const senderName = document.getElementById('sender-name');
+    const dash       = document.getElementById('dashboard');
+    const status     = document.getElementById('status-bar');
+    const overlay    = document.getElementById('drop-overlay');
+    const ringFeed   = document.getElementById('ring-feed');
+    const ringTable  = document.getElementById('ring-table');
     let ws, dragDepth = 0, ringOpen = false;
+
+    // Persist sender name in localStorage
+    const _savedName = localStorage.getItem('igor_sender_name');
+    if (_savedName) senderName.value = _savedName;
+    senderName.addEventListener('change', () => localStorage.setItem('igor_sender_name', senderName.value));
 
     function toggleRing() {
       ringOpen = !ringOpen;
@@ -525,12 +540,17 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     }
 
     function sendMsg() {
-      const text = input.value.trim();
-      if (!text || !ws || ws.readyState !== 1) return;
+      const rawText = input.value.trim();
+      if (!rawText || !ws || ws.readyState !== 1) return;
+      const name = (senderName.value.trim() || 'akien').toLowerCase();
+      const text = name === 'akien' ? rawText : name + ': ' + rawText;
       ws.send(JSON.stringify({type: 'message', content: text}));
       input.value = '';
     }
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') sendMsg(); });
+    // Enter sends; Shift+Enter inserts newline in textarea
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+    });
 
     async function uploadFile(el) {
       const file = el.files[0];
