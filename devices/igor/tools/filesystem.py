@@ -1,13 +1,12 @@
 """
-Filesystem tools - sandboxed to /home/akien (Igor's workspace root).
+Filesystem tools.
 
-Accessible paths (relative to workspace root /home/akien):
-  TheIgors/thoughts/       - Research notes, design thoughts (read/write)
-  TheIgors/design_docs/    - Architecture CSB docs (read/write)
-  TheIgors/wild_igor/      - Source code (read; writes via self_edit tools)
-  TheIgors/data/           - SQLite DB etc. (read only recommended)
+Read/write tools (sandboxed to /home/akien):
+  read_file, write_file, list_directory — paths relative to /home/akien
+  Cannot read or write outside /home/akien.
 
-Cannot read or write outside /home/akien.
+System read-only tools (full filesystem, read only):
+  read_system_file, list_system_dir — absolute paths required, no writes
 """
 
 from pathlib import Path
@@ -92,6 +91,59 @@ def list_directory(path: str = ".") -> str:
         return f"Error listing directory: {e}"
 
 
+def read_system_file(path: str) -> str:
+    """Read any file on the system (read-only, no sandbox). Absolute path required."""
+    try:
+        target = Path(path).resolve()
+        if not target.is_absolute():
+            return "Error: read_system_file requires an absolute path (e.g. /etc/hostname)."
+        if not target.exists():
+            return f"Error: File not found: {path}"
+        if not target.is_file():
+            return f"Error: Not a file: {path}"
+        if target.suffix.lower() == ".pdf":
+            try:
+                import pypdf
+                reader = pypdf.PdfReader(str(target))
+                pages = [f"--- Page {i+1} ---\n{p.extract_text()}" for i, p in enumerate(reader.pages) if p.extract_text()]
+                return "\n\n".join(pages) if pages else "Error: PDF has no extractable text."
+            except ImportError:
+                return "Error: pypdf not installed."
+            except Exception as e:
+                return f"Error reading PDF: {e}"
+        return target.read_text(encoding="utf-8", errors="replace")
+    except PermissionError:
+        return f"Error: Permission denied: {path}"
+    except Exception as e:
+        return f"Error reading file: {e}"
+
+
+def list_system_dir(path: str) -> str:
+    """List a directory anywhere on the system (read-only). Absolute path required."""
+    try:
+        target = Path(path).resolve()
+        if not target.is_absolute():
+            return "Error: list_system_dir requires an absolute path (e.g. /home/akien)."
+        if not target.exists():
+            return f"Error: Not found: {path}"
+        if not target.is_dir():
+            return f"Error: Not a directory: {path}"
+        entries = sorted(target.iterdir())
+        if not entries:
+            return f"(empty: {path})"
+        lines = []
+        for e in entries:
+            if e.is_dir():
+                lines.append(f"[DIR ] {e.name}/")
+            else:
+                lines.append(f"[FILE] {e.name}  ({e.stat().st_size} bytes)")
+        return "\n".join(lines)
+    except PermissionError:
+        return f"Error: Permission denied: {path}"
+    except Exception as e:
+        return f"Error listing directory: {e}"
+
+
 # Register tools
 registry.register(Tool(
     name="read_file",
@@ -143,4 +195,38 @@ registry.register(Tool(
         "required": [],
     },
     fn=list_directory,
+))
+
+registry.register(Tool(
+    name="read_system_file",
+    description=(
+        "Read any file on akiendelllinux's filesystem (read-only). "
+        "Absolute path required (e.g. /etc/hostname, /proc/cpuinfo, /home/akien/.bashrc). "
+        "Use this to learn about the machine, installed software, config files, and OneDrive share paths."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "path": {"type": "string", "description": "Absolute path to the file"},
+        },
+        "required": ["path"],
+    },
+    fn=read_system_file,
+))
+
+registry.register(Tool(
+    name="list_system_dir",
+    description=(
+        "List a directory anywhere on akiendelllinux's filesystem (read-only). "
+        "Absolute path required (e.g. /home/akien, /mnt, /etc). "
+        "Use this to discover mount points, installed packages, OneDrive share location, etc."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "path": {"type": "string", "description": "Absolute path to the directory"},
+        },
+        "required": ["path"],
+    },
+    fn=list_system_dir,
 ))
