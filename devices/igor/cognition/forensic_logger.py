@@ -266,6 +266,28 @@ def log_anomaly(
         pass  # Logging must never crash the main loop
 
 
+def log_batch_call(
+    *,
+    source: str,       # "local" | "openrouter"
+    model: str,
+    elapsed_s: float,
+    via: str = "",     # host URL or bypass reason
+) -> None:
+    """Log one batch pool call to metrics.log for performance tracking."""
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        path = LOG_DIR / "cognition_metrics.log"
+        entry = (
+            f"{_ts()}|batch_call|{source}|model={model}"
+            f"|elapsed={elapsed_s:.1f}s"
+            + (f"|via={via}" if via else "") + "\n"
+        )
+        with path.open("a", encoding="utf-8") as f:
+            f.write(entry)
+    except Exception:
+        pass
+
+
 def log_tier_selection(
     *,
     tiers_available: list,
