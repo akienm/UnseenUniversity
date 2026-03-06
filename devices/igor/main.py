@@ -1167,12 +1167,23 @@ class Igor:
                 _llm_habit = None  # reject — trigger phrase not present in input
         habit = _llm_habit or _thalamus_habit
 
+        # Proactive habits fire from ProactiveHabitSource, not reactive input triggers.
+        # If one matches here (trigger substring coincidence), let the reasoner handle it.
+        if habit and habit.metadata.get("habit_type") == "proactive":
+            habit = None
+
         if habit:
             dashboard.print_habit_trigger(habit)
             _habit_trigger = habit.metadata.get("trigger", "")
             _habit_source = "llm" if _llm_habit is not None else "thalamus"
+            _habit_type   = habit.metadata.get("habit_type", "action")
             code_ref = habit.metadata.get("code_ref")
-            if code_ref:
+            if _habit_type == "question":
+                # Question-habit: emit stored question without any LLM call
+                response_text = habit.metadata.get(
+                    "question_template", "Can you tell me more about that?"
+                )
+            elif code_ref:
                 # Change 6 / D030: resolve code_ref to builtin tool via registry (POC)
                 # Full argument extraction from user input is future work.
                 from .tools.registry import registry as _tool_registry
@@ -1185,6 +1196,7 @@ class Igor:
                        else "Tool not found in registry.")
                 )
             else:
+                # "action", "response", or unset: return stored action text
                 response_text = habit.metadata.get("action", "Habit executed.")
             self.cortex.record_activation(habit.id, 0.05)
             # Log habit execution to ring + forensic log for auditability
@@ -1525,7 +1537,7 @@ class Igor:
         obs = self.cortex.twm_read(limit=20, include_integrated=False)
         impulses = [
             o for o in obs
-            if o.get("source") == "narrative_engine"
+            if o.get("source") in ("narrative_engine", "proactive_habit")
             and "ACTION_IMPULSE" in o.get("content_csb", "")
         ]
         if not impulses:
