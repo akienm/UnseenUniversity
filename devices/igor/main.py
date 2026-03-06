@@ -160,6 +160,10 @@ class Igor:
         # change.41: relay state
         self._relay_session: RelaySession | None = None
 
+        # Boot-ready gate: False until run() pre-warms the system prompt.
+        # Prevents fuzzy responses to messages queued during __init__.
+        self._boot_ready: bool = False
+
         # Start Discord bot, unified network listener, web UI server, and model boot-check
         discord_bot.start()
         net_listener.start()
@@ -666,6 +670,15 @@ class Igor:
         """
         console.print("[dim]Type your message. /help for commands. /quit to exit.[/]\n")
 
+        # Pre-warm system prompt cache so the first interaction isn't cold.
+        # Also flushes any messages queued during __init__ with a polite deferral.
+        try:
+            from .cognition.system_prompt import build_system_prompt as _bsp
+            _bsp(self.cortex, self.instance_id)
+        except Exception:
+            pass
+        self._boot_ready = True
+
         dashboard.render(
             cortex=self.cortex,
             instance_id=self.instance_id,
@@ -855,6 +868,11 @@ class Igor:
         )
 
     def _process(self, user_input: str, is_impulse: bool = False) -> str:
+        # Boot-ready gate: politely defer if boot pre-warm hasn't finished yet.
+        # Only applies to non-impulse turns — impulses are internal and skip the gate.
+        if not self._boot_ready and not is_impulse:
+            return "Sorry, still waking up — boot sequence running. Give me just a moment."
+
         self.interaction_count += 1
 
         # [DASHBOARD] Signal processing start (#18)
