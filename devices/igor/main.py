@@ -1122,6 +1122,10 @@ class Igor:
         # Impulses/background stay at tier.3 (cheap/fast, no persona needed).
         if not is_impulse and _skip_to == "tier.3":
             _skip_to = "tier.3.5"
+        # #93: thalamus complexity as secondary signal — if thalamus says high and
+        # preparse only got to tier.3/3.5, bump to tier.4
+        if not is_impulse and parsed.complexity == "high" and _skip_to in ("tier.3", "tier.3.5"):
+            _skip_to = "tier.4"
 
         # G1 / #59: milieu.dominance modulates escalation threshold.
         # Low dominance (feeling out of control) → escalate sooner (more capable model).
