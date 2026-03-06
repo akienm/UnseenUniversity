@@ -59,6 +59,11 @@ class TurnRateLimiter:
         The block message is returned as the tool result so the LLM can see it.
         """
         if self._total >= TOTAL_LIMIT:
+            try:
+                from ..cognition.forensic_logger import log_anomaly as _la
+                _la(kind="RATE_LIMIT", detail=f"total={self._total}|tool={tool_name}|limit={TOTAL_LIMIT}")
+            except Exception:
+                pass
             return (
                 f"RATE_LIMIT: Reached {TOTAL_LIMIT} total tool calls this turn. "
                 f"Synthesise your response with what you have so far."
@@ -67,6 +72,11 @@ class TurnRateLimiter:
         limit = TOOL_LIMITS.get(tool_name, DEFAULT_TOOL_LIMIT)
         count = self._counts.get(tool_name, 0)
         if count >= limit:
+            try:
+                from ..cognition.forensic_logger import log_anomaly as _la
+                _la(kind="RATE_LIMIT", detail=f"tool={tool_name}|count={count}|per_turn_limit={limit}")
+            except Exception:
+                pass
             return (
                 f"RATE_LIMIT: {tool_name} called {count} times this turn "
                 f"(per-turn limit={limit}). Use what you have so far."

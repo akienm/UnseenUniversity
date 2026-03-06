@@ -373,6 +373,7 @@ class LocalKoboldPool:
         core_patterns: list[Memory],
         instance_id: str,
         preparse_csb: str = "",
+        force_local: bool = False,
     ) -> tuple[str, float]:
         """
         Try each machine in round-robin order; fall back on failure.
@@ -380,6 +381,8 @@ class LocalKoboldPool:
         Before executing: estimates latency and scores the local tier.
         If estimated latency > LATENCY_BUDGET_SECONDS, raises so the caller
         (main._process_inner) escalates to the cloud chain.
+
+        force_local: skip latency budget check (#90 local_only directive).
         """
         from .forensic_logger import log_routing_decision
 
@@ -387,7 +390,7 @@ class LocalKoboldPool:
         est_latency = self._estimate_latency(user_input)
 
         cost_score = speed_score = tier_score = 0.0
-        if est_latency is not None:
+        if est_latency is not None and not force_local:
             cost_score, speed_score, tier_score = self.weights.score_local(est_latency, budget)
 
             if est_latency > budget:

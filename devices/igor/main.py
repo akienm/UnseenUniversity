@@ -163,6 +163,7 @@ class Igor:
         # Boot-ready gate: False until run() pre-warms the system prompt.
         # Prevents fuzzy responses to messages queued during __init__.
         self._boot_ready: bool = False
+        self._boot_orientation_scored: bool = False  # #112: score first response once
 
         # Start Discord bot, unified network listener, web UI server, and model boot-check
         discord_bot.start()
@@ -184,6 +185,7 @@ class Igor:
 
         # [WARM CONTEXT] Reload warm working memory from previous session
         warm_ctx = self._load_warm_context()
+        self._boot_ring_tail: list = (warm_ctx or {}).get("ring_tail") or []  # #112
 
         # [BOOT MESSAGE] Synthetic first-turn orientation — Igor reads this before any input
         try:
@@ -550,6 +552,18 @@ class Igor:
         except Exception as e:
             console.print(f"[dim][WARM] warm context save failed: {e}[/]")
 
+        # #116: log escalation rate at end of session for predictor network trend tracking
+        try:
+            from .cognition.forensic_logger import log_cognition_metric as _lcm
+            _rate = self.upstream_calls / self.interaction_count if self.interaction_count else 0.0
+            _lcm(
+                metric="escalation_rate",
+                value=_rate,
+                detail=f"cloud={self.upstream_calls}|total={self.interaction_count}|cost=${self.session_cost:.4f}",
+            )
+        except Exception:
+            pass
+
     def _load_warm_context(self):
         """
         Reload warm working memory from the previous session on boot.
@@ -777,6 +791,7 @@ class Igor:
         core: list,
         skip_to: str = "tier.3",
         preparse_csb: str = "",
+        local_only: bool = False,
     ) -> tuple[str, float, bool]:
         """
         WO5 priority escalation ladder (tiers 3-6).
@@ -789,9 +804,18 @@ class Igor:
 
         skip_to: minimum tier to start at ("tier.3"|"tier.3.5"|"tier.4"|"tier.5").
                  Interactive human turns default to "tier.3.5" (D035).
+        local_only: if True, skip all cloud tiers — return apology if local unavailable.
 
         Returns (response_text, cost_usd, used_cloud_api).
         """
+        if local_only:
+            return (
+                "I'm operating in local-only mode per your instruction, "
+                "but my local model is unavailable right now. "
+                "Please try a simpler task or remove the 'local only' constraint.",
+                0.0,
+                False,
+            )
         last_error: str = ""
 
         # ── tier.3: OR cheap model ──────────────────────────────────────────────
@@ -858,6 +882,8 @@ class Igor:
             console.print(f"[yellow]tier.5 Anthropic failed ({e}), escalating to arbiter...[/]")
 
         # ── tier.6: arbiter alert — all cloud upstreams exhausted ──────────────
+        from .cognition.forensic_logger import log_anomaly as _log_anomaly
+        _log_anomaly(kind="TIER6", detail=f"last_error={last_error[:160]}")
         try:
             from .arbiter import queue as arbiter_queue
             item_id = arbiter_queue.submit(
@@ -1059,6 +1085,11 @@ class Igor:
                 f"signals={complexity['signals_fired']} → {_skip_to}[/]"
             )
 
+        # #90: routing_directive — honour explicit constraints from user
+        _local_only = (parsed.routing_directive == "local_only")
+        if _local_only:
+            console.print("[dim][ROUTING] local_only directive — cloud escalation disabled[/]")
+
         # [JOB TRIGGER] pass.4: create a long-running job when task looks multi-unit
         # Only for non-impulse user messages; only if complexity qualifies
         # G4 / #27: multi-unit jobs now run async — Igor returns immediately.
@@ -1192,7 +1223,8 @@ class Igor:
                 except Exception as e:
                     console.print(f"[yellow]Local pool failed ({e}), trying cloud...[/]")
                     response_text, cost, used_api = self._reason_with_failover(
-                        user_input, relevant, core, skip_to=_skip_to, preparse_csb=pre_csb
+                        user_input, relevant, core, skip_to=_skip_to, preparse_csb=pre_csb,
+                        local_only=_local_only,
                     )
             elif is_impulse:
                 # Background NE impulse — always local, take as long as needed, never escalate.
@@ -1209,17 +1241,62 @@ class Igor:
                     console.print(f"[dim][IMPULSE] Local failed ({e}) — skipping[/]")
                     response_text = ""
                     cost = 0.0
+            elif _local_only:
+                # #90: local_only directive — use local pool, never escalate to cloud
+                self._current_action = "reasoning"; self._current_tier = "tier.2"
+                web_server.broadcast_activity(self._activity_state())
+                dashboard.print_reasoning(used_api=False)
+                try:
+                    response_text, cost = self.local_pool.reason(
+                        user_input, relevant, core, self.instance_id, force_local=True
+                    )
+                    used_api = False
+                    console.print(f"[dim](local_only/tier.2 | session_cost: ${self.session_cost:.4f})[/]")
+                except Exception as e:
+                    console.print(f"[yellow]Local pool failed in local_only mode ({e})[/]")
+                    response_text = (
+                        "I'm operating in local-only mode per your instruction, "
+                        "but my local model is unavailable right now. "
+                        "Please try a simpler task or remove the 'local only' constraint."
+                    )
+                    cost = 0.0
+                    used_api = False
             else:
                 # Interactive human turn — tier.3+ directly (D032).
                 # Local 1B is too slow/weak for conversational UX on no-GPU hardware.
                 # Cloud cheap (gpt-4o-mini ~$0.001/turn) is the correct default.
+
+                # #109: cloud escalation habit evaluation — append nudge to preparse_csb
+                # so cloud model can identify recurring patterns and trigger habit compilation.
+                # Also surface any high-activation memory candidates from TWM (#106/#108).
+                _habit_nudge = (
+                    "\n\n[ESCALATION NOTE] This request reached cloud reasoning. "
+                    "After responding, consider: does this request represent a recurring pattern "
+                    "you will see again? If yes, end your response with a habit compilation trigger: "
+                    "'build a habit for: [short description] — whenever [trigger phrase], [action]'. "
+                    "Only do this if a clear, general pattern exists — skip if this is one-off."
+                )
+                try:
+                    _twm_candidates = self.cortex.twm_read(limit=20, include_integrated=False)
+                    _cands = [
+                        o for o in _twm_candidates
+                        if o.get("source") == "habit_candidate"
+                    ][:3]
+                    if _cands:
+                        _habit_nudge += "\n\nHigh-activation memory candidates for possible habituation:"
+                        for _c in _cands:
+                            _habit_nudge += f"\n  • {_c['content_csb'][:150]}"
+                except Exception:
+                    pass
+                _pre_csb_with_nudge = pre_csb + _habit_nudge
+
                 dashboard.print_reasoning(used_api=True)
                 self._current_action = "reasoning"
                 web_server.broadcast_activity(self._activity_state())
                 with Live(Spinner("dots", text=" Thinking..."), console=console,
                           transient=True, refresh_per_second=8):
                     response_text, cost, used_api = self._reason_with_failover(
-                        user_input, relevant, core, skip_to=_skip_to, preparse_csb=pre_csb
+                        user_input, relevant, core, skip_to=_skip_to, preparse_csb=_pre_csb_with_nudge
                     )
                 # G5 / #42: prediction signal — did we need a higher tier than expected?
                 _m = milieu_mod.get()
@@ -1247,6 +1324,23 @@ class Igor:
                 response_text = ""
             else:
                 console.print(f"\n[bold blue]Igor:[/] {response_text}\n")
+                # #112 phase 1: score boot orientation on first interactive response
+                if not self._boot_orientation_scored and not is_impulse:
+                    self._boot_orientation_scored = True
+                    try:
+                        from .cognition.forensic_logger import (
+                            compute_boot_orientation_score as _bos,
+                            log_cognition_metric as _lcm,
+                        )
+                        _score = _bos(response_text, self._boot_ring_tail)
+                        _lcm(
+                            metric="boot_orientation",
+                            value=_score,
+                            detail=f"ring_tail_entries={len(self._boot_ring_tail)}|interaction={self.interaction_count}",
+                        )
+                        console.print(f"[dim][METRICS] boot_orientation={_score:.2f}[/]")
+                    except Exception:
+                        pass
 
         # [AMYGDALA] Assess valence
         valence = pfc.assess_valence(user_input, response_text)

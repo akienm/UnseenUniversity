@@ -190,6 +190,82 @@ def log_routing_decision(
     _prepend("reasoning_calls.log", entry)
 
 
+_METRIC_STOP = frozenset({
+    "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
+    "have", "has", "had", "do", "does", "did", "will", "would", "could",
+    "should", "may", "might", "can", "i", "you", "he", "she", "it", "we",
+    "they", "and", "or", "but", "in", "on", "at", "to", "for", "of",
+    "with", "by", "from", "about", "that", "this", "not", "just", "so",
+})
+
+
+def compute_boot_orientation_score(first_response: str, ring_tail: list[dict]) -> float:
+    """
+    Score how well Igor's first response reflects the session context loaded at boot.
+    Returns 0.0–1.0: fraction of distinct key terms from ring_tail found in response.
+    Pure keyword overlap — no LLM, no cost (#112 phase 1).
+    """
+    import re
+    if not ring_tail or not first_response:
+        return 0.0
+
+    def _terms(text: str) -> set:
+        words = re.findall(r'\b[a-z]{3,}\b', text.lower())
+        return {w for w in words if w not in _METRIC_STOP}
+
+    context_terms: set = set()
+    for entry in ring_tail:
+        context_terms |= _terms(entry.get("content", ""))
+
+    if not context_terms:
+        return 0.0
+
+    response_terms = _terms(first_response)
+    matched = context_terms & response_terms
+    return len(matched) / len(context_terms)
+
+
+def log_cognition_metric(
+    *,
+    metric: str,         # e.g. "boot_orientation", "escalation_rate", "ne_grounding"
+    value: float,
+    detail: str = "",
+) -> None:
+    """
+    Append one cognitive metric sample to cognition_metrics.log (#112).
+    Format: timestamp|metric|value|detail
+    Append-only (newest-last) — suitable for trend analysis over time.
+    """
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        path = LOG_DIR / "cognition_metrics.log"
+        entry = f"{_ts()}|{metric}|{value:.4f}|{detail[:200].replace(chr(10), ' ')}\n"
+        with path.open("a", encoding="utf-8") as f:
+            f.write(entry)
+    except Exception:
+        pass
+
+
+def log_anomaly(
+    *,
+    kind: str,           # RATE_LIMIT | CONTEXT_OVERFLOW | TIER6 | NE_FAIL | ARBITER_BUILDUP
+    detail: str = "",
+) -> None:
+    """
+    Write a curated anomaly entry to cc_alerts.log (#105).
+    CC reads this at session start and after restarts to surface problems proactively.
+    Format: timestamp|kind|detail
+    """
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        path = LOG_DIR / "cc_alerts.log"
+        entry = f"{_ts()}|{kind}|{detail[:200].replace(chr(10), ' ')}\n"
+        with path.open("a", encoding="utf-8") as f:
+            f.write(entry)
+    except Exception:
+        pass  # Logging must never crash the main loop
+
+
 def log_tier_selection(
     *,
     tiers_available: list,

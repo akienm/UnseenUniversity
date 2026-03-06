@@ -228,9 +228,16 @@ class HeartbeatSource(BasePushSource):
             urgency=budget_urgency,  # Change 4: budget alerts scale with severity
         )
 
-        # Proactive Discord ping for CRITICAL/EXHAUSTED (once per session per level)
-        if level in ("CRITICAL", "EXHAUSTED") and level not in self._discord_alerted:
-            self._alert_discord(f"[Igor heartbeat] {msg}")
+        # Alert once per level per session — Discord (CRITICAL/EXHAUSTED) + cc_alerts (all)
+        if level not in self._discord_alerted:
+            # #67: cc_alerts.log so CC sees budget warnings at next session start
+            try:
+                from .forensic_logger import log_anomaly as _la
+                _la(kind=f"BUDGET_{level}", detail=msg)
+            except Exception:
+                pass
+            if level in ("CRITICAL", "EXHAUSTED"):
+                self._alert_discord(f"[Igor heartbeat] {msg}")
             self._discord_alerted.add(level)
 
         return [obs_id]
@@ -414,6 +421,85 @@ class InboxWatcher(BasePushSource):
         return pushed
 
 
+# ── HabitCandidateSource ──────────────────────────────────────────────────────
+
+class HabitCandidateSource(BasePushSource):
+    """
+    Watches for non-PROC memories with high activation_count (#106/#108).
+
+    Any memory accessed repeatedly is a candidate for habituation.
+    When activation_count >= THRESHOLD, surface it to TWM so the NE and
+    cloud escalation nudge (#109) can evaluate habit compilation.
+
+    Rate-limited per candidate so the same memory isn't nagged repeatedly.
+    """
+    name = "habit_candidate"
+    MIN_INTERVAL_SEC  = 600   # Full pass every 10 minutes
+    ACTIVATION_THRESH = 5     # Activations before flagging as candidate
+    CANDIDATE_TTL_SEC = 3600  # Don't re-surface a candidate within 1 hour
+
+    # Types ineligible for habituation (structure memories, not behaviour)
+    _SKIP_TYPES = {"ROOT", "CORE_PATTERN", "PROCEDURAL"}
+
+    def __init__(self):
+        self._last_run: Optional[datetime] = None
+        self._surfaced_at: dict = {}  # memory_id → datetime last surfaced
+
+    def push(self, cortex) -> list[int]:
+        now = datetime.now()
+        if (self._last_run is not None
+                and (now - self._last_run).total_seconds() < self.MIN_INTERVAL_SEC):
+            return []
+        self._last_run = now
+
+        try:
+            from ..memory.models import MemoryType
+            eligible_types = [
+                t for t in MemoryType
+                if t.value not in self._SKIP_TYPES
+            ]
+            all_mems = []
+            for mt in eligible_types:
+                all_mems.extend(cortex.get_by_type(mt))
+        except Exception:
+            return []
+
+        candidates = [
+            m for m in all_mems
+            if m.activation_count >= self.ACTIVATION_THRESH
+        ]
+        if not candidates:
+            return []
+
+        # Sort by activation_count desc; cap at top 5 per cycle to avoid noise
+        candidates.sort(key=lambda m: m.activation_count, reverse=True)
+        candidates = candidates[:5]
+
+        pushed = []
+        for mem in candidates:
+            last = self._surfaced_at.get(mem.id)
+            if last and (now - last).total_seconds() < self.CANDIDATE_TTL_SEC:
+                continue  # surfaced recently — skip
+
+            csb = (
+                f"HABIT_CANDIDATE|id={mem.id}|type={mem.memory_type.value}"
+                f"|activations={mem.activation_count}|inertia={mem.inertia:.2f}"
+                f"|narrative={mem.narrative[:200]}"
+            )
+            obs_id = cortex.twm_push(
+                source=self.name,
+                content_csb=csb,
+                salience=min(0.7, 0.4 + mem.activation_count * 0.02),
+                urgency=0.3,
+                ttl_seconds=1800,
+                metadata={"memory_id": mem.id, "activation_count": mem.activation_count},
+            )
+            pushed.append(obs_id)
+            self._surfaced_at[mem.id] = now
+
+        return pushed
+
+
 # ── MilieuSource ──────────────────────────────────────────────────────────────
 
 class MilieuSource(BasePushSource):
@@ -475,12 +561,13 @@ class MilieuSource(BasePushSource):
 
 # ── Module singletons + convenience runner ────────────────────────────────────
 
-memory_surfacer   = MemorySurfacer()
-heartbeat_source  = HeartbeatSource()
-user_input_source = UserInputSource()
-machines_watcher  = MachinesWatcher()
-inbox_watcher     = InboxWatcher()
-milieu_source     = MilieuSource()
+memory_surfacer        = MemorySurfacer()
+heartbeat_source       = HeartbeatSource()
+user_input_source      = UserInputSource()
+machines_watcher       = MachinesWatcher()
+inbox_watcher          = InboxWatcher()
+milieu_source          = MilieuSource()
+habit_candidate_source = HabitCandidateSource()
 
 
 def run_background_sources(cortex) -> int:
@@ -491,7 +578,7 @@ def run_background_sources(cortex) -> int:
     """
     pushed = 0
     for src in (heartbeat_source, memory_surfacer, machines_watcher, inbox_watcher,
-                milieu_source):
+                milieu_source, habit_candidate_source):
         try:
             ids = src.push(cortex)
             pushed += len(ids)

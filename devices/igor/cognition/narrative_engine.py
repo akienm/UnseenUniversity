@@ -81,10 +81,11 @@ class NarrativeEngine:
     """
 
     def __init__(self, cortex: Cortex, instance_id: str = "wild-0001"):
-        self.cortex      = cortex
-        self.instance_id = instance_id
-        self._last_run:  Optional[datetime] = None
-        self._run_count: int = 0
+        self.cortex         = cortex
+        self.instance_id    = instance_id
+        self._last_run:     Optional[datetime] = None
+        self._run_count:    int = 0
+        self._last_ne_model: str = NE_MODEL  # #84: updated to actual model on each run
 
     # ── Trigger logic ──────────────────────────────────────────────────────────
 
@@ -195,6 +196,11 @@ class NarrativeEngine:
         if result is None:
             if verbose:
                 print("[NE] Both Ollama and Claude failed — skipping this cycle.")
+            try:
+                from .forensic_logger import log_anomaly as _la
+                _la(kind="NE_FAIL", detail="all_local_and_cloud_failed")
+            except Exception:
+                pass
             self._last_run = datetime.now()
             return None
 
@@ -209,7 +215,7 @@ class NarrativeEngine:
             integrated=len(obs_list),
             promoted=promoted,
             impulses=impulses,
-            model=NE_MODEL,
+            model=self._last_ne_model,  # #84: actual model, not stale constant
             elapsed_ms=int((time.perf_counter() - t0) * 1000),
         )
 
@@ -369,7 +375,9 @@ class NarrativeEngine:
                 result = self._parse_ne_json(text)
                 if result is not None:
                     print(f"[NE] KoboldCpp ok ({elapsed:.1f}s)")
-                    reasoning_cache.put(NE_MODEL, prompt, text, max_twm_id)
+                    _kcc_model = _os.getenv("KOBOLDCPP_MODEL", "koboldcpp/llama-3.2-1b")
+                    reasoning_cache.put(_kcc_model, prompt, text, max_twm_id)
+                    self._last_ne_model = _kcc_model  # #84: track actual model used
                     return result
             except Exception as e:
                 elapsed = time.perf_counter() - t0
@@ -389,6 +397,7 @@ class NarrativeEngine:
             if result is not None:
                 print(f"[NE] Ollama ok ({elapsed:.1f}s)")
                 reasoning_cache.put(NE_MODEL, prompt, text, max_twm_id)
+                self._last_ne_model = NE_MODEL  # #84
             return result
         except Exception as e:
             elapsed = time.perf_counter() - t0
