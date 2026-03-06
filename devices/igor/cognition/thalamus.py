@@ -67,6 +67,15 @@ def _detect_routing_directive(text: str) -> str:
     return ""
 
 
+# #100: Proper nouns that must survive stop-word filtering regardless of casing.
+# 'igor' and 'akien' were already excluded from stop_words (#85); this extends
+# the pattern to any name that should stay high-signal.
+PROPER_NOUN_WHITELIST: frozenset[str] = frozenset({
+    "igor", "akien", "leah", "claude", "confluence", "discord",
+    "openrouter", "koboldcpp", "ollama", "anthropic",
+})
+
+
 def _extract_keywords(text: str) -> list:
     # Remove common stop words, extract meaningful terms
     stop_words = {
@@ -77,10 +86,10 @@ def _extract_keywords(text: str) -> list:
         "who", "how", "when", "where", "why", "that", "this", "these",
         "those", "and", "or", "but", "in", "on", "at", "to", "for",
         "of", "with", "by", "from", "about", "as", "into", "through",
-        # NOTE: 'igor' and 'akien' intentionally excluded (#85) — highest-signal terms
     }
     words = re.findall(r'\b[a-zA-Z]{3,}\b', text.lower())
-    return [w for w in words if w not in stop_words]
+    # Keep word if not a stop word, OR if it's a whitelisted proper noun
+    return [w for w in words if w not in stop_words or w in PROPER_NOUN_WHITELIST]
 
 
 def _classify_intent(text: str, keywords: list) -> str:
@@ -105,12 +114,14 @@ def _classify_intent(text: str, keywords: list) -> str:
 
 def _detect_tone(text: str) -> str:
     text_lower = text.lower()
-    if any(w in text_lower for w in ["!", "urgent", "asap", "immediately", "now"]):
+    # #77: urgent requires explicit urgency words — bare "!" no longer qualifies
+    # because "Great!" or "Nice!" are positive, not urgent.
+    if any(w in text_lower for w in ["urgent", "asap", "immediately", "right now", "emergency"]):
         return "urgent"
-    if any(w in text_lower for w in ["?", "how", "why", "what", "curious"]):
-        return "curious"
-    if any(w in text_lower for w in ["frustrated", "annoyed", "wrong", "broken", "stupid"]):
+    if any(w in text_lower for w in ["frustrated", "annoyed", "wrong", "broken", "stupid", "not working"]):
         return "frustrated"
-    if any(w in text_lower for w in ["hello", "hi", "hey", "thanks", "please", "great"]):
+    if any(w in text_lower for w in ["hello", "hi ", "hey", "thanks", "please", "great", "nice", "good work"]):
         return "friendly"
+    if any(w in text_lower for w in ["?", "how", "why", "what", "curious", "explain"]):
+        return "curious"
     return "neutral"
