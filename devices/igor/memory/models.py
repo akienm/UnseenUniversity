@@ -21,6 +21,7 @@ class MemoryType(Enum):
     EXPERIENTIAL = "EXPERIENTIAL"  # Sequential emotional experiences
     FACTUAL = "FACTUAL"         # Objective information
     REFERENCE = "REFERENCE"     # #65: tagged blob — brief narrative + full content in memory_blobs
+    CREDENTIAL_REF = "CREDENTIAL_REF"  # #71: credential pointer — what exists + where, NOT the value
 
 
 # Base inertia by type - network position, activation, and friction adjust these
@@ -34,7 +35,8 @@ BASE_INERTIA = {
     MemoryType.INTERPRETIVE: 0.25,
     MemoryType.EXPERIENTIAL: 0.20,
     MemoryType.FACTUAL: 0.25,
-    MemoryType.REFERENCE: 0.40,  # blobs are intentionally stored — higher base inertia
+    MemoryType.REFERENCE: 0.40,       # blobs are intentionally stored — higher base inertia
+    MemoryType.CREDENTIAL_REF: 0.50,  # credential refs are stable until env changes
 }
 
 
@@ -53,6 +55,7 @@ class Memory:
     friction_history: list = field(default_factory=list)
     timestamp: datetime = field(default_factory=datetime.now)
     metadata: dict = field(default_factory=dict)
+    portable: bool = True  # #71: False = instance-local (machine paths, episodic, credentials)
 
     @property
     def inertia(self) -> float:
