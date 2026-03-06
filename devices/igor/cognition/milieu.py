@@ -82,6 +82,8 @@ class Milieu:
             / "milieu.json"
         )
         self._state = self._load()
+        # #99: session histogram — in-memory only, never persisted
+        self._session_samples: list[tuple[float, float, float]] = []
 
     # ── Persistence ───────────────────────────────────────────────────────────
 
@@ -152,6 +154,8 @@ class Milieu:
         s.tick        += 1
         s.last_update  = time.time()
         self._save()
+        # #99: accumulate session histogram sample
+        self._session_samples.append((s.valence, s.arousal, s.dominance))
         return s
 
     def ingest_ne_state(self, ne_state: dict) -> None:
@@ -248,6 +252,66 @@ class Milieu:
             abs(s.arousal   - prev.arousal),
             abs(s.dominance - prev.dominance),
         )
+
+    def session_histogram(self) -> dict:
+        """
+        #99: Compute per-dimension distribution stats for this session.
+
+        Returns a dict with per-dim (min/max/mean/std/bins) and a session_character
+        classification: bouncy | stressed | focused | calm | insufficient_data.
+
+        Bins are 5 equal buckets across [-1, 1]: very_neg, neg, neutral, pos, very_pos.
+        """
+        samples = self._session_samples
+        if len(samples) < 3:
+            return {"session_character": "insufficient_data", "sample_count": len(samples)}
+
+        def _stats(vals: list[float]) -> dict:
+            n = len(vals)
+            mean = sum(vals) / n
+            std  = (sum((v - mean) ** 2 for v in vals) / n) ** 0.5
+            buckets = [0, 0, 0, 0, 0]  # very_neg, neg, neutral, pos, very_pos
+            for v in vals:
+                idx = min(4, int((v + 1.0) / 0.4))
+                buckets[idx] += 1
+            return {
+                "min": round(min(vals), 3),
+                "max": round(max(vals), 3),
+                "mean": round(mean, 3),
+                "std": round(std, 3),
+                "bins": buckets,  # [very_neg, neg, neutral, pos, very_pos]
+            }
+
+        v_vals = [s[0] for s in samples]
+        a_vals = [s[1] for s in samples]
+        d_vals = [s[2] for s in samples]
+        v_stats = _stats(v_vals)
+        a_stats = _stats(a_vals)
+        d_stats = _stats(d_vals)
+
+        # Session character classification
+        # bouncy   = high std in valence or arousal (oscillating — problem-solving pattern)
+        # stressed = low mean valence + high mean arousal
+        # focused  = low std, moderate-to-high arousal, positive dominance
+        # calm     = low arousal, near-neutral valence
+        if v_stats["std"] > 0.25 or a_stats["std"] > 0.25:
+            character = "bouncy"
+        elif v_stats["mean"] < -0.2 and a_stats["mean"] > 0.2:
+            character = "stressed"
+        elif a_stats["std"] < 0.15 and a_stats["mean"] > 0.0 and d_stats["mean"] > 0.2:
+            character = "focused"
+        elif abs(a_stats["mean"]) < 0.15 and abs(v_stats["mean"]) < 0.15:
+            character = "calm"
+        else:
+            character = "neutral"
+
+        return {
+            "session_character": character,
+            "sample_count": len(samples),
+            "valence": v_stats,
+            "arousal": a_stats,
+            "dominance": d_stats,
+        }
 
     def snapshot(self) -> MilieuState:
         """Return a copy of current state for delta comparison."""

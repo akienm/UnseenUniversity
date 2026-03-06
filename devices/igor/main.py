@@ -564,6 +564,30 @@ class Igor:
         except Exception:
             pass
 
+        # #99: log session emotional histogram at warm_context save
+        try:
+            _m = milieu_mod.get()
+            if _m:
+                _hist = _m.session_histogram()
+                _char = _hist.get("session_character", "unknown")
+                _n    = _hist.get("sample_count", 0)
+                if _n >= 3:
+                    from .cognition.forensic_logger import log_cognition_metric as _lcm2
+                    _lcm2(
+                        metric="session_histogram",
+                        value=float(_n),
+                        detail=(
+                            f"character={_char}"
+                            f"|v_mean={_hist.get('valence',{}).get('mean',0):.2f}"
+                            f"|v_std={_hist.get('valence',{}).get('std',0):.2f}"
+                            f"|a_mean={_hist.get('arousal',{}).get('mean',0):.2f}"
+                            f"|a_std={_hist.get('arousal',{}).get('std',0):.2f}"
+                            f"|d_mean={_hist.get('dominance',{}).get('mean',0):.2f}"
+                        ),
+                    )
+        except Exception:
+            pass
+
     def _load_warm_context(self):
         """
         Reload warm working memory from the previous session on boot.
