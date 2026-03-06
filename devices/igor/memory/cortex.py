@@ -311,7 +311,8 @@ class Cortex:
         Hybrid search (change.37): text candidates → embedding re-rank.
 
         Phase 1 (always runs): naive text search over the memory graph.
-          Filters out ROOT/CORE_PATTERN/IDENTITY/ROLE_MODEL (same as before).
+          Filters out ROOT/CORE_PATTERN only (structural bedrock, always in system prompt).
+          IDENTITY and ROLE_MODEL are now searchable — they are who Igor is (#86/#98).
           Returns up to limit×2 candidates sorted by keyword hit count.
 
         Phase 2 (runs when Ollama is available): embed the query and each
@@ -324,10 +325,9 @@ class Cortex:
         terms = query.lower().split()
         with self._conn() as conn:
             rows = conn.execute(
-                "SELECT * FROM memories WHERE memory_type NOT IN (?, ?, ?, ?) "
+                "SELECT * FROM memories WHERE memory_type NOT IN (?, ?) "
                 "ORDER BY activation_count DESC",
-                (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value,
-                 MemoryType.IDENTITY.value, MemoryType.ROLE_MODEL.value)
+                (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value)
             ).fetchall()
 
         all_memories = [self._to_memory(r) for r in rows]
@@ -457,10 +457,9 @@ class Cortex:
                     if adj_id not in neighbor_scores or neighbor_scores[adj_id] < spread:
                         neighbor_scores[adj_id] = spread
 
-        # Fetch new neighbors from DB; skip infrastructure types
+        # Fetch new neighbors from DB; skip structural infrastructure only
         _SKIP_TYPES = {
             MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value,
-            MemoryType.IDENTITY.value, MemoryType.ROLE_MODEL.value,
         }
         new_neighbors: list = []
         if neighbor_scores:
