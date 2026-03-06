@@ -333,6 +333,16 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     #dashboard { padding: 0.3rem 1rem; background: #0f0f1e;
                  font-size: 0.8rem; color: #888; border-top: 1px solid #222;
                  display: flex; gap: 1rem; }
+    #ring-feed { max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+                 background: #080814; border-top: 1px solid #1a1a30; }
+    #ring-feed.open { max-height: 14em; overflow-y: auto; }
+    #ring-feed table { width: 100%; border-collapse: collapse; font-size: 0.73rem;
+                       font-family: monospace; color: #99a; }
+    #ring-feed td { padding: 0.15rem 0.5rem; border-bottom: 1px solid #111; vertical-align: top; }
+    #ring-feed td.cat { color: #7ec8e3; white-space: nowrap; width: 12em; }
+    #ring-toggle { cursor: pointer; user-select: none; padding: 0 0.4rem; color: #555;
+                   font-size: 0.85em; }
+    #ring-toggle:hover { color: #aaa; }
     #drop-overlay { display: none; position: fixed; inset: 0; z-index: 100;
                     background: rgba(74,74,138,0.8); align-items: center;
                     justify-content: center; font-size: 2rem; color: #fff;
@@ -350,14 +360,31 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     <button onclick="document.getElementById('file-input').click()">📎</button>
     <input id="file-input" type="file" style="display:none" onchange="uploadFile(this)">
   </div>
-  <div id="dashboard"><span>Connecting...</span></div>
+  <div id="dashboard"><span>Connecting...</span><span id="ring-toggle" onclick="toggleRing()" title="Toggle ring feed">▼ ring</span></div>
+  <div id="ring-feed"><table id="ring-table"><tr><td colspan="2">loading…</td></tr></table></div>
   <script>
     const chat    = document.getElementById('chat');
     const input   = document.getElementById('input');
     const dash    = document.getElementById('dashboard');
     const status  = document.getElementById('status-bar');
     const overlay = document.getElementById('drop-overlay');
-    let ws, dragDepth = 0;
+    const ringFeed = document.getElementById('ring-feed');
+    const ringTable = document.getElementById('ring-table');
+    let ws, dragDepth = 0, ringOpen = false;
+
+    function toggleRing() {
+      ringOpen = !ringOpen;
+      ringFeed.className = ringOpen ? 'open' : '';
+      document.getElementById('ring-toggle').textContent = (ringOpen ? '▲' : '▼') + ' ring';
+    }
+
+    function updateRing(entries) {
+      if (!entries || !entries.length) { ringTable.innerHTML = '<tr><td colspan="2">no ring entries</td></tr>'; return; }
+      ringTable.innerHTML = entries.map(r => {
+        const t = new Date(r.ts * 1000).toLocaleTimeString();
+        return '<tr><td class="cat">[' + esc(r.category) + '] ' + t + '</td><td>' + esc(r.content) + '</td></tr>';
+      }).join('');
+    }
 
     function updateStatus(m) {
       const busy = m.busy === true;
@@ -546,7 +573,10 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
         if (d.last_friction   !== undefined) parts.push('f:' + Number(d.last_friction).toFixed(2));
         if (d.arbiter_pending !== undefined && d.arbiter_pending > 0)
           parts.push('⚠ arbiter:' + d.arbiter_pending);
-        dash.innerHTML = parts.length ? parts.map(p => '<span>' + p + '</span>').join('') : '<span>Igor online</span>';
+        const toggle = document.getElementById('ring-toggle');
+        dash.innerHTML = (parts.length ? parts.map(p => '<span>' + p + '</span>').join('') : '<span>Igor online</span>');
+        dash.appendChild(toggle);
+        if (d.ring_recent) updateRing(d.ring_recent);
       } catch(e) {}
     }
 

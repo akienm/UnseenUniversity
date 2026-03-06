@@ -434,12 +434,17 @@ class Igor:
         Igor owns all state; web server calls this via stats_fn, never touches cortex directly.
         """
         from .arbiter import queue as arbiter_queue
+        ring = self.cortex.read_ring_memory(limit=8)
         return {
             "memory_count": self.cortex.total_count(),
             "session_cost": self.session_cost,
             "last_valence": self.last_valence,
             "last_friction": self.last_friction,
             "arbiter_pending": arbiter_queue.count_pending(),
+            "ring_recent": [
+                {"category": r["category"], "content": r["content"][:120], "ts": r["timestamp"]}
+                for r in ring
+            ],
             **self._activity_state(),
         }
 
