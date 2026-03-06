@@ -31,10 +31,13 @@ TOOL_LIMITS: dict[str, int] = {
     "get_reference":         5,
     "arbiter_submit":        3,
     "list_work_orders":      4,
+    "get_work_order":        10,
 }
 
 # Cumulative cap across all tool calls in one turn
-TOTAL_LIMIT: int = 20
+# 40 allows code-review-class tasks (read 8 DSBs + source files + tickets + writes)
+# without blocking runaway loops (true loops hit per-tool limits first)
+TOTAL_LIMIT: int = 40
 
 # Default limit for tools not listed above
 DEFAULT_TOOL_LIMIT: int = 8
