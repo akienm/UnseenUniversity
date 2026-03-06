@@ -512,7 +512,7 @@ Reply with ONLY a JSON object — no other text:
     {{
       "content_csb": "<key points only — what happened, what it means, enough to find more later; NOT verbatim; max 2 sentences>",
       "importance": <0.0-1.0>,
-      "memory_type": "<episodic|interpretive|procedural|factual>",
+      "memory_type": "<choose: episodic=one-time event; interpretive=meaning/insight; procedural=recurring pattern or HOW TO do something; factual=stable reference fact>",
       "valence": <-1.0 to 1.0>
     }}
   ],
