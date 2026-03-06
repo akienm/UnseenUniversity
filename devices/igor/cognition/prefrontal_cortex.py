@@ -47,15 +47,67 @@ def _log_judgment(cortex, judgment_type: str, inputs: dict, result, reasoning: s
     cortex.write_ring(entry, category="judgment")
 
 
+
+# ── Valence anchor sentences (embedded once, cached to disk) ─────────────────
+_POSITIVE_ANCHORS = [
+    "This is excellent, exactly what I needed, thank you",
+    "That worked perfectly, great job",
+    "I really appreciate this, very helpful and clear",
+    "Yes, this is right, I'm happy with this outcome",
+]
+_NEGATIVE_ANCHORS = [
+    "This is wrong and frustrating, that didn't work",
+    "I'm annoyed, this is broken and incorrect",
+    "That's not what I wanted at all, this is bad",
+    "This failed, I'm stuck and this isn't helping",
+]
+
+
+def _embed_anchors():
+    """Return (pos_vecs, neg_vecs) — cached via embedder file cache."""
+    try:
+        from .embedder import embed
+        pos = [v for t in _POSITIVE_ANCHORS if (v := embed(t)) is not None]
+        neg = [v for t in _NEGATIVE_ANCHORS if (v := embed(t)) is not None]
+        return pos, neg
+    except Exception:
+        return [], []
+
+
 def assess_valence(interaction_text: str, response_text: str, cortex=None) -> float:
     """
     Score the emotional valence of an interaction.
     Returns float in [-1.0, 1.0]. Neutral default is 0.3 (slightly positive).
+
+    #94: Uses nomic-embed-text semantic similarity against positive/negative anchor
+    sentences. Falls back to keyword matching if embeddings are unavailable.
     Logs its reasoning if a cortex is provided.
     """
+    combined = (interaction_text + " " + response_text).lower()
+
+    # ── Semantic path (preferred) ─────────────────────────────────────────────
+    try:
+        from .embedder import embed, cosine_similarity
+        text_vec = embed(combined[:500])  # cap to avoid huge embed calls
+        if text_vec is not None:
+            pos_vecs, neg_vecs = _embed_anchors()
+            if pos_vecs and neg_vecs:
+                pos_sim = max(cosine_similarity(text_vec, v) for v in pos_vecs)
+                neg_sim = max(cosine_similarity(text_vec, v) for v in neg_vecs)
+                # Scale: similarity difference → [-1, 1]; shift +0.1 (Igor is usually helpful)
+                result = max(-1.0, min(1.0, (pos_sim - neg_sim) * 2.0 + 0.1))
+                reasoning = f"embedding|pos_sim={pos_sim:.3f}|neg_sim={neg_sim:.3f}|result={result:.2f}"
+                _log_judgment(cortex, "valence", {
+                    "method": "embedding",
+                    "input_len": len(interaction_text),
+                }, result, reasoning)
+                return result
+    except Exception:
+        pass
+
+    # ── Keyword fallback ──────────────────────────────────────────────────────
     positive = ["thank", "great", "excellent", "perfect", "yes", "good", "love", "appreciate"]
     negative = ["wrong", "error", "fail", "bad", "incorrect", "frustrat", "annoyed"]
-    combined = (interaction_text + " " + response_text).lower()
 
     pos_hits = [s for s in positive if s in combined]
     neg_hits = [s for s in negative if s in combined]
@@ -64,12 +116,13 @@ def assess_valence(interaction_text: str, response_text: str, cortex=None) -> fl
 
     if pos + neg == 0:
         result = 0.3
-        reasoning = "no signal words found → neutral default (0.3)"
+        reasoning = "keyword_fallback|no signal words → neutral (0.3)"
     else:
         result = max(-1.0, min(1.0, (pos - neg) / (pos + neg)))
-        reasoning = f"pos_hits={pos_hits} neg_hits={neg_hits} → ({pos}-{neg})/({pos}+{neg})={result:.2f}"
+        reasoning = f"keyword_fallback|pos={pos_hits}|neg={neg_hits}|result={result:.2f}"
 
     _log_judgment(cortex, "valence", {
+        "method": "keyword",
         "input_len": len(interaction_text),
         "response_len": len(response_text),
     }, result, reasoning)

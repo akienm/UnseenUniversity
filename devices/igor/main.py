@@ -1367,13 +1367,18 @@ class Igor:
             _routing_proc_id = "PROC_ROUTING_LOCAL" if not used_api else "PROC_ROUTING_ESCALATE"
             # G14 / #52: tag episodic memories with ambient emotional state at time of creation
             _ep_milieu = milieu_mod.get().get_state() if milieu_mod.get() else None
+            # #66: amygdala analog — flag high-charge moments so inertia formula
+            # applies charged_boost (+0.05). Threshold: strong valence or high arousal.
+            _ep_arousal   = _ep_milieu.arousal if _ep_milieu else 0.0
+            _ep_dominance = _ep_milieu.dominance if _ep_milieu else 0.0
+            _emotionally_charged = abs(valence) > 0.5 or abs(_ep_arousal) > 0.5
             ep = Memory(
                 narrative=f"User: {user_input[:80]} → Igor responded about {parsed.intent}",
                 memory_type=MemoryType.EPISODIC,
                 parent_id="CP3",  # "There's always a why"
                 valence=valence,
-                arousal=_ep_milieu.arousal if _ep_milieu else 0.0,
-                dominance=_ep_milieu.dominance if _ep_milieu else 0.0,
+                arousal=_ep_arousal,
+                dominance=_ep_dominance,
                 metadata={
                     "user_input": user_input,
                     "intent": parsed.intent,
@@ -1382,6 +1387,7 @@ class Igor:
                     "tier_hint": _tier_hint,
                     "complexity_score": complexity["score"],
                     "routing_proc_id": _routing_proc_id,
+                    "emotionally_charged": _emotionally_charged,
                 }
             )
             self.cortex.store(ep)
@@ -1405,6 +1411,35 @@ class Igor:
             new_learning=True,
             used_api=used_api,
         )
+
+        # [MISSION METRICS] #96 — store EXPERIENTIAL memory on notable metric events.
+        # Notable = high friction, strong valence swing, or negative ROI.
+        # Not every turn — keeps EXPERIENTIAL count meaningful, not noisy.
+        if not is_impulse:
+            _roi = self.last_roi or 0.0
+            _notable = friction > 0.5 or abs(valence) > 0.6 or _roi < 0.0
+            if _notable:
+                _metric_narrative = (
+                    f"Interaction outcome: friction={friction:.2f} valence={valence:.2f} "
+                    f"roi={_roi:.2f} used_api={used_api} intent={parsed.intent}"
+                )
+                _metric_mem = Memory(
+                    narrative=_metric_narrative,
+                    memory_type=MemoryType.EXPERIENTIAL,
+                    parent_id="CP3",
+                    valence=valence,
+                    arousal=_ep_arousal,
+                    metadata={
+                        "metric_type": "interaction_outcome",
+                        "friction": friction,
+                        "roi": _roi,
+                        "used_api": used_api,
+                        "intent": parsed.intent,
+                        "interaction_count": self.interaction_count,
+                    },
+                )
+                self.cortex.store(_metric_mem)
+                self.cortex.add_child("CP3", _metric_mem.id)
 
         # [MILIEU] Update ambient emotional state from this interaction's signals
         if not is_impulse:
