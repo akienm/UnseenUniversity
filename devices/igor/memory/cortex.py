@@ -47,8 +47,9 @@ TWM_TTL_EXTENSION_SECONDS = int(
 class Cortex:
     """SQLite-backed memory graph."""
 
-    def __init__(self, db_path: Path):
+    def __init__(self, db_path: Path, instance_id: str = None):
         self.db_path = db_path
+        self._instance_id = instance_id  # #51: scopes TWM to this instance when set
         self._init_db()
 
     def _conn(self):
@@ -94,6 +95,32 @@ class Cortex:
                 conn.execute("ALTER TABLE memories ADD COLUMN portable INTEGER DEFAULT 1")
             except Exception:
                 pass  # Column already exists
+
+            # #128: directed weighted links + last_accessed
+            for _col in (
+                "links_weighted TEXT DEFAULT '{}'",
+                "last_accessed TEXT DEFAULT NULL",
+            ):
+                try:
+                    conn.execute(f"ALTER TABLE memories ADD COLUMN {_col}")
+                except Exception:
+                    pass  # Column already exists
+
+            # #128: one-time migration — promote non-empty link_ids into links_weighted (weight 0.5)
+            _migrate_rows = conn.execute(
+                "SELECT id, link_ids FROM memories "
+                "WHERE links_weighted = '{}' AND link_ids != '[]' AND link_ids IS NOT NULL"
+            ).fetchall()
+            for _row in _migrate_rows:
+                try:
+                    _ids = json.loads(_row["link_ids"] or "[]")
+                    if _ids:
+                        conn.execute(
+                            "UPDATE memories SET links_weighted = ? WHERE id = ?",
+                            (json.dumps({mid: 0.5 for mid in _ids}), _row["id"]),
+                        )
+                except Exception:
+                    pass
 
             # #65: tagged blob storage — full-content reference documents
             conn.execute("""
@@ -148,9 +175,27 @@ class Cortex:
             except Exception:
                 pass  # Column already exists
 
+            # #51: instance_id column — scopes each observation to the instance that pushed it
+            try:
+                conn.execute(
+                    "ALTER TABLE twm_observations ADD COLUMN instance_id TEXT DEFAULT NULL"
+                )
+            except Exception:
+                pass  # Column already exists
+
     # ── Long-term memory graph ─────────────────────────────────────────────────
 
-    def store(self, memory: Memory) -> Memory:
+    def store(
+        self,
+        memory: Memory,
+        link_to: list = None,
+        milieu_arousal: float = 0.0,
+    ) -> Memory:
+        """
+        Persist a memory. If link_to is provided, auto-create directed weighted
+        links to those memories (weight = relevance_score * arousal_factor).
+        Only pass link_to for live-interaction stores — not genesis/boot.
+        """
         memory.narrative = scrub(memory.narrative)
         # Scrub string values in metadata to prevent credential leakage (#19)
         if memory.metadata:
@@ -158,13 +203,25 @@ class Cortex:
                 k: scrub(v) if isinstance(v, str) else v
                 for k, v in memory.metadata.items()
             }
+        # #128: auto-link to contextually active memories at store time
+        if link_to:
+            for related in link_to:
+                if related.id == memory.id:
+                    continue
+                rel_score = getattr(related, "relevance_score", 0.5) or 0.5
+                weight = min(1.0, rel_score * (1.0 + abs(milieu_arousal) * 0.5))
+                if weight > 0.05:
+                    memory.links[related.id] = max(
+                        memory.links.get(related.id, 0.0), weight
+                    )
         with self._conn() as conn:
             conn.execute("""
                 INSERT OR REPLACE INTO memories
                 (id, narrative, memory_type, parent_id, children_ids, link_ids,
                  valence, arousal, dominance,
-                 activation_count, friction_history, timestamp, metadata, portable)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 activation_count, friction_history, timestamp, metadata, portable,
+                 links_weighted, last_accessed)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 memory.id,
                 memory.narrative,
@@ -180,6 +237,8 @@ class Cortex:
                 memory.timestamp.isoformat(),
                 json.dumps(memory.metadata),
                 1 if memory.portable else 0,
+                json.dumps(memory.links),
+                memory.last_accessed.isoformat() if memory.last_accessed else None,
             ))
         return memory
 
@@ -228,6 +287,7 @@ class Cortex:
         if memory:
             memory.activation_count += 1
             memory.friction_history.append(friction)
+            memory.last_accessed = datetime.now()  # #128
             self.store(memory)
 
     # ── #65: Tagged blob storage ───────────────────────────────────────────────
@@ -262,6 +322,115 @@ class Cortex:
                 (mem.id, scrub(content), json.dumps(tags), datetime.now().isoformat()),
             )
         return mem
+
+    def upsert_blob(
+        self,
+        narrative: str,
+        content: str,
+        tags: list[str],
+        source_id: str,
+        extra_metadata: dict = None,
+        parent_id: str = "CP3",
+        valence: float = 0.0,
+    ) -> tuple["Memory", bool]:
+        """
+        Insert or update a blob identified by source_id (#87).
+
+        source_id: unique external key (e.g. "github_issue_#42"). Used to find
+        existing blobs on repeat calls. Stored in metadata["source_id"].
+
+        Returns (Memory, created) where created=True if inserted, False if updated.
+        """
+        from datetime import datetime as _dt
+        tags = [t.lower().strip() for t in tags if t.strip()]
+        now_iso = _dt.now().isoformat()
+        extra = dict(extra_metadata or {})
+        extra["source_id"] = source_id
+        extra["synced_at"] = now_iso
+
+        # Search for existing blob by source_id in metadata JSON
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT id FROM memories WHERE metadata LIKE ?",
+                (f'%"source_id": "{source_id}"%',),
+            ).fetchone()
+
+        if row:
+            mem_id = row["id"]
+            # Update narrative in memories table
+            with self._conn() as conn:
+                existing_meta = conn.execute(
+                    "SELECT metadata FROM memories WHERE id = ?", (mem_id,)
+                ).fetchone()
+                old_meta = json.loads(existing_meta["metadata"] or "{}")
+                old_meta.update(extra)
+                old_meta["tags"] = tags
+                conn.execute(
+                    "UPDATE memories SET narrative = ?, metadata = ? WHERE id = ?",
+                    (scrub(narrative[:500]), json.dumps(old_meta), mem_id),
+                )
+                conn.execute(
+                    "UPDATE memory_blobs SET content = ?, tags = ? WHERE memory_id = ?",
+                    (scrub(content), json.dumps(tags), mem_id),
+                )
+            mem = self.get(mem_id)
+            return mem, False
+        else:
+            meta = {"tags": tags, "has_blob": True}
+            meta.update(extra)
+            mem = Memory(
+                narrative=scrub(narrative[:500]),
+                memory_type=MemoryType.REFERENCE,
+                parent_id=parent_id,
+                valence=valence,
+                metadata=meta,
+            )
+            self.store(mem)
+            with self._conn() as conn:
+                conn.execute(
+                    "INSERT INTO memory_blobs (memory_id, content, tags, created_at) "
+                    "VALUES (?, ?, ?, ?)",
+                    (mem.id, scrub(content), json.dumps(tags), now_iso),
+                )
+            return mem, True
+
+    def store_blob_pair(
+        self,
+        name: str,
+        raw_content: str,
+        distilled_content: str,
+        model_id: str,
+        extra_tags: list[str] = None,
+    ) -> tuple["Memory", "Memory"]:
+        """
+        Two-blob pattern (#68): store raw CSB + model-tagged distilled summary.
+
+        name: short identifier, e.g. "mission" or "detailed_architecture"
+        raw_content: authoritative source (full CSB)
+        distilled_content: compact summary (~60-70% fewer tokens)
+        model_id: model that generated the distilled version (for cache-miss detection)
+        extra_tags: additional tags beyond design_doc/csb/distilled
+
+        Returns (raw_mem, distilled_mem).
+        Tag schema:
+          raw:       ["design_doc", "csb", name]
+          distilled: ["design_doc", "distilled", name, f"model={model_id}"]
+        """
+        extra = extra_tags or []
+        raw_mem, _ = self.upsert_blob(
+            narrative=f"Design doc (raw CSB): {name}",
+            content=raw_content,
+            tags=["design_doc", "csb", name] + extra,
+            source_id=f"design_doc_raw_{name}",
+        )
+        distilled_mem, _ = self.upsert_blob(
+            narrative=f"Design doc (distilled, {model_id}): {name}",
+            content=distilled_content,
+            tags=["design_doc", "distilled", name, f"model={model_id}"] + extra,
+            source_id=f"design_doc_distilled_{name}_{model_id}",
+            extra_metadata={"model_id": model_id, "raw_blob_id": raw_mem.id},
+        )
+        return raw_mem, distilled_mem
 
     def get_blob(self, memory_id: str) -> Optional[str]:
         """Fetch full blob content for a REFERENCE memory. Returns None if not found."""
@@ -417,7 +586,9 @@ class Cortex:
 
                 result = [m for _, m in scored[:limit]]
                 # G9: spreading activation — boost graph neighbors
-                return self._spread_activation(result, {}, limit)
+                result = self._spread_activation(result, {}, limit)
+                self._apply_recency_frequency_boost(result)
+                return result
         except Exception:
             pass  # Embedding unavailable — fall through to text results
 
@@ -427,7 +598,24 @@ class Cortex:
             m.relevance_score = score / max_terms  # type: ignore[attr-defined]
         result = [m for _, m in text_scored[:limit]]
         # G9: spreading activation — boost graph neighbors
-        return self._spread_activation(result, {}, limit)
+        result = self._spread_activation(result, {}, limit)
+        self._apply_recency_frequency_boost(result)
+        return result
+
+    def _apply_recency_frequency_boost(self, memories: list) -> None:
+        """#128: apply small recency + frequency multipliers to relevance scores."""
+        now = datetime.now()
+        for m in memories:
+            score = getattr(m, "relevance_score", 0.0) or 0.0
+            # Recency: decays over 30 days, max +15%
+            if m.last_accessed:
+                days = max(0.0, (now - m.last_accessed).total_seconds() / 86400)
+                recency = max(0.0, 1.0 - days / 30.0)
+                score *= (1.0 + 0.15 * recency)
+            # Frequency: caps at 20 activations, max +10%
+            freq = min(1.0, m.activation_count / 20.0)
+            score *= (1.0 + 0.10 * freq)
+            m.relevance_score = score  # type: ignore[attr-defined]
 
     # G9 / #60: spreading activation ──────────────────────────────────────────
 
@@ -457,25 +645,38 @@ class Cortex:
             base = getattr(m, "relevance_score", 0.1) or 0.1
             spread = base * self._SA_DECAY
 
-            # Gather adjacent node IDs
-            adjacent_ids: list[str] = []
-            if getattr(m, "parent_id", None):
-                adjacent_ids.append(m.parent_id)
-            adjacent_ids.extend(getattr(m, "children_ids", []) or [])
-            adjacent_ids.extend(getattr(m, "link_ids", []) or [])
+            # Gather adjacent node IDs with their spread amounts
+            # #128: weighted links use link weight × decay; unweighted use flat decay
+            spread_map: dict[str, float] = {}
 
-            for adj_id in adjacent_ids:
+            if getattr(m, "parent_id", None):
+                spread_map[m.parent_id] = spread
+            for cid in (getattr(m, "children_ids", []) or []):
+                spread_map[cid] = spread
+
+            # Weighted directed links (new) — spread proportional to weight
+            for link_id, link_weight in (getattr(m, "links", {}) or {}).items():
+                weighted_spread = base * link_weight * self._SA_DECAY
+                spread_map[link_id] = max(spread_map.get(link_id, 0.0), weighted_spread)
+
+            # Legacy link_ids — use flat decay, don't double-count if already in links
+            existing_links = set(getattr(m, "links", {}) or {})
+            for lid in (getattr(m, "link_ids", []) or []):
+                if lid not in existing_links:
+                    spread_map[lid] = max(spread_map.get(lid, 0.0), spread)
+
+            for adj_id, adj_spread in spread_map.items():
                 if adj_id in activated_ids:
                     # Already activated — small boost only
                     existing = next((x for x in activated if x.id == adj_id), None)
                     if existing:
                         existing.relevance_score = min(  # type: ignore[attr-defined]
-                            1.0, getattr(existing, "relevance_score", 0.0) + spread * 0.3
+                            1.0, getattr(existing, "relevance_score", 0.0) + adj_spread * 0.3
                         )
                 else:
                     # New neighbor — record best spread score
-                    if adj_id not in neighbor_scores or neighbor_scores[adj_id] < spread:
-                        neighbor_scores[adj_id] = spread
+                    if adj_id not in neighbor_scores or neighbor_scores[adj_id] < adj_spread:
+                        neighbor_scores[adj_id] = adj_spread
 
         # Fetch new neighbors from DB; skip structural infrastructure only
         _SKIP_TYPES = {
@@ -543,8 +744,12 @@ class Cortex:
             return conn.execute("SELECT COUNT(*) FROM memories").fetchone()[0]
 
     def get_habits(self) -> list:
-        memories = self.get_by_type(MemoryType.PROCEDURAL)
-        return [m for m in memories if m.is_habit]
+        # #128: any memory with a trigger field is a habit — not gated on PROCEDURAL type
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT * FROM memories WHERE metadata LIKE '%\"trigger\"%'"
+            ).fetchall()
+        return [m for m in (self._to_memory(r) for r in rows) if m.is_habit]
 
     def integrity_check(self) -> tuple[bool, list[str]]:
         """
@@ -590,6 +795,20 @@ class Cortex:
 
     def _to_memory(self, row) -> Memory:
         keys = row.keys()
+        # #128: load directed weighted links
+        _links = {}
+        if "links_weighted" in keys:
+            try:
+                _links = json.loads(row["links_weighted"] or "{}")
+            except Exception:
+                pass
+        # #128: load last_accessed
+        _last_accessed = None
+        if "last_accessed" in keys and row["last_accessed"]:
+            try:
+                _last_accessed = datetime.fromisoformat(row["last_accessed"])
+            except Exception:
+                pass
         return Memory(
             id=row["id"],
             narrative=row["narrative"],
@@ -597,12 +816,14 @@ class Cortex:
             parent_id=row["parent_id"],
             children_ids=json.loads(row["children_ids"]),
             link_ids=json.loads(row["link_ids"]),
+            links=_links,
             valence=row["valence"] or 0.0,
             arousal=row["arousal"] if "arousal" in keys else 0.0,
             dominance=row["dominance"] if "dominance" in keys else 0.0,
             activation_count=row["activation_count"],
             friction_history=json.loads(row["friction_history"]),
             timestamp=datetime.fromisoformat(row["timestamp"]),
+            last_accessed=_last_accessed,
             metadata=json.loads(row["metadata"]),
             portable=bool(row["portable"]) if "portable" in keys else True,
         )
@@ -720,10 +941,10 @@ class Cortex:
             cur = conn.execute(
                 """INSERT INTO twm_observations
                    (timestamp, source, content_csb, salience, metadata_json,
-                    integrated, integration_count, expires_at, urgency)
-                   VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?)""",
+                    integrated, integration_count, expires_at, urgency, instance_id)
+                   VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?, ?)""",
                 (now.isoformat(), source, content_csb, salience,
-                 json.dumps(metadata or {}), expires_at, urgency)
+                 json.dumps(metadata or {}), expires_at, urgency, self._instance_id)
             )
             obs_id = cur.lastrowid
 
@@ -751,9 +972,22 @@ class Cortex:
         """
         Read TWM observations (newest last). Default: all including integrated.
         Use include_integrated=False to get only unprocessed ones.
+        When self._instance_id is set, only returns observations for this instance.
         """
+        _iid = self._instance_id
         with self._conn() as conn:
-            if include_integrated:
+            if _iid:
+                if include_integrated:
+                    rows = conn.execute(
+                        "SELECT * FROM twm_observations WHERE instance_id = ? ORDER BY id ASC LIMIT ?",
+                        (_iid, limit)
+                    ).fetchall()
+                else:
+                    rows = conn.execute(
+                        "SELECT * FROM twm_observations WHERE integrated = 0 AND instance_id = ? ORDER BY id ASC LIMIT ?",
+                        (_iid, limit)
+                    ).fetchall()
+            elif include_integrated:
                 rows = conn.execute(
                     "SELECT * FROM twm_observations ORDER BY id ASC LIMIT ?", (limit,)
                 ).fetchall()
@@ -770,6 +1004,7 @@ class Cortex:
                 "content_csb": r["content_csb"],
                 "salience": r["salience"],
                 "urgency": r["urgency"] if "urgency" in r.keys() else 0.2,
+                "instance_id": r["instance_id"] if "instance_id" in r.keys() else None,
                 "metadata": json.loads(r["metadata_json"]),
                 "integrated": bool(r["integrated"]),
                 "integration_count": r["integration_count"],
@@ -780,7 +1015,13 @@ class Cortex:
 
     def twm_count_unintegrated(self) -> int:
         """How many TWM observations are waiting to be integrated?"""
+        _iid = self._instance_id
         with self._conn() as conn:
+            if _iid:
+                return conn.execute(
+                    "SELECT COUNT(*) FROM twm_observations WHERE integrated = 0 AND instance_id = ?",
+                    (_iid,)
+                ).fetchone()[0]
             return conn.execute(
                 "SELECT COUNT(*) FROM twm_observations WHERE integrated = 0"
             ).fetchone()[0]

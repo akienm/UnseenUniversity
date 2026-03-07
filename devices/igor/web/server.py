@@ -348,6 +348,18 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     #ring-toggle { cursor: pointer; user-select: none; padding: 0 0.4rem; color: #555;
                    font-size: 0.85em; }
     #ring-toggle:hover { color: #aaa; }
+    #surprise-feed { max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+                     background: #080814; border-top: 1px solid #1a1a30; }
+    #surprise-feed.open { max-height: 10em; overflow-y: auto; }
+    #surprise-feed table { width: 100%; border-collapse: collapse; font-size: 0.73rem;
+                           font-family: monospace; color: #99a; }
+    #surprise-feed td { padding: 0.15rem 0.5rem; border-bottom: 1px solid #111; vertical-align: top; }
+    #surprise-toggle { cursor: pointer; user-select: none; padding: 0 0.4rem; color: #555;
+                       font-size: 0.85em; }
+    #surprise-toggle:hover { color: #aaa; }
+    #surprise-avg.low  { color: #5c5; }
+    #surprise-avg.mid  { color: #cc5; }
+    #surprise-avg.high { color: #c55; }
     #drop-overlay { display: none; position: fixed; inset: 0; z-index: 100;
                     background: rgba(74,74,138,0.8); align-items: center;
                     justify-content: center; font-size: 2rem; color: #fff;
@@ -369,8 +381,9 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     <button onclick="document.getElementById('file-input').click()">📎</button>
     <input id="file-input" type="file" style="display:none" onchange="uploadFile(this)">
   </div>
-  <div id="dashboard"><span>Connecting...</span><span id="ring-toggle" onclick="toggleRing()" title="Toggle ring feed">▼ ring</span></div>
+  <div id="dashboard"><span>Connecting...</span><span id="ring-toggle" onclick="toggleRing()" title="Toggle ring feed">▼ ring</span><span id="surprise-toggle" onclick="toggleSurprise()" title="Toggle prediction surprise feed">▼ surprise</span></div>
   <div id="ring-feed"><table id="ring-table"><tr><td colspan="2">loading…</td></tr></table></div>
+  <div id="surprise-feed"><table id="surprise-table"><tr><td>loading…</td></tr></table></div>
   <script>
     const chat       = document.getElementById('chat');
     const input      = document.getElementById('input');
@@ -378,9 +391,11 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     const dash       = document.getElementById('dashboard');
     const status     = document.getElementById('status-bar');
     const overlay    = document.getElementById('drop-overlay');
-    const ringFeed   = document.getElementById('ring-feed');
-    const ringTable  = document.getElementById('ring-table');
-    let ws, dragDepth = 0, ringOpen = false;
+    const ringFeed      = document.getElementById('ring-feed');
+    const ringTable     = document.getElementById('ring-table');
+    const surpriseFeed  = document.getElementById('surprise-feed');
+    const surpriseTable = document.getElementById('surprise-table');
+    let ws, dragDepth = 0, ringOpen = false, surpriseOpen = false;
 
     // Persist sender name in localStorage
     const _savedName = localStorage.getItem('igor_sender_name');
@@ -391,6 +406,28 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
       ringOpen = !ringOpen;
       ringFeed.className = ringOpen ? 'open' : '';
       document.getElementById('ring-toggle').textContent = (ringOpen ? '▲' : '▼') + ' ring';
+    }
+
+    function toggleSurprise() {
+      surpriseOpen = !surpriseOpen;
+      surpriseFeed.className = surpriseOpen ? 'open' : '';
+      document.getElementById('surprise-toggle').textContent = (surpriseOpen ? '▲' : '▼') + ' surprise';
+    }
+
+    function updateSurprise(entries, avg) {
+      if (!entries || !entries.length) {
+        surpriseTable.innerHTML = '<tr><td>no surprise entries yet</td></tr>'; return;
+      }
+      surpriseTable.innerHTML = entries.map(e => {
+        const t = new Date(e.ts * 1000).toLocaleTimeString();
+        return '<tr><td>' + t + ' ' + esc(e.content) + '</td></tr>';
+      }).join('');
+      // Update avg badge in status bar
+      const el = document.getElementById('surprise-avg');
+      if (el && avg !== null && avg !== undefined) {
+        el.textContent = 'Δ' + Number(avg).toFixed(2);
+        el.className = avg < 0.2 ? 'low' : avg < 0.5 ? 'mid' : 'high';
+      }
     }
 
     function updateRing(entries) {
@@ -593,10 +630,15 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
         if (d.last_friction   !== undefined) parts.push('f:' + Number(d.last_friction).toFixed(2));
         if (d.arbiter_pending !== undefined && d.arbiter_pending > 0)
           parts.push('⚠ arbiter:' + d.arbiter_pending);
-        const toggle = document.getElementById('ring-toggle');
+        if (d.surprise_avg !== null && d.surprise_avg !== undefined)
+          parts.push('<span id="surprise-avg">Δ' + Number(d.surprise_avg).toFixed(2) + '</span>');
+        const toggle   = document.getElementById('ring-toggle');
+        const stoggle  = document.getElementById('surprise-toggle');
         dash.innerHTML = (parts.length ? parts.map(p => '<span>' + p + '</span>').join('') : '<span>Igor online</span>');
         dash.appendChild(toggle);
+        dash.appendChild(stoggle);
         if (d.ring_recent) updateRing(d.ring_recent);
+        if (d.surprise_recent) updateSurprise(d.surprise_recent, d.surprise_avg);
       } catch(e) {}
     }
 

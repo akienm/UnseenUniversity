@@ -22,10 +22,9 @@ memory_candidates with importance > 0.7 are promoted to LTM automatically.
 
 import json
 import time
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Optional
-
-import ollama as _ollama
 
 from . import reasoning_cache
 from .forensic_logger import log_ne_run
@@ -34,7 +33,7 @@ from ..memory.cortex import Cortex
 from ..memory.models import Memory, MemoryType
 
 # ── Config ─────────────────────────────────────────────────────────────────────
-NE_MODEL              = "gemma3:1b"     # Ollama fallback model (legacy; primary is KoboldCpp via _call_local())
+NE_MODEL              = "koboldcpp"     # label only; actual inference via KoboldCppReasoner in _call_local()
 NE_TRIGGER_OBS        = 5              # Run if >= this many unintegrated obs
 NE_MIN_INTERVAL_SEC   = 30             # Minimum seconds between NE runs
 NE_MAX_INTERVAL_SEC   = 300            # Maximum seconds between NE runs (5 min)
@@ -69,6 +68,17 @@ _SELF_DIAG_KEYWORDS = (
     "self-detect", "self_detect",
 )
 
+# ── Prospective prediction ─────────────────────────────────────────────────────
+
+@dataclass
+class ProspectivePrediction:
+    """Result of a prospective NE pass — prediction made before a turn is processed."""
+    predicted_habit_id: Optional[str]   # None = no habit predicted to fire
+    confidence: float = 0.0             # 0.0–1.0
+    pre_warmed_memory_ids: list = field(default_factory=list)
+
+
+# ── Prompt token cap ───────────────────────────────────────────────────────────
 # token_cap 2000 (WO7): cap observation block at 2000 tokens
 # Rough estimate: 4 chars per token. Oldest observations are dropped first (FIFO).
 NE_MAX_OBS_CHARS = 8000  # 2000 tokens × 4 chars/token
@@ -86,6 +96,83 @@ class NarrativeEngine:
         self._last_run:     Optional[datetime] = None
         self._run_count:    int = 0
         self._last_ne_model: str = NE_MODEL  # #84: updated to actual model on each run
+        self._last_prediction: Optional[ProspectivePrediction] = None  # #121
+
+    # ── Prospective pass (#121) ────────────────────────────────────────────────
+
+    def prospective_pass(self, recent_obs: list[dict], habits: list) -> ProspectivePrediction:
+        """
+        #121: Rule-based forward prediction — no LLM, must be fast (called every turn).
+        Looks at recent TWM observations and predicts which habit is likely to fire.
+        Stores result in self._last_prediction for comparison after basal ganglia resolves.
+        """
+        window = " ".join(
+            o.get("content_csb", "") for o in recent_obs[-5:]
+        ).lower()
+
+        best_habit = None
+        best_score = 0.0
+        for habit in habits:
+            trigger = habit.metadata.get("trigger", "").lower()
+            if not trigger or trigger not in window:
+                continue
+            # Score: base + recency boost from activation_count
+            score = 0.5 + min(0.3, habit.activation_count * 0.01)
+            if score > best_score:
+                best_score = score
+                best_habit = habit
+
+        pred = ProspectivePrediction(
+            predicted_habit_id=best_habit.id if best_habit else None,
+            confidence=best_score,
+            pre_warmed_memory_ids=[best_habit.id] if best_habit else [],
+        )
+        self._last_prediction = pred
+        return pred
+
+    def record_actual(self, actual_habit_id: Optional[str]) -> None:
+        """
+        #121: Compare actual fired habit to prospective prediction.
+        Logs NE_SURPRISE ring entry and boosts TWM salience when surprised.
+        Called by main.py after basal_ganglia.select_habit() resolves.
+        """
+        pred = self._last_prediction
+        self._last_prediction = None
+        if pred is None:
+            return
+
+        predicted = pred.predicted_habit_id
+
+        # No signal if neither predicted nor fired
+        if predicted is None and actual_habit_id is None:
+            return
+
+        if predicted == actual_habit_id:
+            delta = 0.0   # correct prediction — no surprise
+        elif predicted is None:
+            delta = 0.4   # didn't predict a habit but one fired
+        elif actual_habit_id is None:
+            delta = 0.25  # predicted a habit but nothing fired
+        else:
+            delta = 0.8   # wrong habit predicted
+
+        if delta < 0.1:
+            return
+
+        self.cortex.write_ring(
+            f"NE_SURPRISE|predicted={predicted}|actual={actual_habit_id}|delta={delta:.2f}",
+            category="ne_prediction",
+        )
+
+        # Boost salience on recent TWM context proportional to surprise magnitude
+        if delta >= 0.4:
+            try:
+                recent = self.cortex.twm_read(limit=3, include_integrated=False)
+                for obs in recent:
+                    boosted = min(1.0, obs["salience"] + delta * 0.3)
+                    self.cortex.twm_update_salience(obs["id"], boosted)
+            except Exception:
+                pass  # salience boost is advisory — never raise
 
     # ── Trigger logic ──────────────────────────────────────────────────────────
 
@@ -276,10 +363,25 @@ class NarrativeEngine:
                 _valence_enc = _ms.valence if _ms else float(cand.get("valence", 0.0))
                 _emotionally_charged = importance >= 0.85 and abs(_arousal) > 0.4
 
+                # CP parent routing: NE candidates are routed by memory_type/content
+                # CP1=uncertainty/identity threat; CP2=pattern/learning; CP3=causality;
+                # CP4=experience/tool-use; CP5=inner state; CP6=ethics
+                _cp_parent = "CP3"  # default: "there's always a why"
+                if mem_type.value == "PROCEDURAL":
+                    _cp_parent = "CP2"  # patterns and how-to → "I look for patterns"
+                elif mem_type.value == "INTERPRETIVE":
+                    _cp_parent = "CP2"  # meaning/insight → pattern recognition
+                elif mem_type.value in ("EXPERIENTIAL", "EPISODIC"):
+                    _cp_parent = "CP4"  # experience → "I learn from doing"
+                elif mem_type.value == "FACTUAL":
+                    _cp_parent = "CP3"  # stable facts → causality context
+                elif abs(float(cand.get("valence", 0.0))) > 0.6:
+                    _cp_parent = "CP5"  # emotionally significant → inner state
+
                 mem = Memory(
                     narrative=content,
                     memory_type=mem_type,
-                    parent_id="CP3",  # "There's always a why" — NE always has a reason
+                    parent_id=_cp_parent,
                     valence=float(cand.get("valence", 0.0)),
                     arousal=_arousal,
                     metadata={
@@ -381,36 +483,12 @@ class NarrativeEngine:
                     return result
             except Exception as e:
                 elapsed = time.perf_counter() - t0
-                print(f"[NE] KoboldCpp failed ({elapsed:.1f}s): {e} — falling back to Ollama")
+                print(f"[NE] KoboldCpp failed ({elapsed:.1f}s): {e}")
 
-        # ── Ollama fallback ───────────────────────────────────────────────────
-        t0 = time.perf_counter()
-        try:
-            response = _ollama.chat(
-                model=NE_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                options={"temperature": 0.3},
-            )
-            elapsed = time.perf_counter() - t0
-            text = response["message"]["content"].strip()
-            result = self._parse_ne_json(text)
-            if result is not None:
-                print(f"[NE] Ollama ok ({elapsed:.1f}s)")
-                reasoning_cache.put(NE_MODEL, prompt, text, max_twm_id)
-                self._last_ne_model = NE_MODEL  # #84
-            return result
-        except Exception as e:
-            elapsed = time.perf_counter() - t0
-            print(f"[NE] Ollama failed ({elapsed:.1f}s): {e}")
-            return None
-
-    # Keep _call_ollama as alias for backwards compatibility
-    def _call_ollama(self, prompt: str, max_twm_id: int = 0) -> Optional[dict]:
-        """Alias for _call_local (KoboldCpp preferred, Ollama fallback)."""
-        return self._call_local(prompt, max_twm_id)
+        return None
 
     def _call_claude_fallback(self, prompt: str) -> Optional[dict]:
-        """Fall back to Claude if Ollama fails and budget allows."""
+        """Fall back to Claude if KoboldCpp is down and budget allows."""
         try:
             from ..tools.budget import budget_status
             status = budget_status()
@@ -495,7 +573,11 @@ class NarrativeEngine:
         return "(none — first NE run)"
 
     def _build_prompt(self, obs_text: str, last_narrative: str) -> str:
-        return f"""You are Igor's Narrative Engine. Your job: make sense of what's happening.
+        return f"""You are the Narrative Engine for Igor, an AI agent. Your job: make sense of what Igor is experiencing.
+
+IDENTITY GUARD: The subject of all observations is IGOR (not "Claude", not "the AI", not "the model").
+Igor is the agent. Akien is the human. Always write from Igor's perspective.
+"Igor said...", "Igor learned...", "Igor completed..." — never "Claude learned" or "the model did."
 
 SELF-REF GUARD (WO7): Focus ONLY on external events, user interactions, and Igor's goals.
 Do NOT generate content describing your own NE process, loops, recursion, or self-observation.
@@ -508,24 +590,24 @@ CURRENT TWM OBSERVATIONS (✓=integrated, ·=new):
 {obs_text}
 
 Answer these three questions, then produce structured output:
-1. What is happening right now?
+1. What is Igor experiencing right now?
 2. What does this mean for Igor's goals/state?
 3. What (if anything) should Igor do?
 
 Reply with ONLY a JSON object — no other text:
 {{
-  "summary_csb": "<50-100 word dense summary of current state and meaning>",
+  "summary_csb": "<50-100 word dense summary of Igor's current state and what it means>",
   "connections": ["<observation pattern or link noticed>"],
   "salience_updates": [{{"obs_id": <int>, "new_salience": <0.0-1.0>}}],
   "memory_candidates": [
     {{
-      "content_csb": "<key points only — what happened, what it means, enough to find more later; NOT verbatim; max 2 sentences>",
+      "content_csb": "<key points only — what Igor did/learned, what it means; NOT verbatim; max 2 sentences; subject=Igor>",
       "importance": <0.0-1.0>,
-      "memory_type": "<choose: episodic=one-time event; interpretive=meaning/insight; procedural=recurring pattern or HOW TO do something; factual=stable reference fact>",
+      "memory_type": "<choose: episodic=one-time event Igor experienced; interpretive=meaning/insight Igor gained; procedural=pattern or method Igor uses; factual=stable reference fact>",
       "valence": <-1.0 to 1.0>
     }}
   ],
-  "action_impulses": [{{"action": "<what to do>", "urgency": <0.0-1.0>, "why": "<reason>"}}],
+  "action_impulses": [{{"action": "<what Igor should do>", "urgency": <0.0-1.0>, "why": "<reason>"}}],
   "internal_state": {{"valence": <-1.0 to 1.0>, "arousal": <0.0-1.0>, "notes": "<brief>"}}
 }}"""
 

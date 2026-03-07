@@ -174,9 +174,11 @@ def build_boot_message(cortex, instance_id: str = "wild-0001",
         if warm_context.get("ne_state"):
             lines.append(f"  Narrative state: {warm_context['ne_state']}")
         if warm_context.get("ring_tail"):
-            lines.append("  Recent ring (last entries):")
-            for entry in warm_context["ring_tail"][-3:]:
-                lines.append(f"    {entry}")
+            lines.append("  Recent activity (ring tail):")
+            for entry in warm_context["ring_tail"][-8:]:
+                cat = entry.get("category", "note") if isinstance(entry, dict) else "note"
+                content = entry.get("content", str(entry)) if isinstance(entry, dict) else str(entry)
+                lines.append(f"    [{cat}] {content[:200]}")
     else:
         lines.append("WARM CONTEXT: None available (cold start or TTL expired).")
 

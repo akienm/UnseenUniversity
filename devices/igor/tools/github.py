@@ -135,6 +135,103 @@ def get_work_order(number: int) -> str:
         return f"Error getting work order #{number}: {e}"
 
 
+def sync_github_issues(state: str = "all", limit: int = 50, **_) -> str:
+    """
+    Sync GitHub issues into blob storage (#87).
+
+    Uses synced_at metadata for incremental refresh — only fetches issues updated
+    since the last sync. First run does a full fetch. Upserts (no duplicates).
+
+    state: open | closed | all (default: all)
+    limit: max issues to fetch per sync (default: 50)
+    """
+    from datetime import datetime as _dt
+    import os as _os
+
+    db_path = _os.getenv("IGOR_DB_PATH", "memory/igor.db")
+    from pathlib import Path as _Path
+    from ..memory.cortex import Cortex as _Cortex
+    cortex = _Cortex(_Path(db_path))
+
+    # Find last synced_at across all github+issue blobs
+    try:
+        existing = cortex.search_by_tags(["github", "issue"])
+        sync_times = [
+            b.get("created_at", "")
+            for b in existing
+        ]
+        # Use metadata synced_at if available
+        import json as _json
+        sync_times_meta = []
+        for b in existing:
+            mem = cortex.get(b["memory_id"])
+            if mem and mem.metadata.get("synced_at"):
+                sync_times_meta.append(mem.metadata["synced_at"])
+        last_sync = max(sync_times_meta) if sync_times_meta else None
+    except Exception:
+        last_sync = None
+
+    # Fetch issues (incremental if last_sync available)
+    try:
+        repo = _repo()
+        valid_states = ("open", "closed", "all")
+        if state not in valid_states:
+            state = "all"
+        since_param = f"&since={last_sync}" if last_sync else ""
+        issues = _gh_api(
+            "GET",
+            f"/repos/{repo}/issues?state={state}&per_page={limit}&sort=updated&direction=desc{since_param}",
+        )
+    except Exception as e:
+        return f"Error fetching GitHub issues: {e}"
+
+    if not issues:
+        return f"No issues updated since {last_sync or 'beginning'}."
+
+    created_count = 0
+    updated_count = 0
+    now = _dt.now().isoformat()
+
+    for issue in issues:
+        num = issue["number"]
+        title = issue["title"]
+        body = issue.get("body") or ""
+        state_label = issue["state"]
+        labels = [lb["name"] for lb in issue.get("labels", [])]
+        updated_at = issue.get("updated_at", "")
+
+        narrative = f"GitHub #{num}: {title} [{state_label}]"
+        content = (
+            f"# GitHub Issue #{num}: {title}\n"
+            f"State: {state_label}\n"
+            f"Labels: {', '.join(labels) or 'none'}\n"
+            f"Updated: {updated_at[:10]}\n"
+            f"URL: {issue.get('html_url', '')}\n\n"
+            f"{body}"
+        )
+        tags = ["github", "issue"] + labels
+        source_id = f"github_issue_{num}"
+
+        _, was_created = cortex.upsert_blob(
+            narrative=narrative,
+            content=content,
+            tags=tags,
+            source_id=source_id,
+            extra_metadata={"issue_number": num, "issue_state": state_label, "synced_at": now},
+        )
+        if was_created:
+            created_count += 1
+        else:
+            updated_count += 1
+
+    since_str = f"since {last_sync[:10]}" if last_sync else "(full sync)"
+    return (
+        f"GitHub issues synced {since_str}: "
+        f"{created_count} new, {updated_count} updated "
+        f"({len(issues)} fetched total)."
+    )
+
+
 # ── Register tools ─────────────────────────────────────────────────────────────
 
 registry.register(Tool(
@@ -214,4 +311,28 @@ registry.register(Tool(
         "required": ["number"],
     },
     fn=get_work_order,
+))
+
+registry.register(Tool(
+    name="sync_github_issues",
+    description=(
+        "Sync GitHub issues into blob storage for searchable reference. "
+        "Incremental: only fetches issues updated since last sync. "
+        "First run does a full fetch. Safe to call repeatedly — upserts, no duplicates."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "state": {
+                "type": "string",
+                "description": "open | closed | all (default: all)",
+            },
+            "limit": {
+                "type": "integer",
+                "description": "Max issues to fetch per sync (default: 50)",
+            },
+        },
+        "required": [],
+    },
+    fn=sync_github_issues,
 ))
