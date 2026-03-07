@@ -20,6 +20,7 @@ Concrete implementations:
 Eventually: no upstream at all. Pure habit execution replaces reasoning entirely.
 """
 
+import os
 from abc import ABC, abstractmethod
 from ...memory.models import Memory
 
@@ -34,9 +35,24 @@ _RING_CONTEXT_LIMIT = 5
 # blowing up the context window.  Big tasks should be decomposed, not ingested
 # in one shot.
 TOOL_RESULT_MAX_CHARS = 8_000    # ~2 K tokens — enough for real data; trim forces decomposition
-MAX_TURNS = 25                   # hard limit on tool-call rounds per session
+MAX_TURNS = int(os.getenv("IGOR_MAX_TURNS", "8"))  # env-overridable; default 8 prevents runaway agentic burns
 CONTEXT_WARN_CHARS = 80_000      # ~20 K tokens — warn earlier, prompt breaking into steps
 CONTEXT_HARD_CAP_CHARS = 120_000 # hard trim — drop oldest tool results above this
+
+# ── Cost guardrails (shared across all API reasoners) ─────────────────────────
+# IGOR_CALL_COST_WARN_USD: stop the agentic loop if a single call exceeds this.
+# IGOR_RESEARCH_MODE: set true to allow bulk reads (confluence, source files, web).
+# IGOR_RESEARCH_TOOL_CAP: max big-read tool calls per reasoning session when not in research mode.
+CALL_COST_WARN_USD  = float(os.getenv("IGOR_CALL_COST_WARN_USD", "0.30"))
+RESEARCH_TOOL_CAP   = int(os.getenv("IGOR_RESEARCH_TOOL_CAP", "5"))
+RESEARCH_MODE       = os.getenv("IGOR_RESEARCH_MODE", "false").lower() in ("1", "true", "yes")
+
+# Tools that constitute "big reading" — bulk use without IGOR_RESEARCH_MODE triggers a gate.
+BIG_READ_TOOLS = frozenset({
+    "read_source_file", "list_source_files",
+    "confluence_search", "confluence_get_page",
+    "web_search",
+})
 
 
 class BaseReasoner(ABC):

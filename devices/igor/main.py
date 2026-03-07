@@ -940,19 +940,25 @@ class Igor:
                 console.print(f"[yellow]tier.4 OR-claude failed ({e}), trying Anthropic direct...[/]")
 
         # ── tier.5: Anthropic direct ────────────────────────────────────────────
-        self._current_action = "reasoning"; self._current_tier = "tier.5"
-        web_server.broadcast_activity(self._activity_state())
-        try:
-            text, cost = self.reasoner.reason(
-                user_input, relevant, core, self.instance_id,
-                cortex=self.cortex, preparse_csb=preparse_csb
-            )
-            self.upstream_calls += 1
-            console.print(f"[dim](tier.5/anthropic | session_cost: ${self.session_cost + cost:.4f})[/]")
-            return text, cost, True
-        except Exception as e:
-            last_error = str(e)
-            console.print(f"[yellow]tier.5 Anthropic failed ({e}), escalating to arbiter...[/]")
+        # Inhibited by default — Anthropic direct is the most expensive path.
+        # Set IGOR_TIER5_ENABLED=true in .env only when OR is exhausted and Akien approves.
+        if os.getenv("IGOR_TIER5_ENABLED", "false").lower() not in ("1", "true", "yes"):
+            last_error = "tier.5 inhibited (IGOR_TIER5_ENABLED not set)"
+            console.print("[yellow]tier.5 (Anthropic direct) inhibited — set IGOR_TIER5_ENABLED=true to enable[/]")
+        else:
+            self._current_action = "reasoning"; self._current_tier = "tier.5"
+            web_server.broadcast_activity(self._activity_state())
+            try:
+                text, cost = self.reasoner.reason(
+                    user_input, relevant, core, self.instance_id,
+                    cortex=self.cortex, preparse_csb=preparse_csb
+                )
+                self.upstream_calls += 1
+                console.print(f"[dim](tier.5/anthropic | session_cost: ${self.session_cost + cost:.4f})[/]")
+                return text, cost, True
+            except Exception as e:
+                last_error = str(e)
+                console.print(f"[yellow]tier.5 Anthropic failed ({e}), escalating to arbiter...[/]")
 
         # ── tier.6: arbiter alert — all cloud upstreams exhausted ──────────────
         from .cognition.forensic_logger import log_anomaly as _log_anomaly
@@ -1218,7 +1224,7 @@ class Igor:
             _tiers_available.append("tier.3")
         if self.openrouter_reasoner is not None:
             _tiers_available.append("tier.4")
-        if self.reasoner is not None:
+        if self.reasoner is not None and os.getenv("IGOR_TIER5_ENABLED", "false").lower() in ("1", "true", "yes"):
             _tiers_available.append("tier.5")
         _tiers_available.append("tier.6")  # arbiter always last resort
 
