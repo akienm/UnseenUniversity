@@ -47,13 +47,15 @@ class Memory:
     id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     parent_id: Optional[str] = None
     children_ids: list = field(default_factory=list)
-    link_ids: list = field(default_factory=list)
+    link_ids: list = field(default_factory=list)       # legacy — kept for migration compat
+    links: dict = field(default_factory=dict)          # #128: outgoing directed weighted edges {id: weight}
     valence: float = 0.0
     arousal: float = 0.0      # G14 / #52: emotional profile — [-1,1] activated vs deactivated
     dominance: float = 0.0    # G14 / #52: emotional profile — [-1,1] in-control vs overwhelmed
     activation_count: int = 0
     friction_history: list = field(default_factory=list)
     timestamp: datetime = field(default_factory=datetime.now)
+    last_accessed: Optional[datetime] = None           # #128: last activation timestamp
     metadata: dict = field(default_factory=dict)
     portable: bool = True  # #71: False = instance-local (machine paths, episodic, credentials)
 
@@ -83,8 +85,8 @@ class Memory:
 
     @property
     def is_habit(self) -> bool:
-        return (self.memory_type == MemoryType.PROCEDURAL
-                and "trigger" in self.metadata)
+        # #128: any memory with a trigger can be a habit — not gated on PROCEDURAL type
+        return bool(self.metadata.get("trigger"))
 
     def __repr__(self):
         return f"Memory({self.id}, {self.memory_type.value}, inertia={self.inertia:.2f})"

@@ -6,15 +6,14 @@ KoboldCpp is built on llama.cpp and exposes an OpenAI-compatible endpoint
 per-request context_size control, which lets Igor tune context window to task size
 without global model reload.
 
-Replaces Ollama as the preferred local inference backend.  Ollama remains as
-fallback during transition (see LocalReasonerPool in local_pool.py).
+Primary local inference backend. Ollama is retained only for nomic-embed-text embeddings.
 
 Config:
   KOBOLDCPP_HOST         — default "http://localhost:5001"
   KOBOLDCPP_CONTEXT_SIZE — default 8192 (conservative; override per request)
   KOBOLDCPP_MODEL        — informational label; default "hugging-quants/Llama-3.2-1B-Instruct-Q4_K_M-GGUF"
 
-Logging: every call → koboldcpp_calls.log (same format as ollama_calls.log)
+Logging: every call → koboldcpp_calls.log
 """
 
 import http.client
@@ -387,3 +386,64 @@ class KoboldCppReasoner(LocalReasoner):
             elapsed = time.perf_counter() - t0
             _log_call("KoboldCppReasoner.reason", self.host, elapsed, error=str(exc))
             raise
+
+
+# ── summarize_session ─────────────────────────────────────────────────────────
+
+def summarize_session(
+    ring_entries: list,
+    instance_id: str,
+    host: str = "",
+    timeout: int = 60,
+) -> str:
+    """
+    Compress ring memory into a CSB session summary via KoboldCpp.
+    Moved from ollama_reasoner — now uses local KoboldCpp (1B model).
+    Falls back to a simple join if KoboldCpp is unavailable.
+    """
+    if not ring_entries:
+        return f"SESSION_SUMMARY|{instance_id}|empty_session"
+
+    relevant = [
+        e for e in ring_entries
+        if e.get("category") not in ("tool_trace", "interruptor")
+    ][-30:]
+
+    entries_text = "\n".join(
+        f"[{e['timestamp'][11:16]}][{e['category']}] {e['content'][:200]}"
+        for e in relevant
+    )
+
+    prompt = f"""You are a memory compression system. Fill in each labeled field below using the session data.
+Rules: fragments only, no full sentences, max 20 words per field, no preamble, no explanation.
+
+SESSION DATA (oldest first):
+{entries_text}
+
+Fill in each field exactly as shown. Replace <...> with your answer:
+
+TASKS: <what was worked on, comma-separated>
+CHANGES: <decisions or code/config changes made, comma-separated>
+TOOLS: <tool names used and outcome, pipe-separated>
+STATE: <current state and pending work>
+VALENCE: <positive|neutral|negative>"""
+
+    _host = host or os.getenv("KOBOLDCPP_HOST", DEFAULT_HOST)
+    t0 = time.perf_counter()
+    try:
+        payload = {
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 300,
+            "temperature": 0.2,
+            "context_size": 4096,
+        }
+        data    = _post_json(_host, CHAT_ENDPOINT, payload, timeout)
+        summary = data["choices"][0]["message"]["content"].strip()
+        elapsed = time.perf_counter() - t0
+        _log_call("summarize_session", _host, elapsed, 0, 0)
+        return f"SESSION_SUMMARY|{instance_id}|{summary}"
+    except Exception as exc:
+        elapsed = time.perf_counter() - t0
+        _log_call("summarize_session", _host, elapsed, error=str(exc))
+        lines = [e["content"][:120] for e in relevant[-5:]]
+        return f"SESSION_SUMMARY|{instance_id}|fallback: " + " | ".join(lines)

@@ -21,6 +21,7 @@ Consumers:
 
 from __future__ import annotations
 
+import fcntl
 import json
 import os
 import time
@@ -44,6 +45,11 @@ DECAY_DOMINANCE = 0.99   # slowest — sense of control is most stable
 NE_ALPHA_UP   = 0.10
 NE_ALPHA_DOWN = 0.03
 
+# Global milieu: shared across all instances with same ~/.TheIgors root
+SPIKE_THRESHOLD      = 0.15   # min delta on any dim to classify as spike
+GLOBAL_ALPHA_SPIKE   = 0.05   # global EMA speed on notable change
+GLOBAL_ALPHA_ROUTINE = 0.01   # global EMA speed on routine tick
+
 
 # ── State dataclass ────────────────────────────────────────────────────────────
 
@@ -66,6 +72,45 @@ class MilieuState:
     last_update: float = 0.0
 
 
+# ── Global milieu helpers ──────────────────────────────────────────────────────
+
+def _global_milieu_path() -> Path:
+    return Path(os.path.expanduser("~/.TheIgors")) / "milieu_global.json"
+
+
+def _contribute_to_global(state: MilieuState, alpha: float) -> None:
+    """
+    Slow-EMA contribution from one instance's current state to the shared global.
+    Uses a lock file for safe concurrent writes from multiple instances.
+    Never raises — global milieu is advisory.
+    """
+    path = _global_milieu_path()
+    lock_path = path.with_suffix(".lock")
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(lock_path, "w") as lf:
+            fcntl.flock(lf, fcntl.LOCK_EX)
+            try:
+                if path.exists():
+                    try:
+                        data = json.loads(path.read_text(encoding="utf-8"))
+                        g = MilieuState(**{k: v for k, v in data.items()
+                                          if k in MilieuState.__dataclass_fields__})
+                    except Exception:
+                        g = MilieuState()
+                else:
+                    g = MilieuState()
+                g.valence   += alpha * (state.valence   - g.valence)
+                g.arousal   += alpha * (state.arousal   - g.arousal)
+                g.dominance += alpha * (state.dominance - g.dominance)
+                g.last_update = time.time()
+                path.write_text(json.dumps(asdict(g), indent=2), encoding="utf-8")
+            finally:
+                fcntl.flock(lf, fcntl.LOCK_UN)
+    except Exception:
+        pass
+
+
 # ── Core Milieu class ──────────────────────────────────────────────────────────
 
 class Milieu:
@@ -81,7 +126,14 @@ class Milieu:
             / f"igor_{instance_id}"
             / "milieu.json"
         )
+        _local_existed = self._path.exists()
         self._state = self._load()
+        # New instance with no local history: seed from global baseline
+        if not _local_existed:
+            g = self._load_global_baseline()
+            self._state.valence   = g.valence
+            self._state.arousal   = g.arousal
+            self._state.dominance = g.dominance
         # #99: session histogram — in-memory only, never persisted
         self._session_samples: list[tuple[float, float, float]] = []
 
@@ -95,6 +147,17 @@ class Milieu:
                                       if k in MilieuState.__dataclass_fields__})
         except Exception:
             pass  # Corrupt or missing — start fresh
+        return MilieuState()
+
+    def _load_global_baseline(self) -> MilieuState:
+        try:
+            path = _global_milieu_path()
+            if path.exists():
+                data = json.loads(path.read_text(encoding="utf-8"))
+                return MilieuState(**{k: v for k, v in data.items()
+                                      if k in MilieuState.__dataclass_fields__})
+        except Exception:
+            pass
         return MilieuState()
 
     def _save(self) -> None:
@@ -131,6 +194,7 @@ class Milieu:
         friction [0,1]   — from pfc.measure_friction(); high = stressed/activated
         roi      [-1,1]  — from pfc.calculate_roi(); positive = successful/in-control
         """
+        _prev = self.snapshot()
         s = self._state
 
         # Valence dimension: direct mapping
@@ -156,6 +220,8 @@ class Milieu:
         self._save()
         # #99: accumulate session histogram sample
         self._session_samples.append((s.valence, s.arousal, s.dominance))
+        _alpha = GLOBAL_ALPHA_SPIKE if self.delta(_prev) >= SPIKE_THRESHOLD else GLOBAL_ALPHA_ROUTINE
+        _contribute_to_global(s, _alpha)
         return s
 
     def ingest_ne_state(self, ne_state: dict) -> None:
@@ -170,6 +236,7 @@ class Milieu:
         except (TypeError, ValueError):
             return
 
+        _prev = self.snapshot()
         s = self._state
         s.valence = self._clamp(self._blend(s.valence, ne_valence,
                                              NE_ALPHA_UP, NE_ALPHA_DOWN))
@@ -179,6 +246,8 @@ class Milieu:
                                              NE_ALPHA_UP, NE_ALPHA_DOWN))
         s.last_update = time.time()
         self._save()
+        if self.delta(_prev) >= SPIKE_THRESHOLD:
+            _contribute_to_global(s, GLOBAL_ALPHA_SPIKE)
 
     def tick(self) -> MilieuState:
         """
@@ -193,6 +262,7 @@ class Milieu:
         s.dominance  = s.dominance * DECAY_DOMINANCE + (0.3 * (1.0 - DECAY_DOMINANCE))
         s.last_update = time.time()
         self._save()
+        _contribute_to_global(s, GLOBAL_ALPHA_ROUTINE)
         return s
 
     def ingest_surprise(self, predicted_tier: str, actual_tier: str) -> None:
@@ -206,6 +276,7 @@ class Milieu:
         This closes the prediction loop: repeated escalation-surprises erode dominance
         (Igor loses confidence); consistent local resolution gradually rebuilds it.
         """
+        _prev = self.snapshot()
         _TIER_ORDER: dict[str, float] = {
             "tier.1": 1.0, "tier.2": 2.0, "tier.3": 3.0,
             "tier.3.5": 3.5, "tier.4": 4.0, "tier.5": 5.0, "tier.6": 6.0,
@@ -231,6 +302,8 @@ class Milieu:
 
         s.last_update = time.time()
         self._save()
+        if self.delta(_prev) >= SPIKE_THRESHOLD:
+            _contribute_to_global(s, GLOBAL_ALPHA_SPIKE)
 
     def get_state(self) -> MilieuState:
         """Return current state (read-only view)."""

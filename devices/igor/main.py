@@ -28,7 +28,7 @@ from .brainstem.core_patterns import initialize_genesis, get_core_patterns, veri
 from .cognition import thalamus
 from .cognition import prefrontal_cortex as pfc
 from .cognition.reasoners.anthropic import AnthropicReasoner
-from .cognition.reasoners.koboldcpp_reasoner import preparse, parse_preparse_csb, score_memories, _rule_based_csb
+from .cognition.reasoners.koboldcpp_reasoner import preparse, parse_preparse_csb, score_memories, _rule_based_csb, is_healthy as kobold_is_healthy
 from .cognition.reasoners.openrouter_reasoner import preparse_via_openrouter
 from .cognition.forensic_logger import log_tier_selection
 from .cognition.system_prompt import build_boot_message, invalidate_cache
@@ -84,7 +84,7 @@ class Igor:
             self.db_path = DATA_DIR / f"{instance_id}.db"
         DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-        self.cortex = Cortex(self.db_path)
+        self.cortex = Cortex(self.db_path, instance_id=instance_id)
         milieu_mod.init(self.instance_id)
         observer.init(self.cortex)
         self.root_id = initialize_genesis(self.cortex, instance_id)
@@ -103,9 +103,8 @@ class Igor:
         self.last_roi = None
         self.session_cost = 0.0
         self.use_local_preparse = os.getenv("IGOR_LOCAL_PREPARSE", "true").lower() in ("true", "1", "yes")
-        self.use_ollama = os.getenv("IGOR_OLLAMA", "true").lower() in ("true", "1", "yes")
-        # local_mode: default False — use cloud (Anthropic) for general reasoning.
-        # Set IGOR_LOCAL=true in .env to default to local Ollama pool mode.
+        # local_mode: default False — use cloud for general reasoning.
+        # Set IGOR_LOCAL=true in .env to default to local KoboldCpp pool mode.
         self.local_mode = os.getenv("IGOR_LOCAL", "false").lower() in ("true", "1", "yes")
         self._ne_thread: threading.Thread | None = None
         self._context_flush_done: bool = False  # change.32: set after pre-compaction flush
@@ -146,12 +145,7 @@ class Igor:
                 self.openrouter_cheap_reasoner = OpenRouterReasoner(model=cheap_model)
                 self.openrouter_interactive_reasoner = OpenRouterReasoner(model=interactive_model)
                 self.openrouter_reasoner = OpenRouterReasoner()
-                console.print(
-                    f"[dim]OpenRouter ready: "
-                    f"tier.3={self.openrouter_cheap_reasoner.model} | "
-                    f"tier.3.5={self.openrouter_interactive_reasoner.model} | "
-                    f"tier.4={self.openrouter_reasoner.model}[/]"
-                )
+                console.print(f"[dim]OpenRouter ready ({self.openrouter_reasoner.model})[/]")
             except Exception as _e:
                 console.print(f"[yellow]OpenRouter init failed: {_e}[/]")
 
@@ -215,10 +209,14 @@ class Igor:
             console.print(f"[dim]  (at {restart_note['timestamp'][:16]})[/]")
         ring = self.cortex.read_ring_memory(limit=10)
         if ring:
-            console.print(f"\n[dim]── Recent context ({len(ring)} entries) ──[/]")
-            for entry in ring[-5:]:
-                ts = entry['timestamp'][11:16]
-                console.print(f"[dim]  {ts} [{entry['category']}] {entry['content'][:90]}[/]")
+            _noisy = {"session_control", "ne_diagnostic", "tool_trace", "habit_trace", "interruptor"}
+            _filtered = [e for e in ring if e['category'] not in _noisy]
+            _show = _filtered[-3:] if _filtered else []
+            if _show:
+                console.print(f"\n[dim]── Recent context ({len(_show)} entries) ──[/]")
+                for entry in _show:
+                    ts = entry['timestamp'][11:16]
+                    console.print(f"[dim]  {ts} [{entry['category']}] {entry['content'][:90]}[/]")
 
         # [CHANGE LOG] Surface any completed change entries logged by Claude Code
         self._load_change_log()
@@ -464,6 +462,17 @@ class Igor:
         """
         from .arbiter import queue as arbiter_queue
         ring = self.cortex.read_ring_memory(limit=8)
+        # #121: NE surprise signal — last 8 entries + rolling avg delta
+        surprise_entries = self.cortex.read_ring_memory(limit=8, category="ne_prediction")
+        _deltas = []
+        for e in surprise_entries:
+            try:
+                for part in e["content"].split("|"):
+                    if part.startswith("delta="):
+                        _deltas.append(float(part[6:]))
+            except Exception:
+                pass
+        surprise_avg = sum(_deltas) / len(_deltas) if _deltas else None
         return {
             "memory_count": self.cortex.total_count(),
             "session_cost": self.session_cost,
@@ -474,6 +483,11 @@ class Igor:
                 {"category": r["category"], "content": r["content"][:120], "ts": r["timestamp"]}
                 for r in ring
             ],
+            "surprise_recent": [
+                {"content": e["content"][:120], "ts": e["timestamp"]}
+                for e in surprise_entries
+            ],
+            "surprise_avg": surprise_avg,
             **self._activity_state(),
         }
 
@@ -546,7 +560,7 @@ class Igor:
 
         # Collect state
         twm_items = self.cortex.twm_read(limit=50, include_integrated=True)
-        ring_tail  = self.cortex.read_ring_memory(limit=20)
+        ring_tail  = self.cortex.read_ring_memory(limit=40)
         ne_state   = self.ne._get_last_narrative()
 
         active_jobs  = self.job_manager.list_jobs()
@@ -559,13 +573,13 @@ class Igor:
         _summary_parts = []
         for e in ring_tail:
             if e.get("category") in _SUMMARY_CATS:
-                _summary_parts.append(e["content"][:100])
+                _summary_parts.append(f"[{e.get('category','note')}] {e['content'][:200]}")
         # Fall back to last ring content if nothing useful found
         if not _summary_parts:
-            _summary_parts = [ring_tail[-1]["content"][:120]] if ring_tail else []
+            _summary_parts = [ring_tail[-1]["content"][:200]] if ring_tail else []
         session_summary = (
-            f"{self.interaction_count} interactions, ${self.session_cost:.4f} — "
-            + " | ".join(_summary_parts[-4:])  # most recent 4 meaningful events
+            f"{self.interaction_count} interactions, ${self.session_cost:.4f}\n"
+            + "\n".join(_summary_parts[-8:])  # most recent 8 meaningful events
         )
 
         ctx = {
@@ -696,7 +710,7 @@ class Igor:
             recent_ne = self.cortex.read_ring_memory(limit=5, category="narrative")
             if not recent_ne:
                 self.cortex.write_ring(
-                    f"[warm] {ne_state[:400]}", category="narrative"
+                    f"[warm] {ne_state[:800]}", category="narrative"
                 )
 
         # 3. Ring tail — only inject if ring is effectively empty (new instance)
@@ -1076,10 +1090,26 @@ class Igor:
         # caught by thalamus rules — rule-based CSB is instant.
         habits = self.cortex.get_habits()
         _milieu_state = milieu_mod.get().get_state() if milieu_mod.get() else None
+
+        # #121: Prospective NE pass — predict which habit might fire before it happens
+        if not is_impulse:
+            try:
+                _twm_recent = self.cortex.twm_read(limit=5, include_integrated=False)
+                self.ne.prospective_pass(_twm_recent, habits)
+            except Exception:
+                pass
+
         _fast_path_intents = {"greeting", "command"}
         _thalamus_habit, _thalamus_confidence = basal_ganglia.select_habit(
             parsed, habits, milieu_state=_milieu_state
         )
+
+        # #121: Record actual vs predicted — compute surprise delta
+        if not is_impulse:
+            try:
+                self.ne.record_actual(_thalamus_habit.id if _thalamus_habit else None)
+            except Exception:
+                pass
         _skip_llm_preparse = (
             parsed.intent in _fast_path_intents
             or _thalamus_habit is not None
@@ -1101,9 +1131,12 @@ class Igor:
             import concurrent.futures as _cf
             self._current_action = "preparse"
             web_server.broadcast_activity(self._activity_state())
-            if self.use_local_preparse:
+            if self.use_local_preparse and kobold_is_healthy():
                 console.print("[dim][LOCAL] Pre-parsing via KoboldCpp...[/]")
                 _preparse_fn = lambda: preparse(user_input, habits)
+            elif self.use_local_preparse:
+                console.print("[dim][PREPARSE] KoboldCpp unavailable — preparse via OR cheap...[/]")
+                _preparse_fn = lambda: preparse_via_openrouter(user_input, habits)
             else:
                 console.print("[dim][PREPARSE] Local preparse off — classifying via tier.3...[/]")
                 _preparse_fn = lambda: preparse_via_openrouter(user_input, habits)
@@ -1180,9 +1213,7 @@ class Igor:
             return f"Started background job #{_async_job_id}. I'll notify you when complete."
 
         # Forensic: log tier selection decision (WO_escalation_gate)
-        _tiers_available = ["tier.1"]  # habits always available
-        if self.use_ollama:
-            _tiers_available.append("tier.2")
+        _tiers_available = ["tier.1", "tier.2"]  # habits + local KoboldCpp always available
         if self.openrouter_cheap_reasoner is not None:
             _tiers_available.append("tier.3")
         if self.openrouter_reasoner is not None:
@@ -1191,11 +1222,11 @@ class Igor:
             _tiers_available.append("tier.5")
         _tiers_available.append("tier.6")  # arbiter always last resort
 
-        _preparse_via = "ollama" if self.use_ollama else "openrouter"
+        _preparse_via = "koboldcpp" if (self.use_local_preparse and kobold_is_healthy()) else "openrouter"
         if self.local_mode:
             _tier_hint = "tier.2"
             _reason = "local_mode=true"
-        elif not pre["should_escalate"] and self.use_ollama:
+        elif not pre["should_escalate"]:
             _tier_hint = "tier.2"
             _reason = "preparse=simple"
         elif _skip_to == "tier.4":
@@ -1203,7 +1234,7 @@ class Igor:
             _reason = f"complexity={complexity['score']:.2f}|signals={','.join(complexity['signals_fired'])}"
         else:
             _tier_hint = "tier.3+"
-            _reason = "preparse=escalate" if pre["should_escalate"] else "ollama_off"
+            _reason = "preparse=escalate"
 
         log_tier_selection(
             tiers_available=_tiers_available,
@@ -1260,7 +1291,9 @@ class Igor:
                 )
             else:
                 # "action", "response", or unset: return stored action text
-                response_text = habit.metadata.get("action", "Habit executed.")
+                response_text = habit.metadata.get(
+                    "action", f"Habit executed. [{habit.id}: {habit.narrative[:80]}]"
+                )
             self.cortex.record_activation(habit.id, 0.05)
             # Log habit execution to ring + forensic log for auditability
             _habit_score = _thalamus_confidence if _habit_source == "thalamus" else pre["confidence"]
@@ -1462,7 +1495,8 @@ class Igor:
                     "emotionally_charged": _emotionally_charged,
                 }
             )
-            self.cortex.store(ep)
+            # #128: auto-link to contextually active memories at store time
+            self.cortex.store(ep, link_to=relevant, milieu_arousal=_ep_arousal)
             self.cortex.add_child("CP3", ep.id)
             new_memories += 1
 
@@ -1704,6 +1738,13 @@ class Igor:
             )
             return
 
+        # If this is a proactive habit impulse, record activation directly.
+        # The habit is identified by push_sources metadata, not by trigger matching,
+        # so basal_ganglia won't match it inside _process() — bypass is real (#131 fix).
+        _proactive_habit_id = impulse.get("metadata", {}).get("habit_id")
+        if _proactive_habit_id:
+            self.cortex.record_activation(_proactive_habit_id, 0.05)
+
         # Route to _process() as a synthetic low-priority input (impulse — no episodic store)
         synthetic = f"[NE action impulse]: {content}"
         response = self._process(synthetic, is_impulse=True)
@@ -1796,7 +1837,7 @@ class Igor:
         Called at most once per session (guarded by _context_flush_done).
         Does NOT restart Igor — that remains the user's choice via /compress.
         """
-        from .cognition.reasoners.ollama_reasoner import summarize_session
+        from .cognition.reasoners.koboldcpp_reasoner import summarize_session
 
         ring_entries = self.cortex.read_ring_memory(limit=50)
         if not ring_entries:
@@ -1893,6 +1934,9 @@ class Igor:
                     f"CC: {msg.content}\n"
                     f"[Routing directive: respond inline — no async background jobs for this turn]"
                 )
+            elif msg.source == "web" and msg.content.strip().startswith("/"):
+                # Slash command from web UI — pass through unwrapped so thalamus parses it
+                synthetic = msg.content.strip()
             elif msg.source == "web":
                 synthetic = f"[Web message from {msg.author}]: {msg.content}"
             else:
@@ -1913,7 +1957,7 @@ class Igor:
             "restart": self._cmd_restart,
             "cost": self._cmd_cost,
             "model": self._cmd_model,
-            "ollama": self._cmd_ollama,
+
             "local": self._cmd_local,
             "compress": self._cmd_compress,
             "arbiter": self._cmd_arbiter,
@@ -1921,12 +1965,12 @@ class Igor:
             "upstream": self._cmd_upstream,   # change.40
             "relay": self._cmd_relay,         # change.41
             "jobs": self._cmd_jobs,           # pass.4
+            "implement": self._cmd_implement, # #95
         }
         fn = commands.get(command, self._cmd_unknown)
         fn(raw)
 
     def _cmd_help(self, _):
-        ollama_state = "ON" if self.use_ollama else "OFF"
         local_state  = "ON" if self.local_mode  else "OFF"
         web_port     = os.getenv("IGOR_WEB_PORT", "8080")
         console.print(f"""
@@ -1938,11 +1982,10 @@ class Igor:
   /arbiter        - Human-approval queue (/arbiter list|approve <N>|all|deny <N>|all|explain <N>)
   /cost           - Show session cost
   /model          - Show current reasoning model
-  /model <name>   - Switch model (cloud: sonnet/opus/haiku; local: any Ollama model name)
-  /ollama         - Toggle local Ollama pre-parser (currently {ollama_state})
+  /model <name>   - Switch model (cloud: sonnet/opus/haiku; local: KoboldCpp model)
   /local          - Toggle local-only mode (currently {local_state})
   /local on|off   - Explicitly set local mode
-  /compress       - Summarize context to LTM (Ollama), then restart fresh
+  /compress       - Summarize context to LTM (KoboldCpp), then restart fresh
   /restart        - Relaunch Igor (requires igor bash alias)
   /quit           - Exit
 
@@ -1950,6 +1993,7 @@ class Igor:
   /orders           - List last 10 open work orders
   /orders all       - Last 10 any status
   /orders N         - Detail on work order N
+  /implement #N     - Autonomous implementation of GitHub issue N (#95)
 
 [bold]Long-running Jobs (pass.4):[/]
   /jobs             - List active jobs
@@ -2201,6 +2245,60 @@ class Igor:
         else:
             result = list_work_orders()
         console.print(f"\n{result}\n")
+
+    # ── #95: autonomous self-implementation ────────────────────────────────────
+
+    def _cmd_implement(self, raw):
+        """
+        /implement #N — write an implementation brief for Claude Code to pick up.
+        Phase 1 (manual-assist): Igor fetches the ticket, writes a task brief to
+        ~/.TheIgors/<instance>/workspace/impl_#N.md, then tells Akien to hand it
+        to Claude Code. Zero cloud cost — Claude Code handles the actual edits.
+        """
+        from .tools.github import get_work_order
+        import datetime as _dt
+        parts = raw.strip().split()
+        # Accept "/implement 95" or "/implement #95"
+        num_str = parts[1].lstrip("#") if len(parts) > 1 else ""
+        if not num_str.isdigit():
+            console.print("[yellow]Usage: /implement #N  (e.g. /implement #95)[/]")
+            return
+
+        issue_num = int(num_str)
+        console.print(f"\n[dim]Fetching issue #{issue_num}...[/]")
+        ticket = get_work_order(issue_num)
+
+        # Write task brief to workspace for Claude Code to pick up
+        workspace = self._instance_dir() / "workspace"
+        workspace.mkdir(parents=True, exist_ok=True)
+        brief_path = workspace / f"impl_{issue_num}.md"
+        brief = (
+            f"# Implementation Request — GitHub issue #{issue_num}\n"
+            f"_Queued by Igor at {_dt.datetime.now().strftime('%Y-%m-%d %H:%M')}_\n\n"
+            f"{ticket}\n\n"
+            "---\n"
+            "## Workflow for Claude Code\n"
+            "1. Read the ticket above.\n"
+            "2. State a concise implementation plan (files, changes).\n"
+            "3. Confirm with Akien before writing any code.\n"
+            "4. Implement using Edit/Write tools; run `python -m py_compile` on changed files.\n"
+            "5. Close with `gh issue comment` + `gh issue close`.\n"
+            "6. Report back to Igor via `python claudecode/igor_talk.py \"impl #"
+            f"{issue_num} complete: <summary>\"`\n"
+        )
+        brief_path.write_text(brief, encoding="utf-8")
+
+        # Ring entry so Igor remembers he queued this
+        self.cortex.write_ring(
+            f"IMPL_REQUEST|#{issue_num}|brief={brief_path}",
+            category="implement",
+        )
+
+        console.print(
+            f"\n[bold green]Implementation brief written:[/] {brief_path}\n"
+            f"\n[bold]Tell Claude Code:[/] implement #{issue_num} "
+            f"— brief is at {brief_path}\n"
+        )
 
     # ── pass.4: long-running job management ───────────────────────────────────
 
@@ -2487,18 +2585,12 @@ class Igor:
             resolved = self.reasoner.set_model(name)
             console.print(f"\n[green]Cloud model switched to:[/] {resolved}")
 
-    def _cmd_ollama(self, _):
-        self.use_local_preparse = not self.use_local_preparse
-        state = "[green]ON[/]" if self.use_local_preparse else "[yellow]OFF[/]"
-        note = "" if self.use_local_preparse else "  [dim](skipping local pre-parse, using simple keyword matching)[/]"
-        console.print(f"\n[bold]Local pre-parser:[/] {state}{note}")
-
     def _cmd_compress(self, _):
-        """Summarize session ring memory to LTM via Ollama, then restart fresh."""
-        from .cognition.reasoners.ollama_reasoner import summarize_session
+        """Summarize session ring memory to LTM via KoboldCpp, then restart fresh."""
+        from .cognition.reasoners.koboldcpp_reasoner import summarize_session
         from .memory.models import Memory, MemoryType
 
-        console.print("[cyan]Compressing session context via Ollama...[/]")
+        console.print("[cyan]Compressing session context via KoboldCpp...[/]")
         ring_entries = self.cortex.read_ring_memory(limit=50)
         if not ring_entries:
             console.print("[yellow]Ring memory is empty — nothing to compress.[/]")
