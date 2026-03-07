@@ -266,23 +266,14 @@ class NarrativeEngine:
         # Watermark for cache invalidation — max obs id already in hand
         max_twm_id = max((o["id"] for o in obs_list), default=0)
 
-        # Call LLM (KoboldCpp preferred, Ollama fallback, Claude only if service is down)
+        # Call LLM: reasoning cache first, then OpenRouter cheap model.
+        # 1B local models can't reliably generate the NE's structured JSON — use cloud.
         result = self._call_local(prompt, max_twm_id)
         if result is None:
-            # Only escalate to cloud if KoboldCpp service is actually down (not just slow).
-            # A slow response that returns None means parse failure, not service failure —
-            # never pay cloud cost just because local 1B produced bad JSON.
-            from .reasoners.koboldcpp_reasoner import is_healthy as _kcc_healthy
-            import os as _os
-            _kcc_host = _os.getenv("KOBOLDCPP_HOST", "http://localhost:5001")
-            if not _kcc_healthy(_kcc_host, timeout=3):
-                result = self._call_claude_fallback(prompt)
-            else:
-                if verbose:
-                    print("[NE] KoboldCpp is up but result unparseable — skipping cloud fallback.")
+            result = self._call_cloud(prompt, max_twm_id)
         if result is None:
             if verbose:
-                print("[NE] Both Ollama and Claude failed — skipping this cycle.")
+                print("[NE] Cloud NE call failed — skipping this cycle.")
             try:
                 from .forensic_logger import log_anomaly as _la
                 _la(kind="NE_FAIL", detail="all_local_and_cloud_failed")
@@ -445,74 +436,61 @@ class NarrativeEngine:
     # ── LLM calls ─────────────────────────────────────────────────────────────
 
     def _call_local(self, prompt: str, max_twm_id: int = 0) -> Optional[dict]:
-        """
-        Call local inference: KoboldCpp preferred, Ollama fallback (Change 1 / D025).
-        Checks reasoning cache first.
-        """
-        # ── Cache check ───────────────────────────────────────────────────────
+        """Check reasoning cache only. 1B local models can't reliably generate NE JSON."""
         cached = reasoning_cache.get(NE_MODEL, prompt, max_twm_id)
         if cached is not None:
             result = self._parse_ne_json(cached)
             if result is not None:
-                print(f"[NE] local cache hit (twm_id≤{max_twm_id})")
+                print(f"[NE] cache hit (twm_id≤{max_twm_id})")
                 return result
-
-        # ── KoboldCpp preferred (Change 1) ────────────────────────────────────
-        import os as _os
-        kcc_host = _os.getenv("KOBOLDCPP_HOST", "").strip()
-        if kcc_host:
-            t0 = time.perf_counter()
-            try:
-                from .reasoners.koboldcpp_reasoner import KoboldCppReasoner
-                # NE is background — take as long as needed (120s), never escalate for speed
-                kcc = KoboldCppReasoner(host=kcc_host, timeout=120)
-                text, _ = kcc.reason(
-                    user_input=prompt,
-                    relevant_memories=[],
-                    core_patterns=[],
-                    instance_id=self.instance_id,
-                    cortex=self.cortex,
-                )
-                elapsed = time.perf_counter() - t0
-                result = self._parse_ne_json(text)
-                if result is not None:
-                    print(f"[NE] KoboldCpp ok ({elapsed:.1f}s)")
-                    _kcc_model = _os.getenv("KOBOLDCPP_MODEL", "koboldcpp/llama-3.2-1b")
-                    reasoning_cache.put(_kcc_model, prompt, text, max_twm_id)
-                    self._last_ne_model = _kcc_model  # #84: track actual model used
-                    return result
-            except Exception as e:
-                elapsed = time.perf_counter() - t0
-                print(f"[NE] KoboldCpp failed ({elapsed:.1f}s): {e}")
-
         return None
 
-    def _call_claude_fallback(self, prompt: str) -> Optional[dict]:
-        """Fall back to Claude if KoboldCpp is down and budget allows."""
+    def _call_cloud(self, prompt: str, max_twm_id: int = 0) -> Optional[dict]:
+        """Run NE via OpenRouter cheap model (gpt-4o-mini). Budget-gated."""
+        import os as _os
         try:
             from ..tools.budget import budget_status
             status = budget_status()
             if status["remaining_usd"] < 0.50:
-                print("[NE] Claude fallback skipped — budget critical")
+                print("[NE] cloud skipped — budget critical")
                 return None
         except Exception:
-            pass  # Can't check budget — try anyway
+            pass
+
+        or_key   = _os.getenv("OPENROUTER_API_KEY", "")
+        or_model = _os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
+        if not or_key:
+            return None
 
         try:
-            import anthropic
-            client = anthropic.Anthropic()
-            msg = client.messages.create(
-                model="claude-haiku-4-5-20251001",
-                max_tokens=1024,
-                messages=[{"role": "user", "content": prompt}],
+            import urllib.request as _ur
+            import json as _json
+            payload = _json.dumps({
+                "model": or_model,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 1024,
+                "temperature": 0.3,
+            }).encode()
+            req = _ur.Request(
+                "https://openrouter.ai/api/v1/chat/completions",
+                data=payload,
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {or_key}",
+                },
+                method="POST",
             )
-            text = msg.content[0].text.strip()
+            with _ur.urlopen(req, timeout=60) as resp:
+                data = _json.loads(resp.read())
+            text = data["choices"][0]["message"]["content"].strip()
             result = self._parse_ne_json(text)
             if result is not None:
-                print("[NE] Claude fallback ok")
+                print(f"[NE] cloud ok ({or_model})")
+                reasoning_cache.put(or_model, prompt, text, max_twm_id)
+                self._last_ne_model = or_model
             return result
         except Exception as e:
-            print(f"[NE] Claude fallback failed: {e}")
+            print(f"[NE] cloud failed: {e}")
             return None
 
     # ── Helpers ────────────────────────────────────────────────────────────────
