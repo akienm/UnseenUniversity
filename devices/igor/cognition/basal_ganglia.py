@@ -18,6 +18,8 @@ PROC_HABIT_COMPILER immediately at confidence 0.95.
 
 from __future__ import annotations
 
+import math
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -46,10 +48,60 @@ THRESHOLD_MAX  = 0.70
 
 # ── Internal scoring ──────────────────────────────────────────────────────────
 
-def _score_habit(habit, raw_lower: str, keywords: set[str]) -> float:
+def compute_decay_factor(habit, now: datetime | None = None) -> float:
+    """
+    Returns a multiplier in [0, 1] representing how much of a habit's score
+    to preserve based on time since last activation.
+
+    Biological model: exponential decay with stability scaling.
+    - τ_base = 30 days (half-life for activation_count=0)
+    - τ scales with activation_count (experienced habits decay slower)
+    - Cap at 12× = 360 days (no habit lasts forever)
+
+    Examples:
+    - 30 days unused, activation=0:  score × 0.37
+    - 30 days unused, activation=10: score × 0.85 (more stable)
+    - 1 year unused,  activation=0:  score × ~0.00 (effectively gone)
+    - 1 year unused,  activation=20: score × 0.33 (still competitive)
+    """
+    if now is None:
+        now = datetime.now(timezone.utc)
+
+    # Use last_accessed if available, else fall back to creation timestamp
+    anchor = getattr(habit, "last_accessed", None) or getattr(habit, "timestamp", None)
+    if anchor is None:
+        return 1.0  # no timestamp info — don't penalize
+
+    # Normalize to UTC-aware datetime
+    if isinstance(anchor, str):
+        try:
+            from datetime import datetime as dt
+            anchor = dt.fromisoformat(anchor.replace("Z", "+00:00"))
+        except (ValueError, AttributeError):
+            return 1.0
+    if hasattr(anchor, "tzinfo") and anchor.tzinfo is None:
+        anchor = anchor.replace(tzinfo=timezone.utc)
+    if hasattr(now, "tzinfo") and now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+
+    days_since = (now - anchor).total_seconds() / 86400.0
+    if days_since <= 0:
+        return 1.0
+
+    # τ scales with activation_count: base 30d, max 360d (12×)
+    activation = getattr(habit, "activation_count", 0) or 0
+    tau_scale = min(1.0 + (activation * 0.5), 12.0)
+    tau = 30.0 * tau_scale
+
+    return math.exp(-days_since / tau)
+
+
+def _score_habit(habit, raw_lower: str, keywords: set[str], now: datetime | None = None) -> float:
     """
     Score a single habit.  Returns 0.0 if the trigger is not in the input
     (habits without trigger present can never win).
+
+    `now` is injectable for testability (default: current UTC time).
     """
     trigger = habit.metadata.get("trigger", "")
     if not trigger or trigger.lower() not in raw_lower:
@@ -74,6 +126,9 @@ def _score_habit(habit, raw_lower: str, keywords: set[str]) -> float:
     # valence_bonus: positive-valence habits preferred (valence is [0,1])
     valence = getattr(habit, "valence", 0.0) or 0.0
     score += valence * 0.10
+
+    # decay_factor: experienced habits decay slower; unused habits fade
+    score *= compute_decay_factor(habit, now=now)
 
     return score
 
@@ -124,9 +179,10 @@ def select_habit(
 
         # ── 2. Parallel scoring ───────────────────────────────────────────────
         threshold = _compute_threshold(milieu_state)
+        now = datetime.now(timezone.utc)
         scored = []
         for habit in habits:
-            s = _score_habit(habit, raw_lower, keywords)
+            s = _score_habit(habit, raw_lower, keywords, now=now)
             if s >= threshold:
                 scored.append((s, habit))
 
