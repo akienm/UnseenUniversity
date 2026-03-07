@@ -299,6 +299,7 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     .msg { font-size: 0.95rem; line-height: 1.5; }
     .msg-user   .author { color: #7ec8e3; font-weight: bold; }
     .msg-igor   .author { color: #90ee90; font-weight: bold; }
+    .msg-cc     .author { color: #ffb347; font-weight: bold; }
     .msg-system { color: #888; font-style: italic; }
     .author { margin-right: 0.4rem; }
     .content { white-space: pre-wrap; }
@@ -568,7 +569,9 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
       ws.onmessage = e => {
         const m = JSON.parse(e.data);
         if (m.type === 'message')
-          addMsg(m.author === 'igor' ? 'igor' : 'user', m.author === 'igor' ? 'Igor' : 'You', m.content);
+          addMsg(m.author === 'igor' ? 'igor' : m.author === 'claude-code' ? 'cc' : 'user',
+                 m.author === 'igor' ? 'Igor' : m.author === 'claude-code' ? 'CC>' : (m.author || 'You'),
+                 m.content);
         else if (m.type === 'file_dropped')
           addMsg('system', '', '📎 ' + m.filename + ' received in inbox');
         else if (m.type === 'activity')
