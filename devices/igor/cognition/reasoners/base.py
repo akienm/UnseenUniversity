@@ -54,6 +54,10 @@ BIG_READ_TOOLS = frozenset({
     "web_search",
 })
 
+# Bash command prefixes that indicate file reading/searching via run_bash.
+# These count against the research cap — Igor should delegate code archaeology to CC.
+BASH_READ_PATTERNS = ("cat ", "sed ", "grep ", "find ", "head ", "tail ", "ls ")
+
 
 class BaseReasoner(ABC):
     """
