@@ -54,6 +54,11 @@ DATA_DIR = Path(_IGOR_DB_ENV).expanduser().parent if _IGOR_DB_ENV else Path(__fi
 CHANGE_LOG_PATH    = Path.home() / ".TheIgors" / "claudecode" / "changes.log"
 CHANGE_REQUEST_PATH = Path.home() / ".TheIgors" / "claudecode" / "change_request.txt"
 
+# ── Exit interrupt event ───────────────────────────────────────────────────────
+# Canonical instance lives in cognition/reasoners/base.py so reasoners can check
+# it without a circular import. We import and re-expose it here for _stdin_reader.
+from .cognition.reasoners.base import exit_requested as _exit_requested
+
 # ── Stdin thread ───────────────────────────────────────────────────────────────
 
 def _stdin_reader(stdin_queue: queue.Queue):
@@ -61,16 +66,23 @@ def _stdin_reader(stdin_queue: queue.Queue):
     Daemon thread: reads stdin lines and pushes them into stdin_queue.
     This unblocks the main loop so network messages are drained even
     while waiting for human input.
+    Sets _exit_requested immediately on /exit or /quit so the agentic
+    loop can stop at the next turn boundary without waiting for the full call.
     """
     while True:
         try:
             console.print("\n[bold green]You:[/] ", end="")
             line = sys.stdin.readline()
             if line == "":          # EOF (Ctrl-D)
+                _exit_requested.set()
                 stdin_queue.put(None)
                 break
-            stdin_queue.put(line.rstrip("\n"))
+            text = line.rstrip("\n")
+            if text.strip().lower() in ("/exit", "/quit"):
+                _exit_requested.set()
+            stdin_queue.put(text)
         except (KeyboardInterrupt, EOFError):
+            _exit_requested.set()
             stdin_queue.put(None)
             break
 
@@ -834,6 +846,11 @@ class Igor:
                 continue
 
             self._process(user_input)
+
+            # Exit check after _process() — catches /exit typed during a blocking call
+            if _exit_requested.is_set():
+                self._shutdown(reason="quit via /quit")
+                break
 
     def _bg_reason(
         self,

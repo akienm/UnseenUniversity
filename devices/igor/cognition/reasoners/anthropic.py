@@ -22,7 +22,7 @@ from ...tools.registry import registry
 from ... import tools as _tools  # noqa: F401 - imports all tools, registers them
 from .base import (APIReasoner, MAX_TURNS, CONTEXT_WARN_CHARS, CONTEXT_HARD_CAP_CHARS,
                    CALL_COST_WARN_USD, RESEARCH_TOOL_CAP, RESEARCH_MODE, BIG_READ_TOOLS,
-                   BASH_READ_PATTERNS)
+                   BASH_READ_PATTERNS, exit_requested)
 from ..system_prompt import build_system_prompt
 from ..forensic_logger import log_reasoning_call, log_tool_call
 from ...memory.scrub import scrub
@@ -135,6 +135,12 @@ class AnthropicReasoner(APIReasoner):
 
         while True:
             turn += 1
+
+            # ── EXIT INTERRUPT — stop at turn boundary if /exit was typed ─
+            if exit_requested.is_set():
+                console.print("[yellow][THINK] Exit requested — stopping at turn boundary.[/]")
+                self._run_interruptors(cortex)
+                return "Stopping — exit requested.", total_cost
 
             # ── TURN LIMIT — break runaway tool loops ─────────────────────
             if turn > MAX_TURNS:
