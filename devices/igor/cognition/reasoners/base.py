@@ -21,8 +21,15 @@ Eventually: no upstream at all. Pure habit execution replaces reasoning entirely
 """
 
 import os
+import threading
 from abc import ABC, abstractmethod
 from ...memory.models import Memory
+
+# ── Global exit signal ─────────────────────────────────────────────────────────
+# Set by main._stdin_reader when /exit or /quit is typed.
+# Checked at the top of each agentic turn so a long API call stops at the
+# next turn boundary instead of running to completion.
+exit_requested: threading.Event = threading.Event()
 
 # Shared ring-context constants (WO8: single source of truth — was duplicated
 # verbatim in anthropic.py and openrouter_reasoner.py)
