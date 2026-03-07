@@ -20,7 +20,8 @@ from rich.console import Console
 from ...memory.models import Memory
 from ...tools.registry import registry
 from ... import tools as _tools  # noqa: F401 — registers all tools
-from .base import BaseReasoner, MAX_TURNS, CONTEXT_WARN_CHARS, CONTEXT_HARD_CAP_CHARS
+from .base import (BaseReasoner, MAX_TURNS, CONTEXT_WARN_CHARS, CONTEXT_HARD_CAP_CHARS,
+                   CALL_COST_WARN_USD, RESEARCH_TOOL_CAP, RESEARCH_MODE, BIG_READ_TOOLS)
 from ..system_prompt import build_system_prompt
 from ..forensic_logger import log_reasoning_call, log_tool_call
 from ...memory.scrub import scrub
@@ -127,6 +128,7 @@ class OpenRouterReasoner(BaseReasoner):
         tools = registry.to_openai_schemas()
         total_cost = 0.0
         turn = 0
+        big_read_count = 0
 
         while True:
             turn += 1
@@ -163,6 +165,25 @@ class OpenRouterReasoner(BaseReasoner):
             finish_reason = choice.get("finish_reason", "stop")
             total_cost += self._estimate_cost(response.get("usage", {}))
 
+            # ── PER-CALL COST CAP ─────────────────────────────────────────
+            _cost_cap = float(os.getenv("IGOR_CALL_COST_WARN_USD", str(CALL_COST_WARN_USD)))
+            if total_cost > _cost_cap:
+                console.print(
+                    f"[yellow][OR] Per-call cost cap ${_cost_cap:.2f} hit "
+                    f"(${total_cost:.4f} at turn {turn}) — stopping. "
+                    f"Raise IGOR_CALL_COST_WARN_USD or ask Akien.[/]"
+                )
+                try:
+                    from ..forensic_logger import log_anomaly as _la
+                    _la(kind="COST_CAP_HIT", detail=f"model={self.model}|cost={total_cost:.4f}|cap={_cost_cap}|turn={turn}")
+                except Exception:
+                    pass
+                return (
+                    f"⚠ Per-call cost cap ${_cost_cap:.2f} reached (${total_cost:.4f} at turn {turn}). "
+                    f"Ask Akien to raise IGOR_CALL_COST_WARN_USD if deeper work is needed.",
+                    total_cost,
+                )
+
             if finish_reason in ("stop", "end_turn", None) or (
                 not msg.get("tool_calls") and finish_reason != "tool_calls"
             ):
@@ -188,9 +209,27 @@ class OpenRouterReasoner(BaseReasoner):
                     "tool_calls": tool_calls,
                 })
 
+                _research_blocked = False
                 for tc in tool_calls:
                     fn = tc["function"]
                     tool_name = fn["name"]
+
+                    # ── RESEARCH GATE ──────────────────────────────────────
+                    if tool_name in BIG_READ_TOOLS:
+                        big_read_count += 1
+                        _cap = int(os.getenv("IGOR_RESEARCH_TOOL_CAP", str(RESEARCH_TOOL_CAP)))
+                        _mode = os.getenv("IGOR_RESEARCH_MODE", "false").lower() in ("1", "true", "yes")
+                        if big_read_count > _cap and not _mode:
+                            console.print(
+                                f"[yellow][OR] Research tool cap ({_cap}) reached — "
+                                f"{tool_name} call #{big_read_count} blocked. "
+                                f"Set IGOR_RESEARCH_MODE=true to allow bulk reading.[/]"
+                            )
+                            messages.append({"role": "tool", "tool_call_id": tc["id"],
+                                             "content": "BLOCKED: research tool cap reached — set IGOR_RESEARCH_MODE=true"})
+                            _research_blocked = True
+                            break
+
                     try:
                         kwargs = json.loads(fn.get("arguments", "{}"))
                     except json.JSONDecodeError:
@@ -223,6 +262,14 @@ class OpenRouterReasoner(BaseReasoner):
                         "tool_call_id": tc["id"],
                         "content": self._cap_tool_result(str(result)),
                     })
+
+                if _research_blocked:
+                    _cap = int(os.getenv("IGOR_RESEARCH_TOOL_CAP", str(RESEARCH_TOOL_CAP)))
+                    return (
+                        f"⚠ Research tool cap ({_cap} big-read calls) reached. "
+                        f"Set IGOR_RESEARCH_MODE=true if bulk reading is needed.",
+                        total_cost,
+                    )
 
             else:
                 text = msg.get("content") or f"[Stopped: {finish_reason}]"

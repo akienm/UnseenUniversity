@@ -20,7 +20,8 @@ from rich.console import Console
 from ...memory.models import Memory
 from ...tools.registry import registry
 from ... import tools as _tools  # noqa: F401 - imports all tools, registers them
-from .base import APIReasoner, MAX_TURNS, CONTEXT_WARN_CHARS, CONTEXT_HARD_CAP_CHARS
+from .base import (APIReasoner, MAX_TURNS, CONTEXT_WARN_CHARS, CONTEXT_HARD_CAP_CHARS,
+                   CALL_COST_WARN_USD, RESEARCH_TOOL_CAP, RESEARCH_MODE, BIG_READ_TOOLS)
 from ..system_prompt import build_system_prompt
 from ..forensic_logger import log_reasoning_call, log_tool_call
 from ...memory.scrub import scrub
@@ -125,6 +126,7 @@ class AnthropicReasoner(APIReasoner):
         in_self_edit_session = False
         model_to_use = self.active_model
         turn = 0
+        big_read_count = 0
 
         # GitHub #82: per-turn rate limiter — fresh each reasoning session
         from ...tools.rate_limiter import TurnRateLimiter
@@ -185,6 +187,31 @@ class AnthropicReasoner(APIReasoner):
             total_cost += call_cost
             total_input_tokens  += getattr(response.usage, "input_tokens", 0)
             total_output_tokens += getattr(response.usage, "output_tokens", 0)
+
+            # ── PER-CALL COST CAP ─────────────────────────────────────────
+            _cost_cap = float(os.getenv("IGOR_CALL_COST_WARN_USD", str(CALL_COST_WARN_USD)))
+            if total_cost > _cost_cap:
+                console.print(
+                    f"[yellow][THINK] Per-call cost cap ${_cost_cap:.2f} hit "
+                    f"(${total_cost:.4f} at turn {turn}) — stopping. "
+                    f"Raise IGOR_CALL_COST_WARN_USD or ask Akien.[/]"
+                )
+                try:
+                    from ..forensic_logger import log_anomaly as _la
+                    _la(kind="COST_CAP_HIT", detail=f"model={model_to_use}|cost={total_cost:.4f}|cap={_cost_cap}|turn={turn}")
+                except Exception:
+                    pass
+                log_reasoning_call(
+                    provider="anthropic", model=model_to_use,
+                    input_tokens=total_input_tokens, output_tokens=total_output_tokens,
+                    cost_usd=total_cost, elapsed_ms=int((time.perf_counter() - t0) * 1000),
+                    turns=turn, response_summary="[COST_CAP_HIT]",
+                )
+                return (
+                    f"⚠ Per-call cost cap ${_cost_cap:.2f} reached (${total_cost:.4f} at turn {turn}). "
+                    f"Ask Akien to raise IGOR_CALL_COST_WARN_USD if deeper work is needed.",
+                    total_cost,
+                )
 
             # ── RECORD SPEND ──────────────────────────────────────────────
             try:
@@ -261,9 +288,26 @@ class AnthropicReasoner(APIReasoner):
 
                 # Execute each tool call and collect results
                 tool_results = []
+                _research_blocked = False
                 for block in response.content:
                     if block.type == "tool_use":
                         tool_calls_made.append(block.name)
+
+                        # ── RESEARCH GATE ──────────────────────────────────────
+                        if block.name in BIG_READ_TOOLS:
+                            big_read_count += 1
+                            _cap = int(os.getenv("IGOR_RESEARCH_TOOL_CAP", str(RESEARCH_TOOL_CAP)))
+                            _mode = os.getenv("IGOR_RESEARCH_MODE", "false").lower() in ("1", "true", "yes")
+                            if big_read_count > _cap and not _mode:
+                                console.print(
+                                    f"[yellow][THINK] Research tool cap ({_cap}) reached — "
+                                    f"{block.name} call #{big_read_count} blocked. "
+                                    f"Set IGOR_RESEARCH_MODE=true to allow bulk reading.[/]"
+                                )
+                                tool_results.append({"type": "tool_result", "tool_use_id": block.id,
+                                                     "content": "BLOCKED: research tool cap reached — set IGOR_RESEARCH_MODE=true"})
+                                _research_blocked = True
+                                break
 
                         # ── AUTO-HAIKU for self-edit sessions ─────────────────
                         if not in_self_edit_session and block.name in SELF_EDIT_TRIGGER_TOOLS:
@@ -316,6 +360,15 @@ class AnthropicReasoner(APIReasoner):
                             "tool_use_id": block.id,
                             "content": self._cap_tool_result(str(result)),
                         })
+
+                if _research_blocked:
+                    _cap = int(os.getenv("IGOR_RESEARCH_TOOL_CAP", str(RESEARCH_TOOL_CAP)))
+                    self._run_interruptors(cortex)
+                    return (
+                        f"⚠ Research tool cap ({_cap} big-read calls) reached. "
+                        f"Set IGOR_RESEARCH_MODE=true if bulk reading is needed.",
+                        total_cost,
+                    )
 
                 # Feed results back and loop
                 messages.append({"role": "user", "content": tool_results})

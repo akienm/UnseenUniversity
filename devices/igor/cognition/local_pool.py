@@ -164,9 +164,20 @@ def _save_benchmark_cache(hostname: str, result: dict) -> None:
         pass
 
 
+def _in_benchmark_window() -> bool:
+    """True if current hour is within the overnight benchmark window (default 22:00–06:00)."""
+    hour = datetime.now().hour
+    start = int(os.getenv("IGOR_BENCHMARK_WINDOW_START", "22"))
+    end   = int(os.getenv("IGOR_BENCHMARK_WINDOW_END",   "6"))
+    if start > end:   # wraps midnight
+        return hour >= start or hour < end
+    return start <= hour < end
+
+
 def _init_benchmark_async(model: str, on_complete) -> None:
     """
     Load from cache if fresh; otherwise run benchmark in a daemon thread.
+    Fresh benchmarks only run during the overnight window (IGOR_BENCHMARK_WINDOW_START/END).
     on_complete(result_dict) is called when the benchmark is ready.
     """
     hostname = platform.node()
@@ -174,6 +185,9 @@ def _init_benchmark_async(model: str, on_complete) -> None:
     if cached:
         on_complete(cached)
         return  # Cache hit — no thread needed
+
+    if not _in_benchmark_window():
+        return  # Outside overnight window — skip fresh benchmark, use stale data or nothing
 
     def _worker():
         try:
@@ -256,7 +270,7 @@ BENCHMARK_TTL_HOURS = 24
 
 class LocalKoboldPool:
     """
-    Round-robin pool of OllamaReasoner instances across network machines.
+    Round-robin pool of KoboldCppReasoner instances across network machines.
 
     Part A: self._benchmark populated async from ~/.TheIgors/benchmarks/
     Part B: reason() estimates local latency; escalates if > LATENCY_BUDGET_SECONDS
@@ -285,7 +299,6 @@ class LocalKoboldPool:
         reasoners = []
         for m in machines:
             ip = m.get("ip", "")
-            # KoboldCpp first (Change 1)
             kcc_port_str = m.get("koboldcpp_port", "").strip()
             if kcc_port_str:
                 try:
