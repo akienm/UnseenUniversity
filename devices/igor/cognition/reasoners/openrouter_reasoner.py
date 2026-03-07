@@ -21,7 +21,8 @@ from ...memory.models import Memory
 from ...tools.registry import registry
 from ... import tools as _tools  # noqa: F401 — registers all tools
 from .base import (BaseReasoner, MAX_TURNS, CONTEXT_WARN_CHARS, CONTEXT_HARD_CAP_CHARS,
-                   CALL_COST_WARN_USD, RESEARCH_TOOL_CAP, RESEARCH_MODE, BIG_READ_TOOLS)
+                   CALL_COST_WARN_USD, RESEARCH_TOOL_CAP, RESEARCH_MODE, BIG_READ_TOOLS,
+                   BASH_READ_PATTERNS)
 from ..system_prompt import build_system_prompt
 from ..forensic_logger import log_reasoning_call, log_tool_call
 from ...memory.scrub import scrub
@@ -215,7 +216,12 @@ class OpenRouterReasoner(BaseReasoner):
                     tool_name = fn["name"]
 
                     # ── RESEARCH GATE ──────────────────────────────────────
-                    if tool_name in BIG_READ_TOOLS:
+                    _is_bash_read = (
+                        tool_name == "run_bash"
+                        and any(kwargs.get("command", "").lstrip().startswith(p)
+                                for p in BASH_READ_PATTERNS)
+                    )
+                    if tool_name in BIG_READ_TOOLS or _is_bash_read:
                         big_read_count += 1
                         _cap = int(os.getenv("IGOR_RESEARCH_TOOL_CAP", str(RESEARCH_TOOL_CAP)))
                         _mode = os.getenv("IGOR_RESEARCH_MODE", "false").lower() in ("1", "true", "yes")
