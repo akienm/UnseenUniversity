@@ -114,6 +114,20 @@ class OpenRouterReasoner(BaseReasoner):
         # WO1: dynamic system prompt from cortex memories
         system = build_system_prompt(cortex, instance_id)
 
+        # ── Context winnow: targeted retrieval before main call ───────────────
+        # Cheap pre-call identifies which specific memories are needed.
+        # Merges results with passed-in relevant_memories (deduped).
+        try:
+            from ..basal_ganglia import _word_graph as _wg
+            _winnowed = self._winnow_context(user_input, cortex, word_graph=_wg)
+            if _winnowed:
+                seen = {m.id for m in relevant_memories}
+                relevant_memories = list(relevant_memories) + [
+                    m for m in _winnowed if m.id not in seen
+                ]
+        except Exception:
+            pass
+
         content = user_input
         if preparse_csb:
             content = preparse_csb + "\n\n" + content

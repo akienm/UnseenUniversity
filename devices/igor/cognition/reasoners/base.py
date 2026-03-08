@@ -20,8 +20,10 @@ Concrete implementations:
 Eventually: no upstream at all. Pure habit execution replaces reasoning entirely.
 """
 
+import json
 import os
 import threading
+import urllib.request
 from abc import ABC, abstractmethod
 from ...memory.models import Memory
 
@@ -237,6 +239,98 @@ class BaseReasoner(ABC):
         for m in high_rel:
             lines.append(f"- [{m.memory_type.value}] {m.narrative}")
         return "\n".join(lines)
+
+
+    def _winnow_context(self, user_input: str, cortex, word_graph=None) -> list[Memory]:
+        """
+        Pre-call context filter — the breadcrumb step.
+
+        Before the main reasoning call, ask a cheap model:
+        "Given what we've been talking about and this new input,
+        what specific memories do you need?"
+
+        Returns targeted Memory objects to merge into relevant_memories.
+        Skipped if: input is short/command, IGOR_CONTEXT_WINNOW=false, no OR key.
+
+        This is the winnowing loop: smaller calls more often, converging on
+        the relevant context rather than dumping everything every time.
+        """
+        # Skip for trivial inputs
+        if len(user_input.strip()) < 20 or user_input.strip().startswith("/"):
+            return []
+        if os.getenv("IGOR_CONTEXT_WINNOW", "true").lower() in ("false", "0", "no"):
+            return []
+        api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+        if not api_key or cortex is None:
+            return []
+
+        # ── Build compact breadcrumb trail from ring ───────────────────────────
+        try:
+            ring = cortex.read_ring_memory(limit=10)
+            filtered = [e for e in ring if e["category"] not in _RING_EXCLUDE]
+            breadcrumbs = "\n".join(
+                f"[{e['timestamp'][11:16]}] {e['content'][:80]}"
+                for e in filtered[-5:]
+            )
+        except Exception:
+            breadcrumbs = ""
+
+        # ── Word graph hints: concepts activated by this input ─────────────────
+        wg_hints = ""
+        if word_graph is not None:
+            try:
+                predicted = word_graph.predict_next(user_input, n=5)
+                if predicted:
+                    wg_hints = "Activated concepts: " + ", ".join(w for w, _ in predicted)
+            except Exception:
+                pass
+
+        prompt = (
+            f"Context trail:\n{breadcrumbs}\n\n"
+            f"{wg_hints}\n\n"
+            f"New input: {user_input[:200]}\n\n"
+            "List 2-3 specific memory search queries (comma-separated, 2-4 words each) "
+            "to retrieve the most relevant context for responding. Be specific. No explanation."
+        )
+
+        # ── Cheap model call ───────────────────────────────────────────────────
+        try:
+            model = os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
+            payload = json.dumps({
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.1,
+                "max_tokens": 60,
+            }).encode()
+            req = urllib.request.Request(
+                "https://openrouter.ai/api/v1/chat/completions",
+                data=payload,
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                data = json.loads(resp.read())
+            queries_text = data["choices"][0]["message"]["content"].strip()
+            queries = [q.strip() for q in queries_text.replace("\n", ",").split(",") if q.strip()][:3]
+        except Exception:
+            return []
+
+        # ── Fetch memories for each query, dedupe ─────────────────────────────
+        results: list[Memory] = []
+        seen_ids: set[str] = set()
+        for q in queries:
+            try:
+                found = cortex.search(q, limit=2)
+                for m in found:
+                    if m.id not in seen_ids:
+                        seen_ids.add(m.id)
+                        results.append(m)
+            except Exception:
+                pass
+        return results
 
 
 # ── Level 1 — Transport base classes (Change 2 / D026) ────────────────────────

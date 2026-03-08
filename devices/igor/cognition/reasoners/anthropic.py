@@ -105,6 +105,18 @@ class AnthropicReasoner(APIReasoner):
         total_input_tokens = 0
         total_output_tokens = 0
 
+        # ── Context winnow: targeted retrieval before main call ───────────────
+        try:
+            from ..basal_ganglia import _word_graph as _wg
+            _winnowed = self._winnow_context(user_input, cortex, word_graph=_wg)
+            if _winnowed:
+                seen = {m.id for m in relevant_memories}
+                relevant_memories = list(relevant_memories) + [
+                    m for m in _winnowed if m.id not in seen
+                ]
+        except Exception:
+            pass
+
         memory_context = self._build_memory_context(relevant_memories)
         session_context = self._build_session_context(cortex)
 
