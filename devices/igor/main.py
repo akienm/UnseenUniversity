@@ -2195,10 +2195,12 @@ class Igor:
                 console.print("[dim]Arbiter queue is empty — nothing to resolve.[/]")
                 return
             console.print(f"\n[bold]{'Approving' if sub == 'approve' else 'Denying'} all {len(pending)} pending items...[/]")
+            resolved = "approved" if sub == "approve" else "denied"
             for item in pending:
-                self._arbiter_resolve(arbiter_queue, item.id, sub)
+                self._arbiter_resolve(arbiter_queue, item.id, resolved)
         elif sub in ("approve", "deny") and arg.isdigit():
-            self._arbiter_resolve(arbiter_queue, int(arg), sub)
+            resolved = "approved" if sub == "approve" else "denied"
+            self._arbiter_resolve(arbiter_queue, int(arg), resolved)
         elif sub == "explain" and arg.isdigit():
             self._arbiter_explain(arbiter_queue, int(arg))
         else:

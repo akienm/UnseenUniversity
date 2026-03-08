@@ -47,6 +47,23 @@ def tokenize(text: str) -> list[str]:
     return [w for w in words if w not in _STOPWORDS and len(w) > 1]
 
 
+def tokenize_with_bigrams(text: str) -> list[str]:
+    """
+    Like tokenize() but also yields adjacent-word bigrams as chunk tokens.
+    e.g. "to be or not to be" → ["not", "be__be"] (stopwords stripped first,
+    bigrams formed from the remaining sequence).
+
+    Bigrams capture bound phrases ("word_graph", "habit_compiler", "new_york")
+    at the chunk level — one step above individual words.
+    Bigram tokens use __ separator to avoid collision with plain words.
+    """
+    words = tokenize(text)
+    tokens = list(words)
+    for a, b in zip(words, words[1:]):
+        tokens.append(f"{a}__{b}")
+    return tokens
+
+
 # ── WordGraph ─────────────────────────────────────────────────────────────────
 
 class WordGraph:
@@ -67,12 +84,12 @@ class WordGraph:
     # ── Indexing ───────────────────────────────────────────────────────────────
 
     def index(self, doc_id: str, text: str, weight: float = 1.0) -> None:
-        """Index a document so its words participate in scoring."""
-        words = tokenize(text)
-        if not words:
+        """Index a document so its words and bigram chunks participate in scoring."""
+        tokens = tokenize_with_bigrams(text)
+        if not tokens:
             return
         self._doc_count += 1
-        unique = list(dict.fromkeys(words))   # preserve order, dedupe
+        unique = list(dict.fromkeys(tokens))   # preserve order, dedupe
         for w in unique:
             self._word_to_ids[w][doc_id] = max(
                 self._word_to_ids[w].get(doc_id, 0.0), weight
@@ -96,7 +113,7 @@ class WordGraph:
         Score each doc_id by TF-IDF word overlap with input_text.
         Returns {doc_id: score} normalised to [0, 1].
         """
-        words = set(tokenize(input_text))
+        words = set(tokenize_with_bigrams(input_text))
         if not words or not doc_ids:
             return {}
 
@@ -121,7 +138,7 @@ class WordGraph:
         Given context text, return top-N co-occurring words by accumulated weight.
         Future: feeds NE incremental word prediction (#50).
         """
-        words = tokenize(context_text)
+        words = tokenize_with_bigrams(context_text)
         counts: dict[str, float] = defaultdict(float)
         for w in words:
             for co_word, weight in self._cooccur.get(w, {}).items():
