@@ -34,6 +34,7 @@ def render(
     last_tier: str = "",
     active_jobs: int = 0,
     word_graph=None,
+    latency_samples: list | None = None,
 ):
     counts = cortex.count_by_type()
     total = cortex.total_count()
@@ -95,6 +96,8 @@ def render(
             pass
     local_pct = _get_local_pct()
     lines.append(f"[bold]Upstream Dependency:[/] {upstream_pct}%   [bold]Local reasoning:[/] {local_pct}%")
+    if latency_samples:
+        lines.append(f"[bold]Latency (p50/p95):[/]  {_latency_p50(latency_samples)}ms / {_latency_p95(latency_samples)}ms  [dim](last {len(latency_samples)})[/]")
     if active_jobs:
         lines.append(f"[bold yellow]Active jobs:[/] {active_jobs}")
     if last_tier:
@@ -155,6 +158,17 @@ def _get_active_alerts(cortex: Cortex) -> list[str]:
         return list(seen.values())
     except Exception:
         return []
+
+
+def _latency_p50(samples: list) -> int:
+    s = sorted(samples)
+    return s[len(s) // 2] if s else 0
+
+
+def _latency_p95(samples: list) -> int:
+    s = sorted(samples)
+    idx = max(0, int(len(s) * 0.95) - 1)
+    return s[idx] if s else 0
 
 
 def _get_budget_line() -> str:
