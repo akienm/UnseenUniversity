@@ -52,6 +52,7 @@ class NetworkMessage:
     author: str               # Display name or email
     reply_info: dict = field(default_factory=dict)  # Source-specific reply metadata
     raw: Any = None           # Original source object (for advanced use)
+    received_at: float = 0.0  # time.monotonic() at moment of queue insertion (#139)
 
 
 # ── Source pollers ─────────────────────────────────────────────────────────────
@@ -72,6 +73,7 @@ def _poll_discord():
                     "message_id":   msg.message_id,
                 },
                 raw=msg,
+                received_at=time.monotonic(),
             ))
         except queue.Empty:
             break
@@ -87,6 +89,7 @@ def _poll_web():
                 content=msg["content"],
                 author=msg.get("author", "web-user"),
                 reply_info={"client_id": msg.get("client_id")},
+                received_at=time.monotonic(),
             ))
         except queue.Empty:
             break
@@ -146,6 +149,7 @@ def _poll_gmail():
                         "subject":  subject,
                         "reply_to": reply_to,
                     },
+                    received_at=time.monotonic(),
                 ))
 
     except Exception:

@@ -152,6 +152,7 @@ class Igor:
         # Part C — routing signal tracking
         self._last_response_time: float = 0.0      # epoch seconds of last response
         self._consecutive_slow: int = 0             # consecutive responses over latency budget
+        self._latency_samples: list = []            # rolling last-20 total_ms for p50/p95 (#139)
 
         # Dashboard live activity state (#18)
         self._current_action: str = "idle"
@@ -246,7 +247,7 @@ class Igor:
             console.print(f"[dim]  (at {restart_note['timestamp'][:16]})[/]")
         ring = self.cortex.read_ring_memory(limit=10)
         if ring:
-            _noisy = {"session_control", "ne_diagnostic", "tool_trace", "habit_trace", "interruptor"}
+            _noisy = {"session_control", "ne_diagnostic", "tool_trace", "habit_trace", "interruptor", "latency_trace", "user_turn"}
             _filtered = [e for e in ring if e['category'] not in _noisy]
             _show = _filtered[-3:] if _filtered else []
             if _show:
@@ -782,7 +783,7 @@ class Igor:
         # Also include Q/A entries (most informative for context recovery)
         for e in ring_tail:
             cat = e.get("category", "")
-            if cat not in _SUMMARY_CATS and cat not in ("tool_trace", "interruptor", "session_control", "habit_trace"):
+            if cat not in _SUMMARY_CATS and cat not in ("tool_trace", "interruptor", "session_control", "habit_trace", "latency_trace", "user_turn"):
                 _summary_parts.append(f"[{cat}] {e['content'][:800]}")
         # Fall back to last ring content if nothing useful found
         if not _summary_parts:
@@ -1257,6 +1258,8 @@ class Igor:
             web_server.broadcast_activity(self._activity_state())
 
     def _process_inner(self, user_input: str, is_impulse: bool) -> str:
+        import time as _time
+        _t0 = _time.monotonic()   # wall-clock start for latency instrumentation (#139)
         new_memories = 0
         # [TWM] Push incoming message as observation (non-command, non-impulse messages only)
         if not is_impulse and not user_input.startswith("/"):
@@ -1423,6 +1426,7 @@ class Igor:
             relevant = score_memories(user_input, candidates) if candidates else []
 
         pre = parse_preparse_csb(pre_csb, habits)
+        _t_after_preparse_memory = _time.monotonic()   # preparse + memory retrieval done (#139)
         complexity = pre["complexity"]
         _skip_to = complexity["tier_minimum"]
         # D035: interactive human turns need persona-capable model (min tier.3.5).
@@ -1799,6 +1803,7 @@ class Igor:
         # [RING] Write interaction summary to short-term memory
         # Skip impulse turns — their keywords would pollute push_sources memory surfacing
         # and their content adds no value to human-turn context.
+        _t_after_reasoning = _time.monotonic()   # reasoning complete (#139)
         if not is_impulse:
             self.cortex.write_ring(
                 f"Q: {user_input[:800]} | A: {response_text[:1200]} | intent={parsed.intent} friction={friction:.2f}",
@@ -1866,6 +1871,7 @@ class Igor:
             last_tier=getattr(self, "_current_tier", ""),
             active_jobs=self.job_manager.active_count() if hasattr(self, "job_manager") and self.job_manager else 0,
             word_graph=self._word_graph,
+            latency_samples=self._latency_samples,
         )
 
         # [PRECOMPACT] Flush session summary to LTM before context window gets too large (change.32)
@@ -1874,8 +1880,9 @@ class Igor:
                 and not self._context_flush_done):
             self._pre_compaction_flush()
 
-        # Part C — stamp response time; track consecutive slow responses
+        # Part C — stamp response time; track consecutive slow responses; latency instrumentation (#139)
         import time as _t
+        _t_end = _time.monotonic()
         _response_elapsed = _t.time() - (self._last_response_time if self._last_response_time > 0 else _t.time())
         self._last_response_time = _t.time()
         _budget = float(os.getenv("LATENCY_BUDGET_SECONDS", "8"))
@@ -1883,6 +1890,21 @@ class Igor:
             self._consecutive_slow += 1
         elif not is_impulse:
             self._consecutive_slow = max(0, self._consecutive_slow - 1)
+
+        # Compute stage latencies and write latency_trace ring entry (#139)
+        if not is_impulse:
+            _preparse_ms  = round((_t_after_preparse_memory - _t0) * 1000)
+            _reasoning_ms = round((_t_after_reasoning - _t_after_preparse_memory) * 1000)
+            _total_ms     = round((_t_end - _t0) * 1000)
+            # Rolling last-20 samples for p50/p95 dashboard display
+            self._latency_samples.append(_total_ms)
+            if len(self._latency_samples) > 20:
+                self._latency_samples = self._latency_samples[-20:]
+            self.cortex.write_ring(
+                f"LATENCY|preparse_ms={_preparse_ms}|reasoning_ms={_reasoning_ms}"
+                f"|total_ms={_total_ms}|tier={_tier_hint}|intent={parsed.intent}",
+                category="latency_trace",
+            )
 
         return response_text
 
