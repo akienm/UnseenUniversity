@@ -420,8 +420,8 @@ class LocalKoboldPool:
                     proc_id="PROC_ROUTING_ESCALATE",  # Change 7 / D031
                 )
                 raise RuntimeError(
-                    f"Estimated local latency {est_latency:.1f}s > budget {budget}s "
-                    f"(speed_score={speed_score:.2f}) — escalating to cloud"
+                    f"Local too slow: est {est_latency:.1f}s > budget {budget}s "
+                    f"(speed_score={speed_score:.2f})"
                 )
 
         t0       = time.perf_counter()

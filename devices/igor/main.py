@@ -132,7 +132,7 @@ class Igor:
         self.batch_pool  = BatchKoboldPool(fallback=self.local_pool)
         self.thalamus = thalamus.Thalamus()
         self.interaction_count = 0
-        self.upstream_calls = 0
+        self.cloud_calls = 0
         self.last_friction = None
         self.last_valence = None
         self.last_roi = None
@@ -240,7 +240,8 @@ class Igor:
         # [RING] Surface recent context and restart notes on wakeup
         restart_note = self.cortex.get_last_restart_note()
         if restart_note:
-            console.print(f"\n[yellow]Last session note:[/] {restart_note['content']}")
+            from rich.markup import escape as _escape
+            console.print(f"\n[yellow]Last session note:[/] {_escape(restart_note['content'])}")
             console.print(f"[dim]  (at {restart_note['timestamp'][:16]})[/]")
         ring = self.cortex.read_ring_memory(limit=10)
         if ring:
@@ -737,11 +738,11 @@ class Igor:
         # #116: log escalation rate at end of session for predictor network trend tracking
         try:
             from .cognition.forensic_logger import log_cognition_metric as _lcm
-            _rate = self.upstream_calls / self.interaction_count if self.interaction_count else 0.0
+            _rate = self.cloud_calls / self.interaction_count if self.interaction_count else 0.0
             _lcm(
-                metric="escalation_rate",
+                metric="cloud_escalation_rate",
                 value=_rate,
-                detail=f"cloud={self.upstream_calls}|total={self.interaction_count}|cost=${self.session_cost:.4f}",
+                detail=f"cloud_calls={self.cloud_calls}|total={self.interaction_count}|cost=${self.session_cost:.4f}",
             )
         except Exception:
             pass
@@ -1039,12 +1040,14 @@ class Igor:
                     user_input, relevant, core, self.instance_id,
                     cortex=self.cortex, preparse_csb=preparse_csb
                 )
-                self.upstream_calls += 1
+                self.cloud_calls += 1
                 console.print(f"[dim](tier.3/or-cheap | session_cost: ${self.session_cost + cost:.4f})[/]")
                 return text, cost, True
             except Exception as e:
                 last_error = str(e)
                 console.print(f"[yellow]tier.3 OR-cheap failed ({e}), trying tier.3.5...[/]")
+                from .cognition.forensic_logger import log_error as _log_error
+                _log_error(kind="TIER_FAIL", source="tier.3", detail=str(e))
 
         # ── tier.3.5: OR interactive/persona model ─────────────────────────────
         if self.openrouter_interactive_reasoner is not None and skip_to in ("tier.3", "tier.3.5"):
@@ -1055,12 +1058,14 @@ class Igor:
                     user_input, relevant, core, self.instance_id,
                     cortex=self.cortex, preparse_csb=preparse_csb
                 )
-                self.upstream_calls += 1
+                self.cloud_calls += 1
                 console.print(f"[dim](tier.3.5/or-interactive | session_cost: ${self.session_cost + cost:.4f})[/]")
                 return text, cost, True
             except Exception as e:
                 last_error = str(e)
                 console.print(f"[yellow]tier.3.5 OR-interactive failed ({e}), trying OR-claude...[/]")
+                from .cognition.forensic_logger import log_error as _log_error
+                _log_error(kind="TIER_FAIL", source="tier.3.5", detail=str(e))
 
         # ── tier.4: OR claude ───────────────────────────────────────────────────
         if self.openrouter_reasoner is not None:
@@ -1071,12 +1076,14 @@ class Igor:
                     user_input, relevant, core, self.instance_id,
                     cortex=self.cortex, preparse_csb=preparse_csb
                 )
-                self.upstream_calls += 1
+                self.cloud_calls += 1
                 console.print(f"[dim](tier.4/or-claude | session_cost: ${self.session_cost + cost:.4f})[/]")
                 return text, cost, True
             except Exception as e:
                 last_error = str(e)
                 console.print(f"[yellow]tier.4 OR-claude failed ({e}), trying Anthropic direct...[/]")
+                from .cognition.forensic_logger import log_error as _log_error
+                _log_error(kind="TIER_FAIL", source="tier.4", detail=str(e))
 
         # ── tier.5: Anthropic direct ────────────────────────────────────────────
         # Inhibited by default — Anthropic direct is the most expensive path.
@@ -1092,12 +1099,14 @@ class Igor:
                     user_input, relevant, core, self.instance_id,
                     cortex=self.cortex, preparse_csb=preparse_csb
                 )
-                self.upstream_calls += 1
+                self.cloud_calls += 1
                 console.print(f"[dim](tier.5/anthropic | session_cost: ${self.session_cost + cost:.4f})[/]")
                 return text, cost, True
             except Exception as e:
                 last_error = str(e)
                 console.print(f"[yellow]tier.5 Anthropic failed ({e}), escalating to arbiter...[/]")
+                from .cognition.forensic_logger import log_error as _log_error
+                _log_error(kind="TIER_FAIL", source="tier.5", detail=str(e))
 
         # ── tier.6: arbiter alert — all cloud upstreams exhausted ──────────────
         from .cognition.forensic_logger import log_anomaly as _log_anomaly
@@ -1105,17 +1114,17 @@ class Igor:
         try:
             from .arbiter import queue as arbiter_queue
             item_id = arbiter_queue.submit(
-                description="All reasoning upstreams failed — Igor offline",
+                description="All cloud reasoning upstreams failed — Igor offline",
                 context=f"Last error: {last_error[:200]}",
                 action_type="system_alert",
-                threshold_reason="Total upstream failure (tiers 3-5 all failed)",
+                threshold_reason="Total cloud upstream failure (tiers 3-5 all failed)",
                 metadata={"tier_failures": ["tier.3", "tier.4", "tier.5"]},
             )
-            console.print(f"[bold red][tier.6] All upstreams failed. Arbiter alert #{item_id} queued.[/]")
+            console.print(f"[bold red][tier.6] All cloud upstreams failed. Arbiter alert #{item_id} queued.[/]")
         except Exception:
-            console.print("[bold red][tier.6] All upstreams failed and arbiter unavailable.[/]")
+            console.print("[bold red][tier.6] All cloud upstreams failed and arbiter unavailable.[/]")
         return (
-            "⚠ All reasoning upstreams are currently unavailable. "
+            "⚠ All cloud reasoning upstreams are currently unavailable. "
             "I've queued a notification for akien.",
             0.0,
             False,
@@ -1186,7 +1195,8 @@ class Igor:
         # [RELAY] change.41 — pass-through mode: forward directly to relay model
         if self._relay_session is not None and not is_impulse:
             response = self._relay_session.send(user_input)
-            console.print(f"\n[bold magenta][relay: {self._relay_session.model_name}][/] {response}\n")
+            from rich.markup import escape as _escape
+            console.print(f"\n[bold magenta][relay: {self._relay_session.model_name}][/] {_escape(response)}\n")
             return response
 
         # ── Part C — Routing signal detection ──────────────────────────────────
@@ -1481,7 +1491,7 @@ class Igor:
                     response_text, cost = self.local_pool.reason(
                         user_input, relevant, core, self.instance_id
                     )
-                    self.upstream_calls += 1
+                    self.cloud_calls += 1
                     used_api = False
                     console.print(f"[dim](local | session_cost: ${self.session_cost:.4f})[/]")
                 except Exception as e:
@@ -1505,13 +1515,17 @@ class Igor:
                             user_input, relevant, core, self.instance_id
                         )
                     else:
+                        # force_local=True: impulses are background work — no interactive
+                        # latency requirement, so skip the budget check entirely.
                         response_text, cost = _impulse_pool.reason(
-                            user_input, relevant, core, self.instance_id
+                            user_input, relevant, core, self.instance_id, force_local=True
                         )
                     used_api = False
                     console.print(f"[dim][IMPULSE/{_tier_label}] local ok[/]")
                 except Exception as e:
-                    console.print(f"[dim][IMPULSE] Local failed ({e}) — skipping[/]")
+                    console.print(f"[dim][IMPULSE] local too slow — skipped (no cloud escalation for impulses)[/]")
+                    from .cognition.forensic_logger import log_error as _log_error
+                    _log_error(kind="IMPULSE_SKIP", source="impulse/tier.2", detail=str(e))
                     response_text = ""
                     cost = 0.0
             elif _local_only:
@@ -1596,7 +1610,8 @@ class Igor:
                 )
                 response_text = ""
             else:
-                console.print(f"\n[bold blue]Igor:[/] {response_text}\n")
+                from rich.markup import escape as _escape
+                console.print(f"\n[bold blue]Igor:[/] {_escape(response_text)}\n")
                 # #112 phase 1: score boot orientation on first interactive response
                 if not self._boot_orientation_scored and not is_impulse:
                     self._boot_orientation_scored = True
@@ -1720,7 +1735,7 @@ class Igor:
             last_roi=self.last_roi,
             last_action=f"{parsed.intent}: {user_input[:40]}",
             new_memories=new_memories,
-            upstream_calls=self.upstream_calls,
+            upstream_calls=self.cloud_calls,
             milieu_state=milieu_mod.get().get_state() if milieu_mod.get() else None,
             last_tier=getattr(self, "_current_tier", ""),
             active_jobs=self.job_manager.active_count() if hasattr(self, "job_manager") and self.job_manager else 0,
@@ -2199,7 +2214,7 @@ class Igor:
             cortex=self.cortex,
             session_interactions=self.interaction_count,
             session_cost=self.session_cost,
-            upstream_calls=self.upstream_calls,
+            upstream_calls=self.cloud_calls,
         )
         console.print(report)
 
@@ -2829,7 +2844,8 @@ class Igor:
             return
         console.print("[dim]Sending to Claude Code CLI...[/]")
         output = send_to_claude_code(block)
-        console.print(f"\n[bold]Claude Code response:[/]\n{output}\n")
+        from rich.markup import escape as _escape
+        console.print(f"\n[bold]Claude Code response:[/]\n{_escape(output)}\n")
 
     def _cmd_local(self, raw):
         parts = raw.strip().split(None, 1)
@@ -2911,7 +2927,7 @@ class Igor:
 
     def _cmd_cost(self, _):
         console.print(f"\n[bold]Session cost:[/] ${self.session_cost:.4f}")
-        console.print(f"[bold]Upstream calls:[/] {self.upstream_calls}")
+        console.print(f"[bold]Upstream calls:[/] {self.cloud_calls}")
         console.print(f"[bold]Interactions:[/] {self.interaction_count}")
 
     def _cmd_restart(self, _):
