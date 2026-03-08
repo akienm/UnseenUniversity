@@ -234,6 +234,67 @@ class MilieuInterruptor(BaseInterruptor):
         return None
 
 
+class DiskInterruptor(BaseInterruptor):
+    """
+    Monitors free disk space for Igor's runtime paths.
+    Fires when free space drops below IGOR_DISK_WARN_GB (default 1GB)
+    or IGOR_DISK_CRITICAL_GB (default 0.2GB).
+    Rate-limited: re-checks every 50 interactions to avoid shutil overhead every turn.
+    """
+
+    name = "disk_space"
+    COOLDOWN_INTERACTIONS = 50
+
+    def __init__(self):
+        self._last_fired_at: int = 0
+        self._interaction_count: int = 0
+        self._was_alerting: bool = False
+
+    def check(self, cortex=None) -> str | None:
+        import os
+        import shutil
+        from pathlib import Path
+
+        self._interaction_count += 1
+        if self._interaction_count - self._last_fired_at < self.COOLDOWN_INTERACTIONS:
+            return None
+
+        warn_gb = float(os.getenv("IGOR_DISK_WARN_GB", "1.0"))
+        crit_gb = float(os.getenv("IGOR_DISK_CRITICAL_GB", "0.2"))
+
+        try:
+            usage = shutil.disk_usage(str(Path.home() / ".TheIgors"))
+            free_gb = usage.free / (1024 ** 3)
+        except Exception:
+            return None
+
+        self._last_fired_at = self._interaction_count
+
+        if free_gb < crit_gb:
+            msg = (
+                f"⛔ DISK CRITICAL: Only {free_gb:.2f} GB free on ~/.TheIgors partition. "
+                "Stop large writes immediately. Skipping backups. Alert Akien!"
+            )
+            self._was_alerting = True
+            self._write_alert(cortex, msg)
+            return msg
+
+        if free_gb < warn_gb:
+            msg = (
+                f"⚠️  DISK WARN: {free_gb:.2f} GB free on ~/.TheIgors partition. "
+                "Consider pruning logs or old cache files."
+            )
+            self._was_alerting = True
+            self._write_alert(cortex, msg)
+            return msg
+
+        if self._was_alerting:
+            self._write_alert(cortex, f"✅ CLEARED: Disk space OK — {free_gb:.2f} GB free.")
+            self._was_alerting = False
+
+        return None
+
+
 # ── Active interruptors ───────────────────────────────────────────────────────
 # Add new interruptors here. They'll be run automatically.
 
@@ -241,6 +302,7 @@ ACTIVE_INTERRUPTORS: list[BaseInterruptor] = [
     BudgetInterruptor(),
     ContextInterruptor(),
     MilieuInterruptor(),
+    DiskInterruptor(),
 ]
 
 

@@ -7,8 +7,13 @@ Read/write tools (sandboxed to /home/akien):
 
 System read-only tools (full filesystem, read only):
   read_system_file, list_system_dir — absolute paths required, no writes
+
+Self-awareness tools:
+  check_disk_usage — disk free space for Igor's key paths
 """
 
+import os
+import shutil
 from pathlib import Path
 from .registry import Tool, registry
 
@@ -144,6 +149,52 @@ def list_system_dir(path: str) -> str:
         return f"Error listing directory: {e}"
 
 
+def check_disk_usage() -> str:
+    """
+    Check disk free space for Igor's key paths.
+    Returns a summary with warnings if below thresholds.
+    """
+    warn_gb   = float(os.getenv("IGOR_DISK_WARN_GB", "1.0"))
+    crit_gb   = float(os.getenv("IGOR_DISK_CRITICAL_GB", "0.2"))
+    igor_home = Path.home() / ".TheIgors"
+    src_home  = Path.home() / "TheIgors"
+
+    paths = [
+        ("runtime (~/.TheIgors)", igor_home),
+        ("source (~/TheIgors)", src_home),
+        ("disk (/)", Path("/")),
+    ]
+
+    lines = ["Disk usage report:"]
+    alerts = []
+    for label, p in paths:
+        try:
+            usage = shutil.disk_usage(str(p))
+            free_gb  = usage.free  / (1024 ** 3)
+            total_gb = usage.total / (1024 ** 3)
+            used_pct = (usage.used / usage.total * 100) if usage.total else 0
+            status = ""
+            if free_gb < crit_gb:
+                status = " ⚠ CRITICAL"
+                alerts.append(f"CRITICAL: {label} has only {free_gb:.2f} GB free")
+            elif free_gb < warn_gb:
+                status = " ⚠ WARN"
+                alerts.append(f"WARN: {label} has only {free_gb:.2f} GB free")
+            lines.append(f"  {label}: {free_gb:.2f} GB free / {total_gb:.1f} GB total ({used_pct:.0f}% used){status}")
+        except Exception as e:
+            lines.append(f"  {label}: error — {e}")
+
+    if alerts:
+        lines.append("")
+        lines.append("⚠ Alerts:")
+        for a in alerts:
+            lines.append(f"  {a}")
+    else:
+        lines.append("  All paths within normal thresholds.")
+
+    return "\n".join(lines)
+
+
 # Register tools
 registry.register(Tool(
     name="read_file",
@@ -229,4 +280,20 @@ registry.register(Tool(
         "required": ["path"],
     },
     fn=list_system_dir,
+))
+
+registry.register(Tool(
+    name="check_disk_usage",
+    description=(
+        "Check free disk space for Igor's key paths (~/.TheIgors, ~/TheIgors, /). "
+        "Returns usage summary with warnings if below IGOR_DISK_WARN_GB (default 1GB) "
+        "or IGOR_DISK_CRITICAL_GB (default 0.2GB) thresholds. "
+        "Call this after large ingestion tasks or whenever storage feels tight."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {},
+        "required": [],
+    },
+    fn=check_disk_usage,
 ))

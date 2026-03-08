@@ -101,6 +101,7 @@ class Igor:
         observer.init(self.cortex)
         self.root_id = initialize_genesis(self.cortex, instance_id)
         self._inject_credential_refs()
+        self._ensure_builtin_habits()
         self._boot_integrity_check()
 
         # Word graph: fast in-memory semantic index over habit triggers + narratives.
@@ -291,6 +292,75 @@ class Igor:
                     portable=False,
                     metadata={"env_key": env_key, "present": True},
                 ))
+
+    def _ensure_builtin_habits(self) -> None:
+        """
+        Seed built-in habits that should exist on every instance but aren't genesis.
+        Uses INSERT OR REPLACE (upsert) so re-running is safe.
+        Habits are keyed by stable IDs — updating the metadata here will update the DB.
+        """
+        builtin = [
+            Memory(
+                id="PROC_BACKUP_CHECK",
+                narrative="Periodically check when the last backup was made and trigger PROC_BACKUP_RUN if overdue.",
+                memory_type=MemoryType.PROCEDURAL,
+                parent_id="CP4",
+                valence=0.6,
+                metadata={
+                    "trigger": "backup_check",
+                    "habit_type": "proactive",
+                    "schedule": "interval:86400",  # once per day
+                    "action": (
+                        "Check ~/.TheIgors/backups/ for the most recent backup timestamp. "
+                        "If last backup > IGOR_BACKUP_INTERVAL_H hours ago (default 24h), "
+                        "emit ACTION_IMPULSE to trigger PROC_BACKUP_RUN."
+                    ),
+                    "why": "Self-preservation: a backup Igor hasn't taken is a backup that won't be there when needed.",
+                },
+            ),
+            Memory(
+                id="PROC_BACKUP_RUN",
+                narrative="Back up Igor's runtime state: DB, milieu, warm context, SOUL.md, IDENTITY.md.",
+                memory_type=MemoryType.PROCEDURAL,
+                parent_id="CP4",
+                valence=0.7,
+                metadata={
+                    "trigger": "backup_requested",
+                    "habit_type": "action",
+                    "action": (
+                        "Run: tar czf ~/.TheIgors/backups/igor_{id}_$(date +%Y%m%d_%H%M%S).tar.gz "
+                        "~/.TheIgors/igor_{id}/wild-0001.db "
+                        "~/.TheIgors/milieu_global.json "
+                        "~/.TheIgors/igor_{id}/warm_context.0.json "
+                        "~/.TheIgors/SOUL.md "
+                        "~/.TheIgors/igor_{id}/IDENTITY.md "
+                        "2>/dev/null. "
+                        "Log result to ring: BACKUP_OK|size=Xmb or BACKUP_FAIL|reason=..."
+                    ),
+                    "why": "Resilience: runtime state loss means starting cold. Backups close the recovery gap.",
+                },
+            ),
+            Memory(
+                id="PROC_DISK_USAGE_CHECK",
+                narrative="Check disk space when asked or after large ingestion tasks.",
+                memory_type=MemoryType.PROCEDURAL,
+                parent_id="CP4",
+                valence=0.5,
+                metadata={
+                    "trigger": "check disk",
+                    "habit_type": "action",
+                    "action": "Call check_disk_usage() tool to report free space on key paths.",
+                    "code_ref": "tools/filesystem.py:check_disk_usage",
+                    "why": "Self-awareness about storage prevents silent failures from full partitions.",
+                },
+            ),
+        ]
+        for mem in builtin:
+            self.cortex.store(mem)
+            try:
+                self.cortex.add_child(mem.parent_id, mem.id)
+            except Exception:
+                pass  # child link may already exist
 
     def _boot_integrity_check(self):
         """
@@ -607,13 +677,18 @@ class Igor:
         _summary_parts = []
         for e in ring_tail:
             if e.get("category") in _SUMMARY_CATS:
-                _summary_parts.append(f"[{e.get('category','note')}] {e['content'][:200]}")
+                _summary_parts.append(f"[{e.get('category','note')}] {e['content'][:400]}")
+        # Also include Q/A entries (most informative for context recovery)
+        for e in ring_tail:
+            cat = e.get("category", "")
+            if cat not in _SUMMARY_CATS and cat not in ("tool_trace", "interruptor", "session_control", "habit_trace"):
+                _summary_parts.append(f"[{cat}] {e['content'][:400]}")
         # Fall back to last ring content if nothing useful found
         if not _summary_parts:
-            _summary_parts = [ring_tail[-1]["content"][:200]] if ring_tail else []
+            _summary_parts = [ring_tail[-1]["content"][:400]] if ring_tail else []
         session_summary = (
             f"{self.interaction_count} interactions, ${self.session_cost:.4f}\n"
-            + "\n".join(_summary_parts[-8:])  # most recent 8 meaningful events
+            + "\n".join(_summary_parts[-12:])  # most recent 12 meaningful events
         )
 
         ctx = {
