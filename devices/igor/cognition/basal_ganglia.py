@@ -27,6 +27,18 @@ if TYPE_CHECKING:
     from .milieu import MilieuState
 
 
+# ── Word graph integration ─────────────────────────────────────────────────────
+# Injected at boot by main.py. None until set — all code paths must guard.
+
+_word_graph = None
+
+
+def set_word_graph(wg) -> None:
+    """Inject the WordGraph instance at boot — called from main.py."""
+    global _word_graph
+    _word_graph = wg
+
+
 # ── Compile-phrase pre-check ───────────────────────────────────────────────────
 
 COMPILE_PHRASES: tuple[str, ...] = (
@@ -180,9 +192,20 @@ def select_habit(
         # ── 2. Parallel scoring ───────────────────────────────────────────────
         threshold = _compute_threshold(milieu_state)
         now = datetime.now(timezone.utc)
+
+        # Word graph pre-score: semantic signal over all habits at once (fast)
+        _wg_scores: dict[str, float] = {}
+        if _word_graph is not None:
+            try:
+                _wg_scores = _word_graph.score(parsed.raw, [h.id for h in habits])
+            except Exception:
+                pass
+
         scored = []
         for habit in habits:
             s = _score_habit(habit, raw_lower, keywords, now=now)
+            if s > 0:  # only apply bonus when trigger matched
+                s += _wg_scores.get(habit.id, 0.0) * 0.10  # word graph bonus: 0.0–0.10
             if s >= threshold:
                 scored.append((s, habit))
 
@@ -196,6 +219,14 @@ def select_habit(
             reverse=True,
         )
         winner_score, winner = scored[0]
+
+        # Reinforce word graph: winning habit's word weights get a small boost
+        if _word_graph is not None:
+            try:
+                _word_graph.reinforce(winner.id)
+            except Exception:
+                pass
+
         return (winner, winner_score)
 
     except Exception:
