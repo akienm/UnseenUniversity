@@ -354,6 +354,30 @@ class Igor:
                     "why": "Self-awareness about storage prevents silent failures from full partitions.",
                 },
             ),
+            Memory(
+                id="PROC_PREPARSE_TUNING",
+                narrative="Tune when KoboldCpp preparse is skipped vs used. Low/high complexity = skip; medium = use.",
+                memory_type=MemoryType.PROCEDURAL,
+                parent_id="CP2",
+                valence=0.6,
+                metadata={
+                    "trigger": "tune preparse",
+                    "habit_type": "action",
+                    "env_var": "IGOR_SKIP_PREPARSE_ON_CONFIDENT",
+                    "current_value": "true",
+                    "action": (
+                        "To disable: set IGOR_SKIP_PREPARSE_ON_CONFIDENT=false in .env and /restart. "
+                        "To re-enable: set to true. "
+                        "When true: KoboldCpp preparse only called on medium-complexity non-habit turns. "
+                        "Expected: reduces upstream dependency by ~10-15%."
+                    ),
+                    "why": (
+                        "KoboldCpp preparse is redundant when thalamus complexity is already confident. "
+                        "low=rule-based CSB is sufficient; high=tier.4 forced regardless of preparse. "
+                        "Only medium complexity needs KoboldCpp for routing disambiguation."
+                    ),
+                },
+            ),
         ]
         for mem in builtin:
             self.cortex.store(mem)
@@ -1231,11 +1255,19 @@ class Igor:
                 self.ne.record_actual(_thalamus_habit.id if _thalamus_habit else None)
             except Exception:
                 pass
+        # #142: skip KoboldCpp preparse when thalamus is already confident.
+        # low complexity → rule-based CSB is correct; high complexity → tier.4 forced anyway.
+        # Only medium complexity genuinely needs KoboldCpp for routing disambiguation.
+        _thalamus_confident = (
+            parsed.complexity in ("low", "high")
+            and os.getenv("IGOR_SKIP_PREPARSE_ON_CONFIDENT", "true").lower() != "false"
+        )
         _skip_llm_preparse = (
             parsed.intent in _fast_path_intents
             or _thalamus_habit is not None
             or not parsed.keywords  # empty input
             or is_impulse  # background work — rule-based CSB is instant; never wait on LLM
+            or _thalamus_confident  # thalamus is confident — KoboldCpp won't change the routing
         )
 
         candidates: list = []
