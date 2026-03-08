@@ -93,7 +93,8 @@ def render(
             lines.append(f"[bold]Word graph:[/] {wg_words} words  {wg_habits} docs indexed")
         except Exception:
             pass
-    lines.append(f"[bold]Upstream Dependency:[/] {upstream_pct}%")
+    local_pct = _get_local_pct()
+    lines.append(f"[bold]Upstream Dependency:[/] {upstream_pct}%   [bold]Local reasoning:[/] {local_pct}%")
     if active_jobs:
         lines.append(f"[bold yellow]Active jobs:[/] {active_jobs}")
     if last_tier:
@@ -198,6 +199,18 @@ def _vad_bar(value: float, width: int = 5) -> str:
     filled = round((value + 1.0) / 2.0 * width)
     filled = max(0, min(width, filled))
     return "▓" * filled + "░" * (width - filled)
+
+
+def _get_local_pct(n: int = 100) -> int:
+    """% of last N tier selections that were local (tier.1 or tier.2)."""
+    try:
+        from ..cognition.metrics import _tier_distribution
+        counts = _tier_distribution(n=n)
+        total = sum(counts.values())
+        local = counts.get("tier.1", 0) + counts.get("tier.2", 0)
+        return round(local / max(total, 1) * 100)
+    except Exception:
+        return 0
 
 
 def _upstream_pct(total_interactions: int, upstream_calls: int) -> int:
