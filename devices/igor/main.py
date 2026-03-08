@@ -103,6 +103,28 @@ class Igor:
         self._inject_credential_refs()
         self._boot_integrity_check()
 
+        # Word graph: fast in-memory semantic index over habit triggers + narratives.
+        # Two traversal directions on same weights: parsing (which habit?) + generation (what next?).
+        self._word_graph = None
+        try:
+            from .cognition.word_graph import WordGraph, default_cache_path
+            _wg_path = default_cache_path()
+            _boot_habits = self.cortex.get_habits()
+            if _wg_path.exists():
+                self._word_graph = WordGraph.load(_wg_path)
+                if not self._word_graph._word_to_ids:
+                    self._word_graph = WordGraph.build_from_habits(_boot_habits)
+            else:
+                self._word_graph = WordGraph.build_from_habits(_boot_habits)
+                self._word_graph.save(_wg_path)
+            basal_ganglia.set_word_graph(self._word_graph)
+            console.print(
+                f"[dim]Word graph ready ({len(self._word_graph._word_to_ids)} words, "
+                f"{len(_boot_habits)} habits)[/]"
+            )
+        except Exception as _wg_e:
+            console.print(f"[yellow]Word graph init failed: {_wg_e}[/]")
+
         self.ne = NarrativeEngine(self.cortex, instance_id)
         self.reasoner = AnthropicReasoner()
         self.local_pool  = LocalKoboldPool()
@@ -798,6 +820,7 @@ class Igor:
             last_action="Genesis state loaded",
             milieu_state=milieu_mod.get().get_state() if milieu_mod.get() else None,
             active_jobs=self.job_manager.active_count(),
+            word_graph=self._word_graph,
         )
 
         # Spin up stdin reader thread
@@ -1590,6 +1613,7 @@ class Igor:
             milieu_state=milieu_mod.get().get_state() if milieu_mod.get() else None,
             last_tier=getattr(self, "_current_tier", ""),
             active_jobs=self.job_manager.active_count() if hasattr(self, "job_manager") and self.job_manager else 0,
+            word_graph=self._word_graph,
         )
 
         # [PRECOMPACT] Flush session summary to LTM before context window gets too large (change.32)
@@ -2666,6 +2690,13 @@ class Igor:
         console.print(f"[yellow]Unknown command: {raw}[/]  (try /help)")
 
     def _shutdown(self, reason: str = "shutdown"):
+        # Persist learned word graph weights before exit
+        if self._word_graph is not None:
+            try:
+                from .cognition.word_graph import default_cache_path
+                self._word_graph.save(default_cache_path())
+            except Exception:
+                pass
         self.cortex.write_restart_note(
             reason=f"{reason} — {self.interaction_count} interactions, ${self.session_cost:.4f}",
         )

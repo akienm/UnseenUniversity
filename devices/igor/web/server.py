@@ -6,6 +6,7 @@ Endpoints:
   GET  /assets/{path}       → serve web_ui/dist/assets/
   WS   /ws                  → WebSocket chat (bidirectional)
   POST /api/upload          → save file to inbox, notify Igor
+  POST /api/cc_send         → Claude Code → Igor channel (author: "claude-code")
   GET  /api/outbox          → JSON list of outbox files with size/mtime
   GET  /api/outbox/{file}   → download file from outbox
   GET  /api/dashboard       → JSON stats snapshot
@@ -157,6 +158,25 @@ async def _api_outbox_download(request: Request):
     return FileResponse(str(path), filename=safe)
 
 
+async def _api_cc_send(request: Request):
+    """CC→Igor channel: Claude Code injects a message with author 'claude-code'."""
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "invalid JSON"}, status_code=400)
+    content = body.get("content", "").strip()
+    if not content:
+        return JSONResponse({"error": "empty content"}, status_code=400)
+    incoming.put({"content": content, "author": "claude-code"})
+    _broadcast(json.dumps({
+        "type": "message",
+        "author": "claude-code",
+        "content": content,
+        "ts": _ts(),
+    }))
+    return JSONResponse({"status": "ok"})
+
+
 async def _api_dashboard(request: Request):
     data: dict = {}
     if _stats_fn is not None:
@@ -234,6 +254,7 @@ def _make_app() -> Starlette:
         Route("/", _index),
         WebSocketRoute("/ws", _ws_endpoint),
         Route("/api/upload", _api_upload, methods=["POST"]),
+        Route("/api/cc_send", _api_cc_send, methods=["POST"]),
         Route("/api/outbox", _api_outbox_list),
         Route("/api/outbox/{filename}", _api_outbox_download),
         Route("/api/dashboard", _api_dashboard),
@@ -583,8 +604,7 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
       const rawText = input.value.trim();
       if (!rawText || !ws || ws.readyState !== 1) return;
       const name = (senderName.value.trim() || 'akien').toLowerCase();
-      const text = name === 'akien' ? rawText : name + ': ' + rawText;
-      ws.send(JSON.stringify({type: 'message', content: text}));
+      ws.send(JSON.stringify({type: 'message', content: rawText, author: name}));
       input.value = '';
     }
     // Enter sends; Shift+Enter inserts newline in textarea

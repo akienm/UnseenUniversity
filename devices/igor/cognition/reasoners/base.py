@@ -54,16 +54,17 @@ CALL_COST_WARN_USD  = float(os.getenv("IGOR_CALL_COST_WARN_USD", "0.30"))
 RESEARCH_TOOL_CAP   = int(os.getenv("IGOR_RESEARCH_TOOL_CAP", "5"))
 RESEARCH_MODE       = os.getenv("IGOR_RESEARCH_MODE", "false").lower() in ("1", "true", "yes")
 
-# Tools that constitute "big reading" — bulk use without IGOR_RESEARCH_MODE triggers a gate.
+# Tools that constitute expensive external reads — capped when not in research mode.
+# Local file reads (read_source_file, list_source_files) are free and NOT capped.
+# Only external API calls that cost money or tokens are gated.
 BIG_READ_TOOLS = frozenset({
-    "read_source_file", "list_source_files",
     "confluence_search", "confluence_get_page",
     "web_search",
 })
 
-# Bash command prefixes that indicate file reading/searching via run_bash.
-# These count against the research cap — Igor should delegate code archaeology to CC.
-BASH_READ_PATTERNS = ("cat ", "sed ", "grep ", "find ", "head ", "tail ", "ls ")
+# Bash command prefixes that indicate external/expensive operations via run_bash.
+# Plain file reads via bash are NOT counted — only network/search patterns.
+BASH_READ_PATTERNS = ("curl ", "wget ")
 
 
 class BaseReasoner(ABC):

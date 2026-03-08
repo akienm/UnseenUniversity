@@ -33,6 +33,7 @@ def render(
     milieu_state=None,
     last_tier: str = "",
     active_jobs: int = 0,
+    word_graph=None,
 ):
     counts = cortex.count_by_type()
     total = cortex.total_count()
@@ -85,6 +86,13 @@ def render(
     blob_count = _get_blob_count(cortex)
     blob_str = f"   [bold]Blobs:[/] {blob_count}" if blob_count else ""
     lines.append(f"[bold]Habits:[/] {len(habits)}   [bold]TWM depth:[/] {twm_depth}{blob_str}")
+    if word_graph is not None:
+        try:
+            wg_words = len(word_graph._word_to_ids)
+            wg_habits = word_graph._doc_count
+            lines.append(f"[bold]Word graph:[/] {wg_words} words  {wg_habits} docs indexed")
+        except Exception:
+            pass
     lines.append(f"[bold]Upstream Dependency:[/] {upstream_pct}%")
     if active_jobs:
         lines.append(f"[bold yellow]Active jobs:[/] {active_jobs}")
@@ -226,7 +234,7 @@ def print_activated_memories(memories: list, label: str = "Activated memories"):
 
 
 def print_habit_trigger(habit):
-    console.print(f"\n[green][HABIT] Triggered: {habit.narrative[:60]}[/]")
+    console.print(f"\n[green][HABIT] Triggered: {habit.id} — {habit.narrative}[/]")
 
 
 def print_reasoning(used_api: bool):
