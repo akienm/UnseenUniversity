@@ -32,11 +32,15 @@ _FULL_PATTERNS: list[re.Pattern] = [
     # Slack tokens
     re.compile(r'xox[bpas]-[A-Za-z0-9\-]{20,}'),
     # Pure lowercase hex ≥32 chars (MD5/SHA/UUID-like API keys)
-    re.compile(r'\b[0-9a-f]{32,}\b'),
+    # Excluded: path segments (preceded/followed by / or word chars) to avoid
+    # clobbering SHA-256 cache filenames and training corpus book IDs (#30)
+    re.compile(r'(?<![/\w])[0-9a-f]{32,}(?![/\w])'),
     # Pure uppercase hex ≥32 chars
-    re.compile(r'\b[0-9A-F]{32,}\b'),
-    # Base64-ish strings ≥40 chars not immediately preceded/followed by word chars or /
-    re.compile(r'(?<![/\w])[A-Za-z0-9+/]{40,}={0,2}(?![/\w])'),
+    re.compile(r'(?<![/\w])[0-9A-F]{32,}(?![/\w])'),
+    # Base64/URL-safe-base64-ish tokens ≥40 chars.
+    # '/' excluded from charset — real API tokens use URL-safe base64 ('-'/'_'); including
+    # '/' caused path segments to be absorbed and mangled (e.g. .TheIgors/cache/... redacted).
+    re.compile(r'(?<![/\w])[A-Za-z0-9+\-_]{40,}={0,2}(?![/\w])'),
 ]
 
 # Bearer token — replace only the token portion (group 1), keep "Bearer "
