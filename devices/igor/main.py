@@ -1999,6 +1999,7 @@ class Igor:
             "memories": self._cmd_memories,
             "core": self._cmd_core,
             "habits": self._cmd_habits,
+            "metrics": self._cmd_metrics,
             "quit": self._cmd_quit,
             "exit": self._cmd_quit,
             "restart": self._cmd_restart,
@@ -2026,6 +2027,7 @@ class Igor:
   /memories       - List recent episodic memories
   /core           - Show core patterns
   /habits         - Show compiled habits (/habits list|pending|compile|explain <id>)
+  /metrics        - Full internal metrics: tier distribution, local%, word graph, top tools
   /arbiter        - Human-approval queue (/arbiter list|approve <N>|all|deny <N>|all|explain <N>)
   /cost           - Show session cost
   /model          - Show current reasoning model
@@ -2078,6 +2080,17 @@ class Igor:
         console.print(f"\n[bold]Core Patterns (inertia ~{patterns[0].inertia:.2f}):[/]")
         for p in patterns:
             console.print(f"  [{p.id}] {p.narrative}")
+
+    def _cmd_metrics(self, raw):
+        """Full internal metrics report."""
+        from .cognition.metrics import build_report
+        report = build_report(
+            cortex=self.cortex,
+            session_interactions=self.interaction_count,
+            session_cost=self.session_cost,
+            upstream_calls=self.upstream_calls,
+        )
+        console.print(report)
 
     def _cmd_habits(self, raw):
         """Habit visibility and compilation (change.34).
