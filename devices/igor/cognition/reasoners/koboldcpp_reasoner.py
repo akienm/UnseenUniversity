@@ -74,11 +74,12 @@ def _post_json(host: str, path: str, payload: dict, timeout: int) -> dict:
 
 PREPARSE_TIMEOUT = 8   # seconds — fast extraction only, not reasoning
 
+# Intent taxonomy must match thalamus.py 12-intent taxonomy exactly (#30)
 _PREPARSE_PROMPT = """\
 Parse this input. Output ONLY the block below with fields filled in — no other text.
 
 [PARSED_INPUT]
-intent: <greeting|question|task|memory_op|command|general>
+intent: <greeting|meta_question|memory_instruction|code_task|analysis_task|explanation_request|factual_question|action_request|complaint|command|conversation|general>
 tone: <friendly|neutral|urgent|frustrated|curious>
 complexity: <low|medium|high>
 entities: <comma-separated names/things, or none>
@@ -91,23 +92,35 @@ Input: "{text}"
 
 
 def _rule_based_csb(user_input: str, habits: List[Memory]) -> str:
-    """Fallback: produce PARSED_INPUT CSB block using pure Python rules."""
+    """Fallback: produce PARSED_INPUT CSB block using pure Python rules.
+    Intent taxonomy matches thalamus.py 12-intent taxonomy (#30).
+    """
     text = user_input.lower()
     words = text.split()
 
-    # Intent
+    # Intent — 12-intent taxonomy matching thalamus.py
     if any(w in text for w in ["hello", "hi ", "hey ", "good morning", "good evening"]):
         intent = "greeting"
     elif any(w in text for w in ["remember", "note that", "save", "learn that"]):
-        intent = "memory_op"
+        intent = "memory_instruction"
     elif text.startswith("/"):
         intent = "command"
+    elif any(w in text for w in ["how do i", "how does", "explain", "what is", "describe"]):
+        intent = "explanation_request"
+    elif any(w in text for w in ["what about igor", "tell me about yourself", "what are you", "who are you"]):
+        intent = "meta_question"
+    elif any(w in text for w in ["code", "function", "class", "algorithm", "script", "program", "debug", "fix this"]):
+        intent = "code_task"
+    elif any(w in text for w in ["analyze", "analyse", "compare", "review", "assess", "evaluate"]):
+        intent = "analysis_task"
+    elif any(w in text for w in ["broken", "wrong", "doesn't work", "not working", "failed", "frustrated", "annoyed"]):
+        intent = "complaint"
     elif "?" in text:
-        intent = "question"
-    elif any(w in text for w in ["do ", "run ", "execute", "search", "find", "browse"]):
-        intent = "task"
+        intent = "factual_question"
+    elif any(w in text for w in ["do ", "run ", "execute", "search", "find", "browse", "send", "create", "delete"]):
+        intent = "action_request"
     else:
-        intent = "general"
+        intent = "conversation"
 
     # Tone
     if any(w in text for w in ["urgent", "asap", "immediately", "!"]):
@@ -136,7 +149,7 @@ def _rule_based_csb(user_input: str, habits: List[Memory]) -> str:
     complexity = "high" if len(signals) >= 3 else "medium" if len(signals) >= 1 else "low"
     should_escalate = len(signals) >= 2
 
-    requires_tools = intent in ("task", "command") or any(
+    requires_tools = intent in ("action_request", "command", "code_task") or any(
         w in text for w in ["search", "run", "execute", "file", "browse", "read"]
     )
 
@@ -161,6 +174,7 @@ def preparse(user_input: str, habits: List[Memory], host: str = "") -> str:
     Pre-parse user input via KoboldCpp LLM → PARSED_INPUT CSB block.
     Falls back to rule-based CSB on timeout or error.
     Returns a CSB string (always — never raises).
+    Logs fallback events to errors.log for telemetry (#30).
     """
     _host = host or DEFAULT_HOST
     prompt = _PREPARSE_PROMPT.format(text=user_input[:300])
@@ -172,11 +186,20 @@ def preparse(user_input: str, habits: List[Memory], host: str = "") -> str:
         "temperature": 0.1,
         "cache_prompt": True,
     }
+    fallback_reason = None
     try:
         data = _post_json(_host, CHAT_ENDPOINT, payload, PREPARSE_TIMEOUT)
         text = data["choices"][0]["message"]["content"]
         if "[PARSED_INPUT]" in text:
             return text.strip()
+        fallback_reason = "no_parsed_input_block"
+    except Exception as exc:
+        fallback_reason = f"exception:{type(exc).__name__}"
+
+    # Log fallback for telemetry — Igor and Claude Code can read errors.log
+    try:
+        from ..forensic_logger import log_error
+        log_error(kind="preparse_fallback", detail=fallback_reason or "unknown", source="koboldcpp_reasoner")
     except Exception:
         pass
 

@@ -72,14 +72,24 @@ def preparse_via_openrouter(
         method="POST",
     )
 
+    fallback_reason = None
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read())
         text = data["choices"][0]["message"]["content"].strip()
         if "[PARSED_INPUT]" in text:
             return text
+        fallback_reason = "no_parsed_input_block"
     except Exception as exc:
         console.print(f"[yellow][PREPARSE] OR preparse failed ({exc}), using rule-based fallback[/]")
+        fallback_reason = f"exception:{type(exc).__name__}"
+
+    if fallback_reason:
+        try:
+            from ..forensic_logger import log_error
+            log_error(kind="preparse_fallback", detail=fallback_reason, source="openrouter_reasoner")
+        except Exception:
+            pass
 
     return _rule_based_csb(user_input, habits)
 
