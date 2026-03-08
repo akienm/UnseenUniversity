@@ -2359,10 +2359,54 @@ class Igor:
         action = action.replace("\n", " ").strip()
         description = description.replace("\n", " ").strip()
 
+        # ── Phase 2: enrich metadata before storing ───────────────────────────
+
+        # compiled_from_count: count episodic memories that match this trigger/context
+        compiled_from_count = 1
+        if trigger:
+            try:
+                matching = self.cortex.search(trigger, limit=20)
+                compiled_from_count = max(1, len([
+                    m for m in matching
+                    if getattr(m, "memory_type", None) == MemoryType.EPISODIC
+                ]))
+            except Exception:
+                pass
+
+        # context: extract "because / so that / in order to" clause if present
+        context = ""
+        _ctx_m = re.search(
+            r"(?:because|so that|in order to|context:)\s*(.+?)(?:\.|$)",
+            raw, re.IGNORECASE
+        )
+        if _ctx_m:
+            context = _ctx_m.group(1).strip()
+
+        # habit_type inference: detect question-habits by action phrasing
+        _question_starts = (
+            "what ", "how ", "tell me", "can you tell", "could you",
+            "would you", "do you ", "is there ", "are there ", "why ", "when ", "who ",
+        )
+        _action_lower = action.lower()
+        habit_type = "question" if any(_action_lower.startswith(q) for q in _question_starts) else "action"
+
         # ── Store as PROCEDURAL memory ────────────────────────────────────────
         now_iso = datetime.now(timezone.utc).isoformat()
         # Build a stable short ID from timestamp
         hab_id = "HABIT_" + now_iso.replace(":", "").replace("-", "").replace("+", "").replace(".", "")[:15]
+
+        _meta = {
+            "trigger":             trigger,
+            "action":              action,
+            "context":             context,
+            "needs_met":           [],
+            "habit_type":          habit_type,
+            "compiled_at":         now_iso,
+            "compiled_from_count": compiled_from_count,
+            "compiled_from_input": raw[:200],
+        }
+        if habit_type == "question":
+            _meta["question_template"] = action
 
         mem = Memory(
             id=hab_id,
@@ -2370,16 +2414,7 @@ class Igor:
             memory_type=MemoryType.PROCEDURAL,
             parent_id="PROC_HABIT_COMPILER",
             valence=0.7,
-            metadata={
-                "trigger": trigger,
-                "action": action,
-                "context": "",
-                "needs_met": [],
-                "habit_type": "action",
-                "compiled_at": now_iso,
-                "compiled_from_count": 1,
-                "compiled_from_input": raw[:200],
-            },
+            metadata=_meta,
         )
         self.cortex.store(mem)
         self.cortex.add_child("PROC_HABIT_COMPILER", hab_id)
@@ -2390,17 +2425,22 @@ class Igor:
             category="habit_trace",
         )
 
+        _ctx_line   = f"\n  Context: `{context}`" if context else ""
+        _count_line = f"\n  Based on: {compiled_from_count} episode(s)" if compiled_from_count > 1 else ""
+        _type_note  = f" [{habit_type}]" if habit_type != "action" else ""
         if trigger:
             return (
-                f"Habit compiled: **{description}**\n"
+                f"Habit compiled{_type_note}: **{description}**\n"
                 f"  Trigger: `{trigger}`\n"
-                f"  Action:  `{action}`\n"
+                f"  Action:  `{action}`"
+                f"{_ctx_line}{_count_line}\n"
                 f"  ID: `{hab_id}`"
             )
         else:
             return (
-                f"Habit compiled: **{description}**\n"
-                f"  Action: `{action}`\n"
+                f"Habit compiled{_type_note}: **{description}**\n"
+                f"  Action: `{action}`"
+                f"{_ctx_line}{_count_line}\n"
                 f"  ID: `{hab_id}`\n"
                 f"  (No trigger extracted — fires only on manual invocation)"
             )
