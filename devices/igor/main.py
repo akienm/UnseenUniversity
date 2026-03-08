@@ -702,12 +702,12 @@ class Igor:
         _summary_parts = []
         for e in ring_tail:
             if e.get("category") in _SUMMARY_CATS:
-                _summary_parts.append(f"[{e.get('category','note')}] {e['content'][:400]}")
+                _summary_parts.append(f"[{e.get('category','note')}] {e['content'][:800]}")
         # Also include Q/A entries (most informative for context recovery)
         for e in ring_tail:
             cat = e.get("category", "")
             if cat not in _SUMMARY_CATS and cat not in ("tool_trace", "interruptor", "session_control", "habit_trace"):
-                _summary_parts.append(f"[{cat}] {e['content'][:400]}")
+                _summary_parts.append(f"[{cat}] {e['content'][:800]}")
         # Fall back to last ring content if nothing useful found
         if not _summary_parts:
             _summary_parts = [ring_tail[-1]["content"][:400]] if ring_tail else []
@@ -783,7 +783,7 @@ class Igor:
         """
         import json
 
-        ttl_hours   = float(os.getenv("WARM_CONTEXT_TTL_HOURS", "4"))
+        ttl_hours   = float(os.getenv("WARM_CONTEXT_TTL_HOURS", "24"))
         instance_dir = self._instance_dir()
 
         ctx         = None
@@ -1677,7 +1677,7 @@ class Igor:
         # and their content adds no value to human-turn context.
         if not is_impulse:
             self.cortex.write_ring(
-                f"Q: {user_input[:300]} | A: {response_text[:400]} | intent={parsed.intent} friction={friction:.2f}",
+                f"Q: {user_input[:800]} | A: {response_text[:1200]} | intent={parsed.intent} friction={friction:.2f}",
                 category=parsed.intent,
             )
 
