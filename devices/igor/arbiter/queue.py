@@ -86,7 +86,10 @@ def submit(
     """
     Submit an action for human approval. Returns new item ID. Thread-safe.
     Sends a one-per-item Discord ping if DISCORD_CHANNEL_ID is configured.
+    Returns 0 without queuing when IGOR_ARBITER_ENABLED=false.
     """
+    if os.getenv("IGOR_ARBITER_ENABLED", "true").lower() in ("false", "0", "no"):
+        return 0
     with _lock:
         items = _load()
         new_id = max((i["id"] for i in items), default=0) + 1
