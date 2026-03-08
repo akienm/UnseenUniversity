@@ -76,6 +76,74 @@ def query_stats(
         return f"Error querying word graph: {e}"
 
 
+def analyze_graph(
+    query: str = "hubs",
+    word_a: str = "",
+    word_b: str = "",
+    doc_prefix: str = "",
+    top_n: int = 10,
+    **_,
+) -> str:
+    """
+    query="hubs"    → top N most-connected words
+    query="bridge"  → words connecting word_a and word_b (requires both)
+    query="exclusive" → words found only in docs with doc_prefix
+    """
+    try:
+        wg = _get_wg()
+        if query == "hubs":
+            results = wg.top_hubs(n=int(top_n))
+            lines = [f"{w} ({c} connections)" for w, c in results]
+            return f"Top {len(results)} hub words:\n" + "\n".join(lines)
+        elif query == "bridge":
+            if not word_a or not word_b:
+                return "bridge query requires both word_a and word_b."
+            results = wg.bridge_words(word_a, word_b, n=int(top_n))
+            if not results:
+                return f"No bridge words found between '{word_a}' and '{word_b}' — may not be in graph yet."
+            lines = [f"{w} (weight={s:.1f})" for w, s in results]
+            return f"Bridge words between '{word_a}' and '{word_b}':\n" + "\n".join(lines)
+        elif query == "exclusive":
+            if not doc_prefix:
+                return "exclusive query requires doc_prefix."
+            results = wg.domain_exclusive(doc_prefix, n=int(top_n))
+            if not results:
+                return f"No exclusive words found for docs starting with '{doc_prefix}'."
+            return f"Words exclusive to '{doc_prefix}*' docs:\n" + "\n".join(results)
+        else:
+            return "query must be 'hubs', 'bridge', or 'exclusive'."
+    except Exception as e:
+        return f"Error analyzing word graph: {e}"
+
+
+registry.register(Tool(
+    name="analyze_word_graph",
+    description=(
+        "Analyze the word graph structure. Three modes: "
+        "'hubs' — top N most-connected words (connective tissue of the corpus); "
+        "'bridge' — words that connect two concepts (word_a + word_b required); "
+        "'exclusive' — words found only in a specific document domain (doc_prefix required). "
+        "Use this for the Gemini stress test: hub check, bridge words, domain outliers."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "query": {
+                "type": "string",
+                "enum": ["hubs", "bridge", "exclusive"],
+                "description": "Analysis type: hubs | bridge | exclusive",
+            },
+            "word_a": {"type": "string", "description": "First concept for bridge query."},
+            "word_b": {"type": "string", "description": "Second concept for bridge query."},
+            "doc_prefix": {"type": "string", "description": "Doc id prefix for exclusive query."},
+            "top_n": {"type": "integer", "description": "How many results to return (default 10)."},
+        },
+        "required": ["query"],
+    },
+    fn=analyze_graph,
+))
+
+
 registry.register(Tool(
     name="index_text_into_word_graph",
     description=(

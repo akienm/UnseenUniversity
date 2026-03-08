@@ -145,6 +145,56 @@ class WordGraph:
                 counts[co_word] += weight
         return sorted(counts.items(), key=lambda x: x[1], reverse=True)[:n]
 
+    # ── Graph analysis ─────────────────────────────────────────────────────────
+
+    def top_hubs(self, n: int = 10, words_only: bool = True) -> list[tuple[str, int]]:
+        """
+        Return the N most-connected words by co-occurrence neighbour count.
+        words_only=True skips bigram tokens (a__b) to keep results readable.
+        """
+        items = (
+            (w, len(co))
+            for w, co in self._cooccur.items()
+            if not (words_only and "__" in w)
+        )
+        return sorted(items, key=lambda x: x[1], reverse=True)[:n]
+
+    def bridge_words(self, word_a: str, word_b: str, n: int = 10) -> list[tuple[str, float]]:
+        """
+        Find words that co-occur with BOTH word_a and word_b — the connective
+        tissue between two concepts. Ranked by combined co-occurrence weight.
+        Returns [] if either word is not in the graph.
+        """
+        co_a = self._cooccur.get(word_a.lower(), {})
+        co_b = self._cooccur.get(word_b.lower(), {})
+        shared = set(co_a) & set(co_b)
+        if not shared:
+            return []
+        ranked = sorted(
+            ((w, co_a[w] + co_b[w]) for w in shared if "__" not in w),
+            key=lambda x: x[1],
+            reverse=True,
+        )
+        return ranked[:n]
+
+    def domain_exclusive(self, doc_prefix: str, n: int = 10) -> list[str]:
+        """
+        Find words that appear ONLY in docs whose id starts with doc_prefix.
+        Useful for isolating specialised vocabulary (e.g. 'hamlet_' or 'neuro_').
+        """
+        exclusive = []
+        for w, doc_weights in self._word_to_ids.items():
+            if "__" in w:
+                continue
+            if doc_weights and all(doc_id.startswith(doc_prefix) for doc_id in doc_weights):
+                exclusive.append(w)
+        # Rank by total weight (most domain-specific first)
+        exclusive.sort(
+            key=lambda w: sum(self._word_to_ids[w].values()),
+            reverse=True,
+        )
+        return exclusive[:n]
+
     # ── Learning ───────────────────────────────────────────────────────────────
 
     def reinforce(self, doc_id: str, boost: float = 0.1) -> None:
