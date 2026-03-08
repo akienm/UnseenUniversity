@@ -10,6 +10,7 @@ Log files:
     self_edit.log        — every self-edit attempt (allowed or blocked)
     tool_calls.log       — every tool invocation (high-volume; optional)
     memory_ops.log       — memory store/search operations (optional)
+    errors.log           — runtime errors: impulse skips, tier failures, degraded-mode events
 
 All functions are fire-and-forget: exceptions are swallowed so logging
 can never crash the main loop.
@@ -286,6 +287,24 @@ def log_batch_call(
             f.write(entry)
     except Exception:
         pass
+
+
+def log_error(
+    *,
+    kind: str,           # IMPULSE_SKIP | TIER_FAIL | TOOL_FAIL | etc.
+    detail: str = "",
+    source: str = "",    # e.g. "tier.3" | "impulse/tier.2"
+) -> None:
+    """
+    Log a runtime error or degraded-mode event to errors.log.
+    Newest-first. Readable by both Igor (get_error_log tool) and Claude Code (read file).
+    """
+    entry = (
+        f"{_ts()}|ERROR|{kind}"
+        + (f"|source={source}" if source else "")
+        + (f"|{detail[:200].replace(chr(10), ' ')}" if detail else "")
+    )
+    _prepend("errors.log", entry)
 
 
 def log_tier_selection(

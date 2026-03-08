@@ -1,7 +1,7 @@
 """
-Multi-upstream query support (change.40).
+Multi-cloud-upstream query support (change.40).
 
-Allows querying multiple reasoning models simultaneously and comparing their responses.
+Allows querying multiple cloud reasoning models simultaneously and comparing their responses.
 Used by the /upstream command in main.py.
 """
 
