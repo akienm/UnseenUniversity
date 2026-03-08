@@ -217,6 +217,7 @@ class Igor:
         # [WARM CONTEXT] Reload warm working memory from previous session
         warm_ctx = self._load_warm_context()
         self._boot_ring_tail: list = (warm_ctx or {}).get("ring_tail") or []  # #112
+        self._conversation_threads: list = []  # populated by _load_warm_context via warm_ctx
 
         # [BOOT MESSAGE] Synthetic first-turn orientation — Igor reads this before any input
         try:
@@ -664,6 +665,81 @@ class Igor:
             category="system_info",
         )
 
+    # ── Conversation thread breadcrumbs ────────────────────────────────────────
+
+    def _update_conversation_thread(
+        self,
+        user_input: str,
+        response_text: str,
+        intent: str,
+        milieu_state=None,
+    ) -> None:
+        """
+        Update the conversation thread breadcrumb list after each turn.
+
+        Maintains up to 5 threads (topic-keyed), each with a TTL controlled by
+        CONVERSATION_THREAD_TTL_HOURS (default 1.0h).  On restart, active threads
+        are injected into ring so Igor can pick up mid-conversation without
+        asking "what were we talking about?"
+
+        Topic heuristics (kept simple to avoid LLM cost):
+          - "book_reading"       — user mentions PDF, book, or "read to me"
+          - "personal_conversation" — conversation/explanation intent
+          - else                 — thalamus intent string
+        """
+        import re
+
+        # Topic detection
+        _lower = user_input.lower()
+        if any(w in _lower for w in [".pdf", "read it", "read to me", "read the", "page ", "chapter"]):
+            topic = "book_reading"
+        elif intent in ("conversation", "explanation_request", "personal_sharing", "factual_question"):
+            topic = "personal_conversation"
+        else:
+            topic = intent
+
+        # Last question Igor asked (last sentence containing "?")
+        last_q = ""
+        if response_text:
+            sentences = re.split(r'(?<=[.!?])\s+', response_text.strip())
+            questions = [s for s in sentences if "?" in s]
+            last_q = questions[-1][:200] if questions else ""
+
+        # Emotional register from milieu
+        register = "neutral"
+        if milieu_state:
+            if milieu_state.valence > 0.4 and milieu_state.arousal > 0.3:
+                register = "personal-reflective"
+            elif milieu_state.valence > 0.3:
+                register = "positive"
+            elif milieu_state.valence < -0.3:
+                register = "difficult"
+            elif milieu_state.arousal > 0.5:
+                register = "engaged"
+
+        exchange = f"Akien: {user_input[:200].strip()} → Igor: {response_text[:250].strip()}"
+        updated  = datetime.now().isoformat()
+
+        # Update existing thread or append new
+        for t in self._conversation_threads:
+            if t.get("topic") == topic:
+                t["last_exchange"]    = exchange
+                t["register"]         = register
+                t["updated"]          = updated
+                if last_q:
+                    t["last_q_from_igor"] = last_q
+                return
+
+        self._conversation_threads.append({
+            "topic":            topic,
+            "last_exchange":    exchange,
+            "last_q_from_igor": last_q,
+            "register":         register,
+            "updated":          updated,
+        })
+        # Cap at 5 most recent threads
+        self._conversation_threads = self._conversation_threads[-5:]
+
     # ── Warm context — shutdown serialization / boot reload ────────────────────
 
     def _save_warm_context(self):
@@ -717,13 +793,14 @@ class Igor:
         )
 
         ctx = {
-            "timestamp":       datetime.now().isoformat(),
-            "instance_id":     self.instance_id,
-            "session_summary": session_summary,
-            "ne_state":        ne_state,
-            "current_job":     current_job,
-            "ring_tail":       ring_tail,
-            "twm_contents":    twm_items,
+            "timestamp":              datetime.now().isoformat(),
+            "instance_id":            self.instance_id,
+            "session_summary":        session_summary,
+            "ne_state":               ne_state,
+            "current_job":            current_job,
+            "ring_tail":              ring_tail,
+            "twm_contents":           twm_items,
+            "conversation_threads":   self._conversation_threads,
         }
 
         try:
@@ -886,6 +963,31 @@ class Igor:
             f"|twm={twm_restored}|{summary[:100]}",
             category="session_control",
         )
+
+        # 5. Conversation threads — filter by TTL, inject active ones into ring
+        thread_ttl = float(os.getenv("CONVERSATION_THREAD_TTL_HOURS", "1.0"))
+        raw_threads = ctx.get("conversation_threads") or []
+        active_threads = []
+        for t in raw_threads:
+            try:
+                age_h = (datetime.now() - datetime.fromisoformat(t["updated"])).total_seconds() / 3600
+                if age_h <= thread_ttl:
+                    active_threads.append(t)
+            except Exception:
+                pass
+        self._conversation_threads = active_threads
+        if active_threads:
+            parts = []
+            for t in active_threads:
+                line = f"[{t['topic']}|{t.get('register','neutral')}] {t['last_exchange'][:200]}"
+                if t.get("last_q_from_igor"):
+                    line += f" | Igor last asked: {t['last_q_from_igor'][:150]}"
+                parts.append(line)
+            self.cortex.write_ring(
+                "ACTIVE_CONVERSATION_THREADS (resume these):\n" + "\n".join(parts),
+                category="session_control",
+            )
+
         return ctx
 
     def run(self):
@@ -1165,6 +1267,15 @@ class Igor:
         # [THALAMUS] Parse input
         parsed = self.thalamus.process(user_input)
 
+        # [D] Capture raw user input to ring immediately — before any habit/reasoner processing.
+        # This ensures the user's actual words survive even if a habit misfires and the Q|A
+        # ring entry later shows a confusing response. Queryable as category="user_turn".
+        if not is_impulse and not parsed.is_command:
+            self.cortex.write_ring(
+                f"USER_INPUT: {user_input[:1000]}",
+                category="user_turn",
+            )
+
         # Handle commands
         if parsed.is_command:
             self._handle_command(parsed.command, user_input)
@@ -1429,6 +1540,19 @@ class Igor:
         if habit and habit.metadata.get("habit_type") == "proactive":
             habit = None
 
+        # [A] Milieu gate: suppress question-habits when in engaged/reflective register.
+        # Prevents probe-questions from firing mid personal conversation (e.g. "suck less"
+        # triggering HABIT_Q_SUCK_LESS while Akien is sharing something vulnerable).
+        # Gate: valence > 0.3 AND arousal > 0.3 (positively engaged = real conversation).
+        if habit and habit.metadata.get("habit_type") == "question" and _milieu_state:
+            if _milieu_state.valence > 0.3 and _milieu_state.arousal > 0.3:
+                self.cortex.write_ring(
+                    f"HABIT_SUPPRESSED|id={habit.id}|reason=milieu_gate"
+                    f"|valence={_milieu_state.valence:.2f}|arousal={_milieu_state.arousal:.2f}",
+                    category="habit_trace",
+                )
+                habit = None
+
         if habit:
             dashboard.print_habit_trigger(habit)
             _habit_trigger = habit.metadata.get("trigger", "")
@@ -1680,6 +1804,8 @@ class Igor:
                 f"Q: {user_input[:800]} | A: {response_text[:1200]} | intent={parsed.intent} friction={friction:.2f}",
                 category=parsed.intent,
             )
+            # [C] Update conversation thread breadcrumbs for context recovery after restart
+            self._update_conversation_thread(user_input, response_text, parsed.intent, _milieu_state)
 
         # Update metrics
         self.last_friction = friction
