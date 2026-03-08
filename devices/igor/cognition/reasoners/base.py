@@ -36,7 +36,7 @@ exit_requested: threading.Event = threading.Event()
 # Shared ring-context constants (WO8: single source of truth — was duplicated
 # verbatim in anthropic.py and openrouter_reasoner.py)
 _RING_EXCLUDE = frozenset({"tool_trace", "judgment", "action_impulse", "ne_diagnostic"})
-_RING_CONTEXT_LIMIT = 5
+_RING_CONTEXT_LIMIT = 10
 
 # ── Token economy (shared across all reasoners) ────────────────────────────────
 # Each tool result is capped before it enters the message history.

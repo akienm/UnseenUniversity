@@ -1335,6 +1335,9 @@ class Igor:
                     + ("Tool found in registry — provide arguments to invoke." if tool
                        else "Tool not found in registry.")
                 )
+            elif habit.id == "PROC_HABIT_COMPILER":
+                # Phase 2: parse user input and store a structured PROCEDURAL memory
+                response_text = self._compile_habit_from_input(user_input)
             else:
                 # "action", "response", or unset: return stored action text
                 response_text = habit.metadata.get(
@@ -1524,7 +1527,7 @@ class Igor:
             _ep_dominance = _ep_milieu.dominance if _ep_milieu else 0.0
             _emotionally_charged = abs(valence) > 0.5 or abs(_ep_arousal) > 0.5
             ep = Memory(
-                narrative=f"User: {user_input[:80]} → Igor responded about {parsed.intent}",
+                narrative=f"User: {user_input} → Igor responded about {parsed.intent}",
                 memory_type=MemoryType.EPISODIC,
                 parent_id="CP3",  # "There's always a why"
                 valence=valence,
@@ -1532,6 +1535,7 @@ class Igor:
                 dominance=_ep_dominance,
                 metadata={
                     "user_input": user_input,
+                    "response": response_text[:500],
                     "intent": parsed.intent,
                     "friction": friction,
                     "used_api": used_api,
@@ -2167,6 +2171,117 @@ class Igor:
             f"|{','.join(i for i, _ in candidates[:5])}",
             category="session_control",
         )
+
+    def _compile_habit_from_input(self, user_input: str) -> str:
+        """
+        Phase 2: Parse 'build a habit for: X — whenever Y, Z' and store a
+        structured PROCEDURAL memory. Returns a human-readable confirmation.
+
+        Accepted formats (all case-insensitive):
+          build a habit for: <desc> — whenever <trigger>, <action>
+          make a habit for: <desc> — whenever <trigger>, <action>
+          whenever <trigger>, <action>    (trigger-only form)
+          from now on, <action>           (open-trigger form)
+        """
+        import re
+        from datetime import timezone
+
+        raw = user_input.strip()
+
+        # ── Extract fields ────────────────────────────────────────────────────
+        trigger = ""
+        action = ""
+        description = ""
+
+        # Form 1: "build/make a habit for: <desc> — whenever <trigger>, <action>"
+        m = re.search(
+            r"(?:build|make)\s+a\s+habit\s+for\s*:\s*(.+?)\s*[—\-–]+\s*whenever\s+(.+?)[,;]\s*(.+)",
+            raw, re.IGNORECASE | re.DOTALL,
+        )
+        if m:
+            description = m.group(1).strip()
+            trigger = m.group(2).strip().rstrip(".,;")
+            action = m.group(3).strip()
+        else:
+            # Form 2: "build a habit for: <desc> — <action>"  (no trigger)
+            m = re.search(
+                r"(?:build|make)\s+a\s+habit\s+for\s*:\s*(.+?)\s*[—\-–]+\s*(.+)",
+                raw, re.IGNORECASE | re.DOTALL,
+            )
+            if m:
+                description = m.group(1).strip()
+                action = m.group(2).strip()
+            else:
+                # Form 3: "whenever <trigger>, <action>"
+                m = re.search(r"whenever\s+(.+?)[,;]\s*(.+)", raw, re.IGNORECASE | re.DOTALL)
+                if m:
+                    trigger = m.group(1).strip().rstrip(".,;")
+                    action = m.group(2).strip()
+                    description = f"Whenever {trigger}"
+                else:
+                    # Form 4: "from now on, <action>"
+                    m = re.search(r"from\s+now\s+on[,;]?\s*(.+)", raw, re.IGNORECASE | re.DOTALL)
+                    if m:
+                        action = m.group(1).strip()
+                        description = action[:60]
+                    else:
+                        # Fallback: store the whole input as action
+                        action = raw
+                        description = raw[:60]
+
+        if not description:
+            description = (trigger or action)[:80]
+
+        # Sanitise — keep to one line each
+        trigger = trigger.replace("\n", " ").strip()
+        action = action.replace("\n", " ").strip()
+        description = description.replace("\n", " ").strip()
+
+        # ── Store as PROCEDURAL memory ────────────────────────────────────────
+        now_iso = datetime.now(timezone.utc).isoformat()
+        # Build a stable short ID from timestamp
+        hab_id = "HABIT_" + now_iso.replace(":", "").replace("-", "").replace("+", "").replace(".", "")[:15]
+
+        mem = Memory(
+            id=hab_id,
+            narrative=description,
+            memory_type=MemoryType.PROCEDURAL,
+            parent_id="PROC_HABIT_COMPILER",
+            valence=0.7,
+            metadata={
+                "trigger": trigger,
+                "action": action,
+                "context": "",
+                "needs_met": [],
+                "habit_type": "action",
+                "compiled_at": now_iso,
+                "compiled_from_count": 1,
+                "compiled_from_input": raw[:200],
+            },
+        )
+        self.cortex.store(mem)
+        self.cortex.add_child("PROC_HABIT_COMPILER", hab_id)
+        invalidate_cache()
+
+        self.cortex.write_ring(
+            f"HABIT_COMPILED|id={hab_id}|trigger={trigger!r}|action={action[:60]!r}",
+            category="habit_trace",
+        )
+
+        if trigger:
+            return (
+                f"Habit compiled: **{description}**\n"
+                f"  Trigger: `{trigger}`\n"
+                f"  Action:  `{action}`\n"
+                f"  ID: `{hab_id}`"
+            )
+        else:
+            return (
+                f"Habit compiled: **{description}**\n"
+                f"  Action: `{action}`\n"
+                f"  ID: `{hab_id}`\n"
+                f"  (No trigger extracted — fires only on manual invocation)"
+            )
 
     def _habits_explain(self, habit_id: str):
         """Show why a specific habit was compiled."""
