@@ -149,6 +149,46 @@ def list_system_dir(path: str) -> str:
         return f"Error listing directory: {e}"
 
 
+def read_pdf_pages(path: str, start_page: int = 1, end_page: int = 0) -> str:
+    """
+    Read specific pages from a PDF file.
+    start_page is 1-based. end_page=0 means just start_page.
+    Returns extracted text and a page-count header for cursor tracking.
+    """
+    try:
+        target = _safe_path(path)
+        if not target.exists():
+            return f"Error: File not found: {path}"
+        if target.suffix.lower() != ".pdf":
+            return f"Error: Not a PDF file: {path}"
+        try:
+            import pypdf
+        except ImportError:
+            return "Error: pypdf not installed. Run: pip install pypdf"
+        reader = pypdf.PdfReader(str(target))
+        total = len(reader.pages)
+        if end_page <= 0:
+            end_page = start_page
+        start_page = max(1, start_page)
+        end_page   = min(total, end_page)
+        if start_page > total:
+            return f"Error: start_page {start_page} exceeds total pages ({total})."
+        pages = []
+        for i in range(start_page - 1, end_page):
+            text = reader.pages[i].extract_text()
+            if text and text.strip():
+                pages.append(f"--- Page {i+1}/{total} ---\n{text.strip()}")
+        if not pages:
+            return (f"[PDF: {path} | total_pages={total} | "
+                    f"pages {start_page}-{end_page} have no extractable text]")
+        header = f"[PDF: {path} | total_pages={total} | showing pages {start_page}-{end_page}]\n\n"
+        return header + "\n\n".join(pages)
+    except PermissionError as e:
+        return f"Error: {e}"
+    except Exception as e:
+        return f"Error reading PDF pages: {e}"
+
+
 def check_disk_usage() -> str:
     """
     Check disk free space for Igor's key paths.
@@ -280,6 +320,27 @@ registry.register(Tool(
         "required": ["path"],
     },
     fn=list_system_dir,
+))
+
+registry.register(Tool(
+    name="read_pdf_pages",
+    description=(
+        "Read specific pages from a PDF file (1-based page numbers). "
+        "Use this to read a book or document one page at a time — read page 1, discuss, "
+        "then read page 2, etc. Returns page text plus total_pages so you can track your cursor. "
+        "Paths are relative to workspace root /home/akien. "
+        "Example: read pages 1-2 of TheIgorsProject/akien/Readings/SomeBook.pdf"
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "path":       {"type": "string",  "description": "Relative path from /home/akien"},
+            "start_page": {"type": "integer", "description": "First page to read (1-based). Default: 1"},
+            "end_page":   {"type": "integer", "description": "Last page to read (inclusive). 0 = same as start_page. Default: 0"},
+        },
+        "required": ["path"],
+    },
+    fn=read_pdf_pages,
 ))
 
 registry.register(Tool(
