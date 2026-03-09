@@ -368,6 +368,55 @@ class Igor:
                 },
             ),
             Memory(
+                id="PROC_WG_PREPARSE_TUNING",
+                narrative="Word graph preparse routing — controls when word graph replaces KoboldCpp for habit selection.",
+                memory_type=MemoryType.PROCEDURAL,
+                parent_id="CP4",
+                valence=0.6,
+                metadata={
+                    "trigger": "tune word graph preparse",
+                    "habit_type": "action",
+                    "env_vars": {
+                        "IGOR_WG_PREPARSE_THRESHOLD": "0.35",
+                        "IGOR_WG_PREPARSE_REQUIRE_TRIGGER": "true",
+                    },
+                    "action": (
+                        "Word graph + thalamus form Stage 1 of preparse (free, instant). "
+                        "KoboldCpp is Stage 2 — called only when Stage 1 finds no confident habit match. "
+                        "Adjust IGOR_WG_PREPARSE_THRESHOLD (0.0–1.0) in .env; higher = more conservative. "
+                        "Set IGOR_WG_PREPARSE_REQUIRE_TRIGGER=false to allow WG-only matches without trigger phrase."
+                    ),
+                    "why": (
+                        "Word graph scoring already happens in basal_ganglia before preparse. "
+                        "If habit fires (trigger + WG match), KoboldCpp preparse is already skipped. "
+                        "This memory documents the tuning levers and expected behavior."
+                    ),
+                },
+            ),
+            Memory(
+                id="PROC_LATENCY_ADAPTIVE_TUNING",
+                narrative="Adaptive routing from latency history — automatically skips slow tiers based on measured performance.",
+                memory_type=MemoryType.PROCEDURAL,
+                parent_id="CP4",
+                valence=0.6,
+                metadata={
+                    "trigger": "tune latency adaptive",
+                    "habit_type": "action",
+                    "env_vars": {
+                        "IGOR_LATENCY_ADAPTIVE": "false",
+                        "IGOR_LATENCY_PREPARSE_SLOW_MS": "2500",
+                        "IGOR_LATENCY_TIER2_SLOW_MS": "5000",
+                    },
+                    "action": (
+                        "Enable: set IGOR_LATENCY_ADAPTIVE=true in .env and /restart. "
+                        "Requires >= 5 latency_trace ring entries (collect a session of data first). "
+                        "Preparse: if p50 > IGOR_LATENCY_PREPARSE_SLOW_MS → skip KoboldCpp preparse. "
+                        "Tier.2: if p50 > IGOR_LATENCY_TIER2_SLOW_MS (>= 3 samples) → jump to tier.3."
+                    ),
+                    "why": "Self-measured latency drives routing; no guessing. Data > assumptions.",
+                },
+            ),
+            Memory(
                 id="PROC_PREPARSE_TUNING",
                 narrative="Tune when KoboldCpp preparse is skipped vs used. Low/high complexity = skip; medium = use.",
                 memory_type=MemoryType.PROCEDURAL,
