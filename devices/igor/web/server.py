@@ -207,7 +207,18 @@ async def _ws_endpoint(ws: WebSocket):
                     msg = json.loads(data)
                 except json.JSONDecodeError:
                     continue
-                if msg.get("type") == "message":
+                if msg.get("type") == "identify":
+                    # Client is re-identifying from cookie/localStorage on (re)connect.
+                    # Queue as a special marker so main.py can preseed user context
+                    # for this connection's thread_id without triggering first-contact.
+                    _iname = (msg.get("name") or "").strip()[:60]
+                    if _iname:
+                        incoming.put({
+                            "content": f"__identify__:{_iname}",
+                            "author": _iname,
+                            "client_id": id(ws),
+                        })
+                elif msg.get("type") == "message":
                     content = msg.get("content", "").strip()
                     # Allow client to self-identify (e.g. "claude-code"); default "web-user"
                     author = msg.get("author", "web-user")
@@ -459,10 +470,21 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     const surpriseTable = document.getElementById('surprise-table');
     let ws, dragDepth = 0, ringOpen = false, surpriseOpen = false;
 
-    // Persist sender name in localStorage
-    const _savedName = localStorage.getItem('igor_sender_name');
+    // Persist sender name in localStorage + cookie (cookie survives harder refreshes)
+    function _saveName(n) {
+      localStorage.setItem('igor_sender_name', n);
+      document.cookie = 'igor_user=' + encodeURIComponent(n) + '; path=/; max-age=31536000; SameSite=Lax';
+    }
+    function _loadName() {
+      // Cookie takes priority (survives localStorage clear); fall back to localStorage
+      const _ck = document.cookie.split(';').map(c => c.trim())
+        .find(c => c.startsWith('igor_user='));
+      if (_ck) return decodeURIComponent(_ck.split('=')[1]);
+      return localStorage.getItem('igor_sender_name') || '';
+    }
+    const _savedName = _loadName();
     if (_savedName) senderName.value = _savedName;
-    senderName.addEventListener('change', () => localStorage.setItem('igor_sender_name', senderName.value));
+    senderName.addEventListener('change', () => _saveName(senderName.value));
 
     function toggleRing() {
       ringOpen = !ringOpen;
@@ -640,6 +662,9 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
         if (!_connectedOnce) { addMsg('system', '', 'Connected to Igor.'); _connectedOnce = true; }
         else                  { addMsg('system', '', 'Reconnected.'); }
         _disconnectedMsgShown = false;
+        // Re-identify from cookie so Igor knows who we are without asking again
+        const _cookieName = _loadName();
+        if (_cookieName) ws.send(JSON.stringify({type: 'identify', name: _cookieName}));
       };
       ws.onclose = () => {
         setLed(false);
@@ -661,7 +686,7 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
           updateStatus(m);
         else if (m.type === 'name_resolved') {
           senderName.value = m.name;
-          localStorage.setItem('igor_sender_name', m.name);
+          _saveName(m.name);
           addMsg('system', '', 'Igor has learned your name: ' + m.name);
         }
       };
