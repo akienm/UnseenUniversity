@@ -28,6 +28,11 @@ REQUIRED_MODELS    = [
     "nomic-embed-text",                                  # embeddings
     os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b"),      # preparse + tier.2
 ]
+# Batch model only pulled on priority.batch / priority.background machines
+BATCH_MODELS       = [
+    os.getenv("OLLAMA_BATCH_MODEL", "qwen2.5:14b"),      # large reasoning
+]
+_BATCH_PRIORITIES  = {"priority.batch", "priority.background"}
 CHECK_TIMEOUT      = 5    # seconds per reachability probe
 PULL_TIMEOUT       = 600  # seconds — model pull can take a while on first run
 
@@ -118,7 +123,11 @@ def run(cortex=None):
             results.append(f"BOOT_CHECK|{ts}|{hostname}|{ip}|{priority}|ollama_unreachable")
             continue
 
-        for model in REQUIRED_MODELS:
+        models_to_check = list(REQUIRED_MODELS)
+        if priority in _BATCH_PRIORITIES:
+            models_to_check.extend(BATCH_MODELS)
+
+        for model in models_to_check:
             model_root = model.split(":")[0].lower()
             if model_root in available:
                 results.append(f"BOOT_CHECK|{ts}|{hostname}|{ip}|{model}|present")

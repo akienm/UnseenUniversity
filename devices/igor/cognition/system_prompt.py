@@ -237,7 +237,7 @@ def build_boot_message(cortex, instance_id: str = "wild-0001",
         "  1. cortex.search()           — your own memory; free, instant, yours",
         "  2. web_search / read_webpage — DuckDuckGo; free, current, no upstream cost",
         "  3. BrowserReasoner           — free web AI (Copilot, Gemini); zero cost, unreliable",
-        "  4. Local KoboldCpp           — reason over what was found; not for fact retrieval",
+        "  4. Local Ollama               — reason over what was found; not for fact retrieval",
         "  5. OpenRouter → Claude API   — complex reasoning only; last resort; costs budget",
         "Reserve upstream API calls for reasoning, not retrieval.",
     ])

@@ -126,7 +126,7 @@ def build_report(cortex=None, session_interactions: int = 0,
         pct = round(count / max(total_tiers, 1) * 100)
         label = {
             "tier.1": "habit (local)",
-            "tier.2": "KoboldCpp (local)",
+            "tier.2": "Ollama (local)",
             "tier.3": "cheap OR (cloud)",
             "tier.3.5": "haiku (cloud)",
             "tier.4": "sonnet (cloud)",
