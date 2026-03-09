@@ -2963,6 +2963,16 @@ class Igor:
         # ── #135: User context + chat logging ─────────────────────────────────
         _author = (msg.author or "unknown").lower()
         _skip_ctx = _author in ("claude-code", "igor") or msg.content.strip().startswith("/")
+
+        # Cookie-based re-identification: client sends __identify__:<name> on connect.
+        # Preseed context from existing chats/<slug>/context.json (loads relationship etc.)
+        # and return immediately — no chat logging, no first-contact, no response.
+        if not _skip_ctx and msg.content.startswith("__identify__:"):
+            _id_name = msg.content[len("__identify__:"):].strip()
+            if _id_name:
+                self._user_ctx_mgr.preseed(_thread_id, _id_name)
+            return
+
         _ctx = None
         if not _skip_ctx:
             _ctx = self._user_ctx_mgr.get(_thread_id, _author)
