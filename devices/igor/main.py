@@ -1681,6 +1681,7 @@ class Igor:
 
         # #121 + #50: Prospective NE pass — predict habit + pre-warm memory search topics
         _ne_search_keys: list[str] = []
+        _ne_pred = None
         if not is_impulse:
             try:
                 _twm_recent = self.cortex.twm_read(limit=5, include_integrated=False)
@@ -1838,6 +1839,26 @@ class Igor:
                         console.print(f"[dim][MILIEU] session_character=focused → tier eased to {_skip_to}[/]")
             except Exception:
                 pass
+
+        # [#50 P2] NE habit prediction mismatch → ambiguity → bump tier.
+        # If NE predicted a specific habit would fire (confidence >= 0.6) but no habit
+        # actually fired, the NE's model and the thalamus disagree — genuine ambiguity.
+        # Escalate one tier so a stronger reasoner can resolve it.
+        # Gate: IGOR_NE_ROUTING=true (default false — collect data before enabling).
+        if (
+            not is_impulse
+            and _ne_pred is not None
+            and _ne_pred.predicted_habit_id is not None
+            and _ne_pred.confidence >= 0.6
+            and _thalamus_habit is None
+            and os.getenv("IGOR_NE_ROUTING", "false").lower() in ("1", "true", "yes")
+        ):
+            _TIER_UP_NE = {"tier.3": "tier.3.5", "tier.3.5": "tier.4", "tier.4": "tier.4"}
+            _skip_to = _TIER_UP_NE.get(_skip_to, _skip_to)
+            console.print(
+                f"[dim][NE] predicted {_ne_pred.predicted_habit_id} (conf={_ne_pred.confidence:.2f}) "
+                f"but no habit fired → ambiguity → {_skip_to}[/]"
+            )
 
         # [#139 P2] Apply latency-driven tier override (computed before preparse above)
         if _latency_skip_to_override and not self.local_mode:
