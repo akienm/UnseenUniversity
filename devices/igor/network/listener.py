@@ -88,7 +88,8 @@ def _poll_web():
                 source="web",
                 content=msg["content"],
                 author=msg.get("author", "web-user"),
-                reply_info={"client_id": msg.get("client_id")},
+                reply_info={"client_id": msg.get("client_id"),
+                            "session_id": msg.get("session_id", "shared")},
                 received_at=time.monotonic(),
             ))
         except queue.Empty:

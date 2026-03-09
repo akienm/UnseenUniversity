@@ -50,8 +50,10 @@ _DIST_DIR  = Path(__file__).parent.parent.parent.parent / "web_ui" / "dist"
 # ── Thread-safe queue: web messages → Igor ────────────────────────────────────
 incoming: queue.Queue = queue.Queue()
 
-# ── Per-client asyncio queues for broadcast ───────────────────────────────────
-_client_queues: list = []
+# ── Per-session asyncio queues for broadcast (#119) ──────────────────────────
+_session_clients: dict = {}   # session_id → [asyncio.Queue, ...]
+_client_session: dict  = {}   # id(ws) → session_id
+_session_history: dict = {}   # session_id → [{...}, ...] (capped at 50)
 _client_lock = threading.Lock()
 _loop: Optional[asyncio.AbstractEventLoop] = None
 
@@ -71,14 +73,12 @@ def _ensure_dirs():
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
-def send(text: str):
-    """Broadcast an Igor response to all connected WebSocket clients. Thread-safe."""
-    _broadcast(json.dumps({
-        "type": "message",
-        "author": "igor",
-        "content": text,
-        "ts": _ts(),
-    }))
+def send(text: str, session_id: str = "shared"):
+    """Send an Igor response to a specific session's clients. Thread-safe."""
+    msg = {"type": "message", "author": "igor", "content": text,
+           "ts": _ts(), "session_id": session_id}
+    _add_to_history(session_id, msg)
+    _broadcast_to_session(session_id, json.dumps(msg))
 
 
 def broadcast_activity(state: dict):
@@ -103,13 +103,32 @@ def broadcast_name_resolved(name: str):
     _broadcast(json.dumps({"type": "name_resolved", "name": name, "ts": _ts()}))
 
 
-def _broadcast(payload: str):
-    """Fan out a JSON payload to every connected WebSocket client."""
+def _add_to_history(session_id: str, msg: dict):
+    """Add a message to session history (capped at 50)."""
+    with _client_lock:
+        hist = _session_history.setdefault(session_id, [])
+        hist.append(msg)
+        if len(hist) > 50:
+            hist.pop(0)
+
+
+def _broadcast_to_session(session_id: str, payload: str):
+    """Fan out a payload to clients in a specific session."""
     if _loop is None:
         return
     with _client_lock:
-        queues = list(_client_queues)
+        queues = list(_session_clients.get(session_id, []))
     for q in queues:
+        _loop.call_soon_threadsafe(q.put_nowait, payload)
+
+
+def _broadcast(payload: str):
+    """Fan out a JSON payload to every connected WebSocket client (all sessions)."""
+    if _loop is None:
+        return
+    with _client_lock:
+        all_queues = [q for qs in _session_clients.values() for q in qs]
+    for q in all_queues:
         _loop.call_soon_threadsafe(q.put_nowait, payload)
 
 
@@ -196,10 +215,23 @@ async def _api_dashboard(request: Request):
 async def _ws_endpoint(ws: WebSocket):
     await ws.accept()
     q: asyncio.Queue = asyncio.Queue()
+    current_session = "shared"
     with _client_lock:
-        _client_queues.append(q)
+        _session_clients.setdefault(current_session, []).append(q)
+        _client_session[id(ws)] = current_session
+
+    # Send session history to newly joined client
+    with _client_lock:
+        hist = list(_session_history.get(current_session, []))
+    if hist:
+        await ws.send_text(json.dumps({
+            "type": "session_history",
+            "session_id": current_session,
+            "messages": hist,
+        }))
 
     async def _receive():
+        nonlocal current_session
         try:
             while True:
                 data = await ws.receive_text()
@@ -207,30 +239,55 @@ async def _ws_endpoint(ws: WebSocket):
                     msg = json.loads(data)
                 except json.JSONDecodeError:
                     continue
-                if msg.get("type") == "identify":
-                    # Client is re-identifying from cookie/localStorage on (re)connect.
-                    # Queue as a special marker so main.py can preseed user context
-                    # for this connection's thread_id without triggering first-contact.
+                mtype = msg.get("type")
+
+                if mtype == "identify":
+                    # Client re-identifying from cookie on (re)connect.
                     _iname = (msg.get("name") or "").strip()[:60]
                     if _iname:
                         incoming.put({
                             "content": f"__identify__:{_iname}",
                             "author": _iname,
                             "client_id": id(ws),
+                            "session_id": current_session,
                         })
-                elif msg.get("type") == "message":
+
+                elif mtype == "join_session":
+                    # Client switching to a named session (or creating it)
+                    new_sid = (msg.get("session_id") or "shared").strip()[:64] or "shared"
+                    with _client_lock:
+                        # Leave old session
+                        old_qs = _session_clients.get(current_session, [])
+                        if q in old_qs:
+                            old_qs.remove(q)
+                        # Join new session
+                        _session_clients.setdefault(new_sid, []).append(q)
+                        _client_session[id(ws)] = new_sid
+                        hist = list(_session_history.get(new_sid, []))
+                    current_session = new_sid
+                    # Send history for the new session
+                    await ws.send_text(json.dumps({
+                        "type": "session_history",
+                        "session_id": new_sid,
+                        "messages": hist,
+                    }))
+
+                elif mtype == "message":
                     content = msg.get("content", "").strip()
-                    # Allow client to self-identify (e.g. "claude-code"); default "web-user"
                     author = msg.get("author", "web-user")
                     if content:
-                        incoming.put({"content": content, "author": author, "client_id": id(ws)})
-                        # Echo user message to all clients so multi-tab works
-                        _broadcast(json.dumps({
-                            "type": "message",
-                            "author": author,
+                        incoming.put({
                             "content": content,
-                            "ts": _ts(),
-                        }))
+                            "author": author,
+                            "client_id": id(ws),
+                            "session_id": current_session,
+                        })
+                        # Echo user message to session clients only
+                        umsg = {"type": "message", "author": author,
+                                "content": content, "ts": _ts(),
+                                "session_id": current_session}
+                        _add_to_history(current_session, umsg)
+                        _broadcast_to_session(current_session, json.dumps(umsg))
         except Exception:
             pass
 
@@ -253,10 +310,19 @@ async def _ws_endpoint(ws: WebSocket):
             pass
 
     with _client_lock:
-        try:
-            _client_queues.remove(q)
-        except ValueError:
-            pass
+        qs = _session_clients.get(current_session, [])
+        if q in qs:
+            qs.remove(q)
+        _client_session.pop(id(ws), None)
+
+
+# ── #119: Sessions API ────────────────────────────────────────────────────────
+
+async def _api_sessions(request: Request):
+    """GET /api/sessions — list active sessions and their client counts."""
+    with _client_lock:
+        sessions = {sid: len(qs) for sid, qs in _session_clients.items() if qs}
+    return JSONResponse({"sessions": sessions})
 
 
 # ── G16: Global milieu API endpoints ─────────────────────────────────────────
@@ -302,6 +368,7 @@ def _make_app() -> Starlette:
         Route("/api/outbox", _api_outbox_list),
         Route("/api/outbox/{filename}", _api_outbox_download),
         Route("/api/dashboard", _api_dashboard),
+        Route("/api/sessions", _api_sessions),
         Route("/api/milieu/global", _api_milieu_global),
         Route("/api/milieu/contribute", _api_milieu_contribute, methods=["POST"]),
     ]
@@ -437,10 +504,27 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
                     justify-content: center; font-size: 2rem; color: #fff;
                     border: 4px dashed #7ec8e3; }
     #drop-overlay.active { display: flex; }
+    /* #119 Session tab strip */
+    #session-bar { display: flex; gap: 0; align-items: center; background: #0d0d22;
+                   border-bottom: 1px solid #1a1a30; padding: 0.1rem 0.4rem; overflow-x: auto;
+                   white-space: nowrap; flex-shrink: 0; }
+    .session-tab { font-family: monospace; font-size: 0.78rem; padding: 0.2rem 0.6rem;
+                   cursor: pointer; color: #888; border: 1px solid transparent;
+                   border-radius: 2px 2px 0 0; background: transparent; transition: color 0.2s; }
+    .session-tab:hover  { color: #ccc; }
+    .session-tab.active { color: #7ec8e3; border-color: #1a1a30; background: #1a1a2e; }
+    #new-session-btn { font-family: monospace; font-size: 0.82rem; padding: 0.1rem 0.5rem;
+                       cursor: pointer; color: #555; background: transparent; border: none;
+                       margin-left: 0.3rem; }
+    #new-session-btn:hover { color: #aaa; }
   </style>
 </head>
 <body>
   <div id="drop-overlay">Drop file to send to Igor</div>
+  <div id="session-bar">
+    <span class="session-tab active" data-sid="shared" onclick="switchSession('shared')">shared</span>
+    <button id="new-session-btn" onclick="newSession()" title="New session">+</button>
+  </div>
   <div id="chat"></div>
   <div id="status-bar">●  idle</div>
   <div id="name-row">
@@ -469,6 +553,9 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     const surpriseFeed  = document.getElementById('surprise-feed');
     const surpriseTable = document.getElementById('surprise-table');
     let ws, dragDepth = 0, ringOpen = false, surpriseOpen = false;
+    let currentSession = 'shared';
+    const sessionMsgs = {shared: []};   // session_id → [{author,content,ts}, ...]
+    const sessionBar = document.getElementById('session-bar');
 
     // Persist sender name in localStorage + cookie (cookie survives harder refreshes)
     function _saveName(n) {
@@ -485,6 +572,50 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     const _savedName = _loadName();
     if (_savedName) senderName.value = _savedName;
     senderName.addEventListener('change', () => _saveName(senderName.value));
+
+    // ── #119 Session management ──────────────────────────────────────────────
+    function _renderSessionBar() {
+      // Rebuild tab strip from sessionMsgs keys
+      // Keep existing tabs, add new ones, preserve order
+      const existing = new Set([...sessionBar.querySelectorAll('.session-tab')].map(t => t.dataset.sid));
+      Object.keys(sessionMsgs).forEach(sid => {
+        if (!existing.has(sid)) {
+          const tab = document.createElement('span');
+          tab.className = 'session-tab';
+          tab.dataset.sid = sid;
+          tab.textContent = sid;
+          tab.onclick = () => switchSession(sid);
+          sessionBar.insertBefore(tab, document.getElementById('new-session-btn'));
+        }
+      });
+      sessionBar.querySelectorAll('.session-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.sid === currentSession);
+      });
+    }
+
+    function _renderSession(sid) {
+      chat.innerHTML = '';
+      (sessionMsgs[sid] || []).forEach(m => {
+        const cls = m.author === 'igor' ? 'igor' : m.author === 'claude-code' ? 'cc' : 'user';
+        const label = m.author === 'igor' ? 'Igor' : m.author === 'claude-code' ? 'CC>' : (m.author || 'You');
+        addMsg(cls, label, m.content);
+      });
+    }
+
+    function switchSession(sid) {
+      if (!sessionMsgs[sid]) sessionMsgs[sid] = [];
+      currentSession = sid;
+      _renderSessionBar();
+      _renderSession(sid);
+      if (ws && ws.readyState === 1)
+        ws.send(JSON.stringify({type: 'join_session', session_id: sid}));
+    }
+
+    function newSession() {
+      const sid = 'session-' + Date.now().toString(36);
+      sessionMsgs[sid] = [];
+      switchSession(sid);
+    }
 
     function toggleRing() {
       ringOpen = !ringOpen;
@@ -665,6 +796,9 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
         // Re-identify from cookie so Igor knows who we are without asking again
         const _cookieName = _loadName();
         if (_cookieName) ws.send(JSON.stringify({type: 'identify', name: _cookieName}));
+        // Re-join current session after reconnect (server will send history)
+        if (currentSession !== 'shared')
+          ws.send(JSON.stringify({type: 'join_session', session_id: currentSession}));
       };
       ws.onclose = () => {
         setLed(false);
@@ -676,11 +810,24 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
       };
       ws.onmessage = e => {
         const m = JSON.parse(e.data);
-        if (m.type === 'message')
-          addMsg(m.author === 'igor' ? 'igor' : m.author === 'claude-code' ? 'cc' : 'user',
-                 m.author === 'igor' ? 'Igor' : m.author === 'claude-code' ? 'CC>' : (m.author || 'You'),
-                 m.content);
-        else if (m.type === 'file_dropped')
+        if (m.type === 'message') {
+          const sid = m.session_id || 'shared';
+          if (!sessionMsgs[sid]) sessionMsgs[sid] = [];
+          sessionMsgs[sid].push(m);
+          if (sessionMsgs[sid].length > 50) sessionMsgs[sid].shift();
+          _renderSessionBar();
+          // Only render if this is the active session
+          if (sid === currentSession) {
+            const cls = m.author === 'igor' ? 'igor' : m.author === 'claude-code' ? 'cc' : 'user';
+            const label = m.author === 'igor' ? 'Igor' : m.author === 'claude-code' ? 'CC>' : (m.author || 'You');
+            addMsg(cls, label, m.content);
+          }
+        } else if (m.type === 'session_history') {
+          const sid = m.session_id || 'shared';
+          sessionMsgs[sid] = m.messages || [];
+          _renderSessionBar();
+          if (sid === currentSession) _renderSession(sid);
+        } else if (m.type === 'file_dropped')
           addMsg('system', '', '📎 ' + m.filename + ' received in inbox');
         else if (m.type === 'activity')
           updateStatus(m);
@@ -696,7 +843,7 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
       const rawText = input.value.trim();
       if (!rawText || !ws || ws.readyState !== 1) return;
       const name = (senderName.value.trim() || 'akien').toLowerCase();
-      ws.send(JSON.stringify({type: 'message', content: rawText, author: name}));
+      ws.send(JSON.stringify({type: 'message', content: rawText, author: name, session_id: currentSession}));
       input.value = '';
     }
     // Enter sends; Shift+Enter inserts newline in textarea
