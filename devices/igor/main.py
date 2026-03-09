@@ -846,6 +846,84 @@ class Igor:
 
     # ── #54 Habit tiebreaker ────────────────────────────────────────────────────
 
+    def _build_think_context(
+        self,
+        user_input: str,
+        parsed,
+        relevant: list,
+        milieu_state,
+        ne_pred,
+        near_misses: list,
+    ) -> str:
+        """
+        #145 Step 3 — Python-built think context block.
+
+        Assembles [THINK_CONTEXT] from already-computed Python components at zero cost.
+        Injects only what is NOT already in the ring/session context injected by
+        _build_session_context(): parsed intent, word graph activation, NE prediction,
+        near-miss habits, top relevant memories.
+
+        Always runs on non-habit non-impulse turns. The LLM _think_call() is an
+        optional additional layer (IGOR_TWO_PHASE_CALLS gate).
+        """
+        lines = ["[THINK_CONTEXT]"]
+
+        # ── Thalamus: parsed intent + complexity ──────────────────────────────
+        if parsed is not None:
+            lines.append(
+                f"intent={parsed.intent} | complexity={parsed.complexity}"
+                + (f" | tone={parsed.tone}" if parsed.tone != "neutral" else "")
+            )
+
+        # ── Milieu: ambient affect ─────────────────────────────────────────────
+        if milieu_state is not None:
+            lines.append(
+                f"affect: v={milieu_state.valence:.2f} "
+                f"a={milieu_state.arousal:.2f} "
+                f"d={milieu_state.dominance:.2f}"
+            )
+
+        # ── Word graph: concepts activated by this input ───────────────────────
+        if self._word_graph is not None:
+            try:
+                predicted = self._word_graph.predict_next(user_input, n=5)
+                if predicted:
+                    lines.append(
+                        "activated: " + ", ".join(w for w, _ in predicted)
+                    )
+            except Exception:
+                pass
+
+        # ── Top relevant memories (high relevance only) ───────────────────────
+        if relevant:
+            top = sorted(
+                relevant,
+                key=lambda m: getattr(m, "relevance_score", 0.0),
+                reverse=True,
+            )[:2]
+            top = [m for m in top if getattr(m, "relevance_score", 0.0) >= 0.5]
+            if top:
+                lines.append("relevant:")
+                for m in top:
+                    lines.append(f"  [{m.memory_type.value}] {m.narrative[:100]}")
+
+        # ── NE prediction signal ───────────────────────────────────────────────
+        if ne_pred is not None and ne_pred.predicted_habit_id is not None:
+            lines.append(
+                f"NE predicts: {ne_pred.predicted_habit_id} "
+                f"(conf={ne_pred.confidence:.2f})"
+            )
+
+        # ── Near-miss habits ───────────────────────────────────────────────────
+        if near_misses:
+            ids = ", ".join(
+                h.id for _, h in near_misses[:3] if hasattr(h, "id")
+            )
+            if ids:
+                lines.append(f"near-miss habits: {ids}")
+
+        return "\n".join(lines)
+
     def _try_habit_tiebreaker(self, user_input: str, near_misses: list) -> "Memory | None":
         """
         #54: cheap classification call to resolve near-miss habit competition.
@@ -2213,11 +2291,19 @@ class Igor:
                 dashboard.print_reasoning(used_api=True)
                 self._current_action = "reasoning"
                 web_server.broadcast_activity(self._activity_state())
-                # [#145 Step 2] Two-phase cognition: run think call before reply.
-                # Gate: IGOR_TWO_PHASE_CALLS=true (default false — enable to test).
-                # Think: gpt-4o-mini → private scratchpad → logged to ring.
-                # Reply: _reason_with_failover receives scratchpad as [THINK_CONTEXT].
-                _reply_input = user_input
+
+                # [#145 Step 3] Python-built think context — zero cost, always on.
+                # Assembles [THINK_CONTEXT] from already-computed components:
+                # parsed intent, word graph activation, NE prediction, near-misses,
+                # top relevant memories, milieu. No LLM call.
+                _py_think = self._build_think_context(
+                    user_input, parsed, relevant, _milieu_state,
+                    _ne_pred, _thalamus_near_misses,
+                )
+                _reply_input = f"{_py_think}\n\n[USER_INPUT]\n{user_input}"
+
+                # [#145 Step 2] Optional LLM think call on top of Python context.
+                # Gate: IGOR_TWO_PHASE_CALLS=true — adds cheap gpt-4o-mini scratchpad.
                 if (
                     not is_impulse
                     and os.getenv("IGOR_TWO_PHASE_CALLS", "false").lower() in ("1", "true", "yes")
@@ -2230,7 +2316,8 @@ class Igor:
                             thread_id=thread_id,
                         )
                         _reply_input = (
-                            f"[THINK_CONTEXT]\n{_scratchpad}\n\n[USER_INPUT]\n{user_input}"
+                            f"{_py_think}\n\n[THINK_SCRATCHPAD]\n{_scratchpad}"
+                            f"\n\n[USER_INPUT]\n{user_input}"
                         )
                         console.print("[dim][THINK] Scratchpad ready → reply call[/]")
 
