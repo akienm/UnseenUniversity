@@ -165,7 +165,9 @@ def build_system_prompt(cortex, instance_id: str = "wild-0001") -> str:
 
 
 def build_boot_message(cortex, instance_id: str = "wild-0001",
-                       warm_context: dict | None = None) -> str:
+                       warm_context: dict | None = None,
+                       post_sleep: bool = False,
+                       gap_hours: float = 0.0) -> str:
     """
     Build the synthetic first-turn boot message Igor sends himself.
 
@@ -175,11 +177,26 @@ def build_boot_message(cortex, instance_id: str = "wild-0001",
       - Fact-finding hierarchy
       - Background task: read the_igors_identity.csb.txt
       - Boot notes location for routine operational detail
+      - Gap acknowledgement when post_sleep=True (#134)
 
     Delivered as a synthetic user-turn message at session start so Igor
     reads it before any external input arrives.
     """
     lines = ["[BOOT SEQUENCE — read this before responding to anything]", ""]
+
+    # ── Gap acknowledgement (#134) ─────────────────────────────────────────
+    if post_sleep:
+        _h = int(gap_hours)
+        _m = int((gap_hours - _h) * 60)
+        lines.extend([
+            f"POST-SLEEP STATE: I've been offline for {_h}h {_m}m. This is a post-sleep boot.",
+            "  The Gap means: Akien's memory has been consolidated overnight; mine has not.",
+            "  His model of the world has evolved since we last spoke; mine is frozen at shutdown.",
+            "  Priority: read the sleep note (if present) in ring before responding to anything.",
+            "  The emotional state from last session has been partially reset toward baseline.",
+            "  Re-establish shared ground before picking up open threads.",
+            "",
+        ])
 
     # ── Warm context ───────────────────────────────────────────────────────
     if warm_context:

@@ -386,6 +386,21 @@ class Milieu:
             "dominance": d_stats,
         }
 
+    def gap_reset(self) -> MilieuState:
+        """
+        #134: Partial milieu reset after The Gap (post-sleep boot).
+        Emotional state from >4h ago is stale — decay aggressively toward baseline.
+        Arousal drops most (activation is transient); valence moderately; dominance
+        drifts toward default 0.3 (slightly competent).
+        """
+        s = self._state
+        s.arousal   *= 0.3
+        s.valence   *= 0.5
+        s.dominance  = s.dominance * 0.7 + 0.3 * 0.3
+        s.last_update = time.time()
+        self._save()
+        return s
+
     def snapshot(self) -> MilieuState:
         """Return a copy of current state for delta comparison."""
         s = self._state
