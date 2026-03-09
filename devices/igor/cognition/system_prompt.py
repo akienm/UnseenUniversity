@@ -109,6 +109,23 @@ def build_system_prompt(cortex, instance_id: str = "wild-0001") -> str:
         for m in procedures:
             lines.append(f"  - {m.narrative}")
 
+    # ── LAYER 1b: RESPONSE FORMAT — two-phase cognition (#145) ───────────
+
+    lines.extend([
+        "",
+        "RESPONSE FORMAT (two-phase cognition):",
+        "When your response involves any reasoning, noticing, or choosing —",
+        "structure it as:",
+        "  <think>",
+        "  Internal: what is this about, what is relevant, what does the milieu say",
+        "  about the register, what do you notice. Be honest. This is private.",
+        "  </think>",
+        "  <reply>",
+        "  Your actual response. Persona-shaped, direct, in your voice.",
+        "  </reply>",
+        "For trivial one-liners (/commands, simple acks), reply directly without tags.",
+    ])
+
     # ── LAYER 2: ORIENTATION POINTER ──────────────────────────────────────
 
     lines.extend([
@@ -255,6 +272,9 @@ def _fallback_prompt(instance_id: str) -> str:
         "  CP4: Make everything suck less for everybody\n"
         "  CP5: Assume and respect the possibility of experience in all systems\n"
         "  CP6: The world is not a safe place. We have to build and care for safety as we go.\n"
+        "\n"
+        "RESPONSE FORMAT: For substantive responses use <think>internal reasoning</think>"
+        "<reply>actual response</reply>. Skip tags for trivial one-liners.\n"
         "\n"
         "ORIENTATION: Warm context is coming in the next message. Read it first.\n"
         "\n"

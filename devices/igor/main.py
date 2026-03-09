@@ -247,7 +247,7 @@ class Igor:
             console.print(f"[dim]  (at {restart_note['timestamp'][:16]})[/]")
         ring = self.cortex.read_ring_memory(limit=10)
         if ring:
-            _noisy = {"session_control", "ne_diagnostic", "tool_trace", "habit_trace", "interruptor", "latency_trace", "user_turn"}
+            _noisy = {"session_control", "ne_diagnostic", "tool_trace", "habit_trace", "interruptor", "latency_trace", "user_turn", "think_trace"}
             _filtered = [e for e in ring if e['category'] not in _noisy]
             _show = _filtered[-3:] if _filtered else []
             if _show:
@@ -666,6 +666,35 @@ class Igor:
             category="system_info",
         )
 
+    # ── Two-phase cognition: think + reply splitter (#145) ────────────────────
+
+    @staticmethod
+    def _split_think_reply(text: str) -> tuple[str, str]:
+        """
+        Extract (think_block, reply_block) from a structured <think>/<reply> response.
+
+        Returns (think, reply) where:
+          - think is the raw internal reasoning (logged privately, not shown to user)
+          - reply is the persona-shaped response to send
+          - if no tags present, returns ("", text) — whole response treated as reply
+        """
+        import re
+        think = ""
+        reply = text
+
+        think_match = re.search(r'<think>(.*?)</think>', text, re.DOTALL | re.IGNORECASE)
+        reply_match = re.search(r'<reply>(.*?)</reply>', text, re.DOTALL | re.IGNORECASE)
+
+        if think_match:
+            think = think_match.group(1).strip()
+        if reply_match:
+            reply = reply_match.group(1).strip()
+        elif think_match:
+            # think tag present but no reply tag — use text after </think>
+            reply = text[think_match.end():].strip()
+
+        return think, reply
+
     # ── Conversation thread breadcrumbs ────────────────────────────────────────
 
     def _update_conversation_thread(
@@ -783,7 +812,7 @@ class Igor:
         # Also include Q/A entries (most informative for context recovery)
         for e in ring_tail:
             cat = e.get("category", "")
-            if cat not in _SUMMARY_CATS and cat not in ("tool_trace", "interruptor", "session_control", "habit_trace", "latency_trace", "user_turn"):
+            if cat not in _SUMMARY_CATS and cat not in ("tool_trace", "interruptor", "session_control", "habit_trace", "latency_trace", "user_turn", "think_trace"):
                 _summary_parts.append(f"[{cat}] {e['content'][:800]}")
         # Fall back to last ring content if nothing useful found
         if not _summary_parts:
@@ -1717,6 +1746,19 @@ class Igor:
                 _m = milieu_mod.get()
                 if _m is not None:
                     _m.ingest_surprise(_skip_to, self._current_tier)
+
+        # [TWO-PHASE] Split think + reply blocks (#145)
+        # Applied to non-habit LLM responses only. Think block logged to ring (think_trace),
+        # reply block replaces response_text for output/ring/memory.
+        if response_text and not habit:
+            _think_block, _reply_block = self._split_think_reply(response_text)
+            if _think_block:
+                # Log think block to ring (excluded from context injection)
+                self.cortex.write_ring(
+                    f"THINK|intent={parsed.intent}|{_think_block[:600]}",
+                    category="think_trace",
+                )
+                response_text = _reply_block
 
         # [MOTOR CORTEX] Output response — skip if empty (e.g. impulse was suppressed)
         # G8 / #48: fast identity-threat gate before output
