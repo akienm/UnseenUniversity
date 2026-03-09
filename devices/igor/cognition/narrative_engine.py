@@ -33,7 +33,7 @@ from ..memory.cortex import Cortex
 from ..memory.models import Memory, MemoryType
 
 # ── Config ─────────────────────────────────────────────────────────────────────
-NE_MODEL              = "koboldcpp"     # label only; actual inference via KoboldCppReasoner in _call_local()
+NE_MODEL              = "ollama"        # label only; actual inference via OllamaReasoner in _call_local()
 NE_TRIGGER_OBS        = 5              # Run if >= this many unintegrated obs
 NE_MIN_INTERVAL_SEC   = 30             # Minimum seconds between NE runs
 NE_MAX_INTERVAL_SEC   = 300            # Maximum seconds between NE runs (5 min)

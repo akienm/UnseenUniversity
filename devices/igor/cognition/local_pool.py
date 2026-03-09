@@ -1,26 +1,30 @@
 """
-LocalKoboldPool — distributes reasoning across available local-network KoboldCpp instances.
+LocalPool / BatchPool — Ollama-backed local inference pools.
 
-Reads ~/.TheIgors/local/machines.json to discover online machines, creates a
-KoboldCppReasoner for each, and selects the optimal instance based on capabilities
-and benchmark data. Falls back to cloud reasoning if all local instances fail.
+All local inference runs on Ollama. Igor can self-manage models via
+`ollama pull <model>` / `ollama list` without manual server restarts.
 
-Machine selection:
-- Reads capabilities from machines.json ("pre_parsing", "reasoning", etc)
-- Uses benchmark data from ~/.TheIgors/benchmarks/{hostname}.json
-- Selects fastest machine with required capability
-- Falls back to next best option if preferred host is offline
+Config env vars:
+  OLLAMA_LOCAL_MODEL     — interactive 1B model  (default: llama3.2:1b)
+  OLLAMA_BATCH_MODEL     — batch / document model (default: qwen2.5:14b)
+  OLLAMA_BATCH_HOST      — override batch Ollama host (default: auto from machines.json)
+  LATENCY_BUDGET_SECONDS — budget before escalating to cloud (default: 8.0)
+  ROUTING_WEIGHT_COST    — cost weight [0.2-0.8] (default: 0.60)
+  ROUTING_WEIGHT_SPEED   — speed weight [0.2-0.8] (default: 0.40)
+  BATCH_SLOW_THRESHOLD_SECS — avg duration that triggers OR fallback (default: 3600)
+  BATCH_OR_MODEL         — OpenRouter fallback for batch (default: qwen/qwen2.5-14b-instruct)
 
-Part A: Dynamic resource selection based on capabilities and benchmarks
-Part B: Latency budget enforcement with cloud escalation
-Part C: Benchmark tracking and performance optimization
+LocalPool:    round-robin Ollama instances across the cluster for interactive turns.
+BatchPool:    single best background/batch Ollama machine for document work.
+              Falls back to OpenRouter (qwen2.5-14b) when local is slow or unavailable.
+
+Backwards-compat aliases: LocalKoboldPool, BatchKoboldPool.
 """
 
 from __future__ import annotations
 
 import json
 import os
-import urllib.request
 import platform
 import threading
 import time
@@ -28,17 +32,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterator
 
-from .reasoners.koboldcpp_reasoner import KoboldCppReasoner, DEFAULT_HOST as KCC_DEFAULT_HOST
-from .reasoners.ollama_reasoner import OllamaReasoner, OLLAMA_LOCAL_MODEL, OLLAMA_HOST
+from .reasoners.ollama_reasoner import OllamaReasoner, OLLAMA_LOCAL_MODEL, OLLAMA_HOST, is_healthy
 from ..memory.models import Memory
 
 MACHINES_JSON       = Path.home() / ".TheIgors" / "local" / "machines.json"
 BENCHMARK_DIR       = Path.home() / ".TheIgors" / "benchmarks"
 OLLAMA_PORT         = 11434
-KOBOLDCPP_PORT_DEFAULT = 5001
 
-BENCHMARK_TTL_HOURS     = 24
-_DEFAULT_LATENCY_BUDGET = 8.0    # seconds; overridden by LATENCY_BUDGET_SECONDS
+OLLAMA_BATCH_MODEL      = os.getenv("OLLAMA_BATCH_MODEL", "qwen2.5:14b")
+BATCH_TTL_HOURS         = 24
+_DEFAULT_LATENCY_BUDGET = 8.0
 
 # Lower number = higher priority; realtime machines tried first
 PRIORITY_ORDER: dict[str, int] = {
@@ -48,31 +51,18 @@ PRIORITY_ORDER: dict[str, int] = {
     "priority.batch":       3,
 }
 
-# Short, deterministic prompts — fast enough that benchmarking doesn't block startup
-_BENCH_PROMPTS = [
-    "Reply with only the word 'ready'.",
-    "What is 2+2? Reply with only the number.",
-    "True or false: water is wet. Reply with one word.",
-]
-
-
-# ── Machine CSV helpers ────────────────────────────────────────────────────────
+# ── Machine helpers ────────────────────────────────────────────────────────────
 
 def _parse_online_machines() -> list[dict]:
-    """
-    Parse machines.json and return online machines sorted by priority.
-    Priority order: realtime → main_loop → background → batch.
-    """
+    """Parse machines.json; return online machines sorted by priority."""
     if not MACHINES_JSON.exists():
         return []
     try:
         data = json.loads(MACHINES_JSON.read_text(encoding="utf-8"))
-        machines = []
-        for m in data.get("machines", []):
-            ip = m.get("ip") or ""
-            if ip and m.get("status", "online") != "offline":
-                machines.append(m)
-        # Wired before wifi within same priority tier (lower latency, more reliable)
+        machines = [
+            m for m in data.get("machines", [])
+            if m.get("ip") and m.get("status", "online") != "offline"
+        ]
         machines.sort(key=lambda m: (
             PRIORITY_ORDER.get(m.get("priority", ""), 99),
             0 if m.get("network", "").lower() == "wired" else 1,
@@ -83,14 +73,13 @@ def _parse_online_machines() -> list[dict]:
 
 
 def parse_capabilities(row: dict) -> list[str]:
-    """Return list of capability strings from a machines.json entry."""
     caps = row.get("capabilities", [])
     if isinstance(caps, list):
         return caps
     return [c.strip() for c in str(caps).split(",") if c.strip()]
 
 
-# ── Part A — Boot benchmarking ─────────────────────────────────────────────────
+# ── Benchmarking ───────────────────────────────────────────────────────────────
 
 def _benchmark_path(hostname: str) -> Path:
     BENCHMARK_DIR.mkdir(parents=True, exist_ok=True)
@@ -98,35 +87,31 @@ def _benchmark_path(hostname: str) -> Path:
 
 
 def _load_benchmark_cache(hostname: str, model: str) -> dict | None:
-    """Load cached benchmark if it's fresh and for the current model."""
     path = _benchmark_path(hostname)
     if not path.exists():
         return None
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
         if data.get("model") != model:
-            return None  # Model changed — need re-benchmark
+            return None
         ts = datetime.fromisoformat(data["measured_at"])
-        age_hours = (datetime.now() - ts).total_seconds() / 3600
-        if age_hours > BENCHMARK_TTL_HOURS:
-            return None  # Stale
+        if (datetime.now() - ts).total_seconds() / 3600 > BATCH_TTL_HOURS:
+            return None
         return data
     except Exception:
         return None
 
 
 def _run_benchmark(model: str, host: str | None = None) -> dict:
-    """
-    Run _BENCH_PROMPTS through the given model and measure throughput.
-    Returns {model, tokens_per_sec, avg_latency_ms, measured_at}.
-    Raises on Ollama connection failure.
-    """
     import ollama as _ollama
     client = _ollama.Client(host=host) if host else _ollama
-
+    _BENCH_PROMPTS = [
+        "Reply with only the word 'ready'.",
+        "What is 2+2? Reply with only the number.",
+        "True or false: water is wet. Reply with one word.",
+    ]
     timings: list[float] = []
     total_tokens = 0
-
     for prompt in _BENCH_PROMPTS:
         t0 = time.perf_counter()
         response = client.chat(
@@ -135,7 +120,6 @@ def _run_benchmark(model: str, host: str | None = None) -> dict:
             options={"temperature": 0.0, "num_predict": 20},
         )
         elapsed = time.perf_counter() - t0
-        # eval_count = output tokens generated
         tokens_out = (
             getattr(response, "eval_count", None)
             or (response.get("eval_count") if isinstance(response, dict) else None)
@@ -143,11 +127,8 @@ def _run_benchmark(model: str, host: str | None = None) -> dict:
         )
         timings.append(elapsed)
         total_tokens += tokens_out
-
-    avg_latency_ms  = (sum(timings) / len(timings)) * 1000
-    total_elapsed   = sum(timings)
-    tokens_per_sec  = total_tokens / total_elapsed if total_elapsed > 0 else 1.0
-
+    avg_latency_ms = (sum(timings) / len(timings)) * 1000
+    tokens_per_sec = total_tokens / sum(timings) if sum(timings) > 0 else 1.0
     return {
         "model":          model,
         "tokens_per_sec": round(tokens_per_sec, 1),
@@ -158,37 +139,28 @@ def _run_benchmark(model: str, host: str | None = None) -> dict:
 
 def _save_benchmark_cache(hostname: str, result: dict) -> None:
     try:
-        _benchmark_path(hostname).write_text(
-            json.dumps(result, indent=2), encoding="utf-8"
-        )
+        _benchmark_path(hostname).write_text(json.dumps(result, indent=2), encoding="utf-8")
     except Exception:
         pass
 
 
 def _in_benchmark_window() -> bool:
-    """True if current hour is within the overnight benchmark window (default 22:00–06:00)."""
     hour = datetime.now().hour
     start = int(os.getenv("IGOR_BENCHMARK_WINDOW_START", "22"))
     end   = int(os.getenv("IGOR_BENCHMARK_WINDOW_END",   "6"))
-    if start > end:   # wraps midnight
+    if start > end:
         return hour >= start or hour < end
     return start <= hour < end
 
 
 def _init_benchmark_async(model: str, on_complete) -> None:
-    """
-    Load from cache if fresh; otherwise run benchmark in a daemon thread.
-    Fresh benchmarks only run during the overnight window (IGOR_BENCHMARK_WINDOW_START/END).
-    on_complete(result_dict) is called when the benchmark is ready.
-    """
     hostname = platform.node()
     cached = _load_benchmark_cache(hostname, model)
     if cached:
         on_complete(cached)
-        return  # Cache hit — no thread needed
-
+        return
     if not _in_benchmark_window():
-        return  # Outside overnight window — skip fresh benchmark, use stale data or nothing
+        return
 
     def _worker():
         try:
@@ -198,30 +170,18 @@ def _init_benchmark_async(model: str, on_complete) -> None:
             from rich.console import Console
             Console().print(
                 f"[dim][BENCH] {model} @ {result['tokens_per_sec']} tok/sec "
-                f"on {hostname} — latency budget now active[/]"
+                f"on {hostname} — latency budget active[/]"
             )
         except Exception as e:
             from rich.console import Console
-            Console().print(
-                f"[dim][BENCH] benchmark failed for {model} ({e}) "
-                f"— latency budget disabled until next boot[/]"
-            )
+            Console().print(f"[dim][BENCH] benchmark failed for {model} ({e})[/]")
 
-    t = threading.Thread(target=_worker, daemon=True, name="ollama-benchmark")
-    t.start()
+    threading.Thread(target=_worker, daemon=True, name="ollama-benchmark").start()
 
 
-# ── Part B + C — RoutingWeights ────────────────────────────────────────────────
+# ── RoutingWeights ─────────────────────────────────────────────────────────────
 
 class RoutingWeights:
-    """
-    Session-scoped cost/speed routing weights. Reset to .env defaults on boot.
-    Adjusted by signals observed during the session (Part C).
-
-    If weight adjustments prove consistently useful across sessions, the NE
-    can compile them into PROCEDURAL memory so they become learned preferences.
-    """
-
     CLAMP_MIN = 0.2
     CLAMP_MAX = 0.8
     STEP      = 0.05
@@ -233,28 +193,14 @@ class RoutingWeights:
         self.speed_weight = max(self.CLAMP_MIN, min(self.CLAMP_MAX, speed_w))
 
     def adjust(self, signal: str) -> None:
-        """
-        Adjust weights based on observed pressure signal.
-
-        speed_pressure   → more weight on speed (tolerate higher cost)
-        cost_pressure    → more weight on cost (tolerate slower responses)
-        quality_pressure → no weight change (handled by complexity skip_to=tier.4)
-        """
         if signal == "speed_pressure":
             self.speed_weight = min(self.CLAMP_MAX, self.speed_weight + self.STEP)
             self.cost_weight  = max(self.CLAMP_MIN, self.cost_weight  - self.STEP)
         elif signal == "cost_pressure":
             self.cost_weight  = min(self.CLAMP_MAX, self.cost_weight  + self.STEP)
             self.speed_weight = max(self.CLAMP_MIN, self.speed_weight - self.STEP)
-        # quality_pressure: no adjustment here
 
     def score_local(self, est_latency: float, budget: float) -> tuple[float, float, float]:
-        """
-        Compute (cost_score, speed_score, tier_score) for the local tier.
-        cost_score  = 1.0 (local is always free).
-        speed_score = 1.0 - (est_latency / budget), clamped [0, 1].
-        tier_score  = weighted combination.
-        """
         cost_score  = 1.0
         speed_score = max(0.0, 1.0 - (est_latency / budget)) if budget > 0 else 0.0
         tier_score  = (cost_score * self.cost_weight) + (speed_score * self.speed_weight)
@@ -264,21 +210,14 @@ class RoutingWeights:
         return f"weights(cost={self.cost_weight:.2f},speed={self.speed_weight:.2f})"
 
 
-# ── Pool ───────────────────────────────────────────────────────────────────────
+# ── LocalPool ──────────────────────────────────────────────────────────────────
 
 BENCHMARK_DIR = Path.home() / ".TheIgors" / "benchmarks"
-BENCHMARK_TTL_HOURS = 24
 
-class LocalKoboldPool:
+class LocalPool:
     """
-    Round-robin pool of OllamaReasoner instances across network machines.
-
-    Switched from KoboldCpp to Ollama so Igor can self-manage models
-    (ollama pull/list) without manual server restarts.
-
-    Part A: self._benchmark populated async from ~/.TheIgors/benchmarks/
-    Part B: reason() estimates local latency; escalates if > LATENCY_BUDGET_SECONDS
-    Part C: self.weights adjusted by signal observations from main.py
+    Round-robin pool of OllamaReasoner instances across the cluster.
+    Used for interactive tier.2 reasoning. Igor can switch models with /model.
     """
 
     def __init__(self):
@@ -294,11 +233,7 @@ class LocalKoboldPool:
         self._benchmark = result
 
     def _refresh(self):
-        """Rebuild OllamaReasoner list from machines.json.
-
-        Each online machine runs Ollama on port 11434. Local machine added last
-        as guaranteed fallback. Igor can pull/switch models via ollama CLI.
-        """
+        """Rebuild OllamaReasoner list from machines.json."""
         machines = _parse_online_machines()
         reasoners = []
         for m in machines:
@@ -307,30 +242,25 @@ class LocalKoboldPool:
                 continue
             host = f"http://{ip}:{OLLAMA_PORT}"
             reasoners.append(OllamaReasoner(model=self.model, host=host))
-        # Always include local Ollama as fallback
+        # Always include local Ollama
         reasoners.append(OllamaReasoner(model=self.model, host=OLLAMA_HOST))
         self._reasoners = reasoners
         self._index     = 0
 
     def record_benchmark(self, hostname: str, task: str, latency: float) -> None:
-        """Store benchmark results for a specific host/task combination."""
         BENCHMARK_DIR.mkdir(parents=True, exist_ok=True)
         bench_file = BENCHMARK_DIR / f"{hostname}.json"
-        
         try:
             data = json.loads(bench_file.read_text()) if bench_file.exists() else {}
         except Exception:
             data = {}
-            
         if task not in data:
             data[task] = {}
-            
         data[task].update({
             "last_latency": latency,
-            "last_update": datetime.now().isoformat(),
-            "avg": (data[task].get("avg", latency) + latency) / 2
+            "last_update":  datetime.now().isoformat(),
+            "avg": (data[task].get("avg", latency) + latency) / 2,
         })
-        
         bench_file.write_text(json.dumps(data, indent=2))
 
     def _next_reasoner(self) -> Iterator[OllamaReasoner]:
@@ -338,46 +268,13 @@ class LocalKoboldPool:
         for i in range(n):
             yield self._reasoners[(self._index + i) % n]
 
-    def select_preparse_host(self) -> dict:
-        """Select the best host for pre-parsing based on capabilities and benchmarks."""
-        machines = _parse_online_machines()
-        if not machines:
-            return None
-
-        # Filter for machines with pre_parsing capability
-        capable_hosts = [
-            m for m in machines 
-            if "pre_parsing" in parse_capabilities(m)
-        ]
-        
-        if not capable_hosts:
-            return machines[0]  # Fallback to first available
-
-        # Load benchmark data for each capable host
-        for host in capable_hosts:
-            bench_file = BENCHMARK_DIR / f"{host['Hostname']}.json"
-            try:
-                data = json.loads(bench_file.read_text())
-                host["benchmark"] = data.get("preparse", {}).get("avg", 10.0)
-            except Exception:
-                host["benchmark"] = 10.0  # Default/slow score
-                
-        # Return fastest host
-        return min(capable_hosts, key=lambda x: x["benchmark"])
-
     def _estimate_latency(self, user_input: str) -> float | None:
-        """
-        Estimate response latency (seconds) using benchmark throughput.
-        Uses prompt_tokens as a proxy per the ticket spec.
-        Returns None if benchmark is not yet available.
-        """
         if self._benchmark is None:
             return None
         tps = self._benchmark.get("tokens_per_sec", 0)
         if tps <= 0:
             return None
-        prompt_tokens = max(1, len(user_input) // 4)
-        return prompt_tokens / tps
+        return max(1, len(user_input) // 4) / tps
 
     def reason(
         self,
@@ -388,15 +285,6 @@ class LocalKoboldPool:
         preparse_csb: str = "",
         force_local: bool = False,
     ) -> tuple[str, float]:
-        """
-        Try each machine in round-robin order; fall back on failure.
-
-        Before executing: estimates latency and scores the local tier.
-        If estimated latency > LATENCY_BUDGET_SECONDS, raises so the caller
-        (main._process_inner) escalates to the cloud chain.
-
-        force_local: skip latency budget check (#90 local_only directive).
-        """
         from .forensic_logger import log_routing_decision
 
         budget      = float(os.getenv("LATENCY_BUDGET_SECONDS", str(_DEFAULT_LATENCY_BUDGET)))
@@ -405,43 +293,29 @@ class LocalKoboldPool:
         cost_score = speed_score = tier_score = 0.0
         if est_latency is not None and not force_local:
             cost_score, speed_score, tier_score = self.weights.score_local(est_latency, budget)
-
             if est_latency > budget:
                 log_routing_decision(
-                    est_latency_s=est_latency,
-                    budget_s=budget,
-                    tier_selected="tier.2",
-                    cost_score=cost_score,
-                    speed_score=speed_score,
-                    tier_score=tier_score,
-                    escalated=True,
-                    weights=repr(self.weights),
-                    proc_id="PROC_ROUTING_ESCALATE",  # Change 7 / D031
+                    est_latency_s=est_latency, budget_s=budget, tier_selected="tier.2",
+                    cost_score=cost_score, speed_score=speed_score, tier_score=tier_score,
+                    escalated=True, weights=repr(self.weights), proc_id="PROC_ROUTING_ESCALATE",
                 )
                 raise RuntimeError(
                     f"Local too slow: est {est_latency:.1f}s > budget {budget}s "
                     f"(speed_score={speed_score:.2f})"
                 )
 
-        t0       = time.perf_counter()
+        t0 = time.perf_counter()
         last_exc = None
-
         for reasoner in self._next_reasoner():
             try:
                 result         = reasoner.reason(user_input, relevant_memories, core_patterns, instance_id)
                 actual_latency = time.perf_counter() - t0
                 self._index    = (self._index + 1) % len(self._reasoners)
                 log_routing_decision(
-                    est_latency_s=est_latency,
-                    actual_latency_s=actual_latency,
-                    budget_s=budget,
-                    tier_selected="tier.2",
-                    cost_score=cost_score,
-                    speed_score=speed_score,
-                    tier_score=tier_score,
-                    escalated=False,
-                    weights=repr(self.weights),
-                    proc_id="PROC_ROUTING_LOCAL",   # Change 7 / D031
+                    est_latency_s=est_latency, actual_latency_s=actual_latency,
+                    budget_s=budget, tier_selected="tier.2",
+                    cost_score=cost_score, speed_score=speed_score, tier_score=tier_score,
+                    escalated=False, weights=repr(self.weights), proc_id="PROC_ROUTING_LOCAL",
                 )
                 return result
             except Exception as exc:
@@ -449,118 +323,88 @@ class LocalKoboldPool:
                 continue
 
         raise RuntimeError(
-            f"All {len(self._reasoners)} Ollama instances failed. "
-            f"Last error: {last_exc}"
+            f"All {len(self._reasoners)} Ollama instances failed. Last error: {last_exc}"
         )
 
     def set_model(self, model: str) -> str:
-        """Switch model on all pool members. Triggers re-benchmark if model changed."""
         if model != self.model:
             self.model      = model
-            self._benchmark = None  # Stale — re-benchmark for new model
+            self._benchmark = None
             _init_benchmark_async(model, self._on_benchmark_done)
         for r in self._reasoners:
             r.model = model
         return model
 
     def machines_summary(self) -> str:
-        """Human-readable list of pool members with priority."""
         machines = _parse_online_machines()
-        parts = []
-        for m in machines:
-            pri  = m.get("priority", "?").replace("priority.", "")
-            caps = ",".join(m.get("capabilities", []))
-            parts.append(f"{m['hostname']}({pri})[{caps}]")
+        parts = [
+            f"{m['hostname']}({m.get('priority','?').replace('priority.','')})"
+            for m in machines
+        ]
         parts.append("localhost(fallback)")
         if self._benchmark:
             parts.append(f"bench={self._benchmark['tokens_per_sec']}tok/s")
         return ", ".join(parts)
 
 
-# ── BatchKoboldPool ────────────────────────────────────────────────────────────
+# ── BatchPool ──────────────────────────────────────────────────────────────────
 
-class BatchKoboldPool:
+class BatchPool:
     """
     Secondary pool for slow/deep batch reasoning (#29).
 
-    Uses machines.json `koboldcpp_port_batch` field — machines running a larger
-    model (14B Q4) on a second KoboldCpp instance (default port 5002).
+    Uses Ollama with OLLAMA_BATCH_MODEL (default: qwen2.5:14b) on the best
+    background/batch machine. Igor can `ollama pull qwen2.5:14b` to activate.
+    Falls back to OpenRouter (qwen/qwen2.5-14b-instruct) when unavailable.
 
-    Key differences from LocalKoboldPool:
-    - No latency budget enforcement — batch work has no interactive time pressure
-    - Longer timeout (5 min default, configurable BATCH_TIMEOUT_SECONDS)
-    - Prefers wired/priority.background machines over realtime (save fast machines
-      for interactive use)
-    - OpenRouter fallback (qwen/qwen2.5-14b-instruct) when local is slow or down
-    - Duration tracking: if recent calls average > BATCH_SLOW_THRESHOLD_SECS,
-      prefer OpenRouter over local
-
-    machines.json schema extension (optional per machine):
-      "koboldcpp_port_batch": 5002
-      "koboldcpp_model_batch": "Qwen2.5-14B-Instruct-Q4_K_M"  — informational label
+    Machine selection: OLLAMA_BATCH_HOST env var overrides; otherwise prefers
+    wired priority.background or priority.batch machines from machines.json.
     """
 
-    BATCH_TIMEOUT_SECONDS    = int(os.getenv("BATCH_TIMEOUT_SECONDS", "300"))
-    BATCH_PORT_DEFAULT       = int(os.getenv("KOBOLDCPP_BATCH_PORT", "5002"))
     BATCH_SLOW_THRESHOLD_SECS = int(os.getenv("BATCH_SLOW_THRESHOLD_SECS", "3600"))
-    BATCH_OR_MODEL           = os.getenv("BATCH_OR_MODEL", "qwen/qwen2.5-14b-instruct")
-    _DURATION_WINDOW         = 5   # rolling window for slow detection
+    BATCH_OR_MODEL            = os.getenv("BATCH_OR_MODEL", "qwen/qwen2.5-14b-instruct")
+    _DURATION_WINDOW          = 5
 
-    def __init__(self, fallback: "LocalKoboldPool | None" = None):
-        self._fallback = fallback
-        self._reasoner: "KoboldCppReasoner | None" = None
+    def __init__(self, fallback: "LocalPool | None" = None):
+        self._fallback         = fallback
+        self._reasoner:  OllamaReasoner | None = None
         self._batch_host: str | None = None
-        self._batch_model_label: str = ""
-        self._recent_durations: list[float] = []   # last N call durations in seconds
+        self._recent_durations: list[float] = []
         self._refresh()
 
     def _refresh(self) -> None:
-        """Find the best batch-capable machine and build a reasoner for it."""
+        """Find best batch-capable Ollama machine."""
+        # Explicit override wins
+        override = os.getenv("OLLAMA_BATCH_HOST", "").strip()
+        if override:
+            self._batch_host = override
+            self._reasoner   = OllamaReasoner(model=OLLAMA_BATCH_MODEL, host=override)
+            return
+
         machines = _parse_online_machines()
-        # Prefer wired background/batch machines (save realtime for interactive)
         batch_order = sorted(machines, key=lambda m: (
             0 if m.get("network", "").lower() == "wired" else 1,
             PRIORITY_ORDER.get(m.get("priority", ""), 99),
         ))
         for m in batch_order:
-            port_str = str(m.get("koboldcpp_port_batch", "")).strip()
-            if not port_str:
-                continue
-            try:
-                port = int(port_str)
-            except ValueError:
-                continue
-            host = f"http://{m['ip']}:{port}"
-            self._reasoner        = KoboldCppReasoner(host=host)
-            self._batch_host      = host
-            self._batch_model_label = str(m.get("koboldcpp_model_batch", ""))
-            return
+            pri = m.get("priority", "")
+            if pri in ("priority.background", "priority.batch"):
+                host = f"http://{m['ip']}:{OLLAMA_PORT}"
+                self._batch_host = host
+                self._reasoner   = OllamaReasoner(model=OLLAMA_BATCH_MODEL, host=host)
+                return
 
-        # No dedicated batch machine — check local env override
-        local_batch = os.getenv("KOBOLDCPP_BATCH_HOST", "")
-        if local_batch:
-            self._reasoner   = KoboldCppReasoner(host=local_batch)
-            self._batch_host = local_batch
-        else:
-            self._reasoner   = None
-            self._batch_host = None
+        # Fallback: local Ollama with batch model
+        self._batch_host = OLLAMA_HOST
+        self._reasoner   = OllamaReasoner(model=OLLAMA_BATCH_MODEL, host=OLLAMA_HOST)
 
     def is_available(self) -> bool:
-        """Return True if a batch KoboldCpp instance is reachable."""
-        if self._reasoner is None:
-            return False
-        from .reasoners.koboldcpp_reasoner import is_healthy
-        try:
-            return is_healthy(self._batch_host, timeout=3)
-        except Exception:
-            return False
+        return is_healthy(self._batch_host or OLLAMA_HOST, timeout=3)
 
     def _is_running_slow(self) -> bool:
-        """True if recent local calls average over the slow threshold."""
         if len(self._recent_durations) < 2:
             return False
-        avg = sum(self._recent_durations) / len(self._recent_durations)
-        return avg > self.BATCH_SLOW_THRESHOLD_SECS
+        return sum(self._recent_durations) / len(self._recent_durations) > self.BATCH_SLOW_THRESHOLD_SECS
 
     def _record_duration(self, seconds: float) -> None:
         self._recent_durations.append(seconds)
@@ -568,19 +412,18 @@ class BatchKoboldPool:
             self._recent_durations.pop(0)
 
     def _reason_openrouter(self, user_input: str) -> tuple[str, float]:
-        """Minimal direct OpenRouter call — no tool use, no system prompt overhead."""
-        import urllib.request, urllib.error
+        import urllib.request
         api_key = os.getenv("OPENROUTER_API_KEY", "")
         if not api_key:
             raise RuntimeError("OPENROUTER_API_KEY not set")
-        payload = {
+        payload = json.dumps({
             "model": self.BATCH_OR_MODEL,
             "messages": [{"role": "user", "content": user_input}],
             "max_tokens": 2048,
-        }
+        }).encode()
         req = urllib.request.Request(
             "https://openrouter.ai/api/v1/chat/completions",
-            data=json.dumps(payload).encode(),
+            data=payload,
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
@@ -591,7 +434,7 @@ class BatchKoboldPool:
         with urllib.request.urlopen(req, timeout=120) as resp:
             data = json.loads(resp.read())
         text = data["choices"][0]["message"]["content"]
-        cost = data.get("usage", {}).get("total_tokens", 0) * 0.000001  # rough estimate
+        cost = data.get("usage", {}).get("total_tokens", 0) * 0.000001
         return text, cost
 
     def reason_batch(
@@ -603,70 +446,58 @@ class BatchKoboldPool:
     ) -> tuple[str, float]:
         """
         Run a batch reasoning request. No latency budget.
-
-        Routing:
-        1. If local machine is running slow (avg > BATCH_SLOW_THRESHOLD_SECS),
-           prefer OpenRouter (same model family, cheaper per slow-hour).
-        2. Try local KoboldCpp batch machine.
-        3. Try OpenRouter fallback.
-        4. Try LocalKoboldPool fallback.
-
-        Logs duration to metrics.log for performance tracking.
+        1. If local is running slow → prefer OpenRouter.
+        2. Try local Ollama batch machine.
+        3. OpenRouter fallback.
+        4. LocalPool fallback (last resort).
         """
         from .forensic_logger import log_batch_call
 
-        # Prefer OpenRouter when local is demonstrably slow
         if self._is_running_slow():
             try:
                 t0 = time.time()
                 result = self._reason_openrouter(user_input)
-                elapsed = time.time() - t0
                 log_batch_call(source="openrouter", model=self.BATCH_OR_MODEL,
-                               elapsed_s=elapsed, via="slow_local_bypass")
+                               elapsed_s=time.time() - t0, via="slow_local_bypass")
                 return result
             except Exception:
                 pass
 
-        # Try local batch machine
         if self._reasoner is not None and self.is_available():
             try:
                 t0 = time.time()
-                result = self._reasoner.reason(
-                    user_input, relevant_memories, core_patterns, instance_id
-                )
+                result = self._reasoner.reason(user_input, relevant_memories, core_patterns, instance_id)
                 elapsed = time.time() - t0
                 self._record_duration(elapsed)
-                log_batch_call(source="local", model=self._batch_model_label,
+                log_batch_call(source="local", model=OLLAMA_BATCH_MODEL,
                                elapsed_s=elapsed, via=self._batch_host or "")
                 return result
             except Exception:
                 pass
 
-        # OpenRouter fallback
         try:
             t0 = time.time()
             result = self._reason_openrouter(user_input)
-            elapsed = time.time() - t0
             log_batch_call(source="openrouter", model=self.BATCH_OR_MODEL,
-                           elapsed_s=elapsed, via="local_unavailable")
+                           elapsed_s=time.time() - t0, via="local_unavailable")
             return result
         except Exception:
             pass
 
-        # Last resort: interactive local pool
         if self._fallback is not None:
             return self._fallback.reason(
-                user_input, relevant_memories, core_patterns, instance_id,
-                force_local=True,
+                user_input, relevant_memories, core_patterns, instance_id, force_local=True,
             )
-        raise RuntimeError("BatchKoboldPool: all batch paths exhausted")
+        raise RuntimeError("BatchPool: all batch paths exhausted")
 
     def status(self) -> str:
-        """One-line status string for dashboard/logging."""
         slow = f"|slow={'yes' if self._is_running_slow() else 'no'}"
-        avg = (f"|avg={sum(self._recent_durations)/len(self._recent_durations):.0f}s"
-               if self._recent_durations else "")
-        if self._batch_host:
-            avail = "up" if self.is_available() else "down"
-            return f"batch_pool|host={self._batch_host}|{avail}{slow}{avg}"
-        return f"batch_pool|no_local|or_model={self.BATCH_OR_MODEL}{slow}"
+        avg  = (f"|avg={sum(self._recent_durations)/len(self._recent_durations):.0f}s"
+                if self._recent_durations else "")
+        avail = "up" if self.is_available() else "down"
+        return f"batch_pool|host={self._batch_host}|model={OLLAMA_BATCH_MODEL}|{avail}{slow}{avg}"
+
+
+# ── Backwards-compat aliases ───────────────────────────────────────────────────
+LocalKoboldPool = LocalPool
+BatchKoboldPool = BatchPool
