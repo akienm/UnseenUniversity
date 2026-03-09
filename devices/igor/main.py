@@ -1458,11 +1458,15 @@ class Igor:
         habits = self.cortex.get_habits()
         _milieu_state = milieu_mod.get().get_state() if milieu_mod.get() else None
 
-        # #121: Prospective NE pass — predict which habit might fire before it happens
+        # #121 + #50: Prospective NE pass — predict habit + pre-warm memory search topics
+        _ne_search_keys: list[str] = []
         if not is_impulse:
             try:
                 _twm_recent = self.cortex.twm_read(limit=5, include_integrated=False)
-                self.ne.prospective_pass(_twm_recent, habits)
+                _ne_pred = self.ne.prospective_pass(
+                    _twm_recent, habits, word_graph=self._word_graph
+                )
+                _ne_search_keys = _ne_pred.predicted_search_keys
             except Exception:
                 pass
 
@@ -1499,7 +1503,11 @@ class Igor:
             # No I/O needed — build CSB from thalamus result instantly
             pre_csb = _rule_based_csb(user_input, habits)
             if parsed.intent != "command":  # commands don't need memory search
-                candidates = self.cortex.search(" ".join(parsed.keywords), emotional_context=_milieu_state)
+                _search_query = " ".join(parsed.keywords)
+                # #50: merge NE predicted search keys — topics the NE predicted before input arrived
+                if _ne_search_keys:
+                    _search_query = _search_query + " " + " ".join(_ne_search_keys)
+                candidates = self.cortex.search(_search_query.strip(), emotional_context=_milieu_state)
             relevant = score_memories(user_input, candidates) if candidates else []
         else:
             # Parallel: memory search + LLM preparse
@@ -1516,9 +1524,14 @@ class Igor:
                 console.print("[dim][PREPARSE] Local preparse off — classifying via tier.3...[/]")
                 _preparse_fn = lambda: preparse_via_openrouter(user_input, habits)
 
+            # #50: include NE predicted search keys in memory retrieval query
+            _kw_query = " ".join(parsed.keywords)
+            if _ne_search_keys:
+                _kw_query = _kw_query + " " + " ".join(_ne_search_keys)
+
             with _cf.ThreadPoolExecutor(max_workers=2) as _pool:
                 _pre_fut  = _pool.submit(_preparse_fn)
-                _cand_fut = _pool.submit(self.cortex.search, " ".join(parsed.keywords), 10, _milieu_state)
+                _cand_fut = _pool.submit(self.cortex.search, _kw_query.strip(), 10, _milieu_state)
                 pre_csb   = _pre_fut.result()
                 candidates = _cand_fut.result()
             relevant = score_memories(user_input, candidates) if candidates else []

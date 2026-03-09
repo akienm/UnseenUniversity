@@ -76,6 +76,8 @@ class ProspectivePrediction:
     predicted_habit_id: Optional[str]   # None = no habit predicted to fire
     confidence: float = 0.0             # 0.0–1.0
     pre_warmed_memory_ids: list = field(default_factory=list)
+    # #50: NE as incremental predictive parser — predicted upcoming topics from word graph
+    predicted_search_keys: list = field(default_factory=list)  # top co-occurring words
 
 
 # ── Prompt token cap ───────────────────────────────────────────────────────────
@@ -100,11 +102,24 @@ class NarrativeEngine:
 
     # ── Prospective pass (#121) ────────────────────────────────────────────────
 
-    def prospective_pass(self, recent_obs: list[dict], habits: list) -> ProspectivePrediction:
+    def prospective_pass(
+        self,
+        recent_obs: list[dict],
+        habits: list,
+        word_graph=None,
+    ) -> ProspectivePrediction:
         """
-        #121: Rule-based forward prediction — no LLM, must be fast (called every turn).
-        Looks at recent TWM observations and predicts which habit is likely to fire.
-        Stores result in self._last_prediction for comparison after basal ganglia resolves.
+        #121 + #50: Rule-based forward prediction — no LLM, must be fast (every turn).
+
+        Looks at recent TWM observations and predicts:
+          - which habit is likely to fire (#121)
+          - which topics are likely upcoming via word graph co-occurrence (#50)
+
+        The #50 predicted_search_keys pre-warm memory retrieval before the user
+        input is fully parsed — NE starts pulling context the moment prior
+        observations suggest a topic shift.
+
+        Stores result in self._last_prediction for comparison after basal ganglia.
         """
         window = " ".join(
             o.get("content_csb", "") for o in recent_obs[-5:]
@@ -122,10 +137,26 @@ class NarrativeEngine:
                 best_score = score
                 best_habit = habit
 
+        # #50: word graph predicts upcoming topics from the context window.
+        # These become pre-warmed memory search keys — retrieved before preparse.
+        _search_keys: list[str] = []
+        if word_graph is not None:
+            try:
+                predictions = word_graph.predict_next(window, n=8)
+                # Filter: skip short words, bigrams (contain "__"), and stop words
+                _STOP = {"the", "and", "for", "that", "this", "with", "have", "from"}
+                _search_keys = [
+                    w for w, _ in predictions
+                    if len(w) > 3 and "__" not in w and w not in _STOP
+                ][:3]
+            except Exception:
+                pass
+
         pred = ProspectivePrediction(
             predicted_habit_id=best_habit.id if best_habit else None,
             confidence=best_score,
             pre_warmed_memory_ids=[best_habit.id] if best_habit else [],
+            predicted_search_keys=_search_keys,
         )
         self._last_prediction = pred
         return pred
