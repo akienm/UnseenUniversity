@@ -762,85 +762,39 @@ class Igor:
 
     def _think_call(
         self,
+        py_think_context: str,
         user_input: str,
-        relevant: list,
-        milieu_state,
     ) -> str:
         """
-        Phase 1 of two-phase cognition (#145 Step 2).
+        #145 Step 4 — local think synthesis via Ollama. Zero cloud cost.
 
-        Cheap gpt-4o-mini call — generates a private scratchpad:
-        what is this about, what's emotionally salient, what response approach fits?
-        Returns scratchpad text (empty string on any failure).
+        Takes the already-assembled Python think context (_build_think_context output)
+        and asks the local Ollama model to synthesize a 2-3 sentence scratchpad:
+        what is the emotional register, what response approach fits?
 
-        The scratchpad is injected into the reply call as [THINK_CONTEXT] so the
-        reply model works from a much smaller, already-reasoned context.
+        This is the only remaining LLM call in the think phase — and it is local.
+        Only the reply call hits cloud. Returns synthesis text (empty string on failure).
         """
-        import json as _json
-        api_key = os.getenv("OPENROUTER_API_KEY", "")
-        if not api_key:
-            return ""
-
-        mem_lines = "\n".join(
-            f"- {m.narrative[:120]}" for m in (relevant or [])[:4]
-        )
-        mem_block = f"\n[RELEVANT MEMORIES]\n{mem_lines}" if mem_lines else ""
-
-        milieu_block = ""
-        if milieu_state is not None:
-            milieu_block = (
-                f"\n[MILIEU] valence={milieu_state.valence:.2f} "
-                f"arousal={milieu_state.arousal:.2f} "
-                f"dominance={milieu_state.dominance:.2f}"
+        try:
+            import ollama as _ollama
+            from .cognition.reasoners.ollama_reasoner import OLLAMA_LOCAL_MODEL, OLLAMA_HOST
+            _prompt = (
+                f"{py_think_context}\n\n"
+                f"Input: {user_input[:300]}\n\n"
+                "In 2-3 sentences: what is the emotional register of this input, "
+                "and what response approach fits? Be direct. This is never shown to the user."
             )
-
-        # Recent ring context — last 3 entries, 100 chars each
-        try:
-            _ring = self.cortex.read_ring_memory(limit=3)
-            ring_lines = "\n".join(e.get("content", "")[:100] for e in _ring)
-            ring_block = f"\n[RECENT CONTEXT]\n{ring_lines}" if ring_lines else ""
-        except Exception:
-            ring_block = ""
-
-        think_prompt = (
-            f"[USER INPUT]\n{user_input[:500]}"
-            f"{ring_block}"
-            f"{mem_block}"
-            f"{milieu_block}"
-        )
-
-        _THINK_SYSTEM = (
-            "You are Igor's private internal reasoning engine. "
-            "Analyze the user input and produce a concise scratchpad (3-5 sentences): "
-            "what is this about, what is emotionally relevant, what response approach fits? "
-            "This is never shown to the user. Be direct, not verbose."
-        )
-
-        payload = _json.dumps({
-            "model": os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini"),
-            "messages": [
-                {"role": "system", "content": _THINK_SYSTEM},
-                {"role": "user", "content": think_prompt},
-            ],
-            "max_tokens": 250,
-            "temperature": 0.3,
-        }).encode()
-
-        import urllib.request as _urllib_req
-        req = _urllib_req.Request(
-            "https://openrouter.ai/api/v1/chat/completions",
-            data=payload,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://github.com/akienm/TheIgors",
-            },
-            method="POST",
-        )
-        try:
-            with _urllib_req.urlopen(req, timeout=12) as resp:
-                data = _json.loads(resp.read())
-            return data["choices"][0]["message"]["content"].strip()
+            _client = _ollama.Client(host=OLLAMA_HOST)
+            resp = _client.chat(
+                model=OLLAMA_LOCAL_MODEL,
+                messages=[{"role": "user", "content": _prompt}],
+                options={"temperature": 0.2, "num_predict": 80},
+            )
+            return (
+                resp["message"]["content"]
+                if isinstance(resp, dict)
+                else resp.message.content
+            ).strip()
         except Exception:
             return ""
 
@@ -2302,24 +2256,25 @@ class Igor:
                 )
                 _reply_input = f"{_py_think}\n\n[USER_INPUT]\n{user_input}"
 
-                # [#145 Step 2] Optional LLM think call on top of Python context.
-                # Gate: IGOR_TWO_PHASE_CALLS=true — adds cheap gpt-4o-mini scratchpad.
+                # [#145 Step 4] Optional local Ollama synthesis on top of Python context.
+                # Gate: IGOR_TWO_PHASE_CALLS=true — adds local synthesis (zero cloud cost).
+                # Think phase is now fully local. Only the reply call hits cloud.
                 if (
                     not is_impulse
                     and os.getenv("IGOR_TWO_PHASE_CALLS", "false").lower() in ("1", "true", "yes")
                 ):
-                    _scratchpad = self._think_call(user_input, relevant, _milieu_state)
+                    _scratchpad = self._think_call(_py_think, user_input)
                     if _scratchpad:
                         self.cortex.write_ring(
-                            f"THINK|phase1|intent={parsed.intent}|{_scratchpad[:600]}",
+                            f"THINK|local|intent={parsed.intent}|{_scratchpad[:600]}",
                             category="think_trace",
                             thread_id=thread_id,
                         )
                         _reply_input = (
-                            f"{_py_think}\n\n[THINK_SCRATCHPAD]\n{_scratchpad}"
+                            f"{_py_think}\n\n[THINK_SYNTHESIS]\n{_scratchpad}"
                             f"\n\n[USER_INPUT]\n{user_input}"
                         )
-                        console.print("[dim][THINK] Scratchpad ready → reply call[/]")
+                        console.print("[dim][THINK] Local synthesis ready → reply call[/]")
 
                 with Live(Spinner("dots", text=" Thinking..."), console=console,
                           transient=True, refresh_per_second=8):
