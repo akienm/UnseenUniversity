@@ -153,6 +153,8 @@ class Igor:
         self._last_response_time: float = 0.0      # epoch seconds of last response
         self._consecutive_slow: int = 0             # consecutive responses over latency budget
         self._latency_samples: list = []            # rolling last-20 total_ms for p50/p95 (#139)
+        self._latency_profile_cache: dict | None = None   # #139 P2: cached per-tier profile
+        self._latency_profile_ts: float = 0.0            # monotonic time of last profile build
 
         # Dashboard live activity state (#18)
         self._current_action: str = "idle"
@@ -827,6 +829,80 @@ class Igor:
         ]
         for tid in stale:
             del self._thread_buffers[tid]
+
+    # ── #139 P2 Adaptive latency routing ───────────────────────────────────────
+
+    def _get_latency_profile(self, n: int = 20, ttl_sec: float = 60.0) -> dict:
+        """
+        Parse recent latency_trace ring entries into per-stage statistics.
+
+        Returns dict:
+          preparse_ms_p50  — median preparse+memory stage (ms)
+          preparse_ms_p95
+          tier_reasoning   — {tier: {"p50": int, "p95": int, "n": int}}
+          samples          — number of entries parsed
+
+        Cached for ttl_sec (default 60s) to avoid re-reading ring every turn.
+        Returns empty profile if ring has no latency data (cold start).
+        """
+        import time as _t
+        now = _t.monotonic()
+        if (
+            self._latency_profile_cache is not None
+            and now - self._latency_profile_ts < ttl_sec
+        ):
+            return self._latency_profile_cache
+
+        preparse_vals: list[int] = []
+        tier_vals: dict[str, list[int]] = {}
+
+        try:
+            entries = self.cortex.read_ring_memory(limit=n, category="latency_trace")
+            for e in entries:
+                content = e.get("content", "")
+                # Parse: LATENCY|preparse_ms=150|reasoning_ms=2300|total_ms=2500|tier=tier.4|...
+                parts = {
+                    kv.split("=")[0]: kv.split("=")[1]
+                    for kv in content.split("|")[1:]  # skip "LATENCY" prefix
+                    if "=" in kv
+                }
+                try:
+                    preparse_vals.append(int(parts["preparse_ms"]))
+                except (KeyError, ValueError):
+                    pass
+                try:
+                    tier = parts["tier"]
+                    r_ms = int(parts["reasoning_ms"])
+                    tier_vals.setdefault(tier, []).append(r_ms)
+                except (KeyError, ValueError):
+                    pass
+        except Exception:
+            pass
+
+        def _p50(vals: list[int]) -> int:
+            if not vals:
+                return 0
+            s = sorted(vals)
+            return s[len(s) // 2]
+
+        def _p95(vals: list[int]) -> int:
+            if not vals:
+                return 0
+            s = sorted(vals)
+            return s[max(0, int(len(s) * 0.95) - 1)]
+
+        profile = {
+            "preparse_ms_p50": _p50(preparse_vals),
+            "preparse_ms_p95": _p95(preparse_vals),
+            "tier_reasoning": {
+                tier: {"p50": _p50(vals), "p95": _p95(vals), "n": len(vals)}
+                for tier, vals in tier_vals.items()
+            },
+            "samples": len(preparse_vals),
+        }
+        self._latency_profile_cache = profile
+        self._latency_profile_ts = now
+        return profile
 
     # ── Conversation thread breadcrumbs ────────────────────────────────────────
 
@@ -1561,6 +1637,33 @@ class Igor:
             or _thalamus_confident  # thalamus is confident — KoboldCpp won't change the routing
         )
 
+        # [#139 P2] Adaptive routing from latency history.
+        # Gate: IGOR_LATENCY_ADAPTIVE=true (default false until enough data collected).
+        _latency_skip_to_override: str | None = None
+        if (
+            not is_impulse
+            and os.getenv("IGOR_LATENCY_ADAPTIVE", "false").lower() in ("1", "true", "yes")
+        ):
+            _lp = self._get_latency_profile()
+            if _lp["samples"] >= 5:
+                # If KoboldCpp preparse is slow → skip it; rule-based is instant and cheaper
+                _PREPARSE_SLOW_MS = int(os.getenv("IGOR_LATENCY_PREPARSE_SLOW_MS", "2500"))
+                if not _skip_llm_preparse and _lp["preparse_ms_p50"] > _PREPARSE_SLOW_MS:
+                    _skip_llm_preparse = True
+                    console.print(
+                        f"[dim][LATENCY] preparse p50={_lp['preparse_ms_p50']}ms "
+                        f"> {_PREPARSE_SLOW_MS}ms → skipping LLM preparse[/]"
+                    )
+                # If tier.2 (local KoboldCpp reasoning) is slow → jump to tier.3
+                _TIER2_SLOW_MS = int(os.getenv("IGOR_LATENCY_TIER2_SLOW_MS", "5000"))
+                _t2 = _lp["tier_reasoning"].get("tier.2", {})
+                if _t2.get("n", 0) >= 3 and _t2.get("p50", 0) > _TIER2_SLOW_MS:
+                    _latency_skip_to_override = "tier.3"
+                    console.print(
+                        f"[dim][LATENCY] tier.2 p50={_t2['p50']}ms "
+                        f"> {_TIER2_SLOW_MS}ms → routing skips to tier.3[/]"
+                    )
+
         candidates: list = []
         pre_csb: str = ""
 
@@ -1634,6 +1737,15 @@ class Igor:
                 f"[dim][COMPLEXITY] score={complexity['score']:.2f} "
                 f"signals={complexity['signals_fired']} → {_skip_to}[/]"
             )
+
+        # [#139 P2] Apply latency-driven tier override (computed before preparse above)
+        if _latency_skip_to_override and not self.local_mode:
+            _tier_order = ["tier.2", "tier.3", "tier.3.5", "tier.4", "tier.5"]
+            if (
+                _tier_order.index(_latency_skip_to_override)
+                > _tier_order.index(_skip_to) if _skip_to in _tier_order else False
+            ):
+                _skip_to = _latency_skip_to_override
 
         # #90: routing_directive — honour explicit constraints from user
         _local_only = (parsed.routing_directive == "local_only")
