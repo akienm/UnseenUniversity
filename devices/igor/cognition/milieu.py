@@ -50,6 +50,12 @@ SPIKE_THRESHOLD      = 0.15   # min delta on any dim to classify as spike
 GLOBAL_ALPHA_SPIKE   = 0.05   # global EMA speed on notable change
 GLOBAL_ALPHA_ROUTINE = 0.01   # global EMA speed on routine tick
 
+# G16 / #56: cross-instance sync
+# Local: tick() blends toward global every GLOBAL_SYNC_TICKS ticks
+# Cross-machine: POST contributions + GET global from IGOR_GLOBAL_MILIEU_URL
+GLOBAL_BLEND_ALPHA   = 0.02   # 2% pull toward global per sync tick — gentle, non-overriding
+GLOBAL_SYNC_TICKS    = 10     # blend every N ticks (~5 min at 30s/tick)
+
 
 # ── State dataclass ────────────────────────────────────────────────────────────
 
@@ -136,6 +142,8 @@ class Milieu:
             self._state.dominance = g.dominance
         # #99: session histogram — in-memory only, never persisted
         self._session_samples: list[tuple[float, float, float]] = []
+        # G16: tick counter for global sync cadence
+        self._tick_count: int = 0
 
     # ── Persistence ───────────────────────────────────────────────────────────
 
@@ -148,6 +156,51 @@ class Milieu:
         except Exception:
             pass  # Corrupt or missing — start fresh
         return MilieuState()
+
+    def _read_global(self) -> "MilieuState | None":
+        """
+        G16: Read global milieu — local file first, then remote URL if configured.
+
+        IGOR_GLOBAL_MILIEU_URL: HTTP endpoint of the main_loop instance serving
+        GET /api/milieu/global. If set and reachable, remote overrides local file.
+        Falls back to local file silently. Returns None if nothing available.
+        """
+        _remote_url = os.getenv("IGOR_GLOBAL_MILIEU_URL", "").strip()
+        if _remote_url:
+            try:
+                import urllib.request as _req
+                import json as _j
+                with _req.urlopen(f"{_remote_url.rstrip('/')}/api/milieu/global",
+                                  timeout=3) as resp:
+                    data = _j.loads(resp.read().decode())
+                return MilieuState(**{k: v for k, v in data.items()
+                                      if k in MilieuState.__dataclass_fields__})
+            except Exception:
+                pass  # Fall through to local
+        return self._load_global_baseline()
+
+    def _push_to_remote(self) -> None:
+        """
+        G16: Push this instance's contribution to the remote global milieu endpoint.
+        Only called when IGOR_GLOBAL_MILIEU_URL is set (cross-machine scenario).
+        Fire-and-forget — never blocks or raises.
+        """
+        _remote_url = os.getenv("IGOR_GLOBAL_MILIEU_URL", "").strip()
+        if not _remote_url:
+            return
+        try:
+            import urllib.request as _req
+            import json as _j
+            _payload = _j.dumps(asdict(self._state)).encode()
+            _req_obj = _req.Request(
+                f"{_remote_url.rstrip('/')}/api/milieu/contribute",
+                data=_payload,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            _req.urlopen(_req_obj, timeout=3)
+        except Exception:
+            pass  # Advisory — never block on network failure
 
     def _load_global_baseline(self) -> MilieuState:
         try:
@@ -222,6 +275,9 @@ class Milieu:
         self._session_samples.append((s.valence, s.arousal, s.dominance))
         _alpha = GLOBAL_ALPHA_SPIKE if self.delta(_prev) >= SPIKE_THRESHOLD else GLOBAL_ALPHA_ROUTINE
         _contribute_to_global(s, _alpha)
+        # G16: on spike, push to remote immediately (cross-machine propagation)
+        if _alpha == GLOBAL_ALPHA_SPIKE:
+            self._push_to_remote()
         return s
 
     def ingest_ne_state(self, ne_state: dict) -> None:
@@ -255,11 +311,22 @@ class Milieu:
         there are no new interactions — mood gradually normalizes with time.
 
         G12 / #55: per-dimension rates — valence fastest (volatile), dominance slowest (stable).
+        G16 / #56: every GLOBAL_SYNC_TICKS ticks, blend gently toward global baseline.
         """
         s = self._state
         s.valence   *= DECAY_VALENCE
         s.arousal   *= DECAY_AROUSAL
         s.dominance  = s.dominance * DECAY_DOMINANCE + (0.3 * (1.0 - DECAY_DOMINANCE))
+
+        # G16: periodic pull toward global — keeps long sessions from drifting too far
+        self._tick_count += 1
+        if self._tick_count % GLOBAL_SYNC_TICKS == 0:
+            g = self._read_global()
+            if g is not None:
+                s.valence   += GLOBAL_BLEND_ALPHA * (g.valence   - s.valence)
+                s.arousal   += GLOBAL_BLEND_ALPHA * (g.arousal   - s.arousal)
+                s.dominance += GLOBAL_BLEND_ALPHA * (g.dominance - s.dominance)
+
         s.last_update = time.time()
         self._save()
         _contribute_to_global(s, GLOBAL_ALPHA_ROUTINE)
