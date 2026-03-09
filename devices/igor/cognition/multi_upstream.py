@@ -51,11 +51,10 @@ def compare_responses(responses: list[tuple[str, str, float]]) -> str:
         lines.append(text[:500])
     plain = "\n".join(lines)
 
-    # Try KoboldCpp synthesis
+    # Try Ollama synthesis (migrated from KoboldCpp)
     try:
-        from .reasoners.koboldcpp_reasoner import _post_json, DEFAULT_HOST, CHAT_ENDPOINT
-        import os as _os
-        host = _os.getenv("KOBOLDCPP_HOST", DEFAULT_HOST)
+        import ollama as _ollama
+        from .reasoners.ollama_reasoner import OLLAMA_LOCAL_MODEL
         prompt_parts = [
             "Compare these AI responses to the same question. "
             "Identify: (1) what they agree on, (2) key differences, (3) which is most useful. "
@@ -64,10 +63,12 @@ def compare_responses(responses: list[tuple[str, str, float]]) -> str:
         for name, text, _ in responses:
             prompt_parts.append(f"{name}:\n{text[:300]}\n\n")
         prompt = "".join(prompt_parts)
-        payload = {"messages": [{"role": "user", "content": prompt}],
-                   "max_tokens": 200, "temperature": 0.2}
-        data = _post_json(host, CHAT_ENDPOINT, payload, timeout=30)
-        synthesis = data["choices"][0]["message"]["content"].strip()
+        resp = _ollama.chat(
+            model=OLLAMA_LOCAL_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            options={"temperature": 0.2, "num_predict": 200},
+        )
+        synthesis = (resp["message"]["content"] if isinstance(resp, dict) else resp.message.content).strip()
         return plain + f"\n\n── Synthesis (local) ──\n{synthesis}"
     except Exception:
         return plain
