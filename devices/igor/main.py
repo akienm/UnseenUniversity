@@ -966,7 +966,8 @@ class Igor:
         if msg.source == "discord":
             return f"discord:{ri.get('channel_id', 'unknown')}"
         if msg.source == "web":
-            return f"web:{ri.get('client_id', 'unknown')}"
+            # #119: thread_id keyed by session_id so each session has isolated history
+            return f"web:{ri.get('session_id', ri.get('client_id', 'unknown'))}"
         if msg.source == "gmail":
             # Thread per sender address (simple; upgrade to In-Reply-To later)
             return f"gmail:{msg.author}"
@@ -2960,6 +2961,9 @@ class Igor:
         """Build synthetic input from a network message and process it."""
         import re as _re
 
+        # #119: extract session_id for targeted web delivery
+        _session_id = (msg.reply_info or {}).get("session_id", "shared") if msg.source == "web" else "shared"
+
         # ── #135: User context + chat logging ─────────────────────────────────
         _author = (msg.author or "unknown").lower()
         _skip_ctx = _author in ("claude-code", "igor") or msg.content.strip().startswith("/")
@@ -2992,7 +2996,7 @@ class Igor:
                 self._user_ctx_mgr.log(_ctx, "out", _reply, _thread_id)
                 if msg.source == "web":
                     web_server.broadcast_name_resolved(_ctx.name)
-                    web_server.send(_reply)
+                    web_server.send(_reply, session_id=_session_id)
                 return
 
             # New unknown user (not pre-seeded, first message ever) → introduce self
@@ -3002,7 +3006,7 @@ class Igor:
                 _reply = "I'm sorry, you have me at a disadvantage. I am Igor. And you are?"
                 self._user_ctx_mgr.log(_ctx, "out", _reply, _thread_id)
                 if msg.source == "web":
-                    web_server.send(_reply)
+                    web_server.send(_reply, session_id=_session_id)
                 return
 
             # Update message count + formality
@@ -3050,7 +3054,7 @@ class Igor:
         if _ctx and not _skip_ctx and response:
             self._user_ctx_mgr.log(_ctx, "out", response, _thread_id)
         if msg.source == "web" and response:
-            web_server.send(response)
+            web_server.send(response, session_id=_session_id)
 
         if response and msg.author != "claude-code" and not msg.content.strip().startswith("/"):
             self._update_thread_buffer(_thread_id, msg.content, response)
