@@ -695,6 +695,75 @@ class Igor:
 
         return think, reply
 
+    # ── #54 Habit tiebreaker ────────────────────────────────────────────────────
+
+    def _try_habit_tiebreaker(self, user_input: str, near_misses: list) -> "Memory | None":
+        """
+        #54: cheap classification call to resolve near-miss habit competition.
+
+        Called when basal_ganglia.select_habit() returns no winner but exposes
+        near-miss candidates (trigger matched, score below milieu threshold).
+        Sends a tiny prompt to gpt-4o-mini asking which habit, if any, to fire.
+
+        Gate: IGOR_HABIT_TIEBREAKER env var (default false — experimental).
+        Returns the resolved habit, or None if tiebreaker declines or fails.
+        """
+        if os.getenv("IGOR_HABIT_TIEBREAKER", "false").lower() not in ("1", "true", "yes"):
+            return None
+        api_key = os.getenv("OPENROUTER_API_KEY", "")
+        if not api_key or not near_misses:
+            return None
+
+        import json as _json
+        import urllib.request as _urllib_req
+
+        habit_lines = "\n".join(
+            f"  {h.id} (score={s:.2f}): {h.narrative[:80]}"
+            for s, h in near_misses
+        )
+        prompt = (
+            f"User said: \"{user_input[:200]}\"\n\n"
+            f"Near-miss habits (trigger matched, score below auto-select threshold):\n"
+            f"{habit_lines}\n\n"
+            f"Reply with ONLY: HABIT:<habit_id>   or   REASON"
+        )
+        payload = _json.dumps({
+            "model": "openai/gpt-4o-mini",
+            "messages": [
+                {"role": "system", "content": "Habit arbitration: pick the best habit or say REASON."},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.0,
+            "max_tokens": 20,
+        }).encode()
+
+        try:
+            req = _urllib_req.Request(
+                "https://openrouter.ai/api/v1/chat/completions",
+                data=payload,
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                method="POST",
+            )
+            with _urllib_req.urlopen(req, timeout=5) as resp:
+                data = _json.loads(resp.read())
+            text = data["choices"][0]["message"]["content"].strip().upper()
+            if text.startswith("HABIT:"):
+                habit_id = text[6:].strip()
+                for s, h in near_misses:
+                    if h.id == habit_id:
+                        self.cortex.write_ring(
+                            f"TIEBREAKER|resolved={habit_id}|score={s:.2f}"
+                            f"|candidates={[h2.id for _, h2 in near_misses]}",
+                            category="habit_trace",
+                        )
+                        return h
+        except Exception:
+            pass
+        return None
+
     # ── Conversation thread breadcrumbs ────────────────────────────────────────
 
     def _update_conversation_thread(
@@ -1398,7 +1467,7 @@ class Igor:
                 pass
 
         _fast_path_intents = {"greeting", "command"}
-        _thalamus_habit, _thalamus_confidence = basal_ganglia.select_habit(
+        _thalamus_habit, _thalamus_confidence, _thalamus_near_misses = basal_ganglia.select_habit(
             parsed, habits, milieu_state=_milieu_state
         )
 
@@ -1585,6 +1654,15 @@ class Igor:
                     category="habit_trace",
                 )
                 habit = None
+
+        # [#54] Habit tiebreaker: near-miss candidates → cheap classification call.
+        # Fires only when no habit cleared threshold AND near-misses exist AND gate enabled.
+        if habit is None and _thalamus_near_misses and not is_impulse:
+            _tb_habit = self._try_habit_tiebreaker(user_input, _thalamus_near_misses)
+            if _tb_habit:
+                habit = _tb_habit
+                _thalamus_confidence = 0.60  # tiebreaker confidence marker
+                console.print(f"[dim][TIEBREAKER] #54 resolved → {habit.id}[/]")
 
         if habit:
             dashboard.print_habit_trigger(habit)

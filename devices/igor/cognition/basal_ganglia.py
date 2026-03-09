@@ -166,13 +166,17 @@ def select_habit(
     parsed,
     habits: list,
     milieu_state=None,
-) -> "tuple[Memory | None, float]":
+) -> "tuple[Memory | None, float, list[tuple[float, Memory]]]":
     """
-    Score all habits in parallel; return (winner, confidence) or (None, 0.0).
+    Score all habits in parallel; return (winner, confidence, near_misses).
+
+    near_misses: habits whose trigger matched but scored below the milieu-
+    modulated threshold (in [THRESHOLD_MIN, threshold)).  Used by the #54
+    tiebreaker path in main.py — cheap classification call before full LLM.
 
     Steps:
       1. Compile-phrase pre-check → PROC_HABIT_COMPILER at 0.95.
-      2. Score every habit; keep only those above milieu-modulated threshold.
+      2. Score every habit; separate into scored (≥ threshold) and near_misses.
       3. Winner = max score; tiebreak by activation_count.
 
     Never raises — habit selection must not crash the main loop.
@@ -187,7 +191,7 @@ def select_habit(
                 (h for h in habits if h.id == "PROC_HABIT_COMPILER"), None
             )
             if compiler:
-                return (compiler, 0.95)
+                return (compiler, 0.95, [])
 
         # ── 2. Parallel scoring ───────────────────────────────────────────────
         threshold = _compute_threshold(milieu_state)
@@ -202,15 +206,23 @@ def select_habit(
                 pass
 
         scored = []
+        near_misses: list[tuple[float, "Memory"]] = []
         for habit in habits:
             s = _score_habit(habit, raw_lower, keywords, now=now)
             if s > 0:  # only apply bonus when trigger matched
                 s += _wg_scores.get(habit.id, 0.0) * 0.10  # word graph bonus: 0.0–0.10
             if s >= threshold:
                 scored.append((s, habit))
+            elif s >= THRESHOLD_MIN:
+                # Trigger matched but score below milieu-adjusted threshold.
+                # Expose as near_miss for optional tiebreaker resolution (#54).
+                near_misses.append((s, habit))
+
+        near_misses.sort(key=lambda x: x[0], reverse=True)
+        near_misses = near_misses[:3]  # cap — tiebreaker prompt stays small
 
         if not scored:
-            return (None, 0.0)
+            return (None, 0.0, near_misses)
 
         # ── 3. Winner-take-all (lateral inhibition) ───────────────────────────
         # Primary sort: descending score; tiebreak: descending activation_count
@@ -227,7 +239,7 @@ def select_habit(
             except Exception:
                 pass
 
-        return (winner, winner_score)
+        return (winner, winner_score, [])
 
     except Exception:
-        return (None, 0.0)  # FAIL = Further Advance In Learning, but don't crash
+        return (None, 0.0, [])  # FAIL = Further Advance In Learning, but don't crash
