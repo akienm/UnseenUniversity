@@ -63,7 +63,11 @@ class ToolRegistry:
     def execute(self, name: str, kwargs: dict) -> str:
         tool = self.get(name)
         if not tool:
-            return f"Error: Unknown tool '{name}'"
+            available = ", ".join(sorted(self._tools.keys()))
+            return (
+                f"Error: Unknown tool '{name}'. "
+                f"Do not retry — use one of the available tools instead: {available}"
+            )
         try:
             return tool.execute(**kwargs)
         except Exception as e:
