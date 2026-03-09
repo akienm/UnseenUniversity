@@ -1787,6 +1787,27 @@ class Igor:
                 f"signals={complexity['signals_fired']} → {_skip_to}[/]"
             )
 
+        # [#53] Session emotional histogram → routing influence.
+        # session_character provides a richer signal than instantaneous VAD alone.
+        # stressed → escalate sooner (more capable reasoner needed for difficult state)
+        # focused  → trust habit network more (stay lower in the tier ladder)
+        if not is_impulse and _milieu_state is not None:
+            try:
+                _m = milieu_mod.get()
+                if _m is not None:
+                    _hist = _m.session_histogram()
+                    _char = _hist.get("session_character", "unknown")
+                    _TIER_UP2 = {"tier.3": "tier.3.5", "tier.3.5": "tier.4", "tier.4": "tier.4"}
+                    _TIER_DN  = {"tier.4": "tier.3.5", "tier.3.5": "tier.3", "tier.3": "tier.3"}
+                    if _char == "stressed" and _skip_to in ("tier.3", "tier.3.5"):
+                        _skip_to = _TIER_UP2.get(_skip_to, _skip_to)
+                        console.print(f"[dim][MILIEU] session_character=stressed → tier bumped to {_skip_to}[/]")
+                    elif _char == "focused" and _skip_to == "tier.3.5":
+                        _skip_to = _TIER_DN.get(_skip_to, _skip_to)
+                        console.print(f"[dim][MILIEU] session_character=focused → tier eased to {_skip_to}[/]")
+            except Exception:
+                pass
+
         # [#139 P2] Apply latency-driven tier override (computed before preparse above)
         if _latency_skip_to_override and not self.local_mode:
             _tier_order = ["tier.2", "tier.3", "tier.3.5", "tier.4", "tier.5"]
