@@ -220,6 +220,14 @@ class Igor:
         self._boot_ring_tail: list = (warm_ctx or {}).get("ring_tail") or []  # #112
         self._conversation_threads: list = []  # populated by _load_warm_context via warm_ctx
 
+        # [#136] Per-channel thread buffers — independent conversation history per source+channel.
+        # dict[thread_id, {"history": [(user, reply), ...], "last_active": float}]
+        # thread_id = f"{source}:{channel_or_user_key}"
+        # Evicted after THREAD_IDLE_TTL_SEC without activity.
+        self._thread_buffers: dict = {}
+        self._THREAD_IDLE_TTL_SEC: int = 3600   # 1 hour
+        self._THREAD_MAX_HISTORY: int = 4        # last 4 exchanges shown as context
+
         # [BOOT MESSAGE] Synthetic first-turn orientation — Igor reads this before any input
         try:
             boot_msg = build_boot_message(
@@ -764,6 +772,62 @@ class Igor:
             pass
         return None
 
+    # ── #136 Per-channel thread buffers ────────────────────────────────────────
+
+    def _get_thread_id(self, msg) -> str:
+        """Stable thread_id from a NetworkMessage — keys per-channel history."""
+        ri = msg.reply_info or {}
+        if msg.source == "discord":
+            return f"discord:{ri.get('channel_id', 'unknown')}"
+        if msg.source == "web":
+            return f"web:{ri.get('client_id', 'unknown')}"
+        if msg.source == "gmail":
+            # Thread per sender address (simple; upgrade to In-Reply-To later)
+            return f"gmail:{msg.author}"
+        return f"{msg.source}:default"
+
+    def _get_thread_context_prefix(self, thread_id: str) -> str:
+        """
+        Return a preamble injected before the current network message.
+        Shows last N exchanges so the LLM has thread-scoped context.
+        Returns "" if no history or thread is new.
+        """
+        import time as _t
+        buf = self._thread_buffers.get(thread_id)
+        if not buf or not buf["history"]:
+            return ""
+        # Evict stale threads
+        if _t.monotonic() - buf["last_active"] > self._THREAD_IDLE_TTL_SEC:
+            del self._thread_buffers[thread_id]
+            return ""
+        lines = ["[Thread context — recent exchanges in this channel:]"]
+        for user_turn, igor_turn in buf["history"][-self._THREAD_MAX_HISTORY:]:
+            lines.append(f"  User: {user_turn[:120]}")
+            lines.append(f"  Igor: {igor_turn[:160]}")
+        lines.append("")
+        return "\n".join(lines)
+
+    def _update_thread_buffer(self, thread_id: str, user_turn: str, igor_reply: str) -> None:
+        """Record a completed exchange in the thread buffer."""
+        import time as _t
+        if thread_id not in self._thread_buffers:
+            self._thread_buffers[thread_id] = {"history": [], "last_active": 0.0}
+        buf = self._thread_buffers[thread_id]
+        buf["history"].append((user_turn[:300], igor_reply[:400]))
+        buf["history"] = buf["history"][-self._THREAD_MAX_HISTORY:]
+        buf["last_active"] = _t.monotonic()
+
+    def _evict_stale_threads(self) -> None:
+        """Remove thread buffers that have been idle > TTL. Called periodically."""
+        import time as _t
+        now = _t.monotonic()
+        stale = [
+            tid for tid, b in self._thread_buffers.items()
+            if now - b["last_active"] > self._THREAD_IDLE_TTL_SEC
+        ]
+        for tid in stale:
+            del self._thread_buffers[tid]
+
     # ── Conversation thread breadcrumbs ────────────────────────────────────────
 
     def _update_conversation_thread(
@@ -1157,6 +1221,7 @@ class Igor:
                 self._run_ne_background()
                 self._announce_completed_jobs()
                 self._drain_action_impulses()
+                self._evict_stale_threads()  # #136: purge idle thread buffers
                 import time; time.sleep(0.5)
                 continue
 
@@ -2370,6 +2435,10 @@ class Igor:
                 channel=channel_label, author=msg.author,
             )
 
+            # [#136] Per-channel thread context — inject recent exchanges as preamble
+            _thread_id = self._get_thread_id(msg)
+            _thread_prefix = self._get_thread_context_prefix(_thread_id)
+
             if msg.source == "discord":
                 ri = msg.reply_info
                 synthetic = (
@@ -2396,9 +2465,17 @@ class Igor:
             else:
                 synthetic = f"[{msg.source} from {msg.author}]: {msg.content}"
 
+            # Prepend thread context to synthetic input (skipped for CC and slash commands)
+            if _thread_prefix and msg.author != "claude-code" and not msg.content.strip().startswith("/"):
+                synthetic = _thread_prefix + synthetic
+
             response = self._process(synthetic)
             if msg.source == "web" and response:
                 web_server.send(response)
+
+            # [#136] Update thread buffer with completed exchange
+            if response and msg.author != "claude-code" and not msg.content.strip().startswith("/"):
+                self._update_thread_buffer(_thread_id, msg.content, response)
 
     def _handle_command(self, command: str, raw: str):
         commands = {
