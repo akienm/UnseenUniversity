@@ -1,7 +1,14 @@
 """
-Ollama local reasoner.
-Runs on-device. No API cost. Used for fast pre-parsing and habit matching,
-not for heavy reasoning (that stays with Anthropic).
+Ollama local reasoner — primary local inference backend.
+
+Replaces KoboldCpp for tier.2 interactive reasoning and preparse.
+Ollama is already required for nomic-embed-text embeddings; this unifies
+all local inference under one backend so Igor can self-manage models
+(ollama pull, ollama list, etc.) without manual server restarts.
+
+Config:
+  OLLAMA_LOCAL_MODEL  — local 1B model for preparse + tier.2 (default: llama3.2:1b)
+  OLLAMA_HOST         — host override (default: http://localhost:11434)
 
 Call logging: every Ollama call writes a structured entry to ollama_calls.log
 with timing, token counts, and tokens/sec so we can tune model selection.
@@ -10,13 +17,36 @@ with timing, token counts, and tokens/sec so we can tune model selection.
 import json
 import logging
 import os
+import re
 import time
+import urllib.request
+from urllib.error import URLError
 import ollama as _ollama
 from ...memory.models import Memory
 from .base import BaseReasoner, LocalReasoner
 from ..system_prompt import build_system_prompt
 
-DEFAULT_MODEL = "gemma3:1b"
+OLLAMA_LOCAL_MODEL = os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b")
+OLLAMA_HOST        = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+DEFAULT_MODEL      = OLLAMA_LOCAL_MODEL  # backwards-compat alias
+
+PREPARSE_TIMEOUT = 8  # seconds
+
+# Intent taxonomy must match thalamus.py 12-intent taxonomy exactly (#30)
+_PREPARSE_PROMPT = """\
+Parse this input. Output ONLY the block below with fields filled in — no other text.
+
+[PARSED_INPUT]
+intent: <greeting|meta_question|memory_instruction|code_task|analysis_task|explanation_request|factual_question|action_request|complaint|command|conversation|general>
+tone: <friendly|neutral|urgent|frustrated|curious>
+complexity: <low|medium|high>
+entities: <comma-separated names/things, or none>
+requires_tools: <true|false>
+memory_hints: <comma-separated keywords relevant to memory search, or none>
+should_escalate: <true|false>
+
+Input: "{text}"
+"""
 
 # ── Ollama call logger ──────────────────────────────────────────────────────
 _LOG_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "ollama_calls.log")
@@ -29,6 +59,163 @@ if not _ollama_log.handlers:
     _fh.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
     _ollama_log.addHandler(_fh)
     _ollama_log.propagate = False  # don't bubble up to root logger
+
+
+# ── Health check ────────────────────────────────────────────────────────────
+
+def is_healthy(host: str = OLLAMA_HOST, timeout: int = 5) -> bool:
+    """Return True if Ollama is running at host (probes /api/tags)."""
+    try:
+        with urllib.request.urlopen(f"{host}/api/tags", timeout=timeout) as resp:
+            return resp.status == 200
+    except (URLError, OSError):
+        return False
+
+
+# ── CSB preparse (12-intent; drop-in for koboldcpp_reasoner.preparse) ────────
+
+def _rule_based_csb(user_input: str, habits: list) -> str:
+    """Pure-Python fallback: produce PARSED_INPUT CSB block without LLM.
+    Intent taxonomy matches thalamus.py 12-intent taxonomy (#30).
+    """
+    text = user_input.lower()
+    words = text.split()
+
+    if any(w in text for w in ["hello", "hi ", "hey ", "good morning", "good evening"]):
+        intent = "greeting"
+    elif any(w in text for w in ["remember", "note that", "save", "learn that"]):
+        intent = "memory_instruction"
+    elif text.startswith("/"):
+        intent = "command"
+    elif any(w in text for w in ["how do i", "how does", "explain", "what is", "describe"]):
+        intent = "explanation_request"
+    elif any(w in text for w in ["what about igor", "tell me about yourself", "what are you", "who are you"]):
+        intent = "meta_question"
+    elif any(w in text for w in ["code", "function", "class", "algorithm", "script", "program", "debug", "fix this"]):
+        intent = "code_task"
+    elif any(w in text for w in ["analyze", "analyse", "compare", "review", "assess", "evaluate"]):
+        intent = "analysis_task"
+    elif any(w in text for w in ["broken", "wrong", "doesn't work", "not working", "failed", "frustrated", "annoyed"]):
+        intent = "complaint"
+    elif "?" in text:
+        intent = "factual_question"
+    elif any(w in text for w in ["do ", "run ", "execute", "search", "find", "browse", "send", "create", "delete"]):
+        intent = "action_request"
+    else:
+        intent = "conversation"
+
+    if any(w in text for w in ["urgent", "asap", "immediately", "!"]):
+        tone = "urgent"
+    elif any(w in text for w in ["frustrated", "annoyed", "broken", "wrong"]):
+        tone = "frustrated"
+    elif any(w in text for w in ["hello", "hi", "hey", "thanks", "please"]):
+        tone = "friendly"
+    elif "?" in text:
+        tone = "curious"
+    else:
+        tone = "neutral"
+
+    signals = []
+    if len(words) > 50:
+        signals.append("long_input")
+    if text.count("?") > 1:
+        signals.append("multiple_questions")
+    if any(w in text for w in ["complex", "complicated", "difficult"]):
+        signals.append("self_declared_complex")
+    if text.count(",") > 3 or text.count(";") > 1:
+        signals.append("complex_structure")
+    if any(w in text for w in ["code", "function", "class", "algorithm"]):
+        signals.append("code_related")
+    complexity = "high" if len(signals) >= 3 else "medium" if len(signals) >= 1 else "low"
+    should_escalate = len(signals) >= 2
+
+    requires_tools = intent in ("action_request", "command", "code_task") or any(
+        w in text for w in ["search", "run", "execute", "file", "browse", "read"]
+    )
+
+    stop_words = {"the", "a", "an", "is", "are", "was", "i", "you", "it", "in", "on", "at", "to", "for", "of", "and", "or"}
+    keywords = [w for w in re.findall(r'\b[a-zA-Z]{4,}\b', text) if w not in stop_words]
+    memory_hints = ", ".join(keywords[:4]) if keywords else "none"
+
+    return (
+        f"[PARSED_INPUT]\n"
+        f"intent: {intent}\n"
+        f"tone: {tone}\n"
+        f"complexity: {complexity}\n"
+        f"entities: none\n"
+        f"requires_tools: {str(requires_tools).lower()}\n"
+        f"memory_hints: {memory_hints}\n"
+        f"should_escalate: {str(should_escalate).lower()}\n"
+    )
+
+
+def preparse(user_input: str, habits: list, model: str = "") -> str:
+    """
+    Pre-parse user input via Ollama → PARSED_INPUT CSB block.
+    Falls back to _rule_based_csb on timeout or error.
+    Returns a CSB string (always — never raises).
+    Logs fallback events to errors.log for telemetry (#30).
+    """
+    _model = model or OLLAMA_LOCAL_MODEL
+    prompt = _PREPARSE_PROMPT.format(text=user_input[:300])
+    fallback_reason = None
+    t0 = time.perf_counter()
+    try:
+        response = _ollama.chat(
+            model=_model,
+            messages=[{"role": "user", "content": prompt}],
+            options={"temperature": 0.1, "num_predict": 120},
+        )
+        elapsed = time.perf_counter() - t0
+        text = response["message"]["content"] if isinstance(response, dict) else response.message.content
+        _log_call("preparse", _model, response, elapsed)
+        if "[PARSED_INPUT]" in text:
+            return text.strip()
+        fallback_reason = "no_parsed_input_block"
+    except Exception as exc:
+        elapsed = time.perf_counter() - t0
+        _log_call("preparse", _model, None, elapsed, error=str(exc))
+        fallback_reason = f"exception:{type(exc).__name__}"
+
+    try:
+        from ..forensic_logger import log_error
+        log_error(kind="preparse_fallback", detail=fallback_reason or "unknown", source="ollama_reasoner")
+    except Exception:
+        pass
+
+    return _rule_based_csb(user_input, habits)
+
+
+def parse_preparse_csb(csb: str, habits: list) -> dict:
+    """Extract routing dict from a PARSED_INPUT CSB block. Never raises."""
+    fields: dict = {}
+    for line in csb.splitlines():
+        if ":" in line and not line.startswith("["):
+            key, _, val = line.partition(":")
+            fields[key.strip()] = val.strip()
+
+    intent         = fields.get("intent", "general")
+    complexity     = fields.get("complexity", "low")
+    should_esc     = fields.get("should_escalate", "false").lower() == "true"
+    requires_tools = fields.get("requires_tools", "false").lower() == "true"
+
+    score        = {"low": 0.1, "medium": 0.4, "high": 0.8}.get(complexity, 0.1)
+    is_multi_unit = score > 0.6 or requires_tools
+    tier_minimum  = "tier.4" if score > 0.4 else "tier.3"
+
+    return {
+        "intent":          intent,
+        "should_escalate": should_esc,
+        "habit_match":     None,
+        "confidence":      0.0,
+        "complexity": {
+            "score":         score,
+            "signals_fired": [complexity] if complexity != "low" else [],
+            "tier_minimum":  tier_minimum,
+            "is_multi_unit": is_multi_unit,
+        },
+        "_csb": csb,
+    }
 
 
 def _log_call(fn_name: str, model: str, response, elapsed: float, error: str | None = None):
@@ -104,20 +291,12 @@ class OllamaReasoner(LocalReasoner):
             raise
 
 
-# ── preparse ────────────────────────────────────────────────────────────────
+# ── preparse_dict (legacy; retained for reference) ──────────────────────────
 
-def preparse(user_input: str, habits: list[Memory], model: str = DEFAULT_MODEL) -> dict:
+def _preparse_dict(user_input: str, habits: list[Memory], model: str = DEFAULT_MODEL) -> dict:
     """
-    Use local 1B model to cheaply classify input before touching the API.
-    Habit matching is intentionally excluded — _find_habit() handles that
-    via deterministic trigger substring matching (1B is unreliable for it).
-
-    Returns a dict with:
-      - intent: classified intent string
-      - keywords: list of key terms
-      - habit_match: always None (habit matching done by _find_habit in main.py)
-      - confidence: always 0.0
-      - should_escalate: bool - True means send to cloud API
+    Legacy dict-returning preparse. Retained for reference only.
+    Production preparse is now the CSB-format preparse() function above.
     """
     prompt = f"""Classify this user input. Reply with ONLY a JSON object, no other text.
 
