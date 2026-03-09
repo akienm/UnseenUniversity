@@ -15,7 +15,7 @@ Concrete implementations:
   AnthropicReasoner(APIReasoner)    — Anthropic API
   OpenRouterReasoner(APIReasoner)   — OpenRouter API
   OllamaReasoner(LocalReasoner)     — local Ollama
-  KoboldCppReasoner(LocalReasoner)  — local KoboldCpp
+  KoboldCppReasoner(LocalReasoner)  — local KoboldCpp (batch only; interactive uses OllamaReasoner)
 
 Eventually: no upstream at all. Pure habit execution replaces reasoning entirely.
 """

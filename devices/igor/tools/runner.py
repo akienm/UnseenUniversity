@@ -30,8 +30,8 @@ DEFAULT_TIMEOUT = 30  # seconds
 
 
 import time
-from ..cognition.local_pool import LocalKoboldPool, KOBOLDCPP_PORT_DEFAULT
-from ..cognition.reasoners.koboldcpp_reasoner import KoboldCppReasoner
+from ..cognition.local_pool import LocalKoboldPool
+from ..cognition.reasoners.ollama_reasoner import OllamaReasoner, OLLAMA_LOCAL_MODEL, OLLAMA_HOST
 
 def _run(args: list[str], timeout: int, input_text: str = "") -> str:
     """
@@ -145,10 +145,8 @@ def _run_benchmark(hostname: str, task: str) -> str:
     
     try:
         if task == "pre_parsing":
-            # Use KoboldCpp's basic completion for speed test
-            port = KOBOLDCPP_PORT_DEFAULT
-            host = f"http://{hostname}:{port}"
-            reasoner = KoboldCppReasoner(host=host)
+            # Use Ollama for speed test (migrated from KoboldCpp)
+            reasoner = OllamaReasoner(model=OLLAMA_LOCAL_MODEL, host=OLLAMA_HOST)
             result = reasoner.reason(test_prompt, [], [], "benchmark")
         else:
             raise ValueError(f"Unknown benchmark task: {task}")
