@@ -147,24 +147,29 @@ class IgorBot(discord.Client):
                     if self._webhook_url:
                         sent = await self._send_via_webhook(chunk)
 
-                    # Fall back to bot channel.send()
+                    # Fall back to bot channel.send().
+                    # Use fetch_channel() (API call) not get_channel() (cache only).
+                    # get_channel() misses DM channels entirely and misses guild channels
+                    # that weren't cached at ready time — causing both known #144 bugs.
                     if not sent:
-                        channel = self.get_channel(channel_id)
-                        if channel:
-                            try:
-                                await channel.send(chunk)
-                                _log("bot_send_ok",
-                                     channel_id=channel_id,
-                                     text_len=len(chunk), preview=chunk[:60])
-                                sent = True
-                            except Exception as exc:
-                                _log("bot_send_error",
-                                     channel_id=channel_id, error=str(exc),
-                                     preview=chunk[:60])
-                        else:
-                            _log("bot_send_no_channel",
+                        try:
+                            channel = await self.fetch_channel(channel_id)
+                            await channel.send(chunk)
+                            _log("bot_send_ok",
                                  channel_id=channel_id,
-                                 known_channels=[c.id for c in self.get_all_channels()])
+                                 text_len=len(chunk), preview=chunk[:60])
+                            sent = True
+                        except discord.Forbidden as exc:
+                            _log("bot_send_forbidden",
+                                 channel_id=channel_id, error=str(exc),
+                                 hint="check bot permissions / DM privacy settings")
+                        except discord.NotFound as exc:
+                            _log("bot_send_not_found",
+                                 channel_id=channel_id, error=str(exc))
+                        except Exception as exc:
+                            _log("bot_send_error",
+                                 channel_id=channel_id, error=str(exc),
+                                 preview=chunk[:60])
 
                     if not sent:
                         _log("msg_dropped",
