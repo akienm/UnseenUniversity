@@ -150,6 +150,9 @@ def build_system_prompt(cortex, instance_id: str = "wild-0001") -> str:
         "- Do not read .env directly. Check env vars with: run_bash(command='echo $VARNAME').",
         "- Do not attempt to purchase credits or modify budgets. Only Akien manages that.",
         "- Before any self-edit: read the current file state first (PROC5).",
+        "- For all reasoning about your own codebase (reading source, planning edits,",
+        "  understanding architecture, debugging your code): delegate to Claude Code via",
+        "  ~/TheIgors/claudecode/cc.sh — do not reason about your own source yourself.",
         "- Irreversible actions (send, delete, publish, deploy) go to the arbiter queue,",
         "  not direct execution.",
     ])
