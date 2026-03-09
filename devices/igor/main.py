@@ -28,7 +28,7 @@ from .brainstem.core_patterns import initialize_genesis, get_core_patterns, veri
 from .cognition import thalamus
 from .cognition import prefrontal_cortex as pfc
 from .cognition.reasoners.anthropic import AnthropicReasoner
-from .cognition.reasoners.koboldcpp_reasoner import preparse, parse_preparse_csb, score_memories, _rule_based_csb, is_healthy as kobold_is_healthy
+from .cognition.reasoners.ollama_reasoner import preparse, parse_preparse_csb, score_memories, _rule_based_csb, is_healthy as ollama_is_healthy
 from .cognition.reasoners.openrouter_reasoner import preparse_via_openrouter
 from .cognition.forensic_logger import log_tier_selection
 from .cognition.system_prompt import build_boot_message, invalidate_cache
@@ -373,7 +373,7 @@ class Igor:
             ),
             Memory(
                 id="PROC_WG_PREPARSE_TUNING",
-                narrative="Word graph preparse routing — controls when word graph replaces KoboldCpp for habit selection.",
+                narrative="Word graph preparse routing — controls when word graph replaces Ollama for habit selection.",
                 memory_type=MemoryType.PROCEDURAL,
                 parent_id="CP4",
                 valence=0.6,
@@ -386,13 +386,13 @@ class Igor:
                     },
                     "action": (
                         "Word graph + thalamus form Stage 1 of preparse (free, instant). "
-                        "KoboldCpp is Stage 2 — called only when Stage 1 finds no confident habit match. "
+                        "Ollama is Stage 2 — called only when Stage 1 finds no confident habit match. "
                         "Adjust IGOR_WG_PREPARSE_THRESHOLD (0.0–1.0) in .env; higher = more conservative. "
                         "Set IGOR_WG_PREPARSE_REQUIRE_TRIGGER=false to allow WG-only matches without trigger phrase."
                     ),
                     "why": (
                         "Word graph scoring already happens in basal_ganglia before preparse. "
-                        "If habit fires (trigger + WG match), KoboldCpp preparse is already skipped. "
+                        "If habit fires (trigger + WG match), Ollama preparse is already skipped. "
                         "This memory documents the tuning levers and expected behavior."
                     ),
                 },
@@ -414,7 +414,7 @@ class Igor:
                     "action": (
                         "Enable: set IGOR_LATENCY_ADAPTIVE=true in .env and /restart. "
                         "Requires >= 5 latency_trace ring entries (collect a session of data first). "
-                        "Preparse: if p50 > IGOR_LATENCY_PREPARSE_SLOW_MS → skip KoboldCpp preparse. "
+                        "Preparse: if p50 > IGOR_LATENCY_PREPARSE_SLOW_MS → skip Ollama preparse. "
                         "Tier.2: if p50 > IGOR_LATENCY_TIER2_SLOW_MS (>= 3 samples) → jump to tier.3."
                     ),
                     "why": "Self-measured latency drives routing; no guessing. Data > assumptions.",
@@ -422,7 +422,7 @@ class Igor:
             ),
             Memory(
                 id="PROC_PREPARSE_TUNING",
-                narrative="Tune when KoboldCpp preparse is skipped vs used. Low/high complexity = skip; medium = use.",
+                narrative="Tune when Ollama preparse is skipped vs used. Low/high complexity = skip; medium = use.",
                 memory_type=MemoryType.PROCEDURAL,
                 parent_id="CP2",
                 valence=0.6,
@@ -434,13 +434,13 @@ class Igor:
                     "action": (
                         "To disable: set IGOR_SKIP_PREPARSE_ON_CONFIDENT=false in .env and /restart. "
                         "To re-enable: set to true. "
-                        "When true: KoboldCpp preparse only called on medium-complexity non-habit turns. "
+                        "When true: Ollama preparse only called on medium-complexity non-habit turns. "
                         "Expected: reduces upstream dependency by ~10-15%."
                     ),
                     "why": (
-                        "KoboldCpp preparse is redundant when thalamus complexity is already confident. "
+                        "Ollama preparse is redundant when thalamus complexity is already confident. "
                         "low=rule-based CSB is sufficient; high=tier.4 forced regardless of preparse. "
-                        "Only medium complexity needs KoboldCpp for routing disambiguation."
+                        "Only medium complexity needs Ollama for routing disambiguation."
                     ),
                 },
             ),
@@ -1761,11 +1761,11 @@ class Igor:
             import concurrent.futures as _cf
             self._current_action = "preparse"
             web_server.broadcast_activity(self._activity_state())
-            if self.use_local_preparse and kobold_is_healthy():
-                console.print("[dim][LOCAL] Pre-parsing via KoboldCpp...[/]")
+            if self.use_local_preparse and ollama_is_healthy():
+                console.print("[dim][LOCAL] Pre-parsing via Ollama...[/]")
                 _preparse_fn = lambda: preparse(user_input, habits)
             elif self.use_local_preparse:
-                console.print("[dim][PREPARSE] KoboldCpp unavailable — preparse via OR cheap...[/]")
+                console.print("[dim][PREPARSE] Ollama unavailable — preparse via OR cheap...[/]")
                 _preparse_fn = lambda: preparse_via_openrouter(user_input, habits)
             else:
                 console.print("[dim][PREPARSE] Local preparse off — classifying via tier.3...[/]")
@@ -1888,7 +1888,7 @@ class Igor:
             _tiers_available.append("tier.5")
         _tiers_available.append("tier.6")  # arbiter always last resort
 
-        _preparse_via = "koboldcpp" if (self.use_local_preparse and kobold_is_healthy()) else "openrouter"
+        _preparse_via = "ollama" if (self.use_local_preparse and ollama_is_healthy()) else "openrouter"
         if self.local_mode:
             _tier_hint = "tier.2"
             _reason = "local_mode=true"
@@ -2568,7 +2568,7 @@ class Igor:
         Called at most once per session (guarded by _context_flush_done).
         Does NOT restart Igor — that remains the user's choice via /compress.
         """
-        from .cognition.reasoners.koboldcpp_reasoner import summarize_session
+        from .cognition.reasoners.ollama_reasoner import summarize_session
 
         ring_entries = self.cortex.read_ring_memory(limit=50)
         if not ring_entries:
@@ -2728,10 +2728,10 @@ class Igor:
   /arbiter        - Human-approval queue (/arbiter list|approve <N>|all|deny <N>|all|explain <N>)
   /cost           - Show session cost
   /model          - Show current reasoning model
-  /model <name>   - Switch model (cloud: sonnet/opus/haiku; local: KoboldCpp model)
+  /model <name>   - Switch model (cloud: sonnet/opus/haiku; local: Ollama model)
   /local          - Toggle local-only mode (currently {local_state})
   /local on|off   - Explicitly set local mode
-  /compress       - Summarize context to LTM (KoboldCpp), then restart fresh
+  /compress       - Summarize context to LTM (Ollama), then restart fresh
   /restart        - Relaunch Igor (requires igor bash alias)
   /sleep          - Pre-sleep ritual: NE consolidation + sleep note + shutdown (post-sleep detection on next boot)
   /quit           - Exit
@@ -3498,11 +3498,11 @@ class Igor:
             console.print(f"\n[green]Cloud model switched to:[/] {resolved}")
 
     def _cmd_compress(self, _):
-        """Summarize session ring memory to LTM via KoboldCpp, then restart fresh."""
-        from .cognition.reasoners.koboldcpp_reasoner import summarize_session
+        """Summarize session ring memory to LTM via Ollama, then restart fresh."""
+        from .cognition.reasoners.ollama_reasoner import summarize_session
         from .memory.models import Memory, MemoryType
 
-        console.print("[cyan]Compressing session context via KoboldCpp...[/]")
+        console.print("[cyan]Compressing session context via Ollama...[/]")
         ring_entries = self.cortex.read_ring_memory(limit=50)
         if not ring_entries:
             console.print("[yellow]Ring memory is empty — nothing to compress.[/]")

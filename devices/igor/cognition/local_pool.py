@@ -29,6 +29,7 @@ from pathlib import Path
 from typing import Iterator
 
 from .reasoners.koboldcpp_reasoner import KoboldCppReasoner, DEFAULT_HOST as KCC_DEFAULT_HOST
+from .reasoners.ollama_reasoner import OllamaReasoner, OLLAMA_LOCAL_MODEL, OLLAMA_HOST
 from ..memory.models import Memory
 
 MACHINES_JSON       = Path.home() / ".TheIgors" / "local" / "machines.json"
@@ -270,7 +271,10 @@ BENCHMARK_TTL_HOURS = 24
 
 class LocalKoboldPool:
     """
-    Round-robin pool of KoboldCppReasoner instances across network machines.
+    Round-robin pool of OllamaReasoner instances across network machines.
+
+    Switched from KoboldCpp to Ollama so Igor can self-manage models
+    (ollama pull/list) without manual server restarts.
 
     Part A: self._benchmark populated async from ~/.TheIgors/benchmarks/
     Part B: reason() estimates local latency; escalates if > LATENCY_BUDGET_SECONDS
@@ -278,38 +282,33 @@ class LocalKoboldPool:
     """
 
     def __init__(self):
-        self._reasoners:  list[KoboldCppReasoner] = []
+        self._reasoners:  list[OllamaReasoner] = []
         self._index       = 0
         self._benchmark:  dict | None = None
         self.weights      = RoutingWeights()
+        self.model        = OLLAMA_LOCAL_MODEL
         self._refresh()
-        # No model needed for KoboldCpp - removing benchmark
         self._benchmark = {"tokens_per_sec": 1.0, "avg_latency_ms": 1000}
 
     def _on_benchmark_done(self, result: dict) -> None:
         self._benchmark = result
 
     def _refresh(self):
-        """Rebuild reasoner list from machines.csv.
+        """Rebuild OllamaReasoner list from machines.json.
 
-        Change 1 (D025): KoboldCpp tried first for each machine when koboldcpp_port
-        is present in the JSON entry. Ollama retained as fallback.
+        Each online machine runs Ollama on port 11434. Local machine added last
+        as guaranteed fallback. Igor can pull/switch models via ollama CLI.
         """
         machines = _parse_online_machines()
         reasoners = []
         for m in machines:
             ip = m.get("ip", "")
-            kcc_port_str = m.get("koboldcpp_port", "").strip()
-            if kcc_port_str:
-                try:
-                    kcc_port = int(kcc_port_str)
-                except ValueError:
-                    kcc_port = KOBOLDCPP_PORT_DEFAULT
-                kcc_host = f"http://{ip}:{kcc_port}"
-                reasoners.append(KoboldCppReasoner(host=kcc_host))
-        # Always include local KoboldCpp (env override or default localhost:5001)
-        local_kcc_host = os.getenv("KOBOLDCPP_HOST", KCC_DEFAULT_HOST)
-        reasoners.append(KoboldCppReasoner(host=local_kcc_host))
+            if not ip:
+                continue
+            host = f"http://{ip}:{OLLAMA_PORT}"
+            reasoners.append(OllamaReasoner(model=self.model, host=host))
+        # Always include local Ollama as fallback
+        reasoners.append(OllamaReasoner(model=self.model, host=OLLAMA_HOST))
         self._reasoners = reasoners
         self._index     = 0
 
@@ -334,7 +333,7 @@ class LocalKoboldPool:
         
         bench_file.write_text(json.dumps(data, indent=2))
 
-    def _next_reasoner(self) -> Iterator[KoboldCppReasoner]:
+    def _next_reasoner(self) -> Iterator[OllamaReasoner]:
         n = len(self._reasoners)
         for i in range(n):
             yield self._reasoners[(self._index + i) % n]
