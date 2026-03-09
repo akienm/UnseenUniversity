@@ -142,9 +142,15 @@ class Cortex:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     category TEXT NOT NULL DEFAULT 'note',
                     content TEXT NOT NULL,
-                    timestamp TEXT NOT NULL
+                    timestamp TEXT NOT NULL,
+                    thread_id TEXT DEFAULT NULL
                 )
             """)
+            # #136 P2: thread_id column — lazy migration for existing DBs
+            try:
+                conn.execute("ALTER TABLE ring_memory ADD COLUMN thread_id TEXT DEFAULT NULL")
+            except Exception:
+                pass  # Column already exists
 
             # TWM — Temporal Working Memory
             # Push-based sandbox. Any process can deposit observations.
@@ -830,17 +836,20 @@ class Cortex:
 
     # ── Ring memory (short-term, survives restarts) ────────────────────────────
 
-    def write_ring(self, content: str, category: str = "note"):
+    def write_ring(self, content: str, category: str = "note", thread_id: str | None = None):
         """
         Write an entry to the short-term ring buffer.
         Automatically trims to RING_MAX entries (oldest first).
+
+        thread_id: optional per-channel key (e.g. "discord:123456") for #136 P2 isolation.
+        None = global entry visible to all threads.
         """
         content = scrub(content)
         now = datetime.now().isoformat()
         with self._conn() as conn:
             conn.execute(
-                "INSERT INTO ring_memory (category, content, timestamp) VALUES (?, ?, ?)",
-                (category, content, now)
+                "INSERT INTO ring_memory (category, content, timestamp, thread_id) VALUES (?, ?, ?, ?)",
+                (category, content, now, thread_id)
             )
             # Trim to max size
             conn.execute(f"""
@@ -859,13 +868,37 @@ class Cortex:
             note += f" | Context: {context}"
         self.write_ring(note, category="restart_note")
 
-    def read_ring_memory(self, limit: int = 20, category: str = None) -> list[dict]:
+    def read_ring_memory(
+        self,
+        limit: int = 20,
+        category: str | None = None,
+        thread_id: str | None = None,
+    ) -> list[dict]:
         """
         Read recent ring memory entries, newest last (chronological order).
-        Optionally filter by category.
+        Optionally filter by category and/or thread_id.
+
+        thread_id filtering (#136 P2):
+          - None (default): return all entries (global + all threads)
+          - str: return entries matching that thread_id OR thread_id IS NULL (global entries)
+            This means per-thread reads include global context entries too.
         """
         with self._conn() as conn:
-            if category:
+            if category and thread_id:
+                rows = conn.execute(
+                    "SELECT * FROM ring_memory WHERE category = ? "
+                    "AND (thread_id = ? OR thread_id IS NULL) "
+                    "ORDER BY id DESC LIMIT ?",
+                    (category, thread_id, limit)
+                ).fetchall()
+            elif thread_id:
+                rows = conn.execute(
+                    "SELECT * FROM ring_memory "
+                    "WHERE (thread_id = ? OR thread_id IS NULL) "
+                    "ORDER BY id DESC LIMIT ?",
+                    (thread_id, limit)
+                ).fetchall()
+            elif category:
                 rows = conn.execute(
                     "SELECT * FROM ring_memory WHERE category = ? ORDER BY id DESC LIMIT ?",
                     (category, limit)
@@ -876,9 +909,14 @@ class Cortex:
                     (limit,)
                 ).fetchall()
         # Return in chronological order (oldest first)
-        entries = [{"id": r["id"], "category": r["category"],
-                    "content": r["content"], "timestamp": r["timestamp"]}
-                   for r in rows]
+        entries = [
+            {
+                "id": r["id"], "category": r["category"],
+                "content": r["content"], "timestamp": r["timestamp"],
+                "thread_id": r["thread_id"] if "thread_id" in r.keys() else None,
+            }
+            for r in rows
+        ]
         return list(reversed(entries))
 
     def get_last_restart_note(self) -> Optional[dict]:
