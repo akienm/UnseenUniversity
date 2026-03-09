@@ -12,6 +12,7 @@ import os
 import queue
 import sys
 import threading
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -53,6 +54,12 @@ _IGOR_DB_ENV = os.getenv("IGOR_DB_PATH")
 DATA_DIR = Path(_IGOR_DB_ENV).expanduser().parent if _IGOR_DB_ENV else Path(__file__).parent.parent / "data"
 CHANGE_LOG_PATH    = Path.home() / ".TheIgors" / "claudecode" / "changes.log"
 CHANGE_REQUEST_PATH = Path.home() / ".TheIgors" / "claudecode" / "change_request.txt"
+
+# ── Input debounce (#146) ──────────────────────────────────────────────────────
+# Buffer multi-line turns (fits-and-starts chat). Lines accumulate until the
+# sender is idle for DEBOUNCE_SECS, then the batch is processed as one turn.
+# Commands (/...) always bypass debounce and are processed immediately.
+DEBOUNCE_SECS = float(os.getenv("IGOR_INPUT_DEBOUNCE_MS", "3000")) / 1000.0
 
 # ── Exit interrupt event ───────────────────────────────────────────────────────
 # Canonical instance lives in cognition/reasoners/base.py so reasoners can check
@@ -135,6 +142,8 @@ class Igor:
         self.cloud_calls = 0
         self.last_friction = None
         self.last_valence = None
+        # #146 input debounce: per-thread buffer {thread_id: {"lines": [], "last_time": float, "msgs": []}}
+        self._net_debounce: dict = {}
         self.last_roi = None
         self.session_cost = 0.0
         self.use_local_preparse = os.getenv("IGOR_LOCAL_PREPARSE", "true").lower() in ("true", "1", "yes")
@@ -1466,48 +1475,81 @@ class Igor:
         t = threading.Thread(target=_stdin_reader, args=(stdin_queue,), daemon=True, name="stdin-reader")
         t.start()
 
+        # #146 stdin debounce state — local to run() (single-threaded consumer)
+        _stdin_buffer: list[str] = []
+        _stdin_last_time: float = 0.0
+
         while True:
-            # ── Stdin first — commands like /quit must be responsive ──────────
-            # Checked before any blocking work so a queued /quit is picked up
-            # within one tick (≤0.5s) rather than after a long API call.
+            # ── Stdin: collect lines into debounce buffer ─────────────────────
+            # Commands (/...) bypass debounce and flush any pending buffer first.
+            # Regular lines accumulate until DEBOUNCE_SECS of idle, then process.
             try:
-                user_input = stdin_queue.get_nowait()
+                _line = stdin_queue.get_nowait()
             except queue.Empty:
-                # ── Nothing typed — drain network then do background work ─────
-                # #64: check restart flag before anything else — no LLM, no arbiter
-                _restart_flag = (
-                    Path(os.path.expanduser("~/.TheIgors"))
-                    / f"igor_{self.instance_id}"
-                    / "restart.flag"
-                )
-                if _restart_flag.exists():
-                    try:
-                        _restart_flag.unlink()
-                    except Exception:
-                        pass
-                    console.print("[cyan][EXTERNAL] Restart flag detected — restarting...[/]")
-                    self._shutdown(reason="restart flag (external)")
-                    sys.exit(42)
+                _line = None
 
-                self._drain_network()
-                run_background_sources(self.cortex)
-                self._run_ne_background()
-                self._announce_completed_jobs()
-                self._drain_action_impulses()
-                self._evict_stale_threads()  # #136: purge idle thread buffers
-                import time; time.sleep(0.5)
+            if _line is not None:
+                if _line is None:
+                    # EOF sentinel from stdin reader (Ctrl-D / KeyboardInterrupt)
+                    if _stdin_buffer:
+                        self._process("\n".join(_stdin_buffer), thread_id="stdin:main")
+                    self._shutdown(reason="EOF/Ctrl-D")
+                    break
+
+                _stripped = _line.strip()
+                if not _stripped:
+                    pass  # ignore blank lines
+                elif _stripped.startswith("/"):
+                    # Command: flush any buffered input first, then process immediately
+                    if _stdin_buffer:
+                        self._process("\n".join(_stdin_buffer), thread_id="stdin:main")
+                        _stdin_buffer.clear()
+                        _stdin_last_time = 0.0
+                    self._process(_stripped, thread_id="stdin:main")
+                    if _exit_requested.is_set():
+                        self._shutdown(reason="quit via /quit")
+                        break
+                else:
+                    # Regular line: add to buffer, reset idle timer
+                    _stdin_buffer.append(_stripped)
+                    _stdin_last_time = time.time()
+                    console.print("[dim](buffering...)[/]")
+
+            # ── Flush stdin buffer if idle for DEBOUNCE_SECS ─────────────────
+            if _stdin_buffer and time.time() - _stdin_last_time >= DEBOUNCE_SECS:
+                self._process("\n".join(_stdin_buffer), thread_id="stdin:main")
+                _stdin_buffer.clear()
+                _stdin_last_time = 0.0
+                if _exit_requested.is_set():
+                    self._shutdown(reason="quit via /quit")
+                    break
                 continue
 
-            # EOF / KeyboardInterrupt from stdin thread
-            if user_input is None:
-                self._shutdown(reason="EOF/Ctrl-D")
-                break
+            # ── Nothing to process — drain network then do background work ────
+            # #64: check restart flag before anything else — no LLM, no arbiter
+            _restart_flag = (
+                Path(os.path.expanduser("~/.TheIgors"))
+                / f"igor_{self.instance_id}"
+                / "restart.flag"
+            )
+            if _restart_flag.exists():
+                try:
+                    _restart_flag.unlink()
+                except Exception:
+                    pass
+                console.print("[cyan][EXTERNAL] Restart flag detected — restarting...[/]")
+                self._shutdown(reason="restart flag (external)")
+                sys.exit(42)
 
-            user_input = user_input.strip()
-            if not user_input:
-                continue
-
-            self._process(user_input, thread_id="stdin:main")
+            self._drain_network()
+            self._flush_debounced_network()
+            run_background_sources(self.cortex)
+            self._run_ne_background()
+            self._announce_completed_jobs()
+            self._drain_action_impulses()
+            self._evict_stale_threads()  # #136: purge idle thread buffers
+            time.sleep(0.5)
+            continue
 
             # Exit check after _process() — catches /exit typed during a blocking call
             if _exit_requested.is_set():
@@ -2806,7 +2848,13 @@ class Igor:
         self._context_flush_done = True
 
     def _drain_network(self):
-        """Process any queued messages from any network source."""
+        """
+        Collect queued network messages into the debounce buffer.
+
+        #146: Messages are NOT processed immediately. They are buffered by thread_id.
+        CC messages and slash commands bypass debounce and are processed inline.
+        _flush_debounced_network() processes threads that have been idle for DEBOUNCE_SECS.
+        """
         while True:
             try:
                 msg = net_listener.incoming.get_nowait()
@@ -2823,47 +2871,84 @@ class Igor:
                 channel=channel_label, author=msg.author,
             )
 
-            # [#136] Per-channel thread context — inject recent exchanges as preamble
             _thread_id = self._get_thread_id(msg)
-            _thread_prefix = self._get_thread_context_prefix(_thread_id)
 
-            if msg.source == "discord":
-                ri = msg.reply_info
-                synthetic = (
-                    f"[Discord message from {msg.author} in #{ri.get('channel_name', '?')} "
-                    f"on {ri.get('guild_name', '?')}, channel_id={ri.get('channel_id', 0)}]: {msg.content}"
-                )
-            elif msg.source == "gmail":
-                ri = msg.reply_info
-                synthetic = (
-                    f"[Email from {msg.author}, subject='{ri.get('subject', '')}', "
-                    f"reply_to='{ri.get('reply_to', msg.author)}']: {msg.content}"
-                )
-            elif msg.source == "web" and msg.author == "claude-code":
-                # CC→Igor machine-to-machine channel: always respond inline, no background jobs
-                synthetic = (
-                    f"CC: {msg.content}\n"
-                    f"[Routing directive: respond inline — no async background jobs for this turn]"
-                )
-            elif msg.source == "web" and msg.content.strip().startswith("/"):
-                # Slash command from web UI — pass through unwrapped so thalamus parses it
-                synthetic = msg.content.strip()
-            elif msg.source == "web":
-                synthetic = f"[Web message from {msg.author}]: {msg.content}"
+            # CC and slash commands: bypass debounce, process immediately
+            _is_cc = msg.source == "web" and msg.author == "claude-code"
+            _is_slash = msg.content.strip().startswith("/")
+            if _is_cc or _is_slash:
+                self._process_network_msg(msg, _thread_id)
+                continue
+
+            # Regular message: add to debounce buffer
+            if _thread_id not in self._net_debounce:
+                self._net_debounce[_thread_id] = {"msgs": [], "last_time": 0.0}
+            self._net_debounce[_thread_id]["msgs"].append(msg)
+            self._net_debounce[_thread_id]["last_time"] = time.time()
+            console.print("[dim](buffering...)[/]")
+
+    def _flush_debounced_network(self):
+        """
+        Process network threads that have been idle for DEBOUNCE_SECS.
+        Called each main loop tick after _drain_network().
+        """
+        now = time.time()
+        for _thread_id, buf in list(self._net_debounce.items()):
+            if not buf["msgs"]:
+                del self._net_debounce[_thread_id]
+                continue
+            if now - buf["last_time"] < DEBOUNCE_SECS:
+                continue
+            # Timer fired — process all buffered messages as a merged turn
+            msgs = buf.pop("msgs")
+            buf["last_time"] = 0.0
+            del self._net_debounce[_thread_id]
+
+            if len(msgs) == 1:
+                self._process_network_msg(msgs[0], _thread_id)
             else:
-                synthetic = f"[{msg.source} from {msg.author}]: {msg.content}"
+                # Merge multi-message turn: join content, use last msg's metadata
+                last = msgs[-1]
+                merged_content = "\n".join(m.content for m in msgs)
+                last.content = merged_content
+                self._process_network_msg(last, _thread_id)
 
-            # Prepend thread context to synthetic input (skipped for CC and slash commands)
-            if _thread_prefix and msg.author != "claude-code" and not msg.content.strip().startswith("/"):
-                synthetic = _thread_prefix + synthetic
+    def _process_network_msg(self, msg, _thread_id: str):
+        """Build synthetic input from a network message and process it."""
+        _thread_prefix = self._get_thread_context_prefix(_thread_id)
+        ri = msg.reply_info or {}
 
-            response = self._process(synthetic, thread_id=_thread_id)
-            if msg.source == "web" and response:
-                web_server.send(response)
+        if msg.source == "discord":
+            synthetic = (
+                f"[Discord message from {msg.author} in #{ri.get('channel_name', '?')} "
+                f"on {ri.get('guild_name', '?')}, channel_id={ri.get('channel_id', 0)}]: {msg.content}"
+            )
+        elif msg.source == "gmail":
+            synthetic = (
+                f"[Email from {msg.author}, subject='{ri.get('subject', '')}', "
+                f"reply_to='{ri.get('reply_to', msg.author)}']: {msg.content}"
+            )
+        elif msg.source == "web" and msg.author == "claude-code":
+            synthetic = (
+                f"CC: {msg.content}\n"
+                f"[Routing directive: respond inline — no async background jobs for this turn]"
+            )
+        elif msg.source == "web" and msg.content.strip().startswith("/"):
+            synthetic = msg.content.strip()
+        elif msg.source == "web":
+            synthetic = f"[Web message from {msg.author}]: {msg.content}"
+        else:
+            synthetic = f"[{msg.source} from {msg.author}]: {msg.content}"
 
-            # [#136] Update thread buffer with completed exchange
-            if response and msg.author != "claude-code" and not msg.content.strip().startswith("/"):
-                self._update_thread_buffer(_thread_id, msg.content, response)
+        if _thread_prefix and msg.author != "claude-code" and not msg.content.strip().startswith("/"):
+            synthetic = _thread_prefix + synthetic
+
+        response = self._process(synthetic, thread_id=_thread_id)
+        if msg.source == "web" and response:
+            web_server.send(response)
+
+        if response and msg.author != "claude-code" and not msg.content.strip().startswith("/"):
+            self._update_thread_buffer(_thread_id, msg.content, response)
 
     def _handle_command(self, command: str, raw: str):
         commands = {
