@@ -144,6 +144,10 @@ class Igor:
         self.last_valence = None
         # #146 input debounce: per-thread buffer {thread_id: {"lines": [], "last_time": float, "msgs": []}}
         self._net_debounce: dict = {}
+        # #135: per-user context (formality, chat logs, first-contact flow)
+        from .cognition.user_context import UserContextManager
+        self._user_ctx_mgr = UserContextManager(DATA_DIR)
+        self._user_ctx_mgr.preseed("stdin:main", "Akien", relationship="operator")
         self.last_roi = None
         self.session_cost = 0.0
         self.use_local_preparse = os.getenv("IGOR_LOCAL_PREPARSE", "true").lower() in ("true", "1", "yes")
@@ -2954,11 +2958,59 @@ class Igor:
 
     def _process_network_msg(self, msg, _thread_id: str):
         """Build synthetic input from a network message and process it."""
+        import re as _re
+
+        # ── #135: User context + chat logging ─────────────────────────────────
+        _author = (msg.author or "unknown").lower()
+        _skip_ctx = _author in ("claude-code", "igor") or msg.content.strip().startswith("/")
+        _ctx = None
+        if not _skip_ctx:
+            _ctx = self._user_ctx_mgr.get(_thread_id, _author)
+            self._user_ctx_mgr.log(_ctx, "in", msg.content, _thread_id)
+
+            # First-contact: pending_name=True means we just sent the intro
+            if _ctx.pending_name:
+                _given = msg.content.strip()
+                if _re.match(r"^[A-Za-z][A-Za-z\s\-']{0,58}$", _given):
+                    _ctx = self._user_ctx_mgr.rename(_thread_id, _given)
+                    _reply = f"A pleasure to make your acquaintance, {_ctx.name}."
+                else:
+                    _ctx.name = _given[:30]
+                    _ctx.pending_name = False
+                    self._user_ctx_mgr.save(_ctx)
+                    _reply = "If you say so, sir. Not our place to judge."
+                self._user_ctx_mgr.log(_ctx, "out", _reply, _thread_id)
+                if msg.source == "web":
+                    web_server.broadcast_name_resolved(_ctx.name)
+                    web_server.send(_reply)
+                return
+
+            # New unknown user (not pre-seeded, first message ever) → introduce self
+            if _ctx.message_count == 0 and msg.source not in ("gmail",):
+                _ctx.pending_name = True
+                self._user_ctx_mgr.save(_ctx)
+                _reply = "I'm sorry, you have me at a disadvantage. I am Igor. And you are?"
+                self._user_ctx_mgr.log(_ctx, "out", _reply, _thread_id)
+                if msg.source == "web":
+                    web_server.send(_reply)
+                return
+
+            # Update message count + formality
+            _ctx.message_count += 1
+            _ctx.update_formality()
+            _ctx.last_seen = datetime.now().isoformat()
+            self._user_ctx_mgr.save(_ctx)
+
+        # ── Build synthetic input ─────────────────────────────────────────────
         _thread_prefix = self._get_thread_context_prefix(_thread_id)
         ri = msg.reply_info or {}
 
+        # User context block (compact, injected before the message body)
+        _ctx_block = (_ctx.context_block() + "\n") if _ctx and not _skip_ctx else ""
+
         if msg.source == "discord":
             synthetic = (
+                _ctx_block +
                 f"[Discord message from {msg.author} in #{ri.get('channel_name', '?')} "
                 f"on {ri.get('guild_name', '?')}, channel_id={ri.get('channel_id', 0)}]: {msg.content}"
             )
@@ -2975,14 +3027,18 @@ class Igor:
         elif msg.source == "web" and msg.content.strip().startswith("/"):
             synthetic = msg.content.strip()
         elif msg.source == "web":
-            synthetic = f"[Web message from {msg.author}]: {msg.content}"
+            synthetic = _ctx_block + f"[Web message from {msg.author}]: {msg.content}"
         else:
-            synthetic = f"[{msg.source} from {msg.author}]: {msg.content}"
+            synthetic = _ctx_block + f"[{msg.source} from {msg.author}]: {msg.content}"
 
         if _thread_prefix and msg.author != "claude-code" and not msg.content.strip().startswith("/"):
             synthetic = _thread_prefix + synthetic
 
         response = self._process(synthetic, thread_id=_thread_id)
+
+        # Log outgoing + deliver
+        if _ctx and not _skip_ctx and response:
+            self._user_ctx_mgr.log(_ctx, "out", response, _thread_id)
         if msg.source == "web" and response:
             web_server.send(response)
 

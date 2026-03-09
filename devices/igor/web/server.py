@@ -98,6 +98,11 @@ def broadcast_activity(state: dict):
 
 
 
+def broadcast_name_resolved(name: str):
+    """Tell the web client to update its sender-name input box."""
+    _broadcast(json.dumps({"type": "name_resolved", "name": name, "ts": _ts()}))
+
+
 def _broadcast(payload: str):
     """Fan out a JSON payload to every connected WebSocket client."""
     if _loop is None:
@@ -654,6 +659,11 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
           addMsg('system', '', '📎 ' + m.filename + ' received in inbox');
         else if (m.type === 'activity')
           updateStatus(m);
+        else if (m.type === 'name_resolved') {
+          senderName.value = m.name;
+          localStorage.setItem('igor_sender_name', m.name);
+          addMsg('system', '', 'Igor has learned your name: ' + m.name);
+        }
       };
     }
 
