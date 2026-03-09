@@ -163,8 +163,9 @@ class NarrativeEngine:
 
     def record_actual(self, actual_habit_id: Optional[str]) -> None:
         """
-        #121: Compare actual fired habit to prospective prediction.
-        Logs NE_SURPRISE ring entry and boosts TWM salience when surprised.
+        #121/#45: Compare actual fired habit to prospective prediction.
+        Logs NE_SURPRISE ring entry, boosts TWM salience when surprised,
+        and reinforces/weakens link weights (G11 learning loop).
         Called by main.py after basal_ganglia.select_habit() resolves.
         """
         pred = self._last_prediction
@@ -187,7 +188,22 @@ class NarrativeEngine:
         else:
             delta = 0.8   # wrong habit predicted
 
+        # G11: get TWM seed IDs for link reinforcement (also used for salience boost below)
+        seed_ids: list = []
+        recent_obs: list = []
+        try:
+            recent_obs = self.cortex.twm_read(limit=5, include_integrated=False)
+            seed_ids = [obs["id"] for obs in recent_obs if obs.get("id")]
+        except Exception:
+            pass
+
         if delta < 0.1:
+            # Correct prediction — reinforce links from predicted habit to co-active seeds
+            if predicted and seed_ids:
+                try:
+                    self.cortex.reinforce_links(predicted, seed_ids, +0.05)
+                except Exception:
+                    pass
             return
 
         self.cortex.write_ring(
@@ -195,11 +211,22 @@ class NarrativeEngine:
             category="ne_prediction",
         )
 
+        # G11: weaken links that led to wrong prediction; reinforce links toward actual habit
+        if predicted and seed_ids:
+            try:
+                self.cortex.reinforce_links(predicted, seed_ids, -0.10)
+            except Exception:
+                pass
+        if actual_habit_id and seed_ids:
+            try:
+                self.cortex.reinforce_links(actual_habit_id, seed_ids, +0.05)
+            except Exception:
+                pass
+
         # Boost salience on recent TWM context proportional to surprise magnitude
         if delta >= 0.4:
             try:
-                recent = self.cortex.twm_read(limit=3, include_integrated=False)
-                for obs in recent:
+                for obs in recent_obs:
                     boosted = min(1.0, obs["salience"] + delta * 0.3)
                     self.cortex.twm_update_salience(obs["id"], boosted)
             except Exception:

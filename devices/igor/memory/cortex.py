@@ -288,6 +288,33 @@ class Cortex:
             parent.children_ids.append(child_id)
             self.store(parent)
 
+    def reinforce_links(self, memory_id: str, co_active_ids: list, delta: float) -> None:
+        """#45 G11: adjust outgoing link weights from memory_id toward co_active_ids.
+
+        Positive delta strengthens links (correct prediction).
+        Negative delta weakens them (wrong prediction).
+        Weights are clamped to [0.0, 1.0]; links that hit 0.0 are removed.
+        """
+        if not memory_id or not co_active_ids or delta == 0.0:
+            return
+        memory = self.get(memory_id)
+        if memory is None:
+            return
+        changed = False
+        for co_id in co_active_ids:
+            if co_id == memory_id:
+                continue
+            old = memory.links.get(co_id, 0.0)
+            new = max(0.0, min(1.0, old + delta))
+            if new == 0.0:
+                memory.links.pop(co_id, None)
+            else:
+                memory.links[co_id] = round(new, 4)
+            if old != new:
+                changed = True
+        if changed:
+            self.store(memory)
+
     def record_activation(self, memory_id: str, friction: float):
         memory = self.get(memory_id)
         if memory:
