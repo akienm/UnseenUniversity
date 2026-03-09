@@ -508,53 +508,112 @@ def summarize_session(
     model: str = DEFAULT_MODEL,
 ) -> str:
     """
-    Compress ring memory entries into a CSB (Compressed Semantic Block).
-    Uses local Ollama — free and fast. Returns a dense summary string suitable
-    for storing as an INTERPRETIVE memory (cold-readable by future Igor).
-    Falls back to a simple join if Ollama fails.
+    Compress ring memory into a dense CSB suitable for cold-reading by a future Igor.
+
+    G22 / #22: improved prompt preserves open threads, decisions, and conversation
+    context that the old prompt lost. Tries gpt-4o-mini (best quality, cheap) then
+    Ollama batch model, then local 1B as last resort.
     """
     if not ring_entries:
         return f"SESSION_SUMMARY|{instance_id}|empty_session"
 
-    # Format entries for the prompt — skip internal noise
-    relevant = [
+    # ── Separate conversation turns from system events ────────────────────────
+    _NOISE = {"tool_trace", "interruptor", "latency_trace", "think_trace",
+              "integrity_check", "action_impulse", "ne_diagnostic"}
+    _CONVO = {"user_turn", "Q", "A"}
+
+    convo_entries = [
         e for e in ring_entries
-        if e.get("category") not in ("tool_trace", "interruptor")
-    ][-30:]
+        if e.get("category") in _CONVO
+    ][-20:]
+    system_entries = [
+        e for e in ring_entries
+        if e.get("category") not in _NOISE | _CONVO
+    ][-20:]
 
-    entries_text = "\n".join(
-        f"[{e['timestamp'][11:16]}][{e['category']}] {e['content'][:200]}"
-        for e in relevant
-    )
+    convo_text = "\n".join(
+        f"[{e['timestamp'][11:16]}] {e['content'][:300]}"
+        for e in convo_entries
+    ) or "(no conversation turns)"
 
-    prompt = f"""You are a memory compression system. Fill in each labeled field below using the session data.
-Rules: fragments only, no full sentences, max 20 words per field, no preamble, no explanation.
+    system_text = "\n".join(
+        f"[{e['timestamp'][11:16]}][{e['category']}] {e['content'][:150]}"
+        for e in system_entries
+    ) or "(no system events)"
 
-SESSION DATA (oldest first):
-{entries_text}
+    prompt = f"""You are Igor's memory compression system. Produce a dense session summary for cold-reading by a future Igor instance that has no other context.
 
-Fill in each field exactly as shown. Replace <...> with your answer:
+CONVERSATION TURNS (what was discussed):
+{convo_text}
 
-TASKS: <what was worked on, comma-separated>
-CHANGES: <decisions or code/config changes made, comma-separated>
-TOOLS: <tool names used and outcome, pipe-separated>
-STATE: <current state and pending work>
+SYSTEM EVENTS (habits, NE, decisions):
+{system_text}
+
+Fill in each field. Fragments only, no full sentences, no preamble. Max 25 words per field.
+
+TASKS: <what was worked on or discussed, comma-separated>
+CHANGES: <decisions, code changes, config changes made — be specific>
+OPEN_THREADS: <unresolved topics or questions still in flight>
+KEY_DECISIONS: <important conclusions reached this session>
+NEXT_SESSION: <what to pick up next time>
+STATE: <current state of any in-progress work>
 VALENCE: <positive|neutral|negative>"""
 
+    # ── Model preference: gpt-4o-mini → Ollama batch → local ─────────────────
     t0 = time.perf_counter()
-    try:
-        response = _ollama.chat(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-            options={"temperature": 0.2},
-        )
-        elapsed = time.perf_counter() - t0
-        _log_call("summarize_session", model, response, elapsed)
-        summary = response["message"]["content"].strip()
-        return f"SESSION_SUMMARY|{instance_id}|{summary}"
-    except Exception as exc:
-        elapsed = time.perf_counter() - t0
-        _log_call("summarize_session", model, None, elapsed, error=str(exc))
-        # Fallback: join last few entries manually
-        lines = [e["content"][:120] for e in relevant[-5:]]
-        return f"SESSION_SUMMARY|{instance_id}|fallback: " + " | ".join(lines)
+
+    # Try gpt-4o-mini via OpenRouter first (much better at summarization than 1B)
+    _or_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+    if _or_key:
+        try:
+            import json as _json
+            import urllib.request as _req
+            _payload = _json.dumps({
+                "model": os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini"),
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 400,
+                "temperature": 0.2,
+            }).encode()
+            _http_req = _req.Request(
+                "https://openrouter.ai/api/v1/chat/completions",
+                data=_payload,
+                headers={
+                    "Authorization": f"Bearer {_or_key}",
+                    "Content-Type": "application/json",
+                },
+                method="POST",
+            )
+            with _req.urlopen(_http_req, timeout=20) as resp:
+                _data = _json.loads(resp.read())
+            summary = _data["choices"][0]["message"]["content"].strip()
+            elapsed = time.perf_counter() - t0
+            _log_call("summarize_session", "gpt-4o-mini", None, elapsed)
+            return f"SESSION_SUMMARY|{instance_id}|{summary}"
+        except Exception:
+            pass  # Fall through to Ollama
+
+    # Try Ollama batch model (qwen2.5:14b — better reasoning than 1B)
+    _batch_model = os.getenv("OLLAMA_BATCH_MODEL", "qwen2.5:14b")
+    for _model in (_batch_model, DEFAULT_MODEL):
+        try:
+            response = _ollama.chat(
+                model=_model,
+                messages=[{"role": "user", "content": prompt}],
+                options={"temperature": 0.2, "num_predict": 400},
+            )
+            elapsed = time.perf_counter() - t0
+            _log_call("summarize_session", _model, response, elapsed)
+            summary = (
+                response["message"]["content"]
+                if isinstance(response, dict)
+                else response.message.content
+            ).strip()
+            return f"SESSION_SUMMARY|{instance_id}|{summary}"
+        except Exception:
+            continue
+
+    # Last resort: manual join
+    elapsed = time.perf_counter() - t0
+    _log_call("summarize_session", "fallback", None, elapsed, error="all models failed")
+    lines = [e["content"][:120] for e in (convo_entries + system_entries)[-5:]]
+    return f"SESSION_SUMMARY|{instance_id}|fallback: " + " | ".join(lines)
