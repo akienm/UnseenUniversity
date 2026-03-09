@@ -5,13 +5,10 @@ Parses intent, emotional tone, and determines what memories to activate.
 
 import re
 from dataclasses import dataclass, field
-from .local_pool import LocalKoboldPool
-
 
 class Thalamus:
     def __init__(self):
-        self.pool = LocalKoboldPool()
-        self.preparse_host = self.pool.select_preparse_host()
+        pass
 
     def process(self, raw_input: str) -> "ParsedInput":
         text = raw_input.strip()
