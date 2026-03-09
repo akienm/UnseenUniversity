@@ -127,7 +127,8 @@ class UserContextManager:
         if ctx is None:
             return UserContext(name=new_name, slug=_slugify(new_name))
 
-        old_dir = self._root / ctx.slug
+        old_slug = ctx.slug   # capture before mutation
+        old_dir = self._root / old_slug
         new_slug = _slugify(new_name)
         new_dir = self._root / new_slug
 
@@ -138,7 +139,6 @@ class UserContextManager:
                 pass
             else:
                 old_dir.rename(new_dir)
-        old_slug = ctx.slug  # capture before mutation
 
         ctx.name = new_name.strip().title() if _looks_like_name(new_name) else new_name
         ctx.slug = new_slug
