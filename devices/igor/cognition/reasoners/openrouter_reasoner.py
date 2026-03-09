@@ -46,7 +46,7 @@ def preparse_via_openrouter(
     Falls back to rule-based CSB on any error.
     Returns a CSB string (always — never raises).
     """
-    from .koboldcpp_reasoner import _PREPARSE_PROMPT, _rule_based_csb
+    from .ollama_reasoner import _PREPARSE_PROMPT, _rule_based_csb
     from ...memory.models import Memory as _Memory
 
     api_key = os.getenv("OPENROUTER_API_KEY", "")
