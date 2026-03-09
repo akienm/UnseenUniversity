@@ -2127,6 +2127,27 @@ class Igor:
                 )
                 habit = None
 
+        # G11: link-based near-miss recovery — free Python, runs before the expensive tiebreaker.
+        # If relevant memories have outgoing links to near-miss habits, that's spreading
+        # activation evidence the habit IS contextually appropriate. Boost and re-evaluate.
+        if habit is None and _thalamus_near_misses and relevant:
+            _link_boosts: dict = {}
+            for _rm in relevant:
+                for _lid, _lw in getattr(_rm, "links", {}).items():
+                    _link_boosts[_lid] = _link_boosts.get(_lid, 0.0) + _lw * 0.20
+            if _link_boosts:
+                _boosted = [
+                    (score + _link_boosts.get(h.id, 0.0), h)
+                    for score, h in _thalamus_near_misses
+                ]
+                _boosted.sort(key=lambda x: x[0], reverse=True)
+                _best_bs, _best_bh = _boosted[0]
+                if _best_bs >= basal_ganglia.BASE_THRESHOLD:
+                    habit = _best_bh
+                    _thalamus_confidence = _best_bs
+                    _thalamus_near_misses = []
+                    console.print(f"[dim][LINK-BOOST] G11 near-miss promoted → {habit.id} score={_best_bs:.2f}[/]")
+
         # [#54] Habit tiebreaker: near-miss candidates → cheap classification call.
         # Fires only when no habit cleared threshold AND near-misses exist AND gate enabled.
         if habit is None and _thalamus_near_misses and not is_impulse:
@@ -2148,17 +2169,30 @@ class Igor:
                     "question_template", "Can you tell me more about that?"
                 )
             elif code_ref:
-                # Change 6 / D030: resolve code_ref to builtin tool via registry (POC)
-                # Full argument extraction from user input is future work.
+                # G11: actually dispatch to the tool. Auto-extracts args by schema:
+                # no required args → call with none; one required arg → pass user_input.
+                # Multi-arg tools can't be auto-dispatched; describe and skip habit.
                 from .tools.registry import registry as _tool_registry
                 tool_name = code_ref.split(":")[-1]
                 tool = _tool_registry.get(tool_name)
-                response_text = (
-                    f"[HABIT→TOOL] Matched habit {habit.id} maps to builtin '{tool_name}' "
-                    f"(code_ref={code_ref}). "
-                    + ("Tool found in registry — provide arguments to invoke." if tool
-                       else "Tool not found in registry.")
-                )
+                if tool:
+                    _required = tool.parameters.get("required", [])
+                    try:
+                        if not _required:
+                            response_text = tool.execute()
+                        elif len(_required) == 1:
+                            response_text = tool.execute(**{_required[0]: user_input})
+                        else:
+                            # Can't auto-dispatch multi-arg tool — ask for what's needed
+                            _arg_list = ", ".join(_required)
+                            response_text = (
+                                f"I want to run {tool_name} for that, "
+                                f"but I need: {_arg_list}. Can you provide those?"
+                            )
+                    except Exception as _ce:
+                        response_text = f"[HABIT→TOOL] Error running {tool_name}: {_ce}"
+                else:
+                    response_text = f"[HABIT→TOOL] tool '{tool_name}' (code_ref={code_ref}) not in registry."
             elif habit.id == "PROC_HABIT_COMPILER":
                 # Phase 2: parse user input and store a structured PROCEDURAL memory
                 response_text = self._compile_habit_from_input(user_input)
@@ -2435,6 +2469,11 @@ class Igor:
             )
             # [C] Update conversation thread breadcrumbs for context recovery after restart
             self._update_conversation_thread(user_input, response_text, parsed.intent, _milieu_state)
+            # G11: index exchange text into word graph so prediction improves over time.
+            # Keyed by thread+monotonic tick to avoid collisions across restarts.
+            if self._word_graph is not None and response_text:
+                _wg_doc_id = f"ex_{thread_id}_{int(_time.monotonic() * 1000) % 10_000_000}"
+                self._word_graph.index(_wg_doc_id, f"{user_input} {response_text}", weight=0.7)
 
         # Update metrics
         self.last_friction = friction
