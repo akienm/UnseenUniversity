@@ -218,6 +218,8 @@ class Igor:
             console.print(f"\n[cyan]Igor-{instance_id} resumed. {self.cortex.total_count()} memories loaded.[/]")
 
         # [WARM CONTEXT] Reload warm working memory from previous session
+        self._post_sleep_boot: bool = False   # #134: set True by _load_warm_context when gap detected
+        self._gap_hours: float      = 0.0     # #134: actual offline duration in hours
         warm_ctx = self._load_warm_context()
         self._boot_ring_tail: list = (warm_ctx or {}).get("ring_tail") or []  # #112
         self._conversation_threads: list = []  # populated by _load_warm_context via warm_ctx
@@ -236,6 +238,8 @@ class Igor:
                 cortex=self.cortex,
                 instance_id=self.instance_id,
                 warm_context=warm_ctx,
+                post_sleep=self._post_sleep_boot,
+                gap_hours=self._gap_hours,
             )
             self.cortex.write_ring(boot_msg[:800], category="session_control")
             self.cortex.twm_push(
@@ -1080,8 +1084,10 @@ class Igor:
             + "\n".join(_summary_parts[-12:])  # most recent 12 meaningful events
         )
 
+        _now = datetime.now().isoformat()
         ctx = {
-            "timestamp":              datetime.now().isoformat(),
+            "timestamp":              _now,
+            "shutdown_timestamp":     _now,           # #134: post-sleep gap detection
             "instance_id":            self.instance_id,
             "session_summary":        session_summary,
             "ne_state":               ne_state,
@@ -1195,6 +1201,30 @@ class Igor:
             return None
 
         # ── Fresh enough — restore ────────────────────────────────────────────
+
+        # #134: The Gap — detect post-sleep state from shutdown_timestamp
+        _shutdown_ts_str = ctx.get("shutdown_timestamp")
+        if _shutdown_ts_str:
+            try:
+                _gap_threshold = float(os.getenv("THE_GAP_THRESHOLD_HOURS", "4"))
+                _shutdown_dt = datetime.fromisoformat(_shutdown_ts_str)
+                _gap_h = (datetime.now() - _shutdown_dt).total_seconds() / 3600
+                if _gap_h > _gap_threshold:
+                    self._post_sleep_boot = True
+                    self._gap_hours = _gap_h
+                    console.print(
+                        f"[dim][GAP] post-sleep boot detected: {_gap_h:.1f}h offline[/]"
+                    )
+                    # Partial milieu reset — emotional state from >THE_GAP_THRESHOLD_HOURS ago is stale
+                    try:
+                        _m = milieu_mod.get()
+                        if _m:
+                            _m.gap_reset()
+                            console.print("[dim][GAP] milieu partially reset toward baseline[/]")
+                    except Exception:
+                        pass
+            except Exception:
+                pass
 
         # 1. Session summary — always inject so it surfaces at top of ring context
         summary = ctx.get("session_summary", "")
@@ -2668,6 +2698,7 @@ class Igor:
             "metrics": self._cmd_metrics,
             "quit": self._cmd_quit,
             "exit": self._cmd_quit,
+            "sleep": self._cmd_sleep,             # #134: pre-sleep ritual
             "restart": self._cmd_restart,
             "cost": self._cmd_cost,
             "model": self._cmd_model,
@@ -2702,6 +2733,7 @@ class Igor:
   /local on|off   - Explicitly set local mode
   /compress       - Summarize context to LTM (KoboldCpp), then restart fresh
   /restart        - Relaunch Igor (requires igor bash alias)
+  /sleep          - Pre-sleep ritual: NE consolidation + sleep note + shutdown (post-sleep detection on next boot)
   /quit           - Exit
 
 [bold]Work Orders (change.38):[/]
@@ -3517,6 +3549,57 @@ class Igor:
 
     def _cmd_quit(self, _):
         self._shutdown(reason="quit via /quit")
+        sys.exit(0)
+
+    def _cmd_sleep(self, _):
+        """
+        #134 Phase 2: /sleep — pre-sleep ritual before The Gap.
+        1. Force synchronous NE consolidation pass (promote high-salience TWM → LTM).
+        2. Write sleep note to ring (letter to tomorrow-Igor).
+        3. Normal shutdown (saves warm context + shutdown_timestamp for gap detection).
+        """
+        console.print("[cyan]Pre-sleep ritual — consolidating before The Gap...[/]")
+
+        # 1. Force NE consolidation pass synchronously
+        console.print("[dim][SLEEP] running NE consolidation pass...[/]")
+        try:
+            # Wait for any in-flight NE thread to finish first
+            if self._ne_thread is not None and self._ne_thread.is_alive():
+                self._ne_thread.join(timeout=30)
+            result = self.ne.run(verbose=False)
+            if result:
+                _ne_state = result.get("internal_state", {})
+                _m = milieu_mod.get()
+                if _ne_state and _m:
+                    _m.ingest_ne_state(_ne_state)
+            console.print("[dim][SLEEP] NE consolidation complete.[/]")
+        except Exception as _e:
+            console.print(f"[dim][SLEEP] NE pass failed (non-fatal): {_e}[/]")
+
+        # 2. Write sleep note — "letter to tomorrow-Igor"
+        _milieu_snap = ""
+        try:
+            _m2 = milieu_mod.get()
+            if _m2:
+                _milieu_snap = _m2.state_csb()
+        except Exception:
+            pass
+
+        _recent = self.cortex.read_ring_memory(limit=5)
+        _last_events = "; ".join(
+            e.get("content", "")[:100] for e in (_recent or [])[-3:]
+        )
+        sleep_note = (
+            f"SLEEP_NOTE|time={datetime.now().isoformat()}"
+            f"|interactions={self.interaction_count}|cost=${self.session_cost:.4f}"
+            f"|{_milieu_snap}"
+            f"|last_events={_last_events[:300]}"
+        )
+        self.cortex.write_ring(sleep_note, category="sleep_note")
+        console.print("[dim][SLEEP] sleep note written to ring.[/]")
+
+        # 3. Normal shutdown — saves warm_context with shutdown_timestamp for gap detection
+        self._shutdown(reason="sleep via /sleep")
         sys.exit(0)
 
     def _cmd_unknown(self, raw):
