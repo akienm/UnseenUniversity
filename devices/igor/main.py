@@ -1389,7 +1389,7 @@ class Igor:
             if not user_input:
                 continue
 
-            self._process(user_input)
+            self._process(user_input, thread_id="stdin:main")
 
             # Exit check after _process() — catches /exit typed during a blocking call
             if _exit_requested.is_set():
@@ -1551,7 +1551,7 @@ class Igor:
             False,
         )
 
-    def _process(self, user_input: str, is_impulse: bool = False) -> str:
+    def _process(self, user_input: str, is_impulse: bool = False, thread_id: str | None = None) -> str:
         # Boot-ready gate: politely defer if boot pre-warm hasn't finished yet.
         # Only applies to non-impulse turns — impulses are internal and skip the gate.
         if not self._boot_ready and not is_impulse:
@@ -1567,7 +1567,7 @@ class Igor:
         web_server.broadcast_activity(self._activity_state())
 
         try:
-            return self._process_inner(user_input, is_impulse)
+            return self._process_inner(user_input, is_impulse, thread_id=thread_id)
         finally:
             # [DASHBOARD] Always reset to idle on exit (#18)
             self._is_processing = False
@@ -1575,7 +1575,7 @@ class Igor:
             self._current_tier = ""
             web_server.broadcast_activity(self._activity_state())
 
-    def _process_inner(self, user_input: str, is_impulse: bool) -> str:
+    def _process_inner(self, user_input: str, is_impulse: bool, thread_id: str | None = None) -> str:
         import time as _time
         _t0 = _time.monotonic()   # wall-clock start for latency instrumentation (#139)
         new_memories = 0
@@ -1595,6 +1595,7 @@ class Igor:
             self.cortex.write_ring(
                 f"USER_INPUT: {user_input[:1000]}",
                 category="user_turn",
+                thread_id=thread_id,
             )
 
         # Handle commands
@@ -2218,6 +2219,7 @@ class Igor:
             self.cortex.write_ring(
                 f"Q: {user_input[:800]} | A: {response_text[:1200]} | intent={parsed.intent} friction={friction:.2f}",
                 category=parsed.intent,
+                thread_id=thread_id,
             )
             # [C] Update conversation thread breadcrumbs for context recovery after restart
             self._update_conversation_thread(user_input, response_text, parsed.intent, _milieu_state)
@@ -2681,7 +2683,7 @@ class Igor:
             if _thread_prefix and msg.author != "claude-code" and not msg.content.strip().startswith("/"):
                 synthetic = _thread_prefix + synthetic
 
-            response = self._process(synthetic)
+            response = self._process(synthetic, thread_id=_thread_id)
             if msg.source == "web" and response:
                 web_server.send(response)
 
