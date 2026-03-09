@@ -2624,7 +2624,9 @@ class Igor:
 
         console.print(f"[dim][IMPULSE] {content[:100]}[/]")
 
-        # change.33: if impulse sounds irreversible, queue to arbiter instead of executing
+        # change.33: if impulse sounds irreversible, queue to arbiter instead of executing.
+        # If arbiter is disabled (IGOR_ARBITER_ENABLED=false), submit() returns 0 —
+        # fall through and execute the impulse normally rather than silently dropping it.
         from .arbiter import queue as arbiter_queue
         if arbiter_queue.is_irreversible_impulse(content):
             item_id = arbiter_queue.submit(
@@ -2634,12 +2636,14 @@ class Igor:
                 threshold_reason="NE action impulse contains irreversible/external keywords",
                 metadata={"obs_id": impulse["id"]},
             )
-            console.print(f"[yellow][IMPULSE→ARBITER] Queued as #{item_id} — type /arbiter approve {item_id} or /arbiter deny {item_id}[/]")
-            self.cortex.write_ring(
-                f"IMPULSE_QUEUED|obs_id={impulse['id']}|arbiter_id={item_id}|{content[:200]}",
-                category="impulse_executed",
-            )
-            return
+            if item_id != 0:
+                console.print(f"[yellow][IMPULSE→ARBITER] Queued as #{item_id} — type /arbiter approve {item_id} or /arbiter deny {item_id}[/]")
+                self.cortex.write_ring(
+                    f"IMPULSE_QUEUED|obs_id={impulse['id']}|arbiter_id={item_id}|{content[:200]}",
+                    category="impulse_executed",
+                )
+                return
+            # arbiter disabled — fall through to normal execution below
 
         # If this is a proactive habit impulse, record activation directly.
         # The habit is identified by push_sources metadata, not by trigger matching,
