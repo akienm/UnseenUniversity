@@ -340,6 +340,10 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     .md hr { border: none; border-top: 1px solid #333; margin: 0.5em 0; }
     .md blockquote { border-left: 2px solid #555; margin: 0.3em 0;
                      padding-left: 0.7em; color: #aaa; }
+    #conn-led { font-size: 1.1em; line-height: 1; transition: color 0.3s; color: #555;
+                cursor: default; }
+    #conn-led.on  { color: #4caf50; }
+    #conn-led.off { color: #f44336; }
     #name-row { display: flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.5rem 0;
                 border-top: 1px solid #333; font-size: 0.78rem; color: #888; }
     #sender-name { width: 7em; background: #1e1e30; color: #aaa; border: 1px solid #444;
@@ -394,6 +398,7 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
   <div id="chat"></div>
   <div id="status-bar">●  idle</div>
   <div id="name-row">
+    <span id="conn-led" title="Connection status">●</span>
     <label for="sender-name">Your name:</label>
     <input id="sender-name" type="text" value="akien" maxlength="32" autocomplete="off">
   </div>
@@ -583,10 +588,32 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
       chat.scrollTop = chat.scrollHeight;
     }
 
+    const led = document.getElementById('conn-led');
+    let _connectedOnce = false;
+    let _disconnectedMsgShown = false;
+
+    function setLed(on) {
+      led.classList.toggle('on', on);
+      led.classList.toggle('off', !on);
+      led.title = on ? 'Connected' : 'Disconnected — retrying…';
+    }
+
     function connect() {
       ws = new WebSocket('ws://' + location.host + '/ws');
-      ws.onopen  = () => addMsg('system', '', 'Connected to Igor.');
-      ws.onclose = () => { addMsg('system', '', 'Disconnected. Retrying…'); setTimeout(connect, 2000); };
+      ws.onopen  = () => {
+        setLed(true);
+        if (!_connectedOnce) { addMsg('system', '', 'Connected to Igor.'); _connectedOnce = true; }
+        else                  { addMsg('system', '', 'Reconnected.'); }
+        _disconnectedMsgShown = false;
+      };
+      ws.onclose = () => {
+        setLed(false);
+        if (!_disconnectedMsgShown) {
+          addMsg('system', '', 'Disconnected. Retrying silently…');
+          _disconnectedMsgShown = true;
+        }
+        setTimeout(connect, 2000);
+      };
       ws.onmessage = e => {
         const m = JSON.parse(e.data);
         if (m.type === 'message')
