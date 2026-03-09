@@ -243,6 +243,34 @@ async def _ws_endpoint(ws: WebSocket):
             pass
 
 
+# ── G16: Global milieu API endpoints ─────────────────────────────────────────
+
+async def _api_milieu_global(request):
+    """GET /api/milieu/global — serve current global milieu state (cross-machine sync)."""
+    from pathlib import Path as _Path
+    import json as _j
+    _gpath = _Path.home() / ".TheIgors" / "milieu_global.json"
+    try:
+        data = _j.loads(_gpath.read_text(encoding="utf-8")) if _gpath.exists() else {}
+        return JSONResponse(data)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+async def _api_milieu_contribute(request):
+    """POST /api/milieu/contribute — accept a milieu contribution from a remote instance."""
+    from pathlib import Path as _Path
+    try:
+        body = await request.json()
+        from ..cognition.milieu import MilieuState, GLOBAL_ALPHA_SPIKE, _contribute_to_global
+        from dataclasses import fields as _fields
+        state = MilieuState(**{k: body[k] for k in body if k in {f.name for f in _fields(MilieuState)}})
+        _contribute_to_global(state, GLOBAL_ALPHA_SPIKE)
+        return JSONResponse({"status": "ok"})
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+
+
 # ── Starlette app factory ─────────────────────────────────────────────────────
 
 def _make_app() -> Starlette:
@@ -258,6 +286,8 @@ def _make_app() -> Starlette:
         Route("/api/outbox", _api_outbox_list),
         Route("/api/outbox/{filename}", _api_outbox_download),
         Route("/api/dashboard", _api_dashboard),
+        Route("/api/milieu/global", _api_milieu_global),
+        Route("/api/milieu/contribute", _api_milieu_contribute, methods=["POST"]),
     ]
 
     # Serve compiled Svelte assets if the UI has been built
