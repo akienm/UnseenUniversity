@@ -313,3 +313,11 @@ registry.register(Tool(
     },
     fn=_tool_spend_history,
 ))
+
+# Alias: models commonly hallucinate this name; redirect to the real tool.
+registry.register(Tool(
+    name="get_budget_status",
+    description="Alias for check_openrouter_balance. Use that instead.",
+    parameters={"type": "object", "properties": {}, "required": []},
+    fn=_tool_check_balance,
+))
