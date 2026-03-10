@@ -264,8 +264,14 @@ def print_habit_trigger(habit):
     console.print(f"\n[green][HABIT] Triggered: {habit.id} — {habit.narrative}[/]")
 
 
-def print_reasoning(used_api: bool):
+def print_reasoning(used_api: bool, skip_to: str = ""):
     if used_api:
-        console.print("[dim][PREFRONTAL] Calling upstream API...[/]")
+        _tier_label = {
+            "tier.3":   "tier.3/gpt-4o-mini",
+            "tier.3.5": "tier.3.5/haiku",
+            "tier.4":   "tier.4/sonnet",
+            "tier.5":   "tier.5/anthropic-direct",
+        }.get(skip_to, skip_to or "upstream")
+        console.print(f"[dim][PREFRONTAL] Calling {_tier_label}...[/]")
     else:
         console.print("[dim][BASAL GANGLIA] Habit execution - no reasoning needed[/]")
