@@ -17,6 +17,7 @@ Why this exists:
     observe real output dramatically improves the feedback loop.
 """
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -181,4 +182,52 @@ registry.register(Tool(
         "required": ["code"],
     },
     fn=run_python,
+))
+
+
+def restart_self(note: str = "") -> str:
+    """
+    Signal Igor to restart cleanly on the next main-loop iteration.
+
+    Writes ~/.TheIgors/igor_<instance_id>/restart.flag — the main loop
+    checks this flag at the top of each idle cycle and exits with code 42,
+    which the bash wrapper catches and relaunches.
+
+    Optional note is written to ring memory so Igor can read it on wakeup.
+    Equivalent to the /restart command but callable as a tool from any channel
+    (web UI, Discord, API — not just stdin).
+    """
+    instance_id = os.getenv("IGOR_INSTANCE_ID", "wild-0001")
+    flag_path = (
+        Path.home() / ".TheIgors"
+        / f"igor_{instance_id.replace('-', '_')}"
+        / "restart.flag"
+    )
+    flag_path.parent.mkdir(parents=True, exist_ok=True)
+    flag_path.write_text(note or "restart requested via tool")
+    return (
+        f"Restart flag written. I will restart cleanly on the next loop cycle. "
+        + (f"Note for wakeup: {note}" if note else "")
+    ).strip()
+
+
+registry.register(Tool(
+    name="restart_self",
+    description=(
+        "Restart Igor cleanly. Writes the restart flag; the main loop picks it up "
+        "on the next idle cycle and exits with code 42 (bash wrapper relaunches). "
+        "Use when asked to restart, or after self-edits that need to take effect. "
+        "Optionally pass a note that will be readable after wakeup."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "note": {
+                "type": "string",
+                "description": "Optional message to self — readable after restart via ring memory",
+            },
+        },
+        "required": [],
+    },
+    fn=restart_self,
 ))
