@@ -171,6 +171,11 @@ def _classify_intent(text: str, keywords: list) -> str:
     if any(w in t for w in ["think", "feel", "opinion", "thoughts on", "what do you reckon",
                              "agree", "disagree", "interesting"]):
         return "conversation"
+    # G36: creative/reading requests are interactive dialogue, not batch jobs.
+    if any(w in t for w in ["read me", "read to me", "tell me a story", "write me a poem",
+                             "write me a story", "let's read", "read aloud", "narrate",
+                             "sing me", "recite", "read through"]):
+        return "creative_request"
     return "general"
 
 
