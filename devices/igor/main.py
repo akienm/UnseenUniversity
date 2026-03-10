@@ -2115,6 +2115,7 @@ class Igor:
                 ),
                 title=user_input[:80],
                 completions_queue=self._job_completions,
+                thread_id=thread_id or "",
             )
             console.print(
                 f"\n[cyan][JOBS] Long-running job started in background (#{_async_job_id}). "
@@ -2722,11 +2723,29 @@ class Igor:
         """
         while self._job_completions:
             item = self._job_completions.popleft()
-            job_id = item.get("job_id", "?")
-            title = item.get("title", "")
-            result = item.get("result", "")
-            # Truncate result for TWM — full result goes to ring memory
+            job_id   = item.get("job_id", "?")
+            title    = item.get("title", "")
+            result   = item.get("result", "")
+            tid      = item.get("thread_id", "") or ""
             result_preview = result[:300] if result else "(no output)"
+
+            # #159: Direct web notification to the originating thread.
+            # Bypasses the 1B TWM impulse path for user-facing messages.
+            _is_error = result_preview.startswith("[ERROR]")
+            if _is_error:
+                _msg = (
+                    f"I'm shorry, Mashter — background job **{title[:60]}** "
+                    f"failed: {result_preview[:200]}"
+                )
+            else:
+                _msg = (
+                    f"Background job complete, Mashter: **{title[:60]}**\n"
+                    f"{result_preview[:200]}"
+                )
+            _session = tid if tid else "shared"
+            web_server.send(_msg, session_id=_session)
+
+            # Keep TWM impulse for NE integration (internal awareness only)
             self.cortex.twm_push(
                 content_csb=(
                     f"ACTION_IMPULSE|source=job_completion|job_id={job_id}|"
@@ -2736,10 +2755,12 @@ class Igor:
                 salience=0.8,
                 urgency=0.7,
                 ttl_seconds=300,
+                thread_id=tid or None,
             )
             self.cortex.write_ring(
                 f"JOB_COMPLETED|id={job_id}|title={title[:60]}|result={result[:200]}",
                 category="system_info",
+                thread_id=tid or None,
             )
             console.print(
                 f"\n[green][JOBS] Job #{job_id} '{title[:50]}' completed.[/]\n"
