@@ -133,10 +133,10 @@ def _extract_keywords(text: str) -> list:
 
 def _classify_intent(text: str, keywords: list) -> str:
     """
-    #93 phase 1: Expanded 12-intent taxonomy.
+    #93 phase 1 / G36: Expanded 13-intent taxonomy.
     Intents: greeting | meta_question | explanation_request | factual_question |
              memory_instruction | action_request | code_task | analysis_task |
-             complaint | conversation | command | general
+             complaint | conversation | command | creative_request | general
     """
     t = text.lower()
 
