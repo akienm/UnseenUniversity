@@ -156,6 +156,8 @@ def search_notebook(user_slug: str, query: str, limit: int = 5) -> str:
         return "Your notebook is empty — nothing saved yet."
 
     query_vec = _embed(query)
+    # G33: pre-compute keyword set outside loop; filter short stop-words
+    _kw_words = {w for w in query.lower().split() if len(w) >= 3}
     scored = []
     for row in rows:
         if query_vec and row["embedding"]:
@@ -164,10 +166,10 @@ def search_notebook(user_slug: str, query: str, limit: int = 5) -> str:
             except Exception:
                 sim = 0.0
         else:
-            # Keyword fallback when Ollama unavailable
-            words = set(query.lower().split())
-            hits  = sum(w in row["content"].lower() for w in words)
-            sim   = hits / max(1, len(words)) * 0.5
+            # Keyword fallback when Ollama unavailable — case-insensitive set intersection
+            _content_lower = row["content"].lower()
+            hits = sum(w in _content_lower for w in _kw_words)
+            sim  = hits / max(1, len(_kw_words)) * 0.5
         scored.append((sim, row))
 
     scored.sort(key=lambda x: x[0], reverse=True)

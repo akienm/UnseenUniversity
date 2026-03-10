@@ -962,6 +962,33 @@ class Cortex:
         ]
         return list(reversed(entries))
 
+    def search_ring_text(self, query: str, limit: int = 5) -> list[dict]:
+        """
+        G32: Keyword search over ring_memory content using SQLite LIKE.
+        Returns up to `limit` entries (newest first) whose content contains
+        any term from the query.  Used as a fallback when cortex.search() finds
+        nothing in LTM — catches recent session context not yet promoted.
+        """
+        terms = [t.strip() for t in query.lower().split() if len(t.strip()) >= 3]
+        if not terms:
+            return []
+        # Build WHERE clause: content LIKE '%term%' OR ...
+        clauses = " OR ".join("lower(content) LIKE ?" for _ in terms)
+        params = [f"%{t}%" for t in terms] + [limit]
+        with self._conn() as conn:
+            rows = conn.execute(
+                f"SELECT * FROM ring_memory WHERE {clauses} ORDER BY id DESC LIMIT ?",
+                params,
+            ).fetchall()
+        return [
+            {
+                "id": r["id"], "category": r["category"],
+                "content": r["content"], "timestamp": r["timestamp"],
+                "thread_id": r["thread_id"] if "thread_id" in r.keys() else None,
+            }
+            for r in rows
+        ]
+
     def get_last_restart_note(self) -> Optional[dict]:
         """Get the most recent restart note, if any."""
         with self._conn() as conn:
