@@ -142,6 +142,24 @@ def build_report(cortex=None, session_interactions: int = 0,
     lines.append(f"  Rate:              {esc_rate:.1%}  ({cloud} cloud / {total} total)")
     lines.append("")
 
+    # ── Response habituation (WO#140 Phase 2) ─────────────────
+    try:
+        from .response_habituation import ResponseHabituation as _RH
+        from pathlib import Path as _Path
+        import os as _os
+        _rh_path = _Path.home() / ".TheIgors" / f"igor_{_os.getenv('IGOR_INSTANCE_ID','wild_0001')}" / "response_habituation.json"
+        if _rh_path.exists():
+            _rh = _RH(_rh_path)
+            _top = _rh.top_habituated(n=5)
+            lines.append("RESPONSE HABITUATION")
+            lines.append(f"  Vocab tracked:     {_rh.vocab_size()} words")
+            if _top:
+                _top_str = "  ".join(f"{w}({c})" for w, c, _ in _top)
+                lines.append(f"  Top 5 used:        {_top_str}")
+            lines.append("")
+    except Exception:
+        pass
+
     # ── Word graph ────────────────────────────────────────────
     wg = _word_graph_stats()
     lines.append("WORD GRAPH")
