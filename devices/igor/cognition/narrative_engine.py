@@ -287,9 +287,17 @@ class NarrativeEngine:
             return None
 
         # WO7: filter out NE's own output on all axes (source + content prefix)
-        raw_obs = self._filter_obs(
-            self.cortex.twm_read(limit=50, include_integrated=True)
-        )
+        _all_raw = self.cortex.twm_read(limit=50, include_integrated=True)
+        raw_obs = self._filter_obs(_all_raw)
+
+        # Mark filtered-out unintegrated obs as integrated so they stop counting
+        # toward the trigger threshold. They've been seen — just not processable.
+        _filtered_ids = [
+            o["id"] for o in _all_raw
+            if not o.get("integrated") and o not in raw_obs
+        ]
+        if _filtered_ids:
+            self.cortex.twm_mark_integrated(_filtered_ids)
 
         # Change 4: sort by urgency * salience — urgent + important items processed first
         obs_list = sorted(
