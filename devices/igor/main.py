@@ -3031,20 +3031,20 @@ class Igor:
             title    = item.get("title", "")
             result   = item.get("result", "")
             tid      = item.get("thread_id", "") or ""
-            result_preview = result[:300] if result else "(no output)"
+            result_for_twm = result[:500] if result else "(no output)"
 
             # #159: Direct web notification to the originating thread.
-            # Bypasses the 1B TWM impulse path for user-facing messages.
-            _is_error = result_preview.startswith("[ERROR]")
+            # Full result sent to user — no truncation. TWM/ring use shorter copies.
+            _is_error = result.startswith("[ERROR]")
             if _is_error:
                 _msg = (
                     f"I'm shorry, Mashter — background job **{title[:60]}** "
-                    f"failed: {result_preview[:200]}"
+                    f"failed:\n{result}"
                 )
             else:
                 _msg = (
                     f"Background job complete, Mashter: **{title[:60]}**\n"
-                    f"{result_preview[:200]}"
+                    f"{result}"
                 )
             # #159 fix: thread_id is "web:<session_id>" but web_server sessions
             # are keyed by just the session_id part. Strip the "web:" prefix so
@@ -3062,7 +3062,7 @@ class Igor:
             self.cortex.twm_push(
                 content_csb=(
                     f"ACTION_IMPULSE|source=job_completion|job_id={job_id}|"
-                    f"title={title[:60]}|result={result_preview}"
+                    f"title={title[:60]}|result={result_for_twm}"
                 ),
                 source="job_manager",
                 salience=0.8,
