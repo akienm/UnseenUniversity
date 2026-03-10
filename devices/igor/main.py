@@ -2550,7 +2550,7 @@ class Igor:
                         pass
                     _pre_csb_with_nudge = pre_csb + _habit_nudge
     
-                    dashboard.print_reasoning(used_api=True)
+                    dashboard.print_reasoning(used_api=True, skip_to=_skip_to)
                     self._current_action = "reasoning"
                     web_server.broadcast_activity(self._activity_state())
     
