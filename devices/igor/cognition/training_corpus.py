@@ -109,12 +109,19 @@ def fetch(url: str, title: str, source: str = "gutenberg") -> tuple[str, str]:
     headers = {
         "User-Agent": "Mozilla/5.0 (compatible; IgorWordGraphTrainer/1.0)"
     }
+    # Hard cap: don't load a document larger than this into memory at once.
+    # 5MB+ papers were OOM-crashing the process. 1MB is plenty for training.
+    MAX_FETCH_CHARS = int(os.getenv("IGOR_TRAINING_MAX_CHARS", str(1_000_000)))
+
     try:
         resp = requests.get(url, headers=headers, timeout=30, verify=certifi.where())
         resp.raise_for_status()
         text = resp.text
     except Exception as e:
         return "", f"Fetch failed: {e}"
+
+    if len(text) > MAX_FETCH_CHARS:
+        text = text[:MAX_FETCH_CHARS]
 
     text_path = CORPUS_DIR / f"{book_id}.txt"
     text_path.write_text(text, encoding="utf-8", errors="replace")

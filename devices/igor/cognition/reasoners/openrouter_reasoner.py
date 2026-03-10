@@ -320,6 +320,13 @@ class OpenRouterReasoner(BaseReasoner):
                     text = f"[{self.model}] {text}"
                 return text, total_cost
 
+        # MAX_TURNS break lands here — return a graceful message rather than None
+        return (
+            "I reached my tool-use limit for this turn and stopped. "
+            "You can ask me to continue or break the task into smaller steps.",
+            total_cost,
+        )
+
     def _call_api(self, messages: list, tools: list, system: str = "") -> dict:
         """POST to OpenRouter chat completions endpoint."""
         token = os.getenv("OPENROUTER_API_KEY", "").strip()
