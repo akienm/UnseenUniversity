@@ -1612,6 +1612,7 @@ class Igor:
         skip_to: str = "tier.3",
         preparse_csb: str = "",
         local_only: bool = False,
+        thread_id: str | None = None,
     ) -> tuple[str, float, bool]:
         """
         WO5 priority escalation ladder (tiers 3-6).
@@ -1645,7 +1646,7 @@ class Igor:
             try:
                 text, cost = self.openrouter_cheap_reasoner.reason(
                     user_input, relevant, core, self.instance_id,
-                    cortex=self.cortex, preparse_csb=preparse_csb
+                    cortex=self.cortex, preparse_csb=preparse_csb, thread_id=thread_id
                 )
                 self.cloud_calls += 1
                 console.print(f"[dim](tier.3/or-cheap | session_cost: ${self.session_cost + cost:.4f})[/]")
@@ -1663,7 +1664,7 @@ class Igor:
             try:
                 text, cost = self.openrouter_interactive_reasoner.reason(
                     user_input, relevant, core, self.instance_id,
-                    cortex=self.cortex, preparse_csb=preparse_csb
+                    cortex=self.cortex, preparse_csb=preparse_csb, thread_id=thread_id
                 )
                 self.cloud_calls += 1
                 console.print(f"[dim](tier.3.5/or-interactive | session_cost: ${self.session_cost + cost:.4f})[/]")
@@ -1681,7 +1682,7 @@ class Igor:
             try:
                 text, cost = self.openrouter_reasoner.reason(
                     user_input, relevant, core, self.instance_id,
-                    cortex=self.cortex, preparse_csb=preparse_csb
+                    cortex=self.cortex, preparse_csb=preparse_csb, thread_id=thread_id
                 )
                 self.cloud_calls += 1
                 console.print(f"[dim](tier.4/or-claude | session_cost: ${self.session_cost + cost:.4f})[/]")
@@ -1704,7 +1705,7 @@ class Igor:
             try:
                 text, cost = self.reasoner.reason(
                     user_input, relevant, core, self.instance_id,
-                    cortex=self.cortex, preparse_csb=preparse_csb
+                    cortex=self.cortex, preparse_csb=preparse_csb, thread_id=thread_id
                 )
                 self.cloud_calls += 1
                 console.print(f"[dim](tier.5/anthropic | session_cost: ${self.session_cost + cost:.4f})[/]")
@@ -1783,6 +1784,21 @@ class Igor:
                 category="user_turn",
                 thread_id=thread_id,
             )
+
+        # ── #158: TASK_SET — push explicit action requests to thread TWM ─────────
+        # Anchors the current goal at the top of context, outcompeting ambient ring.
+        if not is_impulse and parsed.intent == "action_request" and thread_id:
+            _task_goal = self._extract_task_goal(user_input)
+            self.cortex.twm_push(
+                source="thalamus",
+                content_csb=f"TASK_SET|{_task_goal}",
+                salience=0.9,
+                urgency=0.92,
+                ttl_seconds=1800,
+                thread_id=thread_id,
+                category="task_set",
+            )
+            console.print(f"[dim][TASK_SET] Anchored: {_task_goal[:80]}[/]")
 
         # Handle commands
         if parsed.is_command:
@@ -2312,7 +2328,7 @@ class Igor:
                         console.print(f"[yellow]Local pool failed ({e}), trying cloud...[/]")
                         response_text, cost, used_api = self._reason_with_failover(
                             user_input, relevant, core, skip_to=_skip_to, preparse_csb=pre_csb,
-                            local_only=_local_only,
+                            local_only=_local_only, thread_id=thread_id,
                         )
                 elif is_impulse:
                     # Background impulse — no UX latency requirement; cost must be zero.
@@ -2428,7 +2444,8 @@ class Igor:
                     with Live(Spinner("dots", text=" Thinking..."), console=console,
                               transient=True, refresh_per_second=8):
                         response_text, cost, used_api = self._reason_with_failover(
-                            _reply_input, relevant, core, skip_to=_skip_to, preparse_csb=_pre_csb_with_nudge
+                            _reply_input, relevant, core, skip_to=_skip_to,
+                            preparse_csb=_pre_csb_with_nudge, thread_id=thread_id,
                         )
                     # G5 / #42: prediction signal — did we need a higher tier than expected?
                     _m = milieu_mod.get()
@@ -2447,6 +2464,18 @@ class Igor:
                     category="think_trace",
                 )
                 response_text = _reply_block
+
+        # ── #158: TASK_SET completion detection — clear anchor when task done ────
+        if response_text and thread_id and not is_impulse:
+            _completion_signals = (
+                "created", "done", "completed", "filed", "written", "saved",
+                "scheduled", "sent", "updated", "finished", "resolved",
+            )
+            _resp_lower = response_text.lower()
+            if any(w in _resp_lower for w in _completion_signals):
+                _cleared = self.cortex.twm_clear_task_set(thread_id=thread_id)
+                if _cleared:
+                    console.print(f"[dim][TASK_SET] Cleared {_cleared} completed task(s)[/]")
 
         # [MOTOR CORTEX] Output response — skip if empty (e.g. impulse was suppressed)
         # G8 / #48: fast identity-threat gate before output
@@ -3493,6 +3522,24 @@ class Igor:
                 f"  ID: `{hab_id}`\n"
                 f"  (No trigger extracted — fires only on manual invocation)"
             )
+
+    @staticmethod
+    def _extract_task_goal(user_input: str) -> str:
+        """
+        #158: Strip politeness wrapper from an action request, returning the core goal.
+        "Please write a ticket on adding Google Calendar" → "write a ticket on adding Google Calendar"
+        """
+        import re
+        t = user_input.strip()
+        # Strip leading politeness phrases
+        _politeness = re.compile(
+            r'^(please\s+|could you\s+|can you\s+|would you\s+|i\'d like you to\s+|'
+            r'i want you to\s+|i need you to\s+|hey\s+igor[,\s]+)',
+            re.IGNORECASE,
+        )
+        t = _politeness.sub("", t).strip()
+        # Capitalize first letter
+        return t[:200] if t else user_input[:200]
 
     def _tier0_response(self, user_input: str, parsed, thread_id: str | None = None) -> str | None:
         """

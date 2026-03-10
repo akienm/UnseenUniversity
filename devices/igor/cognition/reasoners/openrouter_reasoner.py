@@ -117,6 +117,7 @@ class OpenRouterReasoner(BaseReasoner):
         instance_id: str,
         cortex=None,
         preparse_csb: str = "",
+        thread_id: str | None = None,
     ) -> tuple[str, float]:
         """Run full agentic tool loop via OpenRouter."""
         t0 = time.perf_counter()
@@ -141,7 +142,7 @@ class OpenRouterReasoner(BaseReasoner):
         content = user_input
         if preparse_csb:
             content = preparse_csb + "\n\n" + content
-        session_ctx = self._build_session_context(cortex)
+        session_ctx = self._build_session_context(cortex, thread_id=thread_id)
         mem_ctx = self._build_memory_context(relevant_memories)
         if session_ctx:
             content += session_ctx

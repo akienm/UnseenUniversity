@@ -94,6 +94,7 @@ class AnthropicReasoner(APIReasoner):
         instance_id: str,
         cortex=None,
         preparse_csb: str = "",
+        thread_id: str | None = None,
     ) -> tuple[str, float]:
         """
         Run the full agentic tool loop.
@@ -118,7 +119,7 @@ class AnthropicReasoner(APIReasoner):
             pass
 
         memory_context = self._build_memory_context(relevant_memories)
-        session_context = self._build_session_context(cortex)
+        session_context = self._build_session_context(cortex, thread_id=thread_id)
 
         # WO1: dynamic system prompt from cortex memories
         system = build_system_prompt(cortex, instance_id)

@@ -189,6 +189,22 @@ class Cortex:
             except Exception:
                 pass  # Column already exists
 
+            # #158: thread_id — per-attention-nexus isolation (mirrors ring_memory #136)
+            try:
+                conn.execute(
+                    "ALTER TABLE twm_observations ADD COLUMN thread_id TEXT DEFAULT NULL"
+                )
+            except Exception:
+                pass
+
+            # #158: category — distinguishes TASK_SET from normal observations
+            try:
+                conn.execute(
+                    "ALTER TABLE twm_observations ADD COLUMN category TEXT DEFAULT 'observation'"
+                )
+            except Exception:
+                pass
+
     # ── Long-term memory graph ─────────────────────────────────────────────────
 
     def store(
@@ -961,7 +977,8 @@ class Cortex:
 
     def twm_push(self, source: str, content_csb: str, salience: float = 0.5,
                  metadata: dict = None, ttl_seconds: int = None,
-                 urgency: float = 0.2) -> int:
+                 urgency: float = 0.2, thread_id: str | None = None,
+                 category: str = "observation") -> int:
         """
         Push an observation into TWM. Any process can call this.
         Returns the new observation ID.
@@ -1006,10 +1023,12 @@ class Cortex:
             cur = conn.execute(
                 """INSERT INTO twm_observations
                    (timestamp, source, content_csb, salience, metadata_json,
-                    integrated, integration_count, expires_at, urgency, instance_id)
-                   VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?, ?)""",
+                    integrated, integration_count, expires_at, urgency, instance_id,
+                    thread_id, category)
+                   VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?)""",
                 (now.isoformat(), source, content_csb, salience,
-                 json.dumps(metadata or {}), expires_at, urgency, self._instance_id)
+                 json.dumps(metadata or {}), expires_at, urgency, self._instance_id,
+                 thread_id, category)
             )
             obs_id = cur.lastrowid
 
@@ -1033,34 +1052,46 @@ class Cortex:
 
         return obs_id
 
-    def twm_read(self, limit: int = 50, include_integrated: bool = True) -> list[dict]:
+    def twm_read(self, limit: int = 50, include_integrated: bool = True,
+                 thread_id: str | None = None,
+                 category: str | None = None) -> list[dict]:
         """
         Read TWM observations (newest last). Default: all including integrated.
         Use include_integrated=False to get only unprocessed ones.
         When self._instance_id is set, only returns observations for this instance.
+
+        thread_id (#158): when provided, returns entries for that thread OR global
+        entries (thread_id IS NULL) — same semantics as ring_memory.
+        category (#158): when provided, filters to that category (e.g. "task_set").
         """
         _iid = self._instance_id
+        clauses = []
+        params: list = []
+
+        if _iid:
+            clauses.append("instance_id = ?")
+            params.append(_iid)
+
+        if not include_integrated:
+            clauses.append("integrated = 0")
+
+        if thread_id:
+            clauses.append("(thread_id = ? OR thread_id IS NULL)")
+            params.append(thread_id)
+
+        if category:
+            clauses.append("category = ?")
+            params.append(category)
+
+        where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+        params.append(limit)
+
         with self._conn() as conn:
-            if _iid:
-                if include_integrated:
-                    rows = conn.execute(
-                        "SELECT * FROM twm_observations WHERE instance_id = ? ORDER BY id ASC LIMIT ?",
-                        (_iid, limit)
-                    ).fetchall()
-                else:
-                    rows = conn.execute(
-                        "SELECT * FROM twm_observations WHERE integrated = 0 AND instance_id = ? ORDER BY id ASC LIMIT ?",
-                        (_iid, limit)
-                    ).fetchall()
-            elif include_integrated:
-                rows = conn.execute(
-                    "SELECT * FROM twm_observations ORDER BY id ASC LIMIT ?", (limit,)
-                ).fetchall()
-            else:
-                rows = conn.execute(
-                    "SELECT * FROM twm_observations WHERE integrated = 0 ORDER BY id ASC LIMIT ?",
-                    (limit,)
-                ).fetchall()
+            rows = conn.execute(
+                f"SELECT * FROM twm_observations {where} ORDER BY id ASC LIMIT ?",
+                params
+            ).fetchall()
+
         return [
             {
                 "id": r["id"],
@@ -1070,6 +1101,8 @@ class Cortex:
                 "salience": r["salience"],
                 "urgency": r["urgency"] if "urgency" in r.keys() else 0.2,
                 "instance_id": r["instance_id"] if "instance_id" in r.keys() else None,
+                "thread_id": r["thread_id"] if "thread_id" in r.keys() else None,
+                "category": r["category"] if "category" in r.keys() else "observation",
                 "metadata": json.loads(r["metadata_json"]),
                 "integrated": bool(r["integrated"]),
                 "integration_count": r["integration_count"],
@@ -1077,6 +1110,27 @@ class Cortex:
             }
             for r in rows
         ]
+
+    def twm_clear_task_set(self, thread_id: str | None = None) -> int:
+        """
+        #158: Mark all TASK_SET entries for this thread as integrated (completed).
+        Called when a task completion signal is detected in the response.
+        Returns count of entries cleared.
+        """
+        with self._conn() as conn:
+            if thread_id:
+                result = conn.execute(
+                    "UPDATE twm_observations SET integrated = 1 "
+                    "WHERE category = 'task_set' AND integrated = 0 "
+                    "AND (thread_id = ? OR thread_id IS NULL)",
+                    (thread_id,)
+                )
+            else:
+                result = conn.execute(
+                    "UPDATE twm_observations SET integrated = 1 "
+                    "WHERE category = 'task_set' AND integrated = 0"
+                )
+            return result.rowcount
 
     def twm_count_unintegrated(self) -> int:
         """How many TWM observations are waiting to be integrated?"""

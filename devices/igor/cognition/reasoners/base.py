@@ -182,31 +182,52 @@ class BaseReasoner(ABC):
 
     # ── Shared context builders (WO8) ─────────────────────────────────────────
 
-    def _build_session_context(self, cortex) -> str:
+    def _build_session_context(self, cortex, thread_id: str | None = None) -> str:
         """
         Recent ring memory as session context block. Empty string if nothing relevant.
 
         Change 4 (D028): high-urgency TWM obs (urgency ≥ 0.7) are flagged distinctly
         at the top of the context injection so the model notices them first.
+
+        #158: TASK_SET entries for this thread go first — before ring, before all else.
+        They represent the active goal of this attention nexus and must outcompete
+        ambient ring content (the SSH/Hamlet problem).
         """
         if cortex is None:
             return ""
-        all_entries = cortex.read_ring_memory(limit=50)
+        all_entries = cortex.read_ring_memory(limit=50, thread_id=thread_id)
         filtered = [e for e in all_entries if e["category"] not in _RING_EXCLUDE]
         entries = filtered[-_RING_CONTEXT_LIMIT:]
 
         lines = []
 
-        # ── Change 4: inject high-urgency TWM observations first ──────────────
+        # ── #158: TASK_SET first — active goal anchors all context ────────────
         try:
-            twm_obs = cortex.twm_read(limit=15, include_integrated=False)
+            task_sets = cortex.twm_read(
+                limit=3, include_integrated=False,
+                thread_id=thread_id, category="task_set"
+            )
+            if task_sets:
+                lines.append("🎯 ACTIVE TASK (complete this before anything else):")
+                for t in task_sets:
+                    goal = t["content_csb"].replace("TASK_SET|", "").strip()
+                    lines.append(f"  → {goal[:200]}")
+        except Exception:
+            pass
+
+        # ── Change 4: inject high-urgency TWM observations ────────────────────
+        try:
+            twm_obs = cortex.twm_read(
+                limit=15, include_integrated=False, thread_id=thread_id
+            )
             urgent = [
                 o for o in twm_obs
                 if o.get("urgency", 0.2) >= 0.7
                 and o.get("source") not in ("narrative_engine", "ne_loop_guard")
+                and o.get("category") != "task_set"  # already shown above
             ]
             if urgent:
-                lines.append("\n\n⚠ URGENT observations (act on these):")
+                lines.append("\n⚠ URGENT observations (act on these):")
                 for o in sorted(urgent, key=lambda x: x.get("urgency", 0.2) * x.get("salience", 0.5), reverse=True)[:5]:
                     urg = o.get("urgency", 0.2)
                     lines.append(f"  [urgency={urg:.1f}] {o['content_csb'][:150]}")

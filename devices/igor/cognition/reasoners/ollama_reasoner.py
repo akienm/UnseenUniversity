@@ -262,6 +262,7 @@ class OllamaReasoner(LocalReasoner):
         core_patterns: list[Memory],
         instance_id: str,
         cortex=None,
+        thread_id: str | None = None,
     ) -> tuple[str, float]:
         # Local model cannot embody Igor's persona from the full system prompt.
         # Use a minimal task instruction instead (#41). Persona belongs to Claude only.
