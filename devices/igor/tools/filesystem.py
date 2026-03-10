@@ -235,6 +235,103 @@ def check_disk_usage() -> str:
     return "\n".join(lines)
 
 
+def check_resource_load() -> str:
+    """
+    Report current CPU, RAM, and swap load on this machine.
+    Used before starting bulk/batch operations to avoid OOM crashes.
+
+    Returns:
+      - CPU: 1/5/15-min load averages + logical core count
+      - RAM: used/total/available + percent
+      - Swap: used/total/free + percent
+      - This process: RSS memory (Igor's own footprint)
+      - Verdict: ok / warn / critical with a plain-language note
+    """
+    import psutil
+
+    # CPU load averages (POSIX: /proc/loadavg)
+    load1, load5, load15 = os.getloadavg()
+    ncpus = os.cpu_count() or 1
+    load_pct = load1 / ncpus * 100  # normalised to core count
+
+    # RAM
+    vm = psutil.virtual_memory()
+    ram_total_gb  = vm.total    / (1024 ** 3)
+    ram_used_gb   = vm.used     / (1024 ** 3)
+    ram_avail_gb  = vm.available / (1024 ** 3)
+    ram_pct       = vm.percent
+
+    # Swap
+    sw = psutil.swap_memory()
+    swap_total_gb = sw.total / (1024 ** 3)
+    swap_used_gb  = sw.used  / (1024 ** 3)
+    swap_free_gb  = sw.free  / (1024 ** 3)
+    swap_pct      = sw.percent
+
+    # This process's own footprint
+    try:
+        proc = psutil.Process(os.getpid())
+        self_rss_mb = proc.memory_info().rss / (1024 ** 2)
+    except Exception:
+        self_rss_mb = 0.0
+
+    # Thresholds (overridable via env)
+    _cpu_warn  = float(os.getenv("IGOR_LOAD_CPU_WARN",  "80"))   # % of all cores
+    _cpu_crit  = float(os.getenv("IGOR_LOAD_CPU_CRIT",  "95"))
+    _ram_warn  = float(os.getenv("IGOR_LOAD_RAM_WARN",  "80"))   # % RAM used
+    _ram_crit  = float(os.getenv("IGOR_LOAD_RAM_CRIT",  "92"))
+    _swap_warn = float(os.getenv("IGOR_LOAD_SWAP_WARN", "40"))   # % swap used
+    _swap_crit = float(os.getenv("IGOR_LOAD_SWAP_CRIT", "75"))
+
+    alerts = []
+    verdict = "ok"
+
+    if load_pct >= _cpu_crit:
+        alerts.append(f"CPU critical: {load_pct:.0f}% load ({load1:.1f}/{ncpus} cores)")
+        verdict = "critical"
+    elif load_pct >= _cpu_warn:
+        alerts.append(f"CPU high: {load_pct:.0f}% load ({load1:.1f}/{ncpus} cores)")
+        verdict = max(verdict, "warn")
+
+    if ram_pct >= _ram_crit:
+        alerts.append(f"RAM critical: {ram_pct:.0f}% used ({ram_avail_gb:.1f} GB free)")
+        verdict = "critical"
+    elif ram_pct >= _ram_warn:
+        alerts.append(f"RAM high: {ram_pct:.0f}% used ({ram_avail_gb:.1f} GB free)")
+        verdict = max(verdict, "warn")
+
+    if swap_pct >= _swap_crit:
+        alerts.append(f"Swap critical: {swap_pct:.0f}% used ({swap_free_gb:.1f} GB free) — "
+                      "bulk operations risk thrashing")
+        verdict = "critical"
+    elif swap_pct >= _swap_warn:
+        alerts.append(f"Swap elevated: {swap_pct:.0f}% used ({swap_free_gb:.1f} GB free)")
+        verdict = max(verdict, "warn")
+
+    _verdict_note = {
+        "ok":       "System is healthy — bulk operations are fine.",
+        "warn":     "System under moderate load — consider deferring large batch work.",
+        "critical": "System under heavy load — defer bulk/training operations now.",
+    }[verdict]
+
+    lines = [
+        f"Resource load [{verdict.upper()}] — {_verdict_note}",
+        f"  CPU:  {load1:.2f} / {load5:.2f} / {load15:.2f} load avg (1/5/15m) "
+        f"| {ncpus} logical cores | {load_pct:.0f}% normalised",
+        f"  RAM:  {ram_used_gb:.1f} / {ram_total_gb:.1f} GB used ({ram_pct:.0f}%) "
+        f"| {ram_avail_gb:.1f} GB available",
+        f"  Swap: {swap_used_gb:.1f} / {swap_total_gb:.1f} GB used ({swap_pct:.0f}%) "
+        f"| {swap_free_gb:.1f} GB free",
+        f"  Igor: {self_rss_mb:.0f} MB RSS (this process)",
+    ]
+    if alerts:
+        lines.append("  Alerts:")
+        for a in alerts:
+            lines.append(f"    ⚠ {a}")
+
+    return "\n".join(lines)
+
+
 # Register tools
 registry.register(Tool(
     name="read_file",
@@ -357,4 +454,20 @@ registry.register(Tool(
         "required": [],
     },
     fn=check_disk_usage,
+))
+
+registry.register(Tool(
+    name="check_resource_load",
+    description=(
+        "Report current CPU, RAM, and swap load on this machine. "
+        "Call this before starting bulk operations (training fetches, batch jobs, "
+        "large background tasks) to check if the system can handle the load. "
+        "Returns a verdict: ok / warn / critical with plain-language guidance."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {},
+        "required": [],
+    },
+    fn=check_resource_load,
 ))
