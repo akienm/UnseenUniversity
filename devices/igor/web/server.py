@@ -806,7 +806,7 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
       ws.onclose = () => {
         setLed(false);
         if (!_disconnectedMsgShown) {
-          addMsg('system', '', 'Disconnected. Retrying silently…');
+          addMsg('system', '', 'Disconnected. Retrying shilently…');
           _disconnectedMsgShown = true;
         }
         setTimeout(connect, 2000);
