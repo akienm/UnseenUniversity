@@ -30,6 +30,7 @@ class Thalamus:
         tone = _detect_tone(text)
 
         routing_directive = _detect_routing_directive(text)
+        output_complexity = _assess_output_complexity(text, intent)
 
         return ParsedInput(
             raw=text,
@@ -40,6 +41,7 @@ class Thalamus:
             command=command,
             routing_directive=routing_directive,
             complexity=complexity,
+            output_complexity=output_complexity,
         )
 
 
@@ -51,8 +53,9 @@ class ParsedInput:
     tone: str          # friendly, neutral, frustrated, curious, urgent
     is_command: bool   # starts with / or is a system command
     command: str | None = None
-    routing_directive: str = ""   # "local_only" | "" — from user instruction (#90)
-    complexity: str = "medium"    # "low" | "medium" | "high" — #93 tier hint
+    routing_directive: str = ""      # "local_only" | "" — from user instruction (#90)
+    complexity: str = "medium"       # "low" | "medium" | "high" — #93 tier hint
+    output_complexity: str = "medium" # "low" | "medium" | "high" — #154 tier.0 gate
 
 
 _LOCAL_ONLY_PHRASES = (
@@ -202,6 +205,73 @@ def _assess_complexity(text: str, keywords: list) -> str:
     if t.startswith("/"):
         return "low"
     if any(w in t for w in ["hello", "hi ", "hey ", "thanks", "ok ", "yes", "no ", "sure"]):
+        return "low"
+
+    return "medium"
+
+
+_STATUS_PHRASES = (
+    "what are you doing", "what are you working on",
+    "what tier", "which tier", "what model are you",
+    "are you local", "is cloud available", "how much have you spent",
+    "session cost", "how many memories", "how many habits",
+    "what time is it", "what's the time", "what day is it",
+    "what's today", "today's date", "what is today",
+)
+
+_HELP_PHRASES = (
+    "what commands", "what can you do", "list commands",
+    "what habits do you have", "list habits",
+    "what tools do you have", "list tools",
+)
+
+_MEMORY_LOOKUP_PHRASES = (
+    "do you remember", "what do you know about", "did you save",
+    "did you get that", "was that saved", "did you store",
+    "what's my name", "what is my name", "who am i",
+    "what have you saved", "what's in my notebook",
+)
+
+
+def _assess_output_complexity(text: str, intent: str) -> str:
+    """
+    #154 / #156: Classify how complex the *output* needs to be.
+
+    "low" → a Python template can satisfy this without any LLM.
+    Pure acks, simple greetings, status queries, and help queries qualify.
+    Everything else is "medium" (default) — don't risk wrong short answers.
+    """
+    t = text.lower().strip().rstrip("!.?")
+    word_count = len(t.split())
+
+    # Commands never get tier.0 (they have structured outputs)
+    if t.startswith("/"):
+        return "medium"
+
+    # Pure short acks / affirmations (≤4 words)
+    _acks = {
+        "ok", "okay", "yes", "yeah", "yep", "yup", "no", "nope",
+        "sure", "got it", "understood", "noted", "thanks", "thank you",
+        "cheers", "cool", "great", "nice", "perfect", "good",
+        "alright", "right", "fine", "k",
+    }
+    if word_count <= 4 and t in _acks:
+        return "low"
+
+    # Greetings
+    if intent == "greeting" and word_count <= 6:
+        return "low"
+
+    # Status introspection queries
+    if any(p in t for p in _STATUS_PHRASES):
+        return "low"
+
+    # Help / capability queries
+    if any(p in t for p in _HELP_PHRASES):
+        return "low"
+
+    # Memory lookups / confirmation echoes
+    if any(p in t for p in _MEMORY_LOOKUP_PHRASES):
         return "low"
 
     return "medium"

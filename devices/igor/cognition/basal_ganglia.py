@@ -51,6 +51,20 @@ COMPILE_PHRASES: tuple[str, ...] = (
     "you should always",
 )
 
+# Notebook save-intent phrases → PROC_NOTEBOOK_SAVE at 0.93
+NOTEBOOK_PHRASES: tuple[str, ...] = (
+    "remember this for me",
+    "save this to my notebook",
+    "add this to my notebook",
+    "add to my notebook",
+    "save this for later",
+    "keep a note of",
+    "file this away",
+    "notebook:",
+    "add to notebook",
+    "save this to the notebook",
+)
+
 # ── Threshold constants ────────────────────────────────────────────────────────
 
 BASE_THRESHOLD = 0.50   # minimum score for any habit to fire
@@ -185,13 +199,21 @@ def select_habit(
         raw_lower = parsed.raw.lower()
         keywords  = set(parsed.keywords) if parsed.keywords else set()
 
-        # ── 1. Compile-phrase pre-check ───────────────────────────────────────
+        # ── 1a. Compile-phrase pre-check ─────────────────────────────────────
         if any(p in raw_lower for p in COMPILE_PHRASES):
             compiler = next(
                 (h for h in habits if h.id == "PROC_HABIT_COMPILER"), None
             )
             if compiler:
                 return (compiler, 0.95, [])
+
+        # ── 1b. Notebook save-intent pre-check ───────────────────────────────
+        if any(p in raw_lower for p in NOTEBOOK_PHRASES):
+            saver = next(
+                (h for h in habits if h.id == "PROC_NOTEBOOK_SAVE"), None
+            )
+            if saver:
+                return (saver, 0.93, [])
 
         # ── 2. Parallel scoring ───────────────────────────────────────────────
         threshold = _compute_threshold(milieu_state)

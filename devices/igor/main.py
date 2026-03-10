@@ -457,6 +457,27 @@ class Igor:
                     ),
                 },
             ),
+            Memory(
+                id="PROC_NOTEBOOK_SAVE",
+                narrative=(
+                    "Save content to the active user's personal notebook when they ask "
+                    "to remember, save, or file something for later reference."
+                ),
+                memory_type=MemoryType.PROCEDURAL,
+                parent_id="CP4",
+                valence=0.8,
+                metadata={
+                    "trigger": "notebook_save",
+                    "habit_type": "action",
+                    "action": (
+                        "The user wants to save something to their personal notebook. "
+                        "Extract the content they want saved. If it's a URL, note the source. "
+                        "Use notebook_save tool with their user_slug (from TALKING WITH context), "
+                        "a concise title, and the full content. Confirm back with the title saved."
+                    ),
+                    "why": "Users need a personal knowledge base separate from Igor's memory.",
+                },
+            ),
         ]
         for mem in builtin:
             self.cortex.store(mem)
@@ -1950,6 +1971,30 @@ class Igor:
                 candidates = _cand_fut.result()
             relevant = score_memories(user_input, candidates) if candidates else []
 
+        # #153: Notebook context — search user's personal notebook, prepend hits to relevant
+        if not is_impulse and thread_id:
+            try:
+                _nb_ctx = self._user_ctx_mgr._cache.get(thread_id)
+                _nb_slug = _nb_ctx.slug if _nb_ctx and not _nb_ctx.slug.startswith("thread_") else None
+                if _nb_slug:
+                    from .tools import notebook as _nb_mod
+                    from pathlib import Path as _P
+                    if _nb_mod._db_path(_nb_slug).exists():
+                        _nb_hits = _nb_mod.search_notebook(_nb_slug, user_input, limit=3)
+                        if "Nothing relevant" not in _nb_hits and "empty" not in _nb_hits:
+                            # Inject as a synthetic memory-like object the reasoners can see
+                            from .memory.models import Memory as _Mem, MemoryType as _MT
+                            relevant = [
+                                _Mem(
+                                    id=f"NB_{_nb_slug}",
+                                    narrative=f"[Notebook] {_nb_hits[:600]}",
+                                    memory_type=_MT.FACTUAL,
+                                    inertia=0.1,
+                                )
+                            ] + list(relevant)
+            except Exception:
+                pass  # notebook search is advisory — never block main processing
+
         pre = parse_preparse_csb(pre_csb, habits)
         _t_after_preparse_memory = _time.monotonic()   # preparse + memory retrieval done (#139)
         complexity = pre["complexity"]
@@ -2200,7 +2245,15 @@ class Igor:
                     response_text = f"[HABIT→TOOL] tool '{tool_name}' (code_ref={code_ref}) not in registry."
             elif habit.id == "PROC_HABIT_COMPILER":
                 # Phase 2: parse user input and store a structured PROCEDURAL memory
-                response_text = self._compile_habit_from_input(user_input)
+                # Guard: never compile from CC bridge messages or internal impulses
+                _is_cc_msg = user_input.startswith("CC:") or "[CC_MESSAGE|" in user_input
+                _is_impulse_input = user_input.startswith("[NE action impulse]")
+                if is_impulse or _is_cc_msg or _is_impulse_input:
+                    response_text = "(habit compilation skipped — CC/impulse inputs are not compilable)"
+                else:
+                    response_text = self._compile_habit_from_input(user_input)
+            elif habit.id == "PROC_NOTEBOOK_SAVE":
+                response_text = self._notebook_save_from_input(user_input, thread_id)
             else:
                 # "action", "response", or unset: return stored action text
                 response_text = habit.metadata.get(
@@ -2224,149 +2277,164 @@ class Igor:
                 elapsed_ms=0,
             )
         else:
-            # [PREFRONTAL CORTEX] Upstream reasoning
-            # Ring context is injected by anthropic.py._build_session_context (D014)
-            # — do NOT also build ring_ctx here (would cause double injection)
-            core = get_core_patterns(self.cortex)
-            if self.local_mode:
-                # Local-only override — never use cloud
-                self._current_action = "reasoning"; self._current_tier = "local"
-                web_server.broadcast_activity(self._activity_state())
-                dashboard.print_reasoning(used_api=False)
-                try:
-                    response_text, cost = self.local_pool.reason(
-                        user_input, relevant, core, self.instance_id
-                    )
-                    self.cloud_calls += 1
+            # ── tier.0: pure Python response — zero LLM cost (#154) ───────────
+            # Gate: output_complexity=="low" AND not an impulse AND not local_only.
+            # Falls through (returns None) for anything it can't handle confidently.
+            _tier0_fired = False
+            if not is_impulse and not _local_only and parsed.output_complexity == "low":
+                _t0_result = self._tier0_response(user_input, parsed, thread_id=thread_id)
+                if _t0_result:
+                    response_text = _t0_result
+                    cost = 0.0
                     used_api = False
-                    console.print(f"[dim](local | session_cost: ${self.session_cost:.4f})[/]")
-                except Exception as e:
-                    console.print(f"[yellow]Local pool failed ({e}), trying cloud...[/]")
-                    response_text, cost, used_api = self._reason_with_failover(
-                        user_input, relevant, core, skip_to=_skip_to, preparse_csb=pre_csb,
-                        local_only=_local_only,
-                    )
-            elif is_impulse:
-                # Background impulse — no UX latency requirement; cost must be zero.
-                # #29: PROACTIVE_HABIT impulses (document/batch work) use batch_pool
-                # (7B on port 5002) for better quality. NE impulses use local_pool (1B).
-                _is_batch_impulse = "PROACTIVE_HABIT" in user_input
-                _impulse_pool = self.batch_pool if _is_batch_impulse else self.local_pool
-                _tier_label   = "tier.2/batch" if _is_batch_impulse else "tier.2/impulse"
-                self._current_action = "reasoning"; self._current_tier = _tier_label
-                web_server.broadcast_activity(self._activity_state())
-                try:
-                    if _is_batch_impulse:
-                        response_text, cost = _impulse_pool.reason_batch(
+                    _tier0_fired = True
+                    self._current_tier = "tier.0"
+                    console.print(f"[dim][tier.0] Python response — no LLM[/]")
+
+            if not _tier0_fired:
+                # [PREFRONTAL CORTEX] Upstream reasoning
+                # Ring context is injected by anthropic.py._build_session_context (D014)
+                # — do NOT also build ring_ctx here (would cause double injection)
+                core = get_core_patterns(self.cortex)
+                if self.local_mode:
+                    # Local-only override — never use cloud
+                    self._current_action = "reasoning"; self._current_tier = "local"
+                    web_server.broadcast_activity(self._activity_state())
+                    dashboard.print_reasoning(used_api=False)
+                    try:
+                        response_text, cost = self.local_pool.reason(
                             user_input, relevant, core, self.instance_id
                         )
-                    else:
-                        # force_local=True: impulses are background work — no interactive
-                        # latency requirement, so skip the budget check entirely.
-                        response_text, cost = _impulse_pool.reason(
+                        self.cloud_calls += 1
+                        used_api = False
+                        console.print(f"[dim](local | session_cost: ${self.session_cost:.4f})[/]")
+                    except Exception as e:
+                        console.print(f"[yellow]Local pool failed ({e}), trying cloud...[/]")
+                        response_text, cost, used_api = self._reason_with_failover(
+                            user_input, relevant, core, skip_to=_skip_to, preparse_csb=pre_csb,
+                            local_only=_local_only,
+                        )
+                elif is_impulse:
+                    # Background impulse — no UX latency requirement; cost must be zero.
+                    # #29: PROACTIVE_HABIT impulses (document/batch work) use batch_pool
+                    # (7B on port 5002) for better quality. NE impulses use local_pool (1B).
+                    _is_batch_impulse = "PROACTIVE_HABIT" in user_input
+                    _impulse_pool = self.batch_pool if _is_batch_impulse else self.local_pool
+                    _tier_label   = "tier.2/batch" if _is_batch_impulse else "tier.2/impulse"
+                    self._current_action = "reasoning"; self._current_tier = _tier_label
+                    web_server.broadcast_activity(self._activity_state())
+                    try:
+                        if _is_batch_impulse:
+                            response_text, cost = _impulse_pool.reason_batch(
+                                user_input, relevant, core, self.instance_id
+                            )
+                        else:
+                            # force_local=True: impulses are background work — no interactive
+                            # latency requirement, so skip the budget check entirely.
+                            response_text, cost = _impulse_pool.reason(
+                                user_input, relevant, core, self.instance_id, force_local=True
+                            )
+                        used_api = False
+                        console.print(f"[dim][IMPULSE/{_tier_label}] local ok[/]")
+                    except Exception as e:
+                        console.print(f"[dim][IMPULSE] local too slow — skipped (no cloud escalation for impulses)[/]")
+                        from .cognition.forensic_logger import log_error as _log_error
+                        _log_error(kind="IMPULSE_SKIP", source="impulse/tier.2", detail=str(e))
+                        response_text = ""
+                        cost = 0.0
+                elif _local_only:
+                    # #90: local_only directive — use local pool, never escalate to cloud
+                    self._current_action = "reasoning"; self._current_tier = "tier.2"
+                    web_server.broadcast_activity(self._activity_state())
+                    dashboard.print_reasoning(used_api=False)
+                    try:
+                        response_text, cost = self.local_pool.reason(
                             user_input, relevant, core, self.instance_id, force_local=True
                         )
-                    used_api = False
-                    console.print(f"[dim][IMPULSE/{_tier_label}] local ok[/]")
-                except Exception as e:
-                    console.print(f"[dim][IMPULSE] local too slow — skipped (no cloud escalation for impulses)[/]")
-                    from .cognition.forensic_logger import log_error as _log_error
-                    _log_error(kind="IMPULSE_SKIP", source="impulse/tier.2", detail=str(e))
-                    response_text = ""
-                    cost = 0.0
-            elif _local_only:
-                # #90: local_only directive — use local pool, never escalate to cloud
-                self._current_action = "reasoning"; self._current_tier = "tier.2"
-                web_server.broadcast_activity(self._activity_state())
-                dashboard.print_reasoning(used_api=False)
-                try:
-                    response_text, cost = self.local_pool.reason(
-                        user_input, relevant, core, self.instance_id, force_local=True
-                    )
-                    used_api = False
-                    console.print(f"[dim](local_only/tier.2 | session_cost: ${self.session_cost:.4f})[/]")
-                except Exception as e:
-                    console.print(f"[yellow]Local pool failed in local_only mode ({e})[/]")
-                    response_text = (
-                        "I'm operating in local-only mode per your instruction, "
-                        "but my local model is unavailable right now. "
-                        "Please try a simpler task or remove the 'local only' constraint."
-                    )
-                    cost = 0.0
-                    used_api = False
-            else:
-                # Interactive human turn — tier.3+ directly (D032).
-                # Local 1B is too slow/weak for conversational UX on no-GPU hardware.
-                # Cloud cheap (gpt-4o-mini ~$0.001/turn) is the correct default.
-
-                # #109: cloud escalation habit evaluation — append nudge to preparse_csb
-                # so cloud model can identify recurring patterns and trigger habit compilation.
-                # Also surface any high-activation memory candidates from TWM (#106/#108).
-                _habit_nudge = (
-                    "\n\n[ESCALATION NOTE] This request reached cloud reasoning. "
-                    "After responding, consider: does this request represent a recurring pattern "
-                    "you will see again? If yes, end your response with a habit compilation trigger: "
-                    "'build a habit for: [short description] — whenever [trigger phrase], [action]'. "
-                    "Only do this if a clear, general pattern exists — skip if this is one-off."
-                )
-                try:
-                    _twm_candidates = self.cortex.twm_read(limit=20, include_integrated=False)
-                    _cands = [
-                        o for o in _twm_candidates
-                        if o.get("source") == "habit_candidate"
-                    ][:3]
-                    if _cands:
-                        _habit_nudge += "\n\nHigh-activation memory candidates for possible habituation:"
-                        for _c in _cands:
-                            _habit_nudge += f"\n  • {_c['content_csb'][:150]}"
-                except Exception:
-                    pass
-                _pre_csb_with_nudge = pre_csb + _habit_nudge
-
-                dashboard.print_reasoning(used_api=True)
-                self._current_action = "reasoning"
-                web_server.broadcast_activity(self._activity_state())
-
-                # [#145 Step 3] Python-built think context — zero cost, always on.
-                # Assembles [THINK_CONTEXT] from already-computed components:
-                # parsed intent, word graph activation, NE prediction, near-misses,
-                # top relevant memories, milieu. No LLM call.
-                _py_think = self._build_think_context(
-                    user_input, parsed, relevant, _milieu_state,
-                    _ne_pred, _thalamus_near_misses,
-                )
-                _reply_input = f"{_py_think}\n\n[USER_INPUT]\n{user_input}"
-
-                # [#145 Step 4] Optional local Ollama synthesis on top of Python context.
-                # Gate: IGOR_TWO_PHASE_CALLS=true — adds local synthesis (zero cloud cost).
-                # Think phase is now fully local. Only the reply call hits cloud.
-                if (
-                    not is_impulse
-                    and os.getenv("IGOR_TWO_PHASE_CALLS", "false").lower() in ("1", "true", "yes")
-                ):
-                    _scratchpad = self._think_call(_py_think, user_input)
-                    if _scratchpad:
-                        self.cortex.write_ring(
-                            f"THINK|local|intent={parsed.intent}|{_scratchpad[:600]}",
-                            category="think_trace",
-                            thread_id=thread_id,
+                        used_api = False
+                        console.print(f"[dim](local_only/tier.2 | session_cost: ${self.session_cost:.4f})[/]")
+                    except Exception as e:
+                        console.print(f"[yellow]Local pool failed in local_only mode ({e})[/]")
+                        response_text = (
+                            "I'm operating in local-only mode per your instruction, "
+                            "but my local model is unavailable right now. "
+                            "Please try a simpler task or remove the 'local only' constraint."
                         )
-                        _reply_input = (
-                            f"{_py_think}\n\n[THINK_SYNTHESIS]\n{_scratchpad}"
-                            f"\n\n[USER_INPUT]\n{user_input}"
-                        )
-                        console.print("[dim][THINK] Local synthesis ready → reply call[/]")
-
-                with Live(Spinner("dots", text=" Thinking..."), console=console,
-                          transient=True, refresh_per_second=8):
-                    response_text, cost, used_api = self._reason_with_failover(
-                        _reply_input, relevant, core, skip_to=_skip_to, preparse_csb=_pre_csb_with_nudge
+                        cost = 0.0
+                        used_api = False
+                else:
+                    # Interactive human turn — tier.3+ directly (D032).
+                    # Local 1B is too slow/weak for conversational UX on no-GPU hardware.
+                    # Cloud cheap (gpt-4o-mini ~$0.001/turn) is the correct default.
+    
+                    # #109: cloud escalation habit evaluation — append nudge to preparse_csb
+                    # so cloud model can identify recurring patterns and trigger habit compilation.
+                    # Also surface any high-activation memory candidates from TWM (#106/#108).
+                    _habit_nudge = (
+                        "\n\n[ESCALATION NOTE] This request reached cloud reasoning. "
+                        "After responding, consider: does this request represent a recurring pattern "
+                        "you will see again? If yes, end your response with a habit compilation trigger: "
+                        "'build a habit for: [short description] — whenever [trigger phrase], [action]'. "
+                        "Only do this if a clear, general pattern exists — skip if this is one-off."
                     )
-                # G5 / #42: prediction signal — did we need a higher tier than expected?
-                _m = milieu_mod.get()
-                if _m is not None:
-                    _m.ingest_surprise(_skip_to, self._current_tier)
-
+                    try:
+                        _twm_candidates = self.cortex.twm_read(limit=20, include_integrated=False)
+                        _cands = [
+                            o for o in _twm_candidates
+                            if o.get("source") == "habit_candidate"
+                        ][:3]
+                        if _cands:
+                            _habit_nudge += "\n\nHigh-activation memory candidates for possible habituation:"
+                            for _c in _cands:
+                                _habit_nudge += f"\n  • {_c['content_csb'][:150]}"
+                    except Exception:
+                        pass
+                    _pre_csb_with_nudge = pre_csb + _habit_nudge
+    
+                    dashboard.print_reasoning(used_api=True)
+                    self._current_action = "reasoning"
+                    web_server.broadcast_activity(self._activity_state())
+    
+                    # [#145 Step 3] Python-built think context — zero cost, always on.
+                    # Assembles [THINK_CONTEXT] from already-computed components:
+                    # parsed intent, word graph activation, NE prediction, near-misses,
+                    # top relevant memories, milieu. No LLM call.
+                    _py_think = self._build_think_context(
+                        user_input, parsed, relevant, _milieu_state,
+                        _ne_pred, _thalamus_near_misses,
+                    )
+                    _reply_input = f"{_py_think}\n\n[USER_INPUT]\n{user_input}"
+    
+                    # [#145 Step 4] Optional local Ollama synthesis on top of Python context.
+                    # Gate: IGOR_TWO_PHASE_CALLS=true — adds local synthesis (zero cloud cost).
+                    # Think phase is now fully local. Only the reply call hits cloud.
+                    if (
+                        not is_impulse
+                        and os.getenv("IGOR_TWO_PHASE_CALLS", "false").lower() in ("1", "true", "yes")
+                    ):
+                        _scratchpad = self._think_call(_py_think, user_input)
+                        if _scratchpad:
+                            self.cortex.write_ring(
+                                f"THINK|local|intent={parsed.intent}|{_scratchpad[:600]}",
+                                category="think_trace",
+                                thread_id=thread_id,
+                            )
+                            _reply_input = (
+                                f"{_py_think}\n\n[THINK_SYNTHESIS]\n{_scratchpad}"
+                                f"\n\n[USER_INPUT]\n{user_input}"
+                            )
+                            console.print("[dim][THINK] Local synthesis ready → reply call[/]")
+    
+                    with Live(Spinner("dots", text=" Thinking..."), console=console,
+                              transient=True, refresh_per_second=8):
+                        response_text, cost, used_api = self._reason_with_failover(
+                            _reply_input, relevant, core, skip_to=_skip_to, preparse_csb=_pre_csb_with_nudge
+                        )
+                    # G5 / #42: prediction signal — did we need a higher tier than expected?
+                    _m = milieu_mod.get()
+                    if _m is not None:
+                        _m.ingest_surprise(_skip_to, self._current_tier)
+    
         # [TWO-PHASE] Split think + reply blocks (#145)
         # Applied to non-habit LLM responses only. Think block logged to ring (think_trace),
         # reply block replaces response_text for output/ring/memory.
@@ -2957,6 +3025,34 @@ class Igor:
                 last.content = merged_content
                 self._process_network_msg(last, _thread_id)
 
+    @staticmethod
+    def _igor_lisp(text: str) -> str:
+        """
+        Apply Igor's characteristic lisp to a string.
+
+        Rules (mild — readable but clearly lisped):
+          - Word-initial 's' before a vowel or as a standalone word → 'sh'
+          - 'ance'/'ence' endings → 'anthe'/'enthe'
+          - A handful of specific common words for consistency
+        """
+        import re
+        # Specific high-frequency words first (order matters — longest match first)
+        _words = [
+            ("sorry",       "shorry"),
+            ("sir",         "shir"),
+            ("say so",      "shay sho"),
+            ("so,",         "sho,"),
+            (" so ",        " sho "),
+            ("pleasure",    "pleashure"),
+            ("disadvantage","dishadvantage"),
+        ]
+        for old, new in _words:
+            text = text.replace(old, new).replace(old.capitalize(), new.capitalize())
+        # 'ance'/'ence' endings → 'anthe'/'enthe'
+        text = re.sub(r'([Aa])nce\b', r'\1nthe', text)
+        text = re.sub(r'([Ee])nce\b', r'\1nthe', text)
+        return text
+
     def _process_network_msg(self, msg, _thread_id: str):
         """Build synthetic input from a network message and process it."""
         import re as _re
@@ -2985,14 +3081,24 @@ class Igor:
             # First-contact: pending_name=True means we just sent the intro
             if _ctx.pending_name:
                 _given = msg.content.strip()
+                # Strip common intro phrases: "I am X", "I'm X", "my name is X", "call me X"
+                _intro_re = _re.compile(
+                    r"^(?:i\s+am|i'm|my\s+name\s+is|call\s+me)\s+", _re.IGNORECASE
+                )
+                _given_clean = _intro_re.sub("", _given).strip()
+                if _re.match(r"^[A-Za-z][A-Za-z\s\-']{0,58}$", _given_clean):
+                    _given = _given_clean
                 if _re.match(r"^[A-Za-z][A-Za-z\s\-']{0,58}$", _given):
                     _ctx = self._user_ctx_mgr.rename(_thread_id, _given)
-                    _reply = f"A pleasure to make your acquaintance, {_ctx.name}."
+                    _reply = self._igor_lisp(f"A pleasure to make your acquaintance, {_ctx.name}.")
                 else:
                     _ctx.name = _given[:30]
                     _ctx.pending_name = False
                     self._user_ctx_mgr.save(_ctx)
-                    _reply = "If you say so, sir. Not our place to judge."
+                    _reply = self._igor_lisp("If you say so, sir. Not our place to judge.")
+                # Mark one message received so next turn doesn't re-trigger first-contact
+                _ctx.message_count = max(_ctx.message_count, 1)
+                self._user_ctx_mgr.save(_ctx)
                 self._user_ctx_mgr.log(_ctx, "out", _reply, _thread_id)
                 if msg.source == "web":
                     web_server.broadcast_name_resolved(_ctx.name)
@@ -3003,7 +3109,7 @@ class Igor:
             if _ctx.message_count == 0 and msg.source not in ("gmail",):
                 _ctx.pending_name = True
                 self._user_ctx_mgr.save(_ctx)
-                _reply = "I'm sorry, you have me at a disadvantage. I am Igor. And you are?"
+                _reply = self._igor_lisp("I'm sorry, you have me at a disadvantage. I am Igor. And you are?")
                 self._user_ctx_mgr.log(_ctx, "out", _reply, _thread_id)
                 if msg.source == "web":
                     web_server.send(_reply, session_id=_session_id)
@@ -3081,6 +3187,7 @@ class Igor:
             "relay": self._cmd_relay,         # change.41
             "jobs": self._cmd_jobs,           # pass.4
             "implement": self._cmd_implement, # #95
+            "notebook": self._cmd_notebook,   # #153
         }
         fn = commands.get(command, self._cmd_unknown)
         fn(raw)
@@ -3386,6 +3493,293 @@ class Igor:
                 f"  ID: `{hab_id}`\n"
                 f"  (No trigger extracted — fires only on manual invocation)"
             )
+
+    def _tier0_response(self, user_input: str, parsed, thread_id: str | None = None) -> str | None:
+        """
+        #154/#156 tier.0: pure-Python response generator — zero LLM cost.
+        Returns an Igor-voiced (lisped) response, or None to fall through to tier.1+.
+
+        Categories handled:
+          - Greetings
+          - Acks / affirmations / negatives
+          - Status introspection (tier, cost, memory count, date/time)
+          - Help / capability queries (commands, habits, tools)
+          - Confirmation echoes (did you save that?)
+          - Simple memory lookups (do you remember X, what's my name)
+          - Word graph completions (high-confidence short inputs)
+        """
+        import random
+        from datetime import datetime as _dt
+        t = user_input.lower().strip().rstrip("!.?")
+
+        # ── Greeting templates ─────────────────────────────────────────────────
+        if parsed.intent == "greeting":
+            _greetings = [
+                "Good evening, Mashter. How may I be of shervice?",
+                "Ah, you've arrived! I am at your dishposal, Mashter.",
+                "Welcome! How can I asshisht you today?",
+                "Greetingths! Wonderful to hear from you, Mashter.",
+                "I live to sherve. What shall we work on today?",
+            ]
+            return random.choice(_greetings)
+
+        # ── Pure acks / affirmations / negatives ──────────────────────────────
+        _acks     = {"ok", "okay", "yes", "yeah", "yep", "yup", "sure", "alright", "right", "k"}
+        _thanks   = {"thanks", "thank you", "cheers", "great", "nice", "perfect", "cool", "good"}
+        _negative = {"no", "nope"}
+
+        if t in _acks:
+            return random.choice([
+                "Very good, Mashter.",
+                "Ash you wish.",
+                "Of coursh.",
+                "Certainly, Mashter.",
+                "Right away.",
+            ])
+        if t in _thanks:
+            return random.choice([
+                "The pleashure ith all mine, Mashter.",
+                "Think nothing of it.",
+                "It ith my honor to sherve.",
+                "You are mosht welcome.",
+            ])
+        if t in _negative:
+            return random.choice([
+                "Very well, Mashter. Not to worry.",
+                "Ash you wish — I shall not purshue it.",
+                "Understhood. We shall leave it at that.",
+            ])
+
+        # ── Date / time ───────────────────────────────────────────────────────
+        _time_words = ("what time", "what's the time", "what day", "today's date",
+                       "what is today", "what's today")
+        if any(p in t for p in _time_words):
+            now = _dt.now()
+            return (
+                f"It ith currently {now.strftime('%A, %B %-d, %Y')} "
+                f"at {now.strftime('%-I:%M %p')}, Mashter."
+            )
+
+        # ── Status introspection ──────────────────────────────────────────────
+        _tier_words = ("what tier", "which tier", "what model are you")
+        if any(p in t for p in _tier_words):
+            tier = self._current_tier or "idle"
+            model = getattr(
+                getattr(self, "openrouter_interactive_reasoner", None), "model", "unknown"
+            )
+            return f"Currently on {tier}, Mashter. Default model: {model}."
+
+        _cost_words = ("session cost", "how much have you spent", "how much has this cost")
+        if any(p in t for p in _cost_words):
+            return (
+                f"Shession cosht sho far: ${self.session_cost:.4f}, Mashter. "
+                f"{self.cloud_calls} cloud call{'s' if self.cloud_calls != 1 else ''}."
+            )
+
+        _mem_words = ("how many memories", "how many habits")
+        if any(p in t for p in _mem_words):
+            try:
+                total = self.cortex.total_count()
+            except Exception:
+                total = "?"
+            return f"I currently hold {total} memorieth, Mashter."
+
+        _local_words = ("are you local", "is cloud available")
+        if any(p in t for p in _local_words):
+            if self.local_mode:
+                return "I am operating in local-only mode, Mashter. No cloud callth."
+            cloud_ok = self.openrouter_interactive_reasoner is not None
+            return (
+                "Cloud ith available, Mashter."
+                if cloud_ok else
+                "Cloud ith not configured — I am effectively local-only, Mashter."
+            )
+
+        _doing_words = ("what are you doing", "what are you working on")
+        if any(p in t for p in _doing_words):
+            action = self._current_action or "waiting"
+            tier   = self._current_tier   or "idle"
+            return f"I am currently {action} on {tier}, Mashter."
+
+        # ── Help / capability queries ─────────────────────────────────────────
+        _cmd_words = ("what commands", "list commands")
+        if any(p in t for p in _cmd_words):
+            return (
+                "My commandth begin with /. Key oneth: "
+                "/help, /memories, /habits, /metrics, /cost, /model, "
+                "/local, /jobs, /orders, /implement, /sleep, /quit. "
+                "Type /help for the full lisht, Mashter."
+            )
+
+        _habit_words = ("what habits do you have", "list habits", "list your habits")
+        if any(p in t for p in _habit_words):
+            try:
+                habits = self.cortex.get_habits()
+                if habits:
+                    names = ", ".join(
+                        h.metadata.get("trigger", h.id)[:30] for h in habits[:8]
+                    )
+                    more  = f" …and {len(habits) - 8} more" if len(habits) > 8 else ""
+                    return f"I have {len(habits)} habitth, Mashter: {names}{more}. Type /habits lisht for detailth."
+                return "I have no compiled habitth yet, Mashter."
+            except Exception:
+                return "I could not retrieve habitth right now, Mashter."
+
+        _tool_words = ("what tools do you have", "list tools", "list your tools")
+        if any(p in t for p in _tool_words):
+            try:
+                from .tools.registry import registry as _reg
+                all_tools = _reg.all()
+                total = len(all_tools)
+                names = ", ".join(sorted(t.name for t in all_tools)[:12])
+                more  = f" …and {total - 12} more" if total > 12 else ""
+                return f"I have {total} toolth, Mashter: {names}{more}."
+            except Exception:
+                return "I could not enumerate toolth right now, Mashter."
+
+        # ── Confirmation echoes (#3) ──────────────────────────────────────────
+        # "Did you get that?" / "Was that saved?" → echo the last action summary
+        _confirm_words = ("did you get that", "was that saved", "did you save",
+                          "did you store", "did you do that")
+        if any(p in t for p in _confirm_words):
+            echo = getattr(self, "_last_response_summary", None)
+            if echo:
+                return f"Yeth, Mashter — {echo}"
+            # Check ring for recent save/habit event
+            try:
+                ring = self.cortex.read_ring_memory(limit=5, thread_id=thread_id)
+                for entry in ring:
+                    txt = entry.get("content", "") if isinstance(entry, dict) else ""
+                    if any(w in txt for w in ("HABIT_EXEC", "notebook_save", "HABIT_COMPILED")):
+                        snippet = txt[:120].replace("\n", " ")
+                        return f"Yeth, Mashter — I recorded: {snippet}"
+            except Exception:
+                pass
+            return "I believe sho, Mashter — nothing went wrong on my end."
+
+        # ── Simple factual from memory (#5) ──────────────────────────────────
+        # "What's my name?" / "Who am I?" → user context, no LLM needed
+        _name_words = ("what's my name", "what is my name", "who am i")
+        if any(p in t for p in _name_words):
+            # Try thread context first
+            slug = None
+            try:
+                if self._user_ctx_mgr is not None and thread_id:
+                    _ctx = self._user_ctx_mgr._cache.get(thread_id)
+                    if _ctx and not _ctx.slug.startswith("thread_"):
+                        slug = _ctx.slug
+            except Exception:
+                pass
+            if slug:
+                return f"You are {slug}, Mashter."
+            return "I don't have your name on file yet, Mashter."
+
+        # "Do you remember X?" / "What do you know about X?"
+        _recall_words = ("do you remember", "what do you know about")
+        if any(p in t for p in _recall_words):
+            # Extract the subject after the phrase
+            subject = t
+            for p in _recall_words:
+                if p in subject:
+                    subject = subject.split(p, 1)[-1].strip().strip("?")
+                    break
+            if subject and len(subject) >= 3:
+                try:
+                    hits = self.cortex.search(subject, limit=1)
+                    if hits:
+                        m = hits[0]
+                        snippet = getattr(m, "narrative", "")[:200]
+                        return f"Yeth, Mashter — I recall: {snippet}"
+                    return f"I have nothing on '{subject}' in my memory, Mashter."
+                except Exception:
+                    pass
+
+        # "What's in my notebook?" → list notebook entries
+        _nb_words = ("what's in my notebook", "what have you saved")
+        if any(p in t for p in _nb_words):
+            try:
+                slug = None
+                if self._user_ctx_mgr is not None and thread_id:
+                    _ctx = self._user_ctx_mgr._cache.get(thread_id)
+                    if _ctx and not _ctx.slug.startswith("thread_"):
+                        slug = _ctx.slug
+                if slug:
+                    from .tools import notebook as _nb
+                    return _nb.list_notebook(slug)
+            except Exception:
+                pass
+
+        # ── Word graph completion (#4) ────────────────────────────────────────
+        # When confidence is high, attempt a word-graph-constructed short answer.
+        # Conservative: only for ≤3-word inputs with top-pred conf ≥ 0.75.
+        try:
+            from .cognition.basal_ganglia import _word_graph as _wg
+            if _wg is not None and len(user_input.split()) <= 3:
+                preds = _wg.predict_next(user_input, n=5)
+                if preds and preds[0][1] >= 0.75:
+                    # Build a short response: "I think of [top words]..."
+                    top_words = [w for w, _ in preds[:3]]
+                    top_str = ", ".join(top_words)
+                    console.print(
+                        f"[dim][tier.0] WG response attempt: {top_str!r} "
+                        f"conf={preds[0][1]:.2f}[/]"
+                    )
+                    # Only respond if the top word is a proper noun or content word
+                    # (not a stop word) — heuristic guard against garbage output
+                    _stops = {"the", "a", "an", "is", "are", "it", "to", "of", "in", "and"}
+                    if top_words[0].lower() not in _stops:
+                        return self._igor_lisp(
+                            f"That brings to mind: {top_str}. Shall I elaborate, Master?"
+                        )
+                elif preds and preds[0][1] >= 0.6:
+                    console.print(
+                        f"[dim][tier.0] WG signal {preds[0][1]:.2f} (below threshold) — falling through[/]"
+                    )
+        except Exception:
+            pass
+
+        return None
+
+    def _notebook_save_from_input(self, user_input: str, thread_id: str | None) -> str:
+        """
+        PROC_NOTEBOOK_SAVE dispatch: extract content from a save-intent message,
+        look up the active user, and store to their notebook.
+        """
+        import re as _re
+        from .tools import notebook as _nb
+
+        # Resolve user slug from thread context
+        user_slug = "unknown"
+        if thread_id:
+            _ctx = self._user_ctx_mgr._cache.get(thread_id)
+            if _ctx and not _ctx.slug.startswith("thread_"):
+                user_slug = _ctx.slug
+
+        # Strip common save-intent prefixes to get the actual content
+        _save_re = _re.compile(
+            r"^(?:remember\s+this\s+for\s+me|save\s+this\s+to\s+(?:my\s+)?(?:the\s+)?notebook"
+            r"|add\s+(?:this\s+)?to\s+(?:my\s+)?notebook|keep\s+a\s+note\s+of"
+            r"|file\s+this\s+away|save\s+this\s+for\s+later|notebook\s*:|save\s+this)"
+            r"\s*[:\-–]?\s*",
+            _re.IGNORECASE,
+        )
+        content = _save_re.sub("", user_input).strip()
+
+        if not content:
+            return (
+                "What would you like me to save to your notebook? "
+                "You can say 'remember this for me: [your content]' or just paste what you want saved."
+            )
+
+        # Generate a title from the first line (capped at 70 chars)
+        first_line = content.split("\n")[0].strip()
+        title = (first_line[:67] + "…") if len(first_line) > 70 else first_line
+
+        # Detect URL-only saves and note the source
+        _url_re = _re.compile(r"^https?://\S+$")
+        source = content.strip() if _url_re.match(content.strip()) else "paste"
+
+        return _nb.save_entry(user_slug, title, content, source=source)
 
     def _habits_explain(self, habit_id: str):
         """Show why a specific habit was compiled."""
@@ -3971,6 +4365,36 @@ class Igor:
         # 3. Normal shutdown — saves warm_context with shutdown_timestamp for gap detection
         self._shutdown(reason="sleep via /sleep")
         sys.exit(0)
+
+    def _cmd_notebook(self, raw: str):
+        """#153: The Master's Notebook — /notebook [list|search <q>|remove <id>]"""
+        from .tools import notebook as _nb
+        # Resolve slug: stdin → akien preseed; best-effort from cache otherwise
+        _slug = "akien"
+        for _tid, _ctx in self._user_ctx_mgr._cache.items():
+            if _tid == "stdin" or not _ctx.slug.startswith("thread_"):
+                _slug = _ctx.slug
+                break
+
+        parts = raw.strip().split(None, 2)
+        # parts[0] is "/notebook", parts[1] is subcommand, parts[2] is rest
+        sub  = parts[1].lower() if len(parts) > 1 else "list"
+        rest = parts[2] if len(parts) > 2 else ""
+
+        if sub == "list":
+            console.print(_nb.list_notebook(_slug))
+        elif sub == "search":
+            if not rest:
+                console.print("[yellow]Usage: /notebook search <query>[/]")
+            else:
+                console.print(_nb.search_notebook(_slug, rest))
+        elif sub in ("remove", "delete", "rm"):
+            if not rest:
+                console.print("[yellow]Usage: /notebook remove <id_or_title>[/]")
+            else:
+                console.print(_nb.remove_entry(_slug, rest))
+        else:
+            console.print(_nb.list_notebook(_slug))
 
     def _cmd_unknown(self, raw):
         console.print(f"[yellow]Unknown command: {raw}[/]  (try /help)")

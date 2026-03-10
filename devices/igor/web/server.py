@@ -553,8 +553,10 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     const surpriseFeed  = document.getElementById('surprise-feed');
     const surpriseTable = document.getElementById('surprise-table');
     let ws, dragDepth = 0, ringOpen = false, surpriseOpen = false;
-    let currentSession = 'shared';
-    const sessionMsgs = {shared: []};   // session_id → [{author,content,ts}, ...]
+    const _urlSession = new URLSearchParams(location.search).get('session') || 'shared';
+    let currentSession = _urlSession;
+    const sessionMsgs = {'shared': []};   // session_id → [{author,content,ts}, ...]
+    if (_urlSession !== 'shared') sessionMsgs[_urlSession] = [];
     const sessionBar = document.getElementById('session-bar');
 
     // Persist sender name in localStorage + cookie (cookie survives harder refreshes)
@@ -605,6 +607,7 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     function switchSession(sid) {
       if (!sessionMsgs[sid]) sessionMsgs[sid] = [];
       currentSession = sid;
+      history.replaceState({}, '', sid === 'shared' ? '/' : '/?session=' + encodeURIComponent(sid));
       _renderSessionBar();
       _renderSession(sid);
       if (ws && ws.readyState === 1)
@@ -612,8 +615,9 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     }
 
     function newSession() {
-      const sid = 'session-' + Date.now().toString(36);
-      sessionMsgs[sid] = [];
+      const name = prompt('Session name (blank for random):');
+      if (name === null) return;
+      const sid = name.trim() || 'session-' + Date.now().toString(36);
       switchSession(sid);
     }
 
@@ -796,9 +800,8 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
         // Re-identify from cookie so Igor knows who we are without asking again
         const _cookieName = _loadName();
         if (_cookieName) ws.send(JSON.stringify({type: 'identify', name: _cookieName}));
-        // Re-join current session after reconnect (server will send history)
-        if (currentSession !== 'shared')
-          ws.send(JSON.stringify({type: 'join_session', session_id: currentSession}));
+        // Join/re-join current session so server routes to the right session
+        ws.send(JSON.stringify({type: 'join_session', session_id: currentSession}));
       };
       ws.onclose = () => {
         setLed(false);
@@ -904,6 +907,8 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
       } catch(e) {}
     }
 
+    // Show tab for URL-specified session before WebSocket connects
+    if (_urlSession !== 'shared') _renderSessionBar();
     connect();
     pollDash();
     setInterval(pollDash, 5000);
