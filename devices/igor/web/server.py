@@ -533,7 +533,7 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     <input id="sender-name" type="text" value="akien" maxlength="32" autocomplete="off">
   </div>
   <div id="input-row">
-    <textarea id="input" placeholder="Message Igor..." autocomplete="off" rows="1"></textarea>
+    <textarea id="input" placeholder="Message Igor..." autocomplete="off" rows="4"></textarea>
     <button onclick="sendMsg()">Send</button>
     <button onclick="document.getElementById('file-input').click()">📎</button>
     <input id="file-input" type="file" style="display:none" onchange="uploadFile(this)">
