@@ -2141,14 +2141,17 @@ class Igor:
         _t_after_preparse_memory = _time.monotonic()   # preparse + memory retrieval done (#139)
         complexity = pre["complexity"]
         _skip_to = complexity["tier_minimum"]
+        _routing_reason = f"preparse→{_skip_to}"
         # D035: interactive human turns need persona-capable model (min tier.3.5).
         # Impulses/background stay at tier.3 (cheap/fast, no persona needed).
         if not is_impulse and _skip_to == "tier.3":
             _skip_to = "tier.3.5"
+            _routing_reason = "D035:interactive→tier.3.5"
         # #93: thalamus complexity as secondary signal — if thalamus says high and
         # preparse only got to tier.3/3.5, bump to tier.4
         if not is_impulse and parsed.complexity == "high" and _skip_to in ("tier.3", "tier.3.5"):
             _skip_to = "tier.4"
+            _routing_reason = f"thalamus:high→tier.4"
 
         # G1 / #59: milieu.dominance modulates escalation threshold.
         # Low dominance (feeling out of control) → escalate sooner (more capable model).
@@ -2159,10 +2162,12 @@ class Igor:
             if _dom < -0.3:
                 # Significantly low dominance: bump two tiers
                 _skip_to = _TIER_UP.get(_TIER_UP.get(_skip_to, _skip_to), _skip_to)
+                _routing_reason = f"milieu:dominance={_dom:.2f}(very_low)→{_skip_to}"
                 console.print(f"[dim][MILIEU] dominance={_dom:.2f} (very low) → escalation bumped to {_skip_to}[/]")
             elif _dom < 0.0:
                 # Mildly low dominance: bump one tier
                 _skip_to = _TIER_UP.get(_skip_to, _skip_to)
+                _routing_reason = f"milieu:dominance={_dom:.2f}(low)→{_skip_to}"
                 console.print(f"[dim][MILIEU] dominance={_dom:.2f} (low) → escalation bumped to {_skip_to}[/]")
 
         if complexity["signals_fired"]:
@@ -2185,9 +2190,11 @@ class Igor:
                     _TIER_DN  = {"tier.4": "tier.3.5", "tier.3.5": "tier.3", "tier.3": "tier.3"}
                     if _char == "stressed" and _skip_to in ("tier.3", "tier.3.5"):
                         _skip_to = _TIER_UP2.get(_skip_to, _skip_to)
+                        _routing_reason = f"milieu:session=stressed→{_skip_to}"
                         console.print(f"[dim][MILIEU] session_character=stressed → tier bumped to {_skip_to}[/]")
                     elif _char == "focused" and _skip_to == "tier.3.5":
                         _skip_to = _TIER_DN.get(_skip_to, _skip_to)
+                        _routing_reason = f"milieu:session=focused→{_skip_to}"
                         console.print(f"[dim][MILIEU] session_character=focused → tier eased to {_skip_to}[/]")
             except Exception:
                 pass
@@ -2208,6 +2215,7 @@ class Igor:
             _TIER_UP_NE = {"tier.3": "tier.3.5", "tier.3.5": "tier.4", "tier.4": "tier.4"}
             _prev_tier = _skip_to
             _skip_to = _TIER_UP_NE.get(_skip_to, _skip_to)
+            _routing_reason = f"NE:ambiguity(predicted={_ne_pred.predicted_habit_id})→{_skip_to}"
             console.print(
                 f"[dim][NE] predicted {_ne_pred.predicted_habit_id} (conf={_ne_pred.confidence:.2f}) "
                 f"but no habit fired → ambiguity → {_skip_to}[/]"
@@ -2550,7 +2558,7 @@ class Igor:
                         pass
                     _pre_csb_with_nudge = pre_csb + _habit_nudge
     
-                    dashboard.print_reasoning(used_api=True, skip_to=_skip_to)
+                    dashboard.print_reasoning(used_api=True, skip_to=_skip_to, reason=_routing_reason)
                     self._current_action = "reasoning"
                     web_server.broadcast_activity(self._activity_state())
     
