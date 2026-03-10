@@ -93,9 +93,13 @@ class WordGraph:
     _cooccur     : word → {word: count}       — generation direction (crosses lang)
     _word_lang   : word → lang_tag            — language of each node
     _idf         : word → float               — built after indexing
+
+    G37: name param allows two instances — recognition (listening) and generation
+    (speaking) — with separate cache paths and independent weight development.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, name: str = "word_graph") -> None:
+        self.name = name                           # G37: "word_graph" | "generation_graph"
         self._word_to_ids: dict[str, dict[str, float]] = defaultdict(dict)
         self._cooccur: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))
         self._word_lang: dict[str, str] = {}      # #141: word → lang tag
@@ -175,12 +179,19 @@ class WordGraph:
     # ── Generation direction ───────────────────────────────────────────────────
 
     def predict_next(self, context_text: str, n: int = 5,
-                     lang: str | None = None) -> list[tuple[str, float]]:
+                     lang: str | None = None,
+                     milieu_state: dict | None = None) -> list[tuple[str, float]]:
         """
         Given context text, return top-N co-occurring words by accumulated weight.
 
         lang: if specified, only return predictions tagged with that language.
               None (default) returns across all languages — enables code-switching.
+
+        milieu_state: optional dict with 'arousal' key in [0.0, 1.0].
+            High arousal steepens the gradient — top candidates pull harder relative
+            to weaker ones (sharpened softmax-like effect). Low arousal flattens it,
+            producing more diffuse, exploratory predictions.
+            G37: milieu tilts the gradient field without rewriting it.
         """
         words = tokenize_with_bigrams(context_text)
         counts: dict[str, float] = defaultdict(float)
@@ -188,7 +199,36 @@ class WordGraph:
             for co_word, weight in self._cooccur.get(w, {}).items():
                 if lang is None or self._word_lang.get(co_word, "en") == lang:
                     counts[co_word] += weight
+        if not counts:
+            return []
+        # G37: milieu tilt — arousal sharpens gradient (temperature-like)
+        if milieu_state is not None:
+            arousal = float(milieu_state.get("arousal", 0.5))
+            # map arousal [0,1] → exponent [0.5, 2.0]: high arousal = steep gradient
+            exponent = 0.5 + arousal * 1.5
+            counts = {w: v ** exponent for w, v in counts.items()}
         return sorted(counts.items(), key=lambda x: x[1], reverse=True)[:n]
+
+    def gradient_flatness(self, context_text: str, n: int = 5) -> float:
+        """
+        Returns a [0.0, 1.0] flatness score for the current prediction gradient.
+
+        0.0 = steep gradient (strong top prediction — generation has clear direction)
+        1.0 = flat gradient (no strong prediction — natural stopping point)
+
+        G37: reply termination condition. When flatness exceeds threshold (~0.8),
+        the gradient has nothing more to push — silence is the right answer.
+        The value returned is 1 - normalised_top_weight.
+        """
+        top = self.predict_next(context_text, n=n)
+        if not top:
+            return 1.0
+        max_weight = top[0][1]
+        if max_weight <= 0:
+            return 1.0
+        # normalise against rough expected max (empirical: ~50 co-occurrences typical)
+        normalised = min(max_weight / 50.0, 1.0)
+        return 1.0 - normalised
 
     # ── Graph analysis ─────────────────────────────────────────────────────────
 
@@ -268,6 +308,28 @@ class WordGraph:
             if doc_id in ids:
                 ids[doc_id] = min(ids[doc_id] + boost, 2.0)
 
+    def reinforce_text(self, text: str, boost: float = 0.05,
+                       lang: str = "en") -> None:
+        """
+        Boost co-occurrence edges for words in text — the comprehension signal loop.
+
+        G37: called on the generation graph when we receive a positive comprehension
+        signal (the other person heard what we meant). Strengthens the word paths
+        that produced a well-received reply. Opposite of index() which sets initial
+        weights — this nudges weights up based on observed success.
+
+        boost: small positive delta per edge (default 0.05 — 20× smaller than
+               reinforce() doc boost, because text-level signals are coarser).
+        Capped at 2.0 per edge to prevent runaway dominance.
+        """
+        tokens = tokenize_with_bigrams(text, lang=lang)
+        unique = list(dict.fromkeys(tokens))
+        for w in unique:
+            for w2 in unique:
+                if w2 != w:
+                    current = self._cooccur[w].get(w2, 0.0)
+                    self._cooccur[w][w2] = min(current + boost, 2.0)
+
     # ── Persistence ───────────────────────────────────────────────────────────
 
     def save(self, path: Path) -> None:
@@ -323,5 +385,6 @@ class WordGraph:
 
 # ── Cache path ────────────────────────────────────────────────────────────────
 
-def default_cache_path() -> Path:
-    return Path.home() / ".TheIgors" / "word_graph.json"
+def default_cache_path(name: str = "word_graph") -> Path:
+    """G37: parameterised so recognition and generation graphs use separate caches."""
+    return Path.home() / ".TheIgors" / f"{name}.json"
