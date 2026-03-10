@@ -2007,6 +2007,25 @@ class Igor:
         habits = self.cortex.get_habits()
         _milieu_state = milieu_mod.get().get_state() if milieu_mod.get() else None
 
+        # G38: Backchannel — immediate acknowledgment before full cognitive processing.
+        # Fires as soon as we have intent + milieu; before BG habit scoring or any LLM.
+        # Gate: IGOR_BACKCHANNEL=true (default false — observe first).
+        if not is_impulse and not parsed.is_command:
+            try:
+                from .cognition.backchannel import should_backchannel as _should_bc
+                _bc = _should_bc(parsed, _milieu_state, habits)
+                if _bc.should_send:
+                    _bc_text = _bc.form
+                    # Route to web session if available, else console
+                    if thread_id and thread_id.startswith("web:"):
+                        _bc_session = thread_id[4:] or "shared"
+                        web_server.send(_bc_text, session_id=_bc_session)
+                    else:
+                        console.print(f"[dim]{_bc_text}[/]")
+                    console.print(f"[dim][BC] {_bc_text!r} (level={_bc.level}, {_bc.reason})[/]")
+            except Exception as _bc_e:
+                console.print(f"[yellow][BC] backchannel error: {_bc_e}[/]")
+
         # #121 + #50: Prospective NE pass — predict habit + pre-warm memory search topics
         _ne_search_keys: list[str] = []
         _ne_pred = None
