@@ -142,6 +142,34 @@ class Igor:
         except Exception as _wg_e:
             console.print(f"[yellow]Word graph init failed: {_wg_e}[/]")
 
+        # G37: asymmetric dual word graphs — recognition (parsing) vs generation (voice).
+        # Gate: IGOR_DUAL_WORD_GRAPHS=true  (default false — observe first, enable when ready)
+        self._dual_graphs = os.getenv("IGOR_DUAL_WORD_GRAPHS", "false").lower() in ("1", "true", "yes")
+        self._generation_graph: "WordGraph | None" = None  # type: ignore[name-defined]
+        if self._dual_graphs:
+            try:
+                from .cognition.word_graph import WordGraph, default_cache_path
+                _gg_path = default_cache_path("generation_graph")
+                if _gg_path.exists():
+                    self._generation_graph = WordGraph.load(_gg_path)
+                    self._generation_graph.name = "generation_graph"
+                    if not self._generation_graph._word_to_ids:
+                        self._generation_graph = WordGraph(name="generation_graph")
+                else:
+                    # Fresh generation graph — will be seeded by reinforce_text() on reply
+                    self._generation_graph = WordGraph(name="generation_graph")
+                console.print(
+                    f"[dim]Generation graph ready "
+                    f"({len(self._generation_graph._word_to_ids)} words) [G37][/]"
+                )
+            except Exception as _gg_e:
+                console.print(f"[yellow]Generation graph init failed: {_gg_e}[/]")
+        # G37: last reply text for comprehension signal; milieu tilt + n-pass gates
+        self._last_reply: str = ""
+        self._comprehension_signal = os.getenv("IGOR_COMPREHENSION_SIGNAL", "false").lower() in ("1", "true", "yes")
+        self._milieu_tilt = os.getenv("IGOR_MILIEU_TILT", "false").lower() in ("1", "true", "yes")
+        self._npass_reply = os.getenv("IGOR_NPASS_REPLY", "false").lower() in ("1", "true", "yes")
+
         self.ne = NarrativeEngine(self.cortex, instance_id)
         self.reasoner = AnthropicReasoner()
         self.local_pool  = LocalKoboldPool()
@@ -883,7 +911,15 @@ class Igor:
         # ── Word graph: concepts activated by this input ───────────────────────
         if self._word_graph is not None:
             try:
-                predicted = self._word_graph.predict_next(user_input, n=5)
+                _milieu_dict = None
+                if self._milieu_tilt and milieu_state is not None:
+                    _milieu_dict = {
+                        "arousal": milieu_state.arousal,
+                        "valence": milieu_state.valence,
+                        "dominance": milieu_state.dominance,
+                    }
+                predicted = self._word_graph.predict_next(user_input, n=5,
+                                                          milieu_state=_milieu_dict)
                 if predicted:
                     lines.append(
                         "activated: " + ", ".join(w for w, _ in predicted)
@@ -1847,6 +1883,24 @@ class Igor:
         # [THALAMUS] Parse input
         parsed = self.thalamus.process(user_input)
 
+        # G37: comprehension signal — if prior reply was well-received, reinforce generation graph.
+        # Gate: IGOR_COMPREHENSION_SIGNAL=true (default false — wire when ready to observe)
+        # Positive signal heuristic: positive valence + not a correction/confusion intent.
+        # This is the "did they hear what I meant?" feedback loop that shapes voice over time.
+        if (
+            self._comprehension_signal
+            and self._dual_graphs
+            and self._generation_graph is not None
+            and self._last_reply
+            and not is_impulse
+            and parsed.intent not in ("clarification_request", "correction", "meta_question")
+            and parsed.tone in ("positive", "neutral")
+        ):
+            try:
+                self._generation_graph.reinforce_text(self._last_reply, boost=0.05)
+            except Exception:
+                pass
+
         # [D] Capture raw user input to ring immediately — before any habit/reasoner processing.
         # This ensures the user's actual words survive even if a habit misfires and the Q|A
         # ring entry later shows a confusing response. Queryable as category="user_turn".
@@ -2666,6 +2720,22 @@ class Igor:
                     except Exception:
                         pass
 
+        # G37: n-pass reply termination — log gradient flatness after reply.
+        # Gate: IGOR_NPASS_REPLY=true (default false — observe first).
+        # Flatness ~1.0 = gradient is flat = natural stopping point.
+        # Flatness ~0.0 = steep gradient = more to say (future: trigger addendum pass).
+        if self._npass_reply and self._generation_graph is not None and response_text:
+            try:
+                from .cognition.forensic_logger import log_cognition_metric as _lcm
+                _flatness = self._generation_graph.gradient_flatness(response_text)
+                _lcm(
+                    metric="gradient_flatness",
+                    value=_flatness,
+                    detail=f"intent={parsed.intent}|resp_len={len(response_text)}",
+                )
+            except Exception:
+                pass
+
         # [AMYGDALA] Assess valence
         valence = pfc.assess_valence(user_input, response_text)
 
@@ -2725,6 +2795,14 @@ class Igor:
             if self._word_graph is not None and response_text:
                 _wg_doc_id = f"ex_{thread_id}_{int(_time.monotonic() * 1000) % 10_000_000}"
                 self._word_graph.index(_wg_doc_id, f"{user_input} {response_text}", weight=0.7)
+            # G37: generation graph — index response_text only (not user_input).
+            # Recognition graph learns from everything; generation graph learns from Igor's voice.
+            if self._dual_graphs and self._generation_graph is not None and response_text:
+                _gg_doc_id = f"gen_{thread_id}_{int(_time.monotonic() * 1000) % 10_000_000}"
+                self._generation_graph.index(_gg_doc_id, response_text, weight=1.0)
+            # G37: track last reply for comprehension signal on next turn
+            if response_text:
+                self._last_reply = response_text
 
         # Update metrics
         self.last_friction = friction
@@ -4678,6 +4756,13 @@ class Igor:
             try:
                 from .cognition.word_graph import default_cache_path
                 self._word_graph.save(default_cache_path())
+            except Exception:
+                pass
+        # G37: persist generation graph separately
+        if self._dual_graphs and self._generation_graph is not None:
+            try:
+                from .cognition.word_graph import default_cache_path
+                self._generation_graph.save(default_cache_path("generation_graph"))
             except Exception:
                 pass
         # WO#140 Phase 2: persist response habituation store
