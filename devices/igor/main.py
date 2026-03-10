@@ -975,9 +975,72 @@ class Igor:
                             category="habit_trace",
                         )
                         return h
+            # G35: log decline for telemetry (answer was REASON or unknown habit_id)
+            self.cortex.write_ring(
+                f"TIEBREAKER|declined|answer={text[:40]}"
+                f"|candidates={[h2.id for _, h2 in near_misses]}",
+                category="habit_trace",
+            )
         except Exception:
             pass
         return None
+
+    # ── G31: TASK_SET semantic completion check ─────────────────────────────────
+
+    def _check_task_completion_semantic(
+        self, task_goals: list[str], response_text: str
+    ) -> bool:
+        """
+        G31: Cheap gpt-4o-mini call — does response_text indicate any active task
+        was completed?  Returns True = completed.
+
+        Gate: IGOR_TASK_COMPLETION_SEMANTIC (default false — enable after testing).
+        ~5-token response; timeout 5s; fails silently to False.
+        """
+        if os.getenv("IGOR_TASK_COMPLETION_SEMANTIC", "false").lower() not in (
+            "1", "true", "yes"
+        ):
+            return False
+        api_key = os.getenv("OPENROUTER_API_KEY", "")
+        if not api_key or not task_goals:
+            return False
+
+        import json as _json
+        import urllib.request as _urllib_req
+
+        goals_text = "\n".join(f"- {g[:200]}" for g in task_goals)
+        prompt = (
+            f"Active tasks:\n{goals_text}\n\n"
+            f"Response: {response_text[:500]}\n\n"
+            f"Does the response indicate one or more of these tasks was completed? "
+            f"Reply YES or NO only."
+        )
+        payload = _json.dumps({
+            "model": "openai/gpt-4o-mini",
+            "messages": [
+                {"role": "system", "content": "Task completion classifier. Reply YES or NO only."},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.0,
+            "max_tokens": 5,
+        }).encode()
+
+        try:
+            req = _urllib_req.Request(
+                "https://openrouter.ai/api/v1/chat/completions",
+                data=payload,
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                method="POST",
+            )
+            with _urllib_req.urlopen(req, timeout=5) as resp:
+                data = _json.loads(resp.read())
+            answer = data["choices"][0]["message"]["content"].strip().upper()
+            return answer.startswith("YES")
+        except Exception:
+            return False
 
     # ── #136 Per-channel thread buffers ────────────────────────────────────────
 
@@ -2080,10 +2143,17 @@ class Igor:
             and os.getenv("IGOR_NE_ROUTING", "false").lower() in ("1", "true", "yes")
         ):
             _TIER_UP_NE = {"tier.3": "tier.3.5", "tier.3.5": "tier.4", "tier.4": "tier.4"}
+            _prev_tier = _skip_to
             _skip_to = _TIER_UP_NE.get(_skip_to, _skip_to)
             console.print(
                 f"[dim][NE] predicted {_ne_pred.predicted_habit_id} (conf={_ne_pred.confidence:.2f}) "
                 f"but no habit fired → ambiguity → {_skip_to}[/]"
+            )
+            # G34: ring trace for every NE routing fire — data collection
+            self.cortex.write_ring(
+                f"NE_ROUTING|predicted={_ne_pred.predicted_habit_id}"
+                f"|conf={_ne_pred.confidence:.2f}|tier_before={_prev_tier}|tier_after={_skip_to}",
+                category="ne_routing",
             )
 
         # [#139 P2] Apply latency-driven tier override (computed before preparse above)
@@ -2466,17 +2536,77 @@ class Igor:
                 )
                 response_text = _reply_block
 
-        # ── #158: TASK_SET completion detection — clear anchor when task done ────
+        # ── G31 / #158: TASK_SET completion detection — keyword fast-path + semantic ─
+        # Sentence-level co-occurrence (signal + task keyword) as fast path.
+        # IGOR_TASK_COMPLETION_SEMANTIC=true adds a gpt-4o-mini classification call
+        # for paraphrases ("wrapped up", "taken care of", etc.).
+        # All clear/no-clear decisions logged to ring for observability.
         if response_text and thread_id and not is_impulse:
-            _completion_signals = (
-                "created", "done", "completed", "filed", "written", "saved",
-                "scheduled", "sent", "updated", "finished", "resolved",
-            )
-            _resp_lower = response_text.lower()
-            if any(w in _resp_lower for w in _completion_signals):
-                _cleared = self.cortex.twm_clear_task_set(thread_id=thread_id)
-                if _cleared:
-                    console.print(f"[dim][TASK_SET] Cleared {_cleared} completed task(s)[/]")
+            try:
+                _active_tasks = self.cortex.twm_read(
+                    limit=5, include_integrated=False,
+                    thread_id=thread_id, category="task_set",
+                )
+                if _active_tasks:
+                    _completion_signals = (
+                        "created", "done", "completed", "filed", "written", "saved",
+                        "scheduled", "sent", "updated", "finished", "resolved",
+                        "submitted", "closed", "added", "recorded", "committed",
+                        "wrapped up", "taken care", "all set", "all done",
+                        "handled", "addressed", "fixed", "implemented",
+                    )
+                    # Extract key nouns from all active task goals (>3 chars)
+                    _task_keywords: set[str] = set()
+                    _task_goals: list[str] = []
+                    for _t in _active_tasks:
+                        _goal = _t["content_csb"].replace("TASK_SET|", "").strip()
+                        _task_goals.append(_goal)
+                        _task_keywords.update(
+                            w for w in _goal.lower().split() if len(w) > 3
+                        )
+                    # Fast path: split response into sentences, check signal + keyword co-occur
+                    _resp_lower = response_text.lower()
+                    _sentences = [
+                        s.strip() for s in
+                        _resp_lower.replace("!", ".").replace("?", ".").split(".")
+                        if s.strip()
+                    ]
+                    _should_clear = False
+                    _clear_method = "none"
+                    for _sent in _sentences:
+                        _has_signal = any(sig in _sent for sig in _completion_signals)
+                        _has_task_ref = (
+                            any(kw in _sent for kw in _task_keywords)
+                            if _task_keywords else True
+                        )
+                        if _has_signal and _has_task_ref:
+                            _should_clear = True
+                            _clear_method = "keyword"
+                            break
+                    # Semantic augment: if keyword missed, try gpt-4o-mini classification
+                    if not _should_clear:
+                        _sem = self._check_task_completion_semantic(
+                            _task_goals, response_text
+                        )
+                        if _sem:
+                            _should_clear = True
+                            _clear_method = "semantic"
+                    # Log decision to ring for observability
+                    _tasks_summary = "|".join(g[:60] for g in _task_goals)
+                    self.cortex.write_ring(
+                        f"TASK_SET|decision={'CLEAR' if _should_clear else 'KEEP'}"
+                        f"|method={_clear_method}|tasks={_tasks_summary[:120]}",
+                        category="task_set",
+                    )
+                    if _should_clear:
+                        _cleared = self.cortex.twm_clear_task_set(thread_id=thread_id)
+                        if _cleared:
+                            console.print(
+                                f"[dim][TASK_SET] Cleared {_cleared} task(s) "
+                                f"via {_clear_method}[/]"
+                            )
+            except Exception:
+                pass
 
         # [MOTOR CORTEX] Output response — skip if empty (e.g. impulse was suppressed)
         # G8 / #48: fast identity-threat gate before output
@@ -3743,21 +3873,38 @@ class Igor:
             return "I don't have your name on file yet, Mashter."
 
         # "Do you remember X?" / "What do you know about X?"
-        _recall_words = ("do you remember", "what do you know about")
+        # G32: search LTM (cortex.search) first; fall through to ring if no LTM hit.
+        _recall_words = ("do you remember", "what do you know about", "do you know about")
         if any(p in t for p in _recall_words):
-            # Extract the subject after the phrase
+            # Extract the subject after the matched phrase
             subject = t
             for p in _recall_words:
                 if p in subject:
-                    subject = subject.split(p, 1)[-1].strip().strip("?")
+                    subject = subject.split(p, 1)[-1].strip().strip("?").strip()
                     break
             if subject and len(subject) >= 3:
                 try:
-                    hits = self.cortex.search(subject, limit=1)
-                    if hits:
-                        m = hits[0]
-                        snippet = getattr(m, "narrative", "")[:200]
-                        return f"Yeth, Mashter — I recall: {snippet}"
+                    # Phase 1: LTM search (cortex.search covers all memory types incl. EPISODIC)
+                    _subj_terms = set(subject.lower().split())
+                    hits = self.cortex.search(subject, limit=3)
+                    # Relevance gate: at least one subject term must appear in narrative
+                    _ltm_hit = None
+                    for _h in hits:
+                        _narr = getattr(_h, "narrative", "").lower()
+                        if any(term in _narr for term in _subj_terms if len(term) >= 3):
+                            _ltm_hit = _h
+                            break
+                    if _ltm_hit:
+                        _snippet = getattr(_ltm_hit, "narrative", "")[:200]
+                        _mtype = getattr(
+                            getattr(_ltm_hit, "memory_type", None), "value", "memory"
+                        )
+                        return f"Yeth, Mashter — I recall ({_mtype}): {_snippet}"
+                    # Phase 2: recent ring search — catches session context not yet in LTM
+                    _ring_hits = self.cortex.search_ring_text(subject, limit=3)
+                    if _ring_hits:
+                        _ring_snippet = _ring_hits[0]["content"][:200]
+                        return f"I don't have a long-term memory on that, but recently: {_ring_snippet}"
                     return f"I have nothing on '{subject}' in my memory, Mashter."
                 except Exception:
                     pass
