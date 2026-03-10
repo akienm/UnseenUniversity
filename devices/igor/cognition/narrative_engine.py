@@ -473,21 +473,46 @@ class NarrativeEngine:
             print(f"[NE] promoted={promoted} to LTM | summary: {summary[:80]}...")
 
         # 5. Push action impulses back into TWM so they can be acted on
+        # Dedup: don't re-push an impulse whose action keywords already appear in a
+        # recent IMPULSE_EXECUTED ring entry. Prevents the NE from re-deriving the
+        # same impulse every run when stale context keeps mentioning the same topic.
+        _recent_executed = " ".join(
+            e.get("content", "")
+            for e in self.cortex.search_ring_text("IMPULSE_EXECUTED", limit=10)
+        ).lower()
+
         impulse_count = 0
         for impulse in result.get("action_impulses", []):
             imp_urgency = float(impulse.get("urgency", 0.3))
             action      = impulse.get("action", "")
             why         = impulse.get("why", "")
-            if action:
-                self.cortex.twm_push(
-                    source="narrative_engine",
-                    content_csb=f"ACTION_IMPULSE|urgency={imp_urgency:.2f}|{action}|why:{why}",
-                    salience=imp_urgency,
-                    metadata={"type": "action_impulse", "action": action, "why": why},
-                    ttl_seconds=300,  # impulses expire in 5 min if unacted
-                    urgency=0.6,  # Change 4: NE action impulses — moderately urgent
+            if not action:
+                continue
+            # Dedup check: if >2 significant words from this action already appear
+            # in recently-executed impulses, skip — it's already been handled.
+            _action_words = [
+                w for w in action.lower().split()
+                if len(w) > 3 and w not in {"igor", "will", "akien", "that", "this", "with", "from", "have"}
+            ]
+            _already_done = (
+                len(_action_words) >= 2
+                and sum(1 for w in _action_words if w in _recent_executed) >= 2
+            )
+            if _already_done:
+                self.cortex.write_ring(
+                    f"NE_IMPULSE_DEDUP|skipped duplicate: {action[:80]}",
+                    category="ne_diagnostic",
                 )
-                impulse_count += 1
+                continue
+            self.cortex.twm_push(
+                source="narrative_engine",
+                content_csb=f"ACTION_IMPULSE|urgency={imp_urgency:.2f}|{action}|why:{why}",
+                salience=imp_urgency,
+                metadata={"type": "action_impulse", "action": action, "why": why},
+                ttl_seconds=300,  # impulses expire in 5 min if unacted
+                urgency=0.6,  # Change 4: NE action impulses — moderately urgent
+            )
+            impulse_count += 1
 
         return promoted, impulse_count
 
