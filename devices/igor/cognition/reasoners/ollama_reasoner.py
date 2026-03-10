@@ -32,12 +32,12 @@ DEFAULT_MODEL      = OLLAMA_LOCAL_MODEL  # backwards-compat alias
 
 PREPARSE_TIMEOUT = 8  # seconds
 
-# Intent taxonomy must match thalamus.py 12-intent taxonomy exactly (#30)
+# Intent taxonomy must match thalamus.py 13-intent taxonomy exactly (#30, G36)
 _PREPARSE_PROMPT = """\
 Parse this input. Output ONLY the block below with fields filled in — no other text.
 
 [PARSED_INPUT]
-intent: <greeting|meta_question|memory_instruction|code_task|analysis_task|explanation_request|factual_question|action_request|complaint|command|conversation|general>
+intent: <greeting|meta_question|memory_instruction|code_task|analysis_task|explanation_request|factual_question|action_request|complaint|command|conversation|creative_request|general>
 tone: <friendly|neutral|urgent|frustrated|curious>
 complexity: <low|medium|high>
 entities: <comma-separated names/things, or none>
@@ -72,37 +72,54 @@ def is_healthy(host: str = OLLAMA_HOST, timeout: int = 5) -> bool:
         return False
 
 
-# ── CSB preparse (12-intent; drop-in for koboldcpp_reasoner.preparse) ────────
+# ── CSB preparse (13-intent; drop-in for koboldcpp_reasoner.preparse) ────────
 
 def _rule_based_csb(user_input: str, habits: list) -> str:
     """Pure-Python fallback: produce PARSED_INPUT CSB block without LLM.
-    Intent taxonomy matches thalamus.py 12-intent taxonomy (#30).
+    Intent taxonomy matches thalamus.py 13-intent taxonomy (#30, G36).
     """
     text = user_input.lower()
     words = text.split()
 
-    if any(w in text for w in ["hello", "hi ", "hey ", "good morning", "good evening"]):
+    if any(w in text for w in ["hello", "hi ", "hey ", "good morning", "good evening",
+                                "howdy", "how are you"]):
         intent = "greeting"
     elif any(w in text for w in ["remember", "note that", "save", "learn that"]):
         intent = "memory_instruction"
     elif text.startswith("/"):
         intent = "command"
-    elif any(w in text for w in ["how do i", "how does", "explain", "what is", "describe"]):
-        intent = "explanation_request"
-    elif any(w in text for w in ["what about igor", "tell me about yourself", "what are you", "who are you"]):
+    elif any(w in text for w in ["what about igor", "tell me about yourself", "what are you",
+                                  "who are you", "how do you work", "what can you do",
+                                  "how do you", "what do you do"]):
         intent = "meta_question"
-    elif any(w in text for w in ["code", "function", "class", "algorithm", "script", "program", "debug", "fix this"]):
+    elif any(w in text for w in ["explain", "how does", "how do i", "describe",
+                                  "walk me through", "why did you", "why are you",
+                                  "how does that", "what does that mean"]):
+        intent = "explanation_request"
+    elif any(w in text for w in ["write code", "fix this", "debug", "implement", "refactor",
+                                  "code", "function", "class", "algorithm", "script", "program"]):
         intent = "code_task"
-    elif any(w in text for w in ["analyze", "analyse", "compare", "review", "assess", "evaluate"]):
+    elif any(w in text for w in ["analyze", "analyse", "compare", "review", "assess",
+                                  "evaluate", "summarize", "summarise", "audit"]):
         intent = "analysis_task"
-    elif any(w in text for w in ["broken", "wrong", "doesn't work", "not working", "failed", "frustrated", "annoyed"]):
+    elif any(w in text for w in ["broken", "wrong", "doesn't work", "not working",
+                                  "failed", "frustrated", "annoyed"]):
         intent = "complaint"
+    elif any(w in text for w in ["what do you think", "do you agree", "do you reckon",
+                                  "i think", "i feel", "i find that", "i believe",
+                                  "what's your opinion", "thoughts on"]):
+        intent = "conversation"
+    elif any(w in text for w in ["read me", "read to me", "tell me a story", "write me a poem",
+                                  "write me a story", "let's read", "read aloud", "narrate",
+                                  "sing me", "recite", "read through"]):
+        intent = "creative_request"
     elif "?" in text:
         intent = "factual_question"
-    elif any(w in text for w in ["do ", "run ", "execute", "search", "find", "browse", "send", "create", "delete"]):
+    elif any(w in text for w in ["do ", "run ", "execute", "search", "find", "browse",
+                                  "send", "create", "delete"]):
         intent = "action_request"
     else:
-        intent = "conversation"
+        intent = "general"
 
     if any(w in text for w in ["urgent", "asap", "immediately", "!"]):
         tone = "urgent"
