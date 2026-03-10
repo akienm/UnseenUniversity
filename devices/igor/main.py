@@ -1708,6 +1708,9 @@ class Igor:
             response_text, _cost, _used = self._reason_with_failover(
                 user_input, relevant, core, skip_to=skip_to, preparse_csb=preparse_csb
             )
+            # Strip <think> block — same as _process_inner does for foreground replies
+            if response_text:
+                _, response_text = self._split_think_reply(response_text)
             return response_text or "(no response)"
         except Exception as exc:
             return f"[ERROR in background job] {exc}"
@@ -2269,6 +2272,7 @@ class Igor:
         # live conversation loop. "creative_request" added to thalamus taxonomy.
         _INTERACTIVE_INTENTS = frozenset({
             "conversation", "creative_request", "greeting",
+            "general",  # catch-all fallback — if unclassified, keep foreground
         })
         _intent_blocks_bg = parsed.intent in _INTERACTIVE_INTENTS
         _async_job_id: str | None = None
@@ -2282,7 +2286,7 @@ class Igor:
                 fn=lambda _ui=user_input, _rel=list(relevant), _sk=_skip_to, _pc=pre_csb: (
                     self._bg_reason(_ui, _rel, _sk, _pc)
                 ),
-                title=user_input[:80],
+                title=parsed.core_input[:80],
                 completions_queue=self._job_completions,
                 thread_id=thread_id or "",
             )

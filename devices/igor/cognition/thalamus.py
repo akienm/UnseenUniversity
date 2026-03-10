@@ -166,14 +166,14 @@ def _classify_intent(text: str, keywords: list) -> str:
     if any(w in t for w in ["how do you work", "how are you", "what are you", "who are you",
                              "what can you do", "tell me about yourself"]):
         return "meta_question"
-    if any(w in t for w in ["remember", "save this", "note that", "learn that",
-                             "don't forget", "keep in mind"]):
+    if any(w in t for w in ["remember that", "remember this", "save this", "note that",
+                             "learn that", "don't forget", "keep in mind"]):
         return "memory_instruction"
     if any(w in t for w in ["write code", "fix the code", "debug", "implement", "refactor",
                              "function that", "class that", "script to", "patch"]):
         return "code_task"
     if any(w in t for w in ["analyse", "analyze", "compare", "summarize", "summarise",
-                             "what patterns", "what trends", "review", "audit"]):
+                             "what patterns", "what trends", "review ", "audit"]):
         return "analysis_task"
     if any(w in t for w in ["why did you", "why are you", "explain", "reasoning",
                              "how does", "walk me through"]):
@@ -194,7 +194,7 @@ def _classify_intent(text: str, keywords: list) -> str:
                              "sentence by sentence"]):
         return "creative_request"
     if any(w in t for w in ["run ", "execute", "search for", "find ", "browse",
-                             "open ", "launch ", "start ", "stop ", "restart"]):
+                             "open ", "launch ", "stop ", "restart"]):
         return "action_request"
     if any(w in t for w in ["broken", "not working", "wrong", "fail", "error", "bug",
                              "doesn't work", "can't ", "won't ", "never "]):
