@@ -13,27 +13,45 @@ class Thalamus:
     def process(self, raw_input: str) -> "ParsedInput":
         text = raw_input.strip()
 
+        # Extract the actual user message, stripping prepended thread context.
+        # Habit trigger scoring should fire on what the user *said*, not on
+        # prior exchange history that happens to contain trigger words.
+        # [Thread context — recent exchanges in this channel:] prefix ends at
+        # the last bracketed message tag before the actual content.
+        core_text = text
+        _THREAD_MARKER = "[Thread context — recent exchanges in this channel:]"
+        if _THREAD_MARKER in text:
+            # Find the last "[Web message from", "[Discord message", "[Email from",
+            # "CC:" etc. — the actual current message starts there.
+            import re as _re
+            _msg_start = _re.search(
+                r'\[(?:Web message|Discord message|Email) from [^\]]+\]:|CC:', text
+            )
+            if _msg_start:
+                core_text = text[_msg_start.start():]
+
         # Command detection
         is_command = text.startswith("/")
         command = text[1:].split()[0].lower() if is_command else None
 
         # Keyword extraction — preserves technical tokens (#93 phase 1)
-        keywords = _extract_keywords(text)
+        keywords = _extract_keywords(core_text)
 
         # Intent classification — expanded taxonomy (#93 phase 1)
-        intent = _classify_intent(text, keywords)
+        intent = _classify_intent(core_text, keywords)
 
         # Complexity assessment — drives tier skip_to logic (#93 phase 1)
-        complexity = _assess_complexity(text, keywords)
+        complexity = _assess_complexity(core_text, keywords)
 
         # Tone detection
-        tone = _detect_tone(text)
+        tone = _detect_tone(core_text)
 
-        routing_directive = _detect_routing_directive(text)
-        output_complexity = _assess_output_complexity(text, intent)
+        routing_directive = _detect_routing_directive(core_text)
+        output_complexity = _assess_output_complexity(core_text, intent)
 
         return ParsedInput(
             raw=text,
+            core_input=core_text,
             intent=intent,
             keywords=keywords,
             tone=tone,
@@ -48,6 +66,7 @@ class Thalamus:
 @dataclass
 class ParsedInput:
     raw: str
+    core_input: str    # bare user message, thread-context prefix stripped — used for habit scoring
     intent: str
     keywords: list
     tone: str          # friendly, neutral, frustrated, curious, urgent

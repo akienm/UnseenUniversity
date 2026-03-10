@@ -196,7 +196,11 @@ def select_habit(
     Never raises — habit selection must not crash the main loop.
     """
     try:
-        raw_lower = parsed.raw.lower()
+        # Use core_input (thread-context stripped) for habit trigger matching.
+        # parsed.raw contains the full input including prepended thread history;
+        # trigger words buried in prior exchanges should not fire habits.
+        _score_text = getattr(parsed, "core_input", parsed.raw)
+        raw_lower = _score_text.lower()
         keywords  = set(parsed.keywords) if parsed.keywords else set()
 
         # ── 1a. Compile-phrase pre-check ─────────────────────────────────────
@@ -223,7 +227,7 @@ def select_habit(
         _wg_scores: dict[str, float] = {}
         if _word_graph is not None:
             try:
-                _wg_scores = _word_graph.score(parsed.raw, [h.id for h in habits])
+                _wg_scores = _word_graph.score(_score_text, [h.id for h in habits])
             except Exception:
                 pass
 
