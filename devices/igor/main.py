@@ -3235,6 +3235,9 @@ class Igor:
                 f"Ring had {len(ring_entries)} entries. "
                 f"Session cost: ${self.session_cost:.4f}."
             )
+        # Strip structured prefix before storing in LTM
+        if summary.startswith("SESSION_SUMMARY|"):
+            summary = summary.split("|", 2)[-1]
 
         mem = Memory(
             narrative=summary,
@@ -4624,6 +4627,8 @@ class Igor:
             return
 
         summary = summarize_session(ring_entries, self.instance_id)
+        if summary.startswith("SESSION_SUMMARY|"):
+            summary = summary.split("|", 2)[-1]
         console.print(f"[dim]Summary: {summary[:200]}...[/]")
 
         # Store as an interpretive memory — durable, survives context resets
