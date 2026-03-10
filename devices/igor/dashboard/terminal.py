@@ -272,6 +272,6 @@ def print_reasoning(used_api: bool, skip_to: str = ""):
             "tier.4":   "tier.4/sonnet",
             "tier.5":   "tier.5/anthropic-direct",
         }.get(skip_to, skip_to or "upstream")
-        console.print(f"[dim][PREFRONTAL] Calling {_tier_label}...[/]")
+        console.print(f"[dim][PREFRONTAL] reply → {_tier_label}...[/]")
     else:
         console.print("[dim][BASAL GANGLIA] Habit execution - no reasoning needed[/]")
