@@ -118,6 +118,13 @@ class AnthropicReasoner(APIReasoner):
         except Exception:
             pass
 
+        # ── Blob expansion: append full content for high-relevance blob memories ─
+        if cortex is not None:
+            try:
+                cortex.expand_blob_memories(relevant_memories)
+            except Exception:
+                pass
+
         memory_context = self._build_memory_context(relevant_memories)
         session_context = self._build_session_context(cortex, thread_id=thread_id)
 

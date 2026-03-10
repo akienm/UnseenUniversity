@@ -2834,6 +2834,23 @@ class Igor:
             except Exception:
                 pass
 
+        # Reading progress log: record what Igor read aloud in creative_request turns.
+        if response_text and not is_impulse and parsed.intent == "creative_request":
+            try:
+                from .cognition.forensic_logger import log_reading_progress as _log_reading
+                _wc = len(response_text.split())
+                _log_reading(
+                    passage=response_text,
+                    word_count=_wc,
+                    thread_id=thread_id or "",
+                )
+                self.cortex.write_ring(
+                    f"READING_SESSION|words={_wc}|{response_text[:200].replace(chr(10), ' ')}",
+                    category="reading_session",
+                )
+            except Exception:
+                pass
+
         return response_text
 
     def _run_ne_background(self):
