@@ -116,7 +116,7 @@ class Igor:
         self._response_habituation = None
         try:
             from .cognition.response_habituation import ResponseHabituation as _RH
-            _rh_path = Path.home() / ".TheIgors" / f"igor_{self.instance_id}" / "response_habituation.json"
+            _rh_path = Path.home() / ".TheIgors" / f"igor_{self.instance_id.replace('-', '_')}" / "response_habituation.json"
             self._response_habituation = _RH(_rh_path)
         except Exception:
             pass
@@ -1663,7 +1663,7 @@ class Igor:
             # #64: check restart flag before anything else — no LLM, no arbiter
             _restart_flag = (
                 Path(os.path.expanduser("~/.TheIgors"))
-                / f"igor_{self.instance_id}"
+                / f"igor_{self.instance_id.replace('-', '_')}"
                 / "restart.flag"
             )
             if _restart_flag.exists():

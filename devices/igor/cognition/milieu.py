@@ -129,7 +129,7 @@ class Milieu:
         self._instance_id = instance_id
         self._path = (
             Path(os.path.expanduser("~/.TheIgors"))
-            / f"igor_{instance_id}"
+            / f"igor_{instance_id.replace('-', '_')}"
             / "milieu.json"
         )
         _local_existed = self._path.exists()
