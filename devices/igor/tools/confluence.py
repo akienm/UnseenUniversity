@@ -9,9 +9,47 @@ Required .env vars:
 """
 
 import os
+import re
+import time
 import requests
 from requests.auth import HTTPBasicAuth
 from .registry import Tool, registry
+
+# ── Read-rate throttle (G24) ─────────────────────────────────────────────────
+# Prevents Igor from pulling pages faster than a human reader, avoiding
+# Atlassian's bot-detection / rate-limiter during bulk reading sessions.
+#
+# Env vars:
+#   IGOR_CONFLUENCE_MIN_DELAY_S   — hard floor between page fetches (default 3 s)
+#   IGOR_CONFLUENCE_READ_WPM      — target reader speed (default 250 WPM)
+#
+# The delay before each fetch = max(MIN_DELAY, words_on_last_page / READ_WPM * 60).
+
+_cf_last_fetch: float = 0.0
+_cf_last_word_count: int = 0
+
+
+def _throttle_page_fetch() -> None:
+    """Sleep if needed so page fetches stay at human-reader pace."""
+    global _cf_last_fetch
+    now = time.monotonic()
+    if _cf_last_fetch > 0:
+        elapsed = now - _cf_last_fetch
+        min_delay = float(os.getenv("IGOR_CONFLUENCE_MIN_DELAY_S", "3.0"))
+        read_wpm  = float(os.getenv("IGOR_CONFLUENCE_READ_WPM",      "250"))
+        reading_delay = (_cf_last_word_count / read_wpm) * 60.0 if _cf_last_word_count else 0.0
+        target = max(min_delay, reading_delay)
+        wait = target - elapsed
+        if wait > 0:
+            time.sleep(wait)
+    _cf_last_fetch = time.monotonic()
+
+
+def _update_word_count(body_html: str) -> None:
+    """Estimate word count of fetched page body and store for next throttle call."""
+    global _cf_last_word_count
+    plain = re.sub(r"<[^>]+>", " ", body_html)
+    _cf_last_word_count = max(50, len(plain.split()))
 
 
 def _client():
@@ -34,6 +72,7 @@ def _client():
 
 def confluence_get_page(page_id: str = "", title: str = "", space_key: str = "") -> str:
     """Fetch a Confluence page by ID, or by title+space_key."""
+    _throttle_page_fetch()
     try:
         base, auth = _client()
         headers = {"Accept": "application/json"}
@@ -61,6 +100,7 @@ def confluence_get_page(page_id: str = "", title: str = "", space_key: str = "")
                 return f"No page titled '{title}' found in space '{space_key}'."
             page = results[0]
             body_html = page.get("body", {}).get("storage", {}).get("value", "(no body)")
+            _update_word_count(body_html)
             return (
                 f"Page: {page['title']} (ID: {page['id']})\n"
                 f"Space: {space_key}\n"
@@ -73,6 +113,7 @@ def confluence_get_page(page_id: str = "", title: str = "", space_key: str = "")
         r.raise_for_status()
         page = r.json()
         body_html = page.get("body", {}).get("storage", {}).get("value", "(no body)")
+        _update_word_count(body_html)
         domain = os.getenv("CONFLUENCE_DOMAIN", "")
         return (
             f"Page: {page['title']} (ID: {page['id']})\n"
