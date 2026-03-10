@@ -2559,6 +2559,22 @@ class Igor:
                     _pre_csb_with_nudge = pre_csb + _habit_nudge
     
                     dashboard.print_reasoning(used_api=True, skip_to=_skip_to, reason=_routing_reason)
+                    # G37: log escalation decision for weaning analysis
+                    try:
+                        from .cognition.forensic_logger import log_escalation as _log_esc
+                        _log_esc(
+                            tier=_skip_to,
+                            reason=_routing_reason,
+                            intent=parsed.intent,
+                            complexity=parsed.complexity,
+                            preparse_tier=complexity.get("tier_minimum", ""),
+                            complexity_score=complexity.get("score", 0.0),
+                            complexity_signals="|".join(complexity.get("signals_fired", [])),
+                            input_snippet=user_input[:120],
+                            habit_fired=bool(habit),
+                        )
+                    except Exception:
+                        pass
                     self._current_action = "reasoning"
                     web_server.broadcast_activity(self._activity_state())
     
@@ -3504,6 +3520,7 @@ class Igor:
             "sleep": self._cmd_sleep,             # #134: pre-sleep ritual
             "restart": self._cmd_restart,
             "cost": self._cmd_cost,
+            "routing": self._cmd_routing,         # G37: escalation weaning analysis
             "model": self._cmd_model,
 
             "local": self._cmd_local,
@@ -4669,6 +4686,58 @@ class Igor:
         console.print(f"\n[bold]Session cost:[/] ${self.session_cost:.4f}")
         console.print(f"[bold]Upstream calls:[/] {self.cloud_calls}")
         console.print(f"[bold]Interactions:[/] {self.interaction_count}")
+
+    def _cmd_routing(self, raw):
+        """
+        /routing [N]  — show last N escalation decisions from escalation.log (default 20).
+
+        G37 weaning tool: reveals which reasons are driving upstream calls so we can
+        reduce them incrementally. Each entry shows: tier, reason, intent, complexity,
+        complexity signals, and the first 60 chars of the input that triggered it.
+        """
+        from pathlib import Path as _Path
+        import re as _re
+
+        _log = _Path.home() / ".TheIgors" / "logs" / "escalation.log"
+        if not _log.exists():
+            console.print("[yellow]escalation.log not found — no routing data yet.[/]")
+            return
+
+        try:
+            _n = int(raw.strip().split()[-1]) if raw.strip().split() else 20
+        except ValueError:
+            _n = 20
+
+        lines = [l for l in _log.read_text(encoding="utf-8").splitlines() if l.strip()][:_n]
+
+        # Tally reasons for summary
+        _reason_counts: dict[str, int] = {}
+        _tier_counts:   dict[str, int] = {}
+
+        console.print(f"\n[bold]Last {min(_n, len(lines))} escalation decisions:[/]")
+        for line in lines:
+            parts = {k: v for k, v in (p.split("=", 1) for p in line.split("|") if "=" in p)}
+            _ts_  = line.split("|")[0]
+            _tier = parts.get("tier", "?")
+            _rsn  = parts.get("reason", "?")
+            _intent = parts.get("intent", "?")
+            _cx   = parts.get("complexity", "?")
+            _sig  = parts.get("cx_signals", "none")
+            _inp  = parts.get("input", "")[:60]
+            _reason_counts[_rsn] = _reason_counts.get(_rsn, 0) + 1
+            _tier_counts[_tier]  = _tier_counts.get(_tier, 0) + 1
+            console.print(
+                f"  [dim]{_ts_}[/] [cyan]{_tier}[/] ({_rsn})"
+                f"\n    intent={_intent} cx={_cx} signals={_sig}"
+                f"\n    input: {_inp}"
+            )
+
+        console.print(f"\n[bold]Tier distribution:[/]")
+        for t, c in sorted(_tier_counts.items()):
+            console.print(f"  {t}: {c}")
+        console.print(f"\n[bold]Top escalation reasons:[/]")
+        for r, c in sorted(_reason_counts.items(), key=lambda x: -x[1]):
+            console.print(f"  {c:3d}×  {r}")
 
     def _cmd_restart(self, _):
         self._shutdown(reason="restart via /restart")

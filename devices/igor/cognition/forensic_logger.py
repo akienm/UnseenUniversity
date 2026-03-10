@@ -11,6 +11,7 @@ Log files:
     tool_calls.log       — every tool invocation (high-volume; optional)
     memory_ops.log       — memory store/search operations (optional)
     errors.log           — runtime errors: impulse skips, tier failures, degraded-mode events
+    escalation.log       — per-turn routing decisions: why did we reach up? (G37 weaning data)
 
 All functions are fire-and-forget: exceptions are swallowed so logging
 can never crash the main loop.
@@ -189,6 +190,41 @@ def log_routing_decision(
         + (f"|proc_id={proc_id}" if proc_id else "")
     )
     _prepend("reasoning_calls.log", entry)
+
+
+def log_escalation(
+    *,
+    tier: str,                  # final tier chosen: "tier.3" | "tier.3.5" | "tier.4" | ...
+    reason: str,                # routing_reason string built in _process_inner
+    intent: str = "",           # thalamus intent
+    complexity: str = "",       # thalamus complexity: low | medium | high
+    preparse_tier: str = "",    # complexity["tier_minimum"] from preparse (before bumps)
+    complexity_score: float = 0.0,
+    complexity_signals: str = "",
+    input_snippet: str = "",    # first 120 chars of user input
+    habit_fired: bool = False,  # True if a habit handled this turn (no escalation needed)
+) -> None:
+    """
+    Log one per-turn routing/escalation decision to escalation.log.
+
+    G37 weaning data: each entry records why a tier was chosen and what the input
+    looked like. Over many sessions this reveals which escalation reasons are load-
+    bearing vs. habitual, guiding the incremental reduction of upstream dependence.
+    /routing command reads this log.
+    """
+    entry = (
+        f"{_ts()}|escalation"
+        f"|tier={tier}"
+        f"|reason={reason}"
+        f"|intent={intent}"
+        f"|complexity={complexity}"
+        f"|preparse_base={preparse_tier or 'n/a'}"
+        f"|cx_score={complexity_score:.2f}"
+        f"|cx_signals={complexity_signals[:80] or 'none'}"
+        f"|habit={'yes' if habit_fired else 'no'}"
+        f"|input={input_snippet[:120].replace(chr(10), ' ')}"
+    )
+    _prepend("escalation.log", entry)
 
 
 _METRIC_STOP = frozenset({
