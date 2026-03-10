@@ -2183,11 +2183,11 @@ class Igor:
         # Only for non-impulse user messages; only if complexity qualifies
         # G4 / #27: multi-unit jobs now run async — Igor returns immediately.
         # G36: interactive/conversational intents must NOT be backgrounded — they
-        # require back-and-forth dialogue (reading sessions, creative discussion,
-        # emotional support). Background jobs produce one-shot responses; interactive
-        # tasks need the live conversation loop.
+        # require back-and-forth dialogue (reading sessions, creative discussion).
+        # Background jobs produce one-shot responses; interactive tasks need the
+        # live conversation loop. "creative_request" added to thalamus taxonomy.
         _INTERACTIVE_INTENTS = frozenset({
-            "casual_conversation", "creative_request", "emotional_support",
+            "conversation", "creative_request", "greeting",
         })
         _intent_blocks_bg = parsed.intent in _INTERACTIVE_INTENTS
         _async_job_id: str | None = None
