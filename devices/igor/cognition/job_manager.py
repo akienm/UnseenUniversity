@@ -46,6 +46,7 @@ class Job:
     github_issue: str = ""
     batch_size: int = 5
     notes: str = ""
+    thread_id: str = ""   # #159: originating attention nexus — for completion notification
 
     def save(self) -> None:
         JOBS_DIR.mkdir(parents=True, exist_ok=True)
@@ -242,6 +243,7 @@ class JobManager:
         title: str,
         completions_queue: deque,
         job_id: Optional[str] = None,
+        thread_id: str = "",
     ) -> str:
         """
         Run `fn` in a daemon thread. When it completes, push
@@ -262,6 +264,9 @@ class JobManager:
                 job = self.create(title=title)
                 job_id = job.job_id
 
+        if thread_id:
+            job.thread_id = thread_id
+            self._save(job)
         self.start(job_id)
 
         def _worker():
@@ -274,6 +279,7 @@ class JobManager:
                 "job_id": job_id,
                 "title": title,
                 "result": result,
+                "thread_id": thread_id,
             })
 
         t = threading.Thread(target=_worker, daemon=True, name=f"igor-job-{job_id}")
