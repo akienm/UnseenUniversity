@@ -112,6 +112,15 @@ class Igor:
         self._boot_integrity_check()
 
         # Word graph: fast in-memory semantic index over habit triggers + narratives.
+        # WO#140 Phase 2: response word habituation — passive vocab novelty tracker.
+        self._response_habituation = None
+        try:
+            from .cognition.response_habituation import ResponseHabituation as _RH
+            _rh_path = Path.home() / ".TheIgors" / f"igor_{self.instance_id}" / "response_habituation.json"
+            self._response_habituation = _RH(_rh_path)
+        except Exception:
+            pass
+
         # Two traversal directions on same weights: parsing (which habit?) + generation (what next?).
         self._word_graph = None
         try:
@@ -2811,6 +2820,20 @@ class Igor:
                 category="latency_trace",
             )
 
+        # WO#140 Phase 2: track outgoing response vocabulary for habituation.
+        # Only LLM-generated replies (not habit-fired canned text, not impulses).
+        if (
+            response_text
+            and not is_impulse
+            and habit is None
+            and os.getenv("IGOR_RESPONSE_HABITUATION", "true").lower() not in ("0", "false", "no")
+            and self._response_habituation is not None
+        ):
+            try:
+                self._response_habituation.observe(response_text)
+            except Exception:
+                pass
+
         return response_text
 
     def _run_ne_background(self):
@@ -4638,6 +4661,12 @@ class Igor:
             try:
                 from .cognition.word_graph import default_cache_path
                 self._word_graph.save(default_cache_path())
+            except Exception:
+                pass
+        # WO#140 Phase 2: persist response habituation store
+        if self._response_habituation is not None:
+            try:
+                self._response_habituation.save()
             except Exception:
                 pass
         self.cortex.write_restart_note(
