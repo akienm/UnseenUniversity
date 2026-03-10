@@ -97,6 +97,27 @@ def fetch(url: str, title: str, source: str = "gutenberg") -> tuple[str, str]:
             f"(status={existing['status']}, id={book_id})"
         )
 
+    # Check CPU/RAM load before fetching — bulk training was OOM-crashing the process.
+    # Soft gate: warn but proceed on "warn"; hard gate: abort on "critical".
+    try:
+        import psutil as _psutil
+        _vm = _psutil.virtual_memory()
+        _sw = _psutil.swap_memory()
+        _load1 = os.getloadavg()[0]
+        _ncpus = os.cpu_count() or 1
+        _load_pct = _load1 / _ncpus * 100
+        _ram_crit  = float(os.getenv("IGOR_LOAD_RAM_CRIT",  "92"))
+        _swap_crit = float(os.getenv("IGOR_LOAD_SWAP_CRIT", "75"))
+        _cpu_crit  = float(os.getenv("IGOR_LOAD_CPU_CRIT",  "95"))
+        if _vm.percent >= _ram_crit or _sw.percent >= _swap_crit or _load_pct >= _cpu_crit:
+            return "", (
+                f"Aborted fetch — system under critical load "
+                f"(RAM {_vm.percent:.0f}%, swap {_sw.percent:.0f}%, CPU {_load_pct:.0f}%). "
+                f"Try again when the machine is less busy."
+            )
+    except Exception:
+        pass  # psutil unavailable — proceed without gate
+
     # Check disk before fetching
     free_gb = _disk_free_gb()
     if free_gb < EVICT_THRESHOLD_GB:
