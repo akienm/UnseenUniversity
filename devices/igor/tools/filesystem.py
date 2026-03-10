@@ -332,6 +332,85 @@ def check_resource_load() -> str:
     return "\n".join(lines)
 
 
+def _resource_load_dict() -> dict:
+    """
+    Return raw resource metrics as a dict for programmatic threshold evaluation.
+    Keys: cpu_load_pct, ram_pct, ram_avail_gb, swap_pct, swap_free_gb,
+          igor_rss_mb, verdict (ok/warn/critical).
+    Returns empty dict if psutil unavailable.
+    """
+    try:
+        import psutil as _ps
+        load1, _, _ = os.getloadavg()
+        ncpus = os.cpu_count() or 1
+        cpu_load_pct = load1 / ncpus * 100
+        vm = _ps.virtual_memory()
+        sw = _ps.swap_memory()
+        try:
+            self_rss_mb = _ps.Process(os.getpid()).memory_info().rss / (1024 ** 2)
+        except Exception:
+            self_rss_mb = 0.0
+
+        _cpu_warn  = float(os.getenv("IGOR_LOAD_CPU_WARN",  "80"))
+        _cpu_crit  = float(os.getenv("IGOR_LOAD_CPU_CRIT",  "95"))
+        _ram_warn  = float(os.getenv("IGOR_LOAD_RAM_WARN",  "80"))
+        _ram_crit  = float(os.getenv("IGOR_LOAD_RAM_CRIT",  "92"))
+        _swap_warn = float(os.getenv("IGOR_LOAD_SWAP_WARN", "40"))
+        _swap_crit = float(os.getenv("IGOR_LOAD_SWAP_CRIT", "75"))
+
+        verdict = "ok"
+        if cpu_load_pct >= _cpu_crit or vm.percent >= _ram_crit or sw.percent >= _swap_crit:
+            verdict = "critical"
+        elif cpu_load_pct >= _cpu_warn or vm.percent >= _ram_warn or sw.percent >= _swap_warn:
+            verdict = "warn"
+
+        return {
+            "cpu_load_pct":  round(cpu_load_pct, 1),
+            "ram_pct":       round(vm.percent, 1),
+            "ram_avail_gb":  round(vm.available / (1024 ** 3), 2),
+            "swap_pct":      round(sw.percent, 1),
+            "swap_free_gb":  round(sw.free / (1024 ** 3), 2),
+            "igor_rss_mb":   round(self_rss_mb, 1),
+            "verdict":       verdict,
+        }
+    except Exception:
+        return {}
+
+
+def evaluate_threshold_habits(habits: list) -> list[dict]:
+    """
+    Check threshold-type habits against current resource state.
+    Returns list of {habit, current_value, field, raw} for each tripped habit.
+    Callers: ResourceMonitorSource (background poll) + pre-submit check in main.py.
+    """
+    threshold_habits = [h for h in habits if h.metadata.get("habit_type") == "threshold"]
+    if not threshold_habits:
+        return []
+    raw = _resource_load_dict()
+    if not raw:
+        return []
+    tripped = []
+    for habit in threshold_habits:
+        field = habit.metadata.get("condition_field")
+        op    = habit.metadata.get("condition_op", ">=")
+        value = habit.metadata.get("condition_value")
+        if field is None or value is None:
+            continue
+        current = raw.get(field)
+        if current is None:
+            continue
+        hit = (
+            (op == ">=" and current >= value)
+            or (op == ">"  and current >  value)
+            or (op == "<=" and current <= value)
+            or (op == "<"  and current <  value)
+        )
+        if hit:
+            tripped.append({"habit": habit, "current_value": current,
+                            "field": field, "raw": raw})
+    return tripped
+
+
 # Register tools
 registry.register(Tool(
     name="read_file",
