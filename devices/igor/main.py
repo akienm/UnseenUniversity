@@ -243,7 +243,7 @@ class Igor:
         # Evicted after THREAD_IDLE_TTL_SEC without activity.
         self._thread_buffers: dict = {}
         self._THREAD_IDLE_TTL_SEC: int = 3600   # 1 hour
-        self._THREAD_MAX_HISTORY: int = 4        # last 4 exchanges shown as context
+        self._THREAD_MAX_HISTORY: int = 8        # last 8 exchanges shown as context (was 4)
 
         # [BOOT MESSAGE] Synthetic first-turn orientation — Igor reads this before any input
         try:
@@ -1073,8 +1073,8 @@ class Igor:
             return ""
         lines = ["[Thread context — recent exchanges in this channel:]"]
         for user_turn, igor_turn in buf["history"][-self._THREAD_MAX_HISTORY:]:
-            lines.append(f"  User: {user_turn[:120]}")
-            lines.append(f"  Igor: {igor_turn[:160]}")
+            lines.append(f"  User: {user_turn[:200]}")
+            lines.append(f"  Igor: {igor_turn[:300]}")
         lines.append("")
         return "\n".join(lines)
 
@@ -1084,7 +1084,7 @@ class Igor:
         if thread_id not in self._thread_buffers:
             self._thread_buffers[thread_id] = {"history": [], "last_active": 0.0}
         buf = self._thread_buffers[thread_id]
-        buf["history"].append((user_turn[:300], igor_reply[:400]))
+        buf["history"].append((user_turn[:500], igor_reply[:600]))
         buf["history"] = buf["history"][-self._THREAD_MAX_HISTORY:]
         buf["last_active"] = _t.monotonic()
 
@@ -2173,11 +2173,20 @@ class Igor:
         # [JOB TRIGGER] pass.4: create a long-running job when task looks multi-unit
         # Only for non-impulse user messages; only if complexity qualifies
         # G4 / #27: multi-unit jobs now run async — Igor returns immediately.
+        # G36: interactive/conversational intents must NOT be backgrounded — they
+        # require back-and-forth dialogue (reading sessions, creative discussion,
+        # emotional support). Background jobs produce one-shot responses; interactive
+        # tasks need the live conversation loop.
+        _INTERACTIVE_INTENTS = frozenset({
+            "casual_conversation", "creative_request", "emotional_support",
+        })
+        _intent_blocks_bg = parsed.intent in _INTERACTIVE_INTENTS
         _async_job_id: str | None = None
         if (
             not is_impulse
             and complexity["score"] > 0.6
             and complexity["is_multi_unit"]
+            and not _intent_blocks_bg
         ):
             _async_job_id = self.job_manager.submit_background(
                 fn=lambda _ui=user_input, _rel=list(relevant), _sk=_skip_to, _pc=pre_csb: (
@@ -2872,7 +2881,16 @@ class Igor:
                     f"Background job complete, Mashter: **{title[:60]}**\n"
                     f"{result_preview[:200]}"
                 )
-            _session = tid if tid else "shared"
+            # #159 fix: thread_id is "web:<session_id>" but web_server sessions
+            # are keyed by just the session_id part. Strip the "web:" prefix so
+            # "web:shared" → "shared", "web:abc123" → "abc123", etc.
+            # Non-web sources (discord:*, gmail:*) can't route to web — use "shared".
+            if tid.startswith("web:"):
+                _session = tid[4:] or "shared"
+            elif tid:
+                _session = "shared"
+            else:
+                _session = "shared"
             web_server.send(_msg, session_id=_session)
 
             # Keep TWM impulse for NE integration (internal awareness only)
