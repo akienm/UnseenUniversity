@@ -139,6 +139,13 @@ class OpenRouterReasoner(BaseReasoner):
         except Exception:
             pass
 
+        # ── Blob expansion: append full content for high-relevance blob memories ─
+        if cortex is not None:
+            try:
+                cortex.expand_blob_memories(relevant_memories)
+            except Exception:
+                pass
+
         content = user_input
         if preparse_csb:
             content = preparse_csb + "\n\n" + content

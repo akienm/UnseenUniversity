@@ -357,7 +357,7 @@ class Cortex:
         """
         tags = [t.lower().strip() for t in tags if t.strip()]
         mem = Memory(
-            narrative=scrub(narrative[:500]),
+            narrative=scrub(narrative[:1000]),
             memory_type=MemoryType.REFERENCE,
             parent_id=parent_id,
             valence=valence,
@@ -416,7 +416,7 @@ class Cortex:
                 old_meta["tags"] = tags
                 conn.execute(
                     "UPDATE memories SET narrative = ?, metadata = ? WHERE id = ?",
-                    (scrub(narrative[:500]), json.dumps(old_meta), mem_id),
+                    (scrub(narrative[:1000]), json.dumps(old_meta), mem_id),
                 )
                 conn.execute(
                     "UPDATE memory_blobs SET content = ?, tags = ? WHERE memory_id = ?",
@@ -428,7 +428,7 @@ class Cortex:
             meta = {"tags": tags, "has_blob": True}
             meta.update(extra)
             mem = Memory(
-                narrative=scrub(narrative[:500]),
+                narrative=scrub(narrative[:1000]),
                 memory_type=MemoryType.REFERENCE,
                 parent_id=parent_id,
                 valence=valence,
@@ -530,6 +530,34 @@ class Cortex:
                 "created_at": row["created_at"],
             })
         return results
+
+    def expand_blob_memories(
+        self,
+        memories: list,
+        threshold: float = 0.5,
+        blob_chars: int = 2000,
+    ) -> list:
+        """
+        For high-relevance memories with overflow blob content, append the blob
+        to the memory narrative in-place.  Memory objects are transient (created
+        from DB rows) so mutation is safe — it never touches the DB.
+
+        Call this after search + winnow, before building context for the LLM.
+        Gate: memory.metadata["has_blob"] must be True and relevance_score >= threshold.
+        """
+        for m in memories:
+            if not m.metadata.get("has_blob"):
+                continue
+            rel = getattr(m, "relevance_score", 0.0)
+            if rel < threshold:
+                continue
+            try:
+                blob = self.get_blob(m.id)
+                if blob:
+                    m.narrative = m.narrative + "\n[FULL CONTENT]\n" + blob[:blob_chars]
+            except Exception:
+                pass
+        return memories
 
     def list_blob_tags(self) -> dict[str, int]:
         """Return all tags with counts, sorted by frequency."""

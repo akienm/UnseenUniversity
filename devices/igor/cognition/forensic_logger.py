@@ -329,3 +329,27 @@ def log_tier_selection(
         f"|signals=[{complexity_signals}]"
     )
     _prepend("reasoning_calls.log", entry)
+
+
+def log_reading_progress(
+    *,
+    passage: str = "",
+    word_count: int = 0,
+    book_title: str = "",
+    thread_id: str = "",
+) -> None:
+    """
+    Log a reading-session turn to reading_progress.log.
+
+    Called whenever Igor responds to a creative_request (read-aloud / narration).
+    The log is newest-first like all forensic logs — easy to tail and review
+    how far Igor got through a text.
+    """
+    entry = (
+        f"{_ts()}|reading"
+        + (f"|book={book_title[:60].replace('|', '_')}" if book_title else "")
+        + (f"|thread={thread_id}" if thread_id else "")
+        + f"|words={word_count}"
+        + f"|passage={passage[:300].replace(chr(10), ' ')}"
+    )
+    _prepend("reading_progress.log", entry)
