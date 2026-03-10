@@ -244,6 +244,11 @@ class OpenRouterReasoner(BaseReasoner):
                     fn = tc["function"]
                     tool_name = fn["name"]
 
+                    try:
+                        kwargs = json.loads(fn.get("arguments", "{}"))
+                    except json.JSONDecodeError:
+                        kwargs = {}
+
                     # ── RESEARCH GATE ──────────────────────────────────────
                     _is_bash_read = (
                         tool_name == "run_bash"
@@ -264,11 +269,6 @@ class OpenRouterReasoner(BaseReasoner):
                                              "content": "BLOCKED: research tool cap reached — set IGOR_RESEARCH_MODE=true"})
                             _research_blocked = True
                             break
-
-                    try:
-                        kwargs = json.loads(fn.get("arguments", "{}"))
-                    except json.JSONDecodeError:
-                        kwargs = {}
 
                     input_summary = ", ".join(
                         f"{k}={str(v)[:40]!r}" for k, v in kwargs.items()
