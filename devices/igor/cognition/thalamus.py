@@ -181,6 +181,18 @@ def _classify_intent(text: str, keywords: list) -> str:
     if any(w in t for w in ["capital of", "what is", "what's", "tell me about",
                              "who invented", "when did", "where is"]):
         return "factual_question"
+    # G36: creative/reading requests — checked BEFORE action_request so "start reading",
+    # "start at chapter" etc. don't get swallowed by the "start " action pattern.
+    if any(w in t for w in ["read me", "read to me", "tell me a story", "write me a poem",
+                             "write me a story", "let's read", "read aloud", "narrate",
+                             "sing me", "recite", "read through",
+                             # reading session patterns — must stay foreground
+                             "start at chapter", "start reading", "reading each sentence",
+                             "read each sentence", "let it sit", "we talk about it",
+                             "then we talk", "then we discuss", "your assessment",
+                             "chapter by chapter", "read together", "reading together",
+                             "sentence by sentence"]):
+        return "creative_request"
     if any(w in t for w in ["run ", "execute", "search for", "find ", "browse",
                              "open ", "launch ", "start ", "stop ", "restart"]):
         return "action_request"
@@ -190,11 +202,6 @@ def _classify_intent(text: str, keywords: list) -> str:
     if any(w in t for w in ["think", "feel", "opinion", "thoughts on", "what do you reckon",
                              "agree", "disagree", "interesting"]):
         return "conversation"
-    # G36: creative/reading requests are interactive dialogue, not batch jobs.
-    if any(w in t for w in ["read me", "read to me", "tell me a story", "write me a poem",
-                             "write me a story", "let's read", "read aloud", "narrate",
-                             "sing me", "recite", "read through"]):
-        return "creative_request"
     return "general"
 
 

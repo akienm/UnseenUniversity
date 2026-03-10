@@ -111,7 +111,13 @@ def _rule_based_csb(user_input: str, habits: list) -> str:
         intent = "conversation"
     elif any(w in text for w in ["read me", "read to me", "tell me a story", "write me a poem",
                                   "write me a story", "let's read", "read aloud", "narrate",
-                                  "sing me", "recite", "read through"]):
+                                  "sing me", "recite", "read through",
+                                  # reading session patterns — collaborative, foreground, interactive
+                                  "start at chapter", "start reading", "reading each sentence",
+                                  "read each sentence", "let it sit", "we talk about it",
+                                  "then we talk", "then we discuss", "your assessment",
+                                  "chapter by chapter", "read together", "reading together",
+                                  "sentence by sentence"]):
         intent = "creative_request"
     elif "?" in text:
         intent = "factual_question"
