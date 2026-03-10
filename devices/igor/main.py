@@ -2282,6 +2282,40 @@ class Igor:
             and complexity["is_multi_unit"]
             and not _intent_blocks_bg
         ):
+            # ── Threshold habit check before backgrounding ────────────────
+            # Surface resource warnings so Igor can see them in context.
+            # Inhibitory signal — we still proceed, but Igor knows the state.
+            _threshold_prefix = ""
+            try:
+                from .tools.filesystem import evaluate_threshold_habits as _eval_thresh
+                _tripped = _eval_thresh(habits)
+                if _tripped:
+                    _warn_parts = []
+                    for _t in _tripped:
+                        _h = _t["habit"]
+                        _cur = _t["current_value"]
+                        _fld = _t["field"]
+                        _ttl = int(_h.metadata.get("twm_ttl_seconds", 120))
+                        _tmpl = _h.metadata.get(
+                            "surface_message",
+                            f"{_fld} is at {{current_value}} — check before queuing more work."
+                        )
+                        _msg = _tmpl.format(current_value=_cur, field=_fld, **_t["raw"])
+                        _warn_parts.append(_msg)
+                        self.cortex.twm_push(
+                            source="pre_submit_threshold",
+                            content_csb=f"THRESHOLD_WARN|{_h.id}|{_fld}={_cur}|{_msg}",
+                            salience=0.7, urgency=0.6, ttl_seconds=_ttl,
+                            metadata={"habit_id": _h.id, "field": _fld, "current_value": _cur},
+                        )
+                        self.cortex.write_ring(
+                            f"THRESHOLD_WARN|pre_submit|{_h.id}|{_fld}={_cur}",
+                            category="system_info",
+                        )
+                    _threshold_prefix = "⚠ " + " | ".join(_warn_parts) + "\n"
+            except Exception:
+                pass
+
             _async_job_id = self.job_manager.submit_background(
                 fn=lambda _ui=user_input, _rel=list(relevant), _sk=_skip_to, _pc=pre_csb: (
                     self._bg_reason(_ui, _rel, _sk, _pc)
@@ -2298,7 +2332,7 @@ class Igor:
                 f"JOB_CREATED|id={_async_job_id}|async=true|complexity={complexity['score']:.2f}|{user_input[:80]}",
                 category="system_info",
             )
-            return f"Started background job #{_async_job_id}. I'll notify you when complete."
+            return f"{_threshold_prefix}Started background job #{_async_job_id}. I'll notify you when complete."
 
         # Forensic: log tier selection decision (WO_escalation_gate)
         _tiers_available = ["tier.1", "tier.2"]  # habits + local KoboldCpp always available
@@ -2431,6 +2465,22 @@ class Igor:
                             )
                     except Exception as _ce:
                         response_text = f"[HABIT→TOOL] Error running {tool_name}: {_ce}"
+
+                    # If the habit declares a short TTL, push result to TWM so it
+                    # self-cleans (time, CPU temp, etc. become stale almost immediately).
+                    _ttl = habit.metadata.get("twm_ttl_seconds")
+                    if _ttl is not None and response_text and not str(response_text).startswith("[HABIT→TOOL]"):
+                        try:
+                            self.cortex.twm_push(
+                                source=f"habit:{habit.id}",
+                                content_csb=f"HABIT_RESULT|{habit.id}|{str(response_text)[:200]}",
+                                salience=0.5,
+                                urgency=0.3,
+                                ttl_seconds=int(_ttl),
+                                metadata={"habit_id": habit.id, "code_ref": code_ref},
+                            )
+                        except Exception:
+                            pass
                 else:
                     response_text = f"[HABIT→TOOL] tool '{tool_name}' (code_ref={code_ref}) not in registry."
             elif habit.id == "PROC_HABIT_COMPILER":

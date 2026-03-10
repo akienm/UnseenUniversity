@@ -31,6 +31,7 @@ DEFAULT_TIMEOUT = 30  # seconds
 
 
 import time
+from datetime import datetime
 from ..cognition.local_pool import LocalKoboldPool
 from ..cognition.reasoners.ollama_reasoner import OllamaReasoner, OLLAMA_LOCAL_MODEL, OLLAMA_HOST
 
@@ -182,6 +183,19 @@ registry.register(Tool(
         "required": ["code"],
     },
     fn=run_python,
+))
+
+
+def get_current_time() -> str:
+    """Return the current local date and time."""
+    return datetime.now().strftime("%A, %Y-%m-%d  %H:%M:%S")
+
+
+registry.register(Tool(
+    name="get_current_time",
+    description="Return the current local date and time.",
+    parameters={"type": "object", "properties": {}, "required": []},
+    fn=get_current_time,
 ))
 
 

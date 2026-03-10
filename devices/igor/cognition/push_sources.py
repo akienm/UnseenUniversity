@@ -651,6 +651,107 @@ class ProactiveHabitSource(BasePushSource):
         return pushed
 
 
+# ── ResourceMonitorSource ─────────────────────────────────────────────────────
+
+class ResourceMonitorSource(BasePushSource):
+    """
+    Polls machine resource state every CHECK_INTERVAL_SEC seconds.
+    Evaluates threshold-type PROC habits (habit_type="threshold") and pushes
+    to TWM whenever a habit's condition is met (cpu/ram/swap over threshold).
+
+    TWM TTL is short (habit.metadata["twm_ttl_seconds"], default 120s) so
+    stale load readings don't pollute future context after the condition clears.
+
+    Only fires when verdict is warn or critical — stays silent on ok.
+    Suppresses repeated pushes for the same habit at the same verdict level
+    until that level clears (avoids spamming every 60s).
+    """
+    name = "resource_monitor"
+    CHECK_INTERVAL_SEC = 60
+
+    def __init__(self):
+        self._last_check: Optional[datetime] = None
+        # habit_id → last verdict level pushed ("warn"/"critical")
+        self._last_pushed: dict = {}
+
+    def push(self, cortex) -> list[int]:
+        now = datetime.now()
+        if (self._last_check is not None
+                and (now - self._last_check).total_seconds() < self.CHECK_INTERVAL_SEC):
+            return []
+        self._last_check = now
+
+        try:
+            from ..memory.models import MemoryType
+            habits = cortex.get_by_type(MemoryType.PROCEDURAL)
+        except Exception:
+            return []
+
+        try:
+            from ..tools.filesystem import evaluate_threshold_habits, _resource_load_dict
+            tripped = evaluate_threshold_habits(habits)
+        except Exception:
+            return []
+
+        if not tripped:
+            # Clear suppression for habits that are no longer tripping
+            self._last_pushed.clear()
+            return []
+
+        pushed = []
+        for item in tripped:
+            habit        = item["habit"]
+            current      = item["current_value"]
+            field        = item["field"]
+            raw          = item["raw"]
+            verdict      = raw.get("verdict", "warn")
+            ttl          = int(habit.metadata.get("twm_ttl_seconds", 120))
+            surface_tmpl = habit.metadata.get(
+                "surface_message",
+                f"{field} is at {{current_value}} — check before queuing more work."
+            )
+            surface_msg  = surface_tmpl.format(
+                current_value=current, field=field, verdict=verdict, **raw
+            )
+
+            # Suppress if we already pushed this habit at this or higher severity
+            prev = self._last_pushed.get(habit.id)
+            severity = {"warn": 1, "critical": 2}.get(verdict, 0)
+            prev_sev  = {"warn": 1, "critical": 2}.get(prev, 0)
+            if prev is not None and prev_sev >= severity:
+                continue  # already notified, condition hasn't escalated
+
+            urgency  = 0.7 if verdict == "critical" else 0.5
+            salience = 0.8 if verdict == "critical" else 0.6
+            csb = (
+                f"THRESHOLD_HABIT|{habit.id}|{verdict.upper()}"
+                f"|{field}={current}|{surface_msg}"
+            )
+            obs_id = cortex.twm_push(
+                source=self.name,
+                content_csb=csb,
+                salience=salience,
+                urgency=urgency,
+                ttl_seconds=ttl,
+                metadata={
+                    "habit_id": habit.id,
+                    "field": field,
+                    "current_value": current,
+                    "verdict": verdict,
+                },
+            )
+            pushed.append(obs_id)
+            self._last_pushed[habit.id] = verdict
+
+        # Clear suppression for habits that were not in tripped this cycle
+        tripped_ids = {item["habit"].id for item in tripped}
+        for hid in list(self._last_pushed):
+            if hid not in tripped_ids:
+                del self._last_pushed[hid]
+
+        return pushed
+
+
 # ── Module singletons + convenience runner ────────────────────────────────────
 
 memory_surfacer        = MemorySurfacer()
@@ -661,6 +762,7 @@ inbox_watcher          = InboxWatcher()
 milieu_source          = MilieuSource()
 habit_candidate_source = HabitCandidateSource()
 proactive_habit_source = ProactiveHabitSource()
+resource_monitor       = ResourceMonitorSource()
 
 
 def run_background_sources(cortex) -> int:
@@ -671,7 +773,8 @@ def run_background_sources(cortex) -> int:
     """
     pushed = 0
     for src in (heartbeat_source, memory_surfacer, machines_watcher, inbox_watcher,
-                milieu_source, habit_candidate_source, proactive_habit_source):
+                milieu_source, habit_candidate_source, proactive_habit_source,
+                resource_monitor):
         try:
             ids = src.push(cortex)
             pushed += len(ids)
