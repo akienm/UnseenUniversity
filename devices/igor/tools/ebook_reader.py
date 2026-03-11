@@ -36,6 +36,12 @@ from typing import Optional
 
 from .registry import Tool, registry
 
+# ── Handle cache — survives tool-call JSON round-trips ────────────────────────
+# BookHandle objects can't be serialized. open_book stores handles here by key;
+# read_chunk/jump_to/reading_position accept either a live handle OR a dict
+# with {"_handle_key": "..."} to look up from the cache.
+_HANDLE_CACHE: dict[str, "BookHandle"] = {}
+
 # ── Paths ──────────────────────────────────────────────────────────────────────
 
 _CALIBRE_LIBRARY = Path(
@@ -482,7 +488,26 @@ def open_book(
         if key in state:
             handle.position = state[key].get("position", 0)
 
-    return handle
+    # Store in cache so read_chunk can look it up by key across tool-call boundaries
+    _handle_key = _state_key(meta)
+    _HANDLE_CACHE[_handle_key] = handle
+
+    # Return a serializable summary dict rather than the raw BookHandle (which can't
+    # survive JSON round-trips through the tool interface).
+    chap_idx = _chapter_at(handle, handle.position) if handle.position > 0 else 0
+    return {
+        "_handle_key": _handle_key,
+        "title": meta.title,
+        "author": meta.author,
+        "position": handle.position,
+        "total_sentences": len(handle.sentences),
+        "total_chapters": len(handle.chapter_breaks),
+        "chapter": chap_idx + 1,
+        "chapter_title": handle.chapter_titles[chap_idx] if handle.chapter_titles else "",
+        "percent": round(handle.position / max(len(handle.sentences), 1) * 100, 1),
+        "calibre_id": meta.calibre_id,
+        "fmt": meta.fmt,
+    }
 
 
 def _local_copy(path: Path) -> tuple[Path, bool]:
@@ -582,12 +607,39 @@ def _find_ebook_convert() -> Optional[str]:
 
 # ── Reading interface ──────────────────────────────────────────────────────────
 
-def read_chunk(handle: BookHandle, n: int = 1) -> dict:
+def _resolve_handle(handle) -> "BookHandle | None":
+    """
+    Resolve a handle parameter to a live BookHandle object.
+    Accepts: live BookHandle, or a dict with {"_handle_key": "..."} from open_book.
+    Returns None if the handle can't be resolved (e.g. cache miss after restart).
+    """
+    if isinstance(handle, BookHandle):
+        return handle
+    if isinstance(handle, dict):
+        key = handle.get("_handle_key", "")
+        if key in _HANDLE_CACHE:
+            return _HANDLE_CACHE[key]
+        # Cache miss (e.g. Igor restarted) — try to reopen from reading_state
+        title = handle.get("title", "")
+        calibre_id = handle.get("calibre_id")
+        if title or calibre_id:
+            result = open_book(title=title, calibre_id=calibre_id, resume=True)
+            if isinstance(result, dict) and result.get("_handle_key"):
+                return _HANDLE_CACHE.get(result["_handle_key"])
+    return None
+
+
+def read_chunk(handle, n: int = 1) -> dict:
     """
     Read the next n sentences from the book.
+    Accepts a BookHandle or the dict returned by open_book (with _handle_key).
     Returns dict with sentences, position info, chapter info, and at_end flag.
     Advances handle.position. Saves state.
     """
+    live = _resolve_handle(handle)
+    if live is None:
+        return {"error": "Book handle not found. Call open_book() first to reopen the book."}
+    handle = live
     start = handle.position
     end = min(start + n, len(handle.sentences))
     chunk = handle.sentences[start:end]
@@ -635,11 +687,16 @@ def read_chunk(handle: BookHandle, n: int = 1) -> dict:
     return result
 
 
-def jump_to(handle: BookHandle, chapter: int = 1, sentence: int = 0) -> dict:
+def jump_to(handle, chapter: int = 1, sentence: int = 0) -> dict:
     """
     Jump to a specific chapter (1-indexed) and sentence offset within it.
+    Accepts a BookHandle or the dict returned by open_book.
     Returns same dict as read_chunk describing the new position without advancing.
     """
+    live = _resolve_handle(handle)
+    if live is None:
+        return {"error": "Book handle not found. Call open_book() first to reopen the book."}
+    handle = live
     chapter_idx = max(0, min(chapter - 1, len(handle.chapter_breaks) - 1))
     chapter_start = handle.chapter_breaks[chapter_idx] if handle.chapter_breaks else 0
     handle.position = chapter_start + sentence
@@ -647,8 +704,12 @@ def jump_to(handle: BookHandle, chapter: int = 1, sentence: int = 0) -> dict:
     return read_chunk(handle, n=0)   # peek without advancing
 
 
-def reading_position(handle: BookHandle) -> dict:
-    """Return current position without reading or advancing."""
+def reading_position(handle) -> dict:
+    """Return current position without reading or advancing. Accepts BookHandle or open_book dict."""
+    live = _resolve_handle(handle)
+    if live is None:
+        return {"error": "Book handle not found. Call open_book() first to reopen the book."}
+    handle = live
     chapter_idx = _chapter_at(handle, handle.position)
     return {
         "position": handle.position,
