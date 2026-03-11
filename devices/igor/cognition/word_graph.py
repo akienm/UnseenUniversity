@@ -1,5 +1,5 @@
 """
-WordGraph — lightweight in-memory word co-occurrence index.
+WordGraph — SQLite-backed word co-occurrence index.
 
 Two traversal directions on the same underlying weights:
 
@@ -16,20 +16,20 @@ Language tags (#141):
   score() and predict_next() accept an optional lang filter for targeted traversal.
   words_by_lang() and bridge_words() enable cross-language navigation.
 
-At human conversational speed (~2-3 words/second, <100 habits) this is a
-handful of dict lookups per turn — no database, no network, no API call.
+Storage: SQLite (~/.TheIgors/{name}.db). No in-memory JSON load — the 191MB
+JSON representation was expanding to 4-8GB Python RAM after 158 books trained.
+The public API is identical to the original in-memory version; callers unchanged.
 
-Boot:  built from habit triggers + narratives; optionally loaded from JSON cache.
-Learn: reinforce() boosts a document's word weights when it activates.
-Save:  persisted to ~/.TheIgors/word_graph.json after each reinforcement.
+G37: name param allows two instances — recognition (listening) and generation
+(speaking) — with separate DB files and independent weight development.
 """
 
 from __future__ import annotations
 
-import json
 import math
 import re
-from collections import defaultdict
+import sqlite3
+import threading
 from pathlib import Path
 
 # ── Stopwords ─────────────────────────────────────────────────────────────────
@@ -83,28 +83,117 @@ def tokenize_with_bigrams(text: str, lang: str = "en") -> list[str]:
     return tokens
 
 
+# ── Backward-compat proxy (used by main.py and dashboard/terminal.py) ─────────
+
+class _WordDocProxy:
+    """
+    Proxy for _word_to_ids that supports len() and bool() without loading
+    the full word→doc mapping into memory.
+    """
+    __slots__ = ("_conn",)
+
+    def __init__(self, conn: sqlite3.Connection) -> None:
+        self._conn = conn
+
+    def __len__(self) -> int:
+        row = self._conn.execute(
+            "SELECT COUNT(DISTINCT word) FROM wg_word_docs"
+        ).fetchone()
+        return row[0] if row else 0
+
+    def __bool__(self) -> bool:
+        row = self._conn.execute(
+            "SELECT 1 FROM wg_word_docs LIMIT 1"
+        ).fetchone()
+        return row is not None
+
+
 # ── WordGraph ─────────────────────────────────────────────────────────────────
+
+_SCHEMA = """
+CREATE TABLE IF NOT EXISTS wg_word_docs (
+    word   TEXT NOT NULL,
+    doc_id TEXT NOT NULL,
+    weight REAL NOT NULL DEFAULT 1.0,
+    PRIMARY KEY (word, doc_id)
+);
+CREATE INDEX IF NOT EXISTS idx_wgd_doc  ON wg_word_docs(doc_id);
+
+CREATE TABLE IF NOT EXISTS wg_cooccur (
+    word_a TEXT NOT NULL,
+    word_b TEXT NOT NULL,
+    score  REAL NOT NULL DEFAULT 0.0,
+    PRIMARY KEY (word_a, word_b)
+);
+CREATE INDEX IF NOT EXISTS idx_wgc_a ON wg_cooccur(word_a);
+
+CREATE TABLE IF NOT EXISTS wg_word_lang (
+    word TEXT PRIMARY KEY,
+    lang TEXT NOT NULL DEFAULT 'en'
+);
+
+CREATE TABLE IF NOT EXISTS wg_idf (
+    word  TEXT PRIMARY KEY,
+    score REAL NOT NULL DEFAULT 0.0
+);
+
+CREATE TABLE IF NOT EXISTS wg_meta (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+"""
+
 
 class WordGraph:
     """
-    In-memory word graph with language tags on nodes (#141).
+    SQLite-backed word graph with language tags on nodes (#141).
 
-    _word_to_ids : word → {doc_id: weight}   — parsing direction
-    _cooccur     : word → {word: count}       — generation direction (crosses lang)
-    _word_lang   : word → lang_tag            — language of each node
-    _idf         : word → float               — built after indexing
+    Storage tables:
+      wg_word_docs  : word, doc_id, weight  — parsing direction
+      wg_cooccur    : word_a, word_b, score  — generation direction
+      wg_word_lang  : word, lang             — language of each node
+      wg_idf        : word, score            — IDF weights
+      wg_meta       : key, value             — doc_count etc.
 
-    G37: name param allows two instances — recognition (listening) and generation
-    (speaking) — with separate cache paths and independent weight development.
+    Public API identical to original in-memory version; callers unchanged.
+    G37: name param → separate DB files for recognition and generation graphs.
     """
 
-    def __init__(self, name: str = "word_graph") -> None:
-        self.name = name                           # G37: "word_graph" | "generation_graph"
-        self._word_to_ids: dict[str, dict[str, float]] = defaultdict(dict)
-        self._cooccur: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))
-        self._word_lang: dict[str, str] = {}      # #141: word → lang tag
-        self._idf: dict[str, float] = {}
-        self._doc_count: int = 0
+    def __init__(self, name: str = "word_graph",
+                 db_path: Path | None = None) -> None:
+        self.name    = name
+        self._db_path = db_path or default_cache_path(name)
+        self._lock    = threading.RLock()
+        self._db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._conn = sqlite3.connect(
+            str(self._db_path), check_same_thread=False
+        )
+        self._conn.execute("PRAGMA journal_mode=WAL")
+        self._conn.execute("PRAGMA synchronous=NORMAL")
+        self._conn.execute("PRAGMA cache_size=-16000")   # 16 MB page cache
+        self._conn.execute("PRAGMA temp_store=MEMORY")
+        self._conn.executescript(_SCHEMA)
+        self._conn.commit()
+
+    # ── Backward-compat properties ─────────────────────────────────────────────
+
+    @property
+    def _word_to_ids(self) -> _WordDocProxy:
+        """Proxy for len() and bool() checks in main.py / terminal.py."""
+        return _WordDocProxy(self._conn)
+
+    @property
+    def _doc_count(self) -> int:
+        row = self._conn.execute(
+            "SELECT value FROM wg_meta WHERE key = 'doc_count'"
+        ).fetchone()
+        return int(row[0]) if row else 0
+
+    def _inc_doc_count(self) -> None:
+        self._conn.execute("""
+            INSERT INTO wg_meta (key, value) VALUES ('doc_count', '1')
+            ON CONFLICT(key) DO UPDATE SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT)
+        """)
 
     # ── Indexing ───────────────────────────────────────────────────────────────
 
@@ -121,26 +210,48 @@ class WordGraph:
         tokens = tokenize_with_bigrams(text, lang=lang)
         if not tokens:
             return
-        self._doc_count += 1
         unique = list(dict.fromkeys(tokens))   # preserve order, dedupe
-        for w in unique:
-            self._word_to_ids[w][doc_id] = max(
-                self._word_to_ids[w].get(doc_id, 0.0), weight
+
+        with self._lock:
+            # word → doc weights (max of existing vs new)
+            self._conn.executemany("""
+                INSERT INTO wg_word_docs (word, doc_id, weight) VALUES (?, ?, ?)
+                ON CONFLICT(word, doc_id)
+                DO UPDATE SET weight = MAX(weight, excluded.weight)
+            """, [(w, doc_id, weight) for w in unique])
+
+            # language tags (first writer wins)
+            self._conn.executemany(
+                "INSERT OR IGNORE INTO wg_word_lang (word, lang) VALUES (?, ?)",
+                [(w, lang) for w in unique]
             )
-            # Tag word with lang only if not already tagged (first writer wins)
-            if w not in self._word_lang:
-                self._word_lang[w] = lang
-            for w2 in unique:
-                if w2 != w:
-                    self._cooccur[w][w2] += 1.0
+
+            # co-occurrence edges (accumulate).
+            # Only pair plain words (no bigrams) and cap at 50 to prevent N²
+            # list explosion: a 200-token paragraph generates 40K pairs,
+            # blowing 1-2 GB RAM per book during bulk training.
+            _cooccur_words = [w for w in unique if "__" not in w][:50]
+            self._conn.executemany("""
+                INSERT INTO wg_cooccur (word_a, word_b, score) VALUES (?, ?, 1.0)
+                ON CONFLICT(word_a, word_b)
+                DO UPDATE SET score = score + 1.0
+            """, [(w, w2) for w in _cooccur_words for w2 in _cooccur_words if w != w2])
+
+            self._inc_doc_count()
+            self._conn.commit()
 
     def build_idf(self) -> None:
-        """Compute IDF weights. Call once after all index() calls."""
+        """Compute and persist IDF weights. Call once after all index() calls."""
         n = max(self._doc_count, 1)
-        self._idf = {
-            w: math.log(n / max(len(ids), 1))
-            for w, ids in self._word_to_ids.items()
-        }
+        with self._lock:
+            rows = self._conn.execute(
+                "SELECT word, COUNT(DISTINCT doc_id) FROM wg_word_docs GROUP BY word"
+            ).fetchall()
+            self._conn.executemany(
+                "INSERT OR REPLACE INTO wg_idf (word, score) VALUES (?, ?)",
+                [(w, math.log(n / max(df, 1))) for w, df in rows]
+            )
+            self._conn.commit()
 
     # ── Parsing direction ──────────────────────────────────────────────────────
 
@@ -153,26 +264,33 @@ class WordGraph:
         lang: if specified, only words tagged with that language contribute.
               None (default) uses all words — cross-language scoring.
         """
-        words = set(tokenize_with_bigrams(input_text))
+        words = list(tokenize_with_bigrams(input_text))
         if not words or not doc_ids:
             return {}
 
         if lang is not None:
-            words = {w for w in words if self._word_lang.get(w, "en") == lang}
-        if not words:
-            return {}
+            ph = ",".join("?" * len(words))
+            lang_rows = self._conn.execute(
+                f"SELECT word FROM wg_word_lang WHERE word IN ({ph}) AND lang = ?",
+                words + [lang]
+            ).fetchall()
+            words = [r[0] for r in lang_rows]
+            if not words:
+                return {}
 
-        raw: dict[str, float] = {}
-        for doc_id in doc_ids:
-            total = 0.0
-            for w in words:
-                if doc_id in self._word_to_ids.get(w, {}):
-                    total += self._word_to_ids[w][doc_id] * self._idf.get(w, 1.0)
-            if total > 0:
-                raw[doc_id] = total
+        w_ph   = ",".join("?" * len(words))
+        doc_ph = ",".join("?" * len(doc_ids))
+        rows = self._conn.execute(f"""
+            SELECT wd.doc_id, SUM(wd.weight * COALESCE(i.score, 1.0)) AS total
+            FROM wg_word_docs wd
+            LEFT JOIN wg_idf i ON wd.word = i.word
+            WHERE wd.word IN ({w_ph}) AND wd.doc_id IN ({doc_ph})
+            GROUP BY wd.doc_id
+        """, words + doc_ids).fetchall()
 
-        if not raw:
+        if not rows:
             return {}
+        raw = {r[0]: r[1] for r in rows}
         max_score = max(raw.values())
         return {k: v / max_score for k, v in raw.items()}
 
@@ -193,20 +311,44 @@ class WordGraph:
             producing more diffuse, exploratory predictions.
             G37: milieu tilts the gradient field without rewriting it.
         """
-        words = tokenize_with_bigrams(context_text)
-        counts: dict[str, float] = defaultdict(float)
-        for w in words:
-            for co_word, weight in self._cooccur.get(w, {}).items():
-                if lang is None or self._word_lang.get(co_word, "en") == lang:
-                    counts[co_word] += weight
-        if not counts:
+        words = list(tokenize_with_bigrams(context_text))
+        if not words:
             return []
+
+        w_ph  = ",".join("?" * len(words))
+        fetch = n * 3 if milieu_state else n   # fetch extra when milieu tilt applied
+
+        if lang is not None:
+            rows = self._conn.execute(f"""
+                SELECT c.word_b, SUM(c.score) AS total
+                FROM wg_cooccur c
+                JOIN wg_word_lang l ON c.word_b = l.word
+                WHERE c.word_a IN ({w_ph}) AND l.lang = ?
+                GROUP BY c.word_b
+                ORDER BY total DESC
+                LIMIT ?
+            """, words + [lang, fetch]).fetchall()
+        else:
+            rows = self._conn.execute(f"""
+                SELECT word_b, SUM(score) AS total
+                FROM wg_cooccur
+                WHERE word_a IN ({w_ph})
+                GROUP BY word_b
+                ORDER BY total DESC
+                LIMIT ?
+            """, words + [fetch]).fetchall()
+
+        if not rows:
+            return []
+
+        counts = {r[0]: float(r[1]) for r in rows}
+
         # G37: milieu tilt — arousal sharpens gradient (temperature-like)
         if milieu_state is not None:
-            arousal = float(milieu_state.get("arousal", 0.5))
-            # map arousal [0,1] → exponent [0.5, 2.0]: high arousal = steep gradient
-            exponent = 0.5 + arousal * 1.5
-            counts = {w: v ** exponent for w, v in counts.items()}
+            arousal  = float(milieu_state.get("arousal", 0.5))
+            exponent = 0.5 + arousal * 1.5   # [0,1] → [0.5, 2.0]
+            counts   = {w: v ** exponent for w, v in counts.items()}
+
         return sorted(counts.items(), key=lambda x: x[1], reverse=True)[:n]
 
     def gradient_flatness(self, context_text: str, n: int = 5) -> float:
@@ -239,13 +381,27 @@ class WordGraph:
         words_only=True skips bigram tokens (a__b) to keep results readable.
         lang: optional filter to a specific language.
         """
-        items = (
-            (w, len(co))
-            for w, co in self._cooccur.items()
-            if not (words_only and "__" in w)
-            and (lang is None or self._word_lang.get(w, "en") == lang)
-        )
-        return sorted(items, key=lambda x: x[1], reverse=True)[:n]
+        conditions: list[str] = []
+        params: list = []
+        join = ""
+
+        if words_only:
+            conditions.append("INSTR(c.word_a, '__') = 0")
+        if lang is not None:
+            join = " JOIN wg_word_lang l ON c.word_a = l.word"
+            conditions.append("l.lang = ?")
+            params.append(lang)
+
+        where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+        params.append(n)
+
+        rows = self._conn.execute(
+            f"SELECT c.word_a, COUNT(*) AS degree"
+            f" FROM wg_cooccur c{join}{where}"
+            f" GROUP BY c.word_a ORDER BY degree DESC LIMIT ?",
+            params
+        ).fetchall()
+        return [(r[0], r[1]) for r in rows]
 
     def bridge_words(self, word_a: str, word_b: str,
                      n: int = 10) -> list[tuple[str, float]]:
@@ -255,46 +411,43 @@ class WordGraph:
         Works across language boundaries (cross-language bridges are valid).
         Returns [] if either word is not in the graph.
         """
-        co_a = self._cooccur.get(word_a.lower(), {})
-        co_b = self._cooccur.get(word_b.lower(), {})
-        shared = set(co_a) & set(co_b)
-        if not shared:
-            return []
-        ranked = sorted(
-            ((w, co_a[w] + co_b[w]) for w in shared if "__" not in w),
-            key=lambda x: x[1],
-            reverse=True,
-        )
-        return ranked[:n]
+        rows = self._conn.execute("""
+            SELECT ca.word_b, ca.score + cb.score AS combined
+            FROM wg_cooccur ca
+            JOIN wg_cooccur cb ON ca.word_b = cb.word_b
+            WHERE ca.word_a = ? AND cb.word_a = ?
+              AND INSTR(ca.word_b, '__') = 0
+            ORDER BY combined DESC
+            LIMIT ?
+        """, (word_a.lower(), word_b.lower(), n)).fetchall()
+        return [(r[0], float(r[1])) for r in rows]
 
     def domain_exclusive(self, doc_prefix: str, n: int = 10) -> list[str]:
         """
         Find words that appear ONLY in docs whose id starts with doc_prefix.
         Useful for isolating specialised vocabulary (e.g. 'hamlet_' or 'neuro_').
         """
-        exclusive = []
-        for w, doc_weights in self._word_to_ids.items():
-            if "__" in w:
-                continue
-            if doc_weights and all(doc_id.startswith(doc_prefix) for doc_id in doc_weights):
-                exclusive.append(w)
-        exclusive.sort(
-            key=lambda w: sum(self._word_to_ids[w].values()),
-            reverse=True,
-        )
-        return exclusive[:n]
+        rows = self._conn.execute("""
+            SELECT word, SUM(weight) AS total_weight
+            FROM wg_word_docs
+            WHERE INSTR(word, '__') = 0
+            GROUP BY word
+            HAVING SUM(CASE WHEN doc_id NOT LIKE ? THEN 1 ELSE 0 END) = 0
+            ORDER BY total_weight DESC
+            LIMIT ?
+        """, (doc_prefix + "%", n)).fetchall()
+        return [r[0] for r in rows]
 
     def words_by_lang(self, lang: str) -> list[str]:
         """
         Return all word nodes tagged with the given language.
         Bigram tokens (w1__w2) are excluded — unigrams only.
-        Useful for inspecting language-specific vocabulary or navigating
-        deliberately between languages.
         """
-        return [
-            w for w, l in self._word_lang.items()
-            if l == lang and "__" not in w
-        ]
+        rows = self._conn.execute(
+            "SELECT word FROM wg_word_lang WHERE lang = ? AND INSTR(word, '__') = 0",
+            (lang,)
+        ).fetchall()
+        return [r[0] for r in rows]
 
     # ── Learning ───────────────────────────────────────────────────────────────
 
@@ -304,9 +457,12 @@ class WordGraph:
         Experiences gradually reshape word weights — the learning loop.
         Capped at 2.0 to prevent runaway dominance.
         """
-        for ids in self._word_to_ids.values():
-            if doc_id in ids:
-                ids[doc_id] = min(ids[doc_id] + boost, 2.0)
+        with self._lock:
+            self._conn.execute(
+                "UPDATE wg_word_docs SET weight = MIN(weight + ?, 2.0) WHERE doc_id = ?",
+                (boost, doc_id)
+            )
+            self._conn.commit()
 
     def reinforce_text(self, text: str, boost: float = 0.05,
                        lang: str = "en") -> None:
@@ -324,45 +480,35 @@ class WordGraph:
         """
         tokens = tokenize_with_bigrams(text, lang=lang)
         unique = list(dict.fromkeys(tokens))
-        for w in unique:
-            for w2 in unique:
-                if w2 != w:
-                    current = self._cooccur[w].get(w2, 0.0)
-                    self._cooccur[w][w2] = min(current + boost, 2.0)
+        if len(unique) < 2:
+            return
+        with self._lock:
+            self._conn.executemany("""
+                UPDATE wg_cooccur SET score = MIN(score + ?, 2.0)
+                WHERE word_a = ? AND word_b = ?
+            """, [(boost, w, w2) for w in unique for w2 in unique if w != w2])
+            self._conn.commit()
 
-    # ── Persistence ───────────────────────────────────────────────────────────
+    # ── Persistence ────────────────────────────────────────────────────────────
 
     def save(self, path: Path) -> None:
+        """
+        Flush WAL to main DB file. Data is already persisted in SQLite so this
+        is a lightweight checkpoint rather than a full serialise. The path arg
+        is ignored (kept for API compatibility with callers that pass cache_path).
+        """
         try:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps({
-                "doc_count": self._doc_count,
-                "word_to_ids": {w: dict(ids) for w, ids in self._word_to_ids.items()},
-                "cooccur": {w: dict(co) for w, co in self._cooccur.items()},
-                "word_lang": dict(self._word_lang),   # #141
-            }), encoding="utf-8")
+            self._conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
         except Exception:
             pass
 
     @classmethod
     def load(cls, path: Path) -> "WordGraph":
-        """Load from JSON cache, or return an empty graph if missing/corrupt."""
-        g = cls()
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-            g._doc_count = data.get("doc_count", 0)
-            for w, ids in data.get("word_to_ids", {}).items():
-                g._word_to_ids[w] = ids
-            for w, co in data.get("cooccur", {}).items():
-                g._cooccur[w] = defaultdict(float, co)
-            # #141: load lang tags; default to "en" for pre-existing graphs
-            _saved_langs = data.get("word_lang", {})
-            for w in g._word_to_ids:
-                g._word_lang[w] = _saved_langs.get(w, "en")
-            g.build_idf()
-        except Exception:
-            pass
-        return g
+        """
+        Open (or create) the SQLite word graph at the given path.
+        Returns an empty graph if the DB is new; callers check _word_to_ids bool.
+        """
+        return cls(name=path.stem, db_path=path)
 
     @classmethod
     def build_from_habits(cls, habits: list) -> "WordGraph":
@@ -374,7 +520,7 @@ class WordGraph:
         g = cls()
         for h in habits:
             trigger = h.metadata.get("trigger", "") if h.metadata else ""
-            lang = (h.metadata or {}).get("lang", "en")   # #141
+            lang    = (h.metadata or {}).get("lang", "en")   # #141
             if trigger:
                 g.index(h.id, trigger, weight=2.0, lang=lang)
             if h.narrative:
@@ -383,8 +529,11 @@ class WordGraph:
         return g
 
 
-# ── Cache path ────────────────────────────────────────────────────────────────
+# ── Cache path ─────────────────────────────────────────────────────────────────
 
 def default_cache_path(name: str = "word_graph") -> Path:
-    """G37: parameterised so recognition and generation graphs use separate caches."""
-    return Path.home() / ".TheIgors" / f"{name}.json"
+    """
+    G37: parameterised so recognition and generation graphs use separate files.
+    Returns ~/.TheIgors/{name}.db (SQLite). Old .json files can be deleted.
+    """
+    return Path.home() / ".TheIgors" / f"{name}.db"

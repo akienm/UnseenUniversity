@@ -43,7 +43,7 @@ INDEX_FILE   = CORPUS_DIR / "index.json"
 
 # Paragraphs < this many chars are skipped (headers, short lines)
 MIN_PARA_CHARS   = 60
-# Max paragraphs indexed per book (cap word_graph.json growth)
+# Max paragraphs indexed per book (caps per-book training scope)
 MAX_PARAS_PER_BOOK = int(os.getenv("IGOR_TRAINING_MAX_PARAS", "800"))
 # Disk free threshold below which eviction triggers (GB)
 EVICT_THRESHOLD_GB = float(os.getenv("IGOR_DISK_WARN_GB", "1.0"))
