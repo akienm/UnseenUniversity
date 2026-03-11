@@ -1065,10 +1065,10 @@ def list_reading_memories(book_title: str = "", limit: int = 20, **_) -> str:
             if book_title:
                 rows = conn.execute(
                     """
-                    SELECT id, narrative, metadata_json, confidence, timestamp
+                    SELECT id, narrative, metadata, confidence, timestamp
                     FROM memories
                     WHERE source = 'reading'
-                    AND metadata_json LIKE ?
+                    AND metadata LIKE ?
                     ORDER BY timestamp DESC LIMIT ?
                     """,
                     (f"%{book_title[:30]}%", limit),
@@ -1076,7 +1076,7 @@ def list_reading_memories(book_title: str = "", limit: int = 20, **_) -> str:
             else:
                 rows = conn.execute(
                     """
-                    SELECT id, narrative, metadata_json, confidence, timestamp
+                    SELECT id, narrative, metadata, confidence, timestamp
                     FROM memories
                     WHERE source = 'reading'
                     ORDER BY timestamp DESC LIMIT ?
@@ -1089,7 +1089,7 @@ def list_reading_memories(book_title: str = "", limit: int = 20, **_) -> str:
         lines = [f"Reading memories ({len(rows)} shown):"]
         for r in rows:
             try:
-                meta = json.loads(r["metadata_json"] or "{}")
+                meta = json.loads(r["metadata"] or "{}")
             except Exception:
                 meta = {}
             book = meta.get("book_title", "?")[:25]
