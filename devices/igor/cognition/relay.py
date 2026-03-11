@@ -1,7 +1,7 @@
 """
 Pass-through relay (change.41).
 
-Igor acts as a transparent relay between akien and any upstream model.
+Igor acts as a transparent relay between akien and any cloud inference model.
 Messages pass through; Igor monitors budget/arbiter/heartbeat but does not inject personality.
 
 Commands (handled in main.py):

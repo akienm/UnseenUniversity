@@ -110,6 +110,17 @@ class Cortex:
                 except Exception:
                     pass  # Column already exists
 
+            # G46: provenance + epistemic fields
+            for _col in (
+                "source TEXT DEFAULT ''",
+                "confidence REAL DEFAULT 1.0",
+                "context_of_encoding TEXT DEFAULT ''",
+            ):
+                try:
+                    conn.execute(f"ALTER TABLE memories ADD COLUMN {_col}")
+                except Exception:
+                    pass  # Column already exists
+
             # #128: one-time migration — promote non-empty link_ids into links_weighted (weight 0.5)
             _migrate_rows = conn.execute(
                 "SELECT id, link_ids FROM memories "
@@ -201,6 +212,14 @@ class Cortex:
             except Exception:
                 pass
 
+            # G50: attractor_weight — the current primary focus; one item typically non-zero
+            try:
+                conn.execute(
+                    "ALTER TABLE twm_observations ADD COLUMN attractor_weight REAL DEFAULT 0.0"
+                )
+            except Exception:
+                pass
+
             # #158: category — distinguishes TASK_SET from normal observations
             try:
                 conn.execute(
@@ -208,6 +227,29 @@ class Cortex:
                 )
             except Exception:
                 pass
+
+            # G52: interpretive_edges — directed edges for interpretive tree traversal
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS interpretive_edges (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    from_id TEXT NOT NULL,
+                    to_id TEXT NOT NULL,
+                    direction TEXT NOT NULL DEFAULT 'activation',
+                    condition_csb TEXT DEFAULT '',
+                    meaning_payload TEXT DEFAULT '',
+                    action_pointer TEXT DEFAULT '',
+                    weight REAL DEFAULT 1.0,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY(from_id) REFERENCES memories(id),
+                    FOREIGN KEY(to_id) REFERENCES memories(id)
+                )
+            """)
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ie_from ON interpretive_edges(from_id)"
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ie_to ON interpretive_edges(to_id)"
+            )
 
     # ── Long-term memory graph ─────────────────────────────────────────────────
 
@@ -246,8 +288,9 @@ class Cortex:
                 (id, narrative, memory_type, parent_id, children_ids, link_ids,
                  valence, arousal, dominance,
                  activation_count, friction_history, timestamp, metadata, portable,
-                 links_weighted, last_accessed)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 links_weighted, last_accessed,
+                 source, confidence, context_of_encoding)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 memory.id,
                 memory.narrative,
@@ -265,6 +308,9 @@ class Cortex:
                 1 if memory.portable else 0,
                 json.dumps(memory.links),
                 memory.last_accessed.isoformat() if memory.last_accessed else None,
+                memory.source,
+                memory.confidence,
+                memory.context_of_encoding,
             ))
         return memory
 
@@ -684,7 +730,7 @@ class Cortex:
         return result
 
     def _apply_recency_frequency_boost(self, memories: list) -> None:
-        """#128: apply small recency + frequency multipliers to relevance scores."""
+        """#128 + G45: apply small recency, frequency, inertia, and confidence multipliers."""
         now = datetime.now()
         for m in memories:
             score = getattr(m, "relevance_score", 0.0) or 0.0
@@ -696,6 +742,12 @@ class Cortex:
             # Frequency: caps at 20 activations, max +10%
             freq = min(1.0, m.activation_count / 20.0)
             score *= (1.0 + 0.10 * freq)
+            # G45: inertia weighting — established memories slightly preferred [0.90, 1.05]
+            # Low-inertia episodics (0.20) get -10%; high-inertia core patterns (0.95) get +4%
+            score *= (0.90 + 0.15 * m.inertia)
+            # G45: confidence weighting (G46 field) — uncertain memories slightly penalized [0.90, 1.00]
+            confidence = getattr(m, "confidence", 1.0) or 1.0
+            score *= (0.90 + 0.10 * confidence)
             m.relevance_score = score  # type: ignore[attr-defined]
 
     # G9 / #60: spreading activation ──────────────────────────────────────────
@@ -907,6 +959,10 @@ class Cortex:
             last_accessed=_last_accessed,
             metadata=json.loads(row["metadata"]),
             portable=bool(row["portable"]) if "portable" in keys else True,
+            # G46: provenance + epistemic fields
+            source=row["source"] if "source" in keys and row["source"] else "",
+            confidence=float(row["confidence"]) if "confidence" in keys and row["confidence"] is not None else 1.0,
+            context_of_encoding=row["context_of_encoding"] if "context_of_encoding" in keys and row["context_of_encoding"] else "",
         )
 
     # ── Ring memory (short-term, survives restarts) ────────────────────────────
@@ -1092,13 +1148,25 @@ class Cortex:
                 """INSERT INTO twm_observations
                    (timestamp, source, content_csb, salience, metadata_json,
                     integrated, integration_count, expires_at, urgency, instance_id,
-                    thread_id, category)
-                   VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?)""",
+                    thread_id, category, attractor_weight)
+                   VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?, 0.0)""",
                 (now.isoformat(), source, content_csb, salience,
                  json.dumps(metadata or {}), expires_at, urgency, self._instance_id,
                  thread_id, category)
             )
             obs_id = cur.lastrowid
+
+            # G50: high-urgency items (inbox, ethics, user input ≥0.8) become attractor
+            if urgency >= 0.8 and obs_id and obs_id > 0:
+                conn.execute(
+                    "UPDATE twm_observations SET attractor_weight = 0.0 "
+                    "WHERE instance_id = ? AND id != ?",
+                    (self._instance_id, obs_id)
+                )
+                conn.execute(
+                    "UPDATE twm_observations SET attractor_weight = 1.0 WHERE id = ?",
+                    (obs_id,)
+                )
 
             # Evict expired entries first
             conn.execute(
@@ -1175,9 +1243,76 @@ class Cortex:
                 "integrated": bool(r["integrated"]),
                 "integration_count": r["integration_count"],
                 "expires_at": r["expires_at"],
+                "attractor_weight": r["attractor_weight"] if "attractor_weight" in r.keys() else 0.0,
             }
             for r in rows
         ]
+
+    # ── G50: TWM Attractor ─────────────────────────────────────────────────────
+
+    def twm_set_attractor(self, obs_id: int, weight: float = 1.0) -> None:
+        """
+        G50: Set one TWM item as the current primary attractor.
+        Clears attractor_weight on all other items for this instance first.
+        Callers: UserInputSource.push_message(), high-priority push_sources.
+
+        The attractor represents the current primary focus — the question or task
+        that gives direction to tree traversal. It shapes which TWM items the NE
+        and context builders weight most heavily.
+        """
+        if obs_id <= 0:
+            return
+        with self._conn() as conn:
+            conn.execute(
+                "UPDATE twm_observations SET attractor_weight = 0.0 "
+                "WHERE instance_id = ? AND id != ?",
+                (self._instance_id, obs_id)
+            )
+            conn.execute(
+                "UPDATE twm_observations SET attractor_weight = ? WHERE id = ?",
+                (min(1.0, max(0.0, weight)), obs_id)
+            )
+
+    def twm_get_attractor(self) -> dict | None:
+        """
+        G50: Return the current attractor TWM item (highest attractor_weight > 0.1),
+        or None if no attractor is active.
+        """
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT * FROM twm_observations "
+                "WHERE instance_id = ? AND attractor_weight > 0.1 "
+                "ORDER BY attractor_weight DESC LIMIT 1",
+                (self._instance_id,)
+            ).fetchone()
+        if not row:
+            return None
+        return {
+            "id": row["id"],
+            "content_csb": row["content_csb"],
+            "attractor_weight": row["attractor_weight"],
+            "salience": row["salience"],
+        }
+
+    def twm_decay_attractor(self, factor: float = 0.90) -> None:
+        """
+        G50: Decay all attractor_weights by factor. Call from HeartbeatSource (every 5 min).
+        factor=0.90 → attractor fades to ~0.1 after ~22 heartbeats (~110 minutes).
+        Below 0.05 is treated as inactive.
+        """
+        with self._conn() as conn:
+            conn.execute(
+                "UPDATE twm_observations "
+                "SET attractor_weight = attractor_weight * ? "
+                "WHERE instance_id = ? AND attractor_weight > 0.05",
+                (factor, self._instance_id)
+            )
+            # Zero out anything that has decayed below threshold
+            conn.execute(
+                "UPDATE twm_observations SET attractor_weight = 0.0 "
+                "WHERE instance_id = ? AND attractor_weight <= 0.05",
+                (self._instance_id,)
+            )
 
     def twm_clear_task_set(self, thread_id: str | None = None) -> int:
         """
@@ -1276,3 +1411,124 @@ class Cortex:
             )
         except Exception:
             pass  # TTL extension must never crash callers
+
+    # ── G52: Interpretive Tree ─────────────────────────────────────────────────
+
+    def add_interpretive_edge(
+        self,
+        from_id: str,
+        to_id: str,
+        *,
+        direction: str = "activation",
+        condition_csb: str = "",
+        meaning_payload: str = "",
+        action_pointer: str = "",
+        weight: float = 1.0,
+    ) -> int:
+        """
+        G52: Add a directed edge between two memories in the interpretive tree.
+
+        Edge semantics (4 parts):
+          direction: "activation" | "inhibition" — does traversal promote or suppress?
+          condition_csb: CSB string specifying when this edge fires (empty = always)
+          meaning_payload: the WHY — what reaching to_id means about self or situation
+          action_pointer: memory id or code_ref of the next tree to explore
+          weight: traversal strength [0,1]
+
+        CP1-CP6 are root nodes. Their children are the first interpretive layer.
+        Returns the new edge id.
+        """
+        from datetime import datetime as _dt
+        now = _dt.now().isoformat()
+        with self._conn() as conn:
+            cur = conn.execute(
+                """
+                INSERT INTO interpretive_edges
+                    (from_id, to_id, direction, condition_csb, meaning_payload, action_pointer, weight, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (from_id, to_id, direction, condition_csb, meaning_payload, action_pointer,
+                 max(0.0, min(1.0, weight)), now),
+            )
+            return cur.lastrowid
+
+    def get_interpretive_edges(self, from_id: str) -> list[dict]:
+        """
+        G52: Return all outgoing interpretive edges from from_id.
+        Each dict: {id, from_id, to_id, direction, condition_csb, meaning_payload, action_pointer, weight}
+        Ordered by weight DESC.
+        """
+        with self._conn() as conn:
+            rows = conn.execute(
+                """
+                SELECT id, from_id, to_id, direction, condition_csb,
+                       meaning_payload, action_pointer, weight, created_at
+                FROM interpretive_edges
+                WHERE from_id = ?
+                ORDER BY weight DESC
+                """,
+                (from_id,),
+            ).fetchall()
+        return [dict(r) for r in rows]
+
+    def interpretive_traverse(
+        self,
+        from_ids: list[str],
+        max_depth: int = 3,
+        min_weight: float = 0.1,
+    ) -> list["Memory"]:
+        """
+        G52: Breadth-first traversal of the interpretive tree from a set of seed nodes.
+
+        Used to move from current context (which memory nodes are active) through
+        interpretive edges to find meaning assignments. Returns activated INTERPRETIVE
+        memories, ordered by traversal depth then edge weight.
+
+        from_ids: starting node ids (typically CP1-CP6 + currently-active memories)
+        max_depth: traversal depth cap (default 3 = enough for most schemas)
+        min_weight: prune edges below this weight
+        """
+        if not from_ids:
+            return []
+
+        visited: set[str] = set(from_ids)
+        queue: list[tuple[str, int]] = [(fid, 0) for fid in from_ids]
+        result_ids: list[str] = []
+
+        while queue:
+            current_id, depth = queue.pop(0)
+            if depth >= max_depth:
+                continue
+            edges = self.get_interpretive_edges(current_id)
+            for edge in edges:
+                if edge["weight"] < min_weight:
+                    continue
+                if edge["direction"] == "inhibition":
+                    # inhibition: skip the target (don't follow into inhibited subtree)
+                    visited.add(edge["to_id"])
+                    continue
+                if edge["to_id"] not in visited:
+                    visited.add(edge["to_id"])
+                    result_ids.append(edge["to_id"])
+                    queue.append((edge["to_id"], depth + 1))
+
+        if not result_ids:
+            return []
+
+        # Fetch the actual Memory objects
+        from .models import Memory as _M  # avoid circular at module level
+        placeholders = ",".join("?" * len(result_ids))
+        with self._conn() as conn:
+            rows = conn.execute(
+                f"SELECT * FROM memories WHERE id IN ({placeholders})",
+                result_ids,
+            ).fetchall()
+        row_by_id = {r["id"]: r for r in rows}
+        # Return in traversal order
+        memories = []
+        for mid in result_ids:
+            if mid in row_by_id:
+                mem = self._to_memory(row_by_id[mid])
+                if mem:
+                    memories.append(mem)
+        return memories

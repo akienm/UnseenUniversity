@@ -193,7 +193,7 @@ def initialize_genesis(cortex: Cortex, instance_id: str = "wild-0001") -> str:
           "FAIL = Further Advance In Learning",
           "Make everything suck less for everybody"]),
         ("RM_LEAH", "Leah", "human", "user", "ID1", {}, []),
-        ("RM_CLAUDE", "Claude (upstream)", "AI", "reasoning_partner", "ID1",
+        ("RM_CLAUDE", "Claude (cloud inference)", "AI", "reasoning_partner", "ID1",
          {"reasoning": 0.85, "epistemic_honesty": 0.90, "factual_recall": 0.65},
          ["Think through multiple angles", "Admit uncertainty", "Build on ideas iteratively"]),
         ("RM_IGOR_DW", "Igor (Discworld)", "fictional", "cultural_model", "ID1",

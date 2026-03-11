@@ -165,6 +165,12 @@ class HeartbeatSource(BasePushSource):
             return []
         self._last_run = now
 
+        # G50: decay attractor focus over time — old foci fade every heartbeat
+        try:
+            cortex.twm_decay_attractor(factor=0.90)
+        except Exception:
+            pass
+
         session_mins = int((now - self._session_start).total_seconds() / 60)
         pushed = []
 
@@ -298,7 +304,9 @@ class UserInputSource(BasePushSource):
 
     def push_message(self, cortex, content: str,
                      channel: str = "repl", author: str = "user") -> int:
-        """Push a user/network message into TWM. Returns obs ID."""
+        """Push a user/network message into TWM. Returns obs ID.
+        G50: sets the message as the current TWM attractor — user input defines current focus.
+        """
         csb = f"MSG|ch={channel}|from={author}|{content[:300]}"
         obs_id = cortex.twm_push(
             source=f"{self.name}:{channel}",
@@ -308,6 +316,12 @@ class UserInputSource(BasePushSource):
             ttl_seconds=1800,  # messages stay relevant for 30 min
             urgency=0.7,  # Change 4: user input is time-sensitive
         )
+        # G50: every user message becomes the primary attractor — it defines current focus
+        if obs_id and obs_id > 0:
+            try:
+                cortex.twm_set_attractor(obs_id, weight=1.0)
+            except Exception:
+                pass
         return obs_id
 
 

@@ -39,7 +39,7 @@ from .cognition import milieu as milieu_mod
 from .cognition import basal_ganglia
 from .cognition.narrative_engine import NarrativeEngine
 from .cognition.push_sources import run_background_sources, user_input_source
-from .cognition.multi_upstream import query_multiple, compare_responses
+from .cognition.multi_cloud import query_multiple, compare_responses
 from .cognition.relay import RelaySession, send_to_claude_code
 from .dashboard import terminal as dashboard
 from .network import discord_bot
@@ -237,9 +237,9 @@ class Igor:
             except Exception as _e:
                 console.print(f"[yellow]OpenRouter init failed: {_e}[/]")
 
-        # change.40: extra reasoners for /upstream multi-query
+        # change.40: extra reasoners for /cloud multi-query
         self._extra_reasoners: dict = {}   # name → BaseReasoner
-        self._upstream_tag_on: bool = True  # show [model] prefix in upstream responses
+        self._cloud_tag_on: bool = True  # show [model] prefix in cloud inference responses
 
         # change.41: relay state
         self._relay_session: RelaySession | None = None
@@ -331,6 +331,86 @@ class Igor:
             f"SESSION_START|id={instance_id}|{datetime.now().isoformat()}",
             category="session_control",
         )
+
+        # [G44 Part 1] On-boot state inventory — scan open episodics + push to TWM
+        self._push_state_inventory()
+
+    def _push_state_inventory(self) -> None:
+        """
+        G44 Part 1: Scan for open/unresolved EPISODIC memories and push a compact
+        inventory to TWM so Igor knows what's in-flight on the first turn.
+
+        "Open" means: memory_type=EPISODIC + metadata status NOT in (closed, deferred, done).
+        Only surfaces memories that have been accessed within the last 30 days
+        (very old ones have faded; no need to resurface them).
+        Presents at most 5 items to avoid overwhelming context.
+        """
+        try:
+            from datetime import timedelta as _td
+            from .memory.models import MemoryType as _MT
+            cutoff = (datetime.now() - _td(days=30)).isoformat()
+
+            # Direct SQL for efficiency — avoid embedding overhead at boot
+            with self.cortex._conn() as conn:
+                rows = conn.execute(
+                    """
+                    SELECT id, narrative, metadata_json, last_accessed
+                    FROM memories
+                    WHERE memory_type = ?
+                    AND (last_accessed IS NULL OR last_accessed > ?)
+                    ORDER BY COALESCE(last_accessed, timestamp) DESC
+                    LIMIT 20
+                    """,
+                    (_MT.EPISODIC.value, cutoff),
+                ).fetchall()
+
+            import json as _json
+            open_items = []
+            for r in rows:
+                try:
+                    meta = _json.loads(r["metadata_json"] or "{}")
+                except Exception:
+                    meta = {}
+                status = meta.get("status", "").lower()
+                if status in ("closed", "deferred", "done", "completed", "dismissed"):
+                    continue
+                open_items.append({
+                    "id": r["id"],
+                    "narrative": r["narrative"][:100],
+                    "status": status or "open",
+                })
+
+            if not open_items:
+                return
+
+            # Push at most 5 items to avoid overwhelming context
+            items_to_show = open_items[:5]
+            summary_lines = [f"STATE_INVENTORY|open_episodics={len(open_items)}"]
+            for item in items_to_show:
+                summary_lines.append(
+                    f"  [{item['id']}] status={item['status']} :: {item['narrative']}"
+                )
+            if len(open_items) > 5:
+                summary_lines.append(f"  ... and {len(open_items) - 5} more")
+
+            inventory_csb = "\n".join(summary_lines)
+            self.cortex.twm_push(
+                source="boot_state_inventory",
+                content_csb=inventory_csb,
+                salience=0.6,
+                urgency=0.4,
+                metadata={
+                    "type": "state_inventory",
+                    "open_count": len(open_items),
+                },
+                ttl_seconds=3600,
+            )
+            self.cortex.write_ring(
+                f"BOOT_INVENTORY|open_episodics={len(open_items)}",
+                category="session_control",
+            )
+        except Exception:
+            pass  # State inventory must never crash boot
 
     def _inject_credential_refs(self) -> None:
         """
@@ -485,7 +565,7 @@ class Igor:
                         "To disable: set IGOR_SKIP_PREPARSE_ON_CONFIDENT=false in .env and /restart. "
                         "To re-enable: set to true. "
                         "When true: Ollama preparse only called on medium-complexity non-habit turns. "
-                        "Expected: reduces upstream dependency by ~10-15%."
+                        "Expected: reduces cloud inference dependency by ~10-15%."
                     ),
                     "why": (
                         "Ollama preparse is redundant when thalamus complexity is already confident. "
@@ -1827,23 +1907,23 @@ class Igor:
                 from .cognition.forensic_logger import log_error as _log_error
                 _log_error(kind="TIER_FAIL", source="tier.5", detail=str(e))
 
-        # ── tier.6: arbiter alert — all cloud upstreams exhausted ──────────────
+        # ── tier.6: arbiter alert — all cloud inference exhausted ──────────────
         from .cognition.forensic_logger import log_anomaly as _log_anomaly
         _log_anomaly(kind="TIER6", detail=f"last_error={last_error[:160]}")
         try:
             from .arbiter import queue as arbiter_queue
             item_id = arbiter_queue.submit(
-                description="All cloud reasoning upstreams failed — Igor offline",
+                description="All cloud inference failed — Igor offline",
                 context=f"Last error: {last_error[:200]}",
                 action_type="system_alert",
-                threshold_reason="Total cloud upstream failure (tiers 3-5 all failed)",
+                threshold_reason="Total cloud inference failure (tiers 3-5 all failed)",
                 metadata={"tier_failures": ["tier.3", "tier.4", "tier.5"]},
             )
-            console.print(f"[bold red][tier.6] All cloud upstreams failed. Arbiter alert #{item_id} queued.[/]")
+            console.print(f"[bold red][tier.6] All cloud inference failed. Arbiter alert #{item_id} queued.[/]")
         except Exception:
-            console.print("[bold red][tier.6] All cloud upstreams failed and arbiter unavailable.[/]")
+            console.print("[bold red][tier.6] All cloud inference failed and arbiter unavailable.[/]")
         return (
-            "⚠ All cloud reasoning upstreams are currently unavailable. "
+            "⚠ All cloud inference is currently unavailable. "
             "I've queued a notification for akien.",
             0.0,
             False,
@@ -2960,7 +3040,7 @@ class Igor:
             last_roi=self.last_roi,
             last_action=f"{parsed.intent}: {user_input[:40]}",
             new_memories=new_memories,
-            upstream_calls=self.cloud_calls,
+            cloud_calls=self.cloud_calls,
             milieu_state=milieu_mod.get().get_state() if milieu_mod.get() else None,
             last_tier=getattr(self, "_current_tier", ""),
             active_jobs=self.job_manager.active_count() if hasattr(self, "job_manager") and self.job_manager else 0,
@@ -3605,7 +3685,7 @@ class Igor:
             "compress": self._cmd_compress,
             "arbiter": self._cmd_arbiter,
             "orders": self._cmd_orders,       # change.38
-            "upstream": self._cmd_upstream,   # change.40
+            "cloud": self._cmd_cloud,          # change.40
             "relay": self._cmd_relay,         # change.41
             "jobs": self._cmd_jobs,           # pass.4
             "implement": self._cmd_implement, # #95
@@ -3649,13 +3729,13 @@ class Igor:
   /jobs resume ID   - Resume a paused job
   /jobs cancel ID   - Cancel a job
 
-[bold]Multi-Upstream (change.40):[/]
-  /upstream list            - Show available reasoners + status
-  /upstream add MODEL       - Add OpenRouter model (e.g. openrouter/mistral-7b)
-  /upstream remove NAME     - Remove a previously added reasoner
-  /upstream query all MSG   - Send MSG to all reasoners, compare responses
-  /upstream query NAME MSG  - Send MSG to specific reasoner
-  /upstream tag on|off      - Show/hide [model] prefix in responses
+[bold]Multi-Cloud Inference (change.40):[/]
+  /cloud list            - Show available reasoners + status
+  /cloud add MODEL       - Add OpenRouter model (e.g. openrouter/mistral-7b)
+  /cloud remove NAME     - Remove a previously added reasoner
+  /cloud query all MSG   - Send MSG to all reasoners, compare responses
+  /cloud query NAME MSG  - Send MSG to specific reasoner
+  /cloud tag on|off      - Show/hide [model] prefix in responses
 
 [bold]Relay (change.41):[/]
   /relay start MODEL  - Enter relay mode with specified model
@@ -3685,7 +3765,7 @@ class Igor:
             cortex=self.cortex,
             session_interactions=self.interaction_count,
             session_cost=self.session_cost,
-            upstream_calls=self.cloud_calls,
+            cloud_calls=self.cloud_calls,
         )
         console.print(report)
 
@@ -4498,89 +4578,89 @@ class Igor:
         else:
             console.print("[yellow]Usage: /jobs list|all|status ID|pause ID|resume ID|cancel ID[/]")
 
-    # ── change.40: multi-upstream query ───────────────────────────────────────
+    # ── change.40: multi-cloud inference query ────────────────────────────────
 
-    def _cmd_upstream(self, raw):
-        """Multi-upstream reasoner query. Subcommands: list|add|remove|query|tag"""
+    def _cmd_cloud(self, raw):
+        """Multi-cloud inference reasoner query. Subcommands: list|add|remove|query|tag"""
         parts = raw.strip().split(None, 2)
         sub = parts[1].lower() if len(parts) > 1 else "list"
         arg = parts[2].strip() if len(parts) > 2 else ""
         if sub == "list":
-            self._upstream_list()
+            self._cloud_list()
         elif sub == "add":
-            self._upstream_add(arg)
+            self._cloud_add(arg)
         elif sub == "remove":
-            self._upstream_remove(arg)
+            self._cloud_remove(arg)
         elif sub == "query":
-            self._upstream_query(arg)
+            self._cloud_query(arg)
         elif sub == "tag":
             if arg in ("on", "off"):
-                self._upstream_tag_on = (arg == "on")
-                console.print(f"[dim]Model tags: {'on' if self._upstream_tag_on else 'off'}[/]")
+                self._cloud_tag_on = (arg == "on")
+                console.print(f"[dim]Model tags: {'on' if self._cloud_tag_on else 'off'}[/]")
             else:
-                console.print("[yellow]Usage: /upstream tag on|off[/]")
+                console.print("[yellow]Usage: /cloud tag on|off[/]")
         else:
-            console.print("[yellow]Usage: /upstream list|add|remove|query|tag[/]")
+            console.print("[yellow]Usage: /cloud list|add|remove|query|tag[/]")
 
-    def _upstream_list(self):
-        reasoners = self._all_upstream_reasoners()
+    def _cloud_list(self):
+        reasoners = self._all_cloud_reasoners()
         if not reasoners:
-            console.print("\n[dim]No upstream reasoners configured.[/]")
+            console.print("\n[dim]No cloud inference reasoners configured.[/]")
             return
-        console.print(f"\n[bold]Upstream reasoners ({len(reasoners)}):[/]")
+        console.print(f"\n[bold]Cloud inference reasoners ({len(reasoners)}):[/]")
         for name, r in reasoners.items():
             console.print(f"  [cyan]{name}[/]  {r.name()}")
 
-    def _upstream_add(self, model: str):
+    def _cloud_add(self, model: str):
         if not model:
-            console.print("[yellow]Usage: /upstream add MODEL  (e.g. openai/gpt-4o-mini)[/]")
+            console.print("[yellow]Usage: /cloud add MODEL  (e.g. openai/gpt-4o-mini)[/]")
             return
         if not os.getenv("OPENROUTER_API_KEY", "").strip():
             console.print("[red]OPENROUTER_API_KEY not set — cannot add OpenRouter models.[/]")
             return
         try:
             from .cognition.reasoners.openrouter_reasoner import OpenRouterReasoner
-            r = OpenRouterReasoner(model=model, show_model_tag=self._upstream_tag_on)
+            r = OpenRouterReasoner(model=model, show_model_tag=self._cloud_tag_on)
             name = model.split("/")[-1]
             self._extra_reasoners[name] = r
             console.print(f"[green]Added:[/] {name} → {r.name()}")
         except Exception as e:
             console.print(f"[red]Failed to add {model}: {e}[/]")
 
-    def _upstream_remove(self, name: str):
+    def _cloud_remove(self, name: str):
         if name in self._extra_reasoners:
             del self._extra_reasoners[name]
             console.print(f"[dim]Removed: {name}[/]")
         else:
-            console.print(f"[yellow]No reasoner named '{name}'. Use /upstream list to see names.[/]")
+            console.print(f"[yellow]No reasoner named '{name}'. Use /cloud list to see names.[/]")
 
-    def _upstream_query(self, arg: str):
+    def _cloud_query(self, arg: str):
         parts = arg.split(None, 1)
         if len(parts) < 2:
-            console.print("[yellow]Usage: /upstream query all|NAME MESSAGE[/]")
+            console.print("[yellow]Usage: /cloud query all|NAME MESSAGE[/]")
             return
         target, msg = parts[0].lower(), parts[1]
         mems = self.cortex.search(msg, limit=5)
         core = get_core_patterns(self.cortex)
         if target == "all":
-            reasoners = self._all_upstream_reasoners()
+            reasoners = self._all_cloud_reasoners()
             if not reasoners:
-                console.print("[yellow]No upstream reasoners configured.[/]")
+                console.print("[yellow]No cloud inference reasoners configured.[/]")
                 return
             results = query_multiple(msg, mems, core, self.instance_id, reasoners, self.cortex)
             console.print("\n" + compare_responses(results) + "\n")
             self.session_cost += sum(c for _, _, c in results)
         else:
-            reasoners = self._all_upstream_reasoners()
+            reasoners = self._all_cloud_reasoners()
             if target not in reasoners:
-                console.print(f"[yellow]No reasoner '{target}'. Use /upstream list to see names.[/]")
+                console.print(f"[yellow]No reasoner '{target}'. Use /cloud list to see names.[/]")
                 return
             r = reasoners[target]
             text, cost = r.reason(msg, mems, core, self.instance_id, cortex=self.cortex)
             console.print(f"\n[bold magenta][{r.name()}][/] {text}\n")
             self.session_cost += cost
 
-    def _all_upstream_reasoners(self) -> dict:
+    def _all_cloud_reasoners(self) -> dict:
         result = {}
         if self.openrouter_reasoner:
             result["openrouter"] = self.openrouter_reasoner
@@ -4590,7 +4670,7 @@ class Igor:
     # ── change.41: relay ───────────────────────────────────────────────────────
 
     def _cmd_relay(self, raw):
-        """Pass-through relay to upstream model. Subcommands: start|end|extract|send"""
+        """Pass-through relay to cloud inference model. Subcommands: start|end|extract|send"""
         parts = raw.strip().split(None, 2)
         sub = parts[1].lower() if len(parts) > 1 else ""
         arg = parts[2].strip() if len(parts) > 2 else ""
@@ -4612,7 +4692,7 @@ class Igor:
         if not model:
             console.print("[yellow]Usage: /relay start MODEL[/]")
             return
-        reasoners = self._all_upstream_reasoners()
+        reasoners = self._all_cloud_reasoners()
         short = model.split("/")[-1]
         if short in reasoners:
             r = reasoners[short]
@@ -4624,7 +4704,7 @@ class Igor:
                 console.print(f"[red]Failed to create relay reasoner: {e}[/]")
                 return
         else:
-            console.print(f"[red]No reasoner for '{model}'. Set OPENROUTER_API_KEY or use /upstream add first.[/]")
+            console.print(f"[red]No reasoner for '{model}'. Set OPENROUTER_API_KEY or use /cloud add first.[/]")
             return
         self._relay_session = RelaySession(model_name=model, reasoner=r)
         console.print(f"\n[bold magenta]── Relay started: {model} ──[/]")
@@ -4762,14 +4842,14 @@ class Igor:
 
     def _cmd_cost(self, _):
         console.print(f"\n[bold]Session cost:[/] ${self.session_cost:.4f}")
-        console.print(f"[bold]Upstream calls:[/] {self.cloud_calls}")
+        console.print(f"[bold]Cloud inference calls:[/] {self.cloud_calls}")
         console.print(f"[bold]Interactions:[/] {self.interaction_count}")
 
     def _cmd_routing(self, raw):
         """
         /routing [N]  — show last N escalation decisions from escalation.log (default 20).
 
-        G37 weaning tool: reveals which reasons are driving upstream calls so we can
+        G37 weaning tool: reveals which reasons are driving cloud inference calls so we can
         reduce them incrementally. Each entry shows: tier, reason, intent, complexity,
         complexity signals, and the first 60 chars of the input that triggered it.
         """

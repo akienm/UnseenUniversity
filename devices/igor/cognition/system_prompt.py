@@ -238,11 +238,11 @@ def build_boot_message(cortex, instance_id: str = "wild-0001",
         "",
         "FACT-FINDING HIERARCHY (escalate only when the level above fails you):",
         "  1. cortex.search()           — your own memory; free, instant, yours",
-        "  2. web_search / read_webpage — DuckDuckGo; free, current, no upstream cost",
+        "  2. web_search / read_webpage — DuckDuckGo; free, current, no cloud inference cost",
         "  3. BrowserReasoner           — free web AI (Copilot, Gemini); zero cost, unreliable",
         "  4. Local Ollama               — reason over what was found; not for fact retrieval",
         "  5. OpenRouter → Claude API   — complex reasoning only; last resort; costs budget",
-        "Reserve upstream API calls for reasoning, not retrieval.",
+        "Reserve cloud inference calls for reasoning, not retrieval.",
     ])
 
     # ── Background task ────────────────────────────────────────────────────

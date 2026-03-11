@@ -373,13 +373,21 @@ class BatchPool:
         self._refresh()
 
     def _refresh(self) -> None:
-        """Find best batch-capable Ollama machine."""
+        """Find best batch-capable Ollama machine. G40: skip machines with warn/critical load."""
         # Explicit override wins
         override = os.getenv("OLLAMA_BATCH_HOST", "").strip()
         if override:
             self._batch_host = override
             self._reasoner   = OllamaReasoner(model=OLLAMA_BATCH_MODEL, host=override)
             return
+
+        # G40: get cluster load snapshot (cached 60s — non-blocking on failure)
+        _cluster_loads: dict = {}
+        try:
+            from ...tools.cluster_ssh import get_cluster_loads as _gcl
+            _cluster_loads = _gcl()
+        except Exception:
+            pass  # Load awareness is best-effort; never blocks dispatch
 
         machines = _parse_online_machines()
         batch_order = sorted(machines, key=lambda m: (
@@ -388,11 +396,22 @@ class BatchPool:
         ))
         for m in batch_order:
             pri = m.get("priority", "")
-            if pri in ("priority.background", "priority.batch"):
-                host = f"http://{m['ip']}:{OLLAMA_PORT}"
-                self._batch_host = host
-                self._reasoner   = OllamaReasoner(model=OLLAMA_BATCH_MODEL, host=host)
-                return
+            if pri not in ("priority.background", "priority.batch"):
+                continue
+            # G40: skip machines under warn/critical load
+            load_info = _cluster_loads.get(m.get("hostname", ""), {})
+            if load_info.get("verdict") in ("warn", "critical"):
+                console.print(
+                    f"[yellow][G40] Skipping {m.get('hostname')} for batch — "
+                    f"load verdict={load_info['verdict']} "
+                    f"(cpu={load_info.get('cpu',0):.0f}% "
+                    f"ram={load_info.get('ram',0):.0f}%)[/]"
+                )
+                continue
+            host = f"http://{m['ip']}:{OLLAMA_PORT}"
+            self._batch_host = host
+            self._reasoner   = OllamaReasoner(model=OLLAMA_BATCH_MODEL, host=host)
+            return
 
         # Fallback: local Ollama with batch model
         self._batch_host = OLLAMA_HOST
