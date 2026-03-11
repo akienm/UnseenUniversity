@@ -2098,9 +2098,14 @@ class Igor:
         candidates: list = []
         pre_csb: str = ""
 
+        # G42: preparse receives core_input (thread-context preamble already stripped by
+        # thalamus) so complexity scoring reflects the user's actual message, not the
+        # accumulated thread history. Memory search keeps full user_input for relevance.
+        _preparse_input = parsed.core_input
+
         if _skip_llm_preparse:
             # No I/O needed — build CSB from thalamus result instantly
-            pre_csb = _rule_based_csb(user_input, habits)
+            pre_csb = _rule_based_csb(_preparse_input, habits)
             if parsed.intent != "command":  # commands don't need memory search
                 _search_query = " ".join(parsed.keywords)
                 # #50: merge NE predicted search keys — topics the NE predicted before input arrived
@@ -2115,13 +2120,13 @@ class Igor:
             web_server.broadcast_activity(self._activity_state())
             if self.use_local_preparse and ollama_is_healthy():
                 console.print("[dim][LOCAL] Pre-parsing via Ollama...[/]")
-                _preparse_fn = lambda: preparse(user_input, habits)
+                _preparse_fn = lambda: preparse(_preparse_input, habits)
             elif self.use_local_preparse:
                 console.print("[dim][PREPARSE] Ollama unavailable — preparse via OR cheap...[/]")
-                _preparse_fn = lambda: preparse_via_openrouter(user_input, habits)
+                _preparse_fn = lambda: preparse_via_openrouter(_preparse_input, habits)
             else:
                 console.print("[dim][PREPARSE] Local preparse off — classifying via tier.3...[/]")
-                _preparse_fn = lambda: preparse_via_openrouter(user_input, habits)
+                _preparse_fn = lambda: preparse_via_openrouter(_preparse_input, habits)
 
             # #50: include NE predicted search keys in memory retrieval query
             _kw_query = " ".join(parsed.keywords)

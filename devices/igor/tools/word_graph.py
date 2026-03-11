@@ -37,8 +37,8 @@ def index_text(
         before = len(wg._word_to_ids)
         wg.index(doc_id, text, weight=float(weight))
         wg.build_idf()
-        cache = Path.home() / ".TheIgors" / "word_graph.json"
-        wg.save(cache)
+        from ..cognition.word_graph import default_cache_path
+        wg.save(default_cache_path())
         after = len(wg._word_to_ids)
         new_words = after - before
         return (

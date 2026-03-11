@@ -17,6 +17,7 @@ change.37: memories table now has an `embedding` column (TEXT, nullable JSON).
 """
 
 import json
+import os
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -36,6 +37,9 @@ def _safe_memory_type(value: str) -> MemoryType:
 
 RING_MAX = 50  # Max entries in the ring buffer
 TWM_MAX  = 50  # Max observations in TWM
+# G47: suppress repeated observations at the door rather than admitting at floor salience.
+TWM_SUPPRESS_AFTER_REPEATS = int(os.getenv("IGOR_TWM_SUPPRESS_REPEATS", "4"))
+TWM_SUPPRESS_SALIENCE_FLOOR = float(os.getenv("IGOR_TWM_SUPPRESS_FLOOR", "0.04"))
 
 # Change 4: urgency — distinct from salience (time-sensitivity vs importance)
 # Change 3: TTL extension on confirmed relevance (not mere access)
@@ -1073,6 +1077,15 @@ class Cortex:
             salience = max(0.05, salience * (0.5 ** min(_repeat_count, 6)))
             metadata["repeat_count"] = _repeat_count
             metadata["habituated"] = True
+
+        # G47: suppress at the door — don't admit observations that are too noisy to matter.
+        # Prevents low-salience spam (e.g. NE impulse loop, repeated resource warnings)
+        # from filling TWM slots that should go to meaningful context.
+        if urgency < 0.65:  # high-urgency (ethics, inbox, user input) always admitted
+            if _repeat_count >= TWM_SUPPRESS_AFTER_REPEATS:
+                return -1  # suppressed — caller can ignore this return value
+            if salience < TWM_SUPPRESS_SALIENCE_FLOOR:
+                return -1  # suppressed
 
         with self._conn() as conn:
             cur = conn.execute(
