@@ -17,7 +17,7 @@ Concrete implementations:
   OllamaReasoner(LocalReasoner)     — local Ollama
   KoboldCppReasoner(LocalReasoner)  — local KoboldCpp (batch only; interactive uses OllamaReasoner)
 
-Eventually: no upstream at all. Pure habit execution replaces reasoning entirely.
+Eventually: no cloud inference at all. Pure habit execution replaces reasoning entirely.
 """
 
 import json

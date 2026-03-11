@@ -1,5 +1,5 @@
 """
-OpenRouter reasoner — OpenAI-compatible API to any upstream model.
+OpenRouter reasoner — OpenAI-compatible API to any cloud inference model.
 
 Env vars:
     OPENROUTER_API_KEY          — API key from openrouter.ai
@@ -94,6 +94,151 @@ def preparse_via_openrouter(
     return _rule_based_csb(user_input, habits)
 
 
+# ── G53: Cloud-directed habit extraction ──────────────────────────────────────
+
+_HABIT_EXTRACT_PROMPT = """\
+You are analyzing an AI assistant interaction to identify patterns worth encoding as habits.
+
+USER INPUT:
+{user_input}
+
+ASSISTANT RESPONSE (summary):
+{response_summary}
+
+TIER: {tier}
+
+A "habit" is a trigger phrase + response that should fire automatically without LLM reasoning.
+Good candidates: greetings, status checks, recurring questions with stable answers, common
+tool-dispatch patterns (e.g. "what time is it" → call get_current_time).
+
+Is there a clear, generalizable pattern here that should become a habit?
+
+If YES, respond with ONLY this JSON (no markdown, no explanation):
+{{
+  "trigger": "2-8 key words that activate this habit",
+  "narrative": "one sentence: what this habit does and why",
+  "code_ref": "tools.module:function_name OR empty string if pure text response",
+  "response_template": "the canned response text, OR empty if code_ref is set",
+  "confidence": 0.0-1.0
+}}
+
+If NO (interaction is too context-specific, too complex, or already a known habit):
+SKIP
+
+Respond with ONLY the JSON object or the word SKIP. Nothing else."""
+
+
+def _habit_extract_worker(
+    user_input: str,
+    response_text: str,
+    cortex,
+    tier: str,
+) -> None:
+    """
+    G53: Fire-and-forget habit extraction from a cloud escalation.
+    Runs in a daemon thread — never blocks the main response path.
+    Uses gpt-4o-mini (cheap) to identify habitizable patterns.
+    Stores discovered habits with source="cloud_directed" (G46 field).
+    """
+    import threading
+    import uuid
+
+    try:
+        api_key = os.getenv("OPENROUTER_API_KEY", "")
+        if not api_key:
+            return
+
+        cheap_model = os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
+        prompt = _HABIT_EXTRACT_PROMPT.format(
+            user_input=user_input[:400],
+            response_summary=response_text[:300],
+            tier=tier,
+        )
+
+        payload = json.dumps({
+            "model": cheap_model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.1,
+            "max_tokens": 200,
+        }).encode()
+        req = urllib.request.Request(
+            f"{OPENROUTER_BASE}/chat/completions",
+            data=payload,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": OPENROUTER_REFERER,
+            },
+            method="POST",
+        )
+
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read())
+        result = data["choices"][0]["message"]["content"].strip()
+
+        if result.upper().startswith("SKIP") or not result.startswith("{"):
+            return  # No habit identified
+
+        habit_data = json.loads(result)
+        trigger = habit_data.get("trigger", "").strip()
+        narrative = habit_data.get("narrative", "").strip()
+        confidence = float(habit_data.get("confidence", 0.5))
+        code_ref = habit_data.get("code_ref", "").strip()
+        response_template = habit_data.get("response_template", "").strip()
+
+        if not trigger or not narrative or confidence < 0.6:
+            return  # Too uncertain or incomplete
+
+        # Check if a similar habit already exists (avoid duplicates)
+        existing = cortex.search(trigger, limit=3, min_score=0.8)
+        for mem in existing:
+            if mem.metadata.get("trigger") and trigger.split()[0] in mem.metadata["trigger"]:
+                return  # Close enough match — skip
+
+        from ...memory.models import Memory as _Memory, MemoryType as _MT
+        metadata = {
+            "trigger": trigger,
+            "cloud_directed": True,
+            "extraction_tier": tier,
+        }
+        if code_ref:
+            metadata["code_ref"] = code_ref
+        if response_template:
+            metadata["response_template"] = response_template
+
+        habit = _Memory(
+            id=f"PROC_CLOUD_{str(uuid.uuid4())[:6].upper()}",
+            narrative=narrative,
+            memory_type=_MT.PROCEDURAL,
+            source="cloud_directed",
+            confidence=confidence,
+            context_of_encoding=f"cloud_extraction|tier={tier}|trigger={trigger[:40]}",
+            metadata=metadata,
+        )
+        cortex.store(habit)
+        cortex.add_child("CP2", habit.id)  # Learning from experience → CP2
+
+        try:
+            from ..forensic_logger import log_memory_op as _lm
+            _lm(
+                op="cloud_habit_extracted",
+                memory_id=habit.id,
+                detail=f"tier={tier}|trigger={trigger}|confidence={confidence:.2f}",
+            )
+        except Exception:
+            pass
+
+        console.print(
+            f"[dim cyan][G53] Habit extracted from {tier}: {habit.id} "
+            f"trigger='{trigger}' conf={confidence:.2f}[/]"
+        )
+
+    except json.JSONDecodeError:
+        pass  # Extraction model didn't return valid JSON — ignore
+    except Exception:
+        pass  # Extraction must never crash the main loop
+
+
 class OpenRouterReasoner(BaseReasoner):
     """Reason via any model accessible through OpenRouter's OpenAI-compatible API."""
 
@@ -156,6 +301,12 @@ class OpenRouterReasoner(BaseReasoner):
         if mem_ctx:
             content += mem_ctx
         content = scrub(content)
+        _context_chars = len(system) + len(content)  # G55: layer boundary metric
+        # Infer tier from model name for logging
+        _m = self.model.lower()
+        _tier = ("tier.3.5" if "haiku" in _m
+                 else "tier.4" if "sonnet" in _m or "opus" in _m
+                 else "tier.3")
 
         messages = [{"role": "user", "content": content}]
         tools = registry.to_openai_schemas()
@@ -230,13 +381,27 @@ class OpenRouterReasoner(BaseReasoner):
                     text = f"[{self.model}] {text}"
                 usage = response.get("usage", {})
                 log_reasoning_call(
-                    provider="openrouter", model=self.model,
+                    provider="openrouter", model=self.model, tier=_tier,
                     input_tokens=usage.get("prompt_tokens", 0),
                     output_tokens=usage.get("completion_tokens", 0),
+                    context_chars=_context_chars,
                     cost_usd=total_cost,
                     elapsed_ms=int((time.perf_counter() - t0) * 1000),
                     turns=turn, response_summary=text[:120],
                 )
+                # G53: cloud-directed habit extraction — daemon thread, never blocks
+                if (cortex is not None
+                        and _tier in ("tier.3", "tier.3.5", "tier.4")
+                        and os.getenv("IGOR_HABIT_EXTRACT", "true").lower()
+                            not in ("0", "false", "no")):
+                    import threading as _threading
+                    _t = _threading.Thread(
+                        target=_habit_extract_worker,
+                        args=(user_input, text, cortex, _tier),
+                        daemon=True,
+                        name="habit_extractor",
+                    )
+                    _t.start()
                 return text, total_cost
 
             elif finish_reason == "tool_calls" or msg.get("tool_calls"):

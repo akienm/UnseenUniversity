@@ -29,7 +29,7 @@ def render(
     last_roi: float | None,
     last_action: str,
     new_memories: int = 0,
-    upstream_calls: int = 0,
+    cloud_calls: int = 0,
     milieu_state=None,
     last_tier: str = "",
     active_jobs: int = 0,
@@ -41,7 +41,7 @@ def render(
     habits = cortex.get_habits()
     twm_depth = _get_twm_depth(cortex)
 
-    upstream_pct = _upstream_pct(interaction_count, upstream_calls)
+    upstream_pct = _cloud_pct(interaction_count, cloud_calls)
 
     # ── Interruptor alerts (read from TWM ring) ───────────────────────────────
     alert_lines = _get_active_alerts(cortex)
@@ -95,7 +95,7 @@ def render(
         except Exception:
             pass
     local_pct = _get_local_pct()
-    lines.append(f"[bold]Upstream Dependency:[/] {upstream_pct}%   [bold]Local reasoning:[/] {local_pct}%")
+    lines.append(f"[bold]Cloud inference:[/] {upstream_pct}%   [bold]Local inference:[/] {local_pct}%")
     if latency_samples:
         lines.append(f"[bold]Latency (p50/p95):[/]  {_latency_p50(latency_samples)}ms / {_latency_p95(latency_samples)}ms  [dim](last {len(latency_samples)})[/]")
     if active_jobs:
@@ -227,10 +227,10 @@ def _get_local_pct(n: int = 100) -> int:
         return 0
 
 
-def _upstream_pct(total_interactions: int, upstream_calls: int) -> int:
+def _cloud_pct(total_interactions: int, cloud_calls: int) -> int:
     if total_interactions == 0:
         return 100
-    return round((upstream_calls / max(total_interactions, 1)) * 100)
+    return round((cloud_calls / max(total_interactions, 1)) * 100)
 
 
 def _valence_str(valence: float | None) -> str:

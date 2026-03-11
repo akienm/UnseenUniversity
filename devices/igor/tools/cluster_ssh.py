@@ -267,3 +267,118 @@ registry.register(Tool(
     },
     fn=_cluster_status,
 ))
+
+
+# ── G40: Cluster load awareness ───────────────────────────────────────────────
+
+# Psutil one-liner — same metrics as local _resource_load_dict()
+_LOAD_CMD = (
+    "python3 -c \""
+    "import psutil,os,json;"
+    "load1,*_=os.getloadavg();"
+    "cpu=load1/(os.cpu_count() or 1)*100;"
+    "vm=psutil.virtual_memory();"
+    "sw=psutil.swap_memory();"
+    "print(json.dumps({'cpu':round(cpu,1),'ram':round(vm.percent,1),'swap':round(sw.percent,1)}))"
+    "\""
+)
+
+_LOAD_CACHE: dict[str, dict] = {}   # hostname → {verdict, cpu, ram, swap, ts}
+_LOAD_CACHE_TTL_SEC = 60            # refresh at most once per minute
+
+
+def get_cluster_loads(force_refresh: bool = False) -> dict[str, dict]:
+    """
+    G40: SSH-poll each online SSH-capable machine for CPU/RAM/swap load.
+    Returns {hostname: {verdict, cpu, ram, swap}} — cached for 60s.
+    verdict: "ok" | "warn" | "critical" | "unreachable"
+
+    Thresholds (same as local IGOR_LOAD_* env vars):
+      CPU warn ≥ 80%, RAM warn ≥ 80%, swap warn ≥ 40%
+      CPU crit ≥ 95%, RAM crit ≥ 92%, swap crit ≥ 75%
+    """
+    import time as _time
+    now = _time.time()
+
+    cpu_warn  = float(os.getenv("IGOR_LOAD_CPU_WARN",  "80"))
+    cpu_crit  = float(os.getenv("IGOR_LOAD_CPU_CRIT",  "95"))
+    ram_warn  = float(os.getenv("IGOR_LOAD_RAM_WARN",  "80"))
+    ram_crit  = float(os.getenv("IGOR_LOAD_RAM_CRIT",  "92"))
+    swap_warn = float(os.getenv("IGOR_LOAD_SWAP_WARN", "40"))
+    swap_crit = float(os.getenv("IGOR_LOAD_SWAP_CRIT", "75"))
+
+    machines = [m for m in _load_machines()
+                if m.get("ip") and m.get("ssh") and m.get("status") == "online"]
+    result = {}
+
+    for m in machines:
+        host = m["hostname"]
+        cached = _LOAD_CACHE.get(host)
+        if (not force_refresh and cached and
+                now - cached.get("ts", 0) < _LOAD_CACHE_TTL_SEC):
+            result[host] = cached
+            continue
+
+        ip   = m["ip"]
+        user = m.get("ssh_user", _DEFAULT_USER)
+        raw  = _ssh_run(ip, user, _LOAD_CMD, timeout=10)
+
+        try:
+            metrics = json.loads(raw.strip())
+            cpu  = metrics.get("cpu", 0)
+            ram  = metrics.get("ram", 0)
+            swap = metrics.get("swap", 0)
+            if cpu >= cpu_crit or ram >= ram_crit or swap >= swap_crit:
+                verdict = "critical"
+            elif cpu >= cpu_warn or ram >= ram_warn or swap >= swap_warn:
+                verdict = "warn"
+            else:
+                verdict = "ok"
+            entry = {"verdict": verdict, "cpu": cpu, "ram": ram, "swap": swap, "ts": now}
+        except Exception:
+            entry = {"verdict": "unreachable", "cpu": 0, "ram": 0, "swap": 0, "ts": now}
+
+        _LOAD_CACHE[host] = entry
+        result[host] = entry
+
+    return result
+
+
+def _cluster_load_report() -> str:
+    """
+    G40: Report CPU/RAM/swap load for all SSH-capable cluster machines.
+    """
+    loads = get_cluster_loads()
+    if not loads:
+        return "No SSH-capable online machines in machines.json."
+    lines = ["Cluster load report:\n"]
+    for host, d in loads.items():
+        v = d["verdict"]
+        indicator = {"ok": "✓", "warn": "⚠", "critical": "✗", "unreachable": "?"}.get(v, "?")
+        lines.append(
+            f"  {indicator} {host:<18} verdict={v:<10}  "
+            f"cpu={d['cpu']:5.1f}%  ram={d['ram']:5.1f}%  swap={d['swap']:5.1f}%"
+        )
+    return "\n".join(lines)
+
+
+registry.register(Tool(
+    name="cluster_load",
+    description=(
+        "G40: Check CPU, RAM, and swap load on all SSH-capable cluster machines. "
+        "Returns verdict (ok/warn/critical/unreachable) + numeric stats per machine. "
+        "Use before dispatching batch work to avoid overloading a stressed node."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "force_refresh": {
+                "type": "boolean",
+                "description": "Force fresh SSH poll (default: use 60s cache)",
+                "default": False,
+            },
+        },
+        "required": [],
+    },
+    fn=lambda force_refresh=False, **_: _cluster_load_report(),
+))

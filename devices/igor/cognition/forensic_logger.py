@@ -5,7 +5,7 @@ CSB-format structured logs at ~/.TheIgors/logs/ for post-mortem analysis.
 All logs are newest-first (prepend, not append). Rotate at 10MB.
 
 Log files:
-    reasoning_calls.log  — every upstream API call (anthropic, openrouter)
+    reasoning_calls.log  — every cloud/local inference API call (anthropic, openrouter, ollama)
     ne_runs.log          — every Narrative Engine run
     self_edit.log        — every self-edit attempt (allowed or blocked)
     tool_calls.log       — every tool invocation (high-volume; optional)
@@ -55,21 +55,31 @@ def log_reasoning_call(
     *,
     provider: str,           # "anthropic" | "openrouter" | "ollama"
     model: str,
+    tier: str = "",          # "tier.2" | "tier.3" | "tier.3.5" | "tier.4" | "tier.5"
     input_tokens: int = 0,
     output_tokens: int = 0,
+    context_chars: int = 0,  # chars of context passed in (system + user + memories)
     cost_usd: float = 0.0,
     elapsed_ms: int = 0,
     turns: int = 1,
     response_summary: str = "",
     escalation_reason: str = "",
 ) -> None:
-    """Log one upstream API call (full tool-loop, not per-turn)."""
+    """Log one inference API call — cloud or local (full tool-loop, not per-turn).
+
+    context_chars: total chars of context passed to the model on turn 1.
+    Proxy for tree traversal depth — larger context = more of the tree was loaded.
+    Layer boundary metric: log local inference and cloud inference separately so
+    the dashboard can show how much context each tier consumes.
+    """
     entry = (
         f"{_ts()}|reasoning|{provider}|{model}"
-        f"|in={input_tokens}|out={output_tokens}"
-        f"|cost=${cost_usd:.5f}|elapsed={elapsed_ms}ms|turns={turns}"
-        f"|via={escalation_reason or 'primary'}"
-        f"|resp={response_summary[:120].replace(chr(10), ' ')}"
+        + (f"|tier={tier}" if tier else "")
+        + f"|in={input_tokens}|out={output_tokens}"
+        + (f"|ctx={context_chars}" if context_chars else "")
+        + f"|cost=${cost_usd:.5f}|elapsed={elapsed_ms}ms|turns={turns}"
+        + f"|via={escalation_reason or 'primary'}"
+        + f"|resp={response_summary[:120].replace(chr(10), ' ')}"
     )
     _prepend("reasoning_calls.log", entry)
 
@@ -209,7 +219,7 @@ def log_escalation(
 
     G37 weaning data: each entry records why a tier was chosen and what the input
     looked like. Over many sessions this reveals which escalation reasons are load-
-    bearing vs. habitual, guiding the incremental reduction of upstream dependence.
+    bearing vs. habitual, guiding the incremental reduction of cloud inference dependence.
     /routing command reads this log.
     """
     entry = (
@@ -353,7 +363,7 @@ def log_tier_selection(
     complexity_score: float = 0.0,
     complexity_signals: str = "",
 ) -> None:
-    """Log which tier was selected before each upstream call."""
+    """Log which tier was selected before each inference call (local or cloud)."""
     entry = (
         f"{_ts()}|tier_select"
         f"|available={','.join(tiers_available)}"

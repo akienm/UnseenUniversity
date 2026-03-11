@@ -58,6 +58,10 @@ class Memory:
     last_accessed: Optional[datetime] = None           # #128: last activation timestamp
     metadata: dict = field(default_factory=dict)
     portable: bool = True  # #71: False = instance-local (machine paths, episodic, credentials)
+    # G46: provenance + epistemic fields
+    source: str = ""            # where this memory came from: genesis | cloud_directed | interaction | reading | user_seeded | self_edit | ""
+    confidence: float = 1.0     # 0.0–1.0: how certain is this memory? (1.0 = fully trusted)
+    context_of_encoding: str = ""  # brief context at creation: what was happening when this was encoded?
 
     @property
     def inertia(self) -> float:

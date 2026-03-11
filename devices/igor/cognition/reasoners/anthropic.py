@@ -139,6 +139,7 @@ class AnthropicReasoner(APIReasoner):
         if memory_context:
             content += memory_context
         content = scrub(content)
+        _context_chars = len(system) + len(content)  # G55: layer boundary metric
 
         messages = [{"role": "user", "content": content}]
         tools = registry.to_anthropic_schemas()
@@ -229,8 +230,9 @@ class AnthropicReasoner(APIReasoner):
                 except Exception:
                     pass
                 log_reasoning_call(
-                    provider="anthropic", model=model_to_use,
+                    provider="anthropic", model=model_to_use, tier="tier.5",
                     input_tokens=total_input_tokens, output_tokens=total_output_tokens,
+                    context_chars=_context_chars,
                     cost_usd=total_cost, elapsed_ms=int((time.perf_counter() - t0) * 1000),
                     turns=turn, response_summary="[COST_CAP_HIT]",
                 )
@@ -252,8 +254,9 @@ class AnthropicReasoner(APIReasoner):
                 if tool_calls_made:
                     console.print(f"[dim][THINK] Done. Tools used: {', '.join(tool_calls_made)}[/]")
                 log_reasoning_call(
-                    provider="anthropic", model=model_to_use,
+                    provider="anthropic", model=model_to_use, tier="tier.5",
                     input_tokens=total_input_tokens, output_tokens=total_output_tokens,
+                    context_chars=_context_chars,
                     cost_usd=total_cost, elapsed_ms=int((time.perf_counter() - t0) * 1000),
                     turns=turn, response_summary=text[:120],
                 )
@@ -410,8 +413,9 @@ class AnthropicReasoner(APIReasoner):
                 text = self._extract_text(response) or f"[Stopped: {response.stop_reason}]"
                 console.print(f"[yellow][THINK] Unexpected stop_reason={response.stop_reason}[/]")
                 log_reasoning_call(
-                    provider="anthropic", model=model_to_use,
+                    provider="anthropic", model=model_to_use, tier="tier.5",
                     input_tokens=total_input_tokens, output_tokens=total_output_tokens,
+                    context_chars=_context_chars,
                     cost_usd=total_cost, elapsed_ms=int((time.perf_counter() - t0) * 1000),
                     turns=turn, response_summary=text[:120],
                     escalation_reason=f"stop={response.stop_reason}",

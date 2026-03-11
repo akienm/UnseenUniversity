@@ -82,6 +82,47 @@ def _winnow_stats(n: int = 200) -> tuple[int, int]:
     return fires, 0  # memories_added tracking requires more instrumentation
 
 
+def _context_stats(n: int = 50) -> dict:
+    """
+    G55: Parse context_chars and token counts from recent reasoning_calls.log entries.
+    Returns per-tier averages: {tier: {avg_ctx_chars, avg_in, avg_out, calls}}.
+    """
+    import re as _re
+    stats: dict[str, dict] = {}
+    lines = _read_log_tail("reasoning_calls.log", n * 3)
+    seen = 0
+    for line in lines:
+        if "|reasoning|" not in line:
+            continue
+        tier_m = _re.search(r"\|tier=(tier\.\S+?)\|", line)
+        ctx_m  = _re.search(r"\|ctx=(\d+)", line)
+        in_m   = _re.search(r"\|in=(\d+)", line)
+        out_m  = _re.search(r"\|out=(\d+)", line)
+        tier = tier_m.group(1) if tier_m else "unknown"
+        ctx  = int(ctx_m.group(1)) if ctx_m else 0
+        in_t = int(in_m.group(1)) if in_m else 0
+        out_t = int(out_m.group(1)) if out_m else 0
+        if tier not in stats:
+            stats[tier] = {"ctx_total": 0, "in_total": 0, "out_total": 0, "calls": 0}
+        stats[tier]["ctx_total"] += ctx
+        stats[tier]["in_total"]  += in_t
+        stats[tier]["out_total"] += out_t
+        stats[tier]["calls"] += 1
+        seen += 1
+        if seen >= n:
+            break
+    result = {}
+    for tier, d in stats.items():
+        c = max(d["calls"], 1)
+        result[tier] = {
+            "avg_ctx_chars": d["ctx_total"] // c,
+            "avg_in":  d["in_total"]  // c,
+            "avg_out": d["out_total"] // c,
+            "calls": d["calls"],
+        }
+    return result
+
+
 def _word_graph_stats():
     """Get live word graph stats from basal_ganglia."""
     try:
@@ -97,7 +138,7 @@ def _word_graph_stats():
 
 
 def build_report(cortex=None, session_interactions: int = 0,
-                 session_cost: float = 0.0, upstream_calls: int = 0) -> str:
+                 session_cost: float = 0.0, cloud_calls: int = 0) -> str:
     """
     Build the full metrics report. Returns a formatted string.
     All parameters are optional — provides whatever data is available.
@@ -109,8 +150,8 @@ def build_report(cortex=None, session_interactions: int = 0,
     lines.append(f"  Interactions:      {session_interactions}")
     lines.append(f"  Cost:              ${session_cost:.4f}")
     if session_interactions > 0:
-        upstream_pct = round(upstream_calls / max(session_interactions, 1) * 100)
-        lines.append(f"  Upstream calls:    {upstream_calls} ({upstream_pct}%)")
+        cloud_pct = round(cloud_calls / max(session_interactions, 1) * 100)
+        lines.append(f"  Cloud inference:   {cloud_calls} ({cloud_pct}%)")
     lines.append("")
 
     # ── Tier distribution ─────────────────────────────────────
@@ -135,6 +176,29 @@ def build_report(cortex=None, session_interactions: int = 0,
         bar = "█" * (pct // 5) + "░" * (20 - pct // 5)
         lines.append(f"  {tier}  {bar}  {count:3d} ({pct:2d}%)  {label}")
     lines.append("")
+
+    # ── Layer boundary: context size per tier (G55) ───────────
+    ctx_stats = _context_stats(n=50)
+    if ctx_stats:
+        lines.append("LAYER BOUNDARY  (last 50 inference calls)")
+        _tier_order = ["tier.2", "tier.3", "tier.3.5", "tier.4", "tier.5", "unknown"]
+        for tier in _tier_order:
+            if tier not in ctx_stats:
+                continue
+            d = ctx_stats[tier]
+            label = {
+                "tier.2": "local Ollama",
+                "tier.3": "cloud cheap",
+                "tier.3.5": "cloud haiku",
+                "tier.4": "cloud sonnet",
+                "tier.5": "cloud direct",
+            }.get(tier, tier)
+            ctx_k = f"{d['avg_ctx_chars'] // 1000}K" if d['avg_ctx_chars'] >= 1000 else str(d['avg_ctx_chars'])
+            lines.append(
+                f"  {tier:<9}  {d['calls']:3d} calls  "
+                f"ctx≈{ctx_k}  in≈{d['avg_in']}  out≈{d['avg_out']}  ({label})"
+            )
+        lines.append("")
 
     # ── Escalation ────────────────────────────────────────────
     esc_rate, cloud, total = _escalation_rate()

@@ -83,7 +83,7 @@ class BudgetInterruptor(BaseInterruptor):
         if s["critical"]:
             msg = (
                 f"⚠️  BALANCE CRITICAL ({src}): Only ${remaining:.2f} left of ${total:.2f}. "
-                "Keep upstream calls minimal!"
+                "Keep cloud inference calls minimal!"
             )
             self._was_alerting = True
             self._write_alert(cortex, msg)

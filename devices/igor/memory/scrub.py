@@ -12,7 +12,7 @@ Patterns caught:
 
 Design: pure Python, no dependencies, synchronous, deterministic.
 Called at all write boundaries (cortex store/ring/twm) and before
-upstream API calls (anthropic.py, openrouter_reasoner.py).
+cloud inference API calls (anthropic.py, openrouter_reasoner.py).
 """
 
 import re

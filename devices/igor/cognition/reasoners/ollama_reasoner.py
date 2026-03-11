@@ -297,6 +297,8 @@ class OllamaReasoner(LocalReasoner):
                 f"- {m.narrative}" for m in relevant_memories[:5]
             )
 
+        _context_chars = len(system) + len(user_input) + len(memory_context)  # G55
+
         t0 = time.perf_counter()
         try:
             response = self._client.chat(
@@ -308,6 +310,16 @@ class OllamaReasoner(LocalReasoner):
             )
             elapsed = time.perf_counter() - t0
             _log_call("OllamaReasoner.reason", self.model, response, elapsed)
+            tokens_in  = getattr(response, "prompt_eval_count", None) or (response.get("prompt_eval_count", 0) if isinstance(response, dict) else 0)
+            tokens_out = getattr(response, "eval_count", None) or (response.get("eval_count", 0) if isinstance(response, dict) else 0)
+            try:
+                from ..forensic_logger import log_reasoning_call as _lrc
+                _lrc(provider="ollama", model=self.model, tier="tier.2",
+                     input_tokens=tokens_in, output_tokens=tokens_out,
+                     context_chars=_context_chars,
+                     elapsed_ms=int(elapsed * 1000))
+            except Exception:
+                pass
             return response["message"]["content"], 0.0  # Local = no cost
         except Exception as exc:
             elapsed = time.perf_counter() - t0

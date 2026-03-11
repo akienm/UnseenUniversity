@@ -51,7 +51,7 @@ def _format_cost(per_token: float | None) -> str:
     return f"${per_1k:.4f}"
 
 
-def list_upstream_models(filter: str = "") -> str:
+def list_cloud_models(filter: str = "") -> str:
     """
     List models available via OpenRouter with context length and cost.
     filter: optional substring to match against model id (e.g. 'mistral', 'free', 'claude').
@@ -96,7 +96,7 @@ def list_upstream_models(filter: str = "") -> str:
     return "\n".join(lines)
 
 
-def compare_upstream_costs(task_description: str) -> str:
+def compare_cloud_costs(task_description: str) -> str:
     """
     Given a task description, suggest the cheapest model likely adequate for it.
     Returns a ranked shortlist with cost and rationale.
@@ -156,16 +156,16 @@ def compare_upstream_costs(task_description: str) -> str:
         lines.append("  (no suitable models found — check OPENROUTER_API_KEY)")
 
     lines.append("")
-    lines.append("To use: /upstream add MODEL_ID  or  /relay start MODEL_ID")
+    lines.append("To use: /cloud add MODEL_ID  or  /relay start MODEL_ID")
     return "\n".join(lines)
 
 
 # ── Register tools ─────────────────────────────────────────────────────────────
 
 registry.register(Tool(
-    name="list_upstream_models",
+    name="list_cloud_models",
     description=(
-        "List models available via OpenRouter with context length and pricing. "
+        "List models available via OpenRouter (cloud inference) with context length and pricing. "
         "Use filter to narrow by provider or capability, e.g. 'mistral', 'claude', 'free'. "
         "Returns a table: model_id | context | cost_per_1k_input | cost_per_1k_output."
     ),
@@ -179,13 +179,13 @@ registry.register(Tool(
         },
         "required": [],
     },
-    fn=list_upstream_models,
+    fn=list_cloud_models,
 ))
 
 registry.register(Tool(
-    name="compare_upstream_costs",
+    name="compare_cloud_costs",
     description=(
-        "Given a task description, suggest the cheapest OpenRouter model adequate for it. "
+        "Given a task description, suggest the cheapest OpenRouter cloud inference model adequate for it. "
         "Classifies task complexity (low/medium/high) and filters by required context length. "
         "Returns a ranked shortlist with costs and instructions to activate the model."
     ),
@@ -199,5 +199,5 @@ registry.register(Tool(
         },
         "required": ["task_description"],
     },
-    fn=compare_upstream_costs,
+    fn=compare_cloud_costs,
 ))
