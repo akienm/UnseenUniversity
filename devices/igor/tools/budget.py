@@ -193,6 +193,54 @@ def budget_status() -> dict:
         }
 
 
+def is_cloud_blocked() -> tuple[bool, str]:
+    """
+    Single check combining floor guard + zero-balance guard.
+    Returns (blocked: bool, reason: str).
+
+    blocked=True means: do NOT attempt any cloud API call.
+    Route to local inference instead.
+    """
+    floor = float(os.getenv("IGOR_CLOUD_BUDGET_FLOOR_USD", "0.0"))
+    s = budget_status()
+    remaining = s["remaining_usd"]
+
+    if remaining <= 0:
+        return True, (
+            f"OpenRouter balance exhausted (${remaining:.2f}). "
+            "Running on local inference until Akien tops up credits."
+        )
+    if floor > 0 and remaining <= floor:
+        return True, (
+            f"Budget floor ${floor:.2f} reached (${remaining:.2f} remaining). "
+            "Running on local inference to preserve buffer."
+        )
+    return False, ""
+
+
+def check_budget_floor() -> tuple[bool, str]:
+    """
+    Check whether remaining balance is above the configured research floor.
+    Returns (ok_to_call: bool, message: str).
+
+    Floor set by IGOR_CLOUD_BUDGET_FLOOR_USD (default 0.0 = disabled).
+    When remaining drops below the floor, cloud inference stops gracefully
+    so a buffer is preserved for interactive / non-research tasks.
+    """
+    floor = float(os.getenv("IGOR_CLOUD_BUDGET_FLOOR_USD", "0.0"))
+    if floor <= 0.0:
+        return True, ""
+    s = budget_status()
+    remaining = s["remaining_usd"]
+    if remaining <= floor:
+        return False, (
+            f"📚 Budget floor ${floor:.2f} reached (${remaining:.2f} remaining). "
+            "Stopping cloud inference to preserve buffer for other tasks. "
+            "Lower IGOR_CLOUD_BUDGET_FLOOR_USD or ask Akien to add credits."
+        )
+    return True, ""
+
+
 def check_before_call() -> tuple[bool, str]:
     """
     Call this BEFORE making an OpenRouter API call.

@@ -300,16 +300,29 @@ def _parse_epub(path: Path) -> tuple[list[str], list[int], list[str]]:
     toc_labels: dict[str, str] = {}
 
     def _walk_toc(items):
-        for item in items:
-            if isinstance(item, epub.Link):
-                href = item.href.split("#")[0]   # strip fragment
-                toc_labels[href] = item.title
-            elif isinstance(item, tuple):
-                section, children = item
-                if hasattr(section, "href"):
-                    href = section.href.split("#")[0]
-                    toc_labels[href] = section.title
-                _walk_toc(children)
+        # items may be a single Link, a tuple (section, children), or a list
+        if isinstance(items, epub.Link):
+            toc_labels[items.href.split("#")[0]] = items.title
+            return
+        if isinstance(items, tuple):
+            section, children = items
+            if hasattr(section, "href"):
+                toc_labels[section.href.split("#")[0]] = section.title
+            _walk_toc(children)
+            return
+        try:
+            for item in items:
+                if isinstance(item, epub.Link):
+                    toc_labels[item.href.split("#")[0]] = item.title
+                elif isinstance(item, tuple):
+                    section, children = item
+                    if hasattr(section, "href"):
+                        toc_labels[section.href.split("#")[0]] = section.title
+                    _walk_toc(children)
+                else:
+                    _walk_toc(item)  # recurse for any other container
+        except TypeError:
+            pass  # not iterable — skip gracefully
 
     _walk_toc(book.toc)
 
@@ -610,11 +623,18 @@ def _find_ebook_convert() -> Optional[str]:
 def _resolve_handle(handle) -> "BookHandle | None":
     """
     Resolve a handle parameter to a live BookHandle object.
-    Accepts: live BookHandle, or a dict with {"_handle_key": "..."} from open_book.
+    Accepts: live BookHandle, dict with {"_handle_key": "..."} from open_book,
+    or a plain string handle key (e.g. "Title|Author").
     Returns None if the handle can't be resolved (e.g. cache miss after restart).
     """
     if isinstance(handle, BookHandle):
         return handle
+    if isinstance(handle, str):
+        # Plain string handle key — look up directly in cache
+        if handle in _HANDLE_CACHE:
+            return _HANDLE_CACHE[handle]
+        # Try to reopen by treating string as title
+        handle = {"title": handle}
     if isinstance(handle, dict):
         key = handle.get("_handle_key", "")
         if key in _HANDLE_CACHE:
@@ -629,14 +649,14 @@ def _resolve_handle(handle) -> "BookHandle | None":
     return None
 
 
-def read_chunk(handle, n: int = 1) -> dict:
+def read_chunk(handle=None, n: int = 1, handle_key: str = "", **_) -> dict:
     """
     Read the next n sentences from the book.
     Accepts a BookHandle or the dict returned by open_book (with _handle_key).
     Returns dict with sentences, position info, chapter info, and at_end flag.
     Advances handle.position. Saves state.
     """
-    live = _resolve_handle(handle)
+    live = _resolve_handle(handle_key if handle_key else handle)
     if live is None:
         return {"error": "Book handle not found. Call open_book() first to reopen the book."}
     handle = live
@@ -687,13 +707,13 @@ def read_chunk(handle, n: int = 1) -> dict:
     return result
 
 
-def jump_to(handle, chapter: int = 1, sentence: int = 0) -> dict:
+def jump_to(handle=None, chapter: int = 1, sentence: int = 0, handle_key: str = "", **_) -> dict:
     """
     Jump to a specific chapter (1-indexed) and sentence offset within it.
-    Accepts a BookHandle or the dict returned by open_book.
+    Accepts a BookHandle, the dict returned by open_book, or a handle_key string.
     Returns same dict as read_chunk describing the new position without advancing.
     """
-    live = _resolve_handle(handle)
+    live = _resolve_handle(handle_key if handle_key else handle)
     if live is None:
         return {"error": "Book handle not found. Call open_book() first to reopen the book."}
     handle = live
@@ -704,9 +724,9 @@ def jump_to(handle, chapter: int = 1, sentence: int = 0) -> dict:
     return read_chunk(handle, n=0)   # peek without advancing
 
 
-def reading_position(handle) -> dict:
-    """Return current position without reading or advancing. Accepts BookHandle or open_book dict."""
-    live = _resolve_handle(handle)
+def reading_position(handle=None, handle_key: str = "", **_) -> dict:
+    """Return current position without reading or advancing. Accepts BookHandle, open_book dict, or handle_key string."""
+    live = _resolve_handle(handle_key if handle_key else handle)
     if live is None:
         return {"error": "Book handle not found. Call open_book() first to reopen the book."}
     handle = live
@@ -935,10 +955,18 @@ def _reading_extract_worker(
         except Exception:
             pass
 
-    except json.JSONDecodeError:
-        pass  # Model didn't return valid JSON
-    except Exception:
-        pass  # Extraction must never crash read_chunk
+    except json.JSONDecodeError as _e:
+        try:
+            from rich.console import Console as _C
+            _C().print(f"[dim red][G54] JSON parse error in reading extract: {_e}[/]")
+        except Exception:
+            pass
+    except Exception as _e:
+        try:
+            from rich.console import Console as _C
+            _C().print(f"[dim red][G54] Reading extract failed: {type(_e).__name__}: {_e}[/]")
+        except Exception:
+            pass
 
 
 # ── Persistence ────────────────────────────────────────────────────────────────
@@ -1014,11 +1042,13 @@ registry.register(Tool(
     description=(
         "Read the next N sentences from an open book. Advances the reading position. "
         "Returns sentences, chapter info, and position percentage. "
-        "Use n=1 for sentence-by-sentence interactive reading sessions."
+        "Pass handle_key (the string from open_book's _handle_key field) OR the full "
+        "open_book result dict as handle. Use n=10-20 for efficient reading sessions."
     ),
     fn=read_chunk,
     parameters={
-        "handle": {"type": "object", "description": "BookHandle from open_book"},
+        "handle_key": {"type": "string", "description": "The _handle_key string returned by open_book (preferred)"},
+        "handle": {"type": "object", "description": "Full open_book result dict (alternative to handle_key)"},
         "n": {"type": "integer", "description": "Number of sentences to read (default 1)"},
     },
 ))
@@ -1028,7 +1058,8 @@ registry.register(Tool(
     description="Jump to a specific chapter (and optional sentence offset within it) in an open book.",
     fn=jump_to,
     parameters={
-        "handle": {"type": "object", "description": "BookHandle from open_book"},
+        "handle_key": {"type": "string", "description": "The _handle_key string returned by open_book (preferred)"},
+        "handle": {"type": "object", "description": "Full open_book result dict (alternative to handle_key)"},
         "chapter": {"type": "integer", "description": "Chapter number (1-indexed)"},
         "sentence": {"type": "integer", "description": "Sentence offset within chapter (default 0)"},
     },
@@ -1039,7 +1070,8 @@ registry.register(Tool(
     description="Return current reading position (chapter, sentence, percent) without advancing.",
     fn=reading_position,
     parameters={
-        "handle": {"type": "object", "description": "BookHandle from open_book"},
+        "handle_key": {"type": "string", "description": "The _handle_key string returned by open_book (preferred)"},
+        "handle": {"type": "object", "description": "Full open_book result dict (alternative to handle_key)"},
     },
 ))
 

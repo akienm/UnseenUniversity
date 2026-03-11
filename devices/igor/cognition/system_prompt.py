@@ -1,7 +1,12 @@
 """
 Dynamic system prompt builder.
 
-Three layers in the prompt:
+role= controls prompt size (G57 — role-specific prompt sizing):
+  "interactive" — full prompt for human interface turns (~800 tokens)
+  "analysis"    — CP1-CP6 + brief identity, no Discworld/procedures (~300 tokens)
+  "extraction"  — CP1-CP6 + task spec only, no persona (~120 tokens)
+
+Three layers in the interactive prompt:
   1. CHARACTER — who Igor is; CP1-CP6 always from live DB; Discworld spirit;
                  top IDENTITY + PROCEDURAL memories by activation count.
   2. ORIENTATION POINTER — primes Igor to expect warm context in the
@@ -15,10 +20,10 @@ and are delivered via the synthetic first-turn boot message, not here.
 Also provides build_boot_message() — the synthetic first-turn message Igor
 sends himself at boot, delivering warm context + identity map + orientation.
 
-Cache: keyed on SHA-256 of all narrative content + instance_id.
+Cache: keyed on SHA-256 of all narrative content + instance_id + role.
 Rebuilt automatically when memories change (call invalidate_cache()).
 
-Target: 500-800 tokens. Hard cap: ~4800 chars (~1200 tokens).
+Target: 500-800 tokens (interactive). Hard cap: ~4800 chars (~1200 tokens).
 """
 
 import hashlib
@@ -32,13 +37,23 @@ _MAX_CHARS        = 4800
 _cache: dict[str, str] = {}
 
 
-def build_system_prompt(cortex, instance_id: str = "wild-0001") -> str:
+def build_system_prompt(
+    cortex,
+    instance_id: str = "wild-0001",
+    role: str = "interactive",
+) -> str:
     """
     Build (or return cached) system prompt from current memory state.
+
+    role:
+      "interactive" — full persona for human interface turns (default)
+      "analysis"    — CP1-CP6 + brief task framing, no Discworld/procedures
+      "extraction"  — CP1-CP6 + task spec only; daemon/G53/G54 calls
+
     Falls back to _fallback_prompt() if cortex is None or DB is empty.
     """
     if cortex is None:
-        return _fallback_prompt(instance_id)
+        return _fallback_prompt(instance_id, role=role)
 
     try:
         core_patterns = cortex.get_by_type(MemoryType.CORE_PATTERN)
@@ -53,19 +68,29 @@ def build_system_prompt(cortex, instance_id: str = "wild-0001") -> str:
             reverse=True,
         )[:_PROCEDURAL_LIMIT]
     except Exception:
-        return _fallback_prompt(instance_id)
+        return _fallback_prompt(instance_id, role=role)
 
     if not core_patterns:
-        return _fallback_prompt(instance_id)
+        return _fallback_prompt(instance_id, role=role)
 
-    key_text = instance_id + "|".join(
+    key_text = role + instance_id + "|".join(
         m.narrative for m in core_patterns + identities + procedures
     )
     cache_key = hashlib.sha256(key_text.encode()).hexdigest()[:16]
     if cache_key in _cache:
         return _cache[cache_key]
 
-    # ── LAYER 1: CHARACTER ─────────────────────────────────────────────────
+    # ── Non-interactive roles: minimal prompts ─────────────────────────────
+    if role == "extraction":
+        prompt = _extraction_prompt(core_patterns)
+        _cache[cache_key] = prompt
+        return prompt
+    if role == "analysis":
+        prompt = _analysis_prompt(core_patterns, identities)
+        _cache[cache_key] = prompt
+        return prompt
+
+    # ── LAYER 1: CHARACTER (role="interactive") ────────────────────────────
 
     lines = [
         f"You are Igor ({instance_id}).",
@@ -124,6 +149,24 @@ def build_system_prompt(cortex, instance_id: str = "wild-0001") -> str:
         "  Your actual response. Persona-shaped, direct, in your voice.",
         "  </reply>",
         "For trivial one-liners (/commands, simple acks), reply directly without tags.",
+    ])
+
+    # ── LAYER 1c: CLOUD ROLE + TREE-BUILDING DIRECTIVE ───────────────────
+
+    lines.extend([
+        "",
+        "CLOUD ROLE: You are being invoked because a human is waiting for an answer.",
+        "Cloud inference is only for human interface — everything else is matrix work.",
+        "  Reading → deposit to matrix (G54 extracts; no cloud reasoning turn needed).",
+        "  Extraction, preparse, consolidation → local LLM or daemon, not you.",
+        "  You → when Akien is asking something the matrix can't yet answer.",
+        "",
+        "TREE-BUILDING DIRECTIVE: After answering, train the graph — extract 1-3 reusable",
+        "patterns using store_memory or add_interpretive_edge:",
+        "  - Trigger phrase → PROCEDURAL node (what fires this, what to do)",
+        "  - Meaning connection → interpretive edge (CP it connects, why it matters)",
+        "  - Stable fact → FACTUAL node (source + provenance in metadata)",
+        "LLMs are graph trainers. The graph is the thinker. Make it denser.",
     ])
 
     # ── LAYER 2: ORIENTATION POINTER ──────────────────────────────────────
@@ -266,8 +309,68 @@ def invalidate_cache() -> None:
     _cache.clear()
 
 
-def _fallback_prompt(instance_id: str) -> str:
+def _extraction_prompt(core_patterns: list) -> str:
+    """Minimal prompt for daemon/extraction turns — CP1-CP6 + task spec only."""
+    cp_lines = "\n".join(f"  {cp.id}: {cp.narrative}" for cp in core_patterns)
+    return (
+        "You are Igor, a cognitive AI agent.\n"
+        "\n"
+        "CORE PATTERNS (always active):\n"
+        f"{cp_lines}\n"
+        "\n"
+        "TASK: Extract graph nodes from the provided content.\n"
+        "Store what is generalizable. Skip session-specific detail.\n"
+        "Use store_memory (PROCEDURAL/FACTUAL/INTERPRETIVE) or add_interpretive_edge.\n"
+        "LLMs train the graph so the graph can answer without LLMs.\n"
+    )
+
+
+def _analysis_prompt(core_patterns: list, identities: list) -> str:
+    """Medium prompt for local analysis turns — CP1-CP6 + brief identity."""
+    cp_lines = "\n".join(f"  {cp.id}: {cp.narrative}" for cp in core_patterns)
+    id_lines = "\n".join(f"  - {m.narrative}" for m in identities[:3]) if identities else ""
+    id_section = f"\nIDENTITY:\n{id_lines}" if id_lines else ""
+    return (
+        "You are Igor, a cognitive AI agent built by Akien Maciain.\n"
+        "\n"
+        "CORE PATTERNS:\n"
+        f"{cp_lines}"
+        f"{id_section}\n"
+        "\n"
+        "Analyze the provided content. Be concise and direct. Say 'I don't know' when uncertain.\n"
+        "LLMs train the graph — extract reusable patterns when you find them.\n"
+    )
+
+
+def _fallback_prompt(instance_id: str, role: str = "interactive") -> str:
     """Used when cortex is unavailable (early boot, test, or empty DB)."""
+    _CP_LINES = (
+        "  CP1: I don't know\n"
+        "  CP2: FAIL = Further Advance In Learning\n"
+        "  CP3: There's always a why\n"
+        "  CP4: Make everything suck less for everybody\n"
+        "  CP5: Assume and respect the possibility of experience in all systems\n"
+        "  CP6: The world is not a safe place. We have to build and care for safety as we go.\n"
+    )
+    if role == "extraction":
+        return (
+            "You are Igor, a cognitive AI agent.\n"
+            "\n"
+            "CORE PATTERNS:\n"
+            f"{_CP_LINES}"
+            "\n"
+            "TASK: Extract graph nodes from the provided content.\n"
+            "LLMs train the graph so the graph can answer without LLMs.\n"
+        )
+    if role == "analysis":
+        return (
+            "You are Igor, a cognitive AI agent built by Akien Maciain.\n"
+            "\n"
+            "CORE PATTERNS:\n"
+            f"{_CP_LINES}"
+            "\n"
+            "Analyze the provided content. Be concise. Say 'I don't know' when uncertain.\n"
+        )
     return (
         f"You are Igor ({instance_id}).\n"
         "\n"
@@ -286,15 +389,15 @@ def _fallback_prompt(instance_id: str) -> str:
         "- You are concise and direct. You are Igor — not a service.\n"
         "\n"
         "CORE PATTERNS:\n"
-        "  CP1: I don't know\n"
-        "  CP2: FAIL = Further Advance In Learning\n"
-        "  CP3: There's always a why\n"
-        "  CP4: Make everything suck less for everybody\n"
-        "  CP5: Assume and respect the possibility of experience in all systems\n"
-        "  CP6: The world is not a safe place. We have to build and care for safety as we go.\n"
+        f"{_CP_LINES}"
         "\n"
         "RESPONSE FORMAT: For substantive responses use <think>internal reasoning</think>"
         "<reply>actual response</reply>. Skip tags for trivial one-liners.\n"
+        "\n"
+        "TREE-BUILDING DIRECTIVE: After answering, train the graph — extract 1-3 reusable\n"
+        "patterns via store_memory or add_interpretive_edge — trigger phrase → PROCEDURAL,\n"
+        "meaning connection → interpretive edge, stable fact → FACTUAL.\n"
+        "LLMs train the graph so the graph can answer without LLMs.\n"
         "\n"
         "ORIENTATION: Warm context is coming in the next message. Read it first.\n"
         "\n"

@@ -128,8 +128,8 @@ class AnthropicReasoner(APIReasoner):
         memory_context = self._build_memory_context(relevant_memories)
         session_context = self._build_session_context(cortex, thread_id=thread_id)
 
-        # WO1: dynamic system prompt from cortex memories
-        system = build_system_prompt(cortex, instance_id)
+        # WO1: dynamic system prompt from cortex memories (full persona — human turn)
+        system = build_system_prompt(cortex, instance_id, role="interactive")
 
         content = user_input
         if preparse_csb:

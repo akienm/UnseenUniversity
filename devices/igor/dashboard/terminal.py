@@ -88,20 +88,32 @@ def render(
     blob_count = _get_blob_count(cortex)
     blob_str = f"   [bold]Blobs:[/] {blob_count}" if blob_count else ""
     new_habit_tag = f" [green](+{new_habits})[/]" if new_habits else ""
-    lines.append(f"[bold]Habits:[/] {len(habits)}{new_habit_tag}   [bold]TWM depth:[/] {twm_depth}{blob_str}")
+    lines.append(f"[bold]Procedural nodes:[/] {len(habits)}{new_habit_tag}   [bold]TWM depth:[/] {twm_depth}{blob_str}")
     if new_habits:
         recent = _get_recent_habits(cortex, n=new_habits)
         for h in recent:
             src = h.get("source", "")
             src_tag = {"cloud_directed": "[cyan]cloud[/]", "reading": "[magenta]reading[/]"}.get(src, "[dim]self[/]")
             lines.append(f"  [green]↑ new[/] {src_tag} {h['id']}: {h['narrative'][:55]}")
+    # ── Tree node counts ──────────────────────────────────────────────────
     if word_graph is not None:
         try:
             wg_words = len(word_graph._word_to_ids)
-            wg_habits = word_graph._doc_count
-            lines.append(f"[bold]Word graph:[/] {wg_words} words  {wg_habits} docs indexed")
+            wg_docs = word_graph._doc_count
+            lines.append(
+                f"[bold]Word graph nodes:[/] {wg_words:,}  "
+                f"[dim]({wg_docs:,} documents indexed)[/]"
+            )
         except Exception:
             pass
+    action_nodes = counts.get(MemoryType.PROCEDURAL.value, 0)
+    interp_nodes = counts.get(MemoryType.INTERPRETIVE.value, 0)
+    interp_edges = _get_interpretive_edge_count(cortex)
+    factual_nodes = counts.get(MemoryType.FACTUAL.value, 0)
+    edge_str = f"  [dim]· {interp_edges} edges[/]" if interp_edges else ""
+    lines.append(f"  [dim]Action tree:[/]   {action_nodes:,} nodes")
+    lines.append(f"  [dim]Meaning tree:[/]  {interp_nodes:,} nodes{edge_str}")
+    lines.append(f"  [dim]Knowledge tree:[/]{factual_nodes:,} nodes")
     local_pct = _get_local_pct()
     lines.append(f"[bold]Cloud inference:[/] {upstream_pct}%   [bold]Local inference:[/] {local_pct}%")
     if latency_samples:
@@ -260,6 +272,16 @@ def _valence_str(valence: float | None) -> str:
     return f"{sign}{valence:.2f} ({label})"
 
 
+def _get_interpretive_edge_count(cortex: Cortex) -> int:
+    """Count edges in the interpretive (meaning) tree."""
+    try:
+        with cortex._conn() as conn:
+            row = conn.execute("SELECT COUNT(*) FROM interpretive_edges").fetchone()
+            return row[0] if row else 0
+    except Exception:
+        return 0
+
+
 def _get_recent_habits(cortex: Cortex, n: int = 3) -> list[dict]:
     """Return the N most recently created PROCEDURAL memories (habits) by timestamp."""
     try:
@@ -288,7 +310,7 @@ def print_activated_memories(memories: list, label: str = "Activated memories"):
 
 
 def print_habit_trigger(habit):
-    console.print(f"\n[green][HABIT] Triggered: {habit.id} — {habit.narrative}[/]")
+    console.print(f"\n[green][NODE] Triggered: {habit.id} — {habit.narrative}[/]")
 
 
 def print_reasoning(used_api: bool, skip_to: str = "", reason: str = ""):
