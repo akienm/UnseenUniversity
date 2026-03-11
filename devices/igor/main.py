@@ -1828,6 +1828,26 @@ class Igor:
                 0.0,
                 False,
             )
+
+        # ── Budget depletion guard — degrade to local before attempting cloud ──
+        try:
+            from .tools.budget import is_cloud_blocked as _is_cloud_blocked
+            _blocked, _block_reason = _is_cloud_blocked()
+            if _blocked:
+                console.print(f"[yellow][BUDGET] {_block_reason}[/]")
+                from .cognition.reasoners.ollama_reasoner import OllamaReasoner as _OllamaReasoner
+                _local_r = _OllamaReasoner()
+                _local_text, _local_cost = _local_r.reason(
+                    user_input, relevant, core, self.instance_id, cortex=self.cortex,
+                    thread_id=thread_id,
+                )
+                self._current_tier = "tier.2"
+                return _local_text, _local_cost, False
+        except Exception as _budget_exc:
+            # If the budget check itself or local fallback fails, proceed to cloud
+            # (better to try cloud than to silently fail)
+            console.print(f"[dim][BUDGET] local fallback error: {_budget_exc}[/]")
+
         last_error: str = ""
 
         # ── tier.3: OR cheap model ──────────────────────────────────────────────

@@ -19,6 +19,7 @@ from rich.console import Console
 
 from ...memory.models import Memory
 from ...tools.registry import registry
+from ...tools.budget import check_budget_floor as _check_budget_floor
 from ... import tools as _tools  # noqa: F401 — registers all tools
 from .base import (BaseReasoner, MAX_TURNS, CONTEXT_WARN_CHARS, CONTEXT_HARD_CAP_CHARS,
                    CALL_COST_WARN_USD, RESEARCH_TOOL_CAP, RESEARCH_MODE, BIG_READ_TOOLS,
@@ -97,7 +98,8 @@ def preparse_via_openrouter(
 # ── G53: Cloud-directed habit extraction ──────────────────────────────────────
 
 _HABIT_EXTRACT_PROMPT = """\
-You are analyzing an AI assistant interaction to identify patterns worth encoding as habits.
+You are building a cognitive tree for an AI agent named Igor.
+Analyze this interaction and extract ONE node worth adding to the tree.
 
 USER INPUT:
 {user_input}
@@ -107,25 +109,30 @@ ASSISTANT RESPONSE (summary):
 
 TIER: {tier}
 
-A "habit" is a trigger phrase + response that should fire automatically without LLM reasoning.
-Good candidates: greetings, status checks, recurring questions with stable answers, common
-tool-dispatch patterns (e.g. "what time is it" → call get_current_time).
+Three node types are possible — pick the BEST fit:
 
-Is there a clear, generalizable pattern here that should become a habit?
+TYPE "procedural": A recurring trigger with a stable, automatable response.
+  Good: greetings, status checks, "what time is it" → get_current_time, tool-dispatch patterns.
+  JSON: {{"type":"procedural","trigger":"2-8 key words","narrative":"what this does and why",
+         "code_ref":"tools.module:fn OR empty","response_template":"canned text OR empty",
+         "confidence":0.0-1.0}}
 
-If YES, respond with ONLY this JSON (no markdown, no explanation):
-{{
-  "trigger": "2-8 key words that activate this habit",
-  "narrative": "one sentence: what this habit does and why",
-  "code_ref": "tools.module:function_name OR empty string if pure text response",
-  "response_template": "the canned response text, OR empty if code_ref is set",
-  "confidence": 0.0-1.0
-}}
+TYPE "factual": A stable, generalizable fact or principle learned from this interaction.
+  Good: architectural decisions, domain facts, "X works by Y", confirmed behaviors.
+  Not: ephemeral context, session-specific state, things likely to change.
+  JSON: {{"type":"factual","narrative":"1-2 sentences: the stable fact","confidence":0.0-1.0}}
 
-If NO (interaction is too context-specific, too complex, or already a known habit):
+TYPE "interpretive": A connection between this situation and Igor's core values (CP1-CP6).
+  Good: "when X happens, it means Y about the situation, which connects to CP3/CP4/etc."
+  CP1=epistemic honesty, CP2=failure is learning, CP3=follow the why, CP4=reduce friction,
+  CP5=respect experience in all systems, CP6=safety must be built.
+  JSON: {{"type":"interpretive","from_id":"CP1-CP6","narrative":"the meaning connection",
+         "meaning_payload":"why this matters to Igor personally","confidence":0.0-1.0}}
+
+If nothing generalizable — interaction is too specific, trivial, or already known:
 SKIP
 
-Respond with ONLY the JSON object or the word SKIP. Nothing else."""
+Respond with ONLY the JSON or SKIP. No markdown, no explanation."""
 
 
 def _habit_extract_worker(
@@ -177,64 +184,102 @@ def _habit_extract_worker(
         result = data["choices"][0]["message"]["content"].strip()
 
         if result.upper().startswith("SKIP") or not result.startswith("{"):
-            return  # No habit identified
+            return
 
-        habit_data = json.loads(result)
-        trigger = habit_data.get("trigger", "").strip()
-        narrative = habit_data.get("narrative", "").strip()
-        confidence = float(habit_data.get("confidence", 0.5))
-        code_ref = habit_data.get("code_ref", "").strip()
-        response_template = habit_data.get("response_template", "").strip()
+        node_data = json.loads(result)
+        node_type = node_data.get("type", "procedural").strip().lower()
+        narrative  = node_data.get("narrative", "").strip()
+        confidence = float(node_data.get("confidence", 0.5))
 
-        if not trigger or not narrative or confidence < 0.6:
-            return  # Too uncertain or incomplete
-
-        # Check if a similar habit already exists (avoid duplicates)
-        existing = cortex.search(trigger, limit=3, min_score=0.8)
-        for mem in existing:
-            if mem.metadata.get("trigger") and trigger.split()[0] in mem.metadata["trigger"]:
-                return  # Close enough match — skip
+        if not narrative or confidence < 0.6:
+            return
 
         from ...memory.models import Memory as _Memory, MemoryType as _MT
-        metadata = {
-            "trigger": trigger,
-            "cloud_directed": True,
-            "extraction_tier": tier,
-        }
-        if code_ref:
-            metadata["code_ref"] = code_ref
-        if response_template:
-            metadata["response_template"] = response_template
 
-        habit = _Memory(
-            id=f"PROC_CLOUD_{str(uuid.uuid4())[:6].upper()}",
-            narrative=narrative,
-            memory_type=_MT.PROCEDURAL,
-            source="cloud_directed",
-            confidence=confidence,
-            context_of_encoding=f"cloud_extraction|tier={tier}|trigger={trigger[:40]}",
-            metadata=metadata,
-        )
-        cortex.store(habit)
-        cortex.add_child("CP2", habit.id)  # Learning from experience → CP2
+        if node_type == "procedural":
+            trigger = node_data.get("trigger", "").strip()
+            if not trigger:
+                return
+            # Skip if close duplicate exists
+            existing = cortex.search(trigger, limit=3, min_score=0.8)
+            for mem in existing:
+                if mem.metadata.get("trigger") and trigger.split()[0] in mem.metadata["trigger"]:
+                    return
+            code_ref = node_data.get("code_ref", "").strip()
+            resp_tmpl = node_data.get("response_template", "").strip()
+            metadata = {"trigger": trigger, "cloud_directed": True, "extraction_tier": tier}
+            if code_ref:
+                metadata["code_ref"] = code_ref
+            if resp_tmpl:
+                metadata["response_template"] = resp_tmpl
+            mem = _Memory(
+                id=f"PROC_CLOUD_{str(uuid.uuid4())[:6].upper()}",
+                narrative=narrative,
+                memory_type=_MT.PROCEDURAL,
+                source="cloud_directed",
+                confidence=confidence,
+                context_of_encoding=f"cloud_extraction|tier={tier}|trigger={trigger[:40]}",
+                metadata=metadata,
+            )
+            cortex.store(mem)
+            cortex.add_child("CP2", mem.id)
+
+        elif node_type == "factual":
+            mem = _Memory(
+                id=f"FACT_CLOUD_{str(uuid.uuid4())[:6].upper()}",
+                narrative=narrative,
+                memory_type=_MT.FACTUAL,
+                source="cloud_directed",
+                confidence=confidence,
+                context_of_encoding=f"cloud_extraction|tier={tier}",
+                metadata={"cloud_directed": True, "extraction_tier": tier},
+            )
+            cortex.store(mem)
+            cortex.add_child("CP3", mem.id)  # "there's always a why" → facts
+
+        elif node_type == "interpretive":
+            from_id = node_data.get("from_id", "").strip()
+            meaning_pay = node_data.get("meaning_payload", "").strip()
+            if not from_id:
+                return
+            mem = _Memory(
+                id=f"INTERP_CLOUD_{str(uuid.uuid4())[:6].upper()}",
+                narrative=narrative,
+                memory_type=_MT.INTERPRETIVE,
+                source="cloud_directed",
+                confidence=confidence,
+                context_of_encoding=f"cloud_extraction|tier={tier}|from={from_id}",
+                metadata={"from_id": from_id, "cloud_directed": True, "extraction_tier": tier},
+            )
+            cortex.store(mem)
+            if cortex.get(from_id):
+                cortex.add_child(from_id, mem.id)
+                if meaning_pay:
+                    cortex.add_interpretive_edge(
+                        from_id=from_id,
+                        to_id=mem.id,
+                        direction="activation",
+                        condition_csb=f"cloud_extracted|tier={tier}",
+                        meaning_payload=meaning_pay,
+                        action_pointer="",
+                    )
+        else:
+            return
 
         try:
             from ..forensic_logger import log_memory_op as _lm
-            _lm(
-                op="cloud_habit_extracted",
-                memory_id=habit.id,
-                detail=f"tier={tier}|trigger={trigger}|confidence={confidence:.2f}",
-            )
+            _lm(op="cloud_node_extracted", memory_id=mem.id,
+                detail=f"type={node_type}|tier={tier}|conf={confidence:.2f}")
         except Exception:
             pass
 
         console.print(
-            f"[dim cyan][G53] Habit extracted from {tier}: {habit.id} "
-            f"trigger='{trigger}' conf={confidence:.2f}[/]"
+            f"[dim cyan][G53] {node_type} node from {tier}: {mem.id} "
+            f"conf={confidence:.2f} — {narrative[:60]}[/]"
         )
 
     except json.JSONDecodeError:
-        pass  # Extraction model didn't return valid JSON — ignore
+        pass  # Model didn't return valid JSON — ignore
     except Exception:
         pass  # Extraction must never crash the main loop
 
@@ -267,8 +312,8 @@ class OpenRouterReasoner(BaseReasoner):
         """Run full agentic tool loop via OpenRouter."""
         t0 = time.perf_counter()
 
-        # WO1: dynamic system prompt from cortex memories
-        system = build_system_prompt(cortex, instance_id)
+        # WO1: dynamic system prompt from cortex memories (full persona — human turn)
+        system = build_system_prompt(cortex, instance_id, role="interactive")
 
         # ── Context winnow: targeted retrieval before main call ───────────────
         # Cheap pre-call identifies which specific memories are needed.
@@ -322,11 +367,17 @@ class OpenRouterReasoner(BaseReasoner):
                 console.print("[yellow][OR] Exit requested — stopping at turn boundary.[/]")
                 return "Stopping — exit requested.", total_cost
 
-            # ── TURN LIMIT — break runaway tool loops ─────────────────────
+            # ── TURN LIMIT — safety backstop (budget floor is primary gate) ──
             if turn > MAX_TURNS:
                 console.print(
                     f"[yellow][OR] MAX_TURNS ({MAX_TURNS}) reached — stopping tool loop.[/]"
                 )
+                break
+
+            # ── BUDGET FLOOR — stop when account drops below configured floor
+            _floor_ok, _floor_msg = _check_budget_floor()
+            if not _floor_ok:
+                console.print(f"[yellow][OR] {_floor_msg}[/]")
                 break
 
             # ── CONTEXT SIZE WARNING + HARD CAP (#26) ─────────────────────

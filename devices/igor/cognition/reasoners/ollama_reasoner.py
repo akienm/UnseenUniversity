@@ -30,6 +30,19 @@ OLLAMA_LOCAL_MODEL = os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b")
 OLLAMA_HOST        = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 DEFAULT_MODEL      = OLLAMA_LOCAL_MODEL  # backwards-compat alias
 
+# ── Reasoning host — separate from embedding host (localhost nomic-embed-text) ─
+# Set OLLAMA_REASONING_HOST to a remote machine for a bigger reasoning model.
+# Embeddings always stay on localhost (embedder.py uses _ollama default directly).
+OLLAMA_REASONING_HOST  = os.getenv("OLLAMA_REASONING_HOST", OLLAMA_HOST)
+OLLAMA_REASONING_MODEL = os.getenv("OLLAMA_REASONING_MODEL", OLLAMA_LOCAL_MODEL)
+
+# Client pointed at the reasoning host (may be remote)
+_reasoning_client = (
+    _ollama.Client(host=OLLAMA_REASONING_HOST)
+    if OLLAMA_REASONING_HOST != OLLAMA_HOST
+    else _ollama
+)
+
 PREPARSE_TIMEOUT = 8  # seconds
 
 # Intent taxonomy must match thalamus.py 13-intent taxonomy exactly (#30, G36)
@@ -63,8 +76,9 @@ if not _ollama_log.handlers:
 
 # ── Health check ────────────────────────────────────────────────────────────
 
-def is_healthy(host: str = OLLAMA_HOST, timeout: int = 5) -> bool:
-    """Return True if Ollama is running at host (probes /api/tags)."""
+def is_healthy(host: str = OLLAMA_REASONING_HOST, timeout: int = 5) -> bool:
+    """Return True if Ollama is running at host (probes /api/tags).
+    Defaults to OLLAMA_REASONING_HOST so main.py health checks the right box."""
     try:
         with urllib.request.urlopen(f"{host}/api/tags", timeout=timeout) as resp:
             return resp.status == 200
@@ -175,16 +189,17 @@ def _rule_based_csb(user_input: str, habits: list) -> str:
 def preparse(user_input: str, habits: list, model: str = "") -> str:
     """
     Pre-parse user input via Ollama → PARSED_INPUT CSB block.
+    Uses OLLAMA_REASONING_HOST + OLLAMA_REASONING_MODEL (may be remote).
     Falls back to _rule_based_csb on timeout or error.
     Returns a CSB string (always — never raises).
     Logs fallback events to errors.log for telemetry (#30).
     """
-    _model = model or OLLAMA_LOCAL_MODEL
+    _model = model or OLLAMA_REASONING_MODEL
     prompt = _PREPARSE_PROMPT.format(text=user_input[:300])
     fallback_reason = None
     t0 = time.perf_counter()
     try:
-        response = _ollama.chat(
+        response = _reasoning_client.chat(
             model=_model,
             messages=[{"role": "user", "content": prompt}],
             options={"temperature": 0.1, "num_predict": 120},
@@ -269,10 +284,11 @@ def _log_call(fn_name: str, model: str, response, elapsed: float, error: str | N
 class OllamaReasoner(LocalReasoner):
     """Full reasoning via local or remote Ollama model. Slow but free."""
 
-    def __init__(self, model: str = DEFAULT_MODEL, host: str | None = None):
+    def __init__(self, model: str = OLLAMA_REASONING_MODEL,
+                 host: str | None = OLLAMA_REASONING_HOST):
         self.model = model
-        self.host = host  # None = localhost; e.g. "http://10.0.0.99:11434" for remote
-        self._client = _ollama.Client(host=host) if host else _ollama
+        self.host = host
+        self._client = _reasoning_client
 
     def name(self) -> str:
         label = self.host or "local"
@@ -287,9 +303,17 @@ class OllamaReasoner(LocalReasoner):
         cortex=None,
         thread_id: str | None = None,
     ) -> tuple[str, float]:
-        # Local model cannot embody Igor's persona from the full system prompt.
-        # Use a minimal task instruction instead (#41). Persona belongs to Claude only.
-        system = "Answer briefly and directly. Use the context provided. Say 'I don't know' when uncertain."
+        # Use role="analysis" system prompt when cortex is available (G57):
+        # CP1-CP6 + brief identity — enough structure for local reasoning,
+        # small enough that the 7B model can actually follow it.
+        # Falls back to minimal hardcoded string if cortex is unavailable.
+        if cortex is not None:
+            try:
+                system = build_system_prompt(cortex, role="analysis")
+            except Exception:
+                system = "Answer briefly and directly. Use the context provided. Say 'I don't know' when uncertain."
+        else:
+            system = "Answer briefly and directly. Use the context provided. Say 'I don't know' when uncertain."
 
         memory_context = ""
         if relevant_memories:
