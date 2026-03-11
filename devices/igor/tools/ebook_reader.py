@@ -598,7 +598,7 @@ def read_chunk(handle: BookHandle, n: int = 1) -> dict:
     # Determine chapter
     chapter_idx = _chapter_at(handle, end - 1)
 
-    return {
+    result = {
         "sentences": chunk,
         "position": end,
         "total_sentences": len(handle.sentences),
@@ -608,6 +608,31 @@ def read_chunk(handle: BookHandle, n: int = 1) -> dict:
         "at_end": end >= len(handle.sentences),
         "percent": round(end / max(len(handle.sentences), 1) * 100, 1),
     }
+
+    # G54: reading → interpretive tree extraction (fire-and-forget daemon thread)
+    if (chunk and
+            os.getenv("IGOR_READING_EXTRACT", "false").lower() in ("1", "true", "yes")):
+        chunk_text = " ".join(chunk)
+        word_count = len(chunk_text.split())
+        if word_count >= _MIN_EXTRACT_WORDS:
+            import threading as _threading
+            _t = _threading.Thread(
+                target=_reading_extract_worker,
+                args=(
+                    chunk_text,
+                    handle.meta.title,
+                    handle.meta.author,
+                    result["chapter"],
+                    result["chapter_title"],
+                    end,
+                    handle.meta.calibre_id,
+                ),
+                daemon=True,
+                name="reading_extractor",
+            )
+            _t.start()
+
+    return result
 
 
 def jump_to(handle: BookHandle, chapter: int = 1, sentence: int = 0) -> dict:
@@ -646,6 +671,213 @@ def _chapter_at(handle: BookHandle, pos: int) -> int:
         else:
             break
     return idx
+
+
+# ── G54: Reading → Interpretive Tree extraction ────────────────────────────────
+
+# Candidate interpretive nodes for the extraction model to choose from.
+# These are the root CP nodes + G51 navigational heuristics.
+# Igor adds more as the tree grows — this list is a starter scaffold.
+_INTERP_CANDIDATES = [
+    ("CP1", "Epistemic honesty — say when uncertain"),
+    ("CP2", "Failure is learning — FAIL = Further Advance In Learning"),
+    ("CP3", "There's always a why — follow the causal chain"),
+    ("CP4", "Make everything suck less for everybody — reduce friction"),
+    ("CP5", "Respect the possibility of experience in all systems"),
+    ("CP6", "Safety must be built and maintained — not default"),
+    ("PROC_HEURISTIC_HOW_MUST",    "How must this work? — derive from necessity"),
+    ("PROC_HEURISTIC_FIRST_RESPONSE", "What's the first thing I say? — introspection tool"),
+    ("PROC_HEURISTIC_ALIGNMENT",   "Which choice aligns with who I'd most like to be?"),
+    ("PROC_HEURISTIC_FITS_HERE",   "What looks like it would fit there? — pattern completion"),
+    ("PROC_HEURISTIC_WORKAROUND",  "How could we get around that? — obstacle navigation"),
+    ("PROC_HEURISTIC_LEVER",       "Where is the lever? — leverage point scan"),
+    ("PROC_HEURISTIC_MONKEY_PROOF","How will humans screw this up? — failure simulation"),
+]
+
+_READING_EXTRACT_PROMPT = """\
+You are reading a passage from "{title}" by {author} (chapter {chapter}).
+
+PASSAGE:
+{chunk_text}
+
+Your task: identify whether this passage contains a key idea worth remembering.
+
+Candidate interpretive nodes (choose the BEST match or "none"):
+{candidates}
+
+Respond with ONLY this JSON if there is a memorable idea (confidence >= 0.6):
+{{
+  "narrative": "1-2 sentences: the key idea, in Igor's voice",
+  "node_id": "the best matching candidate id from the list above, or 'none'",
+  "meaning_payload": "what this idea means to Igor personally — why it matters",
+  "store_blob": true/false (true = verbatim passage worth revisiting),
+  "confidence": 0.0-1.0
+}}
+
+Or respond with SKIP if the passage is transitional, repetitive, or not idea-dense.
+
+Respond ONLY with the JSON or SKIP."""
+
+_MIN_EXTRACT_WORDS = 20   # Don't extract from very short chunks
+
+
+def _get_cortex_for_reading():
+    db_path = os.getenv("IGOR_DB_PATH", "")
+    if not db_path:
+        return None
+    from ..memory.cortex import Cortex
+    return Cortex(Path(db_path))
+
+
+def _reading_extract_worker(
+    chunk_text: str,
+    title: str,
+    author: str,
+    chapter: int,
+    chapter_title: str,
+    position: int,
+    calibre_id: int | None,
+) -> None:
+    """
+    G54: Fire-and-forget reading memory extraction.
+    Runs in a daemon thread — never blocks read_chunk().
+    Uses gpt-4o-mini to identify key ideas and link them to the interpretive tree.
+    Gate: IGOR_READING_EXTRACT=true (default off while tuning).
+    """
+    try:
+        import urllib.request as _urlreq
+        api_key = os.getenv("OPENROUTER_API_KEY", "")
+        if not api_key:
+            return
+
+        cheap_model = os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
+        candidates_str = "\n".join(
+            f"  {nid}: {desc}" for nid, desc in _INTERP_CANDIDATES
+        )
+        prompt = _READING_EXTRACT_PROMPT.format(
+            title=title,
+            author=author,
+            chapter=chapter,
+            chunk_text=chunk_text[:600],
+            candidates=candidates_str,
+        )
+
+        payload = json.dumps({
+            "model": cheap_model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.1,
+            "max_tokens": 220,
+        }).encode()
+        req = _urlreq.Request(
+            "https://openrouter.ai/api/v1/chat/completions",
+            data=payload,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://github.com/akienm/TheIgors",
+            },
+            method="POST",
+        )
+
+        with _urlreq.urlopen(req, timeout=20) as resp:
+            data = json.loads(resp.read())
+        result = data["choices"][0]["message"]["content"].strip()
+
+        if result.upper().startswith("SKIP") or not result.startswith("{"):
+            return
+
+        extracted = json.loads(result)
+        narrative   = extracted.get("narrative", "").strip()
+        node_id     = extracted.get("node_id", "none").strip()
+        meaning_pay = extracted.get("meaning_payload", "").strip()
+        store_blob  = bool(extracted.get("store_blob", False))
+        confidence  = float(extracted.get("confidence", 0.5))
+
+        if not narrative or confidence < 0.6:
+            return
+
+        cortex = _get_cortex_for_reading()
+        if cortex is None:
+            return
+
+        import uuid as _uuid
+        from ..memory.models import Memory as _M, MemoryType as _MT
+
+        mem_id = f"READ_{str(_uuid.uuid4())[:6].upper()}"
+        metadata = {
+            "book_title": title,
+            "book_author": author,
+            "chapter": chapter,
+            "chapter_title": chapter_title,
+            "sentence_position": position,
+            "extraction_confidence": confidence,
+        }
+        if calibre_id:
+            metadata["calibre_id"] = calibre_id
+
+        if store_blob:
+            # Store brief narrative + full passage as blob pair
+            try:
+                blob_mem, _ = cortex.store_blob_pair(
+                    narrative=narrative,
+                    content=chunk_text,
+                    tags=[
+                        f"reading", f"book:{title[:30]}", f"author:{author[:20]}",
+                        f"chapter:{chapter}", f"node:{node_id}",
+                    ],
+                )
+                mem_id = blob_mem.id
+            except Exception:
+                store_blob = False  # Fallback to plain FACTUAL
+
+        if not store_blob:
+            mem = _M(
+                id=mem_id,
+                narrative=narrative,
+                memory_type=_MT.FACTUAL,
+                source="reading",
+                confidence=confidence,
+                context_of_encoding=f"reading|{title[:40]}|ch{chapter}|pos{position}",
+                metadata=metadata,
+            )
+            cortex.store(mem)
+
+        # Parent: the matched interpretive node (or CP3 "there's always a why" as fallback)
+        parent_id = node_id if node_id and node_id != "none" else "CP3"
+        try:
+            if cortex.get(parent_id):
+                cortex.add_child(parent_id, mem_id)
+                # Add interpretive edge with meaning payload
+                if meaning_pay and node_id and node_id != "none":
+                    cortex.add_interpretive_edge(
+                        from_id=node_id,
+                        to_id=mem_id,
+                        direction="activation",
+                        condition_csb=f"context:reading|book:{title[:20]}",
+                        meaning_payload=meaning_pay,
+                        action_pointer="",
+                        weight=confidence,
+                    )
+        except Exception:
+            pass
+
+        try:
+            from .registry import registry as _reg  # noqa — for logging only
+            import sys as _sys
+            # Use rich console if available; otherwise silent
+            from rich.console import Console as _C
+            _C().print(
+                f"[dim cyan][G54] Reading memory: {mem_id} "
+                f"node={node_id} conf={confidence:.2f} "
+                f"'{narrative[:60]}'[/]"
+            )
+        except Exception:
+            pass
+
+    except json.JSONDecodeError:
+        pass  # Model didn't return valid JSON
+    except Exception:
+        pass  # Extraction must never crash read_chunk
 
 
 # ── Persistence ────────────────────────────────────────────────────────────────
@@ -755,4 +987,76 @@ registry.register(Tool(
     description="Show all books Igor has started reading, with current position and progress.",
     fn=list_reading_sessions,
     parameters={},
+))
+
+
+def list_reading_memories(book_title: str = "", limit: int = 20, **_) -> str:
+    """
+    G54: List memories extracted from reading sessions.
+    Optionally filter by book title. Returns memories with source="reading".
+    Use to review what Igor has learned from reading and tune the extraction.
+    """
+    cortex = _get_cortex_for_reading()
+    if cortex is None:
+        return "IGOR_DB_PATH not set — cannot access memory store."
+    try:
+        with cortex._conn() as conn:
+            if book_title:
+                rows = conn.execute(
+                    """
+                    SELECT id, narrative, metadata_json, confidence, timestamp
+                    FROM memories
+                    WHERE source = 'reading'
+                    AND metadata_json LIKE ?
+                    ORDER BY timestamp DESC LIMIT ?
+                    """,
+                    (f"%{book_title[:30]}%", limit),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    """
+                    SELECT id, narrative, metadata_json, confidence, timestamp
+                    FROM memories
+                    WHERE source = 'reading'
+                    ORDER BY timestamp DESC LIMIT ?
+                    """,
+                    (limit,),
+                ).fetchall()
+        if not rows:
+            filter_str = f" for '{book_title}'" if book_title else ""
+            return f"No reading memories found{filter_str}. Is IGOR_READING_EXTRACT=true?"
+        lines = [f"Reading memories ({len(rows)} shown):"]
+        for r in rows:
+            try:
+                meta = json.loads(r["metadata_json"] or "{}")
+            except Exception:
+                meta = {}
+            book = meta.get("book_title", "?")[:25]
+            ch = meta.get("chapter", "?")
+            conf = r["confidence"] or 1.0
+            lines.append(
+                f"  [{r['id']}] conf={conf:.2f}  {book} ch{ch}"
+                f"\n    {r['narrative'][:100]}"
+            )
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Error listing reading memories: {e}"
+
+
+registry.register(Tool(
+    name="list_reading_memories",
+    description=(
+        "G54: List memories extracted from reading sessions (source='reading'). "
+        "Filter by book_title to see what was learned from a specific book. "
+        "Use to review extraction quality and tune IGOR_READING_EXTRACT."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "book_title": {"type": "string", "description": "Filter by book title (partial match OK)"},
+            "limit": {"type": "integer", "description": "Max results (default 20)", "default": 20},
+        },
+        "required": [],
+    },
+    fn=list_reading_memories,
 ))
