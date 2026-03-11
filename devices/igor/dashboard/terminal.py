@@ -29,6 +29,7 @@ def render(
     last_roi: float | None,
     last_action: str,
     new_memories: int = 0,
+    new_habits: int = 0,
     cloud_calls: int = 0,
     milieu_state=None,
     last_tier: str = "",
@@ -86,7 +87,14 @@ def render(
 
     blob_count = _get_blob_count(cortex)
     blob_str = f"   [bold]Blobs:[/] {blob_count}" if blob_count else ""
-    lines.append(f"[bold]Habits:[/] {len(habits)}   [bold]TWM depth:[/] {twm_depth}{blob_str}")
+    new_habit_tag = f" [green](+{new_habits})[/]" if new_habits else ""
+    lines.append(f"[bold]Habits:[/] {len(habits)}{new_habit_tag}   [bold]TWM depth:[/] {twm_depth}{blob_str}")
+    if new_habits:
+        recent = _get_recent_habits(cortex, n=new_habits)
+        for h in recent:
+            src = h.get("source", "")
+            src_tag = {"cloud_directed": "[cyan]cloud[/]", "reading": "[magenta]reading[/]"}.get(src, "[dim]self[/]")
+            lines.append(f"  [green]↑ new[/] {src_tag} {h['id']}: {h['narrative'][:55]}")
     if word_graph is not None:
         try:
             wg_words = len(word_graph._word_to_ids)
@@ -250,6 +258,25 @@ def _valence_str(valence: float | None) -> str:
         label = "distressed"
     sign = "+" if valence >= 0 else ""
     return f"{sign}{valence:.2f} ({label})"
+
+
+def _get_recent_habits(cortex: Cortex, n: int = 3) -> list[dict]:
+    """Return the N most recently created PROCEDURAL memories (habits) by timestamp."""
+    try:
+        with cortex._conn() as conn:
+            rows = conn.execute(
+                """
+                SELECT id, narrative, source, metadata
+                FROM memories
+                WHERE memory_type = 'PROCEDURAL'
+                ORDER BY timestamp DESC
+                LIMIT ?
+                """,
+                (n,),
+            ).fetchall()
+        return [{"id": r["id"], "narrative": r["narrative"], "source": r["source"] or ""} for r in rows]
+    except Exception:
+        return []
 
 
 def print_activated_memories(memories: list, label: str = "Activated memories"):

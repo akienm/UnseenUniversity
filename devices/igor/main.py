@@ -1957,6 +1957,7 @@ class Igor:
         import time as _time
         _t0 = _time.monotonic()   # wall-clock start for latency instrumentation (#139)
         new_memories = 0
+        _habits_before = len(self.cortex.get_habits())   # G54/G53: detect new habits this turn
         # [TWM] Push incoming message as observation (non-command, non-impulse messages only)
         if not is_impulse and not user_input.startswith("/"):
             user_input_source.push_message(
@@ -3040,6 +3041,7 @@ class Igor:
             last_roi=self.last_roi,
             last_action=f"{parsed.intent}: {user_input[:40]}",
             new_memories=new_memories,
+            new_habits=max(0, len(self.cortex.get_habits()) - _habits_before),
             cloud_calls=self.cloud_calls,
             milieu_state=milieu_mod.get().get_state() if milieu_mod.get() else None,
             last_tier=getattr(self, "_current_tier", ""),
