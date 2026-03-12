@@ -25,7 +25,7 @@ import os
 import threading
 import urllib.request
 from abc import ABC, abstractmethod
-from ...memory.models import Memory
+from ...memory.models import Memory, MemoryType
 
 # ── Global exit signal ─────────────────────────────────────────────────────────
 # Set by main._stdin_reader when /exit or /quit is typed.
@@ -262,6 +262,66 @@ class BaseReasoner(ABC):
         return "\n".join(lines)
 
 
+def _call_ollama_raw(prompt: str, model: str, timeout: int = 5) -> str | None:
+    """
+    Call local Ollama /api/chat. Returns response text or None on failure.
+    OLLAMA_HOST env var overrides endpoint (default http://localhost:11434).
+    Dual-homed model pattern: same model family runs locally and on OR;
+    local is faster/cheaper, OR is the fallback. (#188)
+    """
+    try:
+        host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+        payload = json.dumps({
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "stream": False,
+            "options": {"temperature": 0.1},
+        }).encode()
+        req = urllib.request.Request(
+            f"{host}/api/chat",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.loads(resp.read())
+        return data.get("message", {}).get("content", "").strip() or None
+    except Exception:
+        return None
+
+
+def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
+    """
+    Deposit an INTERPRETIVE node after a successful winnow: captures
+    "when context involves [keywords], search for [queries]."
+    Trains the graph to route context without a model call over time. (#188)
+    """
+    try:
+        import hashlib
+        _STOP = {"the", "and", "for", "that", "this", "with", "have", "from",
+                 "what", "how", "can", "you", "are", "its", "but"}
+        words = [w.lower().strip(".,?!") for w in user_input.split() if len(w) > 3]
+        keywords = [w for w in words if w not in _STOP][:4]
+        if not keywords or not queries:
+            return
+        narrative = (
+            f"When context involves [{', '.join(keywords)}], "
+            f"search for [{'; '.join(queries)}]."
+        )
+        node_id = "WINNOW_" + hashlib.sha256(narrative.encode()).hexdigest()[:10].upper()
+        mem = Memory(
+            id=node_id,
+            narrative=narrative,
+            memory_type=MemoryType.INTERPRETIVE,
+            activation_count=0,
+            valence=0.5,
+            metadata={"source": "winnow", "trigger": " ".join(keywords), "confidence": 0.6},
+        )
+        cortex.store(mem)
+    except Exception:
+        pass  # deposit failure must never block the caller
+
+
     def _winnow_context(self, user_input: str, cortex, word_graph=None) -> list[Memory]:
         """
         Pre-call context filter — the breadcrumb step.
@@ -281,8 +341,11 @@ class BaseReasoner(ABC):
             return []
         if os.getenv("IGOR_CONTEXT_WINNOW", "true").lower() in ("false", "0", "no"):
             return []
+        if cortex is None:
+            return []
         api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
-        if not api_key or cortex is None:
+        local_first = os.getenv("IGOR_WINNOW_LOCAL_FIRST", "true").lower() not in ("false", "0", "no")
+        if not api_key and not local_first:
             return []
 
         # ── Build compact breadcrumb trail from ring ───────────────────────────
@@ -314,29 +377,42 @@ class BaseReasoner(ABC):
             "to retrieve the most relevant context for responding. Be specific. No explanation."
         )
 
-        # ── Cheap model call ───────────────────────────────────────────────────
-        try:
-            model = os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
-            payload = json.dumps({
-                "model": model,
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.1,
-                "max_tokens": 60,
-            }).encode()
-            req = urllib.request.Request(
-                "https://openrouter.ai/api/v1/chat/completions",
-                data=payload,
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                },
-                method="POST",
-            )
-            with urllib.request.urlopen(req, timeout=8) as resp:
-                data = json.loads(resp.read())
-            queries_text = data["choices"][0]["message"]["content"].strip()
-            queries = [q.strip() for q in queries_text.replace("\n", ",").split(",") if q.strip()][:3]
-        except Exception:
+        # ── Model call: local Ollama first, OR fallback (#188) ────────────────
+        queries: list[str] = []
+
+        if local_first:
+            local_model = os.getenv("IGOR_WINNOW_LOCAL_MODEL", "llama3.2:1b")
+            text = _call_ollama_raw(prompt, local_model, timeout=3)
+            if text:
+                queries = [q.strip() for q in text.replace("\n", ",").split(",") if q.strip()][:3]
+
+        if not queries and api_key:
+            try:
+                model = os.getenv("OPENROUTER_WINNOW_MODEL",
+                                  os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini"))
+                payload = json.dumps({
+                    "model": model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.1,
+                    "max_tokens": 60,
+                }).encode()
+                req = urllib.request.Request(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    data=payload,
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    method="POST",
+                )
+                with urllib.request.urlopen(req, timeout=8) as resp:
+                    data = json.loads(resp.read())
+                queries_text = data["choices"][0]["message"]["content"].strip()
+                queries = [q.strip() for q in queries_text.replace("\n", ",").split(",") if q.strip()][:3]
+            except Exception:
+                pass
+
+        if not queries:
             return []
 
         # ── Fetch memories for each query, dedupe ─────────────────────────────
@@ -351,6 +427,11 @@ class BaseReasoner(ABC):
                         results.append(m)
             except Exception:
                 pass
+
+        # ── Deposit: train the graph on what we just routed (#188) ────────────
+        if results:
+            _deposit_winnow_node(user_input, queries, cortex)
+
         return results
 
 
