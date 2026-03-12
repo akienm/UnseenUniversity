@@ -118,6 +118,16 @@ CURRICULUM = [
     ("architecture", "Apply 'Where is the lever?' to reducing Igor's cloud inference costs."),
     ("architecture", "Apply 'How will us monkeys screw that up?' to Igor's self-edit capability."),
     ("architecture", "Apply 'What looks like it would fit there?' to the gap between word-graph and concept-tree layers."),
+
+    # ── Reasoning about Igor's own code ──────────────────────────────────
+    ("architecture", "When should Igor delegate codebase reasoning to Claude Code (cc.sh) instead of using an OpenRouter cloud turn?"),
+    ("architecture", "What is the inertia principle and how does it determine whether Igor should self-edit a file or escalate to Claude Code?"),
+    ("pattern", "What is the pattern for Igor to self-edit source files: read_source_file → patch_source_file → run_syntax_check → auto-commit?"),
+    ("pattern", "What is the pattern for Igor to spawn Claude Code for an implementation task: write the brief to workspace/, then call cc.sh?"),
+    ("architecture", "Why does Claude Code have a cost advantage over OpenRouter when reasoning about Igor's codebase, and when does that matter?"),
+    ("architecture", "How should Igor decide whether a code change is within his own edit capability vs. needs Claude Code as the implementation worker?"),
+    ("code_review", "When Igor reads his own source to understand a bug, what is the right sequence of tool calls to stay within budget?"),
+    ("architecture", "What architectural patterns in TheIgors make the system self-describing — i.e., what files should Igor read first when starting a codebase reasoning task?"),
 ]
 
 
