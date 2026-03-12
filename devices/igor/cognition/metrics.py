@@ -137,8 +137,77 @@ def _word_graph_stats():
         return None
 
 
+def _ne_stats(n: int = 100) -> dict:
+    """
+    #174: Parse ne_runs.log to summarise NE telemetry.
+    Returns {runs, ok, failed, avg_obs, avg_promoted, avg_impulses, avg_elapsed_ms}.
+    """
+    lines = _read_log_tail("ne_runs.log", n)
+    runs = ok = failed = 0
+    obs_total = promoted_total = impulses_total = elapsed_total = 0
+    for line in lines:
+        if "|ne_run|" not in line:
+            continue
+        runs += 1
+        if "|ne_run|SKIPPED|" in line:
+            continue
+        if "|ne_run|OK|" in line:
+            ok += 1
+            m_obs  = re.search(r"\|obs=(\d+)", line)
+            m_prom = re.search(r"\|promoted=(\d+)", line)
+            m_imp  = re.search(r"\|impulses=(\d+)", line)
+            m_el   = re.search(r"\|elapsed=(\d+)ms", line)
+            obs_total      += int(m_obs.group(1))  if m_obs  else 0
+            promoted_total += int(m_prom.group(1)) if m_prom else 0
+            impulses_total += int(m_imp.group(1))  if m_imp  else 0
+            elapsed_total  += int(m_el.group(1))   if m_el   else 0
+        else:
+            failed += 1
+    safe_ok = max(ok, 1)
+    return {
+        "runs": runs,
+        "ok": ok,
+        "failed": failed,
+        "avg_obs": obs_total // safe_ok,
+        "avg_promoted": promoted_total / safe_ok,
+        "avg_impulses": impulses_total / safe_ok,
+        "avg_elapsed_ms": elapsed_total // safe_ok,
+    }
+
+
+def _consolidation_stats(cortex) -> dict | None:
+    """
+    #174: Read consolidation run stats from ring_memory.
+    Returns dict with last-run info, or None if no runs recorded.
+    """
+    if cortex is None:
+        return None
+    try:
+        entries = cortex.read_ring_memory(limit=20, category="consolidation")
+        if not entries:
+            return None
+        # Newest-first; find last CONSOLIDATION| entry
+        for e in entries:
+            content = e.get("content", "")
+            if content.startswith("CONSOLIDATION|"):
+                m_cl  = re.search(r"clusters=(\d+)", content)
+                m_ex  = re.search(r"extracted=(\d+)", content)
+                m_sk  = re.search(r"skipped=(\d+)", content)
+                ts    = e.get("timestamp", "")[:16]
+                return {
+                    "last_run": ts,
+                    "clusters": int(m_cl.group(1)) if m_cl else 0,
+                    "extracted": int(m_ex.group(1)) if m_ex else 0,
+                    "skipped": int(m_sk.group(1)) if m_sk else 0,
+                }
+    except Exception:
+        pass
+    return None
+
+
 def build_report(cortex=None, session_interactions: int = 0,
-                 session_cost: float = 0.0, cloud_calls: int = 0) -> str:
+                 session_cost: float = 0.0, cloud_calls: int = 0,
+                 ne=None) -> str:
     """
     Build the full metrics report. Returns a formatted string.
     All parameters are optional — provides whatever data is available.
@@ -264,6 +333,40 @@ def build_report(cortex=None, session_interactions: int = 0,
         for tool_name, count in top_tools:
             lines.append(f"  {tool_name:<36} {count:4d}x")
         lines.append("")
+
+    # ── Narrative Engine (#174) ────────────────────────────────
+    ne_s = _ne_stats(n=100)
+    lines.append("NARRATIVE ENGINE  (last 100 log entries)")
+    if ne_s["runs"] > 0:
+        session_runs = getattr(ne, "_run_count", None)
+        run_info = f"  session={session_runs}" if session_runs is not None else ""
+        ok_pct = round(ne_s["ok"] / max(ne_s["runs"], 1) * 100)
+        lines.append(
+            f"  Log runs:          {ne_s['runs']}  OK={ne_s['ok']} ({ok_pct}%)  "
+            f"failed={ne_s['failed']}{run_info}"
+        )
+        lines.append(
+            f"  Avg obs/run:       {ne_s['avg_obs']}  "
+            f"promoted={ne_s['avg_promoted']:.1f}  "
+            f"impulses={ne_s['avg_impulses']:.1f}  "
+            f"elapsed={ne_s['avg_elapsed_ms']}ms"
+        )
+    else:
+        lines.append("  (no NE runs logged yet)")
+    lines.append("")
+
+    # ── Consolidation (#174) ───────────────────────────────────
+    con_s = _consolidation_stats(cortex)
+    lines.append("CONSOLIDATION")
+    if con_s:
+        lines.append(f"  Last run:          {con_s['last_run']}")
+        lines.append(
+            f"  Clusters:          {con_s['clusters']}  "
+            f"extracted={con_s['extracted']}  skipped={con_s['skipped']}"
+        )
+    else:
+        lines.append("  (no consolidation runs logged yet)")
+    lines.append("")
 
     lines.append("═" * 54)
     return "\n".join(lines)
