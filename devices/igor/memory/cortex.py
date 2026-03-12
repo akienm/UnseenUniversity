@@ -312,7 +312,59 @@ class Cortex:
                 memory.confidence,
                 memory.context_of_encoding,
             ))
+        # #170: auto-connect new INTERPRETIVE memories to the nearest CP.
+        # Keyword affinity → no LLM needed; never blocks store on failure.
+        if memory.memory_type == MemoryType.INTERPRETIVE:
+            try:
+                self._auto_wire_interpretive(memory)
+            except Exception:
+                pass  # auto-wire must never interrupt a store
         return memory
+
+    # CP keyword affinity table for auto-wiring (#170)
+    _CP_KEYWORDS: dict = {
+        "CP1": ["don't know", "uncertain", "unknown", "honest", "epistemic", "truth", "ignorance"],
+        "CP2": ["fail", "failure", "learn", "obstacle", "blocked", "mistake", "error", "wrong", "emerge"],
+        "CP3": ["why", "reason", "understand", "structure", "meaning", "motivation", "purpose", "cause"],
+        "CP4": ["friction", "usability", "design", "easier", "interface", "accessible", "suck less"],
+        "CP5": ["experience", "emotion", "respect", "person", "human", "feel", "interpersonal", "consciousness"],
+        "CP6": ["safe", "safety", "risk", "danger", "protect", "critical", "secure", "guard"],
+    }
+
+    def _auto_wire_interpretive(self, memory: "Memory") -> None:
+        """
+        #170: Find the best-matching CP for a new INTERPRETIVE memory and create
+        an activation edge if none exists yet.  Pure keyword scoring — zero LLM cost.
+        Skips SESSION_SUMMARY noise entries.
+        """
+        narrative_lower = memory.narrative.lower()
+        # Skip operational logs masquerading as INTERPRETIVE
+        if narrative_lower.startswith("session_summary") or narrative_lower.startswith("fallback:"):
+            return
+        # Skip if already has an incoming edge (seeded or previously auto-wired)
+        with self._conn() as conn:
+            existing = conn.execute(
+                "SELECT COUNT(*) FROM interpretive_edges WHERE to_id = ?",
+                (memory.id,),
+            ).fetchone()[0]
+        if existing:
+            return
+        # Score each CP by keyword hits
+        scores: dict = {}
+        for cp_id, keywords in self._CP_KEYWORDS.items():
+            scores[cp_id] = sum(1 for kw in keywords if kw in narrative_lower)
+        best_cp = max(scores, key=lambda k: scores[k])
+        if scores[best_cp] == 0:
+            best_cp = "CP3"  # default: "there's always a why"
+        self.add_interpretive_edge(
+            from_id=best_cp,
+            to_id=memory.id,
+            direction="activation",
+            condition_csb="auto_wired",
+            meaning_payload=f"Auto-wired: {best_cp} → {memory.narrative[:80]}",
+            action_pointer=memory.id,
+            weight=0.60,
+        )
 
     def get(self, memory_id: str) -> Optional[Memory]:
         with self._conn() as conn:
@@ -1471,11 +1523,56 @@ class Cortex:
             ).fetchall()
         return [dict(r) for r in rows]
 
+    def add_temporal_edge(
+        self,
+        earlier_id: str,
+        later_id: str,
+        weight: float = 0.7,
+        context: str = "",
+    ) -> int:
+        """
+        #175: Add a temporal edge from earlier_id → later_id.
+        Uses direction="temporal" in the interpretive_edges table — no new table needed.
+        weight: how strongly the earlier memory leads to the later one in time.
+        context: optional note about what connects them temporally.
+        """
+        return self.add_interpretive_edge(
+            from_id=earlier_id,
+            to_id=later_id,
+            direction="temporal",
+            condition_csb=f"temporal_sequence:{context}" if context else "temporal_sequence",
+            meaning_payload=f"Temporal successor: {later_id} follows {earlier_id} in time.",
+            action_pointer=later_id,
+            weight=weight,
+        )
+
+    def wire_temporal_sequence(self, memory_ids: list[str], weight: float = 0.7) -> int:
+        """
+        #175: Wire a list of memory IDs as a temporal chain (A→B→C→...).
+        Returns number of edges created.
+        Skips pairs that already have a temporal edge.
+        """
+        created = 0
+        for i in range(len(memory_ids) - 1):
+            a, b = memory_ids[i], memory_ids[i + 1]
+            # Check if temporal edge already exists
+            with self._conn() as conn:
+                exists = conn.execute(
+                    "SELECT COUNT(*) FROM interpretive_edges "
+                    "WHERE from_id=? AND to_id=? AND direction='temporal'",
+                    (a, b),
+                ).fetchone()[0]
+            if not exists:
+                self.add_temporal_edge(a, b, weight=weight)
+                created += 1
+        return created
+
     def interpretive_traverse(
         self,
         from_ids: list[str],
         max_depth: int = 3,
         min_weight: float = 0.1,
+        include_temporal: bool = False,
     ) -> list["Memory"]:
         """
         G52: Breadth-first traversal of the interpretive tree from a set of seed nodes.
@@ -1487,6 +1584,7 @@ class Cortex:
         from_ids: starting node ids (typically CP1-CP6 + currently-active memories)
         max_depth: traversal depth cap (default 3 = enough for most schemas)
         min_weight: prune edges below this weight
+        include_temporal (#175): if True, also follow temporal edges (time layer traversal)
         """
         if not from_ids:
             return []
@@ -1507,6 +1605,8 @@ class Cortex:
                     # inhibition: skip the target (don't follow into inhibited subtree)
                     visited.add(edge["to_id"])
                     continue
+                if edge["direction"] == "temporal" and not include_temporal:
+                    continue  # #175: time layer opt-in
                 if edge["to_id"] not in visited:
                     visited.add(edge["to_id"])
                     result_ids.append(edge["to_id"])
