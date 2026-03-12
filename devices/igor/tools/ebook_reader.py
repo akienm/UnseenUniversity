@@ -1185,3 +1185,129 @@ registry.register(Tool(
     },
     fn=list_reading_memories,
 ))
+
+
+# ── Web / URL reading ──────────────────────────────────────────────────────────
+
+def _fetch_url_content(url: str) -> tuple[list[str], list[int], list[str]]:
+    """Fetch a URL and return (sentences, chapter_breaks, chapter_titles)."""
+    import urllib.request as _urlreq
+    req = _urlreq.Request(url, headers={"User-Agent": "Igor/1.0 (+https://github.com/akienm/TheIgors)"})
+    with _urlreq.urlopen(req, timeout=30) as resp:
+        content_type = resp.headers.get("Content-Type", "text/html")
+        raw = resp.read().decode("utf-8", errors="replace")
+    text = raw if "text/plain" in content_type else _html_to_text(raw)
+    sentences = _sentences_from_text(text) or ["[No readable content found at URL]"]
+    return sentences, [0], [url]
+
+
+def open_book_url(url: str, title: str = "", author: str = "") -> dict | str:
+    """
+    Open any HTTP/HTTPS URL as a readable book — plain text, HTML, Gutenberg,
+    Internet Archive, etc. Returns same dict as open_book(); use read_chunk() to read.
+    """
+    try:
+        sentences, breaks, titles = _fetch_url_content(url)
+    except Exception as e:
+        return f"Failed to fetch URL: {e}"
+
+    _title = title or url.split("/")[-1] or url
+    _author = author or "web"
+    meta = BookMeta(title=_title, author=_author, path=Path(url), fmt="web")
+    handle = BookHandle(meta=meta, sentences=sentences, chapter_breaks=breaks, chapter_titles=titles)
+
+    state = _load_reading_state()
+    key = _state_key(meta)
+    if key in state:
+        handle.position = state[key].get("position", 0)
+    _HANDLE_CACHE[key] = handle
+
+    return {
+        "_handle_key": key,
+        "title": _title,
+        "author": _author,
+        "position": handle.position,
+        "total_sentences": len(sentences),
+        "total_chapters": len(breaks),
+        "chapter": 1,
+        "chapter_title": titles[0] if titles else url,
+        "percent": round(handle.position / max(len(sentences), 1) * 100, 1),
+        "fmt": "web",
+        "url": url,
+    }
+
+
+def open_book_gutenberg(query: str) -> dict | str:
+    """
+    Open a Project Gutenberg book by numeric ID or title search.
+    ID: "1342" → Pride and Prejudice. Title: "moby dick" → searches gutendex.com.
+    Returns same dict as open_book(); use read_chunk() to read.
+    """
+    import urllib.request as _urlreq
+    import urllib.parse as _urlparse
+    import json as _json
+
+    if query.strip().isdigit():
+        book_id = query.strip()
+        url = f"https://www.gutenberg.org/cache/epub/{book_id}/pg{book_id}.txt"
+        return open_book_url(url, title=f"Gutenberg #{book_id}")
+
+    search_url = f"https://gutendex.com/books/?search={_urlparse.quote(query)}"
+    try:
+        req = _urlreq.Request(search_url, headers={"User-Agent": "Igor/1.0"})
+        with _urlreq.urlopen(req, timeout=15) as resp:
+            data = _json.loads(resp.read())
+        results = data.get("results", [])
+        if not results:
+            return f"No Gutenberg results for '{query}'"
+        book = results[0]
+        book_id = book["id"]
+        title = book.get("title", f"Gutenberg #{book_id}")
+        authors = book.get("authors", [{}])
+        author = authors[0].get("name", "") if authors else ""
+        formats = book.get("formats", {})
+        txt_url = (
+            formats.get("text/plain; charset=utf-8") or
+            formats.get("text/plain; charset=us-ascii") or
+            formats.get("text/plain") or
+            f"https://www.gutenberg.org/cache/epub/{book_id}/pg{book_id}.txt"
+        )
+        return open_book_url(txt_url, title=title, author=author)
+    except Exception as e:
+        return f"Gutenberg search failed: {e}"
+
+
+registry.register(Tool(
+    name="open_book_url",
+    description=(
+        "Open any web URL as a readable book — plain text, HTML pages, Internet Archive, etc. "
+        "Returns same dict as open_book(); use read_chunk() to read sentence by sentence. "
+        "Reading position is saved across sessions."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "url":    {"type": "string", "description": "HTTP/HTTPS URL to fetch"},
+            "title":  {"type": "string", "description": "Optional title override"},
+            "author": {"type": "string", "description": "Optional author override"},
+        },
+        "required": ["url"],
+    },
+    fn=open_book_url,
+))
+
+registry.register(Tool(
+    name="open_book_gutenberg",
+    description=(
+        "Open a Project Gutenberg book by numeric ID (e.g. '1342') or title search (e.g. 'pride and prejudice'). "
+        "Searches gutendex.com API for title queries. Returns same dict as open_book(); use read_chunk() to read."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "query": {"type": "string", "description": "Gutenberg book ID (number) or title/author keywords"},
+        },
+        "required": ["query"],
+    },
+    fn=open_book_gutenberg,
+))

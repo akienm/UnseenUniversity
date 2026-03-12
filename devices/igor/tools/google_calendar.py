@@ -333,7 +333,7 @@ registry.register(Tool(
         },
         "required": ["title", "start_iso", "end_iso"],
     },
-    function=create_event,
+    fn=create_event,
 ))
 
 registry.register(Tool(
@@ -347,7 +347,7 @@ registry.register(Tool(
             "max_results":   {"type": "integer", "default": 10},
         },
     },
-    function=list_events,
+    fn=list_events,
 ))
 
 registry.register(Tool(
@@ -364,7 +364,7 @@ registry.register(Tool(
         },
         "required": ["event_id"],
     },
-    function=update_event,
+    fn=update_event,
 ))
 
 registry.register(Tool(
@@ -375,7 +375,7 @@ registry.register(Tool(
         "properties": {"event_id": {"type": "string"}},
         "required": ["event_id"],
     },
-    function=delete_event,
+    fn=delete_event,
 ))
 
 registry.register(Tool(
@@ -390,7 +390,7 @@ registry.register(Tool(
         },
         "required": ["title"],
     },
-    function=create_task,
+    fn=create_task,
 ))
 
 registry.register(Tool(
@@ -403,7 +403,7 @@ registry.register(Tool(
             "due_max_iso":    {"type": "string"},
         },
     },
-    function=list_tasks,
+    fn=list_tasks,
 ))
 
 registry.register(Tool(
@@ -414,7 +414,7 @@ registry.register(Tool(
         "properties": {"task_id": {"type": "string"}},
         "required": ["task_id"],
     },
-    function=complete_task,
+    fn=complete_task,
 ))
 
 registry.register(Tool(
@@ -425,5 +425,5 @@ registry.register(Tool(
         "properties": {"task_id": {"type": "string"}},
         "required": ["task_id"],
     },
-    function=delete_task,
+    fn=delete_task,
 ))

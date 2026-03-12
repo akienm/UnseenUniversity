@@ -272,7 +272,7 @@ registry.register(Tool(
         },
         "required": ["name"],
     },
-    function=create_contact,
+    fn=create_contact,
 ))
 
 registry.register(Tool(
@@ -286,7 +286,7 @@ registry.register(Tool(
         },
         "required": ["query"],
     },
-    function=search_contacts,
+    fn=search_contacts,
 ))
 
 registry.register(Tool(
@@ -304,5 +304,5 @@ registry.register(Tool(
         },
         "required": ["resource_name"],
     },
-    function=update_contact,
+    fn=update_contact,
 ))
