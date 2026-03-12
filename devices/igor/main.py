@@ -1984,6 +1984,13 @@ class Igor:
                 self.cortex, user_input, channel="repl", author="user"
             )
 
+        # #179: The Wait — per-turn incubation before inference begins.
+        # Lets TWM observations, milieu updates, and ring_memory settle.
+        # Gate: IGOR_WAIT_MS (default 0 = disabled). Libet half-second analog.
+        _wait_ms = int(os.getenv("IGOR_WAIT_MS", "0"))
+        if _wait_ms > 0 and not is_impulse and not user_input.startswith("/"):
+            _time.sleep(_wait_ms / 1000.0)
+
         # [THALAMUS] Parse input
         parsed = self.thalamus.process(user_input)
 
@@ -2264,6 +2271,61 @@ class Igor:
                             ] + list(relevant)
             except Exception:
                 pass  # notebook search is advisory — never block main processing
+
+        # #175: Time layer + #177: Looping/Mulling — interpretive traversal wired into turn.
+        # Uses CP1-CP6 + top relevant memory IDs as seeds; enriches context before LLM call.
+        # Mull loop: if complexity is medium+ and IGOR_MULL_ENABLED, re-traverse with
+        # decayed weight floor until delta novelty drops below threshold or max passes hit.
+        if not is_impulse and not user_input.startswith("/"):
+            try:
+                _cp_ids = ["CP1", "CP2", "CP3", "CP4", "CP5", "CP6"]
+                _seed_ids = _cp_ids + [m.id for m in relevant[:5]]
+                _interp = self.cortex.interpretive_traverse(_seed_ids, max_depth=3)
+                if _interp:
+                    # Deduplicate against existing relevant set before appending
+                    _existing_ids = {m.id for m in relevant}
+                    _new_interp = [m for m in _interp if m.id not in _existing_ids]
+                    if _new_interp:
+                        relevant = list(relevant) + _new_interp[:5]
+                        console.print(f"[dim][INTERP] +{len(_new_interp)} interpretive memories from tree traversal[/]")
+                # #178: record traversal for boredom tracking; apply resistance to over-used nodes
+                try:
+                    from .cognition import boredom as _boredom_mod
+                    _boredom_mod.record_traversals([m.id for m in relevant])
+                    relevant = _boredom_mod.apply_boredom(list(relevant))
+                    if _boredom_mod.boredom_level() > 0.5:
+                        console.print(f"[dim][BOREDOM] level={_boredom_mod.boredom_level():.2f} — novelty forcing active[/]")
+                except Exception:
+                    pass
+
+                # #177: Mull loop — re-traverse if complexity warrants and gate enabled
+                _mull_enabled = os.getenv("IGOR_MULL_ENABLED", "false").lower() == "true"
+                _mull_max = int(os.getenv("IGOR_MULL_MAX_PASSES", "3"))
+                _mull_novelty = float(os.getenv("IGOR_MULL_NOVELTY_THRESHOLD", "0.70"))
+                if _mull_enabled and parsed.complexity in ("medium", "high"):
+                    _mull_pass = 0
+                    _prev_ids = {m.id for m in relevant}
+                    _min_weight = 0.1
+                    while _mull_pass < _mull_max:
+                        _min_weight = min(_min_weight + 0.05, 0.4)  # decay: raise floor each pass
+                        _mull_results = self.cortex.interpretive_traverse(
+                            _seed_ids, max_depth=3, min_weight=_min_weight
+                        )
+                        _mull_ids = {m.id for m in _mull_results}
+                        # Delta: fraction of new IDs that overlap with previous pass
+                        if _prev_ids:
+                            _overlap = len(_mull_ids & _prev_ids) / max(len(_prev_ids), 1)
+                            if _overlap >= _mull_novelty:
+                                console.print(f"[dim][MULL] pass {_mull_pass+1}: overlap={_overlap:.2f} ≥ {_mull_novelty} — no new consequence, exiting[/]")
+                                break
+                        _new_mull = [m for m in _mull_results if m.id not in {r.id for r in relevant}]
+                        if _new_mull:
+                            relevant = list(relevant) + _new_mull[:3]
+                            console.print(f"[dim][MULL] pass {_mull_pass+1}: +{len(_new_mull)} new memories (overlap={_overlap if _prev_ids else 0:.2f})[/]")
+                        _prev_ids = _mull_ids
+                        _mull_pass += 1
+            except Exception:
+                pass  # interpretive traversal + mull must never block main processing
 
         pre = parse_preparse_csb(pre_csb, habits)
         _t_after_preparse_memory = _time.monotonic()   # preparse + memory retrieval done (#139)
