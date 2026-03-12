@@ -192,6 +192,7 @@ class Igor:
         # Set IGOR_LOCAL=true in .env to default to local KoboldCpp pool mode.
         self.local_mode = os.getenv("IGOR_LOCAL", "false").lower() in ("true", "1", "yes")
         self._ne_thread: threading.Thread | None = None
+        self._consolidation_thread: threading.Thread | None = None  # #169
         self._context_flush_done: bool = False  # change.32: set after pre-compaction flush
 
         # NE failure backoff (pass.3): track consecutive tool/response failures for impulses
@@ -1759,6 +1760,7 @@ class Igor:
             self._flush_debounced_network()
             run_background_sources(self.cortex)
             self._run_ne_background()
+            self._run_consolidation_background()  # #169
             self._announce_completed_jobs()
             self._drain_action_impulses()
             self._evict_stale_threads()  # #136: purge idle thread buffers
@@ -2300,13 +2302,51 @@ class Igor:
 
         # #175: Time layer + #177: Looping/Mulling — interpretive traversal wired into turn.
         # Uses CP1-CP6 + top relevant memory IDs as seeds; enriches context before LLM call.
+        # #181: traversal_strategy from thalamus shapes depth/breadth of this traversal.
         # Mull loop: if complexity is medium+ and IGOR_MULL_ENABLED, re-traverse with
         # decayed weight floor until delta novelty drops below threshold or max passes hit.
         if not is_impulse and not user_input.startswith("/"):
             try:
                 _cp_ids = ["CP1", "CP2", "CP3", "CP4", "CP5", "CP6"]
                 _seed_ids = _cp_ids + [m.id for m in relevant[:5]]
-                _interp = self.cortex.interpretive_traverse(_seed_ids, max_depth=3)
+                # #181: strategy shapes traversal depth and entry
+                _trav_strategy = getattr(parsed, "traversal_strategy", "")
+                _trav_depth = {
+                    "semantic_depth": 4,
+                    "causal_trace":   4,
+                    "broad_search":   2,
+                    "factual_leaf":   2,
+                    "memory_verify":  2,
+                    "attractor_hold": 3,
+                }.get(_trav_strategy, 3)
+                # broad_search: also seed from a wider set of relevant memories
+                if _trav_strategy == "broad_search":
+                    _seed_ids = _seed_ids + [m.id for m in relevant[5:10]]
+                # #171: milieu-weighted traversal — stressed → CP6 fires easier; confident → CP4
+                _milieu_bias: dict = {}
+                if _milieu_state is not None:
+                    try:
+                        _val = getattr(_milieu_state, "valence", 0.0)
+                        _aro = getattr(_milieu_state, "arousal", 0.0)
+                        _dom = getattr(_milieu_state, "dominance", 0.0)
+                        # Stressed: high arousal + low dominance → lower CP6 (safety) threshold
+                        if _aro > 0.4 and _dom < 0.4:
+                            _milieu_bias["CP6"] = 1.0 + _aro * 0.6
+                        # Confident: positive valence + high dominance → amplify CP4 (care)
+                        if _val > 0.3 and _dom > 0.5:
+                            _milieu_bias["CP4"] = 1.0 + _val * 0.4
+                        # Curious/engaged: high arousal + positive valence → amplify CP3 (learn)
+                        if _aro > 0.4 and _val > 0.2:
+                            _milieu_bias["CP3"] = 1.0 + _aro * 0.3
+                    except Exception:
+                        pass
+                _interp = self.cortex.interpretive_traverse(
+                    _seed_ids, max_depth=_trav_depth, milieu_bias=_milieu_bias or None
+                )
+                if _trav_strategy:
+                    console.print(f"[dim][#181] traversal_strategy={_trav_strategy} depth={_trav_depth}[/]")
+                if _milieu_bias:
+                    console.print(f"[dim][#171] milieu_bias={_milieu_bias}[/]")
                 if _interp:
                     # Deduplicate against existing relevant set before appending
                     _existing_ids = {m.id for m in relevant}
@@ -3310,6 +3350,44 @@ class Igor:
             target=_ne_worker, daemon=True, name="ne-worker"
         )
         self._ne_thread.start()
+
+    def _run_consolidation_background(self):
+        """
+        #169: Fire episodic consolidation in a background thread.
+        Runs at most once per IGOR_CONSOLIDATION_INTERVAL_SECS (default 1h).
+        Uses local LLM only; never blocks the interaction loop.
+        """
+        if getattr(self, "_consolidation_thread", None) is not None:
+            if self._consolidation_thread.is_alive():
+                return  # already running
+
+        from .cognition.consolidation import run_consolidation, should_run as _should_consolidate
+        if not _should_consolidate():
+            return
+
+        def _worker():
+            import time as _t
+            # Be a good citizen: wait for main loop to be idle
+            _waited = 0.0
+            while self._is_processing and _waited < 30.0:
+                _t.sleep(1.0)
+                _waited += 1.0
+            try:
+                result = run_consolidation(self.cortex)
+                if result.get("extracted", 0) > 0:
+                    self.cortex.write_ring(
+                        f"CONSOLIDATION|clusters={result.get('clusters',0)}"
+                        f"|extracted={result.get('extracted',0)}"
+                        f"|skipped={result.get('skipped',0)}",
+                        category="consolidation",
+                    )
+            except Exception:
+                pass
+
+        self._consolidation_thread = threading.Thread(
+            target=_worker, daemon=True, name="consolidation-worker"
+        )
+        self._consolidation_thread.start()
 
     # Keywords indicating a response is a failure/error (pass.3 NE backoff)
     _FAILURE_KEYWORDS = (
