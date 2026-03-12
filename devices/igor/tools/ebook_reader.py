@@ -649,13 +649,19 @@ def _resolve_handle(handle) -> "BookHandle | None":
     return None
 
 
-def read_chunk(handle=None, n: int = 1, handle_key: str = "", **_) -> dict:
+def read_chunk(handle=None, n: int = 0, handle_key: str = "", **_) -> dict:
     """
     Read the next n sentences from the book.
     Accepts a BookHandle or the dict returned by open_book (with _handle_key).
     Returns dict with sentences, position info, chapter info, and at_end flag.
     Advances handle.position. Saves state.
+
+    n=0 uses IGOR_READING_CHUNK_SIZE env var (default 1). Set that var to adjust
+    Igor's default reading speed across all sessions. (#183)
     """
+    # #183: n=0 means "use default chunk size from env"
+    if n == 0:
+        n = _DEFAULT_CHUNK_SIZE
     live = _resolve_handle(handle_key if handle_key else handle)
     if live is None:
         return {"error": "Book handle not found. Call open_book() first to reopen the book."}
@@ -680,6 +686,22 @@ def read_chunk(handle=None, n: int = 1, handle_key: str = "", **_) -> dict:
         "at_end": end >= len(handle.sentences),
         "percent": round(end / max(len(handle.sentences), 1) * 100, 1),
     }
+
+    # #183: Stew buffer — push chunk to TWM with TTL so NE can process during stew period
+    if chunk and _STEW_ENABLED:
+        try:
+            _cortex = _get_cortex_for_reading()
+            if _cortex:
+                _chunk_text = " ".join(chunk)
+                _book_label = f"{handle.meta.title[:30]} ch.{result['chapter']}"
+                _cortex.twm_push(
+                    content=f"READING_STEW|{_book_label}|{_chunk_text[:400]}",
+                    source="ebook_reader",
+                    salience=0.45,
+                    ttl_seconds=_STEW_TTL_SECS,
+                )
+        except Exception:
+            pass
 
     # G54: reading → interpretive tree extraction (fire-and-forget daemon thread)
     if (chunk and
@@ -800,6 +822,14 @@ Or respond with SKIP if the passage is transitional, repetitive, or not idea-den
 Respond ONLY with the JSON or SKIP."""
 
 _MIN_EXTRACT_WORDS = 20   # Don't extract from very short chunks
+
+# #183: Reading speed and stew cache
+# IGOR_READING_CHUNK_SIZE — default n for read_chunk (default 1 sentence)
+# IGOR_READING_STEW_TTL_SECS — how long a chunk sits in TWM stew buffer (default 600s = 10min)
+# IGOR_READING_STEW — enable/disable stew buffer push (default true)
+_DEFAULT_CHUNK_SIZE = int(os.getenv("IGOR_READING_CHUNK_SIZE", "1"))
+_STEW_TTL_SECS      = int(os.getenv("IGOR_READING_STEW_TTL_SECS", "600"))
+_STEW_ENABLED       = os.getenv("IGOR_READING_STEW", "true").lower() in ("1", "true", "yes")
 
 
 def _get_cortex_for_reading():
@@ -1043,7 +1073,9 @@ registry.register(Tool(
         "Read the next N sentences from an open book. Advances the reading position. "
         "Returns sentences, chapter info, and position percentage. "
         "Pass handle_key (the string from open_book's _handle_key field) OR the full "
-        "open_book result dict as handle. Use n=10-20 for efficient reading sessions."
+        "open_book result dict as handle. "
+        "n=0 uses IGOR_READING_CHUNK_SIZE env var (default 1, adjustable per session). "
+        "Use n=5-15 for faster reading; each chunk is pushed to TWM stew buffer (IGOR_READING_STEW_TTL_SECS, default 10min) for NE processing. (#183)"
     ),
     fn=read_chunk,
     parameters={
