@@ -4084,6 +4084,7 @@ class Igor:
             session_interactions=self.interaction_count,
             session_cost=self.session_cost,
             cloud_calls=self.cloud_calls,
+            ne=self.ne,
         )
         console.print(report)
 
@@ -5233,8 +5234,9 @@ class Igor:
         """
         console.print("[cyan]Pre-sleep ritual — consolidating before The Gap...[/]")
 
-        # 1. Force NE consolidation pass synchronously
+        # 1a. Force NE pass synchronously
         console.print("[dim][SLEEP] running NE consolidation pass...[/]")
+        _ne_promoted = 0
         try:
             # Wait for any in-flight NE thread to finish first
             if self._ne_thread is not None and self._ne_thread.is_alive():
@@ -5245,9 +5247,28 @@ class Igor:
                 _m = milieu_mod.get()
                 if _ne_state and _m:
                     _m.ingest_ne_state(_ne_state)
-            console.print("[dim][SLEEP] NE consolidation complete.[/]")
+                _ne_promoted = len(result.get("memory_candidates", []))
+            console.print(f"[dim][SLEEP] NE pass complete — promoted≈{_ne_promoted}.[/]")
         except Exception as _e:
             console.print(f"[dim][SLEEP] NE pass failed (non-fatal): {_e}[/]")
+
+        # 1b. Run episodic consolidation daemon synchronously (#174)
+        console.print("[dim][SLEEP] running episodic consolidation...[/]")
+        _con_result: dict = {}
+        try:
+            from .cognition.consolidation import run_consolidation as _run_con
+            _con_result = _run_con(self.cortex)
+            _cl = _con_result.get("clusters", 0)
+            _ex = _con_result.get("extracted", 0)
+            _sk = _con_result.get("skipped", 0)
+            console.print(f"[dim][SLEEP] consolidation: clusters={_cl} extracted={_ex} skipped={_sk}.[/]")
+            if _ex > 0:
+                self.cortex.write_ring(
+                    f"CONSOLIDATION|clusters={_cl}|extracted={_ex}|skipped={_sk}",
+                    category="consolidation",
+                )
+        except Exception as _e:
+            console.print(f"[dim][SLEEP] consolidation failed (non-fatal): {_e}[/]")
 
         # 2. Write sleep note — "letter to tomorrow-Igor"
         _milieu_snap = ""
@@ -5262,9 +5283,13 @@ class Igor:
         _last_events = "; ".join(
             e.get("content", "")[:100] for e in (_recent or [])[-3:]
         )
+        _con_ex = _con_result.get("extracted", 0) if _con_result else 0
+        _con_cl = _con_result.get("clusters", 0) if _con_result else 0
         sleep_note = (
             f"SLEEP_NOTE|time={datetime.now().isoformat()}"
             f"|interactions={self.interaction_count}|cost=${self.session_cost:.4f}"
+            f"|ne_runs={self.ne._run_count}|ne_promoted≈{_ne_promoted}"
+            f"|con_clusters={_con_cl}|con_extracted={_con_ex}"
             f"|{_milieu_snap}"
             f"|last_events={_last_events[:300]}"
         )
