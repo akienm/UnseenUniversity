@@ -3133,6 +3133,15 @@ class Igor:
             except Exception:
                 pass
 
+        # [WANT TRACKER] Post-response: detect if Igor expressed a want/request to Akien.
+        # Deposits EPISODIC memory so Igor remembers what he asked for across sessions.
+        if response_text and not is_impulse:
+            try:
+                from .tools.want_tracker import check_response_for_wants as _check_wants
+                _check_wants(response_text, self.cortex, user_input=user_input)
+            except Exception:
+                pass
+
         return response_text
 
     def _run_ne_background(self):
