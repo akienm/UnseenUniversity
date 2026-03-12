@@ -201,6 +201,11 @@ async def _api_cc_send(request: Request):
     return JSONResponse({"status": "ok"})
 
 
+async def _api_health(request: Request):
+    """GET /api/health — simple liveness check; always returns 200 if server is up."""
+    return JSONResponse({"status": "ok"})
+
+
 async def _api_dashboard(request: Request):
     data: dict = {}
     if _stats_fn is not None:
@@ -367,6 +372,7 @@ def _make_app() -> Starlette:
         Route("/api/cc_send", _api_cc_send, methods=["POST"]),
         Route("/api/outbox", _api_outbox_list),
         Route("/api/outbox/{filename}", _api_outbox_download),
+        Route("/api/health", _api_health),
         Route("/api/dashboard", _api_dashboard),
         Route("/api/sessions", _api_sessions),
         Route("/api/milieu/global", _api_milieu_global),
