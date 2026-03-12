@@ -49,6 +49,7 @@ class Thalamus:
         routing_directive = _detect_routing_directive(core_text)
         output_complexity = _assess_output_complexity(core_text, intent)
         traversal_strategy, traversal_entry = _classify_question_traversal(core_text, intent)
+        traversal_direction = _STRATEGY_DIRECTION.get(traversal_strategy, "")
 
         return ParsedInput(
             raw=text,
@@ -63,6 +64,7 @@ class Thalamus:
             output_complexity=output_complexity,
             traversal_strategy=traversal_strategy,
             traversal_entry=traversal_entry,
+            traversal_direction=traversal_direction,
         )
 
 
@@ -78,8 +80,9 @@ class ParsedInput:
     routing_directive: str = ""      # "local_only" | "" — from user instruction (#90)
     complexity: str = "medium"       # "low" | "medium" | "high" — #93 tier hint
     output_complexity: str = "medium" # "low" | "medium" | "high" — #154 tier.0 gate
-    traversal_strategy: str = ""     # #181: "semantic_depth"|"causal_trace"|"broad_search"|"factual_leaf"|"memory_verify"|"attractor_hold"|""
+    traversal_strategy: str = ""     # #181: "semantic_depth"|"causal_trace"|"lever_trace"|"broad_search"|"factual_leaf"|"memory_verify"|"attractor_hold"|""
     traversal_entry: str = ""        # #181: "semantic_anchor"|"cp_closest"|"twm_attractor"|"ring_recent"|""
+    traversal_direction: str = ""    # #182: "up"|"down"|"lateral"|"lookup"|"" — fundamental direction; strategies are shortcuts
 
 
 _LOCAL_ONLY_PHRASES = (
@@ -311,6 +314,22 @@ def _assess_output_complexity(text: str, intent: str) -> str:
         return "low"
 
     return "medium"
+
+
+# #182: Fundamental traversal direction for each strategy.
+# up   — "why?" / causal_trace / lever_trace: upward causal trace toward convergence
+# down — "how?" / semantic_depth / factual_leaf: downward mechanism or detail trace
+# lateral — "what fits?" / broad_search: sibling search for gap-filling candidates
+# lookup — memory_verify / attractor_hold: not pure traversal; search + surface
+_STRATEGY_DIRECTION: dict[str, str] = {
+    "causal_trace":   "up",
+    "lever_trace":    "up",
+    "semantic_depth": "down",
+    "factual_leaf":   "down",
+    "broad_search":   "lateral",
+    "memory_verify":  "lookup",
+    "attractor_hold": "lookup",
+}
 
 
 def _classify_question_traversal(text: str, intent: str) -> tuple[str, str]:
