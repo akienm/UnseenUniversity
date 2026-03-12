@@ -2314,11 +2314,13 @@ class Igor:
                 _trav_depth = {
                     "semantic_depth": 4,
                     "causal_trace":   4,
+                    "lever_trace":    5,  # #182: go deep — levers are high up
                     "broad_search":   2,
                     "factual_leaf":   2,
                     "memory_verify":  2,
                     "attractor_hold": 3,
                 }.get(_trav_strategy, 3)
+                _exit_on_convergence = (_trav_strategy == "lever_trace")
                 # broad_search: also seed from a wider set of relevant memories
                 if _trav_strategy == "broad_search":
                     _seed_ids = _seed_ids + [m.id for m in relevant[5:10]]
@@ -2341,7 +2343,8 @@ class Igor:
                     except Exception:
                         pass
                 _interp = self.cortex.interpretive_traverse(
-                    _seed_ids, max_depth=_trav_depth, milieu_bias=_milieu_bias or None
+                    _seed_ids, max_depth=_trav_depth, milieu_bias=_milieu_bias or None,
+                    exit_on_convergence=_exit_on_convergence,
                 )
                 if _trav_strategy:
                     console.print(f"[dim][#181] traversal_strategy={_trav_strategy} depth={_trav_depth}[/]")

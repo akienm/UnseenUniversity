@@ -382,6 +382,17 @@ def _classify_question_traversal(text: str, intent: str) -> tuple[str, str]:
     )):
         return "attractor_hold", "twm_attractor"
 
+    # Lever trace — "where's the leverage?", "what's the key variable?", "what's driving this?"
+    # Checked BEFORE factual_leaf — "what's the key" must not fall through to factual_leaf.
+    # Upward causal trace that terminates at convergence nodes (investment_weight or out_degree)
+    if any(p in t for p in (
+        "where's the lever", "where is the lever", "what's the key", "what is the key",
+        "what's driving", "what is driving", "what's really", "what would change everything",
+        "root cause", "what's the cause", "what is the cause", "fundamental",
+        "what's the bottleneck", "what's blocking", "highest leverage",
+    )):
+        return "lever_trace", "semantic_anchor"
+
     # Factual leaf — "what is", "when did", "where is", "who is"
     if any(p in t for p in (
         "what is", "what are", "what's", "when did", "when is",

@@ -1649,6 +1649,9 @@ class Cortex:
         min_weight: float = 0.1,
         include_temporal: bool = False,
         milieu_bias: dict | None = None,
+        exit_on_convergence: bool = False,
+        convergence_weight: float = 0.75,
+        convergence_out_degree: int = 4,
     ) -> list["Memory"]:
         """
         G52: Breadth-first traversal of the interpretive tree from a set of seed nodes.
@@ -1664,6 +1667,12 @@ class Cortex:
         milieu_bias (#171): dict mapping node_id → weight_multiplier for milieu-weighted
             traversal. Edges from high-bias roots require less weight to fire. Example:
             {"CP6": 1.5} lowers effective threshold for CP6's safety branch when stressed.
+        exit_on_convergence (#182): if True, stop descending a branch when it reaches a
+            convergence node (investment_weight >= convergence_weight OR out_degree >=
+            convergence_out_degree). The convergence node IS the answer — the lever.
+            Implements the insight: "why?" upward terminates where levers lie.
+        convergence_weight: investment_weight threshold for convergence detection (default 0.75)
+        convergence_out_degree: out-degree threshold for convergence detection (default 4)
         """
         if not from_ids:
             return []
@@ -1672,6 +1681,8 @@ class Cortex:
         visited: set[str] = set(from_ids)
         queue: list[tuple[str, int, str]] = [(fid, 0, fid) for fid in from_ids]  # (id, depth, root)
         result_ids: list[str] = []
+        # #182: cache out-degree counts to avoid per-node DB queries
+        _out_degree_cache: dict[str, int] = {}
 
         while queue:
             current_id, depth, root_id = queue.pop(0)
@@ -1693,7 +1704,30 @@ class Cortex:
                 if edge["to_id"] not in visited:
                     visited.add(edge["to_id"])
                     result_ids.append(edge["to_id"])
-                    queue.append((edge["to_id"], depth + 1, root_id))
+                    # #182: convergence check — is this node a lever?
+                    _is_convergence = False
+                    if exit_on_convergence:
+                        try:
+                            _to_mem = self.get(edge["to_id"])
+                            if _to_mem:
+                                _iw = (_to_mem.metadata or {}).get("investment_weight", 0.0)
+                                if _iw >= convergence_weight:
+                                    _is_convergence = True
+                                else:
+                                    # check out-degree
+                                    if edge["to_id"] not in _out_degree_cache:
+                                        with self._conn() as _c:
+                                            _out_degree_cache[edge["to_id"]] = _c.execute(
+                                                "SELECT COUNT(*) FROM interpretive_edges WHERE from_id=?",
+                                                (edge["to_id"],),
+                                            ).fetchone()[0]
+                                    if _out_degree_cache[edge["to_id"]] >= convergence_out_degree:
+                                        _is_convergence = True
+                        except Exception:
+                            pass
+                    if not _is_convergence:
+                        queue.append((edge["to_id"], depth + 1, root_id))
+                    # convergence node is collected but not descended — it's the lever
 
         if not result_ids:
             return []
