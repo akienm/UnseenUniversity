@@ -194,6 +194,9 @@ class Igor:
         self._ne_thread: threading.Thread | None = None
         self._consolidation_thread: threading.Thread | None = None  # #169
         self._context_flush_done: bool = False  # change.32: set after pre-compaction flush
+        # #182: meta-cognition — track traversal directions for self-awareness
+        from collections import deque as _deque
+        self._traversal_dir_history: "_deque[str]" = _deque(maxlen=5)
 
         # NE failure backoff (pass.3): track consecutive tool/response failures for impulses
         self._consecutive_impulse_failures: int = 0
@@ -2350,6 +2353,19 @@ class Igor:
                     console.print(f"[dim][#181] traversal_strategy={_trav_strategy} depth={_trav_depth}[/]")
                 if _milieu_bias:
                     console.print(f"[dim][#171] milieu_bias={_milieu_bias}[/]")
+                # #182: meta-cognition — track traversal direction; notice persistent upward search
+                _trav_dir = getattr(parsed, "traversal_direction", "")
+                if _trav_dir:
+                    self._traversal_dir_history.append(_trav_dir)
+                    _recent = list(self._traversal_dir_history)
+                    if len(_recent) >= 3 and len(set(_recent[-3:])) == 1 and _recent[-1] == "up":
+                        self.cortex.twm_push(
+                            content=f"META_COGNITION|I've traced upward (causal/'why?') for {len(_recent)} consecutive turns. "
+                                    f"This is deep problem territory — I may be searching for a lever.",
+                            source="meta_cognition",
+                            salience=0.5,
+                            ttl_seconds=300,
+                        )
                 if _interp:
                     # Deduplicate against existing relevant set before appending
                     _existing_ids = {m.id for m in relevant}
