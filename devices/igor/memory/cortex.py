@@ -1464,6 +1464,81 @@ class Cortex:
         except Exception:
             pass  # TTL extension must never crash callers
 
+    # ── #180: Investment Weights ────────────────────────────────────────────────
+
+    def store_relational(
+        self,
+        name: str,
+        narrative: str,
+        relationship_type: str,
+        investment_weight: float = 0.7,
+        proximity: str = "present",
+        valence: float = 0.8,
+        extra_metadata: dict = None,
+    ) -> "Memory":
+        """
+        #180: Store a relational node (person / project / idea) as an INTERPRETIVE
+        memory with investment weight metadata.
+
+        relationship_type: "partner" | "friend" | "family" | "colleague" | "project" | "idea"
+        investment_weight: 0.0–1.0 (love/deep_investment=0.9+; acquaintance=0.3)
+        proximity: "present" | "remote" | "lost" — modulates activation threshold
+        """
+        from .models import Memory as _M, MemoryType as _MT
+        meta = {
+            "relationship_type": relationship_type,
+            "investment_weight": max(0.0, min(1.0, investment_weight)),
+            "proximity": proximity,
+            "nre_phase": False,
+            "source": "relational",
+        }
+        if extra_metadata:
+            meta.update(extra_metadata)
+        mem = _M(
+            id=f"REL_{name.upper().replace(' ', '_')}",
+            narrative=narrative,
+            memory_type=_MT.INTERPRETIVE,
+            valence=valence,
+            metadata=meta,
+        )
+        return self.store(mem)
+
+    def get_investment_nodes(self, min_weight: float = 0.5) -> list["Memory"]:
+        """
+        #180: Return all relational/investment nodes above min_weight.
+        These are INTERPRETIVE memories with metadata.source == "relational".
+        """
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT * FROM memories WHERE memory_type='INTERPRETIVE' "
+                "AND metadata LIKE '%\"source\": \"relational\"%'"
+            ).fetchall()
+        nodes = [self._to_memory(r) for r in rows]
+        return [
+            n for n in nodes
+            if n and n.metadata.get("investment_weight", 0.0) >= min_weight
+        ]
+
+    def investment_weight_check(self, text: str) -> list["Memory"]:
+        """
+        #180: Pre-attentive check — does text mention any high-investment node?
+        Returns relational nodes whose name appears in the text.
+        Used as a pre-traversal salience booster (somatic marker equivalent).
+        """
+        text_lower = text.lower()
+        nodes = self.get_investment_nodes(min_weight=0.4)
+        hits = []
+        for node in nodes:
+            # Node ID is REL_NAME — extract name portion
+            node_name = node.id.replace("REL_", "").replace("_", " ").lower()
+            # Also check first word of narrative
+            narrative_words = node.narrative.lower().split()[:3]
+            if node_name in text_lower or any(w in text_lower for w in narrative_words if len(w) > 3):
+                hits.append(node)
+        # Sort by investment_weight descending
+        hits.sort(key=lambda n: n.metadata.get("investment_weight", 0.0), reverse=True)
+        return hits
+
     # ── G52: Interpretive Tree ─────────────────────────────────────────────────
 
     def add_interpretive_edge(
