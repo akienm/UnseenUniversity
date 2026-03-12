@@ -28,6 +28,11 @@ def _ts() -> str:
     return datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
 
+def cts() -> str:
+    """Short console timestamp prefix: 'HHmmss ' — prepend to diagnostic prints."""
+    return datetime.now().strftime("%H%M%S ")
+
+
 def _prepend(log_name: str, entry: str) -> None:
     """Prepend one CSB line to a log file. Rotate to .old if > 10 MB."""
     try:

@@ -237,10 +237,51 @@ class BaseReasoner(ABC):
         if not entries:
             return "\n".join(lines) if lines else ""
 
-        lines.append("\n\nRecent session context (newest last):")
-        for e in entries:
-            ts = e["timestamp"][11:16] if len(e["timestamp"]) >= 16 else e["timestamp"]
-            lines.append(f"[{ts}] {e['content']}")
+        # ── Temporal anchor: use NE narrative summary if fresh (≤ 10 min) ─────
+        # Find most recent 'narrative' ring entry for this thread (or global).
+        # If found and fresh, use it as [Thread arc: ...] and only show delta
+        # ring entries AFTER it (cap 5). Falls back to full last-10 if no anchor.
+        anchor_content = None
+        anchor_ts = None
+        try:
+            from datetime import datetime as _dt
+            _narrative_entries = cortex.read_ring_memory(
+                limit=5, category="narrative", thread_id=thread_id
+            )
+            if _narrative_entries:
+                _latest_ne = _narrative_entries[-1]  # newest last
+                _ne_ts_str = _latest_ne["timestamp"]
+                _ne_dt = _dt.fromisoformat(_ne_ts_str)
+                _age_s = (_dt.now() - _ne_dt).total_seconds()
+                if _age_s <= 600:  # 10 min
+                    anchor_content = _latest_ne["content"]
+                    anchor_ts = _ne_ts_str
+        except Exception:
+            pass
+
+        if anchor_content:
+            # Strip NE run tag for readability: "[NE#42] text" → "text"
+            _arc = anchor_content
+            if _arc.startswith("[NE#"):
+                _arc = _arc[_arc.find("] ") + 2:] if "] " in _arc else _arc
+            lines.append(f"\n[Thread arc: {_arc[:240]}]")
+            # Delta: ring entries AFTER the anchor timestamp, excluding narrative category
+            delta = [
+                e for e in entries
+                if e["timestamp"] > anchor_ts
+                and e["category"] not in _RING_EXCLUDE
+                and e["category"] != "narrative"
+            ][-5:]
+            if delta:
+                lines.append("Recent context (since last arc):")
+                for e in delta:
+                    ts = e["timestamp"][11:16] if len(e["timestamp"]) >= 16 else e["timestamp"]
+                    lines.append(f"[{ts}] {e['content']}")
+        else:
+            lines.append("\n\nRecent session context (newest last):")
+            for e in entries:
+                ts = e["timestamp"][11:16] if len(e["timestamp"]) >= 16 else e["timestamp"]
+                lines.append(f"[{ts}] {e['content']}")
         return "\n".join(lines)
 
     def _build_memory_context(self, memories: list[Memory]) -> str:
@@ -344,7 +385,12 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
         if cortex is None:
             return []
         api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
-        local_first = os.getenv("IGOR_WINNOW_LOCAL_FIRST", "true").lower() not in ("false", "0", "no")
+        # Cloud training mode: prefer cloud for winnow; else local-first (#CLOUD)
+        try:
+            from ..cloud_mode import is_cloud_training_active as _cloud_active
+            local_first = not _cloud_active()
+        except Exception:
+            local_first = os.getenv("IGOR_WINNOW_LOCAL_FIRST", "true").lower() not in ("false", "0", "no")
         if not api_key and not local_first:
             return []
 

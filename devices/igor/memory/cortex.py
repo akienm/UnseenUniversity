@@ -676,19 +676,20 @@ class Cortex:
 
     def search(self, query: str, limit: int = 10, emotional_context=None) -> list:
         """
-        Hybrid search (change.37): text candidates → embedding re-rank.
+        Three-phase hybrid search (#172 + change.37).
 
-        Phase 1 (always runs): naive text search over the memory graph.
-          Filters out ROOT/CORE_PATTERN only (structural bedrock, always in system prompt).
-          IDENTITY and ROLE_MODEL are now searchable — they are who Igor is (#86/#98).
-          Returns up to limit×2 candidates sorted by keyword hit count.
+        Phase 0 — traversal-first (#172, always runs):
+          If TWM has an active attractor, follow graph edges (parent/children/links)
+          from anchor memory nodes to depth=2. Produces association-chain candidates
+          before any similarity computation.
 
-        Phase 2 (runs when Ollama is available): embed the query and each
-          candidate; sort by cosine similarity. Candidates that lack a stored
-          embedding are computed on-the-fly and written back to the DB so the
-          next call is cached. Sets m.relevance_score on each result.
+        Phase 1 — text scoring (always runs):
+          Naive keyword search over all non-structural memories. Results merged with
+          Phase 0 candidates; deduped; higher score wins for memories in both sets.
 
-        Falls back silently to Phase 1 if nomic-embed-text is unavailable.
+        Phase 2 — embedding re-rank (runs when Ollama available):
+          Embed the query; cosine-rank the merged candidate pool. Falls back silently
+          to the pre-ranked pool if nomic-embed-text is unavailable.
         """
         terms = query.lower().split()
         with self._conn() as conn:
@@ -719,8 +720,35 @@ class Cortex:
                 text_scored.append((score, m))
         text_scored.sort(key=lambda x: x[0], reverse=True)
 
-        # Candidate pool — wider than limit to give embedding re-ranker room
-        candidates = [m for _, m in text_scored[: limit * 2]]
+        # Phase 0: traversal-first from TWM anchors (#172)
+        _traversal: list = []
+        try:
+            _anchors = self._get_context_anchors()
+            if _anchors:
+                _traversal = self._traversal_search(_anchors, depth=2, limit=limit * 2)
+        except Exception:
+            pass  # Traversal must never block search
+
+        # Candidate pool: merge traversal + text results, dedup by id (#172)
+        # Traversal memories are included regardless of keyword hit;
+        # text-only memories fill gaps. In both → take the higher score.
+        _max_terms = max(1, len(terms))
+        _trav_map: dict[str, "Memory"] = {m.id: m for m in _traversal}
+        _merged: dict[str, "Memory"] = dict(_trav_map)
+        for score, m in text_scored:
+            norm_score = score / _max_terms
+            if m.id not in _merged:
+                m.relevance_score = norm_score  # type: ignore[attr-defined]
+                _merged[m.id] = m
+            else:
+                existing = getattr(_merged[m.id], "relevance_score", 0.0) or 0.0
+                _merged[m.id].relevance_score = max(existing, norm_score)  # type: ignore[attr-defined]
+
+        candidates = sorted(
+            _merged.values(),
+            key=lambda m: getattr(m, "relevance_score", 0.0),
+            reverse=True,
+        )[: limit * 2]
 
         if not candidates:
             return []
@@ -771,11 +799,8 @@ class Cortex:
         except Exception:
             pass  # Embedding unavailable — fall through to text results
 
-        # Phase 1 fallback: attach normalised relevance score and return
-        max_terms = max(1, len(terms))
-        for score, m in text_scored[:limit]:
-            m.relevance_score = score / max_terms  # type: ignore[attr-defined]
-        result = [m for _, m in text_scored[:limit]]
+        # Phase 1 fallback: candidates already scored + merged (#172); return top N
+        result = candidates[:limit]
         # G9: spreading activation — boost graph neighbors
         result = self._spread_activation(result, {}, limit)
         self._apply_recency_frequency_boost(result)
@@ -885,6 +910,131 @@ class Cortex:
         merged = activated + new_neighbors
         merged.sort(key=lambda m: getattr(m, "relevance_score", 0.0), reverse=True)
         return merged[:limit]
+
+    # #172: traversal-first retrieval ─────────────────────────────────────────
+
+    def _get_context_anchors(self) -> list[str]:
+        """
+        #172: Return memory IDs to use as BFS anchor nodes.
+        Sources (in priority order):
+        1. TWM attractor metadata.memory_id (explicit pointer)
+        2. Quick text match on attractor content_csb (implicit anchor)
+        3. Recent high-salience TWM items with metadata.memory_id set
+        Returns up to 5 anchor IDs.
+        """
+        anchors: list[str] = []
+        seen: set[str] = set()
+
+        # 1 + 2: TWM attractor
+        try:
+            attractor = self.twm_get_attractor()
+            if attractor:
+                mid = (attractor.get("metadata") or {}).get("memory_id")
+                if mid and mid not in seen:
+                    anchors.append(mid)
+                    seen.add(mid)
+                elif attractor.get("content_csb"):
+                    # Implicit anchor: quick keyword match on attractor content
+                    terms = attractor["content_csb"].lower().split()[:8]
+                    with self._conn() as conn:
+                        rows = conn.execute(
+                            "SELECT id, narrative FROM memories "
+                            "WHERE memory_type NOT IN (?, ?) LIMIT 200",
+                            (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value),
+                        ).fetchall()
+                    scored = [
+                        (sum(1 for t in terms if t in r["narrative"].lower()), r["id"])
+                        for r in rows
+                    ]
+                    scored.sort(reverse=True)
+                    for score, rid in scored[:2]:
+                        if score >= 2 and rid not in seen:
+                            anchors.append(rid)
+                            seen.add(rid)
+        except Exception:
+            pass
+
+        # 3: Recent TWM items with explicit memory_id in metadata
+        try:
+            recent = self.twm_read(limit=10, include_integrated=False)
+            for obs in sorted(recent, key=lambda x: x.get("salience", 0.0), reverse=True)[:5]:
+                mid = (obs.get("metadata") or {}).get("memory_id")
+                if mid and mid not in seen:
+                    anchors.append(mid)
+                    seen.add(mid)
+        except Exception:
+            pass
+
+        return anchors[:5]
+
+    def _traversal_search(
+        self,
+        anchor_ids: list[str],
+        depth: int = 2,
+        limit: int = 20,
+    ) -> list:
+        """
+        #172: BFS from anchor_ids, following all edge types (parent, children, links).
+        Returns Memory objects with relevance_score = decay-weighted path score.
+        Anchor nodes themselves are included at score 1.0.
+        """
+        _SKIP = {MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value}
+        visited: dict[str, float] = {mid: 1.0 for mid in anchor_ids}
+        frontier: list[tuple[str, float]] = [(mid, 1.0) for mid in anchor_ids]
+
+        for _hop in range(depth):
+            if not frontier:
+                break
+            ids = [fid for fid, _ in frontier]
+            with self._conn() as conn:
+                placeholders = ",".join("?" * len(ids))
+                rows = conn.execute(
+                    f"SELECT * FROM memories WHERE id IN ({placeholders})", ids
+                ).fetchall()
+            mem_map = {row["id"]: self._to_memory(row) for row in rows}
+
+            next_frontier: list[tuple[str, float]] = []
+            for fid, fscore in frontier:
+                m = mem_map.get(fid)
+                if m is None:
+                    continue
+                neighbors: dict[str, float] = {}
+                decay = self._SA_DECAY
+                if getattr(m, "parent_id", None):
+                    neighbors[m.parent_id] = fscore * decay
+                for cid in (getattr(m, "children_ids", []) or []):
+                    neighbors[cid] = max(neighbors.get(cid, 0.0), fscore * decay)
+                for lid, lw in (getattr(m, "links", {}) or {}).items():
+                    neighbors[lid] = max(neighbors.get(lid, 0.0), fscore * float(lw) * decay)
+                existing_links = set(getattr(m, "links", {}) or {})
+                for lid in (getattr(m, "link_ids", []) or []):
+                    if lid not in existing_links:
+                        neighbors[lid] = max(neighbors.get(lid, 0.0), fscore * decay)
+                for nid, nscore in neighbors.items():
+                    if nscore > visited.get(nid, 0.0):
+                        visited[nid] = nscore
+                        next_frontier.append((nid, nscore))
+            frontier = next_frontier
+
+        if len(visited) <= len(anchor_ids):
+            return []  # No traversal beyond anchors — graph likely sparse
+
+        all_ids = list(visited.keys())
+        with self._conn() as conn:
+            placeholders = ",".join("?" * len(all_ids))
+            rows = conn.execute(
+                f"SELECT * FROM memories WHERE id IN ({placeholders})", all_ids
+            ).fetchall()
+
+        results = []
+        for row in rows:
+            m = self._to_memory(row)
+            if m.memory_type in _SKIP:
+                continue
+            m.relevance_score = visited.get(m.id, 0.0)  # type: ignore[attr-defined]
+            results.append(m)
+        results.sort(key=lambda m: getattr(m, "relevance_score", 0.0), reverse=True)
+        return results[:limit]
 
     def _get_or_compute_embedding(self, memory) -> Optional[list]:
         """
@@ -1354,6 +1504,7 @@ class Cortex:
             "content_csb": row["content_csb"],
             "attractor_weight": row["attractor_weight"],
             "salience": row["salience"],
+            "metadata": json.loads(row["metadata_json"]) if row["metadata_json"] else {},  # #172
         }
 
     def twm_decay_attractor(self, factor: float = 0.90) -> None:
@@ -1409,6 +1560,30 @@ class Cortex:
             return conn.execute(
                 "SELECT COUNT(*) FROM twm_observations WHERE integrated = 0"
             ).fetchone()[0]
+
+    def twm_count(self) -> int:
+        """Total TWM observation rows (fingerprint helper for NE idle gate)."""
+        _iid = self._instance_id
+        with self._conn() as conn:
+            if _iid:
+                return conn.execute(
+                    "SELECT COUNT(*) FROM twm_observations WHERE instance_id = ?",
+                    (_iid,)
+                ).fetchone()[0]
+            return conn.execute("SELECT COUNT(*) FROM twm_observations").fetchone()[0]
+
+    def twm_max_id(self) -> int:
+        """Highest TWM observation id (fingerprint helper for NE idle gate)."""
+        _iid = self._instance_id
+        with self._conn() as conn:
+            if _iid:
+                row = conn.execute(
+                    "SELECT MAX(id) FROM twm_observations WHERE instance_id = ?",
+                    (_iid,)
+                ).fetchone()
+            else:
+                row = conn.execute("SELECT MAX(id) FROM twm_observations").fetchone()
+            return row[0] if row and row[0] is not None else 0
 
     def twm_mark_integrated(self, obs_ids: list[int]):
         """Mark observations as integrated by the NE."""
