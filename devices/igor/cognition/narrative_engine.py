@@ -21,6 +21,7 @@ memory_candidates with importance > 0.7 are promoted to LTM automatically.
 """
 
 import json
+import os
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -435,19 +436,28 @@ class NarrativeEngine:
                 elif abs(float(cand.get("valence", 0.0))) > 0.6:
                     _cp_parent = "CP5"  # emotionally significant → inner state
 
+                # #188: procedural candidates get a trigger so basal_ganglia can score them
+                _meta: dict = {
+                    "source": "narrative_engine",
+                    "importance": importance,
+                    "ne_run": self._run_count + 1,
+                    "promoted_at": datetime.now().isoformat(),
+                    **({"emotionally_charged": True} if _emotionally_charged else {}),
+                }
+                if mem_type == MemoryType.PROCEDURAL and "trigger" not in _meta:
+                    _STOP = {"that","this","with","have","from","when","igor","will","akien","then"}
+                    _tw = [w.lower().strip(".,?!()[]") for w in content.split() if len(w) > 3]
+                    _trigger_words = [w for w in _tw if w not in _STOP][:5]
+                    if _trigger_words:
+                        _meta["trigger"] = " ".join(_trigger_words)
+
                 mem = Memory(
                     narrative=content,
                     memory_type=mem_type,
                     parent_id=_cp_parent,
                     valence=float(cand.get("valence", 0.0)),
                     arousal=_arousal,
-                    metadata={
-                        "source": "narrative_engine",
-                        "importance": importance,
-                        "ne_run": self._run_count + 1,
-                        "promoted_at": datetime.now().isoformat(),
-                        **({"emotionally_charged": True} if _emotionally_charged else {}),
-                    }
+                    metadata=_meta,
                 )
                 self.cortex.store(mem)
                 promoted += 1
@@ -527,13 +537,50 @@ class NarrativeEngine:
     # ── LLM calls ─────────────────────────────────────────────────────────────
 
     def _call_local(self, prompt: str, max_twm_id: int = 0) -> Optional[dict]:
-        """Check reasoning cache only. 1B local models can't reliably generate NE JSON."""
+        """
+        Check reasoning cache, then try local Ollama NE model (#188).
+        Gate: IGOR_NE_LOCAL_MODEL env var (e.g. qwen2.5:7b). 7B+ handles structured JSON.
+        Falls back to _call_cloud if not set or if Ollama fails.
+        """
         cached = reasoning_cache.get(NE_MODEL, prompt, max_twm_id)
         if cached is not None:
             result = self._parse_ne_json(cached)
             if result is not None:
                 print(f"[NE] cache hit (twm_id≤{max_twm_id})")
                 return result
+
+        ne_local_model = os.getenv("IGOR_NE_LOCAL_MODEL", "")
+        if not ne_local_model:
+            return None
+
+        import urllib.request as _ur
+        import json as _json
+        host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+        try:
+            payload = _json.dumps({
+                "model": ne_local_model,
+                "messages": [{"role": "user", "content": prompt}],
+                "stream": False,
+                "options": {"temperature": 0.3},
+            }).encode()
+            req = _ur.Request(
+                f"{host}/api/chat",
+                data=payload,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with _ur.urlopen(req, timeout=45) as resp:
+                data = _json.loads(resp.read())
+            text = data.get("message", {}).get("content", "").strip()
+            result = self._parse_ne_json(text)
+            if result is not None:
+                print(f"[NE] local ok ({ne_local_model})")
+                reasoning_cache.put(ne_local_model, prompt, text, max_twm_id)
+                self._last_ne_model = ne_local_model
+                return result
+            print(f"[NE] local JSON parse failed ({ne_local_model}) — falling back to cloud")
+        except Exception as e:
+            print(f"[NE] local failed ({ne_local_model}): {e} — falling back to cloud")
         return None
 
     def _call_cloud(self, prompt: str, max_twm_id: int = 0) -> Optional[dict]:
