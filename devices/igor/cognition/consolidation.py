@@ -241,9 +241,28 @@ def run_consolidation(cortex: Cortex) -> dict:
         except Exception:
             skipped += 1
 
+    # #180 NRE decay — run at same cadence as consolidation
+    _decay_result = {}
+    try:
+        _decay_result = cortex.decay_investment_weights()
+        if _decay_result.get("updated", 0) > 0:
+            _ended = _decay_result.get("nre_ended", [])
+            _note = f"|nre_ended={'|'.join(_ended)}" if _ended else ""
+            cortex.write_ring(
+                f"INVESTMENT_DECAY|updated={_decay_result['updated']}{_note}",
+                category="investment_decay",
+            )
+    except Exception:
+        pass
+
     _last_run = now
     _save_checkpoint(now, new_processed_ids)
-    return {"clusters": len(clusters), "extracted": extracted, "skipped": skipped}
+    return {
+        "clusters": len(clusters),
+        "extracted": extracted,
+        "skipped": skipped,
+        "decay_updated": _decay_result.get("updated", 0),
+    }
 
 
 def should_run() -> bool:
