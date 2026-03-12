@@ -28,7 +28,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from . import reasoning_cache
-from .forensic_logger import log_ne_run
+from .forensic_logger import log_ne_run, cts as _cts
 
 from ..memory.cortex import Cortex
 from ..memory.models import Memory, MemoryType
@@ -319,7 +319,7 @@ class NarrativeEngine:
                 category="ne_diagnostic",
             )
             if verbose:
-                print(f"[NE] Dropped {dropped} oldest obs (prompt token cap, kept {len(obs_list)})")
+                print(f"{_cts()}[NE] Dropped {dropped} oldest obs (prompt token cap, kept {len(obs_list)})")
 
         if verbose:
             print(f"\n[NE] Running (reason={reason}, obs={len(obs_list)})...")
@@ -475,6 +475,16 @@ class NarrativeEngine:
         # change.20a.2: if summary itself is self-diagnostic, use ne_diagnostic category
         summary = result.get("summary_csb", "")
         actions = result.get("action_impulses", [])
+
+        # Infer active thread_id from TWM obs — most common non-None thread_id wins.
+        # This tags the narrative so _build_session_context() can use it as a temporal anchor.
+        _thread_counts: dict = {}
+        for _o in obs_list:
+            _tid = _o.get("thread_id")
+            if _tid:
+                _thread_counts[_tid] = _thread_counts.get(_tid, 0) + 1
+        _narrative_thread_id = max(_thread_counts, key=_thread_counts.get) if _thread_counts else None
+
         if summary and (promoted > 0 or actions):
             if self._is_self_diagnostic(summary):
                 self.cortex.write_ring(
@@ -484,11 +494,12 @@ class NarrativeEngine:
             else:
                 self.cortex.write_ring(
                     f"[NE#{self._run_count + 1}] {summary[:300]}",
-                    category="narrative"
+                    category="narrative",
+                    thread_id=_narrative_thread_id,
                 )
 
         if verbose and (promoted > 0 or summary):
-            print(f"[NE] promoted={promoted} to LTM | summary: {summary[:80]}...")
+            print(f"{_cts()}[NE] promoted={promoted} to LTM | summary: {summary[:80]}...")
 
         # 5. Push action impulses back into TWM so they can be acted on
         # Dedup: don't re-push an impulse whose action keywords already appear in a
@@ -546,8 +557,16 @@ class NarrativeEngine:
         if cached is not None:
             result = self._parse_ne_json(cached)
             if result is not None:
-                print(f"[NE] cache hit (twm_id≤{max_twm_id})")
+                print(f"{_cts()}[NE] cache hit (twm_id≤{max_twm_id})")
                 return result
+
+        # Cloud training mode: skip local NE entirely — let _call_cloud() do the work (#CLOUD)
+        try:
+            from .cloud_mode import is_cloud_training_active as _cloud_active
+            if _cloud_active():
+                return None
+        except Exception:
+            pass
 
         ne_local_model = os.getenv("IGOR_NE_LOCAL_MODEL", "")
         if not ne_local_model:
@@ -574,13 +593,13 @@ class NarrativeEngine:
             text = data.get("message", {}).get("content", "").strip()
             result = self._parse_ne_json(text)
             if result is not None:
-                print(f"[NE] local ok ({ne_local_model})")
+                print(f"{_cts()}[NE] local ok ({ne_local_model})")
                 reasoning_cache.put(ne_local_model, prompt, text, max_twm_id)
                 self._last_ne_model = ne_local_model
                 return result
-            print(f"[NE] local JSON parse failed ({ne_local_model}) — falling back to cloud")
+            print(f"{_cts()}[NE] local JSON parse failed ({ne_local_model}) — falling back to cloud")
         except Exception as e:
-            print(f"[NE] local failed ({ne_local_model}): {e} — falling back to cloud")
+            print(f"{_cts()}[NE] local failed ({ne_local_model}): {e} — falling back to cloud")
         return None
 
     def _call_cloud(self, prompt: str, max_twm_id: int = 0) -> Optional[dict]:
@@ -623,12 +642,12 @@ class NarrativeEngine:
             text = data["choices"][0]["message"]["content"].strip()
             result = self._parse_ne_json(text)
             if result is not None:
-                print(f"[NE] cloud ok ({or_model})")
+                print(f"{_cts()}[NE] cloud ok ({or_model})")
                 reasoning_cache.put(or_model, prompt, text, max_twm_id)
                 self._last_ne_model = or_model
             return result
         except Exception as e:
-            print(f"[NE] cloud failed: {e}")
+            print(f"{_cts()}[NE] cloud failed: {e}")
             return None
 
     # ── Helpers ────────────────────────────────────────────────────────────────

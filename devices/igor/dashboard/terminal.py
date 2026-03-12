@@ -1,23 +1,24 @@
 """
-Terminal dashboard - Rich-based display of Igor's internal state.
-Shows after every interaction. Everything visible.
+Terminal dashboard — Rich panel after every interaction.
 
-Interruptor alerts appear at the top of the TWM panel in bold yellow/red
-so they can't be missed. The TWM is now the canonical surface for pushed
-notifications from any Interruptor.
+Four sections (blank-line separated):
+  1. The Graph   — memory tree node counts (what he knows/is)
+  2. Inference   — last-turn routing, tokens, cost, latency per layer
+  3. Performance — tier %, latency distribution, TWM, jobs
+  4. How he's doing — milieu VAD, valence, friction, ROI
 """
 
 from datetime import datetime
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
-from rich.columns import Columns
 from rich import box
 
 from ..memory.cortex import Cortex
 from ..memory.models import MemoryType
 
 console = Console()
+
+_W = 64   # panel inner width (fits ═ border at 66 cols)
 
 
 def render(
@@ -36,146 +37,164 @@ def render(
     active_jobs: int = 0,
     word_graph=None,
     latency_samples: list | None = None,
+    inference_data: dict | None = None,  # per-turn inference details
 ):
-    counts = cortex.count_by_type()
-    total = cortex.total_count()
-    habits = cortex.get_habits()
+    counts   = cortex.count_by_type()
+    total    = cortex.total_count()
+    habits   = cortex.get_habits()
     twm_depth = _get_twm_depth(cortex)
-
     upstream_pct = _cloud_pct(interaction_count, cloud_calls)
+    alert_lines  = _get_active_alerts(cortex)
+    budget_line  = _get_budget_line()
 
-    # ── Interruptor alerts (read from TWM ring) ───────────────────────────────
-    alert_lines = _get_active_alerts(cortex)
-
-    # ── Budget summary ────────────────────────────────────────────────────────
-    budget_line = _get_budget_line()
-
-    # Build dashboard
     lines = []
 
-    # Show interruptor alerts first — they demand attention
+    # ── Alerts (always first) ─────────────────────────────────────────────────
     if alert_lines:
         for al in alert_lines:
             lines.append(f"[bold yellow]{al}[/]")
         lines.append("")
 
+    # ── Header ────────────────────────────────────────────────────────────────
     lines.append(f"[bold cyan]Igor-{instance_id}[/] · Interaction #{interaction_count}")
     if budget_line:
         lines.append(budget_line)
+
+    # ══ SECTION 1: THE GRAPH ══════════════════════════════════════════════════
     lines.append("")
 
-    # Memory counts
     new_tag = f" [green](+{new_memories})[/]" if new_memories else ""
-    lines.append(f"[bold]Memories:[/] {total}{new_tag}")
-    lines.append(f"  Core Patterns:    {counts.get(MemoryType.CORE_PATTERN.value, 0)}")
-    lines.append(f"  Identity:         {counts.get(MemoryType.IDENTITY.value, 0)}")
-    lines.append(f"  Role Models:      {counts.get(MemoryType.ROLE_MODEL.value, 0)}")
-    lines.append(f"  Episodic:         {counts.get(MemoryType.EPISODIC.value, 0)}")
-    proc_count = counts.get(MemoryType.PROCEDURAL.value, 0)
-    proc_ratio = (proc_count / total * 100) if total else 0.0
-    if proc_ratio >= 10.0:
-        proc_color = "green"
-    elif proc_ratio >= 5.0:
-        proc_color = "yellow"
-    else:
-        proc_color = "red"
-    lines.append(f"  Procedural:       {proc_count}  [{proc_color}]({proc_ratio:.1f}% — METRIC_3 target ≥10%)[/]")
-    lines.append(f"  Interpretive:     {counts.get(MemoryType.INTERPRETIVE.value, 0)}")
-    lines.append(f"  Experiential:     {counts.get(MemoryType.EXPERIENTIAL.value, 0)}")
-    lines.append(f"  Factual:          {counts.get(MemoryType.FACTUAL.value, 0)}")
-    lines.append("")
-
+    new_h   = f" [green](+{new_habits})[/]"   if new_habits  else ""
     blob_count = _get_blob_count(cortex)
-    blob_str = f"   [bold]Blobs:[/] {blob_count}" if blob_count else ""
-    new_habit_tag = f" [green](+{new_habits})[/]" if new_habits else ""
-    lines.append(f"[bold]Procedural nodes:[/] {len(habits)}{new_habit_tag}   [bold]TWM depth:[/] {twm_depth}{blob_str}")
+    blob_str   = f"  Blobs: {blob_count}" if blob_count else ""
+    lines.append(f"[bold]Memories:[/] {total}{new_tag}   Habits: {len(habits)}{new_h}{blob_str}")
+
+    # Compact memory type grid: fixed types / structural first
+    cp   = counts.get(MemoryType.CORE_PATTERN.value,  0)
+    idn  = counts.get(MemoryType.IDENTITY.value,       0)
+    rm   = counts.get(MemoryType.ROLE_MODEL.value,     0)
+    ep   = counts.get(MemoryType.EPISODIC.value,       0)
+    exp  = counts.get(MemoryType.EXPERIENTIAL.value,   0)
+    fct  = counts.get(MemoryType.FACTUAL.value,        0)
+    proc = counts.get(MemoryType.PROCEDURAL.value,     0)
+    interp = counts.get(MemoryType.INTERPRETIVE.value, 0)
+    lines.append(f"  [dim]CP·{cp}  ID·{idn}  RM·{rm}[/]")
+    lines.append(f"  Episodic:{ep:>6}   Experiential:{exp:>5}   Factual:{fct:>5}")
+    proc_ratio = (proc / total * 100) if total else 0.0
+    if proc_ratio >= 10.0:
+        pc = "green"
+    elif proc_ratio >= 5.0:
+        pc = "yellow"
+    else:
+        pc = "red"
+    interp_edges = _get_interpretive_edge_count(cortex)
+    edge_str = f" · {interp_edges} edges" if interp_edges else ""
+    lines.append(f"  Procedural:[{pc}]{proc:>5}[/] [{pc}]({proc_ratio:.1f}%)[/]   Interpretive:{interp:>4}{edge_str}")
+
+    # Tree node counts
+    if word_graph is not None:
+        try:
+            wg_words = len(word_graph._word_to_ids)
+            wg_docs  = word_graph._doc_count
+            lines.append(f"  [dim]Word graph:  {wg_words:>10,} nodes  ({wg_docs:,} docs)[/]")
+        except Exception:
+            pass
+    lines.append(f"  [dim]Action tree: {proc:>6,} nodes[/]")
+    lines.append(f"  [dim]Meaning tree:{interp:>6,} nodes{edge_str}[/]")
+    lines.append(f"  [dim]Knowledge:   {fct:>6,} nodes[/]")
+
+    # New habits (if any)
     if new_habits:
         recent = _get_recent_habits(cortex, n=new_habits)
         for h in recent:
             src = h.get("source", "")
-            src_tag = {"cloud_directed": "[cyan]cloud[/]", "reading": "[magenta]reading[/]"}.get(src, "[dim]self[/]")
-            lines.append(f"  [green]↑ new[/] {src_tag} {h['id']}: {h['narrative'][:55]}")
-    # ── Tree node counts ──────────────────────────────────────────────────
-    if word_graph is not None:
-        try:
-            wg_words = len(word_graph._word_to_ids)
-            wg_docs = word_graph._doc_count
-            lines.append(
-                f"[bold]Word graph nodes:[/] {wg_words:,}  "
-                f"[dim]({wg_docs:,} documents indexed)[/]"
-            )
-        except Exception:
-            pass
-    action_nodes = counts.get(MemoryType.PROCEDURAL.value, 0)
-    interp_nodes = counts.get(MemoryType.INTERPRETIVE.value, 0)
-    interp_edges = _get_interpretive_edge_count(cortex)
-    factual_nodes = counts.get(MemoryType.FACTUAL.value, 0)
-    edge_str = f"  [dim]· {interp_edges} edges[/]" if interp_edges else ""
-    lines.append(f"  [dim]Action tree:[/]   {action_nodes:,} nodes")
-    lines.append(f"  [dim]Meaning tree:[/]  {interp_nodes:,} nodes{edge_str}")
-    lines.append(f"  [dim]Knowledge tree:[/]{factual_nodes:,} nodes")
-    local_pct = _get_local_pct()
+            src_tag = {
+                "cloud_directed": "[cyan]cloud[/]",
+                "reading": "[magenta]reading[/]",
+            }.get(src, "[dim]self[/]")
+            lines.append(f"  [green]↑[/] {src_tag} {h['id'][:16]}: {h['narrative'][:44]}")
+
+    # ══ SECTION 2: INFERENCE ══════════════════════════════════════════════════
+    lines.append("")
+    inf = inference_data or {}
+    tier     = inf.get("tier",       last_tier or "—")
+    intent   = inf.get("intent",     "")
+    t_in     = inf.get("tokens_in",  0)
+    t_out    = inf.get("tokens_out", 0)
+    cost     = inf.get("cost_usd",   0.0)
+    lat_ms   = inf.get("latency_ms", 0)
+    preparse = inf.get("preparse",   "")
+    winnow   = inf.get("winnow",     "")
+    ne_info  = inf.get("ne",         "")
+    header   = f"{intent}/{tier}" if intent else tier
+    tok_str  = f"in={t_in} out={t_out}" if t_in or t_out else "tokens=—"
+    cost_str = f"${cost:.4f}" if cost else "—"
+    lat_str  = f"{lat_ms/1000:.1f}s" if lat_ms else "—"
+    lines.append(f"[bold]Turn:[/] {header}  {tok_str}  {cost_str}  {lat_str}")
+    if preparse:
+        lines.append(f"  preparse  {preparse}")
+    if winnow:
+        lines.append(f"  winnow    {winnow}")
+    if ne_info:
+        lines.append(f"  NE        {ne_info}")
+
+    # ══ SECTION 3: PERFORMANCE ════════════════════════════════════════════════
+    lines.append("")
     graph_pct = _get_graph_pct()
-    lines.append(f"[bold]Graph inference:[/] {graph_pct}%   [bold]Cloud inference:[/] {upstream_pct}%   [bold]Local inference:[/] {local_pct}%")
-    if latency_samples:
-        lines.append(f"[bold]Latency (p50/p95):[/]  {_latency_p50(latency_samples)}ms / {_latency_p95(latency_samples)}ms  [dim](last {len(latency_samples)})[/]")
+    local_pct = _get_local_pct()
+    lines.append(
+        f"[bold]Graph:[/] {graph_pct}%  "
+        f"[bold]Cloud:[/] {upstream_pct}%  "
+        f"[bold]Local:[/] {local_pct}%  "
+        f"[bold]TWM:[/] {twm_depth}"
+    )
+    if latency_samples and len(latency_samples) >= 2:
+        p50 = _latency_p50(latency_samples)
+        p95 = _latency_p95(latency_samples)
+        lines.append(
+            f"[bold]Latency p50/p95:[/]  {p50:,}ms / {p95:,}ms"
+            f"  [dim](n={len(latency_samples)})[/]"
+        )
     if active_jobs:
         lines.append(f"[bold yellow]Active jobs:[/] {active_jobs}")
-    if last_tier:
-        lines.append(f"[bold]Last tier:[/] {last_tier}")
+
+    # ══ SECTION 4: HOW HE'S DOING ════════════════════════════════════════════
     lines.append("")
-
-    # Metrics
-    valence_str = _valence_str(last_valence)
-    friction_str = f"{last_friction:.2f}" if last_friction is not None else "—"
-    roi_str = f"{last_roi:+.2f}" if last_roi is not None else "—"
-
-    lines.append(f"[bold]Emotional Valence:[/] {valence_str}")
-    lines.append(f"[bold]Friction (last):[/]   {friction_str}")
-    lines.append(f"[bold]ROI:[/]               {roi_str}")
-
-    # G10 / #35: milieu ambient state with VAD bars
     if milieu_state is not None:
-        lines.append("")
-        lines.append(f"[bold]Milieu[/]  (v/a/d — ambient affect):")
         lines.append(
-            f"  V {milieu_state.valence:+.2f} {_vad_bar(milieu_state.valence)}  "
+            f"[bold]Milieu[/]  "
+            f"V {milieu_state.valence:+.2f} {_vad_bar(milieu_state.valence)}  "
             f"A {milieu_state.arousal:+.2f} {_vad_bar(milieu_state.arousal)}  "
             f"D {milieu_state.dominance:+.2f} {_vad_bar(milieu_state.dominance)}"
         )
-
-    lines.append("")
-    lines.append(f"[bold]Recent:[/] {last_action}")
+    valence_str  = _valence_str(last_valence)
+    friction_str = f"{last_friction:.2f}" if last_friction is not None else "—"
+    roi_str      = f"{last_roi:+.2f}"     if last_roi      is not None else "—"
+    lines.append(f"  Valence: {valence_str}   Friction: {friction_str}   ROI: {roi_str}")
 
     border = "red" if alert_lines else "cyan"
     panel = Panel(
         "\n".join(lines),
         box=box.DOUBLE,
         border_style=border,
-        width=62,
+        width=_W + 2,
     )
     console.print(panel)
 
 
+# ── Support functions ─────────────────────────────────────────────────────────
+
 def _get_active_alerts(cortex: Cortex) -> list[str]:
-    """
-    Read recent interruptor alerts from ring_memory.
-    Only return the most recent alert per interruptor name to avoid spam.
-    """
     try:
         entries = cortex.read_ring_memory(limit=20, category="interruptor")
         if not entries:
             return []
-        # De-duplicate by interruptor name (keep most recent)
         seen = {}
-        for e in reversed(entries):  # newest last → process newest first
+        for e in reversed(entries):
             content = e["content"]
-            # Content format: "[INTERRUPTOR:name] message"
             name = content.split("]")[0].replace("[INTERRUPTOR:", "") if "]" in content else "unknown"
-            if name not in seen:
-                # CLEARED entries are tombstones — suppress from alert panel
-                if "✅ CLEARED" not in content:
-                    seen[name] = content
+            if name not in seen and "✅ CLEARED" not in content:
+                seen[name] = content
         return list(seen.values())
     except Exception:
         return []
@@ -188,31 +207,27 @@ def _latency_p50(samples: list) -> int:
 
 def _latency_p95(samples: list) -> int:
     s = sorted(samples)
-    idx = max(0, int(len(s) * 0.95) - 1)
+    idx = min(len(s) - 1, max(0, int(len(s) * 0.95)))
     return s[idx] if s else 0
 
 
 def _get_budget_line() -> str:
-    """Return a compact budget status line, or empty string if unavailable."""
     try:
         from ..tools.budget import budget_status
         s = budget_status()
         remaining = s["remaining_usd"]
         budget    = s["budget_usd"]
         pct_left  = 100 - s["pct_used"]
-        if s["critical"] or remaining <= 0:
-            color = "red"
-        elif s["warn"]:
-            color = "yellow"
-        else:
-            color = "green"
-        return f"[bold]OpenRouter Budget:[/] [{color}]${remaining:.2f} left[/] of ${budget:.2f} ({pct_left:.0f}% remaining)"
+        color = "red" if (s["critical"] or remaining <= 0) else ("yellow" if s["warn"] else "green")
+        return (
+            f"[bold]OR Budget:[/] [{color}]${remaining:.2f}[/] of ${budget:.2f}"
+            f"  [{color}]({pct_left:.0f}% left)[/]"
+        )
     except Exception:
         return ""
 
 
 def _get_blob_count(cortex: Cortex) -> int:
-    """Count stored reference blobs."""
     try:
         with cortex._conn() as conn:
             row = conn.execute("SELECT COUNT(*) FROM memory_blobs").fetchone()
@@ -222,7 +237,6 @@ def _get_blob_count(cortex: Cortex) -> int:
 
 
 def _get_twm_depth(cortex: Cortex) -> int:
-    """Count active (non-integrated) TWM observations."""
     try:
         return len(cortex.twm_read(limit=50, include_integrated=False))
     except Exception:
@@ -230,30 +244,27 @@ def _get_twm_depth(cortex: Cortex) -> int:
 
 
 def _vad_bar(value: float, width: int = 5) -> str:
-    """Render a [-1,1] value as a short filled/empty bar. e.g. ▓▓▓░░"""
     filled = round((value + 1.0) / 2.0 * width)
     filled = max(0, min(width, filled))
     return "▓" * filled + "░" * (width - filled)
 
 
 def _get_local_pct(n: int = 100) -> int:
-    """% of last N tier selections that were local (tier.1 or tier.2)."""
     try:
         from ..cognition.metrics import _tier_distribution
         counts = _tier_distribution(n=n)
-        total = sum(counts.values())
-        local = counts.get("tier.1", 0) + counts.get("tier.2", 0)
+        total  = sum(counts.values())
+        local  = counts.get("tier.1", 0) + counts.get("tier.2", 0)
         return round(local / max(total, 1) * 100)
     except Exception:
         return 0
 
 
 def _get_graph_pct(n: int = 100) -> int:
-    """% of last N tier selections handled by habit graph (tier.1 — no LLM)."""
     try:
         from ..cognition.metrics import _tier_distribution
         counts = _tier_distribution(n=n)
-        total = sum(counts.values())
+        total  = sum(counts.values())
         return round(counts.get("tier.1", 0) / max(total, 1) * 100)
     except Exception:
         return 0
@@ -268,24 +279,19 @@ def _cloud_pct(total_interactions: int, cloud_calls: int) -> int:
 def _valence_str(valence: float | None) -> str:
     if valence is None:
         return "—"
-    if valence >= 0.8:
-        label = "excellent"
-    elif valence >= 0.5:
-        label = "positive"
-    elif valence >= 0.1:
-        label = "mild"
-    elif valence >= -0.1:
-        label = "neutral"
-    elif valence >= -0.5:
-        label = "uneasy"
-    else:
-        label = "distressed"
+    label = (
+        "excellent"  if valence >= 0.8  else
+        "positive"   if valence >= 0.5  else
+        "mild"       if valence >= 0.1  else
+        "neutral"    if valence >= -0.1 else
+        "uneasy"     if valence >= -0.5 else
+        "distressed"
+    )
     sign = "+" if valence >= 0 else ""
     return f"{sign}{valence:.2f} ({label})"
 
 
 def _get_interpretive_edge_count(cortex: Cortex) -> int:
-    """Count edges in the interpretive (meaning) tree."""
     try:
         with cortex._conn() as conn:
             row = conn.execute("SELECT COUNT(*) FROM interpretive_edges").fetchone()
@@ -295,17 +301,11 @@ def _get_interpretive_edge_count(cortex: Cortex) -> int:
 
 
 def _get_recent_habits(cortex: Cortex, n: int = 3) -> list[dict]:
-    """Return the N most recently created PROCEDURAL memories (habits) by timestamp."""
     try:
         with cortex._conn() as conn:
             rows = conn.execute(
-                """
-                SELECT id, narrative, source, metadata
-                FROM memories
-                WHERE memory_type = 'PROCEDURAL'
-                ORDER BY timestamp DESC
-                LIMIT ?
-                """,
+                "SELECT id, narrative, source FROM memories "
+                "WHERE memory_type = 'PROCEDURAL' ORDER BY timestamp DESC LIMIT ?",
                 (n,),
             ).fetchall()
         return [{"id": r["id"], "narrative": r["narrative"], "source": r["source"] or ""} for r in rows]
@@ -313,9 +313,12 @@ def _get_recent_habits(cortex: Cortex, n: int = 3) -> list[dict]:
         return []
 
 
+# ── Per-turn print helpers (called from main.py) ──────────────────────────────
+
 def print_activated_memories(memories: list, label: str = "Activated memories"):
     if not memories:
         return
+    from .terminal import console  # avoid circular; same object
     console.print(f"\n[dim][SEARCH] {label}:[/]")
     for m in memories:
         console.print(f"[dim]  → {m.id}: {m.narrative[:60]}[/]")

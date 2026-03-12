@@ -323,6 +323,16 @@ class OllamaReasoner(LocalReasoner):
 
         _context_chars = len(system) + len(user_input) + len(memory_context)  # G55
 
+        # Cloud training mode: skip tier.2 Ollama — escalate to cloud (#CLOUD)
+        try:
+            from ..cloud_mode import is_cloud_training_active as _cloud_active
+            if _cloud_active():
+                raise RuntimeError("cloud_mode active — skip tier.2 Ollama")
+        except RuntimeError:
+            raise
+        except Exception:
+            pass
+
         t0 = time.perf_counter()
         try:
             response = self._client.chat(

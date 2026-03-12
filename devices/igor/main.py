@@ -31,7 +31,7 @@ from .cognition import prefrontal_cortex as pfc
 from .cognition.reasoners.anthropic import AnthropicReasoner
 from .cognition.reasoners.ollama_reasoner import preparse, parse_preparse_csb, score_memories, _rule_based_csb, is_healthy as ollama_is_healthy
 from .cognition.reasoners.openrouter_reasoner import preparse_via_openrouter
-from .cognition.forensic_logger import log_tier_selection
+from .cognition.forensic_logger import log_tier_selection, cts as _cts
 from .cognition.system_prompt import build_boot_message, invalidate_cache
 from .cognition.local_pool import LocalKoboldPool, BatchKoboldPool
 from .cognition import observer
@@ -66,6 +66,28 @@ DEBOUNCE_SECS = float(os.getenv("IGOR_INPUT_DEBOUNCE_MS", "3000")) / 1000.0
 # it without a circular import. We import and re-expose it here for _stdin_reader.
 from .cognition.reasoners.base import exit_requested as _exit_requested
 
+# ── #184: Attention nexus classification ───────────────────────────────────────
+
+def _nexus_type(thread_id: str | None) -> str:
+    """
+    #184: Classify a thread_id as 'episodic' or 'open_channel'.
+    Episodic (calendar:*): bounded, event-driven, self-contained.
+    Open channel (web:, discord:, stdin:, gmail:, etc.): persistent traffic.
+    """
+    if thread_id and thread_id.startswith("calendar:"):
+        return "episodic"
+    return "open_channel"
+
+
+def _nexus_twm_ttl(thread_id: str | None) -> int:
+    """
+    #184: Default TWM TTL for a thread nexus (seconds).
+    Episodic = 3600s (expires with the event).
+    Open channel = 7200s (persistent across multiple turns).
+    """
+    return 3600 if _nexus_type(thread_id) == "episodic" else 7200
+
+
 # ── Stdin thread ───────────────────────────────────────────────────────────────
 
 def _stdin_reader(stdin_queue: queue.Queue):
@@ -80,8 +102,10 @@ def _stdin_reader(stdin_queue: queue.Queue):
         try:
             console.print("\n[bold green]You:[/] ", end="")
             line = sys.stdin.readline()
-            if line == "":          # EOF (Ctrl-D)
-                _exit_requested.set()
+            if line == "":          # EOF (Ctrl-D or headless/nohup — stdin exhausted)
+                # Do NOT set exit_requested here: headless mode hits EOF on stdin
+                # immediately (/dev/null), but web sessions must keep working.
+                # exit_requested is only for explicit /exit or /quit commands.
                 stdin_queue.put(None)
                 break
             text = line.rstrip("\n")
@@ -89,7 +113,7 @@ def _stdin_reader(stdin_queue: queue.Queue):
                 _exit_requested.set()
             stdin_queue.put(text)
         except (KeyboardInterrupt, EOFError):
-            _exit_requested.set()
+            _exit_requested.set()  # Ctrl+C / hard interrupt — intentional stop
             stdin_queue.put(None)
             break
 
@@ -192,6 +216,9 @@ class Igor:
         # Set IGOR_LOCAL=true in .env to default to local KoboldCpp pool mode.
         self.local_mode = os.getenv("IGOR_LOCAL", "false").lower() in ("true", "1", "yes")
         self._ne_thread: threading.Thread | None = None
+        self._ne_spawn_lock: threading.Lock = threading.Lock()  # prevent double-fire
+        self._ne_last_twm_fingerprint: tuple[int, int] = (0, 0)  # (obs_count, max_id)
+        self._ne_last_run_time: float = 0.0  # monotonic; idle gate cooldown
         self._consolidation_thread: threading.Thread | None = None  # #169
         self._context_flush_done: bool = False  # change.32: set after pre-compaction flush
         # #182: meta-cognition — track traversal directions for self-awareness
@@ -232,11 +259,15 @@ class Igor:
         if os.getenv("OPENROUTER_API_KEY", "").strip():
             try:
                 from .cognition.reasoners.openrouter_reasoner import OpenRouterReasoner
-                cheap_model = os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
-                interactive_model = os.getenv("OPENROUTER_INTERACTIVE_MODEL", "deepseek/deepseek-chat")
-                self.openrouter_cheap_reasoner = OpenRouterReasoner(model=cheap_model)
+                cheap_model       = os.getenv("OPENROUTER_CHEAP_MODEL",       "openai/gpt-4o-mini")
+                # tier.3.5: persona-capable but cheap — haiku; falls back to INTERACTIVE if DEFAULT unset
+                interactive_model = os.getenv("OPENROUTER_DEFAULT_MODEL",
+                                              os.getenv("OPENROUTER_INTERACTIVE_MODEL", "anthropic/claude-haiku-4.5"))
+                # tier.4: full reasoning — sonnet (INTERACTIVE_MODEL or hardcoded default)
+                claude_model      = os.getenv("OPENROUTER_INTERACTIVE_MODEL", "anthropic/claude-sonnet-4.6")
+                self.openrouter_cheap_reasoner       = OpenRouterReasoner(model=cheap_model)
                 self.openrouter_interactive_reasoner = OpenRouterReasoner(model=interactive_model)
-                self.openrouter_reasoner = OpenRouterReasoner()
+                self.openrouter_reasoner             = OpenRouterReasoner(model=claude_model)
                 console.print(f"[dim]OpenRouter ready ({self.openrouter_reasoner.model})[/]")
             except Exception as _e:
                 console.print(f"[yellow]OpenRouter init failed: {_e}[/]")
@@ -285,6 +316,7 @@ class Igor:
         self._thread_buffers: dict = {}
         self._THREAD_IDLE_TTL_SEC: int = 3600   # 1 hour
         self._THREAD_MAX_HISTORY: int = 8        # last 8 exchanges shown as context (was 4)
+        self._nexus_traffic: dict[str, list] = {}  # #184: per-thread message timestamps
 
         # [BOOT MESSAGE] Synthetic first-turn orientation — Igor reads this before any input
         try:
@@ -1517,14 +1549,14 @@ class Igor:
                 console.print(f"[dim][WARM] {fname} corrupted, trying fallback...[/]")
 
         if ctx is None:
-            console.print("[dim][WARM] no warm context found, starting cold[/]")
+            console.print(f"[dim]{_cts()}[WARM] no warm context found, starting cold[/]")
             return None
 
         # Parse and check TTL
         try:
             saved_ts = datetime.fromisoformat(ctx["timestamp"])
         except Exception:
-            console.print("[dim][WARM] warm context has invalid timestamp, starting cold[/]")
+            console.print(f"[dim]{_cts()}[WARM] warm context has invalid timestamp, starting cold[/]")
             return
 
         age_hours = (datetime.now() - saved_ts).total_seconds() / 3600
@@ -1565,7 +1597,7 @@ class Igor:
                         _m = milieu_mod.get()
                         if _m:
                             _m.gap_reset()
-                            console.print("[dim][GAP] milieu partially reset toward baseline[/]")
+                            console.print(f"[dim]{_cts()}[GAP] milieu partially reset toward baseline[/]")
                     except Exception:
                         pass
             except Exception:
@@ -1664,7 +1696,7 @@ class Igor:
         Neither blocks the other. Network messages are processed promptly
         even while waiting for the human to type.
         """
-        console.print("[dim]Type your message. /help for commands. /quit to exit.[/]\n")
+        console.print(f"[dim]{_cts()}Type your message. /help for commands. /quit to exit.[/]\n")
 
         # Pre-warm system prompt cache so the first interaction isn't cold.
         # Also flushes any messages queued during __init__ with a polite deferral.
@@ -1731,7 +1763,7 @@ class Igor:
                     # Regular line: add to buffer, reset idle timer
                     _stdin_buffer.append(_stripped)
                     _stdin_last_time = time.time()
-                    console.print("[dim](buffering...)[/]")
+                    console.print(f"[dim]{_cts()}(buffering...)[/]")
 
             # ── Flush stdin buffer if idle for DEBOUNCE_SECS ─────────────────
             if _stdin_buffer and time.time() - _stdin_last_time >= DEBOUNCE_SECS:
@@ -2053,6 +2085,38 @@ class Igor:
                 thread_id=thread_id,
             )
 
+        # ── #184: Nexus volume tracking — promote high-traffic open channels ──────
+        if thread_id and not is_impulse:
+            import time as _t184
+            _now184 = _t184.time()
+            _window184 = self._nexus_traffic.setdefault(thread_id, [])
+            _window184.append(_now184)
+            _window184[:] = [ts for ts in _window184 if _now184 - ts < 300]  # 5-min window
+            _TRAFFIC_THRESHOLD = 5
+            if (len(_window184) >= _TRAFFIC_THRESHOLD
+                    and _nexus_type(thread_id) == "open_channel"):
+                try:
+                    _twm_id = self.cortex.twm_push(
+                        source="nexus_monitor",
+                        content_csb=(
+                            f"HIGH_TRAFFIC_CHANNEL|{thread_id}"
+                            f"|msgs={len(_window184)}_in_5min"
+                        ),
+                        salience=0.7,
+                        urgency=0.5,
+                        ttl_seconds=600,
+                        thread_id=thread_id,
+                        category="nexus_traffic",
+                    )
+                    if _twm_id:
+                        self.cortex.twm_set_attractor(_twm_id, weight=0.7)
+                    console.print(
+                        f"[dim][NEXUS] High-traffic: {thread_id}"
+                        f" ({len(_window184)}/5min) → attractor[/]"
+                    )
+                except Exception:
+                    pass
+
         # ── #158: TASK_SET — push explicit action requests to thread TWM ─────────
         # Anchors the current goal at the top of context, outcompeting ambient ring.
         if not is_impulse and parsed.intent == "action_request" and thread_id:
@@ -2062,7 +2126,7 @@ class Igor:
                 content_csb=f"TASK_SET|{_task_goal}",
                 salience=0.9,
                 urgency=0.92,
-                ttl_seconds=1800,
+                ttl_seconds=_nexus_twm_ttl(thread_id),  # #184: nexus-appropriate TTL
                 thread_id=thread_id,
                 category="task_set",
             )
@@ -2199,12 +2263,21 @@ class Igor:
             parsed.complexity in ("low", "high")
             and os.getenv("IGOR_SKIP_PREPARSE_ON_CONFIDENT", "true").lower() != "false"
         )
+        _short_input = len(user_input.split()) <= 6  # rule-based thalamus handles short inputs fine
+        _cloud_mode_active = False
+        try:
+            from .cognition.cloud_mode import is_cloud_training_active as _cma
+            _cloud_mode_active = _cma()
+        except Exception:
+            pass
         _skip_llm_preparse = (
             parsed.intent in _fast_path_intents
             or _thalamus_habit is not None
             or not parsed.keywords  # empty input
             or is_impulse  # background work — rule-based CSB is instant; never wait on LLM
             or _thalamus_confident  # thalamus is confident — KoboldCpp won't change the routing
+            or _short_input  # ≤6 words: LLM preparse overhead > benefit
+            or _cloud_mode_active  # cloud mode: cloud models route fine without preparse overhead
         )
 
         # [#139 P2] Adaptive routing from latency history.
@@ -2257,14 +2330,20 @@ class Igor:
             import concurrent.futures as _cf
             self._current_action = "preparse"
             web_server.broadcast_activity(self._activity_state())
-            if self.use_local_preparse and ollama_is_healthy():
-                console.print("[dim][LOCAL] Pre-parsing via Ollama...[/]")
+            _cloud_preparse = False
+            try:
+                from .cognition.cloud_mode import is_cloud_training_active as _cma
+                _cloud_preparse = _cma()
+            except Exception:
+                pass
+            if self.use_local_preparse and not _cloud_preparse and ollama_is_healthy():
+                console.print(f"[dim]{_cts()}[LOCAL] Pre-parsing via Ollama...[/]")
                 _preparse_fn = lambda: preparse(_preparse_input, habits)
             elif self.use_local_preparse:
-                console.print("[dim][PREPARSE] Ollama unavailable — preparse via OR cheap...[/]")
+                console.print(f"[dim]{_cts()}[PREPARSE] Ollama unavailable — preparse via OR cheap...[/]")
                 _preparse_fn = lambda: preparse_via_openrouter(_preparse_input, habits)
             else:
-                console.print("[dim][PREPARSE] Local preparse off — classifying via tier.3...[/]")
+                console.print(f"[dim]{_cts()}[PREPARSE] Local preparse off — classifying via tier.3...[/]")
                 _preparse_fn = lambda: preparse_via_openrouter(_preparse_input, habits)
 
             # #50: include NE predicted search keys in memory retrieval query
@@ -2610,7 +2689,7 @@ class Igor:
         # #90: routing_directive — honour explicit constraints from user
         _local_only = (parsed.routing_directive == "local_only")
         if _local_only:
-            console.print("[dim][ROUTING] local_only directive — cloud escalation disabled[/]")
+            console.print(f"[dim]{_cts()}[ROUTING] local_only directive — cloud escalation disabled[/]")
 
         # [JOB TRIGGER] pass.4: create a long-running job when task looks multi-unit
         # Only for non-impulse user messages; only if complexity qualifies
@@ -3015,6 +3094,7 @@ class Igor:
                     # Think phase is now fully local. Only the reply call hits cloud.
                     if (
                         not is_impulse
+                        and not _cloud_mode_active
                         and os.getenv("IGOR_TWO_PHASE_CALLS", "false").lower() in ("1", "true", "yes")
                     ):
                         _scratchpad = self._think_call(_py_think, user_input)
@@ -3028,7 +3108,7 @@ class Igor:
                                 f"{_py_think}\n\n[THINK_SYNTHESIS]\n{_scratchpad}"
                                 f"\n\n[USER_INPUT]\n{user_input}"
                             )
-                            console.print("[dim][THINK] Local synthesis ready → reply call[/]")
+                            console.print(f"[dim]{_cts()}[THINK] Local synthesis ready → reply call[/]")
     
                     with Live(Spinner("dots", text=" Thinking..."), console=console,
                               transient=True, refresh_per_second=8):
@@ -3295,6 +3375,16 @@ class Igor:
                 _m.update(valence, friction, self.last_roi or 0.0)
 
         # [DASHBOARD] Update display
+        _inf_data: dict = {
+            "tier":    getattr(self, "_current_tier", ""),
+            "intent":  parsed.intent,
+            "cost_usd": locals().get("cost", 0.0) or 0.0,
+            "latency_ms": (locals().get("_total_ms") or 0) if not is_impulse else 0,
+            "preparse": (
+                "skipped (cloud mode)" if _cloud_mode_active
+                else ("skipped (confident)" if _skip_llm_preparse else "ollama")
+            ),
+        }
         dashboard.render(
             cortex=self.cortex,
             instance_id=self.instance_id,
@@ -3311,6 +3401,7 @@ class Igor:
             active_jobs=self.job_manager.active_count() if hasattr(self, "job_manager") and self.job_manager else 0,
             word_graph=self._word_graph,
             latency_samples=self._latency_samples,
+            inference_data=_inf_data,
         )
 
         # [PRECOMPACT] Flush session summary to LTM before context window gets too large (change.32)
@@ -3392,32 +3483,59 @@ class Igor:
         Fire the Narrative Engine in a background daemon thread.
         If NE is already running (Ollama is slow), skip — don't stack calls.
         The NE is stateless between runs (all state in SQLite), so this is safe.
+
+        Idle gate: skip if TWM hasn't changed since last run AND < 2min cooldown.
+        Lock: prevents double-fire race when two callers hit simultaneously.
         """
         if self._ne_thread is not None and self._ne_thread.is_alive():
             return  # Already running — Ollama is still thinking
 
-        def _ne_worker():
-            # Yield to interactive turn — if main loop is actively processing,
-            # wait briefly rather than competing for KoboldCpp
-            import time as _t
-            _waited = 0.0
-            while self._is_processing and _waited < 10.0:
-                _t.sleep(0.5)
-                _waited += 0.5
-            try:
-                result = self.ne.run(verbose=False)
-                if result:
-                    _ne_state = result.get("internal_state", {})
-                    _m = milieu_mod.get()
-                    if _ne_state and _m:
-                        _m.ingest_ne_state(_ne_state)
-            except Exception:
-                pass  # FAIL = FAL — NE must never crash the loop
+        # Lock prevents a second caller from spawning while we check/set state
+        if not self._ne_spawn_lock.acquire(blocking=False):
+            return
 
-        self._ne_thread = threading.Thread(
-            target=_ne_worker, daemon=True, name="ne-worker"
-        )
-        self._ne_thread.start()
+        try:
+            # Idle gate: skip NE if TWM hasn't changed and cooldown not elapsed
+            import time as _t
+            _now = _t.monotonic()
+            _COOLDOWN = 120.0  # 2 minutes
+            try:
+                _obs = self.cortex.twm_count()        # total obs rows
+                _max_id = self.cortex.twm_max_id()    # highest obs id
+                _fingerprint = (_obs, _max_id)
+            except Exception:
+                _fingerprint = (0, 0)
+            _same_state = _fingerprint == self._ne_last_twm_fingerprint
+            _in_cooldown = (_now - self._ne_last_run_time) < _COOLDOWN
+            if _same_state and _in_cooldown:
+                return  # Nothing new in TWM — NE would produce the same output
+
+            self._ne_last_twm_fingerprint = _fingerprint
+            self._ne_last_run_time = _now
+
+            def _ne_worker():
+                # Yield to interactive turn — if main loop is actively processing,
+                # wait briefly rather than competing for KoboldCpp
+                _waited = 0.0
+                while self._is_processing and _waited < 10.0:
+                    _t.sleep(0.5)
+                    _waited += 0.5
+                try:
+                    result = self.ne.run(verbose=False)
+                    if result:
+                        _ne_state = result.get("internal_state", {})
+                        _m = milieu_mod.get()
+                        if _ne_state and _m:
+                            _m.ingest_ne_state(_ne_state)
+                except Exception:
+                    pass  # FAIL = FAL — NE must never crash the loop
+
+            self._ne_thread = threading.Thread(
+                target=_ne_worker, daemon=True, name="ne-worker"
+            )
+            self._ne_thread.start()
+        finally:
+            self._ne_spawn_lock.release()
 
     def _run_consolidation_background(self):
         """
@@ -3810,7 +3928,7 @@ class Igor:
                 self._net_debounce[_thread_id] = {"msgs": [], "last_time": 0.0}
             self._net_debounce[_thread_id]["msgs"].append(msg)
             self._net_debounce[_thread_id]["last_time"] = time.time()
-            console.print("[dim](buffering...)[/]")
+            console.print(f"[dim]{_cts()}(buffering...)[/]")
 
     def _flush_debounced_network(self):
         """
@@ -4109,7 +4227,7 @@ class Igor:
         if apply:
             console.print("[yellow]  Mode: APPLY — changes will be written[/]")
         else:
-            console.print("[dim]  Mode: DRY RUN — add --apply to execute[/]")
+            console.print(f"[dim]{_cts()}  Mode: DRY RUN — add --apply to execute[/]")
         console.print("")
 
         # ── 1. Junk habits ─────────────────────────────────────────────────────
@@ -4221,7 +4339,7 @@ class Igor:
 
         console.print("[bold cyan]════════════════════════════════════════════════[/]")
         if not apply:
-            console.print("[dim]Run /hygiene --apply to execute the pruning.[/]")
+            console.print(f"[dim]{_cts()}Run /hygiene --apply to execute the pruning.[/]")
 
     def _cmd_habits(self, raw):
         """Habit visibility and compilation (change.34).
@@ -4269,7 +4387,7 @@ class Igor:
         console.print(f"\n[bold]Habit candidates ({len(candidates)}) — 3+ episodes:[/]")
         for intent, count in sorted(candidates, key=lambda x: x[1], reverse=True):
             console.print(f"  intent={intent!r}  episodes={count}")
-        console.print("[dim]Use /habits compile to review and propose new habits.[/]")
+        console.print(f"[dim]{_cts()}Use /habits compile to review and propose new habits.[/]")
 
     def _habits_compile(self):
         """Manually trigger hippocampus compilation pass — suggest habits from patterns."""
@@ -4809,7 +4927,7 @@ class Igor:
         elif sub in ("approve", "deny") and arg == "all":
             pending = arbiter_queue.get_pending()
             if not pending:
-                console.print("[dim]Arbiter queue is empty — nothing to resolve.[/]")
+                console.print(f"[dim]{_cts()}Arbiter queue is empty — nothing to resolve.[/]")
                 return
             console.print(f"\n[bold]{'Approving' if sub == 'approve' else 'Denying'} all {len(pending)} pending items...[/]")
             resolved = "approved" if sub == "approve" else "denied"
@@ -5162,7 +5280,7 @@ class Igor:
             return
         self._relay_session = RelaySession(model_name=model, reasoner=r)
         console.print(f"\n[bold magenta]── Relay started: {model} ──[/]")
-        console.print("[dim]Your messages go directly to the model. /relay end to stop.[/]\n")
+        console.print(f"[dim]{_cts()}Your messages go directly to the model. /relay end to stop.[/]\n")
 
     def _relay_end(self):
         if self._relay_session is None:
@@ -5197,7 +5315,7 @@ class Igor:
             console.print("[yellow]No code or JSON block found in relay transcript.[/]")
             return
         console.print(f"\n[bold]Extracted block:[/]\n{block}\n")
-        console.print("[dim]/relay send claudecode — to forward this to Claude Code CLI[/]")
+        console.print(f"[dim]{_cts()}/relay send claudecode — to forward this to Claude Code CLI[/]")
 
     def _relay_send_claudecode(self):
         if self._relay_session is None:
@@ -5209,7 +5327,7 @@ class Igor:
         if block is None:
             console.print("[yellow]Nothing to send — use /relay extract first.[/]")
             return
-        console.print("[dim]Sending to Claude Code CLI...[/]")
+        console.print(f"[dim]{_cts()}Sending to Claude Code CLI...[/]")
         output = send_to_claude_code(block)
         from rich.markup import escape as _escape
         console.print(f"\n[bold]Claude Code response:[/]\n{_escape(output)}\n")
@@ -5370,7 +5488,7 @@ class Igor:
         console.print("[cyan]Pre-sleep ritual — consolidating before The Gap...[/]")
 
         # 1a. Force NE pass synchronously
-        console.print("[dim][SLEEP] running NE consolidation pass...[/]")
+        console.print(f"[dim]{_cts()}[SLEEP] running NE consolidation pass...[/]")
         _ne_promoted = 0
         try:
             # Wait for any in-flight NE thread to finish first
@@ -5388,7 +5506,7 @@ class Igor:
             console.print(f"[dim][SLEEP] NE pass failed (non-fatal): {_e}[/]")
 
         # 1b. Run episodic consolidation daemon synchronously (#174)
-        console.print("[dim][SLEEP] running episodic consolidation...[/]")
+        console.print(f"[dim]{_cts()}[SLEEP] running episodic consolidation...[/]")
         _con_result: dict = {}
         try:
             from .cognition.consolidation import run_consolidation as _run_con
@@ -5429,7 +5547,7 @@ class Igor:
             f"|last_events={_last_events[:300]}"
         )
         self.cortex.write_ring(sleep_note, category="sleep_note")
-        console.print("[dim][SLEEP] sleep note written to ring.[/]")
+        console.print(f"[dim]{_cts()}[SLEEP] sleep note written to ring.[/]")
 
         # 3. Normal shutdown — saves warm_context with shutdown_timestamp for gap detection
         self._shutdown(reason="sleep via /sleep")
@@ -5597,7 +5715,7 @@ class Igor:
         self._save_warm_context()
         console.print(f"\n[cyan]Igor-{self.instance_id} shutting down.[/]")
         console.print(f"Session: {self.interaction_count} interactions, ${self.session_cost:.4f} cost")
-        console.print("[dim]Memories persisted to SQLite. See you next time.[/]")
+        console.print(f"[dim]{_cts()}Memories persisted to SQLite. See you next time.[/]")
 
 
 _ID_CHARS = "23456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"  # base 34, no 0/1/l/O confusion
