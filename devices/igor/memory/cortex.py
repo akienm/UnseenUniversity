@@ -1648,6 +1648,7 @@ class Cortex:
         max_depth: int = 3,
         min_weight: float = 0.1,
         include_temporal: bool = False,
+        milieu_bias: dict | None = None,
     ) -> list["Memory"]:
         """
         G52: Breadth-first traversal of the interpretive tree from a set of seed nodes.
@@ -1660,21 +1661,28 @@ class Cortex:
         max_depth: traversal depth cap (default 3 = enough for most schemas)
         min_weight: prune edges below this weight
         include_temporal (#175): if True, also follow temporal edges (time layer traversal)
+        milieu_bias (#171): dict mapping node_id → weight_multiplier for milieu-weighted
+            traversal. Edges from high-bias roots require less weight to fire. Example:
+            {"CP6": 1.5} lowers effective threshold for CP6's safety branch when stressed.
         """
         if not from_ids:
             return []
 
+        _milieu_bias: dict = milieu_bias or {}
         visited: set[str] = set(from_ids)
-        queue: list[tuple[str, int]] = [(fid, 0) for fid in from_ids]
+        queue: list[tuple[str, int, str]] = [(fid, 0, fid) for fid in from_ids]  # (id, depth, root)
         result_ids: list[str] = []
 
         while queue:
-            current_id, depth = queue.pop(0)
+            current_id, depth, root_id = queue.pop(0)
             if depth >= max_depth:
                 continue
             edges = self.get_interpretive_edges(current_id)
+            # #171: milieu bias — multiply edge weight for edges originating from biased roots
+            _bias = _milieu_bias.get(root_id, 1.0)
+            _effective_min = min_weight / max(_bias, 0.01)
             for edge in edges:
-                if edge["weight"] < min_weight:
+                if edge["weight"] < _effective_min:
                     continue
                 if edge["direction"] == "inhibition":
                     # inhibition: skip the target (don't follow into inhibited subtree)
@@ -1685,7 +1693,7 @@ class Cortex:
                 if edge["to_id"] not in visited:
                     visited.add(edge["to_id"])
                     result_ids.append(edge["to_id"])
-                    queue.append((edge["to_id"], depth + 1))
+                    queue.append((edge["to_id"], depth + 1, root_id))
 
         if not result_ids:
             return []

@@ -48,6 +48,7 @@ class Thalamus:
 
         routing_directive = _detect_routing_directive(core_text)
         output_complexity = _assess_output_complexity(core_text, intent)
+        traversal_strategy, traversal_entry = _classify_question_traversal(core_text, intent)
 
         return ParsedInput(
             raw=text,
@@ -60,6 +61,8 @@ class Thalamus:
             routing_directive=routing_directive,
             complexity=complexity,
             output_complexity=output_complexity,
+            traversal_strategy=traversal_strategy,
+            traversal_entry=traversal_entry,
         )
 
 
@@ -75,6 +78,8 @@ class ParsedInput:
     routing_directive: str = ""      # "local_only" | "" — from user instruction (#90)
     complexity: str = "medium"       # "low" | "medium" | "high" — #93 tier hint
     output_complexity: str = "medium" # "low" | "medium" | "high" — #154 tier.0 gate
+    traversal_strategy: str = ""     # #181: "semantic_depth"|"causal_trace"|"broad_search"|"factual_leaf"|"memory_verify"|"attractor_hold"|""
+    traversal_entry: str = ""        # #181: "semantic_anchor"|"cp_closest"|"twm_attractor"|"ring_recent"|""
 
 
 _LOCAL_ONLY_PHRASES = (
@@ -306,6 +311,89 @@ def _assess_output_complexity(text: str, intent: str) -> str:
         return "low"
 
     return "medium"
+
+
+def _classify_question_traversal(text: str, intent: str) -> tuple[str, str]:
+    """
+    #181: Questions as traversal programs.
+
+    Question FORM determines traversal STRATEGY and ENTRY POINT.
+    Returns (traversal_strategy, traversal_entry).
+
+    Strategies:
+      semantic_depth  — deep traversal from semantic anchor (how/explain/walk)
+      causal_trace    — causal direction (why/what caused/how did it)
+      broad_search    — broad BFS from multiple entries (what fits/what would)
+      factual_leaf    — traverse to nearest factual node (what is/when/where)
+      memory_verify   — search + ring verification (do you remember/did you save)
+      attractor_hold  — traverse weighted toward TWM attractor (opinion/think)
+      (empty)         — no special traversal hint (non-question turns)
+
+    Entry points:
+      semantic_anchor — extract topic from keywords, anchor traversal there
+      cp_closest      — find nearest core pattern to the topic
+      twm_attractor   — use whatever is in TWM attractor as seed
+      ring_recent     — start from most recent ring entries
+      (empty)         — use default CP1-CP6 seeds
+    """
+    t = text.lower().strip()
+
+    # Not a question at all — no traversal hint
+    if intent in ("command", "memory_instruction", "code_task") or not any(
+        c in t for c in ("?", "how", "why", "what", "when", "where", "which", "who", "explain")
+    ):
+        return "", ""
+
+    # Memory verification — "do you remember", "did you save/get/store"
+    if any(p in t for p in (
+        "do you remember", "did you save", "did you get", "did you store",
+        "was that saved", "what have you saved", "what do you know about",
+        "what's my name", "who am i",
+    )):
+        return "memory_verify", "ring_recent"
+
+    # Causal trace — "why", "what caused", "how did X happen"
+    if any(p in t for p in (
+        "why did", "why does", "why is", "why are", "what caused",
+        "how did", "what made", "what led to", "because of",
+    )):
+        return "causal_trace", "semantic_anchor"
+
+    # Semantic depth — "how does X work", "explain", "walk me through"
+    if any(p in t for p in (
+        "how does", "how do", "how must", "explain", "walk me through",
+        "tell me about", "how is it", "what is it like", "how would",
+    )):
+        return "semantic_depth", "semantic_anchor"
+
+    # Broad search — "what would fit", "what could", "what are options"
+    if any(p in t for p in (
+        "what would", "what could", "what fits", "what else",
+        "what options", "what possibilities", "what if",
+        "how might", "what might",
+    )):
+        return "broad_search", "twm_attractor"
+
+    # Opinion/reflection — "what do you think", "what's your take"
+    if any(p in t for p in (
+        "what do you think", "what do you feel", "what's your",
+        "your opinion", "your thoughts", "do you agree",
+        "how do you feel", "what do you reckon",
+    )):
+        return "attractor_hold", "twm_attractor"
+
+    # Factual leaf — "what is", "when did", "where is", "who is"
+    if any(p in t for p in (
+        "what is", "what are", "what's", "when did", "when is",
+        "where is", "where are", "who is", "who are", "which is",
+    )):
+        return "factual_leaf", "cp_closest"
+
+    # Default for question-shaped turns without a clear form
+    if "?" in t:
+        return "semantic_depth", "semantic_anchor"
+
+    return "", ""
 
 
 def _detect_tone(text: str) -> str:
