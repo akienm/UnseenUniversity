@@ -2414,6 +2414,55 @@ class Igor:
                     except Exception:
                         pass  # fork must never block
 
+                # #176 Mode A: Competitive forking — parallel traversal paths, judge picks winner.
+                # Runs N paths from different CP-anchored entry points; winning path contributes
+                # its unique memories. Judge is graph-scored: path_score = hits × avg_inertia.
+                # No LLM call — the graph itself is the judge.
+                # Trigger: broad_search strategy OR analysis_task with sparse interpretive hits.
+                # Gate: IGOR_FORK_A_ENABLED (default false; separate from Mode B).
+                _fork_a_enabled = os.getenv("IGOR_FORK_A_ENABLED", "false").lower() == "true"
+                if _fork_a_enabled and not is_impulse:
+                    try:
+                        _run_mode_a = (
+                            _trav_strategy == "broad_search"
+                            or (parsed.intent == "analysis_task" and parsed.complexity in ("medium", "high"))
+                        )
+                        if _run_mode_a:
+                            # Three competing paths: CP1+CP2 (truth/ethics), CP3+CP4 (curiosity/care), CP5+CP6 (values/safety)
+                            _fork_paths = [
+                                (["CP1", "CP2"] + [m.id for m in relevant[:3]], "path_A:truth"),
+                                (["CP3", "CP4"] + [m.id for m in relevant[:3]], "path_B:curiosity"),
+                                (["CP5", "CP6"] + [m.id for m in relevant[:3]], "path_C:values"),
+                            ]
+                            _existing_ids = {m.id for m in relevant}
+                            _best_path: list = []
+                            _best_score: float = 0.0
+                            _best_label: str = ""
+                            for _path_seeds, _path_label in _fork_paths:
+                                _path_results = self.cortex.interpretive_traverse(
+                                    _path_seeds, max_depth=3, min_weight=0.15
+                                )
+                                _path_new = [m for m in _path_results if m.id not in _existing_ids]
+                                if not _path_new:
+                                    continue
+                                # Score: hit count × avg inertia
+                                _avg_inertia = sum(
+                                    getattr(m, "inertia", 0.5) for m in _path_new
+                                ) / len(_path_new)
+                                _score = len(_path_new) * _avg_inertia
+                                if _score > _best_score:
+                                    _best_score = _score
+                                    _best_path = _path_new
+                                    _best_label = _path_label
+                            if _best_path:
+                                relevant = list(relevant) + _best_path[:3]
+                                console.print(
+                                    f"[dim][FORK] Mode A winner={_best_label} "
+                                    f"score={_best_score:.2f} +{len(_best_path[:3])} memories[/]"
+                                )
+                    except Exception:
+                        pass  # fork must never block
+
                 # #177: Mull loop — re-traverse if complexity warrants and gate enabled
                 _mull_enabled = os.getenv("IGOR_MULL_ENABLED", "false").lower() == "true"
                 _mull_max = int(os.getenv("IGOR_MULL_MAX_PASSES", "3"))
@@ -3937,6 +3986,7 @@ class Igor:
             "jobs": self._cmd_jobs,           # pass.4
             "implement": self._cmd_implement, # #95
             "notebook": self._cmd_notebook,   # #153
+            "levers": self._cmd_levers,       # #182
         }
         fn = commands.get(command, self._cmd_unknown)
         fn(raw)
@@ -3989,6 +4039,10 @@ class Igor:
   /relay end          - Exit relay, store transcript
   /relay extract      - Pull last code/work-order block from relay
   /relay send claudecode - Send extracted block to Claude Code CLI
+
+[bold]Traversal:[/]
+  /levers [topic]  - Lever trace: find convergence nodes from current context
+                     (where upward 'why?' traces terminate — high investment_weight or out_degree)
 
 [bold]Web UI:[/] http://localhost:{web_port}   (set IGOR_WEB_PORT to change)
 """)
@@ -5233,6 +5287,58 @@ class Igor:
                 console.print(_nb.remove_entry(_slug, rest))
         else:
             console.print(_nb.list_notebook(_slug))
+
+    def _cmd_levers(self, raw: str):
+        """
+        #182: /levers [topic] — run lever_trace traversal from current context.
+        Finds convergence nodes (high investment_weight or out_degree) reachable
+        from the current TWM attractor + top relevant memories.
+        These are the levers: where upward 'why?' traces terminate.
+        """
+        topic = raw.partition(" ")[2].strip() or ""
+        # Seed from TWM attractor + top memories
+        _seeds = ["CP1", "CP2", "CP3", "CP4", "CP5", "CP6"]
+        try:
+            _twm = self.cortex.twm_read(limit=5)
+            _twm_content = " ".join(o.get("content", "") for o in _twm[:3])
+            _search_text = (topic or _twm_content)[:200]
+            if _search_text.strip():
+                _top = self.cortex.search(_search_text, limit=5)
+                _seeds += [m.id for m in _top]
+        except Exception:
+            pass
+
+        console.print(f"\n[bold]Lever trace[/] (exit_on_convergence, depth=5):")
+        if topic:
+            console.print(f"  topic: {topic}")
+
+        try:
+            levers = self.cortex.interpretive_traverse(
+                _seeds, max_depth=5, exit_on_convergence=True,
+                convergence_weight=0.70, convergence_out_degree=3,
+            )
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/]")
+            return
+
+        if not levers:
+            console.print("  [dim]No convergence nodes found in current context.[/]")
+            return
+
+        # Sort by investment_weight desc, then inertia
+        def _lever_score(m):
+            _iw = (m.metadata or {}).get("investment_weight", 0.0)
+            return (_iw, getattr(m, "inertia", 0.5))
+
+        levers_sorted = sorted(levers, key=_lever_score, reverse=True)[:8]
+        for m in levers_sorted:
+            _iw = (m.metadata or {}).get("investment_weight", 0.0)
+            _iw_str = f"  w={_iw:.2f}" if _iw else ""
+            _inertia = getattr(m, "inertia", 0.5)
+            console.print(
+                f"  [bold cyan]{m.id[:16]}[/]{_iw_str}  inertia={_inertia:.2f}\n"
+                f"    {m.narrative[:120]}"
+            )
 
     def _cmd_unknown(self, raw):
         console.print(f"[yellow]Unknown command: {raw}[/]  (try /help)")
