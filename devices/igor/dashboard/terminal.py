@@ -115,7 +115,8 @@ def render(
     lines.append(f"  [dim]Meaning tree:[/]  {interp_nodes:,} nodes{edge_str}")
     lines.append(f"  [dim]Knowledge tree:[/]{factual_nodes:,} nodes")
     local_pct = _get_local_pct()
-    lines.append(f"[bold]Cloud inference:[/] {upstream_pct}%   [bold]Local inference:[/] {local_pct}%")
+    graph_pct = _get_graph_pct()
+    lines.append(f"[bold]Graph inference:[/] {graph_pct}%   [bold]Cloud inference:[/] {upstream_pct}%   [bold]Local inference:[/] {local_pct}%")
     if latency_samples:
         lines.append(f"[bold]Latency (p50/p95):[/]  {_latency_p50(latency_samples)}ms / {_latency_p95(latency_samples)}ms  [dim](last {len(latency_samples)})[/]")
     if active_jobs:
@@ -243,6 +244,17 @@ def _get_local_pct(n: int = 100) -> int:
         total = sum(counts.values())
         local = counts.get("tier.1", 0) + counts.get("tier.2", 0)
         return round(local / max(total, 1) * 100)
+    except Exception:
+        return 0
+
+
+def _get_graph_pct(n: int = 100) -> int:
+    """% of last N tier selections handled by habit graph (tier.1 — no LLM)."""
+    try:
+        from ..cognition.metrics import _tier_distribution
+        counts = _tier_distribution(n=n)
+        total = sum(counts.values())
+        return round(counts.get("tier.1", 0) / max(total, 1) * 100)
     except Exception:
         return 0
 
