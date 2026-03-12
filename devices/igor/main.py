@@ -1984,6 +1984,32 @@ class Igor:
                 self.cortex, user_input, channel="repl", author="user"
             )
 
+        # #180: Investment weight pre-check — somatic marker equivalent.
+        # Before any traversal or thalamus: does this input mention a high-investment node?
+        # If yes, inject that node into TWM as high-salience context (pre-attentive boost).
+        # This is the "Leah at home lights up more than Krissy in Scotland" mechanism.
+        if not is_impulse and not user_input.startswith("/"):
+            try:
+                _invest_hits = self.cortex.investment_weight_check(user_input)
+                if _invest_hits:
+                    for _inode in _invest_hits[:2]:
+                        _iweight = _inode.metadata.get("investment_weight", 0.5)
+                        _iprox   = _inode.metadata.get("proximity", "present")
+                        # Proximity modifier: present=1.0, remote=0.6, lost=0.3
+                        _prox_mod = {"present": 1.0, "remote": 0.6, "lost": 0.3}.get(_iprox, 0.7)
+                        self.cortex.twm_push(
+                            content=f"[INVESTMENT] High-investment node active: {_inode.narrative[:120]}",
+                            salience=min(1.0, _iweight * _prox_mod),
+                            urgency=0.0,
+                            source="investment_check",
+                            metadata={"memory_id": _inode.id, "investment_weight": _iweight},
+                        )
+                        console.print(
+                            f"[dim][INVEST] {_inode.id} (w={_iweight:.2f}, prox={_iprox}) → TWM[/]"
+                        )
+            except Exception:
+                pass  # investment check must never block
+
         # #179: The Wait — per-turn incubation before inference begins.
         # Lets TWM observations, milieu updates, and ring_memory settle.
         # Gate: IGOR_WAIT_MS (default 0 = disabled). Libet half-second analog.
@@ -2297,6 +2323,53 @@ class Igor:
                         console.print(f"[dim][BOREDOM] level={_boredom_mod.boredom_level():.2f} — novelty forcing active[/]")
                 except Exception:
                     pass
+
+                # #176 Mode B: Contextual deepening fork — appellate judge pattern.
+                # Trigger: milieu arousal spike OR high complexity with few interpretive hits.
+                # Branch traverses DEEPER from the most emotionally salient interpretive node
+                # found in the first pass, then injects results back as enriched context.
+                # Gate: IGOR_FORK_ENABLED (default false).
+                _fork_enabled = os.getenv("IGOR_FORK_ENABLED", "false").lower() == "true"
+                if _fork_enabled and not is_impulse:
+                    try:
+                        _trigger_fork = False
+                        _fork_reason = ""
+                        if _milieu_state and abs(_milieu_state.arousal) > 0.5:
+                            _trigger_fork = True
+                            _fork_reason = f"milieu:arousal={_milieu_state.arousal:.2f}"
+                        elif parsed.complexity == "high":
+                            _interp_count = sum(
+                                1 for m in relevant
+                                if hasattr(m, "memory_type") and m.memory_type.value == "INTERPRETIVE"
+                            )
+                            if _interp_count < 2:
+                                _trigger_fork = True
+                                _fork_reason = f"high_complexity:interp_hits={_interp_count}"
+                        if _trigger_fork:
+                            # Find most emotionally salient interpretive result so far
+                            _interp_only = [
+                                m for m in relevant
+                                if hasattr(m, "memory_type") and m.memory_type.value == "INTERPRETIVE"
+                            ]
+                            _fork_seed_node = (
+                                max(_interp_only, key=lambda m: abs(getattr(m, "valence", 0.0)))
+                                if _interp_only else None
+                            )
+                            if _fork_seed_node:
+                                _fork_results = self.cortex.interpretive_traverse(
+                                    [_fork_seed_node.id], max_depth=4, min_weight=0.05
+                                )
+                                _existing_ids = {m.id for m in relevant}
+                                _fork_new = [m for m in _fork_results if m.id not in _existing_ids]
+                                if _fork_new:
+                                    relevant = list(relevant) + _fork_new[:3]
+                                    console.print(
+                                        f"[dim][FORK] Mode B ({_fork_reason}): "
+                                        f"+{len(_fork_new)} from deeper traversal "
+                                        f"seeded at {_fork_seed_node.id[:16]}[/]"
+                                    )
+                    except Exception:
+                        pass  # fork must never block
 
                 # #177: Mull loop — re-traverse if complexity warrants and gate enabled
                 _mull_enabled = os.getenv("IGOR_MULL_ENABLED", "false").lower() == "true"
