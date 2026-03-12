@@ -3987,6 +3987,7 @@ class Igor:
             "implement": self._cmd_implement, # #95
             "notebook": self._cmd_notebook,   # #153
             "levers": self._cmd_levers,       # #182
+            "why": self._cmd_why,             # #182
         }
         fn = commands.get(command, self._cmd_unknown)
         fn(raw)
@@ -4041,8 +4042,8 @@ class Igor:
   /relay send claudecode - Send extracted block to Claude Code CLI
 
 [bold]Traversal:[/]
-  /levers [topic]  - Lever trace: find convergence nodes from current context
-                     (where upward 'why?' traces terminate — high investment_weight or out_degree)
+  /why [topic]     - Upward causal trace: show the path walked (how you reach the lever)
+  /levers [topic]  - Lever trace: find convergence nodes (where upward 'why?' traces terminate)
 
 [bold]Web UI:[/] http://localhost:{web_port}   (set IGOR_WEB_PORT to change)
 """)
@@ -5287,6 +5288,56 @@ class Igor:
                 console.print(_nb.remove_entry(_slug, rest))
         else:
             console.print(_nb.list_notebook(_slug))
+
+    def _cmd_why(self, raw: str):
+        """
+        #182: /why [topic] — upward causal trace; shows the PATH walked, not just the terminus.
+        Complements /levers (which shows convergence nodes) by showing how you get there.
+        Traverses from current context upward (causal_trace direction), annotating each hop.
+        """
+        topic = raw.partition(" ")[2].strip() or ""
+        _seeds = ["CP1", "CP2", "CP3", "CP4", "CP5", "CP6"]
+        try:
+            if topic:
+                _top = self.cortex.search(topic, limit=5)
+                _seeds += [m.id for m in _top]
+            else:
+                _twm = self.cortex.twm_read(limit=3)
+                _twm_content = " ".join(o.get("content", "") for o in _twm)[:200]
+                if _twm_content.strip():
+                    _top = self.cortex.search(_twm_content, limit=3)
+                    _seeds += [m.id for m in _top]
+        except Exception:
+            pass
+
+        console.print(f"\n[bold]Upward causal trace[/] (direction=up, depth=4):")
+        if topic:
+            console.print(f"  anchor: {topic}")
+
+        try:
+            # Regular traverse (not exit_on_convergence — we want to see the full path)
+            path = self.cortex.interpretive_traverse(
+                _seeds, max_depth=4, min_weight=0.08
+            )
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/]")
+            return
+
+        if not path:
+            console.print("  [dim]No causal path found in current context.[/]")
+            return
+
+        console.print(f"  {len(path)} nodes in causal path:")
+        for i, m in enumerate(path[:10]):
+            _iw = (m.metadata or {}).get("investment_weight", 0.0)
+            _iw_str = f"  [w={_iw:.2f}]" if _iw > 0.5 else ""
+            _inertia = getattr(m, "inertia", 0.5)
+            _mtype = getattr(m.memory_type, "value", str(m.memory_type)) if hasattr(m, "memory_type") else "?"
+            console.print(
+                f"  [{i+1:2d}] [dim]{_mtype[:4]}[/] {m.id[:14]}{_iw_str}  "
+                f"[dim]inertia={_inertia:.2f}[/]\n"
+                f"       {m.narrative[:100]}"
+            )
 
     def _cmd_levers(self, raw: str):
         """

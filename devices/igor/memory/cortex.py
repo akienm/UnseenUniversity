@@ -1539,6 +1539,72 @@ class Cortex:
         hits.sort(key=lambda n: n.metadata.get("investment_weight", 0.0), reverse=True)
         return hits
 
+    def decay_investment_weights(
+        self,
+        decay_rate: float = 0.02,
+        stable_floor: float = 0.5,
+        nre_spike: float = 0.95,
+        nre_decay_rate: float = 0.05,
+    ) -> dict:
+        """
+        #180: NRE decay curve — gradually moves investment_weight toward stable attachment.
+
+        NRE (New Relationship Energy) causes initial spike; over time it settles to stable.
+        Same mechanism at different curve points (Akien insight 2026-03-12).
+
+        For each relational node:
+        - If nre_phase=True and weight > stable_floor + 0.1: apply nre_decay_rate (faster)
+        - Otherwise: apply decay_rate toward stable_floor (slower, asymptotic)
+        - Weight never falls below stable_floor (Bowlby: secure attachment baseline)
+        - If weight drops below nre_spike - 0.3, nre_phase is set to False (NRE has ended)
+
+        Returns summary: {"updated": N, "nre_ended": [node_ids]}
+        """
+        nodes = self.get_investment_nodes(min_weight=0.0)
+        updated = 0
+        nre_ended = []
+
+        for node in nodes:
+            if not node.metadata:
+                continue
+            w = node.metadata.get("investment_weight", 0.0)
+            _nre = node.metadata.get("nre_phase", False)
+            _floor = node.metadata.get("stable_floor", stable_floor)
+
+            # Compute new weight
+            if _nre and w > _floor + 0.15:
+                # NRE phase: faster decay toward stable attachment
+                new_w = w - nre_decay_rate * (w - _floor)
+            else:
+                # Stable phase: slow asymptotic approach to floor
+                new_w = w - decay_rate * (w - _floor)
+
+            new_w = max(_floor, min(1.0, new_w))
+
+            # Check if NRE phase has ended
+            new_nre = _nre
+            if _nre and w - new_w < 0.001:  # essentially flat — NRE has ended
+                new_nre = False
+                nre_ended.append(node.id)
+
+            if abs(new_w - w) > 0.0001 or new_nre != _nre:
+                new_meta = dict(node.metadata)
+                new_meta["investment_weight"] = round(new_w, 4)
+                new_meta["nre_phase"] = new_nre
+                new_meta["last_decay"] = __import__("datetime").datetime.utcnow().isoformat()
+                try:
+                    import json as _json
+                    with self._conn() as conn:
+                        conn.execute(
+                            "UPDATE memories SET metadata=? WHERE id=?",
+                            (_json.dumps(new_meta), node.id),
+                        )
+                    updated += 1
+                except Exception:
+                    pass
+
+        return {"updated": updated, "nre_ended": nre_ended}
+
     # ── G52: Interpretive Tree ─────────────────────────────────────────────────
 
     def add_interpretive_edge(
