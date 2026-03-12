@@ -4004,6 +4004,7 @@ class Igor:
             "notebook": self._cmd_notebook,   # #153
             "levers": self._cmd_levers,       # #182
             "why": self._cmd_why,             # #182
+            "hygiene": self._cmd_hygiene,     # #152
         }
         fn = commands.get(command, self._cmd_unknown)
         fn(raw)
@@ -4027,6 +4028,7 @@ class Igor:
   /compress       - Summarize context to LTM (Ollama), then restart fresh
   /restart        - Relaunch Igor (requires igor bash alias)
   /sleep          - Pre-sleep ritual: NE consolidation + sleep note + shutdown (post-sleep detection on next boot)
+  /hygiene        - Memory/habit hygiene report (dry run); /hygiene --apply to prune
   /quit           - Exit
 
 [bold]Work Orders (change.38):[/]
@@ -4087,6 +4089,139 @@ class Igor:
             ne=self.ne,
         )
         console.print(report)
+
+    def _cmd_hygiene(self, raw):
+        """
+        #152: Memory/habit hygiene report (and optional pruning).
+        Usage: /hygiene [--apply]
+        Dry-run by default. --apply deletes flagged junk and logs what was removed.
+        Never touches genesis-protected memories (ROOT, CP1-CP6, ID1-ID14, PROC1-PROC10).
+        """
+        _GENESIS_PROTECTED = (
+            {"ROOT"}
+            | {f"CP{i}" for i in range(1, 7)}
+            | {f"ID{i}" for i in range(1, 15)}
+            | {f"PROC{i}" for i in range(1, 11)}
+        )
+        apply = "--apply" in raw
+
+        console.print("\n[bold cyan]═ Hygiene Report ═══════════════════════════════[/]")
+        if apply:
+            console.print("[yellow]  Mode: APPLY — changes will be written[/]")
+        else:
+            console.print("[dim]  Mode: DRY RUN — add --apply to execute[/]")
+        console.print("")
+
+        # ── 1. Junk habits ─────────────────────────────────────────────────────
+        all_habits = self.cortex.get_habits()
+        junk_habits = []
+        for h in all_habits:
+            if h.id in _GENESIS_PROTECTED:
+                continue
+            if h.inertia >= 0.80:
+                continue  # high inertia — skip
+            # Flag never-activated habits compiled from cloud/CC messages
+            _src = h.metadata.get("source", "")
+            _trigger = h.metadata.get("trigger", "")
+            _compiled_from = h.metadata.get("compiled_from_count", 99)
+            _is_junk = (
+                h.activation_count == 0
+                and _compiled_from <= 1
+                and (
+                    _src in ("cloud_directed", "cc_message", "")
+                    or any(
+                        h.narrative.lower().startswith(kw)
+                        for kw in ("whenever you", "whenever i", "cc message", "claude code")
+                    )
+                )
+            )
+            if _is_junk:
+                junk_habits.append(h)
+
+        console.print(f"[bold]JUNK HABITS[/] (never activated, compiled from 1 source):")
+        if junk_habits:
+            for h in junk_habits:
+                console.print(
+                    f"  [red]×[/] [{h.id}] act={h.activation_count} src={h.metadata.get('source','?')} "
+                    f"| {h.narrative[:70]}"
+                )
+            if apply:
+                deleted = 0
+                for h in junk_habits:
+                    if self.cortex.delete_memory(h.id):
+                        deleted += 1
+                        self.cortex.write_ring(
+                            f"HYGIENE|deleted_junk_habit|{h.id}|{h.narrative[:60]}",
+                            category="hygiene",
+                        )
+                console.print(f"  → Deleted {deleted} junk habits.")
+        else:
+            console.print("  [dim]None found.[/]")
+        console.print("")
+
+        # ── 2. Near-duplicate episodics ────────────────────────────────────────
+        try:
+            episodics = self.cortex.get_by_type(MemoryType.EPISODIC)
+        except Exception:
+            episodics = []
+        _seen_prefix: dict[str, list] = {}
+        for ep in episodics:
+            prefix = ep.narrative[:80].lower().strip()
+            _seen_prefix.setdefault(prefix, []).append(ep)
+        dup_groups = [(p, mems) for p, mems in _seen_prefix.items() if len(mems) >= 3]
+        console.print(f"[bold]NEAR-DUPLICATE EPISODICS[/] (≥3 with same 80-char prefix):")
+        if dup_groups:
+            total_dups = 0
+            for prefix, mems in dup_groups[:10]:
+                oldest = sorted(mems, key=lambda m: m.timestamp)[:-1]  # keep newest
+                total_dups += len(oldest)
+                console.print(
+                    f"  [yellow]×{len(mems)}[/] '{prefix[:60]}...' → keep 1, prune {len(oldest)}"
+                )
+            if len(dup_groups) > 10:
+                console.print(f"  [dim]... and {len(dup_groups)-10} more groups[/]")
+            console.print(f"  Total pruneable: {total_dups}")
+            if apply:
+                pruned = 0
+                for _, mems in dup_groups:
+                    oldest = sorted(mems, key=lambda m: m.timestamp)[:-1]
+                    for m in oldest:
+                        if m.id not in _GENESIS_PROTECTED and m.inertia < 0.80:
+                            if self.cortex.delete_memory(m.id):
+                                pruned += 1
+                self.cortex.write_ring(
+                    f"HYGIENE|pruned_dup_episodics|count={pruned}",
+                    category="hygiene",
+                )
+                console.print(f"  → Pruned {pruned} duplicate episodic memories.")
+        else:
+            console.print("  [dim]None found.[/]")
+        console.print("")
+
+        # ── 3. Log sizes ───────────────────────────────────────────────────────
+        from .cognition.forensic_logger import LOG_DIR
+        console.print("[bold]LOG FILE SIZES[/]")
+        total_log_bytes = 0
+        for log_file in sorted(LOG_DIR.glob("*.log")):
+            size = log_file.stat().st_size
+            total_log_bytes += size
+            size_kb = size // 1024
+            flag = " [yellow]⚠[/]" if size_kb > 5000 else ""
+            console.print(f"  {log_file.name:<30} {size_kb:>6} KB{flag}")
+        console.print(f"  {'TOTAL':<30} {total_log_bytes//1024:>6} KB")
+        console.print("")
+
+        # ── 4. Memory count summary ────────────────────────────────────────────
+        counts = self.cortex.count_by_type()
+        total = self.cortex.total_count()
+        console.print(f"[bold]MEMORY COUNTS[/]  total={total}")
+        for mtype, n in sorted(counts.items(), key=lambda x: -x[1]):
+            console.print(f"  {mtype:<20} {n:>5}")
+        console.print("")
+
+        console.print("[bold cyan]════════════════════════════════════════════════[/]")
+        if not apply:
+            console.print("[dim]Run /hygiene --apply to execute the pruning.[/]")
 
     def _cmd_habits(self, raw):
         """Habit visibility and compilation (change.34).

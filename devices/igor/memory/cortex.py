@@ -936,6 +936,16 @@ class Cortex:
             ).fetchall()
         return [m for m in (self._to_memory(r) for r in rows) if m.is_habit]
 
+    def delete_memory(self, memory_id: str) -> bool:
+        """
+        #152: Delete a memory by ID. Returns True if deleted.
+        Caller is responsible for ensuring the ID is not genesis-protected.
+        Used by /hygiene --apply.
+        """
+        with self._conn() as conn:
+            result = conn.execute("DELETE FROM memories WHERE id=?", (memory_id,))
+        return result.rowcount > 0
+
     def integrity_check(self) -> tuple[bool, list[str]]:
         """
         Verify referential integrity of the genesis core pattern graph (change.28).
