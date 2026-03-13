@@ -2326,6 +2326,7 @@ class Igor:
         # accumulated thread history. Memory search keeps full user_input for relevance.
         _preparse_input = parsed.core_input
 
+        from .cognition.reasoners.ollama_reasoner import _PREPARSE_PROMPT, _rule_based_csb
         if _skip_llm_preparse:
             # No I/O needed — build CSB from thalamus result instantly
             pre_csb = _rule_based_csb(_preparse_input, habits)
@@ -2344,7 +2345,6 @@ class Igor:
             # Inference gateway routes preparse: local Ollama → OR cheap fallback.
             # cloud_mode active → OR directly. Gateway handles all routing decisions.
             from .cognition.inference_gateway import get_gateway as _gw, make_context as _mk_ctx
-            from .cognition.reasoners.ollama_reasoner import _PREPARSE_PROMPT, _rule_based_csb
             def _preparse_fn():
                 _prompt = _PREPARSE_PROMPT.format(text=_preparse_input[:300])
                 try:
