@@ -25,6 +25,7 @@ from typing import Optional
 
 from .models import Memory, MemoryType
 from .scrub import scrub
+from .db_proxy import DatabaseProxy
 
 
 def _safe_memory_type(value: str) -> MemoryType:
@@ -54,12 +55,12 @@ class Cortex:
     def __init__(self, db_path: Path, instance_id: str = None):
         self.db_path = db_path
         self._instance_id = instance_id  # #51: scopes TWM to this instance when set
+        self._db = DatabaseProxy(db_path)
         self._init_db()
 
     def _conn(self):
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        return conn
+        """Deprecated shim — use self._db() directly."""
+        return self._db()
 
     def _init_db(self):
         with self._conn() as conn:

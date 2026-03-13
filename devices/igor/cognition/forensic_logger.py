@@ -17,6 +17,7 @@ All functions are fire-and-forget: exceptions are swallowed so logging
 can never crash the main loop.
 """
 
+import json as _json
 import threading as _threading
 from datetime import datetime
 from pathlib import Path
@@ -24,9 +25,11 @@ from pathlib import Path
 LOG_DIR   = Path.home() / ".TheIgors" / "logs"
 MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 
-# ── Per-turn ID (threading.local) ─────────────────────────────────────────────
-# Set at the start of _process_inner(); readable from any function on the same
-# thread (winnow, cortex calls, etc.) without passing turn_id through every call.
+# ── Per-turn state (threading.local) ──────────────────────────────────────────
+# _current_turn.id  — turn_id string, set at start of _process_inner()
+# _current_turn.ctx — TurnContext dict (#203), built up as pipeline runs
+# Both live on the same threading.local so worker threads (#200) each get
+# their own independent state with zero locking overhead.
 _current_turn = _threading.local()
 
 
@@ -38,6 +41,92 @@ def set_turn_id(tid: str) -> None:
 def get_turn_id() -> str:
     """Return the active turn ID, or '?' if not set."""
     return getattr(_current_turn, "id", "?")
+
+
+# ── TurnContext (#203) ─────────────────────────────────────────────────────────
+# Accumulates pipeline state into a dict so the entire cognition path for one
+# turn is visible as a single structured object in turn_trace.YYYYMMDD.log.
+
+def init_turn_ctx(turn_id: str, thread_id: str, input_text: str) -> None:
+    """Start a fresh TurnContext for this turn on the current thread."""
+    _current_turn.ctx = {
+        "turn_id": turn_id,
+        "thread_id": thread_id or "stdin:main",
+        "ts": _ts(),
+        "input": input_text[:300],
+    }
+
+
+def turn_ctx_update(stage: str, data: dict) -> None:
+    """Write one stage's data into the current TurnContext. Safe to call anywhere."""
+    ctx = getattr(_current_turn, "ctx", None)
+    if ctx is None:
+        return
+    ctx[stage] = {k: (round(v, 4) if isinstance(v, float) else v) for k, v in data.items()}
+
+
+def finalize_turn_ctx(
+    *,
+    response_preview: str = "",
+    tier: str = "",
+    cost_usd: float = 0.0,
+    total_ms: int = 0,
+    new_memories: int = 0,
+    habit_fired: bool = False,
+) -> None:
+    """
+    Close the TurnContext, add response summary, and append to turn_trace log.
+    Called from _process_inner() finally: block.
+    Gate: IGOR_TURN_TRACE (default true).
+    """
+    try:
+        import os as _os
+        if _os.getenv("IGOR_TURN_TRACE", "true").lower() in ("0", "false", "no"):
+            return
+
+        ctx = getattr(_current_turn, "ctx", None)
+        if ctx is None:
+            return
+
+        ctx["response"] = {
+            "preview": response_preview[:200].replace("\n", " "),
+            "tier": tier,
+            "cost_usd": round(cost_usd, 5),
+            "new_memories": new_memories,
+            "habit_fired": habit_fired,
+            "total_ms": total_ms,
+        }
+
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        today = datetime.now().strftime("%Y%m%d")
+        path = LOG_DIR / f"turn_trace.{today}.log"
+        entry = (
+            f"\n=== turn {ctx.get('turn_id','?')} | {ctx.get('thread_id','?')}"
+            f" | {ctx.get('ts','?')} | {total_ms}ms total ===\n"
+            + _json.dumps(ctx, indent=2)
+            + "\n=== END ===\n"
+        )
+        with path.open("a", encoding="utf-8") as f:
+            f.write(entry)
+
+        _purge_old_turn_traces(today)
+    except Exception:
+        pass
+    finally:
+        _current_turn.ctx = None
+
+
+def _purge_old_turn_traces(today: str) -> None:
+    """Delete turn_trace logs older than 2 days."""
+    try:
+        from datetime import datetime as _dt, timedelta
+        cutoff = (_dt.strptime(today, "%Y%m%d") - timedelta(days=2)).strftime("%Y%m%d")
+        for p in LOG_DIR.glob("turn_trace.*.log"):
+            date_part = p.stem.split(".")[-1]
+            if date_part.isdigit() and date_part < cutoff:
+                p.unlink(missing_ok=True)
+    except Exception:
+        pass
 
 
 def _ts() -> str:
@@ -456,6 +545,8 @@ def log_pipeline_step(
         with path.open("a", encoding="utf-8") as f:
             f.write("|".join(parts) + "\n")
         _purge_old_pipeline_traces(today)
+        # Also feed into TurnContext (#203) — dual use, no extra call sites
+        turn_ctx_update(step, {"ms": elapsed_ms, **{k: str(v)[:80] for k, v in kwargs.items()}})
     except Exception:
         pass  # Logging must never crash the main loop
 
@@ -552,3 +643,144 @@ def _purge_old_inference_io(today: str) -> None:
                 p.unlink(missing_ok=True)
     except Exception:
         pass
+
+
+# ── Interaction log (#201) ────────────────────────────────────────────────────
+# Tier-1 triage: one line per turn. Smallest useful log — scan first.
+# Format: timestamp|turn_id|thread_id|tier|elapsed_ms|cost_usd|IN:...|OUT:...
+
+def log_interaction(
+    *,
+    turn_id: str = "",
+    thread_id: str = "",
+    tier: str = "",
+    elapsed_ms: int = 0,
+    cost_usd: float = 0.0,
+    input_text: str = "",
+    response_text: str = "",
+) -> None:
+    """
+    Append one line to interaction.YYYYMMDD.log.
+
+    This is the first log to read when something goes wrong.
+    `turn_id` is the join key to pipeline_trace, inference_io, and turn_trace.
+    Daily rotation, keep 7 days, append-only (newest last).
+    """
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        today = datetime.now().strftime("%Y%m%d")
+        path = LOG_DIR / f"interaction.{today}.log"
+
+        tid = turn_id or get_turn_id()
+        in_preview  = input_text[:120].replace("|", "_").replace("\n", " ")
+        out_preview = response_text[:120].replace("|", "_").replace("\n", " ")
+
+        entry = (
+            f"{_ts()}|{tid}|{thread_id or '?'}|{tier or '?'}"
+            f"|{elapsed_ms}ms|${cost_usd:.5f}"
+            f"|IN:{in_preview}|OUT:{out_preview}\n"
+        )
+        with path.open("a", encoding="utf-8") as f:
+            f.write(entry)
+
+        _purge_old_interaction(today)
+    except Exception:
+        pass
+
+
+def _purge_old_interaction(today: str) -> None:
+    """Delete interaction logs older than 7 days."""
+    try:
+        from datetime import datetime as _dt, timedelta
+        cutoff = (_dt.strptime(today, "%Y%m%d") - timedelta(days=7)).strftime("%Y%m%d")
+        for p in LOG_DIR.glob("interaction.*.log"):
+            date_part = p.stem.split(".")[-1]
+            if date_part.isdigit() and date_part < cutoff:
+                p.unlink(missing_ok=True)
+    except Exception:
+        pass
+
+
+# ── Startup log (#202) ────────────────────────────────────────────────────────
+# Tier-1 triage: one block per boot. Know immediately if a boot was healthy.
+# Keep last 50 boots (trim on write). Append-only, newest last.
+
+_STARTUP_LOG_MAX_BOOTS = 50
+
+
+def log_startup(
+    *,
+    instance_id: str = "",
+    memory_count: int = 0,
+    habit_count: int = 0,
+    wg_words: int = 0,
+    boot_elapsed_s: float = 0.0,
+    embed_ok: bool = True,
+    integrity_ok: bool = True,
+    warm_context: str = "none",    # "loaded" | "none" | "gap=Xh"
+    ollama_status: str = "",       # "healthy(model)" | "unavailable"
+    openrouter_status: str = "",   # "healthy($X.XX)" | "no_key"
+    cloud_mode: str = "off",
+    notes: str = "",
+) -> None:
+    """
+    Append one boot block to startup.log.
+
+    Called from Igor.run() after _boot_ready = True.
+    Keeps last 50 boot blocks — trims oldest when over limit.
+    """
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        path = LOG_DIR / "startup.log"
+
+        block = (
+            f"=== BOOT {_ts()} | {instance_id} | {boot_elapsed_s:.1f}s ===\n"
+            f"memories={memory_count} habits={habit_count} wg_words={wg_words}\n"
+            f"embed={'ok' if embed_ok else 'FAIL'} "
+            f"integrity={'ok' if integrity_ok else 'FAIL'} "
+            f"warm_context={warm_context}\n"
+            f"ollama={ollama_status or 'unknown'} "
+            f"openrouter={openrouter_status or 'unknown'} "
+            f"cloud_mode={cloud_mode}\n"
+            + (f"notes={notes}\n" if notes else "")
+            + "=== BOOT READY ===\n\n"
+        )
+
+        # Append new block
+        existing = path.read_text(encoding="utf-8") if path.exists() else ""
+        combined = existing + block
+
+        # Trim to last _STARTUP_LOG_MAX_BOOTS boot blocks
+        blocks = combined.split("=== BOOT READY ===\n\n")
+        if len(blocks) > _STARTUP_LOG_MAX_BOOTS + 1:
+            blocks = blocks[-((_STARTUP_LOG_MAX_BOOTS + 1)):]
+        path.write_text("=== BOOT READY ===\n\n".join(blocks), encoding="utf-8")
+    except Exception:
+        pass
+
+
+# ── /trace command helper (#203) ──────────────────────────────────────────────
+
+def read_last_turn_traces(n: int = 5) -> str:
+    """
+    Return the last N turn traces from today's turn_trace log as a string.
+    Used by the /trace command in _handle_command().
+    """
+    try:
+        today = datetime.now().strftime("%Y%m%d")
+        path = LOG_DIR / f"turn_trace.{today}.log"
+        if not path.exists():
+            # Fall back to yesterday
+            from datetime import timedelta
+            yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y%m%d")
+            path = LOG_DIR / f"turn_trace.{yesterday}.log"
+        if not path.exists():
+            return "(no turn_trace log found)"
+
+        text = path.read_text(encoding="utf-8")
+        # Split on "=== END ===" boundary
+        blocks = [b.strip() for b in text.split("=== END ===") if b.strip()]
+        selected = blocks[-n:] if len(blocks) >= n else blocks
+        return "\n\n=== END ===\n\n".join(selected) + "\n\n=== END ==="
+    except Exception as e:
+        return f"(error reading turn_trace: {e})"

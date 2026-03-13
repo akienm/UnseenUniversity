@@ -22,11 +22,17 @@ _cache_time: float = 0.0
 _CACHE_TTL = 300.0  # 5 minutes
 
 
+_BALANCE_UNKNOWN = -1.0  # sentinel: API error — do not treat as zero
+
+
 def _or_balance() -> float:
-    """Fetch OpenRouter credit balance via their API. Returns 0.0 on any error."""
+    """Fetch OpenRouter credit balance via their API.
+    Returns the balance, 999.0 for prepaid/unlimited, or _BALANCE_UNKNOWN on error.
+    Never returns 0.0 for a network/parse failure — that would silently disable cloud.
+    """
     api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
     if not api_key:
-        return 0.0
+        return _BALANCE_UNKNOWN
     try:
         import urllib.request as _ur
         import json as _json
@@ -47,7 +53,7 @@ def _or_balance() -> float:
             return 999.0
         return max(0.0, float(limit) - float(usage))
     except Exception:
-        return 0.0
+        return _BALANCE_UNKNOWN
 
 
 def _is_daytime() -> bool:
@@ -89,6 +95,11 @@ def _compute() -> bool:
     # Condition 2: balance above floor
     floor = float(os.getenv("IGOR_CLOUD_BUDGET_FLOOR_USD", "10.00"))
     balance = _or_balance()
+    if balance == _BALANCE_UNKNOWN:
+        # API unreachable — assume funded rather than silently disabling cloud
+        import logging as _logging
+        _logging.getLogger(__name__).warning("[cloud_mode] OR balance check failed — assuming funded")
+        return True
     return balance >= floor
 
 

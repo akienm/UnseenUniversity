@@ -339,9 +339,14 @@ class OllamaReasoner(LocalReasoner):
 
         # Ollama can hang indefinitely (observed: 1164s blocking the main loop).
         # Wrap in a thread future so TimeoutError interrupts the blocking call.
-        # Cap at IGOR_OLLAMA_TIMEOUT_SECS (default 90s) — escalates to next tier.
+        # Interactive turns: 90s (IGOR_OLLAMA_TIMEOUT_SECS).
+        # Impulse/background turns (force_local=True): 15s (IGOR_OLLAMA_IMPULSE_TIMEOUT_SECS).
+        # Impulses are drop-and-move-on — no point waiting 90s for something that gets skipped anyway.
         import concurrent.futures as _cf
-        _timeout = float(os.getenv("IGOR_OLLAMA_TIMEOUT_SECS", "90"))
+        if force_local:
+            _timeout = float(os.getenv("IGOR_OLLAMA_IMPULSE_TIMEOUT_SECS", "15"))
+        else:
+            _timeout = float(os.getenv("IGOR_OLLAMA_TIMEOUT_SECS", "90"))
 
         def _do_chat():
             return self._client.chat(
