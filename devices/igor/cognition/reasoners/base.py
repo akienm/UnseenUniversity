@@ -377,6 +377,8 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
         This is the winnowing loop: smaller calls more often, converging on
         the relevant context rather than dumping everything every time.
         """
+        import time as _wtime
+        _w_t0 = _wtime.monotonic()
         # Skip for trivial inputs
         if len(user_input.strip()) < 20 or user_input.strip().startswith("/"):
             return []
@@ -477,6 +479,15 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
         # ── Deposit: train the graph on what we just routed (#188) ────────────
         if results:
             _deposit_winnow_node(user_input, queries, cortex)
+
+        # ── Pipeline trace ─────────────────────────────────────────────────────
+        try:
+            from ...cognition.forensic_logger import log_pipeline_step as _log_pt, get_turn_id as _get_turn_id
+            _log_pt(turn_id=_get_turn_id(), step="winnow",
+                    elapsed_ms=round((_wtime.monotonic() - _w_t0) * 1000),
+                    queries=len(queries), retrieved=len(results))
+        except Exception:
+            pass
 
         return results
 

@@ -17,11 +17,27 @@ All functions are fire-and-forget: exceptions are swallowed so logging
 can never crash the main loop.
 """
 
+import threading as _threading
 from datetime import datetime
 from pathlib import Path
 
 LOG_DIR   = Path.home() / ".TheIgors" / "logs"
 MAX_BYTES = 10 * 1024 * 1024  # 10 MB
+
+# ── Per-turn ID (threading.local) ─────────────────────────────────────────────
+# Set at the start of _process_inner(); readable from any function on the same
+# thread (winnow, cortex calls, etc.) without passing turn_id through every call.
+_current_turn = _threading.local()
+
+
+def set_turn_id(tid: str) -> None:
+    """Record the active turn ID for pipeline trace logging."""
+    _current_turn.id = tid
+
+
+def get_turn_id() -> str:
+    """Return the active turn ID, or '?' if not set."""
+    return getattr(_current_turn, "id", "?")
 
 
 def _ts() -> str:
@@ -404,3 +420,54 @@ def log_reading_progress(
         + f"|passage={passage[:300].replace(chr(10), ' ')}"
     )
     _prepend("reading_progress.log", entry)
+
+
+# ── Pipeline trace (per-step timing, 24-hour rotation) ────────────────────────
+
+def log_pipeline_step(
+    *,
+    turn_id: str,
+    step: str,
+    elapsed_ms: int,
+    **kwargs,
+) -> None:
+    """
+    Append one pipeline step timing entry to pipeline_trace.YYYYMMDD.log.
+
+    24-hour rotation: one file per calendar day (pipeline_trace.20260312.log).
+    Files older than 1 day are purged on each write — no manual cleanup needed.
+    Append-only (newest last) — suitable for grep and time-series streaming.
+
+    Called from _process_inner() for each named pipeline step, and from
+    _winnow_context() via get_turn_id() for the winnow step.
+
+    Steps: preamble | thalamus | bg_prospect | preparse_search | routing |
+           habit_exec | think_build | think_llm | winnow | reasoning |
+           mem_store | TOTAL
+    """
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        today = datetime.now().strftime("%Y%m%d")
+        path = LOG_DIR / f"pipeline_trace.{today}.log"
+        parts = [_ts(), "PT", f"turn={turn_id}", f"step={step}", f"ms={elapsed_ms}"]
+        for k, v in kwargs.items():
+            sv = str(v)[:80].replace("|", "_").replace("\n", " ")
+            parts.append(f"{k}={sv}")
+        with path.open("a", encoding="utf-8") as f:
+            f.write("|".join(parts) + "\n")
+        _purge_old_pipeline_traces(today)
+    except Exception:
+        pass  # Logging must never crash the main loop
+
+
+def _purge_old_pipeline_traces(today: str) -> None:
+    """Delete pipeline_trace logs from before yesterday."""
+    try:
+        from datetime import datetime as _dt, timedelta
+        cutoff = (_dt.strptime(today, "%Y%m%d") - timedelta(days=1)).strftime("%Y%m%d")
+        for p in LOG_DIR.glob("pipeline_trace.*.log"):
+            date_part = p.stem.split(".")[-1]
+            if date_part.isdigit() and date_part < cutoff:
+                p.unlink(missing_ok=True)
+    except Exception:
+        pass

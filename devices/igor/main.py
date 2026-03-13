@@ -2014,6 +2014,15 @@ class Igor:
         import time as _time
         _t0 = _time.monotonic()   # wall-clock start for latency instrumentation (#139)
         new_memories = 0
+        # Pipeline trace: unique 8-hex turn ID; every step logs against it.
+        import os as _pt_os
+        _turn_id = _pt_os.urandom(4).hex()
+        from .cognition.forensic_logger import (
+            log_pipeline_step as _log_pt,
+            set_turn_id as _set_turn_id,
+        )
+        _set_turn_id(_turn_id)
+        _tc = _t0  # rolling checkpoint: updated after each named step
         _habits_before = len(self.cortex.get_habits())   # G54/G53: detect new habits this turn
         # [TWM] Push incoming message as observation (non-command, non-impulse messages only)
         if not is_impulse and not user_input.startswith("/"):
@@ -2055,7 +2064,13 @@ class Igor:
             _time.sleep(_wait_ms / 1000.0)
 
         # [THALAMUS] Parse input
+        _tc_thal = _time.monotonic()
         parsed = self.thalamus.process(user_input)
+        if not is_impulse:
+            _log_pt(turn_id=_turn_id, step="thalamus",
+                    elapsed_ms=round((_time.monotonic() - _tc_thal) * 1000),
+                    intent=parsed.intent, complexity=parsed.complexity)
+        _tc = _time.monotonic()
 
         # G37: comprehension signal — if prior reply was well-received, reinforce generation graph.
         # Gate: IGOR_COMPREHENSION_SIGNAL=true (default false — wire when ready to observe)
@@ -2246,9 +2261,16 @@ class Igor:
                 pass
 
         _fast_path_intents = {"greeting", "command"}
+        _tc_bg = _time.monotonic()
         _thalamus_habit, _thalamus_confidence, _thalamus_near_misses = basal_ganglia.select_habit(
             parsed, habits, milieu_state=_milieu_state
         )
+        if not is_impulse:
+            _log_pt(turn_id=_turn_id, step="bg_prospect",
+                    elapsed_ms=round((_time.monotonic() - _tc_bg) * 1000),
+                    habit="none" if not _thalamus_habit else _thalamus_habit.id[:20],
+                    ne_keys=len(_ne_search_keys))
+        _tc = _time.monotonic()
 
         # #121: Record actual vs predicted — compute surprise delta
         if not is_impulse:
@@ -2589,6 +2611,11 @@ class Igor:
 
         pre = parse_preparse_csb(pre_csb, habits)
         _t_after_preparse_memory = _time.monotonic()   # preparse + memory retrieval done (#139)
+        if not is_impulse:
+            _log_pt(turn_id=_turn_id, step="preparse_search",
+                    elapsed_ms=round((_t_after_preparse_memory - _tc) * 1000),
+                    llm_skipped=_skip_llm_preparse, candidates=len(candidates))
+        _tc = _t_after_preparse_memory
         complexity = pre["complexity"]
         _skip_to = complexity["tier_minimum"]
         _routing_reason = f"preparse→{_skip_to}"
@@ -2795,6 +2822,11 @@ class Igor:
             complexity_score=complexity["score"],
             complexity_signals=",".join(complexity["signals_fired"]),
         )
+        if not is_impulse:
+            _log_pt(turn_id=_turn_id, step="routing",
+                    elapsed_ms=round((_time.monotonic() - _tc) * 1000),
+                    tier=_skip_to, reason=_routing_reason[:60])
+        _tc = _time.monotonic()
 
         if relevant:
             dashboard.print_activated_memories(relevant, f"Relevant (intent={pre['intent']})")
@@ -2928,6 +2960,10 @@ class Igor:
                     "action", f"Habit executed. [{habit.id}: {habit.narrative[:80]}]"
                 )
             self.cortex.record_activation(habit.id, 0.05)
+            _log_pt(turn_id=_turn_id, step="habit_exec",
+                    elapsed_ms=round((_time.monotonic() - _tc) * 1000),
+                    habit_id=habit.id)
+            _tc = _time.monotonic()
             # Log habit execution to ring + forensic log for auditability
             _habit_score = _thalamus_confidence if _habit_source == "thalamus" else pre["confidence"]
             self.cortex.write_ring(
@@ -3083,12 +3119,15 @@ class Igor:
                     # Assembles [THINK_CONTEXT] from already-computed components:
                     # parsed intent, word graph activation, NE prediction, near-misses,
                     # top relevant memories, milieu. No LLM call.
+                    _tc_tbuild = _time.monotonic()
                     _py_think = self._build_think_context(
                         user_input, parsed, relevant, _milieu_state,
                         _ne_pred, _thalamus_near_misses,
                     )
+                    _log_pt(turn_id=_turn_id, step="think_build",
+                            elapsed_ms=round((_time.monotonic() - _tc_tbuild) * 1000))
                     _reply_input = f"{_py_think}\n\n[USER_INPUT]\n{user_input}"
-    
+
                     # [#145 Step 4] Optional local Ollama synthesis on top of Python context.
                     # Gate: IGOR_TWO_PHASE_CALLS=true — adds local synthesis (zero cloud cost).
                     # Think phase is now fully local. Only the reply call hits cloud.
@@ -3097,7 +3136,10 @@ class Igor:
                         and not _cloud_mode_active
                         and os.getenv("IGOR_TWO_PHASE_CALLS", "false").lower() in ("1", "true", "yes")
                     ):
+                        _tc_tllm = _time.monotonic()
                         _scratchpad = self._think_call(_py_think, user_input)
+                        _log_pt(turn_id=_turn_id, step="think_llm",
+                                elapsed_ms=round((_time.monotonic() - _tc_tllm) * 1000))
                         if _scratchpad:
                             self.cortex.write_ring(
                                 f"THINK|local|intent={parsed.intent}|{_scratchpad[:600]}",
@@ -3110,12 +3152,16 @@ class Igor:
                             )
                             console.print(f"[dim]{_cts()}[THINK] Local synthesis ready → reply call[/]")
     
+                    _tc_reason = _time.monotonic()
                     with Live(Spinner("dots", text=" Thinking..."), console=console,
                               transient=True, refresh_per_second=8):
                         response_text, cost, used_api = self._reason_with_failover(
                             _reply_input, relevant, core, skip_to=_skip_to,
                             preparse_csb=_pre_csb_with_nudge, thread_id=thread_id,
                         )
+                    _log_pt(turn_id=_turn_id, step="reasoning",
+                            elapsed_ms=round((_time.monotonic() - _tc_reason) * 1000),
+                            tier=self._current_tier)
                     # G5 / #42: prediction signal — did we need a higher tier than expected?
                     _m = milieu_mod.get()
                     if _m is not None:
@@ -3300,9 +3346,13 @@ class Igor:
                 }
             )
             # #128: auto-link to contextually active memories at store time
+            _tc_store = _time.monotonic()
             self.cortex.store(ep, link_to=relevant, milieu_arousal=_ep_arousal)
             self.cortex.add_child("CP3", ep.id)
             new_memories += 1
+            _log_pt(turn_id=_turn_id, step="mem_store",
+                    elapsed_ms=round((_time.monotonic() - _tc_store) * 1000),
+                    new_memories=new_memories)
 
         # [RING] Write interaction summary to short-term memory
         # Skip impulse turns — their keywords would pollute push_sources memory surfacing
@@ -3435,6 +3485,9 @@ class Igor:
                 f"|total_ms={_total_ms}|tier={_tier_hint}|intent={parsed.intent}",
                 category="latency_trace",
             )
+            # Pipeline trace: TOTAL — closes the turn record
+            _log_pt(turn_id=_turn_id, step="TOTAL", elapsed_ms=_total_ms,
+                    tier=_tier_hint, intent=parsed.intent, new_memories=new_memories)
 
         # WO#140 Phase 2: track outgoing response vocabulary for habituation.
         # Only LLM-generated replies (not habit-fired canned text, not impulses).
