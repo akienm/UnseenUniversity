@@ -130,8 +130,32 @@ def _score_habit(habit, raw_lower: str, keywords: set[str], now: datetime | None
     `now` is injectable for testability (default: current UTC time).
     """
     trigger = habit.metadata.get("trigger", "")
-    if not trigger or trigger.lower() not in raw_lower:
+    if not trigger:
         return 0.0  # trigger required — no trigger, no score
+
+    # Trigger formats (in priority order):
+    #   1. Pipe-separated phrases: "hello|hi|hey|howdy"
+    #      → match if ANY phrase appears as a substring.  Preferred going forward.
+    #   2. Single-token exact labels: "routing_decision", "run_python"
+    #      → exact substring match; internal pipeline signals still work.
+    #   3. Legacy space-separated lists: "hello hi hey greet good morning"
+    #      → match if ANY token of length >= 5 appears in input.
+    #      Min-5 avoids common short words ('what', 'time', 'this', 'good') that
+    #      would cause wrong habits to win via keyword_bonus on narratives.
+    #      NOTE: some legacy triggers still won't fire well; use | format for new habits.
+    trigger_lower = trigger.lower()
+    if "|" in trigger_lower:
+        # Format 1: pipe-separated alternative phrases
+        if not any(phrase.strip() in raw_lower for phrase in trigger_lower.split("|") if phrase.strip()):
+            return 0.0
+    elif " " in trigger_lower:
+        # Format 3: legacy space-separated synonym list; filter short tokens
+        _tokens = [t for t in trigger_lower.split() if len(t) >= 5]
+        if not _tokens or not any(t in raw_lower for t in _tokens):
+            return 0.0
+    elif trigger_lower not in raw_lower:
+        # Format 2: single-token exact label
+        return 0.0
 
     score = 1.0  # base trigger score
 
