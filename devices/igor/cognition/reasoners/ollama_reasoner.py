@@ -358,7 +358,10 @@ class OllamaReasoner(LocalReasoner):
                      elapsed_ms=int(elapsed * 1000))
             except Exception:
                 pass
-            return response["message"]["content"], 0.0  # Local = no cost
+            text = response["message"]["content"]
+            if not text or not text.strip():
+                raise RuntimeError("Ollama returned blank response — escalating to next tier")
+            return text, 0.0  # Local = no cost
         except Exception as exc:
             elapsed = time.perf_counter() - t0
             _log_call("OllamaReasoner.reason", self.model, None, elapsed, error=str(exc))

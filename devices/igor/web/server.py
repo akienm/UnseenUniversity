@@ -789,6 +789,7 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     const led = document.getElementById('conn-led');
     let _connectedOnce = false;
     let _disconnectedMsgShown = false;
+    let _retryDelay = 2000;  // #196: exponential backoff, resets on successful connect
 
     function setLed(on) {
       led.classList.toggle('on', on);
@@ -800,6 +801,7 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
       ws = new WebSocket('ws://' + location.host + '/ws');
       ws.onopen  = () => {
         setLed(true);
+        _retryDelay = 2000;  // reset backoff on success
         if (!_connectedOnce) { addMsg('system', '', 'Connected to Igor.'); _connectedOnce = true; }
         else                  { addMsg('system', '', 'Reconnected.'); }
         _disconnectedMsgShown = false;
@@ -809,13 +811,15 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
         // Join/re-join current session so server routes to the right session
         ws.send(JSON.stringify({type: 'join_session', session_id: currentSession}));
       };
+      ws.onerror = () => { ws.close(); };  // #196: ensure onclose fires on error too
       ws.onclose = () => {
         setLed(false);
         if (!_disconnectedMsgShown) {
-          addMsg('system', '', 'Disconnected. Retrying shilently…');
+          addMsg('system', '', 'Disconnected. Retrying…');
           _disconnectedMsgShown = true;
         }
-        setTimeout(connect, 2000);
+        setTimeout(connect, _retryDelay);
+        _retryDelay = Math.min(_retryDelay * 2, 30000);  // 2s→4s→8s→…→30s cap
       };
       ws.onmessage = e => {
         const m = JSON.parse(e.data);
