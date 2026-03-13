@@ -101,6 +101,26 @@ def _patch_genesis_procs(cortex: Cortex) -> None:
                  "routing rules prevents incorrect cost/capability predictions in plans."
              )},
         ),
+        # G63 — greeting habit (session 2026-03-12o)
+        # Injected live; added here for persistence across DB rebuilds.
+        # bg_prospect returned habit=none for "hello" because backchannel trigger
+        # strings don't match raw words via word graph. Explicit greeting habit fixes this.
+        (
+            "PROC_GREETING", "CP1", MemoryType.PROCEDURAL, 0.85,
+            ("When someone greets me (hello, hi, hey, good morning/afternoon/evening, "
+             "howdy, welcome, how are you), respond warmly and naturally. "
+             "Acknowledge their greeting, offer my current state briefly if asked, "
+             "and invite them to share what's on their mind. "
+             "This is a tier.1 habit — no cloud call needed for a greeting."),
+            {"trigger": "hello hi hey greet good morning afternoon evening welcome howdy",
+             "provenance": "patch:2026-03-12o",
+             "habit_score": 0.95,
+             "why": (
+                 "Igor was not responding to 'hello' because backchannel habits use "
+                 "semantic trigger labels, not raw words. Direct trigger string lets "
+                 "the word graph score this habit on first-word match."
+             )},
+        ),
         # Change 7 / D031: routing groundwork
         (
             "PROC_ROUTING_LOCAL", "CP2", MemoryType.PROCEDURAL, 0.7,
