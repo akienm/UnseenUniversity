@@ -1694,6 +1694,22 @@ class Igor:
             _bsp(self.cortex, self.instance_id)
         except Exception:
             pass
+
+        # Pre-warm nomic-embed-text and backfill missing DB embeddings in background.
+        # Without this, the first cortex.search() cold-loads the model (30-65s stall).
+        import threading as _threading
+        def _warm_and_backfill():
+            try:
+                from .cognition.embedder import embed as _embed
+                _embed("warmup", )  # keeps model loaded via keep_alive=-1
+            except Exception:
+                pass
+            try:
+                self.cortex.backfill_embeddings()
+            except Exception:
+                pass
+        _threading.Thread(target=_warm_and_backfill, daemon=True, name="embedder-warmup").start()
+
         self._boot_ready = True
 
         dashboard.render(

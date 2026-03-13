@@ -1086,6 +1086,45 @@ class Cortex:
             ).fetchall()
         return [m for m in (self._to_memory(r) for r in rows) if m.is_habit]
 
+    def backfill_embeddings(self, batch_size: int = 50) -> int:
+        """
+        Compute and store DB embeddings for memories that are missing them.
+        Checks file cache first — most will be cache hits (~1ms each).
+        Only calls Ollama for genuinely unseen narratives.
+        Returns count of memories updated.
+        Run at boot in a daemon thread so first search is never cold.
+        """
+        try:
+            from ..cognition.embedder import embed as _embed
+            import json as _json
+        except Exception:
+            return 0
+
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT id, narrative FROM memories "
+                "WHERE embedding IS NULL OR embedding = 'null'"
+            ).fetchall()
+
+        updated = 0
+        for row in rows:
+            text = (row["narrative"] or "").strip()
+            if not text:
+                continue
+            try:
+                vec = _embed(text)
+                if vec:
+                    with self._conn() as conn:
+                        conn.execute(
+                            "UPDATE memories SET embedding = ? WHERE id = ?",
+                            (_json.dumps(vec), row["id"]),
+                        )
+                    updated += 1
+            except Exception:
+                continue
+
+        return updated
+
     def delete_memory(self, memory_id: str) -> bool:
         """
         #152: Delete a memory by ID. Returns True if deleted.
