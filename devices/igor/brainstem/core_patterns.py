@@ -75,6 +75,32 @@ def _patch_genesis_procs(cortex: Cortex) -> None:
              "execution_permissions": ["python"],
              "why": "Python gives Igor direct computational capability beyond text generation."},
         ),
+        # G63 — routing self-awareness (session 2026-03-12o)
+        # D035 is a hard rule: ALL interactive human turns route to at least tier.3.5
+        # (haiku via OpenRouter). tier.2 Ollama only runs for background/NE/impulse turns.
+        # Without this node, Igor plans "local inference" for sessions where D035 will
+        # always override, producing incorrect cost and capability predictions.
+        (
+            "PROC_ROUTING_INTERACTIVE", "CP2", MemoryType.PROCEDURAL, 0.75,
+            (
+                "D035 hard rule: every interactive human turn routes to tier.3.5 minimum "
+                "(haiku via OpenRouter). This is not optional — D035 fires before tier.2 "
+                "Ollama is reached, regardless of complexity score or cloud budget. "
+                "Tier.2 Ollama (local, free) only runs for: background NE tasks, "
+                "action impulses, and preparse checks. When planning 'local inference' "
+                "this means background-only work; interactive sessions always spend OR budget. "
+                "Tier.4 sonnet fires on: NE ambiguity signal, thalamus complexity=high, "
+                "milieu dominance very low. Know this before writing evening plans."
+            ),
+            {"trigger": "routing_decision",
+             "provenance": "patch:2026-03-12o",
+             "rule": "D035",
+             "why": (
+                 "Igor wrote an evening plan saying 'local inference, cloud budget spent' "
+                 "but D035 guarantees every interactive turn hits OR. Self-awareness about "
+                 "routing rules prevents incorrect cost/capability predictions in plans."
+             )},
+        ),
         # Change 7 / D031: routing groundwork
         (
             "PROC_ROUTING_LOCAL", "CP2", MemoryType.PROCEDURAL, 0.7,
