@@ -333,11 +333,9 @@ class NarrativeEngine:
         # Watermark for cache invalidation — max obs id already in hand
         max_twm_id = max((o["id"] for o in obs_list), default=0)
 
-        # Call LLM: reasoning cache first, then OpenRouter cheap model.
-        # 1B local models can't reliably generate the NE's structured JSON — use cloud.
-        result = self._call_local(prompt, max_twm_id)
-        if result is None:
-            result = self._call_cloud(prompt, max_twm_id)
+        # Call LLM: reasoning cache first, then inference gateway (NE purpose).
+        # Gateway routes: cloud_mode active → OR; local NE model set → Ollama → OR fallback.
+        result = self._call_inference(prompt, max_twm_id)
         if result is None:
             if verbose:
                 print("[NE] Cloud NE call failed — skipping this cycle.")
@@ -547,11 +545,12 @@ class NarrativeEngine:
 
     # ── LLM calls ─────────────────────────────────────────────────────────────
 
-    def _call_local(self, prompt: str, max_twm_id: int = 0) -> Optional[dict]:
+    def _call_inference(self, prompt: str, max_twm_id: int = 0) -> Optional[dict]:
         """
-        Check reasoning cache, then try local Ollama NE model (#188).
-        Gate: IGOR_NE_LOCAL_MODEL env var (e.g. qwen2.5:7b). 7B+ handles structured JSON.
-        Falls back to _call_cloud if not set or if Ollama fails.
+        Run NE inference via the inference gateway (ne purpose).
+        Checks reasoning cache first. Gateway routes: cloud_mode → OR;
+        local NE model set → Ollama → OR fallback.
+        Returns parsed result dict or None.
         """
         cached = reasoning_cache.get(NE_MODEL, prompt, max_twm_id)
         if cached is not None:
@@ -560,95 +559,21 @@ class NarrativeEngine:
                 print(f"{_cts()}[NE] cache hit (twm_id≤{max_twm_id})")
                 return result
 
-        # Cloud training mode: skip local NE entirely — let _call_cloud() do the work (#CLOUD)
         try:
-            from .cloud_mode import is_cloud_training_active as _cloud_active
-            if _cloud_active():
-                return None
-        except Exception:
-            pass
-
-        ne_local_model = os.getenv("IGOR_NE_LOCAL_MODEL", "")
-        if not ne_local_model:
-            return None
-
-        import urllib.request as _ur
-        import json as _json
-        host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-        try:
-            payload = _json.dumps({
-                "model": ne_local_model,
-                "messages": [{"role": "user", "content": prompt}],
-                "stream": False,
-                "options": {"temperature": 0.3},
-            }).encode()
-            req = _ur.Request(
-                f"{host}/api/chat",
-                data=payload,
-                headers={"Content-Type": "application/json"},
-                method="POST",
-            )
-            with _ur.urlopen(req, timeout=45) as resp:
-                data = _json.loads(resp.read())
-            text = data.get("message", {}).get("content", "").strip()
+            from .inference_gateway import get_gateway as _gw, make_context as _mk_ctx
+            _ctx = _mk_ctx(is_background=True)
+            text = _gw().call("ne", prompt, _ctx)
             result = self._parse_ne_json(text)
             if result is not None:
-                print(f"{_cts()}[NE] local ok ({ne_local_model})")
-                reasoning_cache.put(ne_local_model, prompt, text, max_twm_id)
-                self._last_ne_model = ne_local_model
+                _via = "cloud" if _ctx.cloud_active else "local"
+                print(f"{_cts()}[NE] {_via} ok")
+                reasoning_cache.put(NE_MODEL, prompt, text, max_twm_id)
+                self._last_ne_model = f"gateway/ne/{_via}"
                 return result
-            print(f"{_cts()}[NE] local JSON parse failed ({ne_local_model}) — falling back to cloud")
+            print(f"{_cts()}[NE] JSON parse failed — skipping cycle")
         except Exception as e:
-            print(f"{_cts()}[NE] local failed ({ne_local_model}): {e} — falling back to cloud")
+            print(f"{_cts()}[NE] inference failed: {e}")
         return None
-
-    def _call_cloud(self, prompt: str, max_twm_id: int = 0) -> Optional[dict]:
-        """Run NE via OpenRouter cheap model (gpt-4o-mini). Budget-gated."""
-        import os as _os
-        try:
-            from ..tools.budget import budget_status
-            status = budget_status()
-            if status["remaining_usd"] < 0.50:
-                print("[NE] cloud skipped — budget critical")
-                return None
-        except Exception:
-            pass
-
-        or_key   = _os.getenv("OPENROUTER_API_KEY", "")
-        or_model = _os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
-        if not or_key:
-            return None
-
-        try:
-            import urllib.request as _ur
-            import json as _json
-            payload = _json.dumps({
-                "model": or_model,
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 1024,
-                "temperature": 0.3,
-            }).encode()
-            req = _ur.Request(
-                "https://openrouter.ai/api/v1/chat/completions",
-                data=payload,
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {or_key}",
-                },
-                method="POST",
-            )
-            with _ur.urlopen(req, timeout=60) as resp:
-                data = _json.loads(resp.read())
-            text = data["choices"][0]["message"]["content"].strip()
-            result = self._parse_ne_json(text)
-            if result is not None:
-                print(f"{_cts()}[NE] cloud ok ({or_model})")
-                reasoning_cache.put(or_model, prompt, text, max_twm_id)
-                self._last_ne_model = or_model
-            return result
-        except Exception as e:
-            print(f"{_cts()}[NE] cloud failed: {e}")
-            return None
 
     # ── Helpers ────────────────────────────────────────────────────────────────
 
