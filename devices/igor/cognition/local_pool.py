@@ -308,7 +308,7 @@ class LocalPool:
         last_exc = None
         for reasoner in self._next_reasoner():
             try:
-                result         = reasoner.reason(user_input, relevant_memories, core_patterns, instance_id)
+                result         = reasoner.reason(user_input, relevant_memories, core_patterns, instance_id, force_local=force_local)
                 actual_latency = time.perf_counter() - t0
                 self._index    = (self._index + 1) % len(self._reasoners)
                 log_routing_decision(
