@@ -963,25 +963,14 @@ class Igor:
         Only the reply call hits cloud. Returns synthesis text (empty string on failure).
         """
         try:
-            import ollama as _ollama
-            from .cognition.reasoners.ollama_reasoner import OLLAMA_LOCAL_MODEL, OLLAMA_HOST
+            from .cognition.inference_gateway import get_gateway as _gw, make_context as _mk_ctx
             _prompt = (
                 f"{py_think_context}\n\n"
                 f"Input: {user_input[:300]}\n\n"
                 "In 2-3 sentences: what is the emotional register of this input, "
                 "and what response approach fits? Be direct. This is never shown to the user."
             )
-            _client = _ollama.Client(host=OLLAMA_HOST)
-            resp = _client.chat(
-                model=OLLAMA_LOCAL_MODEL,
-                messages=[{"role": "user", "content": _prompt}],
-                options={"temperature": 0.2, "num_predict": 80},
-            )
-            return (
-                resp["message"]["content"]
-                if isinstance(resp, dict)
-                else resp.message.content
-            ).strip()
+            return _gw().call("think", _prompt, _mk_ctx())
         except Exception:
             return ""
 
@@ -2352,21 +2341,19 @@ class Igor:
             import concurrent.futures as _cf
             self._current_action = "preparse"
             web_server.broadcast_activity(self._activity_state())
-            _cloud_preparse = False
-            try:
-                from .cognition.cloud_mode import is_cloud_training_active as _cma
-                _cloud_preparse = _cma()
-            except Exception:
-                pass
-            if self.use_local_preparse and not _cloud_preparse and ollama_is_healthy():
-                console.print(f"[dim]{_cts()}[LOCAL] Pre-parsing via Ollama...[/]")
-                _preparse_fn = lambda: preparse(_preparse_input, habits)
-            elif self.use_local_preparse:
-                console.print(f"[dim]{_cts()}[PREPARSE] Ollama unavailable — preparse via OR cheap...[/]")
-                _preparse_fn = lambda: preparse_via_openrouter(_preparse_input, habits)
-            else:
-                console.print(f"[dim]{_cts()}[PREPARSE] Local preparse off — classifying via tier.3...[/]")
-                _preparse_fn = lambda: preparse_via_openrouter(_preparse_input, habits)
+            # Inference gateway routes preparse: local Ollama → OR cheap fallback.
+            # cloud_mode active → OR directly. Gateway handles all routing decisions.
+            from .cognition.inference_gateway import get_gateway as _gw, make_context as _mk_ctx
+            from .cognition.reasoners.ollama_reasoner import _PREPARSE_PROMPT, _rule_based_csb
+            def _preparse_fn():
+                _prompt = _PREPARSE_PROMPT.format(text=_preparse_input[:300])
+                try:
+                    _text = _gw().call("preparse", _prompt, _mk_ctx())
+                    if "[PARSED_INPUT]" in _text:
+                        return _text.strip()
+                except Exception:
+                    pass
+                return _rule_based_csb(_preparse_input, habits)
 
             # #50: include NE predicted search keys in memory retrieval query
             _kw_query = " ".join(parsed.keywords)
@@ -5472,12 +5459,18 @@ class Igor:
 
     def _cmd_routing(self, raw):
         """
-        /routing [N]  — show last N escalation decisions from escalation.log (default 20).
+        /routing [N]       — show last N escalation decisions from escalation.log (default 20).
+        /routing --dag     — show the inference gateway DAG (preparse/winnow/NE/think routing).
 
         G37 weaning tool: reveals which reasons are driving cloud inference calls so we can
         reduce them incrementally. Each entry shows: tier, reason, intent, complexity,
         complexity signals, and the first 60 chars of the input that triggered it.
         """
+        if "--dag" in raw:
+            from .cognition.inference_gateway import get_gateway as _gw
+            console.print(_gw().describe())
+            return
+
         from pathlib import Path as _Path
         import re as _re
 

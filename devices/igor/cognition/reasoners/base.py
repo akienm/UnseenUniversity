@@ -386,15 +386,6 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
             return []
         if cortex is None:
             return []
-        api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
-        # Cloud training mode: prefer cloud for winnow; else local-first (#CLOUD)
-        try:
-            from ..cloud_mode import is_cloud_training_active as _cloud_active
-            local_first = not _cloud_active()
-        except Exception:
-            local_first = os.getenv("IGOR_WINNOW_LOCAL_FIRST", "true").lower() not in ("false", "0", "no")
-        if not api_key and not local_first:
-            return []
 
         # ── Build compact breadcrumb trail from ring ───────────────────────────
         try:
@@ -425,40 +416,15 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
             "to retrieve the most relevant context for responding. Be specific. No explanation."
         )
 
-        # ── Model call: local Ollama first, OR fallback (#188) ────────────────
+        # ── Model call: inference gateway (local Ollama → OR fallback) ─────────
         queries: list[str] = []
-
-        if local_first:
-            local_model = os.getenv("IGOR_WINNOW_LOCAL_MODEL", "llama3.2:1b")
-            text = _call_ollama_raw(prompt, local_model, timeout=3)
-            if text:
-                queries = [q.strip() for q in text.replace("\n", ",").split(",") if q.strip()][:3]
-
-        if not queries and api_key:
-            try:
-                model = os.getenv("OPENROUTER_WINNOW_MODEL",
-                                  os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini"))
-                payload = json.dumps({
-                    "model": model,
-                    "messages": [{"role": "user", "content": prompt}],
-                    "temperature": 0.1,
-                    "max_tokens": 60,
-                }).encode()
-                req = urllib.request.Request(
-                    "https://openrouter.ai/api/v1/chat/completions",
-                    data=payload,
-                    headers={
-                        "Authorization": f"Bearer {api_key}",
-                        "Content-Type": "application/json",
-                    },
-                    method="POST",
-                )
-                with urllib.request.urlopen(req, timeout=8) as resp:
-                    data = json.loads(resp.read())
-                queries_text = data["choices"][0]["message"]["content"].strip()
-                queries = [q.strip() for q in queries_text.replace("\n", ",").split(",") if q.strip()][:3]
-            except Exception:
-                pass
+        try:
+            from ..inference_gateway import get_gateway as _gw, make_context as _mk_ctx
+            _text = _gw().call("winnow", prompt, _mk_ctx(is_background=False))
+            if _text:
+                queries = [q.strip() for q in _text.replace("\n", ",").split(",") if q.strip()][:3]
+        except Exception:
+            pass
 
         if not queries:
             return []
