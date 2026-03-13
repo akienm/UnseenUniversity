@@ -25,7 +25,7 @@ from .base import (BaseReasoner, MAX_TURNS, CONTEXT_WARN_CHARS, CONTEXT_HARD_CAP
                    CALL_COST_WARN_USD, RESEARCH_TOOL_CAP, RESEARCH_MODE, BIG_READ_TOOLS,
                    BASH_READ_PATTERNS, exit_requested)
 from ..system_prompt import build_system_prompt
-from ..forensic_logger import log_reasoning_call, log_tool_call
+from ..forensic_logger import log_reasoning_call, log_tool_call, log_inference_io
 from ...memory.scrub import scrub
 
 console = Console()
@@ -431,14 +431,21 @@ class OpenRouterReasoner(BaseReasoner):
                 if self.show_model_tag:
                     text = f"[{self.model}] {text}"
                 usage = response.get("usage", {})
+                _elapsed_ms = int((time.perf_counter() - t0) * 1000)
                 log_reasoning_call(
                     provider="openrouter", model=self.model, tier=_tier,
                     input_tokens=usage.get("prompt_tokens", 0),
                     output_tokens=usage.get("completion_tokens", 0),
                     context_chars=_context_chars,
                     cost_usd=total_cost,
-                    elapsed_ms=int((time.perf_counter() - t0) * 1000),
+                    elapsed_ms=_elapsed_ms,
                     turns=turn, response_summary=text[:120],
+                )
+                log_inference_io(
+                    provider="openrouter", model=self.model, tier=_tier,
+                    prompt=system + "\n\n" + content,
+                    response=text,
+                    elapsed_ms=_elapsed_ms, call_type="reason",
                 )
                 # G53: cloud-directed habit extraction — daemon thread, never blocks
                 if (cortex is not None
