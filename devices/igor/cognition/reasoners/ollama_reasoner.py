@@ -337,15 +337,30 @@ class OllamaReasoner(LocalReasoner):
             except Exception:
                 pass
 
-        t0 = time.perf_counter()
-        try:
-            response = self._client.chat(
+        # Ollama can hang indefinitely (observed: 1164s blocking the main loop).
+        # Wrap in a thread future so TimeoutError interrupts the blocking call.
+        # Cap at IGOR_OLLAMA_TIMEOUT_SECS (default 90s) — escalates to next tier.
+        import concurrent.futures as _cf
+        _timeout = float(os.getenv("IGOR_OLLAMA_TIMEOUT_SECS", "90"))
+
+        def _do_chat():
+            return self._client.chat(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": system},
                     {"role": "user", "content": user_input + memory_context},
                 ],
             )
+
+        t0 = time.perf_counter()
+        try:
+            _ex = _cf.ThreadPoolExecutor(max_workers=1)
+            _fut = _ex.submit(_do_chat)
+            _ex.shutdown(wait=False)  # don't block — let thread run, we'll timeout via future
+            try:
+                response = _fut.result(timeout=_timeout)
+            except _cf.TimeoutError:
+                raise RuntimeError(f"Ollama timed out after {_timeout}s — escalating to next tier")
             elapsed = time.perf_counter() - t0
             _log_call("OllamaReasoner.reason", self.model, response, elapsed)
             tokens_in  = getattr(response, "prompt_eval_count", None) or (response.get("prompt_eval_count", 0) if isinstance(response, dict) else 0)
