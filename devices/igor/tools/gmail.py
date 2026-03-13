@@ -40,6 +40,12 @@ def _decode_header_value(value: str) -> str:
 
 def send_email(to: str, subject: str, body: str) -> str:
     """Send an email from Igor's Gmail account."""
+    import os as _os
+    if not _os.getenv("IGOR_EMAIL_SEND_ENABLED", "false").lower() in ("1", "true", "yes"):
+        return (
+            "Email sending is currently gated. "
+            "Set IGOR_EMAIL_SEND_ENABLED=true in .env to enable outbound email."
+        )
     try:
         user, pw = _credentials()
 
