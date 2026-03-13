@@ -29,7 +29,7 @@ from .brainstem.core_patterns import initialize_genesis, get_core_patterns, veri
 from .cognition import thalamus
 from .cognition import prefrontal_cortex as pfc
 # AnthropicReasoner moved to InferenceGateway.from_env() — not imported directly here
-from .cognition.reasoners.ollama_reasoner import preparse, parse_preparse_csb, score_memories, _rule_based_csb
+from .cognition.reasoners.ollama_reasoner import preparse, parse_preparse_csb, _rule_based_csb
 from .cognition.inference_gateway import is_local_inference_available as _local_inference_ok
 from .cognition.reasoners.openrouter_reasoner import preparse_via_openrouter
 from .cognition.forensic_logger import log_tier_selection, cts as _cts
@@ -2346,7 +2346,10 @@ class Igor:
                 if _ne_search_keys:
                     _search_query = _search_query + " " + " ".join(_ne_search_keys)
                 candidates = self.cortex.search(_search_query.strip(), emotional_context=_milieu_state)
-            relevant = score_memories(user_input, candidates) if candidates else []
+            # cortex.search() Phase 2 already cosine-reranks by embedding similarity —
+            # score_memories() (qwen2.5:7b) added 25-200s per turn for worse output
+            # (80-char truncation vs full-text embeddings). Removed: G65.
+            relevant = list(candidates)
         else:
             # Parallel: memory search + LLM preparse
             import concurrent.futures as _cf
@@ -2375,7 +2378,9 @@ class Igor:
                 _cand_fut = _pool.submit(self.cortex.search, _kw_query.strip(), 10, _milieu_state)
                 pre_csb   = _pre_fut.result()
                 candidates = _cand_fut.result()
-            relevant = score_memories(user_input, candidates) if candidates else []
+            # Same reasoning: cortex.search() cosine-rank is better than qwen2.5:7b
+            # scoring 80-char truncated narratives. G65.
+            relevant = list(candidates)
 
         # #153: Notebook context — search user's personal notebook, prepend hits to relevant
         if not is_impulse and thread_id:
