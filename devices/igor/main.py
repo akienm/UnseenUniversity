@@ -28,12 +28,13 @@ from .memory.cortex import Cortex
 from .brainstem.core_patterns import initialize_genesis, get_core_patterns, verify_genesis_integrity
 from .cognition import thalamus
 from .cognition import prefrontal_cortex as pfc
-from .cognition.reasoners.anthropic import AnthropicReasoner
-from .cognition.reasoners.ollama_reasoner import preparse, parse_preparse_csb, score_memories, _rule_based_csb, is_healthy as ollama_is_healthy
+# AnthropicReasoner moved to InferenceGateway.from_env() — not imported directly here
+from .cognition.reasoners.ollama_reasoner import preparse, parse_preparse_csb, score_memories, _rule_based_csb
+from .cognition.inference_gateway import is_local_inference_available as _local_inference_ok
 from .cognition.reasoners.openrouter_reasoner import preparse_via_openrouter
 from .cognition.forensic_logger import log_tier_selection, cts as _cts
 from .cognition.system_prompt import build_boot_message, invalidate_cache
-from .cognition.local_pool import LocalKoboldPool, BatchKoboldPool
+# LocalKoboldPool/BatchKoboldPool moved to InferenceGateway.from_env() — not imported directly here
 from .cognition import observer
 from .cognition import milieu as milieu_mod
 from .cognition import basal_ganglia
@@ -75,7 +76,9 @@ CHANGE_REQUEST_PATH = Path.home() / ".TheIgors" / "claudecode" / "change_request
 # Buffer multi-line turns (fits-and-starts chat). Lines accumulate until the
 # sender is idle for DEBOUNCE_SECS, then the batch is processed as one turn.
 # Commands (/...) always bypass debounce and are processed immediately.
-DEBOUNCE_SECS = float(os.getenv("IGOR_INPUT_DEBOUNCE_MS", "3000")) / 1000.0
+# #200: stdin debounce kept but short (handles multi-line pastes).
+# Network messages are dispatched immediately — no debounce needed there.
+DEBOUNCE_SECS = float(os.getenv("IGOR_INPUT_DEBOUNCE_MS", "500")) / 1000.0
 
 # ── Self-repair / turn revision detection (G64) ────────────────────────────────
 # When a user revises their own prior statement ("Yes! ... Oh wait, I can't"),
@@ -282,16 +285,18 @@ class Igor:
         self._npass_reply = os.getenv("IGOR_NPASS_REPLY", "false").lower() in ("1", "true", "yes")
 
         self.ne = NarrativeEngine(self.cortex, instance_id)
-        self.reasoner = AnthropicReasoner()
-        self.local_pool  = LocalKoboldPool()
-        self.batch_pool  = BatchKoboldPool(fallback=self.local_pool)
+        from .cognition.inference_gateway import InferenceGateway as _InferenceGateway
+        self._gateway = _InferenceGateway.from_env()
         self.thalamus = thalamus.Thalamus()
         self.interaction_count = 0
         self.cloud_calls = 0
         self.last_friction = None
         self.last_valence = None
-        # #146 input debounce: per-thread buffer {thread_id: {"lines": [], "last_time": float, "msgs": []}}
-        self._net_debounce: dict = {}
+        # #200: per-thread non-blocking dispatch — one queue + worker thread per thread_id.
+        # Network messages are dispatched immediately; LLM calls run in worker threads;
+        # main loop never blocks on inference. Conversation order preserved per thread_id.
+        self._thread_queues: dict[str, queue.Queue] = {}
+        self._thread_workers: dict[str, threading.Thread] = {}
         # #135: per-user context (formality, chat logs, first-contact flow)
         from .cognition.user_context import UserContextManager
         self._user_ctx_mgr = UserContextManager(DATA_DIR)
@@ -339,25 +344,8 @@ class Igor:
         # G4 / #27: async job completion queue
         self._job_completions: "collections.deque" = __import__("collections").deque()
 
-        # WO4/WO5: OpenRouter — cheap (tier.3), interactive/persona (tier.3.5), claude (tier.4)
-        self.openrouter_cheap_reasoner = None
-        self.openrouter_interactive_reasoner = None
-        self.openrouter_reasoner = None
-        if os.getenv("OPENROUTER_API_KEY", "").strip():
-            try:
-                from .cognition.reasoners.openrouter_reasoner import OpenRouterReasoner
-                cheap_model       = os.getenv("OPENROUTER_CHEAP_MODEL",       "openai/gpt-4o-mini")
-                # tier.3.5: persona-capable but cheap — haiku; falls back to INTERACTIVE if DEFAULT unset
-                interactive_model = os.getenv("OPENROUTER_DEFAULT_MODEL",
-                                              os.getenv("OPENROUTER_INTERACTIVE_MODEL", "anthropic/claude-haiku-4.5"))
-                # tier.4: full reasoning — sonnet (INTERACTIVE_MODEL or hardcoded default)
-                claude_model      = os.getenv("OPENROUTER_INTERACTIVE_MODEL", "anthropic/claude-sonnet-4.6")
-                self.openrouter_cheap_reasoner       = OpenRouterReasoner(model=cheap_model)
-                self.openrouter_interactive_reasoner = OpenRouterReasoner(model=interactive_model)
-                self.openrouter_reasoner             = OpenRouterReasoner(model=claude_model)
-                console.print(f"[dim]OpenRouter ready ({self.openrouter_reasoner.model})[/]")
-            except Exception as _e:
-                console.print(f"[yellow]OpenRouter init failed: {_e}[/]")
+        if self._gateway._t4:
+            console.print(f"[dim]OpenRouter ready ({self._gateway._t4.model})[/]")
 
         # change.40: extra reasoners for /cloud multi-query
         self._extra_reasoners: dict = {}   # name → BaseReasoner
@@ -1784,20 +1772,64 @@ class Igor:
 
         # Pre-warm nomic-embed-text and backfill missing DB embeddings in background.
         # Without this, the first cortex.search() cold-loads the model (30-65s stall).
+        # During cloud mode (daytime) skip backfill — it hammers Ollama with hundreds
+        # of embedding calls. The single warmup ping still runs so search isn't cold.
         import threading as _threading
         def _warm_and_backfill():
             try:
                 from .cognition.embedder import embed as _embed
-                _embed("warmup", )  # keeps model loaded via keep_alive=-1
-            except Exception:
-                pass
+                _embed("warmup")  # keeps model loaded via keep_alive=-1
+            except Exception as _e:
+                from .cognition.forensic_logger import log_error as _log_error
+                _log_error(kind="EMBED_WARMUP", source="boot", detail=str(_e))
             try:
-                self.cortex.backfill_embeddings()
-            except Exception:
-                pass
+                from .cognition.cloud_mode import is_cloud_training_active as _cma
+                if not _cma():
+                    self.cortex.backfill_embeddings()
+            except Exception as _e:
+                from .cognition.forensic_logger import log_error as _log_error
+                _log_error(kind="EMBED_BACKFILL", source="boot", detail=str(_e))
         _threading.Thread(target=_warm_and_backfill, daemon=True, name="embedder-warmup").start()
 
         self._boot_ready = True
+
+        # #202: startup.log — Tier-1 triage: one block per boot
+        try:
+            from .cognition.forensic_logger import log_startup as _log_startup
+            import time as _bt
+            _boot_elapsed = _bt.monotonic()  # rough; __init__ already ran before run()
+            _or_balance = ""
+            try:
+                _or_bal_raw = os.getenv("OPENROUTER_BALANCE", "")
+                _or_balance = f"healthy(${_or_bal_raw})" if _or_bal_raw else (
+                    "healthy" if os.getenv("OPENROUTER_API_KEY") else "no_key"
+                )
+            except Exception:
+                pass
+            _ollama_status = ""
+            try:
+                _ollama_status = (
+                    f"healthy({os.getenv('OLLAMA_LOCAL_MODEL', 'unknown')})"
+                    if _local_inference_ok() else "unavailable"
+                )
+            except Exception:
+                _ollama_status = "unknown"
+            _wg_count = len(self._word_graph._word_to_ids) if self._word_graph else 0
+            _log_startup(
+                instance_id=self.instance_id,
+                memory_count=self.cortex.total_count(),
+                habit_count=len(self.cortex.get_habits()),
+                wg_words=_wg_count,
+                boot_elapsed_s=_boot_elapsed,
+                embed_ok=True,       # warmup thread started; assume ok
+                integrity_ok=True,   # boot would have raised if failed
+                warm_context="loaded" if self._boot_ring_tail else "none",
+                ollama_status=_ollama_status,
+                openrouter_status=_or_balance,
+                cloud_mode=os.getenv("IGOR_CLOUD_TRAINING_ENABLED", "false"),
+            )
+        except Exception:
+            pass
 
         dashboard.render(
             cortex=self.cortex,
@@ -1820,6 +1852,11 @@ class Igor:
         # #146 stdin debounce state — local to run() (single-threaded consumer)
         _stdin_buffer: list[str] = []
         _stdin_last_time: float = 0.0
+
+        console.print(f"[bold cyan]{'═' * 60}[/]")
+        console.print(f"[bold cyan]  IGOR {self.instance_id} — BOOT COMPLETE[/]")
+        console.print(f"[bold cyan]  memories={self.cortex.total_count()}  habits={len(self.cortex.get_habits())}  web=:{os.getenv('IGOR_WEB_PORT', '8080')}[/]")
+        console.print(f"[bold cyan]{'═' * 60}[/]\n")
 
         while True:
             # ── Stdin: collect lines into debounce buffer ─────────────────────
@@ -1855,7 +1892,7 @@ class Igor:
                     # Regular line: add to buffer, reset idle timer
                     _stdin_buffer.append(_stripped)
                     _stdin_last_time = time.time()
-                    console.print(f"[dim]{_cts()}(buffering...)[/]")
+                    loginfo(f"[dim](stdin buffering...)[/]")
 
             # ── Flush stdin buffer if idle for DEBOUNCE_SECS ─────────────────
             if _stdin_buffer and time.time() - _stdin_last_time >= DEBOUNCE_SECS:
@@ -1884,7 +1921,6 @@ class Igor:
                 sys.exit(42)
 
             self._drain_network()
-            self._flush_debounced_network()
             run_background_sources(self.cortex)
             self._run_ne_background()
             self._run_consolidation_background()  # #169
@@ -1892,12 +1928,6 @@ class Igor:
             self._drain_action_impulses()
             self._evict_stale_threads()  # #136: purge idle thread buffers
             time.sleep(0.5)
-            continue
-
-            # Exit check after _process() — catches /exit typed during a blocking call
-            if _exit_requested.is_set():
-                self._shutdown(reason="quit via /quit")
-                break
 
     def _bg_reason(
         self,
@@ -1914,8 +1944,10 @@ class Igor:
         try:
             from .brainstem.core_patterns import get_core_patterns
             core = get_core_patterns(self.cortex)
-            response_text, _cost, _used = self._reason_with_failover(
-                user_input, relevant, core, skip_to=skip_to, preparse_csb=preparse_csb
+            response_text, _cost, _used = self._gateway.reason(
+                user_input, relevant, core,
+                level="interactive", skip_to=skip_to, preparse_csb=preparse_csb,
+                cortex=self.cortex, instance_id=self.instance_id,
             )
             # Strip <think> block — same as _process_inner does for foreground replies
             if response_text:
@@ -1923,160 +1955,6 @@ class Igor:
             return response_text or "(no response)"
         except Exception as exc:
             return f"[ERROR in background job] {exc}"
-
-    def _reason_with_failover(
-        self,
-        user_input: str,
-        relevant: list,
-        core: list,
-        skip_to: str = "tier.3",
-        preparse_csb: str = "",
-        local_only: bool = False,
-        thread_id: str | None = None,
-    ) -> tuple[str, float, bool]:
-        """
-        WO5 priority escalation ladder (tiers 3-6).
-        tier.1 habit and tier.2 local are handled in _process() before this call.
-        tier.3:   OR cheap model (gpt-4o-mini) — background/preparse/NE impulses only
-        tier.3.5: OR interactive model (deepseek/deepseek-chat) — human turns, persona-capable
-        tier.4:   OR claude (anthropic/claude-sonnet-4-6) — complex reasoning, tools, multi-step
-        tier.5:   Anthropic direct (separate budget, always last cloud)
-        tier.6:   arbiter alert + offline message when all cloud fails
-
-        skip_to: minimum tier to start at ("tier.3"|"tier.3.5"|"tier.4"|"tier.5").
-                 Interactive human turns default to "tier.3.5" (D035).
-        local_only: if True, skip all cloud tiers — return apology if local unavailable.
-
-        Returns (response_text, cost_usd, used_cloud_api).
-        """
-        if local_only:
-            return (
-                "I'm operating in local-only mode per your instruction, "
-                "but my local model is unavailable right now. "
-                "Please try a simpler task or remove the 'local only' constraint.",
-                0.0,
-                False,
-            )
-
-        # ── Budget depletion guard — degrade to local before attempting cloud ──
-        try:
-            from .tools.budget import is_cloud_blocked as _is_cloud_blocked
-            _blocked, _block_reason = _is_cloud_blocked()
-            if _blocked:
-                loginfo(f"[yellow][BUDGET] {_block_reason}[/]")
-                from .cognition.reasoners.ollama_reasoner import OllamaReasoner as _OllamaReasoner
-                _local_r = _OllamaReasoner()
-                _local_text, _local_cost = _local_r.reason(
-                    user_input, relevant, core, self.instance_id, cortex=self.cortex,
-                    thread_id=thread_id,
-                )
-                self._current_tier = "tier.2"
-                return _local_text, _local_cost, False
-        except Exception as _budget_exc:
-            # If the budget check itself or local fallback fails, proceed to cloud
-            # (better to try cloud than to silently fail)
-            loginfo(f"[dim][BUDGET] local fallback error: {_budget_exc}[/]")
-
-        last_error: str = ""
-
-        # ── tier.3: OR cheap model ──────────────────────────────────────────────
-        if self.openrouter_cheap_reasoner is not None and skip_to == "tier.3":
-            self._current_action = "reasoning"; self._current_tier = "tier.3"
-            web_server.broadcast_activity(self._activity_state())
-            try:
-                text, cost = self.openrouter_cheap_reasoner.reason(
-                    user_input, relevant, core, self.instance_id,
-                    cortex=self.cortex, preparse_csb=preparse_csb, thread_id=thread_id
-                )
-                self.cloud_calls += 1
-                loginfo(f"[dim](tier.3/or-cheap | session_cost: ${self.session_cost + cost:.4f})[/]")
-                return text, cost, True
-            except Exception as e:
-                last_error = str(e)
-                loginfo(f"[yellow]tier.3 OR-cheap failed ({e}), trying tier.3.5...[/]")
-                from .cognition.forensic_logger import log_error as _log_error
-                _log_error(kind="TIER_FAIL", source="tier.3", detail=str(e))
-
-        # ── tier.3.5: OR interactive/persona model ─────────────────────────────
-        if self.openrouter_interactive_reasoner is not None and skip_to in ("tier.3", "tier.3.5"):
-            self._current_action = "reasoning"; self._current_tier = "tier.3.5"
-            web_server.broadcast_activity(self._activity_state())
-            try:
-                text, cost = self.openrouter_interactive_reasoner.reason(
-                    user_input, relevant, core, self.instance_id,
-                    cortex=self.cortex, preparse_csb=preparse_csb, thread_id=thread_id
-                )
-                self.cloud_calls += 1
-                loginfo(f"[dim](tier.3.5/or-interactive | session_cost: ${self.session_cost + cost:.4f})[/]")
-                return text, cost, True
-            except Exception as e:
-                last_error = str(e)
-                loginfo(f"[yellow]tier.3.5 OR-interactive failed ({e}), trying OR-claude...[/]")
-                from .cognition.forensic_logger import log_error as _log_error
-                _log_error(kind="TIER_FAIL", source="tier.3.5", detail=str(e))
-
-        # ── tier.4: OR claude ───────────────────────────────────────────────────
-        if self.openrouter_reasoner is not None:
-            self._current_action = "reasoning"; self._current_tier = "tier.4"
-            web_server.broadcast_activity(self._activity_state())
-            try:
-                text, cost = self.openrouter_reasoner.reason(
-                    user_input, relevant, core, self.instance_id,
-                    cortex=self.cortex, preparse_csb=preparse_csb, thread_id=thread_id
-                )
-                self.cloud_calls += 1
-                loginfo(f"[dim](tier.4/or-claude | session_cost: ${self.session_cost + cost:.4f})[/]")
-                return text, cost, True
-            except Exception as e:
-                last_error = str(e)
-                loginfo(f"[yellow]tier.4 OR-claude failed ({e}), trying Anthropic direct...[/]")
-                from .cognition.forensic_logger import log_error as _log_error
-                _log_error(kind="TIER_FAIL", source="tier.4", detail=str(e))
-
-        # ── tier.5: Anthropic direct ────────────────────────────────────────────
-        # Inhibited by default — Anthropic direct is the most expensive path.
-        # Set IGOR_TIER5_ENABLED=true in .env only when OR is exhausted and Akien approves.
-        if os.getenv("IGOR_TIER5_ENABLED", "false").lower() not in ("1", "true", "yes"):
-            last_error = "tier.5 inhibited (IGOR_TIER5_ENABLED not set)"
-            loginfo("[yellow]tier.5 (Anthropic direct) inhibited — set IGOR_TIER5_ENABLED=true to enable[/]")
-        else:
-            self._current_action = "reasoning"; self._current_tier = "tier.5"
-            web_server.broadcast_activity(self._activity_state())
-            try:
-                text, cost = self.reasoner.reason(
-                    user_input, relevant, core, self.instance_id,
-                    cortex=self.cortex, preparse_csb=preparse_csb, thread_id=thread_id
-                )
-                self.cloud_calls += 1
-                loginfo(f"[dim](tier.5/anthropic | session_cost: ${self.session_cost + cost:.4f})[/]")
-                return text, cost, True
-            except Exception as e:
-                last_error = str(e)
-                loginfo(f"[yellow]tier.5 Anthropic failed ({e}), escalating to arbiter...[/]")
-                from .cognition.forensic_logger import log_error as _log_error
-                _log_error(kind="TIER_FAIL", source="tier.5", detail=str(e))
-
-        # ── tier.6: arbiter alert — all cloud inference exhausted ──────────────
-        from .cognition.forensic_logger import log_anomaly as _log_anomaly
-        _log_anomaly(kind="TIER6", detail=f"last_error={last_error[:160]}")
-        try:
-            from .arbiter import queue as arbiter_queue
-            item_id = arbiter_queue.submit(
-                description="All cloud inference failed — Igor offline",
-                context=f"Last error: {last_error[:200]}",
-                action_type="system_alert",
-                threshold_reason="Total cloud inference failure (tiers 3-5 all failed)",
-                metadata={"tier_failures": ["tier.3", "tier.4", "tier.5"]},
-            )
-            loginfo(f"[bold red][tier.6] All cloud inference failed. Arbiter alert #{item_id} queued.[/]")
-        except Exception:
-            loginfo("[bold red][tier.6] All cloud inference failed and arbiter unavailable.[/]")
-        return (
-            "⚠ All cloud inference is currently unavailable. "
-            "I've queued a notification for akien.",
-            0.0,
-            False,
-        )
 
     def _process(self, user_input: str, is_impulse: bool = False, thread_id: str | None = None) -> str:
         # Boot-ready gate: politely defer if boot pre-warm hasn't finished yet.
@@ -2112,9 +1990,20 @@ class Igor:
         from .cognition.forensic_logger import (
             log_pipeline_step as _log_pt,
             set_turn_id as _set_turn_id,
+            init_turn_ctx as _init_ctx,
+            finalize_turn_ctx as _finalize_ctx,
+            log_interaction as _log_interaction,
+            turn_ctx_update as _ctx_update,
         )
         _set_turn_id(_turn_id)
+        # #203: init TurnContext dict for this turn (threading.local, safe with #200 workers)
+        if not is_impulse:
+            _init_ctx(_turn_id, thread_id or "stdin:main", user_input)
         _tc = _t0  # rolling checkpoint: updated after each named step
+        # Sentinel defaults for #201/#203 — overwritten as pipeline runs
+        _tier_hint: str = ""
+        _turn_cost: float = 0.0
+        _turn_habit = None
         _habits_before = len(self.cortex.get_habits())   # G54/G53: detect new habits this turn
         # [TWM] Push incoming message as observation (non-command, non-impulse messages only)
         if not is_impulse and not user_input.startswith("/"):
@@ -2301,7 +2190,7 @@ class Igor:
 
             # Speed pressure: user typing very quickly after last response
             if self._last_response_time > 0 and (_now - self._last_response_time) < 30:
-                self.local_pool.weights.adjust("speed_pressure")
+                self._gateway._t2 and self._gateway._t2.weights.adjust("speed_pressure")
                 observer.observe("routing_signal", "speed_pressure",
                                  {"reason": "quick_followup",
                                   "gap_s": round(_now - self._last_response_time, 1)})
@@ -2309,12 +2198,12 @@ class Igor:
             # Speed pressure: explicit user words
             _speed_words = ("faster", "too slow", "hurry", "speed up", "quicker")
             if any(w in _lower_input for w in _speed_words):
-                self.local_pool.weights.adjust("speed_pressure")
+                self._gateway._t2 and self._gateway._t2.weights.adjust("speed_pressure")
                 observer.observe("routing_signal", "speed_pressure", {"reason": "user_words"})
 
             # Speed pressure: consecutive slow responses tracked in local_pool
             if self._consecutive_slow >= 3:
-                self.local_pool.weights.adjust("speed_pressure")
+                self._gateway._t2 and self._gateway._t2.weights.adjust("speed_pressure")
                 observer.observe("routing_signal", "speed_pressure",
                                  {"reason": "consecutive_slow",
                                   "count": self._consecutive_slow})
@@ -2323,7 +2212,7 @@ class Igor:
             # Cost pressure: explicit user words
             _cost_words = ("save budget", "be careful", "use cheap", "save money", "conserve")
             if any(w in _lower_input for w in _cost_words):
-                self.local_pool.weights.adjust("cost_pressure")
+                self._gateway._t2 and self._gateway._t2.weights.adjust("cost_pressure")
                 observer.observe("routing_signal", "cost_pressure", {"reason": "user_words"})
 
             # Quality pressure: explicit user request for better model
@@ -2898,16 +2787,16 @@ class Igor:
             return f"{_threshold_prefix}Started background job #{_async_job_id}. I'll notify you when complete."
 
         # Forensic: log tier selection decision (WO_escalation_gate)
-        _tiers_available = ["tier.1", "tier.2"]  # habits + local KoboldCpp always available
-        if self.openrouter_cheap_reasoner is not None:
-            _tiers_available.append("tier.3")
-        if self.openrouter_reasoner is not None:
-            _tiers_available.append("tier.4")
-        if self.reasoner is not None and os.getenv("IGOR_TIER5_ENABLED", "false").lower() in ("1", "true", "yes"):
+        _tiers_available = ["tier.1"]
+        if self._gateway._t2:    _tiers_available.append("tier.2")
+        if self._gateway._t3:    _tiers_available.append("tier.3")
+        if self._gateway._t35:   _tiers_available.append("tier.3.5")
+        if self._gateway._t4:    _tiers_available.append("tier.4")
+        if self._gateway._t5 and os.getenv("IGOR_TIER5_ENABLED", "false").lower() in ("1", "true", "yes"):
             _tiers_available.append("tier.5")
-        _tiers_available.append("tier.6")  # arbiter always last resort
+        _tiers_available.append("tier.6")
 
-        _preparse_via = "ollama" if (self.use_local_preparse and ollama_is_healthy()) else "openrouter"
+        _preparse_via = "ollama" if (self.use_local_preparse and _local_inference_ok()) else "openrouter"
         if self.local_mode:
             _tier_hint = "tier.2"
             _reason = "local_mode=true"
@@ -2950,6 +2839,7 @@ class Igor:
             if _trigger and _trigger.lower() not in parsed.raw.lower():
                 _llm_habit = None  # reject — trigger phrase not present in input
         habit = _llm_habit or _thalamus_habit
+        _turn_habit = habit  # #201/#203: sentinel for interaction/turn_trace logs
 
         # Proactive habits fire from ProactiveHabitSource, not reactive input triggers.
         # If one matches here (trigger substring coincidence), let the reasoner handle it.
@@ -3108,72 +2998,24 @@ class Igor:
                 # Ring context is injected by anthropic.py._build_session_context (D014)
                 # — do NOT also build ring_ctx here (would cause double injection)
                 core = get_core_patterns(self.cortex)
-                if self.local_mode:
-                    # Local-only override — never use cloud
-                    self._current_action = "reasoning"; self._current_tier = "local"
+                def _on_tier(t: str) -> None:
+                    self._current_action = "reasoning"
+                    self._current_tier = t
                     web_server.broadcast_activity(self._activity_state())
-                    dashboard.print_reasoning(used_api=False)
-                    try:
-                        response_text, cost = self.local_pool.reason(
-                            user_input, relevant, core, self.instance_id
-                        )
-                        self.cloud_calls += 1
-                        used_api = False
-                        loginfo(f"[dim](local | session_cost: ${self.session_cost:.4f})[/]")
-                    except Exception as e:
-                        loginfo(f"[yellow]Local pool failed ({e}), trying cloud...[/]")
-                        response_text, cost, used_api = self._reason_with_failover(
-                            user_input, relevant, core, skip_to=_skip_to, preparse_csb=pre_csb,
-                            local_only=_local_only, thread_id=thread_id,
-                        )
-                elif is_impulse:
-                    # Background impulse — no UX latency requirement; cost must be zero.
-                    # #29: PROACTIVE_HABIT impulses (document/batch work) use batch_pool
-                    # (7B on port 5002) for better quality. NE impulses use local_pool (1B).
-                    _is_batch_impulse = "PROACTIVE_HABIT" in user_input
-                    _impulse_pool = self.batch_pool if _is_batch_impulse else self.local_pool
-                    _tier_label   = "tier.2/batch" if _is_batch_impulse else "tier.2/impulse"
-                    self._current_action = "reasoning"; self._current_tier = _tier_label
-                    web_server.broadcast_activity(self._activity_state())
-                    try:
-                        if _is_batch_impulse:
-                            response_text, cost = _impulse_pool.reason_batch(
-                                user_input, relevant, core, self.instance_id
-                            )
-                        else:
-                            # force_local=True: impulses are background work — no interactive
-                            # latency requirement, so skip the budget check entirely.
-                            response_text, cost = _impulse_pool.reason(
-                                user_input, relevant, core, self.instance_id, force_local=True
-                            )
-                        used_api = False
-                        loginfo(f"[dim][IMPULSE/{_tier_label}] local ok[/]")
-                    except Exception as e:
-                        loginfo(f"[dim][IMPULSE] local too slow — skipped (no cloud escalation for impulses)[/]")
-                        from .cognition.forensic_logger import log_error as _log_error
-                        _log_error(kind="IMPULSE_SKIP", source="impulse/tier.2", detail=str(e))
-                        response_text = ""
-                        cost = 0.0
-                elif _local_only:
-                    # #90: local_only directive — use local pool, never escalate to cloud
-                    self._current_action = "reasoning"; self._current_tier = "tier.2"
-                    web_server.broadcast_activity(self._activity_state())
-                    dashboard.print_reasoning(used_api=False)
-                    try:
-                        response_text, cost = self.local_pool.reason(
-                            user_input, relevant, core, self.instance_id, force_local=True
-                        )
-                        used_api = False
-                        loginfo(f"[dim](local_only/tier.2 | session_cost: ${self.session_cost:.4f})[/]")
-                    except Exception as e:
-                        loginfo(f"[yellow]Local pool failed in local_only mode ({e})[/]")
-                        response_text = (
-                            "I'm operating in local-only mode per your instruction, "
-                            "but my local model is unavailable right now. "
-                            "Please try a simpler task or remove the 'local only' constraint."
-                        )
-                        cost = 0.0
-                        used_api = False
+
+                if is_impulse:
+                    # #29: PROACTIVE_HABIT impulses stay local (batch pool, quality priority)
+                    _level = "background_batch" if "PROACTIVE_HABIT" in user_input else "background"
+                    response_text, cost, used_api = self._gateway.reason(
+                        user_input, relevant, core,
+                        level=_level, thread_id=thread_id,
+                        cortex=self.cortex, instance_id=self.instance_id,
+                        on_tier=_on_tier,
+                    )
+                    if used_api:
+                        loginfo(f"[dim][IMPULSE/{self._gateway.last_tier}] cloud ok (${cost:.5f})[/]")
+                    elif response_text:
+                        loginfo(f"[dim][IMPULSE/{self._gateway.last_tier}] local ok[/]")
                 else:
                     # Interactive human turn — tier.3+ directly (D032).
                     # Local 1B is too slow/weak for conversational UX on no-GPU hardware.
@@ -3263,9 +3105,12 @@ class Igor:
                     _tc_reason = _time.monotonic()
                     with Live(Spinner("dots", text=" Thinking..."), console=console,
                               transient=True, refresh_per_second=8):
-                        response_text, cost, used_api = self._reason_with_failover(
-                            _reply_input, relevant, core, skip_to=_skip_to,
+                        response_text, cost, used_api = self._gateway.reason(
+                            _reply_input, relevant, core,
+                            level="interactive", skip_to=_skip_to,
                             preparse_csb=_pre_csb_with_nudge, thread_id=thread_id,
+                            cortex=self.cortex, instance_id=self.instance_id,
+                            local_only=_local_only, on_tier=_on_tier,
                         )
                     _log_pt(turn_id=_turn_id, step="reasoning",
                             elapsed_ms=round((_time.monotonic() - _tc_reason) * 1000),
@@ -3435,7 +3280,7 @@ class Igor:
             _ep_dominance = _ep_milieu.dominance if _ep_milieu else 0.0
             _emotionally_charged = abs(valence) > 0.5 or abs(_ep_arousal) > 0.5
             ep = Memory(
-                narrative=f"User: {user_input} → Igor responded about {parsed.intent}",
+                narrative=f"User: {user_input[:250]} | Response: {response_text[:300]} | intent={parsed.intent}",
                 memory_type=MemoryType.EPISODIC,
                 parent_id="CP3",  # "There's always a why"
                 valence=valence,
@@ -3487,6 +3332,18 @@ class Igor:
             # G37: track last reply for comprehension signal on next turn
             if response_text:
                 self._last_reply = response_text
+            # #204: push Igor's response to TWM so NE can extract patterns from it
+            if response_text:
+                try:
+                    self.cortex.twm_push(
+                        source="igor_response",
+                        content_csb=f"IGOR_SAID|{response_text[:400]}",
+                        salience=0.55,
+                        urgency=0.1,
+                        ttl_seconds=600,
+                    )
+                except Exception:
+                    pass  # never let TWM bookkeeping abort response delivery
 
         # Update metrics
         self.last_friction = friction
@@ -3584,6 +3441,7 @@ class Igor:
             _preparse_ms  = round((_t_after_preparse_memory - _t0) * 1000)
             _reasoning_ms = round((_t_after_reasoning - _t_after_preparse_memory) * 1000)
             _total_ms     = round((_t_end - _t0) * 1000)
+            _turn_cost    = locals().get("cost", 0.0) or 0.0  # #201/#203: capture for logs
             # Rolling last-20 samples for p50/p95 dashboard display
             self._latency_samples.append(_total_ms)
             if len(self._latency_samples) > 20:
@@ -3636,6 +3494,27 @@ class Igor:
                 _check_wants(response_text, self.cortex, user_input=user_input)
             except Exception:
                 pass
+
+        # #201/#203: interaction + turn_trace — only for non-impulse, non-command turns
+        if not is_impulse and not parsed.is_command:
+            _total_elapsed = round((_time.monotonic() - _t0) * 1000)
+            _log_interaction(
+                turn_id=_turn_id,
+                thread_id=thread_id or "stdin:main",
+                tier=_tier_hint,
+                elapsed_ms=_total_elapsed,
+                cost_usd=_turn_cost,
+                input_text=user_input,
+                response_text=response_text or "",
+            )
+            _finalize_ctx(
+                response_preview=response_text[:200] if response_text else "",
+                tier=_tier_hint,
+                cost_usd=_turn_cost,
+                total_ms=_total_elapsed,
+                new_memories=new_memories,
+                habit_fired=(_turn_habit is not None),
+            )
 
         return response_text
 
@@ -4053,11 +3932,13 @@ class Igor:
 
     def _drain_network(self):
         """
-        Collect queued network messages into the debounce buffer.
+        #200: Dispatch network messages immediately — no debounce buffering.
 
-        #146: Messages are NOT processed immediately. They are buffered by thread_id.
-        CC messages and slash commands bypass debounce and are processed inline.
-        _flush_debounced_network() processes threads that have been idle for DEBOUNCE_SECS.
+        CC messages and slash commands are processed inline (they're fast + stateful).
+        Regular messages go to a per-thread worker queue so:
+          - The main loop never blocks on LLM inference.
+          - Conversation order per thread_id is preserved (sequential worker per thread).
+          - A second message arriving while LLM is in-flight gets queued, not dropped.
         """
         while True:
             try:
@@ -4077,45 +3958,56 @@ class Igor:
 
             _thread_id = self._get_thread_id(msg)
 
-            # CC and slash commands: bypass debounce, process immediately
+            # CC and slash commands: process inline (fast path, ordering critical)
             _is_cc = msg.source == "web" and msg.author == "claude-code"
             _is_slash = msg.content.strip().startswith("/")
             if _is_cc or _is_slash:
                 self._process_network_msg(msg, _thread_id)
                 continue
 
-            # Regular message: add to debounce buffer
-            if _thread_id not in self._net_debounce:
-                self._net_debounce[_thread_id] = {"msgs": [], "last_time": 0.0}
-            self._net_debounce[_thread_id]["msgs"].append(msg)
-            self._net_debounce[_thread_id]["last_time"] = time.time()
-            console.print(f"[dim]{_cts()}(buffering...)[/]")
+            # Regular message: dispatch to per-thread worker (non-blocking)
+            self._enqueue_network_msg(msg, _thread_id)
 
-    def _flush_debounced_network(self):
+    def _enqueue_network_msg(self, msg, thread_id: str) -> None:
         """
-        Process network threads that have been idle for DEBOUNCE_SECS.
-        Called each main loop tick after _drain_network().
-        """
-        now = time.time()
-        for _thread_id, buf in list(self._net_debounce.items()):
-            if not buf["msgs"]:
-                del self._net_debounce[_thread_id]
-                continue
-            if now - buf["last_time"] < DEBOUNCE_SECS:
-                continue
-            # Timer fired — process all buffered messages as a merged turn
-            msgs = buf.pop("msgs")
-            buf["last_time"] = 0.0
-            del self._net_debounce[_thread_id]
+        #200: Put msg in the per-thread queue and ensure a worker thread is running.
 
-            if len(msgs) == 1:
-                self._process_network_msg(msgs[0], _thread_id)
-            else:
-                # G64: merge multi-message turn; label [STATEMENT]/[REVISION] if repair detected
-                last = msgs[-1]
-                merged_content = _smart_merge([m.content for m in msgs])
-                last.content = merged_content
-                self._process_network_msg(last, _thread_id)
+        Worker threads are daemon threads — one per active thread_id. Each drains its
+        queue sequentially so conversation order is preserved. Worker exits when idle.
+        """
+        if thread_id not in self._thread_queues:
+            self._thread_queues[thread_id] = queue.Queue()
+        self._thread_queues[thread_id].put(msg)
+
+        worker = self._thread_workers.get(thread_id)
+        if worker is None or not worker.is_alive():
+            t = threading.Thread(
+                target=self._thread_worker,
+                args=(thread_id, self._thread_queues[thread_id]),
+                daemon=True,
+                name=f"worker-{thread_id}",
+            )
+            self._thread_workers[thread_id] = t
+            t.start()
+
+    def _thread_worker(self, thread_id: str, q: queue.Queue) -> None:
+        """
+        #200: Per-thread worker — drains queue sequentially, exits when idle 5s.
+
+        Runs in a daemon thread. Multiple messages for the same thread_id are
+        processed in order. LLM calls happen here, never in the main loop.
+        Cross-turn revisions handled by G64 _detect_self_repair() inside _process_inner().
+        """
+        while True:
+            try:
+                msg = q.get(timeout=5.0)
+            except queue.Empty:
+                break  # idle — worker exits; restarted on next message
+
+            try:
+                self._process_network_msg(msg, thread_id)
+            except Exception as _e:
+                loginfo(f"[yellow][WORKER/{thread_id}] Error: {_e}[/]")
 
     @staticmethod
     def _igor_lisp(text: str) -> str:
@@ -4284,6 +4176,7 @@ class Igor:
             "levers": self._cmd_levers,       # #182
             "why": self._cmd_why,             # #182
             "hygiene": self._cmd_hygiene,     # #152
+            "trace": self._cmd_trace,         # #203: last N turn traces
         }
         fn = commands.get(command, self._cmd_unknown)
         fn(raw)
@@ -4368,6 +4261,24 @@ class Igor:
             ne=self.ne,
         )
         loginfo(report)
+
+    def _cmd_trace(self, raw: str):
+        """
+        #203: Print last N turn traces from turn_trace.YYYYMMDD.log.
+        Usage: /trace [N]   (default N=3)
+        Shows: full TurnContext dict per turn — routing, thalamus, LLM call, cost, etc.
+        Useful for: 'what actually happened on that weird turn?'
+        """
+        from .cognition.forensic_logger import read_last_turn_traces as _read_traces
+        parts = raw.strip().split()
+        n = 3
+        if len(parts) >= 2:
+            try:
+                n = int(parts[1])
+            except ValueError:
+                pass
+        loginfo(f"\n[bold cyan]═ Last {n} turn trace(s) ═══════════════════════════[/]")
+        loginfo(f"[dim]{_read_traces(n)}[/]")
 
     def _cmd_hygiene(self, raw):
         """
@@ -4841,7 +4752,7 @@ class Igor:
         if any(p in t for p in _local_words):
             if self.local_mode:
                 return "I am operating in local-only mode, Mashter. No cloud callth."
-            cloud_ok = self.openrouter_interactive_reasoner is not None
+            cloud_ok = self._gateway._t35 is not None
             return (
                 "Cloud ith available, Mashter."
                 if cloud_ok else
@@ -5395,8 +5306,8 @@ class Igor:
 
     def _all_cloud_reasoners(self) -> dict:
         result = {}
-        if self.openrouter_reasoner:
-            result["openrouter"] = self.openrouter_reasoner
+        if self._gateway._t4:
+            result["openrouter"] = self._gateway._t4
         result.update(self._extra_reasoners)
         return result
 
@@ -5505,30 +5416,35 @@ class Igor:
 
         state = "[green]ON[/]" if self.local_mode else "[yellow]OFF[/]"
         if self.local_mode:
-            self.local_pool._refresh()  # Re-read machines.json
-            loginfo(f"\n[bold]Local mode:[/] {state}")
-            loginfo(f"[dim]Pool: {self.local_pool.machines_summary()}[/]")
+            if self._gateway._t2:
+                self._gateway._t2._refresh()  # Re-read machines.json
+                loginfo(f"\n[bold]Local mode:[/] {state}")
+                loginfo(f"[dim]Pool: {self._gateway._t2.machines_summary()}[/]")
+            else:
+                loginfo(f"\n[bold]Local mode:[/] {state}  [dim](no local pool available)[/]")
         else:
-            loginfo(f"\n[bold]Local mode:[/] {state}  [dim](using cloud: {self.reasoner.model})[/]")
+            _cloud_model = self._gateway._t4.model if self._gateway._t4 else "none"
+            loginfo(f"\n[bold]Local mode:[/] {state}  [dim](using cloud: {_cloud_model})[/]")
 
     def _cmd_model(self, raw):
         from .cognition.reasoners.anthropic import MODEL_ALIASES
         parts = raw.strip().split(None, 1)
         if len(parts) < 2:
-            if self.local_mode:
-                loginfo(f"\n[bold]Current model (local):[/] {self.local_pool.model}")
-                loginfo(f"[dim]Pool: {self.local_pool.machines_summary()}[/]")
+            if self.local_mode and self._gateway._t2:
+                loginfo(f"\n[bold]Current model (local):[/] {self._gateway._t2.model}")
+                loginfo(f"[dim]Pool: {self._gateway._t2.machines_summary()}[/]")
             else:
-                loginfo(f"\n[bold]Current model (cloud):[/] {self.reasoner.model}")
+                _m = self._gateway._t4.model if self._gateway._t4 else "none"
+                loginfo(f"\n[bold]Current model (cloud):[/] {_m}")
                 aliases = ", ".join(f"{k} → {v}" for k, v in MODEL_ALIASES.items())
                 loginfo(f"[dim]Aliases: {aliases}[/]")
             return
         name = parts[1].strip()
-        if self.local_mode:
-            self.local_pool.set_model(name)
+        if self.local_mode and self._gateway._t2:
+            self._gateway._t2.set_model(name)
             loginfo(f"\n[green]Ollama model switched to:[/] {name}")
-        else:
-            resolved = self.reasoner.set_model(name)
+        elif self._gateway._t4:
+            resolved = self._gateway._t4.set_model(name)
             loginfo(f"\n[green]Cloud model switched to:[/] {resolved}")
 
     def _cmd_compress(self, _):

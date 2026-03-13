@@ -28,12 +28,21 @@ class Tool:
 
     def to_openai_schema(self) -> dict:
         """Convert to OpenAI function-calling format."""
+        params = self.parameters
+        # Normalize shorthand {param: {type, desc}} to full JSON Schema object.
+        # OpenAI/gpt-4o-mini rejects schemas missing "type": "object" at top level.
+        if params.get("type") != "object" and "properties" not in params:
+            params = {
+                "type": "object",
+                "properties": params,
+                "required": [],
+            }
         return {
             "type": "function",
             "function": {
                 "name": self.name,
                 "description": self.description,
-                "parameters": self.parameters,
+                "parameters": params,
             },
         }
 
