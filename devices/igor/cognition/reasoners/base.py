@@ -37,6 +37,11 @@ exit_requested: threading.Event = threading.Event()
 # verbatim in anthropic.py and openrouter_reasoner.py)
 _RING_EXCLUDE = frozenset({"tool_trace", "judgment", "action_impulse", "ne_diagnostic"})
 _RING_CONTEXT_LIMIT = 10
+# #199: Exclude ring entries older than this from LLM context injection.
+# Entries stay in DB for cortex.search() / history — only filtered from live context.
+# Default 8h keeps same-day context, drops yesterday's stale actions/completions.
+import os as _os
+_RING_CONTEXT_MAX_AGE_HOURS = float(_os.getenv("IGOR_RING_CONTEXT_MAX_AGE_HOURS", "8"))
 
 # ── Token economy (shared across all reasoners) ────────────────────────────────
 # Each tool result is capped before it enters the message history.
@@ -196,6 +201,17 @@ class BaseReasoner(ABC):
         if cortex is None:
             return ""
         all_entries = cortex.read_ring_memory(limit=50, thread_id=thread_id)
+        # #199: drop entries older than _RING_CONTEXT_MAX_AGE_HOURS from live context.
+        # They remain in DB for history/search — just not injected into LLM context.
+        try:
+            from datetime import datetime as _dt2
+            _cutoff = _dt2.now().timestamp() - _RING_CONTEXT_MAX_AGE_HOURS * 3600
+            all_entries = [
+                e for e in all_entries
+                if _dt2.fromisoformat(e["timestamp"]).timestamp() >= _cutoff
+            ]
+        except Exception:
+            pass  # on parse error keep all entries
         filtered = [e for e in all_entries if e["category"] not in _RING_EXCLUDE]
         entries = filtered[-_RING_CONTEXT_LIMIT:]
 
