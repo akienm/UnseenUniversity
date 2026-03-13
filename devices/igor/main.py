@@ -2958,10 +2958,16 @@ class Igor:
             elif habit.id == "PROC_NOTEBOOK_SAVE":
                 response_text = self._notebook_save_from_input(user_input, thread_id)
             else:
-                # "action", "response", or unset: return stored action text
-                response_text = habit.metadata.get(
-                    "action", f"Habit executed. [{habit.id}: {habit.narrative[:80]}]"
-                )
+                # "action", "response", or unset: return stored action text.
+                # "actions" (list) → pick one randomly for natural variation.
+                _actions = habit.metadata.get("actions")
+                if _actions and isinstance(_actions, list):
+                    import random as _random
+                    response_text = _random.choice(_actions)
+                else:
+                    response_text = habit.metadata.get(
+                        "action", f"Habit executed. [{habit.id}: {habit.narrative[:80]}]"
+                    )
             self.cortex.record_activation(habit.id, 0.05)
             _log_pt(turn_id=_turn_id, step="habit_exec",
                     elapsed_ms=round((_time.monotonic() - _tc) * 1000),

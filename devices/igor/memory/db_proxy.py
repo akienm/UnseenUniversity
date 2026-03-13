@@ -55,6 +55,13 @@ class _DBContext:
         self._proxy._record(elapsed_ms, error=exc_type is not None)
         if self._conn is not None:
             try:
+                if exc_type is None:
+                    self._conn.commit()   # persist writes — matches `with conn:` semantics
+                else:
+                    self._conn.rollback()
+            except Exception:
+                pass
+            try:
                 self._conn.close()
             except Exception:
                 pass

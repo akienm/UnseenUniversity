@@ -275,6 +275,18 @@ class BaseReasoner(ABC):
         except Exception:
             pass
 
+        # Helper: format a ring-entry timestamp so Igor can distinguish
+        # "this happened 3 days ago" from "this is happening right now."
+        # Same-day entries show HH:MM; older entries show YYYY-MM-DD HH:MM.
+        from datetime import date as _rdate
+        _ring_today = _rdate.today().isoformat()
+        def _ring_ts(raw_ts: str) -> str:
+            if len(raw_ts) < 10:
+                return raw_ts
+            if raw_ts[:10] == _ring_today:
+                return raw_ts[11:16] if len(raw_ts) >= 16 else raw_ts
+            return raw_ts[:16]  # YYYY-MM-DD HH:MM — date visible when not today
+
         if anchor_content:
             # Strip NE run tag for readability: "[NE#42] text" → "text"
             _arc = anchor_content
@@ -291,13 +303,11 @@ class BaseReasoner(ABC):
             if delta:
                 lines.append("Recent context (since last arc):")
                 for e in delta:
-                    ts = e["timestamp"][11:16] if len(e["timestamp"]) >= 16 else e["timestamp"]
-                    lines.append(f"[{ts}] {e['content']}")
+                    lines.append(f"[{_ring_ts(e['timestamp'])}] {e['content']}")
         else:
             lines.append("\n\nRecent session context (newest last):")
             for e in entries:
-                ts = e["timestamp"][11:16] if len(e["timestamp"]) >= 16 else e["timestamp"]
-                lines.append(f"[{ts}] {e['content']}")
+                lines.append(f"[{_ring_ts(e['timestamp'])}] {e['content']}")
         return "\n".join(lines)
 
     def _build_memory_context(self, memories: list[Memory]) -> str:
@@ -313,9 +323,32 @@ class BaseReasoner(ABC):
             )[:2]
         if not high_rel:
             return ""
+        from datetime import datetime as _mdt, date as _mdate
+        _today = _mdate.today()
         lines = ["\n\nRelevant memories:"]
         for m in high_rel:
-            lines.append(f"- [{m.memory_type.value}] {m.narrative}")
+            # Temporal anchor: Igor can see exactly when a memory was stored.
+            # This prevents treating old memories as current reality.
+            try:
+                ts = m.timestamp
+                if isinstance(ts, str):
+                    ts = _mdt.fromisoformat(ts.replace("Z", "+00:00"))
+                if hasattr(ts, "date"):
+                    d = ts.date()
+                    age_days = (_today - d).days
+                    if age_days == 0:
+                        _ts_label = f"today {ts.strftime('%H:%M')}"
+                    elif age_days == 1:
+                        _ts_label = f"yesterday {ts.strftime('%H:%M')}"
+                    elif age_days < 30:
+                        _ts_label = f"{age_days}d ago ({d})"
+                    else:
+                        _ts_label = str(d)
+                else:
+                    _ts_label = "?"
+            except Exception:
+                _ts_label = "?"
+            lines.append(f"- [{m.memory_type.value} | stored {_ts_label}] {m.narrative}")
         return "\n".join(lines)
 
 
