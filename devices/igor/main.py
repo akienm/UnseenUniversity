@@ -61,6 +61,77 @@ CHANGE_REQUEST_PATH = Path.home() / ".TheIgors" / "claudecode" / "change_request
 # Commands (/...) always bypass debounce and are processed immediately.
 DEBOUNCE_SECS = float(os.getenv("IGOR_INPUT_DEBOUNCE_MS", "3000")) / 1000.0
 
+# ── Self-repair / turn revision detection (G64) ────────────────────────────────
+# When a user revises their own prior statement ("Yes! ... Oh wait, I can't"),
+# the second message is a REVISION — its meaning is tied to and modifies the
+# first. The debounce bandaid merged them by time; G64 models the relationship.
+#
+# Two paths:
+#   1. Same-batch: messages arrive within DEBOUNCE_SECS → _smart_merge() labels
+#      them [STATEMENT] / [REVISION] instead of plain \n-joining.
+#   2. Cross-turn: new turn arrives after Igor responded → _detect_self_repair()
+#      checks ring_memory for the prior human turn and writes a [SELF-REPAIR]
+#      context note so the LLM interprets the revised meaning.
+_REPAIR_WINDOW_SECS = 90.0   # cross-turn: max gap between statement and revision
+_REPAIR_MARKERS = (
+    "oh ", "oh!", "oh,", "oh—",
+    "wait", "actually", "hmm", "hold on",
+    "never mind", "nevermind", "scratch that", "forget that",
+    "correction:", "no wait", "no, wait", "but wait",
+    "i can't", "i cannot", "can't do", "cannot do",
+    "on second thought", "second thought",
+    "sorry,", "sorry —",
+)
+
+
+def _detect_self_repair(
+    user_input: str,
+    thread_id: "str | None",
+    cortex,
+    window_secs: float = _REPAIR_WINDOW_SECS,
+) -> "str | None":
+    """
+    Return the prior human turn text if user_input looks like a revision of it.
+    Conditions: (1) contains a repair marker; (2) last user_turn ring entry is
+    within window_secs.  Returns None if no repair is detected.
+    """
+    _lower = user_input.lower().strip()
+    if not any(_lower.startswith(m) or f" {m}" in _lower for m in _REPAIR_MARKERS):
+        return None
+    try:
+        from datetime import datetime as _dt
+        recent = cortex.read_ring_memory(limit=5, category="user_turn", thread_id=thread_id)
+        if not recent:
+            return None
+        last = recent[-1]
+        age = (_dt.now() - _dt.fromisoformat(last["timestamp"])).total_seconds()
+        if age > window_secs:
+            return None
+        prior = last["content"]
+        if prior.startswith("USER_INPUT: "):
+            prior = prior[len("USER_INPUT: "):]
+        return prior.strip() or None
+    except Exception:
+        return None
+
+
+def _smart_merge(texts: "list[str]") -> str:
+    """
+    Merge multiple human messages from the same debounce window.
+    If any message after the first contains a repair marker, label them
+    [STATEMENT] / [REVISION] so the LLM models the semantic relationship.
+    Falls back to plain \\n-join when no repair is detected.
+    """
+    if len(texts) == 1:
+        return texts[0]
+    rest = " ".join(texts[1:]).lower()
+    if any(rest.startswith(m) or f" {m}" in rest for m in _REPAIR_MARKERS):
+        statement = texts[0]
+        revision  = "\n".join(texts[1:])
+        return f"[STATEMENT]: {statement}\n[REVISION]: {revision}"
+    return "\n".join(texts)
+
+
 # ── Exit interrupt event ───────────────────────────────────────────────────────
 # Canonical instance lives in cognition/reasoners/base.py so reasoners can check
 # it without a circular import. We import and re-expose it here for _stdin_reader.
@@ -1747,7 +1818,7 @@ class Igor:
                 if _line is None:
                     # EOF sentinel from stdin reader (Ctrl-D / KeyboardInterrupt)
                     if _stdin_buffer:
-                        self._process("\n".join(_stdin_buffer), thread_id="stdin:main")
+                        self._process(_smart_merge(_stdin_buffer), thread_id="stdin:main")
                     self._shutdown(reason="EOF/Ctrl-D")
                     break
 
@@ -1757,7 +1828,7 @@ class Igor:
                 elif _stripped.startswith("/"):
                     # Command: flush any buffered input first, then process immediately
                     if _stdin_buffer:
-                        self._process("\n".join(_stdin_buffer), thread_id="stdin:main")
+                        self._process(_smart_merge(_stdin_buffer), thread_id="stdin:main")
                         _stdin_buffer.clear()
                         _stdin_last_time = 0.0
                     self._process(_stripped, thread_id="stdin:main")
@@ -1772,7 +1843,7 @@ class Igor:
 
             # ── Flush stdin buffer if idle for DEBOUNCE_SECS ─────────────────
             if _stdin_buffer and time.time() - _stdin_last_time >= DEBOUNCE_SECS:
-                self._process("\n".join(_stdin_buffer), thread_id="stdin:main")
+                self._process(_smart_merge(_stdin_buffer), thread_id="stdin:main")
                 _stdin_buffer.clear()
                 _stdin_last_time = 0.0
                 if _exit_requested.is_set():
@@ -2034,6 +2105,24 @@ class Igor:
             user_input_source.push_message(
                 self.cortex, user_input, channel="repl", author="user"
             )
+
+        # G64 — cross-turn self-repair detection.
+        # If this turn contains a repair marker ("oh wait", "actually", "I can't", ...)
+        # and the last human turn in ring was within _REPAIR_WINDOW_SECS, write a
+        # [SELF-REPAIR] ring note so the LLM sees the revision relationship explicitly
+        # rather than treating this turn as an independent statement.
+        if not is_impulse and not user_input.startswith("/"):
+            _repair_prior = _detect_self_repair(user_input, thread_id, self.cortex)
+            if _repair_prior:
+                self.cortex.write_ring(
+                    f"[SELF-REPAIR] Prior statement revised. "
+                    f"Prior: \"{_repair_prior[:250]}\" — "
+                    f"Revision: \"{user_input[:250]}\". "
+                    "Interpret revised meaning; original commitment is retracted.",
+                    category="self_repair",
+                    thread_id=thread_id,
+                )
+                console.print(f"[dim]{_cts()}[REPAIR] Revision of: {_repair_prior[:60]}[/]")
 
         # #180: Investment weight pre-check — somatic marker equivalent.
         # Before any traversal or thalamus: does this input mention a high-investment node?
@@ -4006,9 +4095,9 @@ class Igor:
             if len(msgs) == 1:
                 self._process_network_msg(msgs[0], _thread_id)
             else:
-                # Merge multi-message turn: join content, use last msg's metadata
+                # G64: merge multi-message turn; label [STATEMENT]/[REVISION] if repair detected
                 last = msgs[-1]
-                merged_content = "\n".join(m.content for m in msgs)
+                merged_content = _smart_merge([m.content for m in msgs])
                 last.content = merged_content
                 self._process_network_msg(last, _thread_id)
 
