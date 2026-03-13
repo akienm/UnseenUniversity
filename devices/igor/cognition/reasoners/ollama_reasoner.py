@@ -302,6 +302,7 @@ class OllamaReasoner(LocalReasoner):
         instance_id: str,
         cortex=None,
         thread_id: str | None = None,
+        force_local: bool = False,
     ) -> tuple[str, float]:
         # Use role="analysis" system prompt when cortex is available (G57):
         # CP1-CP6 + brief identity — enough structure for local reasoning,
@@ -323,15 +324,18 @@ class OllamaReasoner(LocalReasoner):
 
         _context_chars = len(system) + len(user_input) + len(memory_context)  # G55
 
-        # Cloud training mode: skip tier.2 Ollama — escalate to cloud (#CLOUD)
-        try:
-            from ..cloud_mode import is_cloud_training_active as _cloud_active
-            if _cloud_active():
-                raise RuntimeError("cloud_mode active — skip tier.2 Ollama")
-        except RuntimeError:
-            raise
-        except Exception:
-            pass
+        # Cloud training mode: skip tier.2 Ollama — escalate to cloud (#CLOUD).
+        # force_local=True bypasses this gate: background/impulse turns run as long
+        # as needed regardless of cloud_mode (no interactive latency requirement).
+        if not force_local:
+            try:
+                from ..cloud_mode import is_cloud_training_active as _cloud_active
+                if _cloud_active():
+                    raise RuntimeError("cloud_mode active — skip tier.2 Ollama")
+            except RuntimeError:
+                raise
+            except Exception:
+                pass
 
         t0 = time.perf_counter()
         try:
