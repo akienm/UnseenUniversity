@@ -42,7 +42,9 @@ def embed(text: str, model: str = EMBED_MODEL) -> Optional[list[float]]:
     # ── Ollama call ───────────────────────────────────────────────────────────
     try:
         import ollama as _ollama
-        response = _ollama.embeddings(model=model, prompt=text)
+        # keep_alive=-1: keep nomic-embed-text loaded indefinitely.
+        # Without this, Ollama evicts it between searches (cold-load = 30-65s).
+        response = _ollama.embeddings(model=model, prompt=text, keep_alive=-1)
         vector: list[float] = response["embedding"]
         if not vector:
             return None
