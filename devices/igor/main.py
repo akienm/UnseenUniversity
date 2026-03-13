@@ -50,6 +50,22 @@ from .cognition.job_manager import JobManager
 
 console = Console()
 
+
+def loginfo(msg, **kw):
+    """
+    All runtime console output should go through loginfo().
+    Auto-prepends _cts() timestamp so every line is traceable.
+    Strips an existing leading _cts() prefix to avoid double-stamping
+    when callers were already using the old pattern.
+    """
+    _ts = _cts()
+    _msg = str(msg)
+    # Strip existing _cts()-style prefix (HHmmss + optional space/bracket) to avoid duplication
+    if _msg.startswith(_ts.strip()):
+        _msg = _msg[len(_ts.strip()):].lstrip()
+    console.print(f"{_ts}{_msg}", **kw)
+
+
 _IGOR_DB_ENV = os.getenv("IGOR_DB_PATH")
 DATA_DIR = Path(_IGOR_DB_ENV).expanduser().parent if _IGOR_DB_ENV else Path(__file__).parent.parent / "data"
 CHANGE_LOG_PATH    = Path.home() / ".TheIgors" / "claudecode" / "changes.log"
@@ -1863,7 +1879,7 @@ class Igor:
                     _restart_flag.unlink()
                 except Exception:
                     pass
-                console.print("[cyan][EXTERNAL] Restart flag detected — restarting...[/]")
+                loginfo("[cyan][EXTERNAL] Restart flag detected — restarting...[/]")
                 self._shutdown(reason="restart flag (external)")
                 sys.exit(42)
 
@@ -1947,7 +1963,7 @@ class Igor:
             from .tools.budget import is_cloud_blocked as _is_cloud_blocked
             _blocked, _block_reason = _is_cloud_blocked()
             if _blocked:
-                console.print(f"[yellow][BUDGET] {_block_reason}[/]")
+                loginfo(f"[yellow][BUDGET] {_block_reason}[/]")
                 from .cognition.reasoners.ollama_reasoner import OllamaReasoner as _OllamaReasoner
                 _local_r = _OllamaReasoner()
                 _local_text, _local_cost = _local_r.reason(
@@ -1959,7 +1975,7 @@ class Igor:
         except Exception as _budget_exc:
             # If the budget check itself or local fallback fails, proceed to cloud
             # (better to try cloud than to silently fail)
-            console.print(f"[dim][BUDGET] local fallback error: {_budget_exc}[/]")
+            loginfo(f"[dim][BUDGET] local fallback error: {_budget_exc}[/]")
 
         last_error: str = ""
 
@@ -1973,11 +1989,11 @@ class Igor:
                     cortex=self.cortex, preparse_csb=preparse_csb, thread_id=thread_id
                 )
                 self.cloud_calls += 1
-                console.print(f"[dim](tier.3/or-cheap | session_cost: ${self.session_cost + cost:.4f})[/]")
+                loginfo(f"[dim](tier.3/or-cheap | session_cost: ${self.session_cost + cost:.4f})[/]")
                 return text, cost, True
             except Exception as e:
                 last_error = str(e)
-                console.print(f"[yellow]tier.3 OR-cheap failed ({e}), trying tier.3.5...[/]")
+                loginfo(f"[yellow]tier.3 OR-cheap failed ({e}), trying tier.3.5...[/]")
                 from .cognition.forensic_logger import log_error as _log_error
                 _log_error(kind="TIER_FAIL", source="tier.3", detail=str(e))
 
@@ -1991,11 +2007,11 @@ class Igor:
                     cortex=self.cortex, preparse_csb=preparse_csb, thread_id=thread_id
                 )
                 self.cloud_calls += 1
-                console.print(f"[dim](tier.3.5/or-interactive | session_cost: ${self.session_cost + cost:.4f})[/]")
+                loginfo(f"[dim](tier.3.5/or-interactive | session_cost: ${self.session_cost + cost:.4f})[/]")
                 return text, cost, True
             except Exception as e:
                 last_error = str(e)
-                console.print(f"[yellow]tier.3.5 OR-interactive failed ({e}), trying OR-claude...[/]")
+                loginfo(f"[yellow]tier.3.5 OR-interactive failed ({e}), trying OR-claude...[/]")
                 from .cognition.forensic_logger import log_error as _log_error
                 _log_error(kind="TIER_FAIL", source="tier.3.5", detail=str(e))
 
@@ -2009,11 +2025,11 @@ class Igor:
                     cortex=self.cortex, preparse_csb=preparse_csb, thread_id=thread_id
                 )
                 self.cloud_calls += 1
-                console.print(f"[dim](tier.4/or-claude | session_cost: ${self.session_cost + cost:.4f})[/]")
+                loginfo(f"[dim](tier.4/or-claude | session_cost: ${self.session_cost + cost:.4f})[/]")
                 return text, cost, True
             except Exception as e:
                 last_error = str(e)
-                console.print(f"[yellow]tier.4 OR-claude failed ({e}), trying Anthropic direct...[/]")
+                loginfo(f"[yellow]tier.4 OR-claude failed ({e}), trying Anthropic direct...[/]")
                 from .cognition.forensic_logger import log_error as _log_error
                 _log_error(kind="TIER_FAIL", source="tier.4", detail=str(e))
 
@@ -2022,7 +2038,7 @@ class Igor:
         # Set IGOR_TIER5_ENABLED=true in .env only when OR is exhausted and Akien approves.
         if os.getenv("IGOR_TIER5_ENABLED", "false").lower() not in ("1", "true", "yes"):
             last_error = "tier.5 inhibited (IGOR_TIER5_ENABLED not set)"
-            console.print("[yellow]tier.5 (Anthropic direct) inhibited — set IGOR_TIER5_ENABLED=true to enable[/]")
+            loginfo("[yellow]tier.5 (Anthropic direct) inhibited — set IGOR_TIER5_ENABLED=true to enable[/]")
         else:
             self._current_action = "reasoning"; self._current_tier = "tier.5"
             web_server.broadcast_activity(self._activity_state())
@@ -2032,11 +2048,11 @@ class Igor:
                     cortex=self.cortex, preparse_csb=preparse_csb, thread_id=thread_id
                 )
                 self.cloud_calls += 1
-                console.print(f"[dim](tier.5/anthropic | session_cost: ${self.session_cost + cost:.4f})[/]")
+                loginfo(f"[dim](tier.5/anthropic | session_cost: ${self.session_cost + cost:.4f})[/]")
                 return text, cost, True
             except Exception as e:
                 last_error = str(e)
-                console.print(f"[yellow]tier.5 Anthropic failed ({e}), escalating to arbiter...[/]")
+                loginfo(f"[yellow]tier.5 Anthropic failed ({e}), escalating to arbiter...[/]")
                 from .cognition.forensic_logger import log_error as _log_error
                 _log_error(kind="TIER_FAIL", source="tier.5", detail=str(e))
 
@@ -2052,9 +2068,9 @@ class Igor:
                 threshold_reason="Total cloud inference failure (tiers 3-5 all failed)",
                 metadata={"tier_failures": ["tier.3", "tier.4", "tier.5"]},
             )
-            console.print(f"[bold red][tier.6] All cloud inference failed. Arbiter alert #{item_id} queued.[/]")
+            loginfo(f"[bold red][tier.6] All cloud inference failed. Arbiter alert #{item_id} queued.[/]")
         except Exception:
-            console.print("[bold red][tier.6] All cloud inference failed and arbiter unavailable.[/]")
+            loginfo("[bold red][tier.6] All cloud inference failed and arbiter unavailable.[/]")
         return (
             "⚠ All cloud inference is currently unavailable. "
             "I've queued a notification for akien.",
@@ -2144,7 +2160,7 @@ class Igor:
                             source="investment_check",
                             metadata={"memory_id": _inode.id, "investment_weight": _iweight},
                         )
-                        console.print(
+                        loginfo(
                             f"[dim][INVEST] {_inode.id} (w={_iweight:.2f}, prox={_iprox}) → TWM[/]"
                         )
             except Exception:
@@ -2219,7 +2235,7 @@ class Igor:
                     )
                     if _twm_id:
                         self.cortex.twm_set_attractor(_twm_id, weight=0.7)
-                    console.print(
+                    loginfo(
                         f"[dim][NEXUS] High-traffic: {thread_id}"
                         f" ({len(_window184)}/5min) → attractor[/]"
                     )
@@ -2239,7 +2255,7 @@ class Igor:
                 thread_id=thread_id,
                 category="task_set",
             )
-            console.print(f"[dim][TASK_SET] Anchored: {_task_goal[:80]}[/]")
+            loginfo(f"[dim][TASK_SET] Anchored: {_task_goal[:80]}[/]")
 
         # Handle commands
         if parsed.is_command:
@@ -2257,12 +2273,12 @@ class Igor:
                 if any(_lower == w or _lower.startswith(w + " ") for w in _approve_words):
                     # Approve the oldest pending item
                     _item = _pending[0]
-                    console.print(f"[dim](Arbiter intercept: treating '{_lower}' as /arbiter approve {_item.id})[/]")
+                    loginfo(f"[dim](Arbiter intercept: treating '{_lower}' as /arbiter approve {_item.id})[/]")
                     self._arbiter_resolve(_aq, _item.id, "approved")
                     return ""
                 if any(_lower == w or _lower.startswith(w + " ") for w in _deny_words):
                     _item = _pending[0]
-                    console.print(f"[dim](Arbiter intercept: treating '{_lower}' as /arbiter deny {_item.id})[/]")
+                    loginfo(f"[dim](Arbiter intercept: treating '{_lower}' as /arbiter deny {_item.id})[/]")
                     self._arbiter_resolve(_aq, _item.id, "denied")
                     return ""
         except Exception:
@@ -2272,7 +2288,7 @@ class Igor:
         if self._relay_session is not None and not is_impulse:
             response = self._relay_session.send(user_input)
             from rich.markup import escape as _escape
-            console.print(f"\n[bold magenta][relay: {self._relay_session.model_name}][/] {_escape(response)}\n")
+            loginfo(f"\n[bold magenta][relay: {self._relay_session.model_name}][/] {_escape(response)}\n")
             return response
 
         # ── Part C — Routing signal detection ──────────────────────────────────
@@ -2336,10 +2352,10 @@ class Igor:
                         _bc_session = thread_id[4:] or "shared"
                         web_server.send(_bc_text, session_id=_bc_session)
                     else:
-                        console.print(f"[dim]{_bc_text}[/]")
-                    console.print(f"[dim][BC] {_bc_text!r} (level={_bc.level}, {_bc.reason})[/]")
+                        loginfo(f"[dim]{_bc_text}[/]")
+                    loginfo(f"[dim][BC] {_bc_text!r} (level={_bc.level}, {_bc.reason})[/]")
             except Exception as _bc_e:
-                console.print(f"[yellow][BC] backchannel error: {_bc_e}[/]")
+                loginfo(f"[yellow][BC] backchannel error: {_bc_e}[/]")
 
         # #121 + #50: Prospective NE pass — predict habit + pre-warm memory search topics
         _ne_search_keys: list[str] = []
@@ -2409,7 +2425,7 @@ class Igor:
                 _PREPARSE_SLOW_MS = int(os.getenv("IGOR_LATENCY_PREPARSE_SLOW_MS", "2500"))
                 if not _skip_llm_preparse and _lp["preparse_ms_p50"] > _PREPARSE_SLOW_MS:
                     _skip_llm_preparse = True
-                    console.print(
+                    loginfo(
                         f"[dim][LATENCY] preparse p50={_lp['preparse_ms_p50']}ms "
                         f"> {_PREPARSE_SLOW_MS}ms → skipping LLM preparse[/]"
                     )
@@ -2418,7 +2434,7 @@ class Igor:
                 _t2 = _lp["tier_reasoning"].get("tier.2", {})
                 if _t2.get("n", 0) >= 3 and _t2.get("p50", 0) > _TIER2_SLOW_MS:
                     _latency_skip_to_override = "tier.3"
-                    console.print(
+                    loginfo(
                         f"[dim][LATENCY] tier.2 p50={_t2['p50']}ms "
                         f"> {_TIER2_SLOW_MS}ms → routing skips to tier.3[/]"
                     )
@@ -2543,9 +2559,9 @@ class Igor:
                     exit_on_convergence=_exit_on_convergence,
                 )
                 if _trav_strategy:
-                    console.print(f"[dim][#181] traversal_strategy={_trav_strategy} depth={_trav_depth}[/]")
+                    loginfo(f"[dim][#181] traversal_strategy={_trav_strategy} depth={_trav_depth}[/]")
                 if _milieu_bias:
-                    console.print(f"[dim][#171] milieu_bias={_milieu_bias}[/]")
+                    loginfo(f"[dim][#171] milieu_bias={_milieu_bias}[/]")
                 # #182: meta-cognition — track traversal direction; notice persistent upward search
                 _trav_dir = getattr(parsed, "traversal_direction", "")
                 if _trav_dir:
@@ -2565,14 +2581,14 @@ class Igor:
                     _new_interp = [m for m in _interp if m.id not in _existing_ids]
                     if _new_interp:
                         relevant = list(relevant) + _new_interp[:5]
-                        console.print(f"[dim][INTERP] +{len(_new_interp)} interpretive memories from tree traversal[/]")
+                        loginfo(f"[dim][INTERP] +{len(_new_interp)} interpretive memories from tree traversal[/]")
                 # #178: record traversal for boredom tracking; apply resistance to over-used nodes
                 try:
                     from .cognition import boredom as _boredom_mod
                     _boredom_mod.record_traversals([m.id for m in relevant])
                     relevant = _boredom_mod.apply_boredom(list(relevant))
                     if _boredom_mod.boredom_level() > 0.5:
-                        console.print(f"[dim][BOREDOM] level={_boredom_mod.boredom_level():.2f} — novelty forcing active[/]")
+                        loginfo(f"[dim][BOREDOM] level={_boredom_mod.boredom_level():.2f} — novelty forcing active[/]")
                 except Exception:
                     pass
 
@@ -2615,7 +2631,7 @@ class Igor:
                                 _fork_new = [m for m in _fork_results if m.id not in _existing_ids]
                                 if _fork_new:
                                     relevant = list(relevant) + _fork_new[:3]
-                                    console.print(
+                                    loginfo(
                                         f"[dim][FORK] Mode B ({_fork_reason}): "
                                         f"+{len(_fork_new)} from deeper traversal "
                                         f"seeded at {_fork_seed_node.id[:16]}[/]"
@@ -2665,7 +2681,7 @@ class Igor:
                                     _best_label = _path_label
                             if _best_path:
                                 relevant = list(relevant) + _best_path[:3]
-                                console.print(
+                                loginfo(
                                     f"[dim][FORK] Mode A winner={_best_label} "
                                     f"score={_best_score:.2f} +{len(_best_path[:3])} memories[/]"
                                 )
@@ -2690,12 +2706,12 @@ class Igor:
                         if _prev_ids:
                             _overlap = len(_mull_ids & _prev_ids) / max(len(_prev_ids), 1)
                             if _overlap >= _mull_novelty:
-                                console.print(f"[dim][MULL] pass {_mull_pass+1}: overlap={_overlap:.2f} ≥ {_mull_novelty} — no new consequence, exiting[/]")
+                                loginfo(f"[dim][MULL] pass {_mull_pass+1}: overlap={_overlap:.2f} ≥ {_mull_novelty} — no new consequence, exiting[/]")
                                 break
                         _new_mull = [m for m in _mull_results if m.id not in {r.id for r in relevant}]
                         if _new_mull:
                             relevant = list(relevant) + _new_mull[:3]
-                            console.print(f"[dim][MULL] pass {_mull_pass+1}: +{len(_new_mull)} new memories (overlap={_overlap if _prev_ids else 0:.2f})[/]")
+                            loginfo(f"[dim][MULL] pass {_mull_pass+1}: +{len(_new_mull)} new memories (overlap={_overlap if _prev_ids else 0:.2f})[/]")
                         _prev_ids = _mull_ids
                         _mull_pass += 1
             except Exception:
@@ -2732,15 +2748,15 @@ class Igor:
                 # Significantly low dominance: bump two tiers
                 _skip_to = _TIER_UP.get(_TIER_UP.get(_skip_to, _skip_to), _skip_to)
                 _routing_reason = f"milieu:dominance={_dom:.2f}(very_low)→{_skip_to}"
-                console.print(f"[dim][MILIEU] dominance={_dom:.2f} (very low) → escalation bumped to {_skip_to}[/]")
+                loginfo(f"[dim][MILIEU] dominance={_dom:.2f} (very low) → escalation bumped to {_skip_to}[/]")
             elif _dom < 0.0:
                 # Mildly low dominance: bump one tier
                 _skip_to = _TIER_UP.get(_skip_to, _skip_to)
                 _routing_reason = f"milieu:dominance={_dom:.2f}(low)→{_skip_to}"
-                console.print(f"[dim][MILIEU] dominance={_dom:.2f} (low) → escalation bumped to {_skip_to}[/]")
+                loginfo(f"[dim][MILIEU] dominance={_dom:.2f} (low) → escalation bumped to {_skip_to}[/]")
 
         if complexity["signals_fired"]:
-            console.print(
+            loginfo(
                 f"[dim][COMPLEXITY] score={complexity['score']:.2f} "
                 f"signals={complexity['signals_fired']} → {_skip_to}[/]"
             )
@@ -2760,11 +2776,11 @@ class Igor:
                     if _char == "stressed" and _skip_to in ("tier.3", "tier.3.5"):
                         _skip_to = _TIER_UP2.get(_skip_to, _skip_to)
                         _routing_reason = f"milieu:session=stressed→{_skip_to}"
-                        console.print(f"[dim][MILIEU] session_character=stressed → tier bumped to {_skip_to}[/]")
+                        loginfo(f"[dim][MILIEU] session_character=stressed → tier bumped to {_skip_to}[/]")
                     elif _char == "focused" and _skip_to == "tier.3.5":
                         _skip_to = _TIER_DN.get(_skip_to, _skip_to)
                         _routing_reason = f"milieu:session=focused→{_skip_to}"
-                        console.print(f"[dim][MILIEU] session_character=focused → tier eased to {_skip_to}[/]")
+                        loginfo(f"[dim][MILIEU] session_character=focused → tier eased to {_skip_to}[/]")
             except Exception:
                 pass
 
@@ -2785,7 +2801,7 @@ class Igor:
             _prev_tier = _skip_to
             _skip_to = _TIER_UP_NE.get(_skip_to, _skip_to)
             _routing_reason = f"NE:ambiguity(predicted={_ne_pred.predicted_habit_id})→{_skip_to}"
-            console.print(
+            loginfo(
                 f"[dim][NE] predicted {_ne_pred.predicted_habit_id} (conf={_ne_pred.confidence:.2f}) "
                 f"but no habit fired → ambiguity → {_skip_to}[/]"
             )
@@ -2871,7 +2887,7 @@ class Igor:
                 completions_queue=self._job_completions,
                 thread_id=thread_id or "",
             )
-            console.print(
+            loginfo(
                 f"\n[cyan][JOBS] Long-running job started in background (#{_async_job_id}). "
                 f"I'll let you know when it's done.[/]\n"
             )
@@ -2972,7 +2988,7 @@ class Igor:
                     habit = _best_bh
                     _thalamus_confidence = _best_bs
                     _thalamus_near_misses = []
-                    console.print(f"[dim][LINK-BOOST] G11 near-miss promoted → {habit.id} score={_best_bs:.2f}[/]")
+                    loginfo(f"[dim][LINK-BOOST] G11 near-miss promoted → {habit.id} score={_best_bs:.2f}[/]")
 
         # [#54] Habit tiebreaker: near-miss candidates → cheap classification call.
         # Fires only when no habit cleared threshold AND near-misses exist AND gate enabled.
@@ -2981,7 +2997,7 @@ class Igor:
             if _tb_habit:
                 habit = _tb_habit
                 _thalamus_confidence = 0.60  # tiebreaker confidence marker
-                console.print(f"[dim][TIEBREAKER] #54 resolved → {habit.id}[/]")
+                loginfo(f"[dim][TIEBREAKER] #54 resolved → {habit.id}[/]")
 
         if habit:
             dashboard.print_habit_trigger(habit)
@@ -3085,7 +3101,7 @@ class Igor:
                     used_api = False
                     _tier0_fired = True
                     self._current_tier = "tier.0"
-                    console.print(f"[dim][tier.0] Python response — no LLM[/]")
+                    loginfo(f"[dim][tier.0] Python response — no LLM[/]")
 
             if not _tier0_fired:
                 # [PREFRONTAL CORTEX] Upstream reasoning
@@ -3103,9 +3119,9 @@ class Igor:
                         )
                         self.cloud_calls += 1
                         used_api = False
-                        console.print(f"[dim](local | session_cost: ${self.session_cost:.4f})[/]")
+                        loginfo(f"[dim](local | session_cost: ${self.session_cost:.4f})[/]")
                     except Exception as e:
-                        console.print(f"[yellow]Local pool failed ({e}), trying cloud...[/]")
+                        loginfo(f"[yellow]Local pool failed ({e}), trying cloud...[/]")
                         response_text, cost, used_api = self._reason_with_failover(
                             user_input, relevant, core, skip_to=_skip_to, preparse_csb=pre_csb,
                             local_only=_local_only, thread_id=thread_id,
@@ -3131,9 +3147,9 @@ class Igor:
                                 user_input, relevant, core, self.instance_id, force_local=True
                             )
                         used_api = False
-                        console.print(f"[dim][IMPULSE/{_tier_label}] local ok[/]")
+                        loginfo(f"[dim][IMPULSE/{_tier_label}] local ok[/]")
                     except Exception as e:
-                        console.print(f"[dim][IMPULSE] local too slow — skipped (no cloud escalation for impulses)[/]")
+                        loginfo(f"[dim][IMPULSE] local too slow — skipped (no cloud escalation for impulses)[/]")
                         from .cognition.forensic_logger import log_error as _log_error
                         _log_error(kind="IMPULSE_SKIP", source="impulse/tier.2", detail=str(e))
                         response_text = ""
@@ -3148,9 +3164,9 @@ class Igor:
                             user_input, relevant, core, self.instance_id, force_local=True
                         )
                         used_api = False
-                        console.print(f"[dim](local_only/tier.2 | session_cost: ${self.session_cost:.4f})[/]")
+                        loginfo(f"[dim](local_only/tier.2 | session_cost: ${self.session_cost:.4f})[/]")
                     except Exception as e:
-                        console.print(f"[yellow]Local pool failed in local_only mode ({e})[/]")
+                        loginfo(f"[yellow]Local pool failed in local_only mode ({e})[/]")
                         response_text = (
                             "I'm operating in local-only mode per your instruction, "
                             "but my local model is unavailable right now. "
@@ -3337,7 +3353,7 @@ class Igor:
                     if _should_clear:
                         _cleared = self.cortex.twm_clear_task_set(thread_id=thread_id)
                         if _cleared:
-                            console.print(
+                            loginfo(
                                 f"[dim][TASK_SET] Cleared {_cleared} task(s) "
                                 f"via {_clear_method}[/]"
                             )
@@ -3350,7 +3366,7 @@ class Igor:
             from .brainstem.core_patterns import fast_identity_check
             _id_ok, _id_reason = fast_identity_check(response_text)
             if not _id_ok:
-                console.print(f"[bold red][IDENTITY GATE] Suppressed: {_id_reason[:200]}[/]")
+                loginfo(f"[bold red][IDENTITY GATE] Suppressed: {_id_reason[:200]}[/]")
                 self.cortex.write_ring(
                     f"IDENTITY_GATE|FAIL|{_id_reason[:300]}|preview={response_text[:100]}",
                     category="identity_gate",
@@ -3365,7 +3381,7 @@ class Igor:
                 response_text = ""
             else:
                 from rich.markup import escape as _escape
-                console.print(f"\n[bold blue]Igor:[/] {_escape(response_text)}\n")
+                loginfo(f"\n[bold blue]Igor:[/] {_escape(response_text)}\n")
                 # #112 phase 1: score boot orientation on first interactive response
                 if not self._boot_orientation_scored and not is_impulse:
                     self._boot_orientation_scored = True
@@ -3380,7 +3396,7 @@ class Igor:
                             value=_score,
                             detail=f"ring_tail_entries={len(self._boot_ring_tail)}|interaction={self.interaction_count}",
                         )
-                        console.print(f"[dim][METRICS] boot_orientation={_score:.2f}[/]")
+                        loginfo(f"[dim][METRICS] boot_orientation={_score:.2f}[/]")
                     except Exception:
                         pass
 
@@ -3785,7 +3801,7 @@ class Igor:
                 category="system_info",
                 thread_id=tid or None,
             )
-            console.print(
+            loginfo(
                 f"\n[green][JOBS] Job #{job_id} '{title[:50]}' completed.[/]\n"
             )
 
@@ -3833,7 +3849,7 @@ class Igor:
                 f"IMPULSE_SUPPRESSED|failure_backoff_5|count={self._consecutive_impulse_failures}|{content[:100]}",
                 category="impulse_executed",
             )
-            console.print(
+            loginfo(
                 f"[yellow][BACKOFF] Suppressed continue_* impulse "
                 f"(consecutive_failures={self._consecutive_impulse_failures})[/]"
             )
@@ -3841,7 +3857,7 @@ class Igor:
 
         if _is_continue and self._consecutive_impulse_failures >= 3:
             # Downgrade: execute but log that we're operating in backoff mode
-            console.print(
+            loginfo(
                 f"[yellow][BACKOFF] Executing continue_* at reduced priority "
                 f"(failure_count={self._consecutive_impulse_failures})[/]"
             )
@@ -3849,7 +3865,7 @@ class Igor:
         # Mark integrated immediately so NE and this consumer don't re-process it
         self.cortex.twm_mark_integrated([impulse["id"]])
 
-        console.print(f"[dim][IMPULSE] {content[:100]}[/]")
+        loginfo(f"[dim][IMPULSE] {content[:100]}[/]")
 
         # change.33: if impulse sounds irreversible, queue to arbiter instead of executing.
         # If arbiter is disabled (IGOR_ARBITER_ENABLED=false), submit() returns 0 —
@@ -3864,7 +3880,7 @@ class Igor:
                 metadata={"obs_id": impulse["id"]},
             )
             if item_id != 0:
-                console.print(f"[yellow][IMPULSE→ARBITER] Queued as #{item_id} — type /arbiter approve {item_id} or /arbiter deny {item_id}[/]")
+                loginfo(f"[yellow][IMPULSE→ARBITER] Queued as #{item_id} — type /arbiter approve {item_id} or /arbiter deny {item_id}[/]")
                 self.cortex.write_ring(
                     f"IMPULSE_QUEUED|obs_id={impulse['id']}|arbiter_id={item_id}|{content[:200]}",
                     category="impulse_executed",
@@ -3893,7 +3909,7 @@ class Igor:
                 f"IMPULSE_FAILURE|count={self._consecutive_impulse_failures}|{content[:80]}",
                 category="impulse_executed",
             )
-            console.print(
+            loginfo(
                 f"[yellow][BACKOFF] Failure #{self._consecutive_impulse_failures} "
                 f"detected in impulse response.[/]"
             )
@@ -3946,7 +3962,7 @@ class Igor:
         else:
             # Success — reset failure counter
             if self._consecutive_impulse_failures > 0:
-                console.print(
+                loginfo(
                     f"[dim][BACKOFF] Impulse succeeded — resetting failure counter "
                     f"(was {self._consecutive_impulse_failures})[/]"
                 )
@@ -3978,7 +3994,7 @@ class Igor:
             self._context_flush_done = True
             return
 
-        console.print(
+        loginfo(
             f"\n[cyan][PRECOMPACT] Context at {self.interaction_count} interactions — "
             "flushing session summary to LTM...[/]"
         )
@@ -3986,7 +4002,7 @@ class Igor:
         try:
             summary = summarize_session(ring_entries, self.instance_id)
         except Exception as e:
-            console.print(f"[yellow][PRECOMPACT] Ollama summarize failed ({e}), using fallback.[/]")
+            loginfo(f"[yellow][PRECOMPACT] Ollama summarize failed ({e}), using fallback.[/]")
             summary = (
                 f"Session auto-flush at interaction {self.interaction_count}. "
                 f"Ring had {len(ring_entries)} entries. "
@@ -4028,7 +4044,7 @@ class Igor:
         except Exception:
             pass
 
-        console.print(
+        loginfo(
             f"[cyan][PRECOMPACT] Done — stored as {mem.id}. "
             "Run /compress when ready to restart fresh.[/]"
         )
@@ -4049,7 +4065,7 @@ class Igor:
             except queue.Empty:
                 break
 
-            console.print(f"\n[bold magenta][{msg.source.upper()}] {msg.author}:[/] {msg.content[:120]}")
+            loginfo(f"\n[bold magenta][{msg.source.upper()}] {msg.author}:[/] {msg.content[:120]}")
 
             # [TWM] Push raw network message before wrapping it as synthetic input
             ri = msg.reply_info or {}
@@ -4275,7 +4291,7 @@ class Igor:
     def _cmd_help(self, _):
         local_state  = "ON" if self.local_mode  else "OFF"
         web_port     = os.getenv("IGOR_WEB_PORT", "8080")
-        console.print(f"""
+        loginfo(f"""
 [bold]Igor Commands:[/]
   /help           - This message
   /memories       - List recent episodic memories
@@ -4331,15 +4347,15 @@ class Igor:
 
     def _cmd_memories(self, _):
         memories = self.cortex.get_by_type(MemoryType.EPISODIC)
-        console.print(f"\n[bold]Episodic memories ({len(memories)}):[/]")
+        loginfo(f"\n[bold]Episodic memories ({len(memories)}):[/]")
         for m in memories[-10:]:  # Last 10
-            console.print(f"  [{m.id}] {m.narrative[:70]}")
+            loginfo(f"  [{m.id}] {m.narrative[:70]}")
 
     def _cmd_core(self, _):
         patterns = get_core_patterns(self.cortex)
-        console.print(f"\n[bold]Core Patterns (inertia ~{patterns[0].inertia:.2f}):[/]")
+        loginfo(f"\n[bold]Core Patterns (inertia ~{patterns[0].inertia:.2f}):[/]")
         for p in patterns:
-            console.print(f"  [{p.id}] {p.narrative}")
+            loginfo(f"  [{p.id}] {p.narrative}")
 
     def _cmd_metrics(self, raw):
         """Full internal metrics report."""
@@ -4351,7 +4367,7 @@ class Igor:
             cloud_calls=self.cloud_calls,
             ne=self.ne,
         )
-        console.print(report)
+        loginfo(report)
 
     def _cmd_hygiene(self, raw):
         """
@@ -4368,12 +4384,12 @@ class Igor:
         )
         apply = "--apply" in raw
 
-        console.print("\n[bold cyan]═ Hygiene Report ═══════════════════════════════[/]")
+        loginfo("\n[bold cyan]═ Hygiene Report ═══════════════════════════════[/]")
         if apply:
-            console.print("[yellow]  Mode: APPLY — changes will be written[/]")
+            loginfo("[yellow]  Mode: APPLY — changes will be written[/]")
         else:
             console.print(f"[dim]{_cts()}  Mode: DRY RUN — add --apply to execute[/]")
-        console.print("")
+        loginfo("")
 
         # ── 1. Junk habits ─────────────────────────────────────────────────────
         all_habits = self.cortex.get_habits()
@@ -4401,10 +4417,10 @@ class Igor:
             if _is_junk:
                 junk_habits.append(h)
 
-        console.print(f"[bold]JUNK HABITS[/] (never activated, compiled from 1 source):")
+        loginfo(f"[bold]JUNK HABITS[/] (never activated, compiled from 1 source):")
         if junk_habits:
             for h in junk_habits:
-                console.print(
+                loginfo(
                     f"  [red]×[/] [{h.id}] act={h.activation_count} src={h.metadata.get('source','?')} "
                     f"| {h.narrative[:70]}"
                 )
@@ -4417,10 +4433,10 @@ class Igor:
                             f"HYGIENE|deleted_junk_habit|{h.id}|{h.narrative[:60]}",
                             category="hygiene",
                         )
-                console.print(f"  → Deleted {deleted} junk habits.")
+                loginfo(f"  → Deleted {deleted} junk habits.")
         else:
-            console.print("  [dim]None found.[/]")
-        console.print("")
+            loginfo("  [dim]None found.[/]")
+        loginfo("")
 
         # ── 2. Near-duplicate episodics ────────────────────────────────────────
         try:
@@ -4432,18 +4448,18 @@ class Igor:
             prefix = ep.narrative[:80].lower().strip()
             _seen_prefix.setdefault(prefix, []).append(ep)
         dup_groups = [(p, mems) for p, mems in _seen_prefix.items() if len(mems) >= 3]
-        console.print(f"[bold]NEAR-DUPLICATE EPISODICS[/] (≥3 with same 80-char prefix):")
+        loginfo(f"[bold]NEAR-DUPLICATE EPISODICS[/] (≥3 with same 80-char prefix):")
         if dup_groups:
             total_dups = 0
             for prefix, mems in dup_groups[:10]:
                 oldest = sorted(mems, key=lambda m: m.timestamp)[:-1]  # keep newest
                 total_dups += len(oldest)
-                console.print(
+                loginfo(
                     f"  [yellow]×{len(mems)}[/] '{prefix[:60]}...' → keep 1, prune {len(oldest)}"
                 )
             if len(dup_groups) > 10:
-                console.print(f"  [dim]... and {len(dup_groups)-10} more groups[/]")
-            console.print(f"  Total pruneable: {total_dups}")
+                loginfo(f"  [dim]... and {len(dup_groups)-10} more groups[/]")
+            loginfo(f"  Total pruneable: {total_dups}")
             if apply:
                 pruned = 0
                 for _, mems in dup_groups:
@@ -4456,33 +4472,33 @@ class Igor:
                     f"HYGIENE|pruned_dup_episodics|count={pruned}",
                     category="hygiene",
                 )
-                console.print(f"  → Pruned {pruned} duplicate episodic memories.")
+                loginfo(f"  → Pruned {pruned} duplicate episodic memories.")
         else:
-            console.print("  [dim]None found.[/]")
-        console.print("")
+            loginfo("  [dim]None found.[/]")
+        loginfo("")
 
         # ── 3. Log sizes ───────────────────────────────────────────────────────
         from .cognition.forensic_logger import LOG_DIR
-        console.print("[bold]LOG FILE SIZES[/]")
+        loginfo("[bold]LOG FILE SIZES[/]")
         total_log_bytes = 0
         for log_file in sorted(LOG_DIR.glob("*.log")):
             size = log_file.stat().st_size
             total_log_bytes += size
             size_kb = size // 1024
             flag = " [yellow]⚠[/]" if size_kb > 5000 else ""
-            console.print(f"  {log_file.name:<30} {size_kb:>6} KB{flag}")
-        console.print(f"  {'TOTAL':<30} {total_log_bytes//1024:>6} KB")
-        console.print("")
+            loginfo(f"  {log_file.name:<30} {size_kb:>6} KB{flag}")
+        loginfo(f"  {'TOTAL':<30} {total_log_bytes//1024:>6} KB")
+        loginfo("")
 
         # ── 4. Memory count summary ────────────────────────────────────────────
         counts = self.cortex.count_by_type()
         total = self.cortex.total_count()
-        console.print(f"[bold]MEMORY COUNTS[/]  total={total}")
+        loginfo(f"[bold]MEMORY COUNTS[/]  total={total}")
         for mtype, n in sorted(counts.items(), key=lambda x: -x[1]):
-            console.print(f"  {mtype:<20} {n:>5}")
-        console.print("")
+            loginfo(f"  {mtype:<20} {n:>5}")
+        loginfo("")
 
-        console.print("[bold cyan]════════════════════════════════════════════════[/]")
+        loginfo("[bold cyan]════════════════════════════════════════════════[/]")
         if not apply:
             console.print(f"[dim]{_cts()}Run /hygiene --apply to execute the pruning.[/]")
 
@@ -4508,14 +4524,14 @@ class Igor:
     def _habits_list(self):
         habits = self.cortex.get_habits()
         if not habits:
-            console.print("\n[dim]No habits compiled yet. Use /habits pending to see candidates.[/]")
+            loginfo("\n[dim]No habits compiled yet. Use /habits pending to see candidates.[/]")
         else:
-            console.print(f"\n[bold]Compiled habits ({len(habits)}):[/]")
+            loginfo(f"\n[bold]Compiled habits ({len(habits)}):[/]")
             for h in habits:
                 trigger = h.metadata.get("trigger", "none")
                 action  = h.metadata.get("action", "")[:40]
-                console.print(f"  [{h.id}] trigger={trigger!r} → {action or h.narrative[:50]}")
-                console.print(f"         activations={h.activation_count}  parent={h.parent_id}")
+                loginfo(f"  [{h.id}] trigger={trigger!r} → {action or h.narrative[:50]}")
+                loginfo(f"         activations={h.activation_count}  parent={h.parent_id}")
 
     def _habits_pending(self):
         """Show EPISODIC memory clusters that may be ready for habit compilation."""
@@ -4527,11 +4543,11 @@ class Igor:
         )
         candidates = [(intent, count) for intent, count in intent_counts.items() if count >= 3]
         if not candidates:
-            console.print("\n[dim]No habit candidates yet — need 3+ similar interactions.[/]")
+            loginfo("\n[dim]No habit candidates yet — need 3+ similar interactions.[/]")
             return
-        console.print(f"\n[bold]Habit candidates ({len(candidates)}) — 3+ episodes:[/]")
+        loginfo(f"\n[bold]Habit candidates ({len(candidates)}) — 3+ episodes:[/]")
         for intent, count in sorted(candidates, key=lambda x: x[1], reverse=True):
-            console.print(f"  intent={intent!r}  episodes={count}")
+            loginfo(f"  intent={intent!r}  episodes={count}")
         console.print(f"[dim]{_cts()}Use /habits compile to review and propose new habits.[/]")
 
     def _habits_compile(self):
@@ -4545,16 +4561,16 @@ class Igor:
 
         candidates = [(i, mems) for i, mems in intent_groups.items() if len(mems) >= 3]
         if not candidates:
-            console.print("\n[dim]No patterns with 3+ episodes. Keep interacting.[/]")
+            loginfo("\n[dim]No patterns with 3+ episodes. Keep interacting.[/]")
             return
 
-        console.print(f"\n[bold]Habit compilation pass — {len(candidates)} candidate(s):[/]")
+        loginfo(f"\n[bold]Habit compilation pass — {len(candidates)} candidate(s):[/]")
         for intent, mems in sorted(candidates, key=lambda x: len(x[1]), reverse=True):
             avg_friction = sum(m.metadata.get("friction", 0.5) for m in mems) / len(mems)
             sample = mems[-1].metadata.get("user_input", "")[:60]
-            console.print(f"\n  [bold]{intent}[/]  ({len(mems)} episodes, avg_friction={avg_friction:.2f})")
-            console.print(f"  Sample: {sample!r}")
-            console.print(f"  [dim]To compile: ask Igor to store a PROCEDURAL habit for '{intent}'[/]")
+            loginfo(f"\n  [bold]{intent}[/]  ({len(mems)} episodes, avg_friction={avg_friction:.2f})")
+            loginfo(f"  Sample: {sample!r}")
+            loginfo(f"  [dim]To compile: ask Igor to store a PROCEDURAL habit for '{intent}'[/]")
 
         self.cortex.write_ring(
             f"HABITS_COMPILE_PASS|candidates={len(candidates)}"
@@ -4974,7 +4990,7 @@ class Igor:
                     # Build a short response: "I think of [top words]..."
                     top_words = [w for w, _ in preds[:3]]
                     top_str = ", ".join(top_words)
-                    console.print(
+                    loginfo(
                         f"[dim][tier.0] WG response attempt: {top_str!r} "
                         f"conf={preds[0][1]:.2f}[/]"
                     )
@@ -4986,7 +5002,7 @@ class Igor:
                             f"That brings to mind: {top_str}. Shall I elaborate, Master?"
                         )
                 elif preds and preds[0][1] >= 0.6:
-                    console.print(
+                    loginfo(
                         f"[dim][tier.0] WG signal {preds[0][1]:.2f} (below threshold) — falling through[/]"
                     )
         except Exception:
@@ -5038,23 +5054,23 @@ class Igor:
     def _habits_explain(self, habit_id: str):
         """Show why a specific habit was compiled."""
         if not habit_id:
-            console.print("[yellow]Usage: /habits explain <habit_id>[/]")
+            loginfo("[yellow]Usage: /habits explain <habit_id>[/]")
             return
         mem = self.cortex.get(habit_id)
         if mem is None:
-            console.print(f"[yellow]Habit {habit_id!r} not found in memory.[/]")
+            loginfo(f"[yellow]Habit {habit_id!r} not found in memory.[/]")
             return
-        console.print(f"\n[bold]Habit {mem.id}:[/]")
-        console.print(f"  Narrative:   {mem.narrative}")
-        console.print(f"  Type:        {mem.memory_type.value}")
-        console.print(f"  Parent:      {mem.parent_id}")
-        console.print(f"  Trigger:     {mem.metadata.get('trigger', 'none')!r}")
-        console.print(f"  Action:      {mem.metadata.get('action', 'none')!r}")
-        console.print(f"  Why:         {mem.metadata.get('why', 'no why recorded')}")
-        console.print(f"  Activations: {mem.activation_count}")
+        loginfo(f"\n[bold]Habit {mem.id}:[/]")
+        loginfo(f"  Narrative:   {mem.narrative}")
+        loginfo(f"  Type:        {mem.memory_type.value}")
+        loginfo(f"  Parent:      {mem.parent_id}")
+        loginfo(f"  Trigger:     {mem.metadata.get('trigger', 'none')!r}")
+        loginfo(f"  Action:      {mem.metadata.get('action', 'none')!r}")
+        loginfo(f"  Why:         {mem.metadata.get('why', 'no why recorded')}")
+        loginfo(f"  Activations: {mem.activation_count}")
         if mem.friction_history:
             avg = sum(mem.friction_history) / len(mem.friction_history)
-            console.print(f"  Avg friction:{avg:.2f} ({len(mem.friction_history)} samples)")
+            loginfo(f"  Avg friction:{avg:.2f} ({len(mem.friction_history)} samples)")
 
     # ── Arbiter commands (change.33) ──────────────────────────────────────────
 
@@ -5074,7 +5090,7 @@ class Igor:
             if not pending:
                 console.print(f"[dim]{_cts()}Arbiter queue is empty — nothing to resolve.[/]")
                 return
-            console.print(f"\n[bold]{'Approving' if sub == 'approve' else 'Denying'} all {len(pending)} pending items...[/]")
+            loginfo(f"\n[bold]{'Approving' if sub == 'approve' else 'Denying'} all {len(pending)} pending items...[/]")
             resolved = "approved" if sub == "approve" else "denied"
             for item in pending:
                 self._arbiter_resolve(arbiter_queue, item.id, resolved)
@@ -5084,32 +5100,32 @@ class Igor:
         elif sub == "explain" and arg.isdigit():
             self._arbiter_explain(arbiter_queue, int(arg))
         else:
-            console.print("[yellow]Usage: /arbiter list | approve <N>|all | deny <N>|all | explain <N>[/]")
+            loginfo("[yellow]Usage: /arbiter list | approve <N>|all | deny <N>|all | explain <N>[/]")
 
     def _arbiter_list(self, arbiter_queue):
         pending = arbiter_queue.get_pending()
         if not pending:
-            console.print("\n[dim]Arbiter queue is empty — no pending approvals.[/]")
+            loginfo("\n[dim]Arbiter queue is empty — no pending approvals.[/]")
             return
-        console.print(f"\n[bold]Arbiter queue — {len(pending)} pending:[/]")
+        loginfo(f"\n[bold]Arbiter queue — {len(pending)} pending:[/]")
         for item in pending:
             ts = item.timestamp[:16]
-            console.print(f"\n  [bold yellow]#{item.id}[/]  [{item.action_type}]  {ts}")
-            console.print(f"  {item.description[:100]}")
+            loginfo(f"\n  [bold yellow]#{item.id}[/]  [{item.action_type}]  {ts}")
+            loginfo(f"  {item.description[:100]}")
             if item.threshold_reason:
-                console.print(f"  [dim]Reason: {item.threshold_reason[:80]}[/]")
-        console.print("\n[dim]/arbiter approve <N>|all  /arbiter deny <N>|all  /arbiter explain <N>[/]")
+                loginfo(f"  [dim]Reason: {item.threshold_reason[:80]}[/]")
+        loginfo("\n[dim]/arbiter approve <N>|all  /arbiter deny <N>|all  /arbiter explain <N>[/]")
 
     def _arbiter_resolve(self, arbiter_queue, item_id: int, status: str):
         item = arbiter_queue.resolve(item_id, status)
         if item is None:
-            console.print(f"[yellow]Arbiter item #{item_id} not found or already resolved.[/]")
+            loginfo(f"[yellow]Arbiter item #{item_id} not found or already resolved.[/]")
             return
 
         verb = "Approved" if status == "approved" else "Denied"
         color = "green" if status == "approved" else "red"
-        console.print(f"\n[bold {color}]{verb}: Arbiter #{item_id}[/]")
-        console.print(f"  {item.description[:100]}")
+        loginfo(f"\n[bold {color}]{verb}: Arbiter #{item_id}[/]")
+        loginfo(f"  {item.description[:100]}")
 
         # Learning: store as EPISODIC memory so Igor recognises the pattern
         # intent field uses action_type so /habits pending/compile can find clusters (verify.1)
@@ -5137,28 +5153,28 @@ class Igor:
             f"ARBITER_{status.upper()}|id={item_id}|type={item.action_type}|{item.description[:150]}",
             category="arbiter",
         )
-        console.print(f"[dim]Learning stored as {ep.id} (valence={valence:+.1f})[/]")
+        loginfo(f"[dim]Learning stored as {ep.id} (valence={valence:+.1f})[/]")
         invalidate_cache()  # Arbiter decisions may affect activation counts in CP/ID/PROC
 
         # If approved: offer to execute the queued action
         if status == "approved":
-            console.print(
+            loginfo(
                 f"[dim]To execute: ask Igor to proceed with: {item.description[:80]}[/]"
             )
 
     def _arbiter_explain(self, arbiter_queue, item_id: int):
         item = arbiter_queue.get_item(item_id)
         if item is None:
-            console.print(f"[yellow]Arbiter item #{item_id} not found.[/]")
+            loginfo(f"[yellow]Arbiter item #{item_id} not found.[/]")
             return
-        console.print(f"\n[bold]Arbiter #{item.id}  [{item.status}][/]")
-        console.print(f"  Type:      {item.action_type}")
-        console.print(f"  Time:      {item.timestamp[:16]}")
-        console.print(f"  Action:    {item.description}")
-        console.print(f"  Context:   {item.context or '(none)'}")
-        console.print(f"  Flagged:   {item.threshold_reason or '(none)'}")
+        loginfo(f"\n[bold]Arbiter #{item.id}  [{item.status}][/]")
+        loginfo(f"  Type:      {item.action_type}")
+        loginfo(f"  Time:      {item.timestamp[:16]}")
+        loginfo(f"  Action:    {item.description}")
+        loginfo(f"  Context:   {item.context or '(none)'}")
+        loginfo(f"  Flagged:   {item.threshold_reason or '(none)'}")
         if item.status != "pending":
-            console.print(f"  Resolved:  {item.resolution_ts[:16]}  ({item.resolution_note or '-'})")
+            loginfo(f"  Resolved:  {item.resolution_ts[:16]}  ({item.resolution_note or '-'})")
 
     # ── End arbiter commands ───────────────────────────────────────────────────
 
@@ -5173,7 +5189,7 @@ class Igor:
             result = get_work_order(int(arg))
         else:
             result = list_work_orders()
-        console.print(f"\n{result}\n")
+        loginfo(f"\n{result}\n")
 
     # ── #95: autonomous self-implementation ────────────────────────────────────
 
@@ -5190,11 +5206,11 @@ class Igor:
         # Accept "/implement 95" or "/implement #95"
         num_str = parts[1].lstrip("#") if len(parts) > 1 else ""
         if not num_str.isdigit():
-            console.print("[yellow]Usage: /implement #N  (e.g. /implement #95)[/]")
+            loginfo("[yellow]Usage: /implement #N  (e.g. /implement #95)[/]")
             return
 
         issue_num = int(num_str)
-        console.print(f"\n[dim]Fetching issue #{issue_num}...[/]")
+        loginfo(f"\n[dim]Fetching issue #{issue_num}...[/]")
         ticket = get_work_order(issue_num)
 
         # Write task brief to workspace for Claude Code to pick up
@@ -5223,7 +5239,7 @@ class Igor:
             category="implement",
         )
 
-        console.print(
+        loginfo(
             f"\n[bold green]Implementation brief written:[/] {brief_path}\n"
             f"\n[bold]Tell Claude Code:[/] implement #{issue_num} "
             f"— brief is at {brief_path}\n"
@@ -5240,60 +5256,60 @@ class Igor:
         if sub == "list":
             jobs = self.job_manager.list_jobs(include_closed=False)
             if not jobs:
-                console.print("\n[dim]No active jobs.[/]")
+                loginfo("\n[dim]No active jobs.[/]")
             else:
-                console.print(f"\n[bold]Active jobs ({len(jobs)}):[/]")
+                loginfo(f"\n[bold]Active jobs ({len(jobs)}):[/]")
                 for j in jobs:
-                    console.print(f"  {j.summary()}")
-            console.print()
+                    loginfo(f"  {j.summary()}")
+            loginfo()
 
         elif sub == "all":
             jobs = self.job_manager.list_jobs(include_closed=True)
             if not jobs:
-                console.print("\n[dim]No jobs found.[/]")
+                loginfo("\n[dim]No jobs found.[/]")
             else:
-                console.print(f"\n[bold]All jobs ({len(jobs)}):[/]")
+                loginfo(f"\n[bold]All jobs ({len(jobs)}):[/]")
                 for j in jobs[:20]:
-                    console.print(f"  {j.summary()}")
-            console.print()
+                    loginfo(f"  {j.summary()}")
+            loginfo()
 
         elif sub == "status":
             if not arg:
-                console.print("[yellow]Usage: /jobs status <ID>[/]")
+                loginfo("[yellow]Usage: /jobs status <ID>[/]")
                 return
             j = self.job_manager.get(arg)
             if not j:
-                console.print(f"[yellow]Job '{arg}' not found.[/]")
+                loginfo(f"[yellow]Job '{arg}' not found.[/]")
                 return
-            console.print(f"\n[bold]Job details:[/]")
-            console.print(f"  ID:          {j.job_id}")
-            console.print(f"  Title:       {j.title}")
-            console.print(f"  Status:      {j.status}")
-            console.print(f"  Progress:    {j.completed_units}/{j.total_units} ({j.progress_pct():.0f}%)")
-            console.print(f"  Failed:      {j.failed_units}")
-            console.print(f"  Checkpoint:  {j.checkpoint or '(none)'}")
-            console.print(f"  Created:     {j.created_at[:16]}")
-            console.print(f"  Updated:     {j.updated_at[:16]}")
+            loginfo(f"\n[bold]Job details:[/]")
+            loginfo(f"  ID:          {j.job_id}")
+            loginfo(f"  Title:       {j.title}")
+            loginfo(f"  Status:      {j.status}")
+            loginfo(f"  Progress:    {j.completed_units}/{j.total_units} ({j.progress_pct():.0f}%)")
+            loginfo(f"  Failed:      {j.failed_units}")
+            loginfo(f"  Checkpoint:  {j.checkpoint or '(none)'}")
+            loginfo(f"  Created:     {j.created_at[:16]}")
+            loginfo(f"  Updated:     {j.updated_at[:16]}")
             if j.github_issue:
-                console.print(f"  GitHub WO:   #{j.github_issue}")
+                loginfo(f"  GitHub WO:   #{j.github_issue}")
             if j.notes:
-                console.print(f"  Notes:       {j.notes[:80]}")
-            console.print()
+                loginfo(f"  Notes:       {j.notes[:80]}")
+            loginfo()
 
         elif sub == "pause":
             j = self.job_manager.pause(arg)
-            console.print(f"[dim]Job '{arg}': {j.status if j else 'not found'}[/]")
+            loginfo(f"[dim]Job '{arg}': {j.status if j else 'not found'}[/]")
 
         elif sub == "resume":
             j = self.job_manager.resume(arg)
-            console.print(f"[dim]Job '{arg}': {j.status if j else 'not found'}[/]")
+            loginfo(f"[dim]Job '{arg}': {j.status if j else 'not found'}[/]")
 
         elif sub == "cancel":
             j = self.job_manager.cancel(arg)
-            console.print(f"[dim]Job '{arg}' cancelled.[/]" if j else f"[yellow]Job '{arg}' not found.[/]")
+            loginfo(f"[dim]Job '{arg}' cancelled.[/]" if j else f"[yellow]Job '{arg}' not found.[/]")
 
         else:
-            console.print("[yellow]Usage: /jobs list|all|status ID|pause ID|resume ID|cancel ID[/]")
+            loginfo("[yellow]Usage: /jobs list|all|status ID|pause ID|resume ID|cancel ID[/]")
 
     # ── change.40: multi-cloud inference query ────────────────────────────────
 
@@ -5313,48 +5329,48 @@ class Igor:
         elif sub == "tag":
             if arg in ("on", "off"):
                 self._cloud_tag_on = (arg == "on")
-                console.print(f"[dim]Model tags: {'on' if self._cloud_tag_on else 'off'}[/]")
+                loginfo(f"[dim]Model tags: {'on' if self._cloud_tag_on else 'off'}[/]")
             else:
-                console.print("[yellow]Usage: /cloud tag on|off[/]")
+                loginfo("[yellow]Usage: /cloud tag on|off[/]")
         else:
-            console.print("[yellow]Usage: /cloud list|add|remove|query|tag[/]")
+            loginfo("[yellow]Usage: /cloud list|add|remove|query|tag[/]")
 
     def _cloud_list(self):
         reasoners = self._all_cloud_reasoners()
         if not reasoners:
-            console.print("\n[dim]No cloud inference reasoners configured.[/]")
+            loginfo("\n[dim]No cloud inference reasoners configured.[/]")
             return
-        console.print(f"\n[bold]Cloud inference reasoners ({len(reasoners)}):[/]")
+        loginfo(f"\n[bold]Cloud inference reasoners ({len(reasoners)}):[/]")
         for name, r in reasoners.items():
-            console.print(f"  [cyan]{name}[/]  {r.name()}")
+            loginfo(f"  [cyan]{name}[/]  {r.name()}")
 
     def _cloud_add(self, model: str):
         if not model:
-            console.print("[yellow]Usage: /cloud add MODEL  (e.g. openai/gpt-4o-mini)[/]")
+            loginfo("[yellow]Usage: /cloud add MODEL  (e.g. openai/gpt-4o-mini)[/]")
             return
         if not os.getenv("OPENROUTER_API_KEY", "").strip():
-            console.print("[red]OPENROUTER_API_KEY not set — cannot add OpenRouter models.[/]")
+            loginfo("[red]OPENROUTER_API_KEY not set — cannot add OpenRouter models.[/]")
             return
         try:
             from .cognition.reasoners.openrouter_reasoner import OpenRouterReasoner
             r = OpenRouterReasoner(model=model, show_model_tag=self._cloud_tag_on)
             name = model.split("/")[-1]
             self._extra_reasoners[name] = r
-            console.print(f"[green]Added:[/] {name} → {r.name()}")
+            loginfo(f"[green]Added:[/] {name} → {r.name()}")
         except Exception as e:
-            console.print(f"[red]Failed to add {model}: {e}[/]")
+            loginfo(f"[red]Failed to add {model}: {e}[/]")
 
     def _cloud_remove(self, name: str):
         if name in self._extra_reasoners:
             del self._extra_reasoners[name]
-            console.print(f"[dim]Removed: {name}[/]")
+            loginfo(f"[dim]Removed: {name}[/]")
         else:
-            console.print(f"[yellow]No reasoner named '{name}'. Use /cloud list to see names.[/]")
+            loginfo(f"[yellow]No reasoner named '{name}'. Use /cloud list to see names.[/]")
 
     def _cloud_query(self, arg: str):
         parts = arg.split(None, 1)
         if len(parts) < 2:
-            console.print("[yellow]Usage: /cloud query all|NAME MESSAGE[/]")
+            loginfo("[yellow]Usage: /cloud query all|NAME MESSAGE[/]")
             return
         target, msg = parts[0].lower(), parts[1]
         mems = self.cortex.search(msg, limit=5)
@@ -5362,19 +5378,19 @@ class Igor:
         if target == "all":
             reasoners = self._all_cloud_reasoners()
             if not reasoners:
-                console.print("[yellow]No cloud inference reasoners configured.[/]")
+                loginfo("[yellow]No cloud inference reasoners configured.[/]")
                 return
             results = query_multiple(msg, mems, core, self.instance_id, reasoners, self.cortex)
-            console.print("\n" + compare_responses(results) + "\n")
+            loginfo("\n" + compare_responses(results) + "\n")
             self.session_cost += sum(c for _, _, c in results)
         else:
             reasoners = self._all_cloud_reasoners()
             if target not in reasoners:
-                console.print(f"[yellow]No reasoner '{target}'. Use /cloud list to see names.[/]")
+                loginfo(f"[yellow]No reasoner '{target}'. Use /cloud list to see names.[/]")
                 return
             r = reasoners[target]
             text, cost = r.reason(msg, mems, core, self.instance_id, cortex=self.cortex)
-            console.print(f"\n[bold magenta][{r.name()}][/] {text}\n")
+            loginfo(f"\n[bold magenta][{r.name()}][/] {text}\n")
             self.session_cost += cost
 
     def _all_cloud_reasoners(self) -> dict:
@@ -5400,14 +5416,14 @@ class Igor:
         elif sub == "send" and arg.lower() == "claudecode":
             self._relay_send_claudecode()
         else:
-            console.print("[yellow]Usage: /relay start MODEL | end | extract | send claudecode[/]")
+            loginfo("[yellow]Usage: /relay start MODEL | end | extract | send claudecode[/]")
 
     def _relay_start(self, model: str):
         if self._relay_session is not None:
-            console.print(f"[yellow]Already in relay with {self._relay_session.model_name}. Use /relay end first.[/]")
+            loginfo(f"[yellow]Already in relay with {self._relay_session.model_name}. Use /relay end first.[/]")
             return
         if not model:
-            console.print("[yellow]Usage: /relay start MODEL[/]")
+            loginfo("[yellow]Usage: /relay start MODEL[/]")
             return
         reasoners = self._all_cloud_reasoners()
         short = model.split("/")[-1]
@@ -5418,23 +5434,23 @@ class Igor:
                 from .cognition.reasoners.openrouter_reasoner import OpenRouterReasoner
                 r = OpenRouterReasoner(model=model, show_model_tag=False)
             except Exception as e:
-                console.print(f"[red]Failed to create relay reasoner: {e}[/]")
+                loginfo(f"[red]Failed to create relay reasoner: {e}[/]")
                 return
         else:
-            console.print(f"[red]No reasoner for '{model}'. Set OPENROUTER_API_KEY or use /cloud add first.[/]")
+            loginfo(f"[red]No reasoner for '{model}'. Set OPENROUTER_API_KEY or use /cloud add first.[/]")
             return
         self._relay_session = RelaySession(model_name=model, reasoner=r)
-        console.print(f"\n[bold magenta]── Relay started: {model} ──[/]")
+        loginfo(f"\n[bold magenta]── Relay started: {model} ──[/]")
         console.print(f"[dim]{_cts()}Your messages go directly to the model. /relay end to stop.[/]\n")
 
     def _relay_end(self):
         if self._relay_session is None:
-            console.print("[yellow]No active relay session.[/]")
+            loginfo("[yellow]No active relay session.[/]")
             return
         session = self._relay_session
         self._relay_session = None
-        console.print(f"\n[bold magenta]── Relay ended ──[/]")
-        console.print(session.summary())
+        loginfo(f"\n[bold magenta]── Relay ended ──[/]")
+        loginfo(session.summary())
         transcript = session.transcript_csb()
         ep = Memory(
             narrative=f"Relay session with {session.model_name}: {transcript[:300]}",
@@ -5449,33 +5465,33 @@ class Igor:
             f"RELAY_END|model={session.model_name}|turns={sum(1 for m in session.messages if m['role']=='user')}",
             category="relay",
         )
-        console.print(f"[dim]Transcript stored as {ep.id}[/]")
+        loginfo(f"[dim]Transcript stored as {ep.id}[/]")
 
     def _relay_extract(self):
         if self._relay_session is None:
-            console.print("[yellow]No active relay session. Start one with /relay start MODEL.[/]")
+            loginfo("[yellow]No active relay session. Start one with /relay start MODEL.[/]")
             return
         block = self._relay_session.extract_last_block()
         if block is None:
-            console.print("[yellow]No code or JSON block found in relay transcript.[/]")
+            loginfo("[yellow]No code or JSON block found in relay transcript.[/]")
             return
-        console.print(f"\n[bold]Extracted block:[/]\n{block}\n")
+        loginfo(f"\n[bold]Extracted block:[/]\n{block}\n")
         console.print(f"[dim]{_cts()}/relay send claudecode — to forward this to Claude Code CLI[/]")
 
     def _relay_send_claudecode(self):
         if self._relay_session is None:
-            console.print("[yellow]No active relay session.[/]")
+            loginfo("[yellow]No active relay session.[/]")
             return
         block = self._relay_session.last_extract
         if block is None:
             block = self._relay_session.extract_last_block()
         if block is None:
-            console.print("[yellow]Nothing to send — use /relay extract first.[/]")
+            loginfo("[yellow]Nothing to send — use /relay extract first.[/]")
             return
         console.print(f"[dim]{_cts()}Sending to Claude Code CLI...[/]")
         output = send_to_claude_code(block)
         from rich.markup import escape as _escape
-        console.print(f"\n[bold]Claude Code response:[/]\n{_escape(output)}\n")
+        loginfo(f"\n[bold]Claude Code response:[/]\n{_escape(output)}\n")
 
     def _cmd_local(self, raw):
         parts = raw.strip().split(None, 1)
@@ -5490,46 +5506,46 @@ class Igor:
         state = "[green]ON[/]" if self.local_mode else "[yellow]OFF[/]"
         if self.local_mode:
             self.local_pool._refresh()  # Re-read machines.json
-            console.print(f"\n[bold]Local mode:[/] {state}")
-            console.print(f"[dim]Pool: {self.local_pool.machines_summary()}[/]")
+            loginfo(f"\n[bold]Local mode:[/] {state}")
+            loginfo(f"[dim]Pool: {self.local_pool.machines_summary()}[/]")
         else:
-            console.print(f"\n[bold]Local mode:[/] {state}  [dim](using cloud: {self.reasoner.model})[/]")
+            loginfo(f"\n[bold]Local mode:[/] {state}  [dim](using cloud: {self.reasoner.model})[/]")
 
     def _cmd_model(self, raw):
         from .cognition.reasoners.anthropic import MODEL_ALIASES
         parts = raw.strip().split(None, 1)
         if len(parts) < 2:
             if self.local_mode:
-                console.print(f"\n[bold]Current model (local):[/] {self.local_pool.model}")
-                console.print(f"[dim]Pool: {self.local_pool.machines_summary()}[/]")
+                loginfo(f"\n[bold]Current model (local):[/] {self.local_pool.model}")
+                loginfo(f"[dim]Pool: {self.local_pool.machines_summary()}[/]")
             else:
-                console.print(f"\n[bold]Current model (cloud):[/] {self.reasoner.model}")
+                loginfo(f"\n[bold]Current model (cloud):[/] {self.reasoner.model}")
                 aliases = ", ".join(f"{k} → {v}" for k, v in MODEL_ALIASES.items())
-                console.print(f"[dim]Aliases: {aliases}[/]")
+                loginfo(f"[dim]Aliases: {aliases}[/]")
             return
         name = parts[1].strip()
         if self.local_mode:
             self.local_pool.set_model(name)
-            console.print(f"\n[green]Ollama model switched to:[/] {name}")
+            loginfo(f"\n[green]Ollama model switched to:[/] {name}")
         else:
             resolved = self.reasoner.set_model(name)
-            console.print(f"\n[green]Cloud model switched to:[/] {resolved}")
+            loginfo(f"\n[green]Cloud model switched to:[/] {resolved}")
 
     def _cmd_compress(self, _):
         """Summarize session ring memory to LTM via Ollama, then restart fresh."""
         from .cognition.reasoners.ollama_reasoner import summarize_session
         from .memory.models import Memory, MemoryType
 
-        console.print("[cyan]Compressing session context via Ollama...[/]")
+        loginfo("[cyan]Compressing session context via Ollama...[/]")
         ring_entries = self.cortex.read_ring_memory(limit=50)
         if not ring_entries:
-            console.print("[yellow]Ring memory is empty — nothing to compress.[/]")
+            loginfo("[yellow]Ring memory is empty — nothing to compress.[/]")
             return
 
         summary = summarize_session(ring_entries, self.instance_id)
         if summary.startswith("SESSION_SUMMARY|"):
             summary = summary.split("|", 2)[-1]
-        console.print(f"[dim]Summary: {summary[:200]}...[/]")
+        loginfo(f"[dim]Summary: {summary[:200]}...[/]")
 
         # Store as an interpretive memory — durable, survives context resets
         mem = Memory(
@@ -5544,7 +5560,7 @@ class Igor:
         )
         self.cortex.store(mem)
         self.cortex.add_child("CP3", mem.id)
-        console.print(f"[green]Session summary stored as memory [{mem.id}][/]")
+        loginfo(f"[green]Session summary stored as memory [{mem.id}][/]")
 
         # Mark compress event in ring so next session knows
         self.cortex.write_ring(
@@ -5554,13 +5570,13 @@ class Igor:
         )
 
         self._shutdown(reason=f"compress at interaction {self.interaction_count}")
-        console.print("[cyan]Restarting fresh...[/]")
+        loginfo("[cyan]Restarting fresh...[/]")
         sys.exit(42)
 
     def _cmd_cost(self, _):
-        console.print(f"\n[bold]Session cost:[/] ${self.session_cost:.4f}")
-        console.print(f"[bold]Cloud inference calls:[/] {self.cloud_calls}")
-        console.print(f"[bold]Interactions:[/] {self.interaction_count}")
+        loginfo(f"\n[bold]Session cost:[/] ${self.session_cost:.4f}")
+        loginfo(f"[bold]Cloud inference calls:[/] {self.cloud_calls}")
+        loginfo(f"[bold]Interactions:[/] {self.interaction_count}")
 
     def _cmd_routing(self, raw):
         """
@@ -5573,7 +5589,7 @@ class Igor:
         """
         if "--dag" in raw:
             from .cognition.inference_gateway import get_gateway as _gw
-            console.print(_gw().describe())
+            loginfo(_gw().describe())
             return
 
         from pathlib import Path as _Path
@@ -5581,7 +5597,7 @@ class Igor:
 
         _log = _Path.home() / ".TheIgors" / "logs" / "escalation.log"
         if not _log.exists():
-            console.print("[yellow]escalation.log not found — no routing data yet.[/]")
+            loginfo("[yellow]escalation.log not found — no routing data yet.[/]")
             return
 
         try:
@@ -5595,7 +5611,7 @@ class Igor:
         _reason_counts: dict[str, int] = {}
         _tier_counts:   dict[str, int] = {}
 
-        console.print(f"\n[bold]Last {min(_n, len(lines))} escalation decisions:[/]")
+        loginfo(f"\n[bold]Last {min(_n, len(lines))} escalation decisions:[/]")
         for line in lines:
             parts = {k: v for k, v in (p.split("=", 1) for p in line.split("|") if "=" in p)}
             _ts_  = line.split("|")[0]
@@ -5607,22 +5623,22 @@ class Igor:
             _inp  = parts.get("input", "")[:60]
             _reason_counts[_rsn] = _reason_counts.get(_rsn, 0) + 1
             _tier_counts[_tier]  = _tier_counts.get(_tier, 0) + 1
-            console.print(
+            loginfo(
                 f"  [dim]{_ts_}[/] [cyan]{_tier}[/] ({_rsn})"
                 f"\n    intent={_intent} cx={_cx} signals={_sig}"
                 f"\n    input: {_inp}"
             )
 
-        console.print(f"\n[bold]Tier distribution:[/]")
+        loginfo(f"\n[bold]Tier distribution:[/]")
         for t, c in sorted(_tier_counts.items()):
-            console.print(f"  {t}: {c}")
-        console.print(f"\n[bold]Top escalation reasons:[/]")
+            loginfo(f"  {t}: {c}")
+        loginfo(f"\n[bold]Top escalation reasons:[/]")
         for r, c in sorted(_reason_counts.items(), key=lambda x: -x[1]):
-            console.print(f"  {c:3d}×  {r}")
+            loginfo(f"  {c:3d}×  {r}")
 
     def _cmd_restart(self, _):
         self._shutdown(reason="restart via /restart")
-        console.print("[cyan]Restarting...[/]")
+        loginfo("[cyan]Restarting...[/]")
         sys.exit(42)  # Caught by bash wrapper - triggers relaunch
 
     def _cmd_quit(self, _):
@@ -5636,7 +5652,7 @@ class Igor:
         2. Write sleep note to ring (letter to tomorrow-Igor).
         3. Normal shutdown (saves warm context + shutdown_timestamp for gap detection).
         """
-        console.print("[cyan]Pre-sleep ritual — consolidating before The Gap...[/]")
+        loginfo("[cyan]Pre-sleep ritual — consolidating before The Gap...[/]")
 
         # 1a. Force NE pass synchronously
         console.print(f"[dim]{_cts()}[SLEEP] running NE consolidation pass...[/]")
@@ -5652,9 +5668,9 @@ class Igor:
                 if _ne_state and _m:
                     _m.ingest_ne_state(_ne_state)
                 _ne_promoted = len(result.get("memory_candidates", []))
-            console.print(f"[dim][SLEEP] NE pass complete — promoted≈{_ne_promoted}.[/]")
+            loginfo(f"[dim][SLEEP] NE pass complete — promoted≈{_ne_promoted}.[/]")
         except Exception as _e:
-            console.print(f"[dim][SLEEP] NE pass failed (non-fatal): {_e}[/]")
+            loginfo(f"[dim][SLEEP] NE pass failed (non-fatal): {_e}[/]")
 
         # 1b. Run episodic consolidation daemon synchronously (#174)
         console.print(f"[dim]{_cts()}[SLEEP] running episodic consolidation...[/]")
@@ -5665,14 +5681,14 @@ class Igor:
             _cl = _con_result.get("clusters", 0)
             _ex = _con_result.get("extracted", 0)
             _sk = _con_result.get("skipped", 0)
-            console.print(f"[dim][SLEEP] consolidation: clusters={_cl} extracted={_ex} skipped={_sk}.[/]")
+            loginfo(f"[dim][SLEEP] consolidation: clusters={_cl} extracted={_ex} skipped={_sk}.[/]")
             if _ex > 0:
                 self.cortex.write_ring(
                     f"CONSOLIDATION|clusters={_cl}|extracted={_ex}|skipped={_sk}",
                     category="consolidation",
                 )
         except Exception as _e:
-            console.print(f"[dim][SLEEP] consolidation failed (non-fatal): {_e}[/]")
+            loginfo(f"[dim][SLEEP] consolidation failed (non-fatal): {_e}[/]")
 
         # 2. Write sleep note — "letter to tomorrow-Igor"
         _milieu_snap = ""
@@ -5720,19 +5736,19 @@ class Igor:
         rest = parts[2] if len(parts) > 2 else ""
 
         if sub == "list":
-            console.print(_nb.list_notebook(_slug))
+            loginfo(_nb.list_notebook(_slug))
         elif sub == "search":
             if not rest:
-                console.print("[yellow]Usage: /notebook search <query>[/]")
+                loginfo("[yellow]Usage: /notebook search <query>[/]")
             else:
-                console.print(_nb.search_notebook(_slug, rest))
+                loginfo(_nb.search_notebook(_slug, rest))
         elif sub in ("remove", "delete", "rm"):
             if not rest:
-                console.print("[yellow]Usage: /notebook remove <id_or_title>[/]")
+                loginfo("[yellow]Usage: /notebook remove <id_or_title>[/]")
             else:
-                console.print(_nb.remove_entry(_slug, rest))
+                loginfo(_nb.remove_entry(_slug, rest))
         else:
-            console.print(_nb.list_notebook(_slug))
+            loginfo(_nb.list_notebook(_slug))
 
     def _cmd_why(self, raw: str):
         """
@@ -5755,9 +5771,9 @@ class Igor:
         except Exception:
             pass
 
-        console.print(f"\n[bold]Upward causal trace[/] (direction=up, depth=4):")
+        loginfo(f"\n[bold]Upward causal trace[/] (direction=up, depth=4):")
         if topic:
-            console.print(f"  anchor: {topic}")
+            loginfo(f"  anchor: {topic}")
 
         try:
             # Regular traverse (not exit_on_convergence — we want to see the full path)
@@ -5765,20 +5781,20 @@ class Igor:
                 _seeds, max_depth=4, min_weight=0.08
             )
         except Exception as e:
-            console.print(f"[red]Error: {e}[/]")
+            loginfo(f"[red]Error: {e}[/]")
             return
 
         if not path:
-            console.print("  [dim]No causal path found in current context.[/]")
+            loginfo("  [dim]No causal path found in current context.[/]")
             return
 
-        console.print(f"  {len(path)} nodes in causal path:")
+        loginfo(f"  {len(path)} nodes in causal path:")
         for i, m in enumerate(path[:10]):
             _iw = (m.metadata or {}).get("investment_weight", 0.0)
             _iw_str = f"  [w={_iw:.2f}]" if _iw > 0.5 else ""
             _inertia = getattr(m, "inertia", 0.5)
             _mtype = getattr(m.memory_type, "value", str(m.memory_type)) if hasattr(m, "memory_type") else "?"
-            console.print(
+            loginfo(
                 f"  [{i+1:2d}] [dim]{_mtype[:4]}[/] {m.id[:14]}{_iw_str}  "
                 f"[dim]inertia={_inertia:.2f}[/]\n"
                 f"       {m.narrative[:100]}"
@@ -5804,9 +5820,9 @@ class Igor:
         except Exception:
             pass
 
-        console.print(f"\n[bold]Lever trace[/] (exit_on_convergence, depth=5):")
+        loginfo(f"\n[bold]Lever trace[/] (exit_on_convergence, depth=5):")
         if topic:
-            console.print(f"  topic: {topic}")
+            loginfo(f"  topic: {topic}")
 
         try:
             levers = self.cortex.interpretive_traverse(
@@ -5814,11 +5830,11 @@ class Igor:
                 convergence_weight=0.70, convergence_out_degree=3,
             )
         except Exception as e:
-            console.print(f"[red]Error: {e}[/]")
+            loginfo(f"[red]Error: {e}[/]")
             return
 
         if not levers:
-            console.print("  [dim]No convergence nodes found in current context.[/]")
+            loginfo("  [dim]No convergence nodes found in current context.[/]")
             return
 
         # Sort by investment_weight desc, then inertia
@@ -5831,13 +5847,13 @@ class Igor:
             _iw = (m.metadata or {}).get("investment_weight", 0.0)
             _iw_str = f"  w={_iw:.2f}" if _iw else ""
             _inertia = getattr(m, "inertia", 0.5)
-            console.print(
+            loginfo(
                 f"  [bold cyan]{m.id[:16]}[/]{_iw_str}  inertia={_inertia:.2f}\n"
                 f"    {m.narrative[:120]}"
             )
 
     def _cmd_unknown(self, raw):
-        console.print(f"[yellow]Unknown command: {raw}[/]  (try /help)")
+        loginfo(f"[yellow]Unknown command: {raw}[/]  (try /help)")
 
     def _shutdown(self, reason: str = "shutdown"):
         # Persist learned word graph weights before exit
@@ -5864,8 +5880,8 @@ class Igor:
             reason=f"{reason} — {self.interaction_count} interactions, ${self.session_cost:.4f}",
         )
         self._save_warm_context()
-        console.print(f"\n[cyan]Igor-{self.instance_id} shutting down.[/]")
-        console.print(f"Session: {self.interaction_count} interactions, ${self.session_cost:.4f} cost")
+        loginfo(f"\n[cyan]Igor-{self.instance_id} shutting down.[/]")
+        loginfo(f"Session: {self.interaction_count} interactions, ${self.session_cost:.4f} cost")
         console.print(f"[dim]{_cts()}Memories persisted to SQLite. See you next time.[/]")
 
 
@@ -5888,7 +5904,7 @@ def main():
     load_dotenv(env_path)
 
     if not os.getenv("ANTHROPIC_API_KEY") and not os.getenv("ANTHROPIC_AUTH_TOKEN"):
-        console.print("[red]Error: ANTHROPIC_API_KEY or ANTHROPIC_AUTH_TOKEN not set. Create a .env file.[/]")
+        loginfo("[red]Error: ANTHROPIC_API_KEY or ANTHROPIC_AUTH_TOKEN not set. Create a .env file.[/]")
         sys.exit(1)
 
     parser = argparse.ArgumentParser(description="Igor - Wild Instance")
@@ -5905,12 +5921,12 @@ def main():
         if _IGOR_DB_ENV:
             # IGOR_DB_PATH set — instance_id derived from filename
             instance_id = Path(_IGOR_DB_ENV).expanduser().stem
-            console.print(f"[dim]Using IGOR_DB_PATH: {_IGOR_DB_ENV}[/]")
+            loginfo(f"[dim]Using IGOR_DB_PATH: {_IGOR_DB_ENV}[/]")
         else:
             existing_dbs = sorted(DATA_DIR.glob("igor_wild_*.db"), key=lambda p: p.stat().st_mtime, reverse=True)
             if existing_dbs:
                 instance_id = existing_dbs[0].stem
-                console.print(f"[dim]Resuming existing instance: {instance_id}[/]")
+                loginfo(f"[dim]Resuming existing instance: {instance_id}[/]")
             else:
                 instance_id = _make_instance_id(args.host)
 
