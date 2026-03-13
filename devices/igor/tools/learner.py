@@ -13,6 +13,7 @@ Registered tools:
 
 import json
 import re
+import sqlite3
 import subprocess
 import sys
 import time
@@ -36,12 +37,40 @@ _FICTION_MARKERS = (
     "young adult", "fairy tale", "fable",
 )
 
+# Known fiction authors — skip regardless of tags (for authors with missing/wrong tags)
+_FICTION_AUTHORS = {
+    "anthony, piers",
+    "brooks, terry",
+    "burroughs, edgar rice",
+    "card, orson scott",
+    "king, stephen",
+    "koontz, dean",
+    "lackey, mercedes",
+    "leiber, fritz",
+    "martin, george r. r.",
+    "mccaffrey, anne",
+    "pratchett, terry",
+    "stasheff, christopher",
+    "turtledove, harry",
+    "watt-evans, laurence",
+    "weber, david",
+}
+
 def _is_fiction(book: dict) -> bool:
     tags = [t.lower() for t in book.get("tags", [])]
     title_lower = book.get("title", "").lower()
+    author_lower = book.get("author_sort", book.get("authors", "")).lower()
+
+    # Known fiction author
+    for author in _FICTION_AUTHORS:
+        if author in author_lower:
+            return True
+
+    # Tag-based check
     for marker in _FICTION_MARKERS:
         if any(marker in t for t in tags):
             return True
+
     # Heuristic: title ends with common fiction signals
     for signal in (" - a novel", ": a novel", " (novel)"):
         if title_lower.endswith(signal):
@@ -345,4 +374,240 @@ registry.register(Tool(
         "required": [],
     },
     fn=process_learn_queue,
+))
+
+
+# ── list_absorbed_books ────────────────────────────────────────────────────────
+
+def list_absorbed_books(**_kwargs) -> str:
+    """Return a summary of books/sources that have been absorbed via book_learner."""
+    import os, sqlite3, json
+    db_path = os.environ.get("IGOR_DB_PATH", os.path.expanduser("~/.TheIgors/igor_wild_0001/wild-0001.db"))
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT metadata, COUNT(*) as node_count
+            FROM memories
+            WHERE memory_type IN ('FACTUAL','INTERPRETIVE','PROCEDURAL')
+              AND source = 'reading'
+              AND json_extract(metadata, '$.book_title') IS NOT NULL
+            GROUP BY json_extract(metadata, '$.book_title'), json_extract(metadata, '$.book_author')
+            ORDER BY node_count DESC
+        """)
+        rows = cur.fetchall()
+        conn.close()
+    except Exception as e:
+        return f"Error querying absorbed books: {e}"
+
+    if not rows:
+        return "No books have been absorbed yet."
+
+    lines = [f"Absorbed {len(rows)} source(s):"]
+    total_nodes = 0
+    for row in rows:
+        meta = json.loads(row["metadata"]) if row["metadata"] else {}
+        title = meta.get("book_title", "Unknown")
+        author = meta.get("book_author", "")
+        count = row["node_count"]
+        total_nodes += count
+        entry = f"  • {title}"
+        if author:
+            entry += f" — {author}"
+        entry += f"  ({count} nodes)"
+        lines.append(entry)
+    lines.append(f"\nTotal: {total_nodes} knowledge nodes")
+
+    # Also show queue
+    queue_path = Path.home() / ".TheIgors" / "learn_queue.json"
+    if queue_path.exists():
+        try:
+            queue = json.loads(queue_path.read_text())
+            if queue:
+                lines.append(f"\nQueued to learn: {len(queue)} item(s)")
+        except Exception:
+            pass
+
+    return "\n".join(lines)
+
+
+registry.register(Tool(
+    name="list_absorbed_books",
+    description=(
+        "List all books and sources Igor has absorbed via book_learner, "
+        "with node counts per source. Also shows the pending learn queue."
+    ),
+    parameters={"type": "object", "properties": {}, "required": []},
+    fn=list_absorbed_books,
+))
+
+
+# ── reading_list tools ─────────────────────────────────────────────────────────
+
+def _rl_db() -> sqlite3.Connection:
+    import os
+    db_path = os.environ.get("IGOR_DB_PATH", os.path.expanduser("~/.TheIgors/igor_wild_0001/wild-0001.db"))
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def get_reading_list(**kwargs) -> str:
+    """Return the reading list, optionally filtered by status or book_type."""
+    status_filter = kwargs.get("status")       # e.g. "queued", "in_progress", "completed"
+    type_filter   = kwargs.get("book_type")    # "fiction" | "nonfiction"
+    try:
+        conn = _rl_db()
+        cur  = conn.cursor()
+        sql  = "SELECT * FROM reading_list WHERE 1=1"
+        params = []
+        if status_filter:
+            sql += " AND status = ?"
+            params.append(status_filter)
+        if type_filter:
+            sql += " AND book_type = ?"
+            params.append(type_filter)
+        sql += " ORDER BY priority, id"
+        cur.execute(sql, params)
+        rows = cur.fetchall()
+        conn.close()
+    except Exception as e:
+        return f"Error reading reading_list: {e}"
+
+    if not rows:
+        return "No entries match."
+
+    _STATUS_ICON = {
+        "queued": "○", "in_progress": "▶", "completed": "✓",
+        "needs_acquisition": "?", "paused": "‖",
+    }
+    lines = []
+    for r in rows:
+        icon  = _STATUS_ICON.get(r["status"], "·")
+        rate  = "slow" if r["reading_rate"] == "slow" else ""
+        label = f"{icon} [{r['id']}] {r['title']} — {r['author'] or '?'}"
+        if rate:
+            label += f"  ({rate})"
+        lines.append(label)
+        if r["emotional_significance"]:
+            lines.append(f"    ↳ {r['emotional_significance']}")
+    return "\n".join(lines)
+
+
+def add_to_reading_list(**kwargs) -> str:
+    """Add a book to the reading list."""
+    import time as _time
+    title  = kwargs.get("title", "").strip()
+    author = kwargs.get("author", "")
+    source = kwargs.get("source", "")
+    if not title:
+        return "title is required."
+    try:
+        conn = _rl_db()
+        cur  = conn.cursor()
+        cur.execute("SELECT MAX(CAST(SUBSTR(id,4) AS INTEGER)) FROM reading_list")
+        row    = cur.fetchone()
+        max_n  = row[0] or 0
+        new_id = f"RL_{max_n + 1:03d}"
+        cur.execute("""
+            INSERT INTO reading_list
+            (id, title, author, source, book_type, reading_rate, priority, status,
+             emotional_significance, encoding_arousal, notes, added_by, added_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (
+            new_id, title, author, source,
+            kwargs.get("book_type", "nonfiction"),
+            kwargs.get("reading_rate", "fast"),
+            kwargs.get("priority", 50),
+            kwargs.get("status", "queued"),
+            kwargs.get("emotional_significance"),
+            float(kwargs.get("encoding_arousal", 0.3)),
+            kwargs.get("notes"),
+            kwargs.get("added_by", "igor"),
+            _time.strftime("%Y-%m-%dT%H:%M:%S"),
+        ))
+        conn.commit()
+        conn.close()
+        return f"Added {new_id}: {title}"
+    except Exception as e:
+        return f"Error adding to reading_list: {e}"
+
+
+def update_reading_status(**kwargs) -> str:
+    """Update the status of a reading list entry."""
+    import time as _time
+    rl_id  = kwargs.get("id", "").strip()
+    status = kwargs.get("status", "").strip()
+    if not rl_id or not status:
+        return "id and status are required."
+    valid = ("queued", "in_progress", "completed", "needs_acquisition", "paused")
+    if status not in valid:
+        return f"status must be one of: {', '.join(valid)}"
+    try:
+        conn = _rl_db()
+        cur  = conn.cursor()
+        ts   = _time.strftime("%Y-%m-%dT%H:%M:%S")
+        if status == "in_progress":
+            cur.execute("UPDATE reading_list SET status=?, started_at=? WHERE id=?", (status, ts, rl_id))
+        elif status == "completed":
+            cur.execute("UPDATE reading_list SET status=?, completed_at=? WHERE id=?", (status, ts, rl_id))
+        else:
+            cur.execute("UPDATE reading_list SET status=? WHERE id=?", (status, rl_id))
+        conn.commit()
+        changed = cur.rowcount
+        conn.close()
+        return f"Updated {rl_id} → {status}" if changed else f"No entry found with id={rl_id}"
+    except Exception as e:
+        return f"Error updating reading_list: {e}"
+
+
+registry.register(Tool(
+    name="get_reading_list",
+    description="Show Igor's permanent reading list. Filter by status (queued/in_progress/completed/needs_acquisition/paused) or book_type (fiction/nonfiction).",
+    parameters={
+        "type": "object",
+        "properties": {
+            "status":    {"type": "string", "description": "Filter by status"},
+            "book_type": {"type": "string", "description": "Filter by fiction or nonfiction"},
+        },
+        "required": [],
+    },
+    fn=get_reading_list,
+))
+
+registry.register(Tool(
+    name="add_to_reading_list",
+    description="Add a book or resource to Igor's permanent reading list.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "title":                {"type": "string"},
+            "author":               {"type": "string"},
+            "source":               {"type": "string", "description": "calibre://ID, file:///path, or https://..."},
+            "book_type":            {"type": "string", "description": "fiction or nonfiction"},
+            "reading_rate":         {"type": "string", "description": "slow or fast"},
+            "priority":             {"type": "integer", "description": "Lower = sooner. Default 50."},
+            "emotional_significance": {"type": "string"},
+            "encoding_arousal":     {"type": "number", "description": "0.0-1.0"},
+            "notes":                {"type": "string"},
+            "status":               {"type": "string"},
+        },
+        "required": ["title"],
+    },
+    fn=add_to_reading_list,
+))
+
+registry.register(Tool(
+    name="update_reading_status",
+    description="Update the status of a reading list entry (e.g. mark as in_progress or completed).",
+    parameters={
+        "type": "object",
+        "properties": {
+            "id":     {"type": "string", "description": "Reading list ID e.g. RL_001"},
+            "status": {"type": "string", "description": "queued | in_progress | completed | needs_acquisition | paused"},
+        },
+        "required": ["id", "status"],
+    },
+    fn=update_reading_status,
 ))
