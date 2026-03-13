@@ -376,6 +376,14 @@ class OllamaReasoner(LocalReasoner):
             text = response["message"]["content"]
             if not text or not text.strip():
                 raise RuntimeError("Ollama returned blank response — escalating to next tier")
+            try:
+                from ..forensic_logger import log_inference_io as _liio
+                _prompt_sent = (system + "\n\n" + user_input + memory_context)
+                _liio(provider="ollama", model=self.model, tier="tier.2",
+                      prompt=_prompt_sent, response=text,
+                      elapsed_ms=int(elapsed * 1000), call_type="reason")
+            except Exception:
+                pass
             return text, 0.0  # Local = no cost
         except Exception as exc:
             elapsed = time.perf_counter() - t0

@@ -471,3 +471,84 @@ def _purge_old_pipeline_traces(today: str) -> None:
                 p.unlink(missing_ok=True)
     except Exception:
         pass
+
+
+# ── Inference I/O log ─────────────────────────────────────────────────────────
+# Full prompt+response for every model call. Daily rotating, append-only
+# (not prepend — entries can be large). Purge after 2 days.
+# File: ~/.TheIgors/logs/inference_io.YYYYMMDD.log
+# Gate: IGOR_LOG_INFERENCE_IO (default true — disable to save disk)
+
+_INFERENCE_IO_PROMPT_CAP  = 16 * 1024   # 16 KB max per prompt
+_INFERENCE_IO_RESP_CAP    =  8 * 1024   # 8 KB max per response
+
+
+def log_inference_io(
+    *,
+    provider: str,           # "ollama" | "openrouter" | "anthropic"
+    model: str,
+    tier: str = "",
+    turn_id: str = "",
+    prompt: str,             # full prompt sent to model (system + user + context)
+    response: str,           # full text response received
+    elapsed_ms: int = 0,
+    call_type: str = "reason",  # "reason" | "preparse" | "winnow" | "ne" | "think"
+) -> None:
+    """
+    Log full prompt + response for every model inference call.
+
+    Append-only, daily rotation (inference_io.YYYYMMDD.log), purged after 2 days.
+    Prompt capped at 16KB, response at 8KB so the log stays manageable.
+    Gate: IGOR_LOG_INFERENCE_IO (default true).
+    """
+    try:
+        import os as _os
+        if _os.getenv("IGOR_LOG_INFERENCE_IO", "true").lower() in ("0", "false", "no"):
+            return
+
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        today = datetime.now().strftime("%Y%m%d")
+        path  = LOG_DIR / f"inference_io.{today}.log"
+
+        tid  = turn_id or get_turn_id()
+        hdr  = (
+            f"=== {_ts()} | {provider}/{model}"
+            + (f" | {tier}" if tier else "")
+            + (f" | turn={tid}" if tid and tid != "?" else "")
+            + (f" | {call_type}" if call_type else "")
+            + f" | {elapsed_ms}ms ==="
+        )
+        prompt_block   = prompt[:_INFERENCE_IO_PROMPT_CAP]
+        response_block = response[:_INFERENCE_IO_RESP_CAP]
+        if len(prompt) > _INFERENCE_IO_PROMPT_CAP:
+            prompt_block += f"\n...[truncated {len(prompt) - _INFERENCE_IO_PROMPT_CAP} chars]"
+        if len(response) > _INFERENCE_IO_RESP_CAP:
+            response_block += f"\n...[truncated {len(response) - _INFERENCE_IO_RESP_CAP} chars]"
+
+        entry = (
+            f"\n{hdr}\n"
+            f"--- PROMPT ---\n{prompt_block}\n"
+            f"--- RESPONSE ---\n{response_block}\n"
+            f"--- END ---\n"
+        )
+
+        with path.open("a", encoding="utf-8") as f:
+            f.write(entry)
+
+        _purge_old_inference_io(today)
+
+    except Exception:
+        pass  # Logging must never crash the main loop
+
+
+def _purge_old_inference_io(today: str) -> None:
+    """Delete inference_io logs older than 2 days."""
+    try:
+        from datetime import datetime as _dt, timedelta
+        cutoff = (_dt.strptime(today, "%Y%m%d") - timedelta(days=2)).strftime("%Y%m%d")
+        for p in LOG_DIR.glob("inference_io.*.log"):
+            date_part = p.stem.split(".")[-1]
+            if date_part.isdigit() and date_part < cutoff:
+                p.unlink(missing_ok=True)
+    except Exception:
+        pass
