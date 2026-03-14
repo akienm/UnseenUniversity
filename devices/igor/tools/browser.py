@@ -53,19 +53,30 @@ def _make_llm():
     return ChatAnthropic(model="claude-haiku-4-5-20251001")
 
 
+_virtual_display = None  # module-level singleton so it isn't GC'd
+
+
 def _ensure_virtual_display():
-    """Start a virtual display if no real DISPLAY is available. No-op if already set."""
-    if os.environ.get("DISPLAY"):
-        return  # real display present (or already set by previous call)
+    """
+    Always start Igor's own Xvfb virtual display for browser tasks.
+    Creates a new Display regardless of whether a real DISPLAY is already set,
+    so browser windows never appear on the user's desktop.
+    No-op after the first call (module-level singleton).
+    """
+    global _virtual_display
+    if _virtual_display is not None:
+        return
     try:
         from pyvirtualdisplay import Display
 
-        d = Display(visible=False, size=(1280, 900))
-        d.start()
-        logger.info("Virtual display started (Xvfb) for browser_use")
+        _virtual_display = Display(visible=False, size=(1280, 900))
+        _virtual_display.start()
+        logger.info(
+            f"Virtual display started (Xvfb) DISPLAY={os.environ.get('DISPLAY')} for browser_use"
+        )
     except Exception as e:
-        logger.debug(
-            f"pyvirtualdisplay unavailable ({e}), proceeding without virtual display"
+        logger.warning(
+            f"pyvirtualdisplay unavailable ({e}), browser may appear on real display"
         )
 
 
@@ -89,6 +100,9 @@ def browser_use_task(
         JSON string with result status, extracted data, and any errors
     """
     _ensure_virtual_display()
+    logger.info(
+        f"browser_use_task: starting — task={task_description[:100]!r} url={url!r} max_steps={max_steps} timeout={timeout}"
+    )
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -101,11 +115,15 @@ def browser_use_task(
                     timeout=timeout,
                 )
             )
+            logger.info(
+                f"browser_use_task: completed status={result.get('status')} steps={result.get('steps_taken')}"
+            )
             return json.dumps(result, indent=2)
         finally:
             loop.close()
 
     except ImportError as e:
+        logger.error(f"browser_use_task: ImportError — {e}")
         return json.dumps(
             {
                 "status": "error",
@@ -114,7 +132,7 @@ def browser_use_task(
             }
         )
     except Exception as e:
-        logger.exception("Browser task failed")
+        logger.exception(f"browser_use_task: unhandled exception — {e}")
         return json.dumps(
             {
                 "status": "error",

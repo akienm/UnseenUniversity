@@ -225,6 +225,10 @@ def _discover_urls_via_browser(topic: str) -> list[tuple[str, str]]:
     prompt = _DISCOVERY_PROMPT.format(topic=topic)
     results = []
 
+    import logging as _log
+
+    _browser_log = _log.getLogger("browser_use")
+
     for name, site in _AI_SITES:
         try:
             task = (
@@ -232,7 +236,13 @@ def _discover_urls_via_browser(topic: str) -> list[tuple[str, str]]:
                 f"In the chat input, type exactly: {prompt!r} "
                 f"Wait for the full response. Return the complete response text."
             )
+            _browser_log.info(
+                f"[learner] starting browser discovery via {name} for topic={topic!r}"
+            )
             result = browser_use_task(task_description=task, max_steps=8)
+            _browser_log.info(
+                f"[learner] browser_use_task raw result: {str(result)[:300]}"
+            )
             if isinstance(result, str):
                 import json as _json
 
@@ -240,15 +250,25 @@ def _discover_urls_via_browser(topic: str) -> list[tuple[str, str]]:
                     result = _json.loads(result)
                 except Exception:
                     pass
-            response_text = (
-                result.get("result", "") if isinstance(result, dict) else str(result)
-            )
+            if isinstance(result, dict):
+                status = result.get("status", "?")
+                if status != "success":
+                    _browser_log.warning(
+                        f"[learner] {name} browser task status={status} error={result.get('error', '')[:200]}"
+                    )
+                response_text = result.get("result", "")
+            else:
+                response_text = str(result)
             urls = _parse_urls(response_text)
+            _browser_log.info(
+                f"[learner] {name}: parsed {len(urls)} URLs from response"
+            )
             for url in urls[:10]:
                 results.append((url, f"{name} suggestion for '{topic}'"))
             if results:
                 break  # one AI is enough; don't hammer multiple
-        except Exception:
+        except Exception as e:
+            _browser_log.warning(f"[learner] browser discovery via {name} raised: {e}")
             continue
 
     return results
@@ -383,10 +403,10 @@ def learn_about(user_input: str) -> str:
             lines.append(f"Web: {len(url_pairs)} URL(s) queued.")
         else:
             lines.append(
-                "Web: browser discovery unavailable — will rely on library sources."
+                "Web: browser discovery returned no URLs — check ~/.TheIgors/logs/browser_use.log for details."
             )
     except Exception as e:
-        lines.append(f"Web: discovery skipped ({e}).")
+        lines.append(f"Web: discovery error ({e}) — check browser_use.log.")
 
     # ── 3. Spawn queue runner if anything was queued ───────────────────────
     anything_queued = bool(queued_books) or urls_queued > 0
