@@ -114,9 +114,12 @@ _TONIGHT_MARKERS = ("tonight", "later tonight", "overnight", "at night", "when i
 
 def _extract_topic(user_input: str) -> str:
     low = user_input.lower().strip()
+    # Search anywhere in the input — handles thread-context-prefixed CC bridge messages
+    # where the actual request appears after "[Web message from akien]: go learn about X"
     for t in sorted(_TRIGGERS, key=len, reverse=True):
-        if low.startswith(t):
-            topic = user_input[len(t) :].strip(" .:,")
+        idx = low.find(t)
+        if idx != -1:
+            topic = user_input[idx + len(t) :].strip(" .:,")
             # Strip any trailing "tonight" / timing modifier
             for m in _TONIGHT_MARKERS:
                 if topic.lower().endswith(m):
