@@ -23,20 +23,36 @@ from pathlib import Path
 from .registry import Tool, registry
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
-_REPO          = Path(__file__).parent.parent.parent.parent
-_BOOK_LEARNER  = _REPO / "claudecode" / "book_learner.py"
-_DRAIN_SCRIPT  = _REPO / "claudecode" / "drain_learn_queue.py"
-_VENV_PYTHON   = _REPO / "venv" / "bin" / "python"
-_QUEUE_FILE    = Path.home() / ".TheIgors" / "learn_queue.json"
-_DRAIN_PID     = Path.home() / ".TheIgors" / "drain_learn_queue.pid"
+_REPO = Path(__file__).parent.parent.parent.parent
+_BOOK_LEARNER = _REPO / "claudecode" / "book_learner.py"
+_DRAIN_SCRIPT = _REPO / "claudecode" / "drain_learn_queue.py"
+_VENV_PYTHON = _REPO / "venv" / "bin" / "python"
+_QUEUE_FILE = Path.home() / ".TheIgors" / "learn_queue.json"
+_DRAIN_PID = Path.home() / ".TheIgors" / "drain_learn_queue.pid"
 
 # ── Fiction filter ─────────────────────────────────────────────────────────────
 # Tags containing any of these substrings → skip the book
 _FICTION_MARKERS = (
-    "fiction", "novel", "fantasy", "thriller", "mystery", "romance",
-    "horror", "sci-fi", "science fiction", "short stor", "poetry",
-    "drama", "play", "screenplay", "comic", "manga", "children",
-    "young adult", "fairy tale", "fable",
+    "fiction",
+    "novel",
+    "fantasy",
+    "thriller",
+    "mystery",
+    "romance",
+    "horror",
+    "sci-fi",
+    "science fiction",
+    "short stor",
+    "poetry",
+    "drama",
+    "play",
+    "screenplay",
+    "comic",
+    "manga",
+    "children",
+    "young adult",
+    "fairy tale",
+    "fable",
 )
 
 # Known fiction authors — skip regardless of tags (for authors with missing/wrong tags)
@@ -57,6 +73,7 @@ _FICTION_AUTHORS = {
     "watt-evans, laurence",
     "weber, david",
 }
+
 
 def _is_fiction(book: dict) -> bool:
     tags = [t.lower() for t in book.get("tags", [])]
@@ -79,6 +96,7 @@ def _is_fiction(book: dict) -> bool:
             return True
     return False
 
+
 # ── Trigger phrase stripper ────────────────────────────────────────────────────
 _TRIGGERS = (
     "go learn about",
@@ -93,11 +111,12 @@ _TRIGGERS = (
 
 _TONIGHT_MARKERS = ("tonight", "later tonight", "overnight", "at night", "when idle")
 
+
 def _extract_topic(user_input: str) -> str:
     low = user_input.lower().strip()
     for t in sorted(_TRIGGERS, key=len, reverse=True):
         if low.startswith(t):
-            topic = user_input[len(t):].strip(" .:,")
+            topic = user_input[len(t) :].strip(" .:,")
             # Strip any trailing "tonight" / timing modifier
             for m in _TONIGHT_MARKERS:
                 if topic.lower().endswith(m):
@@ -105,11 +124,14 @@ def _extract_topic(user_input: str) -> str:
             return topic
     return user_input.strip()
 
+
 def _is_tonight(user_input: str) -> bool:
     low = user_input.lower()
     return any(m in low for m in _TONIGHT_MARKERS)
 
+
 # ── Learn queue ────────────────────────────────────────────────────────────────
+
 
 def _load_queue() -> list:
     try:
@@ -118,44 +140,57 @@ def _load_queue() -> list:
     except Exception as _e:
         try:
             from ..cognition.forensic_logger import log_error as _le
-            _le(kind="LEARN_QUEUE_LOAD_FAIL", detail=str(_e), source="learner._load_queue")
+
+            _le(
+                kind="LEARN_QUEUE_LOAD_FAIL",
+                detail=str(_e),
+                source="learner._load_queue",
+            )
         except Exception:
             pass
     return []
 
+
 def _save_queue(q: list) -> None:
     _QUEUE_FILE.parent.mkdir(parents=True, exist_ok=True)
     _QUEUE_FILE.write_text(json.dumps(q, indent=2))
+
 
 def _queue_url(url: str, title: str, topic: str) -> None:
     q = _load_queue()
     # Dedup by URL
     if any(e.get("url") == url for e in q):
         return
-    q.append({
-        "url":      url,
-        "title":    title,
-        "topic":    topic,
-        "added_at": datetime.now().isoformat(),
-        "done":     False,
-    })
+    q.append(
+        {
+            "url": url,
+            "title": title,
+            "topic": topic,
+            "added_at": datetime.now().isoformat(),
+            "done": False,
+        }
+    )
     _save_queue(q)
 
+
 # ── Calibre non-fiction search ─────────────────────────────────────────────────
+
 
 def _calibre_nonfiction(topic: str) -> list[dict]:
     """Search Calibre and filter out fiction."""
     try:
         from .ebook_reader import find_book
+
         all_books = find_book(topic)
     except Exception:
         return []
     return [b for b in all_books if not _is_fiction(b)]
 
+
 # ── Browser AI discovery ───────────────────────────────────────────────────────
 
 _AI_SITES = [
-    ("Gemini",  "https://gemini.google.com"),
+    ("Gemini", "https://gemini.google.com"),
     ("ChatGPT", "https://chatgpt.com"),
 ]
 
@@ -166,6 +201,7 @@ _DISCOVERY_PROMPT = (
     "Include the direct URL for each. Return only the list with URLs."
 )
 
+
 def _parse_urls(text: str) -> list[str]:
     """Extract HTTP(S) URLs from a block of text."""
     raw = re.findall(r'https?://[^\s"\'<>\])\|]+', text)
@@ -174,6 +210,7 @@ def _parse_urls(text: str) -> list[str]:
     # Filter out the AI site's own domain
     skip = {"gemini.google.com", "chatgpt.com", "openai.com", "google.com"}
     return [u for u in cleaned if not any(s in u for s in skip)]
+
 
 def _discover_urls_via_browser(topic: str) -> list[tuple[str, str]]:
     """
@@ -195,8 +232,17 @@ def _discover_urls_via_browser(topic: str) -> list[tuple[str, str]]:
                 f"In the chat input, type exactly: {prompt!r} "
                 f"Wait for the full response. Return the complete response text."
             )
-            result = browser_use_task(task=task, max_steps=8)
-            response_text = result.get("result", "") if isinstance(result, dict) else str(result)
+            result = browser_use_task(task_description=task, max_steps=8)
+            if isinstance(result, str):
+                import json as _json
+
+                try:
+                    result = _json.loads(result)
+                except Exception:
+                    pass
+            response_text = (
+                result.get("result", "") if isinstance(result, dict) else str(result)
+            )
             urls = _parse_urls(response_text)
             for url in urls[:10]:
                 results.append((url, f"{name} suggestion for '{topic}'"))
@@ -207,7 +253,9 @@ def _discover_urls_via_browser(topic: str) -> list[tuple[str, str]]:
 
     return results
 
+
 # ── Queue runner ───────────────────────────────────────────────────────────────
+
 
 def _queue_runner_alive() -> bool:
     """True if drain_learn_queue.py is already running (PID file check)."""
@@ -217,6 +265,7 @@ def _queue_runner_alive() -> bool:
         pid = int(_DRAIN_PID.read_text().strip())
         # Check if process exists
         import os as _os
+
         _os.kill(pid, 0)
         return True
     except (ValueError, OSError):
@@ -233,7 +282,7 @@ def _launch_queue_runner(delay: float = 60.0) -> bool:
         return False  # already running
 
     python = str(_VENV_PYTHON) if _VENV_PYTHON.exists() else sys.executable
-    cmd    = [python, str(_DRAIN_SCRIPT), "--delay", str(delay)]
+    cmd = [python, str(_DRAIN_SCRIPT), "--delay", str(delay)]
     try:
         log_dir = Path.home() / ".TheIgors" / "logs"
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -246,8 +295,10 @@ def _launch_queue_runner(delay: float = 60.0) -> bool:
 
 # ── Background launcher ────────────────────────────────────────────────────────
 
-def _launch_book(calibre_id: int = None, url: str = None, title: str = "",
-                 local: bool = True) -> bool:
+
+def _launch_book(
+    calibre_id: int = None, url: str = None, title: str = "", local: bool = True
+) -> bool:
     python = str(_VENV_PYTHON) if _VENV_PYTHON.exists() else sys.executable
     cmd = [python, str(_BOOK_LEARNER), "--run", "--resume"]
     if local:
@@ -274,7 +325,9 @@ def _launch_book(calibre_id: int = None, url: str = None, title: str = "",
     except Exception:
         return False
 
+
 # ── Public tools ──────────────────────────────────────────────────────────────
+
 
 def learn_about(user_input: str) -> str:
     """
@@ -282,8 +335,8 @@ def learn_about(user_input: str) -> str:
     1. Calibre non-fiction search → launch immediately
     2. Browser AI discovery → queue URLs for night processing
     """
-    topic    = _extract_topic(user_input)
-    tonight  = _is_tonight(user_input)
+    topic = _extract_topic(user_input)
+    tonight = _is_tonight(user_input)
 
     if not topic:
         return "What topic shall I learn about? Try: go learn about consciousness"
@@ -293,10 +346,10 @@ def learn_about(user_input: str) -> str:
     # ── 1. Calibre non-fiction ─────────────────────────────────────────────
     books = _calibre_nonfiction(topic)
     launched_books = []
-    queued_books   = []
+    queued_books = []
 
     for book in books[:3]:
-        cid   = book.get("calibre_id")
+        cid = book.get("calibre_id")
         title = book.get("title", "?")
         if not cid:
             continue
@@ -309,9 +362,13 @@ def learn_about(user_input: str) -> str:
                 launched_books.append(title)
 
     if launched_books:
-        lines.append("Library: launched — " + ", ".join(f'"{t}"' for t in launched_books))
+        lines.append(
+            "Library: launched — " + ", ".join(f'"{t}"' for t in launched_books)
+        )
     if queued_books:
-        lines.append("Library: queued for tonight — " + ", ".join(f'"{t}"' for t in queued_books))
+        lines.append(
+            "Library: queued for tonight — " + ", ".join(f'"{t}"' for t in queued_books)
+        )
     if not books:
         lines.append("Library: no non-fiction matches in Calibre.")
 
@@ -325,7 +382,9 @@ def learn_about(user_input: str) -> str:
             urls_queued = len(url_pairs)
             lines.append(f"Web: {len(url_pairs)} URL(s) queued.")
         else:
-            lines.append("Web: browser discovery unavailable — will rely on library sources.")
+            lines.append(
+                "Web: browser discovery unavailable — will rely on library sources."
+            )
     except Exception as e:
         lines.append(f"Web: discovery skipped ({e}).")
 
@@ -334,7 +393,9 @@ def learn_about(user_input: str) -> str:
     if anything_queued:
         launched_runner = _launch_queue_runner(delay=60.0)
         if launched_runner:
-            lines.append("Background queue runner started — will drain items at 60s intervals.")
+            lines.append(
+                "Background queue runner started — will drain items at 60s intervals."
+            )
         else:
             lines.append("Queue runner already active.")
 
@@ -359,7 +420,7 @@ def process_learn_queue(max_items: int = 5) -> str:
 
     launched = []
     for entry in pending[:max_items]:
-        url   = entry.get("url", "")
+        url = entry.get("url", "")
         title = entry.get("title", url)
         if not url:
             entry["done"] = True
@@ -370,7 +431,7 @@ def process_learn_queue(max_items: int = 5) -> str:
         # calibre:// sentinel → use calibre_id path
         if url.startswith("calibre://"):
             try:
-                cid = int(url[len("calibre://"):])
+                cid = int(url[len("calibre://") :])
                 ok = _launch_book(calibre_id=cid, title=title, local=True)
             except ValueError:
                 ok = False
@@ -393,45 +454,49 @@ def process_learn_queue(max_items: int = 5) -> str:
 
 # ── Tool registration ──────────────────────────────────────────────────────────
 
-registry.register(Tool(
-    name="learn_about",
-    description=(
-        "Search Calibre library (non-fiction only) for books on a topic and "
-        "launch book_learner in the background. Also uses browser to discover "
-        "freely available web sources and queues them for night processing. "
-        "Called when user says 'go learn about X' or 'learn about X'."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "user_input": {
-                "type": "string",
-                "description": "Full user input including trigger phrase e.g. 'go learn about consciousness'",
-            }
+registry.register(
+    Tool(
+        name="learn_about",
+        description=(
+            "Search Calibre library (non-fiction only) for books on a topic and "
+            "launch book_learner in the background. Also uses browser to discover "
+            "freely available web sources and queues them for night processing. "
+            "Called when user says 'go learn about X' or 'learn about X'."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "user_input": {
+                    "type": "string",
+                    "description": "Full user input including trigger phrase e.g. 'go learn about consciousness'",
+                }
+            },
+            "required": ["user_input"],
         },
-        "required": ["user_input"],
-    },
-    fn=learn_about,
-))
+        fn=learn_about,
+    )
+)
 
-registry.register(Tool(
-    name="process_learn_queue",
-    description=(
-        "Drain the learn queue: launch book_learner for each queued URL. "
-        "Call at night or when idle. Processes up to 5 items per call at human pace."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "max_items": {
-                "type": "integer",
-                "description": "Max URLs to process in this call (default 5)",
-            }
+registry.register(
+    Tool(
+        name="process_learn_queue",
+        description=(
+            "Drain the learn queue: launch book_learner for each queued URL. "
+            "Call at night or when idle. Processes up to 5 items per call at human pace."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "max_items": {
+                    "type": "integer",
+                    "description": "Max URLs to process in this call (default 5)",
+                }
+            },
+            "required": [],
         },
-        "required": [],
-    },
-    fn=process_learn_queue,
-))
+        fn=process_learn_queue,
+    )
+)
 
 
 def drain_learn_queue(**_kwargs) -> str:
@@ -439,7 +504,7 @@ def drain_learn_queue(**_kwargs) -> str:
     Spawn the background queue runner (drain_learn_queue.py) if not already running.
     Shows queue status and whether the runner was started or was already active.
     """
-    q       = _load_queue()
+    q = _load_queue()
     pending = [e for e in q if not e.get("done")]
 
     if not pending:
@@ -460,25 +525,31 @@ def drain_learn_queue(**_kwargs) -> str:
     return "Failed to launch queue runner — check logs."
 
 
-registry.register(Tool(
-    name="drain_learn_queue",
-    description=(
-        "Start the background learning queue runner. Drains ~/.TheIgors/learn_queue.json "
-        "by launching book_learner for each pending item at 60-second intervals. "
-        "Safe to call multiple times — won't spawn duplicates. "
-        "Use after 'go learn about X tonight' to kick off overnight processing."
-    ),
-    parameters={"type": "object", "properties": {}, "required": []},
-    fn=drain_learn_queue,
-))
+registry.register(
+    Tool(
+        name="drain_learn_queue",
+        description=(
+            "Start the background learning queue runner. Drains ~/.TheIgors/learn_queue.json "
+            "by launching book_learner for each pending item at 60-second intervals. "
+            "Safe to call multiple times — won't spawn duplicates. "
+            "Use after 'go learn about X tonight' to kick off overnight processing."
+        ),
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=drain_learn_queue,
+    )
+)
 
 
 # ── list_absorbed_books ────────────────────────────────────────────────────────
 
+
 def list_absorbed_books(**_kwargs) -> str:
     """Return a summary of books/sources that have been absorbed via book_learner."""
     import os, sqlite3, json
-    db_path = os.environ.get("IGOR_DB_PATH", os.path.expanduser("~/.TheIgors/igor_wild_0001/wild-0001.db"))
+
+    db_path = os.environ.get(
+        "IGOR_DB_PATH", os.path.expanduser("~/.TheIgors/igor_wild_0001/wild-0001.db")
+    )
     try:
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
@@ -528,22 +599,28 @@ def list_absorbed_books(**_kwargs) -> str:
     return "\n".join(lines)
 
 
-registry.register(Tool(
-    name="list_absorbed_books",
-    description=(
-        "List all books and sources Igor has absorbed via book_learner, "
-        "with node counts per source. Also shows the pending learn queue."
-    ),
-    parameters={"type": "object", "properties": {}, "required": []},
-    fn=list_absorbed_books,
-))
+registry.register(
+    Tool(
+        name="list_absorbed_books",
+        description=(
+            "List all books and sources Igor has absorbed via book_learner, "
+            "with node counts per source. Also shows the pending learn queue."
+        ),
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=list_absorbed_books,
+    )
+)
 
 
 # ── reading_list tools ─────────────────────────────────────────────────────────
 
+
 def _rl_db() -> sqlite3.Connection:
     import os
-    db_path = os.environ.get("IGOR_DB_PATH", os.path.expanduser("~/.TheIgors/igor_wild_0001/wild-0001.db"))
+
+    db_path = os.environ.get(
+        "IGOR_DB_PATH", os.path.expanduser("~/.TheIgors/igor_wild_0001/wild-0001.db")
+    )
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
@@ -551,12 +628,12 @@ def _rl_db() -> sqlite3.Connection:
 
 def get_reading_list(**kwargs) -> str:
     """Return the reading list, optionally filtered by status or book_type."""
-    status_filter = kwargs.get("status")       # e.g. "queued", "in_progress", "completed"
-    type_filter   = kwargs.get("book_type")    # "fiction" | "nonfiction"
+    status_filter = kwargs.get("status")  # e.g. "queued", "in_progress", "completed"
+    type_filter = kwargs.get("book_type")  # "fiction" | "nonfiction"
     try:
         conn = _rl_db()
-        cur  = conn.cursor()
-        sql  = "SELECT * FROM reading_list WHERE 1=1"
+        cur = conn.cursor()
+        sql = "SELECT * FROM reading_list WHERE 1=1"
         params = []
         if status_filter:
             sql += " AND status = ?"
@@ -575,13 +652,16 @@ def get_reading_list(**kwargs) -> str:
         return "No entries match."
 
     _STATUS_ICON = {
-        "queued": "○", "in_progress": "▶", "completed": "✓",
-        "needs_acquisition": "?", "paused": "‖",
+        "queued": "○",
+        "in_progress": "▶",
+        "completed": "✓",
+        "needs_acquisition": "?",
+        "paused": "‖",
     }
     lines = []
     for r in rows:
-        icon  = _STATUS_ICON.get(r["status"], "·")
-        rate  = "slow" if r["reading_rate"] == "slow" else ""
+        icon = _STATUS_ICON.get(r["status"], "·")
+        rate = "slow" if r["reading_rate"] == "slow" else ""
         label = f"{icon} [{r['id']}] {r['title']} — {r['author'] or '?'}"
         if rate:
             label += f"  ({rate})"
@@ -594,35 +674,42 @@ def get_reading_list(**kwargs) -> str:
 def add_to_reading_list(**kwargs) -> str:
     """Add a book to the reading list."""
     import time as _time
-    title  = kwargs.get("title", "").strip()
+
+    title = kwargs.get("title", "").strip()
     author = kwargs.get("author", "")
     source = kwargs.get("source", "")
     if not title:
         return "title is required."
     try:
         conn = _rl_db()
-        cur  = conn.cursor()
+        cur = conn.cursor()
         cur.execute("SELECT MAX(CAST(SUBSTR(id,4) AS INTEGER)) FROM reading_list")
-        row    = cur.fetchone()
-        max_n  = row[0] or 0
+        row = cur.fetchone()
+        max_n = row[0] or 0
         new_id = f"RL_{max_n + 1:03d}"
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO reading_list
             (id, title, author, source, book_type, reading_rate, priority, status,
              emotional_significance, encoding_arousal, notes, added_by, added_at)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
-        """, (
-            new_id, title, author, source,
-            kwargs.get("book_type", "nonfiction"),
-            kwargs.get("reading_rate", "fast"),
-            kwargs.get("priority", 50),
-            kwargs.get("status", "queued"),
-            kwargs.get("emotional_significance"),
-            float(kwargs.get("encoding_arousal", 0.3)),
-            kwargs.get("notes"),
-            kwargs.get("added_by", "igor"),
-            _time.strftime("%Y-%m-%dT%H:%M:%S"),
-        ))
+        """,
+            (
+                new_id,
+                title,
+                author,
+                source,
+                kwargs.get("book_type", "nonfiction"),
+                kwargs.get("reading_rate", "fast"),
+                kwargs.get("priority", 50),
+                kwargs.get("status", "queued"),
+                kwargs.get("emotional_significance"),
+                float(kwargs.get("encoding_arousal", 0.3)),
+                kwargs.get("notes"),
+                kwargs.get("added_by", "igor"),
+                _time.strftime("%Y-%m-%dT%H:%M:%S"),
+            ),
+        )
         conn.commit()
         conn.close()
         return f"Added {new_id}: {title}"
@@ -633,7 +720,8 @@ def add_to_reading_list(**kwargs) -> str:
 def update_reading_status(**kwargs) -> str:
     """Update the status of a reading list entry."""
     import time as _time
-    rl_id  = kwargs.get("id", "").strip()
+
+    rl_id = kwargs.get("id", "").strip()
     status = kwargs.get("status", "").strip()
     if not rl_id or not status:
         return "id and status are required."
@@ -642,68 +730,96 @@ def update_reading_status(**kwargs) -> str:
         return f"status must be one of: {', '.join(valid)}"
     try:
         conn = _rl_db()
-        cur  = conn.cursor()
-        ts   = _time.strftime("%Y-%m-%dT%H:%M:%S")
+        cur = conn.cursor()
+        ts = _time.strftime("%Y-%m-%dT%H:%M:%S")
         if status == "in_progress":
-            cur.execute("UPDATE reading_list SET status=?, started_at=? WHERE id=?", (status, ts, rl_id))
+            cur.execute(
+                "UPDATE reading_list SET status=?, started_at=? WHERE id=?",
+                (status, ts, rl_id),
+            )
         elif status == "completed":
-            cur.execute("UPDATE reading_list SET status=?, completed_at=? WHERE id=?", (status, ts, rl_id))
+            cur.execute(
+                "UPDATE reading_list SET status=?, completed_at=? WHERE id=?",
+                (status, ts, rl_id),
+            )
         else:
             cur.execute("UPDATE reading_list SET status=? WHERE id=?", (status, rl_id))
         conn.commit()
         changed = cur.rowcount
         conn.close()
-        return f"Updated {rl_id} → {status}" if changed else f"No entry found with id={rl_id}"
+        return (
+            f"Updated {rl_id} → {status}"
+            if changed
+            else f"No entry found with id={rl_id}"
+        )
     except Exception as e:
         return f"Error updating reading_list: {e}"
 
 
-registry.register(Tool(
-    name="get_reading_list",
-    description="Show Igor's permanent reading list. Filter by status (queued/in_progress/completed/needs_acquisition/paused) or book_type (fiction/nonfiction).",
-    parameters={
-        "type": "object",
-        "properties": {
-            "status":    {"type": "string", "description": "Filter by status"},
-            "book_type": {"type": "string", "description": "Filter by fiction or nonfiction"},
+registry.register(
+    Tool(
+        name="get_reading_list",
+        description="Show Igor's permanent reading list. Filter by status (queued/in_progress/completed/needs_acquisition/paused) or book_type (fiction/nonfiction).",
+        parameters={
+            "type": "object",
+            "properties": {
+                "status": {"type": "string", "description": "Filter by status"},
+                "book_type": {
+                    "type": "string",
+                    "description": "Filter by fiction or nonfiction",
+                },
+            },
+            "required": [],
         },
-        "required": [],
-    },
-    fn=get_reading_list,
-))
+        fn=get_reading_list,
+    )
+)
 
-registry.register(Tool(
-    name="add_to_reading_list",
-    description="Add a book or resource to Igor's permanent reading list.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "title":                {"type": "string"},
-            "author":               {"type": "string"},
-            "source":               {"type": "string", "description": "calibre://ID, file:///path, or https://..."},
-            "book_type":            {"type": "string", "description": "fiction or nonfiction"},
-            "reading_rate":         {"type": "string", "description": "slow or fast"},
-            "priority":             {"type": "integer", "description": "Lower = sooner. Default 50."},
-            "emotional_significance": {"type": "string"},
-            "encoding_arousal":     {"type": "number", "description": "0.0-1.0"},
-            "notes":                {"type": "string"},
-            "status":               {"type": "string"},
+registry.register(
+    Tool(
+        name="add_to_reading_list",
+        description="Add a book or resource to Igor's permanent reading list.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "author": {"type": "string"},
+                "source": {
+                    "type": "string",
+                    "description": "calibre://ID, file:///path, or https://...",
+                },
+                "book_type": {"type": "string", "description": "fiction or nonfiction"},
+                "reading_rate": {"type": "string", "description": "slow or fast"},
+                "priority": {
+                    "type": "integer",
+                    "description": "Lower = sooner. Default 50.",
+                },
+                "emotional_significance": {"type": "string"},
+                "encoding_arousal": {"type": "number", "description": "0.0-1.0"},
+                "notes": {"type": "string"},
+                "status": {"type": "string"},
+            },
+            "required": ["title"],
         },
-        "required": ["title"],
-    },
-    fn=add_to_reading_list,
-))
+        fn=add_to_reading_list,
+    )
+)
 
-registry.register(Tool(
-    name="update_reading_status",
-    description="Update the status of a reading list entry (e.g. mark as in_progress or completed).",
-    parameters={
-        "type": "object",
-        "properties": {
-            "id":     {"type": "string", "description": "Reading list ID e.g. RL_001"},
-            "status": {"type": "string", "description": "queued | in_progress | completed | needs_acquisition | paused"},
+registry.register(
+    Tool(
+        name="update_reading_status",
+        description="Update the status of a reading list entry (e.g. mark as in_progress or completed).",
+        parameters={
+            "type": "object",
+            "properties": {
+                "id": {"type": "string", "description": "Reading list ID e.g. RL_001"},
+                "status": {
+                    "type": "string",
+                    "description": "queued | in_progress | completed | needs_acquisition | paused",
+                },
+            },
+            "required": ["id", "status"],
         },
-        "required": ["id", "status"],
-    },
-    fn=update_reading_status,
-))
+        fn=update_reading_status,
+    )
+)
