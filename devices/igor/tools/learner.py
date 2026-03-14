@@ -218,10 +218,13 @@ def _launch_book(calibre_id: int = None, url: str = None, title: str = "",
     else:
         return False
     try:
+        log_dir = Path.home() / ".TheIgors" / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = open(log_dir / "book_learner.log", "a")
         subprocess.Popen(
             cmd,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=log_file,
+            stderr=log_file,
             start_new_session=True,
         )
         return True

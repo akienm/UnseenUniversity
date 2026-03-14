@@ -505,6 +505,13 @@ def open_book(
     _handle_key = _state_key(meta)
     _HANDLE_CACHE[_handle_key] = handle
 
+    # Console note: new book vs resume
+    if handle.position > 0:
+        pct = round(handle.position / max(len(handle.sentences), 1) * 100, 1)
+        print(f"▶ Resuming: \"{meta.title}\" by {meta.author} ({pct}% through)")
+    else:
+        print(f"★ Opening: \"{meta.title}\" by {meta.author}")
+
     # Return a serializable summary dict rather than the raw BookHandle (which can't
     # survive JSON round-trips through the tool interface).
     chap_idx = _chapter_at(handle, handle.position) if handle.position > 0 else 0
