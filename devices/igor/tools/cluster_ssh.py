@@ -26,9 +26,9 @@ from .registry import Tool, registry
 # ── Config ────────────────────────────────────────────────────────────────────
 
 _MACHINES_JSON = Path.home() / ".TheIgors" / "local" / "machines.json"
-_KEY_PATH      = Path.home() / ".TheIgors" / "igor_id_rsa"
-_DEFAULT_USER  = "igor_wild_0001"
-_SSH_TIMEOUT   = 20   # seconds per command
+_KEY_PATH = Path.home() / ".TheIgors" / "igor_id_rsa"
+_DEFAULT_USER = "igor_wild_0001"
+_SSH_TIMEOUT = 20  # seconds per command
 
 
 def _load_machines() -> list[dict]:
@@ -51,20 +51,25 @@ def _ssh_run(ip: str, user: str, command: str, timeout: int = _SSH_TIMEOUT) -> s
     key = str(_KEY_PATH)
     cmd = [
         "ssh",
-        "-i", key,
-        "-o", "StrictHostKeyChecking=no",
-        "-o", "ConnectTimeout=8",
+        "-i",
+        key,
+        "-o",
+        "StrictHostKeyChecking=no",
+        "-o",
+        "ConnectTimeout=8",
         f"{user}@{ip}",
         command,
     ]
     try:
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout
-        )
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         out = (result.stdout or "").strip()
         err = (result.stderr or "").strip()
         if result.returncode != 0 and not out:
-            return f"[exit {result.returncode}] {err}" if err else f"[exit {result.returncode}]"
+            return (
+                f"[exit {result.returncode}] {err}"
+                if err
+                else f"[exit {result.returncode}]"
+            )
         return (out + ("\n" + err if err else "")).strip()
     except subprocess.TimeoutExpired:
         return f"[timeout after {timeout}s]"
@@ -73,6 +78,7 @@ def _ssh_run(ip: str, user: str, command: str, timeout: int = _SSH_TIMEOUT) -> s
 
 
 # ── Tool: ssh_exec ────────────────────────────────────────────────────────────
+
 
 def _ssh_exec(machine: str, command: str) -> str:
     """
@@ -86,46 +92,53 @@ def _ssh_exec(machine: str, command: str) -> str:
     m = _machine_by_name(machine)
     if m is None:
         machines = [x["hostname"] for x in _load_machines() if x.get("ssh")]
-        return (f"Unknown machine '{machine}'. "
-                f"SSH-capable machines: {', '.join(machines) or 'none configured yet'}")
+        return (
+            f"Unknown machine '{machine}'. "
+            f"SSH-capable machines: {', '.join(machines) or 'none configured yet'}"
+        )
     if not m.get("ssh"):
-        return (f"Machine '{machine}' does not have SSH enabled yet. "
-                f"Check machines.json — ssh:true is required.")
-    ip   = m.get("ip")
+        return (
+            f"Machine '{machine}' does not have SSH enabled yet. "
+            f"Check machines.json — ssh:true is required."
+        )
+    ip = m.get("ip")
     user = m.get("ssh_user", _DEFAULT_USER)
     if not ip:
         return f"Machine '{machine}' has no IP address in machines.json."
     return _ssh_run(ip, user, command)
 
 
-registry.register(Tool(
-    name="ssh_exec",
-    description=(
-        "Run a shell command on a remote cluster machine via SSH. "
-        "Use machine hostname (e.g. 'akiendell') and a command string. "
-        "Windows machines run PowerShell; use PowerShell syntax. "
-        "Good for: checking Ollama status, running benchmarks, listing models, "
-        "inspecting disk/memory on remote nodes."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "machine": {
-                "type": "string",
-                "description": "Hostname or IP of the target machine (must be in machines.json with ssh:true)",
+registry.register(
+    Tool(
+        name="ssh_exec",
+        description=(
+            "Run a shell command on a remote cluster machine via SSH. "
+            "Use machine hostname (e.g. 'akiendell') and a command string. "
+            "Windows machines run PowerShell; use PowerShell syntax. "
+            "Good for: checking Ollama status, running benchmarks, listing models, "
+            "inspecting disk/memory on remote nodes."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "machine": {
+                    "type": "string",
+                    "description": "Hostname or IP of the target machine (must be in machines.json with ssh:true)",
+                },
+                "command": {
+                    "type": "string",
+                    "description": "Shell command to run on the remote machine (PowerShell on Windows)",
+                },
             },
-            "command": {
-                "type": "string",
-                "description": "Shell command to run on the remote machine (PowerShell on Windows)",
-            },
+            "required": ["machine", "command"],
         },
-        "required": ["machine", "command"],
-    },
-    fn=_ssh_exec,
-))
+        fn=_ssh_exec,
+    )
+)
 
 
 # ── Tool: cluster_status ──────────────────────────────────────────────────────
+
 
 def _ollama_models(ip: str, port: int = 11434, timeout: int = 5) -> list[str] | None:
     """Return list of model names from Ollama HTTP API, or None on failure."""
@@ -142,13 +155,15 @@ def _cluster_status() -> str:
     Check Ollama health (HTTP) and SSH connectivity for all cluster machines.
     Returns a summary table.
     """
-    machines = [m for m in _load_machines() if m.get("ip") and m.get("status") == "online"]
+    machines = [
+        m for m in _load_machines() if m.get("ip") and m.get("status") == "online"
+    ]
     if not machines:
         return "No online machines in machines.json."
 
     lines = ["Cluster status:\n"]
     for m in machines:
-        ip   = m["ip"]
+        ip = m["ip"]
         host = m["hostname"]
         port = m.get("ollama_port", 11434)
         # Ollama health via HTTP (works regardless of SSH/PATH issues)
@@ -159,7 +174,7 @@ def _cluster_status() -> str:
             ollama_str = f"✓ Ollama: {len(models)} model(s)"
         # SSH check (optional — just reports if available)
         if m.get("ssh"):
-            user   = m.get("ssh_user", _DEFAULT_USER)
+            user = m.get("ssh_user", _DEFAULT_USER)
             result = _ssh_run(ip, user, "echo ssh_ok", timeout=8)
             ssh_str = "SSH ✓" if "ssh_ok" in result else f"SSH ✗"
         else:
@@ -169,6 +184,7 @@ def _cluster_status() -> str:
 
 
 # ── Tool: bootstrap_ssh ───────────────────────────────────────────────────────
+
 
 def _bootstrap_ssh(machine: str = "") -> str:
     """
@@ -184,27 +200,32 @@ def _bootstrap_ssh(machine: str = "") -> str:
         return "paramiko not installed — run: pip install paramiko"
 
     igor_user = os.getenv("WINDOWS_USER_IGOR_USER", "igor_wild_0001")
-    igor_pw   = os.getenv("WINDOWS_USER_IGOR_PW", "")
-    pubkey    = _KEY_PATH.with_suffix(".pub").read_text().strip()
+    igor_pw = os.getenv("WINDOWS_USER_IGOR_PW", "")
+    pubkey = _KEY_PATH.with_suffix(".pub").read_text().strip()
 
     if not igor_pw:
         return "WINDOWS_USER_IGOR_PW not set in .env"
 
     targets = _load_machines()
     if machine:
-        targets = [m for m in targets if m["hostname"] == machine or m.get("ip") == machine]
+        targets = [
+            m for m in targets if m["hostname"] == machine or m.get("ip") == machine
+        ]
         if not targets:
             return f"Machine '{machine}' not found in machines.json."
     else:
-        targets = [m for m in targets if m.get("ip") and not m.get("ssh")
-                   and m.get("status") == "online"]
+        targets = [
+            m
+            for m in targets
+            if m.get("ip") and not m.get("ssh") and m.get("status") == "online"
+        ]
 
     if not targets:
         return "No machines need SSH bootstrapping."
 
     results = []
     for m in targets:
-        ip   = m["ip"]
+        ip = m["ip"]
         host = m["hostname"]
         try:
             client = paramiko.SSHClient()
@@ -231,60 +252,64 @@ def _bootstrap_ssh(machine: str = "") -> str:
     return "SSH bootstrap results:\n" + "\n".join(results)
 
 
-registry.register(Tool(
-    name="bootstrap_ssh",
-    description=(
-        "Push Igor's SSH public key to cluster machines that don't have key auth yet. "
-        "Uses WINDOWS_USER_IGOR_PW from .env for initial password login, then installs "
-        "the key for future passwordless access. "
-        "Optionally specify a machine name to target just one box."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "machine": {
-                "type": "string",
-                "description": "Hostname to bootstrap (leave empty to try all non-SSH machines)",
+registry.register(
+    Tool(
+        name="bootstrap_ssh",
+        description=(
+            "Push Igor's SSH public key to cluster machines that don't have key auth yet. "
+            "Uses WINDOWS_USER_IGOR_PW from .env for initial password login, then installs "
+            "the key for future passwordless access. "
+            "Optionally specify a machine name to target just one box."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "machine": {
+                    "type": "string",
+                    "description": "Hostname to bootstrap (leave empty to try all non-SSH machines)",
+                },
             },
+            "required": [],
         },
-        "required": [],
-    },
-    fn=_bootstrap_ssh,
-))
+        fn=_bootstrap_ssh,
+    )
+)
 
 
-registry.register(Tool(
-    name="cluster_status",
-    description=(
-        "Check SSH connectivity and Ollama health on all cluster machines. "
-        "Returns a one-line status per machine showing whether SSH works and "
-        "how many Ollama models are available."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {},
-        "required": [],
-    },
-    fn=_cluster_status,
-))
+registry.register(
+    Tool(
+        name="cluster_status",
+        description=(
+            "Check SSH connectivity and Ollama health on all cluster machines. "
+            "Returns a one-line status per machine showing whether SSH works and "
+            "how many Ollama models are available."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        fn=_cluster_status,
+    )
+)
 
 
 # ── G40: Cluster load awareness ───────────────────────────────────────────────
 
 # Psutil one-liner — same metrics as local _resource_load_dict()
 _LOAD_CMD = (
-    "python3 -c \""
+    'python3 -c "'
     "import psutil,os,json;"
     "load1,*_=os.getloadavg();"
     "cpu=load1/(os.cpu_count() or 1)*100;"
     "vm=psutil.virtual_memory();"
     "sw=psutil.swap_memory();"
     "print(json.dumps({'cpu':round(cpu,1),'ram':round(vm.percent,1),'swap':round(sw.percent,1)}))"
-    "\""
+    '"'
 )
 
-_LOAD_CACHE: dict[str, dict] = {}   # hostname → {verdict, cpu, ram, swap, ts}
-_LOAD_CACHE_TTL_SEC = 60            # refresh at most once per minute
+_LOAD_CACHE: dict[str, dict] = {}  # hostname → {verdict, cpu, ram, swap, ts}
+_LOAD_CACHE_TTL_SEC = 60  # refresh at most once per minute
 
 
 def get_cluster_loads(force_refresh: bool = False) -> dict[str, dict]:
@@ -298,35 +323,42 @@ def get_cluster_loads(force_refresh: bool = False) -> dict[str, dict]:
       CPU crit ≥ 95%, RAM crit ≥ 92%, swap crit ≥ 75%
     """
     import time as _time
+
     now = _time.time()
 
-    cpu_warn  = float(os.getenv("IGOR_LOAD_CPU_WARN",  "80"))
-    cpu_crit  = float(os.getenv("IGOR_LOAD_CPU_CRIT",  "95"))
-    ram_warn  = float(os.getenv("IGOR_LOAD_RAM_WARN",  "80"))
-    ram_crit  = float(os.getenv("IGOR_LOAD_RAM_CRIT",  "92"))
+    cpu_warn = float(os.getenv("IGOR_LOAD_CPU_WARN", "80"))
+    cpu_crit = float(os.getenv("IGOR_LOAD_CPU_CRIT", "95"))
+    ram_warn = float(os.getenv("IGOR_LOAD_RAM_WARN", "80"))
+    ram_crit = float(os.getenv("IGOR_LOAD_RAM_CRIT", "92"))
     swap_warn = float(os.getenv("IGOR_LOAD_SWAP_WARN", "40"))
     swap_crit = float(os.getenv("IGOR_LOAD_SWAP_CRIT", "75"))
 
-    machines = [m for m in _load_machines()
-                if m.get("ip") and m.get("ssh") and m.get("status") == "online"]
+    machines = [
+        m
+        for m in _load_machines()
+        if m.get("ip") and m.get("ssh") and m.get("status") == "online"
+    ]
     result = {}
 
     for m in machines:
         host = m["hostname"]
         cached = _LOAD_CACHE.get(host)
-        if (not force_refresh and cached and
-                now - cached.get("ts", 0) < _LOAD_CACHE_TTL_SEC):
+        if (
+            not force_refresh
+            and cached
+            and now - cached.get("ts", 0) < _LOAD_CACHE_TTL_SEC
+        ):
             result[host] = cached
             continue
 
-        ip   = m["ip"]
+        ip = m["ip"]
         user = m.get("ssh_user", _DEFAULT_USER)
-        raw  = _ssh_run(ip, user, _LOAD_CMD, timeout=10)
+        raw = _ssh_run(ip, user, _LOAD_CMD, timeout=10)
 
         try:
             metrics = json.loads(raw.strip())
-            cpu  = metrics.get("cpu", 0)
-            ram  = metrics.get("ram", 0)
+            cpu = metrics.get("cpu", 0)
+            ram = metrics.get("ram", 0)
             swap = metrics.get("swap", 0)
             if cpu >= cpu_crit or ram >= ram_crit or swap >= swap_crit:
                 verdict = "critical"
@@ -334,7 +366,13 @@ def get_cluster_loads(force_refresh: bool = False) -> dict[str, dict]:
                 verdict = "warn"
             else:
                 verdict = "ok"
-            entry = {"verdict": verdict, "cpu": cpu, "ram": ram, "swap": swap, "ts": now}
+            entry = {
+                "verdict": verdict,
+                "cpu": cpu,
+                "ram": ram,
+                "swap": swap,
+                "ts": now,
+            }
         except Exception:
             entry = {"verdict": "unreachable", "cpu": 0, "ram": 0, "swap": 0, "ts": now}
 
@@ -354,7 +392,9 @@ def _cluster_load_report() -> str:
     lines = ["Cluster load report:\n"]
     for host, d in loads.items():
         v = d["verdict"]
-        indicator = {"ok": "✓", "warn": "⚠", "critical": "✗", "unreachable": "?"}.get(v, "?")
+        indicator = {"ok": "✓", "warn": "⚠", "critical": "✗", "unreachable": "?"}.get(
+            v, "?"
+        )
         lines.append(
             f"  {indicator} {host:<18} verdict={v:<10}  "
             f"cpu={d['cpu']:5.1f}%  ram={d['ram']:5.1f}%  swap={d['swap']:5.1f}%"
@@ -362,23 +402,107 @@ def _cluster_load_report() -> str:
     return "\n".join(lines)
 
 
-registry.register(Tool(
-    name="cluster_load",
-    description=(
-        "G40: Check CPU, RAM, and swap load on all SSH-capable cluster machines. "
-        "Returns verdict (ok/warn/critical/unreachable) + numeric stats per machine. "
-        "Use before dispatching batch work to avoid overloading a stressed node."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "force_refresh": {
-                "type": "boolean",
-                "description": "Force fresh SSH poll (default: use 60s cache)",
-                "default": False,
+registry.register(
+    Tool(
+        name="cluster_load",
+        description=(
+            "G40: Check CPU, RAM, and swap load on all SSH-capable cluster machines. "
+            "Returns verdict (ok/warn/critical/unreachable) + numeric stats per machine. "
+            "Use before dispatching batch work to avoid overloading a stressed node."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "force_refresh": {
+                    "type": "boolean",
+                    "description": "Force fresh SSH poll (default: use 60s cache)",
+                    "default": False,
+                },
             },
+            "required": [],
         },
-        "required": [],
-    },
-    fn=lambda force_refresh=False, **_: _cluster_load_report(),
-))
+        fn=lambda force_refresh=False, **_: _cluster_load_report(),
+    )
+)
+
+
+# ── Tool: restart_ollama ──────────────────────────────────────────────────────
+
+
+def _restart_ollama(machine: str = "") -> str:
+    """
+    Restart the Ollama systemd service on the specified machine (or local if empty/localhost).
+    Waits 5 seconds then returns a health check result.
+
+    machine: hostname or "" for local. Local machine uses sudo directly;
+             remote machines use SSH (must have ssh:true in machines.json).
+    """
+    import socket
+    import time as _time
+
+    local_host = socket.gethostname()
+    is_local = machine in ("", "localhost", "127.0.0.1", local_host)
+
+    if is_local:
+        try:
+            result = subprocess.run(
+                ["sudo", "systemctl", "restart", "ollama.service"],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            if result.returncode != 0:
+                err = result.stderr.strip()
+                return f"[restart failed exit {result.returncode}] {err}"
+        except Exception as exc:
+            return f"[restart error: {exc}]"
+        _time.sleep(5)
+        models = _ollama_models("127.0.0.1")
+        if models is not None:
+            return (
+                f"Ollama restarted on {local_host}. {len(models)} model(s) available."
+            )
+        return f"Ollama restarted on {local_host} but health check timed out (may still be starting)."
+
+    m = _machine_by_name(machine)
+    if m is None:
+        return f"Unknown machine '{machine}'."
+    if not m.get("ssh"):
+        return f"Machine '{machine}' has no SSH access — cannot restart remotely."
+    ip = m["ip"]
+    user = m.get("ssh_user", _DEFAULT_USER)
+    out = _ssh_run(ip, user, "sudo systemctl restart ollama.service", timeout=30)
+    if any(tag in out for tag in ("[exit", "[timeout", "[ssh error")):
+        return f"Remote restart of {machine} failed: {out}"
+    _time.sleep(5)
+    port = m.get("ollama_port", 11434)
+    models = _ollama_models(ip, port)
+    if models is not None:
+        return (
+            f"Ollama restarted on {machine} ({ip}). {len(models)} model(s) available."
+        )
+    return f"Ollama restarted on {machine} ({ip}) but health check timed out (may still be starting)."
+
+
+registry.register(
+    Tool(
+        name="restart_ollama",
+        description=(
+            "Restart the Ollama systemd service on a cluster machine. "
+            "Leave machine empty (or omit) to restart on the local box. "
+            "Waits 5 seconds then returns a health check result. "
+            "Requires sudoers entry: akien ALL=(ALL) NOPASSWD: /bin/systemctl restart ollama.service"
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "machine": {
+                    "type": "string",
+                    "description": "Hostname to restart (leave empty for local machine)",
+                },
+            },
+            "required": [],
+        },
+        fn=_restart_ollama,
+    )
+)
