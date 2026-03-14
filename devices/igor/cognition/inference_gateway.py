@@ -495,12 +495,15 @@ def _h_or(prompt: str, c: PurposeConstraints, **kw) -> str:
     if not api_key:
         raise RuntimeError("OPENROUTER_API_KEY not set")
     model = kw.get("model") or c.extra.get("or_model") or os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
-    payload = json.dumps({
+    body: dict = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
         "temperature": c.temperature,
         "max_tokens": c.max_tokens,
-    }).encode()
+    }
+    if "response_format" in c.extra:
+        body["response_format"] = c.extra["response_format"]
+    payload = json.dumps(body).encode()
     req = urllib.request.Request(
         "https://openrouter.ai/api/v1/chat/completions",
         data=payload,
@@ -590,8 +593,9 @@ def build_default_gateway() -> InferenceGateway:
             step_name="ne",
             max_tokens=1024, timeout_s=45.0, temperature=0.3,
             extra={
-                "model":    os.getenv("IGOR_NE_LOCAL_MODEL", ""),
-                "or_model": os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini"),
+                "model":           os.getenv("IGOR_NE_LOCAL_MODEL", ""),
+                "or_model":        os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini"),
+                "response_format": {"type": "json_object"},
             },
         )),
         ("think", PurposeConstraints(
