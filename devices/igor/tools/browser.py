@@ -27,9 +27,9 @@ BROWSER_LOG_PATH = LOG_DIR / "browser_use.log"
 def _init_browser_log():
     """Initialize file logging for browser operations."""
     handler = logging.FileHandler(BROWSER_LOG_PATH)
-    handler.setFormatter(logging.Formatter(
-        "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-    ))
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    )
     logging.getLogger("browser_use").addHandler(handler)
     logging.getLogger("browser_use").setLevel(logging.INFO)
 
@@ -53,6 +53,22 @@ def _make_llm():
     return ChatAnthropic(model="claude-haiku-4-5-20251001")
 
 
+def _ensure_virtual_display():
+    """Start a virtual display if no real DISPLAY is available. No-op if already set."""
+    if os.environ.get("DISPLAY"):
+        return  # real display present (or already set by previous call)
+    try:
+        from pyvirtualdisplay import Display
+
+        d = Display(visible=False, size=(1280, 900))
+        d.start()
+        logger.info("Virtual display started (Xvfb) for browser_use")
+    except Exception as e:
+        logger.debug(
+            f"pyvirtualdisplay unavailable ({e}), proceeding without virtual display"
+        )
+
+
 def browser_use_task(
     task_description: str,
     url: Optional[str] = None,
@@ -72,6 +88,7 @@ def browser_use_task(
     Returns:
         JSON string with result status, extracted data, and any errors
     """
+    _ensure_virtual_display()
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -89,18 +106,22 @@ def browser_use_task(
             loop.close()
 
     except ImportError as e:
-        return json.dumps({
-            "status": "error",
-            "error": f"Browser-use library not available: {e}",
-            "details": "Ensure browser-use is installed: pip install browser-use",
-        })
+        return json.dumps(
+            {
+                "status": "error",
+                "error": f"Browser-use library not available: {e}",
+                "details": "Ensure browser-use is installed: pip install browser-use",
+            }
+        )
     except Exception as e:
         logger.exception("Browser task failed")
-        return json.dumps({
-            "status": "error",
-            "error": str(e),
-            "task": task_description,
-        })
+        return json.dumps(
+            {
+                "status": "error",
+                "error": str(e),
+                "task": task_description,
+            }
+        )
 
 
 async def _run_browser_agent(
@@ -132,10 +153,12 @@ async def _run_browser_agent(
                 final_url = state.url
         except Exception:
             pass
-        history.append({
-            "step": step_num,
-            "output": str(output)[:500],
-        })
+        history.append(
+            {
+                "step": step_num,
+                "output": str(output)[:500],
+            }
+        )
         if step_num >= max_steps:
             raise RuntimeError(f"Exceeded max_steps limit: {max_steps}")
 
@@ -253,31 +276,36 @@ def browse_as_employer(
     # This is the coded form of the inhibitory habit — the habit fires first
     # in pondering; this is the backstop if execution is somehow reached.
     if caller_source and caller_source not in _EMPLOYER_BROWSE_TRUSTED_SOURCES:
-        return json.dumps({
-            "status": "inhibited",
-            "reason": (
-                f"browse_as_employer is not available from '{caller_source}'. "
-                "The employer's Chrome session carries real credentials and logged-in accounts. "
-                "It may only be used from trusted direct sessions (repl, web UI) where the "
-                "employer is present. Requests from Discord or other public channels could "
-                "come from anyone — the employer's accounts must not be exposed to that."
-            ),
-        })
+        return json.dumps(
+            {
+                "status": "inhibited",
+                "reason": (
+                    f"browse_as_employer is not available from '{caller_source}'. "
+                    "The employer's Chrome session carries real credentials and logged-in accounts. "
+                    "It may only be used from trusted direct sessions (repl, web UI) where the "
+                    "employer is present. Requests from Discord or other public channels could "
+                    "come from anyone — the employer's accounts must not be exposed to that."
+                ),
+            }
+        )
 
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
             result = loop.run_until_complete(
-                _run_as_employer(task_description, url=url,
-                                 max_steps=max_steps, timeout=timeout)
+                _run_as_employer(
+                    task_description, url=url, max_steps=max_steps, timeout=timeout
+                )
             )
             return json.dumps(result, indent=2)
         finally:
             loop.close()
     except Exception as e:
         logger.exception("browse_as_employer failed")
-        return json.dumps({"status": "error", "error": str(e), "task": task_description})
+        return json.dumps(
+            {"status": "error", "error": str(e), "task": task_description}
+        )
 
 
 async def _run_as_employer(
@@ -302,7 +330,7 @@ async def _run_as_employer(
         # and session tokens — Igor inherits the employer's logged-in state.
         context = await p.chromium.launch_persistent_context(
             user_data_dir=_EMPLOYER_PROFILE,
-            channel="chrome",          # real Chrome, not bundled Chromium
+            channel="chrome",  # real Chrome, not bundled Chromium
             headless=True,
             args=["--disable-blink-features=AutomationControlled"],
             ignore_default_args=["--enable-automation"],
@@ -334,7 +362,9 @@ async def _run_as_employer(
                     extracted_text = content[:8000]
                     break
 
-            logger.info(f"browse_as_employer: extracted {len(extracted_text)} chars in {steps_taken} steps")
+            logger.info(
+                f"browse_as_employer: extracted {len(extracted_text)} chars in {steps_taken} steps"
+            )
             return {
                 "status": "success",
                 "result": extracted_text or "(no readable content extracted)",
@@ -356,74 +386,78 @@ async def _run_as_employer(
 
 # ── Register tool ─────────────────────────────────────────────────────────────
 
-registry.register(Tool(
-    name="browse_as_employer",
-    description=(
-        "Browse the web using the employer's (Akien's) logged-in Chrome profile. "
-        "Gives access to Kindle Cloud Reader, library ebook services, and any site "
-        "the employer is signed into. For reading books, research behind login walls, "
-        "or any task where the employer's session is needed. "
-        "NOT available from Discord or public channels — only from direct sessions "
-        "where the employer is present."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "task_description": {
-                "type": "string",
-                "description": "What to do or read (e.g. 'Read chapter 1 of Speaking by Levelt on Kindle')",
+registry.register(
+    Tool(
+        name="browse_as_employer",
+        description=(
+            "Browse the web using the employer's (Akien's) logged-in Chrome profile. "
+            "Gives access to Kindle Cloud Reader, library ebook services, and any site "
+            "the employer is signed into. For reading books, research behind login walls, "
+            "or any task where the employer's session is needed. "
+            "NOT available from Discord or public channels — only from direct sessions "
+            "where the employer is present."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "task_description": {
+                    "type": "string",
+                    "description": "What to do or read (e.g. 'Read chapter 1 of Speaking by Levelt on Kindle')",
+                },
+                "url": {
+                    "type": "string",
+                    "description": "URL to navigate to (e.g. 'https://read.amazon.com')",
+                },
+                "max_steps": {
+                    "type": "integer",
+                    "description": "Max page interactions (default 20)",
+                },
+                "caller_source": {
+                    "type": "string",
+                    "description": "The session source (repl/web/discord). Required for trust gate.",
+                },
             },
-            "url": {
-                "type": "string",
-                "description": "URL to navigate to (e.g. 'https://read.amazon.com')",
-            },
-            "max_steps": {
-                "type": "integer",
-                "description": "Max page interactions (default 20)",
-            },
-            "caller_source": {
-                "type": "string",
-                "description": "The session source (repl/web/discord). Required for trust gate.",
-            },
+            "required": ["task_description", "url"],
         },
-        "required": ["task_description", "url"],
-    },
-    fn=browse_as_employer,
-))
+        fn=browse_as_employer,
+    )
+)
 
 
-registry.register(Tool(
-    name="browser_use_task",
-    description=(
-        "Execute a browser automation task using AI-driven control. "
-        "Describe what you want done (navigate sites, extract data, interact with pages, "
-        "use web services like Gemini), and the browser agent will perform the task. "
-        "Returns extracted data or confirmation of completion."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "task_description": {
-                "type": "string",
-                "description": (
-                    "Natural language description of the task. "
-                    "E.g., 'Go to Gemini and ask about cognitive architectures'"
-                ),
+registry.register(
+    Tool(
+        name="browser_use_task",
+        description=(
+            "Execute a browser automation task using AI-driven control. "
+            "Describe what you want done (navigate sites, extract data, interact with pages, "
+            "use web services like Gemini), and the browser agent will perform the task. "
+            "Returns extracted data or confirmation of completion."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "task_description": {
+                    "type": "string",
+                    "description": (
+                        "Natural language description of the task. "
+                        "E.g., 'Go to Gemini and ask about cognitive architectures'"
+                    ),
+                },
+                "url": {
+                    "type": "string",
+                    "description": "Optional starting URL (e.g., 'https://gemini.google.com')",
+                },
+                "max_steps": {
+                    "type": "integer",
+                    "description": "Maximum browser actions to attempt (default 10, max 50)",
+                },
+                "timeout": {
+                    "type": "integer",
+                    "description": "Max seconds to wait (default 120)",
+                },
             },
-            "url": {
-                "type": "string",
-                "description": "Optional starting URL (e.g., 'https://gemini.google.com')",
-            },
-            "max_steps": {
-                "type": "integer",
-                "description": "Maximum browser actions to attempt (default 10, max 50)",
-            },
-            "timeout": {
-                "type": "integer",
-                "description": "Max seconds to wait (default 120)",
-            },
+            "required": ["task_description"],
         },
-        "required": ["task_description"],
-    },
-    fn=browser_use_task,
-))
+        fn=browser_use_task,
+    )
+)
