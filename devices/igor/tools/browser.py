@@ -58,11 +58,13 @@ _virtual_display = None  # module-level singleton so it isn't GC'd
 
 def _ensure_virtual_display():
     """
-    Always start Igor's own Xvfb virtual display for browser tasks.
-    Creates a new Display regardless of whether a real DISPLAY is already set,
-    so browser windows never appear on the user's desktop.
-    No-op after the first call (module-level singleton).
+    Start a virtual display if no real DISPLAY is available.
+    When DISPLAY is set (desktop machine), the browser appears on the real screen —
+    useful for debugging. Once browser_use is working reliably, remove the early
+    return to force Xvfb unconditionally.
     """
+    if os.environ.get("DISPLAY"):
+        return  # real display present — browser will be visible (OK for debugging)
     global _virtual_display
     if _virtual_display is not None:
         return
