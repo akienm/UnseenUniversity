@@ -211,9 +211,11 @@ async def _run_browser_agent(
         logger.info(f"Browser task started: {task_description[:100]}...")
         result = await agent.run()
 
-        # Extract final URL
+        # Extract final URL (final_state() removed in 0.12.x; use urls())
         try:
-            final_url = result.final_state().url or final_url
+            visited = [u for u in (result.urls() or []) if u]
+            if visited:
+                final_url = visited[-1]
         except Exception:
             pass
 
