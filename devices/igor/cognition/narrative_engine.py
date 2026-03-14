@@ -570,7 +570,12 @@ class NarrativeEngine:
                 reasoning_cache.put(NE_MODEL, prompt, text, max_twm_id)
                 self._last_ne_model = f"gateway/ne/{_via}"
                 return result
-            print(f"{_cts()}[NE] JSON parse failed — skipping cycle")
+            print(f"{_cts()}[NE] JSON parse failed — skipping cycle | raw={text[:150]!r}")
+            try:
+                from .forensic_logger import log_anomaly as _la
+                _la(kind="NE_FAIL", detail=f"json_parse_failed raw={text[:150]!r}")
+            except Exception:
+                pass
         except Exception as e:
             print(f"{_cts()}[NE] inference failed: {e}")
         return None
