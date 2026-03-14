@@ -115,8 +115,12 @@ def _load_queue() -> list:
     try:
         if _QUEUE_FILE.exists():
             return json.loads(_QUEUE_FILE.read_text())
-    except Exception:
-        pass
+    except Exception as _e:
+        try:
+            from ..cognition.forensic_logger import log_error as _le
+            _le(kind="LEARN_QUEUE_LOAD_FAIL", detail=str(_e), source="learner._load_queue")
+        except Exception:
+            pass
     return []
 
 def _save_queue(q: list) -> None:
