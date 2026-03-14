@@ -110,6 +110,32 @@ def _get_inertia(path: str) -> tuple[float, str]:
     return 0.30, "LOW"
 
 
+def _path_to_module_name(rel_path: str) -> str:
+    """Convert 'tools/filesystem.py' → 'wild_igor.igor.tools.filesystem'."""
+    name = rel_path.replace("\\", "/").removesuffix(".py").replace("/", ".")
+    return f"wild_igor.igor.{name}"
+
+
+def _try_hot_reload(path: str, label: str) -> str:
+    """
+    After a successful self-edit, attempt hot-reload if gate is open and inertia is LOW.
+    Returns a status line to append to the edit result.
+    """
+    gate = os.getenv("IGOR_HOT_RELOAD", "false").strip().lower()
+    if gate not in ("true", "1", "yes"):
+        return "\n⟳ Restart Igor for changes to take effect."
+    if label != "LOW":
+        return "\n⟳ Restart Igor for changes to take effect (MEDIUM/HIGH inertia — hot-reload skipped)."
+    module_name = _path_to_module_name(path)
+    try:
+        from .hot_reload import reload_module as _reload_module
+        result = _reload_module(module_name)
+        log_self_edit(file=path, change_summary=f"hot_reload: {result}")
+        return f"\n⟳ Hot-reload: {result}"
+    except Exception as exc:
+        return f"\n⟳ Hot-reload failed ({exc}) — restart Igor for changes to take effect."
+
+
 def _inertia_warning(path: str, inertia: float, label: str) -> str:
     if label == "HIGH":
         return (f"\n⚠️  INERTIA WARNING: {path} has inertia {inertia:.2f} ({label}). "
@@ -291,11 +317,12 @@ def edit_source_file(path: str, content: str, reason: str) -> str:
         log_self_edit(file=path, syntax_ok=True, reason=reason,
                       change_summary=f"full_rewrite({len(content)} chars)", git_hash=git_hash)
 
+        reload_status = _try_hot_reload(path, label)
         return (f"EDIT APPLIED: igor/{path}{warning}\n"
                 f"Reason: {reason}\n"
                 f"Backup: {path}.bak"
-                f"{git_status}\n"
-                f"⟳ Restart Igor for changes to take effect.")
+                f"{git_status}"
+                f"{reload_status}")
 
     except PermissionError as e:
         return f"Error: {e}"
@@ -400,11 +427,12 @@ def patch_source_file(path: str, old_string: str, new_string: str, reason: str) 
         log_self_edit(file=path, syntax_ok=True, reason=reason,
                       change_summary=f"patch({sign}{lines_changed} lines)", git_hash=git_hash)
 
+        reload_status = _try_hot_reload(path, label)
         return (f"PATCH APPLIED: igor/{path}{warning}\n"
                 f"Reason: {reason}\n"
                 f"Lines delta: {sign}{lines_changed} | Backup: {path}.bak"
-                f"{git_status}\n"
-                f"⟳ Restart Igor for changes to take effect.")
+                f"{git_status}"
+                f"{reload_status}")
 
     except PermissionError as e:
         return f"Error: {e}"

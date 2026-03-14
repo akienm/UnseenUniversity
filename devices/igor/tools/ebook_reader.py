@@ -707,8 +707,12 @@ def read_chunk(handle=None, n: int = 0, handle_key: str = "", **_) -> dict:
                     salience=0.65,
                     ttl_seconds=_STEW_TTL_SECS,
                 )
-        except Exception:
-            pass
+        except Exception as _e:
+            try:
+                from ..cognition.forensic_logger import log_error as _le
+                _le(kind="EBOOK_TWM_STEW_FAIL", detail=str(_e), source="ebook_reader.read_chunk")
+            except Exception:
+                pass
 
     # G54: reading → interpretive tree extraction (fire-and-forget daemon thread)
     if (chunk and
@@ -976,8 +980,12 @@ def _reading_extract_worker(
                         action_pointer="",
                         weight=confidence,
                     )
-        except Exception:
-            pass
+        except Exception as _e:
+            try:
+                from ..cognition.forensic_logger import log_error as _le
+                _le(kind="EBOOK_EXTRACT_STORE_FAIL", detail=str(_e), source="ebook_reader._reading_extract")
+            except Exception:
+                pass
 
         try:
             from .registry import registry as _reg  # noqa — for logging only
@@ -1016,8 +1024,12 @@ def _load_reading_state() -> dict:
     if _READING_STATE_PATH.exists():
         try:
             return json.loads(_READING_STATE_PATH.read_text())
-        except Exception:
-            pass
+        except Exception as _e:
+            try:
+                from ..cognition.forensic_logger import log_error as _le
+                _le(kind="READING_STATE_LOAD_FAIL", detail=str(_e), source="ebook_reader._load_reading_state")
+            except Exception:
+                pass
     return {}
 
 
