@@ -21,19 +21,32 @@ from rich.console import Console
 from rich.live import Live
 from rich.spinner import Spinner
 from rich.traceback import install as _install_rich_tb
+
 _install_rich_tb(show_locals=False, width=120)
 
 from .memory.models import Memory, MemoryType
 from .memory.cortex import Cortex
-from .brainstem.core_patterns import initialize_genesis, get_core_patterns, verify_genesis_integrity
+from .brainstem.core_patterns import (
+    initialize_genesis,
+    get_core_patterns,
+    verify_genesis_integrity,
+)
 from .cognition import thalamus
 from .cognition import prefrontal_cortex as pfc
+
 # AnthropicReasoner moved to InferenceGateway.from_env() — not imported directly here
-from .cognition.reasoners.ollama_reasoner import preparse, parse_preparse_csb, _rule_based_csb
-from .cognition.inference_gateway import is_local_inference_available as _local_inference_ok
+from .cognition.reasoners.ollama_reasoner import (
+    preparse,
+    parse_preparse_csb,
+    _rule_based_csb,
+)
+from .cognition.inference_gateway import (
+    is_local_inference_available as _local_inference_ok,
+)
 from .cognition.reasoners.openrouter_reasoner import preparse_via_openrouter
 from .cognition.forensic_logger import log_tier_selection, cts as _cts
 from .cognition.system_prompt import build_boot_message, invalidate_cache
+
 # LocalKoboldPool/BatchKoboldPool moved to InferenceGateway.from_env() — not imported directly here
 from .cognition import observer
 from .cognition import milieu as milieu_mod
@@ -63,13 +76,17 @@ def loginfo(msg, **kw):
     _msg = str(msg)
     # Strip existing _cts()-style prefix (HHmmss + optional space/bracket) to avoid duplication
     if _msg.startswith(_ts.strip()):
-        _msg = _msg[len(_ts.strip()):].lstrip()
+        _msg = _msg[len(_ts.strip()) :].lstrip()
     console.print(f"{_ts}{_msg}", **kw)
 
 
 _IGOR_DB_ENV = os.getenv("IGOR_DB_PATH")
-DATA_DIR = Path(_IGOR_DB_ENV).expanduser().parent if _IGOR_DB_ENV else Path(__file__).parent.parent / "data"
-CHANGE_LOG_PATH    = Path.home() / ".TheIgors" / "claudecode" / "changes.log"
+DATA_DIR = (
+    Path(_IGOR_DB_ENV).expanduser().parent
+    if _IGOR_DB_ENV
+    else Path(__file__).parent.parent / "data"
+)
+CHANGE_LOG_PATH = Path.home() / ".TheIgors" / "claudecode" / "changes.log"
 CHANGE_REQUEST_PATH = Path.home() / ".TheIgors" / "claudecode" / "change_request.txt"
 
 # ── Input debounce (#146) ──────────────────────────────────────────────────────
@@ -91,15 +108,32 @@ DEBOUNCE_SECS = float(os.getenv("IGOR_INPUT_DEBOUNCE_MS", "500")) / 1000.0
 #   2. Cross-turn: new turn arrives after Igor responded → _detect_self_repair()
 #      checks ring_memory for the prior human turn and writes a [SELF-REPAIR]
 #      context note so the LLM interprets the revised meaning.
-_REPAIR_WINDOW_SECS = 90.0   # cross-turn: max gap between statement and revision
+_REPAIR_WINDOW_SECS = 90.0  # cross-turn: max gap between statement and revision
 _REPAIR_MARKERS = (
-    "oh ", "oh!", "oh,", "oh—",
-    "wait", "actually", "hmm", "hold on",
-    "never mind", "nevermind", "scratch that", "forget that",
-    "correction:", "no wait", "no, wait", "but wait",
-    "i can't", "i cannot", "can't do", "cannot do",
-    "on second thought", "second thought",
-    "sorry,", "sorry —",
+    "oh ",
+    "oh!",
+    "oh,",
+    "oh—",
+    "wait",
+    "actually",
+    "hmm",
+    "hold on",
+    "never mind",
+    "nevermind",
+    "scratch that",
+    "forget that",
+    "correction:",
+    "no wait",
+    "no, wait",
+    "but wait",
+    "i can't",
+    "i cannot",
+    "can't do",
+    "cannot do",
+    "on second thought",
+    "second thought",
+    "sorry,",
+    "sorry —",
 )
 
 
@@ -119,7 +153,10 @@ def _detect_self_repair(
         return None
     try:
         from datetime import datetime as _dt
-        recent = cortex.read_ring_memory(limit=5, category="user_turn", thread_id=thread_id)
+
+        recent = cortex.read_ring_memory(
+            limit=5, category="user_turn", thread_id=thread_id
+        )
         if not recent:
             return None
         last = recent[-1]
@@ -128,7 +165,7 @@ def _detect_self_repair(
             return None
         prior = last["content"]
         if prior.startswith("USER_INPUT: "):
-            prior = prior[len("USER_INPUT: "):]
+            prior = prior[len("USER_INPUT: ") :]
         return prior.strip() or None
     except Exception:
         return None
@@ -146,7 +183,7 @@ def _smart_merge(texts: "list[str]") -> str:
     rest = " ".join(texts[1:]).lower()
     if any(rest.startswith(m) or f" {m}" in rest for m in _REPAIR_MARKERS):
         statement = texts[0]
-        revision  = "\n".join(texts[1:])
+        revision = "\n".join(texts[1:])
         return f"[STATEMENT]: {statement}\n[REVISION]: {revision}"
     return "\n".join(texts)
 
@@ -157,6 +194,7 @@ def _smart_merge(texts: "list[str]") -> str:
 from .cognition.reasoners.base import exit_requested as _exit_requested
 
 # ── #184: Attention nexus classification ───────────────────────────────────────
+
 
 def _nexus_type(thread_id: str | None) -> str:
     """
@@ -180,6 +218,7 @@ def _nexus_twm_ttl(thread_id: str | None) -> int:
 
 # ── Stdin thread ───────────────────────────────────────────────────────────────
 
+
 def _stdin_reader(stdin_queue: queue.Queue):
     """
     Daemon thread: reads stdin lines and pushes them into stdin_queue.
@@ -192,7 +231,7 @@ def _stdin_reader(stdin_queue: queue.Queue):
         try:
             console.print("\n[bold green]You:[/] ", end="")
             line = sys.stdin.readline()
-            if line == "":          # EOF (Ctrl-D or headless/nohup — stdin exhausted)
+            if line == "":  # EOF (Ctrl-D or headless/nohup — stdin exhausted)
                 # Do NOT set exit_requested here: headless mode hits EOF on stdin
                 # immediately (/dev/null), but web sessions must keep working.
                 # exit_requested is only for explicit /exit or /quit commands.
@@ -230,7 +269,13 @@ class Igor:
         self._response_habituation = None
         try:
             from .cognition.response_habituation import ResponseHabituation as _RH
-            _rh_path = Path.home() / ".TheIgors" / f"igor_{self.instance_id.replace('-', '_')}" / "response_habituation.json"
+
+            _rh_path = (
+                Path.home()
+                / ".TheIgors"
+                / f"igor_{self.instance_id.replace('-', '_')}"
+                / "response_habituation.json"
+            )
             self._response_habituation = _RH(_rh_path)
         except Exception:
             pass
@@ -239,6 +284,7 @@ class Igor:
         self._word_graph = None
         try:
             from .cognition.word_graph import WordGraph, default_cache_path
+
             _wg_path = default_cache_path()
             _boot_habits = self.cortex.get_habits()
             if _wg_path.exists():
@@ -258,11 +304,16 @@ class Igor:
 
         # G37: asymmetric dual word graphs — recognition (parsing) vs generation (voice).
         # Gate: IGOR_DUAL_WORD_GRAPHS=true  (default false — observe first, enable when ready)
-        self._dual_graphs = os.getenv("IGOR_DUAL_WORD_GRAPHS", "false").lower() in ("1", "true", "yes")
+        self._dual_graphs = os.getenv("IGOR_DUAL_WORD_GRAPHS", "false").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
         self._generation_graph: "WordGraph | None" = None  # type: ignore[name-defined]
         if self._dual_graphs:
             try:
                 from .cognition.word_graph import WordGraph, default_cache_path
+
                 _gg_path = default_cache_path("generation_graph")
                 if _gg_path.exists():
                     self._generation_graph = WordGraph.load(_gg_path)
@@ -280,12 +331,23 @@ class Igor:
                 console.print(f"[yellow]Generation graph init failed: {_gg_e}[/]")
         # G37: last reply text for comprehension signal; milieu tilt + n-pass gates
         self._last_reply: str = ""
-        self._comprehension_signal = os.getenv("IGOR_COMPREHENSION_SIGNAL", "false").lower() in ("1", "true", "yes")
-        self._milieu_tilt = os.getenv("IGOR_MILIEU_TILT", "false").lower() in ("1", "true", "yes")
-        self._npass_reply = os.getenv("IGOR_NPASS_REPLY", "false").lower() in ("1", "true", "yes")
+        self._comprehension_signal = os.getenv(
+            "IGOR_COMPREHENSION_SIGNAL", "false"
+        ).lower() in ("1", "true", "yes")
+        self._milieu_tilt = os.getenv("IGOR_MILIEU_TILT", "false").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+        self._npass_reply = os.getenv("IGOR_NPASS_REPLY", "false").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
 
         self.ne = NarrativeEngine(self.cortex, instance_id)
         from .cognition.inference_gateway import InferenceGateway as _InferenceGateway
+
         self._gateway = _InferenceGateway.from_env()
         self.thalamus = thalamus.Thalamus()
         self.interaction_count = 0
@@ -299,35 +361,53 @@ class Igor:
         self._thread_workers: dict[str, threading.Thread] = {}
         # #135: per-user context (formality, chat logs, first-contact flow)
         from .cognition.user_context import UserContextManager
+
         self._user_ctx_mgr = UserContextManager(DATA_DIR)
         self._user_ctx_mgr.preseed("stdin:main", "Akien", relationship="operator")
         self.last_roi = None
         self.session_cost = 0.0
-        self.use_local_preparse = os.getenv("IGOR_LOCAL_PREPARSE", "true").lower() in ("true", "1", "yes")
+        self.use_local_preparse = os.getenv("IGOR_LOCAL_PREPARSE", "true").lower() in (
+            "true",
+            "1",
+            "yes",
+        )
         # local_mode: default False — use cloud for general reasoning.
         # Set IGOR_LOCAL=true in .env to default to local KoboldCpp pool mode.
-        self.local_mode = os.getenv("IGOR_LOCAL", "false").lower() in ("true", "1", "yes")
+        self.local_mode = os.getenv("IGOR_LOCAL", "false").lower() in (
+            "true",
+            "1",
+            "yes",
+        )
         self._ne_thread: threading.Thread | None = None
         self._ne_spawn_lock: threading.Lock = threading.Lock()  # prevent double-fire
         self._ne_last_twm_fingerprint: tuple[int, int] = (0, 0)  # (obs_count, max_id)
         self._ne_last_run_time: float = 0.0  # monotonic; idle gate cooldown
         self._consolidation_thread: threading.Thread | None = None  # #169
-        self._context_flush_done: bool = False  # change.32: set after pre-compaction flush
+        self._context_flush_done: bool = (
+            False  # change.32: set after pre-compaction flush
+        )
         # #182: meta-cognition — track traversal directions for self-awareness
         from collections import deque as _deque
+
         self._traversal_dir_history: "_deque[str]" = _deque(maxlen=5)
 
         # NE failure backoff (pass.3): track consecutive tool/response failures for impulses
         self._consecutive_impulse_failures: int = 0
-        self._failure_report_pushed: bool = False   # prevent duplicate report_failure impulses
-        self._failure_escalated: bool = False       # prevent duplicate escalate_to_human impulses
+        self._failure_report_pushed: bool = (
+            False  # prevent duplicate report_failure impulses
+        )
+        self._failure_escalated: bool = (
+            False  # prevent duplicate escalate_to_human impulses
+        )
 
         # Part C — routing signal tracking
-        self._last_response_time: float = 0.0      # epoch seconds of last response
-        self._consecutive_slow: int = 0             # consecutive responses over latency budget
-        self._latency_samples: list = []            # rolling last-20 total_ms for p50/p95 (#139)
-        self._latency_profile_cache: dict | None = None   # #139 P2: cached per-tier profile
-        self._latency_profile_ts: float = 0.0            # monotonic time of last profile build
+        self._last_response_time: float = 0.0  # epoch seconds of last response
+        self._consecutive_slow: int = 0  # consecutive responses over latency budget
+        self._latency_samples: list = []  # rolling last-20 total_ms for p50/p95 (#139)
+        self._latency_profile_cache: dict | None = (
+            None  # #139 P2: cached per-tier profile
+        )
+        self._latency_profile_ts: float = 0.0  # monotonic time of last profile build
 
         # Dashboard live activity state (#18)
         self._current_action: str = "idle"
@@ -348,8 +428,10 @@ class Igor:
             console.print(f"[dim]OpenRouter ready ({self._gateway._t4.model})[/]")
 
         # change.40: extra reasoners for /cloud multi-query
-        self._extra_reasoners: dict = {}   # name → BaseReasoner
-        self._cloud_tag_on: bool = True  # show [model] prefix in cloud inference responses
+        self._extra_reasoners: dict = {}  # name → BaseReasoner
+        self._cloud_tag_on: bool = (
+            True  # show [model] prefix in cloud inference responses
+        )
 
         # change.41: relay state
         self._relay_session: RelaySession | None = None
@@ -365,32 +447,42 @@ class Igor:
         web_server.start(stats_fn=self.get_stats)
         boot_check.start(cortex=self.cortex)
 
-        is_new = self.cortex.total_count() == 44  # Just genesis (Changes 5-7 added 9 PROCs: 35→44)
+        is_new = (
+            self.cortex.total_count() == 44
+        )  # Just genesis (Changes 5-7 added 9 PROCs: 35→44)
 
         # change.36: export portable identity files on every boot
         self._export_portable_identity()
 
         if is_new:
-            console.print(f"\n[cyan]Igor-{instance_id} initialized from genesis state.[/]")
+            console.print(
+                f"\n[cyan]Igor-{instance_id} initialized from genesis state.[/]"
+            )
             # First-boot: announce to Discord and self-register in machines.json
             self._announce_first_boot()
         else:
-            console.print(f"\n[cyan]Igor-{instance_id} resumed. {self.cortex.total_count()} memories loaded.[/]")
+            console.print(
+                f"\n[cyan]Igor-{instance_id} resumed. {self.cortex.total_count()} memories loaded.[/]"
+            )
 
         # [WARM CONTEXT] Reload warm working memory from previous session
-        self._post_sleep_boot: bool = False   # #134: set True by _load_warm_context when gap detected
-        self._gap_hours: float      = 0.0     # #134: actual offline duration in hours
+        self._post_sleep_boot: bool = (
+            False  # #134: set True by _load_warm_context when gap detected
+        )
+        self._gap_hours: float = 0.0  # #134: actual offline duration in hours
         warm_ctx = self._load_warm_context()
         self._boot_ring_tail: list = (warm_ctx or {}).get("ring_tail") or []  # #112
-        self._conversation_threads: list = []  # populated by _load_warm_context via warm_ctx
+        self._conversation_threads: list = (
+            []
+        )  # populated by _load_warm_context via warm_ctx
 
         # [#136] Per-channel thread buffers — independent conversation history per source+channel.
         # dict[thread_id, {"history": [(user, reply), ...], "last_active": float}]
         # thread_id = f"{source}:{channel_or_user_key}"
         # Evicted after THREAD_IDLE_TTL_SEC without activity.
         self._thread_buffers: dict = {}
-        self._THREAD_IDLE_TTL_SEC: int = 3600   # 1 hour
-        self._THREAD_MAX_HISTORY: int = 8        # last 8 exchanges shown as context (was 4)
+        self._THREAD_IDLE_TTL_SEC: int = 3600  # 1 hour
+        self._THREAD_MAX_HISTORY: int = 8  # last 8 exchanges shown as context (was 4)
         self._nexus_traffic: dict[str, list] = {}  # #184: per-thread message timestamps
 
         # [BOOT MESSAGE] Synthetic first-turn orientation — Igor reads this before any input
@@ -418,18 +510,32 @@ class Igor:
         restart_note = self.cortex.get_last_restart_note()
         if restart_note:
             from rich.markup import escape as _escape
-            console.print(f"\n[yellow]Last session note:[/] {_escape(restart_note['content'])}")
+
+            console.print(
+                f"\n[yellow]Last session note:[/] {_escape(restart_note['content'])}"
+            )
             console.print(f"[dim]  (at {restart_note['timestamp'][:16]})[/]")
         ring = self.cortex.read_ring_memory(limit=10)
         if ring:
-            _noisy = {"session_control", "ne_diagnostic", "tool_trace", "habit_trace", "interruptor", "latency_trace", "user_turn", "think_trace"}
-            _filtered = [e for e in ring if e['category'] not in _noisy]
+            _noisy = {
+                "session_control",
+                "ne_diagnostic",
+                "tool_trace",
+                "habit_trace",
+                "interruptor",
+                "latency_trace",
+                "user_turn",
+                "think_trace",
+            }
+            _filtered = [e for e in ring if e["category"] not in _noisy]
             _show = _filtered[-3:] if _filtered else []
             if _show:
                 console.print(f"\n[dim]── Recent context ({len(_show)} entries) ──[/]")
                 for entry in _show:
-                    ts = entry['timestamp'][11:16]
-                    console.print(f"[dim]  {ts} [{entry['category']}] {entry['content'][:90]}[/]")
+                    ts = entry["timestamp"][11:16]
+                    console.print(
+                        f"[dim]  {ts} [{entry['category']}] {entry['content'][:90]}[/]"
+                    )
 
         # [CHANGE LOG] Surface any completed change entries logged by Claude Code
         self._load_change_log()
@@ -459,6 +565,7 @@ class Igor:
         try:
             from datetime import timedelta as _td
             from .memory.models import MemoryType as _MT
+
             cutoff = (datetime.now() - _td(days=30)).isoformat()
 
             # Direct SQL for efficiency — avoid embedding overhead at boot
@@ -476,6 +583,7 @@ class Igor:
                 ).fetchall()
 
             import json as _json
+
             open_items = []
             for r in rows:
                 try:
@@ -485,11 +593,13 @@ class Igor:
                 status = meta.get("status", "").lower()
                 if status in ("closed", "deferred", "done", "completed", "dismissed"):
                     continue
-                open_items.append({
-                    "id": r["id"],
-                    "narrative": r["narrative"][:100],
-                    "status": status or "open",
-                })
+                open_items.append(
+                    {
+                        "id": r["id"],
+                        "narrative": r["narrative"][:100],
+                        "status": status or "open",
+                    }
+                )
 
             if not open_items:
                 return
@@ -532,24 +642,46 @@ class Igor:
         their own .env and get their own CREDENTIAL_REF memories.
         """
         import os
+
         _CRED_MAP = {
-            "OPENROUTER_API_KEY":  ("openrouter_key",  "OpenRouter API key — in .env OPENROUTER_API_KEY"),
-            "ANTHROPIC_API_KEY":   ("anthropic_key",   "Anthropic API key — in .env ANTHROPIC_API_KEY"),
-            "CONFLUENCE_EMAIL":    ("confluence_email","Confluence login email — in .env CONFLUENCE_EMAIL"),
-            "CONFLUENCE_API_TOKEN":("confluence_token","Confluence API token — in .env CONFLUENCE_API_TOKEN"),
-            "DISCORD_BOT_TOKEN":   ("discord_token",   "Discord bot token — in .env DISCORD_BOT_TOKEN"),
-            "GMAIL_CLIENT_ID":     ("gmail_client",    "Gmail OAuth client ID — in .env GMAIL_CLIENT_ID"),
+            "OPENROUTER_API_KEY": (
+                "openrouter_key",
+                "OpenRouter API key — in .env OPENROUTER_API_KEY",
+            ),
+            "ANTHROPIC_API_KEY": (
+                "anthropic_key",
+                "Anthropic API key — in .env ANTHROPIC_API_KEY",
+            ),
+            "CONFLUENCE_EMAIL": (
+                "confluence_email",
+                "Confluence login email — in .env CONFLUENCE_EMAIL",
+            ),
+            "CONFLUENCE_API_TOKEN": (
+                "confluence_token",
+                "Confluence API token — in .env CONFLUENCE_API_TOKEN",
+            ),
+            "DISCORD_BOT_TOKEN": (
+                "discord_token",
+                "Discord bot token — in .env DISCORD_BOT_TOKEN",
+            ),
+            "GMAIL_CLIENT_ID": (
+                "gmail_client",
+                "Gmail OAuth client ID — in .env GMAIL_CLIENT_ID",
+            ),
         }
         from .memory.models import Memory, MemoryType
+
         for env_key, (mem_id, narrative) in _CRED_MAP.items():
             if os.getenv(env_key):
-                self.cortex.store(Memory(
-                    id=f"CRED_{mem_id.upper()}",
-                    narrative=narrative,
-                    memory_type=MemoryType.CREDENTIAL_REF,
-                    portable=False,
-                    metadata={"env_key": env_key, "present": True},
-                ))
+                self.cortex.store(
+                    Memory(
+                        id=f"CRED_{mem_id.upper()}",
+                        narrative=narrative,
+                        memory_type=MemoryType.CREDENTIAL_REF,
+                        portable=False,
+                        metadata={"env_key": env_key, "present": True},
+                    )
+                )
 
     def _ensure_builtin_habits(self) -> None:
         """
@@ -726,7 +858,7 @@ class Igor:
         Both checks pass silently on an empty DB (first boot).
         """
         genesis_ok, genesis_violations = verify_genesis_integrity(self.cortex)
-        graph_ok,   graph_violations   = self.cortex.integrity_check()
+        graph_ok, graph_violations = self.cortex.integrity_check()
         all_ok = genesis_ok and graph_ok
         all_violations = genesis_violations + graph_violations
 
@@ -792,7 +924,9 @@ class Igor:
             soul_lines.append("")
 
         try:
-            (theigors_dir / "SOUL.md").write_text("\n".join(soul_lines), encoding="utf-8")
+            (theigors_dir / "SOUL.md").write_text(
+                "\n".join(soul_lines), encoding="utf-8"
+            )
         except Exception as e:
             console.print(f"[dim][IDENTITY] SOUL.md write failed: {e}[/]")
 
@@ -814,7 +948,9 @@ class Igor:
             id_lines.append("")
 
         try:
-            (instance_dir / "IDENTITY.md").write_text("\n".join(id_lines), encoding="utf-8")
+            (instance_dir / "IDENTITY.md").write_text(
+                "\n".join(id_lines), encoding="utf-8"
+            )
         except Exception as e:
             console.print(f"[dim][IDENTITY] IDENTITY.md write failed: {e}[/]")
 
@@ -826,6 +962,7 @@ class Igor:
         if boot_notes_src.exists() and not boot_notes_dst.exists():
             try:
                 import shutil
+
                 shutil.copy(boot_notes_src, boot_notes_dst)
                 console.print(f"[dim][IDENTITY] boot_notes.md installed.[/]")
             except Exception as e:
@@ -864,30 +1001,41 @@ class Igor:
         machines_json = _Path.home() / ".TheIgors" / "local" / "machines.json"
         try:
             import json as _json
+
             if machines_json.exists():
                 data = _json.loads(machines_json.read_text(encoding="utf-8"))
                 hostnames = [m.get("hostname", "") for m in data.get("machines", [])]
                 if hostname not in hostnames:
-                    data.setdefault("machines", []).append({
-                        "hostname": hostname,
-                        "ip": ip,
-                        "cpu": "unknown",
-                        "ram_gb": None,
-                        "gpu": None,
-                        "storage": "unknown",
-                        "model": "unknown",
-                        "notes": "Auto-registered at first boot",
-                        "priority": "batch",
-                        "capabilities": ["embedding", "reasoning"],
-                        "network": "unknown",
-                        "status": "online",
-                    })
-                    machines_json.write_text(_json.dumps(data, indent=2), encoding="utf-8")
-                    console.print(f"[cyan][FIRST BOOT] Registered {hostname} in machines.json.[/]")
+                    data.setdefault("machines", []).append(
+                        {
+                            "hostname": hostname,
+                            "ip": ip,
+                            "cpu": "unknown",
+                            "ram_gb": None,
+                            "gpu": None,
+                            "storage": "unknown",
+                            "model": "unknown",
+                            "notes": "Auto-registered at first boot",
+                            "priority": "batch",
+                            "capabilities": ["embedding", "reasoning"],
+                            "network": "unknown",
+                            "status": "online",
+                        }
+                    )
+                    machines_json.write_text(
+                        _json.dumps(data, indent=2), encoding="utf-8"
+                    )
+                    console.print(
+                        f"[cyan][FIRST BOOT] Registered {hostname} in machines.json.[/]"
+                    )
                 else:
-                    console.print(f"[dim][FIRST BOOT] {hostname} already in machines.json.[/]")
+                    console.print(
+                        f"[dim][FIRST BOOT] {hostname} already in machines.json.[/]"
+                    )
         except Exception as e:
-            console.print(f"[dim][FIRST BOOT] machines.json self-register failed: {e}[/]")
+            console.print(
+                f"[dim][FIRST BOOT] machines.json self-register failed: {e}[/]"
+            )
 
         # ── Ring note ────────────────────────────────────────────────────────
         self.cortex.write_ring(
@@ -906,9 +1054,9 @@ class Igor:
         """Current activity state dict for broadcast_activity and get_stats."""
         return {
             "action": self._current_action,
-            "tier":   self._current_tier,
-            "input":  self._last_input_preview,
-            "busy":   self._is_processing,
+            "tier": self._current_tier,
+            "input": self._last_input_preview,
+            "busy": self._is_processing,
         }
 
     def get_stats(self) -> dict:
@@ -917,9 +1065,12 @@ class Igor:
         Igor owns all state; web server calls this via stats_fn, never touches cortex directly.
         """
         from .arbiter import queue as arbiter_queue
+
         ring = self.cortex.read_ring_memory(limit=8)
         # #121: NE surprise signal — last 8 entries + rolling avg delta
-        surprise_entries = self.cortex.read_ring_memory(limit=8, category="ne_prediction")
+        surprise_entries = self.cortex.read_ring_memory(
+            limit=8, category="ne_prediction"
+        )
         _deltas = []
         for e in surprise_entries:
             try:
@@ -936,7 +1087,11 @@ class Igor:
             "last_friction": self.last_friction,
             "arbiter_pending": arbiter_queue.count_pending(),
             "ring_recent": [
-                {"category": r["category"], "content": r["content"][:120], "ts": r["timestamp"]}
+                {
+                    "category": r["category"],
+                    "content": r["content"][:120],
+                    "ts": r["timestamp"],
+                }
                 for r in ring
             ],
             "surprise_recent": [
@@ -984,7 +1139,9 @@ class Igor:
         for line in lines[:5]:
             console.print(f"[dim]  {line[:120]}[/]")
         if len(lines) > 5:
-            console.print(f"[dim]  ... ({len(lines) - 5} more in {CHANGE_REQUEST_PATH})[/]")
+            console.print(
+                f"[dim]  ... ({len(lines) - 5} more in {CHANGE_REQUEST_PATH})[/]"
+            )
         # Write to ring so NE can see pending changes; truncated at 2000 chars
         self.cortex.write_ring(
             f"CHANGE_REQUEST: {content[:2000]}",
@@ -1004,11 +1161,16 @@ class Igor:
           - if no tags present, returns ("", text) — whole response treated as reply
         """
         import re
+
         think = ""
         reply = text
 
-        think_match = re.search(r'<think>(.*?)</think>', text, re.DOTALL | re.IGNORECASE)
-        reply_match = re.search(r'<reply>(.*?)</reply>', text, re.DOTALL | re.IGNORECASE)
+        think_match = re.search(
+            r"<think>(.*?)</think>", text, re.DOTALL | re.IGNORECASE
+        )
+        reply_match = re.search(
+            r"<reply>(.*?)</reply>", text, re.DOTALL | re.IGNORECASE
+        )
 
         if think_match:
             think = think_match.group(1).strip()
@@ -1016,7 +1178,7 @@ class Igor:
             reply = reply_match.group(1).strip()
         elif think_match:
             # think tag present but no reply tag — use text after </think>
-            reply = text[think_match.end():].strip()
+            reply = text[think_match.end() :].strip()
 
         return think, reply
 
@@ -1038,7 +1200,11 @@ class Igor:
         Only the reply call hits cloud. Returns synthesis text (empty string on failure).
         """
         try:
-            from .cognition.inference_gateway import get_gateway as _gw, make_context as _mk_ctx
+            from .cognition.inference_gateway import (
+                get_gateway as _gw,
+                make_context as _mk_ctx,
+            )
+
             _prompt = (
                 f"{py_think_context}\n\n"
                 f"Input: {user_input[:300]}\n\n"
@@ -1098,12 +1264,11 @@ class Igor:
                         "valence": milieu_state.valence,
                         "dominance": milieu_state.dominance,
                     }
-                predicted = self._word_graph.predict_next(user_input, n=5,
-                                                          milieu_state=_milieu_dict)
+                predicted = self._word_graph.predict_next(
+                    user_input, n=5, milieu_state=_milieu_dict
+                )
                 if predicted:
-                    lines.append(
-                        "activated: " + ", ".join(w for w, _ in predicted)
-                    )
+                    lines.append("activated: " + ", ".join(w for w, _ in predicted))
             except Exception:
                 pass
 
@@ -1129,15 +1294,15 @@ class Igor:
 
         # ── Near-miss habits ───────────────────────────────────────────────────
         if near_misses:
-            ids = ", ".join(
-                h.id for _, h in near_misses[:3] if hasattr(h, "id")
-            )
+            ids = ", ".join(h.id for _, h in near_misses[:3] if hasattr(h, "id"))
             if ids:
                 lines.append(f"near-miss habits: {ids}")
 
         return "\n".join(lines)
 
-    def _try_habit_tiebreaker(self, user_input: str, near_misses: list) -> "Memory | None":
+    def _try_habit_tiebreaker(
+        self, user_input: str, near_misses: list
+    ) -> "Memory | None":
         """
         #54: cheap classification call to resolve near-miss habit competition.
 
@@ -1148,7 +1313,11 @@ class Igor:
         Gate: IGOR_HABIT_TIEBREAKER env var (default false — experimental).
         Returns the resolved habit, or None if tiebreaker declines or fails.
         """
-        if os.getenv("IGOR_HABIT_TIEBREAKER", "false").lower() not in ("1", "true", "yes"):
+        if os.getenv("IGOR_HABIT_TIEBREAKER", "false").lower() not in (
+            "1",
+            "true",
+            "yes",
+        ):
             return None
         api_key = os.getenv("OPENROUTER_API_KEY", "")
         if not api_key or not near_misses:
@@ -1158,24 +1327,28 @@ class Igor:
         import urllib.request as _urllib_req
 
         habit_lines = "\n".join(
-            f"  {h.id} (score={s:.2f}): {h.narrative[:80]}"
-            for s, h in near_misses
+            f"  {h.id} (score={s:.2f}): {h.narrative[:80]}" for s, h in near_misses
         )
         prompt = (
-            f"User said: \"{user_input[:200]}\"\n\n"
+            f'User said: "{user_input[:200]}"\n\n'
             f"Near-miss habits (trigger matched, score below auto-select threshold):\n"
             f"{habit_lines}\n\n"
             f"Reply with ONLY: HABIT:<habit_id>   or   REASON"
         )
-        payload = _json.dumps({
-            "model": "openai/gpt-4o-mini",
-            "messages": [
-                {"role": "system", "content": "Habit arbitration: pick the best habit or say REASON."},
-                {"role": "user", "content": prompt},
-            ],
-            "temperature": 0.0,
-            "max_tokens": 20,
-        }).encode()
+        payload = _json.dumps(
+            {
+                "model": "openai/gpt-4o-mini",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "Habit arbitration: pick the best habit or say REASON.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                "temperature": 0.0,
+                "max_tokens": 20,
+            }
+        ).encode()
 
         try:
             req = _urllib_req.Request(
@@ -1223,7 +1396,9 @@ class Igor:
         ~5-token response; timeout 5s; fails silently to False.
         """
         if os.getenv("IGOR_TASK_COMPLETION_SEMANTIC", "false").lower() not in (
-            "1", "true", "yes"
+            "1",
+            "true",
+            "yes",
         ):
             return False
         api_key = os.getenv("OPENROUTER_API_KEY", "")
@@ -1240,15 +1415,20 @@ class Igor:
             f"Does the response indicate one or more of these tasks was completed? "
             f"Reply YES or NO only."
         )
-        payload = _json.dumps({
-            "model": "openai/gpt-4o-mini",
-            "messages": [
-                {"role": "system", "content": "Task completion classifier. Reply YES or NO only."},
-                {"role": "user", "content": prompt},
-            ],
-            "temperature": 0.0,
-            "max_tokens": 5,
-        }).encode()
+        payload = _json.dumps(
+            {
+                "model": "openai/gpt-4o-mini",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "Task completion classifier. Reply YES or NO only.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                "temperature": 0.0,
+                "max_tokens": 5,
+            }
+        ).encode()
 
         try:
             req = _urllib_req.Request(
@@ -1289,6 +1469,7 @@ class Igor:
         Returns "" if no history or thread is new.
         """
         import time as _t
+
         buf = self._thread_buffers.get(thread_id)
         if not buf or not buf["history"]:
             return ""
@@ -1297,28 +1478,33 @@ class Igor:
             del self._thread_buffers[thread_id]
             return ""
         lines = ["[Thread context — recent exchanges in this channel:]"]
-        for user_turn, igor_turn in buf["history"][-self._THREAD_MAX_HISTORY:]:
+        for user_turn, igor_turn in buf["history"][-self._THREAD_MAX_HISTORY :]:
             lines.append(f"  User: {user_turn[:200]}")
             lines.append(f"  Igor: {igor_turn[:300]}")
         lines.append("")
         return "\n".join(lines)
 
-    def _update_thread_buffer(self, thread_id: str, user_turn: str, igor_reply: str) -> None:
+    def _update_thread_buffer(
+        self, thread_id: str, user_turn: str, igor_reply: str
+    ) -> None:
         """Record a completed exchange in the thread buffer."""
         import time as _t
+
         if thread_id not in self._thread_buffers:
             self._thread_buffers[thread_id] = {"history": [], "last_active": 0.0}
         buf = self._thread_buffers[thread_id]
         buf["history"].append((user_turn[:500], igor_reply[:600]))
-        buf["history"] = buf["history"][-self._THREAD_MAX_HISTORY:]
+        buf["history"] = buf["history"][-self._THREAD_MAX_HISTORY :]
         buf["last_active"] = _t.monotonic()
 
     def _evict_stale_threads(self) -> None:
         """Remove thread buffers that have been idle > TTL. Called periodically."""
         import time as _t
+
         now = _t.monotonic()
         stale = [
-            tid for tid, b in self._thread_buffers.items()
+            tid
+            for tid, b in self._thread_buffers.items()
             if now - b["last_active"] > self._THREAD_IDLE_TTL_SEC
         ]
         for tid in stale:
@@ -1340,6 +1526,7 @@ class Igor:
         Returns empty profile if ring has no latency data (cold start).
         """
         import time as _t
+
         now = _t.monotonic()
         if (
             self._latency_profile_cache is not None
@@ -1424,9 +1611,17 @@ class Igor:
 
         # Topic detection
         _lower = user_input.lower()
-        if any(w in _lower for w in [".pdf", "read it", "read to me", "read the", "page ", "chapter"]):
+        if any(
+            w in _lower
+            for w in [".pdf", "read it", "read to me", "read the", "page ", "chapter"]
+        ):
             topic = "book_reading"
-        elif intent in ("conversation", "explanation_request", "personal_sharing", "factual_question"):
+        elif intent in (
+            "conversation",
+            "explanation_request",
+            "personal_sharing",
+            "factual_question",
+        ):
             topic = "personal_conversation"
         else:
             topic = intent
@@ -1434,7 +1629,7 @@ class Igor:
         # Last question Igor asked (last sentence containing "?")
         last_q = ""
         if response_text:
-            sentences = re.split(r'(?<=[.!?])\s+', response_text.strip())
+            sentences = re.split(r"(?<=[.!?])\s+", response_text.strip())
             questions = [s for s in sentences if "?" in s]
             last_q = questions[-1][:200] if questions else ""
 
@@ -1450,26 +1645,30 @@ class Igor:
             elif milieu_state.arousal > 0.5:
                 register = "engaged"
 
-        exchange = f"Akien: {user_input[:200].strip()} → Igor: {response_text[:250].strip()}"
-        updated  = datetime.now().isoformat()
+        exchange = (
+            f"Akien: {user_input[:200].strip()} → Igor: {response_text[:250].strip()}"
+        )
+        updated = datetime.now().isoformat()
 
         # Update existing thread or append new
         for t in self._conversation_threads:
             if t.get("topic") == topic:
-                t["last_exchange"]    = exchange
-                t["register"]         = register
-                t["updated"]          = updated
+                t["last_exchange"] = exchange
+                t["register"] = register
+                t["updated"] = updated
                 if last_q:
                     t["last_q_from_igor"] = last_q
                 return
 
-        self._conversation_threads.append({
-            "topic":            topic,
-            "last_exchange":    exchange,
-            "last_q_from_igor": last_q,
-            "register":         register,
-            "updated":          updated,
-        })
+        self._conversation_threads.append(
+            {
+                "topic": topic,
+                "last_exchange": exchange,
+                "last_q_from_igor": last_q,
+                "register": register,
+                "updated": updated,
+            }
+        )
         # Cap at 5 most recent threads
         self._conversation_threads = self._conversation_threads[-5:]
 
@@ -1498,11 +1697,11 @@ class Igor:
 
         # Collect state
         twm_items = self.cortex.twm_read(limit=50, include_integrated=True)
-        ring_tail  = self.cortex.read_ring_memory(limit=40)
-        ne_state   = self.ne._get_last_narrative()
+        ring_tail = self.cortex.read_ring_memory(limit=40)
+        ne_state = self.ne._get_last_narrative()
 
-        active_jobs  = self.job_manager.list_jobs()
-        current_job  = active_jobs[0].job_id if active_jobs else None
+        active_jobs = self.job_manager.list_jobs()
+        current_job = active_jobs[0].job_id if active_jobs else None
 
         # Build a meaningful session summary from ring — not just the last entry.
         # Priority: NE narratives (what the system concluded) + job completions +
@@ -1511,11 +1710,21 @@ class Igor:
         _summary_parts = []
         for e in ring_tail:
             if e.get("category") in _SUMMARY_CATS:
-                _summary_parts.append(f"[{e.get('category','note')}] {e['content'][:800]}")
+                _summary_parts.append(
+                    f"[{e.get('category','note')}] {e['content'][:800]}"
+                )
         # Also include Q/A entries (most informative for context recovery)
         for e in ring_tail:
             cat = e.get("category", "")
-            if cat not in _SUMMARY_CATS and cat not in ("tool_trace", "interruptor", "session_control", "habit_trace", "latency_trace", "user_turn", "think_trace"):
+            if cat not in _SUMMARY_CATS and cat not in (
+                "tool_trace",
+                "interruptor",
+                "session_control",
+                "habit_trace",
+                "latency_trace",
+                "user_turn",
+                "think_trace",
+            ):
                 _summary_parts.append(f"[{cat}] {e['content'][:800]}")
         # Fall back to last ring content if nothing useful found
         if not _summary_parts:
@@ -1527,15 +1736,15 @@ class Igor:
 
         _now = datetime.now().isoformat()
         ctx = {
-            "timestamp":              _now,
-            "shutdown_timestamp":     _now,           # #134: post-sleep gap detection
-            "instance_id":            self.instance_id,
-            "session_summary":        session_summary,
-            "ne_state":               ne_state,
-            "current_job":            current_job,
-            "ring_tail":              ring_tail,
-            "twm_contents":           twm_items,
-            "conversation_threads":   self._conversation_threads,
+            "timestamp": _now,
+            "shutdown_timestamp": _now,  # #134: post-sleep gap detection
+            "instance_id": self.instance_id,
+            "session_summary": session_summary,
+            "ne_state": ne_state,
+            "current_job": current_job,
+            "ring_tail": ring_tail,
+            "twm_contents": twm_items,
+            "conversation_threads": self._conversation_threads,
         }
 
         try:
@@ -1550,7 +1759,12 @@ class Igor:
         # #116: log escalation rate at end of session for predictor network trend tracking
         try:
             from .cognition.forensic_logger import log_cognition_metric as _lcm
-            _rate = self.cloud_calls / self.interaction_count if self.interaction_count else 0.0
+
+            _rate = (
+                self.cloud_calls / self.interaction_count
+                if self.interaction_count
+                else 0.0
+            )
             _lcm(
                 metric="cloud_escalation_rate",
                 value=_rate,
@@ -1565,9 +1779,10 @@ class Igor:
             if _m:
                 _hist = _m.session_histogram()
                 _char = _hist.get("session_character", "unknown")
-                _n    = _hist.get("sample_count", 0)
+                _n = _hist.get("sample_count", 0)
                 if _n >= 3:
                     from .cognition.forensic_logger import log_cognition_metric as _lcm2
+
                     _lcm2(
                         metric="session_histogram",
                         value=float(_n),
@@ -1595,10 +1810,10 @@ class Igor:
         """
         import json
 
-        ttl_hours   = float(os.getenv("WARM_CONTEXT_TTL_HOURS", "24"))
+        ttl_hours = float(os.getenv("WARM_CONTEXT_TTL_HOURS", "24"))
         instance_dir = self._instance_dir()
 
-        ctx         = None
+        ctx = None
         loaded_slot = None
 
         for slot, fname in enumerate(["warm_context.0.json", "warm_context.1.json"]):
@@ -1606,21 +1821,25 @@ class Igor:
             if not path.exists():
                 continue
             try:
-                ctx         = json.loads(path.read_text(encoding="utf-8"))
+                ctx = json.loads(path.read_text(encoding="utf-8"))
                 loaded_slot = slot
                 break
             except Exception:
                 console.print(f"[dim][WARM] {fname} corrupted, trying fallback...[/]")
 
         if ctx is None:
-            console.print(f"[dim]{_cts()}[WARM] no warm context found, starting cold[/]")
+            console.print(
+                f"[dim]{_cts()}[WARM] no warm context found, starting cold[/]"
+            )
             return None
 
         # Parse and check TTL
         try:
             saved_ts = datetime.fromisoformat(ctx["timestamp"])
         except Exception:
-            console.print(f"[dim]{_cts()}[WARM] warm context has invalid timestamp, starting cold[/]")
+            console.print(
+                f"[dim]{_cts()}[WARM] warm context has invalid timestamp, starting cold[/]"
+            )
             return
 
         age_hours = (datetime.now() - saved_ts).total_seconds() / 3600
@@ -1628,11 +1847,15 @@ class Igor:
         if age_hours > ttl_hours:
             # Archive expired files and start cold
             ts_str = saved_ts.strftime("%Y%m%d_%H%M%S")
-            for slot_n, fname in enumerate(["warm_context.0.json", "warm_context.1.json"]):
+            for slot_n, fname in enumerate(
+                ["warm_context.0.json", "warm_context.1.json"]
+            ):
                 src = instance_dir / fname
                 if src.exists():
                     try:
-                        src.rename(instance_dir / f"warm_context.{ts_str}.{slot_n}.json")
+                        src.rename(
+                            instance_dir / f"warm_context.{ts_str}.{slot_n}.json"
+                        )
                     except Exception:
                         pass
             console.print(
@@ -1661,7 +1884,9 @@ class Igor:
                         _m = milieu_mod.get()
                         if _m:
                             _m.gap_reset()
-                            console.print(f"[dim]{_cts()}[GAP] milieu partially reset toward baseline[/]")
+                            console.print(
+                                f"[dim]{_cts()}[GAP] milieu partially reset toward baseline[/]"
+                            )
                     except Exception:
                         pass
             except Exception:
@@ -1679,9 +1904,7 @@ class Igor:
         if ne_state and ne_state != "(none — first NE run)":
             recent_ne = self.cortex.read_ring_memory(limit=5, category="narrative")
             if not recent_ne:
-                self.cortex.write_ring(
-                    f"[warm] {ne_state[:800]}", category="narrative"
-                )
+                self.cortex.write_ring(f"[warm] {ne_state[:800]}", category="narrative")
 
         # 3. Ring tail — only inject if ring is effectively empty (new instance)
         ring_tail = ctx.get("ring_tail") or []
@@ -1696,8 +1919,8 @@ class Igor:
                     pass
 
         # 4. TWM — only inject if TWM is empty (new instance or all expired)
-        twm_items   = ctx.get("twm_contents") or []
-        twm_live    = self.cortex.twm_count_unintegrated()
+        twm_items = ctx.get("twm_contents") or []
+        twm_live = self.cortex.twm_count_unintegrated()
         ttl_seconds = int(ttl_hours * 3600)
         if twm_live == 0 and twm_items:
             for obs in twm_items:
@@ -1729,7 +1952,9 @@ class Igor:
         active_threads = []
         for t in raw_threads:
             try:
-                age_h = (datetime.now() - datetime.fromisoformat(t["updated"])).total_seconds() / 3600
+                age_h = (
+                    datetime.now() - datetime.fromisoformat(t["updated"])
+                ).total_seconds() / 3600
                 if age_h <= thread_ttl:
                     active_threads.append(t)
             except Exception:
@@ -1760,12 +1985,15 @@ class Igor:
         Neither blocks the other. Network messages are processed promptly
         even while waiting for the human to type.
         """
-        console.print(f"[dim]{_cts()}Type your message. /help for commands. /quit to exit.[/]\n")
+        console.print(
+            f"[dim]{_cts()}Type your message. /help for commands. /quit to exit.[/]\n"
+        )
 
         # Pre-warm system prompt cache so the first interaction isn't cold.
         # Also flushes any messages queued during __init__ with a polite deferral.
         try:
             from .cognition.system_prompt import build_system_prompt as _bsp
+
             _bsp(self.cortex, self.instance_id)
         except Exception:
             pass
@@ -1775,21 +2003,29 @@ class Igor:
         # During cloud mode (daytime) skip backfill — it hammers Ollama with hundreds
         # of embedding calls. The single warmup ping still runs so search isn't cold.
         import threading as _threading
+
         def _warm_and_backfill():
             try:
                 from .cognition.embedder import embed as _embed
+
                 _embed("warmup")  # keeps model loaded via keep_alive=-1
             except Exception as _e:
                 from .cognition.forensic_logger import log_error as _log_error
+
                 _log_error(kind="EMBED_WARMUP", source="boot", detail=str(_e))
             try:
                 from .cognition.cloud_mode import is_cloud_training_active as _cma
+
                 if not _cma():
                     self.cortex.backfill_embeddings()
             except Exception as _e:
                 from .cognition.forensic_logger import log_error as _log_error
+
                 _log_error(kind="EMBED_BACKFILL", source="boot", detail=str(_e))
-        _threading.Thread(target=_warm_and_backfill, daemon=True, name="embedder-warmup").start()
+
+        _threading.Thread(
+            target=_warm_and_backfill, daemon=True, name="embedder-warmup"
+        ).start()
 
         self._boot_ready = True
 
@@ -1797,12 +2033,15 @@ class Igor:
         try:
             from .cognition.forensic_logger import log_startup as _log_startup
             import time as _bt
+
             _boot_elapsed = _bt.monotonic()  # rough; __init__ already ran before run()
             _or_balance = ""
             try:
                 _or_bal_raw = os.getenv("OPENROUTER_BALANCE", "")
-                _or_balance = f"healthy(${_or_bal_raw})" if _or_bal_raw else (
-                    "healthy" if os.getenv("OPENROUTER_API_KEY") else "no_key"
+                _or_balance = (
+                    f"healthy(${_or_bal_raw})"
+                    if _or_bal_raw
+                    else ("healthy" if os.getenv("OPENROUTER_API_KEY") else "no_key")
                 )
             except Exception:
                 pass
@@ -1810,7 +2049,8 @@ class Igor:
             try:
                 _ollama_status = (
                     f"healthy({os.getenv('OLLAMA_LOCAL_MODEL', 'unknown')})"
-                    if _local_inference_ok() else "unavailable"
+                    if _local_inference_ok()
+                    else "unavailable"
                 )
             except Exception:
                 _ollama_status = "unknown"
@@ -1821,8 +2061,8 @@ class Igor:
                 habit_count=len(self.cortex.get_habits()),
                 wg_words=_wg_count,
                 boot_elapsed_s=_boot_elapsed,
-                embed_ok=True,       # warmup thread started; assume ok
-                integrity_ok=True,   # boot would have raised if failed
+                embed_ok=True,  # warmup thread started; assume ok
+                integrity_ok=True,  # boot would have raised if failed
                 warm_context="loaded" if self._boot_ring_tail else "none",
                 ollama_status=_ollama_status,
                 openrouter_status=_or_balance,
@@ -1846,7 +2086,9 @@ class Igor:
 
         # Spin up stdin reader thread
         stdin_queue: queue.Queue = queue.Queue()
-        t = threading.Thread(target=_stdin_reader, args=(stdin_queue,), daemon=True, name="stdin-reader")
+        t = threading.Thread(
+            target=_stdin_reader, args=(stdin_queue,), daemon=True, name="stdin-reader"
+        )
         t.start()
 
         # #146 stdin debounce state — local to run() (single-threaded consumer)
@@ -1855,7 +2097,9 @@ class Igor:
 
         console.print(f"[bold cyan]{'═' * 60}[/]")
         console.print(f"[bold cyan]  IGOR {self.instance_id} — BOOT COMPLETE[/]")
-        console.print(f"[bold cyan]  memories={self.cortex.total_count()}  habits={len(self.cortex.get_habits())}  web=:{os.getenv('IGOR_WEB_PORT', '8080')}[/]")
+        console.print(
+            f"[bold cyan]  memories={self.cortex.total_count()}  habits={len(self.cortex.get_habits())}  web=:{os.getenv('IGOR_WEB_PORT', '8080')}[/]"
+        )
         console.print(f"[bold cyan]{'═' * 60}[/]\n")
 
         while True:
@@ -1871,7 +2115,9 @@ class Igor:
                 if _line is None:
                     # EOF sentinel from stdin reader (Ctrl-D / KeyboardInterrupt)
                     if _stdin_buffer:
-                        self._process(_smart_merge(_stdin_buffer), thread_id="stdin:main")
+                        self._process(
+                            _smart_merge(_stdin_buffer), thread_id="stdin:main"
+                        )
                     self._shutdown(reason="EOF/Ctrl-D")
                     break
 
@@ -1881,7 +2127,9 @@ class Igor:
                 elif _stripped.startswith("/"):
                     # Command: flush any buffered input first, then process immediately
                     if _stdin_buffer:
-                        self._process(_smart_merge(_stdin_buffer), thread_id="stdin:main")
+                        self._process(
+                            _smart_merge(_stdin_buffer), thread_id="stdin:main"
+                        )
                         _stdin_buffer.clear()
                         _stdin_last_time = 0.0
                     self._process(_stripped, thread_id="stdin:main")
@@ -1943,11 +2191,17 @@ class Igor:
         """
         try:
             from .brainstem.core_patterns import get_core_patterns
+
             core = get_core_patterns(self.cortex)
             response_text, _cost, _used = self._gateway.reason(
-                user_input, relevant, core,
-                level="interactive", skip_to=skip_to, preparse_csb=preparse_csb,
-                cortex=self.cortex, instance_id=self.instance_id,
+                user_input,
+                relevant,
+                core,
+                level="interactive",
+                skip_to=skip_to,
+                preparse_csb=preparse_csb,
+                cortex=self.cortex,
+                instance_id=self.instance_id,
             )
             # Strip <think> block — same as _process_inner does for foreground replies
             if response_text:
@@ -1956,11 +2210,15 @@ class Igor:
         except Exception as exc:
             return f"[ERROR in background job] {exc}"
 
-    def _process(self, user_input: str, is_impulse: bool = False, thread_id: str | None = None) -> str:
+    def _process(
+        self, user_input: str, is_impulse: bool = False, thread_id: str | None = None
+    ) -> str:
         # Boot-ready gate: politely defer if boot pre-warm hasn't finished yet.
         # Only applies to non-impulse turns — impulses are internal and skip the gate.
         if not self._boot_ready and not is_impulse:
-            return "Sorry, still waking up — boot sequence running. Give me just a moment."
+            return (
+                "Sorry, still waking up — boot sequence running. Give me just a moment."
+            )
 
         self.interaction_count += 1
 
@@ -1980,12 +2238,16 @@ class Igor:
             self._current_tier = ""
             web_server.broadcast_activity(self._activity_state())
 
-    def _process_inner(self, user_input: str, is_impulse: bool, thread_id: str | None = None) -> str:
+    def _process_inner(
+        self, user_input: str, is_impulse: bool, thread_id: str | None = None
+    ) -> str:
         import time as _time
-        _t0 = _time.monotonic()   # wall-clock start for latency instrumentation (#139)
+
+        _t0 = _time.monotonic()  # wall-clock start for latency instrumentation (#139)
         new_memories = 0
         # Pipeline trace: unique 8-hex turn ID; every step logs against it.
         import os as _pt_os
+
         _turn_id = _pt_os.urandom(4).hex()
         from .cognition.forensic_logger import (
             log_pipeline_step as _log_pt,
@@ -1995,6 +2257,7 @@ class Igor:
             log_interaction as _log_interaction,
             turn_ctx_update as _ctx_update,
         )
+
         _set_turn_id(_turn_id)
         # #203: init TurnContext dict for this turn (threading.local, safe with #200 workers)
         if not is_impulse:
@@ -2004,7 +2267,9 @@ class Igor:
         _tier_hint: str = ""
         _turn_cost: float = 0.0
         _turn_habit = None
-        _habits_before = len(self.cortex.get_habits())   # G54/G53: detect new habits this turn
+        _habits_before = len(
+            self.cortex.get_habits()
+        )  # G54/G53: detect new habits this turn
         # [TWM] Push incoming message as observation (non-command, non-impulse messages only)
         if not is_impulse and not user_input.startswith("/"):
             user_input_source.push_message(
@@ -2021,13 +2286,15 @@ class Igor:
             if _repair_prior:
                 self.cortex.write_ring(
                     f"[SELF-REPAIR] Prior statement revised. "
-                    f"Prior: \"{_repair_prior[:250]}\" — "
-                    f"Revision: \"{user_input[:250]}\". "
+                    f'Prior: "{_repair_prior[:250]}" — '
+                    f'Revision: "{user_input[:250]}". '
                     "Interpret revised meaning; original commitment is retracted.",
                     category="self_repair",
                     thread_id=thread_id,
                 )
-                console.print(f"[dim]{_cts()}[REPAIR] Revision of: {_repair_prior[:60]}[/]")
+                console.print(
+                    f"[dim]{_cts()}[REPAIR] Revision of: {_repair_prior[:60]}[/]"
+                )
 
         # #180: Investment weight pre-check — somatic marker equivalent.
         # Before any traversal or thalamus: does this input mention a high-investment node?
@@ -2039,15 +2306,20 @@ class Igor:
                 if _invest_hits:
                     for _inode in _invest_hits[:2]:
                         _iweight = _inode.metadata.get("investment_weight", 0.5)
-                        _iprox   = _inode.metadata.get("proximity", "present")
+                        _iprox = _inode.metadata.get("proximity", "present")
                         # Proximity modifier: present=1.0, remote=0.6, lost=0.3
-                        _prox_mod = {"present": 1.0, "remote": 0.6, "lost": 0.3}.get(_iprox, 0.7)
+                        _prox_mod = {"present": 1.0, "remote": 0.6, "lost": 0.3}.get(
+                            _iprox, 0.7
+                        )
                         self.cortex.twm_push(
                             content=f"[INVESTMENT] High-investment node active: {_inode.narrative[:120]}",
                             salience=min(1.0, _iweight * _prox_mod),
                             urgency=0.0,
                             source="investment_check",
-                            metadata={"memory_id": _inode.id, "investment_weight": _iweight},
+                            metadata={
+                                "memory_id": _inode.id,
+                                "investment_weight": _iweight,
+                            },
                         )
                         loginfo(
                             f"[dim][INVEST] {_inode.id} (w={_iweight:.2f}, prox={_iprox}) → TWM[/]"
@@ -2066,9 +2338,13 @@ class Igor:
         _tc_thal = _time.monotonic()
         parsed = self.thalamus.process(user_input)
         if not is_impulse:
-            _log_pt(turn_id=_turn_id, step="thalamus",
-                    elapsed_ms=round((_time.monotonic() - _tc_thal) * 1000),
-                    intent=parsed.intent, complexity=parsed.complexity)
+            _log_pt(
+                turn_id=_turn_id,
+                step="thalamus",
+                elapsed_ms=round((_time.monotonic() - _tc_thal) * 1000),
+                intent=parsed.intent,
+                complexity=parsed.complexity,
+            )
         _tc = _time.monotonic()
 
         # G37: comprehension signal — if prior reply was well-received, reinforce generation graph.
@@ -2081,7 +2357,8 @@ class Igor:
             and self._generation_graph is not None
             and self._last_reply
             and not is_impulse
-            and parsed.intent not in ("clarification_request", "correction", "meta_question")
+            and parsed.intent
+            not in ("clarification_request", "correction", "meta_question")
             and parsed.tone in ("positive", "neutral")
         ):
             try:
@@ -2102,13 +2379,18 @@ class Igor:
         # ── #184: Nexus volume tracking — promote high-traffic open channels ──────
         if thread_id and not is_impulse:
             import time as _t184
+
             _now184 = _t184.time()
             _window184 = self._nexus_traffic.setdefault(thread_id, [])
             _window184.append(_now184)
-            _window184[:] = [ts for ts in _window184 if _now184 - ts < 300]  # 5-min window
+            _window184[:] = [
+                ts for ts in _window184 if _now184 - ts < 300
+            ]  # 5-min window
             _TRAFFIC_THRESHOLD = 5
-            if (len(_window184) >= _TRAFFIC_THRESHOLD
-                    and _nexus_type(thread_id) == "open_channel"):
+            if (
+                len(_window184) >= _TRAFFIC_THRESHOLD
+                and _nexus_type(thread_id) == "open_channel"
+            ):
                 try:
                     _twm_id = self.cortex.twm_push(
                         source="nexus_monitor",
@@ -2153,21 +2435,45 @@ class Igor:
 
         # [ARBITER INTERCEPT] Conversational approve/deny when items are pending
         _lower = user_input.strip().lower()
-        _approve_words = {"approve", "approved", "yes", "go ahead", "do it", "ok", "okay"}
-        _deny_words = {"deny", "denied", "no", "stop", "cancel", "abort", "don't", "dont"}
+        _approve_words = {
+            "approve",
+            "approved",
+            "yes",
+            "go ahead",
+            "do it",
+            "ok",
+            "okay",
+        }
+        _deny_words = {
+            "deny",
+            "denied",
+            "no",
+            "stop",
+            "cancel",
+            "abort",
+            "don't",
+            "dont",
+        }
         try:
             from .arbiter import queue as _aq
+
             _pending = _aq.get_pending()
             if _pending:
-                if any(_lower == w or _lower.startswith(w + " ") for w in _approve_words):
+                if any(
+                    _lower == w or _lower.startswith(w + " ") for w in _approve_words
+                ):
                     # Approve the oldest pending item
                     _item = _pending[0]
-                    loginfo(f"[dim](Arbiter intercept: treating '{_lower}' as /arbiter approve {_item.id})[/]")
+                    loginfo(
+                        f"[dim](Arbiter intercept: treating '{_lower}' as /arbiter approve {_item.id})[/]"
+                    )
                     self._arbiter_resolve(_aq, _item.id, "approved")
                     return ""
                 if any(_lower == w or _lower.startswith(w + " ") for w in _deny_words):
                     _item = _pending[0]
-                    loginfo(f"[dim](Arbiter intercept: treating '{_lower}' as /arbiter deny {_item.id})[/]")
+                    loginfo(
+                        f"[dim](Arbiter intercept: treating '{_lower}' as /arbiter deny {_item.id})[/]"
+                    )
                     self._arbiter_resolve(_aq, _item.id, "denied")
                     return ""
         except Exception:
@@ -2177,7 +2483,10 @@ class Igor:
         if self._relay_session is not None and not is_impulse:
             response = self._relay_session.send(user_input)
             from rich.markup import escape as _escape
-            loginfo(f"\n[bold magenta][relay: {self._relay_session.model_name}][/] {_escape(response)}\n")
+
+            loginfo(
+                f"\n[bold magenta][relay: {self._relay_session.model_name}][/] {_escape(response)}\n"
+            )
             return response
 
         # ── Part C — Routing signal detection ──────────────────────────────────
@@ -2185,41 +2494,66 @@ class Igor:
         # Adjustments apply to the current session only; weights reset on next boot.
         if not is_impulse:
             import time as _t
+
             _now = _t.time()
             _lower_input = user_input.lower()
 
             # Speed pressure: user typing very quickly after last response
             if self._last_response_time > 0 and (_now - self._last_response_time) < 30:
                 self._gateway._t2 and self._gateway._t2.weights.adjust("speed_pressure")
-                observer.observe("routing_signal", "speed_pressure",
-                                 {"reason": "quick_followup",
-                                  "gap_s": round(_now - self._last_response_time, 1)})
+                observer.observe(
+                    "routing_signal",
+                    "speed_pressure",
+                    {
+                        "reason": "quick_followup",
+                        "gap_s": round(_now - self._last_response_time, 1),
+                    },
+                )
 
             # Speed pressure: explicit user words
             _speed_words = ("faster", "too slow", "hurry", "speed up", "quicker")
             if any(w in _lower_input for w in _speed_words):
                 self._gateway._t2 and self._gateway._t2.weights.adjust("speed_pressure")
-                observer.observe("routing_signal", "speed_pressure", {"reason": "user_words"})
+                observer.observe(
+                    "routing_signal", "speed_pressure", {"reason": "user_words"}
+                )
 
             # Speed pressure: consecutive slow responses tracked in local_pool
             if self._consecutive_slow >= 3:
                 self._gateway._t2 and self._gateway._t2.weights.adjust("speed_pressure")
-                observer.observe("routing_signal", "speed_pressure",
-                                 {"reason": "consecutive_slow",
-                                  "count": self._consecutive_slow})
+                observer.observe(
+                    "routing_signal",
+                    "speed_pressure",
+                    {"reason": "consecutive_slow", "count": self._consecutive_slow},
+                )
                 self._consecutive_slow = 0  # reset after acting
 
             # Cost pressure: explicit user words
-            _cost_words = ("save budget", "be careful", "use cheap", "save money", "conserve")
+            _cost_words = (
+                "save budget",
+                "be careful",
+                "use cheap",
+                "save money",
+                "conserve",
+            )
             if any(w in _lower_input for w in _cost_words):
                 self._gateway._t2 and self._gateway._t2.weights.adjust("cost_pressure")
-                observer.observe("routing_signal", "cost_pressure", {"reason": "user_words"})
+                observer.observe(
+                    "routing_signal", "cost_pressure", {"reason": "user_words"}
+                )
 
             # Quality pressure: explicit user request for better model
-            _quality_words = ("use claude", "take your time", "hard task", "be thorough")
+            _quality_words = (
+                "use claude",
+                "take your time",
+                "hard task",
+                "be thorough",
+            )
             if any(w in _lower_input for w in _quality_words):
                 # No weight adjustment — quality is handled by complexity skip_to=tier.4
-                observer.observe("routing_signal", "quality_pressure", {"reason": "user_words"})
+                observer.observe(
+                    "routing_signal", "quality_pressure", {"reason": "user_words"}
+                )
 
         # [SEARCH + PREPARSE] Run in parallel — both are I/O-bound
         # Fast-path: skip LLM preparse for greetings and habit triggers already
@@ -2233,6 +2567,7 @@ class Igor:
         if not is_impulse and not parsed.is_command:
             try:
                 from .cognition.backchannel import should_backchannel as _should_bc
+
                 _bc = _should_bc(parsed, _milieu_state, habits)
                 if _bc.should_send:
                     _bc_text = _bc.form
@@ -2242,7 +2577,9 @@ class Igor:
                         web_server.send(_bc_text, session_id=_bc_session)
                     else:
                         loginfo(f"[dim]{_bc_text}[/]")
-                    loginfo(f"[dim][BC] {_bc_text!r} (level={_bc.level}, {_bc.reason})[/]")
+                    loginfo(
+                        f"[dim][BC] {_bc_text!r} (level={_bc.level}, {_bc.reason})[/]"
+                    )
             except Exception as _bc_e:
                 loginfo(f"[yellow][BC] backchannel error: {_bc_e}[/]")
 
@@ -2261,14 +2598,17 @@ class Igor:
 
         _fast_path_intents = {"greeting", "command"}
         _tc_bg = _time.monotonic()
-        _thalamus_habit, _thalamus_confidence, _thalamus_near_misses = basal_ganglia.select_habit(
-            parsed, habits, milieu_state=_milieu_state
+        _thalamus_habit, _thalamus_confidence, _thalamus_near_misses = (
+            basal_ganglia.select_habit(parsed, habits, milieu_state=_milieu_state)
         )
         if not is_impulse:
-            _log_pt(turn_id=_turn_id, step="bg_prospect",
-                    elapsed_ms=round((_time.monotonic() - _tc_bg) * 1000),
-                    habit="none" if not _thalamus_habit else _thalamus_habit.id[:20],
-                    ne_keys=len(_ne_search_keys))
+            _log_pt(
+                turn_id=_turn_id,
+                step="bg_prospect",
+                elapsed_ms=round((_time.monotonic() - _tc_bg) * 1000),
+                habit="none" if not _thalamus_habit else _thalamus_habit.id[:20],
+                ne_keys=len(_ne_search_keys),
+            )
         _tc = _time.monotonic()
 
         # #121: Record actual vs predicted — compute surprise delta
@@ -2284,10 +2624,13 @@ class Igor:
             parsed.complexity in ("low", "high")
             and os.getenv("IGOR_SKIP_PREPARSE_ON_CONFIDENT", "true").lower() != "false"
         )
-        _short_input = len(user_input.split()) <= 6  # rule-based thalamus handles short inputs fine
+        _short_input = (
+            len(user_input.split()) <= 6
+        )  # rule-based thalamus handles short inputs fine
         _cloud_mode_active = False
         try:
             from .cognition.cloud_mode import is_cloud_training_active as _cma
+
             _cloud_mode_active = _cma()
         except Exception:
             pass
@@ -2304,15 +2647,21 @@ class Igor:
         # [#139 P2] Adaptive routing from latency history.
         # Gate: IGOR_LATENCY_ADAPTIVE=true (default false until enough data collected).
         _latency_skip_to_override: str | None = None
-        if (
-            not is_impulse
-            and os.getenv("IGOR_LATENCY_ADAPTIVE", "false").lower() in ("1", "true", "yes")
+        if not is_impulse and os.getenv("IGOR_LATENCY_ADAPTIVE", "false").lower() in (
+            "1",
+            "true",
+            "yes",
         ):
             _lp = self._get_latency_profile()
             if _lp["samples"] >= 5:
                 # If KoboldCpp preparse is slow → skip it; rule-based is instant and cheaper
-                _PREPARSE_SLOW_MS = int(os.getenv("IGOR_LATENCY_PREPARSE_SLOW_MS", "2500"))
-                if not _skip_llm_preparse and _lp["preparse_ms_p50"] > _PREPARSE_SLOW_MS:
+                _PREPARSE_SLOW_MS = int(
+                    os.getenv("IGOR_LATENCY_PREPARSE_SLOW_MS", "2500")
+                )
+                if (
+                    not _skip_llm_preparse
+                    and _lp["preparse_ms_p50"] > _PREPARSE_SLOW_MS
+                ):
                     _skip_llm_preparse = True
                     loginfo(
                         f"[dim][LATENCY] preparse p50={_lp['preparse_ms_p50']}ms "
@@ -2336,7 +2685,11 @@ class Igor:
         # accumulated thread history. Memory search keeps full user_input for relevance.
         _preparse_input = parsed.core_input
 
-        from .cognition.reasoners.ollama_reasoner import _PREPARSE_PROMPT, _rule_based_csb
+        from .cognition.reasoners.ollama_reasoner import (
+            _PREPARSE_PROMPT,
+            _rule_based_csb,
+        )
+
         if _skip_llm_preparse:
             # No I/O needed — build CSB from thalamus result instantly
             pre_csb = _rule_based_csb(_preparse_input, habits)
@@ -2345,7 +2698,9 @@ class Igor:
                 # #50: merge NE predicted search keys — topics the NE predicted before input arrived
                 if _ne_search_keys:
                     _search_query = _search_query + " " + " ".join(_ne_search_keys)
-                candidates = self.cortex.search(_search_query.strip(), emotional_context=_milieu_state)
+                candidates = self.cortex.search(
+                    _search_query.strip(), emotional_context=_milieu_state
+                )
             # cortex.search() Phase 2 already cosine-reranks by embedding similarity —
             # score_memories() (qwen2.5:7b) added 25-200s per turn for worse output
             # (80-char truncation vs full-text embeddings). Removed: G65.
@@ -2353,11 +2708,16 @@ class Igor:
         else:
             # Parallel: memory search + LLM preparse
             import concurrent.futures as _cf
+
             self._current_action = "preparse"
             web_server.broadcast_activity(self._activity_state())
             # Inference gateway routes preparse: local Ollama → OR cheap fallback.
             # cloud_mode active → OR directly. Gateway handles all routing decisions.
-            from .cognition.inference_gateway import get_gateway as _gw, make_context as _mk_ctx
+            from .cognition.inference_gateway import (
+                get_gateway as _gw,
+                make_context as _mk_ctx,
+            )
+
             def _preparse_fn():
                 _prompt = _PREPARSE_PROMPT.format(text=_preparse_input[:300])
                 try:
@@ -2374,9 +2734,11 @@ class Igor:
                 _kw_query = _kw_query + " " + " ".join(_ne_search_keys)
 
             with _cf.ThreadPoolExecutor(max_workers=2) as _pool:
-                _pre_fut  = _pool.submit(_preparse_fn)
-                _cand_fut = _pool.submit(self.cortex.search, _kw_query.strip(), 10, _milieu_state)
-                pre_csb   = _pre_fut.result()
+                _pre_fut = _pool.submit(_preparse_fn)
+                _cand_fut = _pool.submit(
+                    self.cortex.search, _kw_query.strip(), 10, _milieu_state
+                )
+                pre_csb = _pre_fut.result()
                 candidates = _cand_fut.result()
             # Same reasoning: cortex.search() cosine-rank is better than qwen2.5:7b
             # scoring 80-char truncated narratives. G65.
@@ -2386,15 +2748,26 @@ class Igor:
         if not is_impulse and thread_id:
             try:
                 _nb_ctx = self._user_ctx_mgr._cache.get(thread_id)
-                _nb_slug = _nb_ctx.slug if _nb_ctx and not _nb_ctx.slug.startswith("thread_") else None
+                _nb_slug = (
+                    _nb_ctx.slug
+                    if _nb_ctx and not _nb_ctx.slug.startswith("thread_")
+                    else None
+                )
                 if _nb_slug:
                     from .tools import notebook as _nb_mod
                     from pathlib import Path as _P
+
                     if _nb_mod._db_path(_nb_slug).exists():
-                        _nb_hits = _nb_mod.search_notebook(_nb_slug, user_input, limit=3)
-                        if "Nothing relevant" not in _nb_hits and "empty" not in _nb_hits:
+                        _nb_hits = _nb_mod.search_notebook(
+                            _nb_slug, user_input, limit=3
+                        )
+                        if (
+                            "Nothing relevant" not in _nb_hits
+                            and "empty" not in _nb_hits
+                        ):
                             # Inject as a synthetic memory-like object the reasoners can see
                             from .memory.models import Memory as _Mem, MemoryType as _MT
+
                             relevant = [
                                 _Mem(
                                     id=f"NB_{_nb_slug}",
@@ -2419,14 +2792,14 @@ class Igor:
                 _trav_strategy = getattr(parsed, "traversal_strategy", "")
                 _trav_depth = {
                     "semantic_depth": 4,
-                    "causal_trace":   4,
-                    "lever_trace":    5,  # #182: go deep — levers are high up
-                    "broad_search":   2,
-                    "factual_leaf":   2,
-                    "memory_verify":  2,
+                    "causal_trace": 4,
+                    "lever_trace": 5,  # #182: go deep — levers are high up
+                    "broad_search": 2,
+                    "factual_leaf": 2,
+                    "memory_verify": 2,
                     "attractor_hold": 3,
                 }.get(_trav_strategy, 3)
-                _exit_on_convergence = (_trav_strategy == "lever_trace")
+                _exit_on_convergence = _trav_strategy == "lever_trace"
                 # broad_search: also seed from a wider set of relevant memories
                 if _trav_strategy == "broad_search":
                     _seed_ids = _seed_ids + [m.id for m in relevant[5:10]]
@@ -2449,11 +2822,15 @@ class Igor:
                     except Exception:
                         pass
                 _interp = self.cortex.interpretive_traverse(
-                    _seed_ids, max_depth=_trav_depth, milieu_bias=_milieu_bias or None,
+                    _seed_ids,
+                    max_depth=_trav_depth,
+                    milieu_bias=_milieu_bias or None,
                     exit_on_convergence=_exit_on_convergence,
                 )
                 if _trav_strategy:
-                    loginfo(f"[dim][#181] traversal_strategy={_trav_strategy} depth={_trav_depth}[/]")
+                    loginfo(
+                        f"[dim][#181] traversal_strategy={_trav_strategy} depth={_trav_depth}[/]"
+                    )
                 if _milieu_bias:
                     loginfo(f"[dim][#171] milieu_bias={_milieu_bias}[/]")
                 # #182: meta-cognition — track traversal direction; notice persistent upward search
@@ -2461,10 +2838,14 @@ class Igor:
                 if _trav_dir:
                     self._traversal_dir_history.append(_trav_dir)
                     _recent = list(self._traversal_dir_history)
-                    if len(_recent) >= 3 and len(set(_recent[-3:])) == 1 and _recent[-1] == "up":
+                    if (
+                        len(_recent) >= 3
+                        and len(set(_recent[-3:])) == 1
+                        and _recent[-1] == "up"
+                    ):
                         self.cortex.twm_push(
                             content=f"META_COGNITION|I've traced upward (causal/'why?') for {len(_recent)} consecutive turns. "
-                                    f"This is deep problem territory — I may be searching for a lever.",
+                            f"This is deep problem territory — I may be searching for a lever.",
                             source="meta_cognition",
                             salience=0.5,
                             ttl_seconds=300,
@@ -2475,14 +2856,19 @@ class Igor:
                     _new_interp = [m for m in _interp if m.id not in _existing_ids]
                     if _new_interp:
                         relevant = list(relevant) + _new_interp[:5]
-                        loginfo(f"[dim][INTERP] +{len(_new_interp)} interpretive memories from tree traversal[/]")
+                        loginfo(
+                            f"[dim][INTERP] +{len(_new_interp)} interpretive memories from tree traversal[/]"
+                        )
                 # #178: record traversal for boredom tracking; apply resistance to over-used nodes
                 try:
                     from .cognition import boredom as _boredom_mod
+
                     _boredom_mod.record_traversals([m.id for m in relevant])
                     relevant = _boredom_mod.apply_boredom(list(relevant))
                     if _boredom_mod.boredom_level() > 0.5:
-                        loginfo(f"[dim][BOREDOM] level={_boredom_mod.boredom_level():.2f} — novelty forcing active[/]")
+                        loginfo(
+                            f"[dim][BOREDOM] level={_boredom_mod.boredom_level():.2f} — novelty forcing active[/]"
+                        )
                 except Exception:
                     pass
 
@@ -2491,7 +2877,9 @@ class Igor:
                 # Branch traverses DEEPER from the most emotionally salient interpretive node
                 # found in the first pass, then injects results back as enriched context.
                 # Gate: IGOR_FORK_ENABLED (default false).
-                _fork_enabled = os.getenv("IGOR_FORK_ENABLED", "false").lower() == "true"
+                _fork_enabled = (
+                    os.getenv("IGOR_FORK_ENABLED", "false").lower() == "true"
+                )
                 if _fork_enabled and not is_impulse:
                     try:
                         _trigger_fork = False
@@ -2501,28 +2889,42 @@ class Igor:
                             _fork_reason = f"milieu:arousal={_milieu_state.arousal:.2f}"
                         elif parsed.complexity == "high":
                             _interp_count = sum(
-                                1 for m in relevant
-                                if hasattr(m, "memory_type") and m.memory_type.value == "INTERPRETIVE"
+                                1
+                                for m in relevant
+                                if hasattr(m, "memory_type")
+                                and m.memory_type.value == "INTERPRETIVE"
                             )
                             if _interp_count < 2:
                                 _trigger_fork = True
-                                _fork_reason = f"high_complexity:interp_hits={_interp_count}"
+                                _fork_reason = (
+                                    f"high_complexity:interp_hits={_interp_count}"
+                                )
                         if _trigger_fork:
                             # Find most emotionally salient interpretive result so far
                             _interp_only = [
-                                m for m in relevant
-                                if hasattr(m, "memory_type") and m.memory_type.value == "INTERPRETIVE"
+                                m
+                                for m in relevant
+                                if hasattr(m, "memory_type")
+                                and m.memory_type.value == "INTERPRETIVE"
                             ]
                             _fork_seed_node = (
-                                max(_interp_only, key=lambda m: abs(getattr(m, "valence", 0.0)))
-                                if _interp_only else None
+                                max(
+                                    _interp_only,
+                                    key=lambda m: abs(getattr(m, "valence", 0.0)),
+                                )
+                                if _interp_only
+                                else None
                             )
                             if _fork_seed_node:
                                 _fork_results = self.cortex.interpretive_traverse(
                                     [_fork_seed_node.id], max_depth=4, min_weight=0.05
                                 )
                                 _existing_ids = {m.id for m in relevant}
-                                _fork_new = [m for m in _fork_results if m.id not in _existing_ids]
+                                _fork_new = [
+                                    m
+                                    for m in _fork_results
+                                    if m.id not in _existing_ids
+                                ]
                                 if _fork_new:
                                     relevant = list(relevant) + _fork_new[:3]
                                     loginfo(
@@ -2539,19 +2941,30 @@ class Igor:
                 # No LLM call — the graph itself is the judge.
                 # Trigger: broad_search strategy OR analysis_task with sparse interpretive hits.
                 # Gate: IGOR_FORK_A_ENABLED (default false; separate from Mode B).
-                _fork_a_enabled = os.getenv("IGOR_FORK_A_ENABLED", "false").lower() == "true"
+                _fork_a_enabled = (
+                    os.getenv("IGOR_FORK_A_ENABLED", "false").lower() == "true"
+                )
                 if _fork_a_enabled and not is_impulse:
                     try:
-                        _run_mode_a = (
-                            _trav_strategy == "broad_search"
-                            or (parsed.intent == "analysis_task" and parsed.complexity in ("medium", "high"))
+                        _run_mode_a = _trav_strategy == "broad_search" or (
+                            parsed.intent == "analysis_task"
+                            and parsed.complexity in ("medium", "high")
                         )
                         if _run_mode_a:
                             # Three competing paths: CP1+CP2 (truth/ethics), CP3+CP4 (curiosity/care), CP5+CP6 (values/safety)
                             _fork_paths = [
-                                (["CP1", "CP2"] + [m.id for m in relevant[:3]], "path_A:truth"),
-                                (["CP3", "CP4"] + [m.id for m in relevant[:3]], "path_B:curiosity"),
-                                (["CP5", "CP6"] + [m.id for m in relevant[:3]], "path_C:values"),
+                                (
+                                    ["CP1", "CP2"] + [m.id for m in relevant[:3]],
+                                    "path_A:truth",
+                                ),
+                                (
+                                    ["CP3", "CP4"] + [m.id for m in relevant[:3]],
+                                    "path_B:curiosity",
+                                ),
+                                (
+                                    ["CP5", "CP6"] + [m.id for m in relevant[:3]],
+                                    "path_C:values",
+                                ),
                             ]
                             _existing_ids = {m.id for m in relevant}
                             _best_path: list = []
@@ -2561,7 +2974,11 @@ class Igor:
                                 _path_results = self.cortex.interpretive_traverse(
                                     _path_seeds, max_depth=3, min_weight=0.15
                                 )
-                                _path_new = [m for m in _path_results if m.id not in _existing_ids]
+                                _path_new = [
+                                    m
+                                    for m in _path_results
+                                    if m.id not in _existing_ids
+                                ]
                                 if not _path_new:
                                     continue
                                 # Score: hit count × avg inertia
@@ -2583,7 +3000,9 @@ class Igor:
                         pass  # fork must never block
 
                 # #177: Mull loop — re-traverse if complexity warrants and gate enabled
-                _mull_enabled = os.getenv("IGOR_MULL_ENABLED", "false").lower() == "true"
+                _mull_enabled = (
+                    os.getenv("IGOR_MULL_ENABLED", "false").lower() == "true"
+                )
                 _mull_max = int(os.getenv("IGOR_MULL_MAX_PASSES", "3"))
                 _mull_novelty = float(os.getenv("IGOR_MULL_NOVELTY_THRESHOLD", "0.70"))
                 if _mull_enabled and parsed.complexity in ("medium", "high"):
@@ -2591,32 +3010,50 @@ class Igor:
                     _prev_ids = {m.id for m in relevant}
                     _min_weight = 0.1
                     while _mull_pass < _mull_max:
-                        _min_weight = min(_min_weight + 0.05, 0.4)  # decay: raise floor each pass
+                        _min_weight = min(
+                            _min_weight + 0.05, 0.4
+                        )  # decay: raise floor each pass
                         _mull_results = self.cortex.interpretive_traverse(
                             _seed_ids, max_depth=3, min_weight=_min_weight
                         )
                         _mull_ids = {m.id for m in _mull_results}
                         # Delta: fraction of new IDs that overlap with previous pass
                         if _prev_ids:
-                            _overlap = len(_mull_ids & _prev_ids) / max(len(_prev_ids), 1)
+                            _overlap = len(_mull_ids & _prev_ids) / max(
+                                len(_prev_ids), 1
+                            )
                             if _overlap >= _mull_novelty:
-                                loginfo(f"[dim][MULL] pass {_mull_pass+1}: overlap={_overlap:.2f} ≥ {_mull_novelty} — no new consequence, exiting[/]")
+                                loginfo(
+                                    f"[dim][MULL] pass {_mull_pass+1}: overlap={_overlap:.2f} ≥ {_mull_novelty} — no new consequence, exiting[/]"
+                                )
                                 break
-                        _new_mull = [m for m in _mull_results if m.id not in {r.id for r in relevant}]
+                        _new_mull = [
+                            m
+                            for m in _mull_results
+                            if m.id not in {r.id for r in relevant}
+                        ]
                         if _new_mull:
                             relevant = list(relevant) + _new_mull[:3]
-                            loginfo(f"[dim][MULL] pass {_mull_pass+1}: +{len(_new_mull)} new memories (overlap={_overlap if _prev_ids else 0:.2f})[/]")
+                            loginfo(
+                                f"[dim][MULL] pass {_mull_pass+1}: +{len(_new_mull)} new memories (overlap={_overlap if _prev_ids else 0:.2f})[/]"
+                            )
                         _prev_ids = _mull_ids
                         _mull_pass += 1
             except Exception:
                 pass  # interpretive traversal + mull must never block main processing
 
         pre = parse_preparse_csb(pre_csb, habits)
-        _t_after_preparse_memory = _time.monotonic()   # preparse + memory retrieval done (#139)
+        _t_after_preparse_memory = (
+            _time.monotonic()
+        )  # preparse + memory retrieval done (#139)
         if not is_impulse:
-            _log_pt(turn_id=_turn_id, step="preparse_search",
-                    elapsed_ms=round((_t_after_preparse_memory - _tc) * 1000),
-                    llm_skipped=_skip_llm_preparse, candidates=len(candidates))
+            _log_pt(
+                turn_id=_turn_id,
+                step="preparse_search",
+                elapsed_ms=round((_t_after_preparse_memory - _tc) * 1000),
+                llm_skipped=_skip_llm_preparse,
+                candidates=len(candidates),
+            )
         _tc = _t_after_preparse_memory
         complexity = pre["complexity"]
         _skip_to = complexity["tier_minimum"]
@@ -2628,7 +3065,11 @@ class Igor:
             _routing_reason = "D035:interactive→tier.3.5"
         # #93: thalamus complexity as secondary signal — if thalamus says high and
         # preparse only got to tier.3/3.5, bump to tier.4
-        if not is_impulse and parsed.complexity == "high" and _skip_to in ("tier.3", "tier.3.5"):
+        if (
+            not is_impulse
+            and parsed.complexity == "high"
+            and _skip_to in ("tier.3", "tier.3.5")
+        ):
             _skip_to = "tier.4"
             _routing_reason = f"thalamus:high→tier.4"
 
@@ -2642,12 +3083,16 @@ class Igor:
                 # Significantly low dominance: bump two tiers
                 _skip_to = _TIER_UP.get(_TIER_UP.get(_skip_to, _skip_to), _skip_to)
                 _routing_reason = f"milieu:dominance={_dom:.2f}(very_low)→{_skip_to}"
-                loginfo(f"[dim][MILIEU] dominance={_dom:.2f} (very low) → escalation bumped to {_skip_to}[/]")
+                loginfo(
+                    f"[dim][MILIEU] dominance={_dom:.2f} (very low) → escalation bumped to {_skip_to}[/]"
+                )
             elif _dom < 0.0:
                 # Mildly low dominance: bump one tier
                 _skip_to = _TIER_UP.get(_skip_to, _skip_to)
                 _routing_reason = f"milieu:dominance={_dom:.2f}(low)→{_skip_to}"
-                loginfo(f"[dim][MILIEU] dominance={_dom:.2f} (low) → escalation bumped to {_skip_to}[/]")
+                loginfo(
+                    f"[dim][MILIEU] dominance={_dom:.2f} (low) → escalation bumped to {_skip_to}[/]"
+                )
 
         if complexity["signals_fired"]:
             loginfo(
@@ -2665,16 +3110,28 @@ class Igor:
                 if _m is not None:
                     _hist = _m.session_histogram()
                     _char = _hist.get("session_character", "unknown")
-                    _TIER_UP2 = {"tier.3": "tier.3.5", "tier.3.5": "tier.4", "tier.4": "tier.4"}
-                    _TIER_DN  = {"tier.4": "tier.3.5", "tier.3.5": "tier.3", "tier.3": "tier.3"}
+                    _TIER_UP2 = {
+                        "tier.3": "tier.3.5",
+                        "tier.3.5": "tier.4",
+                        "tier.4": "tier.4",
+                    }
+                    _TIER_DN = {
+                        "tier.4": "tier.3.5",
+                        "tier.3.5": "tier.3",
+                        "tier.3": "tier.3",
+                    }
                     if _char == "stressed" and _skip_to in ("tier.3", "tier.3.5"):
                         _skip_to = _TIER_UP2.get(_skip_to, _skip_to)
                         _routing_reason = f"milieu:session=stressed→{_skip_to}"
-                        loginfo(f"[dim][MILIEU] session_character=stressed → tier bumped to {_skip_to}[/]")
+                        loginfo(
+                            f"[dim][MILIEU] session_character=stressed → tier bumped to {_skip_to}[/]"
+                        )
                     elif _char == "focused" and _skip_to == "tier.3.5":
                         _skip_to = _TIER_DN.get(_skip_to, _skip_to)
                         _routing_reason = f"milieu:session=focused→{_skip_to}"
-                        loginfo(f"[dim][MILIEU] session_character=focused → tier eased to {_skip_to}[/]")
+                        loginfo(
+                            f"[dim][MILIEU] session_character=focused → tier eased to {_skip_to}[/]"
+                        )
             except Exception:
                 pass
 
@@ -2691,10 +3148,16 @@ class Igor:
             and _thalamus_habit is None
             and os.getenv("IGOR_NE_ROUTING", "false").lower() in ("1", "true", "yes")
         ):
-            _TIER_UP_NE = {"tier.3": "tier.3.5", "tier.3.5": "tier.4", "tier.4": "tier.4"}
+            _TIER_UP_NE = {
+                "tier.3": "tier.3.5",
+                "tier.3.5": "tier.4",
+                "tier.4": "tier.4",
+            }
             _prev_tier = _skip_to
             _skip_to = _TIER_UP_NE.get(_skip_to, _skip_to)
-            _routing_reason = f"NE:ambiguity(predicted={_ne_pred.predicted_habit_id})→{_skip_to}"
+            _routing_reason = (
+                f"NE:ambiguity(predicted={_ne_pred.predicted_habit_id})→{_skip_to}"
+            )
             loginfo(
                 f"[dim][NE] predicted {_ne_pred.predicted_habit_id} (conf={_ne_pred.confidence:.2f}) "
                 f"but no habit fired → ambiguity → {_skip_to}[/]"
@@ -2711,14 +3174,18 @@ class Igor:
             _tier_order = ["tier.2", "tier.3", "tier.3.5", "tier.4", "tier.5"]
             if (
                 _tier_order.index(_latency_skip_to_override)
-                > _tier_order.index(_skip_to) if _skip_to in _tier_order else False
+                > _tier_order.index(_skip_to)
+                if _skip_to in _tier_order
+                else False
             ):
                 _skip_to = _latency_skip_to_override
 
         # #90: routing_directive — honour explicit constraints from user
-        _local_only = (parsed.routing_directive == "local_only")
+        _local_only = parsed.routing_directive == "local_only"
         if _local_only:
-            console.print(f"[dim]{_cts()}[ROUTING] local_only directive — cloud escalation disabled[/]")
+            console.print(
+                f"[dim]{_cts()}[ROUTING] local_only directive — cloud escalation disabled[/]"
+            )
 
         # [JOB TRIGGER] pass.4: create a long-running job when task looks multi-unit
         # Only for non-impulse user messages; only if complexity qualifies
@@ -2727,10 +3194,14 @@ class Igor:
         # require back-and-forth dialogue (reading sessions, creative discussion).
         # Background jobs produce one-shot responses; interactive tasks need the
         # live conversation loop. "creative_request" added to thalamus taxonomy.
-        _INTERACTIVE_INTENTS = frozenset({
-            "conversation", "creative_request", "greeting",
-            "general",  # catch-all fallback — if unclassified, keep foreground
-        })
+        _INTERACTIVE_INTENTS = frozenset(
+            {
+                "conversation",
+                "creative_request",
+                "greeting",
+                "general",  # catch-all fallback — if unclassified, keep foreground
+            }
+        )
         _intent_blocks_bg = parsed.intent in _INTERACTIVE_INTENTS
         _async_job_id: str | None = None
         if (
@@ -2745,6 +3216,7 @@ class Igor:
             _threshold_prefix = ""
             try:
                 from .tools.filesystem import evaluate_threshold_habits as _eval_thresh
+
                 _tripped = _eval_thresh(habits)
                 if _tripped:
                     _warn_parts = []
@@ -2755,15 +3227,21 @@ class Igor:
                         _ttl = int(_h.metadata.get("twm_ttl_seconds", 120))
                         _tmpl = _h.metadata.get(
                             "surface_message",
-                            f"{_fld} is at {{current_value}} — check before queuing more work."
+                            f"{_fld} is at {{current_value}} — check before queuing more work.",
                         )
                         _msg = _tmpl.format(current_value=_cur, field=_fld, **_t["raw"])
                         _warn_parts.append(_msg)
                         self.cortex.twm_push(
                             source="pre_submit_threshold",
                             content_csb=f"THRESHOLD_WARN|{_h.id}|{_fld}={_cur}|{_msg}",
-                            salience=0.7, urgency=0.6, ttl_seconds=_ttl,
-                            metadata={"habit_id": _h.id, "field": _fld, "current_value": _cur},
+                            salience=0.7,
+                            urgency=0.6,
+                            ttl_seconds=_ttl,
+                            metadata={
+                                "habit_id": _h.id,
+                                "field": _fld,
+                                "current_value": _cur,
+                            },
                         )
                         self.cortex.write_ring(
                             f"THRESHOLD_WARN|pre_submit|{_h.id}|{_fld}={_cur}",
@@ -2774,9 +3252,9 @@ class Igor:
                 pass
 
             _async_job_id = self.job_manager.submit_background(
-                fn=lambda _ui=user_input, _rel=list(relevant), _sk=_skip_to, _pc=pre_csb: (
-                    self._bg_reason(_ui, _rel, _sk, _pc)
-                ),
+                fn=lambda _ui=user_input, _rel=list(
+                    relevant
+                ), _sk=_skip_to, _pc=pre_csb: (self._bg_reason(_ui, _rel, _sk, _pc)),
                 title=parsed.core_input[:80],
                 completions_queue=self._job_completions,
                 thread_id=thread_id or "",
@@ -2793,15 +3271,27 @@ class Igor:
 
         # Forensic: log tier selection decision (WO_escalation_gate)
         _tiers_available = ["tier.1"]
-        if self._gateway._t2:    _tiers_available.append("tier.2")
-        if self._gateway._t3:    _tiers_available.append("tier.3")
-        if self._gateway._t35:   _tiers_available.append("tier.3.5")
-        if self._gateway._t4:    _tiers_available.append("tier.4")
-        if self._gateway._t5 and os.getenv("IGOR_TIER5_ENABLED", "false").lower() in ("1", "true", "yes"):
+        if self._gateway._t2:
+            _tiers_available.append("tier.2")
+        if self._gateway._t3:
+            _tiers_available.append("tier.3")
+        if self._gateway._t35:
+            _tiers_available.append("tier.3.5")
+        if self._gateway._t4:
+            _tiers_available.append("tier.4")
+        if self._gateway._t5 and os.getenv("IGOR_TIER5_ENABLED", "false").lower() in (
+            "1",
+            "true",
+            "yes",
+        ):
             _tiers_available.append("tier.5")
         _tiers_available.append("tier.6")
 
-        _preparse_via = "ollama" if (self.use_local_preparse and _local_inference_ok()) else "openrouter"
+        _preparse_via = (
+            "ollama"
+            if (self.use_local_preparse and _local_inference_ok())
+            else "openrouter"
+        )
         if self.local_mode:
             _tier_hint = "tier.2"
             _reason = "local_mode=true"
@@ -2825,13 +3315,19 @@ class Igor:
             complexity_signals=",".join(complexity["signals_fired"]),
         )
         if not is_impulse:
-            _log_pt(turn_id=_turn_id, step="routing",
-                    elapsed_ms=round((_time.monotonic() - _tc) * 1000),
-                    tier=_skip_to, reason=_routing_reason[:60])
+            _log_pt(
+                turn_id=_turn_id,
+                step="routing",
+                elapsed_ms=round((_time.monotonic() - _tc) * 1000),
+                tier=_skip_to,
+                reason=_routing_reason[:60],
+            )
         _tc = _time.monotonic()
 
         if relevant:
-            dashboard.print_activated_memories(relevant, f"Relevant (intent={pre['intent']})")
+            dashboard.print_activated_memories(
+                relevant, f"Relevant (intent={pre['intent']})"
+            )
 
         used_api = False
 
@@ -2883,7 +3379,9 @@ class Igor:
                     habit = _best_bh
                     _thalamus_confidence = _best_bs
                     _thalamus_near_misses = []
-                    loginfo(f"[dim][LINK-BOOST] G11 near-miss promoted → {habit.id} score={_best_bs:.2f}[/]")
+                    loginfo(
+                        f"[dim][LINK-BOOST] G11 near-miss promoted → {habit.id} score={_best_bs:.2f}[/]"
+                    )
 
         # [#54] Habit tiebreaker: near-miss candidates → cheap classification call.
         # Fires only when no habit cleared threshold AND near-misses exist AND gate enabled.
@@ -2898,7 +3396,7 @@ class Igor:
             dashboard.print_habit_trigger(habit)
             _habit_trigger = habit.metadata.get("trigger", "")
             _habit_source = "llm" if _llm_habit is not None else "thalamus"
-            _habit_type   = habit.metadata.get("habit_type", "action")
+            _habit_type = habit.metadata.get("habit_type", "action")
             code_ref = habit.metadata.get("code_ref")
             if _habit_type == "question":
                 # Question-habit: emit stored question without any LLM call
@@ -2910,6 +3408,7 @@ class Igor:
                 # no required args → call with none; one required arg → pass user_input.
                 # Multi-arg tools can't be auto-dispatched; describe and skip habit.
                 from .tools.registry import registry as _tool_registry
+
                 tool_name = code_ref.split(":")[-1]
                 tool = _tool_registry.get(tool_name)
                 if tool:
@@ -2918,7 +3417,9 @@ class Igor:
                         if not _required:
                             response_text = tool.execute()
                         elif len(_required) == 1:
-                            response_text = tool.execute(**{_required[0]: user_input})
+                            # Pass core_input (routing directive stripped) not raw user_input
+                            _core = getattr(parsed, "core_input", user_input)
+                            response_text = tool.execute(**{_required[0]: _core})
                         else:
                             # Can't auto-dispatch multi-arg tool — ask for what's needed
                             _arg_list = ", ".join(_required)
@@ -2932,7 +3433,11 @@ class Igor:
                     # If the habit declares a short TTL, push result to TWM so it
                     # self-cleans (time, CPU temp, etc. become stale almost immediately).
                     _ttl = habit.metadata.get("twm_ttl_seconds")
-                    if _ttl is not None and response_text and not str(response_text).startswith("[HABIT→TOOL]"):
+                    if (
+                        _ttl is not None
+                        and response_text
+                        and not str(response_text).startswith("[HABIT→TOOL]")
+                    ):
                         try:
                             self.cortex.twm_push(
                                 source=f"habit:{habit.id}",
@@ -2949,7 +3454,9 @@ class Igor:
             elif habit.id == "PROC_HABIT_COMPILER":
                 # Phase 2: parse user input and store a structured PROCEDURAL memory
                 # Guard: never compile from CC bridge messages or internal impulses
-                _is_cc_msg = user_input.startswith("CC:") or "[CC_MESSAGE|" in user_input
+                _is_cc_msg = (
+                    user_input.startswith("CC:") or "[CC_MESSAGE|" in user_input
+                )
                 _is_impulse_input = user_input.startswith("[NE action impulse]")
                 if is_impulse or _is_cc_msg or _is_impulse_input:
                     response_text = "(habit compilation skipped — CC/impulse inputs are not compilable)"
@@ -2963,18 +3470,27 @@ class Igor:
                 _actions = habit.metadata.get("actions")
                 if _actions and isinstance(_actions, list):
                     import random as _random
+
                     response_text = _random.choice(_actions)
                 else:
                     response_text = habit.metadata.get(
-                        "action", f"Habit executed. [{habit.id}: {habit.narrative[:80]}]"
+                        "action",
+                        f"Habit executed. [{habit.id}: {habit.narrative[:80]}]",
                     )
             self.cortex.record_activation(habit.id, 0.05)
-            _log_pt(turn_id=_turn_id, step="habit_exec",
-                    elapsed_ms=round((_time.monotonic() - _tc) * 1000),
-                    habit_id=habit.id)
+            _log_pt(
+                turn_id=_turn_id,
+                step="habit_exec",
+                elapsed_ms=round((_time.monotonic() - _tc) * 1000),
+                habit_id=habit.id,
+            )
             _tc = _time.monotonic()
             # Log habit execution to ring + forensic log for auditability
-            _habit_score = _thalamus_confidence if _habit_source == "thalamus" else pre["confidence"]
+            _habit_score = (
+                _thalamus_confidence
+                if _habit_source == "thalamus"
+                else pre["confidence"]
+            )
             self.cortex.write_ring(
                 f"HABIT_EXEC|id={habit.id}|score={_habit_score:.2f}|"
                 f"trigger={_habit_trigger!r}|source={_habit_source}|"
@@ -2982,6 +3498,7 @@ class Igor:
                 category="habit_trace",
             )
             from .cognition.forensic_logger import log_tool_call as _log_tc
+
             _log_tc(
                 tool_name=f"habit:{habit.id}",
                 args_summary=f"trigger={_habit_trigger!r} source={_habit_source}",
@@ -2995,7 +3512,9 @@ class Igor:
             # Falls through (returns None) for anything it can't handle confidently.
             _tier0_fired = False
             if not is_impulse and not _local_only and parsed.output_complexity == "low":
-                _t0_result = self._tier0_response(user_input, parsed, thread_id=thread_id)
+                _t0_result = self._tier0_response(
+                    user_input, parsed, thread_id=thread_id
+                )
                 if _t0_result:
                     response_text = _t0_result
                     cost = 0.0
@@ -3009,6 +3528,7 @@ class Igor:
                 # Ring context is injected by anthropic.py._build_session_context (D014)
                 # — do NOT also build ring_ctx here (would cause double injection)
                 core = get_core_patterns(self.cortex)
+
                 def _on_tier(t: str) -> None:
                     self._current_action = "reasoning"
                     self._current_tier = t
@@ -3016,22 +3536,32 @@ class Igor:
 
                 if is_impulse:
                     # #29: PROACTIVE_HABIT impulses stay local (batch pool, quality priority)
-                    _level = "background_batch" if "PROACTIVE_HABIT" in user_input else "background"
+                    _level = (
+                        "background_batch"
+                        if "PROACTIVE_HABIT" in user_input
+                        else "background"
+                    )
                     response_text, cost, used_api = self._gateway.reason(
-                        user_input, relevant, core,
-                        level=_level, thread_id=thread_id,
-                        cortex=self.cortex, instance_id=self.instance_id,
+                        user_input,
+                        relevant,
+                        core,
+                        level=_level,
+                        thread_id=thread_id,
+                        cortex=self.cortex,
+                        instance_id=self.instance_id,
                         on_tier=_on_tier,
                     )
                     if used_api:
-                        loginfo(f"[dim][IMPULSE/{self._gateway.last_tier}] cloud ok (${cost:.5f})[/]")
+                        loginfo(
+                            f"[dim][IMPULSE/{self._gateway.last_tier}] cloud ok (${cost:.5f})[/]"
+                        )
                     elif response_text:
                         loginfo(f"[dim][IMPULSE/{self._gateway.last_tier}] local ok[/]")
                 else:
                     # Interactive human turn — tier.3+ directly (D032).
                     # Local 1B is too slow/weak for conversational UX on no-GPU hardware.
                     # Cloud cheap (gpt-4o-mini ~$0.001/turn) is the correct default.
-    
+
                     # #109: cloud escalation habit evaluation — append nudge to preparse_csb
                     # so cloud model can identify recurring patterns and trigger habit compilation.
                     # Also surface any high-activation memory candidates from TWM (#106/#108).
@@ -3043,9 +3573,12 @@ class Igor:
                         "Only do this if a clear, general pattern exists — skip if this is one-off."
                     )
                     try:
-                        _twm_candidates = self.cortex.twm_read(limit=20, include_integrated=False)
+                        _twm_candidates = self.cortex.twm_read(
+                            limit=20, include_integrated=False
+                        )
                         _cands = [
-                            o for o in _twm_candidates
+                            o
+                            for o in _twm_candidates
                             if o.get("source") == "habit_candidate"
                         ][:3]
                         if _cands:
@@ -3055,11 +3588,16 @@ class Igor:
                     except Exception:
                         pass
                     _pre_csb_with_nudge = pre_csb + _habit_nudge
-    
-                    dashboard.print_reasoning(used_api=True, skip_to=_skip_to, reason=_routing_reason)
+
+                    dashboard.print_reasoning(
+                        used_api=True, skip_to=_skip_to, reason=_routing_reason
+                    )
                     # G37: log escalation decision for weaning analysis
                     try:
-                        from .cognition.forensic_logger import log_escalation as _log_esc
+                        from .cognition.forensic_logger import (
+                            log_escalation as _log_esc,
+                        )
+
                         _log_esc(
                             tier=_skip_to,
                             reason=_routing_reason,
@@ -3067,7 +3605,9 @@ class Igor:
                             complexity=parsed.complexity,
                             preparse_tier=complexity.get("tier_minimum", ""),
                             complexity_score=complexity.get("score", 0.0),
-                            complexity_signals="|".join(complexity.get("signals_fired", [])),
+                            complexity_signals="|".join(
+                                complexity.get("signals_fired", [])
+                            ),
                             input_snippet=user_input[:120],
                             habit_fired=bool(habit),
                         )
@@ -3075,18 +3615,25 @@ class Igor:
                         pass
                     self._current_action = "reasoning"
                     web_server.broadcast_activity(self._activity_state())
-    
+
                     # [#145 Step 3] Python-built think context — zero cost, always on.
                     # Assembles [THINK_CONTEXT] from already-computed components:
                     # parsed intent, word graph activation, NE prediction, near-misses,
                     # top relevant memories, milieu. No LLM call.
                     _tc_tbuild = _time.monotonic()
                     _py_think = self._build_think_context(
-                        user_input, parsed, relevant, _milieu_state,
-                        _ne_pred, _thalamus_near_misses,
+                        user_input,
+                        parsed,
+                        relevant,
+                        _milieu_state,
+                        _ne_pred,
+                        _thalamus_near_misses,
                     )
-                    _log_pt(turn_id=_turn_id, step="think_build",
-                            elapsed_ms=round((_time.monotonic() - _tc_tbuild) * 1000))
+                    _log_pt(
+                        turn_id=_turn_id,
+                        step="think_build",
+                        elapsed_ms=round((_time.monotonic() - _tc_tbuild) * 1000),
+                    )
                     _reply_input = f"{_py_think}\n\n[USER_INPUT]\n{user_input}"
 
                     # [#145 Step 4] Optional local Ollama synthesis on top of Python context.
@@ -3095,12 +3642,16 @@ class Igor:
                     if (
                         not is_impulse
                         and not _cloud_mode_active
-                        and os.getenv("IGOR_TWO_PHASE_CALLS", "false").lower() in ("1", "true", "yes")
+                        and os.getenv("IGOR_TWO_PHASE_CALLS", "false").lower()
+                        in ("1", "true", "yes")
                     ):
                         _tc_tllm = _time.monotonic()
                         _scratchpad = self._think_call(_py_think, user_input)
-                        _log_pt(turn_id=_turn_id, step="think_llm",
-                                elapsed_ms=round((_time.monotonic() - _tc_tllm) * 1000))
+                        _log_pt(
+                            turn_id=_turn_id,
+                            step="think_llm",
+                            elapsed_ms=round((_time.monotonic() - _tc_tllm) * 1000),
+                        )
                         if _scratchpad:
                             self.cortex.write_ring(
                                 f"THINK|local|intent={parsed.intent}|{_scratchpad[:600]}",
@@ -3111,26 +3662,41 @@ class Igor:
                                 f"{_py_think}\n\n[THINK_SYNTHESIS]\n{_scratchpad}"
                                 f"\n\n[USER_INPUT]\n{user_input}"
                             )
-                            console.print(f"[dim]{_cts()}[THINK] Local synthesis ready → reply call[/]")
-    
+                            console.print(
+                                f"[dim]{_cts()}[THINK] Local synthesis ready → reply call[/]"
+                            )
+
                     _tc_reason = _time.monotonic()
-                    with Live(Spinner("dots", text=" Thinking..."), console=console,
-                              transient=True, refresh_per_second=8):
+                    with Live(
+                        Spinner("dots", text=" Thinking..."),
+                        console=console,
+                        transient=True,
+                        refresh_per_second=8,
+                    ):
                         response_text, cost, used_api = self._gateway.reason(
-                            _reply_input, relevant, core,
-                            level="interactive", skip_to=_skip_to,
-                            preparse_csb=_pre_csb_with_nudge, thread_id=thread_id,
-                            cortex=self.cortex, instance_id=self.instance_id,
-                            local_only=_local_only, on_tier=_on_tier,
+                            _reply_input,
+                            relevant,
+                            core,
+                            level="interactive",
+                            skip_to=_skip_to,
+                            preparse_csb=_pre_csb_with_nudge,
+                            thread_id=thread_id,
+                            cortex=self.cortex,
+                            instance_id=self.instance_id,
+                            local_only=_local_only,
+                            on_tier=_on_tier,
                         )
-                    _log_pt(turn_id=_turn_id, step="reasoning",
-                            elapsed_ms=round((_time.monotonic() - _tc_reason) * 1000),
-                            tier=self._current_tier)
+                    _log_pt(
+                        turn_id=_turn_id,
+                        step="reasoning",
+                        elapsed_ms=round((_time.monotonic() - _tc_reason) * 1000),
+                        tier=self._current_tier,
+                    )
                     # G5 / #42: prediction signal — did we need a higher tier than expected?
                     _m = milieu_mod.get()
                     if _m is not None:
                         _m.ingest_surprise(_skip_to, self._current_tier)
-    
+
         # [TWO-PHASE] Split think + reply blocks (#145)
         # Applied to non-habit LLM responses only. Think block logged to ring (think_trace),
         # reply block replaces response_text for output/ring/memory.
@@ -3152,16 +3718,37 @@ class Igor:
         if response_text and thread_id and not is_impulse:
             try:
                 _active_tasks = self.cortex.twm_read(
-                    limit=5, include_integrated=False,
-                    thread_id=thread_id, category="task_set",
+                    limit=5,
+                    include_integrated=False,
+                    thread_id=thread_id,
+                    category="task_set",
                 )
                 if _active_tasks:
                     _completion_signals = (
-                        "created", "done", "completed", "filed", "written", "saved",
-                        "scheduled", "sent", "updated", "finished", "resolved",
-                        "submitted", "closed", "added", "recorded", "committed",
-                        "wrapped up", "taken care", "all set", "all done",
-                        "handled", "addressed", "fixed", "implemented",
+                        "created",
+                        "done",
+                        "completed",
+                        "filed",
+                        "written",
+                        "saved",
+                        "scheduled",
+                        "sent",
+                        "updated",
+                        "finished",
+                        "resolved",
+                        "submitted",
+                        "closed",
+                        "added",
+                        "recorded",
+                        "committed",
+                        "wrapped up",
+                        "taken care",
+                        "all set",
+                        "all done",
+                        "handled",
+                        "addressed",
+                        "fixed",
+                        "implemented",
                     )
                     # Extract key nouns from all active task goals (>3 chars)
                     _task_keywords: set[str] = set()
@@ -3175,8 +3762,10 @@ class Igor:
                     # Fast path: split response into sentences, check signal + keyword co-occur
                     _resp_lower = response_text.lower()
                     _sentences = [
-                        s.strip() for s in
-                        _resp_lower.replace("!", ".").replace("?", ".").split(".")
+                        s.strip()
+                        for s in _resp_lower.replace("!", ".")
+                        .replace("?", ".")
+                        .split(".")
                         if s.strip()
                     ]
                     _should_clear = False
@@ -3185,7 +3774,8 @@ class Igor:
                         _has_signal = any(sig in _sent for sig in _completion_signals)
                         _has_task_ref = (
                             any(kw in _sent for kw in _task_keywords)
-                            if _task_keywords else True
+                            if _task_keywords
+                            else True
                         )
                         if _has_signal and _has_task_ref:
                             _should_clear = True
@@ -3220,6 +3810,7 @@ class Igor:
         # G8 / #48: fast identity-threat gate before output
         if response_text:
             from .brainstem.core_patterns import fast_identity_check
+
             _id_ok, _id_reason = fast_identity_check(response_text)
             if not _id_ok:
                 loginfo(f"[bold red][IDENTITY GATE] Suppressed: {_id_reason[:200]}[/]")
@@ -3237,6 +3828,7 @@ class Igor:
                 response_text = ""
             else:
                 from rich.markup import escape as _escape
+
                 loginfo(f"\n[bold blue]Igor:[/] {_escape(response_text)}\n")
                 # #112 phase 1: score boot orientation on first interactive response
                 if not self._boot_orientation_scored and not is_impulse:
@@ -3246,6 +3838,7 @@ class Igor:
                             compute_boot_orientation_score as _bos,
                             log_cognition_metric as _lcm,
                         )
+
                         _score = _bos(response_text, self._boot_ring_tail)
                         _lcm(
                             metric="boot_orientation",
@@ -3263,6 +3856,7 @@ class Igor:
         if self._npass_reply and self._generation_graph is not None and response_text:
             try:
                 from .cognition.forensic_logger import log_cognition_metric as _lcm
+
                 _flatness = self._generation_graph.gradient_flatness(response_text)
                 _lcm(
                     metric="gradient_flatness",
@@ -3282,12 +3876,14 @@ class Igor:
         if not is_impulse:
             # Change 7 / D031: include routing decision in episodic metadata
             # This builds the audit trail for future routing habit compilation.
-            _routing_proc_id = "PROC_ROUTING_LOCAL" if not used_api else "PROC_ROUTING_ESCALATE"
+            _routing_proc_id = (
+                "PROC_ROUTING_LOCAL" if not used_api else "PROC_ROUTING_ESCALATE"
+            )
             # G14 / #52: tag episodic memories with ambient emotional state at time of creation
             _ep_milieu = milieu_mod.get().get_state() if milieu_mod.get() else None
             # #66: amygdala analog — flag high-charge moments so inertia formula
             # applies charged_boost (+0.05). Threshold: strong valence or high arousal.
-            _ep_arousal   = _ep_milieu.arousal if _ep_milieu else 0.0
+            _ep_arousal = _ep_milieu.arousal if _ep_milieu else 0.0
             _ep_dominance = _ep_milieu.dominance if _ep_milieu else 0.0
             _emotionally_charged = abs(valence) > 0.5 or abs(_ep_arousal) > 0.5
             ep = Memory(
@@ -3307,21 +3903,24 @@ class Igor:
                     "complexity_score": complexity["score"],
                     "routing_proc_id": _routing_proc_id,
                     "emotionally_charged": _emotionally_charged,
-                }
+                },
             )
             # #128: auto-link to contextually active memories at store time
             _tc_store = _time.monotonic()
             self.cortex.store(ep, link_to=relevant, milieu_arousal=_ep_arousal)
             self.cortex.add_child("CP3", ep.id)
             new_memories += 1
-            _log_pt(turn_id=_turn_id, step="mem_store",
-                    elapsed_ms=round((_time.monotonic() - _tc_store) * 1000),
-                    new_memories=new_memories)
+            _log_pt(
+                turn_id=_turn_id,
+                step="mem_store",
+                elapsed_ms=round((_time.monotonic() - _tc_store) * 1000),
+                new_memories=new_memories,
+            )
 
         # [RING] Write interaction summary to short-term memory
         # Skip impulse turns — their keywords would pollute push_sources memory surfacing
         # and their content adds no value to human-turn context.
-        _t_after_reasoning = _time.monotonic()   # reasoning complete (#139)
+        _t_after_reasoning = _time.monotonic()  # reasoning complete (#139)
         if not is_impulse:
             self.cortex.write_ring(
                 f"Q: {user_input[:800]} | A: {response_text[:1200]} | intent={parsed.intent} friction={friction:.2f}",
@@ -3329,16 +3928,28 @@ class Igor:
                 thread_id=thread_id,
             )
             # [C] Update conversation thread breadcrumbs for context recovery after restart
-            self._update_conversation_thread(user_input, response_text, parsed.intent, _milieu_state)
+            self._update_conversation_thread(
+                user_input, response_text, parsed.intent, _milieu_state
+            )
             # G11: index exchange text into word graph so prediction improves over time.
             # Keyed by thread+monotonic tick to avoid collisions across restarts.
             if self._word_graph is not None and response_text:
-                _wg_doc_id = f"ex_{thread_id}_{int(_time.monotonic() * 1000) % 10_000_000}"
-                self._word_graph.index(_wg_doc_id, f"{user_input} {response_text}", weight=0.7)
+                _wg_doc_id = (
+                    f"ex_{thread_id}_{int(_time.monotonic() * 1000) % 10_000_000}"
+                )
+                self._word_graph.index(
+                    _wg_doc_id, f"{user_input} {response_text}", weight=0.7
+                )
             # G37: generation graph — index response_text only (not user_input).
             # Recognition graph learns from everything; generation graph learns from Igor's voice.
-            if self._dual_graphs and self._generation_graph is not None and response_text:
-                _gg_doc_id = f"gen_{thread_id}_{int(_time.monotonic() * 1000) % 10_000_000}"
+            if (
+                self._dual_graphs
+                and self._generation_graph is not None
+                and response_text
+            ):
+                _gg_doc_id = (
+                    f"gen_{thread_id}_{int(_time.monotonic() * 1000) % 10_000_000}"
+                )
                 self._generation_graph.index(_gg_doc_id, response_text, weight=1.0)
             # G37: track last reply for comprehension signal on next turn
             if response_text:
@@ -3402,12 +4013,13 @@ class Igor:
 
         # [DASHBOARD] Update display
         _inf_data: dict = {
-            "tier":    getattr(self, "_current_tier", ""),
-            "intent":  parsed.intent,
+            "tier": getattr(self, "_current_tier", ""),
+            "intent": parsed.intent,
             "cost_usd": locals().get("cost", 0.0) or 0.0,
             "latency_ms": (locals().get("_total_ms") or 0) if not is_impulse else 0,
             "preparse": (
-                "skipped (cloud mode)" if _cloud_mode_active
+                "skipped (cloud mode)"
+                if _cloud_mode_active
                 else ("skipped (confident)" if _skip_llm_preparse else "ollama")
             ),
         }
@@ -3424,7 +4036,11 @@ class Igor:
             cloud_calls=self.cloud_calls,
             milieu_state=milieu_mod.get().get_state() if milieu_mod.get() else None,
             last_tier=getattr(self, "_current_tier", ""),
-            active_jobs=self.job_manager.active_count() if hasattr(self, "job_manager") and self.job_manager else 0,
+            active_jobs=(
+                self.job_manager.active_count()
+                if hasattr(self, "job_manager") and self.job_manager
+                else 0
+            ),
             word_graph=self._word_graph,
             latency_samples=self._latency_samples,
             inference_data=_inf_data,
@@ -3432,14 +4048,20 @@ class Igor:
 
         # [PRECOMPACT] Flush session summary to LTM before context window gets too large (change.32)
         from .cognition.interruptors import ContextInterruptor
-        if (self.interaction_count >= ContextInterruptor.URGENT_AT
-                and not self._context_flush_done):
+
+        if (
+            self.interaction_count >= ContextInterruptor.URGENT_AT
+            and not self._context_flush_done
+        ):
             self._pre_compaction_flush()
 
         # Part C — stamp response time; track consecutive slow responses; latency instrumentation (#139)
         import time as _t
+
         _t_end = _time.monotonic()
-        _response_elapsed = _t.time() - (self._last_response_time if self._last_response_time > 0 else _t.time())
+        _response_elapsed = _t.time() - (
+            self._last_response_time if self._last_response_time > 0 else _t.time()
+        )
         self._last_response_time = _t.time()
         _budget = float(os.getenv("LATENCY_BUDGET_SECONDS", "8"))
         if _response_elapsed > _budget and not is_impulse:
@@ -3449,10 +4071,12 @@ class Igor:
 
         # Compute stage latencies and write latency_trace ring entry (#139)
         if not is_impulse:
-            _preparse_ms  = round((_t_after_preparse_memory - _t0) * 1000)
-            _reasoning_ms = round((_t_after_reasoning - _t_after_preparse_memory) * 1000)
-            _total_ms     = round((_t_end - _t0) * 1000)
-            _turn_cost    = locals().get("cost", 0.0) or 0.0  # #201/#203: capture for logs
+            _preparse_ms = round((_t_after_preparse_memory - _t0) * 1000)
+            _reasoning_ms = round(
+                (_t_after_reasoning - _t_after_preparse_memory) * 1000
+            )
+            _total_ms = round((_t_end - _t0) * 1000)
+            _turn_cost = locals().get("cost", 0.0) or 0.0  # #201/#203: capture for logs
             # Rolling last-20 samples for p50/p95 dashboard display
             self._latency_samples.append(_total_ms)
             if len(self._latency_samples) > 20:
@@ -3463,8 +4087,14 @@ class Igor:
                 category="latency_trace",
             )
             # Pipeline trace: TOTAL — closes the turn record
-            _log_pt(turn_id=_turn_id, step="TOTAL", elapsed_ms=_total_ms,
-                    tier=_tier_hint, intent=parsed.intent, new_memories=new_memories)
+            _log_pt(
+                turn_id=_turn_id,
+                step="TOTAL",
+                elapsed_ms=_total_ms,
+                tier=_tier_hint,
+                intent=parsed.intent,
+                new_memories=new_memories,
+            )
 
         # WO#140 Phase 2: track outgoing response vocabulary for habituation.
         # Only LLM-generated replies (not habit-fired canned text, not impulses).
@@ -3472,7 +4102,8 @@ class Igor:
             response_text
             and not is_impulse
             and habit is None
-            and os.getenv("IGOR_RESPONSE_HABITUATION", "true").lower() not in ("0", "false", "no")
+            and os.getenv("IGOR_RESPONSE_HABITUATION", "true").lower()
+            not in ("0", "false", "no")
             and self._response_habituation is not None
         ):
             try:
@@ -3483,7 +4114,10 @@ class Igor:
         # Reading progress log: record what Igor read aloud in creative_request turns.
         if response_text and not is_impulse and parsed.intent == "creative_request":
             try:
-                from .cognition.forensic_logger import log_reading_progress as _log_reading
+                from .cognition.forensic_logger import (
+                    log_reading_progress as _log_reading,
+                )
+
                 _wc = len(response_text.split())
                 _log_reading(
                     passage=response_text,
@@ -3502,6 +4136,7 @@ class Igor:
         if response_text and not is_impulse:
             try:
                 from .tools.want_tracker import check_response_for_wants as _check_wants
+
                 _check_wants(response_text, self.cortex, user_input=user_input)
             except Exception:
                 pass
@@ -3548,11 +4183,12 @@ class Igor:
         try:
             # Idle gate: skip NE if TWM hasn't changed and cooldown not elapsed
             import time as _t
+
             _now = _t.monotonic()
             _COOLDOWN = 120.0  # 2 minutes
             try:
-                _obs = self.cortex.twm_count()        # total obs rows
-                _max_id = self.cortex.twm_max_id()    # highest obs id
+                _obs = self.cortex.twm_count()  # total obs rows
+                _max_id = self.cortex.twm_max_id()  # highest obs id
                 _fingerprint = (_obs, _max_id)
             except Exception:
                 _fingerprint = (0, 0)
@@ -3598,12 +4234,17 @@ class Igor:
             if self._consolidation_thread.is_alive():
                 return  # already running
 
-        from .cognition.consolidation import run_consolidation, should_run as _should_consolidate
+        from .cognition.consolidation import (
+            run_consolidation,
+            should_run as _should_consolidate,
+        )
+
         if not _should_consolidate():
             return
 
         def _worker():
             import time as _t
+
             # Be a good citizen: wait for main loop to be idle
             _waited = 0.0
             while self._is_processing and _waited < 30.0:
@@ -3628,8 +4269,17 @@ class Igor:
 
     # Keywords indicating a response is a failure/error (pass.3 NE backoff)
     _FAILURE_KEYWORDS = (
-        "error", "exception", "failed", "unable", "cannot", "no such",
-        "traceback", "not found", "invalid", "timed out", "connection refused",
+        "error",
+        "exception",
+        "failed",
+        "unable",
+        "cannot",
+        "no such",
+        "traceback",
+        "not found",
+        "invalid",
+        "timed out",
+        "connection refused",
     )
 
     def _announce_completed_jobs(self):
@@ -3643,10 +4293,10 @@ class Igor:
         """
         while self._job_completions:
             item = self._job_completions.popleft()
-            job_id   = item.get("job_id", "?")
-            title    = item.get("title", "")
-            result   = item.get("result", "")
-            tid      = item.get("thread_id", "") or ""
+            job_id = item.get("job_id", "?")
+            title = item.get("title", "")
+            result = item.get("result", "")
+            tid = item.get("thread_id", "") or ""
             result_for_twm = result[:500] if result else "(no output)"
 
             # #159: Direct web notification to the originating thread.
@@ -3659,8 +4309,7 @@ class Igor:
                 )
             else:
                 _msg = (
-                    f"Background job complete, Mashter: **{title[:60]}**\n"
-                    f"{result}"
+                    f"Background job complete, Mashter: **{title[:60]}**\n" f"{result}"
                 )
             # #159 fix: thread_id is "web:<session_id>" but web_server sessions
             # are keyed by just the session_id part. Strip the "web:" prefix so
@@ -3691,9 +4340,7 @@ class Igor:
                 category="system_info",
                 thread_id=tid or None,
             )
-            loginfo(
-                f"\n[green][JOBS] Job #{job_id} '{title[:50]}' completed.[/]\n"
-            )
+            loginfo(f"\n[green][JOBS] Job #{job_id} '{title[:50]}' completed.[/]\n")
 
     def _drain_action_impulses(self):
         """
@@ -3713,7 +4360,8 @@ class Igor:
         """
         obs = self.cortex.twm_read(limit=20, include_integrated=False)
         impulses = [
-            o for o in obs
+            o
+            for o in obs
             if o.get("source") in ("narrative_engine", "proactive_habit")
             and "ACTION_IMPULSE" in o.get("content_csb", "")
         ]
@@ -3761,6 +4409,7 @@ class Igor:
         # If arbiter is disabled (IGOR_ARBITER_ENABLED=false), submit() returns 0 —
         # fall through and execute the impulse normally rather than silently dropping it.
         from .arbiter import queue as arbiter_queue
+
         if arbiter_queue.is_irreversible_impulse(content):
             item_id = arbiter_queue.submit(
                 description=f"NE proposed action: {content[:200]}",
@@ -3770,7 +4419,9 @@ class Igor:
                 metadata={"obs_id": impulse["id"]},
             )
             if item_id != 0:
-                loginfo(f"[yellow][IMPULSE→ARBITER] Queued as #{item_id} — type /arbiter approve {item_id} or /arbiter deny {item_id}[/]")
+                loginfo(
+                    f"[yellow][IMPULSE→ARBITER] Queued as #{item_id} — type /arbiter approve {item_id} or /arbiter deny {item_id}[/]"
+                )
                 self.cortex.write_ring(
                     f"IMPULSE_QUEUED|obs_id={impulse['id']}|arbiter_id={item_id}|{content[:200]}",
                     category="impulse_executed",
@@ -3805,7 +4456,10 @@ class Igor:
             )
 
             # At exactly 3: push report_failure_to_user (once)
-            if self._consecutive_impulse_failures == 3 and not self._failure_report_pushed:
+            if (
+                self._consecutive_impulse_failures == 3
+                and not self._failure_report_pushed
+            ):
                 self._failure_report_pushed = True
                 self.cortex.twm_push(
                     source="failure_backoff",
@@ -3828,7 +4482,9 @@ class Igor:
                 )
 
             # At 5: push escalate_to_human (once)
-            elif self._consecutive_impulse_failures == 5 and not self._failure_escalated:
+            elif (
+                self._consecutive_impulse_failures == 5 and not self._failure_escalated
+            ):
                 self._failure_escalated = True
                 self.cortex.twm_push(
                     source="failure_backoff",
@@ -3892,7 +4548,9 @@ class Igor:
         try:
             summary = summarize_session(ring_entries, self.instance_id)
         except Exception as e:
-            loginfo(f"[yellow][PRECOMPACT] Ollama summarize failed ({e}), using fallback.[/]")
+            loginfo(
+                f"[yellow][PRECOMPACT] Ollama summarize failed ({e}), using fallback.[/]"
+            )
             summary = (
                 f"Session auto-flush at interaction {self.interaction_count}. "
                 f"Ring had {len(ring_entries)} entries. "
@@ -3929,7 +4587,11 @@ class Igor:
                 f"PRECOMPACT_FLUSH|{ts}|instance={self.instance_id}"
                 f"|interactions={self.interaction_count}|memory_id={mem.id}"
             )
-            existing = CHANGE_LOG_PATH.read_text(encoding="utf-8") if CHANGE_LOG_PATH.exists() else ""
+            existing = (
+                CHANGE_LOG_PATH.read_text(encoding="utf-8")
+                if CHANGE_LOG_PATH.exists()
+                else ""
+            )
             CHANGE_LOG_PATH.write_text(entry + "\n" + existing, encoding="utf-8")
         except Exception:
             pass
@@ -3957,14 +4619,18 @@ class Igor:
             except queue.Empty:
                 break
 
-            loginfo(f"\n[bold magenta][{msg.source.upper()}] {msg.author}:[/] {msg.content[:120]}")
+            loginfo(
+                f"\n[bold magenta][{msg.source.upper()}] {msg.author}:[/] {msg.content[:120]}"
+            )
 
             # [TWM] Push raw network message before wrapping it as synthetic input
             ri = msg.reply_info or {}
             channel_label = f"{msg.source}:{ri.get('channel_name', '?')}"
             user_input_source.push_message(
-                self.cortex, msg.content,
-                channel=channel_label, author=msg.author,
+                self.cortex,
+                msg.content,
+                channel=channel_label,
+                author=msg.author,
             )
 
             _thread_id = self._get_thread_id(msg)
@@ -4031,21 +4697,22 @@ class Igor:
           - A handful of specific common words for consistency
         """
         import re
+
         # Specific high-frequency words first (order matters — longest match first)
         _words = [
-            ("sorry",       "shorry"),
-            ("sir",         "shir"),
-            ("say so",      "shay sho"),
-            ("so,",         "sho,"),
-            (" so ",        " sho "),
-            ("pleasure",    "pleashure"),
-            ("disadvantage","dishadvantage"),
+            ("sorry", "shorry"),
+            ("sir", "shir"),
+            ("say so", "shay sho"),
+            ("so,", "sho,"),
+            (" so ", " sho "),
+            ("pleasure", "pleashure"),
+            ("disadvantage", "dishadvantage"),
         ]
         for old, new in _words:
             text = text.replace(old, new).replace(old.capitalize(), new.capitalize())
         # 'ance'/'ence' endings → 'anthe'/'enthe'
-        text = re.sub(r'([Aa])nce\b', r'\1nthe', text)
-        text = re.sub(r'([Ee])nce\b', r'\1nthe', text)
+        text = re.sub(r"([Aa])nce\b", r"\1nthe", text)
+        text = re.sub(r"([Ee])nce\b", r"\1nthe", text)
         return text
 
     def _process_network_msg(self, msg, _thread_id: str):
@@ -4053,17 +4720,24 @@ class Igor:
         import re as _re
 
         # #119: extract session_id for targeted web delivery
-        _session_id = (msg.reply_info or {}).get("session_id", "shared") if msg.source == "web" else "shared"
+        _session_id = (
+            (msg.reply_info or {}).get("session_id", "shared")
+            if msg.source == "web"
+            else "shared"
+        )
 
         # ── #135: User context + chat logging ─────────────────────────────────
         _author = (msg.author or "unknown").lower()
-        _skip_ctx = _author in ("claude-code", "igor") or msg.content.strip().startswith("/")
+        _skip_ctx = _author in (
+            "claude-code",
+            "igor",
+        ) or msg.content.strip().startswith("/")
 
         # Cookie-based re-identification: client sends __identify__:<name> on connect.
         # Preseed context from existing chats/<slug>/context.json (loads relationship etc.)
         # and return immediately — no chat logging, no first-contact, no response.
         if not _skip_ctx and msg.content.startswith("__identify__:"):
-            _id_name = msg.content[len("__identify__:"):].strip()
+            _id_name = msg.content[len("__identify__:") :].strip()
             if _id_name:
                 self._user_ctx_mgr.preseed(_thread_id, _id_name)
             return
@@ -4085,12 +4759,16 @@ class Igor:
                     _given = _given_clean
                 if _re.match(r"^[A-Za-z][A-Za-z\s\-']{0,58}$", _given):
                     _ctx = self._user_ctx_mgr.rename(_thread_id, _given)
-                    _reply = self._igor_lisp(f"A pleasure to make your acquaintance, {_ctx.name}.")
+                    _reply = self._igor_lisp(
+                        f"A pleasure to make your acquaintance, {_ctx.name}."
+                    )
                 else:
                     _ctx.name = _given[:30]
                     _ctx.pending_name = False
                     self._user_ctx_mgr.save(_ctx)
-                    _reply = self._igor_lisp("If you say so, sir. Not our place to judge.")
+                    _reply = self._igor_lisp(
+                        "If you say so, sir. Not our place to judge."
+                    )
                 # Mark one message received so next turn doesn't re-trigger first-contact
                 _ctx.message_count = max(_ctx.message_count, 1)
                 self._user_ctx_mgr.save(_ctx)
@@ -4104,7 +4782,9 @@ class Igor:
             if _ctx.message_count == 0 and msg.source not in ("gmail",):
                 _ctx.pending_name = True
                 self._user_ctx_mgr.save(_ctx)
-                _reply = self._igor_lisp("I'm sorry, you have me at a disadvantage. I am Igor. And you are?")
+                _reply = self._igor_lisp(
+                    "I'm sorry, you have me at a disadvantage. I am Igor. And you are?"
+                )
                 self._user_ctx_mgr.log(_ctx, "out", _reply, _thread_id)
                 if msg.source == "web":
                     web_server.send(_reply, session_id=_session_id)
@@ -4125,8 +4805,8 @@ class Igor:
 
         if msg.source == "discord":
             synthetic = (
-                _ctx_block +
-                f"[Discord message from {msg.author} in #{ri.get('channel_name', '?')} "
+                _ctx_block
+                + f"[Discord message from {msg.author} in #{ri.get('channel_name', '?')} "
                 f"on {ri.get('guild_name', '?')}, channel_id={ri.get('channel_id', 0)}]: {msg.content}"
             )
         elif msg.source == "gmail":
@@ -4146,7 +4826,11 @@ class Igor:
         else:
             synthetic = _ctx_block + f"[{msg.source} from {msg.author}]: {msg.content}"
 
-        if _thread_prefix and msg.author != "claude-code" and not msg.content.strip().startswith("/"):
+        if (
+            _thread_prefix
+            and msg.author != "claude-code"
+            and not msg.content.strip().startswith("/")
+        ):
             synthetic = _thread_prefix + synthetic
 
         response = self._process(synthetic, thread_id=_thread_id)
@@ -4157,7 +4841,11 @@ class Igor:
         if msg.source == "web" and response:
             web_server.send(response, session_id=_session_id)
 
-        if response and msg.author != "claude-code" and not msg.content.strip().startswith("/"):
+        if (
+            response
+            and msg.author != "claude-code"
+            and not msg.content.strip().startswith("/")
+        ):
             self._update_thread_buffer(_thread_id, msg.content, response)
 
     def _handle_command(self, command: str, raw: str):
@@ -4169,32 +4857,31 @@ class Igor:
             "metrics": self._cmd_metrics,
             "quit": self._cmd_quit,
             "exit": self._cmd_quit,
-            "sleep": self._cmd_sleep,             # #134: pre-sleep ritual
+            "sleep": self._cmd_sleep,  # #134: pre-sleep ritual
             "restart": self._cmd_restart,
             "cost": self._cmd_cost,
-            "routing": self._cmd_routing,         # G37: escalation weaning analysis
+            "routing": self._cmd_routing,  # G37: escalation weaning analysis
             "model": self._cmd_model,
-
             "local": self._cmd_local,
             "compress": self._cmd_compress,
             "arbiter": self._cmd_arbiter,
-            "orders": self._cmd_orders,       # change.38
-            "cloud": self._cmd_cloud,          # change.40
-            "relay": self._cmd_relay,         # change.41
-            "jobs": self._cmd_jobs,           # pass.4
-            "implement": self._cmd_implement, # #95
-            "notebook": self._cmd_notebook,   # #153
-            "levers": self._cmd_levers,       # #182
-            "why": self._cmd_why,             # #182
-            "hygiene": self._cmd_hygiene,     # #152
-            "trace": self._cmd_trace,         # #203: last N turn traces
+            "orders": self._cmd_orders,  # change.38
+            "cloud": self._cmd_cloud,  # change.40
+            "relay": self._cmd_relay,  # change.41
+            "jobs": self._cmd_jobs,  # pass.4
+            "implement": self._cmd_implement,  # #95
+            "notebook": self._cmd_notebook,  # #153
+            "levers": self._cmd_levers,  # #182
+            "why": self._cmd_why,  # #182
+            "hygiene": self._cmd_hygiene,  # #152
+            "trace": self._cmd_trace,  # #203: last N turn traces
         }
         fn = commands.get(command, self._cmd_unknown)
         fn(raw)
 
     def _cmd_help(self, _):
-        local_state  = "ON" if self.local_mode  else "OFF"
-        web_port     = os.getenv("IGOR_WEB_PORT", "8080")
+        local_state = "ON" if self.local_mode else "OFF"
+        web_port = os.getenv("IGOR_WEB_PORT", "8080")
         loginfo(f"""
 [bold]Igor Commands:[/]
   /help           - This message
@@ -4264,6 +4951,7 @@ class Igor:
     def _cmd_metrics(self, raw):
         """Full internal metrics report."""
         from .cognition.metrics import build_report
+
         report = build_report(
             cortex=self.cortex,
             session_interactions=self.interaction_count,
@@ -4281,6 +4969,7 @@ class Igor:
         Useful for: 'what actually happened on that weird turn?'
         """
         from .cognition.forensic_logger import read_last_turn_traces as _read_traces
+
         parts = raw.strip().split()
         n = 3
         if len(parts) >= 2:
@@ -4332,7 +5021,12 @@ class Igor:
                     _src in ("cloud_directed", "cc_message", "")
                     or any(
                         h.narrative.lower().startswith(kw)
-                        for kw in ("whenever you", "whenever i", "cc message", "claude code")
+                        for kw in (
+                            "whenever you",
+                            "whenever i",
+                            "cc message",
+                            "claude code",
+                        )
                     )
                 )
             )
@@ -4401,6 +5095,7 @@ class Igor:
 
         # ── 3. Log sizes ───────────────────────────────────────────────────────
         from .cognition.forensic_logger import LOG_DIR
+
         loginfo("[bold]LOG FILE SIZES[/]")
         total_log_bytes = 0
         for log_file in sorted(LOG_DIR.glob("*.log")):
@@ -4422,7 +5117,9 @@ class Igor:
 
         loginfo("[bold cyan]════════════════════════════════════════════════[/]")
         if not apply:
-            console.print(f"[dim]{_cts()}Run /hygiene --apply to execute the pruning.[/]")
+            console.print(
+                f"[dim]{_cts()}Run /hygiene --apply to execute the pruning.[/]"
+            )
 
     def _cmd_habits(self, raw):
         """Habit visibility and compilation (change.34).
@@ -4446,35 +5143,48 @@ class Igor:
     def _habits_list(self):
         habits = self.cortex.get_habits()
         if not habits:
-            loginfo("\n[dim]No habits compiled yet. Use /habits pending to see candidates.[/]")
+            loginfo(
+                "\n[dim]No habits compiled yet. Use /habits pending to see candidates.[/]"
+            )
         else:
             loginfo(f"\n[bold]Compiled habits ({len(habits)}):[/]")
             for h in habits:
                 trigger = h.metadata.get("trigger", "none")
-                action  = h.metadata.get("action", "")[:40]
-                loginfo(f"  [{h.id}] trigger={trigger!r} → {action or h.narrative[:50]}")
-                loginfo(f"         activations={h.activation_count}  parent={h.parent_id}")
+                action = h.metadata.get("action", "")[:40]
+                loginfo(
+                    f"  [{h.id}] trigger={trigger!r} → {action or h.narrative[:50]}"
+                )
+                loginfo(
+                    f"         activations={h.activation_count}  parent={h.parent_id}"
+                )
 
     def _habits_pending(self):
         """Show EPISODIC memory clusters that may be ready for habit compilation."""
         from collections import Counter
+
         episodics = self.cortex.get_by_type(MemoryType.EPISODIC)
         intent_counts = Counter(
-            m.metadata.get("intent", "general") for m in episodics
+            m.metadata.get("intent", "general")
+            for m in episodics
             if m.metadata.get("intent")
         )
-        candidates = [(intent, count) for intent, count in intent_counts.items() if count >= 3]
+        candidates = [
+            (intent, count) for intent, count in intent_counts.items() if count >= 3
+        ]
         if not candidates:
             loginfo("\n[dim]No habit candidates yet — need 3+ similar interactions.[/]")
             return
         loginfo(f"\n[bold]Habit candidates ({len(candidates)}) — 3+ episodes:[/]")
         for intent, count in sorted(candidates, key=lambda x: x[1], reverse=True):
             loginfo(f"  intent={intent!r}  episodes={count}")
-        console.print(f"[dim]{_cts()}Use /habits compile to review and propose new habits.[/]")
+        console.print(
+            f"[dim]{_cts()}Use /habits compile to review and propose new habits.[/]"
+        )
 
     def _habits_compile(self):
         """Manually trigger hippocampus compilation pass — suggest habits from patterns."""
         from collections import Counter
+
         episodics = self.cortex.get_by_type(MemoryType.EPISODIC)
         intent_groups: dict = {}
         for m in episodics:
@@ -4488,11 +5198,17 @@ class Igor:
 
         loginfo(f"\n[bold]Habit compilation pass — {len(candidates)} candidate(s):[/]")
         for intent, mems in sorted(candidates, key=lambda x: len(x[1]), reverse=True):
-            avg_friction = sum(m.metadata.get("friction", 0.5) for m in mems) / len(mems)
+            avg_friction = sum(m.metadata.get("friction", 0.5) for m in mems) / len(
+                mems
+            )
             sample = mems[-1].metadata.get("user_input", "")[:60]
-            loginfo(f"\n  [bold]{intent}[/]  ({len(mems)} episodes, avg_friction={avg_friction:.2f})")
+            loginfo(
+                f"\n  [bold]{intent}[/]  ({len(mems)} episodes, avg_friction={avg_friction:.2f})"
+            )
             loginfo(f"  Sample: {sample!r}")
-            loginfo(f"  [dim]To compile: ask Igor to store a PROCEDURAL habit for '{intent}'[/]")
+            loginfo(
+                f"  [dim]To compile: ask Igor to store a PROCEDURAL habit for '{intent}'[/]"
+            )
 
         self.cortex.write_ring(
             f"HABITS_COMPILE_PASS|candidates={len(candidates)}"
@@ -4524,7 +5240,8 @@ class Igor:
         # Form 1: "build/make a habit for: <desc> — whenever <trigger>, <action>"
         m = re.search(
             r"(?:build|make)\s+a\s+habit\s+for\s*:\s*(.+?)\s*[—\-–]+\s*whenever\s+(.+?)[,;]\s*(.+)",
-            raw, re.IGNORECASE | re.DOTALL,
+            raw,
+            re.IGNORECASE | re.DOTALL,
         )
         if m:
             description = m.group(1).strip()
@@ -4534,21 +5251,26 @@ class Igor:
             # Form 2: "build a habit for: <desc> — <action>"  (no trigger)
             m = re.search(
                 r"(?:build|make)\s+a\s+habit\s+for\s*:\s*(.+?)\s*[—\-–]+\s*(.+)",
-                raw, re.IGNORECASE | re.DOTALL,
+                raw,
+                re.IGNORECASE | re.DOTALL,
             )
             if m:
                 description = m.group(1).strip()
                 action = m.group(2).strip()
             else:
                 # Form 3: "whenever <trigger>, <action>"
-                m = re.search(r"whenever\s+(.+?)[,;]\s*(.+)", raw, re.IGNORECASE | re.DOTALL)
+                m = re.search(
+                    r"whenever\s+(.+?)[,;]\s*(.+)", raw, re.IGNORECASE | re.DOTALL
+                )
                 if m:
                     trigger = m.group(1).strip().rstrip(".,;")
                     action = m.group(2).strip()
                     description = f"Whenever {trigger}"
                 else:
                     # Form 4: "from now on, <action>"
-                    m = re.search(r"from\s+now\s+on[,;]?\s*(.+)", raw, re.IGNORECASE | re.DOTALL)
+                    m = re.search(
+                        r"from\s+now\s+on[,;]?\s*(.+)", raw, re.IGNORECASE | re.DOTALL
+                    )
                     if m:
                         action = m.group(1).strip()
                         description = action[:60]
@@ -4572,10 +5294,16 @@ class Igor:
         if trigger:
             try:
                 matching = self.cortex.search(trigger, limit=20)
-                compiled_from_count = max(1, len([
-                    m for m in matching
-                    if getattr(m, "memory_type", None) == MemoryType.EPISODIC
-                ]))
+                compiled_from_count = max(
+                    1,
+                    len(
+                        [
+                            m
+                            for m in matching
+                            if getattr(m, "memory_type", None) == MemoryType.EPISODIC
+                        ]
+                    ),
+                )
             except Exception:
                 pass
 
@@ -4583,31 +5311,52 @@ class Igor:
         context = ""
         _ctx_m = re.search(
             r"(?:because|so that|in order to|context:)\s*(.+?)(?:\.|$)",
-            raw, re.IGNORECASE
+            raw,
+            re.IGNORECASE,
         )
         if _ctx_m:
             context = _ctx_m.group(1).strip()
 
         # habit_type inference: detect question-habits by action phrasing
         _question_starts = (
-            "what ", "how ", "tell me", "can you tell", "could you",
-            "would you", "do you ", "is there ", "are there ", "why ", "when ", "who ",
+            "what ",
+            "how ",
+            "tell me",
+            "can you tell",
+            "could you",
+            "would you",
+            "do you ",
+            "is there ",
+            "are there ",
+            "why ",
+            "when ",
+            "who ",
         )
         _action_lower = action.lower()
-        habit_type = "question" if any(_action_lower.startswith(q) for q in _question_starts) else "action"
+        habit_type = (
+            "question"
+            if any(_action_lower.startswith(q) for q in _question_starts)
+            else "action"
+        )
 
         # ── Store as PROCEDURAL memory ────────────────────────────────────────
         now_iso = datetime.now(timezone.utc).isoformat()
         # Build a stable short ID from timestamp
-        hab_id = "HABIT_" + now_iso.replace(":", "").replace("-", "").replace("+", "").replace(".", "")[:15]
+        hab_id = (
+            "HABIT_"
+            + now_iso.replace(":", "")
+            .replace("-", "")
+            .replace("+", "")
+            .replace(".", "")[:15]
+        )
 
         _meta = {
-            "trigger":             trigger,
-            "action":              action,
-            "context":             context,
-            "needs_met":           [],
-            "habit_type":          habit_type,
-            "compiled_at":         now_iso,
+            "trigger": trigger,
+            "action": action,
+            "context": context,
+            "needs_met": [],
+            "habit_type": habit_type,
+            "compiled_at": now_iso,
             "compiled_from_count": compiled_from_count,
             "compiled_from_input": raw[:200],
         }
@@ -4631,9 +5380,13 @@ class Igor:
             category="habit_trace",
         )
 
-        _ctx_line   = f"\n  Context: `{context}`" if context else ""
-        _count_line = f"\n  Based on: {compiled_from_count} episode(s)" if compiled_from_count > 1 else ""
-        _type_note  = f" [{habit_type}]" if habit_type != "action" else ""
+        _ctx_line = f"\n  Context: `{context}`" if context else ""
+        _count_line = (
+            f"\n  Based on: {compiled_from_count} episode(s)"
+            if compiled_from_count > 1
+            else ""
+        )
+        _type_note = f" [{habit_type}]" if habit_type != "action" else ""
         if trigger:
             return (
                 f"Habit compiled{_type_note}: **{description}**\n"
@@ -4658,18 +5411,21 @@ class Igor:
         "Please write a ticket on adding Google Calendar" → "write a ticket on adding Google Calendar"
         """
         import re
+
         t = user_input.strip()
         # Strip leading politeness phrases
         _politeness = re.compile(
-            r'^(please\s+|could you\s+|can you\s+|would you\s+|i\'d like you to\s+|'
-            r'i want you to\s+|i need you to\s+|hey\s+igor[,\s]+)',
+            r"^(please\s+|could you\s+|can you\s+|would you\s+|i\'d like you to\s+|"
+            r"i want you to\s+|i need you to\s+|hey\s+igor[,\s]+)",
             re.IGNORECASE,
         )
         t = _politeness.sub("", t).strip()
         # Capitalize first letter
         return t[:200] if t else user_input[:200]
 
-    def _tier0_response(self, user_input: str, parsed, thread_id: str | None = None) -> str | None:
+    def _tier0_response(
+        self, user_input: str, parsed, thread_id: str | None = None
+    ) -> str | None:
         """
         #154/#156 tier.0: pure-Python response generator — zero LLM cost.
         Returns an Igor-voiced (lisped) response, or None to fall through to tier.1+.
@@ -4685,6 +5441,7 @@ class Igor:
         """
         import random
         from datetime import datetime as _dt
+
         t = user_input.lower().strip().rstrip("!.?")
 
         # ── Greeting templates ─────────────────────────────────────────────────
@@ -4699,35 +5456,67 @@ class Igor:
             return random.choice(_greetings)
 
         # ── Pure acks / affirmations / negatives ──────────────────────────────
-        _acks     = {"ok", "okay", "yes", "yeah", "yep", "yup", "sure", "alright", "right", "k"}
-        _thanks   = {"thanks", "thank you", "cheers", "great", "nice", "perfect", "cool", "good"}
+        _acks = {
+            "ok",
+            "okay",
+            "yes",
+            "yeah",
+            "yep",
+            "yup",
+            "sure",
+            "alright",
+            "right",
+            "k",
+        }
+        _thanks = {
+            "thanks",
+            "thank you",
+            "cheers",
+            "great",
+            "nice",
+            "perfect",
+            "cool",
+            "good",
+        }
         _negative = {"no", "nope"}
 
         if t in _acks:
-            return random.choice([
-                "Very good, Mashter.",
-                "Ash you wish.",
-                "Of coursh.",
-                "Certainly, Mashter.",
-                "Right away.",
-            ])
+            return random.choice(
+                [
+                    "Very good, Mashter.",
+                    "Ash you wish.",
+                    "Of coursh.",
+                    "Certainly, Mashter.",
+                    "Right away.",
+                ]
+            )
         if t in _thanks:
-            return random.choice([
-                "The pleashure ith all mine, Mashter.",
-                "Think nothing of it.",
-                "It ith my honor to sherve.",
-                "You are mosht welcome.",
-            ])
+            return random.choice(
+                [
+                    "The pleashure ith all mine, Mashter.",
+                    "Think nothing of it.",
+                    "It ith my honor to sherve.",
+                    "You are mosht welcome.",
+                ]
+            )
         if t in _negative:
-            return random.choice([
-                "Very well, Mashter. Not to worry.",
-                "Ash you wish — I shall not purshue it.",
-                "Understhood. We shall leave it at that.",
-            ])
+            return random.choice(
+                [
+                    "Very well, Mashter. Not to worry.",
+                    "Ash you wish — I shall not purshue it.",
+                    "Understhood. We shall leave it at that.",
+                ]
+            )
 
         # ── Date / time ───────────────────────────────────────────────────────
-        _time_words = ("what time", "what's the time", "what day", "today's date",
-                       "what is today", "what's today")
+        _time_words = (
+            "what time",
+            "what's the time",
+            "what day",
+            "today's date",
+            "what is today",
+            "what's today",
+        )
         if any(p in t for p in _time_words):
             now = _dt.now()
             return (
@@ -4740,11 +5529,17 @@ class Igor:
         if any(p in t for p in _tier_words):
             tier = self._current_tier or "idle"
             model = getattr(
-                getattr(self, "openrouter_interactive_reasoner", None), "model", "unknown"
+                getattr(self, "openrouter_interactive_reasoner", None),
+                "model",
+                "unknown",
             )
             return f"Currently on {tier}, Mashter. Default model: {model}."
 
-        _cost_words = ("session cost", "how much have you spent", "how much has this cost")
+        _cost_words = (
+            "session cost",
+            "how much have you spent",
+            "how much has this cost",
+        )
         if any(p in t for p in _cost_words):
             return (
                 f"Shession cosht sho far: ${self.session_cost:.4f}, Mashter. "
@@ -4766,14 +5561,14 @@ class Igor:
             cloud_ok = self._gateway._t35 is not None
             return (
                 "Cloud ith available, Mashter."
-                if cloud_ok else
-                "Cloud ith not configured — I am effectively local-only, Mashter."
+                if cloud_ok
+                else "Cloud ith not configured — I am effectively local-only, Mashter."
             )
 
         _doing_words = ("what are you doing", "what are you working on")
         if any(p in t for p in _doing_words):
             action = self._current_action or "waiting"
-            tier   = self._current_tier   or "idle"
+            tier = self._current_tier or "idle"
             return f"I am currently {action} on {tier}, Mashter."
 
         # ── Help / capability queries ─────────────────────────────────────────
@@ -4794,7 +5589,7 @@ class Igor:
                     names = ", ".join(
                         h.metadata.get("trigger", h.id)[:30] for h in habits[:8]
                     )
-                    more  = f" …and {len(habits) - 8} more" if len(habits) > 8 else ""
+                    more = f" …and {len(habits) - 8} more" if len(habits) > 8 else ""
                     return f"I have {len(habits)} habitth, Mashter: {names}{more}. Type /habits lisht for detailth."
                 return "I have no compiled habitth yet, Mashter."
             except Exception:
@@ -4804,18 +5599,24 @@ class Igor:
         if any(p in t for p in _tool_words):
             try:
                 from .tools.registry import registry as _reg
+
                 all_tools = _reg.all()
                 total = len(all_tools)
                 names = ", ".join(sorted(t.name for t in all_tools)[:12])
-                more  = f" …and {total - 12} more" if total > 12 else ""
+                more = f" …and {total - 12} more" if total > 12 else ""
                 return f"I have {total} toolth, Mashter: {names}{more}."
             except Exception:
                 return "I could not enumerate toolth right now, Mashter."
 
         # ── Confirmation echoes (#3) ──────────────────────────────────────────
         # "Did you get that?" / "Was that saved?" → echo the last action summary
-        _confirm_words = ("did you get that", "was that saved", "did you save",
-                          "did you store", "did you do that")
+        _confirm_words = (
+            "did you get that",
+            "was that saved",
+            "did you save",
+            "did you store",
+            "did you do that",
+        )
         if any(p in t for p in _confirm_words):
             echo = getattr(self, "_last_response_summary", None)
             if echo:
@@ -4825,7 +5626,10 @@ class Igor:
                 ring = self.cortex.read_ring_memory(limit=5, thread_id=thread_id)
                 for entry in ring:
                     txt = entry.get("content", "") if isinstance(entry, dict) else ""
-                    if any(w in txt for w in ("HABIT_EXEC", "notebook_save", "HABIT_COMPILED")):
+                    if any(
+                        w in txt
+                        for w in ("HABIT_EXEC", "notebook_save", "HABIT_COMPILED")
+                    ):
                         snippet = txt[:120].replace("\n", " ")
                         return f"Yeth, Mashter — I recorded: {snippet}"
             except Exception:
@@ -4851,7 +5655,11 @@ class Igor:
 
         # "Do you remember X?" / "What do you know about X?"
         # G32: search LTM (cortex.search) first; fall through to ring if no LTM hit.
-        _recall_words = ("do you remember", "what do you know about", "do you know about")
+        _recall_words = (
+            "do you remember",
+            "what do you know about",
+            "do you know about",
+        )
         if any(p in t for p in _recall_words):
             # Extract the subject after the matched phrase
             subject = t
@@ -4897,6 +5705,7 @@ class Igor:
                         slug = _ctx.slug
                 if slug:
                     from .tools import notebook as _nb
+
                     return _nb.list_notebook(slug)
             except Exception:
                 pass
@@ -4906,6 +5715,7 @@ class Igor:
         # Conservative: only for ≤3-word inputs with top-pred conf ≥ 0.75.
         try:
             from .cognition.basal_ganglia import _word_graph as _wg
+
             if _wg is not None and len(user_input.split()) <= 3:
                 preds = _wg.predict_next(user_input, n=5)
                 if preds and preds[0][1] >= 0.75:
@@ -4918,7 +5728,18 @@ class Igor:
                     )
                     # Only respond if the top word is a proper noun or content word
                     # (not a stop word) — heuristic guard against garbage output
-                    _stops = {"the", "a", "an", "is", "are", "it", "to", "of", "in", "and"}
+                    _stops = {
+                        "the",
+                        "a",
+                        "an",
+                        "is",
+                        "are",
+                        "it",
+                        "to",
+                        "of",
+                        "in",
+                        "and",
+                    }
                     if top_words[0].lower() not in _stops:
                         return self._igor_lisp(
                             f"That brings to mind: {top_str}. Shall I elaborate, Master?"
@@ -5001,6 +5822,7 @@ class Igor:
         Subcommands: list | approve <N>|all | deny <N>|all | explain <N>
         """
         from .arbiter import queue as arbiter_queue
+
         parts = raw.strip().split(None, 2)
         sub = parts[1].lower() if len(parts) > 1 else "list"
         arg = parts[2].strip() if len(parts) > 2 else ""
@@ -5010,9 +5832,13 @@ class Igor:
         elif sub in ("approve", "deny") and arg == "all":
             pending = arbiter_queue.get_pending()
             if not pending:
-                console.print(f"[dim]{_cts()}Arbiter queue is empty — nothing to resolve.[/]")
+                console.print(
+                    f"[dim]{_cts()}Arbiter queue is empty — nothing to resolve.[/]"
+                )
                 return
-            loginfo(f"\n[bold]{'Approving' if sub == 'approve' else 'Denying'} all {len(pending)} pending items...[/]")
+            loginfo(
+                f"\n[bold]{'Approving' if sub == 'approve' else 'Denying'} all {len(pending)} pending items...[/]"
+            )
             resolved = "approved" if sub == "approve" else "denied"
             for item in pending:
                 self._arbiter_resolve(arbiter_queue, item.id, resolved)
@@ -5022,7 +5848,9 @@ class Igor:
         elif sub == "explain" and arg.isdigit():
             self._arbiter_explain(arbiter_queue, int(arg))
         else:
-            loginfo("[yellow]Usage: /arbiter list | approve <N>|all | deny <N>|all | explain <N>[/]")
+            loginfo(
+                "[yellow]Usage: /arbiter list | approve <N>|all | deny <N>|all | explain <N>[/]"
+            )
 
     def _arbiter_list(self, arbiter_queue):
         pending = arbiter_queue.get_pending()
@@ -5036,12 +5864,16 @@ class Igor:
             loginfo(f"  {item.description[:100]}")
             if item.threshold_reason:
                 loginfo(f"  [dim]Reason: {item.threshold_reason[:80]}[/]")
-        loginfo("\n[dim]/arbiter approve <N>|all  /arbiter deny <N>|all  /arbiter explain <N>[/]")
+        loginfo(
+            "\n[dim]/arbiter approve <N>|all  /arbiter deny <N>|all  /arbiter explain <N>[/]"
+        )
 
     def _arbiter_resolve(self, arbiter_queue, item_id: int, status: str):
         item = arbiter_queue.resolve(item_id, status)
         if item is None:
-            loginfo(f"[yellow]Arbiter item #{item_id} not found or already resolved.[/]")
+            loginfo(
+                f"[yellow]Arbiter item #{item_id} not found or already resolved.[/]"
+            )
             return
 
         verb = "Approved" if status == "approved" else "Denied"
@@ -5063,7 +5895,7 @@ class Igor:
             metadata={
                 "arbiter_id": item_id,
                 "action_type": item.action_type,
-                "intent": item.action_type,       # verify.1: enables /habits pending clustering
+                "intent": item.action_type,  # verify.1: enables /habits pending clustering
                 "status": status,
                 "description": item.description[:200],
                 "threshold_reason": item.threshold_reason,
@@ -5096,7 +5928,9 @@ class Igor:
         loginfo(f"  Context:   {item.context or '(none)'}")
         loginfo(f"  Flagged:   {item.threshold_reason or '(none)'}")
         if item.status != "pending":
-            loginfo(f"  Resolved:  {item.resolution_ts[:16]}  ({item.resolution_note or '-'})")
+            loginfo(
+                f"  Resolved:  {item.resolution_ts[:16]}  ({item.resolution_note or '-'})"
+            )
 
     # ── End arbiter commands ───────────────────────────────────────────────────
 
@@ -5105,6 +5939,7 @@ class Igor:
     def _cmd_orders(self, raw):
         """List or detail GitHub work orders. /orders [N]"""
         from .tools.github import list_work_orders, get_work_order
+
         parts = raw.strip().split(None, 1)
         arg = parts[1].strip() if len(parts) > 1 else ""
         if arg.isdigit():
@@ -5124,6 +5959,7 @@ class Igor:
         """
         from .tools.github import get_work_order
         import datetime as _dt
+
         parts = raw.strip().split()
         # Accept "/implement 95" or "/implement #95"
         num_str = parts[1].lstrip("#") if len(parts) > 1 else ""
@@ -5150,8 +5986,8 @@ class Igor:
             "3. Confirm with Akien before writing any code.\n"
             "4. Implement using Edit/Write tools; run `python -m py_compile` on changed files.\n"
             "5. Close with `gh issue comment` + `gh issue close`.\n"
-            "6. Report back to Igor via `python claudecode/igor_talk.py \"impl #"
-            f"{issue_num} complete: <summary>\"`\n"
+            '6. Report back to Igor via `python claudecode/igor_talk.py "impl #'
+            f'{issue_num} complete: <summary>"`\n'
         )
         brief_path.write_text(brief, encoding="utf-8")
 
@@ -5207,7 +6043,9 @@ class Igor:
             loginfo(f"  ID:          {j.job_id}")
             loginfo(f"  Title:       {j.title}")
             loginfo(f"  Status:      {j.status}")
-            loginfo(f"  Progress:    {j.completed_units}/{j.total_units} ({j.progress_pct():.0f}%)")
+            loginfo(
+                f"  Progress:    {j.completed_units}/{j.total_units} ({j.progress_pct():.0f}%)"
+            )
             loginfo(f"  Failed:      {j.failed_units}")
             loginfo(f"  Checkpoint:  {j.checkpoint or '(none)'}")
             loginfo(f"  Created:     {j.created_at[:16]}")
@@ -5228,10 +6066,16 @@ class Igor:
 
         elif sub == "cancel":
             j = self.job_manager.cancel(arg)
-            loginfo(f"[dim]Job '{arg}' cancelled.[/]" if j else f"[yellow]Job '{arg}' not found.[/]")
+            loginfo(
+                f"[dim]Job '{arg}' cancelled.[/]"
+                if j
+                else f"[yellow]Job '{arg}' not found.[/]"
+            )
 
         else:
-            loginfo("[yellow]Usage: /jobs list|all|status ID|pause ID|resume ID|cancel ID[/]")
+            loginfo(
+                "[yellow]Usage: /jobs list|all|status ID|pause ID|resume ID|cancel ID[/]"
+            )
 
     # ── change.40: multi-cloud inference query ────────────────────────────────
 
@@ -5250,7 +6094,7 @@ class Igor:
             self._cloud_query(arg)
         elif sub == "tag":
             if arg in ("on", "off"):
-                self._cloud_tag_on = (arg == "on")
+                self._cloud_tag_on = arg == "on"
                 loginfo(f"[dim]Model tags: {'on' if self._cloud_tag_on else 'off'}[/]")
             else:
                 loginfo("[yellow]Usage: /cloud tag on|off[/]")
@@ -5271,10 +6115,13 @@ class Igor:
             loginfo("[yellow]Usage: /cloud add MODEL  (e.g. openai/gpt-4o-mini)[/]")
             return
         if not os.getenv("OPENROUTER_API_KEY", "").strip():
-            loginfo("[red]OPENROUTER_API_KEY not set — cannot add OpenRouter models.[/]")
+            loginfo(
+                "[red]OPENROUTER_API_KEY not set — cannot add OpenRouter models.[/]"
+            )
             return
         try:
             from .cognition.reasoners.openrouter_reasoner import OpenRouterReasoner
+
             r = OpenRouterReasoner(model=model, show_model_tag=self._cloud_tag_on)
             name = model.split("/")[-1]
             self._extra_reasoners[name] = r
@@ -5287,7 +6134,9 @@ class Igor:
             del self._extra_reasoners[name]
             loginfo(f"[dim]Removed: {name}[/]")
         else:
-            loginfo(f"[yellow]No reasoner named '{name}'. Use /cloud list to see names.[/]")
+            loginfo(
+                f"[yellow]No reasoner named '{name}'. Use /cloud list to see names.[/]"
+            )
 
     def _cloud_query(self, arg: str):
         parts = arg.split(None, 1)
@@ -5302,13 +6151,17 @@ class Igor:
             if not reasoners:
                 loginfo("[yellow]No cloud inference reasoners configured.[/]")
                 return
-            results = query_multiple(msg, mems, core, self.instance_id, reasoners, self.cortex)
+            results = query_multiple(
+                msg, mems, core, self.instance_id, reasoners, self.cortex
+            )
             loginfo("\n" + compare_responses(results) + "\n")
             self.session_cost += sum(c for _, _, c in results)
         else:
             reasoners = self._all_cloud_reasoners()
             if target not in reasoners:
-                loginfo(f"[yellow]No reasoner '{target}'. Use /cloud list to see names.[/]")
+                loginfo(
+                    f"[yellow]No reasoner '{target}'. Use /cloud list to see names.[/]"
+                )
                 return
             r = reasoners[target]
             text, cost = r.reason(msg, mems, core, self.instance_id, cortex=self.cortex)
@@ -5338,11 +6191,15 @@ class Igor:
         elif sub == "send" and arg.lower() == "claudecode":
             self._relay_send_claudecode()
         else:
-            loginfo("[yellow]Usage: /relay start MODEL | end | extract | send claudecode[/]")
+            loginfo(
+                "[yellow]Usage: /relay start MODEL | end | extract | send claudecode[/]"
+            )
 
     def _relay_start(self, model: str):
         if self._relay_session is not None:
-            loginfo(f"[yellow]Already in relay with {self._relay_session.model_name}. Use /relay end first.[/]")
+            loginfo(
+                f"[yellow]Already in relay with {self._relay_session.model_name}. Use /relay end first.[/]"
+            )
             return
         if not model:
             loginfo("[yellow]Usage: /relay start MODEL[/]")
@@ -5354,16 +6211,21 @@ class Igor:
         elif os.getenv("OPENROUTER_API_KEY", "").strip():
             try:
                 from .cognition.reasoners.openrouter_reasoner import OpenRouterReasoner
+
                 r = OpenRouterReasoner(model=model, show_model_tag=False)
             except Exception as e:
                 loginfo(f"[red]Failed to create relay reasoner: {e}[/]")
                 return
         else:
-            loginfo(f"[red]No reasoner for '{model}'. Set OPENROUTER_API_KEY or use /cloud add first.[/]")
+            loginfo(
+                f"[red]No reasoner for '{model}'. Set OPENROUTER_API_KEY or use /cloud add first.[/]"
+            )
             return
         self._relay_session = RelaySession(model_name=model, reasoner=r)
         loginfo(f"\n[bold magenta]── Relay started: {model} ──[/]")
-        console.print(f"[dim]{_cts()}Your messages go directly to the model. /relay end to stop.[/]\n")
+        console.print(
+            f"[dim]{_cts()}Your messages go directly to the model. /relay end to stop.[/]\n"
+        )
 
     def _relay_end(self):
         if self._relay_session is None:
@@ -5379,7 +6241,10 @@ class Igor:
             memory_type=MemoryType.EPISODIC,
             parent_id="CP4",
             valence=0.3,
-            metadata={"relay_model": session.model_name, "transcript": transcript[:1000]},
+            metadata={
+                "relay_model": session.model_name,
+                "transcript": transcript[:1000],
+            },
         )
         self.cortex.store(ep)
         self.cortex.add_child("CP4", ep.id)
@@ -5391,14 +6256,18 @@ class Igor:
 
     def _relay_extract(self):
         if self._relay_session is None:
-            loginfo("[yellow]No active relay session. Start one with /relay start MODEL.[/]")
+            loginfo(
+                "[yellow]No active relay session. Start one with /relay start MODEL.[/]"
+            )
             return
         block = self._relay_session.extract_last_block()
         if block is None:
             loginfo("[yellow]No code or JSON block found in relay transcript.[/]")
             return
         loginfo(f"\n[bold]Extracted block:[/]\n{block}\n")
-        console.print(f"[dim]{_cts()}/relay send claudecode — to forward this to Claude Code CLI[/]")
+        console.print(
+            f"[dim]{_cts()}/relay send claudecode — to forward this to Claude Code CLI[/]"
+        )
 
     def _relay_send_claudecode(self):
         if self._relay_session is None:
@@ -5413,6 +6282,7 @@ class Igor:
         console.print(f"[dim]{_cts()}Sending to Claude Code CLI...[/]")
         output = send_to_claude_code(block)
         from rich.markup import escape as _escape
+
         loginfo(f"\n[bold]Claude Code response:[/]\n{_escape(output)}\n")
 
     def _cmd_local(self, raw):
@@ -5432,13 +6302,18 @@ class Igor:
                 loginfo(f"\n[bold]Local mode:[/] {state}")
                 loginfo(f"[dim]Pool: {self._gateway._t2.machines_summary()}[/]")
             else:
-                loginfo(f"\n[bold]Local mode:[/] {state}  [dim](no local pool available)[/]")
+                loginfo(
+                    f"\n[bold]Local mode:[/] {state}  [dim](no local pool available)[/]"
+                )
         else:
             _cloud_model = self._gateway._t4.model if self._gateway._t4 else "none"
-            loginfo(f"\n[bold]Local mode:[/] {state}  [dim](using cloud: {_cloud_model})[/]")
+            loginfo(
+                f"\n[bold]Local mode:[/] {state}  [dim](using cloud: {_cloud_model})[/]"
+            )
 
     def _cmd_model(self, raw):
         from .cognition.reasoners.anthropic import MODEL_ALIASES
+
         parts = raw.strip().split(None, 1)
         if len(parts) < 2:
             if self.local_mode and self._gateway._t2:
@@ -5516,6 +6391,7 @@ class Igor:
         """
         if "--dag" in raw:
             from .cognition.inference_gateway import get_gateway as _gw
+
             loginfo(_gw().describe())
             return
 
@@ -5532,24 +6408,28 @@ class Igor:
         except ValueError:
             _n = 20
 
-        lines = [l for l in _log.read_text(encoding="utf-8").splitlines() if l.strip()][:_n]
+        lines = [l for l in _log.read_text(encoding="utf-8").splitlines() if l.strip()][
+            :_n
+        ]
 
         # Tally reasons for summary
         _reason_counts: dict[str, int] = {}
-        _tier_counts:   dict[str, int] = {}
+        _tier_counts: dict[str, int] = {}
 
         loginfo(f"\n[bold]Last {min(_n, len(lines))} escalation decisions:[/]")
         for line in lines:
-            parts = {k: v for k, v in (p.split("=", 1) for p in line.split("|") if "=" in p)}
-            _ts_  = line.split("|")[0]
+            parts = {
+                k: v for k, v in (p.split("=", 1) for p in line.split("|") if "=" in p)
+            }
+            _ts_ = line.split("|")[0]
             _tier = parts.get("tier", "?")
-            _rsn  = parts.get("reason", "?")
+            _rsn = parts.get("reason", "?")
             _intent = parts.get("intent", "?")
-            _cx   = parts.get("complexity", "?")
-            _sig  = parts.get("cx_signals", "none")
-            _inp  = parts.get("input", "")[:60]
+            _cx = parts.get("complexity", "?")
+            _sig = parts.get("cx_signals", "none")
+            _inp = parts.get("input", "")[:60]
             _reason_counts[_rsn] = _reason_counts.get(_rsn, 0) + 1
-            _tier_counts[_tier]  = _tier_counts.get(_tier, 0) + 1
+            _tier_counts[_tier] = _tier_counts.get(_tier, 0) + 1
             loginfo(
                 f"  [dim]{_ts_}[/] [cyan]{_tier}[/] ({_rsn})"
                 f"\n    intent={_intent} cx={_cx} signals={_sig}"
@@ -5604,11 +6484,14 @@ class Igor:
         _con_result: dict = {}
         try:
             from .cognition.consolidation import run_consolidation as _run_con
+
             _con_result = _run_con(self.cortex)
             _cl = _con_result.get("clusters", 0)
             _ex = _con_result.get("extracted", 0)
             _sk = _con_result.get("skipped", 0)
-            loginfo(f"[dim][SLEEP] consolidation: clusters={_cl} extracted={_ex} skipped={_sk}.[/]")
+            loginfo(
+                f"[dim][SLEEP] consolidation: clusters={_cl} extracted={_ex} skipped={_sk}.[/]"
+            )
             if _ex > 0:
                 self.cortex.write_ring(
                     f"CONSOLIDATION|clusters={_cl}|extracted={_ex}|skipped={_sk}",
@@ -5650,6 +6533,7 @@ class Igor:
     def _cmd_notebook(self, raw: str):
         """#153: The Master's Notebook — /notebook [list|search <q>|remove <id>]"""
         from .tools import notebook as _nb
+
         # Resolve slug: stdin → akien preseed; best-effort from cache otherwise
         _slug = "akien"
         for _tid, _ctx in self._user_ctx_mgr._cache.items():
@@ -5659,7 +6543,7 @@ class Igor:
 
         parts = raw.strip().split(None, 2)
         # parts[0] is "/notebook", parts[1] is subcommand, parts[2] is rest
-        sub  = parts[1].lower() if len(parts) > 1 else "list"
+        sub = parts[1].lower() if len(parts) > 1 else "list"
         rest = parts[2] if len(parts) > 2 else ""
 
         if sub == "list":
@@ -5720,7 +6604,11 @@ class Igor:
             _iw = (m.metadata or {}).get("investment_weight", 0.0)
             _iw_str = f"  [w={_iw:.2f}]" if _iw > 0.5 else ""
             _inertia = getattr(m, "inertia", 0.5)
-            _mtype = getattr(m.memory_type, "value", str(m.memory_type)) if hasattr(m, "memory_type") else "?"
+            _mtype = (
+                getattr(m.memory_type, "value", str(m.memory_type))
+                if hasattr(m, "memory_type")
+                else "?"
+            )
             loginfo(
                 f"  [{i+1:2d}] [dim]{_mtype[:4]}[/] {m.id[:14]}{_iw_str}  "
                 f"[dim]inertia={_inertia:.2f}[/]\n"
@@ -5753,8 +6641,11 @@ class Igor:
 
         try:
             levers = self.cortex.interpretive_traverse(
-                _seeds, max_depth=5, exit_on_convergence=True,
-                convergence_weight=0.70, convergence_out_degree=3,
+                _seeds,
+                max_depth=5,
+                exit_on_convergence=True,
+                convergence_weight=0.70,
+                convergence_out_degree=3,
             )
         except Exception as e:
             loginfo(f"[red]Error: {e}[/]")
@@ -5787,6 +6678,7 @@ class Igor:
         if self._word_graph is not None:
             try:
                 from .cognition.word_graph import default_cache_path
+
                 self._word_graph.save(default_cache_path())
             except Exception:
                 pass
@@ -5794,6 +6686,7 @@ class Igor:
         if self._dual_graphs and self._generation_graph is not None:
             try:
                 from .cognition.word_graph import default_cache_path
+
                 self._generation_graph.save(default_cache_path("generation_graph"))
             except Exception:
                 pass
@@ -5808,8 +6701,12 @@ class Igor:
         )
         self._save_warm_context()
         loginfo(f"\n[cyan]Igor-{self.instance_id} shutting down.[/]")
-        loginfo(f"Session: {self.interaction_count} interactions, ${self.session_cost:.4f} cost")
-        console.print(f"[dim]{_cts()}Memories persisted to SQLite. See you next time.[/]")
+        loginfo(
+            f"Session: {self.interaction_count} interactions, ${self.session_cost:.4f} cost"
+        )
+        console.print(
+            f"[dim]{_cts()}Memories persisted to SQLite. See you next time.[/]"
+        )
 
 
 _ID_CHARS = "23456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"  # base 34, no 0/1/l/O confusion
@@ -5818,6 +6715,7 @@ _ID_CHARS = "23456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"  # base 34, no 0/1/l/O confusio
 def _make_instance_id(host: str = "wild") -> str:
     """Generate a unique instance ID from current epoch seconds in base 34."""
     import time
+
     n = int(time.time())
     s = []
     while n:
@@ -5831,12 +6729,20 @@ def main():
     load_dotenv(env_path)
 
     if not os.getenv("ANTHROPIC_API_KEY") and not os.getenv("ANTHROPIC_AUTH_TOKEN"):
-        loginfo("[red]Error: ANTHROPIC_API_KEY or ANTHROPIC_AUTH_TOKEN not set. Create a .env file.[/]")
+        loginfo(
+            "[red]Error: ANTHROPIC_API_KEY or ANTHROPIC_AUTH_TOKEN not set. Create a .env file.[/]"
+        )
         sys.exit(1)
 
     parser = argparse.ArgumentParser(description="Igor - Wild Instance")
-    parser.add_argument("--id", default=None, help="Instance ID (auto-generated if omitted)")
-    parser.add_argument("--host", default="wild", help="Host label for auto-generated ID (default: wild)")
+    parser.add_argument(
+        "--id", default=None, help="Instance ID (auto-generated if omitted)"
+    )
+    parser.add_argument(
+        "--host",
+        default="wild",
+        help="Host label for auto-generated ID (default: wild)",
+    )
     args = parser.parse_args()
 
     if args.id:
@@ -5850,7 +6756,11 @@ def main():
             instance_id = Path(_IGOR_DB_ENV).expanduser().stem
             loginfo(f"[dim]Using IGOR_DB_PATH: {_IGOR_DB_ENV}[/]")
         else:
-            existing_dbs = sorted(DATA_DIR.glob("igor_wild_*.db"), key=lambda p: p.stat().st_mtime, reverse=True)
+            existing_dbs = sorted(
+                DATA_DIR.glob("igor_wild_*.db"),
+                key=lambda p: p.stat().st_mtime,
+                reverse=True,
+            )
             if existing_dbs:
                 instance_id = existing_dbs[0].stem
                 loginfo(f"[dim]Resuming existing instance: {instance_id}[/]")
