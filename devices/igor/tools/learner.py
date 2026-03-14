@@ -198,21 +198,59 @@ _AI_SITES = [
 ]
 
 _DISCOVERY_PROMPT = (
-    "Please list 8-10 freely and publicly available online texts, papers, or books "
-    "about {topic}. Focus on authoritative sources: Project Gutenberg, arXiv, "
-    "university open-access sites, Wikipedia, or well-known free resources. "
-    "Include the direct URL for each. Return only the list with URLs."
+    "List 8-10 freely available online texts or papers about {topic}. "
+    "Sources: arXiv, Project Gutenberg, Wikipedia, university open-access sites. "
+    "OUTPUT FORMAT: one bare URL per line, nothing else. No titles, no descriptions, "
+    "no markdown, no numbering. Just URLs, one per line. Example:\n"
+    "https://arxiv.org/abs/1234.5678\n"
+    "https://en.wikipedia.org/wiki/Example\n"
+    "Start your response with the first URL immediately."
 )
 
 
 def _parse_urls(text: str) -> list[str]:
-    """Extract HTTP(S) URLs from a block of text."""
+    """Extract HTTP(S) URLs from a block of text — bare URLs and markdown [text](url)."""
+    # Bare URLs
     raw = re.findall(r'https?://[^\s"\'<>\])\|]+', text)
+    # Markdown links: [title](url)
+    md_urls = re.findall(r"\[[^\]]*\]\((https?://[^)]+)\)", text)
+    raw.extend(md_urls)
     # Clean trailing punctuation
     cleaned = [u.rstrip(".,;:)") for u in raw]
+    # Deduplicate, preserving order
+    seen: set[str] = set()
+    deduped = []
+    for u in cleaned:
+        if u not in seen:
+            seen.add(u)
+            deduped.append(u)
     # Filter out the AI site's own domain
     skip = {"gemini.google.com", "chatgpt.com", "openai.com", "google.com"}
-    return [u for u in cleaned if not any(s in u for s in skip)]
+    return [u for u in deduped if not any(s in u for s in skip)]
+
+
+def _discover_urls_direct(topic: str) -> list[tuple[str, str]]:
+    """
+    Build a short list of directly-constructable URLs for a topic without needing
+    AI assistance. Hits arXiv search and Wikipedia. Fast and reliable.
+    Returns list of (url, title) tuples.
+    """
+    slug = topic.strip().replace(" ", "+")
+    wiki_slug = topic.strip().replace(" ", "_").title()
+    return [
+        (
+            f"https://arxiv.org/search/?query={slug}&searchtype=all&order=-announced_date_first",
+            f"arXiv search: {topic}",
+        ),
+        (
+            f"https://en.wikipedia.org/wiki/{wiki_slug}",
+            f"Wikipedia: {topic}",
+        ),
+        (
+            f"https://www.gutenberg.org/ebooks/search/?query={slug}",
+            f"Project Gutenberg: {topic}",
+        ),
+    ]
 
 
 def _discover_urls_via_browser(topic: str) -> list[tuple[str, str]]:
@@ -395,21 +433,35 @@ def learn_about(user_input: str) -> str:
     if not books:
         lines.append("Library: no non-fiction matches in Calibre.")
 
-    # ── 2. Browser AI discovery → night queue (always async) ──────────────
+    # ── 2. URL discovery → night queue ────────────────────────────────────
+    # Phase A: direct arXiv/Wikipedia/Gutenberg (always works, no AI needed)
+    # Phase B: browser AI discovery for additional sources
     urls_queued = 0
+    try:
+        direct_pairs = _discover_urls_direct(topic)
+        for url, title in direct_pairs:
+            _queue_url(url, title, topic)
+        urls_queued += len(direct_pairs)
+        if direct_pairs:
+            lines.append(
+                f"Web: {len(direct_pairs)} direct URL(s) queued (arXiv/Wikipedia/Gutenberg)."
+            )
+    except Exception as e:
+        lines.append(f"Web: direct URL discovery error ({e}).")
+
     try:
         url_pairs = _discover_urls_via_browser(topic)
         if url_pairs:
             for url, title in url_pairs:
                 _queue_url(url, title, topic)
-            urls_queued = len(url_pairs)
-            lines.append(f"Web: {len(url_pairs)} URL(s) queued.")
+            urls_queued += len(url_pairs)
+            lines.append(f"Web: {len(url_pairs)} AI-discovered URL(s) queued.")
         else:
             lines.append(
-                "Web: browser discovery returned no URLs — check ~/.TheIgors/logs/browser_use.log for details."
+                "Web: browser AI discovery returned no URLs — check ~/.TheIgors/logs/browser_use.log."
             )
     except Exception as e:
-        lines.append(f"Web: discovery error ({e}) — check browser_use.log.")
+        lines.append(f"Web: browser discovery error ({e}) — check browser_use.log.")
 
     # ── 3. Spawn queue runner if anything was queued ───────────────────────
     anything_queued = bool(queued_books) or urls_queued > 0
