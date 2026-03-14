@@ -14,6 +14,7 @@ Exposed via get_metrics() for /introspect and self-directed testing (#208).
 
 Part of #211. Foundation for remote-agent sync (#190).
 """
+
 from __future__ import annotations
 
 import os
@@ -23,40 +24,73 @@ from collections import deque
 from pathlib import Path
 from typing import Optional
 
-
-_SLOW_MS   = int(os.getenv("IGOR_DB_SLOW_MS", "50"))
+_SLOW_MS = int(os.getenv("IGOR_DB_SLOW_MS", "50"))
 _RING_SIZE = 500
+
+# ── Dedicated DB query log ────────────────────────────────────────────────────
+# All slow queries written to db_queries.log with timestamp + turn_id tie-back.
+# turn_id links each slow query back to the forensic_logger turn for the same call.
+
+_DB_LOG_PATH = Path.home() / ".TheIgors" / "logs" / "db_queries.log"
+_DB_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+
+def _db_log(elapsed_ms: float, sql: str) -> None:
+    """Append one slow-query entry to db_queries.log."""
+    try:
+        turn_id = "(unknown)"
+        try:
+            from ..cognition.forensic_logger import get_turn_id
+
+            turn_id = get_turn_id()
+        except Exception:
+            pass
+        ts = time.strftime("%Y-%m-%d %H:%M:%S")
+        line = f"{ts} turn={turn_id} elapsed={elapsed_ms}ms sql={sql}\n"
+        with open(_DB_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(line)
+    except Exception:
+        pass
 
 
 class _DBContext:
     """
     Context manager returned by DatabaseProxy(). Yields a raw sqlite3.Connection.
     Times the block, records metrics, closes on exit.
+    Uses set_trace_callback to capture executed SQL for slow-query diagnostics.
     """
-    __slots__ = ("_proxy", "_conn", "_t0")
+
+    __slots__ = ("_proxy", "_conn", "_t0", "_last_sql")
 
     def __init__(self, proxy: "DatabaseProxy") -> None:
         self._proxy = proxy
-        self._conn:  Optional[sqlite3.Connection] = None
-        self._t0:    float = 0.0
+        self._conn: Optional[sqlite3.Connection] = None
+        self._t0: float = 0.0
+        self._last_sql: str = ""
 
     def __enter__(self) -> sqlite3.Connection:
         self._t0 = time.monotonic()
         try:
             self._conn = sqlite3.connect(self._proxy.db_path)
             self._conn.row_factory = sqlite3.Row
+            self._conn.set_trace_callback(self._on_sql)
             return self._conn
         except Exception as exc:
             self._proxy._record_error(exc)
             raise
 
+    def _on_sql(self, sql: str) -> None:
+        self._last_sql = sql
+
     def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
         elapsed_ms = round((time.monotonic() - self._t0) * 1000)
-        self._proxy._record(elapsed_ms, error=exc_type is not None)
+        self._proxy._record(
+            elapsed_ms, error=exc_type is not None, last_sql=self._last_sql
+        )
         if self._conn is not None:
             try:
                 if exc_type is None:
-                    self._conn.commit()   # persist writes — matches `with conn:` semantics
+                    self._conn.commit()  # persist writes — matches `with conn:` semantics
                 else:
                     self._conn.rollback()
             except Exception:
@@ -83,11 +117,11 @@ class DatabaseProxy:
     """
 
     def __init__(self, db_path: Path) -> None:
-        self.db_path  = db_path
+        self.db_path = db_path
         self._latencies: deque[float] = deque(maxlen=_RING_SIZE)
-        self._errors:    int = 0
-        self._slow:      int = 0
-        self._calls:     int = 0
+        self._errors: int = 0
+        self._slow: int = 0
+        self._calls: int = 0
         self._connect_errors: int = 0
 
     def __call__(self) -> _DBContext:
@@ -96,7 +130,9 @@ class DatabaseProxy:
 
     # ── Internal recording ────────────────────────────────────────────────────
 
-    def _record(self, elapsed_ms: float, error: bool = False) -> None:
+    def _record(
+        self, elapsed_ms: float, error: bool = False, last_sql: str = ""
+    ) -> None:
         self._calls += 1
         self._latencies.append(elapsed_ms)
         if error:
@@ -105,9 +141,16 @@ class DatabaseProxy:
             self._slow += 1
             try:
                 import logging
-                logging.getLogger(__name__).warning(
-                    f"[db_proxy] slow query {elapsed_ms}ms (threshold={_SLOW_MS}ms)"
+
+                sql_snippet = (
+                    last_sql[:120].replace("\n", " ").strip()
+                    if last_sql
+                    else "(unknown)"
                 )
+                logging.getLogger(__name__).warning(
+                    f"[db_proxy] slow query {elapsed_ms}ms — {sql_snippet}"
+                )
+                _db_log(elapsed_ms, sql_snippet)
             except Exception:
                 pass
 
@@ -115,9 +158,8 @@ class DatabaseProxy:
         self._connect_errors += 1
         try:
             import logging
-            logging.getLogger(__name__).error(
-                f"[db_proxy] connection error: {exc}"
-            )
+
+            logging.getLogger(__name__).error(f"[db_proxy] connection error: {exc}")
         except Exception:
             pass
 
@@ -138,15 +180,15 @@ class DatabaseProxy:
             return round(lats[idx], 1)
 
         return {
-            "db_path":         str(self.db_path),
-            "total_calls":     self._calls,
-            "error_count":     self._errors,
-            "connect_errors":  self._connect_errors,
-            "slow_count":      self._slow,
+            "db_path": str(self.db_path),
+            "total_calls": self._calls,
+            "error_count": self._errors,
+            "connect_errors": self._connect_errors,
+            "slow_count": self._slow,
             "slow_threshold_ms": _SLOW_MS,
-            "latency_p50_ms":  _pct(50),
-            "latency_p95_ms":  _pct(95),
-            "latency_p99_ms":  _pct(99),
-            "latency_max_ms":  round(lats[-1], 1) if lats else 0.0,
-            "sample_size":     n,
+            "latency_p50_ms": _pct(50),
+            "latency_p95_ms": _pct(95),
+            "latency_p99_ms": _pct(99),
+            "latency_max_ms": round(lats[-1], 1) if lats else 0.0,
+            "sample_size": n,
         }
