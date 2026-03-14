@@ -58,13 +58,18 @@ _virtual_display = None  # module-level singleton so it isn't GC'd
 
 def _ensure_virtual_display():
     """
-    Start a virtual display if no real DISPLAY is available.
-    When DISPLAY is set (desktop machine), the browser appears on the real screen —
-    useful for debugging. Once browser_use is working reliably, remove the early
-    return to force Xvfb unconditionally.
+    Start a virtual display (Xvfb) when needed.
+
+    IGOR_BROWSER_HEADLESS=true  → always use Xvfb (production default)
+    IGOR_BROWSER_HEADLESS=false → use real display even when DISPLAY is set (debugging)
+    unset                       → use real display if DISPLAY is set; Xvfb otherwise
     """
-    if os.environ.get("DISPLAY"):
-        return  # real display present — browser will be visible (OK for debugging)
+    headless_env = os.environ.get("IGOR_BROWSER_HEADLESS", "").lower()
+    if headless_env == "false":
+        return  # explicit debug mode — show on real display
+    if headless_env != "true" and os.environ.get("DISPLAY"):
+        return  # unset + real display present — show on screen (legacy debug behaviour)
+
     global _virtual_display
     if _virtual_display is not None:
         return
