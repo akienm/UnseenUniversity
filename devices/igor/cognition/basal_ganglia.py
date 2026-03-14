@@ -19,6 +19,7 @@ PROC_HABIT_COMPILER immediately at confidence 0.95.
 from __future__ import annotations
 
 import math
+import re
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
@@ -45,7 +46,7 @@ COMPILE_PHRASES: tuple[str, ...] = (
     "build a habit",
     "make a habit",
     "remember to always",
-    "whenever ",      # "whenever X happens, you should..."
+    "whenever ",  # "whenever X happens, you should..."
     "every time ",
     "from now on",
     "you should always",
@@ -67,12 +68,13 @@ NOTEBOOK_PHRASES: tuple[str, ...] = (
 
 # ── Threshold constants ────────────────────────────────────────────────────────
 
-BASE_THRESHOLD = 0.50   # minimum score for any habit to fire
-THRESHOLD_MIN  = 0.30
-THRESHOLD_MAX  = 0.70
+BASE_THRESHOLD = 0.50  # minimum score for any habit to fire
+THRESHOLD_MIN = 0.30
+THRESHOLD_MAX = 0.70
 
 
 # ── Internal scoring ──────────────────────────────────────────────────────────
+
 
 def compute_decay_factor(habit, now: datetime | None = None) -> float:
     """
@@ -102,6 +104,7 @@ def compute_decay_factor(habit, now: datetime | None = None) -> float:
     if isinstance(anchor, str):
         try:
             from datetime import datetime as dt
+
             anchor = dt.fromisoformat(anchor.replace("Z", "+00:00"))
         except (ValueError, AttributeError):
             return 1.0
@@ -122,7 +125,9 @@ def compute_decay_factor(habit, now: datetime | None = None) -> float:
     return math.exp(-days_since / tau)
 
 
-def _score_habit(habit, raw_lower: str, keywords: set[str], now: datetime | None = None) -> float:
+def _score_habit(
+    habit, raw_lower: str, keywords: set[str], now: datetime | None = None
+) -> float:
     """
     Score a single habit.  Returns 0.0 if the trigger is not in the input
     (habits without trigger present can never win).
@@ -145,8 +150,16 @@ def _score_habit(habit, raw_lower: str, keywords: set[str], now: datetime | None
     #      NOTE: some legacy triggers still won't fire well; use | format for new habits.
     trigger_lower = trigger.lower()
     if "|" in trigger_lower:
-        # Format 1: pipe-separated alternative phrases
-        if not any(phrase.strip() in raw_lower for phrase in trigger_lower.split("|") if phrase.strip()):
+        # Format 1: pipe-separated alternative phrases.
+        # Use word-boundary matching so short phrases like "hi" don't match
+        # as substrings inside words ("this", "behind", etc.).
+        def _phrase_matches(phrase: str) -> bool:
+            p = phrase.strip()
+            if not p:
+                return False
+            return bool(re.search(r"\b" + re.escape(p) + r"\b", raw_lower))
+
+        if not any(_phrase_matches(ph) for ph in trigger_lower.split("|")):
             return 0.0
     elif " " in trigger_lower:
         # Format 3: legacy space-separated synonym list; filter short tokens
@@ -193,12 +206,13 @@ def _compute_threshold(milieu_state=None) -> float:
     """
     t = BASE_THRESHOLD
     if milieu_state is not None:
-        t -= milieu_state.arousal   * 0.08   # arousal [-1,1]
+        t -= milieu_state.arousal * 0.08  # arousal [-1,1]
         t += (0.3 - milieu_state.dominance) * 0.06  # dominance baseline 0.3
     return max(THRESHOLD_MIN, min(THRESHOLD_MAX, t))
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
+
 
 def select_habit(
     parsed,
@@ -225,21 +239,17 @@ def select_habit(
         # trigger words buried in prior exchanges should not fire habits.
         _score_text = getattr(parsed, "core_input", parsed.raw)
         raw_lower = _score_text.lower()
-        keywords  = set(parsed.keywords) if parsed.keywords else set()
+        keywords = set(parsed.keywords) if parsed.keywords else set()
 
         # ── 1a. Compile-phrase pre-check ─────────────────────────────────────
         if any(p in raw_lower for p in COMPILE_PHRASES):
-            compiler = next(
-                (h for h in habits if h.id == "PROC_HABIT_COMPILER"), None
-            )
+            compiler = next((h for h in habits if h.id == "PROC_HABIT_COMPILER"), None)
             if compiler:
                 return (compiler, 0.95, [])
 
         # ── 1b. Notebook save-intent pre-check ───────────────────────────────
         if any(p in raw_lower for p in NOTEBOOK_PHRASES):
-            saver = next(
-                (h for h in habits if h.id == "PROC_NOTEBOOK_SAVE"), None
-            )
+            saver = next((h for h in habits if h.id == "PROC_NOTEBOOK_SAVE"), None)
             if saver:
                 return (saver, 0.93, [])
 
