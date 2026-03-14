@@ -37,7 +37,7 @@ def _safe_memory_type(value: str) -> MemoryType:
 
 
 RING_MAX = 50  # Max entries in the ring buffer
-TWM_MAX  = 50  # Max observations in TWM
+TWM_MAX = 50  # Max observations in TWM
 # G47: suppress repeated observations at the door rather than admitting at floor salience.
 TWM_SUPPRESS_AFTER_REPEATS = int(os.getenv("IGOR_TWM_SUPPRESS_REPEATS", "4"))
 TWM_SUPPRESS_SALIENCE_FLOOR = float(os.getenv("IGOR_TWM_SUPPRESS_FLOOR", "0.04"))
@@ -84,7 +84,9 @@ class Cortex:
 
             # change.37: embedding column — added via migration so existing DBs are not broken
             try:
-                conn.execute("ALTER TABLE memories ADD COLUMN embedding TEXT DEFAULT NULL")
+                conn.execute(
+                    "ALTER TABLE memories ADD COLUMN embedding TEXT DEFAULT NULL"
+                )
             except Exception:
                 pass  # Column already exists
 
@@ -97,7 +99,9 @@ class Cortex:
 
             # #71: portability flag — 1=portable (default), 0=instance-local
             try:
-                conn.execute("ALTER TABLE memories ADD COLUMN portable INTEGER DEFAULT 1")
+                conn.execute(
+                    "ALTER TABLE memories ADD COLUMN portable INTEGER DEFAULT 1"
+                )
             except Exception:
                 pass  # Column already exists
 
@@ -164,7 +168,9 @@ class Cortex:
             """)
             # #136 P2: thread_id column — lazy migration for existing DBs
             try:
-                conn.execute("ALTER TABLE ring_memory ADD COLUMN thread_id TEXT DEFAULT NULL")
+                conn.execute(
+                    "ALTER TABLE ring_memory ADD COLUMN thread_id TEXT DEFAULT NULL"
+                )
             except Exception:
                 pass  # Column already exists
 
@@ -184,8 +190,12 @@ class Cortex:
                     expires_at TEXT
                 )
             """)
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_twm_integrated ON twm_observations(integrated)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_twm_salience ON twm_observations(salience)")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_twm_integrated ON twm_observations(integrated)"
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_twm_salience ON twm_observations(salience)"
+            )
 
             # Change 4: urgency column (idempotent migration)
             # Urgency = time-sensitivity (0-1); distinct from salience (importance).
@@ -284,7 +294,8 @@ class Cortex:
                         memory.links.get(related.id, 0.0), weight
                     )
         with self._conn() as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT OR REPLACE INTO memories
                 (id, narrative, memory_type, parent_id, children_ids, link_ids,
                  valence, arousal, dominance,
@@ -292,27 +303,29 @@ class Cortex:
                  links_weighted, last_accessed,
                  source, confidence, context_of_encoding)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                memory.id,
-                memory.narrative,
-                memory.memory_type.value,
-                memory.parent_id,
-                json.dumps(memory.children_ids),
-                json.dumps(memory.link_ids),
-                memory.valence,
-                memory.arousal,
-                memory.dominance,
-                memory.activation_count,
-                json.dumps(memory.friction_history),
-                memory.timestamp.isoformat(),
-                json.dumps(memory.metadata),
-                1 if memory.portable else 0,
-                json.dumps(memory.links),
-                memory.last_accessed.isoformat() if memory.last_accessed else None,
-                memory.source,
-                memory.confidence,
-                memory.context_of_encoding,
-            ))
+            """,
+                (
+                    memory.id,
+                    memory.narrative,
+                    memory.memory_type.value,
+                    memory.parent_id,
+                    json.dumps(memory.children_ids),
+                    json.dumps(memory.link_ids),
+                    memory.valence,
+                    memory.arousal,
+                    memory.dominance,
+                    memory.activation_count,
+                    json.dumps(memory.friction_history),
+                    memory.timestamp.isoformat(),
+                    json.dumps(memory.metadata),
+                    1 if memory.portable else 0,
+                    json.dumps(memory.links),
+                    memory.last_accessed.isoformat() if memory.last_accessed else None,
+                    memory.source,
+                    memory.confidence,
+                    memory.context_of_encoding,
+                ),
+            )
         # #170: auto-connect new INTERPRETIVE memories to the nearest CP.
         # Keyword affinity → no LLM needed; never blocks store on failure.
         if memory.memory_type == MemoryType.INTERPRETIVE:
@@ -324,12 +337,65 @@ class Cortex:
 
     # CP keyword affinity table for auto-wiring (#170)
     _CP_KEYWORDS: dict = {
-        "CP1": ["don't know", "uncertain", "unknown", "honest", "epistemic", "truth", "ignorance"],
-        "CP2": ["fail", "failure", "learn", "obstacle", "blocked", "mistake", "error", "wrong", "emerge"],
-        "CP3": ["why", "reason", "understand", "structure", "meaning", "motivation", "purpose", "cause"],
-        "CP4": ["friction", "usability", "design", "easier", "interface", "accessible", "suck less"],
-        "CP5": ["experience", "emotion", "respect", "person", "human", "feel", "interpersonal", "consciousness"],
-        "CP6": ["safe", "safety", "risk", "danger", "protect", "critical", "secure", "guard"],
+        "CP1": [
+            "don't know",
+            "uncertain",
+            "unknown",
+            "honest",
+            "epistemic",
+            "truth",
+            "ignorance",
+        ],
+        "CP2": [
+            "fail",
+            "failure",
+            "learn",
+            "obstacle",
+            "blocked",
+            "mistake",
+            "error",
+            "wrong",
+            "emerge",
+        ],
+        "CP3": [
+            "why",
+            "reason",
+            "understand",
+            "structure",
+            "meaning",
+            "motivation",
+            "purpose",
+            "cause",
+        ],
+        "CP4": [
+            "friction",
+            "usability",
+            "design",
+            "easier",
+            "interface",
+            "accessible",
+            "suck less",
+        ],
+        "CP5": [
+            "experience",
+            "emotion",
+            "respect",
+            "person",
+            "human",
+            "feel",
+            "interpersonal",
+            "consciousness",
+        ],
+        "CP6": [
+            "safe",
+            "safety",
+            "risk",
+            "danger",
+            "protect",
+            "critical",
+            "secure",
+            "guard",
+        ],
     }
 
     def _auto_wire_interpretive(self, memory: "Memory") -> None:
@@ -340,7 +406,9 @@ class Cortex:
         """
         narrative_lower = memory.narrative.lower()
         # Skip operational logs masquerading as INTERPRETIVE
-        if narrative_lower.startswith("session_summary") or narrative_lower.startswith("fallback:"):
+        if narrative_lower.startswith("session_summary") or narrative_lower.startswith(
+            "fallback:"
+        ):
             return
         # Skip if already has an incoming edge (seeded or previously auto-wired)
         with self._conn() as conn:
@@ -407,7 +475,9 @@ class Cortex:
             parent.children_ids.append(child_id)
             self.store(parent)
 
-    def reinforce_links(self, memory_id: str, co_active_ids: list, delta: float) -> None:
+    def reinforce_links(
+        self, memory_id: str, co_active_ids: list, delta: float
+    ) -> None:
         """#45 G11: adjust outgoing link weights from memory_id toward co_active_ids.
 
         Positive delta strengthens links (correct prediction).
@@ -494,6 +564,7 @@ class Cortex:
         Returns (Memory, created) where created=True if inserted, False if updated.
         """
         from datetime import datetime as _dt
+
         tags = [t.lower().strip() for t in tags if t.strip()]
         now_iso = _dt.now().isoformat()
         extra = dict(extra_metadata or {})
@@ -624,14 +695,16 @@ class Cortex:
                 continue
             if not match_all and not matched:
                 continue
-            results.append({
-                "memory_id": row["memory_id"],
-                "narrative": row["narrative"],
-                "tags": blob_tags,
-                "matched_tags": matched,
-                "content_preview": row["content"][:200],
-                "created_at": row["created_at"],
-            })
+            results.append(
+                {
+                    "memory_id": row["memory_id"],
+                    "narrative": row["narrative"],
+                    "tags": blob_tags,
+                    "matched_tags": matched,
+                    "content_preview": row["content"][:200],
+                    "created_at": row["created_at"],
+                }
+            )
         return results
 
     def expand_blob_memories(
@@ -697,7 +770,7 @@ class Cortex:
             rows = conn.execute(
                 "SELECT * FROM memories WHERE memory_type NOT IN (?, ?) "
                 "ORDER BY activation_count DESC",
-                (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value)
+                (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value),
             ).fetchall()
 
         all_memories = [self._to_memory(r) for r in rows]
@@ -706,7 +779,8 @@ class Cortex:
         # that may have entered LTM before the self-diagnostic filter was in place (URGENT.3)
         _NE_DIAG = ("consolidation", "stall", "loop detected", "recursive", "ne_diag")
         all_memories = [
-            m for m in all_memories
+            m
+            for m in all_memories
             if not (
                 m.metadata.get("source") == "narrative_engine"
                 and any(kw in m.narrative.lower() for kw in _NE_DIAG)
@@ -757,6 +831,7 @@ class Cortex:
         # Phase 2: embedding re-rank
         try:
             from ..cognition.embedder import embed, cosine_similarity
+
             query_vec = embed(query)
             if query_vec:
                 scored = []
@@ -787,15 +862,31 @@ class Cortex:
                 # emotional state get a small relevance boost (state-dependent recall)
                 if emotional_context is not None:
                     for sim, m in scored:
-                        v_sim = 1.0 - abs(getattr(m, "valence", 0.0) - emotional_context.valence) / 2.0
-                        a_sim = 1.0 - abs(getattr(m, "arousal", 0.0) - emotional_context.arousal) / 2.0
+                        v_sim = (
+                            1.0
+                            - abs(
+                                getattr(m, "valence", 0.0) - emotional_context.valence
+                            )
+                            / 2.0
+                        )
+                        a_sim = (
+                            1.0
+                            - abs(
+                                getattr(m, "arousal", 0.0) - emotional_context.arousal
+                            )
+                            / 2.0
+                        )
                         m.relevance_score = sim * (1.0 + 0.15 * v_sim * a_sim)
-                    scored.sort(key=lambda x: getattr(x[1], "relevance_score", x[0]), reverse=True)
+                    scored.sort(
+                        key=lambda x: getattr(x[1], "relevance_score", x[0]),
+                        reverse=True,
+                    )
 
                 result = [m for _, m in scored[:limit]]
                 # G9: spreading activation — boost graph neighbors
                 result = self._spread_activation(result, {}, limit)
                 self._apply_recency_frequency_boost(result)
+                self._touch_last_accessed(result)
                 return result
         except Exception:
             pass  # Embedding unavailable — fall through to text results
@@ -805,7 +896,36 @@ class Cortex:
         # G9: spreading activation — boost graph neighbors
         result = self._spread_activation(result, {}, limit)
         self._apply_recency_frequency_boost(result)
+        self._touch_last_accessed(result)
         return result
+
+    def _touch_last_accessed(self, memories: list) -> None:
+        """G-DBM1: batch-update last_accessed for memories surfaced into LLM context.
+
+        Uses a single SQL UPDATE (no full store() cycle) — lightweight, one write per
+        search call regardless of result count.  Skips structural memories (ROOT/CP)
+        since those are accessed every turn and would flood the timestamp.
+        """
+        if not memories:
+            return
+        _SKIP = {MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value}
+        ids = [
+            m.id
+            for m in memories
+            if getattr(m, "memory_type", None) and m.memory_type.value not in _SKIP
+        ]
+        if not ids:
+            return
+        now_iso = datetime.now().isoformat()
+        placeholders = ",".join("?" * len(ids))
+        try:
+            with self._conn() as conn:
+                conn.execute(
+                    f"UPDATE memories SET last_accessed = ? WHERE id IN ({placeholders})",
+                    [now_iso] + ids,
+                )
+        except Exception:
+            pass  # last_accessed update must never block search
 
     def _apply_recency_frequency_boost(self, memories: list) -> None:
         """#128 + G45: apply small recency, frequency, inertia, and confidence multipliers."""
@@ -816,21 +936,21 @@ class Cortex:
             if m.last_accessed:
                 days = max(0.0, (now - m.last_accessed).total_seconds() / 86400)
                 recency = max(0.0, 1.0 - days / 30.0)
-                score *= (1.0 + 0.15 * recency)
+                score *= 1.0 + 0.15 * recency
             # Frequency: caps at 20 activations, max +10%
             freq = min(1.0, m.activation_count / 20.0)
-            score *= (1.0 + 0.10 * freq)
+            score *= 1.0 + 0.10 * freq
             # G45: inertia weighting — established memories slightly preferred [0.90, 1.05]
             # Low-inertia episodics (0.20) get -10%; high-inertia core patterns (0.95) get +4%
-            score *= (0.90 + 0.15 * m.inertia)
+            score *= 0.90 + 0.15 * m.inertia
             # G45: confidence weighting (G46 field) — uncertain memories slightly penalized [0.90, 1.00]
             confidence = getattr(m, "confidence", 1.0) or 1.0
-            score *= (0.90 + 0.10 * confidence)
+            score *= 0.90 + 0.10 * confidence
             m.relevance_score = score  # type: ignore[attr-defined]
 
     # G9 / #60: spreading activation ──────────────────────────────────────────
 
-    _SA_DECAY = 0.4   # neighbor relevance = parent_relevance * _SA_DECAY
+    _SA_DECAY = 0.4  # neighbor relevance = parent_relevance * _SA_DECAY
 
     def _spread_activation(
         self,
@@ -862,7 +982,7 @@ class Cortex:
 
             if getattr(m, "parent_id", None):
                 spread_map[m.parent_id] = spread
-            for cid in (getattr(m, "children_ids", []) or []):
+            for cid in getattr(m, "children_ids", []) or []:
                 spread_map[cid] = spread
 
             # Weighted directed links (new) — spread proportional to weight
@@ -872,7 +992,7 @@ class Cortex:
 
             # Legacy link_ids — use flat decay, don't double-count if already in links
             existing_links = set(getattr(m, "links", {}) or {})
-            for lid in (getattr(m, "link_ids", []) or []):
+            for lid in getattr(m, "link_ids", []) or []:
                 if lid not in existing_links:
                     spread_map[lid] = max(spread_map.get(lid, 0.0), spread)
 
@@ -882,16 +1002,22 @@ class Cortex:
                     existing = next((x for x in activated if x.id == adj_id), None)
                     if existing:
                         existing.relevance_score = min(  # type: ignore[attr-defined]
-                            1.0, getattr(existing, "relevance_score", 0.0) + adj_spread * 0.3
+                            1.0,
+                            getattr(existing, "relevance_score", 0.0)
+                            + adj_spread * 0.3,
                         )
                 else:
                     # New neighbor — record best spread score
-                    if adj_id not in neighbor_scores or neighbor_scores[adj_id] < adj_spread:
+                    if (
+                        adj_id not in neighbor_scores
+                        or neighbor_scores[adj_id] < adj_spread
+                    ):
                         neighbor_scores[adj_id] = adj_spread
 
         # Fetch new neighbors from DB; skip structural infrastructure only
         _SKIP_TYPES = {
-            MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value,
+            MemoryType.ROOT.value,
+            MemoryType.CORE_PATTERN.value,
         }
         new_neighbors: list = []
         if neighbor_scores:
@@ -958,7 +1084,9 @@ class Cortex:
         # 3: Recent TWM items with explicit memory_id in metadata
         try:
             recent = self.twm_read(limit=10, include_integrated=False)
-            for obs in sorted(recent, key=lambda x: x.get("salience", 0.0), reverse=True)[:5]:
+            for obs in sorted(
+                recent, key=lambda x: x.get("salience", 0.0), reverse=True
+            )[:5]:
                 mid = (obs.get("metadata") or {}).get("memory_id")
                 if mid and mid not in seen:
                     anchors.append(mid)
@@ -1003,12 +1131,14 @@ class Cortex:
                 decay = self._SA_DECAY
                 if getattr(m, "parent_id", None):
                     neighbors[m.parent_id] = fscore * decay
-                for cid in (getattr(m, "children_ids", []) or []):
+                for cid in getattr(m, "children_ids", []) or []:
                     neighbors[cid] = max(neighbors.get(cid, 0.0), fscore * decay)
                 for lid, lw in (getattr(m, "links", {}) or {}).items():
-                    neighbors[lid] = max(neighbors.get(lid, 0.0), fscore * float(lw) * decay)
+                    neighbors[lid] = max(
+                        neighbors.get(lid, 0.0), fscore * float(lw) * decay
+                    )
                 existing_links = set(getattr(m, "links", {}) or {})
-                for lid in (getattr(m, "link_ids", []) or []):
+                for lid in getattr(m, "link_ids", []) or []:
                     if lid not in existing_links:
                         neighbors[lid] = max(neighbors.get(lid, 0.0), fscore * decay)
                 for nid, nscore in neighbors.items():
@@ -1056,6 +1186,7 @@ class Cortex:
         # Not in DB — compute via embedder and store back
         try:
             from ..cognition.embedder import embed
+
             vec = embed(memory.narrative)
             if vec:
                 with self._conn() as conn:
@@ -1152,8 +1283,8 @@ class Cortex:
             return True, []
 
         violations: list[str] = []
-        valid_cp  = {f"CP{i}"   for i in range(1, 7)}
-        valid_id  = {f"ID{i}"   for i in range(1, 15)}
+        valid_cp = {f"CP{i}" for i in range(1, 7)}
+        valid_id = {f"ID{i}" for i in range(1, 15)}
         valid_proc_parents = valid_cp | valid_id
 
         for cp_id in sorted(valid_cp):
@@ -1161,20 +1292,26 @@ class Cortex:
             if mem is None:
                 violations.append(f"MISSING_CP: {cp_id}")
             elif mem.parent_id != "ROOT":
-                violations.append(f"ORPHAN_CP: {cp_id} parent={mem.parent_id!r} (expected ROOT)")
+                violations.append(
+                    f"ORPHAN_CP: {cp_id} parent={mem.parent_id!r} (expected ROOT)"
+                )
 
         for id_id in sorted(valid_id):
             mem = self.get(id_id)
             # Missing ID: informational — may be a pre-backfill instance; not a corruption signal
             if mem is not None and mem.parent_id not in valid_cp:
-                violations.append(f"INVALID_PARENT_ID: {id_id} parent={mem.parent_id!r} (expected CP1-CP6)")
+                violations.append(
+                    f"INVALID_PARENT_ID: {id_id} parent={mem.parent_id!r} (expected CP1-CP6)"
+                )
 
         for i in range(1, 11):
             proc_id = f"PROC{i}"
             mem = self.get(proc_id)
             # Missing PROC: informational — may be a pre-backfill instance; not a corruption signal
             if mem is not None and mem.parent_id not in valid_proc_parents:
-                violations.append(f"INVALID_PARENT_PROC: {proc_id} parent={mem.parent_id!r}")
+                violations.append(
+                    f"INVALID_PARENT_PROC: {proc_id} parent={mem.parent_id!r}"
+                )
 
         return len(violations) == 0, violations
 
@@ -1213,13 +1350,23 @@ class Cortex:
             portable=bool(row["portable"]) if "portable" in keys else True,
             # G46: provenance + epistemic fields
             source=row["source"] if "source" in keys and row["source"] else "",
-            confidence=float(row["confidence"]) if "confidence" in keys and row["confidence"] is not None else 1.0,
-            context_of_encoding=row["context_of_encoding"] if "context_of_encoding" in keys and row["context_of_encoding"] else "",
+            confidence=(
+                float(row["confidence"])
+                if "confidence" in keys and row["confidence"] is not None
+                else 1.0
+            ),
+            context_of_encoding=(
+                row["context_of_encoding"]
+                if "context_of_encoding" in keys and row["context_of_encoding"]
+                else ""
+            ),
         )
 
     # ── Ring memory (short-term, survives restarts) ────────────────────────────
 
-    def write_ring(self, content: str, category: str = "note", thread_id: str | None = None):
+    def write_ring(
+        self, content: str, category: str = "note", thread_id: str | None = None
+    ):
         """
         Write an entry to the short-term ring buffer.
         Automatically trims to RING_MAX entries (oldest first).
@@ -1232,7 +1379,7 @@ class Cortex:
         with self._conn() as conn:
             conn.execute(
                 "INSERT INTO ring_memory (category, content, timestamp, thread_id) VALUES (?, ?, ?, ?)",
-                (category, content, now, thread_id)
+                (category, content, now, thread_id),
             )
             # Trim to max size
             conn.execute(f"""
@@ -1272,30 +1419,31 @@ class Cortex:
                     "SELECT * FROM ring_memory WHERE category = ? "
                     "AND (thread_id = ? OR thread_id IS NULL) "
                     "ORDER BY id DESC LIMIT ?",
-                    (category, thread_id, limit)
+                    (category, thread_id, limit),
                 ).fetchall()
             elif thread_id:
                 rows = conn.execute(
                     "SELECT * FROM ring_memory "
                     "WHERE (thread_id = ? OR thread_id IS NULL) "
                     "ORDER BY id DESC LIMIT ?",
-                    (thread_id, limit)
+                    (thread_id, limit),
                 ).fetchall()
             elif category:
                 rows = conn.execute(
                     "SELECT * FROM ring_memory WHERE category = ? ORDER BY id DESC LIMIT ?",
-                    (category, limit)
+                    (category, limit),
                 ).fetchall()
             else:
                 rows = conn.execute(
-                    "SELECT * FROM ring_memory ORDER BY id DESC LIMIT ?",
-                    (limit,)
+                    "SELECT * FROM ring_memory ORDER BY id DESC LIMIT ?", (limit,)
                 ).fetchall()
         # Return in chronological order (oldest first)
         entries = [
             {
-                "id": r["id"], "category": r["category"],
-                "content": r["content"], "timestamp": r["timestamp"],
+                "id": r["id"],
+                "category": r["category"],
+                "content": r["content"],
+                "timestamp": r["timestamp"],
                 "thread_id": r["thread_id"] if "thread_id" in r.keys() else None,
             }
             for r in rows
@@ -1322,8 +1470,10 @@ class Cortex:
             ).fetchall()
         return [
             {
-                "id": r["id"], "category": r["category"],
-                "content": r["content"], "timestamp": r["timestamp"],
+                "id": r["id"],
+                "category": r["category"],
+                "content": r["content"],
+                "timestamp": r["timestamp"],
                 "thread_id": r["thread_id"] if "thread_id" in r.keys() else None,
             }
             for r in rows
@@ -1336,16 +1486,27 @@ class Cortex:
                 "SELECT * FROM ring_memory WHERE category = 'restart_note' ORDER BY id DESC LIMIT 1"
             ).fetchone()
         if row:
-            return {"id": row["id"], "category": row["category"],
-                    "content": row["content"], "timestamp": row["timestamp"]}
+            return {
+                "id": row["id"],
+                "category": row["category"],
+                "content": row["content"],
+                "timestamp": row["timestamp"],
+            }
         return None
 
     # ── TWM — Temporal Working Memory ──────────────────────────────────────────
 
-    def twm_push(self, source: str, content_csb: str, salience: float = 0.5,
-                 metadata: dict = None, ttl_seconds: int = None,
-                 urgency: float = 0.2, thread_id: str | None = None,
-                 category: str = "observation") -> int:
+    def twm_push(
+        self,
+        source: str,
+        content_csb: str,
+        salience: float = 0.5,
+        metadata: dict = None,
+        ttl_seconds: int = None,
+        urgency: float = 0.2,
+        thread_id: str | None = None,
+        category: str = "observation",
+    ) -> int:
         """
         Push an observation into TWM. Any process can call this.
         Returns the new observation ID.
@@ -1402,9 +1563,18 @@ class Cortex:
                     integrated, integration_count, expires_at, urgency, instance_id,
                     thread_id, category, attractor_weight)
                    VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?, 0.0)""",
-                (now.isoformat(), source, content_csb, salience,
-                 json.dumps(metadata or {}), expires_at, urgency, self._instance_id,
-                 thread_id, category)
+                (
+                    now.isoformat(),
+                    source,
+                    content_csb,
+                    salience,
+                    json.dumps(metadata or {}),
+                    expires_at,
+                    urgency,
+                    self._instance_id,
+                    thread_id,
+                    category,
+                ),
             )
             obs_id = cur.lastrowid
 
@@ -1413,17 +1583,17 @@ class Cortex:
                 conn.execute(
                     "UPDATE twm_observations SET attractor_weight = 0.0 "
                     "WHERE instance_id = ? AND id != ?",
-                    (self._instance_id, obs_id)
+                    (self._instance_id, obs_id),
                 )
                 conn.execute(
                     "UPDATE twm_observations SET attractor_weight = 1.0 WHERE id = ?",
-                    (obs_id,)
+                    (obs_id,),
                 )
 
             # Evict expired entries first
             conn.execute(
                 "DELETE FROM twm_observations WHERE expires_at IS NOT NULL AND expires_at < ?",
-                (now.isoformat(),)
+                (now.isoformat(),),
             )
 
             # Evict if over cap: integrated + low salience + oldest first
@@ -1440,9 +1610,13 @@ class Cortex:
 
         return obs_id
 
-    def twm_read(self, limit: int = 50, include_integrated: bool = True,
-                 thread_id: str | None = None,
-                 category: str | None = None) -> list[dict]:
+    def twm_read(
+        self,
+        limit: int = 50,
+        include_integrated: bool = True,
+        thread_id: str | None = None,
+        category: str | None = None,
+    ) -> list[dict]:
         """
         Read TWM observations (newest last). Default: all including integrated.
         Use include_integrated=False to get only unprocessed ones.
@@ -1477,7 +1651,7 @@ class Cortex:
         with self._conn() as conn:
             rows = conn.execute(
                 f"SELECT * FROM twm_observations {where} ORDER BY id ASC LIMIT ?",
-                params
+                params,
             ).fetchall()
 
         return [
@@ -1495,7 +1669,9 @@ class Cortex:
                 "integrated": bool(r["integrated"]),
                 "integration_count": r["integration_count"],
                 "expires_at": r["expires_at"],
-                "attractor_weight": r["attractor_weight"] if "attractor_weight" in r.keys() else 0.0,
+                "attractor_weight": (
+                    r["attractor_weight"] if "attractor_weight" in r.keys() else 0.0
+                ),
             }
             for r in rows
         ]
@@ -1518,11 +1694,11 @@ class Cortex:
             conn.execute(
                 "UPDATE twm_observations SET attractor_weight = 0.0 "
                 "WHERE instance_id = ? AND id != ?",
-                (self._instance_id, obs_id)
+                (self._instance_id, obs_id),
             )
             conn.execute(
                 "UPDATE twm_observations SET attractor_weight = ? WHERE id = ?",
-                (min(1.0, max(0.0, weight)), obs_id)
+                (min(1.0, max(0.0, weight)), obs_id),
             )
 
     def twm_get_attractor(self) -> dict | None:
@@ -1535,7 +1711,7 @@ class Cortex:
                 "SELECT * FROM twm_observations "
                 "WHERE instance_id = ? AND attractor_weight > 0.1 "
                 "ORDER BY attractor_weight DESC LIMIT 1",
-                (self._instance_id,)
+                (self._instance_id,),
             ).fetchone()
         if not row:
             return None
@@ -1544,7 +1720,9 @@ class Cortex:
             "content_csb": row["content_csb"],
             "attractor_weight": row["attractor_weight"],
             "salience": row["salience"],
-            "metadata": json.loads(row["metadata_json"]) if row["metadata_json"] else {},  # #172
+            "metadata": (
+                json.loads(row["metadata_json"]) if row["metadata_json"] else {}
+            ),  # #172
         }
 
     def twm_decay_attractor(self, factor: float = 0.90) -> None:
@@ -1558,13 +1736,13 @@ class Cortex:
                 "UPDATE twm_observations "
                 "SET attractor_weight = attractor_weight * ? "
                 "WHERE instance_id = ? AND attractor_weight > 0.05",
-                (factor, self._instance_id)
+                (factor, self._instance_id),
             )
             # Zero out anything that has decayed below threshold
             conn.execute(
                 "UPDATE twm_observations SET attractor_weight = 0.0 "
                 "WHERE instance_id = ? AND attractor_weight <= 0.05",
-                (self._instance_id,)
+                (self._instance_id,),
             )
 
     def twm_clear_task_set(self, thread_id: str | None = None) -> int:
@@ -1579,7 +1757,7 @@ class Cortex:
                     "UPDATE twm_observations SET integrated = 1 "
                     "WHERE category = 'task_set' AND integrated = 0 "
                     "AND (thread_id = ? OR thread_id IS NULL)",
-                    (thread_id,)
+                    (thread_id,),
                 )
             else:
                 result = conn.execute(
@@ -1595,7 +1773,7 @@ class Cortex:
             if _iid:
                 return conn.execute(
                     "SELECT COUNT(*) FROM twm_observations WHERE integrated = 0 AND instance_id = ?",
-                    (_iid,)
+                    (_iid,),
                 ).fetchone()[0]
             return conn.execute(
                 "SELECT COUNT(*) FROM twm_observations WHERE integrated = 0"
@@ -1608,7 +1786,7 @@ class Cortex:
             if _iid:
                 return conn.execute(
                     "SELECT COUNT(*) FROM twm_observations WHERE instance_id = ?",
-                    (_iid,)
+                    (_iid,),
                 ).fetchone()[0]
             return conn.execute("SELECT COUNT(*) FROM twm_observations").fetchone()[0]
 
@@ -1619,7 +1797,7 @@ class Cortex:
             if _iid:
                 row = conn.execute(
                     "SELECT MAX(id) FROM twm_observations WHERE instance_id = ?",
-                    (_iid,)
+                    (_iid,),
                 ).fetchone()
             else:
                 row = conn.execute("SELECT MAX(id) FROM twm_observations").fetchone()
@@ -1634,7 +1812,7 @@ class Cortex:
             conn.execute(
                 f"UPDATE twm_observations SET integrated = 1, integration_count = integration_count + 1 "
                 f"WHERE id IN ({placeholders})",
-                obs_ids
+                obs_ids,
             )
 
     def twm_update_salience(self, obs_id: int, salience: float):
@@ -1642,7 +1820,7 @@ class Cortex:
         with self._conn() as conn:
             conn.execute(
                 "UPDATE twm_observations SET salience = ? WHERE id = ?",
-                (max(0.0, min(1.0, salience)), obs_id)
+                (max(0.0, min(1.0, salience)), obs_id),
             )
 
     def twm_clear(self):
@@ -1650,7 +1828,9 @@ class Cortex:
         with self._conn() as conn:
             conn.execute("DELETE FROM twm_observations")
 
-    def twm_extend_ttl(self, obs_id: int, extension_seconds: int = None, reason: str = "") -> None:
+    def twm_extend_ttl(
+        self, obs_id: int, extension_seconds: int = None, reason: str = ""
+    ) -> None:
         """
         Extend TWM TTL on confirmed relevance (Change 3 — Signal A/B/C).
 
@@ -1710,6 +1890,7 @@ class Cortex:
         proximity: "present" | "remote" | "lost" — modulates activation threshold
         """
         from .models import Memory as _M, MemoryType as _MT
+
         meta = {
             "relationship_type": relationship_type,
             "investment_weight": max(0.0, min(1.0, investment_weight)),
@@ -1736,11 +1917,12 @@ class Cortex:
         with self._conn() as conn:
             rows = conn.execute(
                 "SELECT * FROM memories WHERE memory_type='INTERPRETIVE' "
-                "AND metadata LIKE '%\"source\": \"relational\"%'"
+                'AND metadata LIKE \'%"source": "relational"%\''
             ).fetchall()
         nodes = [self._to_memory(r) for r in rows]
         return [
-            n for n in nodes
+            n
+            for n in nodes
             if n and n.metadata.get("investment_weight", 0.0) >= min_weight
         ]
 
@@ -1758,7 +1940,9 @@ class Cortex:
             node_name = node.id.replace("REL_", "").replace("_", " ").lower()
             # Also check first word of narrative
             narrative_words = node.narrative.lower().split()[:3]
-            if node_name in text_lower or any(w in text_lower for w in narrative_words if len(w) > 3):
+            if node_name in text_lower or any(
+                w in text_lower for w in narrative_words if len(w) > 3
+            ):
                 hits.append(node)
         # Sort by investment_weight descending
         hits.sort(key=lambda n: n.metadata.get("investment_weight", 0.0), reverse=True)
@@ -1816,9 +2000,12 @@ class Cortex:
                 new_meta = dict(node.metadata)
                 new_meta["investment_weight"] = round(new_w, 4)
                 new_meta["nre_phase"] = new_nre
-                new_meta["last_decay"] = __import__("datetime").datetime.utcnow().isoformat()
+                new_meta["last_decay"] = (
+                    __import__("datetime").datetime.utcnow().isoformat()
+                )
                 try:
                     import json as _json
+
                     with self._conn() as conn:
                         conn.execute(
                             "UPDATE memories SET metadata=? WHERE id=?",
@@ -1857,6 +2044,7 @@ class Cortex:
         Returns the new edge id.
         """
         from datetime import datetime as _dt
+
         now = _dt.now().isoformat()
         with self._conn() as conn:
             cur = conn.execute(
@@ -1865,8 +2053,16 @@ class Cortex:
                     (from_id, to_id, direction, condition_csb, meaning_payload, action_pointer, weight, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (from_id, to_id, direction, condition_csb, meaning_payload, action_pointer,
-                 max(0.0, min(1.0, weight)), now),
+                (
+                    from_id,
+                    to_id,
+                    direction,
+                    condition_csb,
+                    meaning_payload,
+                    action_pointer,
+                    max(0.0, min(1.0, weight)),
+                    now,
+                ),
             )
             return cur.lastrowid
 
@@ -1906,7 +2102,9 @@ class Cortex:
             from_id=earlier_id,
             to_id=later_id,
             direction="temporal",
-            condition_csb=f"temporal_sequence:{context}" if context else "temporal_sequence",
+            condition_csb=(
+                f"temporal_sequence:{context}" if context else "temporal_sequence"
+            ),
             meaning_payload=f"Temporal successor: {later_id} follows {earlier_id} in time.",
             action_pointer=later_id,
             weight=weight,
@@ -1970,7 +2168,9 @@ class Cortex:
 
         _milieu_bias: dict = milieu_bias or {}
         visited: set[str] = set(from_ids)
-        queue: list[tuple[str, int, str]] = [(fid, 0, fid) for fid in from_ids]  # (id, depth, root)
+        queue: list[tuple[str, int, str]] = [
+            (fid, 0, fid) for fid in from_ids
+        ]  # (id, depth, root)
         result_ids: list[str] = []
         # #182: cache out-degree counts to avoid per-node DB queries
         _out_degree_cache: dict[str, int] = {}
@@ -2001,18 +2201,25 @@ class Cortex:
                         try:
                             _to_mem = self.get(edge["to_id"])
                             if _to_mem:
-                                _iw = (_to_mem.metadata or {}).get("investment_weight", 0.0)
+                                _iw = (_to_mem.metadata or {}).get(
+                                    "investment_weight", 0.0
+                                )
                                 if _iw >= convergence_weight:
                                     _is_convergence = True
                                 else:
                                     # check out-degree
                                     if edge["to_id"] not in _out_degree_cache:
                                         with self._conn() as _c:
-                                            _out_degree_cache[edge["to_id"]] = _c.execute(
-                                                "SELECT COUNT(*) FROM interpretive_edges WHERE from_id=?",
-                                                (edge["to_id"],),
-                                            ).fetchone()[0]
-                                    if _out_degree_cache[edge["to_id"]] >= convergence_out_degree:
+                                            _out_degree_cache[edge["to_id"]] = (
+                                                _c.execute(
+                                                    "SELECT COUNT(*) FROM interpretive_edges WHERE from_id=?",
+                                                    (edge["to_id"],),
+                                                ).fetchone()[0]
+                                            )
+                                    if (
+                                        _out_degree_cache[edge["to_id"]]
+                                        >= convergence_out_degree
+                                    ):
                                         _is_convergence = True
                         except Exception:
                             pass
@@ -2025,6 +2232,7 @@ class Cortex:
 
         # Fetch the actual Memory objects
         from .models import Memory as _M  # avoid circular at module level
+
         placeholders = ",".join("?" * len(result_ids))
         with self._conn() as conn:
             rows = conn.execute(
