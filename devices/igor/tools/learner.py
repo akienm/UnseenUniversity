@@ -23,10 +23,12 @@ from pathlib import Path
 from .registry import Tool, registry
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
-_REPO        = Path(__file__).parent.parent.parent.parent
-_BOOK_LEARNER = _REPO / "claudecode" / "book_learner.py"
-_VENV_PYTHON  = _REPO / "venv" / "bin" / "python"
-_QUEUE_FILE   = Path.home() / ".TheIgors" / "learn_queue.json"
+_REPO          = Path(__file__).parent.parent.parent.parent
+_BOOK_LEARNER  = _REPO / "claudecode" / "book_learner.py"
+_DRAIN_SCRIPT  = _REPO / "claudecode" / "drain_learn_queue.py"
+_VENV_PYTHON   = _REPO / "venv" / "bin" / "python"
+_QUEUE_FILE    = Path.home() / ".TheIgors" / "learn_queue.json"
+_DRAIN_PID     = Path.home() / ".TheIgors" / "drain_learn_queue.pid"
 
 # ── Fiction filter ─────────────────────────────────────────────────────────────
 # Tags containing any of these substrings → skip the book
@@ -201,6 +203,43 @@ def _discover_urls_via_browser(topic: str) -> list[tuple[str, str]]:
 
     return results
 
+# ── Queue runner ───────────────────────────────────────────────────────────────
+
+def _queue_runner_alive() -> bool:
+    """True if drain_learn_queue.py is already running (PID file check)."""
+    try:
+        if not _DRAIN_PID.exists():
+            return False
+        pid = int(_DRAIN_PID.read_text().strip())
+        # Check if process exists
+        import os as _os
+        _os.kill(pid, 0)
+        return True
+    except (ValueError, OSError):
+        return False
+
+
+def _launch_queue_runner(delay: float = 60.0) -> bool:
+    """
+    Spawn drain_learn_queue.py as a detached background process.
+    No-op if one is already running (PID file guard).
+    Returns True if launched, False if already running or failed.
+    """
+    if _queue_runner_alive():
+        return False  # already running
+
+    python = str(_VENV_PYTHON) if _VENV_PYTHON.exists() else sys.executable
+    cmd    = [python, str(_DRAIN_SCRIPT), "--delay", str(delay)]
+    try:
+        log_dir = Path.home() / ".TheIgors" / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = open(log_dir / "drain_learn_queue.log", "a")
+        subprocess.Popen(cmd, stdout=log_file, stderr=log_file, start_new_session=True)
+        return True
+    except Exception:
+        return False
+
+
 # ── Background launcher ────────────────────────────────────────────────────────
 
 def _launch_book(calibre_id: int = None, url: str = None, title: str = "",
@@ -273,16 +312,27 @@ def learn_about(user_input: str) -> str:
         lines.append("Library: no non-fiction matches in Calibre.")
 
     # ── 2. Browser AI discovery → night queue (always async) ──────────────
+    urls_queued = 0
     try:
         url_pairs = _discover_urls_via_browser(topic)
         if url_pairs:
             for url, title in url_pairs:
                 _queue_url(url, title, topic)
-            lines.append(f"Web: {len(url_pairs)} URL(s) queued for night processing.")
+            urls_queued = len(url_pairs)
+            lines.append(f"Web: {len(url_pairs)} URL(s) queued.")
         else:
             lines.append("Web: browser discovery unavailable — will rely on library sources.")
     except Exception as e:
         lines.append(f"Web: discovery skipped ({e}).")
+
+    # ── 3. Spawn queue runner if anything was queued ───────────────────────
+    anything_queued = bool(queued_books) or urls_queued > 0
+    if anything_queued:
+        launched_runner = _launch_queue_runner(delay=60.0)
+        if launched_runner:
+            lines.append("Background queue runner started — will drain items at 60s intervals.")
+        else:
+            lines.append("Queue runner already active.")
 
     return "\n".join(lines)
 
@@ -377,6 +427,45 @@ registry.register(Tool(
         "required": [],
     },
     fn=process_learn_queue,
+))
+
+
+def drain_learn_queue(**_kwargs) -> str:
+    """
+    Spawn the background queue runner (drain_learn_queue.py) if not already running.
+    Shows queue status and whether the runner was started or was already active.
+    """
+    q       = _load_queue()
+    pending = [e for e in q if not e.get("done")]
+
+    if not pending:
+        return "Learn queue is empty — nothing to drain."
+
+    if _queue_runner_alive():
+        return f"Queue runner already active. {len(pending)} item(s) pending."
+
+    launched = _launch_queue_runner(delay=60.0)
+    if launched:
+        topics = sorted({e.get("topic", "?") for e in pending if e.get("topic")})
+        topic_str = ", ".join(f'"{t}"' for t in topics[:5])
+        return (
+            f"Background queue runner started. "
+            f"{len(pending)} item(s) to process (topics: {topic_str or '?'}). "
+            f"60s between launches. Check ~/.TheIgors/logs/drain_learn_queue.log for progress."
+        )
+    return "Failed to launch queue runner — check logs."
+
+
+registry.register(Tool(
+    name="drain_learn_queue",
+    description=(
+        "Start the background learning queue runner. Drains ~/.TheIgors/learn_queue.json "
+        "by launching book_learner for each pending item at 60-second intervals. "
+        "Safe to call multiple times — won't spawn duplicates. "
+        "Use after 'go learn about X tonight' to kick off overnight processing."
+    ),
+    parameters={"type": "object", "properties": {}, "required": []},
+    fn=drain_learn_queue,
 ))
 
 
