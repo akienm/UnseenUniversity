@@ -265,6 +265,11 @@ class Cortex:
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_ie_to ON interpretive_edges(to_id)"
             )
+            # G-QP2: checkpoint WAL at boot so search reads don't re-scan a stale WAL
+            try:
+                conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            except Exception:
+                pass
 
     # ── Long-term memory graph ─────────────────────────────────────────────────
 
@@ -773,7 +778,7 @@ class Cortex:
         with self._conn() as conn:
             rows = conn.execute(
                 "SELECT * FROM memories WHERE memory_type NOT IN (?, ?) "
-                "ORDER BY activation_count DESC",
+                "ORDER BY activation_count DESC LIMIT 300",  # G-QP2: cap candidate pool
                 (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value),
             ).fetchall()
 

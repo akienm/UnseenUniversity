@@ -113,19 +113,29 @@ _TONIGHT_MARKERS = ("tonight", "later tonight", "overnight", "at night", "when i
 
 
 def _extract_topic(user_input: str) -> str:
-    low = user_input.lower().strip()
-    # Search anywhere in the input — handles thread-context-prefixed CC bridge messages
-    # where the actual request appears after "[Web message from akien]: go learn about X"
+    # G-OVN-5: strip CC bridge thread-context prefix before processing
+    # Formats: "[Thread context: xxx]\n\n...", "[Web message from X]: ...", "[claude-code]: ..."
+    text = re.sub(r"^\[Thread context:[^\]]*\]\s*", "", user_input, flags=re.IGNORECASE)
+    text = re.sub(r"^\[[^\]]*\]:\s*", "", text, flags=re.IGNORECASE)
+    text = text.strip()
+
+    low = text.lower()
+    # Search anywhere in the input — handles any remaining prefix
     for t in sorted(_TRIGGERS, key=len, reverse=True):
         idx = low.find(t)
         if idx != -1:
-            topic = user_input[idx + len(t) :].strip(" .:,")
+            topic = text[idx + len(t) :].strip(" .:,")
             # Strip any trailing "tonight" / timing modifier
             for m in _TONIGHT_MARKERS:
                 if topic.lower().endswith(m):
                     topic = topic[: -len(m)].strip(" .,")
-            return topic
-    return user_input.strip()
+            if len(topic.split()) >= 2:  # require at least 2 words to be a real topic
+                return topic
+    # No trigger found — return as-is only if it looks like a real topic (3+ words)
+    words = text.split()
+    if len(words) >= 3:
+        return text
+    return ""
 
 
 def _is_tonight(user_input: str) -> bool:

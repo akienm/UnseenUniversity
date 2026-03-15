@@ -256,6 +256,20 @@ def select_habit(
         # ── 2. Parallel scoring ───────────────────────────────────────────────
         threshold = _compute_threshold(milieu_state)
         now = datetime.now(timezone.utc)
+        parsed_intent = getattr(parsed, "intent", "") or ""
+
+        # G-OVN-1: intents where tool-dispatch/threshold habits should never fire.
+        # Threshold habits are evaluated separately by ResourceMonitorSource + pre-submit hook.
+        # Action habits with code_ref should not misfire on question vocabulary.
+        _QUESTION_INTENTS = frozenset(
+            {
+                "factual_question",
+                "meta_question",
+                "explanation_request",
+                "general",
+                "conversation",
+            }
+        )
 
         # Word graph pre-score: semantic signal over all habits at once (fast)
         _wg_scores: dict[str, float] = {}
@@ -268,6 +282,17 @@ def select_habit(
         scored = []
         near_misses: list[tuple[float, "Memory"]] = []
         for habit in habits:
+            h_type = habit.metadata.get("habit_type", "")
+            # G-OVN-1a: threshold habits evaluated by ResourceMonitorSource/pre-submit only
+            if h_type == "threshold":
+                continue
+            # G-OVN-1b: action/proactive habits with code_ref skip on question intents
+            if (
+                h_type in ("action", "proactive")
+                and habit.metadata.get("code_ref")
+                and parsed_intent in _QUESTION_INTENTS
+            ):
+                continue
             s = _score_habit(habit, raw_lower, keywords, now=now)
             if s > 0:  # only apply bonus when trigger matched
                 s += _wg_scores.get(habit.id, 0.0) * 0.10  # word graph bonus: 0.0–0.10
