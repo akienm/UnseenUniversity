@@ -159,7 +159,7 @@ def _save_queue(q: list) -> None:
     _QUEUE_FILE.write_text(json.dumps(q, indent=2))
 
 
-def _queue_url(url: str, title: str, topic: str) -> None:
+def _queue_url(url: str, title: str, topic: str, cloud_ok: bool = True) -> None:
     q = _load_queue()
     # Dedup by URL
     if any(e.get("url") == url for e in q):
@@ -170,6 +170,7 @@ def _queue_url(url: str, title: str, topic: str) -> None:
             "title": title,
             "topic": topic,
             "added_at": datetime.now().isoformat(),
+            "cloud_ok": cloud_ok,  # D071: False = local-only overnight; True = cloud OK (now mode)
             "done": False,
         }
     )
@@ -398,11 +399,40 @@ def learn_about(user_input: str) -> str:
     """
     topic = _extract_topic(user_input)
     tonight = _is_tonight(user_input)
+    cloud_ok = (
+        not tonight
+    )  # D071: "tonight" = local-only; "now" (no tonight marker) = cloud OK
 
     if not topic:
         return "What topic shall I learn about? Try: go learn about consciousness"
 
-    lines = [f"Learning about: {topic}" + (" (queued for tonight)" if tonight else "")]
+    lines = [
+        f"Learning about: {topic}"
+        + (
+            " (queued for tonight, local-only)"
+            if tonight
+            else " (cloud OK — starting now)"
+        )
+    ]
+
+    # ── 0. Set/clear cloud_ok override ────────────────────────────────────
+    if not tonight:
+        # "now" mode — activate cloud_ok override so drain runner and book_learner use cloud
+        try:
+            from ..cognition.cloud_mode import set_cloud_ok_override
+
+            status = set_cloud_ok_override(ttl_hours=4.0, reason="learn_about now")
+            lines.append(f"Cloud: {status}")
+        except Exception as e:
+            lines.append(f"Cloud: override failed ({e}) — will use local.")
+    else:
+        # "tonight" mode — clear any existing override so night runner stays local
+        try:
+            from ..cognition.cloud_mode import clear_cloud_ok_override
+
+            clear_cloud_ok_override(reason="learn_about tonight")
+        except Exception:
+            pass
 
     # ── 1. Calibre non-fiction ─────────────────────────────────────────────
     books = _calibre_nonfiction(topic)
@@ -416,7 +446,7 @@ def learn_about(user_input: str) -> str:
             continue
         if tonight:
             # Queue as URL-style entry using calibre_id sentinel
-            _queue_url(f"calibre://{cid}", title, topic)
+            _queue_url(f"calibre://{cid}", title, topic, cloud_ok=False)
             queued_books.append(title)
         else:
             if _launch_book(calibre_id=cid, local=True):
@@ -440,7 +470,7 @@ def learn_about(user_input: str) -> str:
     try:
         direct_pairs = _discover_urls_direct(topic)
         for url, title in direct_pairs:
-            _queue_url(url, title, topic)
+            _queue_url(url, title, topic, cloud_ok=cloud_ok)
         urls_queued += len(direct_pairs)
         if direct_pairs:
             lines.append(
@@ -453,7 +483,7 @@ def learn_about(user_input: str) -> str:
         url_pairs = _discover_urls_via_browser(topic)
         if url_pairs:
             for url, title in url_pairs:
-                _queue_url(url, title, topic)
+                _queue_url(url, title, topic, cloud_ok=cloud_ok)
             urls_queued += len(url_pairs)
             lines.append(f"Web: {len(url_pairs)} AI-discovered URL(s) queued.")
         else:
