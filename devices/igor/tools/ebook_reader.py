@@ -760,7 +760,7 @@ def read_chunk(handle=None, n: int = 0, handle_key: str = "", **_) -> dict:
                 _chunk_text = " ".join(chunk)
                 _book_label = f"{handle.meta.title[:30]} ch.{result['chapter']}"
                 _cortex.twm_push(
-                    content=f"READING_STEW|{_book_label}|{_chunk_text[:400]}",
+                    content_csb=f"READING_STEW|{_book_label}|{_chunk_text[:400]}",
                     source="ebook_reader",
                     salience=0.65,
                     ttl_seconds=_STEW_TTL_SECS,

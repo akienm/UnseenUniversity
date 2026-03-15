@@ -3421,6 +3421,47 @@ class Igor:
                 _thalamus_confidence = 0.60  # tiebreaker confidence marker
                 loginfo(f"[dim][TIEBREAKER] #54 resolved → {habit.id}[/]")
 
+        # G-HB3: context_inject habits — push LTM identity+milieu to TWM, then fall through
+        # to the LLM so the question gets a real answer instead of a canned string.
+        if habit and habit.metadata.get("habit_type") == "context_inject":
+            try:
+                from .cognition.milieu import get as _milieu_get
+
+                _m_state = _milieu_get()
+                _milieu_str = (
+                    f"v={_m_state.valence:+.2f} a={_m_state.arousal:.2f} d={_m_state.dominance:.2f}"
+                    if _m_state
+                    else "unknown"
+                )
+                # Fetch identity + core-pattern memories for self-context
+                _id_mems = self.cortex.search(
+                    habit.metadata.get(
+                        "context_query", "who am I identity core pattern"
+                    ),
+                    limit=6,
+                    memory_types=["IDENTITY", "CORE_PATTERN"],
+                )
+                _id_lines = (
+                    " | ".join(m.narrative[:100] for m in _id_mems) if _id_mems else ""
+                )
+                self.cortex.twm_push(
+                    source=f"habit:{habit.id}",
+                    content_csb=(
+                        f"SELF_CONTEXT|milieu={_milieu_str}"
+                        + (f"|{_id_lines[:400]}" if _id_lines else "")
+                    ),
+                    salience=0.75,
+                    urgency=0.4,
+                    ttl_seconds=90,
+                    metadata={"habit_id": habit.id},
+                )
+                loginfo(
+                    f"[dim][G-HB3] context_inject: pushed self-context for {habit.id}[/]"
+                )
+            except Exception as _ci_err:
+                loginfo(f"[dim][G-HB3] context_inject error: {_ci_err}[/]")
+            habit = None  # fall through to LLM with enriched TWM context
+
         if habit:
             dashboard.print_habit_trigger(habit)
             _habit_trigger = habit.metadata.get("trigger", "")
