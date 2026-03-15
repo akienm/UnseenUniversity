@@ -462,6 +462,17 @@ class Cortex:
             ).fetchall()
         return [self._to_memory(r) for r in rows]
 
+    def for_employer(self, employer_id: str) -> list:
+        """
+        #239: Return all memories tagged to a specific employer via metadata.employer_id.
+        No schema change — employer_id is a metadata convention.
+        Used by the cc_notebook endpoint to serve Claude's (or any employer's) notebook.
+        """
+        with self._conn() as conn:
+            rows = conn.execute("SELECT * FROM memories ORDER BY id").fetchall()
+        mems = [self._to_memory(r) for r in rows]
+        return [m for m in mems if m.metadata.get("employer_id") == employer_id]
+
     def get_children(self, parent_id: str) -> list:
         with self._conn() as conn:
             rows = conn.execute(

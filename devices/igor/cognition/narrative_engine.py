@@ -25,7 +25,7 @@ import os
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, List
 
 from . import reasoning_cache
 from .forensic_logger import log_ne_run, cts as _cts
@@ -34,20 +34,26 @@ from ..memory.cortex import Cortex
 from ..memory.models import Memory, MemoryType
 
 # ── Config ─────────────────────────────────────────────────────────────────────
-NE_MODEL              = "ollama"        # label only; actual inference via OllamaReasoner in _call_local()
-NE_TRIGGER_OBS        = 5              # Run if >= this many unintegrated obs
-NE_MIN_INTERVAL_SEC   = 30             # Minimum seconds between NE runs
-NE_MAX_INTERVAL_SEC   = 300            # Maximum seconds between NE runs (5 min)
-PROMOTE_THRESHOLD     = 0.7            # importance >= this → goes to LTM
+NE_MODEL = "ollama"  # label only; actual inference via OllamaReasoner in _call_local()
+NE_TRIGGER_OBS = 5  # Run if >= this many unintegrated obs
+NE_MIN_INTERVAL_SEC = (
+    5  # Minimum seconds between NE runs (was 30 — cursor makes fast cycles safe)
+)
+NE_MAX_INTERVAL_SEC = 300  # Maximum seconds between NE runs (5 min)
+PROMOTE_THRESHOLD = 0.7  # importance >= this → goes to LTM
+NE_CURSOR_HISTORY = 5  # How many cycles to keep in topic_history
+NE_OSCILLATION_DEPTH = 3  # Cycles on same topic with no new promotions → oscillating
 
 # WO7: NE loop prevention — comprehensive guards
 
 # source_filter: sources whose TWM entries NE must never re-process
 # (NE's own output chain — re-reading would cause recursive self-detection)
-_NE_EXCLUDED_SOURCES = frozenset({
-    "narrative_engine",   # direct NE TWM pushes (action impulses, promoted echoes)
-    "ne_loop_guard",      # reserved for any future loop-guard writes
-})
+_NE_EXCLUDED_SOURCES = frozenset(
+    {
+        "narrative_engine",  # direct NE TWM pushes (action impulses, promoted echoes)
+        "ne_loop_guard",  # reserved for any future loop-guard writes
+    }
+)
 
 # content_filter: content prefixes that identify NE's own output echoing back
 # through TWM (even if source field was overwritten or re-surfaced by other agents)
@@ -63,22 +69,54 @@ _NE_CONTENT_PREFIXES = (
 # diagnostic_filter: keywords that mark self-referential/operational noise
 # (change.20a.2, expanded in WO7)
 _SELF_DIAG_KEYWORDS = (
-    "loop", "stall", "recursive", "detecting own", "consolidation",
-    "narrative engine", "ne run", "ne_run",
-    "action impulse", "action_impulse",
-    "self-detect", "self_detect",
+    "loop",
+    "stall",
+    "recursive",
+    "detecting own",
+    "consolidation",
+    "narrative engine",
+    "ne run",
+    "ne_run",
+    "action impulse",
+    "action_impulse",
+    "self-detect",
+    "self_detect",
 )
 
 # ── Prospective prediction ─────────────────────────────────────────────────────
 
+
 @dataclass
 class ProspectivePrediction:
     """Result of a prospective NE pass — prediction made before a turn is processed."""
-    predicted_habit_id: Optional[str]   # None = no habit predicted to fire
-    confidence: float = 0.0             # 0.0–1.0
+
+    predicted_habit_id: Optional[str]  # None = no habit predicted to fire
+    confidence: float = 0.0  # 0.0–1.0
     pre_warmed_memory_ids: list = field(default_factory=list)
     # #50: NE as incremental predictive parser — predicted upcoming topics from word graph
     predicted_search_keys: list = field(default_factory=list)  # top co-occurring words
+
+
+# ── Traversal Cursor (#236) ────────────────────────────────────────────────────
+
+
+@dataclass
+class TraversalCursor:
+    """
+    #236: Explicit thread tracker for NE across cycles.
+    Lives on the NE instance (not per-cycle). Tracks what thread NE has been
+    following over time. Oscillation = same topic N cycles with no new promotions.
+    Status transitions: active → converging (high promotions) | oscillating (stuck).
+    """
+
+    thread_id: str = field(default_factory=lambda: datetime.now().strftime("%H%M%S"))
+    topic_history: List[str] = field(
+        default_factory=list
+    )  # last NE_CURSOR_HISTORY topics
+    depth: int = 0  # cycles on current thread
+    status: str = "active"  # active | converging | oscillating
+    last_updated: str = ""
+    promotions_this_thread: int = 0  # total promotions since thread started
 
 
 # ── Prompt token cap ───────────────────────────────────────────────────────────
@@ -94,12 +132,13 @@ class NarrativeEngine:
     """
 
     def __init__(self, cortex: Cortex, instance_id: str = "wild-0001"):
-        self.cortex         = cortex
-        self.instance_id    = instance_id
-        self._last_run:     Optional[datetime] = None
-        self._run_count:    int = 0
+        self.cortex = cortex
+        self.instance_id = instance_id
+        self._last_run: Optional[datetime] = None
+        self._run_count: int = 0
         self._last_ne_model: str = NE_MODEL  # #84: updated to actual model on each run
         self._last_prediction: Optional[ProspectivePrediction] = None  # #121
+        self._cursor: TraversalCursor = TraversalCursor()  # #236: thread tracker
 
     # ── Prospective pass (#121) ────────────────────────────────────────────────
 
@@ -122,9 +161,7 @@ class NarrativeEngine:
 
         Stores result in self._last_prediction for comparison after basal ganglia.
         """
-        window = " ".join(
-            o.get("content_csb", "") for o in recent_obs[-5:]
-        ).lower()
+        window = " ".join(o.get("content_csb", "") for o in recent_obs[-5:]).lower()
 
         best_habit = None
         best_score = 0.0
@@ -147,7 +184,8 @@ class NarrativeEngine:
                 # Filter: skip short words, bigrams (contain "__"), and stop words
                 _STOP = {"the", "and", "for", "that", "this", "with", "have", "from"}
                 _search_keys = [
-                    w for w, _ in predictions
+                    w
+                    for w, _ in predictions
                     if len(w) > 3 and "__" not in w and w not in _STOP
                 ][:3]
             except Exception:
@@ -181,13 +219,13 @@ class NarrativeEngine:
             return
 
         if predicted == actual_habit_id:
-            delta = 0.0   # correct prediction — no surprise
+            delta = 0.0  # correct prediction — no surprise
         elif predicted is None:
-            delta = 0.4   # didn't predict a habit but one fired
+            delta = 0.4  # didn't predict a habit but one fired
         elif actual_habit_id is None:
             delta = 0.25  # predicted a habit but nothing fired
         else:
-            delta = 0.8   # wrong habit predicted
+            delta = 0.8  # wrong habit predicted
 
         # G11: get TWM seed IDs for link reinforcement (also used for salience boost below)
         seed_ids: list = []
@@ -239,7 +277,7 @@ class NarrativeEngine:
         """
         Returns (should_run, reason).
         Checks timing constraints and observation count.
-        
+
         IMPORTANT: Don't force-run on max interval if observations are stale
         (only low-salience timer/surfacer obs). Only force-run if truly stuck.
         """
@@ -260,7 +298,10 @@ class NarrativeEngine:
 
         # Force run only if truly max interval exceeded AND we have any meaningful observations
         # (not just timer heartbeats or background surfacing)
-        if self._last_run is None or (now - self._last_run).total_seconds() >= NE_MAX_INTERVAL_SEC:
+        if (
+            self._last_run is None
+            or (now - self._last_run).total_seconds() >= NE_MAX_INTERVAL_SEC
+        ):
             # WO7: use _filter_obs() — excludes NE-originated sources AND content prefixes
             raw = self.cortex.twm_read(limit=50, include_integrated=True)
             obs_list = self._filter_obs(raw)
@@ -294,8 +335,7 @@ class NarrativeEngine:
         # Mark filtered-out unintegrated obs as integrated so they stop counting
         # toward the trigger threshold. They've been seen — just not processable.
         _filtered_ids = [
-            o["id"] for o in _all_raw
-            if not o.get("integrated") and o not in raw_obs
+            o["id"] for o in _all_raw if not o.get("integrated") and o not in raw_obs
         ]
         if _filtered_ids:
             self.cortex.twm_mark_integrated(_filtered_ids)
@@ -319,7 +359,9 @@ class NarrativeEngine:
                 category="ne_diagnostic",
             )
             if verbose:
-                print(f"{_cts()}[NE] Dropped {dropped} oldest obs (prompt token cap, kept {len(obs_list)})")
+                print(
+                    f"{_cts()}[NE] Dropped {dropped} oldest obs (prompt token cap, kept {len(obs_list)})"
+                )
 
         if verbose:
             print(f"\n[NE] Running (reason={reason}, obs={len(obs_list)})...")
@@ -341,6 +383,7 @@ class NarrativeEngine:
                 print("[NE] Cloud NE call failed — skipping this cycle.")
             try:
                 from .forensic_logger import log_anomaly as _la
+
                 _la(kind="NE_FAIL", detail="all_local_and_cloud_failed")
             except Exception:
                 pass
@@ -349,6 +392,9 @@ class NarrativeEngine:
 
         # Process NE output
         promoted, impulses = self._apply_output(result, obs_list, verbose=verbose)
+
+        # #236: update traversal cursor after output is applied (knows actual promoted count)
+        self._update_cursor(result, promoted)
 
         self._last_run = datetime.now()
         self._run_count += 1
@@ -366,7 +412,9 @@ class NarrativeEngine:
 
     # ── Output processing ──────────────────────────────────────────────────────
 
-    def _apply_output(self, result: dict, obs_list: list[dict], verbose: bool = True) -> tuple[int, int]:
+    def _apply_output(
+        self, result: dict, obs_list: list[dict], verbose: bool = True
+    ) -> tuple[int, int]:
         """Apply NE output: update salience, mark integrated, promote to LTM.
         Returns (promoted_count, impulse_count) for forensic logging."""
 
@@ -408,9 +456,11 @@ class NarrativeEngine:
                 source_obs_id = cand.get("source_obs_id")
 
                 # #66: amygdala analog — tag high-importance memories with current milieu
-                _milieu = __import__(
-                    "igor.cognition.milieu", fromlist=["get"]
-                ).get() if True else None
+                _milieu = (
+                    __import__("igor.cognition.milieu", fromlist=["get"]).get()
+                    if True
+                    else None
+                )
                 try:
                     _ms = _milieu.get_state() if _milieu else None
                 except Exception:
@@ -443,8 +493,23 @@ class NarrativeEngine:
                     **({"emotionally_charged": True} if _emotionally_charged else {}),
                 }
                 if mem_type == MemoryType.PROCEDURAL and "trigger" not in _meta:
-                    _STOP = {"that","this","with","have","from","when","igor","will","akien","then"}
-                    _tw = [w.lower().strip(".,?!()[]") for w in content.split() if len(w) > 3]
+                    _STOP = {
+                        "that",
+                        "this",
+                        "with",
+                        "have",
+                        "from",
+                        "when",
+                        "igor",
+                        "will",
+                        "akien",
+                        "then",
+                    }
+                    _tw = [
+                        w.lower().strip(".,?!()[]")
+                        for w in content.split()
+                        if len(w) > 3
+                    ]
                     _trigger_words = [w for w in _tw if w not in _STOP][:5]
                     if _trigger_words:
                         _meta["trigger"] = " ".join(_trigger_words)
@@ -464,8 +529,7 @@ class NarrativeEngine:
                 # The observation was confirmed relevant enough to persist in LTM.
                 if source_obs_id is not None:
                     self.cortex.twm_extend_ttl(
-                        source_obs_id,
-                        reason=f"ne_promoted_importance={importance:.2f}"
+                        source_obs_id, reason=f"ne_promoted_importance={importance:.2f}"
                     )
 
         # 4. Write narrative fragment to ring_memory ONLY if we promoted or got action impulses
@@ -481,7 +545,9 @@ class NarrativeEngine:
             _tid = _o.get("thread_id")
             if _tid:
                 _thread_counts[_tid] = _thread_counts.get(_tid, 0) + 1
-        _narrative_thread_id = max(_thread_counts, key=_thread_counts.get) if _thread_counts else None
+        _narrative_thread_id = (
+            max(_thread_counts, key=_thread_counts.get) if _thread_counts else None
+        )
 
         if summary and (promoted > 0 or actions):
             if self._is_self_diagnostic(summary):
@@ -497,7 +563,9 @@ class NarrativeEngine:
                 )
 
         if verbose and (promoted > 0 or summary):
-            print(f"{_cts()}[NE] promoted={promoted} to LTM | summary: {summary[:80]}...")
+            print(
+                f"{_cts()}[NE] promoted={promoted} to LTM | summary: {summary[:80]}..."
+            )
 
         # 5. Push action impulses back into TWM so they can be acted on
         # Dedup: don't re-push an impulse whose action keywords already appear in a
@@ -511,15 +579,18 @@ class NarrativeEngine:
         impulse_count = 0
         for impulse in result.get("action_impulses", []):
             imp_urgency = float(impulse.get("urgency", 0.3))
-            action      = impulse.get("action", "")
-            why         = impulse.get("why", "")
+            action = impulse.get("action", "")
+            why = impulse.get("why", "")
             if not action:
                 continue
             # Dedup check: if >2 significant words from this action already appear
             # in recently-executed impulses, skip — it's already been handled.
             _action_words = [
-                w for w in action.lower().split()
-                if len(w) > 3 and w not in {"igor", "will", "akien", "that", "this", "with", "from", "have"}
+                w
+                for w in action.lower().split()
+                if len(w) > 3
+                and w
+                not in {"igor", "will", "akien", "that", "this", "with", "from", "have"}
             ]
             _already_done = (
                 len(_action_words) >= 2
@@ -561,6 +632,7 @@ class NarrativeEngine:
 
         try:
             from .inference_gateway import get_gateway as _gw, make_context as _mk_ctx
+
             _ctx = _mk_ctx(is_background=True)
             text = _gw().call("ne", prompt, _ctx)
             result = self._parse_ne_json(text)
@@ -570,9 +642,12 @@ class NarrativeEngine:
                 reasoning_cache.put(NE_MODEL, prompt, text, max_twm_id)
                 self._last_ne_model = f"gateway/ne/{_via}"
                 return result
-            print(f"{_cts()}[NE] JSON parse failed — skipping cycle | raw={text[:150]!r}")
+            print(
+                f"{_cts()}[NE] JSON parse failed — skipping cycle | raw={text[:150]!r}"
+            )
             try:
                 from .forensic_logger import log_anomaly as _la
+
                 _la(kind="NE_FAIL", detail=f"json_parse_failed raw={text[:150]!r}")
             except Exception:
                 pass
@@ -590,9 +665,12 @@ class NarrativeEngine:
         Both axes are required — source field can be absent or overwritten by re-surfacing.
         """
         return [
-            o for o in obs_list
+            o
+            for o in obs_list
             if o.get("source") not in _NE_EXCLUDED_SOURCES
-            and not any(o.get("content_csb", "").startswith(p) for p in _NE_CONTENT_PREFIXES)
+            and not any(
+                o.get("content_csb", "").startswith(p) for p in _NE_CONTENT_PREFIXES
+            )
         ]
 
     def _is_self_diagnostic(self, text: str) -> bool:
@@ -602,11 +680,11 @@ class NarrativeEngine:
 
     def _format_obs_line(self, o: dict) -> str:
         """Format one TWM observation as a CSB line (shared by _format_obs_csb and _cap_observations)."""
-        ts   = o["timestamp"][11:16]  # HH:MM only
-        src  = o["source"]
-        sal  = f"{o['salience']:.2f}"
+        ts = o["timestamp"][11:16]  # HH:MM only
+        src = o["source"]
+        sal = f"{o['salience']:.2f}"
         intg = "✓" if o["integrated"] else "·"
-        csb  = o["content_csb"][:200]
+        csb = o["content_csb"][:200]
         return f"{intg} [{ts}] src={src} sal={sal} | {csb}"
 
     def _format_obs_csb(self, obs_list: list[dict]) -> str:
@@ -638,6 +716,7 @@ class NarrativeEngine:
         return "(none — first NE run)"
 
     def _build_prompt(self, obs_text: str, last_narrative: str) -> str:
+        cursor_ctx = self._cursor_context()
         return f"""You are the Narrative Engine for Igor, an AI agent. Your job: make sense of what Igor is experiencing.
 
 IDENTITY GUARD: The subject of all observations is IGOR (not "Claude", not "the AI", not "the model").
@@ -651,6 +730,9 @@ Do NOT produce action_impulses about the NE itself, its loop detection, or its o
 LAST NARRATIVE:
 {last_narrative}
 
+TRAVERSAL STATE (#236):
+{cursor_ctx}
+
 CURRENT TWM OBSERVATIONS (✓=integrated, ·=new):
 {obs_text}
 
@@ -662,6 +744,7 @@ Answer these three questions, then produce structured output:
 Reply with ONLY a JSON object — no other text:
 {{
   "summary_csb": "<50-100 word dense summary of Igor's current state and what it means>",
+  "thread_topic": "<3-8 word label for the thread you are following this cycle — e.g. 'language learning queue drain'>",
   "connections": ["<observation pattern or link noticed>"],
   "salience_updates": [{{"obs_id": <int>, "new_salience": <0.0-1.0>}}],
   "memory_candidates": [
@@ -676,10 +759,79 @@ Reply with ONLY a JSON object — no other text:
   "internal_state": {{"valence": <-1.0 to 1.0>, "arousal": <0.0-1.0>, "notes": "<brief>"}}
 }}"""
 
+    # ── Traversal cursor (#236) ────────────────────────────────────────────────
+
+    def _cursor_context(self) -> str:
+        """
+        #236: Format cursor state for injection into the NE prompt.
+        When oscillating, adds a directive to seek a new thread.
+        """
+        c = self._cursor
+        history = " → ".join(c.topic_history[-NE_CURSOR_HISTORY:]) or "(none)"
+        lines = [
+            f"thread_id={c.thread_id} depth={c.depth} status={c.status}",
+            f"recent_threads: {history}",
+        ]
+        if c.status == "oscillating":
+            lines.append(
+                "OSCILLATION DETECTED: you have followed this thread without new insights "
+                f"for {NE_OSCILLATION_DEPTH}+ cycles. Seek a different thread this cycle."
+            )
+        elif c.status == "converging":
+            lines.append("Thread converging well — continue deepening or consolidate.")
+        return "\n".join(lines)
+
+    def _update_cursor(self, result: dict, promoted: int) -> None:
+        """
+        #236: Update traversal cursor after each NE cycle.
+        - Reads thread_topic from NE output
+        - Detects oscillation: same topic N cycles with no new promotions
+        - Detects convergence: high promotion rate
+        - Persists cursor snapshot to ring_memory (category=ne_cursor)
+        """
+        c = self._cursor
+        topic = result.get("thread_topic", "").strip() or "(unlabelled)"
+
+        # Append to history (cap at NE_CURSOR_HISTORY)
+        c.topic_history.append(topic)
+        if len(c.topic_history) > NE_CURSOR_HISTORY:
+            c.topic_history = c.topic_history[-NE_CURSOR_HISTORY:]
+
+        c.depth += 1
+        c.promotions_this_thread += promoted
+        c.last_updated = datetime.now().isoformat()
+
+        # Oscillation detection: last N topics identical + no new promotions in this cycle
+        recent = c.topic_history[-NE_OSCILLATION_DEPTH:]
+        all_same = len(recent) >= NE_OSCILLATION_DEPTH and len(set(recent)) == 1
+        if all_same and promoted == 0:
+            c.status = "oscillating"
+        elif promoted >= 2:
+            c.status = "converging"
+        else:
+            c.status = "active"
+
+        # When oscillating, reset thread so next cycle starts fresh
+        if c.status == "oscillating":
+            c.thread_id = datetime.now().strftime("%H%M%S")
+            c.depth = 0
+            c.promotions_this_thread = 0
+
+        # Persist cursor snapshot to ring_memory for observability
+        try:
+            snapshot = (
+                f"NE_CURSOR|thread={c.thread_id}|depth={c.depth}"
+                f"|status={c.status}|topic={topic[:60]}"
+                f"|promoted={promoted}"
+            )
+            self.cortex.write_ring(snapshot, category="ne_cursor")
+        except Exception:
+            pass
+
     def _parse_ne_json(self, text: str) -> Optional[dict]:
         """Extract and parse JSON from LLM response. Returns None if unparseable."""
         start = text.find("{")
-        end   = text.rfind("}") + 1
+        end = text.rfind("}") + 1
         if start < 0 or end <= start:
             return None
         try:

@@ -450,7 +450,7 @@ class Igor:
         # Start Discord bot, unified network listener, web UI server, and model boot-check
         discord_bot.start()
         net_listener.start()
-        web_server.start(stats_fn=self.get_stats)
+        web_server.start(stats_fn=self.get_stats, cortex_fn=lambda: self.cortex)
         boot_check.start(cortex=self.cortex)
 
         is_new = (
