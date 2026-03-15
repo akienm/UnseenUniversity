@@ -47,20 +47,38 @@ _HANDLE_CACHE: dict[str, "BookHandle"] = {}
 _CALIBRE_LIBRARY = Path(
     os.getenv(
         "CALIBRE_LIBRARY_PATH",
-        str(Path.home() / ".TheIgors" / "akien" / "onedrive" /
-            "AkiensMedia" / "Ebooks" / "Calibre Portable" / "Calibre Library"),
+        str(
+            Path.home()
+            / ".TheIgors"
+            / "akien"
+            / "onedrive"
+            / "AkiensMedia"
+            / "Ebooks"
+            / "Calibre Portable"
+            / "Calibre Library"
+        ),
     )
 )
 _KINDLE_DIR = Path(
     os.getenv(
         "KINDLE_BOOKS_PATH",
-        str(Path.home() / ".TheIgors" / "akien" / "onedrive" /
-            "AkiensMedia" / "Ebooks" / "Kindle"),
+        str(
+            Path.home()
+            / ".TheIgors"
+            / "akien"
+            / "onedrive"
+            / "AkiensMedia"
+            / "Ebooks"
+            / "Kindle"
+        ),
     )
 )
 
 _INSTANCE_DIR = Path(
-    os.getenv("IGOR_DB_PATH", str(Path.home() / ".TheIgors" / "igor_wild_0001" / "wild-0001.db"))
+    os.getenv(
+        "IGOR_DB_PATH",
+        str(Path.home() / ".TheIgors" / "igor_wild_0001" / "wild-0001.db"),
+    )
 ).parent
 _READING_STATE_PATH = _INSTANCE_DIR / "reading_state.json"
 
@@ -69,12 +87,13 @@ _DEDRM_DIR = Path(__file__).parent / "ebook_drm"
 
 # ── Data structures ────────────────────────────────────────────────────────────
 
+
 @dataclass
 class BookMeta:
     title: str
     author: str
     path: Path
-    fmt: str           # epub | mobi | azw | azw3 | lit | pdf
+    fmt: str  # epub | mobi | azw | azw3 | lit | pdf
     calibre_id: int | None = None
     asin: str | None = None
 
@@ -83,13 +102,16 @@ class BookMeta:
 class BookHandle:
     meta: BookMeta
     sentences: list[str] = field(default_factory=list)
-    chapter_breaks: list[int] = field(default_factory=list)   # sentence indices where chapters start
+    chapter_breaks: list[int] = field(
+        default_factory=list
+    )  # sentence indices where chapters start
     chapter_titles: list[str] = field(default_factory=list)
     # current position
-    position: int = 0   # absolute sentence index
+    position: int = 0  # absolute sentence index
 
 
 # ── Calibre library search ─────────────────────────────────────────────────────
+
 
 def _calibre_db() -> Optional[sqlite3.Connection]:
     db_path = _CALIBRE_LIBRARY / "metadata.db"
@@ -141,15 +163,17 @@ def find_book(query: str, author: str = "") -> list[dict]:
                             fmt, name = part.split("|", 1)
                             fmts[fmt.lower()] = name
 
-                results.append({
-                    "calibre_id": bid,
-                    "title": title,
-                    "author": auth,
-                    "formats": list(fmts.keys()),
-                    "best_format": _best_format(list(fmts.keys())),
-                    "asin": asin,
-                    "_fmt_names": fmts,
-                })
+                results.append(
+                    {
+                        "calibre_id": bid,
+                        "title": title,
+                        "author": auth,
+                        "formats": list(fmts.keys()),
+                        "best_format": _best_format(list(fmts.keys())),
+                        "asin": asin,
+                        "_fmt_names": fmts,
+                    }
+                )
         finally:
             con.close()
 
@@ -158,15 +182,17 @@ def find_book(query: str, author: str = "") -> list[dict]:
         for azw in _KINDLE_DIR.rglob("*.azw"):
             stem = azw.stem.replace("_EBOK", "")
             if query.lower() in stem.lower() or stem.lower() in query.lower():
-                results.append({
-                    "calibre_id": None,
-                    "title": stem,
-                    "author": "unknown",
-                    "formats": ["azw"],
-                    "best_format": "azw",
-                    "asin": stem if stem.startswith("B0") else None,
-                    "_fmt_names": {"azw": str(azw)},
-                })
+                results.append(
+                    {
+                        "calibre_id": None,
+                        "title": stem,
+                        "author": "unknown",
+                        "formats": ["azw"],
+                        "best_format": "azw",
+                        "asin": stem if stem.startswith("B0") else None,
+                        "_fmt_names": {"azw": str(azw)},
+                    }
+                )
 
     return results
 
@@ -216,6 +242,7 @@ def _calibre_book_path(calibre_id: int, fmt: str, name: str) -> Path:
 
 # ── DRM decryption ─────────────────────────────────────────────────────────────
 
+
 def _decrypt_azw(src: Path) -> Optional[Path]:
     """
     Attempt DRM removal on a Kindle AZW/MOBI file.
@@ -231,14 +258,14 @@ def _decrypt_azw(src: Path) -> Optional[Path]:
         sys.path.insert(0, str(_DEDRM_DIR))
 
     try:
-        import kindlekey      # type: ignore
-        import k4mobidedrm    # type: ignore
+        import kindlekey  # type: ignore
+        import k4mobidedrm  # type: ignore
     except ImportError as e:
         return None
 
     # Try to get Kindle for PC keys
     try:
-        kindlekeys = kindlekey.getkey(None)   # list of (serial, key) tuples
+        kindlekeys = kindlekey.getkey(None)  # list of (serial, key) tuples
     except Exception:
         kindlekeys = []
 
@@ -261,27 +288,36 @@ def _decrypt_azw(src: Path) -> Optional[Path]:
 
 # ── Format parsers ─────────────────────────────────────────────────────────────
 
+
 def _sentences_from_text(text: str) -> list[str]:
     """Split text into sentences using nltk punkt tokenizer."""
     try:
         import nltk
+
         sentences = nltk.sent_tokenize(text)
         # Filter blanks, dedent
         return [s.strip() for s in sentences if s.strip() and len(s.strip()) > 2]
     except Exception:
         # Fallback: split on . / ! / ? followed by whitespace
-        parts = re.split(r'(?<=[.!?])\s+', text)
+        parts = re.split(r"(?<=[.!?])\s+", text)
         return [p.strip() for p in parts if p.strip() and len(p.strip()) > 2]
 
 
 def _html_to_text(html: str) -> str:
     """Strip HTML tags, decode entities, collapse whitespace."""
-    text = re.sub(r'<[^>]+>', ' ', html)
+    text = re.sub(r"<[^>]+>", " ", html)
     # Basic entity decode
-    text = text.replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>') \
-               .replace('&nbsp;', ' ').replace('&#160;', ' ').replace('&quot;', '"') \
-               .replace('&apos;', "'").replace('&#39;', "'")
-    text = re.sub(r'\s+', ' ', text)
+    text = (
+        text.replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&nbsp;", " ")
+        .replace("&#160;", " ")
+        .replace("&quot;", '"')
+        .replace("&apos;", "'")
+        .replace("&#39;", "'")
+    )
+    text = re.sub(r"\s+", " ", text)
     return text.strip()
 
 
@@ -340,8 +376,9 @@ def _parse_epub(path: Path) -> tuple[list[str], list[int], list[str]]:
         item_href = item.get_name()
         chapter_title = toc_labels.get(item_href, "")
         if not chapter_title:
-            title_match = re.search(r'<h[123][^>]*>(.*?)</h[123]>', content,
-                                    re.IGNORECASE | re.DOTALL)
+            title_match = re.search(
+                r"<h[123][^>]*>(.*?)</h[123]>", content, re.IGNORECASE | re.DOTALL
+            )
             chapter_title = (
                 _html_to_text(title_match.group(1))
                 if title_match
@@ -359,13 +396,16 @@ def _parse_mobi(path: Path) -> tuple[list[str], list[int], list[str]]:
     """Parse mobi/prc/azw into sentences. Mobi is single-document so one chapter."""
     try:
         import mobi as _mobi
+
         tmp_dir = tempfile.mkdtemp(prefix="igor_mobi_")
         _, ripped = _mobi.extract(str(path))
         # ripped is a list of (filename, content) tuples or a path
         if isinstance(ripped, str):
             html_path = Path(ripped)
             if html_path.is_dir():
-                htmls = sorted(html_path.rglob("*.html")) + sorted(html_path.rglob("*.htm"))
+                htmls = sorted(html_path.rglob("*.html")) + sorted(
+                    html_path.rglob("*.htm")
+                )
             else:
                 htmls = [html_path]
         else:
@@ -400,7 +440,7 @@ def _parse_pdf(path: Path) -> tuple[list[str], list[int], list[str]]:
         for element in page:
             if isinstance(element, LTTextContainer):
                 page_text += element.get_text()
-        page_text = re.sub(r'\s+', ' ', page_text).strip()
+        page_text = re.sub(r"\s+", " ", page_text).strip()
         if page_text:
             breaks.append(len(sentences))
             titles.append(f"Page {i + 1}")
@@ -410,6 +450,7 @@ def _parse_pdf(path: Path) -> tuple[list[str], list[int], list[str]]:
 
 
 # ── open_book ──────────────────────────────────────────────────────────────────
+
 
 def open_book(
     title: str = "",
@@ -443,7 +484,9 @@ def open_book(
             return "Calibre library not found"
         try:
             cur = con.cursor()
-            cur.execute("SELECT b.title, b.author_sort FROM books b WHERE b.id=?", (calibre_id,))
+            cur.execute(
+                "SELECT b.title, b.author_sort FROM books b WHERE b.id=?", (calibre_id,)
+            )
             row = cur.fetchone()
             if not row:
                 return f"No book with calibre_id={calibre_id}"
@@ -458,13 +501,16 @@ def open_book(
         file_path = _calibre_book_path(calibre_id, best, name)
         if not file_path.exists():
             return f"Book file not found in library: {name}.{best}"
-        meta = BookMeta(title=_title, author=_auth, path=file_path, fmt=best,
-                        calibre_id=calibre_id)
+        meta = BookMeta(
+            title=_title, author=_auth, path=file_path, fmt=best, calibre_id=calibre_id
+        )
 
     else:
         results = find_book(title, author)
         if not results:
-            return f"No books found matching '{title}'" + (f" by '{author}'" if author else "")
+            return f"No books found matching '{title}'" + (
+                f" by '{author}'" if author else ""
+            )
         best_result = results[0]
         fmt = best_result["best_format"]
         name = best_result["_fmt_names"].get(fmt, "")
@@ -491,8 +537,9 @@ def open_book(
 
     # Parse
     sentences, breaks, titles = _load_book_content(meta)
-    handle = BookHandle(meta=meta, sentences=sentences,
-                        chapter_breaks=breaks, chapter_titles=titles)
+    handle = BookHandle(
+        meta=meta, sentences=sentences, chapter_breaks=breaks, chapter_titles=titles
+    )
 
     # Restore position if resuming
     if resume:
@@ -508,9 +555,9 @@ def open_book(
     # Console note: new book vs resume
     if handle.position > 0:
         pct = round(handle.position / max(len(handle.sentences), 1) * 100, 1)
-        print(f"▶ Resuming: \"{meta.title}\" by {meta.author} ({pct}% through)")
+        print(f'▶ Resuming: "{meta.title}" by {meta.author} ({pct}% through)')
     else:
-        print(f"★ Opening: \"{meta.title}\" by {meta.author}")
+        print(f'★ Opening: "{meta.title}" by {meta.author}')
 
     # Return a serializable summary dict rather than the raw BookHandle (which can't
     # survive JSON round-trips through the tool interface).
@@ -523,7 +570,9 @@ def open_book(
         "total_sentences": len(handle.sentences),
         "total_chapters": len(handle.chapter_breaks),
         "chapter": chap_idx + 1,
-        "chapter_title": handle.chapter_titles[chap_idx] if handle.chapter_titles else "",
+        "chapter_title": (
+            handle.chapter_titles[chap_idx] if handle.chapter_titles else ""
+        ),
         "percent": round(handle.position / max(len(handle.sentences), 1) * 100, 1),
         "calibre_id": meta.calibre_id,
         "fmt": meta.fmt,
@@ -539,12 +588,13 @@ def _local_copy(path: Path) -> tuple[Path, bool]:
     try:
         # Attempt a tiny seek to probe for stale handle without reading
         with path.open("rb") as f:
-            f.seek(0, 2)   # seek to end — cheap probe
+            f.seek(0, 2)  # seek to end — cheap probe
         return path, False
     except OSError:
         pass
     # Copy to local tmp
     import shutil
+
     tmp = Path(tempfile.mktemp(suffix=path.suffix, prefix="igor_ebook_"))
     shutil.copy2(str(path), str(tmp))
     return tmp, True
@@ -600,9 +650,11 @@ def _load_book_content(
         if ebook_convert:
             tmp = Path(tempfile.mktemp(suffix=".epub"))
             import subprocess
+
             r = subprocess.run(
                 [ebook_convert, str(meta.path), str(tmp)],
-                capture_output=True, timeout=60,
+                capture_output=True,
+                timeout=60,
             )
             if r.returncode == 0 and tmp.exists():
                 result = _parse_epub(tmp)
@@ -622,10 +674,12 @@ def _load_book_content(
 
 def _find_ebook_convert() -> Optional[str]:
     import shutil
+
     return shutil.which("ebook-convert")
 
 
 # ── Reading interface ──────────────────────────────────────────────────────────
+
 
 def _resolve_handle(handle) -> "BookHandle | None":
     """
@@ -671,7 +725,9 @@ def read_chunk(handle=None, n: int = 0, handle_key: str = "", **_) -> dict:
         n = _DEFAULT_CHUNK_SIZE
     live = _resolve_handle(handle_key if handle_key else handle)
     if live is None:
-        return {"error": "Book handle not found. Call open_book() first to reopen the book."}
+        return {
+            "error": "Book handle not found. Call open_book() first to reopen the book."
+        }
     handle = live
     start = handle.position
     end = min(start + n, len(handle.sentences))
@@ -688,7 +744,9 @@ def read_chunk(handle=None, n: int = 0, handle_key: str = "", **_) -> dict:
         "position": end,
         "total_sentences": len(handle.sentences),
         "chapter": chapter_idx + 1,
-        "chapter_title": handle.chapter_titles[chapter_idx] if handle.chapter_titles else "",
+        "chapter_title": (
+            handle.chapter_titles[chapter_idx] if handle.chapter_titles else ""
+        ),
         "total_chapters": len(handle.chapter_breaks),
         "at_end": end >= len(handle.sentences),
         "percent": round(end / max(len(handle.sentences), 1) * 100, 1),
@@ -710,17 +768,26 @@ def read_chunk(handle=None, n: int = 0, handle_key: str = "", **_) -> dict:
         except Exception as _e:
             try:
                 from ..cognition.forensic_logger import log_error as _le
-                _le(kind="EBOOK_TWM_STEW_FAIL", detail=str(_e), source="ebook_reader.read_chunk")
+
+                _le(
+                    kind="EBOOK_TWM_STEW_FAIL",
+                    detail=str(_e),
+                    source="ebook_reader.read_chunk",
+                )
             except Exception:
                 pass
 
     # G54: reading → interpretive tree extraction (fire-and-forget daemon thread)
-    if (chunk and
-            os.getenv("IGOR_READING_EXTRACT", "false").lower() in ("1", "true", "yes")):
+    if chunk and os.getenv("IGOR_READING_EXTRACT", "false").lower() in (
+        "1",
+        "true",
+        "yes",
+    ):
         chunk_text = " ".join(chunk)
         word_count = len(chunk_text.split())
         if word_count >= _MIN_EXTRACT_WORDS:
             import threading as _threading
+
             _t = _threading.Thread(
                 target=_reading_extract_worker,
                 args=(
@@ -740,7 +807,9 @@ def read_chunk(handle=None, n: int = 0, handle_key: str = "", **_) -> dict:
     return result
 
 
-def jump_to(handle=None, chapter: int = 1, sentence: int = 0, handle_key: str = "", **_) -> dict:
+def jump_to(
+    handle=None, chapter: int = 1, sentence: int = 0, handle_key: str = "", **_
+) -> dict:
     """
     Jump to a specific chapter (1-indexed) and sentence offset within it.
     Accepts a BookHandle, the dict returned by open_book, or a handle_key string.
@@ -748,27 +817,33 @@ def jump_to(handle=None, chapter: int = 1, sentence: int = 0, handle_key: str = 
     """
     live = _resolve_handle(handle_key if handle_key else handle)
     if live is None:
-        return {"error": "Book handle not found. Call open_book() first to reopen the book."}
+        return {
+            "error": "Book handle not found. Call open_book() first to reopen the book."
+        }
     handle = live
     chapter_idx = max(0, min(chapter - 1, len(handle.chapter_breaks) - 1))
     chapter_start = handle.chapter_breaks[chapter_idx] if handle.chapter_breaks else 0
     handle.position = chapter_start + sentence
     _save_reading_state(handle)
-    return read_chunk(handle, n=0)   # peek without advancing
+    return read_chunk(handle, n=0)  # peek without advancing
 
 
 def reading_position(handle=None, handle_key: str = "", **_) -> dict:
     """Return current position without reading or advancing. Accepts BookHandle, open_book dict, or handle_key string."""
     live = _resolve_handle(handle_key if handle_key else handle)
     if live is None:
-        return {"error": "Book handle not found. Call open_book() first to reopen the book."}
+        return {
+            "error": "Book handle not found. Call open_book() first to reopen the book."
+        }
     handle = live
     chapter_idx = _chapter_at(handle, handle.position)
     return {
         "position": handle.position,
         "total_sentences": len(handle.sentences),
         "chapter": chapter_idx + 1,
-        "chapter_title": handle.chapter_titles[chapter_idx] if handle.chapter_titles else "",
+        "chapter_title": (
+            handle.chapter_titles[chapter_idx] if handle.chapter_titles else ""
+        ),
         "total_chapters": len(handle.chapter_breaks),
         "percent": round(handle.position / max(len(handle.sentences), 1) * 100, 1),
         "title": handle.meta.title,
@@ -799,13 +874,25 @@ _INTERP_CANDIDATES = [
     ("CP4", "Make everything suck less for everybody — reduce friction"),
     ("CP5", "Respect the possibility of experience in all systems"),
     ("CP6", "Safety must be built and maintained — not default"),
-    ("PROC_HEURISTIC_HOW_MUST",    "How must this work? — derive from necessity"),
-    ("PROC_HEURISTIC_FIRST_RESPONSE", "What's the first thing I say? — introspection tool"),
-    ("PROC_HEURISTIC_ALIGNMENT",   "Which choice aligns with who I'd most like to be?"),
-    ("PROC_HEURISTIC_FITS_HERE",   "What looks like it would fit there? — pattern completion"),
-    ("PROC_HEURISTIC_WORKAROUND",  "How could we get around that? — obstacle navigation"),
-    ("PROC_HEURISTIC_LEVER",       "Where is the lever? — leverage point scan"),
-    ("PROC_HEURISTIC_MONKEY_PROOF","How will humans screw this up? — failure simulation"),
+    ("PROC_HEURISTIC_HOW_MUST", "How must this work? — derive from necessity"),
+    (
+        "PROC_HEURISTIC_FIRST_RESPONSE",
+        "What's the first thing I say? — introspection tool",
+    ),
+    ("PROC_HEURISTIC_ALIGNMENT", "Which choice aligns with who I'd most like to be?"),
+    (
+        "PROC_HEURISTIC_FITS_HERE",
+        "What looks like it would fit there? — pattern completion",
+    ),
+    (
+        "PROC_HEURISTIC_WORKAROUND",
+        "How could we get around that? — obstacle navigation",
+    ),
+    ("PROC_HEURISTIC_LEVER", "Where is the lever? — leverage point scan"),
+    (
+        "PROC_HEURISTIC_MONKEY_PROOF",
+        "How will humans screw this up? — failure simulation",
+    ),
 ]
 
 _READING_EXTRACT_PROMPT = """\
@@ -832,23 +919,31 @@ Or respond with SKIP if the passage is transitional, repetitive, or not idea-den
 
 Respond ONLY with the JSON or SKIP."""
 
-_MIN_EXTRACT_WORDS = 20   # Don't extract from very short chunks
+_MIN_EXTRACT_WORDS = 20  # Don't extract from very short chunks
 
 # #183: Reading speed and stew cache
 # IGOR_READING_CHUNK_SIZE — default n for read_chunk (default 1 sentence)
 # IGOR_READING_STEW_TTL_SECS — how long a chunk sits in TWM stew buffer (default 600s = 10min)
 # IGOR_READING_STEW — enable/disable stew buffer push (default true)
 _DEFAULT_CHUNK_SIZE = int(os.getenv("IGOR_READING_CHUNK_SIZE", "1"))
-_STEW_TTL_SECS      = int(os.getenv("IGOR_READING_STEW_TTL_SECS", "600"))
-_STEW_ENABLED       = os.getenv("IGOR_READING_STEW", "true").lower() in ("1", "true", "yes")
+_STEW_TTL_SECS = int(os.getenv("IGOR_READING_STEW_TTL_SECS", "600"))
+_STEW_ENABLED = os.getenv("IGOR_READING_STEW", "true").lower() in ("1", "true", "yes")
+
+
+_READING_CORTEX_CACHE: dict = (
+    {}
+)  # db_path → Cortex; avoids _init_db() per read_chunk call
 
 
 def _get_cortex_for_reading():
     db_path = os.getenv("IGOR_DB_PATH", "")
     if not db_path:
         return None
-    from ..memory.cortex import Cortex
-    return Cortex(Path(db_path))
+    if db_path not in _READING_CORTEX_CACHE:
+        from ..memory.cortex import Cortex
+
+        _READING_CORTEX_CACHE[db_path] = Cortex(Path(db_path))
+    return _READING_CORTEX_CACHE[db_path]
 
 
 def _reading_extract_worker(
@@ -868,6 +963,7 @@ def _reading_extract_worker(
     """
     try:
         import urllib.request as _urlreq
+
         api_key = os.getenv("OPENROUTER_API_KEY", "")
         if not api_key:
             return
@@ -884,12 +980,14 @@ def _reading_extract_worker(
             candidates=candidates_str,
         )
 
-        payload = json.dumps({
-            "model": cheap_model,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.1,
-            "max_tokens": 220,
-        }).encode()
+        payload = json.dumps(
+            {
+                "model": cheap_model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.1,
+                "max_tokens": 220,
+            }
+        ).encode()
         req = _urlreq.Request(
             "https://openrouter.ai/api/v1/chat/completions",
             data=payload,
@@ -909,11 +1007,11 @@ def _reading_extract_worker(
             return
 
         extracted = json.loads(result)
-        narrative   = extracted.get("narrative", "").strip()
-        node_id     = extracted.get("node_id", "none").strip()
+        narrative = extracted.get("narrative", "").strip()
+        node_id = extracted.get("node_id", "none").strip()
         meaning_pay = extracted.get("meaning_payload", "").strip()
-        store_blob  = bool(extracted.get("store_blob", False))
-        confidence  = float(extracted.get("confidence", 0.5))
+        store_blob = bool(extracted.get("store_blob", False))
+        confidence = float(extracted.get("confidence", 0.5))
 
         if not narrative or confidence < 0.6:
             return
@@ -944,8 +1042,11 @@ def _reading_extract_worker(
                     narrative=narrative,
                     content=chunk_text,
                     tags=[
-                        f"reading", f"book:{title[:30]}", f"author:{author[:20]}",
-                        f"chapter:{chapter}", f"node:{node_id}",
+                        f"reading",
+                        f"book:{title[:30]}",
+                        f"author:{author[:20]}",
+                        f"chapter:{chapter}",
+                        f"node:{node_id}",
                     ],
                 )
                 mem_id = blob_mem.id
@@ -983,15 +1084,22 @@ def _reading_extract_worker(
         except Exception as _e:
             try:
                 from ..cognition.forensic_logger import log_error as _le
-                _le(kind="EBOOK_EXTRACT_STORE_FAIL", detail=str(_e), source="ebook_reader._reading_extract")
+
+                _le(
+                    kind="EBOOK_EXTRACT_STORE_FAIL",
+                    detail=str(_e),
+                    source="ebook_reader._reading_extract",
+                )
             except Exception:
                 pass
 
         try:
             from .registry import registry as _reg  # noqa — for logging only
             import sys as _sys
+
             # Use rich console if available; otherwise silent
             from rich.console import Console as _C
+
             _C().print(
                 f"[dim cyan][G54] Reading memory: {mem_id} "
                 f"node={node_id} conf={confidence:.2f} "
@@ -1003,18 +1111,23 @@ def _reading_extract_worker(
     except json.JSONDecodeError as _e:
         try:
             from rich.console import Console as _C
+
             _C().print(f"[dim red][G54] JSON parse error in reading extract: {_e}[/]")
         except Exception:
             pass
     except Exception as _e:
         try:
             from rich.console import Console as _C
-            _C().print(f"[dim red][G54] Reading extract failed: {type(_e).__name__}: {_e}[/]")
+
+            _C().print(
+                f"[dim red][G54] Reading extract failed: {type(_e).__name__}: {_e}[/]"
+            )
         except Exception:
             pass
 
 
 # ── Persistence ────────────────────────────────────────────────────────────────
+
 
 def _state_key(meta: BookMeta) -> str:
     return f"{meta.title}|{meta.author}"
@@ -1027,7 +1140,12 @@ def _load_reading_state() -> dict:
         except Exception as _e:
             try:
                 from ..cognition.forensic_logger import log_error as _le
-                _le(kind="READING_STATE_LOAD_FAIL", detail=str(_e), source="ebook_reader._load_reading_state")
+
+                _le(
+                    kind="READING_STATE_LOAD_FAIL",
+                    detail=str(_e),
+                    source="ebook_reader._load_reading_state",
+                )
             except Exception:
                 pass
     return {}
@@ -1056,82 +1174,127 @@ def list_reading_sessions() -> list[dict]:
 
 # ── Tool registration ──────────────────────────────────────────────────────────
 
-registry.register(Tool(
-    name="find_book",
-    description=(
-        "Search the Calibre ebook library and Kindle folder for books by title or author. "
-        "Returns matching books with available formats and calibre_id for opening."
-    ),
-    fn=find_book,
-    parameters={
-        "query": {"type": "string", "description": "Title keywords or author name to search"},
-        "author": {"type": "string", "description": "Optional author filter"},
-    },
-))
+registry.register(
+    Tool(
+        name="find_book",
+        description=(
+            "Search the Calibre ebook library and Kindle folder for books by title or author. "
+            "Returns matching books with available formats and calibre_id for opening."
+        ),
+        fn=find_book,
+        parameters={
+            "query": {
+                "type": "string",
+                "description": "Title keywords or author name to search",
+            },
+            "author": {"type": "string", "description": "Optional author filter"},
+        },
+    )
+)
 
-registry.register(Tool(
-    name="open_book",
-    description=(
-        "Open an ebook for reading. Returns a BookHandle for use with read_chunk. "
-        "Accepts title search, calibre_id, or explicit file path. "
-        "Restores last reading position automatically if the book was read before."
-    ),
-    fn=open_book,
-    parameters={
-        "title": {"type": "string", "description": "Book title (partial match OK)"},
-        "author": {"type": "string", "description": "Author name filter"},
-        "path": {"type": "string", "description": "Direct file path (optional)"},
-        "calibre_id": {"type": "integer", "description": "Calibre library ID (from find_book)"},
-        "resume": {"type": "boolean", "description": "Resume from last position (default true)"},
-    },
-))
+registry.register(
+    Tool(
+        name="open_book",
+        description=(
+            "Open an ebook for reading. Returns a BookHandle for use with read_chunk. "
+            "Accepts title search, calibre_id, or explicit file path. "
+            "Restores last reading position automatically if the book was read before."
+        ),
+        fn=open_book,
+        parameters={
+            "title": {"type": "string", "description": "Book title (partial match OK)"},
+            "author": {"type": "string", "description": "Author name filter"},
+            "path": {"type": "string", "description": "Direct file path (optional)"},
+            "calibre_id": {
+                "type": "integer",
+                "description": "Calibre library ID (from find_book)",
+            },
+            "resume": {
+                "type": "boolean",
+                "description": "Resume from last position (default true)",
+            },
+        },
+    )
+)
 
-registry.register(Tool(
-    name="read_chunk",
-    description=(
-        "Read the next N sentences from an open book. Advances the reading position. "
-        "Returns sentences, chapter info, and position percentage. "
-        "Pass handle_key (the string from open_book's _handle_key field) OR the full "
-        "open_book result dict as handle. "
-        "n=0 uses IGOR_READING_CHUNK_SIZE env var (default 1, adjustable per session). "
-        "Use n=5-15 for faster reading; each chunk is pushed to TWM stew buffer (IGOR_READING_STEW_TTL_SECS, default 10min) for NE processing. (#183)"
-    ),
-    fn=read_chunk,
-    parameters={
-        "handle_key": {"type": "string", "description": "The _handle_key string returned by open_book (preferred)"},
-        "handle": {"type": "object", "description": "Full open_book result dict (alternative to handle_key)"},
-        "n": {"type": "integer", "description": "Number of sentences to read (default 1)"},
-    },
-))
+registry.register(
+    Tool(
+        name="read_chunk",
+        description=(
+            "Read the next N sentences from an open book. Advances the reading position. "
+            "Returns sentences, chapter info, and position percentage. "
+            "Pass handle_key (the string from open_book's _handle_key field) OR the full "
+            "open_book result dict as handle. "
+            "n=0 uses IGOR_READING_CHUNK_SIZE env var (default 1, adjustable per session). "
+            "Use n=5-15 for faster reading; each chunk is pushed to TWM stew buffer (IGOR_READING_STEW_TTL_SECS, default 10min) for NE processing. (#183)"
+        ),
+        fn=read_chunk,
+        parameters={
+            "handle_key": {
+                "type": "string",
+                "description": "The _handle_key string returned by open_book (preferred)",
+            },
+            "handle": {
+                "type": "object",
+                "description": "Full open_book result dict (alternative to handle_key)",
+            },
+            "n": {
+                "type": "integer",
+                "description": "Number of sentences to read (default 1)",
+            },
+        },
+    )
+)
 
-registry.register(Tool(
-    name="jump_to_chapter",
-    description="Jump to a specific chapter (and optional sentence offset within it) in an open book.",
-    fn=jump_to,
-    parameters={
-        "handle_key": {"type": "string", "description": "The _handle_key string returned by open_book (preferred)"},
-        "handle": {"type": "object", "description": "Full open_book result dict (alternative to handle_key)"},
-        "chapter": {"type": "integer", "description": "Chapter number (1-indexed)"},
-        "sentence": {"type": "integer", "description": "Sentence offset within chapter (default 0)"},
-    },
-))
+registry.register(
+    Tool(
+        name="jump_to_chapter",
+        description="Jump to a specific chapter (and optional sentence offset within it) in an open book.",
+        fn=jump_to,
+        parameters={
+            "handle_key": {
+                "type": "string",
+                "description": "The _handle_key string returned by open_book (preferred)",
+            },
+            "handle": {
+                "type": "object",
+                "description": "Full open_book result dict (alternative to handle_key)",
+            },
+            "chapter": {"type": "integer", "description": "Chapter number (1-indexed)"},
+            "sentence": {
+                "type": "integer",
+                "description": "Sentence offset within chapter (default 0)",
+            },
+        },
+    )
+)
 
-registry.register(Tool(
-    name="reading_position",
-    description="Return current reading position (chapter, sentence, percent) without advancing.",
-    fn=reading_position,
-    parameters={
-        "handle_key": {"type": "string", "description": "The _handle_key string returned by open_book (preferred)"},
-        "handle": {"type": "object", "description": "Full open_book result dict (alternative to handle_key)"},
-    },
-))
+registry.register(
+    Tool(
+        name="reading_position",
+        description="Return current reading position (chapter, sentence, percent) without advancing.",
+        fn=reading_position,
+        parameters={
+            "handle_key": {
+                "type": "string",
+                "description": "The _handle_key string returned by open_book (preferred)",
+            },
+            "handle": {
+                "type": "object",
+                "description": "Full open_book result dict (alternative to handle_key)",
+            },
+        },
+    )
+)
 
-registry.register(Tool(
-    name="list_reading_sessions",
-    description="Show all books Igor has started reading, with current position and progress.",
-    fn=list_reading_sessions,
-    parameters={},
-))
+registry.register(
+    Tool(
+        name="list_reading_sessions",
+        description="Show all books Igor has started reading, with current position and progress.",
+        fn=list_reading_sessions,
+        parameters={},
+    )
+)
 
 
 def list_reading_memories(book_title: str = "", limit: int = 20, **_) -> str:
@@ -1168,7 +1331,9 @@ def list_reading_memories(book_title: str = "", limit: int = 20, **_) -> str:
                 ).fetchall()
         if not rows:
             filter_str = f" for '{book_title}'" if book_title else ""
-            return f"No reading memories found{filter_str}. Is IGOR_READING_EXTRACT=true?"
+            return (
+                f"No reading memories found{filter_str}. Is IGOR_READING_EXTRACT=true?"
+            )
         lines = [f"Reading memories ({len(rows)} shown):"]
         for r in rows:
             try:
@@ -1187,31 +1352,44 @@ def list_reading_memories(book_title: str = "", limit: int = 20, **_) -> str:
         return f"Error listing reading memories: {e}"
 
 
-registry.register(Tool(
-    name="list_reading_memories",
-    description=(
-        "G54: List memories extracted from reading sessions (source='reading'). "
-        "Filter by book_title to see what was learned from a specific book. "
-        "Use to review extraction quality and tune IGOR_READING_EXTRACT."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "book_title": {"type": "string", "description": "Filter by book title (partial match OK)"},
-            "limit": {"type": "integer", "description": "Max results (default 20)", "default": 20},
+registry.register(
+    Tool(
+        name="list_reading_memories",
+        description=(
+            "G54: List memories extracted from reading sessions (source='reading'). "
+            "Filter by book_title to see what was learned from a specific book. "
+            "Use to review extraction quality and tune IGOR_READING_EXTRACT."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "book_title": {
+                    "type": "string",
+                    "description": "Filter by book title (partial match OK)",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Max results (default 20)",
+                    "default": 20,
+                },
+            },
+            "required": [],
         },
-        "required": [],
-    },
-    fn=list_reading_memories,
-))
+        fn=list_reading_memories,
+    )
+)
 
 
 # ── Web / URL reading ──────────────────────────────────────────────────────────
 
+
 def _fetch_url_content(url: str) -> tuple[list[str], list[int], list[str]]:
     """Fetch a URL and return (sentences, chapter_breaks, chapter_titles)."""
     import urllib.request as _urlreq
-    req = _urlreq.Request(url, headers={"User-Agent": "Igor/1.0 (+https://github.com/akienm/TheIgors)"})
+
+    req = _urlreq.Request(
+        url, headers={"User-Agent": "Igor/1.0 (+https://github.com/akienm/TheIgors)"}
+    )
     with _urlreq.urlopen(req, timeout=30) as resp:
         content_type = resp.headers.get("Content-Type", "text/html")
         raw = resp.read().decode("utf-8", errors="replace")
@@ -1233,7 +1411,9 @@ def open_book_url(url: str, title: str = "", author: str = "") -> dict | str:
     _title = title or url.split("/")[-1] or url
     _author = author or "web"
     meta = BookMeta(title=_title, author=_author, path=Path(url), fmt="web")
-    handle = BookHandle(meta=meta, sentences=sentences, chapter_breaks=breaks, chapter_titles=titles)
+    handle = BookHandle(
+        meta=meta, sentences=sentences, chapter_breaks=breaks, chapter_titles=titles
+    )
 
     state = _load_reading_state()
     key = _state_key(meta)
@@ -1286,47 +1466,54 @@ def open_book_gutenberg(query: str) -> dict | str:
         author = authors[0].get("name", "") if authors else ""
         formats = book.get("formats", {})
         txt_url = (
-            formats.get("text/plain; charset=utf-8") or
-            formats.get("text/plain; charset=us-ascii") or
-            formats.get("text/plain") or
-            f"https://www.gutenberg.org/cache/epub/{book_id}/pg{book_id}.txt"
+            formats.get("text/plain; charset=utf-8")
+            or formats.get("text/plain; charset=us-ascii")
+            or formats.get("text/plain")
+            or f"https://www.gutenberg.org/cache/epub/{book_id}/pg{book_id}.txt"
         )
         return open_book_url(txt_url, title=title, author=author)
     except Exception as e:
         return f"Gutenberg search failed: {e}"
 
 
-registry.register(Tool(
-    name="open_book_url",
-    description=(
-        "Open any web URL as a readable book — plain text, HTML pages, Internet Archive, etc. "
-        "Returns same dict as open_book(); use read_chunk() to read sentence by sentence. "
-        "Reading position is saved across sessions."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "url":    {"type": "string", "description": "HTTP/HTTPS URL to fetch"},
-            "title":  {"type": "string", "description": "Optional title override"},
-            "author": {"type": "string", "description": "Optional author override"},
+registry.register(
+    Tool(
+        name="open_book_url",
+        description=(
+            "Open any web URL as a readable book — plain text, HTML pages, Internet Archive, etc. "
+            "Returns same dict as open_book(); use read_chunk() to read sentence by sentence. "
+            "Reading position is saved across sessions."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "url": {"type": "string", "description": "HTTP/HTTPS URL to fetch"},
+                "title": {"type": "string", "description": "Optional title override"},
+                "author": {"type": "string", "description": "Optional author override"},
+            },
+            "required": ["url"],
         },
-        "required": ["url"],
-    },
-    fn=open_book_url,
-))
+        fn=open_book_url,
+    )
+)
 
-registry.register(Tool(
-    name="open_book_gutenberg",
-    description=(
-        "Open a Project Gutenberg book by numeric ID (e.g. '1342') or title search (e.g. 'pride and prejudice'). "
-        "Searches gutendex.com API for title queries. Returns same dict as open_book(); use read_chunk() to read."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "query": {"type": "string", "description": "Gutenberg book ID (number) or title/author keywords"},
+registry.register(
+    Tool(
+        name="open_book_gutenberg",
+        description=(
+            "Open a Project Gutenberg book by numeric ID (e.g. '1342') or title search (e.g. 'pride and prejudice'). "
+            "Searches gutendex.com API for title queries. Returns same dict as open_book(); use read_chunk() to read."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Gutenberg book ID (number) or title/author keywords",
+                },
+            },
+            "required": ["query"],
         },
-        "required": ["query"],
-    },
-    fn=open_book_gutenberg,
-))
+        fn=open_book_gutenberg,
+    )
+)
