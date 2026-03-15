@@ -40,6 +40,7 @@ def read_file(path: str) -> str:
         if target.suffix.lower() == ".pdf":
             try:
                 import pypdf
+
                 reader = pypdf.PdfReader(str(target))
                 pages = []
                 for i, page in enumerate(reader.pages):
@@ -109,9 +110,18 @@ def read_system_file(path: str) -> str:
         if target.suffix.lower() == ".pdf":
             try:
                 import pypdf
+
                 reader = pypdf.PdfReader(str(target))
-                pages = [f"--- Page {i+1} ---\n{p.extract_text()}" for i, p in enumerate(reader.pages) if p.extract_text()]
-                return "\n\n".join(pages) if pages else "Error: PDF has no extractable text."
+                pages = [
+                    f"--- Page {i+1} ---\n{p.extract_text()}"
+                    for i, p in enumerate(reader.pages)
+                    if p.extract_text()
+                ]
+                return (
+                    "\n\n".join(pages)
+                    if pages
+                    else "Error: PDF has no extractable text."
+                )
             except ImportError:
                 return "Error: pypdf not installed."
             except Exception as e:
@@ -128,7 +138,9 @@ def list_system_dir(path: str) -> str:
     try:
         target = Path(path).resolve()
         if not target.is_absolute():
-            return "Error: list_system_dir requires an absolute path (e.g. /home/akien)."
+            return (
+                "Error: list_system_dir requires an absolute path (e.g. /home/akien)."
+            )
         if not target.exists():
             return f"Error: Not found: {path}"
         if not target.is_dir():
@@ -170,7 +182,7 @@ def read_pdf_pages(path: str, start_page: int = 1, end_page: int = 0) -> str:
         if end_page <= 0:
             end_page = start_page
         start_page = max(1, start_page)
-        end_page   = min(total, end_page)
+        end_page = min(total, end_page)
         if start_page > total:
             return f"Error: start_page {start_page} exceeds total pages ({total})."
         pages = []
@@ -179,8 +191,10 @@ def read_pdf_pages(path: str, start_page: int = 1, end_page: int = 0) -> str:
             if text and text.strip():
                 pages.append(f"--- Page {i+1}/{total} ---\n{text.strip()}")
         if not pages:
-            return (f"[PDF: {path} | total_pages={total} | "
-                    f"pages {start_page}-{end_page} have no extractable text]")
+            return (
+                f"[PDF: {path} | total_pages={total} | "
+                f"pages {start_page}-{end_page} have no extractable text]"
+            )
         header = f"[PDF: {path} | total_pages={total} | showing pages {start_page}-{end_page}]\n\n"
         return header + "\n\n".join(pages)
     except PermissionError as e:
@@ -194,10 +208,10 @@ def check_disk_usage() -> str:
     Check disk free space for Igor's key paths.
     Returns a summary with warnings if below thresholds.
     """
-    warn_gb   = float(os.getenv("IGOR_DISK_WARN_GB", "1.0"))
-    crit_gb   = float(os.getenv("IGOR_DISK_CRITICAL_GB", "0.2"))
+    warn_gb = float(os.getenv("IGOR_DISK_WARN_GB", "1.0"))
+    crit_gb = float(os.getenv("IGOR_DISK_CRITICAL_GB", "0.2"))
     igor_home = Path.home() / ".TheIgors"
-    src_home  = Path.home() / "TheIgors"
+    src_home = Path.home() / "TheIgors"
 
     paths = [
         ("runtime (~/.TheIgors)", igor_home),
@@ -210,8 +224,8 @@ def check_disk_usage() -> str:
     for label, p in paths:
         try:
             usage = shutil.disk_usage(str(p))
-            free_gb  = usage.free  / (1024 ** 3)
-            total_gb = usage.total / (1024 ** 3)
+            free_gb = usage.free / (1024**3)
+            total_gb = usage.total / (1024**3)
             used_pct = (usage.used / usage.total * 100) if usage.total else 0
             status = ""
             if free_gb < crit_gb:
@@ -220,7 +234,9 @@ def check_disk_usage() -> str:
             elif free_gb < warn_gb:
                 status = " ⚠ WARN"
                 alerts.append(f"WARN: {label} has only {free_gb:.2f} GB free")
-            lines.append(f"  {label}: {free_gb:.2f} GB free / {total_gb:.1f} GB total ({used_pct:.0f}% used){status}")
+            lines.append(
+                f"  {label}: {free_gb:.2f} GB free / {total_gb:.1f} GB total ({used_pct:.0f}% used){status}"
+            )
         except Exception as e:
             lines.append(f"  {label}: error — {e}")
 
@@ -256,31 +272,31 @@ def check_resource_load() -> str:
 
     # RAM
     vm = psutil.virtual_memory()
-    ram_total_gb  = vm.total    / (1024 ** 3)
-    ram_used_gb   = vm.used     / (1024 ** 3)
-    ram_avail_gb  = vm.available / (1024 ** 3)
-    ram_pct       = vm.percent
+    ram_total_gb = vm.total / (1024**3)
+    ram_used_gb = vm.used / (1024**3)
+    ram_avail_gb = vm.available / (1024**3)
+    ram_pct = vm.percent
 
     # Swap
     sw = psutil.swap_memory()
-    swap_total_gb = sw.total / (1024 ** 3)
-    swap_used_gb  = sw.used  / (1024 ** 3)
-    swap_free_gb  = sw.free  / (1024 ** 3)
-    swap_pct      = sw.percent
+    swap_total_gb = sw.total / (1024**3)
+    swap_used_gb = sw.used / (1024**3)
+    swap_free_gb = sw.free / (1024**3)
+    swap_pct = sw.percent
 
     # This process's own footprint
     try:
         proc = psutil.Process(os.getpid())
-        self_rss_mb = proc.memory_info().rss / (1024 ** 2)
+        self_rss_mb = proc.memory_info().rss / (1024**2)
     except Exception:
         self_rss_mb = 0.0
 
     # Thresholds (overridable via env)
-    _cpu_warn  = float(os.getenv("IGOR_LOAD_CPU_WARN",  "80"))   # % of all cores
-    _cpu_crit  = float(os.getenv("IGOR_LOAD_CPU_CRIT",  "95"))
-    _ram_warn  = float(os.getenv("IGOR_LOAD_RAM_WARN",  "80"))   # % RAM used
-    _ram_crit  = float(os.getenv("IGOR_LOAD_RAM_CRIT",  "92"))
-    _swap_warn = float(os.getenv("IGOR_LOAD_SWAP_WARN", "40"))   # % swap used
+    _cpu_warn = float(os.getenv("IGOR_LOAD_CPU_WARN", "80"))  # % of all cores
+    _cpu_crit = float(os.getenv("IGOR_LOAD_CPU_CRIT", "95"))
+    _ram_warn = float(os.getenv("IGOR_LOAD_RAM_WARN", "80"))  # % RAM used
+    _ram_crit = float(os.getenv("IGOR_LOAD_RAM_CRIT", "92"))
+    _swap_warn = float(os.getenv("IGOR_LOAD_SWAP_WARN", "40"))  # % swap used
     _swap_crit = float(os.getenv("IGOR_LOAD_SWAP_CRIT", "75"))
 
     alerts = []
@@ -301,16 +317,20 @@ def check_resource_load() -> str:
         verdict = max(verdict, "warn")
 
     if swap_pct >= _swap_crit:
-        alerts.append(f"Swap critical: {swap_pct:.0f}% used ({swap_free_gb:.1f} GB free) — "
-                      "bulk operations risk thrashing")
+        alerts.append(
+            f"Swap critical: {swap_pct:.0f}% used ({swap_free_gb:.1f} GB free) — "
+            "bulk operations risk thrashing"
+        )
         verdict = "critical"
     elif swap_pct >= _swap_warn:
-        alerts.append(f"Swap elevated: {swap_pct:.0f}% used ({swap_free_gb:.1f} GB free)")
+        alerts.append(
+            f"Swap elevated: {swap_pct:.0f}% used ({swap_free_gb:.1f} GB free)"
+        )
         verdict = max(verdict, "warn")
 
     _verdict_note = {
-        "ok":       "System is healthy — bulk operations are fine.",
-        "warn":     "System under moderate load — consider deferring large batch work.",
+        "ok": "System is healthy — bulk operations are fine.",
+        "warn": "System under moderate load — consider deferring large batch work.",
         "critical": "System under heavy load — defer bulk/training operations now.",
     }[verdict]
 
@@ -336,42 +356,57 @@ def _resource_load_dict() -> dict:
     """
     Return raw resource metrics as a dict for programmatic threshold evaluation.
     Keys: cpu_load_pct, ram_pct, ram_avail_gb, swap_pct, swap_free_gb,
-          igor_rss_mb, verdict (ok/warn/critical).
+          igor_rss_mb, verdict (ok/warn/critical), night_mode (1 if 22:00-07:00 else 0).
     Returns empty dict if psutil unavailable.
     """
     try:
         import psutil as _ps
+
         load1, _, _ = os.getloadavg()
         ncpus = os.cpu_count() or 1
         cpu_load_pct = load1 / ncpus * 100
         vm = _ps.virtual_memory()
         sw = _ps.swap_memory()
         try:
-            self_rss_mb = _ps.Process(os.getpid()).memory_info().rss / (1024 ** 2)
+            self_rss_mb = _ps.Process(os.getpid()).memory_info().rss / (1024**2)
         except Exception:
             self_rss_mb = 0.0
 
-        _cpu_warn  = float(os.getenv("IGOR_LOAD_CPU_WARN",  "80"))
-        _cpu_crit  = float(os.getenv("IGOR_LOAD_CPU_CRIT",  "95"))
-        _ram_warn  = float(os.getenv("IGOR_LOAD_RAM_WARN",  "80"))
-        _ram_crit  = float(os.getenv("IGOR_LOAD_RAM_CRIT",  "92"))
+        _cpu_warn = float(os.getenv("IGOR_LOAD_CPU_WARN", "80"))
+        _cpu_crit = float(os.getenv("IGOR_LOAD_CPU_CRIT", "95"))
+        _ram_warn = float(os.getenv("IGOR_LOAD_RAM_WARN", "80"))
+        _ram_crit = float(os.getenv("IGOR_LOAD_RAM_CRIT", "92"))
         _swap_warn = float(os.getenv("IGOR_LOAD_SWAP_WARN", "40"))
         _swap_crit = float(os.getenv("IGOR_LOAD_SWAP_CRIT", "75"))
 
         verdict = "ok"
-        if cpu_load_pct >= _cpu_crit or vm.percent >= _ram_crit or sw.percent >= _swap_crit:
+        if (
+            cpu_load_pct >= _cpu_crit
+            or vm.percent >= _ram_crit
+            or sw.percent >= _swap_crit
+        ):
             verdict = "critical"
-        elif cpu_load_pct >= _cpu_warn or vm.percent >= _ram_warn or sw.percent >= _swap_warn:
+        elif (
+            cpu_load_pct >= _cpu_warn
+            or vm.percent >= _ram_warn
+            or sw.percent >= _swap_warn
+        ):
             verdict = "warn"
 
+        import datetime as _dt
+
+        _hour = _dt.datetime.now().hour
+        _night_mode = 1 if (_hour >= 22 or _hour < 7) else 0
+
         return {
-            "cpu_load_pct":  round(cpu_load_pct, 1),
-            "ram_pct":       round(vm.percent, 1),
-            "ram_avail_gb":  round(vm.available / (1024 ** 3), 2),
-            "swap_pct":      round(sw.percent, 1),
-            "swap_free_gb":  round(sw.free / (1024 ** 3), 2),
-            "igor_rss_mb":   round(self_rss_mb, 1),
-            "verdict":       verdict,
+            "cpu_load_pct": round(cpu_load_pct, 1),
+            "ram_pct": round(vm.percent, 1),
+            "ram_avail_gb": round(vm.available / (1024**3), 2),
+            "swap_pct": round(sw.percent, 1),
+            "swap_free_gb": round(sw.free / (1024**3), 2),
+            "igor_rss_mb": round(self_rss_mb, 1),
+            "verdict": verdict,
+            "night_mode": _night_mode,
         }
     except Exception:
         return {}
@@ -383,7 +418,9 @@ def evaluate_threshold_habits(habits: list) -> list[dict]:
     Returns list of {habit, current_value, field, raw} for each tripped habit.
     Callers: ResourceMonitorSource (background poll) + pre-submit check in main.py.
     """
-    threshold_habits = [h for h in habits if h.metadata.get("habit_type") == "threshold"]
+    threshold_habits = [
+        h for h in habits if h.metadata.get("habit_type") == "threshold"
+    ]
     if not threshold_habits:
         return []
     raw = _resource_load_dict()
@@ -392,7 +429,7 @@ def evaluate_threshold_habits(habits: list) -> list[dict]:
     tripped = []
     for habit in threshold_habits:
         field = habit.metadata.get("condition_field")
-        op    = habit.metadata.get("condition_op", ">=")
+        op = habit.metadata.get("condition_op", ">=")
         value = habit.metadata.get("condition_value")
         if field is None or value is None:
             continue
@@ -401,152 +438,190 @@ def evaluate_threshold_habits(habits: list) -> list[dict]:
             continue
         hit = (
             (op == ">=" and current >= value)
-            or (op == ">"  and current >  value)
+            or (op == ">" and current > value)
             or (op == "<=" and current <= value)
-            or (op == "<"  and current <  value)
+            or (op == "<" and current < value)
         )
         if hit:
-            tripped.append({"habit": habit, "current_value": current,
-                            "field": field, "raw": raw})
+            tripped.append(
+                {"habit": habit, "current_value": current, "field": field, "raw": raw}
+            )
     return tripped
 
 
 # Register tools
-registry.register(Tool(
-    name="read_file",
-    description=(
-        "Read a file. Paths are relative to workspace root /home/akien. "
-        "Examples: 'TheIgors/thoughts/filename.md', 'TheIgors/design_docs/decisions_log.csb.txt'. "
-        "Use list_directory to discover what's available."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "path": {"type": "string", "description": "Relative path from /home/akien"},
+registry.register(
+    Tool(
+        name="read_file",
+        description=(
+            "Read a file. Paths are relative to workspace root /home/akien. "
+            "Examples: 'TheIgors/thoughts/filename.md', 'TheIgors/design_docs/decisions_log.csb.txt'. "
+            "Use list_directory to discover what's available."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Relative path from /home/akien",
+                },
+            },
+            "required": ["path"],
         },
-        "required": ["path"],
-    },
-    fn=read_file,
-))
+        fn=read_file,
+    )
+)
 
-registry.register(Tool(
-    name="write_file",
-    description=(
-        "Write content to a file. Paths are relative to workspace root /home/akien. "
-        "Can write to TheIgors/thoughts/ and TheIgors/design_docs/ — use this to update "
-        "design documents, capture thoughts, or reorganize the thoughts folder. "
-        "Creates directories as needed."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "path": {"type": "string", "description": "Relative path from /home/akien"},
-            "content": {"type": "string", "description": "Content to write"},
+registry.register(
+    Tool(
+        name="write_file",
+        description=(
+            "Write content to a file. Paths are relative to workspace root /home/akien. "
+            "Can write to TheIgors/thoughts/ and TheIgors/design_docs/ — use this to update "
+            "design documents, capture thoughts, or reorganize the thoughts folder. "
+            "Creates directories as needed."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Relative path from /home/akien",
+                },
+                "content": {"type": "string", "description": "Content to write"},
+            },
+            "required": ["path", "content"],
         },
-        "required": ["path", "content"],
-    },
-    fn=write_file,
-))
+        fn=write_file,
+    )
+)
 
-registry.register(Tool(
-    name="list_directory",
-    description=(
-        "List contents of a directory. Paths are relative to workspace root /home/akien. "
-        "Try 'TheIgors/thoughts' or 'TheIgors/design_docs' to see available documents."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "path": {"type": "string", "description": "Relative directory path. Defaults to workspace root."},
+registry.register(
+    Tool(
+        name="list_directory",
+        description=(
+            "List contents of a directory. Paths are relative to workspace root /home/akien. "
+            "Try 'TheIgors/thoughts' or 'TheIgors/design_docs' to see available documents."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Relative directory path. Defaults to workspace root.",
+                },
+            },
+            "required": [],
         },
-        "required": [],
-    },
-    fn=list_directory,
-))
+        fn=list_directory,
+    )
+)
 
-registry.register(Tool(
-    name="read_system_file",
-    description=(
-        "Read any file on akiendelllinux's filesystem (read-only). "
-        "Absolute path required (e.g. /etc/hostname, /proc/cpuinfo, /home/akien/.bashrc). "
-        "Use this to learn about the machine, installed software, config files, and OneDrive share paths."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "path": {"type": "string", "description": "Absolute path to the file"},
+registry.register(
+    Tool(
+        name="read_system_file",
+        description=(
+            "Read any file on akiendelllinux's filesystem (read-only). "
+            "Absolute path required (e.g. /etc/hostname, /proc/cpuinfo, /home/akien/.bashrc). "
+            "Use this to learn about the machine, installed software, config files, and OneDrive share paths."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "Absolute path to the file"},
+            },
+            "required": ["path"],
         },
-        "required": ["path"],
-    },
-    fn=read_system_file,
-))
+        fn=read_system_file,
+    )
+)
 
-registry.register(Tool(
-    name="list_system_dir",
-    description=(
-        "List a directory anywhere on akiendelllinux's filesystem (read-only). "
-        "Absolute path required (e.g. /home/akien, /mnt, /etc). "
-        "Use this to discover mount points, installed packages, OneDrive share location, etc."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "path": {"type": "string", "description": "Absolute path to the directory"},
+registry.register(
+    Tool(
+        name="list_system_dir",
+        description=(
+            "List a directory anywhere on akiendelllinux's filesystem (read-only). "
+            "Absolute path required (e.g. /home/akien, /mnt, /etc). "
+            "Use this to discover mount points, installed packages, OneDrive share location, etc."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Absolute path to the directory",
+                },
+            },
+            "required": ["path"],
         },
-        "required": ["path"],
-    },
-    fn=list_system_dir,
-))
+        fn=list_system_dir,
+    )
+)
 
-registry.register(Tool(
-    name="read_pdf_pages",
-    description=(
-        "Read specific pages from a PDF file (1-based page numbers). "
-        "Use this to read a book or document one page at a time — read page 1, discuss, "
-        "then read page 2, etc. Returns page text plus total_pages so you can track your cursor. "
-        "Paths are relative to workspace root /home/akien. "
-        "Example: read pages 1-2 of TheIgorsProject/akien/Readings/SomeBook.pdf"
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "path":       {"type": "string",  "description": "Relative path from /home/akien"},
-            "start_page": {"type": "integer", "description": "First page to read (1-based). Default: 1"},
-            "end_page":   {"type": "integer", "description": "Last page to read (inclusive). 0 = same as start_page. Default: 0"},
+registry.register(
+    Tool(
+        name="read_pdf_pages",
+        description=(
+            "Read specific pages from a PDF file (1-based page numbers). "
+            "Use this to read a book or document one page at a time — read page 1, discuss, "
+            "then read page 2, etc. Returns page text plus total_pages so you can track your cursor. "
+            "Paths are relative to workspace root /home/akien. "
+            "Example: read pages 1-2 of TheIgorsProject/akien/Readings/SomeBook.pdf"
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Relative path from /home/akien",
+                },
+                "start_page": {
+                    "type": "integer",
+                    "description": "First page to read (1-based). Default: 1",
+                },
+                "end_page": {
+                    "type": "integer",
+                    "description": "Last page to read (inclusive). 0 = same as start_page. Default: 0",
+                },
+            },
+            "required": ["path"],
         },
-        "required": ["path"],
-    },
-    fn=read_pdf_pages,
-))
+        fn=read_pdf_pages,
+    )
+)
 
-registry.register(Tool(
-    name="check_disk_usage",
-    description=(
-        "Check free disk space for Igor's key paths (~/.TheIgors, ~/TheIgors, /). "
-        "Returns usage summary with warnings if below IGOR_DISK_WARN_GB (default 1GB) "
-        "or IGOR_DISK_CRITICAL_GB (default 0.2GB) thresholds. "
-        "Call this after large ingestion tasks or whenever storage feels tight."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {},
-        "required": [],
-    },
-    fn=check_disk_usage,
-))
+registry.register(
+    Tool(
+        name="check_disk_usage",
+        description=(
+            "Check free disk space for Igor's key paths (~/.TheIgors, ~/TheIgors, /). "
+            "Returns usage summary with warnings if below IGOR_DISK_WARN_GB (default 1GB) "
+            "or IGOR_DISK_CRITICAL_GB (default 0.2GB) thresholds. "
+            "Call this after large ingestion tasks or whenever storage feels tight."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        fn=check_disk_usage,
+    )
+)
 
-registry.register(Tool(
-    name="check_resource_load",
-    description=(
-        "Report current CPU, RAM, and swap load on this machine. "
-        "Call this before starting bulk operations (training fetches, batch jobs, "
-        "large background tasks) to check if the system can handle the load. "
-        "Returns a verdict: ok / warn / critical with plain-language guidance."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {},
-        "required": [],
-    },
-    fn=check_resource_load,
-))
+registry.register(
+    Tool(
+        name="check_resource_load",
+        description=(
+            "Report current CPU, RAM, and swap load on this machine. "
+            "Call this before starting bulk operations (training fetches, batch jobs, "
+            "large background tasks) to check if the system can handle the load. "
+            "Returns a verdict: ok / warn / critical with plain-language guidance."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        fn=check_resource_load,
+    )
+)

@@ -23,7 +23,7 @@ from .registry import Tool, registry
 from ..cognition.forensic_logger import log_self_edit
 
 SOURCE_ROOT = Path(__file__).parent.parent  # wild_igor/igor/
-REPO_ROOT = SOURCE_ROOT.parent              # wild_igor/
+REPO_ROOT = SOURCE_ROOT.parent  # wild_igor/
 
 # Paths Igor may READ but never WRITE (change.26).
 # Core patterns can only be changed by akien via Claude Code.
@@ -87,6 +87,7 @@ def _is_write_excluded(path: str) -> bool:
 def _log_blocked_edit(path: str):
     """Append a blocked-write record to the instance log file (change.26)."""
     from datetime import datetime
+
     log_path = Path.home() / ".TheIgors" / "igor_wild_0001" / "blocked_edits.log"
     try:
         log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -116,34 +117,81 @@ def _path_to_module_name(rel_path: str) -> str:
     return f"wild_igor.igor.{name}"
 
 
-def _try_hot_reload(path: str, label: str) -> str:
+def _get_self_edit_cortex():
+    """Return a Cortex instance for self-edit memory writes. None if DB path unset."""
+    db_path = os.getenv("IGOR_DB_PATH", "")
+    if not db_path:
+        return None
+    try:
+        from ..memory.cortex import Cortex
+
+        return Cortex(Path(db_path))
+    except Exception:
+        return None
+
+
+def _push_edit_episodic(path: str, reason: str) -> str:
+    """Push an EPISODIC memory of the self-edit (D070). Returns a status line."""
+    try:
+        _cortex = _get_self_edit_cortex()
+        if _cortex is None:
+            return ""
+        from ..memory.models import Memory, MemoryType
+
+        mem = Memory(
+            narrative=f"self-edited igor/{path} — {reason[:120]}",
+            memory_type=MemoryType.EPISODIC,
+            portable=False,
+            source="self_edit",
+            context_of_encoding=f"self_edit|{path}",
+        )
+        _cortex.store(mem)
+        return f"\n📝 Episodic memory stored ({mem.id})."
+    except Exception as exc:
+        return f"\n⚠️  Episodic memory failed ({exc})."
+
+
+def _try_hot_reload(path: str, label: str, reason: str = "") -> str:
     """
-    After a successful self-edit, attempt hot-reload if gate is open and inertia is LOW.
-    Returns a status line to append to the edit result.
+    After a successful self-edit: push EPISODIC memory (D070) then attempt hot-reload
+    if gate is open and inertia is LOW. Returns a status line to append to the edit result.
     """
+    memory_status = _push_edit_episodic(path, reason)
+
     gate = os.getenv("IGOR_HOT_RELOAD", "false").strip().lower()
     if gate not in ("true", "1", "yes"):
-        return "\n⟳ Restart Igor for changes to take effect."
+        return memory_status + "\n⟳ Restart Igor for changes to take effect."
     if label != "LOW":
-        return "\n⟳ Restart Igor for changes to take effect (MEDIUM/HIGH inertia — hot-reload skipped)."
+        return (
+            memory_status
+            + "\n⟳ Restart Igor for changes to take effect (MEDIUM/HIGH inertia — hot-reload skipped)."
+        )
     module_name = _path_to_module_name(path)
     try:
         from .hot_reload import reload_module as _reload_module
+
         result = _reload_module(module_name)
         log_self_edit(file=path, change_summary=f"hot_reload: {result}")
-        return f"\n⟳ Hot-reload: {result}"
+        return memory_status + f"\n⟳ Hot-reload: {result}"
     except Exception as exc:
-        return f"\n⟳ Hot-reload failed ({exc}) — restart Igor for changes to take effect."
+        return (
+            memory_status
+            + f"\n⟳ Hot-reload failed ({exc}) — restart Igor for changes to take effect."
+        )
 
 
 def _inertia_warning(path: str, inertia: float, label: str) -> str:
     if label == "HIGH":
-        return (f"\n⚠️  INERTIA WARNING: {path} has inertia {inertia:.2f} ({label}). "
-                f"This is a core file. Changes here require overwhelming evidence "
-                f"that they reduce friction. Proceed with extreme care.")
+        return (
+            f"\n⚠️  INERTIA WARNING: {path} has inertia {inertia:.2f} ({label}). "
+            f"This is a core file. Changes here require overwhelming evidence "
+            f"that they reduce friction. Proceed with extreme care."
+        )
     elif label == "MEDIUM":
-        return (f"\n⚡ INERTIA NOTICE: {path} has inertia {inertia:.2f} ({label}). "
-                f"This is an architectural file. Validate carefully.")
+        return (
+            f"\n⚡ INERTIA NOTICE: {path} has inertia {inertia:.2f} ({label}). "
+            f"This is an architectural file. Validate carefully."
+        )
     return ""
 
 
@@ -157,7 +205,8 @@ def _git_commit_and_push(rel_path: str, reason: str) -> str:
         check = subprocess.run(
             ["git", "rev-parse", "--is-inside-work-tree"],
             cwd=REPO_ROOT,
-            capture_output=True, text=True
+            capture_output=True,
+            text=True,
         )
         if check.returncode != 0:
             return "\n⚠️  Git: not a git repo — skipping commit/push."
@@ -165,21 +214,21 @@ def _git_commit_and_push(rel_path: str, reason: str) -> str:
         # Stage the file (path relative to repo root)
         stage_path = f"igor/{rel_path}"
         subprocess.run(
-            ["git", "add", stage_path],
-            cwd=REPO_ROOT, check=True, capture_output=True
+            ["git", "add", stage_path], cwd=REPO_ROOT, check=True, capture_output=True
         )
 
         # Commit
         commit_msg = f"self-edit: igor/{rel_path}\n\n{reason}"
         subprocess.run(
             ["git", "commit", "-m", commit_msg],
-            cwd=REPO_ROOT, check=True, capture_output=True
+            cwd=REPO_ROOT,
+            check=True,
+            capture_output=True,
         )
 
         # Push
         push_result = subprocess.run(
-            ["git", "push"],
-            cwd=REPO_ROOT, capture_output=True, text=True
+            ["git", "push"], cwd=REPO_ROOT, capture_output=True, text=True
         )
         if push_result.returncode == 0:
             return "\n✅ Git: committed and pushed to origin."
@@ -249,13 +298,17 @@ def edit_source_file(path: str, content: str, reason: str) -> str:
         # WO6: self-edit disabled during cognition stabilization
         if not _is_self_edit_enabled():
             _log_blocked_self_edit_attempt(path)
-            log_self_edit(file=path, blocked=True, block_reason="IGOR_SELF_EDIT_ENABLED=false")
+            log_self_edit(
+                file=path, blocked=True, block_reason="IGOR_SELF_EDIT_ENABLED=false"
+            )
             return _SELF_EDIT_DISABLED_MSG
 
         # change.26: hard write exclusion for brainstem/
         if _is_write_excluded(path):
             _log_blocked_edit(path)
-            log_self_edit(file=path, blocked=True, block_reason="write_excluded(brainstem)")
+            log_self_edit(
+                file=path, blocked=True, block_reason="write_excluded(brainstem)"
+            )
             return (
                 f"BLOCKED_EDIT: igor/{path} is in a write-protected directory.\n"
                 f"brainstem/ contains core patterns that only akien may modify via Claude Code.\n"
@@ -266,6 +319,7 @@ def edit_source_file(path: str, content: str, reason: str) -> str:
         inertia, label = _get_inertia(path)
         if label == "HIGH":
             from ..arbiter import queue as _arbiter_queue
+
             arbiter_id = _arbiter_queue.submit(
                 description=f"HIGH-inertia self-edit request: igor/{path}",
                 context=reason,
@@ -274,7 +328,11 @@ def edit_source_file(path: str, content: str, reason: str) -> str:
                 metadata={"path": path, "inertia": inertia},
             )
             _log_blocked_edit(path)
-            log_self_edit(file=path, blocked=True, block_reason=f"HIGH_INERTIA_GATE|arbiter#{arbiter_id}")
+            log_self_edit(
+                file=path,
+                blocked=True,
+                block_reason=f"HIGH_INERTIA_GATE|arbiter#{arbiter_id}",
+            )
             return (
                 f"BLOCKED_HIGH_INERTIA: igor/{path} (inertia={inertia:.2f}).\n"
                 f"Self-edits to HIGH-inertia files require human approval (GitHub #69).\n"
@@ -290,11 +348,18 @@ def edit_source_file(path: str, content: str, reason: str) -> str:
         try:
             ast.parse(content)
         except SyntaxError as e:
-            log_self_edit(file=path, syntax_ok=False, reason=reason, change_summary=f"SyntaxError L{e.lineno}: {e.msg}")
-            return (f"EDIT REJECTED: Syntax error in proposed change to {path}:\n"
-                    f"  Line {e.lineno}: {e.msg}\n"
-                    f"  {e.text}\n"
-                    f"File not modified.")
+            log_self_edit(
+                file=path,
+                syntax_ok=False,
+                reason=reason,
+                change_summary=f"SyntaxError L{e.lineno}: {e.msg}",
+            )
+            return (
+                f"EDIT REJECTED: Syntax error in proposed change to {path}:\n"
+                f"  Line {e.lineno}: {e.msg}\n"
+                f"  {e.text}\n"
+                f"File not modified."
+            )
 
         # Back up original
         if target.exists():
@@ -314,15 +379,22 @@ def edit_source_file(path: str, content: str, reason: str) -> str:
             if len(part) == 7 and all(c in "0123456789abcdef" for c in part):
                 git_hash = part
                 break
-        log_self_edit(file=path, syntax_ok=True, reason=reason,
-                      change_summary=f"full_rewrite({len(content)} chars)", git_hash=git_hash)
+        log_self_edit(
+            file=path,
+            syntax_ok=True,
+            reason=reason,
+            change_summary=f"full_rewrite({len(content)} chars)",
+            git_hash=git_hash,
+        )
 
-        reload_status = _try_hot_reload(path, label)
-        return (f"EDIT APPLIED: igor/{path}{warning}\n"
-                f"Reason: {reason}\n"
-                f"Backup: {path}.bak"
-                f"{git_status}"
-                f"{reload_status}")
+        reload_status = _try_hot_reload(path, label, reason)
+        return (
+            f"EDIT APPLIED: igor/{path}{warning}\n"
+            f"Reason: {reason}\n"
+            f"Backup: {path}.bak"
+            f"{git_status}"
+            f"{reload_status}"
+        )
 
     except PermissionError as e:
         return f"Error: {e}"
@@ -347,13 +419,17 @@ def patch_source_file(path: str, old_string: str, new_string: str, reason: str) 
         # WO6: self-edit disabled during cognition stabilization
         if not _is_self_edit_enabled():
             _log_blocked_self_edit_attempt(path)
-            log_self_edit(file=path, blocked=True, block_reason="IGOR_SELF_EDIT_ENABLED=false")
+            log_self_edit(
+                file=path, blocked=True, block_reason="IGOR_SELF_EDIT_ENABLED=false"
+            )
             return _SELF_EDIT_DISABLED_MSG
 
         # change.26: hard write exclusion for brainstem/
         if _is_write_excluded(path):
             _log_blocked_edit(path)
-            log_self_edit(file=path, blocked=True, block_reason="write_excluded(brainstem)")
+            log_self_edit(
+                file=path, blocked=True, block_reason="write_excluded(brainstem)"
+            )
             return (
                 f"BLOCKED_EDIT: igor/{path} is in a write-protected directory.\n"
                 f"brainstem/ contains core patterns that only akien may modify via Claude Code.\n"
@@ -364,6 +440,7 @@ def patch_source_file(path: str, old_string: str, new_string: str, reason: str) 
         inertia, label = _get_inertia(path)
         if label == "HIGH":
             from ..arbiter import queue as _arbiter_queue
+
             arbiter_id = _arbiter_queue.submit(
                 description=f"HIGH-inertia self-edit request: igor/{path}",
                 context=reason,
@@ -372,7 +449,11 @@ def patch_source_file(path: str, old_string: str, new_string: str, reason: str) 
                 metadata={"path": path, "inertia": inertia},
             )
             _log_blocked_edit(path)
-            log_self_edit(file=path, blocked=True, block_reason=f"HIGH_INERTIA_GATE|arbiter#{arbiter_id}")
+            log_self_edit(
+                file=path,
+                blocked=True,
+                block_reason=f"HIGH_INERTIA_GATE|arbiter#{arbiter_id}",
+            )
             return (
                 f"BLOCKED_HIGH_INERTIA: igor/{path} (inertia={inertia:.2f}).\n"
                 f"Self-edits to HIGH-inertia files require human approval (GitHub #69).\n"
@@ -391,11 +472,15 @@ def patch_source_file(path: str, old_string: str, new_string: str, reason: str) 
         count = original.count(old_string)
 
         if count == 0:
-            return (f"PATCH REJECTED: old_string not found in igor/{path}.\n"
-                    f"Re-read the file first — it may have changed since you last read it.")
+            return (
+                f"PATCH REJECTED: old_string not found in igor/{path}.\n"
+                f"Re-read the file first — it may have changed since you last read it."
+            )
         if count > 1:
-            return (f"PATCH REJECTED: old_string matched {count} times in igor/{path} — ambiguous.\n"
-                    f"Add more surrounding context to old_string to make it unique.")
+            return (
+                f"PATCH REJECTED: old_string matched {count} times in igor/{path} — ambiguous.\n"
+                f"Add more surrounding context to old_string to make it unique."
+            )
 
         patched = original.replace(old_string, new_string, 1)
 
@@ -403,12 +488,18 @@ def patch_source_file(path: str, old_string: str, new_string: str, reason: str) 
         try:
             ast.parse(patched)
         except SyntaxError as e:
-            log_self_edit(file=path, syntax_ok=False, reason=reason,
-                          change_summary=f"patch SyntaxError L{e.lineno}: {e.msg}")
-            return (f"PATCH REJECTED: Result has a syntax error in igor/{path}:\n"
-                    f"  Line {e.lineno}: {e.msg}\n"
-                    f"  {e.text}\n"
-                    f"File not modified.")
+            log_self_edit(
+                file=path,
+                syntax_ok=False,
+                reason=reason,
+                change_summary=f"patch SyntaxError L{e.lineno}: {e.msg}",
+            )
+            return (
+                f"PATCH REJECTED: Result has a syntax error in igor/{path}:\n"
+                f"  Line {e.lineno}: {e.msg}\n"
+                f"  {e.text}\n"
+                f"File not modified."
+            )
 
         # Back up and write
         backup = target.with_suffix(".py.bak")
@@ -424,15 +515,22 @@ def patch_source_file(path: str, old_string: str, new_string: str, reason: str) 
                 break
         lines_changed = new_string.count("\n") - old_string.count("\n")
         sign = "+" if lines_changed >= 0 else ""
-        log_self_edit(file=path, syntax_ok=True, reason=reason,
-                      change_summary=f"patch({sign}{lines_changed} lines)", git_hash=git_hash)
+        log_self_edit(
+            file=path,
+            syntax_ok=True,
+            reason=reason,
+            change_summary=f"patch({sign}{lines_changed} lines)",
+            git_hash=git_hash,
+        )
 
-        reload_status = _try_hot_reload(path, label)
-        return (f"PATCH APPLIED: igor/{path}{warning}\n"
-                f"Reason: {reason}\n"
-                f"Lines delta: {sign}{lines_changed} | Backup: {path}.bak"
-                f"{git_status}"
-                f"{reload_status}")
+        reload_status = _try_hot_reload(path, label, reason)
+        return (
+            f"PATCH APPLIED: igor/{path}{warning}\n"
+            f"Reason: {reason}\n"
+            f"Lines delta: {sign}{lines_changed} | Backup: {path}.bak"
+            f"{git_status}"
+            f"{reload_status}"
+        )
 
     except PermissionError as e:
         return f"Error: {e}"
@@ -452,91 +550,130 @@ def run_syntax_check(path: str) -> str:
             ast.parse(content)
             return f"OK: igor/{path} — no syntax errors."
         except SyntaxError as e:
-            return (f"SYNTAX ERROR in igor/{path}:\n"
-                    f"  Line {e.lineno}: {e.msg}\n"
-                    f"  {e.text}")
+            return (
+                f"SYNTAX ERROR in igor/{path}:\n"
+                f"  Line {e.lineno}: {e.msg}\n"
+                f"  {e.text}"
+            )
     except Exception as e:
         return f"Error: {e}"
 
 
 # Register tools
-registry.register(Tool(
-    name="list_source_files",
-    description="List Igor's own Python source files with their inertia levels (HIGH/MEDIUM/LOW). HIGH inertia files are core and should rarely change.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "path": {"type": "string", "description": "Subdirectory to list (default: all source files)"},
+registry.register(
+    Tool(
+        name="list_source_files",
+        description="List Igor's own Python source files with their inertia levels (HIGH/MEDIUM/LOW). HIGH inertia files are core and should rarely change.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Subdirectory to list (default: all source files)",
+                },
+            },
+            "required": [],
         },
-        "required": [],
-    },
-    fn=list_source_files,
-))
+        fn=list_source_files,
+    )
+)
 
-registry.register(Tool(
-    name="read_source_file",
-    description="Read one of Igor's own Python source files. Use this to understand current implementation before making changes.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "path": {"type": "string", "description": "Relative path within igor/ source tree, e.g. 'tools/filesystem.py'"},
+registry.register(
+    Tool(
+        name="read_source_file",
+        description="Read one of Igor's own Python source files. Use this to understand current implementation before making changes.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Relative path within igor/ source tree, e.g. 'tools/filesystem.py'",
+                },
+            },
+            "required": ["path"],
         },
-        "required": ["path"],
-    },
-    fn=read_source_file,
-))
+        fn=read_source_file,
+    )
+)
 
-registry.register(Tool(
-    name="edit_source_file",
-    description=(
-        "Write new content to one of Igor's own source files. "
-        "Runs syntax check first — rejects changes that don't parse. "
-        "Always provide a reason. High-inertia files (brainstem, core memory) "
-        "require strong justification. Changes take effect on restart."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "path": {"type": "string", "description": "Relative path within igor/ source tree"},
-            "content": {"type": "string", "description": "Complete new file content"},
-            "reason": {"type": "string", "description": "Why this change reduces friction or improves Igor"},
+registry.register(
+    Tool(
+        name="edit_source_file",
+        description=(
+            "Write new content to one of Igor's own source files. "
+            "Runs syntax check first — rejects changes that don't parse. "
+            "Always provide a reason. High-inertia files (brainstem, core memory) "
+            "require strong justification. Changes take effect on restart."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Relative path within igor/ source tree",
+                },
+                "content": {
+                    "type": "string",
+                    "description": "Complete new file content",
+                },
+                "reason": {
+                    "type": "string",
+                    "description": "Why this change reduces friction or improves Igor",
+                },
+            },
+            "required": ["path", "content", "reason"],
         },
-        "required": ["path", "content", "reason"],
-    },
-    fn=edit_source_file,
-))
+        fn=edit_source_file,
+    )
+)
 
-registry.register(Tool(
-    name="patch_source_file",
-    description=(
-        "Make a targeted patch to one of Igor's source files. "
-        "Replaces old_string with new_string — only the changed lines, not the whole file. "
-        "PREFER THIS over edit_source_file for any change smaller than ~50 lines. "
-        "Fails clearly if old_string is not found or matches multiple times (add more context). "
-        "Syntax-checked before writing. Change takes effect on restart."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "path":       {"type": "string", "description": "Relative path within igor/ source tree"},
-            "old_string": {"type": "string", "description": "Exact text to find and replace (must be unique in the file)"},
-            "new_string": {"type": "string", "description": "Replacement text"},
-            "reason":     {"type": "string", "description": "Why this change reduces friction or improves Igor"},
+registry.register(
+    Tool(
+        name="patch_source_file",
+        description=(
+            "Make a targeted patch to one of Igor's source files. "
+            "Replaces old_string with new_string — only the changed lines, not the whole file. "
+            "PREFER THIS over edit_source_file for any change smaller than ~50 lines. "
+            "Fails clearly if old_string is not found or matches multiple times (add more context). "
+            "Syntax-checked before writing. Change takes effect on restart."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Relative path within igor/ source tree",
+                },
+                "old_string": {
+                    "type": "string",
+                    "description": "Exact text to find and replace (must be unique in the file)",
+                },
+                "new_string": {"type": "string", "description": "Replacement text"},
+                "reason": {
+                    "type": "string",
+                    "description": "Why this change reduces friction or improves Igor",
+                },
+            },
+            "required": ["path", "old_string", "new_string", "reason"],
         },
-        "required": ["path", "old_string", "new_string", "reason"],
-    },
-    fn=patch_source_file,
-))
+        fn=patch_source_file,
+    )
+)
 
-registry.register(Tool(
-    name="run_syntax_check",
-    description="Check a source file for Python syntax errors without modifying it. Use before edit_source_file to validate proposed changes.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "path": {"type": "string", "description": "Relative path within igor/ source tree"},
+registry.register(
+    Tool(
+        name="run_syntax_check",
+        description="Check a source file for Python syntax errors without modifying it. Use before edit_source_file to validate proposed changes.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Relative path within igor/ source tree",
+                },
+            },
+            "required": ["path"],
         },
-        "required": ["path"],
-    },
-    fn=run_syntax_check,
-))
+        fn=run_syntax_check,
+    )
+)

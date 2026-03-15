@@ -47,6 +47,9 @@ class InferenceContext:
     local_available: bool  # Ollama health check passed
     balance_ok: bool  # OR api key present AND balance above floor
     is_background: bool  # impulse / background turn (no latency requirement)
+    cloud_ok_override: bool = (
+        True  # D071: False = night/local-only mode; gates background cloud calls
+    )
     last_elapsed_ms: float = 0.0  # set by gateway after each handler attempt
 
 
@@ -642,12 +645,16 @@ def _local_preferred(ctx: InferenceContext) -> bool:
 
 
 def _cloud_preferred(ctx: InferenceContext) -> bool:
-    """Cloud training active OR local unavailable."""
+    """Cloud training active OR local unavailable. Blocked for background if night mode (D071)."""
+    if ctx.is_background and not ctx.cloud_ok_override:
+        return False
     return ctx.cloud_active or not ctx.local_available
 
 
 def _cloud_ok(ctx: InferenceContext) -> bool:
-    """OR balance above floor and API key present."""
+    """OR balance above floor and API key present. Blocked for background if night mode (D071)."""
+    if ctx.is_background and not ctx.cloud_ok_override:
+        return False
     return ctx.balance_ok
 
 
@@ -877,6 +884,14 @@ def make_context(is_background: bool = False) -> InferenceContext:
     except Exception:
         pass
 
+    cloud_ok_override = True
+    try:
+        from .cloud_mode import is_cloud_ok_override as _cko
+
+        cloud_ok_override = _cko()
+    except Exception:
+        pass
+
     local_available = False
     try:
         from .reasoners.ollama_reasoner import is_healthy as _ollama_healthy
@@ -899,6 +914,7 @@ def make_context(is_background: bool = False) -> InferenceContext:
         local_available=local_available,
         balance_ok=balance_ok,
         is_background=is_background,
+        cloud_ok_override=cloud_ok_override,
     )
 
 

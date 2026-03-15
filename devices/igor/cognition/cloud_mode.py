@@ -8,12 +8,15 @@ is_cloud_training_active() returns True when ALL THREE hold:
 
 Result is cached for 5 minutes to avoid hammering the OR balance API.
 """
+
 from __future__ import annotations
 
+import json
 import os
 import time
 import threading
 import datetime
+from pathlib import Path
 from typing import Optional
 
 _lock = threading.Lock()
@@ -36,6 +39,7 @@ def _or_balance() -> float:
     try:
         import urllib.request as _ur
         import json as _json
+
         req = _ur.Request(
             "https://openrouter.ai/api/v1/auth/key",
             headers={"Authorization": f"Bearer {api_key}"},
@@ -85,7 +89,11 @@ def is_cloud_training_active() -> bool:
 
 def _compute() -> bool:
     # Condition 1: env var enabled
-    if os.getenv("IGOR_CLOUD_TRAINING_ENABLED", "false").lower() not in ("1", "true", "yes"):
+    if os.getenv("IGOR_CLOUD_TRAINING_ENABLED", "false").lower() not in (
+        "1",
+        "true",
+        "yes",
+    ):
         return False
 
     # Condition 3: daytime (cheap check first to avoid balance API hit at night)
@@ -98,7 +106,10 @@ def _compute() -> bool:
     if balance == _BALANCE_UNKNOWN:
         # API unreachable — assume funded rather than silently disabling cloud
         import logging as _logging
-        _logging.getLogger(__name__).warning("[cloud_mode] OR balance check failed — assuming funded")
+
+        _logging.getLogger(__name__).warning(
+            "[cloud_mode] OR balance check failed — assuming funded"
+        )
         return True
     return balance >= floor
 
@@ -108,3 +119,78 @@ def invalidate_cache() -> None:
     global _cache_result
     with _lock:
         _cache_result = None
+
+
+# ── Runtime cloud_ok override ──────────────────────────────────────────────────
+# Separate from is_cloud_training_active() — this is a human-triggered or
+# habit-triggered override that allows cloud inference at any time (including night).
+# Stored as a file so background subprocesses can read it without restart.
+
+_OVERRIDE_FILE = Path.home() / ".TheIgors" / "cloud_ok_override.json"
+
+
+def is_cloud_ok_override() -> bool:
+    """
+    Return True if a cloud_ok override is currently active (not expired).
+    Written by PROC_SET_CLOUD_NOW habit ("do it now"); read per-call by
+    inference_gateway and book_learner. Checked without lock — reads are atomic
+    at filesystem level for small JSON files.
+    """
+    try:
+        if not _OVERRIDE_FILE.exists():
+            return False
+        data = json.loads(_OVERRIDE_FILE.read_text())
+        if not data.get("active", False):
+            return False
+        expires = data.get("expires")
+        if expires:
+            exp_dt = datetime.datetime.fromisoformat(expires)
+            if datetime.datetime.now() > exp_dt:
+                # Expired — clean up
+                _OVERRIDE_FILE.unlink(missing_ok=True)
+                return False
+        return True
+    except Exception:
+        return False
+
+
+def set_cloud_ok_override(ttl_hours: float = 4.0, reason: str = "") -> str:
+    """
+    Activate cloud_ok override for ttl_hours (default 4h).
+    Called by PROC_SET_CLOUD_NOW habit or 'do it now' commands.
+    Returns a status string.
+    """
+    try:
+        _OVERRIDE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        expires = (
+            datetime.datetime.now() + datetime.timedelta(hours=ttl_hours)
+        ).isoformat()
+        data = {
+            "active": True,
+            "expires": expires,
+            "set_by": reason or "habit",
+            "ttl_hours": ttl_hours,
+        }
+        _OVERRIDE_FILE.write_text(json.dumps(data))
+        invalidate_cache()
+        return f"cloud_ok override active for {ttl_hours}h (expires {expires[:16]})."
+    except Exception as exc:
+        return f"cloud_ok override failed: {exc}"
+
+
+def clear_cloud_ok_override(reason: str = "") -> str:
+    """
+    Deactivate cloud_ok override. Called by PROC_NIGHT_READ or time-based habits.
+    Returns a status string.
+    """
+    try:
+        existed = _OVERRIDE_FILE.exists()
+        _OVERRIDE_FILE.unlink(missing_ok=True)
+        invalidate_cache()
+        return (
+            "cloud_ok override cleared."
+            if existed
+            else "cloud_ok override was not set."
+        )
+    except Exception as exc:
+        return f"cloud_ok clear failed: {exc}"
