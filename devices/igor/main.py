@@ -1285,6 +1285,35 @@ class Igor:
                 for m in top:
                     lines.append(f"  [{m.memory_type.value}] {m.narrative[:100]}")
 
+        # ── D072: generation graph vigilance gate (IGOR_NPASS_REPLY) ─────────────
+        # flatness=0.0 → steep (reflexive — strong dominant prediction → inhibit)
+        # flatness=1.0 → flat (novel/uncertain → D073 escalation signal)
+        if self._npass_reply and self._generation_graph is not None:
+            try:
+                gen_words, gen_flatness = (
+                    self._generation_graph.predict_next_with_flatness(user_input, n=5)
+                )
+                word_str = ", ".join(w for w, _ in gen_words) if gen_words else "none"
+                import logging as _logging
+
+                _logging.getLogger("forensic").debug(
+                    "[D072] gen_flatness=%.3f words=[%s]", gen_flatness, word_str
+                )
+                if gen_flatness < 0.35:
+                    # Steep gradient — generation has a strong reflexive path
+                    lines.append(
+                        f"[REFLEXIVE_PATTERN]: generation predicts: {word_str}. "
+                        "If this reply feels automatic, go deeper."
+                    )
+                elif gen_flatness > 0.85:
+                    # Flat — generation graph has no strong prediction (novel territory)
+                    lines.append(
+                        "[GRAPH_UNCERTAIN]: generation graph has no strong prediction "
+                        "— novel territory or genuinely stumped."
+                    )
+            except Exception:
+                pass
+
         # ── NE prediction signal ───────────────────────────────────────────────
         if ne_pred is not None and ne_pred.predicted_habit_id is not None:
             lines.append(
