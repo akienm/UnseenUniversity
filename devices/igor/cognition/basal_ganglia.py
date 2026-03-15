@@ -286,12 +286,14 @@ def select_habit(
             # G-OVN-1a: threshold habits evaluated by ResourceMonitorSource/pre-submit only
             if h_type == "threshold":
                 continue
-            # G-OVN-1b: action/proactive habits with code_ref skip on question intents
+            # G-OVN-1b: action-class habits (with code_ref or workflow/delegation types)
+            # skip on question intents — prevent PROC_CALENDAR_CREATE, PROC_CLUSTER_SSH_CHECK
+            # etc. from misfiring when a question happens to match their trigger vocabulary.
             if (
                 h_type in ("action", "proactive")
                 and habit.metadata.get("code_ref")
-                and parsed_intent in _QUESTION_INTENTS
-            ):
+                or h_type in ("workflow", "delegation", "reactive")
+            ) and parsed_intent in _QUESTION_INTENTS:
                 continue
             s = _score_habit(habit, raw_lower, keywords, now=now)
             if s > 0:  # only apply bonus when trigger matched
