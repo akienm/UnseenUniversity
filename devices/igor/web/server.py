@@ -43,24 +43,28 @@ from starlette.websockets import WebSocket
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 _INSTANCE_DIR = Path.home() / ".TheIgors" / "igor_wild_0001"
-INBOX_DIR  = _INSTANCE_DIR / "inbox"
+INBOX_DIR = _INSTANCE_DIR / "inbox"
 OUTBOX_DIR = _INSTANCE_DIR / "outbox"
-_DIST_DIR  = Path(__file__).parent.parent.parent.parent / "web_ui" / "dist"
+_DIST_DIR = Path(__file__).parent.parent.parent.parent / "web_ui" / "dist"
 
 # ── Thread-safe queue: web messages → Igor ────────────────────────────────────
 incoming: queue.Queue = queue.Queue()
 
 # ── Per-session asyncio queues for broadcast (#119) ──────────────────────────
-_session_clients: dict = {}   # session_id → [asyncio.Queue, ...]
-_client_session: dict  = {}   # id(ws) → session_id
-_session_history: dict = {}   # session_id → [{...}, ...] (capped at 50)
+_session_clients: dict = {}  # session_id → [asyncio.Queue, ...]
+_client_session: dict = {}  # id(ws) → session_id
+_session_history: dict = {}  # session_id → [{...}, ...] (capped at 50)
 _client_lock = threading.Lock()
 _loop: Optional[asyncio.AbstractEventLoop] = None
 
 # ── Shared state ──────────────────────────────────────────────────────────────
-_stats_fn = None  # callable → dict; set by start(); Igor class owns all state (change.30)
+_stats_fn = (
+    None  # callable → dict; set by start(); Igor class owns all state (change.30)
+)
+_cortex_fn = None  # callable → Cortex; set by start(); used by /api/cc_notebook (#239)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _ts() -> str:
     return datetime.now().isoformat(timespec="seconds")
@@ -73,10 +77,16 @@ def _ensure_dirs():
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
+
 def send(text: str, session_id: str = "shared"):
     """Send an Igor response to a specific session's clients. Thread-safe."""
-    msg = {"type": "message", "author": "igor", "content": text,
-           "ts": _ts(), "session_id": session_id}
+    msg = {
+        "type": "message",
+        "author": "igor",
+        "content": text,
+        "ts": _ts(),
+        "session_id": session_id,
+    }
     _add_to_history(session_id, msg)
     _broadcast_to_session(session_id, json.dumps(msg))
 
@@ -90,12 +100,15 @@ def broadcast_activity(state: dict):
         input   — first 60 chars of the current user input
         busy    — bool: True while processing, False when idle
     """
-    _broadcast(json.dumps({
-        "type": "activity",
-        "ts": _ts(),
-        **state,
-    }))
-
+    _broadcast(
+        json.dumps(
+            {
+                "type": "activity",
+                "ts": _ts(),
+                **state,
+            }
+        )
+    )
 
 
 def broadcast_name_resolved(name: str):
@@ -134,6 +147,7 @@ def _broadcast(payload: str):
 
 # ── Route handlers ────────────────────────────────────────────────────────────
 
+
 async def _index(request: Request):
     index_file = _DIST_DIR / "index.html"
     if index_file.exists():
@@ -155,7 +169,13 @@ async def _api_upload(request: Request):
     content = await file.read()
     dest.write_bytes(content)
     # Notify Igor via listener queue
-    incoming.put({"content": f"[File uploaded: {safe_name}]", "filename": safe_name, "author": "web-user"})
+    incoming.put(
+        {
+            "content": f"[File uploaded: {safe_name}]",
+            "filename": safe_name,
+            "author": "web-user",
+        }
+    )
     # Tell all WebSocket clients a file arrived
     _broadcast(json.dumps({"type": "file_dropped", "filename": safe_name, "ts": _ts()}))
     return JSONResponse({"status": "ok", "filename": safe_name})
@@ -192,18 +212,99 @@ async def _api_cc_send(request: Request):
     if not content:
         return JSONResponse({"error": "empty content"}, status_code=400)
     incoming.put({"content": content, "author": "claude-code"})
-    _broadcast(json.dumps({
-        "type": "message",
-        "author": "claude-code",
-        "content": content,
-        "ts": _ts(),
-    }))
+    _broadcast(
+        json.dumps(
+            {
+                "type": "message",
+                "author": "claude-code",
+                "content": content,
+                "ts": _ts(),
+            }
+        )
+    )
     return JSONResponse({"status": "ok"})
 
 
 async def _api_health(request: Request):
     """GET /api/health — simple liveness check; always returns 200 if server is up."""
     return JSONResponse({"status": "ok"})
+
+
+async def _api_cc_notebook(request: Request):
+    """
+    #239: Employer notebook endpoint for Claude (and any employer).
+
+    GET  /api/cc_notebook?employer=claude  — return notebook entries for employer
+    POST /api/cc_notebook                  — add a notebook entry
+         body: {"employer": "claude", "key": "...", "content": "...", "parent_id": "CP2"}
+
+    Notebook entries are FACTUAL memories tagged with metadata.employer_id.
+    No schema change — convention only.
+    """
+    if _cortex_fn is None:
+        return JSONResponse({"error": "cortex not available"}, status_code=503)
+
+    cortex = _cortex_fn()
+    if cortex is None:
+        return JSONResponse({"error": "cortex not available"}, status_code=503)
+
+    if request.method == "GET":
+        employer = request.query_params.get("employer", "claude")
+        try:
+            entries = cortex.for_employer(employer)
+            return JSONResponse(
+                {
+                    "employer": employer,
+                    "count": len(entries),
+                    "entries": [
+                        {
+                            "id": m.id,
+                            "narrative": m.narrative,
+                            "memory_type": m.memory_type.value,
+                            "metadata": m.metadata,
+                        }
+                        for m in entries
+                    ],
+                }
+            )
+        except Exception as e:
+            return JSONResponse({"error": str(e)}, status_code=500)
+
+    # POST — add entry
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "invalid JSON"}, status_code=400)
+
+    employer = body.get("employer", "claude")
+    key = body.get("key", "").strip()
+    content = body.get("content", "").strip()
+    if not key or not content:
+        return JSONResponse({"error": "key and content required"}, status_code=400)
+
+    try:
+        from ..memory.models import Memory, MemoryType
+
+        mem = Memory(
+            id=f"NB_{employer.upper()}_{key.upper().replace(' ', '_')[:40]}",
+            narrative=content,
+            memory_type=MemoryType.FACTUAL,
+            parent_id=body.get("parent_id", "CP2"),
+            metadata={
+                "employer_id": employer,
+                "notebook_key": key,
+                "source": "cc_notebook",
+            },
+        )
+        existing = cortex.get(mem.id)
+        if existing:
+            # Update in place via store (upsert by id)
+            cortex.store(mem)
+            return JSONResponse({"status": "updated", "id": mem.id})
+        cortex.store(mem)
+        return JSONResponse({"status": "created", "id": mem.id})
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 
 async def _api_dashboard(request: Request):
@@ -229,11 +330,15 @@ async def _ws_endpoint(ws: WebSocket):
     with _client_lock:
         hist = list(_session_history.get(current_session, []))
     if hist:
-        await ws.send_text(json.dumps({
-            "type": "session_history",
-            "session_id": current_session,
-            "messages": hist,
-        }))
+        await ws.send_text(
+            json.dumps(
+                {
+                    "type": "session_history",
+                    "session_id": current_session,
+                    "messages": hist,
+                }
+            )
+        )
 
     async def _receive():
         nonlocal current_session
@@ -250,16 +355,20 @@ async def _ws_endpoint(ws: WebSocket):
                     # Client re-identifying from cookie on (re)connect.
                     _iname = (msg.get("name") or "").strip()[:60]
                     if _iname:
-                        incoming.put({
-                            "content": f"__identify__:{_iname}",
-                            "author": _iname,
-                            "client_id": id(ws),
-                            "session_id": current_session,
-                        })
+                        incoming.put(
+                            {
+                                "content": f"__identify__:{_iname}",
+                                "author": _iname,
+                                "client_id": id(ws),
+                                "session_id": current_session,
+                            }
+                        )
 
                 elif mtype == "join_session":
                     # Client switching to a named session (or creating it)
-                    new_sid = (msg.get("session_id") or "shared").strip()[:64] or "shared"
+                    new_sid = (msg.get("session_id") or "shared").strip()[
+                        :64
+                    ] or "shared"
                     with _client_lock:
                         # Leave old session
                         old_qs = _session_clients.get(current_session, [])
@@ -271,26 +380,36 @@ async def _ws_endpoint(ws: WebSocket):
                         hist = list(_session_history.get(new_sid, []))
                     current_session = new_sid
                     # Send history for the new session
-                    await ws.send_text(json.dumps({
-                        "type": "session_history",
-                        "session_id": new_sid,
-                        "messages": hist,
-                    }))
+                    await ws.send_text(
+                        json.dumps(
+                            {
+                                "type": "session_history",
+                                "session_id": new_sid,
+                                "messages": hist,
+                            }
+                        )
+                    )
 
                 elif mtype == "message":
                     content = msg.get("content", "").strip()
                     author = msg.get("author", "web-user")
                     if content:
-                        incoming.put({
-                            "content": content,
-                            "author": author,
-                            "client_id": id(ws),
-                            "session_id": current_session,
-                        })
+                        incoming.put(
+                            {
+                                "content": content,
+                                "author": author,
+                                "client_id": id(ws),
+                                "session_id": current_session,
+                            }
+                        )
                         # Echo user message to session clients only
-                        umsg = {"type": "message", "author": author,
-                                "content": content, "ts": _ts(),
-                                "session_id": current_session}
+                        umsg = {
+                            "type": "message",
+                            "author": author,
+                            "content": content,
+                            "ts": _ts(),
+                            "session_id": current_session,
+                        }
                         _add_to_history(current_session, umsg)
                         _broadcast_to_session(current_session, json.dumps(umsg))
         except Exception:
@@ -305,7 +424,7 @@ async def _ws_endpoint(ws: WebSocket):
             pass
 
     recv = asyncio.ensure_future(_receive())
-    fwd  = asyncio.ensure_future(_forward())
+    fwd = asyncio.ensure_future(_forward())
     await asyncio.wait([recv, fwd], return_when=asyncio.FIRST_COMPLETED)
     for t in (recv, fwd):
         t.cancel()
@@ -323,6 +442,7 @@ async def _ws_endpoint(ws: WebSocket):
 
 # ── #119: Sessions API ────────────────────────────────────────────────────────
 
+
 async def _api_sessions(request: Request):
     """GET /api/sessions — list active sessions and their client counts."""
     with _client_lock:
@@ -332,10 +452,12 @@ async def _api_sessions(request: Request):
 
 # ── G16: Global milieu API endpoints ─────────────────────────────────────────
 
+
 async def _api_milieu_global(request):
     """GET /api/milieu/global — serve current global milieu state (cross-machine sync)."""
     from pathlib import Path as _Path
     import json as _j
+
     _gpath = _Path.home() / ".TheIgors" / "milieu_global.json"
     try:
         data = _j.loads(_gpath.read_text(encoding="utf-8")) if _gpath.exists() else {}
@@ -347,11 +469,19 @@ async def _api_milieu_global(request):
 async def _api_milieu_contribute(request):
     """POST /api/milieu/contribute — accept a milieu contribution from a remote instance."""
     from pathlib import Path as _Path
+
     try:
         body = await request.json()
-        from ..cognition.milieu import MilieuState, GLOBAL_ALPHA_SPIKE, _contribute_to_global
+        from ..cognition.milieu import (
+            MilieuState,
+            GLOBAL_ALPHA_SPIKE,
+            _contribute_to_global,
+        )
         from dataclasses import fields as _fields
-        state = MilieuState(**{k: body[k] for k in body if k in {f.name for f in _fields(MilieuState)}})
+
+        state = MilieuState(
+            **{k: body[k] for k in body if k in {f.name for f in _fields(MilieuState)}}
+        )
         _contribute_to_global(state, GLOBAL_ALPHA_SPIKE)
         return JSONResponse({"status": "ok"})
     except Exception as e:
@@ -359,6 +489,7 @@ async def _api_milieu_contribute(request):
 
 
 # ── Starlette app factory ─────────────────────────────────────────────────────
+
 
 def _make_app() -> Starlette:
     async def on_startup():
@@ -377,12 +508,15 @@ def _make_app() -> Starlette:
         Route("/api/sessions", _api_sessions),
         Route("/api/milieu/global", _api_milieu_global),
         Route("/api/milieu/contribute", _api_milieu_contribute, methods=["POST"]),
+        Route("/api/cc_notebook", _api_cc_notebook, methods=["GET", "POST"]),
     ]
 
     # Serve compiled Svelte assets if the UI has been built
     assets_dir = _DIST_DIR / "assets"
     if assets_dir.exists():
-        routes.append(Mount("/assets", app=StaticFiles(directory=str(assets_dir)), name="assets"))
+        routes.append(
+            Mount("/assets", app=StaticFiles(directory=str(assets_dir)), name="assets")
+        )
 
     return Starlette(routes=routes, on_startup=[on_startup])
 
@@ -392,14 +526,16 @@ def _make_app() -> Starlette:
 _server_thread: Optional[threading.Thread] = None
 
 
-def start(stats_fn=None):
+def start(stats_fn=None, cortex_fn=None):
     """Start the web server in a background daemon thread. Non-blocking.
 
-    stats_fn: callable () → dict — Igor.get_stats(); called by /api/dashboard.
+    stats_fn:  callable () → dict    — Igor.get_stats(); called by /api/dashboard.
+    cortex_fn: callable () → Cortex  — Igor.get_cortex(); used by /api/cc_notebook (#239).
     Igor owns all state; web server owns none (change.30 gateway pattern).
     """
-    global _server_thread, _stats_fn
+    global _server_thread, _stats_fn, _cortex_fn
     _stats_fn = stats_fn
+    _cortex_fn = cortex_fn
     _ensure_dirs()
 
     if _server_thread and _server_thread.is_alive():
