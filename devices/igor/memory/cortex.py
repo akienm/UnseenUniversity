@@ -81,6 +81,10 @@ class Cortex:
             """)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_parent ON memories(parent_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_type ON memories(memory_type)")
+            # G-QP1: NE query ORDER BY activation_count DESC runs 600-750ms without this
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_activation ON memories(activation_count DESC)"
+            )
 
             # change.37: embedding column — added via migration so existing DBs are not broken
             try:
