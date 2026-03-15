@@ -265,11 +265,9 @@ class Cortex:
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_ie_to ON interpretive_edges(to_id)"
             )
-            # G-QP2: checkpoint WAL at boot so search reads don't re-scan a stale WAL
-            try:
-                conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-            except Exception:
-                pass
+            # G-QP2: wal_checkpoint moved to main.py post-Cortex-init (G-QP3)
+            # Do NOT checkpoint here — _init_db() runs on every Cortex() instantiation
+            # (book_learner, tools, etc.) and would flood the DB with checkpoint contention
 
     # ── Long-term memory graph ─────────────────────────────────────────────────
 

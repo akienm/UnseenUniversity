@@ -257,6 +257,12 @@ class Igor:
         DATA_DIR.mkdir(parents=True, exist_ok=True)
 
         self.cortex = Cortex(self.db_path, instance_id=instance_id)
+        # G-QP2/G-QP3: checkpoint WAL once at main Igor boot only, not on every Cortex instantiation
+        try:
+            with self.cortex._db() as conn:
+                conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        except Exception:
+            pass
         milieu_mod.init(self.instance_id)
         observer.init(self.cortex)
         self.root_id = initialize_genesis(self.cortex, instance_id)
