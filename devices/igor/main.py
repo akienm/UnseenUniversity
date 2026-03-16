@@ -453,7 +453,11 @@ class Igor:
         # Start Discord bot, unified network listener, web UI server, and model boot-check
         discord_bot.start()
         net_listener.start()
-        web_server.start(stats_fn=self.get_stats, cortex_fn=lambda: self.cortex)
+        web_server.start(
+            stats_fn=self.get_stats,
+            cortex_fn=lambda: self.cortex,
+            igor_fn=lambda: self,
+        )
         boot_check.start(cortex=self.cortex)
 
         is_new = (
@@ -1109,6 +1113,118 @@ class Igor:
             ],
             "surprise_avg": surprise_avg,
             **self._activity_state(),
+        }
+
+    def execute_habit(self, habit_id: str, args: dict) -> dict:
+        """
+        Execute a habit directly by ID, bypassing NLU/thalamus pipeline.
+        Called by POST /api/execute_habit (D094 — cc-direct-habit-execution).
+
+        Returns dict: {status, result, habit_id, habit_type, duration_ms}
+        Supports multi-arg tool dispatch via explicit args dict (upgrade over
+        the 0/1-arg auto-dispatch limitation in the normal habit pipeline).
+        """
+        import time as _time
+        from .cognition.cc_session_logger import log_habit_call
+
+        _t0 = _time.monotonic()
+
+        habit = self.cortex.get(habit_id)
+        if habit is None:
+            result = f"[execute_habit] habit_id '{habit_id}' not found"
+            log_habit_call(
+                habit_id=habit_id,
+                args=args,
+                result=result,
+                duration_ms=round((_time.monotonic() - _t0) * 1000),
+            )
+            return {
+                "status": "error",
+                "result": result,
+                "habit_id": habit_id,
+                "habit_type": "",
+                "duration_ms": 0,
+            }
+
+        _habit_type = habit.metadata.get("habit_type", "action")
+        code_ref = habit.metadata.get("code_ref")
+        response_text = ""
+        status = "ok"
+
+        try:
+            if _habit_type == "question":
+                response_text = habit.metadata.get(
+                    "question_template", "Can you tell me more about that?"
+                )
+            elif code_ref:
+                from .tools.registry import registry as _tool_registry
+
+                tool_name = code_ref.split(":")[-1]
+                tool = _tool_registry.get(tool_name)
+                if tool:
+                    try:
+                        if args:
+                            response_text = tool.execute(**args)
+                        else:
+                            _required = tool.parameters.get("required", [])
+                            if not _required:
+                                response_text = tool.execute()
+                            elif len(_required) == 1:
+                                response_text = tool.execute(**{_required[0]: ""})
+                            else:
+                                _arg_list = ", ".join(_required)
+                                response_text = (
+                                    f"[execute_habit] {tool_name} requires args: "
+                                    f"{_arg_list}. Pass them in the args dict."
+                                )
+                    except Exception as _ce:
+                        response_text = (
+                            f"[execute_habit→TOOL] Error running {tool_name}: {_ce}"
+                        )
+                        status = "error"
+                else:
+                    response_text = (
+                        f"[execute_habit] tool '{tool_name}' "
+                        f"(code_ref={code_ref}) not in registry."
+                    )
+                    status = "error"
+            elif habit.id in ("PROC_HABIT_COMPILER", "PROC_NOTEBOOK_SAVE"):
+                response_text = (
+                    f"[execute_habit] {habit.id} requires user_input context; "
+                    "use /api/cc_send instead."
+                )
+                status = "error"
+            else:
+                _actions = habit.metadata.get("actions")
+                if _actions and isinstance(_actions, list):
+                    import random as _random
+
+                    response_text = _random.choice(_actions)
+                else:
+                    response_text = habit.metadata.get(
+                        "action",
+                        f"[{habit.id}: {habit.narrative[:80]}]",
+                    )
+
+            self.cortex.record_activation(habit.id, 0.05)
+
+        except Exception as _e:
+            response_text = f"[execute_habit] unexpected error: {_e}"
+            status = "error"
+
+        duration_ms = round((_time.monotonic() - _t0) * 1000)
+        log_habit_call(
+            habit_id=habit_id,
+            args=args,
+            result=str(response_text),
+            duration_ms=duration_ms,
+        )
+        return {
+            "status": status,
+            "result": str(response_text) if response_text is not None else "",
+            "habit_id": habit_id,
+            "habit_type": _habit_type,
+            "duration_ms": duration_ms,
         }
 
     def _load_change_log(self):

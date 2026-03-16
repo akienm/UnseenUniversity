@@ -62,6 +62,7 @@ _stats_fn = (
     None  # callable → dict; set by start(); Igor class owns all state (change.30)
 )
 _cortex_fn = None  # callable → Cortex; set by start(); used by /api/cc_notebook (#239)
+_igor_fn = None  # callable → Igor;   set by start(); used by /api/execute_habit (D094)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -488,6 +489,81 @@ async def _api_milieu_contribute(request):
         return JSONResponse({"error": str(e)}, status_code=400)
 
 
+# ── D094: Direct habit execution ─────────────────────────────────────────────
+
+
+async def _api_execute_habit(request: Request):
+    """
+    POST /api/execute_habit
+    Body: {"habit_id": "PROC_WHAT_TIME", "args": {}}
+
+    Execute an Igor habit directly by ID, bypassing NLU/thalamus.
+    Returns: {status, result, habit_id, habit_type, duration_ms}
+    Every call is logged to ~/.TheIgors/logs/cc_session_YYYYMMDD.log.
+    """
+    if _igor_fn is None:
+        return JSONResponse({"error": "igor not available"}, status_code=503)
+    igor = _igor_fn()
+    if igor is None:
+        return JSONResponse({"error": "igor not available"}, status_code=503)
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "invalid JSON"}, status_code=400)
+
+    habit_id = (body.get("habit_id") or "").strip()
+    if not habit_id:
+        return JSONResponse({"error": "habit_id required"}, status_code=400)
+
+    args = body.get("args") or {}
+    if not isinstance(args, dict):
+        return JSONResponse({"error": "args must be a JSON object"}, status_code=400)
+
+    try:
+        result = igor.execute_habit(habit_id, args)
+        status_code = 200 if result.get("status") == "ok" else 422
+        return JSONResponse(result, status_code=status_code)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+async def _api_execute_habit_get(request: Request):
+    """
+    GET /api/execute_habit/{habit_id}
+    Discoverability: returns habit narrative + metadata so Claude can inspect
+    what a habit does before deciding to call it.
+    """
+    if _igor_fn is None:
+        return JSONResponse({"error": "igor not available"}, status_code=503)
+    igor = _igor_fn()
+    if igor is None:
+        return JSONResponse({"error": "igor not available"}, status_code=503)
+
+    habit_id = request.path_params.get("habit_id", "").strip()
+    if not habit_id:
+        return JSONResponse({"error": "habit_id required"}, status_code=400)
+
+    try:
+        habit = igor.cortex.get(habit_id)
+        if habit is None:
+            return JSONResponse(
+                {"error": f"habit '{habit_id}' not found"}, status_code=404
+            )
+        return JSONResponse(
+            {
+                "habit_id": habit.id,
+                "narrative": habit.narrative,
+                "habit_type": habit.metadata.get("habit_type", "action"),
+                "trigger": habit.metadata.get("trigger", ""),
+                "code_ref": habit.metadata.get("code_ref", ""),
+                "action": habit.metadata.get("action", ""),
+            }
+        )
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
 # ── Starlette app factory ─────────────────────────────────────────────────────
 
 
@@ -509,6 +585,8 @@ def _make_app() -> Starlette:
         Route("/api/milieu/global", _api_milieu_global),
         Route("/api/milieu/contribute", _api_milieu_contribute, methods=["POST"]),
         Route("/api/cc_notebook", _api_cc_notebook, methods=["GET", "POST"]),
+        Route("/api/execute_habit", _api_execute_habit, methods=["POST"]),
+        Route("/api/execute_habit/{habit_id}", _api_execute_habit_get, methods=["GET"]),
     ]
 
     # Serve compiled Svelte assets if the UI has been built
@@ -526,16 +604,18 @@ def _make_app() -> Starlette:
 _server_thread: Optional[threading.Thread] = None
 
 
-def start(stats_fn=None, cortex_fn=None):
+def start(stats_fn=None, cortex_fn=None, igor_fn=None):
     """Start the web server in a background daemon thread. Non-blocking.
 
     stats_fn:  callable () → dict    — Igor.get_stats(); called by /api/dashboard.
     cortex_fn: callable () → Cortex  — Igor.get_cortex(); used by /api/cc_notebook (#239).
+    igor_fn:   callable () → Igor    — Igor instance; used by /api/execute_habit (D094).
     Igor owns all state; web server owns none (change.30 gateway pattern).
     """
-    global _server_thread, _stats_fn, _cortex_fn
+    global _server_thread, _stats_fn, _cortex_fn, _igor_fn
     _stats_fn = stats_fn
     _cortex_fn = cortex_fn
+    _igor_fn = igor_fn
     _ensure_dirs()
 
     if _server_thread and _server_thread.is_alive():
