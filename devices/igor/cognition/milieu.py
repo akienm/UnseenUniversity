@@ -35,6 +35,12 @@ ALPHA_UP = 0.25  # fast rise toward new signal
 ALPHA_DOWN = 0.05  # slow fall away from signal
 PUSH_DELTA = 0.08  # min per-dim change required to push a TWM update
 
+# D101: milieu time series — ring buffer of V/A/D rows + gradient detection
+HISTORY_MAX = 50  # max rows kept (ring; oldest evicted)
+HISTORY_MIN_DELTA = 0.02  # min per-dim change to record a new history row
+AROUSAL_SLOPE_ALERT = 0.03  # arousal rising by this much per row = climbing alert
+AROUSAL_SLOPE_N = 5  # look back N rows for slope computation
+
 # G12 / #55: per-dimension asymmetric decay rates (faster for volatile dims)
 DECAY_VALENCE = 0.96  # fastest — mood is volatile, fades quickly
 DECAY_AROUSAL = 0.97  # medium — activation persists somewhat longer
@@ -146,8 +152,12 @@ class Milieu:
             / f"igor_{instance_id.replace('-', '_')}"
             / "milieu.json"
         )
+        # D101: persisted history ring
+        self._history_path = self._path.parent / "milieu_history.json"
         _local_existed = self._path.exists()
         self._state = self._load()
+        # D101: load history ring from disk
+        self._history: list[dict] = self._load_history()
         # New instance with no local history: seed from global baseline
         if not _local_existed:
             g = self._load_global_baseline()
@@ -254,6 +264,80 @@ class Milieu:
             )
         except Exception:
             pass  # Never crash — milieu is advisory
+        self._append_history()
+
+    # ── D101: History ring buffer ──────────────────────────────────────────────
+
+    def _load_history(self) -> list[dict]:
+        """D101: Load persisted history ring from disk."""
+        try:
+            if self._history_path.exists():
+                data = json.loads(self._history_path.read_text(encoding="utf-8"))
+                if isinstance(data, list):
+                    return data[-HISTORY_MAX:]
+        except Exception:
+            pass
+        return []
+
+    def _save_history(self) -> None:
+        try:
+            self._history_path.write_text(
+                json.dumps(self._history[-HISTORY_MAX:]),
+                encoding="utf-8",
+            )
+        except Exception:
+            pass
+
+    def _append_history(self) -> None:
+        """
+        D101: Append current state to history ring if it has changed enough.
+        Reactivation creates a new row at NOW (not revival of old row).
+        """
+        s = self._state
+        if self._history:
+            last = self._history[-1]
+            delta = max(
+                abs(s.valence - last["v"]),
+                abs(s.arousal - last["a"]),
+                abs(s.dominance - last["d"]),
+            )
+            if delta < HISTORY_MIN_DELTA:
+                return
+        self._history.append(
+            {
+                "t": time.time(),
+                "v": round(s.valence, 4),
+                "a": round(s.arousal, 4),
+                "d": round(s.dominance, 4),
+            }
+        )
+        if len(self._history) > HISTORY_MAX:
+            self._history = self._history[-HISTORY_MAX:]
+        self._save_history()
+
+    def gradient(self, dim: str = "arousal", n: int = AROUSAL_SLOPE_N) -> float:
+        """
+        D101: Compute slope of `dim` over the last `n` history rows.
+        Returns (last - first) / n — positive means rising, negative means falling.
+        Returns 0.0 if insufficient history.
+        """
+        h = self._history
+        if len(h) < 2:
+            return 0.0
+        window = h[-min(n, len(h)) :]
+        if len(window) < 2:
+            return 0.0
+        first = window[0].get(dim[0], 0.0)  # "arousal" → "a", "valence" → "v", etc.
+        last = window[-1].get(dim[0], 0.0)
+        return (last - first) / len(window)
+
+    def is_arousal_climbing(
+        self,
+        threshold: float = AROUSAL_SLOPE_ALERT,
+        n: int = AROUSAL_SLOPE_N,
+    ) -> bool:
+        """D101: True if arousal has been rising steadily over the last n history rows."""
+        return self.gradient("arousal", n) >= threshold
 
     # ── Math ──────────────────────────────────────────────────────────────────
 
