@@ -29,6 +29,7 @@ from . import (
     hot_reload,
     learner,
     watchlist,
+    ops,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
