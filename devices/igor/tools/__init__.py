@@ -30,6 +30,7 @@ from . import (
     learner,
     watchlist,
     ops,
+    converter,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
