@@ -77,6 +77,8 @@ class Cortex:
         self._last_traverse_meaning_to_me: bool = False
         # #258b: in-process memory fetch cache; id → (Memory, monotonic_timestamp)
         self._mem_cache: dict = {}
+        # #260: in-process habit list cache; invalidated on store() when new habit added
+        self._habit_cache: Optional[list] = None
 
     def _conn(self):
         """Deprecated shim — use self._db() directly."""
@@ -84,6 +86,14 @@ class Cortex:
 
     def _init_db(self):
         with self._conn() as conn:
+            # #261: one-time migration tracker — prevents costly scans on every boot
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS _migrations (
+                    name TEXT PRIMARY KEY,
+                    applied_at TEXT NOT NULL
+                )
+            """)
+
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS memories (
                     id TEXT PRIMARY KEY,
@@ -292,13 +302,23 @@ class Cortex:
                 )
             except Exception:
                 pass  # Column already exists
-            # Tag existing edges from CP/ID root nodes as meaning_to_me layer
-            conn.execute("""
-                UPDATE interpretive_edges
-                SET layer = 'meaning_to_me'
-                WHERE (from_id LIKE 'CP%' OR from_id LIKE 'ID%')
-                  AND (layer IS NULL OR layer = '')
-                """)
+            # #261: one-time migration — only runs if marker not yet present
+            _m261 = conn.execute(
+                "SELECT 1 FROM _migrations WHERE name = 'meaning_to_me_layer_tag'"
+            ).fetchone()
+            if not _m261:
+                conn.execute("""
+                    UPDATE interpretive_edges
+                    SET layer = 'meaning_to_me'
+                    WHERE (from_id LIKE 'CP%' OR from_id LIKE 'ID%')
+                      AND (layer IS NULL OR layer = '')
+                    """)
+                from datetime import datetime as _dt261
+
+                conn.execute(
+                    "INSERT OR IGNORE INTO _migrations(name, applied_at) VALUES (?, ?)",
+                    ("meaning_to_me_layer_tag", _dt261.now().isoformat()),
+                )
             # G-QP2: wal_checkpoint moved to main.py post-Cortex-init (G-QP3)
             # Do NOT checkpoint here — _init_db() runs on every Cortex() instantiation
             # (book_learner, tools, etc.) and would flood the DB with checkpoint contention
@@ -367,6 +387,9 @@ class Cortex:
                     memory.context_of_encoding,
                 ),
             )
+        # #260: invalidate habit cache when a habit is stored
+        if memory.is_habit:
+            self._habit_cache = None
         # #170: auto-connect new INTERPRETIVE memories to the nearest CP.
         # Keyword affinity → no LLM needed; never blocks store on failure.
         if memory.memory_type == MemoryType.INTERPRETIVE:
@@ -517,7 +540,8 @@ class Cortex:
     def get_by_type(self, memory_type: MemoryType) -> list:
         with self._conn() as conn:
             rows = conn.execute(
-                "SELECT * FROM memories WHERE memory_type = ?", (memory_type.value,)
+                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type = ?",
+                (memory_type.value,),
             ).fetchall()
         return [self._to_memory(r) for r in rows]
 
@@ -1282,11 +1306,20 @@ class Cortex:
 
     def get_habits(self) -> list:
         # #128: any memory with a trigger field is a habit — not gated on PROCEDURAL type
+        # #260: in-process cache — avoids repeated full-table LIKE scan (55ms each)
+        if self._habit_cache is not None:
+            return self._habit_cache
         with self._conn() as conn:
             rows = conn.execute(
                 "SELECT * FROM memories WHERE metadata LIKE '%\"trigger\"%'"
             ).fetchall()
-        return [m for m in (self._to_memory(r) for r in rows) if m.is_habit]
+        result = [m for m in (self._to_memory(r) for r in rows) if m.is_habit]
+        self._habit_cache = result
+        return result
+
+    def invalidate_habit_cache(self) -> None:
+        """Clear the in-process habit cache. Call after any habit is added or updated."""
+        self._habit_cache = None
 
     def backfill_embeddings(self, batch_size: int = 50) -> int:
         """
