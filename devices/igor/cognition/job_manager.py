@@ -26,6 +26,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, Optional
 
+from ..igor_base import IgorBase
+
 JOBS_DIR = Path.home() / ".TheIgors" / "igor_wild_0001" / "jobs"
 
 _STATUS_ACTIVE = frozenset({"pending", "running", "paused"})
@@ -35,7 +37,7 @@ _STATUS_ACTIVE = frozenset({"pending", "running", "paused"})
 class Job:
     job_id: str
     title: str
-    status: str           # pending | running | paused | completed | cancelled | failed
+    status: str  # pending | running | paused | completed | cancelled | failed
     created_at: str
     updated_at: str
     total_units: int = 0
@@ -46,7 +48,9 @@ class Job:
     github_issue: str = ""
     batch_size: int = 5
     notes: str = ""
-    thread_id: str = ""   # #159: originating attention nexus — for completion notification
+    thread_id: str = (
+        ""  # #159: originating attention nexus — for completion notification
+    )
 
     def save(self) -> None:
         JOBS_DIR.mkdir(parents=True, exist_ok=True)
@@ -79,13 +83,14 @@ class Job:
         )
 
 
-class JobManager:
+class JobManager(IgorBase):
     """
     Manages the lifecycle of long-running jobs.
     Loaded at Igor boot; persists state to ~/.TheIgors/igor_wild_0001/jobs/.
     """
 
     def __init__(self) -> None:
+        super().__init__()
         self._jobs: dict[str, Job] = {}
         self._load_active()
 
@@ -115,7 +120,9 @@ class JobManager:
                     ).total_seconds() / 3600
                     if age_hours > self._STALE_PENDING_HOURS:
                         j.status = "cancelled"
-                        j.notes = (j.notes + " | auto-cancelled: stale pending at startup").strip()
+                        j.notes = (
+                            j.notes + " | auto-cancelled: stale pending at startup"
+                        ).strip()
                         j.save()
                         continue
                 if j.status in _STATUS_ACTIVE:
@@ -275,12 +282,14 @@ class JobManager:
             except Exception as exc:
                 result = f"[ERROR] {exc}"
             self.complete(job_id)
-            completions_queue.append({
-                "job_id": job_id,
-                "title": title,
-                "result": result,
-                "thread_id": thread_id,
-            })
+            completions_queue.append(
+                {
+                    "job_id": job_id,
+                    "title": title,
+                    "result": result,
+                    "thread_id": thread_id,
+                }
+            )
 
         t = threading.Thread(target=_worker, daemon=True, name=f"igor-job-{job_id}")
         t.start()

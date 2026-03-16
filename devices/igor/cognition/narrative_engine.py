@@ -32,6 +32,7 @@ from .forensic_logger import log_ne_run, cts as _cts
 
 from ..memory.cortex import Cortex
 from ..memory.models import Memory, MemoryType
+from ..igor_base import IgorBase
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 NE_MODEL = "ollama"  # label only; actual inference via OllamaReasoner in _call_local()
@@ -125,13 +126,14 @@ class TraversalCursor:
 NE_MAX_OBS_CHARS = 8000  # 2000 tokens × 4 chars/token
 
 
-class NarrativeEngine:
+class NarrativeEngine(IgorBase):
     """
     Coherence-checker. Runs in the main loop. Stateless between runs —
     all state lives in TWM (SQLite).
     """
 
     def __init__(self, cortex: Cortex, instance_id: str = "wild-0001"):
+        super().__init__()
         self.cortex = cortex
         self.instance_id = instance_id
         self._last_run: Optional[datetime] = None

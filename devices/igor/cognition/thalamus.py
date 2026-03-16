@@ -6,10 +6,12 @@ Parses intent, emotional tone, and determines what memories to activate.
 import re
 from dataclasses import dataclass, field
 
+from ..igor_base import IgorBase
 
-class Thalamus:
+
+class Thalamus(IgorBase):
     def __init__(self):
-        pass
+        super().__init__()
 
     def process(self, raw_input: str) -> "ParsedInput":
         text = raw_input.strip()

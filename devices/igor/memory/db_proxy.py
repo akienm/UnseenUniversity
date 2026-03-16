@@ -27,6 +27,8 @@ from collections import deque
 from pathlib import Path
 from typing import Optional
 
+from ..igor_base import IgorBase
+
 # Thread-local flag to prevent EXPLAIN QUERY PLAN re-entrancy
 _in_explain = threading.local()
 
@@ -41,7 +43,7 @@ _DB_LOG_PATH = Path.home() / ".TheIgors" / "logs" / "db_queries.log"
 _DB_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
-def _db_log(elapsed_ms: float, sql: str) -> None:
+def _db_log(elapsed_ms: float, sql: str, owner: str = "?") -> None:
     """Append one slow-query entry to db_queries.log."""
     try:
         turn_id = "(unknown)"
@@ -52,7 +54,7 @@ def _db_log(elapsed_ms: float, sql: str) -> None:
         except Exception:
             pass
         ts = time.strftime("%Y-%m-%d %H:%M:%S")
-        line = f"{ts} turn={turn_id} elapsed={elapsed_ms}ms sql={sql}\n"
+        line = f"{ts} owner={owner} turn={turn_id} elapsed={elapsed_ms}ms sql={sql}\n"
         with open(_DB_LOG_PATH, "a", encoding="utf-8") as f:
             f.write(line)
     except Exception:
@@ -110,7 +112,7 @@ class _DBContext:
         return False  # never suppress exceptions
 
 
-class DatabaseProxy:
+class DatabaseProxy(IgorBase):
     """
     Drop-in replacement for Cortex._conn().
 
@@ -125,6 +127,7 @@ class DatabaseProxy:
     """
 
     def __init__(self, db_path: Path) -> None:
+        super().__init__()
         self.db_path = db_path
         self._latencies: deque[float] = deque(maxlen=_RING_SIZE)
         self._errors: int = 0
@@ -162,7 +165,7 @@ class DatabaseProxy:
                 logging.getLogger(__name__).warning(
                     f"[db_proxy] slow query {elapsed_ms}ms — {sql_snippet}"
                 )
-                _db_log(elapsed_ms, sql_snippet)
+                _db_log(elapsed_ms, sql_snippet, owner=self.get_name())
             except Exception:
                 pass
 

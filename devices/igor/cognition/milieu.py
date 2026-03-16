@@ -29,6 +29,8 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Optional
 
+from ..igor_base import IgorBase
+
 # ── Constants ──────────────────────────────────────────────────────────────────
 
 ALPHA_UP = 0.25  # fast rise toward new signal
@@ -139,13 +141,14 @@ def _contribute_to_global(state: MilieuState, alpha: float) -> None:
 # ── Core Milieu class ──────────────────────────────────────────────────────────
 
 
-class Milieu:
+class Milieu(IgorBase):
     """
     Ambient emotional state manager.
     One instance per Igor process (module singleton via init()/get()).
     """
 
     def __init__(self, instance_id: str):
+        super().__init__()
         self._instance_id = instance_id
         self._path = (
             Path(os.path.expanduser("~/.TheIgors"))
