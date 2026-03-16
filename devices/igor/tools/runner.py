@@ -305,6 +305,190 @@ registry.register(
 )
 
 
+# ── Project-aware git / ticket tools (D095) ────────────────────────────────
+
+
+def _resolve_repo_path(repo_path: str = None, project_id: str = None) -> str:
+    """
+    Resolve a repository path.
+    Priority: explicit repo_path > project_id lookup in DB > ~/TheIgors fallback.
+    """
+    if repo_path:
+        return repo_path
+    if project_id:
+        try:
+            db_path = os.environ.get("IGOR_DB_PATH", "")
+            if db_path:
+                from pathlib import Path as _Path
+                from ..memory.cortex import Cortex as _Cortex
+
+                _cortex = _Cortex(_Path(db_path))
+                _mem = _cortex.get(project_id)
+                if _mem and _mem.metadata and _mem.metadata.get("path"):
+                    return _mem.metadata["path"]
+        except Exception:
+            pass
+    return str(Path.home() / "TheIgors")
+
+
+def git_log(repo_path: str = None, project_id: str = None, n: int = 20) -> str:
+    """
+    Return the last N git log entries for a project repository.
+    If project_id is given, the path is looked up from Igor's DB.
+    Defaults to ~/TheIgors if neither is provided.
+    """
+    path = _resolve_repo_path(repo_path, project_id)
+    try:
+        result = subprocess.run(
+            ["git", "log", "--oneline", f"-{int(n)}"],
+            cwd=path,
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        out = result.stdout.strip()
+        if result.returncode != 0:
+            return f"[git log error] {result.stderr.strip() or 'exit ' + str(result.returncode)}"
+        return out or "(no commits)"
+    except FileNotFoundError:
+        return "[ERROR] git not found in PATH"
+    except Exception as e:
+        return f"[ERROR] {e}"
+
+
+def find_tickets(
+    repo_path: str = None,
+    project_id: str = None,
+    query: str = "",
+    state: str = "open",
+) -> str:
+    """
+    List GitHub issues for a project repository using gh CLI.
+    state: open | closed | all
+    query: optional search string (gh issue list --search)
+    """
+    path = _resolve_repo_path(repo_path, project_id)
+    cmd = ["gh", "issue", "list", "--state", state, "--limit", "30"]
+    if query:
+        cmd += ["--search", query]
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=path,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        out = result.stdout.strip()
+        if result.returncode != 0:
+            return f"[gh error] {result.stderr.strip() or 'exit ' + str(result.returncode)}"
+        return out or "(no matching issues)"
+    except FileNotFoundError:
+        return "[ERROR] gh CLI not found in PATH"
+    except Exception as e:
+        return f"[ERROR] {e}"
+
+
+def list_projects() -> str:
+    """
+    List all projects registered in Igor's lists.projects table.
+    Returns a formatted summary of each project (id, path, github_repo).
+    """
+    try:
+        db_path = os.environ.get("IGOR_DB_PATH", "")
+        if not db_path:
+            return "[ERROR] IGOR_DB_PATH not set"
+        from pathlib import Path as _Path
+        from ..memory.cortex import Cortex as _Cortex
+
+        _cortex = _Cortex(_Path(db_path))
+        items = _cortex.list_all("lists.projects")
+        if not items:
+            return "(no projects registered)"
+        lines = []
+        for item in items:
+            mem_id = item.get("ref_id") or item["item_key"]
+            details = item.get("item_value") or ""
+            lines.append(f"  {item['item_key']:24s}  ref={mem_id}  {details}")
+        return f"projects ({len(items)}):\n" + "\n".join(lines)
+    except Exception as e:
+        return f"[ERROR] {e}"
+
+
+registry.register(
+    Tool(
+        name="git_log",
+        description=(
+            "Return the last N git log entries for a project repository. "
+            "Pass project_id to look up the path from Igor's memory, "
+            "or repo_path to specify directly. Defaults to ~/TheIgors."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "repo_path": {
+                    "type": "string",
+                    "description": "Absolute path to git repo",
+                },
+                "project_id": {
+                    "type": "string",
+                    "description": "Igor memory ID of the project (e.g. 'Project:TheIgors')",
+                },
+                "n": {
+                    "type": "integer",
+                    "description": "Number of commits to show (default 20)",
+                },
+            },
+            "required": [],
+        },
+        fn=git_log,
+    )
+)
+
+registry.register(
+    Tool(
+        name="find_tickets",
+        description=(
+            "List GitHub issues for a project using gh CLI. "
+            "Pass project_id to resolve the repo path from Igor's memory. "
+            "state: open | closed | all. query: optional search string."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "repo_path": {
+                    "type": "string",
+                    "description": "Absolute path to git repo",
+                },
+                "project_id": {
+                    "type": "string",
+                    "description": "Igor memory ID of the project",
+                },
+                "query": {
+                    "type": "string",
+                    "description": "Optional search string (gh --search)",
+                },
+                "state": {
+                    "type": "string",
+                    "description": "Issue state: open | closed | all (default open)",
+                },
+            },
+            "required": [],
+        },
+        fn=find_tickets,
+    )
+)
+
+registry.register(
+    Tool(
+        name="list_projects",
+        description="List all projects registered in Igor's lists.projects table.",
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=list_projects,
+    )
+)
+
+
 registry.register(
     Tool(
         name="restart_self",
