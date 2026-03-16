@@ -190,6 +190,10 @@ def _score_habit(
     valence = getattr(habit, "valence", 0.0) or 0.0
     score += valence * 0.10
 
+    # meaning_to_me_bonus: habits tagged as personally significant get a small boost (#244)
+    if (habit.metadata or {}).get("meaning_to_me"):
+        score += 0.08
+
     # decay_factor: experienced habits decay slower; unused habits fade
     score *= compute_decay_factor(habit, now=now)
 
@@ -218,6 +222,7 @@ def select_habit(
     parsed,
     habits: list,
     milieu_state=None,
+    meaning_to_me_context: bool = False,
 ) -> "tuple[Memory | None, float, list[tuple[float, Memory]]]":
     """
     Score all habits in parallel; return (winner, confidence, near_misses).
@@ -225,6 +230,10 @@ def select_habit(
     near_misses: habits whose trigger matched but scored below the milieu-
     modulated threshold (in [THRESHOLD_MIN, threshold)).  Used by the #54
     tiebreaker path in main.py — cheap classification call before full LLM.
+
+    meaning_to_me_context (#244): when True (caller detected a meaning_to_me TWM
+        observation this turn), habits tagged with metadata.meaning_to_me=True get
+        a +0.05 salience bonus so personally significant habits win tiebreaks.
 
     Steps:
       1. Compile-phrase pre-check → PROC_HABIT_COMPILER at 0.95.
@@ -264,12 +273,16 @@ def select_habit(
         _QUESTION_INTENTS = frozenset(
             {
                 "factual_question",
+                "knowledge_request",
                 "meta_question",
                 "explanation_request",
                 "general",
                 "conversation",
             }
         )
+        # G-OVN-1d: intents where ALL response habits should fall through to LLM + winnow.
+        # Canned response habits must not suppress genuine knowledge queries. (D074 expansion)
+        _KNOWLEDGE_INTENTS = frozenset({"factual_question", "knowledge_request"})
 
         # Word graph pre-score: semantic signal over all habits at once (fast)
         _wg_scores: dict[str, float] = {}
@@ -295,9 +308,26 @@ def select_habit(
                 or h_type in ("workflow", "delegation", "reactive")
             ) and parsed_intent in _QUESTION_INTENTS:
                 continue
+            # G-OVN-1c: response habits flagged suppress_on_factual_intent skip on
+            # factual_question — prevents "I don't know that one" canned responses from
+            # firing when the intent is a genuine knowledge query (#248, bug 3).
+            if (
+                h_type == "response"
+                and habit.metadata.get("suppress_on_factual_intent")
+                and parsed_intent == "factual_question"
+            ):
+                continue
+            # G-OVN-1d: ALL response habits skip on factual_question or knowledge_request.
+            # Canned responses must never suppress genuine knowledge/factual queries;
+            # fall through to LLM + winnow to get a real answer. (D074 expansion, #254)
+            if h_type == "response" and parsed_intent in _KNOWLEDGE_INTENTS:
+                continue
             s = _score_habit(habit, raw_lower, keywords, now=now)
             if s > 0:  # only apply bonus when trigger matched
                 s += _wg_scores.get(habit.id, 0.0) * 0.10  # word graph bonus: 0.0–0.10
+                # #244: meaning_to_me context bonus — personally significant habits win tiebreaks
+                if meaning_to_me_context and habit.metadata.get("meaning_to_me"):
+                    s += 0.05
             if s >= threshold:
                 scored.append((s, habit))
             elif s >= THRESHOLD_MIN:

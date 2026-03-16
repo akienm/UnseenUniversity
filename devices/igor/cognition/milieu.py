@@ -29,35 +29,41 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Optional
 
-
 # ── Constants ──────────────────────────────────────────────────────────────────
 
-ALPHA_UP   = 0.25   # fast rise toward new signal
-ALPHA_DOWN = 0.05   # slow fall away from signal
-PUSH_DELTA = 0.08   # min per-dim change required to push a TWM update
+ALPHA_UP = 0.25  # fast rise toward new signal
+ALPHA_DOWN = 0.05  # slow fall away from signal
+PUSH_DELTA = 0.08  # min per-dim change required to push a TWM update
 
 # G12 / #55: per-dimension asymmetric decay rates (faster for volatile dims)
-DECAY_VALENCE   = 0.96   # fastest — mood is volatile, fades quickly
-DECAY_AROUSAL   = 0.97   # medium — activation persists somewhat longer
-DECAY_DOMINANCE = 0.99   # slowest — sense of control is most stable
+DECAY_VALENCE = 0.96  # fastest — mood is volatile, fades quickly
+DECAY_AROUSAL = 0.97  # medium — activation persists somewhat longer
+DECAY_DOMINANCE = 0.99  # slowest — sense of control is most stable
 
 # NE's self-assessment is a softer hint than direct interaction signals
-NE_ALPHA_UP   = 0.10
+NE_ALPHA_UP = 0.10
 NE_ALPHA_DOWN = 0.03
 
+# Per-turn resolution reward: faster than NE hint, slower than direct interaction
+RESOLUTION_ALPHA_UP = 0.15
+RESOLUTION_ALPHA_DOWN = 0.04
+
 # Global milieu: shared across all instances with same ~/.TheIgors root
-SPIKE_THRESHOLD      = 0.15   # min delta on any dim to classify as spike
-GLOBAL_ALPHA_SPIKE   = 0.05   # global EMA speed on notable change
-GLOBAL_ALPHA_ROUTINE = 0.01   # global EMA speed on routine tick
+SPIKE_THRESHOLD = 0.15  # min delta on any dim to classify as spike
+GLOBAL_ALPHA_SPIKE = 0.05  # global EMA speed on notable change
+GLOBAL_ALPHA_ROUTINE = 0.01  # global EMA speed on routine tick
 
 # G16 / #56: cross-instance sync
 # Local: tick() blends toward global every GLOBAL_SYNC_TICKS ticks
 # Cross-machine: POST contributions + GET global from IGOR_GLOBAL_MILIEU_URL
-GLOBAL_BLEND_ALPHA   = 0.02   # 2% pull toward global per sync tick — gentle, non-overriding
-GLOBAL_SYNC_TICKS    = 10     # blend every N ticks (~5 min at 30s/tick)
+GLOBAL_BLEND_ALPHA = (
+    0.02  # 2% pull toward global per sync tick — gentle, non-overriding
+)
+GLOBAL_SYNC_TICKS = 10  # blend every N ticks (~5 min at 30s/tick)
 
 
 # ── State dataclass ────────────────────────────────────────────────────────────
+
 
 @dataclass
 class MilieuState:
@@ -71,14 +77,16 @@ class MilieuState:
     tick counts mutations (debugging/rate-limiting).
     last_update is unix timestamp of last mutation.
     """
-    valence:     float = 0.0
-    arousal:     float = 0.0
-    dominance:   float = 0.3   # start slight positive (default competent)
-    tick:        int   = 0
+
+    valence: float = 0.0
+    arousal: float = 0.0
+    dominance: float = 0.3  # start slight positive (default competent)
+    tick: int = 0
     last_update: float = 0.0
 
 
 # ── Global milieu helpers ──────────────────────────────────────────────────────
+
 
 def _global_milieu_path() -> Path:
     return Path(os.path.expanduser("~/.TheIgors")) / "milieu_global.json"
@@ -100,14 +108,19 @@ def _contribute_to_global(state: MilieuState, alpha: float) -> None:
                 if path.exists():
                     try:
                         data = json.loads(path.read_text(encoding="utf-8"))
-                        g = MilieuState(**{k: v for k, v in data.items()
-                                          if k in MilieuState.__dataclass_fields__})
+                        g = MilieuState(
+                            **{
+                                k: v
+                                for k, v in data.items()
+                                if k in MilieuState.__dataclass_fields__
+                            }
+                        )
                     except Exception:
                         g = MilieuState()
                 else:
                     g = MilieuState()
-                g.valence   += alpha * (state.valence   - g.valence)
-                g.arousal   += alpha * (state.arousal   - g.arousal)
+                g.valence += alpha * (state.valence - g.valence)
+                g.arousal += alpha * (state.arousal - g.arousal)
                 g.dominance += alpha * (state.dominance - g.dominance)
                 g.last_update = time.time()
                 path.write_text(json.dumps(asdict(g), indent=2), encoding="utf-8")
@@ -118,6 +131,7 @@ def _contribute_to_global(state: MilieuState, alpha: float) -> None:
 
 
 # ── Core Milieu class ──────────────────────────────────────────────────────────
+
 
 class Milieu:
     """
@@ -137,8 +151,8 @@ class Milieu:
         # New instance with no local history: seed from global baseline
         if not _local_existed:
             g = self._load_global_baseline()
-            self._state.valence   = g.valence
-            self._state.arousal   = g.arousal
+            self._state.valence = g.valence
+            self._state.arousal = g.arousal
             self._state.dominance = g.dominance
         # #99: session histogram — in-memory only, never persisted
         self._session_samples: list[tuple[float, float, float]] = []
@@ -151,8 +165,13 @@ class Milieu:
         try:
             if self._path.exists():
                 data = json.loads(self._path.read_text(encoding="utf-8"))
-                return MilieuState(**{k: v for k, v in data.items()
-                                      if k in MilieuState.__dataclass_fields__})
+                return MilieuState(
+                    **{
+                        k: v
+                        for k, v in data.items()
+                        if k in MilieuState.__dataclass_fields__
+                    }
+                )
         except Exception:
             pass  # Corrupt or missing — start fresh
         return MilieuState()
@@ -170,11 +189,18 @@ class Milieu:
             try:
                 import urllib.request as _req
                 import json as _j
-                with _req.urlopen(f"{_remote_url.rstrip('/')}/api/milieu/global",
-                                  timeout=3) as resp:
+
+                with _req.urlopen(
+                    f"{_remote_url.rstrip('/')}/api/milieu/global", timeout=3
+                ) as resp:
                     data = _j.loads(resp.read().decode())
-                return MilieuState(**{k: v for k, v in data.items()
-                                      if k in MilieuState.__dataclass_fields__})
+                return MilieuState(
+                    **{
+                        k: v
+                        for k, v in data.items()
+                        if k in MilieuState.__dataclass_fields__
+                    }
+                )
             except Exception:
                 pass  # Fall through to local
         return self._load_global_baseline()
@@ -191,6 +217,7 @@ class Milieu:
         try:
             import urllib.request as _req
             import json as _j
+
             _payload = _j.dumps(asdict(self._state)).encode()
             _req_obj = _req.Request(
                 f"{_remote_url.rstrip('/')}/api/milieu/contribute",
@@ -207,8 +234,13 @@ class Milieu:
             path = _global_milieu_path()
             if path.exists():
                 data = json.loads(path.read_text(encoding="utf-8"))
-                return MilieuState(**{k: v for k, v in data.items()
-                                      if k in MilieuState.__dataclass_fields__})
+                return MilieuState(
+                    **{
+                        k: v
+                        for k, v in data.items()
+                        if k in MilieuState.__dataclass_fields__
+                    }
+                )
         except Exception:
             pass
         return MilieuState()
@@ -226,9 +258,12 @@ class Milieu:
     # ── Math ──────────────────────────────────────────────────────────────────
 
     @staticmethod
-    def _blend(current: float, signal: float,
-               alpha_up: float = ALPHA_UP,
-               alpha_down: float = ALPHA_DOWN) -> float:
+    def _blend(
+        current: float,
+        signal: float,
+        alpha_up: float = ALPHA_UP,
+        alpha_down: float = ALPHA_DOWN,
+    ) -> float:
         """Asymmetric EMA: fast rise, slow fall."""
         alpha = alpha_up if signal > current else alpha_down
         return current + alpha * (signal - current)
@@ -261,19 +296,24 @@ class Milieu:
         # Dominance dimension: friction erodes control, positive roi restores it
         # Friction: high → dominance drops; inverted and scaled
         friction_dom_signal = self._clamp(1.0 - friction * 2.0)  # high friction → -1
-        roi_dom_signal       = self._clamp(roi)
+        roi_dom_signal = self._clamp(roi)
 
         # Blend both signals; roi is a lighter touch
         s.dominance = self._clamp(self._blend(s.dominance, friction_dom_signal))
-        s.dominance = self._clamp(self._blend(s.dominance, roi_dom_signal,
-                                               alpha_up=0.10, alpha_down=0.02))
+        s.dominance = self._clamp(
+            self._blend(s.dominance, roi_dom_signal, alpha_up=0.10, alpha_down=0.02)
+        )
 
-        s.tick        += 1
-        s.last_update  = time.time()
+        s.tick += 1
+        s.last_update = time.time()
         self._save()
         # #99: accumulate session histogram sample
         self._session_samples.append((s.valence, s.arousal, s.dominance))
-        _alpha = GLOBAL_ALPHA_SPIKE if self.delta(_prev) >= SPIKE_THRESHOLD else GLOBAL_ALPHA_ROUTINE
+        _alpha = (
+            GLOBAL_ALPHA_SPIKE
+            if self.delta(_prev) >= SPIKE_THRESHOLD
+            else GLOBAL_ALPHA_ROUTINE
+        )
         _contribute_to_global(s, _alpha)
         # G16: on spike, push to remote immediately (cross-machine propagation)
         if _alpha == GLOBAL_ALPHA_SPIKE:
@@ -294,12 +334,37 @@ class Milieu:
 
         _prev = self.snapshot()
         s = self._state
-        s.valence = self._clamp(self._blend(s.valence, ne_valence,
-                                             NE_ALPHA_UP, NE_ALPHA_DOWN))
+        s.valence = self._clamp(
+            self._blend(s.valence, ne_valence, NE_ALPHA_UP, NE_ALPHA_DOWN)
+        )
         # NE arousal is [0,1] not [-1,1] — map it
         arousal_signal = self._clamp(ne_arousal * 2.0 - 1.0)
-        s.arousal = self._clamp(self._blend(s.arousal, arousal_signal,
-                                             NE_ALPHA_UP, NE_ALPHA_DOWN))
+        s.arousal = self._clamp(
+            self._blend(s.arousal, arousal_signal, NE_ALPHA_UP, NE_ALPHA_DOWN)
+        )
+        s.last_update = time.time()
+        self._save()
+        if self.delta(_prev) >= SPIKE_THRESHOLD:
+            _contribute_to_global(s, GLOBAL_ALPHA_SPIKE)
+
+    def ingest_resolution_reward(self, valence: float) -> None:
+        """
+        Per-turn reward signal: called when a turn resolves with a response.
+
+        Stronger than NE hint (α=0.15/0.04) but weaker than direct interaction.
+        Only updates valence — turn resolution doesn't affect arousal or dominance.
+        Contributes to global milieu on spike.
+        """
+        try:
+            valence = float(valence)
+        except (TypeError, ValueError):
+            return
+
+        _prev = self.snapshot()
+        s = self._state
+        s.valence = self._clamp(
+            self._blend(s.valence, valence, RESOLUTION_ALPHA_UP, RESOLUTION_ALPHA_DOWN)
+        )
         s.last_update = time.time()
         self._save()
         if self.delta(_prev) >= SPIKE_THRESHOLD:
@@ -314,17 +379,17 @@ class Milieu:
         G16 / #56: every GLOBAL_SYNC_TICKS ticks, blend gently toward global baseline.
         """
         s = self._state
-        s.valence   *= DECAY_VALENCE
-        s.arousal   *= DECAY_AROUSAL
-        s.dominance  = s.dominance * DECAY_DOMINANCE + (0.3 * (1.0 - DECAY_DOMINANCE))
+        s.valence *= DECAY_VALENCE
+        s.arousal *= DECAY_AROUSAL
+        s.dominance = s.dominance * DECAY_DOMINANCE + (0.3 * (1.0 - DECAY_DOMINANCE))
 
         # G16: periodic pull toward global — keeps long sessions from drifting too far
         self._tick_count += 1
         if self._tick_count % GLOBAL_SYNC_TICKS == 0:
             g = self._read_global()
             if g is not None:
-                s.valence   += GLOBAL_BLEND_ALPHA * (g.valence   - s.valence)
-                s.arousal   += GLOBAL_BLEND_ALPHA * (g.arousal   - s.arousal)
+                s.valence += GLOBAL_BLEND_ALPHA * (g.valence - s.valence)
+                s.arousal += GLOBAL_BLEND_ALPHA * (g.arousal - s.arousal)
                 s.dominance += GLOBAL_BLEND_ALPHA * (g.dominance - s.dominance)
 
         s.last_update = time.time()
@@ -345,8 +410,13 @@ class Milieu:
         """
         _prev = self.snapshot()
         _TIER_ORDER: dict[str, float] = {
-            "tier.1": 1.0, "tier.2": 2.0, "tier.3": 3.0,
-            "tier.3.5": 3.5, "tier.4": 4.0, "tier.5": 5.0, "tier.6": 6.0,
+            "tier.1": 1.0,
+            "tier.2": 2.0,
+            "tier.3": 3.0,
+            "tier.3.5": 3.5,
+            "tier.4": 4.0,
+            "tier.5": 5.0,
+            "tier.6": 6.0,
         }
         pred_n = _TIER_ORDER.get(predicted_tier, 3.5)
         actual_n = _TIER_ORDER.get(actual_tier, 3.5)
@@ -356,16 +426,19 @@ class Milieu:
             # Had to escalate further — prediction failed → dominance erodes, arousal spikes
             magnitude = min(0.5, (actual_n - pred_n) * 0.25)
             dom_signal = self._clamp(s.dominance - magnitude)
-            s.dominance = self._clamp(self._blend(s.dominance, dom_signal,
-                                                   alpha_up=0.20, alpha_down=0.05))
+            s.dominance = self._clamp(
+                self._blend(s.dominance, dom_signal, alpha_up=0.20, alpha_down=0.05)
+            )
             aro_signal = self._clamp(s.arousal + 0.15)
-            s.arousal = self._clamp(self._blend(s.arousal, aro_signal,
-                                                 alpha_up=0.20, alpha_down=0.05))
+            s.arousal = self._clamp(
+                self._blend(s.arousal, aro_signal, alpha_up=0.20, alpha_down=0.05)
+            )
         else:
             # Succeeded at or below predicted tier — mild confidence restoration
             dom_signal = self._clamp(s.dominance + 0.08)
-            s.dominance = self._clamp(self._blend(s.dominance, dom_signal,
-                                                   alpha_up=0.10, alpha_down=0.02))
+            s.dominance = self._clamp(
+                self._blend(s.dominance, dom_signal, alpha_up=0.10, alpha_down=0.02)
+            )
 
         s.last_update = time.time()
         self._save()
@@ -388,8 +461,8 @@ class Milieu:
         """Max absolute change across dims since prev snapshot."""
         s = self._state
         return max(
-            abs(s.valence   - prev.valence),
-            abs(s.arousal   - prev.arousal),
+            abs(s.valence - prev.valence),
+            abs(s.arousal - prev.arousal),
             abs(s.dominance - prev.dominance),
         )
 
@@ -404,12 +477,15 @@ class Milieu:
         """
         samples = self._session_samples
         if len(samples) < 3:
-            return {"session_character": "insufficient_data", "sample_count": len(samples)}
+            return {
+                "session_character": "insufficient_data",
+                "sample_count": len(samples),
+            }
 
         def _stats(vals: list[float]) -> dict:
             n = len(vals)
             mean = sum(vals) / n
-            std  = (sum((v - mean) ** 2 for v in vals) / n) ** 0.5
+            std = (sum((v - mean) ** 2 for v in vals) / n) ** 0.5
             buckets = [0, 0, 0, 0, 0]  # very_neg, neg, neutral, pos, very_pos
             for v in vals:
                 idx = min(4, int((v + 1.0) / 0.4))
@@ -461,9 +537,9 @@ class Milieu:
         drifts toward default 0.3 (slightly competent).
         """
         s = self._state
-        s.arousal   *= 0.3
-        s.valence   *= 0.5
-        s.dominance  = s.dominance * 0.7 + 0.3 * 0.3
+        s.arousal *= 0.3
+        s.valence *= 0.5
+        s.dominance = s.dominance * 0.7 + 0.3 * 0.3
         s.last_update = time.time()
         self._save()
         return s

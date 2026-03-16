@@ -407,6 +407,9 @@ class Igor:
         )
 
         # Part C — routing signal tracking
+        self._last_ne_valence: float = (
+            0.0  # most recent NE internal_state valence (#246)
+        )
         self._last_response_time: float = 0.0  # epoch seconds of last response
         self._consecutive_slow: int = 0  # consecutive responses over latency budget
         self._latency_samples: list = []  # rolling last-20 total_ms for p50/p95 (#139)
@@ -2632,9 +2635,23 @@ class Igor:
                 pass
 
         _fast_path_intents = {"greeting", "command"}
+        # #244: check TWM for meaning_to_me signal from prior turn
+        _meaning_to_me_active = False
+        try:
+            _mtm_obs = self.cortex.twm_read(
+                limit=1, include_integrated=False, category="meaning_to_me"
+            )
+            _meaning_to_me_active = bool(_mtm_obs)
+        except Exception:
+            pass
         _tc_bg = _time.monotonic()
         _thalamus_habit, _thalamus_confidence, _thalamus_near_misses = (
-            basal_ganglia.select_habit(parsed, habits, milieu_state=_milieu_state)
+            basal_ganglia.select_habit(
+                parsed,
+                habits,
+                milieu_state=_milieu_state,
+                meaning_to_me_context=_meaning_to_me_active,
+            )
         )
         if not is_impulse:
             _log_pt(
@@ -2861,6 +2878,7 @@ class Igor:
                     max_depth=_trav_depth,
                     milieu_bias=_milieu_bias or None,
                     exit_on_convergence=_exit_on_convergence,
+                    track_meaning_layer=True,
                 )
                 if _trav_strategy:
                     loginfo(
@@ -2885,14 +2903,42 @@ class Igor:
                             salience=0.5,
                             ttl_seconds=300,
                         )
+                # #244: meaning_to_me detection — push TWM so NE and BG see it next turn
+                if self.cortex._last_traverse_meaning_to_me:
+                    try:
+                        self.cortex.twm_push(
+                            content_csb="MEANING_TO_ME|Traversal touched personally significant thread (CP/ID origin)",
+                            source="interpretive_traverse",
+                            salience=0.65,
+                            ttl_seconds=180,
+                            category="meaning_to_me",
+                        )
+                        loginfo(
+                            "[dim][#244] meaning_to_me thread active — salience boost pushed to TWM[/]"
+                        )
+                    except Exception:
+                        pass
                 if _interp:
                     # Deduplicate against existing relevant set before appending
                     _existing_ids = {m.id for m in relevant}
                     _new_interp = [m for m in _interp if m.id not in _existing_ids]
                     if _new_interp:
-                        relevant = list(relevant) + _new_interp[:5]
+                        # #244: meaning_to_me memories bubble up — personally significant threads first
+                        _mtm = [
+                            m
+                            for m in _new_interp
+                            if (m.metadata or {}).get("meaning_to_me")
+                        ]
+                        _rest = [
+                            m
+                            for m in _new_interp
+                            if not (m.metadata or {}).get("meaning_to_me")
+                        ]
+                        relevant = list(relevant) + (_mtm + _rest)[:5]
                         loginfo(
-                            f"[dim][INTERP] +{len(_new_interp)} interpretive memories from tree traversal[/]"
+                            f"[dim][INTERP] +{len(_new_interp)} interpretive memories"
+                            + (f" ({len(_mtm)} meaning_to_me)" if _mtm else "")
+                            + " from tree traversal[/]"
                         )
                 # #178: record traversal for boredom tracking; apply resistance to over-used nodes
                 try:
@@ -3467,6 +3513,59 @@ class Igor:
             except Exception as _ci_err:
                 loginfo(f"[dim][G-HB3] context_inject error: {_ci_err}[/]")
             habit = None  # fall through to LLM with enriched TWM context
+
+        # D080: watch habit type — boost TWM salience when watched concept mentioned, then fall through.
+        # Does not dispatch an action. LLM sees the boosted context and responds naturally.
+        if habit and habit.metadata.get("habit_type") == "watch":
+            try:
+                _watch_id = habit.id
+                _expires = habit.metadata.get("watch_expires")
+                _expired = False
+                if _expires:
+                    from datetime import datetime as _dt, timezone as _tz
+
+                    _exp_dt = _dt.fromisoformat(_expires.replace("Z", "+00:00"))
+                    if _exp_dt.tzinfo is None:
+                        _exp_dt = _exp_dt.replace(tzinfo=_tz.utc)
+                    _expired = _dt.now(_tz.utc) > _exp_dt
+                if not _expired:
+                    _attractor = self.cortex.twm_get_attractor()
+                    _base_sal = _attractor["salience"] if _attractor else 0.4
+                    _sal = min(1.0, _base_sal + 0.3)
+                    _label = habit.metadata.get("watch_label", _watch_id)
+                    self.cortex.twm_push(
+                        source=f"habit:{_watch_id}",
+                        content_csb=f"WATCH_HIT|{_label}|salience_boost={_sal:.2f}",
+                        salience=_sal,
+                        urgency=0.3,
+                        ttl_seconds=120,
+                        metadata={"habit_id": _watch_id, "watch_label": _label},
+                    )
+                    self.cortex.write_ring(
+                        f"WATCH_HIT|{_watch_id}|trigger={habit.metadata.get('trigger', '')}",
+                        category="watch_events",
+                    )
+                    loginfo(
+                        f"[dim][WATCH] {_watch_id} fired: salience boost → {_sal:.2f}[/]"
+                    )
+                else:
+                    loginfo(f"[dim][WATCH] {_watch_id} expired — skipping[/]")
+            except Exception as _we:
+                loginfo(f"[dim][WATCH] error: {_we}[/]")
+            habit = None  # always fall through to LLM
+
+        # #248 bug 2: cognitive/passive_capture habits with no action template produce
+        # "Habit executed. [...]" debug text in responses. Fall through to LLM instead.
+        if habit and habit.metadata.get("habit_type") in (
+            "cognitive",
+            "passive_capture",
+        ):
+            if not habit.metadata.get("action") and not habit.metadata.get("actions"):
+                self.cortex.write_ring(
+                    f"HABIT_FALLTHROUGH|id={habit.id}|reason=no_action_template",
+                    category="habit_trace",
+                )
+                habit = None
 
         if habit:
             dashboard.print_habit_trigger(habit)
@@ -4120,6 +4219,7 @@ class Igor:
             word_graph=self._word_graph,
             latency_samples=self._latency_samples,
             inference_data=_inf_data,
+            cloud_mode_active=_cloud_mode_active,
         )
 
         # [PRECOMPACT] Flush session summary to LTM before context window gets too large (change.32)
@@ -4238,6 +4338,7 @@ class Igor:
                 habit_fired=(_turn_habit is not None),
             )
 
+        self._apply_resolution_reward()
         return response_text
 
     def _run_ne_background(self):
@@ -4290,6 +4391,13 @@ class Igor:
                         _m = milieu_mod.get()
                         if _ne_state and _m:
                             _m.ingest_ne_state(_ne_state)
+                        if _ne_state:
+                            try:
+                                self._last_ne_valence = float(
+                                    _ne_state.get("valence", 0.0)
+                                )
+                            except (TypeError, ValueError):
+                                pass
                 except Exception:
                     pass  # FAIL = FAL — NE must never crash the loop
 
@@ -4299,6 +4407,23 @@ class Igor:
             self._ne_thread.start()
         finally:
             self._ne_spawn_lock.release()
+
+    def _apply_resolution_reward(self) -> None:
+        """
+        #246: Per-turn intrinsic reward signal — called when a turn resolves with a response.
+        Uses the last NE valence reading as a proxy for how well the turn went.
+        Never raises — milieu is advisory.
+        """
+        if self._last_ne_valence == 0.0:
+            return
+        try:
+            from .cognition import milieu as milieu_mod
+
+            _m = milieu_mod.get()
+            if _m is not None:
+                _m.ingest_resolution_reward(self._last_ne_valence)
+        except Exception:
+            pass
 
     def _run_consolidation_background(self):
         """

@@ -19,6 +19,7 @@ change.37: memories table now has an `embedding` column (TEXT, nullable JSON).
 import json
 import os
 import sqlite3
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
@@ -35,6 +36,21 @@ def _safe_memory_type(value: str) -> MemoryType:
     except ValueError:
         return MemoryType.FACTUAL
 
+
+# #258: explicit column list for batch id IN fetches — excludes embedding blob
+# to avoid deserializing large vectors when cosine rerank is not needed.
+_MEM_COLS_NO_EMBED = (
+    "id, narrative, memory_type, parent_id, children_ids, link_ids, "
+    "valence, activation_count, friction_history, timestamp, metadata, "
+    "arousal, dominance, portable, links_weighted, last_accessed, "
+    "source, confidence, context_of_encoding"
+)
+
+# #258b: in-process memory fetch cache
+# Genesis types (ROOT / CORE_PATTERN / IDENTITY) are structurally immutable → permanent.
+# All others expire after _MEM_CACHE_TTL seconds (one turn is well under this).
+_GENESIS_MEM_TYPES = frozenset({"ROOT", "CORE_PATTERN", "IDENTITY"})
+_MEM_CACHE_TTL = 60.0  # seconds
 
 RING_MAX = 50  # Max entries in the ring buffer
 TWM_MAX = 50  # Max observations in TWM
@@ -57,6 +73,10 @@ class Cortex:
         self._instance_id = instance_id  # #51: scopes TWM to this instance when set
         self._db = DatabaseProxy(db_path)
         self._init_db()
+        # #244: set to True after interpretive_traverse() when a meaning_to_me edge was followed
+        self._last_traverse_meaning_to_me: bool = False
+        # #258b: in-process memory fetch cache; id → (Memory, monotonic_timestamp)
+        self._mem_cache: dict = {}
 
     def _conn(self):
         """Deprecated shim — use self._db() directly."""
@@ -265,6 +285,20 @@ class Cortex:
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_ie_to ON interpretive_edges(to_id)"
             )
+            # #244: layer column — tags edges by semantic layer (e.g. 'meaning_to_me')
+            try:
+                conn.execute(
+                    "ALTER TABLE interpretive_edges ADD COLUMN layer TEXT DEFAULT ''"
+                )
+            except Exception:
+                pass  # Column already exists
+            # Tag existing edges from CP/ID root nodes as meaning_to_me layer
+            conn.execute("""
+                UPDATE interpretive_edges
+                SET layer = 'meaning_to_me'
+                WHERE (from_id LIKE 'CP%' OR from_id LIKE 'ID%')
+                  AND (layer IS NULL OR layer = '')
+                """)
             # G-QP2: wal_checkpoint moved to main.py post-Cortex-init (G-QP3)
             # Do NOT checkpoint here — _init_db() runs on every Cortex() instantiation
             # (book_learner, tools, etc.) and would flood the DB with checkpoint contention
@@ -1039,14 +1073,19 @@ class Cortex:
         }
         new_neighbors: list = []
         if neighbor_scores:
-            with self._conn() as conn:
-                placeholders = ",".join("?" * len(neighbor_scores))
-                rows = conn.execute(
-                    f"SELECT * FROM memories WHERE id IN ({placeholders})",
-                    list(neighbor_scores.keys()),
-                ).fetchall()
-            for row in rows:
-                m = self._to_memory(row)
+            _cached, _miss_ids = self._cache_fetch_ids(list(neighbor_scores.keys()))
+            if _miss_ids:
+                with self._conn() as conn:
+                    placeholders = ",".join("?" * len(_miss_ids))
+                    _rows = conn.execute(
+                        f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE id IN ({placeholders})",
+                        _miss_ids,
+                    ).fetchall()
+                for _row in _rows:
+                    _m = self._to_memory(_row)
+                    self._cache_put(_m)
+                    _cached.append(_m)
+            for m in _cached:
                 if m.memory_type in _SKIP_TYPES:
                     continue
                 m.relevance_score = neighbor_scores[m.id]  # type: ignore[attr-defined]
@@ -1133,12 +1172,19 @@ class Cortex:
             if not frontier:
                 break
             ids = [fid for fid, _ in frontier]
-            with self._conn() as conn:
-                placeholders = ",".join("?" * len(ids))
-                rows = conn.execute(
-                    f"SELECT * FROM memories WHERE id IN ({placeholders})", ids
-                ).fetchall()
-            mem_map = {row["id"]: self._to_memory(row) for row in rows}
+            _cached, _miss_ids = self._cache_fetch_ids(ids)
+            if _miss_ids:
+                with self._conn() as conn:
+                    placeholders = ",".join("?" * len(_miss_ids))
+                    rows = conn.execute(
+                        f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE id IN ({placeholders})",
+                        _miss_ids,
+                    ).fetchall()
+                for _row in rows:
+                    _m = self._to_memory(_row)
+                    self._cache_put(_m)
+                    _cached.append(_m)
+            mem_map = {m.id: m for m in _cached}
 
             next_frontier: list[tuple[str, float]] = []
             for fid, fscore in frontier:
@@ -1169,15 +1215,21 @@ class Cortex:
             return []  # No traversal beyond anchors — graph likely sparse
 
         all_ids = list(visited.keys())
-        with self._conn() as conn:
-            placeholders = ",".join("?" * len(all_ids))
-            rows = conn.execute(
-                f"SELECT * FROM memories WHERE id IN ({placeholders})", all_ids
-            ).fetchall()
+        _cached, _miss_ids = self._cache_fetch_ids(all_ids)
+        if _miss_ids:
+            with self._conn() as conn:
+                placeholders = ",".join("?" * len(_miss_ids))
+                _rows = conn.execute(
+                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE id IN ({placeholders})",
+                    _miss_ids,
+                ).fetchall()
+            for _row in _rows:
+                _m = self._to_memory(_row)
+                self._cache_put(_m)
+                _cached.append(_m)
 
         results = []
-        for row in rows:
-            m = self._to_memory(row)
+        for m in _cached:
             if m.memory_type in _SKIP:
                 continue
             m.relevance_score = visited.get(m.id, 0.0)  # type: ignore[attr-defined]
@@ -1379,6 +1431,36 @@ class Cortex:
                 else ""
             ),
         )
+
+    # ── In-process memory fetch cache (#258b) ─────────────────────────────────
+
+    def _cache_get(self, memory_id: str) -> Optional[Memory]:
+        """Return cached Memory if still valid, else None."""
+        entry = self._mem_cache.get(memory_id)
+        if entry is None:
+            return None
+        mem, ts = entry
+        if mem.memory_type.value in _GENESIS_MEM_TYPES:
+            return mem  # permanent — never expires
+        if time.monotonic() - ts < _MEM_CACHE_TTL:
+            return mem
+        del self._mem_cache[memory_id]
+        return None
+
+    def _cache_put(self, mem: Memory) -> None:
+        """Store a Memory in the in-process cache."""
+        self._mem_cache[mem.id] = (mem, time.monotonic())
+
+    def _cache_fetch_ids(self, ids) -> tuple:
+        """Split ids into (cached_memories, uncached_id_strings)."""
+        cached, misses = [], []
+        for mid in ids:
+            m = self._cache_get(mid)
+            if m is not None:
+                cached.append(m)
+            else:
+                misses.append(mid)
+        return cached, misses
 
     # ── Ring memory (short-term, survives restarts) ────────────────────────────
 
@@ -2047,6 +2129,7 @@ class Cortex:
         meaning_payload: str = "",
         action_pointer: str = "",
         weight: float = 1.0,
+        layer: str = "",
     ) -> int:
         """
         G52: Add a directed edge between two memories in the interpretive tree.
@@ -2057,19 +2140,24 @@ class Cortex:
           meaning_payload: the WHY — what reaching to_id means about self or situation
           action_pointer: memory id or code_ref of the next tree to explore
           weight: traversal strength [0,1]
+          layer: semantic layer tag; auto-set to 'meaning_to_me' for CP/ID root edges (#244)
 
         CP1-CP6 are root nodes. Their children are the first interpretive layer.
         Returns the new edge id.
         """
         from datetime import datetime as _dt
 
+        # #244: auto-tag edges from CP/ID roots as meaning_to_me layer
+        if not layer and (from_id.startswith("CP") or from_id.startswith("ID")):
+            layer = "meaning_to_me"
+
         now = _dt.now().isoformat()
         with self._conn() as conn:
             cur = conn.execute(
                 """
                 INSERT INTO interpretive_edges
-                    (from_id, to_id, direction, condition_csb, meaning_payload, action_pointer, weight, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    (from_id, to_id, direction, condition_csb, meaning_payload, action_pointer, weight, created_at, layer)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     from_id,
@@ -2080,6 +2168,7 @@ class Cortex:
                     action_pointer,
                     max(0.0, min(1.0, weight)),
                     now,
+                    layer,
                 ),
             )
             return cur.lastrowid
@@ -2087,14 +2176,15 @@ class Cortex:
     def get_interpretive_edges(self, from_id: str) -> list[dict]:
         """
         G52: Return all outgoing interpretive edges from from_id.
-        Each dict: {id, from_id, to_id, direction, condition_csb, meaning_payload, action_pointer, weight}
+        Each dict: {id, from_id, to_id, direction, condition_csb, meaning_payload, action_pointer, weight, layer}
         Ordered by weight DESC.
         """
         with self._conn() as conn:
             rows = conn.execute(
                 """
                 SELECT id, from_id, to_id, direction, condition_csb,
-                       meaning_payload, action_pointer, weight, created_at
+                       meaning_payload, action_pointer, weight, created_at,
+                       COALESCE(layer, '') AS layer
                 FROM interpretive_edges
                 WHERE from_id = ?
                 ORDER BY weight DESC
@@ -2102,6 +2192,53 @@ class Cortex:
                 (from_id,),
             ).fetchall()
         return [dict(r) for r in rows]
+
+    def get_meaning_to_me(self, limit: int = 50) -> list["Memory"]:
+        """
+        #244: Return Memory objects reachable via meaning_to_me layer edges.
+
+        These are memories directly connected to Igor's core patterns (CP1-CP6)
+        or identity nodes (ID1-ID14). Personally significant threads.
+        Ordered by edge weight DESC.
+        """
+        from .models import Memory as _M  # avoid circular at module level
+
+        with self._conn() as conn:
+            rows = conn.execute(
+                """
+                SELECT DISTINCT ie.to_id, ie.weight
+                FROM interpretive_edges ie
+                WHERE ie.layer = 'meaning_to_me'
+                  AND ie.direction != 'inhibition'
+                ORDER BY ie.weight DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+        if not rows:
+            return []
+        to_ids = [r["to_id"] for r in rows]
+        _cached, _miss_ids = self._cache_fetch_ids(to_ids)
+        if _miss_ids:
+            with self._conn() as conn:
+                placeholders = ",".join("?" * len(_miss_ids))
+                _mem_rows = conn.execute(
+                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE id IN ({placeholders})",
+                    _miss_ids,
+                ).fetchall()
+            for _row in _mem_rows:
+                _m = self._to_memory(_row)
+                self._cache_put(_m)
+                _cached.append(_m)
+        mem_by_id = {m.id: m for m in _cached}
+        result = []
+        for r in rows:
+            mid = r["to_id"]
+            if mid in mem_by_id:
+                mem = mem_by_id[mid]
+                if mem:
+                    result.append(mem)
+        return result
 
     def add_temporal_edge(
         self,
@@ -2159,6 +2296,7 @@ class Cortex:
         exit_on_convergence: bool = False,
         convergence_weight: float = 0.75,
         convergence_out_degree: int = 4,
+        track_meaning_layer: bool = False,
     ) -> list["Memory"]:
         """
         G52: Breadth-first traversal of the interpretive tree from a set of seed nodes.
@@ -2180,9 +2318,14 @@ class Cortex:
             Implements the insight: "why?" upward terminates where levers lie.
         convergence_weight: investment_weight threshold for convergence detection (default 0.75)
         convergence_out_degree: out-degree threshold for convergence detection (default 4)
+        track_meaning_layer (#244): if True, set self._last_traverse_meaning_to_me = True
+            whenever an edge with layer='meaning_to_me' is followed.
         """
         if not from_ids:
             return []
+
+        if track_meaning_layer:
+            self._last_traverse_meaning_to_me = False
 
         _milieu_bias: dict = milieu_bias or {}
         visited: set[str] = set(from_ids)
@@ -2190,6 +2333,8 @@ class Cortex:
             (fid, 0, fid) for fid in from_ids
         ]  # (id, depth, root)
         result_ids: list[str] = []
+        # #244: track which collected nodes are personally significant (meaning_to_me layer)
+        _meaning_to_me_ids: set[str] = set()
         # #182: cache out-degree counts to avoid per-node DB queries
         _out_degree_cache: dict[str, int] = {}
 
@@ -2213,6 +2358,14 @@ class Cortex:
                 if edge["to_id"] not in visited:
                     visited.add(edge["to_id"])
                     result_ids.append(edge["to_id"])
+                    # #244: meaning_to_me flag — direct edge hit or descendant of flagged node
+                    if (
+                        edge.get("layer") == "meaning_to_me"
+                        or current_id in _meaning_to_me_ids
+                    ):
+                        _meaning_to_me_ids.add(edge["to_id"])
+                        if track_meaning_layer:
+                            self._last_traverse_meaning_to_me = True
                     # #182: convergence check — is this node a lever?
                     _is_convergence = False
                     if exit_on_convergence:
@@ -2251,18 +2404,28 @@ class Cortex:
         # Fetch the actual Memory objects
         from .models import Memory as _M  # avoid circular at module level
 
-        placeholders = ",".join("?" * len(result_ids))
-        with self._conn() as conn:
-            rows = conn.execute(
-                f"SELECT * FROM memories WHERE id IN ({placeholders})",
-                result_ids,
-            ).fetchall()
-        row_by_id = {r["id"]: r for r in rows}
-        # Return in traversal order
+        _cached, _miss_ids = self._cache_fetch_ids(result_ids)
+        if _miss_ids:
+            with self._conn() as conn:
+                placeholders = ",".join("?" * len(_miss_ids))
+                _rows = conn.execute(
+                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE id IN ({placeholders})",
+                    _miss_ids,
+                ).fetchall()
+            for _row in _rows:
+                _m = self._to_memory(_row)
+                self._cache_put(_m)
+                _cached.append(_m)
+        mem_by_id = {m.id: m for m in _cached}
+        # Return in traversal order; tag meaning_to_me nodes in-place (#244)
         memories = []
         for mid in result_ids:
-            if mid in row_by_id:
-                mem = self._to_memory(row_by_id[mid])
+            if mid in mem_by_id:
+                mem = mem_by_id[mid]
                 if mem:
+                    if mid in _meaning_to_me_ids:
+                        if mem.metadata is None:
+                            mem.metadata = {}
+                        mem.metadata["meaning_to_me"] = True
                     memories.append(mem)
         return memories
