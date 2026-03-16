@@ -332,15 +332,29 @@ class NarrativeEngine:
         _all_raw = self.cortex.twm_read(limit=50, include_integrated=True)
         raw_obs = self._filter_obs(_all_raw)
 
-        # D099: comparison pass — decay slots with no shared action_pointer with others
+        # D099 + D100: focus pass — decay solo slots, compute live co-activation scores
+        # D099: slots with no shared action_pointer with any other slot → decay at 0.7
+        # D100: count how many slots reference each action_pointer node → co-activation score
+        #       most-referenced node IS most salient right now (computed not stored)
+        _co_activation: dict[str, int] = {}
         try:
             slots = self.cortex.twm_get_slots()
+
+            def _slot_actions(slot):
+                ap = slot["metadata"].get("action_pointer", "")
+                return (
+                    set(filter(None, (n.strip() for n in ap.split(","))))
+                    if ap
+                    else set()
+                )
+
+            # D100: tally co-activation across all slots
+            for slot in slots:
+                for node in _slot_actions(slot):
+                    _co_activation[node] = _co_activation.get(node, 0) + 1
+
+            # D099: decay solo slots (no shared action_pointer with any peer)
             if len(slots) > 1:
-
-                def _slot_actions(slot):
-                    ap = slot["metadata"].get("action_pointer", "")
-                    return set(filter(None, ap.split(","))) if ap else set()
-
                 for slot in slots:
                     mine = _slot_actions(slot)
                     if not mine:
@@ -353,7 +367,7 @@ class NarrativeEngine:
                     if not shared:
                         self.cortex.twm_decay_slot(slot["id"], factor=0.7)
         except Exception:
-            pass  # comparison pass is advisory — never block NE
+            pass  # focus pass is advisory — never block NE
 
         # Mark filtered-out unintegrated obs as integrated so they stop counting
         # toward the trigger threshold. They've been seen — just not processable.
@@ -363,12 +377,19 @@ class NarrativeEngine:
         if _filtered_ids:
             self.cortex.twm_mark_integrated(_filtered_ids)
 
-        # Change 4: sort by urgency * salience — urgent + important items processed first
-        obs_list = sorted(
-            raw_obs,
-            key=lambda o: o.get("urgency", 0.2) * o.get("salience", 0.5),
-            reverse=True,
-        )
+        # D100: sort by urgency * salience + co-activation bonus (computed not stored)
+        # co-activation bonus: each hot node shared by N slots contributes N * 0.1 to sort weight
+        def _sort_weight(o):
+            base = o.get("urgency", 0.2) * o.get("salience", 0.5)
+            ap = o.get("metadata", {}).get("action_pointer", "")
+            bonus = sum(
+                _co_activation.get(n.strip(), 0) * 0.1
+                for n in ap.split(",")
+                if n.strip()
+            )
+            return base + bonus
+
+        obs_list = sorted(raw_obs, key=_sort_weight, reverse=True)
 
         if not obs_list:
             self._last_run = datetime.now()
