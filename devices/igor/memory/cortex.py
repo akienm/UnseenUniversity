@@ -54,6 +54,9 @@ _MEM_CACHE_TTL = 60.0  # seconds
 
 RING_MAX = 50  # Max entries in the ring buffer
 TWM_MAX = 50  # Max observations in TWM
+TWM_MAX_SLOTS = int(
+    os.getenv("IGOR_TWM_MAX_SLOTS", "7")
+)  # D099: max attractor slots (Baars GWT)
 # G47: suppress repeated observations at the door rather than admitting at floor salience.
 TWM_SUPPRESS_AFTER_REPEATS = int(os.getenv("IGOR_TWM_SUPPRESS_REPEATS", "4"))
 TWM_SUPPRESS_SALIENCE_FLOOR = float(os.getenv("IGOR_TWM_SUPPRESS_FLOOR", "0.04"))
@@ -269,6 +272,14 @@ class Cortex:
             try:
                 conn.execute(
                     "ALTER TABLE twm_observations ADD COLUMN category TEXT DEFAULT 'observation'"
+                )
+            except Exception:
+                pass
+
+            # D099: parent_obs_id — slot branching; child obs traces back to parent slot
+            try:
+                conn.execute(
+                    "ALTER TABLE twm_observations ADD COLUMN parent_obs_id INTEGER DEFAULT NULL"
                 )
             except Exception:
                 pass
@@ -1658,6 +1669,7 @@ class Cortex:
         urgency: float = 0.2,
         thread_id: str | None = None,
         category: str = "observation",
+        parent_obs_id: int | None = None,
     ) -> int:
         """
         Push an observation into TWM. Any process can call this.
@@ -1713,8 +1725,8 @@ class Cortex:
                 """INSERT INTO twm_observations
                    (timestamp, source, content_csb, salience, metadata_json,
                     integrated, integration_count, expires_at, urgency, instance_id,
-                    thread_id, category, attractor_weight)
-                   VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?, 0.0)""",
+                    thread_id, category, attractor_weight, parent_obs_id)
+                   VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?, 0.0, ?)""",
                 (
                     now.isoformat(),
                     source,
@@ -1726,6 +1738,7 @@ class Cortex:
                     self._instance_id,
                     thread_id,
                     category,
+                    parent_obs_id,
                 ),
             )
             obs_id = cur.lastrowid
@@ -1824,6 +1837,9 @@ class Cortex:
                 "attractor_weight": (
                     r["attractor_weight"] if "attractor_weight" in r.keys() else 0.0
                 ),
+                "parent_obs_id": (
+                    r["parent_obs_id"] if "parent_obs_id" in r.keys() else None
+                ),
             }
             for r in rows
         ]
@@ -1832,22 +1848,29 @@ class Cortex:
 
     def twm_set_attractor(self, obs_id: int, weight: float = 1.0) -> None:
         """
-        G50: Set one TWM item as the current primary attractor.
-        Clears attractor_weight on all other items for this instance first.
+        G50/D099: Set one TWM item as an attractor slot.
+        Keeps up to TWM_MAX_SLOTS-1 existing non-zero attractor slots.
+        Evicts the lowest-weight slot if already at capacity.
+        Emergency path (urgency≥0.8 via twm_push): still zeros all others.
         Callers: UserInputSource.push_message(), high-priority push_sources.
-
-        The attractor represents the current primary focus — the question or task
-        that gives direction to tree traversal. It shapes which TWM items the NE
-        and context builders weight most heavily.
         """
         if obs_id <= 0:
             return
         with self._conn() as conn:
-            conn.execute(
-                "UPDATE twm_observations SET attractor_weight = 0.0 "
-                "WHERE instance_id = ? AND id != ?",
+            # Count existing active attractor slots (excluding the target)
+            active = conn.execute(
+                "SELECT id, attractor_weight FROM twm_observations "
+                "WHERE instance_id = ? AND id != ? AND attractor_weight > 0.05 "
+                "ORDER BY attractor_weight ASC",
                 (self._instance_id, obs_id),
-            )
+            ).fetchall()
+            # If at capacity, evict the weakest slot
+            if len(active) >= TWM_MAX_SLOTS:
+                evict_id = active[0]["id"]
+                conn.execute(
+                    "UPDATE twm_observations SET attractor_weight = 0.0 WHERE id = ?",
+                    (evict_id,),
+                )
             conn.execute(
                 "UPDATE twm_observations SET attractor_weight = ? WHERE id = ?",
                 (min(1.0, max(0.0, weight)), obs_id),
@@ -1895,6 +1918,51 @@ class Cortex:
                 "UPDATE twm_observations SET attractor_weight = 0.0 "
                 "WHERE instance_id = ? AND attractor_weight <= 0.05",
                 (self._instance_id,),
+            )
+
+    def twm_get_slots(self) -> list[dict]:
+        """
+        D099: Return all active attractor slots (attractor_weight > 0.05), ordered by weight desc.
+        Used by NE comparison pass to find shared action_pointer overlap across slots.
+        """
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT id, content_csb, attractor_weight, salience, metadata_json "
+                "FROM twm_observations "
+                "WHERE instance_id = ? AND attractor_weight > 0.05 "
+                "ORDER BY attractor_weight DESC",
+                (self._instance_id,),
+            ).fetchall()
+        return [
+            {
+                "id": r["id"],
+                "content_csb": r["content_csb"],
+                "attractor_weight": r["attractor_weight"],
+                "salience": r["salience"],
+                "metadata": json.loads(r["metadata_json"] or "{}"),
+            }
+            for r in rows
+        ]
+
+    def twm_decay_slot(self, obs_id: int, factor: float = 0.7) -> None:
+        """
+        D099: Decay attractor_weight on a single slot. Called by NE comparison pass
+        on solo slots (no shared action_pointer with any other slot). factor=0.7
+        fades an isolated slot quickly — it loses focus without collaborative context.
+        """
+        if obs_id <= 0:
+            return
+        with self._conn() as conn:
+            conn.execute(
+                "UPDATE twm_observations "
+                "SET attractor_weight = MAX(0.0, attractor_weight * ?) "
+                "WHERE id = ? AND attractor_weight > 0.05",
+                (factor, obs_id),
+            )
+            conn.execute(
+                "UPDATE twm_observations SET attractor_weight = 0.0 "
+                "WHERE id = ? AND attractor_weight <= 0.05",
+                (obs_id,),
             )
 
     def twm_clear_task_set(self, thread_id: str | None = None) -> int:
