@@ -25,20 +25,23 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from ..memory.cortex import Cortex
+from ..memory.cortex import Cortex, _MEM_COLS_NO_EMBED
 from ..memory.models import Memory, MemoryType
 
 # ── Config ─────────────────────────────────────────────────────────────────────
-_ENABLED           = lambda: os.getenv("IGOR_CONSOLIDATION_ENABLED", "true").lower() == "true"
-_INTERVAL_SECS     = lambda: int(os.getenv("IGOR_CONSOLIDATION_INTERVAL_SECS", "3600"))
-_BATCH_SIZE        = lambda: int(os.getenv("IGOR_CONSOLIDATION_BATCH", "20"))
-_MIN_IMPORTANCE    = float(os.getenv("IGOR_CONSOLIDATION_MIN_IMPORTANCE", "0.5"))
-_CHECKPOINT_FILE   = Path.home() / ".TheIgors" / "igor_wild_0001" / "consolidation_checkpoint.json"
+_ENABLED = lambda: os.getenv("IGOR_CONSOLIDATION_ENABLED", "true").lower() == "true"
+_INTERVAL_SECS = lambda: int(os.getenv("IGOR_CONSOLIDATION_INTERVAL_SECS", "3600"))
+_BATCH_SIZE = lambda: int(os.getenv("IGOR_CONSOLIDATION_BATCH", "20"))
+_MIN_IMPORTANCE = float(os.getenv("IGOR_CONSOLIDATION_MIN_IMPORTANCE", "0.5"))
+_CHECKPOINT_FILE = (
+    Path.home() / ".TheIgors" / "igor_wild_0001" / "consolidation_checkpoint.json"
+)
 
 _last_run: float = 0.0
 
 
 # ── Checkpoint persistence ─────────────────────────────────────────────────────
+
 
 def _load_checkpoint() -> dict:
     try:
@@ -63,9 +66,25 @@ def _save_checkpoint(ts: float, processed_ids: list[str]) -> None:
 
 # ── Clustering ─────────────────────────────────────────────────────────────────
 
+
 def _keyword_overlap(a: str, b: str) -> float:
     """Simple keyword Jaccard overlap between two strings."""
-    _stop = {"the", "a", "an", "is", "was", "i", "and", "or", "but", "in", "on", "to", "of", "it"}
+    _stop = {
+        "the",
+        "a",
+        "an",
+        "is",
+        "was",
+        "i",
+        "and",
+        "or",
+        "but",
+        "in",
+        "on",
+        "to",
+        "of",
+        "it",
+    }
     ta = {w for w in a.lower().split() if len(w) > 3 and w not in _stop}
     tb = {w for w in b.lower().split() if len(w) > 3 and w not in _stop}
     if not ta or not tb:
@@ -73,7 +92,9 @@ def _keyword_overlap(a: str, b: str) -> float:
     return len(ta & tb) / len(ta | tb)
 
 
-def _cluster_episodics(memories: list[Memory], threshold: float = 0.15) -> list[list[Memory]]:
+def _cluster_episodics(
+    memories: list[Memory], threshold: float = 0.15
+) -> list[list[Memory]]:
     """
     Greedy single-pass clustering by keyword overlap.
     Each memory joins the first existing cluster it has ≥ threshold overlap with,
@@ -126,16 +147,24 @@ def _call_local_llm(prompt: str, cortex: Cortex) -> Optional[dict]:
     try:
         import ollama as _ollama
         import os as _os
-        _host = _os.getenv("OLLAMA_REASONING_HOST", _os.getenv("OLLAMA_HOST", "http://localhost:11434"))
-        _model = _os.getenv("OLLAMA_REASONING_MODEL", _os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b"))
+
+        _host = _os.getenv(
+            "OLLAMA_REASONING_HOST", _os.getenv("OLLAMA_HOST", "http://localhost:11434")
+        )
+        _model = _os.getenv(
+            "OLLAMA_REASONING_MODEL", _os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b")
+        )
         _client = _ollama.Client(host=_host)
         response = _client.chat(
             model=_model,
             messages=[{"role": "user", "content": prompt}],
             options={"temperature": 0.1, "num_predict": 300},
         )
-        raw = (response["message"]["content"] if isinstance(response, dict)
-               else response.message.content)
+        raw = (
+            response["message"]["content"]
+            if isinstance(response, dict)
+            else response.message.content
+        )
         if not raw:
             return None
         # Strip markdown code fences if present
@@ -152,6 +181,7 @@ def _call_local_llm(prompt: str, cortex: Cortex) -> Optional[dict]:
 
 
 # ── Main consolidation pass ────────────────────────────────────────────────────
+
 
 def run_consolidation(cortex: Cortex) -> dict:
     """
@@ -174,16 +204,22 @@ def run_consolidation(cortex: Cortex) -> dict:
     try:
         with cortex._conn() as conn:
             rows = conn.execute(
-                """
-                SELECT * FROM memories
+                f"""
+                SELECT {_MEM_COLS_NO_EMBED} FROM memories
                 WHERE memory_type = 'EPISODIC'
-                  AND id NOT IN ({})
-                ORDER BY created_at DESC
+                  AND id NOT IN ({{}})
+                ORDER BY timestamp DESC
                 LIMIT ?
                 """.format(
-                    ",".join("?" * len(already_processed)) if already_processed else "'__none__'"
+                    ",".join("?" * len(already_processed))
+                    if already_processed
+                    else "'__none__'"
                 ),
-                list(already_processed) + [_BATCH_SIZE()] if already_processed else [_BATCH_SIZE()],
+                (
+                    list(already_processed) + [_BATCH_SIZE()]
+                    if already_processed
+                    else [_BATCH_SIZE()]
+                ),
             ).fetchall()
         episodics = [cortex._to_memory(r) for r in rows if cortex._to_memory(r)]
     except Exception:
