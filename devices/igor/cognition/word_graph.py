@@ -225,11 +225,22 @@ class _WordDocProxy:
         self._db = db
 
     def __len__(self) -> int:
+        # Read word_count from wg_meta (maintained incrementally in WordGraph.index()).
+        # Falls back to COUNT(DISTINCT word) once on first call, then caches in wg_meta.
         with self._db() as conn:
             row = conn.execute(
-                "SELECT COUNT(DISTINCT word) FROM wg_word_docs"
+                "SELECT value FROM wg_meta WHERE key = 'word_count'"
             ).fetchone()
-        return row[0] if row else 0
+            if row is not None:
+                return int(row[0])
+            # First call ever: compute and cache (one-time cost per DB lifetime)
+            n = conn.execute("SELECT COUNT(DISTINCT word) FROM wg_word_docs").fetchone()
+            count = n[0] if n else 0
+            conn.execute(
+                "INSERT OR REPLACE INTO wg_meta (key, value) VALUES ('word_count', ?)",
+                (str(count),),
+            )
+            return count
 
     def __bool__(self) -> bool:
         with self._db() as conn:
@@ -354,6 +365,16 @@ class WordGraph:
                     "INSERT OR IGNORE INTO wg_word_lang (word, lang) VALUES (?, ?)",
                     [(w, lang) for w in unique],
                 )
+                # Increment word_count by number of genuinely new words (INSERT OR IGNORE
+                # only counts actual inserts in changes(), not ignored conflicts)
+                _new_words = conn.execute("SELECT changes()").fetchone()[0]
+                if _new_words > 0:
+                    conn.execute(
+                        "INSERT INTO wg_meta (key, value) VALUES ('word_count', ?)"
+                        " ON CONFLICT(key) DO UPDATE"
+                        " SET value = CAST(CAST(value AS INTEGER) + ? AS TEXT)",
+                        (str(_new_words), _new_words),
+                    )
 
                 # co-occurrence edges (accumulate).
                 # Only pair plain words (no bigrams) and cap at 50 to prevent N²
