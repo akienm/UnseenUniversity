@@ -640,7 +640,35 @@ class MilieuSource(BasePushSource):
             metadata={"type": "milieu", "tick": state.tick},
         )
         self._prev_snapshot = m.snapshot()
-        return [obs_id]
+        result_ids = [obs_id]
+
+        # D101: gradient alert — if arousal has been climbing steadily, the parent steps in
+        # Push a high-urgency regulate obs so NE can decay conflicting slots
+        try:
+            from . import milieu as milieu_mod
+
+            slope = m.gradient("arousal")
+            if m.is_arousal_climbing():
+                regulate_id = cortex.twm_push(
+                    source="milieu_gradient",
+                    content_csb=(
+                        f"MILIEU_REGULATE|arousal_slope={slope:.3f}"
+                        f"|arousal={state.arousal:.2f}|action=regulate"
+                    ),
+                    salience=0.8,
+                    urgency=0.75,
+                    ttl_seconds=120,
+                    metadata={
+                        "type": "milieu_regulate",
+                        "arousal_slope": slope,
+                        "action_pointer": "regulate,de-escalate",
+                    },
+                )
+                result_ids.append(regulate_id)
+        except Exception:
+            pass  # gradient alert is advisory — never block
+
+        return result_ids
 
 
 # ── ProactiveHabitSource ──────────────────────────────────────────────────────
