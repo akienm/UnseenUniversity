@@ -319,6 +319,25 @@ class Cortex:
                     "INSERT OR IGNORE INTO _migrations(name, applied_at) VALUES (?, ?)",
                     ("meaning_to_me_layer_tag", _dt261.now().isoformat()),
                 )
+            # D095: lists table — cross-type enumeration primitive
+            # One table for all named lists: tags, projects, capabilities, per-master-notebook data.
+            # instance_id="" = global (not NULL — avoids SQLite NULL-in-PK ambiguity).
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS lists (
+                    list_name   TEXT NOT NULL,
+                    item_key    TEXT NOT NULL,
+                    item_value  TEXT,
+                    ref_type    TEXT,
+                    ref_id      TEXT,
+                    instance_id TEXT NOT NULL DEFAULT '',
+                    updated_at  TEXT,
+                    PRIMARY KEY (list_name, item_key, instance_id)
+                )
+            """)
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_lists_name ON lists(list_name)"
+            )
+
             # G-QP2: wal_checkpoint moved to main.py post-Cortex-init (G-QP3)
             # Do NOT checkpoint here — _init_db() runs on every Cortex() instantiation
             # (book_learner, tools, etc.) and would flood the DB with checkpoint contention
@@ -2462,3 +2481,56 @@ class Cortex:
                         mem.metadata["meaning_to_me"] = True
                     memories.append(mem)
         return memories
+
+    # ── Lists (D095) ────────────────────────────────────────────────────────────
+
+    def list_set(
+        self,
+        list_name: str,
+        item_key: str,
+        item_value: str = None,
+        ref_type: str = None,
+        ref_id: str = None,
+        instance_id: str = "",
+    ) -> None:
+        """Upsert one item in a named list. instance_id='' means global."""
+        now = datetime.utcnow().isoformat()
+        with self._conn() as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO lists
+                    (list_name, item_key, item_value, ref_type, ref_id, instance_id, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (list_name, item_key, item_value, ref_type, ref_id, instance_id, now),
+            )
+
+    def list_get(
+        self, list_name: str, item_key: str, instance_id: str = ""
+    ) -> Optional[dict]:
+        """Return one list item as a dict, or None if not found."""
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT * FROM lists WHERE list_name=? AND item_key=? AND instance_id=?",
+                (list_name, item_key, instance_id),
+            ).fetchone()
+        if row is None:
+            return None
+        return dict(row)
+
+    def list_remove(self, list_name: str, item_key: str, instance_id: str = "") -> None:
+        """Delete one item from a named list."""
+        with self._conn() as conn:
+            conn.execute(
+                "DELETE FROM lists WHERE list_name=? AND item_key=? AND instance_id=?",
+                (list_name, item_key, instance_id),
+            )
+
+    def list_all(self, list_name: str, instance_id: str = "") -> list[dict]:
+        """Return all items in a named list as a list of dicts, ordered by item_key."""
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT * FROM lists WHERE list_name=? AND instance_id=? ORDER BY item_key",
+                (list_name, instance_id),
+            ).fetchall()
+        return [dict(r) for r in rows]
