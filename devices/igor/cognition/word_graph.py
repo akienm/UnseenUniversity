@@ -28,9 +28,10 @@ from __future__ import annotations
 
 import math
 import re
-import sqlite3
 import threading
 from pathlib import Path
+
+from ..memory.db_proxy import DatabaseProxy
 
 # ── Stopwords ─────────────────────────────────────────────────────────────────
 _STOPWORDS = frozenset(
@@ -218,19 +219,21 @@ class _WordDocProxy:
     the full word→doc mapping into memory.
     """
 
-    __slots__ = ("_conn",)
+    __slots__ = ("_db",)
 
-    def __init__(self, conn: sqlite3.Connection) -> None:
-        self._conn = conn
+    def __init__(self, db: DatabaseProxy) -> None:
+        self._db = db
 
     def __len__(self) -> int:
-        row = self._conn.execute(
-            "SELECT COUNT(DISTINCT word) FROM wg_word_docs"
-        ).fetchone()
+        with self._db() as conn:
+            row = conn.execute(
+                "SELECT COUNT(DISTINCT word) FROM wg_word_docs"
+            ).fetchone()
         return row[0] if row else 0
 
     def __bool__(self) -> bool:
-        row = self._conn.execute("SELECT 1 FROM wg_word_docs LIMIT 1").fetchone()
+        with self._db() as conn:
+            row = conn.execute("SELECT 1 FROM wg_word_docs LIMIT 1").fetchone()
         return row is not None
 
 
@@ -290,30 +293,28 @@ class WordGraph:
         self._db_path = db_path or default_cache_path(name)
         self._lock = threading.RLock()
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
-        self._conn = sqlite3.connect(str(self._db_path), check_same_thread=False)
-        self._conn.execute("PRAGMA journal_mode=WAL")
-        self._conn.execute("PRAGMA synchronous=NORMAL")
-        self._conn.execute("PRAGMA cache_size=-16000")  # 16 MB page cache
-        self._conn.execute("PRAGMA temp_store=MEMORY")
-        self._conn.executescript(_SCHEMA)
-        self._conn.commit()
+        self._db = DatabaseProxy(self._db_path)
+        with self._db() as conn:
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.executescript(_SCHEMA)
 
     # ── Backward-compat properties ─────────────────────────────────────────────
 
     @property
     def _word_to_ids(self) -> _WordDocProxy:
         """Proxy for len() and bool() checks in main.py / terminal.py."""
-        return _WordDocProxy(self._conn)
+        return _WordDocProxy(self._db)
 
     @property
     def _doc_count(self) -> int:
-        row = self._conn.execute(
-            "SELECT value FROM wg_meta WHERE key = 'doc_count'"
-        ).fetchone()
+        with self._db() as conn:
+            row = conn.execute(
+                "SELECT value FROM wg_meta WHERE key = 'doc_count'"
+            ).fetchone()
         return int(row[0]) if row else 0
 
-    def _inc_doc_count(self) -> None:
-        self._conn.execute("""
+    def _inc_doc_count(self, conn) -> None:
+        conn.execute("""
             INSERT INTO wg_meta (key, value) VALUES ('doc_count', '1')
             ON CONFLICT(key) DO UPDATE SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT)
         """)
@@ -337,51 +338,56 @@ class WordGraph:
         unique = list(dict.fromkeys(tokens))  # preserve order, dedupe
 
         with self._lock:
-            # word → doc weights (max of existing vs new)
-            self._conn.executemany(
-                """
-                INSERT INTO wg_word_docs (word, doc_id, weight) VALUES (?, ?, ?)
-                ON CONFLICT(word, doc_id)
-                DO UPDATE SET weight = MAX(weight, excluded.weight)
-            """,
-                [(w, doc_id, weight) for w in unique],
-            )
+            with self._db() as conn:
+                # word → doc weights (max of existing vs new)
+                conn.executemany(
+                    """
+                    INSERT INTO wg_word_docs (word, doc_id, weight) VALUES (?, ?, ?)
+                    ON CONFLICT(word, doc_id)
+                    DO UPDATE SET weight = MAX(weight, excluded.weight)
+                """,
+                    [(w, doc_id, weight) for w in unique],
+                )
 
-            # language tags (first writer wins)
-            self._conn.executemany(
-                "INSERT OR IGNORE INTO wg_word_lang (word, lang) VALUES (?, ?)",
-                [(w, lang) for w in unique],
-            )
+                # language tags (first writer wins)
+                conn.executemany(
+                    "INSERT OR IGNORE INTO wg_word_lang (word, lang) VALUES (?, ?)",
+                    [(w, lang) for w in unique],
+                )
 
-            # co-occurrence edges (accumulate).
-            # Only pair plain words (no bigrams) and cap at 50 to prevent N²
-            # list explosion: a 200-token paragraph generates 40K pairs,
-            # blowing 1-2 GB RAM per book during bulk training.
-            _cooccur_words = [w for w in unique if "__" not in w][:50]
-            self._conn.executemany(
-                """
-                INSERT INTO wg_cooccur (word_a, word_b, score) VALUES (?, ?, 1.0)
-                ON CONFLICT(word_a, word_b)
-                DO UPDATE SET score = score + 1.0
-            """,
-                [(w, w2) for w in _cooccur_words for w2 in _cooccur_words if w != w2],
-            )
+                # co-occurrence edges (accumulate).
+                # Only pair plain words (no bigrams) and cap at 50 to prevent N²
+                # list explosion: a 200-token paragraph generates 40K pairs,
+                # blowing 1-2 GB RAM per book during bulk training.
+                _cooccur_words = [w for w in unique if "__" not in w][:50]
+                conn.executemany(
+                    """
+                    INSERT INTO wg_cooccur (word_a, word_b, score) VALUES (?, ?, 1.0)
+                    ON CONFLICT(word_a, word_b)
+                    DO UPDATE SET score = score + 1.0
+                """,
+                    [
+                        (w, w2)
+                        for w in _cooccur_words
+                        for w2 in _cooccur_words
+                        if w != w2
+                    ],
+                )
 
-            self._inc_doc_count()
-            self._conn.commit()
+                self._inc_doc_count(conn)
 
     def build_idf(self) -> None:
         """Compute and persist IDF weights. Call once after all index() calls."""
         n = max(self._doc_count, 1)
         with self._lock:
-            rows = self._conn.execute(
-                "SELECT word, COUNT(DISTINCT doc_id) FROM wg_word_docs GROUP BY word"
-            ).fetchall()
-            self._conn.executemany(
-                "INSERT OR REPLACE INTO wg_idf (word, score) VALUES (?, ?)",
-                [(w, math.log(n / max(df, 1))) for w, df in rows],
-            )
-            self._conn.commit()
+            with self._db() as conn:
+                rows = conn.execute(
+                    "SELECT word, COUNT(DISTINCT doc_id) FROM wg_word_docs GROUP BY word"
+                ).fetchall()
+                conn.executemany(
+                    "INSERT OR REPLACE INTO wg_idf (word, score) VALUES (?, ?)",
+                    [(w, math.log(n / max(df, 1))) for w, df in rows],
+                )
 
     # ── Parsing direction ──────────────────────────────────────────────────────
 
@@ -399,28 +405,29 @@ class WordGraph:
         if not words or not doc_ids:
             return {}
 
-        if lang is not None:
-            ph = ",".join("?" * len(words))
-            lang_rows = self._conn.execute(
-                f"SELECT word FROM wg_word_lang WHERE word IN ({ph}) AND lang = ?",
-                words + [lang],
-            ).fetchall()
-            words = [r[0] for r in lang_rows]
-            if not words:
-                return {}
+        with self._db() as conn:
+            if lang is not None:
+                ph = ",".join("?" * len(words))
+                lang_rows = conn.execute(
+                    f"SELECT word FROM wg_word_lang WHERE word IN ({ph}) AND lang = ?",
+                    words + [lang],
+                ).fetchall()
+                words = [r[0] for r in lang_rows]
+                if not words:
+                    return {}
 
-        w_ph = ",".join("?" * len(words))
-        doc_ph = ",".join("?" * len(doc_ids))
-        rows = self._conn.execute(
-            f"""
-            SELECT wd.doc_id, SUM(wd.weight * COALESCE(i.score, 1.0)) AS total
-            FROM wg_word_docs wd
-            LEFT JOIN wg_idf i ON wd.word = i.word
-            WHERE wd.word IN ({w_ph}) AND wd.doc_id IN ({doc_ph})
-            GROUP BY wd.doc_id
-        """,
-            words + doc_ids,
-        ).fetchall()
+            w_ph = ",".join("?" * len(words))
+            doc_ph = ",".join("?" * len(doc_ids))
+            rows = conn.execute(
+                f"""
+                SELECT wd.doc_id, SUM(wd.weight * COALESCE(i.score, 1.0)) AS total
+                FROM wg_word_docs wd
+                LEFT JOIN wg_idf i ON wd.word = i.word
+                WHERE wd.word IN ({w_ph}) AND wd.doc_id IN ({doc_ph})
+                GROUP BY wd.doc_id
+            """,
+                words + doc_ids,
+            ).fetchall()
 
         if not rows:
             return {}
@@ -456,31 +463,32 @@ class WordGraph:
         w_ph = ",".join("?" * len(words))
         fetch = n * 3 if milieu_state else n  # fetch extra when milieu tilt applied
 
-        if lang is not None:
-            rows = self._conn.execute(
-                f"""
-                SELECT c.word_b, SUM(c.score) AS total
-                FROM wg_cooccur c
-                JOIN wg_word_lang l ON c.word_b = l.word
-                WHERE c.word_a IN ({w_ph}) AND l.lang = ?
-                GROUP BY c.word_b
-                ORDER BY total DESC
-                LIMIT ?
-            """,
-                words + [lang, fetch],
-            ).fetchall()
-        else:
-            rows = self._conn.execute(
-                f"""
-                SELECT word_b, SUM(score) AS total
-                FROM wg_cooccur
-                WHERE word_a IN ({w_ph})
-                GROUP BY word_b
-                ORDER BY total DESC
-                LIMIT ?
-            """,
-                words + [fetch],
-            ).fetchall()
+        with self._db() as conn:
+            if lang is not None:
+                rows = conn.execute(
+                    f"""
+                    SELECT c.word_b, SUM(c.score) AS total
+                    FROM wg_cooccur c
+                    JOIN wg_word_lang l ON c.word_b = l.word
+                    WHERE c.word_a IN ({w_ph}) AND l.lang = ?
+                    GROUP BY c.word_b
+                    ORDER BY total DESC
+                    LIMIT ?
+                """,
+                    words + [lang, fetch],
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    f"""
+                    SELECT word_b, SUM(score) AS total
+                    FROM wg_cooccur
+                    WHERE word_a IN ({w_ph})
+                    GROUP BY word_b
+                    ORDER BY total DESC
+                    LIMIT ?
+                """,
+                    words + [fetch],
+                ).fetchall()
 
         if not rows:
             return []
@@ -559,12 +567,13 @@ class WordGraph:
         where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
         params.append(n)
 
-        rows = self._conn.execute(
-            f"SELECT c.word_a, COUNT(*) AS degree"
-            f" FROM wg_cooccur c{join}{where}"
-            f" GROUP BY c.word_a ORDER BY degree DESC LIMIT ?",
-            params,
-        ).fetchall()
+        with self._db() as conn:
+            rows = conn.execute(
+                f"SELECT c.word_a, COUNT(*) AS degree"
+                f" FROM wg_cooccur c{join}{where}"
+                f" GROUP BY c.word_a ORDER BY degree DESC LIMIT ?",
+                params,
+            ).fetchall()
         return [(r[0], r[1]) for r in rows]
 
     def bridge_words(
@@ -576,18 +585,19 @@ class WordGraph:
         Works across language boundaries (cross-language bridges are valid).
         Returns [] if either word is not in the graph.
         """
-        rows = self._conn.execute(
-            """
-            SELECT ca.word_b, ca.score + cb.score AS combined
-            FROM wg_cooccur ca
-            JOIN wg_cooccur cb ON ca.word_b = cb.word_b
-            WHERE ca.word_a = ? AND cb.word_a = ?
-              AND INSTR(ca.word_b, '__') = 0
-            ORDER BY combined DESC
-            LIMIT ?
-        """,
-            (word_a.lower(), word_b.lower(), n),
-        ).fetchall()
+        with self._db() as conn:
+            rows = conn.execute(
+                """
+                SELECT ca.word_b, ca.score + cb.score AS combined
+                FROM wg_cooccur ca
+                JOIN wg_cooccur cb ON ca.word_b = cb.word_b
+                WHERE ca.word_a = ? AND cb.word_a = ?
+                  AND INSTR(ca.word_b, '__') = 0
+                ORDER BY combined DESC
+                LIMIT ?
+            """,
+                (word_a.lower(), word_b.lower(), n),
+            ).fetchall()
         return [(r[0], float(r[1])) for r in rows]
 
     def domain_exclusive(self, doc_prefix: str, n: int = 10) -> list[str]:
@@ -595,18 +605,19 @@ class WordGraph:
         Find words that appear ONLY in docs whose id starts with doc_prefix.
         Useful for isolating specialised vocabulary (e.g. 'hamlet_' or 'neuro_').
         """
-        rows = self._conn.execute(
-            """
-            SELECT word, SUM(weight) AS total_weight
-            FROM wg_word_docs
-            WHERE INSTR(word, '__') = 0
-            GROUP BY word
-            HAVING SUM(CASE WHEN doc_id NOT LIKE ? THEN 1 ELSE 0 END) = 0
-            ORDER BY total_weight DESC
-            LIMIT ?
-        """,
-            (doc_prefix + "%", n),
-        ).fetchall()
+        with self._db() as conn:
+            rows = conn.execute(
+                """
+                SELECT word, SUM(weight) AS total_weight
+                FROM wg_word_docs
+                WHERE INSTR(word, '__') = 0
+                GROUP BY word
+                HAVING SUM(CASE WHEN doc_id NOT LIKE ? THEN 1 ELSE 0 END) = 0
+                ORDER BY total_weight DESC
+                LIMIT ?
+            """,
+                (doc_prefix + "%", n),
+            ).fetchall()
         return [r[0] for r in rows]
 
     def words_by_lang(self, lang: str) -> list[str]:
@@ -614,10 +625,11 @@ class WordGraph:
         Return all word nodes tagged with the given language.
         Bigram tokens (w1__w2) are excluded — unigrams only.
         """
-        rows = self._conn.execute(
-            "SELECT word FROM wg_word_lang WHERE lang = ? AND INSTR(word, '__') = 0",
-            (lang,),
-        ).fetchall()
+        with self._db() as conn:
+            rows = conn.execute(
+                "SELECT word FROM wg_word_lang WHERE lang = ? AND INSTR(word, '__') = 0",
+                (lang,),
+            ).fetchall()
         return [r[0] for r in rows]
 
     # ── Learning ───────────────────────────────────────────────────────────────
@@ -629,11 +641,11 @@ class WordGraph:
         Capped at 2.0 to prevent runaway dominance.
         """
         with self._lock:
-            self._conn.execute(
-                "UPDATE wg_word_docs SET weight = MIN(weight + ?, 2.0) WHERE doc_id = ?",
-                (boost, doc_id),
-            )
-            self._conn.commit()
+            with self._db() as conn:
+                conn.execute(
+                    "UPDATE wg_word_docs SET weight = MIN(weight + ?, 2.0) WHERE doc_id = ?",
+                    (boost, doc_id),
+                )
 
     def reinforce_text(self, text: str, boost: float = 0.05, lang: str = "en") -> None:
         """
@@ -653,14 +665,14 @@ class WordGraph:
         if len(unique) < 2:
             return
         with self._lock:
-            self._conn.executemany(
-                """
-                UPDATE wg_cooccur SET score = MIN(score + ?, 2.0)
-                WHERE word_a = ? AND word_b = ?
-            """,
-                [(boost, w, w2) for w in unique for w2 in unique if w != w2],
-            )
-            self._conn.commit()
+            with self._db() as conn:
+                conn.executemany(
+                    """
+                    UPDATE wg_cooccur SET score = MIN(score + ?, 2.0)
+                    WHERE word_a = ? AND word_b = ?
+                """,
+                    [(boost, w, w2) for w in unique for w2 in unique if w != w2],
+                )
 
     # ── Persistence ────────────────────────────────────────────────────────────
 
@@ -671,7 +683,8 @@ class WordGraph:
         is ignored (kept for API compatibility with callers that pass cache_path).
         """
         try:
-            self._conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
+            with self._db() as conn:
+                conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
         except Exception:
             pass
 

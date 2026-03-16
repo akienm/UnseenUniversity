@@ -15,13 +15,14 @@ Igor CANNOT purchase credits. Only Akien manages account funding.
 
 import json
 import os
-import sqlite3
 import time
 import urllib.request
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 from .registry import Tool, registry
+from ..memory.db_proxy import DatabaseProxy
 
 # ── Config ──────────────────────────────────────────────────────────────────
 # Soft spending cap (USD) — a local guardrail, not account balance.
@@ -29,15 +30,15 @@ from .registry import Tool, registry
 DEFAULT_SPENDING_CAP_USD = 10.00
 
 # Alert threshold — interruptor fires when remaining drops below this fraction.
-WARN_FRACTION = 0.20   # warn at 20% remaining
-CRITICAL_USD   = 2.00  # hard "keep it down" threshold in dollars
+WARN_FRACTION = 0.20  # warn at 20% remaining
+CRITICAL_USD = 2.00  # hard "keep it down" threshold in dollars
 
 # OpenRouter credits endpoint
 _OR_CREDITS_URL = "https://openrouter.ai/api/v1/credits"
 
 # Cache real balance for 1 hour
 _BALANCE_CACHE_TTL_SEC = 3600
-_balance_cache: dict = {}   # keys: purchased, used, balance, fetched_at
+_balance_cache: dict = {}  # keys: purchased, used, balance, fetched_at
 
 
 # ── DB path (same directory as main memory DB) ────────────────────────────
@@ -46,31 +47,37 @@ def _db_path() -> Path:
     return Path(base).parent / "claude_budget.db"
 
 
-def _conn():
-    db = _db_path()
-    db.parent.mkdir(parents=True, exist_ok=True)
-    c = sqlite3.connect(db)
-    c.row_factory = sqlite3.Row
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS spend (
-            id        INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT    NOT NULL,
-            model     TEXT    NOT NULL,
-            usd       REAL    NOT NULL,
-            note      TEXT    DEFAULT ''
-        )
-    """)
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS config (
-            key   TEXT PRIMARY KEY,
-            value TEXT NOT NULL
-        )
-    """)
-    c.commit()
-    return c
+_BUDGET_PROXY: Optional[DatabaseProxy] = None
+
+
+def _db_proxy() -> DatabaseProxy:
+    """Return (or create) the singleton budget DatabaseProxy, initialising schema on first use."""
+    global _BUDGET_PROXY
+    if _BUDGET_PROXY is None:
+        db = _db_path()
+        db.parent.mkdir(parents=True, exist_ok=True)
+        _BUDGET_PROXY = DatabaseProxy(db)
+        with _BUDGET_PROXY() as c:
+            c.execute("""
+                CREATE TABLE IF NOT EXISTS spend (
+                    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp TEXT    NOT NULL,
+                    model     TEXT    NOT NULL,
+                    usd       REAL    NOT NULL,
+                    note      TEXT    DEFAULT ''
+                )
+            """)
+            c.execute("""
+                CREATE TABLE IF NOT EXISTS config (
+                    key   TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                )
+            """)
+    return _BUDGET_PROXY
 
 
 # ── Real balance from OpenRouter API ─────────────────────────────────────────
+
 
 def fetch_openrouter_balance() -> dict | None:
     """
@@ -81,7 +88,10 @@ def fetch_openrouter_balance() -> dict | None:
     """
     global _balance_cache
     now = time.time()
-    if _balance_cache and (now - _balance_cache.get("fetched_at", 0)) < _BALANCE_CACHE_TTL_SEC:
+    if (
+        _balance_cache
+        and (now - _balance_cache.get("fetched_at", 0)) < _BALANCE_CACHE_TTL_SEC
+    ):
         return _balance_cache.copy()
 
     api_key = os.getenv("OPENROUTER_MANAGEMENT_KEY") or os.getenv("OPENROUTER_API_KEY")
@@ -97,8 +107,8 @@ def fetch_openrouter_balance() -> dict | None:
             data = json.loads(resp.read())["data"]
         result = {
             "purchased": float(data["total_credits"]),
-            "used":      float(data["total_usage"]),
-            "balance":   float(data["total_credits"]) - float(data["total_usage"]),
+            "used": float(data["total_usage"]),
+            "balance": float(data["total_credits"]) - float(data["total_usage"]),
             "fetched_at": now,
         }
         _balance_cache = result
@@ -109,10 +119,13 @@ def fetch_openrouter_balance() -> dict | None:
 
 # ── Local spending cap (soft guardrail) ───────────────────────────────────────
 
+
 def get_spending_cap() -> float:
     """Return the local spending cap (USD). Not the same as account balance."""
-    with _conn() as c:
-        row = c.execute("SELECT value FROM config WHERE key='spending_cap_usd'").fetchone()
+    with _db_proxy()() as c:
+        row = c.execute(
+            "SELECT value FROM config WHERE key='spending_cap_usd'"
+        ).fetchone()
     if row:
         return float(row["value"])
     return float(os.getenv("IGOR_SPENDING_CAP", DEFAULT_SPENDING_CAP_USD))
@@ -120,17 +133,17 @@ def get_spending_cap() -> float:
 
 def set_spending_cap(usd: float) -> str:
     """Set local spending cap. Returns confirmation string."""
-    with _conn() as c:
+    with _db_proxy()() as c:
         c.execute(
             "INSERT OR REPLACE INTO config (key, value) VALUES ('spending_cap_usd', ?)",
-            (str(usd),)
+            (str(usd),),
         )
     return f"Local spending cap set to ${usd:.2f}"
 
 
 def get_spend_total() -> float:
     """Return total spend recorded locally (USD)."""
-    with _conn() as c:
+    with _db_proxy()() as c:
         row = c.execute("SELECT COALESCE(SUM(usd), 0) as total FROM spend").fetchone()
     return float(row["total"])
 
@@ -142,10 +155,10 @@ def get_remaining() -> float:
 
 def record_spend(usd: float, model: str = "unknown", note: str = "") -> None:
     """Record a spend event. Called by reasoners after each API call."""
-    with _conn() as c:
+    with _db_proxy()() as c:
         c.execute(
             "INSERT INTO spend (timestamp, model, usd, note) VALUES (?, ?, ?, ?)",
-            (datetime.now().isoformat(), model, usd, note)
+            (datetime.now().isoformat(), model, usd, note),
         )
 
 
@@ -157,7 +170,7 @@ def budget_status() -> dict:
     Falls back to local spend-tracking against cap.
     """
     real = fetch_openrouter_balance()
-    cap  = get_spending_cap()
+    cap = get_spending_cap()
     spent_local = get_spend_total()
 
     if real:
@@ -166,30 +179,30 @@ def budget_status() -> dict:
         total_purchased = real["purchased"]
         pct_used = (real["used"] / total_purchased * 100) if total_purchased > 0 else 0
         return {
-            "source":        "openrouter_api",
-            "balance_usd":   real["balance"],
+            "source": "openrouter_api",
+            "balance_usd": real["balance"],
             "purchased_usd": real["purchased"],
-            "used_usd":      real["used"],
+            "used_usd": real["used"],
             "remaining_usd": remaining,
-            "pct_used":      pct_used,
-            "spending_cap":  cap,
-            "local_spent":   spent_local,
-            "fetched_at":    real["fetched_at"],
-            "warn":          remaining < (total_purchased * WARN_FRACTION),
-            "critical":      remaining < CRITICAL_USD,
+            "pct_used": pct_used,
+            "spending_cap": cap,
+            "local_spent": spent_local,
+            "fetched_at": real["fetched_at"],
+            "warn": remaining < (total_purchased * WARN_FRACTION),
+            "critical": remaining < CRITICAL_USD,
         }
     else:
         # Fallback: local tracking only
         remaining = cap - spent_local
         pct_used = (spent_local / cap * 100) if cap > 0 else 100
         return {
-            "source":        "local_tracking",
+            "source": "local_tracking",
             "remaining_usd": remaining,
-            "spending_cap":  cap,
-            "local_spent":   spent_local,
-            "pct_used":      pct_used,
-            "warn":          remaining < (cap * WARN_FRACTION),
-            "critical":      remaining < CRITICAL_USD,
+            "spending_cap": cap,
+            "local_spent": spent_local,
+            "pct_used": pct_used,
+            "warn": remaining < (cap * WARN_FRACTION),
+            "critical": remaining < CRITICAL_USD,
         }
 
 
@@ -270,6 +283,7 @@ def check_before_call() -> tuple[bool, str]:
 
 # ── Tool functions (exposed to Igor) ─────────────────────────────────────────
 
+
 def _tool_check_balance(**_) -> str:
     s = budget_status()
     if s["source"] == "openrouter_api":
@@ -293,10 +307,10 @@ def _tool_set_spending_cap(amount_usd: float, **_) -> str:
 
 
 def _tool_spend_history(limit: int = 20, **_) -> str:
-    with _conn() as c:
+    with _db_proxy()() as c:
         rows = c.execute(
             "SELECT timestamp, model, usd, note FROM spend ORDER BY id DESC LIMIT ?",
-            (int(limit),)
+            (int(limit),),
         ).fetchall()
     if not rows:
         return "No spend recorded yet."
@@ -311,61 +325,69 @@ def _tool_spend_history(limit: int = 20, **_) -> str:
 
 # ── Register tools ────────────────────────────────────────────────────────────
 
-registry.register(Tool(
-    name="check_openrouter_balance",
-    description=(
-        "Check real OpenRouter account balance by polling the API (cached 1 hour). "
-        "Use this instead of guessing. Do NOT use this more than once per hour. "
-        "You cannot purchase credits — only Akien manages that."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {},
-        "required": [],
-    },
-    fn=_tool_check_balance,
-))
-
-registry.register(Tool(
-    name="set_spending_cap",
-    description=(
-        "Set a local spending cap (USD) as a soft guardrail. "
-        "This does NOT purchase credits — it just sets a local limit. "
-        "Use check_openrouter_balance for the real account balance."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "amount_usd": {
-                "type": "number",
-                "description": "Spending cap in US dollars (e.g. 10.00)",
-            },
+registry.register(
+    Tool(
+        name="check_openrouter_balance",
+        description=(
+            "Check real OpenRouter account balance by polling the API (cached 1 hour). "
+            "Use this instead of guessing. Do NOT use this more than once per hour. "
+            "You cannot purchase credits — only Akien manages that."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
         },
-        "required": ["amount_usd"],
-    },
-    fn=_tool_set_spending_cap,
-))
+        fn=_tool_check_balance,
+    )
+)
 
-registry.register(Tool(
-    name="openrouter_spend_history",
-    description="Show recent locally-tracked OpenRouter spend history.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "limit": {
-                "type": "integer",
-                "description": "Number of recent entries to show (default 20)",
+registry.register(
+    Tool(
+        name="set_spending_cap",
+        description=(
+            "Set a local spending cap (USD) as a soft guardrail. "
+            "This does NOT purchase credits — it just sets a local limit. "
+            "Use check_openrouter_balance for the real account balance."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "amount_usd": {
+                    "type": "number",
+                    "description": "Spending cap in US dollars (e.g. 10.00)",
+                },
             },
+            "required": ["amount_usd"],
         },
-        "required": [],
-    },
-    fn=_tool_spend_history,
-))
+        fn=_tool_set_spending_cap,
+    )
+)
+
+registry.register(
+    Tool(
+        name="openrouter_spend_history",
+        description="Show recent locally-tracked OpenRouter spend history.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer",
+                    "description": "Number of recent entries to show (default 20)",
+                },
+            },
+            "required": [],
+        },
+        fn=_tool_spend_history,
+    )
+)
 
 # Alias: models commonly hallucinate this name; redirect to the real tool.
-registry.register(Tool(
-    name="get_budget_status",
-    description="Alias for check_openrouter_balance. Use that instead.",
-    parameters={"type": "object", "properties": {}, "required": []},
-    fn=_tool_check_balance,
-))
+registry.register(
+    Tool(
+        name="get_budget_status",
+        description="Alias for check_openrouter_balance. Use that instead.",
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=_tool_check_balance,
+    )
+)

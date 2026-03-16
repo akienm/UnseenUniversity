@@ -17,12 +17,18 @@ Part of #211. Foundation for remote-agent sync (#190).
 
 from __future__ import annotations
 
+import hashlib
 import os
+import re
 import sqlite3
+import threading
 import time
 from collections import deque
 from pathlib import Path
 from typing import Optional
+
+# Thread-local flag to prevent EXPLAIN QUERY PLAN re-entrancy
+_in_explain = threading.local()
 
 _SLOW_MS = int(os.getenv("IGOR_DB_SLOW_MS", "50"))
 _RING_SIZE = 500
@@ -81,6 +87,8 @@ class _DBContext:
 
     def _on_sql(self, sql: str) -> None:
         self._last_sql = sql
+        if self._conn is not None:
+            self._proxy._track_index_usage(self._conn, sql)
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
         elapsed_ms = round((time.monotonic() - self._t0) * 1000)
@@ -123,6 +131,10 @@ class DatabaseProxy:
         self._slow: int = 0
         self._calls: int = 0
         self._connect_errors: int = 0
+        # W2: index lifecycle tracking
+        self._explain_cache: dict[str, list[str]] = {}  # sql_hash[:12] → [index_names]
+        self._index_hits: dict[str, int] = {}
+        self._ensure_lock = threading.Lock()
 
     def __call__(self) -> _DBContext:
         """Return a context manager that yields an instrumented connection."""
@@ -162,6 +174,124 @@ class DatabaseProxy:
             logging.getLogger(__name__).error(f"[db_proxy] connection error: {exc}")
         except Exception:
             pass
+
+    # ── Index lifecycle ───────────────────────────────────────────────────────
+
+    def _track_index_usage(self, conn: sqlite3.Connection, sql: str) -> None:
+        """
+        Run EXPLAIN QUERY PLAN once per unique SQL pattern; accumulate index hit counts.
+        Called from _DBContext._on_sql() on every executed statement.
+        Thread-local _in_explain flag prevents re-entrancy.
+        """
+        if getattr(_in_explain, "active", False):
+            return
+        upper = sql.lstrip().upper()
+        if upper.startswith(
+            (
+                "EXPLAIN",
+                "CREATE",
+                "DROP",
+                "PRAGMA",
+                "BEGIN",
+                "COMMIT",
+                "ROLLBACK",
+                "SAVEPOINT",
+                "RELEASE",
+                "ATTACH",
+                "DETACH",
+            )
+        ):
+            return
+
+        key = hashlib.sha256(sql.encode()).hexdigest()[:12]
+        cached = self._explain_cache.get(key)
+        if cached is not None:
+            for idx_name in cached:
+                self._index_hits[idx_name] = self._index_hits.get(idx_name, 0) + 1
+            return
+
+        _in_explain.active = True
+        try:
+            rows = conn.execute("EXPLAIN QUERY PLAN " + sql).fetchall()
+            idx_names: list[str] = []
+            for row in rows:
+                row_str = " ".join(str(c) for c in row)
+                m = re.search(r"USING INDEX (\S+)", row_str, re.IGNORECASE)
+                if m:
+                    idx_names.append(m.group(1))
+            self._explain_cache[key] = idx_names
+            for idx_name in idx_names:
+                self._index_hits[idx_name] = self._index_hits.get(idx_name, 0) + 1
+        except Exception:
+            self._explain_cache[key] = []
+        finally:
+            _in_explain.active = False
+
+    def ensure_index(self, table: str, columns: tuple, unique: bool = False) -> None:
+        """
+        Idempotent CREATE INDEX IF NOT EXISTS for the given table+columns.
+        Records creation in _cc_index_registry table (created once per DB).
+        Thread-safe. Logs to db_queries.log when a new index is created.
+        """
+        col_str = "_".join(columns)
+        idx_name = f"idx_{table}_{col_str}"
+        cols_sql = ", ".join(columns)
+        unique_kw = "UNIQUE " if unique else ""
+
+        with self._ensure_lock:
+            with self() as conn:
+                conn.execute(
+                    "CREATE TABLE IF NOT EXISTS _cc_index_registry "
+                    "(index_name TEXT PRIMARY KEY, table_name TEXT, "
+                    "columns TEXT, created_at TEXT)"
+                )
+                existing = conn.execute(
+                    "SELECT 1 FROM _cc_index_registry WHERE index_name = ?",
+                    (idx_name,),
+                ).fetchone()
+                conn.execute(
+                    f"CREATE {unique_kw}INDEX IF NOT EXISTS {idx_name} "
+                    f"ON {table} ({cols_sql})"
+                )
+                if not existing:
+                    conn.execute(
+                        "INSERT OR IGNORE INTO _cc_index_registry "
+                        "(index_name, table_name, columns, created_at) VALUES (?,?,?,?)",
+                        (
+                            idx_name,
+                            table,
+                            ",".join(columns),
+                            time.strftime("%Y-%m-%dT%H:%M:%S"),
+                        ),
+                    )
+                    _db_log(
+                        0,
+                        f"ensure_index: CREATE INDEX {idx_name} ON {table}({cols_sql})",
+                    )
+
+    def get_index_report(self) -> dict:
+        """
+        Return {index_name: {hits, table, columns, created_at}} from registry + in-memory hit counts.
+        Safe to call at any time; returns {} if registry table not yet created.
+        """
+        result: dict = {}
+        try:
+            with self() as conn:
+                rows = conn.execute(
+                    "SELECT index_name, table_name, columns, created_at "
+                    "FROM _cc_index_registry"
+                ).fetchall()
+            for row in rows:
+                idx_name = row["index_name"]
+                result[idx_name] = {
+                    "hits": self._index_hits.get(idx_name, 0),
+                    "table": row["table_name"],
+                    "columns": row["columns"],
+                    "created_at": row["created_at"],
+                }
+        except Exception:
+            pass
+        return result
 
     # ── Metrics ───────────────────────────────────────────────────────────────
 
