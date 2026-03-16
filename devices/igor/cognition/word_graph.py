@@ -32,6 +32,7 @@ import threading
 from pathlib import Path
 
 from ..memory.db_proxy import DatabaseProxy
+from ..igor_base import IgorBase
 
 # ── Stopwords ─────────────────────────────────────────────────────────────────
 _STOPWORDS = frozenset(
@@ -284,7 +285,7 @@ CREATE TABLE IF NOT EXISTS wg_meta (
 """
 
 
-class WordGraph:
+class WordGraph(IgorBase):
     """
     SQLite-backed word graph with language tags on nodes (#141).
 
@@ -299,7 +300,12 @@ class WordGraph:
     G37: name param → separate DB files for recognition and generation graphs.
     """
 
+    # predict_next LRU cache: (words_tuple, lang, fetch_n) → [(word, score), ...]
+    # Cleared on every index() call. Max 512 entries; evict half when full.
+    _PREDICT_CACHE_MAX = 512
+
     def __init__(self, name: str = "word_graph", db_path: Path | None = None) -> None:
+        super().__init__()
         self.name = name
         self._db_path = db_path or default_cache_path(name)
         self._lock = threading.RLock()
@@ -308,6 +314,11 @@ class WordGraph:
         with self._db() as conn:
             conn.execute("PRAGMA journal_mode=WAL")
             conn.executescript(_SCHEMA)
+        # G-WG2: predict_next cache — avoid re-aggregating 29M wg_cooccur rows
+        self._predict_cache: dict[tuple, list] = {}
+        # G-WG3: doc_count write batching — flush every N docs instead of every index()
+        self._pending_doc_count: int = 0
+        self._DOC_FLUSH_EVERY: int = 10
 
     # ── Backward-compat properties ─────────────────────────────────────────────
 
@@ -322,13 +333,33 @@ class WordGraph:
             row = conn.execute(
                 "SELECT value FROM wg_meta WHERE key = 'doc_count'"
             ).fetchone()
-        return int(row[0]) if row else 0
+        # G-WG3: include unflushed pending count so callers see live value
+        return (int(row[0]) if row else 0) + self._pending_doc_count
 
     def _inc_doc_count(self, conn) -> None:
-        conn.execute("""
-            INSERT INTO wg_meta (key, value) VALUES ('doc_count', '1')
-            ON CONFLICT(key) DO UPDATE SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT)
-        """)
+        # G-WG3: batch doc_count writes — accumulate in memory, flush every N docs
+        # instead of one SQLite write transaction per index() call (was 116x × 320ms)
+        self._pending_doc_count += 1
+        if self._pending_doc_count >= self._DOC_FLUSH_EVERY:
+            conn.execute(
+                "INSERT INTO wg_meta (key, value) VALUES ('doc_count', ?)"
+                " ON CONFLICT(key) DO UPDATE"
+                " SET value = CAST(CAST(value AS INTEGER) + ? AS TEXT)",
+                (str(self._pending_doc_count), self._pending_doc_count),
+            )
+            self._pending_doc_count = 0
+
+    def flush_doc_count(self) -> None:
+        """Flush any pending doc_count increment to DB. Call on shutdown or build_idf."""
+        if self._pending_doc_count > 0:
+            with self._db() as conn:
+                conn.execute(
+                    "INSERT INTO wg_meta (key, value) VALUES ('doc_count', ?)"
+                    " ON CONFLICT(key) DO UPDATE"
+                    " SET value = CAST(CAST(value AS INTEGER) + ? AS TEXT)",
+                    (str(self._pending_doc_count), self._pending_doc_count),
+                )
+            self._pending_doc_count = 0
 
     # ── Indexing ───────────────────────────────────────────────────────────────
 
@@ -397,8 +428,13 @@ class WordGraph:
 
                 self._inc_doc_count(conn)
 
+        # G-WG2: invalidate predict_next cache — new doc changes co-occurrence scores
+        if self._predict_cache:
+            self._predict_cache.clear()
+
     def build_idf(self) -> None:
         """Compute and persist IDF weights. Call once after all index() calls."""
+        self.flush_doc_count()  # G-WG3: ensure pending count is flushed before IDF uses it
         n = max(self._doc_count, 1)
         with self._lock:
             with self._db() as conn:
@@ -484,32 +520,47 @@ class WordGraph:
         w_ph = ",".join("?" * len(words))
         fetch = n * 3 if milieu_state else n  # fetch extra when milieu tilt applied
 
-        with self._db() as conn:
-            if lang is not None:
-                rows = conn.execute(
-                    f"""
-                    SELECT c.word_b, SUM(c.score) AS total
-                    FROM wg_cooccur c
-                    JOIN wg_word_lang l ON c.word_b = l.word
-                    WHERE c.word_a IN ({w_ph}) AND l.lang = ?
-                    GROUP BY c.word_b
-                    ORDER BY total DESC
-                    LIMIT ?
-                """,
-                    words + [lang, fetch],
-                ).fetchall()
-            else:
-                rows = conn.execute(
-                    f"""
-                    SELECT word_b, SUM(score) AS total
-                    FROM wg_cooccur
-                    WHERE word_a IN ({w_ph})
-                    GROUP BY word_b
-                    ORDER BY total DESC
-                    LIMIT ?
-                """,
-                    words + [fetch],
-                ).fetchall()
+        # G-WG2: LRU-style cache — skip DB aggregation on repeated context
+        # Key excludes milieu_state (tilt applied post-fetch, not in SQL)
+        _cache_key = (tuple(sorted(words)), lang, fetch)
+        if _cache_key in self._predict_cache:
+            rows = self._predict_cache[_cache_key]
+        else:
+            rows = None
+
+        if rows is None:
+            with self._db() as conn:
+                if lang is not None:
+                    rows = conn.execute(
+                        f"""
+                        SELECT c.word_b, SUM(c.score) AS total
+                        FROM wg_cooccur c
+                        JOIN wg_word_lang l ON c.word_b = l.word
+                        WHERE c.word_a IN ({w_ph}) AND l.lang = ?
+                        GROUP BY c.word_b
+                        ORDER BY total DESC
+                        LIMIT ?
+                    """,
+                        words + [lang, fetch],
+                    ).fetchall()
+                else:
+                    rows = conn.execute(
+                        f"""
+                        SELECT word_b, SUM(score) AS total
+                        FROM wg_cooccur
+                        WHERE word_a IN ({w_ph})
+                        GROUP BY word_b
+                        ORDER BY total DESC
+                        LIMIT ?
+                    """,
+                        words + [fetch],
+                    ).fetchall()
+            # G-WG2: store in cache; evict half when full
+            if len(self._predict_cache) >= self._PREDICT_CACHE_MAX:
+                evict = list(self._predict_cache.keys())[: self._PREDICT_CACHE_MAX // 2]
+                for k in evict:
+                    del self._predict_cache[k]
+            self._predict_cache[_cache_key] = rows
 
         if not rows:
             return []

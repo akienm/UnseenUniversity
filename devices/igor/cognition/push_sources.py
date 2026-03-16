@@ -23,6 +23,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from ..igor_base import IgorBase
+
 MACHINES_JSON = Path.home() / ".TheIgors" / "local" / "machines.json"
 INBOX_DIR = Path.home() / ".TheIgors" / "igor_wild_0001" / "inbox"
 
@@ -30,7 +32,7 @@ INBOX_DIR = Path.home() / ".TheIgors" / "igor_wild_0001" / "inbox"
 # ── Base ──────────────────────────────────────────────────────────────────────
 
 
-class BasePushSource:
+class BasePushSource(IgorBase):
     name: str = "unnamed_source"
 
     def push(self, cortex) -> list[int]:
@@ -88,6 +90,7 @@ class MemorySurfacer(BasePushSource):
     }
 
     def __init__(self):
+        super().__init__()
         self._last_run: Optional[datetime] = None
         self._last_ring_snapshot: Optional[str] = None  # Detect stale ring (change.43)
         self._recent_surfaced: list[set] = (

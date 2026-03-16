@@ -24,6 +24,7 @@ from rich.traceback import install as _install_rich_tb
 
 _install_rich_tb(show_locals=False, width=120)
 
+from .igor_base import IgorBase
 from .memory.models import Memory, MemoryType
 from .memory.cortex import Cortex
 from .brainstem.core_patterns import (
@@ -247,8 +248,9 @@ def _stdin_reader(stdin_queue: queue.Queue):
             break
 
 
-class Igor:
+class Igor(IgorBase):
     def __init__(self, instance_id: str):
+        super().__init__()
         self.instance_id = instance_id
         if _IGOR_DB_ENV:
             self.db_path = Path(_IGOR_DB_ENV).expanduser()

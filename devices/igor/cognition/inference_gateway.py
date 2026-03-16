@@ -33,6 +33,8 @@ import urllib.request
 from dataclasses import dataclass, field
 from typing import Callable, Optional
 
+from ..igor_base import IgorBase
+
 # ── Data model ──────────────────────────────────────────────────────────────────
 
 
@@ -94,8 +96,9 @@ class RoutingError(RuntimeError):
 # ── Gateway ──────────────────────────────────────────────────────────────────────
 
 
-class InferenceGateway:
+class InferenceGateway(IgorBase):
     def __init__(self) -> None:
+        super().__init__()
         self._nodes: dict[str, Node] = {}
         self._edges: dict[str, list[Edge]] = {}
         self._purposes: dict[str, PurposeConstraints] = {}
