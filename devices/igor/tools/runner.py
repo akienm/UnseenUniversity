@@ -33,7 +33,12 @@ DEFAULT_TIMEOUT = 30  # seconds
 import time
 from datetime import datetime
 from ..cognition.local_pool import LocalKoboldPool
-from ..cognition.reasoners.ollama_reasoner import OllamaReasoner, OLLAMA_LOCAL_MODEL, OLLAMA_HOST
+from ..cognition.reasoners.ollama_reasoner import (
+    OllamaReasoner,
+    OLLAMA_LOCAL_MODEL,
+    OLLAMA_HOST,
+)
+
 
 def _run(args: list[str], timeout: int, input_text: str = "") -> str:
     """
@@ -66,6 +71,7 @@ def _run(args: list[str], timeout: int, input_text: str = "") -> str:
 
 # ── Bash runner ────────────────────────────────────────────────────────────────
 
+
 def run_bash(command: str, timeout: int = DEFAULT_TIMEOUT) -> str:
     """
     Run a bash command string. Working directory is workspace/.
@@ -75,6 +81,7 @@ def run_bash(command: str, timeout: int = DEFAULT_TIMEOUT) -> str:
 
 
 # ── Python runner ──────────────────────────────────────────────────────────────
+
 
 def run_python(code: str, timeout: int = DEFAULT_TIMEOUT) -> str:
     """
@@ -88,63 +95,68 @@ def run_python(code: str, timeout: int = DEFAULT_TIMEOUT) -> str:
 
 # ── Register tools ─────────────────────────────────────────────────────────────
 
-registry.register(Tool(
-    name="run_bash",
-    description=(
-        "Run a bash command in Igor's workspace directory. "
-        "Captures and returns stdout + stderr. "
-        "Has a configurable timeout (default 30s). "
-        "NOT sandboxed — runs as the current OS user. Use responsibly."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "command": {
-                "type": "string",
-                "description": "Bash command string to execute (e.g. 'ls -la' or 'pip show numpy')",
+registry.register(
+    Tool(
+        name="run_bash",
+        description=(
+            "Run a bash command in Igor's workspace directory. "
+            "Captures and returns stdout + stderr. "
+            "Has a configurable timeout (default 30s). "
+            "NOT sandboxed — runs as the current OS user. Use responsibly."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "description": "Bash command string to execute (e.g. 'ls -la' or 'pip show numpy')",
+                },
+                "timeout": {
+                    "type": "integer",
+                    "description": "Max seconds to wait before killing the process (default 30, max suggested 120)",
+                },
             },
-            "timeout": {
-                "type": "integer",
-                "description": "Max seconds to wait before killing the process (default 30, max suggested 120)",
-            },
+            "required": ["command"],
         },
-        "required": ["command"],
-    },
-    fn=run_bash,
-))
+        fn=run_bash,
+    )
+)
 
 # Add benchmark tool
-registry.register(Tool(
-    name="run_benchmark",
-    description=(
-        "Run standardized benchmarks for resource comparison across the cluster. "
-        "Measures and records latency for specific tasks (pre_parsing, reasoning, etc)."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "hostname": {
-                "type": "string",
-                "description": "Target machine hostname",
+registry.register(
+    Tool(
+        name="run_benchmark",
+        description=(
+            "Run standardized benchmarks for resource comparison across the cluster. "
+            "Measures and records latency for specific tasks (pre_parsing, reasoning, etc)."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "hostname": {
+                    "type": "string",
+                    "description": "Target machine hostname",
+                },
+                "task": {
+                    "type": "string",
+                    "description": "Task to benchmark (pre_parsing, reasoning, etc)",
+                },
             },
-            "task": {
-                "type": "string",
-                "description": "Task to benchmark (pre_parsing, reasoning, etc)",
-            },
+            "required": ["hostname", "task"],
         },
-        "required": ["hostname", "task"],
-    },
-    fn=lambda **kwargs: _run_benchmark(**kwargs),
-))
+        fn=lambda **kwargs: _run_benchmark(**kwargs),
+    )
+)
+
 
 def _run_benchmark(hostname: str, task: str) -> str:
     """Execute standardized benchmark and record results."""
     # Simple benchmark prompt that exercises the model
     test_prompt = "Analyze this sentence for sentiment: 'I love coding!'"
-    
+
     pool = LocalKoboldPool()
     t0 = time.perf_counter()
-    
+
     try:
         if task == "pre_parsing":
             # Use Ollama for speed test (migrated from KoboldCpp)
@@ -152,38 +164,41 @@ def _run_benchmark(hostname: str, task: str) -> str:
             result = reasoner.reason(test_prompt, [], [], "benchmark")
         else:
             raise ValueError(f"Unknown benchmark task: {task}")
-            
+
         latency = time.perf_counter() - t0
         pool.record_benchmark(hostname, task, latency)
-        
+
         return f"Benchmark complete: {task} on {hostname} took {latency:.2f}s"
     except Exception as e:
         return f"Benchmark failed: {str(e)}"
 
-registry.register(Tool(
-    name="run_python",
-    description=(
-        "Execute a Python code snippet using Igor's interpreter. "
-        "Working directory is workspace/. Captures stdout + stderr. "
-        "NOT sandboxed — full OS access. "
-        "Good for experiments, calculations, data wrangling, and building things."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "code": {
-                "type": "string",
-                "description": "Python source code to execute",
+
+registry.register(
+    Tool(
+        name="run_python",
+        description=(
+            "Execute a Python code snippet using Igor's interpreter. "
+            "Working directory is workspace/. Captures stdout + stderr. "
+            "NOT sandboxed — full OS access. "
+            "Good for experiments, calculations, data wrangling, and building things."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "description": "Python source code to execute",
+                },
+                "timeout": {
+                    "type": "integer",
+                    "description": "Max seconds to wait before killing the process (default 30)",
+                },
             },
-            "timeout": {
-                "type": "integer",
-                "description": "Max seconds to wait before killing the process (default 30)",
-            },
+            "required": ["code"],
         },
-        "required": ["code"],
-    },
-    fn=run_python,
-))
+        fn=run_python,
+    )
+)
 
 
 def get_current_time() -> str:
@@ -191,12 +206,14 @@ def get_current_time() -> str:
     return datetime.now().strftime("%A, %Y-%m-%d  %H:%M:%S")
 
 
-registry.register(Tool(
-    name="get_current_time",
-    description="Return the current local date and time.",
-    parameters={"type": "object", "properties": {}, "required": []},
-    fn=get_current_time,
-))
+registry.register(
+    Tool(
+        name="get_current_time",
+        description="Return the current local date and time.",
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=get_current_time,
+    )
+)
 
 
 def restart_self(note: str = "") -> str:
@@ -213,7 +230,8 @@ def restart_self(note: str = "") -> str:
     """
     instance_id = os.getenv("IGOR_INSTANCE_ID", "wild-0001")
     flag_path = (
-        Path.home() / ".TheIgors"
+        Path.home()
+        / ".TheIgors"
         / f"igor_{instance_id.replace('-', '_')}"
         / "restart.flag"
     )
@@ -225,23 +243,87 @@ def restart_self(note: str = "") -> str:
     ).strip()
 
 
-registry.register(Tool(
-    name="restart_self",
-    description=(
-        "Restart Igor cleanly. Writes the restart flag; the main loop picks it up "
-        "on the next idle cycle and exits with code 42 (bash wrapper relaunches). "
-        "Use when asked to restart, or after self-edits that need to take effect. "
-        "Optionally pass a note that will be readable after wakeup."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "note": {
-                "type": "string",
-                "description": "Optional message to self — readable after restart via ring memory",
+def check_process(name: str) -> str:
+    """
+    Check whether a process matching `name` is currently running.
+    Uses pgrep to search by process name pattern.
+    Returns a structured string: running status, PID list, and count.
+    """
+    try:
+        result = subprocess.run(
+            ["pgrep", "-af", name],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        lines = [l.strip() for l in result.stdout.strip().splitlines() if l.strip()]
+        if lines:
+            pids = [l.split()[0] for l in lines]
+            return (
+                f"RUNNING|name={name}|count={len(pids)}|pids={','.join(pids)}"
+                f"|processes={'; '.join(lines[:5])}"
+            )
+        return f"NOT_RUNNING|name={name}"
+    except FileNotFoundError:
+        # pgrep not available — fall back to ps
+        result = subprocess.run(
+            ["ps", "aux"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        matches = [l for l in result.stdout.splitlines() if name.lower() in l.lower()]
+        if matches:
+            return f"RUNNING|name={name}|count={len(matches)}|via=ps_aux"
+        return f"NOT_RUNNING|name={name}|via=ps_aux"
+    except Exception as e:
+        return f"ERROR|name={name}|{e}"
+
+
+registry.register(
+    Tool(
+        name="check_process",
+        description=(
+            "Check whether a named process is currently running on this machine. "
+            "Uses pgrep to search by process name pattern. "
+            "Returns running status, PID list, and matching process lines. "
+            "Useful for: verifying Igor is up, checking if Ollama/KoboldCpp are running, "
+            "confirming background jobs are alive."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Process name or pattern to search for (e.g. 'igor', 'ollama', 'python')",
+                },
             },
+            "required": ["name"],
         },
-        "required": [],
-    },
-    fn=restart_self,
-))
+        fn=check_process,
+    )
+)
+
+
+registry.register(
+    Tool(
+        name="restart_self",
+        description=(
+            "Restart Igor cleanly. Writes the restart flag; the main loop picks it up "
+            "on the next idle cycle and exits with code 42 (bash wrapper relaunches). "
+            "Use when asked to restart, or after self-edits that need to take effect. "
+            "Optionally pass a note that will be readable after wakeup."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "note": {
+                    "type": "string",
+                    "description": "Optional message to self — readable after restart via ring memory",
+                },
+            },
+            "required": [],
+        },
+        fn=restart_self,
+    )
+)
