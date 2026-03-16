@@ -411,6 +411,140 @@ async def _run_as_employer(
             await context.close()
 
 
+# ── check_claude_balance — scrape Anthropic billing for current credit balance ──
+
+_ANTHROPIC_BILLING_URL = "https://console.anthropic.com/settings/billing"
+_BALANCE_JSON_PATH = Path.home() / ".TheIgors" / "cc_channel" / "anthropic_balance.json"
+
+
+def check_claude_balance(caller_source: str = "") -> str:
+    """
+    Scrape the Anthropic console billing page for the current credit balance.
+
+    Navigates to https://console.anthropic.com/settings/billing using the
+    employer's Chrome profile, extracts the balance dollar amount, and writes
+    {"balance_usd": X.XX, "fetched_at": ISO-timestamp} to
+    ~/.TheIgors/cc_channel/anthropic_balance.json.
+
+    caller_source: session source — only trusted direct channels (repl, web)
+    may use the employer's browser session. Discord is excluded.
+
+    Returns balance as a string, e.g. "balance_usd: 42.50".
+    """
+    if caller_source and caller_source not in _EMPLOYER_BROWSE_TRUSTED_SOURCES:
+        return json.dumps(
+            {
+                "status": "inhibited",
+                "reason": (
+                    f"check_claude_balance is not available from '{caller_source}'. "
+                    "Uses the employer's Chrome session — only repl/web allowed."
+                ),
+            }
+        )
+
+    logger.info(
+        f"check_claude_balance: starting — navigating to Anthropic billing caller_source={caller_source!r}"
+    )
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            result = loop.run_until_complete(_scrape_anthropic_balance())
+            return result
+        finally:
+            loop.close()
+    except Exception as e:
+        logger.error(f"check_claude_balance: unhandled exception — {e}")
+        return json.dumps({"status": "error", "error": str(e)})
+
+
+async def _scrape_anthropic_balance() -> str:
+    """Async implementation: navigate to billing page and parse balance."""
+    import re
+    from datetime import datetime, timezone
+
+    from playwright.async_api import async_playwright
+
+    extracted_text = ""
+
+    async with async_playwright() as p:
+        context = await p.chromium.launch_persistent_context(
+            user_data_dir=_EMPLOYER_PROFILE,
+            channel="chrome",
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"],
+            ignore_default_args=["--enable-automation"],
+        )
+        page = await context.new_page()
+        try:
+            await page.goto(
+                _ANTHROPIC_BILLING_URL, wait_until="domcontentloaded", timeout=30000
+            )
+            # Wait for SPA content to render
+            await page.wait_for_timeout(3000)
+
+            content = await page.evaluate("""() => {
+                const noise = document.querySelectorAll(
+                    'script,style,nav,header,footer,[role=navigation]'
+                );
+                noise.forEach(n => n.remove());
+                return document.body ? document.body.innerText.trim() : '';
+            }""")
+            extracted_text = content[:4000]
+        except Exception as e:
+            logger.error(f"check_claude_balance: page error — {e}")
+            await context.close()
+            return json.dumps({"status": "error", "error": str(e)})
+        finally:
+            await context.close()
+
+    # Parse balance from page text
+    balance_usd = None
+    patterns = [
+        r"[Cc]redit[s]?\s*(?:remaining|balance|available)?[:\s]*\$?([\d,]+\.?\d*)",
+        r"[Bb]alance[:\s]*\$?([\d,]+\.?\d*)",
+        r"\$([\d,]+\.\d{2})",
+    ]
+    for pat in patterns:
+        m = re.search(pat, extracted_text)
+        if m:
+            raw = m.group(1).replace(",", "")
+            try:
+                balance_usd = float(raw)
+                break
+            except ValueError:
+                continue
+
+    fetched_at = datetime.now(timezone.utc).isoformat()
+
+    if balance_usd is not None:
+        payload = {"balance_usd": balance_usd, "fetched_at": fetched_at}
+        _BALANCE_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _BALANCE_JSON_PATH.write_text(json.dumps(payload, indent=2))
+        logger.info(
+            f"check_claude_balance: complete — balance_usd={balance_usd} written to {_BALANCE_JSON_PATH}"
+        )
+        return f"balance_usd: {balance_usd}"
+    else:
+        logger.warning(
+            f"check_claude_balance: could not parse balance from page text (len={len(extracted_text)})"
+        )
+        payload = {
+            "balance_usd": None,
+            "fetched_at": fetched_at,
+            "raw_text": extracted_text[:500],
+        }
+        _BALANCE_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _BALANCE_JSON_PATH.write_text(json.dumps(payload, indent=2))
+        return json.dumps(
+            {
+                "status": "parse_failed",
+                "message": "Could not parse balance from billing page",
+                "raw_text": extracted_text[:500],
+            }
+        )
+
+
 # ── Register tool ─────────────────────────────────────────────────────────────
 
 registry.register(
@@ -486,5 +620,29 @@ registry.register(
             "required": ["task_description"],
         },
         fn=browser_use_task,
+    )
+)
+
+registry.register(
+    Tool(
+        name="check_claude_balance",
+        description=(
+            "Check the current Anthropic credit balance by scraping the console billing page. "
+            "Navigates to https://console.anthropic.com/settings/billing using the employer's "
+            "logged-in Chrome profile and extracts the credit balance. "
+            "Writes {balance_usd, fetched_at} to ~/.TheIgors/cc_channel/anthropic_balance.json. "
+            "Only available from trusted direct sessions (repl, web UI) — not from Discord."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "caller_source": {
+                    "type": "string",
+                    "description": "The session source (repl/web/discord). Required for trust gate.",
+                },
+            },
+            "required": [],
+        },
+        fn=check_claude_balance,
     )
 )
