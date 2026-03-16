@@ -9,21 +9,26 @@ Sources:
   UserInputSource — wraps incoming messages as TWM observations (explicit call)
   MachinesWatcher — watches machines.json for cluster state changes
   InboxWatcher    — watches inbox directory for new files (5s)
-  MilieuSource    — pushes ambient emotional state into TWM (60s timer)
+  MilieuSource          — pushes ambient emotional state into TWM (60s timer)
+  SelfObservationSource — watches Igor's own output for inward watch habit patterns (#243)
+  CuriositySource       — fires idle-curiosity impulse when TWM has no active focus (#246)
 
 All push via cortex.twm_push(). None of them block or crash the main loop.
 """
 
+import hashlib
+import re
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
 MACHINES_JSON = Path.home() / ".TheIgors" / "local" / "machines.json"
-INBOX_DIR    = Path.home() / ".TheIgors" / "igor_wild_0001" / "inbox"
+INBOX_DIR = Path.home() / ".TheIgors" / "igor_wild_0001" / "inbox"
 
 
 # ── Base ──────────────────────────────────────────────────────────────────────
+
 
 class BasePushSource:
     name: str = "unnamed_source"
@@ -38,6 +43,7 @@ class BasePushSource:
 
 # ── MemorySurfacer ─────────────────────────────────────────────────────────────
 
+
 class MemorySurfacer(BasePushSource):
     """
     Surfaces relevant LTM memories into TWM at low salience.
@@ -49,26 +55,51 @@ class MemorySurfacer(BasePushSource):
     change.43: deduplication — tracks recently surfaced memory IDs
     to avoid repetition cycles when ring context is static.
     """
+
     name = "memory_surfacer"
     MIN_INTERVAL_SEC = 120  # At most every 2 minutes
-    SURFACE_WINDOW = 10     # Remember last N surface runs to deduplicate (change.43)
+    SURFACE_WINDOW = 10  # Remember last N surface runs to deduplicate (change.43)
 
     _STOP = {
-        "from", "that", "with", "this", "have", "been", "will", "were",
-        "they", "what", "when", "where", "which", "there", "their",
-        "about", "could", "would", "should", "intent", "friction",
-        "igor", "user", "akien",
+        "from",
+        "that",
+        "with",
+        "this",
+        "have",
+        "been",
+        "will",
+        "were",
+        "they",
+        "what",
+        "when",
+        "where",
+        "which",
+        "there",
+        "their",
+        "about",
+        "could",
+        "would",
+        "should",
+        "intent",
+        "friction",
+        "igor",
+        "user",
+        "akien",
     }
 
     def __init__(self):
         self._last_run: Optional[datetime] = None
         self._last_ring_snapshot: Optional[str] = None  # Detect stale ring (change.43)
-        self._recent_surfaced: list[set] = []  # Dedup window: [set(mem_ids), ...] (change.43)
+        self._recent_surfaced: list[set] = (
+            []
+        )  # Dedup window: [set(mem_ids), ...] (change.43)
 
     def push(self, cortex) -> list[int]:
         now = datetime.now()
-        if (self._last_run is not None
-                and (now - self._last_run).total_seconds() < self.MIN_INTERVAL_SEC):
+        if (
+            self._last_run is not None
+            and (now - self._last_run).total_seconds() < self.MIN_INTERVAL_SEC
+        ):
             return []
 
         self._last_run = now
@@ -79,7 +110,7 @@ class MemorySurfacer(BasePushSource):
             return []
 
         combined = " ".join(e["content"] for e in ring)
-        
+
         # change.43: detect stale ring — if unchanged since last run, skip push
         # (avoids repetition cycle when human is idle)
         ring_snapshot = combined[:500]
@@ -101,7 +132,7 @@ class MemorySurfacer(BasePushSource):
         recently_surfaced = set()
         for mem_ids_set in self._recent_surfaced:
             recently_surfaced.update(mem_ids_set)
-        
+
         # Filter out recently surfaced candidates
         new_candidates = [m for m in candidates if m.id not in recently_surfaced]
         if not new_candidates:
@@ -137,6 +168,7 @@ class MemorySurfacer(BasePushSource):
 
 # ── HeartbeatSource ───────────────────────────────────────────────────────────
 
+
 class HeartbeatSource(BasePushSource):
     """
     Igor's anterior cingulate running on a clock (change.31).
@@ -150,6 +182,7 @@ class HeartbeatSource(BasePushSource):
          (once per level per session to avoid spam).
       5. Arbiter pending items checked via HeartbeatSource._check_arbiter() (change.33).
     """
+
     name = "heartbeat"
     MIN_INTERVAL_SEC = 300  # 5 minutes
 
@@ -160,8 +193,10 @@ class HeartbeatSource(BasePushSource):
 
     def push(self, cortex) -> list[int]:
         now = datetime.now()
-        if (self._last_run is not None
-                and (now - self._last_run).total_seconds() < self.MIN_INTERVAL_SEC):
+        if (
+            self._last_run is not None
+            and (now - self._last_run).total_seconds() < self.MIN_INTERVAL_SEC
+        ):
             return []
         self._last_run = now
 
@@ -202,27 +237,34 @@ class HeartbeatSource(BasePushSource):
         """Push high-salience budget alert if warn/critical. Fire Discord once per level."""
         try:
             from ..tools.budget import budget_status
+
             s = budget_status()
         except Exception:
             return []
 
         remaining = s["remaining_usd"]
-        total     = s.get("purchased_usd") or s.get("spending_cap", 0)
-        src       = s.get("source", "local_tracking")
+        total = s.get("purchased_usd") or s.get("spending_cap", 0)
+        src = s.get("source", "local_tracking")
         if remaining > total * 0.20 and not s["critical"]:
             return []  # Balance fine — stay quiet
 
         if remaining <= 0:
             level, salience = "EXHAUSTED", 1.0
-            msg = (f"Balance EXHAUSTED ({src}): ${remaining:.2f} remaining. "
-                   f"OpenRouter calls blocked.")
+            msg = (
+                f"Balance EXHAUSTED ({src}): ${remaining:.2f} remaining. "
+                f"OpenRouter calls blocked."
+            )
         elif s["critical"]:
             level, salience = "CRITICAL", 0.9
-            msg = (f"Balance CRITICAL ({src}): ${remaining:.2f} remaining of ${total:.2f}.")
+            msg = (
+                f"Balance CRITICAL ({src}): ${remaining:.2f} remaining of ${total:.2f}."
+            )
         else:
             level, salience = "LOW", 0.7
-            msg = (f"Balance LOW ({src}): ${remaining:.2f} remaining "
-                   f"({100 - s['pct_used']:.0f}% left).")
+            msg = (
+                f"Balance LOW ({src}): ${remaining:.2f} remaining "
+                f"({100 - s['pct_used']:.0f}% left)."
+            )
 
         budget_urgency = {"EXHAUSTED": 0.9, "CRITICAL": 0.9, "LOW": 0.5}.get(level, 0.3)
         obs_id = cortex.twm_push(
@@ -239,6 +281,7 @@ class HeartbeatSource(BasePushSource):
             # #67: cc_alerts.log so CC sees budget warnings at next session start
             try:
                 from .forensic_logger import log_anomaly as _la
+
                 _la(kind=f"BUDGET_{level}", detail=msg)
             except Exception:
                 pass
@@ -252,8 +295,11 @@ class HeartbeatSource(BasePushSource):
         """Push any PROCEDURAL memories with trigger='heartbeat_check' as context."""
         try:
             from ..memory.models import MemoryType
+
             mems = cortex.get_by_type(MemoryType.PROCEDURAL)
-            hb_mems = [m for m in mems if m.metadata.get("trigger") == "heartbeat_check"]
+            hb_mems = [
+                m for m in mems if m.metadata.get("trigger") == "heartbeat_check"
+            ]
         except Exception:
             return []
 
@@ -279,16 +325,19 @@ class HeartbeatSource(BasePushSource):
         """Best-effort proactive Discord alert. Silently ignores all errors."""
         try:
             import os
+
             channel_id_str = os.getenv("DISCORD_CHANNEL_ID", "").strip()
             if not channel_id_str:
                 return
             from ..network import discord_bot
+
             discord_bot.send(int(channel_id_str), message)
         except Exception:
             pass
 
 
 # ── UserInputSource ───────────────────────────────────────────────────────────
+
 
 class UserInputSource(BasePushSource):
     """
@@ -297,13 +346,15 @@ class UserInputSource(BasePushSource):
     Called explicitly via push_message() on each message arrival.
     Higher salience than background sources — user input is relevant now.
     """
+
     name = "user_input"
 
     def push(self, cortex) -> list[int]:
         return []  # Not timer-based — use push_message() directly
 
-    def push_message(self, cortex, content: str,
-                     channel: str = "repl", author: str = "user") -> int:
+    def push_message(
+        self, cortex, content: str, channel: str = "repl", author: str = "user"
+    ) -> int:
         """Push a user/network message into TWM. Returns obs ID.
         G50: sets the message as the current TWM attractor — user input defines current focus.
         """
@@ -327,6 +378,7 @@ class UserInputSource(BasePushSource):
 
 # ── MachinesWatcher ───────────────────────────────────────────────────────────
 
+
 class MachinesWatcher(BasePushSource):
     """
     Watches ~/.TheIgors/local/machines.json for changes.
@@ -335,6 +387,7 @@ class MachinesWatcher(BasePushSource):
     knows the current machine inventory) and again whenever the file's
     modification time changes (e.g. a machine comes online/offline).
     """
+
     name = "machines_watcher"
     CHECK_INTERVAL_SEC = 30  # Check every 30 seconds
 
@@ -344,8 +397,10 @@ class MachinesWatcher(BasePushSource):
 
     def push(self, cortex) -> list[int]:
         now = datetime.now()
-        if (self._last_check is not None
-                and (now - self._last_check).total_seconds() < self.CHECK_INTERVAL_SEC):
+        if (
+            self._last_check is not None
+            and (now - self._last_check).total_seconds() < self.CHECK_INTERVAL_SEC
+        ):
             return []
         self._last_check = now
 
@@ -375,7 +430,11 @@ class MachinesWatcher(BasePushSource):
             source=self.name,
             content_csb=csb,
             salience=0.8,
-            metadata={"path": str(MACHINES_JSON), "mtime": current_mtime, "reason": reason},
+            metadata={
+                "path": str(MACHINES_JSON),
+                "mtime": current_mtime,
+                "reason": reason,
+            },
             urgency=0.5,
             ttl_seconds=3600,
         )
@@ -384,6 +443,7 @@ class MachinesWatcher(BasePushSource):
 
 # ── InboxWatcher ──────────────────────────────────────────────────────────────
 
+
 class InboxWatcher(BasePushSource):
     """
     Watches the inbox directory for new files every CHECK_INTERVAL_SEC seconds.
@@ -391,6 +451,7 @@ class InboxWatcher(BasePushSource):
     Pushes a high-salience TWM observation (0.9) when new files appear,
     whether dropped via the web UI or copied there by other means.
     """
+
     name = "inbox_watcher"
     CHECK_INTERVAL_SEC = 5
 
@@ -400,8 +461,10 @@ class InboxWatcher(BasePushSource):
 
     def push(self, cortex) -> list[int]:
         now = datetime.now()
-        if (self._last_check is not None
-                and (now - self._last_check).total_seconds() < self.CHECK_INTERVAL_SEC):
+        if (
+            self._last_check is not None
+            and (now - self._last_check).total_seconds() < self.CHECK_INTERVAL_SEC
+        ):
             return []
         self._last_check = now
 
@@ -437,6 +500,7 @@ class InboxWatcher(BasePushSource):
 
 # ── HabitCandidateSource ──────────────────────────────────────────────────────
 
+
 class HabitCandidateSource(BasePushSource):
     """
     Watches for non-PROC memories with high activation_count (#106/#108).
@@ -447,9 +511,10 @@ class HabitCandidateSource(BasePushSource):
 
     Rate-limited per candidate so the same memory isn't nagged repeatedly.
     """
+
     name = "habit_candidate"
-    MIN_INTERVAL_SEC  = 600   # Full pass every 10 minutes
-    ACTIVATION_THRESH = 5     # Activations before flagging as candidate
+    MIN_INTERVAL_SEC = 600  # Full pass every 10 minutes
+    ACTIVATION_THRESH = 5  # Activations before flagging as candidate
     CANDIDATE_TTL_SEC = 3600  # Don't re-surface a candidate within 1 hour
 
     # Types ineligible for habituation (structure memories, not behaviour)
@@ -461,17 +526,17 @@ class HabitCandidateSource(BasePushSource):
 
     def push(self, cortex) -> list[int]:
         now = datetime.now()
-        if (self._last_run is not None
-                and (now - self._last_run).total_seconds() < self.MIN_INTERVAL_SEC):
+        if (
+            self._last_run is not None
+            and (now - self._last_run).total_seconds() < self.MIN_INTERVAL_SEC
+        ):
             return []
         self._last_run = now
 
         try:
             from ..memory.models import MemoryType
-            eligible_types = [
-                t for t in MemoryType
-                if t.value not in self._SKIP_TYPES
-            ]
+
+            eligible_types = [t for t in MemoryType if t.value not in self._SKIP_TYPES]
             all_mems = []
             for mt in eligible_types:
                 all_mems.extend(cortex.get_by_type(mt))
@@ -479,8 +544,7 @@ class HabitCandidateSource(BasePushSource):
             return []
 
         candidates = [
-            m for m in all_mems
-            if m.activation_count >= self.ACTIVATION_THRESH
+            m for m in all_mems if m.activation_count >= self.ACTIVATION_THRESH
         ]
         if not candidates:
             return []
@@ -506,7 +570,10 @@ class HabitCandidateSource(BasePushSource):
                 salience=min(0.7, 0.4 + mem.activation_count * 0.02),
                 urgency=0.3,
                 ttl_seconds=1800,
-                metadata={"memory_id": mem.id, "activation_count": mem.activation_count},
+                metadata={
+                    "memory_id": mem.id,
+                    "activation_count": mem.activation_count,
+                },
             )
             pushed.append(obs_id)
             self._surfaced_at[mem.id] = now
@@ -515,6 +582,7 @@ class HabitCandidateSource(BasePushSource):
 
 
 # ── MilieuSource ──────────────────────────────────────────────────────────────
+
 
 class MilieuSource(BasePushSource):
     """
@@ -534,8 +602,10 @@ class MilieuSource(BasePushSource):
         from . import milieu as milieu_mod
 
         now = datetime.now()
-        if (self._last_run is not None
-                and (now - self._last_run).total_seconds() < self.MIN_INTERVAL_SEC):
+        if (
+            self._last_run is not None
+            and (now - self._last_run).total_seconds() < self.MIN_INTERVAL_SEC
+        ):
             return []
         self._last_run = now
 
@@ -547,14 +617,14 @@ class MilieuSource(BasePushSource):
         m.tick()
 
         state = m.get_state()
-        prev  = self._prev_snapshot
+        prev = self._prev_snapshot
 
         # Decide whether to push: significant change OR extreme state
         should_push = (
             prev is None
             or m.delta(prev) > milieu_mod.PUSH_DELTA
-            or state.arousal  >  0.6
-            or state.valence  < -0.4
+            or state.arousal > 0.6
+            or state.valence < -0.4
         )
 
         if not should_push:
@@ -565,7 +635,7 @@ class MilieuSource(BasePushSource):
             source=self.name,
             content_csb=m.state_csb(),
             salience=0.4,
-            urgency=0.3,   # Background context; not urgent unless NE decides it is
+            urgency=0.3,  # Background context; not urgent unless NE decides it is
             ttl_seconds=600,
             metadata={"type": "milieu", "tick": state.tick},
         )
@@ -574,6 +644,7 @@ class MilieuSource(BasePushSource):
 
 
 # ── ProactiveHabitSource ──────────────────────────────────────────────────────
+
 
 class ProactiveHabitSource(BasePushSource):
     """
@@ -590,23 +661,27 @@ class ProactiveHabitSource(BasePushSource):
     Example: a "go read confluence" habit with schedule="session_start" will
     trigger Igor to absorb new Confluence content every time he wakes up.
     """
+
     name = "proactive_habit"
     CHECK_INTERVAL_SEC = 60  # Check schedules every minute
 
     def __init__(self):
         self._last_check: Optional[datetime] = None
-        self._session_fired: set = set()   # habit IDs already fired this session
-        self._interval_last: dict = {}     # habit_id → datetime last fired
+        self._session_fired: set = set()  # habit IDs already fired this session
+        self._interval_last: dict = {}  # habit_id → datetime last fired
 
     def push(self, cortex) -> list[int]:
         now = datetime.now()
-        if (self._last_check is not None
-                and (now - self._last_check).total_seconds() < self.CHECK_INTERVAL_SEC):
+        if (
+            self._last_check is not None
+            and (now - self._last_check).total_seconds() < self.CHECK_INTERVAL_SEC
+        ):
             return []
         self._last_check = now
 
         try:
             from ..memory.models import MemoryType
+
             habits = cortex.get_by_type(MemoryType.PROCEDURAL)
         except Exception:
             return []
@@ -633,8 +708,7 @@ class ProactiveHabitSource(BasePushSource):
                     continue
                 last = self._interval_last.get(habit.id)
                 should_fire = (
-                    last is None
-                    or (now - last).total_seconds() >= interval_sec
+                    last is None or (now - last).total_seconds() >= interval_sec
                 )
             else:
                 continue  # unknown schedule type — skip
@@ -667,6 +741,7 @@ class ProactiveHabitSource(BasePushSource):
 
 # ── ResourceMonitorSource ─────────────────────────────────────────────────────
 
+
 class ResourceMonitorSource(BasePushSource):
     """
     Polls machine resource state every CHECK_INTERVAL_SEC seconds.
@@ -680,6 +755,7 @@ class ResourceMonitorSource(BasePushSource):
     Suppresses repeated pushes for the same habit at the same verdict level
     until that level clears (avoids spamming every 60s).
     """
+
     name = "resource_monitor"
     CHECK_INTERVAL_SEC = 60
 
@@ -690,19 +766,26 @@ class ResourceMonitorSource(BasePushSource):
 
     def push(self, cortex) -> list[int]:
         now = datetime.now()
-        if (self._last_check is not None
-                and (now - self._last_check).total_seconds() < self.CHECK_INTERVAL_SEC):
+        if (
+            self._last_check is not None
+            and (now - self._last_check).total_seconds() < self.CHECK_INTERVAL_SEC
+        ):
             return []
         self._last_check = now
 
         try:
             from ..memory.models import MemoryType
+
             habits = cortex.get_by_type(MemoryType.PROCEDURAL)
         except Exception:
             return []
 
         try:
-            from ..tools.filesystem import evaluate_threshold_habits, _resource_load_dict
+            from ..tools.filesystem import (
+                evaluate_threshold_habits,
+                _resource_load_dict,
+            )
+
             tripped = evaluate_threshold_habits(habits)
         except Exception:
             return []
@@ -714,28 +797,28 @@ class ResourceMonitorSource(BasePushSource):
 
         pushed = []
         for item in tripped:
-            habit        = item["habit"]
-            current      = item["current_value"]
-            field        = item["field"]
-            raw          = item["raw"]
-            verdict      = raw.get("verdict", "warn")
-            ttl          = int(habit.metadata.get("twm_ttl_seconds", 120))
+            habit = item["habit"]
+            current = item["current_value"]
+            field = item["field"]
+            raw = item["raw"]
+            verdict = raw.get("verdict", "warn")
+            ttl = int(habit.metadata.get("twm_ttl_seconds", 120))
             surface_tmpl = habit.metadata.get(
                 "surface_message",
-                f"{field} is at {{current_value}} — check before queuing more work."
+                f"{field} is at {{current_value}} — check before queuing more work.",
             )
-            surface_msg  = surface_tmpl.format(
+            surface_msg = surface_tmpl.format(
                 current_value=current, field=field, verdict=verdict, **raw
             )
 
             # Suppress if we already pushed this habit at this or higher severity
             prev = self._last_pushed.get(habit.id)
             severity = {"warn": 1, "critical": 2}.get(verdict, 0)
-            prev_sev  = {"warn": 1, "critical": 2}.get(prev, 0)
+            prev_sev = {"warn": 1, "critical": 2}.get(prev, 0)
             if prev is not None and prev_sev >= severity:
                 continue  # already notified, condition hasn't escalated
 
-            urgency  = 0.7 if verdict == "critical" else 0.5
+            urgency = 0.7 if verdict == "critical" else 0.5
             salience = 0.8 if verdict == "critical" else 0.6
             csb = (
                 f"THRESHOLD_HABIT|{habit.id}|{verdict.upper()}"
@@ -766,17 +849,267 @@ class ResourceMonitorSource(BasePushSource):
         return pushed
 
 
+# ── SelfObservationSource ─────────────────────────────────────────────────────
+
+
+class SelfObservationSource(BasePushSource):
+    """
+    Watches Igor's own output for patterns matching inward watch habits (#243).
+
+    Reads recent IGOR_SAID entries from TWM (source="igor_response") that
+    haven't been seen yet, and scores all inward-watch habits
+    (habit_type="watch", watch_direction="inward") against each one.
+
+    On match: pushes SELF_OBS_HIT|{habit_id}|{matched_text[:200]} to TWM
+    at salience 0.5, urgency 0.3, TTL 300s.
+
+    Deduplication: same (habit_id, content_hash) pair won't fire again
+    within DEDUP_TTL_SEC, preventing floods from static response patterns.
+    """
+
+    name = "self_observation"
+    CHECK_INTERVAL_SEC = 30  # Check every 30 seconds
+    DEDUP_TTL_SEC = 300  # Same habit+content won't fire again within 5 min
+
+    def __init__(self):
+        self._last_check: Optional[datetime] = None
+        self._last_twm_id: int = 0  # cursor — only process newer TWM entries
+        # (habit_id, content_hash) → datetime last fired
+        self._dedup: dict = {}
+
+    @staticmethod
+    def _trigger_matches(trigger: str, text_lower: str) -> bool:
+        """Return True if trigger pattern matches text (same logic as basal_ganglia)."""
+        trigger_lower = trigger.lower()
+        if "|" in trigger_lower:
+
+            def _phrase_ok(phrase: str) -> bool:
+                p = phrase.strip()
+                return bool(p and re.search(r"\b" + re.escape(p) + r"\b", text_lower))
+
+            return any(_phrase_ok(ph) for ph in trigger_lower.split("|"))
+        elif " " in trigger_lower:
+            tokens = [t for t in trigger_lower.split() if len(t) >= 5]
+            return bool(tokens and any(t in text_lower for t in tokens))
+        else:
+            return trigger_lower in text_lower
+
+    def push(self, cortex) -> list[int]:
+        now = datetime.now()
+        if (
+            self._last_check is not None
+            and (now - self._last_check).total_seconds() < self.CHECK_INTERVAL_SEC
+        ):
+            return []
+        self._last_check = now
+
+        # Expire old dedup entries
+        expired = [
+            k
+            for k, t in self._dedup.items()
+            if (now - t).total_seconds() >= self.DEDUP_TTL_SEC
+        ]
+        for k in expired:
+            del self._dedup[k]
+
+        # Load inward watch habits
+        try:
+            from ..memory.models import MemoryType
+
+            habits = cortex.get_by_type(MemoryType.PROCEDURAL)
+            inward_habits = [
+                h
+                for h in habits
+                if h.metadata.get("habit_type") == "watch"
+                and h.metadata.get("watch_direction") == "inward"
+                and h.metadata.get("trigger")
+            ]
+        except Exception:
+            return []
+
+        if not inward_habits:
+            return []
+
+        # Read recent TWM entries, filter to IGOR_SAID from igor_response source
+        try:
+            all_obs = cortex.twm_read(limit=100)
+        except Exception:
+            return []
+
+        new_obs = [o for o in all_obs if o["id"] > self._last_twm_id]
+        if new_obs:
+            self._last_twm_id = max(o["id"] for o in new_obs)
+
+        igor_said = [
+            o
+            for o in new_obs
+            if o.get("source") == "igor_response"
+            and o.get("content_csb", "").startswith("IGOR_SAID|")
+        ]
+        if not igor_said:
+            return []
+
+        pushed = []
+        for obs in igor_said:
+            # Extract the response text (after "IGOR_SAID|")
+            text = obs["content_csb"][len("IGOR_SAID|") :]
+            text_lower = text.lower()
+
+            for habit in inward_habits:
+                trigger = habit.metadata.get("trigger", "")
+                if not self._trigger_matches(trigger, text_lower):
+                    continue
+
+                # Dedup check
+                content_hash = hashlib.md5(text[:200].encode()).hexdigest()[:8]
+                dedup_key = (habit.id, content_hash)
+                if dedup_key in self._dedup:
+                    continue
+                self._dedup[dedup_key] = now
+
+                label = habit.metadata.get("watch_label", habit.id)
+                csb = f"SELF_OBS_HIT|{habit.id}|label={label}|{text[:200]}"
+                obs_id = cortex.twm_push(
+                    source=self.name,
+                    content_csb=csb,
+                    salience=0.5,
+                    urgency=0.3,
+                    ttl_seconds=300,
+                    metadata={
+                        "habit_id": habit.id,
+                        "watch_label": label,
+                        "watch_direction": "inward",
+                    },
+                )
+                pushed.append(obs_id)
+
+        return pushed
+
+
+# ── CuriositySource ───────────────────────────────────────────────────────────
+
+
+class CuriositySource(BasePushSource):
+    """
+    Fires an idle-curiosity impulse when TWM has no active attractor and urgency
+    is low (#246 sub-task 2).
+
+    When Igor has nothing pressing, pick a topic from watch habits and push
+    an ACTION_IMPULSE inviting proactive exploration. The main loop's
+    _drain_action_impulses() consumes these as synthetic impulses.
+
+    Deduplication: same topic won't fire again within TOPIC_COOLDOWN_SEC.
+    """
+
+    name = "curiosity"
+    MIN_INTERVAL_SEC = 300  # At most every 5 minutes
+    IDLE_URGENCY_MAX = 0.35  # Only fire when max TWM urgency < this
+    TOPIC_COOLDOWN_SEC = 600  # Same topic won't fire again within 10 min
+
+    def __init__(self):
+        self._last_run: Optional[datetime] = None
+        self._topic_cooldowns: dict = {}  # topic → datetime last fired
+        self._topic_index: int = 0  # round-robin index into topic list
+
+    def push(self, cortex) -> list[int]:
+        now = datetime.now()
+        if (
+            self._last_run is not None
+            and (now - self._last_run).total_seconds() < self.MIN_INTERVAL_SEC
+        ):
+            return []
+        self._last_run = now
+
+        # Expire old cooldowns
+        expired = [
+            t
+            for t, ts in self._topic_cooldowns.items()
+            if (now - ts).total_seconds() >= self.TOPIC_COOLDOWN_SEC
+        ]
+        for t in expired:
+            del self._topic_cooldowns[t]
+
+        # Idle check: no active attractor
+        try:
+            attractor = cortex.twm_get_attractor()
+            if attractor is not None and attractor.get("weight", 0.0) >= 0.1:
+                return []  # Something has focus — stay quiet
+        except Exception:
+            return []
+
+        # Low-urgency check: nothing pressing in TWM
+        try:
+            obs_list = cortex.twm_read(limit=10)
+            if obs_list:
+                max_urgency = max(
+                    (o.get("urgency", 0.0) for o in obs_list), default=0.0
+                )
+                if max_urgency >= self.IDLE_URGENCY_MAX:
+                    return []
+        except Exception:
+            return []
+
+        # Gather topics from watch habits
+        try:
+            from ..memory.models import MemoryType
+
+            habits = cortex.get_by_type(MemoryType.PROCEDURAL)
+            topics = [
+                h.metadata.get("watch_label") or h.metadata.get("trigger", "")
+                for h in habits
+                if (
+                    h.metadata.get("habit_type") == "watch"
+                    and h.metadata.get("watch_direction", "outward") == "outward"
+                    and (h.metadata.get("watch_label") or h.metadata.get("trigger"))
+                )
+            ]
+            topics = [t for t in topics if t]
+        except Exception:
+            topics = []
+
+        if not topics:
+            topics = ["reading queue"]  # fallback
+
+        # Round-robin, skipping topics in cooldown
+        for _ in range(len(topics)):
+            idx = self._topic_index % len(topics)
+            self._topic_index += 1
+            topic = topics[idx]
+            if topic not in self._topic_cooldowns:
+                break
+        else:
+            return []  # All topics in cooldown
+
+        self._topic_cooldowns[topic] = now
+
+        csb = (
+            f"ACTION_IMPULSE|CURIOSITY|topic={topic}"
+            f"|action=You have idle time. Explore or read about: {topic}"
+        )
+        obs_id = cortex.twm_push(
+            source=self.name,
+            content_csb=csb,
+            salience=0.5,
+            urgency=0.4,
+            ttl_seconds=600,
+            metadata={"topic": topic, "curiosity_source": True},
+        )
+        return [obs_id]
+
+
 # ── Module singletons + convenience runner ────────────────────────────────────
 
-memory_surfacer        = MemorySurfacer()
-heartbeat_source       = HeartbeatSource()
-user_input_source      = UserInputSource()
-machines_watcher       = MachinesWatcher()
-inbox_watcher          = InboxWatcher()
-milieu_source          = MilieuSource()
+memory_surfacer = MemorySurfacer()
+heartbeat_source = HeartbeatSource()
+user_input_source = UserInputSource()
+machines_watcher = MachinesWatcher()
+inbox_watcher = InboxWatcher()
+milieu_source = MilieuSource()
 habit_candidate_source = HabitCandidateSource()
 proactive_habit_source = ProactiveHabitSource()
-resource_monitor       = ResourceMonitorSource()
+resource_monitor = ResourceMonitorSource()
+self_observation_source = SelfObservationSource()
+curiosity_source = CuriositySource()
 
 
 def run_background_sources(cortex) -> int:
@@ -786,9 +1119,18 @@ def run_background_sources(cortex) -> int:
     Exceptions are swallowed — a broken source must not crash the loop.
     """
     pushed = 0
-    for src in (heartbeat_source, memory_surfacer, machines_watcher, inbox_watcher,
-                milieu_source, habit_candidate_source, proactive_habit_source,
-                resource_monitor):
+    for src in (
+        heartbeat_source,
+        memory_surfacer,
+        machines_watcher,
+        inbox_watcher,
+        milieu_source,
+        habit_candidate_source,
+        proactive_habit_source,
+        resource_monitor,
+        self_observation_source,
+        curiosity_source,
+    ):
         try:
             ids = src.push(cortex)
             pushed += len(ids)
