@@ -874,8 +874,8 @@ class Cortex:
         terms = query.lower().split()
         with self._conn() as conn:
             rows = conn.execute(
-                "SELECT * FROM memories WHERE memory_type NOT IN (?, ?) "
-                "ORDER BY activation_count DESC LIMIT 300",  # G-QP2: cap candidate pool
+                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type NOT IN (?, ?) "
+                "ORDER BY activation_count DESC LIMIT 300",  # G-QP2: cap candidate pool; G-MEM2: no embedding blob
                 (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value),
             ).fetchall()
 
