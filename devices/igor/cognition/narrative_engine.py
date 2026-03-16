@@ -332,6 +332,29 @@ class NarrativeEngine:
         _all_raw = self.cortex.twm_read(limit=50, include_integrated=True)
         raw_obs = self._filter_obs(_all_raw)
 
+        # D099: comparison pass — decay slots with no shared action_pointer with others
+        try:
+            slots = self.cortex.twm_get_slots()
+            if len(slots) > 1:
+
+                def _slot_actions(slot):
+                    ap = slot["metadata"].get("action_pointer", "")
+                    return set(filter(None, ap.split(","))) if ap else set()
+
+                for slot in slots:
+                    mine = _slot_actions(slot)
+                    if not mine:
+                        continue
+                    shared = any(
+                        mine & _slot_actions(other)
+                        for other in slots
+                        if other["id"] != slot["id"]
+                    )
+                    if not shared:
+                        self.cortex.twm_decay_slot(slot["id"], factor=0.7)
+        except Exception:
+            pass  # comparison pass is advisory — never block NE
+
         # Mark filtered-out unintegrated obs as integrated so they stop counting
         # toward the trigger threshold. They've been seen — just not processable.
         _filtered_ids = [
