@@ -10,6 +10,7 @@ Endpoints:
   GET  /api/outbox          → JSON list of outbox files with size/mtime
   GET  /api/outbox/{file}   → download file from outbox
   GET  /api/dashboard       → JSON stats snapshot
+  POST /api/bridge_chat     → proxy to claude_bridge on 8082
 
 WebSocket message protocol (JSON):
   Client → server: {"type": "message", "content": "hello igor"}
@@ -564,6 +565,51 @@ async def _api_execute_habit_get(request: Request):
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
+# ── D105: Claude bridge proxy ─────────────────────────────────────────────────
+
+_BRIDGE_PORT = int(os.getenv("CLAUDE_BRIDGE_PORT", "8082"))
+
+
+async def _api_bridge_chat(request: Request) -> JSONResponse:
+    """POST /api/bridge_chat — proxy to claude_bridge on _BRIDGE_PORT.
+
+    Body: {"message": "...", "channel": "shared|back"}
+    Forwards to http://localhost:8082/chat and returns the response.
+    Allows the web UI to call Claude without CORS issues.
+    """
+    try:
+        body_bytes = await request.body()
+    except Exception:
+        return JSONResponse({"error": "read error"}, status_code=400)
+
+    import urllib.request as _ur
+    import urllib.error as _ue
+
+    def _do_proxy():
+        req = _ur.Request(
+            f"http://localhost:{_BRIDGE_PORT}/chat",
+            data=body_bytes,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with _ur.urlopen(req, timeout=90) as resp:
+            return resp.read()
+
+    try:
+        loop = asyncio.get_event_loop()
+        data = await loop.run_in_executor(None, _do_proxy)
+        return JSONResponse(json.loads(data))
+    except _ue.URLError:
+        return JSONResponse(
+            {
+                "error": "Claude bridge unavailable — is claude_bridge.py running on port 8082?"
+            },
+            status_code=503,
+        )
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
 # ── Starlette app factory ─────────────────────────────────────────────────────
 
 
@@ -587,6 +633,7 @@ def _make_app() -> Starlette:
         Route("/api/cc_notebook", _api_cc_notebook, methods=["GET", "POST"]),
         Route("/api/execute_habit", _api_execute_habit, methods=["POST"]),
         Route("/api/execute_habit/{habit_id}", _api_execute_habit_get, methods=["GET"]),
+        Route("/api/bridge_chat", _api_bridge_chat, methods=["POST"]),
     ]
 
     # Serve compiled Svelte assets if the UI has been built
@@ -739,6 +786,25 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
                        cursor: pointer; color: #555; background: transparent; border: none;
                        margin-left: 0.3rem; }
     #new-session-btn:hover { color: #aaa; }
+    /* D105: Claude bridge pane */
+    #content-area { flex: 1; display: flex; overflow: hidden; min-height: 0; }
+    #bridge-pane { width: 42%; border-left: 1px solid #2a1a40; display: flex;
+                   flex-direction: column; min-height: 0; background: #130d1e; }
+    #bridge-header { padding: 0.25rem 0.6rem; background: #0a0717;
+                     border-bottom: 1px solid #2a1a40; font-size: 0.75rem;
+                     color: #c8a0ff; flex-shrink: 0; }
+    #bridge-chat { flex: 1; overflow-y: auto; padding: 0.6rem;
+                   display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.88rem; }
+    .msg-claude .author { color: #c8a0ff; font-weight: bold; }
+    #back-row { display: flex; gap: 0.4rem; padding: 0.3rem 0.4rem;
+                border-top: 1px solid #2a1a40; flex-shrink: 0; }
+    #back-input { flex: 1; background: #180d26; color: #e0e0e0; border: 1px solid #4a2a6a;
+                  padding: 0.3rem 0.5rem; font-family: monospace; font-size: 0.85rem;
+                  resize: none; min-height: 2em; }
+    #cc-toggle { font-family: monospace; font-size: 0.78rem; color: #555;
+                 background: transparent; border: 1px solid #444;
+                 padding: 0.2rem 0.5rem; cursor: pointer; }
+    #cc-toggle.active { color: #c8a0ff; border-color: #c8a0ff; }
   </style>
 </head>
 <body>
@@ -747,12 +813,23 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     <span class="session-tab active" data-sid="shared" onclick="switchSession('shared')">shared</span>
     <button id="new-session-btn" onclick="newSession()" title="New session">+</button>
   </div>
-  <div id="chat"></div>
+  <div id="content-area">
+    <div id="chat"></div>
+    <div id="bridge-pane" style="display:none">
+      <div id="bridge-header">◈ Claude bridge  <span id="bridge-count" style="color:#555;float:right"></span></div>
+      <div id="bridge-chat"></div>
+      <div id="back-row">
+        <textarea id="back-input" placeholder="→ Claude only (back channel)…" rows="2" autocomplete="off"></textarea>
+        <button onclick="sendBack()">→CC</button>
+      </div>
+    </div>
+  </div>
   <div id="status-bar">●  idle</div>
   <div id="name-row">
     <span id="conn-led" title="Connection status">●</span>
     <label for="sender-name">Your name:</label>
     <input id="sender-name" type="text" value="akien" maxlength="32" autocomplete="off">
+    <button id="cc-toggle" onclick="toggleCC()" title="Toggle Claude bridge pane">CC</button>
   </div>
   <div id="input-row">
     <textarea id="input" placeholder="Message Igor..." autocomplete="off" rows="4"></textarea>
@@ -1074,6 +1151,8 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
       const name = (senderName.value.trim() || 'akien').toLowerCase();
       ws.send(JSON.stringify({type: 'message', content: rawText, author: name, session_id: currentSession}));
       input.value = '';
+      // D105: if CC bridge pane is open, also send as shared channel
+      if (ccEnabled) sendToBridge(rawText, 'shared');
     }
     // Enter sends; Shift+Enter inserts newline in textarea
     input.addEventListener('keydown', e => {
@@ -1132,6 +1211,71 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
         if (d.surprise_recent) updateSurprise(d.surprise_recent, d.surprise_avg);
       } catch(e) {}
     }
+
+    // ── D105: Claude bridge pane ─────────────────────────────────────────────
+    let ccEnabled = false;
+
+    function toggleCC() {
+      ccEnabled = !ccEnabled;
+      document.getElementById('bridge-pane').style.display = ccEnabled ? 'flex' : 'none';
+      document.getElementById('cc-toggle').classList.toggle('active', ccEnabled);
+    }
+
+    function addBridgeMsg(cls, author, content) {
+      const bc = document.getElementById('bridge-chat');
+      const d = document.createElement('div');
+      d.className = 'msg msg-' + cls;
+      if (author) {
+        const s = document.createElement('span');
+        s.className = 'author'; s.textContent = author + ':'; d.appendChild(s);
+      }
+      const c = document.createElement(cls === 'claude' ? 'div' : 'span');
+      if (cls === 'claude') { c.className = 'content md'; c.innerHTML = parseMarkdown(content); }
+      else { c.className = 'content'; c.textContent = content; }
+      d.appendChild(c);
+      bc.appendChild(d);
+      bc.scrollTop = bc.scrollHeight;
+    }
+
+    async function sendToBridge(message, channel) {
+      if (channel === 'shared') addBridgeMsg('user', 'you', message);
+      const thinkId = 'think-' + Date.now();
+      const bc = document.getElementById('bridge-chat');
+      const thinkEl = document.createElement('div');
+      thinkEl.id = thinkId; thinkEl.className = 'msg msg-system';
+      thinkEl.textContent = '◈ Claude is thinking…'; bc.appendChild(thinkEl);
+      bc.scrollTop = bc.scrollHeight;
+      try {
+        const r = await fetch('/api/bridge_chat', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({message, channel})
+        });
+        const j = await r.json();
+        const el = document.getElementById(thinkId);
+        if (el) el.remove();
+        if (j.reply) {
+          addBridgeMsg('claude', 'Claude', j.reply);
+          const cnt = document.getElementById('bridge-count');
+          if (cnt) cnt.textContent = j.message_count + ' msgs';
+        } else {
+          addBridgeMsg('system', '', 'Bridge error: ' + (j.error || 'unknown'));
+        }
+      } catch(e) {
+        const el = document.getElementById(thinkId);
+        if (el) el.remove();
+        addBridgeMsg('system', '', 'Bridge unavailable: ' + e.message);
+      }
+    }
+
+    async function sendBack() {
+      const bi = document.getElementById('back-input');
+      const msg = bi.value.trim(); if (!msg) return; bi.value = '';
+      await sendToBridge(msg, 'back');
+    }
+
+    document.getElementById('back-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendBack(); }
+    });
 
     // Show tab for URL-specified session before WebSocket connects
     if (_urlSession !== 'shared') _renderSessionBar();
