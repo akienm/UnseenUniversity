@@ -17,8 +17,10 @@ import json
 from pathlib import Path
 from typing import Optional
 
+from ..paths import paths
+
 EMBED_MODEL = "nomic-embed-text"
-CACHE_DIR   = Path.home() / ".TheIgors" / "cache" / "embeddings"
+CACHE_DIR = paths().embeddings_cache
 
 
 def embed(text: str, model: str = EMBED_MODEL) -> Optional[list[float]]:
@@ -29,7 +31,7 @@ def embed(text: str, model: str = EMBED_MODEL) -> Optional[list[float]]:
     if not text or not text.strip():
         return None
 
-    cache_key  = hashlib.sha256(f"{model}:{text}".encode()).hexdigest()
+    cache_key = hashlib.sha256(f"{model}:{text}".encode()).hexdigest()
     cache_file = CACHE_DIR / f"{cache_key}.json"
 
     # ── Cache hit ─────────────────────────────────────────────────────────────
@@ -42,6 +44,7 @@ def embed(text: str, model: str = EMBED_MODEL) -> Optional[list[float]]:
     # ── Ollama call ───────────────────────────────────────────────────────────
     try:
         import ollama as _ollama
+
         # keep_alive=-1: keep nomic-embed-text loaded indefinitely.
         # Without this, Ollama evicts it between searches (cold-load = 30-65s).
         response = _ollama.embeddings(model=model, prompt=text, keep_alive=-1)
@@ -62,7 +65,7 @@ def cosine_similarity(a: list[float], b: list[float]) -> float:
     """Cosine similarity in [–1, 1]. Returns 0.0 on empty or mismatched vectors."""
     if not a or not b or len(a) != len(b):
         return 0.0
-    dot    = sum(x * y for x, y in zip(a, b))
+    dot = sum(x * y for x, y in zip(a, b))
     norm_a = sum(x * x for x in a) ** 0.5
     norm_b = sum(x * x for x in b) ** 0.5
     if norm_a == 0.0 or norm_b == 0.0:

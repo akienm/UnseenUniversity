@@ -19,9 +19,11 @@ import inspect
 from datetime import datetime
 from pathlib import Path
 
-_cortex = None   # wired in at boot via observer.init()
+from ..paths import paths
 
-_LOG_DIR  = Path.home() / ".TheIgors" / "logs"
+_cortex = None  # wired in at boot via observer.init()
+
+_LOG_DIR = paths().logs
 _LOG_FILE = "metrics.log"
 _MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 
@@ -77,6 +79,7 @@ def observe(label: str, value, context: dict = None) -> None:
     if _cortex is not None:
         try:
             from ..memory.models import Memory, MemoryType
+
             narrative = f"METRIC|{label}|{value}"
             if ctx_str:
                 narrative += f"|{ctx_str[:200]}"
@@ -85,8 +88,8 @@ def observe(label: str, value, context: dict = None) -> None:
                 memory_type=MemoryType.EXPERIENTIAL,
                 valence=0.0,
                 metadata={
-                    "label":  label,
-                    "value":  str(value),
+                    "label": label,
+                    "value": str(value),
                     "caller": caller,
                     **(context or {}),
                 },

@@ -12,6 +12,7 @@ Runs in a daemon thread at startup so Igor is not blocked.
 Logs results to ~/.TheIgors/claudecode/changes.log (CSB format, newest first)
 and writes a summary to ring memory for NE integration.
 """
+
 import json
 import os
 import threading
@@ -21,23 +22,26 @@ from typing import Optional
 from urllib.request import urlopen, Request
 from urllib.error import URLError
 
-MACHINES_JSON      = Path.home() / ".TheIgors" / "local" / "machines.json"
-CHANGES_LOG        = Path.home() / ".TheIgors" / "claudecode" / "changes.log"
-OLLAMA_PORT        = 11434
-REQUIRED_MODELS    = [
-    "nomic-embed-text",                                  # embeddings
-    os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b"),      # preparse + tier.2
+from igor.paths import paths
+
+MACHINES_JSON = paths().machines_json
+CHANGES_LOG = paths().claudecode / "changes.log"
+OLLAMA_PORT = 11434
+REQUIRED_MODELS = [
+    "nomic-embed-text",  # embeddings
+    os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b"),  # preparse + tier.2
 ]
 # Batch model only pulled on priority.batch / priority.background machines
-BATCH_MODELS       = [
-    os.getenv("OLLAMA_BATCH_MODEL", "qwen2.5:14b"),      # large reasoning
+BATCH_MODELS = [
+    os.getenv("OLLAMA_BATCH_MODEL", "qwen2.5:14b"),  # large reasoning
 ]
-_BATCH_PRIORITIES  = {"priority.batch", "priority.background"}
-CHECK_TIMEOUT      = 5    # seconds per reachability probe
-PULL_TIMEOUT       = 600  # seconds — model pull can take a while on first run
+_BATCH_PRIORITIES = {"priority.batch", "priority.background"}
+CHECK_TIMEOUT = 5  # seconds per reachability probe
+PULL_TIMEOUT = 600  # seconds — model pull can take a while on first run
 
 
 # ── Internal helpers ───────────────────────────────────────────────────────────
+
 
 def _parse_online_machines() -> list[dict]:
     """Parse machines.json; return dicts for machines with non-null/non-offline IPs."""
@@ -53,7 +57,6 @@ def _parse_online_machines() -> list[dict]:
         return machines
     except Exception:
         return []
-
 
 
 def _get_available_models(ip: str) -> Optional[list[str]]:
@@ -79,7 +82,9 @@ def _pull_model(ip: str, model: str) -> bool:
     """
     url = f"http://{ip}:{OLLAMA_PORT}/api/pull"
     body = json.dumps({"name": model, "stream": False}).encode()
-    req = Request(url, data=body, headers={"Content-Type": "application/json"}, method="POST")
+    req = Request(
+        url, data=body, headers={"Content-Type": "application/json"}, method="POST"
+    )
     try:
         with urlopen(req, timeout=PULL_TIMEOUT) as resp:
             data = json.loads(resp.read().decode())
@@ -92,13 +97,16 @@ def _prepend_log(entry: str):
     """Prepend one CSB line to changes.log (newest-first format)."""
     CHANGES_LOG.parent.mkdir(parents=True, exist_ok=True)
     try:
-        existing = CHANGES_LOG.read_text(encoding="utf-8") if CHANGES_LOG.exists() else ""
+        existing = (
+            CHANGES_LOG.read_text(encoding="utf-8") if CHANGES_LOG.exists() else ""
+        )
         CHANGES_LOG.write_text(entry + "\n" + existing, encoding="utf-8")
     except OSError:
         pass
 
 
 # ── Public API ─────────────────────────────────────────────────────────────────
+
 
 def run(cortex=None):
     """
@@ -114,13 +122,15 @@ def run(cortex=None):
 
     for machine in machines:
         hostname = machine.get("hostname", "unknown")
-        ip       = machine.get("ip", "")
+        ip = machine.get("ip", "")
         priority = machine.get("priority", "unknown")
 
         # ── Ollama model checks ────────────────────────────────────────────
         available = _get_available_models(ip)
         if available is None:
-            results.append(f"BOOT_CHECK|{ts}|{hostname}|{ip}|{priority}|ollama_unreachable")
+            results.append(
+                f"BOOT_CHECK|{ts}|{hostname}|{ip}|{priority}|ollama_unreachable"
+            )
             continue
 
         models_to_check = list(REQUIRED_MODELS)
@@ -132,7 +142,9 @@ def run(cortex=None):
             if model_root in available:
                 results.append(f"BOOT_CHECK|{ts}|{hostname}|{ip}|{model}|present")
             else:
-                results.append(f"BOOT_CHECK|{ts}|{hostname}|{ip}|{model}|missing|pulling")
+                results.append(
+                    f"BOOT_CHECK|{ts}|{hostname}|{ip}|{model}|missing|pulling"
+                )
                 success = _pull_model(ip, model)
                 status = "pulled_ok" if success else "pull_failed"
                 results.append(f"BOOT_CHECK|{ts}|{hostname}|{ip}|{model}|{status}")
@@ -143,8 +155,14 @@ def run(cortex=None):
 
     # Push concise summary to ring memory so NE can integrate it
     if cortex is not None:
-        ok_count    = sum(1 for r in results if r.endswith("|present") or r.endswith("|pulled_ok"))
-        fail_count  = sum(1 for r in results if r.endswith("|pull_failed") or r.endswith("|unreachable"))
+        ok_count = sum(
+            1 for r in results if r.endswith("|present") or r.endswith("|pulled_ok")
+        )
+        fail_count = sum(
+            1
+            for r in results
+            if r.endswith("|pull_failed") or r.endswith("|unreachable")
+        )
         summary = (
             f"BOOT_CHECK_DONE|{ts}|machines={len(machines)}"
             f"|required={','.join(REQUIRED_MODELS)}"

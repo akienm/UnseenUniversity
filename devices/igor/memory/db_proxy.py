@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Optional
 
 from ..igor_base import IgorBase
+from ..paths import paths
 
 # Thread-local flag to prevent EXPLAIN QUERY PLAN re-entrancy
 _in_explain = threading.local()
@@ -39,7 +40,7 @@ _RING_SIZE = 500
 # All slow queries written to db_queries.log with timestamp + turn_id tie-back.
 # turn_id links each slow query back to the forensic_logger turn for the same call.
 
-_DB_LOG_PATH = Path.home() / ".TheIgors" / "logs" / "db_queries.log"
+_DB_LOG_PATH = paths().logs / "db_queries.log"
 _DB_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 

@@ -25,6 +25,7 @@ from typing import Optional
 
 from .registry import Tool, registry
 from ..memory.db_proxy import DatabaseProxy
+from ..paths import paths
 
 # ── Igor DB proxy singleton (G-DB1 W1) ────────────────────────────────────────
 _IGOR_DB_PROXY: Optional[DatabaseProxy] = None
@@ -39,7 +40,7 @@ def _igor_db_proxy() -> DatabaseProxy:
             db = Path(
                 os.environ.get(
                     "IGOR_DB_PATH",
-                    os.path.expanduser("~/.TheIgors/igor_wild_0001/wild-0001.db"),
+                    str(paths().instance / "wild-0001.db"),
                 )
             )
             _IGOR_DB_PROXY = DatabaseProxy(db)
@@ -51,8 +52,8 @@ _REPO = Path(__file__).parent.parent.parent.parent
 _BOOK_LEARNER = _REPO / "claudecode" / "book_learner.py"
 _DRAIN_SCRIPT = _REPO / "claudecode" / "drain_learn_queue.py"
 _VENV_PYTHON = _REPO / "venv" / "bin" / "python"
-_QUEUE_FILE = Path.home() / ".TheIgors" / "learn_queue.json"
-_DRAIN_PID = Path.home() / ".TheIgors" / "drain_learn_queue.pid"
+_QUEUE_FILE = paths().learn_queue
+_DRAIN_PID = paths().drain_pid
 
 # ── Fiction filter ─────────────────────────────────────────────────────────────
 # Tags containing any of these substrings → skip the book
@@ -380,7 +381,7 @@ def _launch_queue_runner(delay: float = 60.0) -> bool:
     python = str(_VENV_PYTHON) if _VENV_PYTHON.exists() else sys.executable
     cmd = [python, str(_DRAIN_SCRIPT), "--delay", str(delay)]
     try:
-        log_dir = Path.home() / ".TheIgors" / "logs"
+        log_dir = paths().logs
         log_dir.mkdir(parents=True, exist_ok=True)
         log_file = open(log_dir / "drain_learn_queue.log", "a")
         subprocess.Popen(cmd, stdout=log_file, stderr=log_file, start_new_session=True)
@@ -408,7 +409,7 @@ def _launch_book(
     else:
         return False
     try:
-        log_dir = Path.home() / ".TheIgors" / "logs"
+        log_dir = paths().logs
         log_dir.mkdir(parents=True, exist_ok=True)
         log_file = open(log_dir / "book_learner.log", "a")
         subprocess.Popen(
@@ -717,7 +718,7 @@ def list_absorbed_books(**_kwargs) -> str:
     lines.append(f"\nTotal: {total_nodes} knowledge nodes")
 
     # Also show queue
-    queue_path = Path.home() / ".TheIgors" / "learn_queue.json"
+    queue_path = paths().learn_queue
     if queue_path.exists():
         try:
             queue = json.loads(queue_path.read_text())

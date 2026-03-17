@@ -19,6 +19,8 @@ import datetime
 from pathlib import Path
 from typing import Optional
 
+from ..paths import paths
+
 _lock = threading.Lock()
 _cache_result: Optional[bool] = None
 _cache_time: float = 0.0
@@ -126,7 +128,7 @@ def invalidate_cache() -> None:
 # habit-triggered override that allows cloud inference at any time (including night).
 # Stored as a file so background subprocesses can read it without restart.
 
-_OVERRIDE_FILE = Path.home() / ".TheIgors" / "cloud_ok_override.json"
+_OVERRIDE_FILE = paths().cloud_ok_override
 
 
 def is_cloud_ok_override() -> bool:

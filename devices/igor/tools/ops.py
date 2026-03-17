@@ -17,8 +17,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .registry import Tool, registry
+from ..paths import paths
 
-_QUEUE_PATH = Path.home() / ".TheIgors" / "cc_channel" / "queue.json"
+_QUEUE_PATH = paths().cc_channel / "queue.json"
 
 
 def _now_iso() -> str:

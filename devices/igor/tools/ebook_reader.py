@@ -35,6 +35,7 @@ from pathlib import Path
 from typing import Optional
 
 from .registry import Tool, registry
+from ..paths import paths
 
 # ── Handle cache — survives tool-call JSON round-trips ────────────────────────
 # BookHandle objects can't be serialized. open_book stores handles here by key;
@@ -48,8 +49,7 @@ _CALIBRE_LIBRARY = Path(
     os.getenv(
         "CALIBRE_LIBRARY_PATH",
         str(
-            Path.home()
-            / ".TheIgors"
+            paths().runtime
             / "akien"
             / "onedrive"
             / "AkiensMedia"
@@ -63,13 +63,7 @@ _KINDLE_DIR = Path(
     os.getenv(
         "KINDLE_BOOKS_PATH",
         str(
-            Path.home()
-            / ".TheIgors"
-            / "akien"
-            / "onedrive"
-            / "AkiensMedia"
-            / "Ebooks"
-            / "Kindle"
+            paths().runtime / "akien" / "onedrive" / "AkiensMedia" / "Ebooks" / "Kindle"
         ),
     )
 )
@@ -77,7 +71,7 @@ _KINDLE_DIR = Path(
 _INSTANCE_DIR = Path(
     os.getenv(
         "IGOR_DB_PATH",
-        str(Path.home() / ".TheIgors" / "igor_wild_0001" / "wild-0001.db"),
+        str(paths().instance / "wild-0001.db"),
     )
 ).parent
 _READING_STATE_PATH = _INSTANCE_DIR / "reading_state.json"

@@ -29,10 +29,11 @@ from pathlib import Path
 from typing import Optional
 
 from .registry import Tool, registry
+from ..paths import paths
 
 # ── Paths + gates ─────────────────────────────────────────────────────────────
 
-_INSTANCE_DIR = Path.home() / ".TheIgors" / "igor_wild_0001"
+_INSTANCE_DIR = paths().instance
 _DEFAULT_CREDS = _INSTANCE_DIR / "google_credentials.json"
 _DEFAULT_TOKEN = _INSTANCE_DIR / "google_token.json"
 
@@ -64,6 +65,7 @@ def _tasks_list_id() -> str:
 
 
 # ── OAuth helper ──────────────────────────────────────────────────────────────
+
 
 def _get_service(api: str, version: str, scopes: list | None = None):
     """
@@ -110,6 +112,7 @@ def _get_service(api: str, version: str, scopes: list | None = None):
 
 # ── Event tools ───────────────────────────────────────────────────────────────
 
+
 def create_event(
     title: str,
     start_iso: str,
@@ -129,15 +132,17 @@ def create_event(
         body: dict = {
             "summary": title,
             "start": {"dateTime": start_iso, "timeZone": "America/Los_Angeles"},
-            "end":   {"dateTime": end_iso,   "timeZone": "America/Los_Angeles"},
+            "end": {"dateTime": end_iso, "timeZone": "America/Los_Angeles"},
         }
         if description:
             body["description"] = description
         if attendees:
             body["attendees"] = [{"email": e} for e in attendees]
-        event = svc.events().insert(
-            calendarId=calendar_id or _calendar_id(), body=body
-        ).execute()
+        event = (
+            svc.events()
+            .insert(calendarId=calendar_id or _calendar_id(), body=body)
+            .execute()
+        )
         return f"created:{event['id']}"
     except Exception as e:
         return f"error:{e}"
@@ -160,21 +165,29 @@ def list_events(
         now = datetime.now(timezone.utc)
         t_min = time_min_iso or now.isoformat()
         t_max = time_max_iso or (now + timedelta(hours=24)).isoformat()
-        result = svc.events().list(
-            calendarId=calendar_id or _calendar_id(),
-            timeMin=t_min, timeMax=t_max,
-            maxResults=max_results, singleEvents=True,
-            orderBy="startTime",
-        ).execute()
+        result = (
+            svc.events()
+            .list(
+                calendarId=calendar_id or _calendar_id(),
+                timeMin=t_min,
+                timeMax=t_max,
+                maxResults=max_results,
+                singleEvents=True,
+                orderBy="startTime",
+            )
+            .execute()
+        )
         events = []
         for e in result.get("items", []):
-            events.append({
-                "id":          e["id"],
-                "title":       e.get("summary", "(no title)"),
-                "start":       e["start"].get("dateTime", e["start"].get("date", "")),
-                "end":         e["end"].get("dateTime",   e["end"].get("date", "")),
-                "description": e.get("description", ""),
-            })
+            events.append(
+                {
+                    "id": e["id"],
+                    "title": e.get("summary", "(no title)"),
+                    "start": e["start"].get("dateTime", e["start"].get("date", "")),
+                    "end": e["end"].get("dateTime", e["end"].get("date", "")),
+                    "description": e.get("description", ""),
+                }
+            )
         return events
     except Exception as e:
         return [{"error": str(e)}]
@@ -192,9 +205,9 @@ def update_event(
     if not _enabled():
         return "CALENDAR_DISABLED"
     try:
-        svc   = _get_service("calendar", "v3")
+        svc = _get_service("calendar", "v3")
         cal_id = calendar_id or _calendar_id()
-        event  = svc.events().get(calendarId=cal_id, eventId=event_id).execute()
+        event = svc.events().get(calendarId=cal_id, eventId=event_id).execute()
         if title:
             event["summary"] = title
         if start_iso:
@@ -203,9 +216,11 @@ def update_event(
             event["end"] = {"dateTime": end_iso, "timeZone": "America/Los_Angeles"}
         if description is not None:
             event["description"] = description
-        updated = svc.events().update(
-            calendarId=cal_id, eventId=event_id, body=event
-        ).execute()
+        updated = (
+            svc.events()
+            .update(calendarId=cal_id, eventId=event_id, body=event)
+            .execute()
+        )
         return f"updated:{updated['id']}"
     except Exception as e:
         return f"error:{e}"
@@ -227,6 +242,7 @@ def delete_event(event_id: str, calendar_id: str | None = None) -> str:
 
 # ── Task tools ────────────────────────────────────────────────────────────────
 
+
 def create_task(
     title: str,
     notes: str = "",
@@ -240,15 +256,17 @@ def create_task(
     if not _enabled():
         return "CALENDAR_DISABLED"
     try:
-        svc  = _get_service("tasks", "v1")
+        svc = _get_service("tasks", "v1")
         body: dict = {"title": title}
         if notes:
             body["notes"] = notes
         if due_iso:
             body["due"] = due_iso
-        task = svc.tasks().insert(
-            tasklist=tasklist_id or _tasks_list_id(), body=body
-        ).execute()
+        task = (
+            svc.tasks()
+            .insert(tasklist=tasklist_id or _tasks_list_id(), body=body)
+            .execute()
+        )
         return f"created:{task['id']}"
     except Exception as e:
         return f"error:{e}"
@@ -276,13 +294,15 @@ def list_tasks(
         result = svc.tasks().list(**kwargs).execute()
         tasks = []
         for t in result.get("items", []):
-            tasks.append({
-                "id":     t["id"],
-                "title":  t.get("title", "(no title)"),
-                "notes":  t.get("notes", ""),
-                "due":    t.get("due", ""),
-                "status": t.get("status", "needsAction"),
-            })
+            tasks.append(
+                {
+                    "id": t["id"],
+                    "title": t.get("title", "(no title)"),
+                    "notes": t.get("notes", ""),
+                    "due": t.get("due", ""),
+                    "status": t.get("status", "needsAction"),
+                }
+            )
         return tasks
     except Exception as e:
         return [{"error": str(e)}]
@@ -294,7 +314,7 @@ def complete_task(task_id: str, tasklist_id: str | None = None) -> str:
         return "CALENDAR_DISABLED"
     try:
         svc = _get_service("tasks", "v1")
-        tl  = tasklist_id or _tasks_list_id()
+        tl = tasklist_id or _tasks_list_id()
         task = svc.tasks().get(tasklist=tl, task=task_id).execute()
         task["status"] = "completed"
         updated = svc.tasks().update(tasklist=tl, task=task_id, body=task).execute()
@@ -319,111 +339,140 @@ def delete_task(task_id: str, tasklist_id: str | None = None) -> str:
 
 # ── Tool registration ─────────────────────────────────────────────────────────
 
-registry.register(Tool(
-    name="create_calendar_event",
-    description="Create a calendar event. start_iso and end_iso are ISO 8601 datetimes.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "title":       {"type": "string"},
-            "start_iso":   {"type": "string", "description": "ISO 8601 start datetime"},
-            "end_iso":     {"type": "string", "description": "ISO 8601 end datetime"},
-            "description": {"type": "string"},
-            "attendees":   {"type": "array", "items": {"type": "string"}, "description": "email addresses"},
+registry.register(
+    Tool(
+        name="create_calendar_event",
+        description="Create a calendar event. start_iso and end_iso are ISO 8601 datetimes.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "start_iso": {
+                    "type": "string",
+                    "description": "ISO 8601 start datetime",
+                },
+                "end_iso": {"type": "string", "description": "ISO 8601 end datetime"},
+                "description": {"type": "string"},
+                "attendees": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "email addresses",
+                },
+            },
+            "required": ["title", "start_iso", "end_iso"],
         },
-        "required": ["title", "start_iso", "end_iso"],
-    },
-    fn=create_event,
-))
+        fn=create_event,
+    )
+)
 
-registry.register(Tool(
-    name="list_calendar_events",
-    description="List upcoming calendar events within a time range.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "time_min_iso":  {"type": "string", "description": "ISO 8601 start of range"},
-            "time_max_iso":  {"type": "string", "description": "ISO 8601 end of range"},
-            "max_results":   {"type": "integer", "default": 10},
+registry.register(
+    Tool(
+        name="list_calendar_events",
+        description="List upcoming calendar events within a time range.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "time_min_iso": {
+                    "type": "string",
+                    "description": "ISO 8601 start of range",
+                },
+                "time_max_iso": {
+                    "type": "string",
+                    "description": "ISO 8601 end of range",
+                },
+                "max_results": {"type": "integer", "default": 10},
+            },
         },
-    },
-    fn=list_events,
-))
+        fn=list_events,
+    )
+)
 
-registry.register(Tool(
-    name="update_calendar_event",
-    description="Update an existing calendar event. Only provided fields are changed.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "event_id":    {"type": "string"},
-            "title":       {"type": "string"},
-            "start_iso":   {"type": "string"},
-            "end_iso":     {"type": "string"},
-            "description": {"type": "string"},
+registry.register(
+    Tool(
+        name="update_calendar_event",
+        description="Update an existing calendar event. Only provided fields are changed.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "event_id": {"type": "string"},
+                "title": {"type": "string"},
+                "start_iso": {"type": "string"},
+                "end_iso": {"type": "string"},
+                "description": {"type": "string"},
+            },
+            "required": ["event_id"],
         },
-        "required": ["event_id"],
-    },
-    fn=update_event,
-))
+        fn=update_event,
+    )
+)
 
-registry.register(Tool(
-    name="delete_calendar_event",
-    description="Delete a calendar event by ID.",
-    parameters={
-        "type": "object",
-        "properties": {"event_id": {"type": "string"}},
-        "required": ["event_id"],
-    },
-    fn=delete_event,
-))
-
-registry.register(Tool(
-    name="create_task",
-    description="Create a Google Task (no fixed time required; due_iso is optional date).",
-    parameters={
-        "type": "object",
-        "properties": {
-            "title":    {"type": "string"},
-            "notes":    {"type": "string"},
-            "due_iso":  {"type": "string", "description": "ISO 8601 due date"},
+registry.register(
+    Tool(
+        name="delete_calendar_event",
+        description="Delete a calendar event by ID.",
+        parameters={
+            "type": "object",
+            "properties": {"event_id": {"type": "string"}},
+            "required": ["event_id"],
         },
-        "required": ["title"],
-    },
-    fn=create_task,
-))
+        fn=delete_event,
+    )
+)
 
-registry.register(Tool(
-    name="list_tasks",
-    description="List pending Google Tasks.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "show_completed": {"type": "boolean", "default": False},
-            "due_max_iso":    {"type": "string"},
+registry.register(
+    Tool(
+        name="create_task",
+        description="Create a Google Task (no fixed time required; due_iso is optional date).",
+        parameters={
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "notes": {"type": "string"},
+                "due_iso": {"type": "string", "description": "ISO 8601 due date"},
+            },
+            "required": ["title"],
         },
-    },
-    fn=list_tasks,
-))
+        fn=create_task,
+    )
+)
 
-registry.register(Tool(
-    name="complete_task",
-    description="Mark a Google Task as completed.",
-    parameters={
-        "type": "object",
-        "properties": {"task_id": {"type": "string"}},
-        "required": ["task_id"],
-    },
-    fn=complete_task,
-))
+registry.register(
+    Tool(
+        name="list_tasks",
+        description="List pending Google Tasks.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "show_completed": {"type": "boolean", "default": False},
+                "due_max_iso": {"type": "string"},
+            },
+        },
+        fn=list_tasks,
+    )
+)
 
-registry.register(Tool(
-    name="delete_task",
-    description="Delete a Google Task.",
-    parameters={
-        "type": "object",
-        "properties": {"task_id": {"type": "string"}},
-        "required": ["task_id"],
-    },
-    fn=delete_task,
-))
+registry.register(
+    Tool(
+        name="complete_task",
+        description="Mark a Google Task as completed.",
+        parameters={
+            "type": "object",
+            "properties": {"task_id": {"type": "string"}},
+            "required": ["task_id"],
+        },
+        fn=complete_task,
+    )
+)
+
+registry.register(
+    Tool(
+        name="delete_task",
+        description="Delete a Google Task.",
+        parameters={
+            "type": "object",
+            "properties": {"task_id": {"type": "string"}},
+            "required": ["task_id"],
+        },
+        fn=delete_task,
+    )
+)

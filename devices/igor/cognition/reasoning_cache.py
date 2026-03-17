@@ -19,7 +19,9 @@ import time
 from pathlib import Path
 from typing import Optional
 
-CACHE_DIR   = Path.home() / ".TheIgors" / "cache" / "reasoning"
+from ..paths import paths
+
+CACHE_DIR = paths().reasoning_cache
 TTL_SECONDS = 720  # 12 minutes
 
 
@@ -63,11 +65,13 @@ def put(model: str, prompt: str, response_text: str, max_twm_id: int) -> None:
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     cache_file = CACHE_DIR / f"{_key(model, prompt)}.json"
     cache_file.write_text(
-        json.dumps({
-            "response_text": response_text,
-            "ts":            time.time(),
-            "max_twm_id":    max_twm_id,
-            "model":         model,
-        }),
+        json.dumps(
+            {
+                "response_text": response_text,
+                "ts": time.time(),
+                "max_twm_id": max_twm_id,
+                "model": model,
+            }
+        ),
         encoding="utf-8",
     )

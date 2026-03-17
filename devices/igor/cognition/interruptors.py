@@ -19,6 +19,8 @@ Adding a new interruptor:
 from abc import ABC, abstractmethod
 from datetime import datetime
 
+from ..paths import paths
+
 
 class BaseInterruptor(ABC):
     """Base class for all interruptors."""
@@ -62,14 +64,15 @@ class BudgetInterruptor(BaseInterruptor):
     def check(self, cortex=None) -> str | None:
         try:
             from ..tools.budget import budget_status
+
             s = budget_status()
         except Exception:
             return None  # Budget tracker not available — don't crash
 
         remaining = s["remaining_usd"]
-        total     = s.get("purchased_usd") or s.get("spending_cap", 0)
-        spent     = s.get("used_usd") or s.get("local_spent", 0)
-        src       = s.get("source", "local_tracking")
+        total = s.get("purchased_usd") or s.get("spending_cap", 0)
+        spent = s.get("used_usd") or s.get("local_spent", 0)
+        src = s.get("source", "local_tracking")
 
         if remaining <= 0:
             msg = (
@@ -101,7 +104,9 @@ class BudgetInterruptor(BaseInterruptor):
         # Balance is fine.
         if self._was_alerting:
             # Write CLEARED once to supersede prior alert in the ring, then go silent.
-            self._write_alert(cortex, f"✅ CLEARED: Balance OK — ${remaining:.2f} remaining ({src}).")
+            self._write_alert(
+                cortex, f"✅ CLEARED: Balance OK — ${remaining:.2f} remaining ({src})."
+            )
             self._was_alerting = False
         return None
 
@@ -133,8 +138,10 @@ class ContextInterruptor(BaseInterruptor):
             return None
 
         # Cooldown: don't spam every interaction
-        if (self._last_fired_at is not None
-                and session_count - self._last_fired_at < self.COOLDOWN_INTERACTIONS):
+        if (
+            self._last_fired_at is not None
+            and session_count - self._last_fired_at < self.COOLDOWN_INTERACTIONS
+        ):
             return None
 
         if session_count >= self.URGENT_AT:
@@ -169,7 +176,9 @@ class ContextInterruptor(BaseInterruptor):
             count = 0
             for entry in reversed(entries):  # walk newest → oldest
                 cat = entry.get("category", "")
-                if cat == "session_control" and "SESSION_START" in entry.get("content", ""):
+                if cat == "session_control" and "SESSION_START" in entry.get(
+                    "content", ""
+                ):
                     return count
                 # Count only substantive interaction entries
                 if cat not in ("tool_trace", "interruptor", "session_control"):
@@ -189,9 +198,9 @@ class MilieuInterruptor(BaseInterruptor):
     """
 
     name = "milieu"
-    AROUSAL_HIGH    = 0.70
-    VALENCE_LOW     = -0.50
-    COOLDOWN_TICKS  = 10   # don't re-fire within 10 milieu ticks (~10 interactions)
+    AROUSAL_HIGH = 0.70
+    VALENCE_LOW = -0.50
+    COOLDOWN_TICKS = 10  # don't re-fire within 10 milieu ticks (~10 interactions)
 
     def __init__(self):
         self._last_fired_tick: int | None = None
@@ -199,6 +208,7 @@ class MilieuInterruptor(BaseInterruptor):
     def check(self, cortex=None) -> str | None:
         try:
             from . import milieu as milieu_mod
+
             m = milieu_mod.get()
             if m is None:
                 return None
@@ -206,8 +216,10 @@ class MilieuInterruptor(BaseInterruptor):
             state = m.get_state()
 
             # Cooldown — don't spam
-            if (self._last_fired_tick is not None
-                    and state.tick - self._last_fired_tick < self.COOLDOWN_TICKS):
+            if (
+                self._last_fired_tick is not None
+                and state.tick - self._last_fired_tick < self.COOLDOWN_TICKS
+            ):
                 return None
 
             if state.arousal > self.AROUSAL_HIGH:
@@ -263,8 +275,8 @@ class DiskInterruptor(BaseInterruptor):
         crit_gb = float(os.getenv("IGOR_DISK_CRITICAL_GB", "0.2"))
 
         try:
-            usage = shutil.disk_usage(str(Path.home() / ".TheIgors"))
-            free_gb = usage.free / (1024 ** 3)
+            usage = shutil.disk_usage(str(paths().runtime))
+            free_gb = usage.free / (1024**3)
         except Exception:
             return None
 
@@ -289,7 +301,9 @@ class DiskInterruptor(BaseInterruptor):
             return msg
 
         if self._was_alerting:
-            self._write_alert(cortex, f"✅ CLEARED: Disk space OK — {free_gb:.2f} GB free.")
+            self._write_alert(
+                cortex, f"✅ CLEARED: Disk space OK — {free_gb:.2f} GB free."
+            )
             self._was_alerting = False
 
         return None

@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import Optional
 
 from ..igor_base import IgorBase
+from ..paths import paths
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -97,7 +98,7 @@ class MilieuState:
 
 
 def _global_milieu_path() -> Path:
-    return Path(os.path.expanduser("~/.TheIgors")) / "milieu_global.json"
+    return paths().milieu
 
 
 def _contribute_to_global(state: MilieuState, alpha: float) -> None:
@@ -151,9 +152,7 @@ class Milieu(IgorBase):
         super().__init__()
         self._instance_id = instance_id
         self._path = (
-            Path(os.path.expanduser("~/.TheIgors"))
-            / f"igor_{instance_id.replace('-', '_')}"
-            / "milieu.json"
+            paths().runtime / f"igor_{instance_id.replace('-', '_')}" / "milieu.json"
         )
         # D101: persisted history ring
         self._history_path = self._path.parent / "milieu_history.json"

@@ -22,7 +22,9 @@ import threading as _threading
 from datetime import datetime
 from pathlib import Path
 
-LOG_DIR   = Path.home() / ".TheIgors" / "logs"
+from ..paths import paths
+
+LOG_DIR = paths().logs
 MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 
 # ── Per-turn state (threading.local) ──────────────────────────────────────────
@@ -47,6 +49,7 @@ def get_turn_id() -> str:
 # Accumulates pipeline state into a dict so the entire cognition path for one
 # turn is visible as a single structured object in turn_trace.YYYYMMDD.log.
 
+
 def init_turn_ctx(turn_id: str, thread_id: str, input_text: str) -> None:
     """Start a fresh TurnContext for this turn on the current thread."""
     _current_turn.ctx = {
@@ -62,7 +65,9 @@ def turn_ctx_update(stage: str, data: dict) -> None:
     ctx = getattr(_current_turn, "ctx", None)
     if ctx is None:
         return
-    ctx[stage] = {k: (round(v, 4) if isinstance(v, float) else v) for k, v in data.items()}
+    ctx[stage] = {
+        k: (round(v, 4) if isinstance(v, float) else v) for k, v in data.items()
+    }
 
 
 def finalize_turn_ctx(
@@ -81,6 +86,7 @@ def finalize_turn_ctx(
     """
     try:
         import os as _os
+
         if _os.getenv("IGOR_TURN_TRACE", "true").lower() in ("0", "false", "no"):
             return
 
@@ -120,6 +126,7 @@ def _purge_old_turn_traces(today: str) -> None:
     """Delete turn_trace logs older than 2 days."""
     try:
         from datetime import datetime as _dt, timedelta
+
         cutoff = (_dt.strptime(today, "%Y%m%d") - timedelta(days=2)).strftime("%Y%m%d")
         for p in LOG_DIR.glob("turn_trace.*.log"):
             date_part = p.stem.split(".")[-1]
@@ -161,11 +168,12 @@ def _prepend(log_name: str, entry: str) -> None:
 
 # ── Public log functions ──────────────────────────────────────────────────────
 
+
 def log_reasoning_call(
     *,
-    provider: str,           # "anthropic" | "openrouter" | "ollama"
+    provider: str,  # "anthropic" | "openrouter" | "ollama"
     model: str,
-    tier: str = "",          # "tier.2" | "tier.3" | "tier.3.5" | "tier.4" | "tier.5"
+    tier: str = "",  # "tier.2" | "tier.3" | "tier.3.5" | "tier.4" | "tier.5"
     input_tokens: int = 0,
     output_tokens: int = 0,
     context_chars: int = 0,  # chars of context passed in (system + user + memories)
@@ -264,7 +272,7 @@ def log_tool_call(
 
 def log_memory_op(
     *,
-    operation: str,          # "store" | "search" | "retrieve" | "update"
+    operation: str,  # "store" | "search" | "retrieve" | "update"
     memory_type: str = "",
     narrative_snippet: str = "",
     inertia: float = 0.0,
@@ -314,14 +322,14 @@ def log_routing_decision(
 
 def log_escalation(
     *,
-    tier: str,                  # final tier chosen: "tier.3" | "tier.3.5" | "tier.4" | ...
-    reason: str,                # routing_reason string built in _process_inner
-    intent: str = "",           # thalamus intent
-    complexity: str = "",       # thalamus complexity: low | medium | high
-    preparse_tier: str = "",    # complexity["tier_minimum"] from preparse (before bumps)
+    tier: str,  # final tier chosen: "tier.3" | "tier.3.5" | "tier.4" | ...
+    reason: str,  # routing_reason string built in _process_inner
+    intent: str = "",  # thalamus intent
+    complexity: str = "",  # thalamus complexity: low | medium | high
+    preparse_tier: str = "",  # complexity["tier_minimum"] from preparse (before bumps)
     complexity_score: float = 0.0,
     complexity_signals: str = "",
-    input_snippet: str = "",    # first 120 chars of user input
+    input_snippet: str = "",  # first 120 chars of user input
     habit_fired: bool = False,  # True if a habit handled this turn (no escalation needed)
 ) -> None:
     """
@@ -347,13 +355,58 @@ def log_escalation(
     _prepend("escalation.log", entry)
 
 
-_METRIC_STOP = frozenset({
-    "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
-    "have", "has", "had", "do", "does", "did", "will", "would", "could",
-    "should", "may", "might", "can", "i", "you", "he", "she", "it", "we",
-    "they", "and", "or", "but", "in", "on", "at", "to", "for", "of",
-    "with", "by", "from", "about", "that", "this", "not", "just", "so",
-})
+_METRIC_STOP = frozenset(
+    {
+        "the",
+        "a",
+        "an",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "being",
+        "have",
+        "has",
+        "had",
+        "do",
+        "does",
+        "did",
+        "will",
+        "would",
+        "could",
+        "should",
+        "may",
+        "might",
+        "can",
+        "i",
+        "you",
+        "he",
+        "she",
+        "it",
+        "we",
+        "they",
+        "and",
+        "or",
+        "but",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+        "of",
+        "with",
+        "by",
+        "from",
+        "about",
+        "that",
+        "this",
+        "not",
+        "just",
+        "so",
+    }
+)
 
 
 def compute_boot_orientation_score(first_response: str, ring_tail: list[dict]) -> float:
@@ -363,11 +416,12 @@ def compute_boot_orientation_score(first_response: str, ring_tail: list[dict]) -
     Pure keyword overlap — no LLM, no cost (#112 phase 1).
     """
     import re
+
     if not ring_tail or not first_response:
         return 0.0
 
     def _terms(text: str) -> set:
-        words = re.findall(r'\b[a-z]{3,}\b', text.lower())
+        words = re.findall(r"\b[a-z]{3,}\b", text.lower())
         return {w for w in words if w not in _METRIC_STOP}
 
     context_terms: set = set()
@@ -384,7 +438,7 @@ def compute_boot_orientation_score(first_response: str, ring_tail: list[dict]) -
 
 def log_cognition_metric(
     *,
-    metric: str,         # e.g. "boot_orientation", "escalation_rate", "ne_grounding"
+    metric: str,  # e.g. "boot_orientation", "escalation_rate", "ne_grounding"
     value: float,
     detail: str = "",
 ) -> None:
@@ -405,7 +459,7 @@ def log_cognition_metric(
 
 def log_anomaly(
     *,
-    kind: str,           # RATE_LIMIT | CONTEXT_OVERFLOW | TIER6 | NE_FAIL | ARBITER_BUILDUP
+    kind: str,  # RATE_LIMIT | CONTEXT_OVERFLOW | TIER6 | NE_FAIL | ARBITER_BUILDUP
     detail: str = "",
 ) -> None:
     """
@@ -425,10 +479,10 @@ def log_anomaly(
 
 def log_batch_call(
     *,
-    source: str,       # "local" | "openrouter"
+    source: str,  # "local" | "openrouter"
     model: str,
     elapsed_s: float,
-    via: str = "",     # host URL or bypass reason
+    via: str = "",  # host URL or bypass reason
 ) -> None:
     """Log one batch pool call to metrics.log for performance tracking."""
     try:
@@ -436,8 +490,7 @@ def log_batch_call(
         path = LOG_DIR / "cognition_metrics.log"
         entry = (
             f"{_ts()}|batch_call|{source}|model={model}"
-            f"|elapsed={elapsed_s:.1f}s"
-            + (f"|via={via}" if via else "") + "\n"
+            f"|elapsed={elapsed_s:.1f}s" + (f"|via={via}" if via else "") + "\n"
         )
         with path.open("a", encoding="utf-8") as f:
             f.write(entry)
@@ -447,9 +500,9 @@ def log_batch_call(
 
 def log_error(
     *,
-    kind: str,           # IMPULSE_SKIP | TIER_FAIL | TOOL_FAIL | etc.
+    kind: str,  # IMPULSE_SKIP | TIER_FAIL | TOOL_FAIL | etc.
     detail: str = "",
-    source: str = "",    # e.g. "tier.3" | "impulse/tier.2"
+    source: str = "",  # e.g. "tier.3" | "impulse/tier.2"
 ) -> None:
     """
     Log a runtime error or degraded-mode event to errors.log.
@@ -467,8 +520,8 @@ def log_tier_selection(
     *,
     tiers_available: list,
     preparse_escalate: bool,
-    preparse_via: str,        # "ollama" | "openrouter" | "skipped"
-    tier_selected: str,       # "tier.1" | "tier.2" | "tier.3" | ...
+    preparse_via: str,  # "ollama" | "openrouter" | "skipped"
+    tier_selected: str,  # "tier.1" | "tier.2" | "tier.3" | ...
     reason: str,
     complexity_score: float = 0.0,
     complexity_signals: str = "",
@@ -513,6 +566,7 @@ def log_reading_progress(
 
 # ── Pipeline trace (per-step timing, 24-hour rotation) ────────────────────────
 
+
 def log_pipeline_step(
     *,
     turn_id: str,
@@ -546,7 +600,9 @@ def log_pipeline_step(
             f.write("|".join(parts) + "\n")
         _purge_old_pipeline_traces(today)
         # Also feed into TurnContext (#203) — dual use, no extra call sites
-        turn_ctx_update(step, {"ms": elapsed_ms, **{k: str(v)[:80] for k, v in kwargs.items()}})
+        turn_ctx_update(
+            step, {"ms": elapsed_ms, **{k: str(v)[:80] for k, v in kwargs.items()}}
+        )
     except Exception:
         pass  # Logging must never crash the main loop
 
@@ -555,6 +611,7 @@ def _purge_old_pipeline_traces(today: str) -> None:
     """Delete pipeline_trace logs from before yesterday."""
     try:
         from datetime import datetime as _dt, timedelta
+
         cutoff = (_dt.strptime(today, "%Y%m%d") - timedelta(days=1)).strftime("%Y%m%d")
         for p in LOG_DIR.glob("pipeline_trace.*.log"):
             date_part = p.stem.split(".")[-1]
@@ -570,18 +627,18 @@ def _purge_old_pipeline_traces(today: str) -> None:
 # File: ~/.TheIgors/logs/inference_io.YYYYMMDD.log
 # Gate: IGOR_LOG_INFERENCE_IO (default true — disable to save disk)
 
-_INFERENCE_IO_PROMPT_CAP  = 16 * 1024   # 16 KB max per prompt
-_INFERENCE_IO_RESP_CAP    =  8 * 1024   # 8 KB max per response
+_INFERENCE_IO_PROMPT_CAP = 16 * 1024  # 16 KB max per prompt
+_INFERENCE_IO_RESP_CAP = 8 * 1024  # 8 KB max per response
 
 
 def log_inference_io(
     *,
-    provider: str,           # "ollama" | "openrouter" | "anthropic"
+    provider: str,  # "ollama" | "openrouter" | "anthropic"
     model: str,
     tier: str = "",
     turn_id: str = "",
-    prompt: str,             # full prompt sent to model (system + user + context)
-    response: str,           # full text response received
+    prompt: str,  # full prompt sent to model (system + user + context)
+    response: str,  # full text response received
     elapsed_ms: int = 0,
     call_type: str = "reason",  # "reason" | "preparse" | "winnow" | "ne" | "think"
 ) -> None:
@@ -594,27 +651,32 @@ def log_inference_io(
     """
     try:
         import os as _os
+
         if _os.getenv("IGOR_LOG_INFERENCE_IO", "true").lower() in ("0", "false", "no"):
             return
 
         LOG_DIR.mkdir(parents=True, exist_ok=True)
         today = datetime.now().strftime("%Y%m%d")
-        path  = LOG_DIR / f"inference_io.{today}.log"
+        path = LOG_DIR / f"inference_io.{today}.log"
 
-        tid  = turn_id or get_turn_id()
-        hdr  = (
+        tid = turn_id or get_turn_id()
+        hdr = (
             f"=== {_ts()} | {provider}/{model}"
             + (f" | {tier}" if tier else "")
             + (f" | turn={tid}" if tid and tid != "?" else "")
             + (f" | {call_type}" if call_type else "")
             + f" | {elapsed_ms}ms ==="
         )
-        prompt_block   = prompt[:_INFERENCE_IO_PROMPT_CAP]
+        prompt_block = prompt[:_INFERENCE_IO_PROMPT_CAP]
         response_block = response[:_INFERENCE_IO_RESP_CAP]
         if len(prompt) > _INFERENCE_IO_PROMPT_CAP:
-            prompt_block += f"\n...[truncated {len(prompt) - _INFERENCE_IO_PROMPT_CAP} chars]"
+            prompt_block += (
+                f"\n...[truncated {len(prompt) - _INFERENCE_IO_PROMPT_CAP} chars]"
+            )
         if len(response) > _INFERENCE_IO_RESP_CAP:
-            response_block += f"\n...[truncated {len(response) - _INFERENCE_IO_RESP_CAP} chars]"
+            response_block += (
+                f"\n...[truncated {len(response) - _INFERENCE_IO_RESP_CAP} chars]"
+            )
 
         entry = (
             f"\n{hdr}\n"
@@ -636,6 +698,7 @@ def _purge_old_inference_io(today: str) -> None:
     """Delete inference_io logs older than 2 days."""
     try:
         from datetime import datetime as _dt, timedelta
+
         cutoff = (_dt.strptime(today, "%Y%m%d") - timedelta(days=2)).strftime("%Y%m%d")
         for p in LOG_DIR.glob("inference_io.*.log"):
             date_part = p.stem.split(".")[-1]
@@ -648,6 +711,7 @@ def _purge_old_inference_io(today: str) -> None:
 # ── Interaction log (#201) ────────────────────────────────────────────────────
 # Tier-1 triage: one line per turn. Smallest useful log — scan first.
 # Format: timestamp|turn_id|thread_id|tier|elapsed_ms|cost_usd|IN:...|OUT:...
+
 
 def log_interaction(
     *,
@@ -672,7 +736,7 @@ def log_interaction(
         path = LOG_DIR / f"interaction.{today}.log"
 
         tid = turn_id or get_turn_id()
-        in_preview  = input_text[:120].replace("|", "_").replace("\n", " ")
+        in_preview = input_text[:120].replace("|", "_").replace("\n", " ")
         out_preview = response_text[:120].replace("|", "_").replace("\n", " ")
 
         entry = (
@@ -692,6 +756,7 @@ def _purge_old_interaction(today: str) -> None:
     """Delete interaction logs older than 7 days."""
     try:
         from datetime import datetime as _dt, timedelta
+
         cutoff = (_dt.strptime(today, "%Y%m%d") - timedelta(days=7)).strftime("%Y%m%d")
         for p in LOG_DIR.glob("interaction.*.log"):
             date_part = p.stem.split(".")[-1]
@@ -717,9 +782,9 @@ def log_startup(
     boot_elapsed_s: float = 0.0,
     embed_ok: bool = True,
     integrity_ok: bool = True,
-    warm_context: str = "none",    # "loaded" | "none" | "gap=Xh"
-    ollama_status: str = "",       # "healthy(model)" | "unavailable"
-    openrouter_status: str = "",   # "healthy($X.XX)" | "no_key"
+    warm_context: str = "none",  # "loaded" | "none" | "gap=Xh"
+    ollama_status: str = "",  # "healthy(model)" | "unavailable"
+    openrouter_status: str = "",  # "healthy($X.XX)" | "no_key"
     cloud_mode: str = "off",
     notes: str = "",
 ) -> None:
@@ -753,13 +818,14 @@ def log_startup(
         # Trim to last _STARTUP_LOG_MAX_BOOTS boot blocks
         blocks = combined.split("=== BOOT READY ===\n\n")
         if len(blocks) > _STARTUP_LOG_MAX_BOOTS + 1:
-            blocks = blocks[-((_STARTUP_LOG_MAX_BOOTS + 1)):]
+            blocks = blocks[-((_STARTUP_LOG_MAX_BOOTS + 1)) :]
         path.write_text("=== BOOT READY ===\n\n".join(blocks), encoding="utf-8")
     except Exception:
         pass
 
 
 # ── /trace command helper (#203) ──────────────────────────────────────────────
+
 
 def read_last_turn_traces(n: int = 5) -> str:
     """
@@ -772,6 +838,7 @@ def read_last_turn_traces(n: int = 5) -> str:
         if not path.exists():
             # Fall back to yesterday
             from datetime import timedelta
+
             yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y%m%d")
             path = LOG_DIR / f"turn_trace.{yesterday}.log"
         if not path.exists():

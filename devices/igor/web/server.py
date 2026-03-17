@@ -38,12 +38,14 @@ import uvicorn
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import FileResponse, HTMLResponse, JSONResponse, Response
+
+from ..paths import paths
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocket
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
-_INSTANCE_DIR = Path.home() / ".TheIgors" / "igor_wild_0001"
+_INSTANCE_DIR = paths().instance
 INBOX_DIR = _INSTANCE_DIR / "inbox"
 OUTBOX_DIR = _INSTANCE_DIR / "outbox"
 _DIST_DIR = Path(__file__).parent.parent.parent.parent / "web_ui" / "dist"
@@ -460,7 +462,7 @@ async def _api_milieu_global(request):
     from pathlib import Path as _Path
     import json as _j
 
-    _gpath = _Path.home() / ".TheIgors" / "milieu_global.json"
+    _gpath = paths().milieu
     try:
         data = _j.loads(_gpath.read_text(encoding="utf-8")) if _gpath.exists() else {}
         return JSONResponse(data)

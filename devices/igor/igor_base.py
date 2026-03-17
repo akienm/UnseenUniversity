@@ -26,7 +26,9 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
 
-_LOG_DIR = Path.home() / ".TheIgors" / "logs"
+from igor.paths import paths
+
+_LOG_DIR = paths().logs
 
 
 class IgorBase:

@@ -13,7 +13,9 @@ Fire-and-forget: exceptions are swallowed so logging never crashes a caller.
 from datetime import datetime
 from pathlib import Path
 
-_LOG_DIR = Path.home() / ".TheIgors" / "logs"
+from ..paths import paths
+
+_LOG_DIR = paths().logs
 _MAX_BYTES = 10 * 1024 * 1024  # 10 MB — rotate to .old
 
 
