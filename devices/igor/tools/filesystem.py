@@ -16,6 +16,7 @@ import os
 import shutil
 from pathlib import Path
 from .registry import Tool, registry
+from ..paths import paths as _igor_paths
 
 WORKSPACE = Path("/home/akien")
 WORKSPACE.mkdir(exist_ok=True)
@@ -210,10 +211,10 @@ def check_disk_usage() -> str:
     """
     warn_gb = float(os.getenv("IGOR_DISK_WARN_GB", "1.0"))
     crit_gb = float(os.getenv("IGOR_DISK_CRITICAL_GB", "0.2"))
-    igor_home = Path.home() / ".TheIgors"
+    igor_home = _igor_paths().runtime
     src_home = Path.home() / "TheIgors"
 
-    paths = [
+    check_paths = [
         ("runtime (~/.TheIgors)", igor_home),
         ("source (~/TheIgors)", src_home),
         ("disk (/)", Path("/")),
@@ -221,7 +222,7 @@ def check_disk_usage() -> str:
 
     lines = ["Disk usage report:"]
     alerts = []
-    for label, p in paths:
+    for label, p in check_paths:
         try:
             usage = shutil.disk_usage(str(p))
             free_gb = usage.free / (1024**3)

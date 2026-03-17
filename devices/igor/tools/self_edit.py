@@ -21,6 +21,7 @@ from pathlib import Path
 
 from .registry import Tool, registry
 from ..cognition.forensic_logger import log_self_edit
+from ..paths import paths
 
 SOURCE_ROOT = Path(__file__).parent.parent  # wild_igor/igor/
 REPO_ROOT = SOURCE_ROOT.parent  # wild_igor/
@@ -61,7 +62,7 @@ def _is_self_edit_enabled() -> bool:
 
 def _log_blocked_self_edit_attempt(path: str) -> None:
     """Write a blocked-self-edit record to the instance log file."""
-    log_path = Path.home() / ".TheIgors" / "igor_wild_0001" / "blocked_edits.log"
+    log_path = paths().blocked_edits_log
     try:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         entry = f"{datetime.now().isoformat()}|SELF_EDIT_DISABLED|igor/{path}\n"
@@ -88,7 +89,7 @@ def _log_blocked_edit(path: str):
     """Append a blocked-write record to the instance log file (change.26)."""
     from datetime import datetime
 
-    log_path = Path.home() / ".TheIgors" / "igor_wild_0001" / "blocked_edits.log"
+    log_path = paths().blocked_edits_log
     try:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         entry = f"{datetime.now().isoformat()}|BLOCKED_WRITE|igor/{path}\n"

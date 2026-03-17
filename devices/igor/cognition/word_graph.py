@@ -796,4 +796,6 @@ def default_cache_path(name: str = "word_graph") -> Path:
     G37: parameterised so recognition and generation graphs use separate files.
     Returns ~/.TheIgors/{name}.db (SQLite). Old .json files can be deleted.
     """
-    return Path.home() / ".TheIgors" / f"{name}.db"
+    from ..paths import paths
+
+    return paths().word_graph(name)

@@ -27,8 +27,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-_INSTANCE_ID = os.getenv("IGOR_INSTANCE_ID", "igor_wild_0001")
-_BASE = Path.home() / ".TheIgors" / _INSTANCE_ID
+from ..paths import paths
+
+_BASE = paths().instance
 
 # Terminal states — written as .txt (permanent), never removed
 _TERMINAL = {"done", "failed", "cancelled", "skipped"}

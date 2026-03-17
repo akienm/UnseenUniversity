@@ -16,7 +16,9 @@ import re
 from collections import Counter, defaultdict
 from pathlib import Path
 
-_LOGS_DIR = Path.home() / ".TheIgors" / "logs"
+from ..paths import paths
+
+_LOGS_DIR = paths().logs
 
 
 def _read_log_tail(name: str, n: int = 200) -> list[str]:
@@ -88,6 +90,7 @@ def _context_stats(n: int = 50) -> dict:
     Returns per-tier averages: {tier: {avg_ctx_chars, avg_in, avg_out, calls}}.
     """
     import re as _re
+
     stats: dict[str, dict] = {}
     lines = _read_log_tail("reasoning_calls.log", n * 3)
     seen = 0
@@ -95,17 +98,17 @@ def _context_stats(n: int = 50) -> dict:
         if "|reasoning|" not in line:
             continue
         tier_m = _re.search(r"\|tier=(tier\.\S+?)\|", line)
-        ctx_m  = _re.search(r"\|ctx=(\d+)", line)
-        in_m   = _re.search(r"\|in=(\d+)", line)
-        out_m  = _re.search(r"\|out=(\d+)", line)
+        ctx_m = _re.search(r"\|ctx=(\d+)", line)
+        in_m = _re.search(r"\|in=(\d+)", line)
+        out_m = _re.search(r"\|out=(\d+)", line)
         tier = tier_m.group(1) if tier_m else "unknown"
-        ctx  = int(ctx_m.group(1)) if ctx_m else 0
+        ctx = int(ctx_m.group(1)) if ctx_m else 0
         in_t = int(in_m.group(1)) if in_m else 0
         out_t = int(out_m.group(1)) if out_m else 0
         if tier not in stats:
             stats[tier] = {"ctx_total": 0, "in_total": 0, "out_total": 0, "calls": 0}
         stats[tier]["ctx_total"] += ctx
-        stats[tier]["in_total"]  += in_t
+        stats[tier]["in_total"] += in_t
         stats[tier]["out_total"] += out_t
         stats[tier]["calls"] += 1
         seen += 1
@@ -116,7 +119,7 @@ def _context_stats(n: int = 50) -> dict:
         c = max(d["calls"], 1)
         result[tier] = {
             "avg_ctx_chars": d["ctx_total"] // c,
-            "avg_in":  d["in_total"]  // c,
+            "avg_in": d["in_total"] // c,
             "avg_out": d["out_total"] // c,
             "calls": d["calls"],
         }
@@ -127,6 +130,7 @@ def _word_graph_stats():
     """Get live word graph stats from basal_ganglia."""
     try:
         from .basal_ganglia import _word_graph as wg
+
         if wg is None:
             return None
         vocab = len(wg._word_to_ids)
@@ -153,14 +157,14 @@ def _ne_stats(n: int = 100) -> dict:
             continue
         if "|ne_run|OK|" in line:
             ok += 1
-            m_obs  = re.search(r"\|obs=(\d+)", line)
+            m_obs = re.search(r"\|obs=(\d+)", line)
             m_prom = re.search(r"\|promoted=(\d+)", line)
-            m_imp  = re.search(r"\|impulses=(\d+)", line)
-            m_el   = re.search(r"\|elapsed=(\d+)ms", line)
-            obs_total      += int(m_obs.group(1))  if m_obs  else 0
+            m_imp = re.search(r"\|impulses=(\d+)", line)
+            m_el = re.search(r"\|elapsed=(\d+)ms", line)
+            obs_total += int(m_obs.group(1)) if m_obs else 0
             promoted_total += int(m_prom.group(1)) if m_prom else 0
-            impulses_total += int(m_imp.group(1))  if m_imp  else 0
-            elapsed_total  += int(m_el.group(1))   if m_el   else 0
+            impulses_total += int(m_imp.group(1)) if m_imp else 0
+            elapsed_total += int(m_el.group(1)) if m_el else 0
         else:
             failed += 1
     safe_ok = max(ok, 1)
@@ -190,10 +194,10 @@ def _consolidation_stats(cortex) -> dict | None:
         for e in entries:
             content = e.get("content", "")
             if content.startswith("CONSOLIDATION|"):
-                m_cl  = re.search(r"clusters=(\d+)", content)
-                m_ex  = re.search(r"extracted=(\d+)", content)
-                m_sk  = re.search(r"skipped=(\d+)", content)
-                ts    = e.get("timestamp", "")[:16]
+                m_cl = re.search(r"clusters=(\d+)", content)
+                m_ex = re.search(r"extracted=(\d+)", content)
+                m_sk = re.search(r"skipped=(\d+)", content)
+                ts = e.get("timestamp", "")[:16]
                 return {
                     "last_run": ts,
                     "clusters": int(m_cl.group(1)) if m_cl else 0,
@@ -205,9 +209,13 @@ def _consolidation_stats(cortex) -> dict | None:
     return None
 
 
-def build_report(cortex=None, session_interactions: int = 0,
-                 session_cost: float = 0.0, cloud_calls: int = 0,
-                 ne=None) -> str:
+def build_report(
+    cortex=None,
+    session_interactions: int = 0,
+    session_cost: float = 0.0,
+    cloud_calls: int = 0,
+    ne=None,
+) -> str:
     """
     Build the full metrics report. Returns a formatted string.
     All parameters are optional — provides whatever data is available.
@@ -228,7 +236,9 @@ def build_report(cortex=None, session_interactions: int = 0,
     total_tiers = sum(tier_counts.values())
     local_calls = tier_counts.get("tier.1", 0) + tier_counts.get("tier.2", 0)
     local_pct = round(local_calls / max(total_tiers, 1) * 100)
-    lines.append(f"TIER DISTRIBUTION  (last 100)   LOCAL: {local_pct}%  CLOUD: {100 - local_pct}%")
+    lines.append(
+        f"TIER DISTRIBUTION  (last 100)   LOCAL: {local_pct}%  CLOUD: {100 - local_pct}%"
+    )
     for tier in ["tier.1", "tier.2", "tier.3", "tier.3.5", "tier.4", "tier.5"]:
         count = tier_counts.get(tier, 0)
         if count == 0 and tier not in ("tier.1", "tier.2", "tier.3", "tier.4"):
@@ -262,7 +272,11 @@ def build_report(cortex=None, session_interactions: int = 0,
                 "tier.4": "cloud sonnet",
                 "tier.5": "cloud direct",
             }.get(tier, tier)
-            ctx_k = f"{d['avg_ctx_chars'] // 1000}K" if d['avg_ctx_chars'] >= 1000 else str(d['avg_ctx_chars'])
+            ctx_k = (
+                f"{d['avg_ctx_chars'] // 1000}K"
+                if d["avg_ctx_chars"] >= 1000
+                else str(d["avg_ctx_chars"])
+            )
             lines.append(
                 f"  {tier:<9}  {d['calls']:3d} calls  "
                 f"ctx≈{ctx_k}  in≈{d['avg_in']}  out≈{d['avg_out']}  ({label})"
@@ -272,15 +286,16 @@ def build_report(cortex=None, session_interactions: int = 0,
     # ── Escalation ────────────────────────────────────────────
     esc_rate, cloud, total = _escalation_rate()
     lines.append("ESCALATION  (lifetime)")
-    lines.append(f"  Rate:              {esc_rate:.1%}  ({cloud} cloud / {total} total)")
+    lines.append(
+        f"  Rate:              {esc_rate:.1%}  ({cloud} cloud / {total} total)"
+    )
     lines.append("")
 
     # ── Response habituation (WO#140 Phase 2) ─────────────────
     try:
         from .response_habituation import ResponseHabituation as _RH
-        from pathlib import Path as _Path
-        import os as _os
-        _rh_path = _Path.home() / ".TheIgors" / f"igor_{_os.getenv('IGOR_INSTANCE_ID','wild_0001')}" / "response_habituation.json"
+
+        _rh_path = paths().instance / "response_habituation.json"
         if _rh_path.exists():
             _rh = _RH(_rh_path)
             _top = _rh.top_habituated(n=5)
@@ -316,10 +331,13 @@ def build_report(cortex=None, session_interactions: int = 0,
             lines.append(f"  Total memories:    {total_mem}")
             lines.append(f"  Habits:            {len(habits)}")
             from ..memory.models import MemoryType
+
             ep = counts.get(MemoryType.EPISODIC.value, 0)
             interp = counts.get(MemoryType.INTERPRETIVE.value, 0)
             exp = counts.get(MemoryType.EXPERIENTIAL.value, 0)
-            lines.append(f"  Episodic:          {ep}  Interpretive: {interp}  Experiential: {exp}")
+            lines.append(
+                f"  Episodic:          {ep}  Interpretive: {interp}  Experiential: {exp}"
+            )
         except Exception:
             lines.append("  (cortex unavailable)")
     else:

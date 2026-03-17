@@ -62,6 +62,7 @@ from .network import listener as net_listener
 from .web import server as web_server
 from . import boot_check
 from .cognition.job_manager import JobManager
+from .paths import paths as _paths
 
 console = Console()
 
@@ -87,8 +88,8 @@ DATA_DIR = (
     if _IGOR_DB_ENV
     else Path(__file__).parent.parent / "data"
 )
-CHANGE_LOG_PATH = Path.home() / ".TheIgors" / "claudecode" / "changes.log"
-CHANGE_REQUEST_PATH = Path.home() / ".TheIgors" / "claudecode" / "change_request.txt"
+CHANGE_LOG_PATH = _paths().claudecode / "changes.log"
+CHANGE_REQUEST_PATH = _paths().claudecode / "change_request.txt"
 
 # ── Input debounce (#146) ──────────────────────────────────────────────────────
 # Buffer multi-line turns (fits-and-starts chat). Lines accumulate until the
@@ -919,7 +920,7 @@ class Igor(IgorBase):
         from .memory.models import MemoryType
 
         ts = datetime.now().strftime("%Y-%m-%d %H:%M")
-        theigors_dir = Path.home() / ".TheIgors"
+        theigors_dir = _paths().runtime
         theigors_dir.mkdir(parents=True, exist_ok=True)
 
         # ── SOUL.md — CP1-CP6 ────────────────────────────────────────────────
@@ -1013,7 +1014,7 @@ class Igor(IgorBase):
             console.print(f"[dim][FIRST BOOT] Discord announce failed: {e}[/]")
 
         # ── machines.json self-registration ──────────────────────────────────
-        machines_json = _Path.home() / ".TheIgors" / "local" / "machines.json"
+        machines_json = _paths().machines_json
         try:
             import json as _json
 
@@ -1061,7 +1062,7 @@ class Igor(IgorBase):
     def _instance_dir(self) -> Path:
         """~/.TheIgors/igor_{instance_id}/ — consistent with _export_portable_identity."""
         name = f"igor_{self.instance_id.replace('-', '_')}"
-        d = Path.home() / ".TheIgors" / name
+        d = _paths().runtime / name
         d.mkdir(parents=True, exist_ok=True)
         return d
 
@@ -2311,7 +2312,7 @@ class Igor(IgorBase):
             # ── Nothing to process — drain network then do background work ────
             # #64: check restart flag before anything else — no LLM, no arbiter
             _restart_flag = (
-                Path(os.path.expanduser("~/.TheIgors"))
+                _paths().runtime
                 / f"igor_{self.instance_id.replace('-', '_')}"
                 / "restart.flag"
             )
@@ -6724,7 +6725,7 @@ class Igor(IgorBase):
         from pathlib import Path as _Path
         import re as _re
 
-        _log = _Path.home() / ".TheIgors" / "logs" / "escalation.log"
+        _log = _paths().logs / "escalation.log"
         if not _log.exists():
             loginfo("[yellow]escalation.log not found — no routing data yet.[/]")
             return

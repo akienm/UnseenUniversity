@@ -28,15 +28,28 @@ from pathlib import Path
 from typing import Optional
 
 from ..tools.registry import Tool, registry
+from ..paths import paths
 
-ARBITER_DIR  = Path.home() / ".TheIgors" / "igor_wild_0001" / "arbiter"
+ARBITER_DIR = paths().arbiter_dir
 PENDING_PATH = ARBITER_DIR / "pending.json"
 
 # Keywords that indicate an NE action impulse may be irreversible/external
 IRREVERSIBLE_KEYWORDS = {
-    "send", "delete", "publish", "purchase", "email", "message",
-    "remove", "modify", "post", "notify", "alert", "deploy",
-    "write_file", "execute", "broadcast",
+    "send",
+    "delete",
+    "publish",
+    "purchase",
+    "email",
+    "message",
+    "remove",
+    "modify",
+    "post",
+    "notify",
+    "alert",
+    "deploy",
+    "write_file",
+    "execute",
+    "broadcast",
 }
 
 _lock = threading.Lock()
@@ -46,11 +59,13 @@ _lock = threading.Lock()
 class ArbiterItem:
     id: int
     timestamp: str
-    action_type: str        # irreversible | external_system | high_cost | ethics_flag | manual
-    description: str        # What Igor was about to do
-    context: str            # Why Igor thinks this is needed
-    threshold_reason: str   # Which criterion triggered the flag
-    status: str = "pending" # pending | approved | denied
+    action_type: (
+        str  # irreversible | external_system | high_cost | ethics_flag | manual
+    )
+    description: str  # What Igor was about to do
+    context: str  # Why Igor thinks this is needed
+    threshold_reason: str  # Which criterion triggered the flag
+    status: str = "pending"  # pending | approved | denied
     cost_estimate: float = 0.0
     metadata: dict = field(default_factory=dict)
     resolution_ts: str = ""
@@ -58,6 +73,7 @@ class ArbiterItem:
 
 
 # ── File I/O ──────────────────────────────────────────────────────────────────
+
 
 def _load() -> list[dict]:
     if not PENDING_PATH.exists():
@@ -74,6 +90,7 @@ def _save(items: list[dict]):
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
+
 
 def submit(
     description: str,
@@ -112,7 +129,11 @@ def submit(
     if pending_count > 3:
         try:
             from ..cognition.forensic_logger import log_anomaly as _la
-            _la(kind="ARBITER_BUILDUP", detail=f"pending={pending_count}|newest={description[:80]}")
+
+            _la(
+                kind="ARBITER_BUILDUP",
+                detail=f"pending={pending_count}|newest={description[:80]}",
+            )
         except Exception:
             pass
     return new_id
@@ -166,6 +187,7 @@ def _ping_discord(item_id: int, description: str):
         if not channel_id_str:
             return
         from ..network import discord_bot
+
         discord_bot.send(
             int(channel_id_str),
             f"[Arbiter #{item_id}] Pending approval: {description[:140]}\n"
@@ -177,15 +199,21 @@ def _ping_discord(item_id: int, description: str):
 
 # ── Tool registration ─────────────────────────────────────────────────────────
 
-def _tool_arbiter_submit(description: str, context: str = "",
-                          action_type: str = "manual",
-                          threshold_reason: str = "", **_) -> str:
+
+def _tool_arbiter_submit(
+    description: str,
+    context: str = "",
+    action_type: str = "manual",
+    threshold_reason: str = "",
+    **_,
+) -> str:
     """Igor calls this tool to queue an action for akien's approval."""
     item_id = submit(
         description=description,
         context=context,
         action_type=action_type,
-        threshold_reason=threshold_reason or "Igor manually queued via arbiter_submit tool",
+        threshold_reason=threshold_reason
+        or "Igor manually queued via arbiter_submit tool",
     )
     return (
         f"Arbiter item #{item_id} queued for Akien's review. "
@@ -194,37 +222,45 @@ def _tool_arbiter_submit(description: str, context: str = "",
     )
 
 
-registry.register(Tool(
-    name="arbiter_submit",
-    description=(
-        "Queue an action for Akien's approval before executing it. "
-        "Use for: irreversible actions (delete, send, publish, email), "
-        "actions affecting systems Igor does not own, or any action "
-        "where Igor is uncertain about Akien's preferences. "
-        "Igor continues helping while Akien reviews the queue."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "description": {
-                "type": "string",
-                "description": "What action Igor was about to take",
+registry.register(
+    Tool(
+        name="arbiter_submit",
+        description=(
+            "Queue an action for Akien's approval before executing it. "
+            "Use for: irreversible actions (delete, send, publish, email), "
+            "actions affecting systems Igor does not own, or any action "
+            "where Igor is uncertain about Akien's preferences. "
+            "Igor continues helping while Akien reviews the queue."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "description": "What action Igor was about to take",
+                },
+                "context": {
+                    "type": "string",
+                    "description": "Why Igor thinks this action is needed",
+                },
+                "action_type": {
+                    "type": "string",
+                    "enum": [
+                        "irreversible",
+                        "external_system",
+                        "high_cost",
+                        "ethics_flag",
+                        "manual",
+                    ],
+                    "description": "Category of the action being queued",
+                },
+                "threshold_reason": {
+                    "type": "string",
+                    "description": "Which threshold criterion triggered the flag",
+                },
             },
-            "context": {
-                "type": "string",
-                "description": "Why Igor thinks this action is needed",
-            },
-            "action_type": {
-                "type": "string",
-                "enum": ["irreversible", "external_system", "high_cost", "ethics_flag", "manual"],
-                "description": "Category of the action being queued",
-            },
-            "threshold_reason": {
-                "type": "string",
-                "description": "Which threshold criterion triggered the flag",
-            },
+            "required": ["description"],
         },
-        "required": ["description"],
-    },
-    fn=_tool_arbiter_submit,
-))
+        fn=_tool_arbiter_submit,
+    )
+)

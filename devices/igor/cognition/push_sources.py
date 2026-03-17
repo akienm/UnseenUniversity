@@ -24,9 +24,10 @@ from pathlib import Path
 from typing import Optional
 
 from ..igor_base import IgorBase
+from ..paths import paths
 
-MACHINES_JSON = Path.home() / ".TheIgors" / "local" / "machines.json"
-INBOX_DIR = Path.home() / ".TheIgors" / "igor_wild_0001" / "inbox"
+MACHINES_JSON = paths().machines_json
+INBOX_DIR = paths().inbox
 
 
 # ── Base ──────────────────────────────────────────────────────────────────────

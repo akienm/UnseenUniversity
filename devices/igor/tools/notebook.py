@@ -24,10 +24,11 @@ from typing import Optional
 
 from .registry import Tool, registry
 from ..memory.db_proxy import DatabaseProxy
+from ..paths import paths
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 
-_INSTANCE_DIR = Path.home() / ".TheIgors" / "igor_wild_0001"
+_INSTANCE_DIR = paths().instance
 _CHATS_DIR = _INSTANCE_DIR / "chats"
 _CHUNK_SIZE = 1500
 _CHUNK_OVERLAP = 150

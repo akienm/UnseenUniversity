@@ -27,8 +27,9 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from ..igor_base import IgorBase
+from ..paths import paths
 
-JOBS_DIR = Path.home() / ".TheIgors" / "igor_wild_0001" / "jobs"
+JOBS_DIR = paths().jobs
 
 _STATUS_ACTIVE = frozenset({"pending", "running", "paused"})
 

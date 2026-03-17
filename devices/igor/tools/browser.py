@@ -16,10 +16,11 @@ from pathlib import Path
 from typing import Optional
 
 from .registry import Tool, registry
+from ..paths import paths
 
 # Configure logging
 logger = logging.getLogger(__name__)
-LOG_DIR = Path.home() / ".TheIgors" / "logs"
+LOG_DIR = paths().logs
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 BROWSER_LOG_PATH = LOG_DIR / "browser_use.log"
 
@@ -414,7 +415,7 @@ async def _run_as_employer(
 # ── check_claude_balance — scrape Anthropic billing for current credit balance ──
 
 _ANTHROPIC_BILLING_URL = "https://console.anthropic.com/settings/billing"
-_BALANCE_JSON_PATH = Path.home() / ".TheIgors" / "cc_channel" / "anthropic_balance.json"
+_BALANCE_JSON_PATH = paths().cc_channel / "anthropic_balance.json"
 
 
 def check_claude_balance(caller_source: str = "") -> str:

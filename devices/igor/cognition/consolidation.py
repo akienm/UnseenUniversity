@@ -27,15 +27,14 @@ from typing import Optional
 
 from ..memory.cortex import Cortex, _MEM_COLS_NO_EMBED
 from ..memory.models import Memory, MemoryType
+from ..paths import paths
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 _ENABLED = lambda: os.getenv("IGOR_CONSOLIDATION_ENABLED", "true").lower() == "true"
 _INTERVAL_SECS = lambda: int(os.getenv("IGOR_CONSOLIDATION_INTERVAL_SECS", "3600"))
 _BATCH_SIZE = lambda: int(os.getenv("IGOR_CONSOLIDATION_BATCH", "20"))
 _MIN_IMPORTANCE = float(os.getenv("IGOR_CONSOLIDATION_MIN_IMPORTANCE", "0.5"))
-_CHECKPOINT_FILE = (
-    Path.home() / ".TheIgors" / "igor_wild_0001" / "consolidation_checkpoint.json"
-)
+_CHECKPOINT_FILE = paths().consolidation_checkpoint
 
 _last_run: float = 0.0
 

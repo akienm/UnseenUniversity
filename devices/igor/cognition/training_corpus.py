@@ -38,11 +38,13 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .word_graph import WordGraph
 
-CORPUS_DIR   = Path.home() / ".TheIgors" / "training_corpus"
-INDEX_FILE   = CORPUS_DIR / "index.json"
+from ..paths import paths
+
+CORPUS_DIR = paths().training_corpus
+INDEX_FILE = CORPUS_DIR / "index.json"
 
 # Paragraphs < this many chars are skipped (headers, short lines)
-MIN_PARA_CHARS   = 60
+MIN_PARA_CHARS = 60
 # Max paragraphs indexed per book (caps per-book training scope)
 MAX_PARAS_PER_BOOK = int(os.getenv("IGOR_TRAINING_MAX_PARAS", "800"))
 # Disk free threshold below which eviction triggers (GB)
@@ -60,7 +62,7 @@ def _now() -> str:
 
 def _disk_free_gb() -> float:
     usage = shutil.disk_usage(str(CORPUS_DIR.parent))
-    return usage.free / (1024 ** 3)
+    return usage.free / (1024**3)
 
 
 def _load_index() -> dict:
@@ -79,6 +81,7 @@ def _save_index(index: dict) -> None:
 
 # ── Fetch ──────────────────────────────────────────────────────────────────────
 
+
 def fetch(url: str, title: str, source: str = "gutenberg") -> tuple[str, str]:
     """
     Download text from URL and register in corpus.
@@ -88,7 +91,7 @@ def fetch(url: str, title: str, source: str = "gutenberg") -> tuple[str, str]:
     import requests, certifi
 
     book_id = _book_id(url)
-    index   = _load_index()
+    index = _load_index()
 
     if book_id in index:
         existing = index[book_id]
@@ -101,15 +104,20 @@ def fetch(url: str, title: str, source: str = "gutenberg") -> tuple[str, str]:
     # Soft gate: warn but proceed on "warn"; hard gate: abort on "critical".
     try:
         import psutil as _psutil
+
         _vm = _psutil.virtual_memory()
         _sw = _psutil.swap_memory()
         _load1 = os.getloadavg()[0]
         _ncpus = os.cpu_count() or 1
         _load_pct = _load1 / _ncpus * 100
-        _ram_crit  = float(os.getenv("IGOR_LOAD_RAM_CRIT",  "92"))
+        _ram_crit = float(os.getenv("IGOR_LOAD_RAM_CRIT", "92"))
         _swap_crit = float(os.getenv("IGOR_LOAD_SWAP_CRIT", "75"))
-        _cpu_crit  = float(os.getenv("IGOR_LOAD_CPU_CRIT",  "95"))
-        if _vm.percent >= _ram_crit or _sw.percent >= _swap_crit or _load_pct >= _cpu_crit:
+        _cpu_crit = float(os.getenv("IGOR_LOAD_CPU_CRIT", "95"))
+        if (
+            _vm.percent >= _ram_crit
+            or _sw.percent >= _swap_crit
+            or _load_pct >= _cpu_crit
+        ):
             return "", (
                 f"Aborted fetch — system under critical load "
                 f"(RAM {_vm.percent:.0f}%, swap {_sw.percent:.0f}%, CPU {_load_pct:.0f}%). "
@@ -124,12 +132,13 @@ def fetch(url: str, title: str, source: str = "gutenberg") -> tuple[str, str]:
         evict_msg = evict()
         free_gb = _disk_free_gb()
         if free_gb < 0.2:
-            return "", f"Disk critically low ({free_gb:.2f} GB free) even after eviction. Aborting fetch."
+            return (
+                "",
+                f"Disk critically low ({free_gb:.2f} GB free) even after eviction. Aborting fetch.",
+            )
 
     CORPUS_DIR.mkdir(parents=True, exist_ok=True)
-    headers = {
-        "User-Agent": "Mozilla/5.0 (compatible; IgorWordGraphTrainer/1.0)"
-    }
+    headers = {"User-Agent": "Mozilla/5.0 (compatible; IgorWordGraphTrainer/1.0)"}
     # Hard cap: don't load a document larger than this into memory at once.
     # 5MB+ papers were OOM-crashing the process. 1MB is plenty for training.
     MAX_FETCH_CHARS = int(os.getenv("IGOR_TRAINING_MAX_CHARS", str(1_000_000)))
@@ -148,14 +157,14 @@ def fetch(url: str, title: str, source: str = "gutenberg") -> tuple[str, str]:
     text_path.write_text(text, encoding="utf-8", errors="replace")
 
     index[book_id] = {
-        "title":        title,
-        "url":          url,
-        "source":       source,
-        "status":       "pending",
-        "fetch_ts":     _now(),
-        "train_ts":     None,
-        "size_bytes":   len(text.encode("utf-8")),
-        "para_cursor":  0,
+        "title": title,
+        "url": url,
+        "source": source,
+        "status": "pending",
+        "fetch_ts": _now(),
+        "train_ts": None,
+        "size_bytes": len(text.encode("utf-8")),
+        "para_cursor": 0,
     }
     _save_index(index)
     return book_id, (
@@ -166,9 +175,11 @@ def fetch(url: str, title: str, source: str = "gutenberg") -> tuple[str, str]:
 
 # ── Local source ───────────────────────────────────────────────────────────────
 
+
 def local_source_dir() -> Path:
-    return Path(os.getenv("IGOR_TRAINING_SOURCE_DIR",
-                          str(Path.home() / "TheIgorsProject")))
+    return Path(
+        os.getenv("IGOR_TRAINING_SOURCE_DIR", str(Path.home() / "TheIgorsProject"))
+    )
 
 
 def scan_local() -> str:
@@ -187,8 +198,8 @@ def scan_local() -> str:
     if not files:
         return f"No .txt files found in {src}"
 
-    index   = _load_index()
-    added   = []
+    index = _load_index()
+    added = []
     already = []
     CORPUS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -197,7 +208,7 @@ def scan_local() -> str:
         if book_id in index:
             already.append(fpath.name)
             continue
-        text      = fpath.read_text(encoding="utf-8", errors="replace")
+        text = fpath.read_text(encoding="utf-8", errors="replace")
         text_path = CORPUS_DIR / f"{book_id}.txt"
         # Symlink if in same filesystem, else copy
         try:
@@ -205,22 +216,24 @@ def scan_local() -> str:
         except Exception:
             text_path.write_text(text, encoding="utf-8")
         index[book_id] = {
-            "title":        fpath.stem,
-            "url":          str(fpath.resolve()),
-            "source":       "local",
-            "status":       "pending",
-            "fetch_ts":     _now(),
-            "train_ts":     None,
-            "size_bytes":   fpath.stat().st_size,
-            "para_cursor":  0,
+            "title": fpath.stem,
+            "url": str(fpath.resolve()),
+            "source": "local",
+            "status": "pending",
+            "fetch_ts": _now(),
+            "train_ts": None,
+            "size_bytes": fpath.stat().st_size,
+            "para_cursor": 0,
         }
         added.append(fpath.name)
 
     _save_index(index)
     lines = [f"Scanned {src}:"]
     if added:
-        lines.append(f"  Registered {len(added)} new file(s): {', '.join(added[:5])}"
-                     + (" ..." if len(added) > 5 else ""))
+        lines.append(
+            f"  Registered {len(added)} new file(s): {', '.join(added[:5])}"
+            + (" ..." if len(added) > 5 else "")
+        )
     if already:
         lines.append(f"  Already in corpus: {len(already)} file(s)")
     if not added and not already:
@@ -229,6 +242,7 @@ def scan_local() -> str:
 
 
 # ── Train ──────────────────────────────────────────────────────────────────────
+
 
 def train(book_id: str, word_graph: "WordGraph", wg_save_path: Path) -> str:
     """
@@ -241,20 +255,22 @@ def train(book_id: str, word_graph: "WordGraph", wg_save_path: Path) -> str:
     if book_id not in index:
         return f"Book '{book_id}' not in corpus. Fetch it first."
 
-    meta      = index[book_id]
+    meta = index[book_id]
     text_path = CORPUS_DIR / f"{book_id}.txt"
     if not text_path.exists():
         meta["status"] = "pending"  # lost the file, needs re-fetch
         _save_index(index)
-        return f"Text file missing for '{meta['title']}' (id={book_id}). Re-fetch needed."
+        return (
+            f"Text file missing for '{meta['title']}' (id={book_id}). Re-fetch needed."
+        )
 
     text = text_path.read_text(encoding="utf-8", errors="replace")
 
     # Split into paragraphs
     raw_paras = [p.strip() for p in text.split("\n\n")]
-    paras     = [p for p in raw_paras if len(p) >= MIN_PARA_CHARS]
+    paras = [p for p in raw_paras if len(p) >= MIN_PARA_CHARS]
 
-    cursor  = meta.get("para_cursor", 0)
+    cursor = meta.get("para_cursor", 0)
     remaining = paras[cursor:]
 
     if not remaining:
@@ -266,7 +282,7 @@ def train(book_id: str, word_graph: "WordGraph", wg_save_path: Path) -> str:
     # Cap to MAX_PARAS_PER_BOOK total across all training runs for this book
     already_trained = cursor
     budget = max(0, MAX_PARAS_PER_BOOK - already_trained)
-    batch  = remaining[:budget]
+    batch = remaining[:budget]
 
     meta["status"] = "in_progress"
     _save_index(index)
@@ -282,8 +298,8 @@ def train(book_id: str, word_graph: "WordGraph", wg_save_path: Path) -> str:
 
     new_cursor = cursor + trained
     if new_cursor >= len(paras) or trained >= budget:
-        meta["status"]    = "complete"
-        meta["train_ts"]  = _now()
+        meta["status"] = "complete"
+        meta["train_ts"] = _now()
     meta["para_cursor"] = new_cursor
     _save_index(index)
 
@@ -302,6 +318,7 @@ def train(book_id: str, word_graph: "WordGraph", wg_save_path: Path) -> str:
 
 # ── Eviction ───────────────────────────────────────────────────────────────────
 
+
 def evict() -> str:
     """
     Evict corpus files to free space.
@@ -309,7 +326,7 @@ def evict() -> str:
     Stops when disk free >= EVICT_THRESHOLD_GB or corpus is empty.
     Returns a summary of what was deleted.
     """
-    index   = _load_index()
+    index = _load_index()
     deleted = []
 
     def _try_evict_group(status: str) -> None:
@@ -334,6 +351,7 @@ def evict() -> str:
 
 
 # ── Status ─────────────────────────────────────────────────────────────────────
+
 
 def load_url_list(path: str) -> list[str]:
     """
@@ -374,13 +392,15 @@ def list_books() -> str:
         lines.append(f"\n  [{status.upper()}]")
         for book_id, meta in group:
             cursor = meta.get("para_cursor", 0)
-            kb     = meta.get("size_bytes", 0) // 1024
+            kb = meta.get("size_bytes", 0) // 1024
             lines.append(
                 f"    {book_id}  {meta['title'][:50]:<50}  "
                 f"{kb:>6} KB  cursor={cursor}  src={meta['source']}"
             )
 
     lines.append(f"\n  Disk free: {_disk_free_gb():.2f} GB")
-    lines.append(f"  Local source: {local_source_dir()} "
-                 f"({'exists' if local_source_dir().exists() else 'not found yet'})")
+    lines.append(
+        f"  Local source: {local_source_dir()} "
+        f"({'exists' if local_source_dir().exists() else 'not found yet'})"
+    )
     return "\n".join(lines)

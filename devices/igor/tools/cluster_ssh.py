@@ -22,11 +22,12 @@ import urllib.request
 from pathlib import Path
 
 from .registry import Tool, registry
+from ..paths import paths
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-_MACHINES_JSON = Path.home() / ".TheIgors" / "local" / "machines.json"
-_KEY_PATH = Path.home() / ".TheIgors" / "igor_id_rsa"
+_MACHINES_JSON = paths().machines_json
+_KEY_PATH = paths().ssh_key
 _DEFAULT_USER = "igor_wild_0001"
 _SSH_TIMEOUT = 20  # seconds per command
 

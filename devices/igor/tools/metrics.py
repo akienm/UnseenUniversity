@@ -34,7 +34,9 @@ def _get_error_log(lines: int = 50, **_) -> str:
     try:
         from pathlib import Path
 
-        log_path = Path.home() / ".TheIgors" / "logs" / "errors.log"
+        from ..paths import paths as _paths
+
+        log_path = _paths().logs / "errors.log"
         if not log_path.exists():
             return "errors.log does not exist yet — no errors have been recorded."
         entries = log_path.read_text(encoding="utf-8").splitlines()
@@ -83,7 +85,9 @@ def _get_slow_query_report(top: int = 10, min_ms: int = 50, **_) -> str:
     from pathlib import Path
     from collections import defaultdict
 
-    log_path = Path.home() / ".TheIgors" / "logs" / "db_queries.log"
+    from ..paths import paths as _paths
+
+    log_path = _paths().logs / "db_queries.log"
     if not log_path.exists():
         return "db_queries.log does not exist — no slow queries recorded yet."
 
