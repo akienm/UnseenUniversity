@@ -266,7 +266,8 @@ CREATE TABLE IF NOT EXISTS wg_cooccur (
     score  REAL NOT NULL DEFAULT 0.0,
     PRIMARY KEY (word_a, word_b)
 );
-CREATE INDEX IF NOT EXISTS idx_wgc_a ON wg_cooccur(word_a);
+CREATE INDEX IF NOT EXISTS idx_wgc_a        ON wg_cooccur(word_a);
+CREATE INDEX IF NOT EXISTS idx_wgc_covering ON wg_cooccur(word_a, word_b, score);
 
 CREATE TABLE IF NOT EXISTS wg_word_lang (
     word TEXT PRIMARY KEY,
