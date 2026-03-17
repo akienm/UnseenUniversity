@@ -445,6 +445,11 @@ class NarrativeEngine(IgorBase):
         self._last_run = datetime.now()
         self._run_count += 1
 
+        # G-NE1: episodic-to-semantic merge pass (runs every cycle; conservative defaults)
+        _merges = self._consolidation_merge_pass()
+        if _merges > 0:
+            print(f"{_cts()}[NE] merge: {_merges} cluster(s) → semantic nodes")
+
         log_ne_run(
             obs_count=len(obs_list),
             integrated=len(obs_list),
@@ -884,3 +889,152 @@ Reply with ONLY a JSON object — no other text:
             return json.loads(text[start:end])
         except json.JSONDecodeError:
             return None
+
+    # ── G-NE1: Episodic-to-semantic merge pass ─────────────────────────────────
+
+    def _consolidation_merge_pass(self) -> int:
+        """
+        G-NE1: After promotion pass, scan recent EPISODIC LTM nodes (source=narrative_engine)
+        for cosine clusters. Clusters >= IGOR_NE_MERGE_MIN_CLUSTER get synthesized into one
+        semantic node with metadata.occurrence_dates preserving all source timestamps.
+        Returns number of merges performed.
+        """
+        import os as _os
+
+        threshold = float(_os.getenv("IGOR_NE_MERGE_THRESHOLD", "0.85"))
+        min_cluster = int(_os.getenv("IGOR_NE_MERGE_MIN_CLUSTER", "3"))
+        window = int(_os.getenv("IGOR_NE_MERGE_WINDOW", "10"))
+
+        # 1. Fetch recent EPISODIC memories promoted by this NE instance
+        min_run = max(0, self._run_count - window)
+        try:
+            candidates = [
+                m
+                for m in self.cortex.get_by_type(MemoryType.EPISODIC)
+                if m.metadata.get("source") == "narrative_engine"
+                and m.metadata.get("ne_run", 0) >= min_run
+                and not m.metadata.get("merged")  # skip already-merged nodes
+            ]
+        except Exception:
+            return 0
+
+        if len(candidates) < min_cluster:
+            return 0
+
+        # 2. Get stored embeddings (batch) + compute missing ones
+        try:
+            from ..cognition.embedder import embed as _embed, cosine_similarity as _cos
+        except Exception:
+            return 0  # embedder unavailable — skip silently
+
+        ids = [m.id for m in candidates]
+        emb_map = self.cortex._get_embeddings_batch(ids)
+        vec_map: dict = {}
+        for m in candidates:
+            vec = emb_map.get(m.id)
+            if vec is None:
+                try:
+                    vec = _embed(m.narrative)
+                except Exception:
+                    vec = None
+            if vec is not None:
+                vec_map[m.id] = vec
+
+        # 3. Greedy cosine clustering
+        merged_ids: set = set()
+        clusters: list = []
+        for i, m_i in enumerate(candidates):
+            if m_i.id in merged_ids or m_i.id not in vec_map:
+                continue
+            cluster = [m_i]
+            for m_j in candidates[i + 1 :]:
+                if m_j.id in merged_ids or m_j.id not in vec_map:
+                    continue
+                if _cos(vec_map[m_i.id], vec_map[m_j.id]) >= threshold:
+                    cluster.append(m_j)
+            if len(cluster) >= min_cluster:
+                clusters.append(cluster)
+                for m in cluster:
+                    merged_ids.add(m.id)
+
+        if not clusters:
+            return 0
+
+        # 4. Merge each cluster
+        merged = 0
+        for cluster in clusters:
+            try:
+                self._merge_cluster(cluster)
+                merged += 1
+            except Exception as e:
+                try:
+                    from .forensic_logger import log_anomaly as _la
+
+                    _la(kind="NE_MERGE_FAIL", detail=str(e)[:200])
+                except Exception:
+                    pass
+        return merged
+
+    def _merge_cluster(self, cluster: list) -> None:
+        """
+        G-NE1: Synthesize a cluster of similar EPISODIC memories into one node.
+        Writes merged node with occurrence_dates; deletes originals.
+        """
+        narratives = [m.narrative for m in cluster]
+        occurrence_dates = [
+            m.metadata.get("promoted_at", m.timestamp.isoformat()) for m in cluster
+        ]
+        total_activation = sum(m.activation_count or 0 for m in cluster)
+
+        # LLM synthesis: extract pattern, not individual events
+        episodes_block = "\n".join(f"- {n}" for n in narratives)
+        prompt = (
+            "You are synthesizing similar episodic memories into a single semantic memory.\n\n"
+            f"Episodes:\n{episodes_block}\n\n"
+            'Respond with ONLY valid JSON: {"merged_narrative": "..."}\n\n'
+            "The merged_narrative captures the recurring PATTERN across these episodes "
+            'in 1-2 sentences. Do not mention specific dates or "multiple times".'
+        )
+
+        merged_narrative = max(narratives, key=len)  # safe fallback
+        try:
+            from .inference_gateway import get_gateway as _gw, make_context as _mk_ctx
+
+            _ctx = _mk_ctx(is_background=True)
+            raw = _gw().call("ne", prompt, _ctx)
+            parsed = json.loads(raw[raw.find("{") : raw.rfind("}") + 1])
+            merged_narrative = parsed.get("merged_narrative", merged_narrative)
+        except Exception:
+            pass  # use fallback
+
+        mem = Memory(
+            narrative=merged_narrative,
+            memory_type=MemoryType.EPISODIC,
+            parent_id="CP4",
+            activation_count=total_activation,
+            metadata={
+                "source": "narrative_engine",
+                "merged": True,
+                "occurrence_dates": occurrence_dates,
+                "merged_from_count": len(cluster),
+                "merged_at": datetime.now().isoformat(),
+                "ne_run": self._run_count,
+            },
+        )
+        self.cortex.store(mem)
+
+        for m in cluster:
+            self.cortex.delete_memory(m.id)
+
+        try:
+            from .forensic_logger import log_anomaly as _la
+
+            _la(
+                kind="NE_MERGE",
+                detail=(
+                    f"merged {len(cluster)} EPISODIC → 1 semantic node; "
+                    f"occurrence_dates={occurrence_dates}"
+                ),
+            )
+        except Exception:
+            pass
