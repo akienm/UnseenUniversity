@@ -181,6 +181,15 @@ class Cortex(IgorBase):
                 except Exception:
                     pass
 
+            # G-EMB1: separate embeddings table — keeps 16KB blobs off memories rows
+            # so activation_count scans and LIKE scans don't load embedding pages.
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS memory_embeddings (
+                    memory_id TEXT PRIMARY KEY,
+                    embedding  TEXT NOT NULL
+                )
+            """)
+
             # #65: tagged blob storage — full-content reference documents
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS memory_blobs (
@@ -942,9 +951,15 @@ class Cortex(IgorBase):
 
             query_vec = embed(query)
             if query_vec:
+                # G-EMB1: batch-fetch all candidate embeddings in one query
+                emb_map = self._get_embeddings_batch([m.id for m in candidates])
+                # Lazily compute any that are missing (new memories not yet embedded)
+                for m in candidates:
+                    if m.id not in emb_map:
+                        emb_map[m.id] = self._get_or_compute_embedding(m)
                 scored = []
                 for m in candidates:
-                    mem_vec = self._get_or_compute_embedding(m)
+                    mem_vec = emb_map.get(m.id)
                     sim = cosine_similarity(query_vec, mem_vec) if mem_vec else 0.0
                     m.relevance_score = sim  # type: ignore[attr-defined]
                     scored.append((sim, m))
@@ -1295,13 +1310,14 @@ class Cortex(IgorBase):
 
     def _get_or_compute_embedding(self, memory) -> Optional[list]:
         """
-        Return the stored embedding for a memory, computing and caching it
-        if missing. Returns None if Ollama is unavailable.
+        G-EMB1: Return the stored embedding from memory_embeddings (separate table).
+        Falls back to computing via Ollama if missing.
+        Returns None if Ollama is unavailable.
         """
-        # Check DB first
         with self._conn() as conn:
             row = conn.execute(
-                "SELECT embedding FROM memories WHERE id = ?", (memory.id,)
+                "SELECT embedding FROM memory_embeddings WHERE memory_id = ?",
+                (memory.id,),
             ).fetchone()
         if row and row["embedding"]:
             try:
@@ -1309,7 +1325,7 @@ class Cortex(IgorBase):
             except Exception:
                 pass
 
-        # Not in DB — compute via embedder and store back
+        # Not in separate table — compute via embedder and store
         try:
             from ..cognition.embedder import embed
 
@@ -1317,13 +1333,39 @@ class Cortex(IgorBase):
             if vec:
                 with self._conn() as conn:
                     conn.execute(
-                        "UPDATE memories SET embedding = ? WHERE id = ?",
-                        (json.dumps(vec), memory.id),
+                        "INSERT OR REPLACE INTO memory_embeddings(memory_id, embedding)"
+                        " VALUES (?, ?)",
+                        (memory.id, json.dumps(vec)),
                     )
                 return vec
         except Exception:
             pass
         return None
+
+    def _get_embeddings_batch(self, ids: list) -> dict:
+        """
+        G-EMB1: Batch-fetch embeddings for a list of memory ids.
+        One SQL round-trip vs N individual selects in Phase 2 of search().
+        Returns {memory_id: list[float] or None}.
+        """
+        if not ids:
+            return {}
+        placeholders = ",".join("?" * len(ids))
+        with self._conn() as conn:
+            rows = conn.execute(
+                f"SELECT memory_id, embedding FROM memory_embeddings"
+                f" WHERE memory_id IN ({placeholders})",
+                ids,
+            ).fetchall()
+        result: dict = {}
+        for row in rows:
+            try:
+                result[row["memory_id"]] = (
+                    json.loads(row["embedding"]) if row["embedding"] else None
+                )
+            except Exception:
+                result[row["memory_id"]] = None
+        return result
 
     def count_by_type(self) -> dict:
         with self._conn() as conn:
@@ -1367,10 +1409,12 @@ class Cortex(IgorBase):
         except Exception:
             return 0
 
+        # G-EMB1: find memories missing from memory_embeddings (separate table)
         with self._conn() as conn:
             rows = conn.execute(
-                "SELECT id, narrative FROM memories "
-                "WHERE embedding IS NULL OR embedding = 'null'"
+                "SELECT m.id, m.narrative FROM memories m"
+                " LEFT JOIN memory_embeddings e ON e.memory_id = m.id"
+                " WHERE e.memory_id IS NULL"
             ).fetchall()
 
         updated = 0
@@ -1383,8 +1427,9 @@ class Cortex(IgorBase):
                 if vec:
                     with self._conn() as conn:
                         conn.execute(
-                            "UPDATE memories SET embedding = ? WHERE id = ?",
-                            (_json.dumps(vec), row["id"]),
+                            "INSERT OR REPLACE INTO memory_embeddings"
+                            "(memory_id, embedding) VALUES (?, ?)",
+                            (row["id"], _json.dumps(vec)),
                         )
                     updated += 1
             except Exception:
