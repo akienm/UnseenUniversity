@@ -927,6 +927,10 @@ _MIN_EXTRACT_WORDS = 20  # Don't extract from very short chunks
 # IGOR_READING_STEW — enable/disable stew buffer push (default true)
 _DEFAULT_CHUNK_SIZE = int(os.getenv("IGOR_READING_CHUNK_SIZE", "1"))
 _STEW_TTL_SECS = int(os.getenv("IGOR_READING_STEW_TTL_SECS", "600"))
+
+# ── Foreground reading state (D107) ────────────────────────────────────────────
+_stop_reading_flag: bool = False
+_reading_thread = None  # threading.Thread | None
 _STEW_ENABLED = os.getenv("IGOR_READING_STEW", "true").lower() in ("1", "true", "yes")
 
 
@@ -1515,5 +1519,209 @@ registry.register(
             "required": ["query"],
         },
         fn=open_book_gutenberg,
+    )
+)
+
+
+# ── D107: Foreground reading loop ──────────────────────────────────────────────
+
+
+def _fg_reading_loop(handle_key: str, session_id: str) -> None:
+    """Background thread: reads one sentence at a time, sends to web UI, 1s pause."""
+    import time
+    import threading
+
+    global _stop_reading_flag, _reading_thread
+
+    try:
+        from ..web import server as _web_server
+    except Exception as _e:
+        return  # No web server available — silent fail
+
+    try:
+        from ..cognition.forensic_logger import log_event as _log_evt
+    except Exception:
+        _log_evt = None
+
+    while not _stop_reading_flag:
+        live = _HANDLE_CACHE.get(handle_key)
+        if live is None:
+            break
+
+        result = read_chunk(live, n=1)
+        if isinstance(result, dict) and result.get("error"):
+            break
+
+        sentences = result.get("sentences", [])
+        if not sentences:
+            # at_end
+            chapter_title = result.get("chapter_title", "")
+            at_end = result.get("at_end", False)
+            if at_end:
+                _web_server.send(
+                    f"📖 Finished reading. Ready to discuss whenever you like.",
+                    session_id=session_id,
+                )
+                break
+            # Empty chunk but not at end — shouldn't happen, but guard
+            break
+
+        sentence = sentences[0]
+        _web_server.send(sentence, session_id=session_id)
+
+        if _log_evt:
+            try:
+                _log_evt(
+                    kind="FG_READING_SENTENCE",
+                    detail=sentence[:80],
+                    source="ebook_reader.fg_loop",
+                )
+            except Exception:
+                pass
+
+        # Chapter boundary soft prompt — gates nothing, just offers discussion
+        chapter_idx = result.get("chapter", 1)
+        at_end = result.get("at_end", False)
+        if at_end:
+            _web_server.send(
+                f"📖 Finished reading. Ready to discuss whenever you like.",
+                session_id=session_id,
+            )
+            break
+
+        # Check if we just crossed a chapter boundary (next sentence starts a new chapter)
+        live_after = _HANDLE_CACHE.get(handle_key)
+        if live_after:
+            next_chapter_idx = _chapter_at(live_after, live_after.position)
+            if next_chapter_idx + 1 > chapter_idx:
+                _web_server.send(
+                    f"📖 End of chapter {chapter_idx}. Want to discuss, or shall I continue?",
+                    session_id=session_id,
+                )
+                # Pause and wait for stop signal — don't auto-continue across chapter
+                _stop_reading_flag = True
+                break
+
+        time.sleep(1.0)
+
+    _reading_thread = None
+
+
+def start_foreground_reading(input_text: str, session_id: str = "shared") -> str:
+    """
+    Start reading a URL, file path, or raw text passage sentence-by-sentence in the foreground.
+
+    - URL (http/https): fetched and parsed via open_book_url()
+    - File path (starts with / or ~/): opened via open_book(path=...)
+    - Raw text (anything else): wrapped in a temp file and parsed as plain text
+
+    Sends one sentence every ~1 second to the web UI (session_id channel).
+    Call stop_foreground_reading() to interrupt with "One moment please…".
+
+    Returns a status string immediately; reading happens in background thread.
+    """
+    import threading
+
+    global _stop_reading_flag, _reading_thread
+
+    # Stop any existing reading session
+    if _reading_thread and _reading_thread.is_alive():
+        _stop_reading_flag = True
+        _reading_thread.join(timeout=3.0)
+
+    _stop_reading_flag = False
+
+    text = input_text.strip()
+
+    # Detect input type
+    if text.startswith("http://") or text.startswith("https://"):
+        result = open_book_url(text)
+    elif text.startswith("/") or text.startswith("~/") or text.startswith("~\\"):
+        result = open_book(path=text)
+    else:
+        # Raw text — write to temp file and parse
+        import tempfile as _tmpfile
+
+        tmp = _tmpfile.NamedTemporaryFile(
+            mode="w", suffix=".txt", delete=False, prefix="igor_fg_"
+        )
+        tmp.write(text)
+        tmp.close()
+        result = open_book(path=tmp.name, title="(pasted text)")
+
+    if isinstance(result, str):
+        # open_book* returned an error string
+        return f"Could not open for reading: {result}"
+
+    handle_key = result.get("_handle_key", "")
+    if not handle_key:
+        return "Could not open for reading: no handle key returned"
+
+    title = result.get("title", "?")
+    total = result.get("total_sentences", 0)
+    position = result.get("position", 0)
+
+    _reading_thread = threading.Thread(
+        target=_fg_reading_loop,
+        args=(handle_key, session_id),
+        daemon=True,
+        name="fg_reading",
+    )
+    _reading_thread.start()
+
+    resume_note = f" (resuming from sentence {position})" if position > 0 else ""
+    return (
+        f"Starting foreground reading of '{title}'{resume_note} — "
+        f"{total} sentences total. Say 'stop reading' to pause."
+    )
+
+
+def stop_foreground_reading(**_) -> str:
+    """
+    Stop the foreground reading loop after finishing the current sentence.
+    Returns 'One moment please…' immediately; the thread halts within ~1s.
+    """
+    global _stop_reading_flag
+    _stop_reading_flag = True
+    return "One moment please…"
+
+
+registry.register(
+    Tool(
+        name="start_foreground_reading",
+        description=(
+            "Read a URL, file path, or pasted text sentence-by-sentence in the foreground, "
+            "sending one sentence per second to the web UI for Akien to follow along. "
+            "Use this when Akien says 'read this', 'read this slowly', or sends a bare URL/path. "
+            "NOT for background batch ingestion — use book_learner for that."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "input_text": {
+                    "type": "string",
+                    "description": "URL (http/https), file path (/... or ~/...), or raw text to read",
+                },
+                "session_id": {
+                    "type": "string",
+                    "description": "Web UI session to send sentences to (default: 'shared')",
+                },
+            },
+            "required": ["input_text"],
+        },
+        fn=start_foreground_reading,
+    )
+)
+
+registry.register(
+    Tool(
+        name="stop_foreground_reading",
+        description=(
+            "Stop the foreground sentence-by-sentence reading loop. "
+            "Finishes the current sentence then halts. Returns 'One moment please…'. "
+            "Trigger: 'stop reading', 'stop background reading', 'pause reading'."
+        ),
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=stop_foreground_reading,
     )
 )
