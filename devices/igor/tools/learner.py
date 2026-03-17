@@ -12,15 +12,39 @@ Registered tools:
 """
 
 import json
+import os
 import re
 import sqlite3
 import subprocess
 import sys
+import threading
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 from .registry import Tool, registry
+from ..memory.db_proxy import DatabaseProxy
+
+# ── Igor DB proxy singleton (G-DB1 W1) ────────────────────────────────────────
+_IGOR_DB_PROXY: Optional[DatabaseProxy] = None
+_IGOR_DB_PROXY_LOCK = threading.Lock()
+
+
+def _igor_db_proxy() -> DatabaseProxy:
+    """Return (or create) the singleton DatabaseProxy for IGOR_DB_PATH."""
+    global _IGOR_DB_PROXY
+    with _IGOR_DB_PROXY_LOCK:
+        if _IGOR_DB_PROXY is None:
+            db = Path(
+                os.environ.get(
+                    "IGOR_DB_PATH",
+                    os.path.expanduser("~/.TheIgors/igor_wild_0001/wild-0001.db"),
+                )
+            )
+            _IGOR_DB_PROXY = DatabaseProxy(db)
+    return _IGOR_DB_PROXY
+
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 _REPO = Path(__file__).parent.parent.parent.parent
@@ -660,26 +684,17 @@ registry.register(
 
 def list_absorbed_books(**_kwargs) -> str:
     """Return a summary of books/sources that have been absorbed via book_learner."""
-    import os, sqlite3, json
-
-    db_path = os.environ.get(
-        "IGOR_DB_PATH", os.path.expanduser("~/.TheIgors/igor_wild_0001/wild-0001.db")
-    )
     try:
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT metadata, COUNT(*) as node_count
-            FROM memories
-            WHERE memory_type IN ('FACTUAL','INTERPRETIVE','PROCEDURAL')
-              AND source = 'reading'
-              AND json_extract(metadata, '$.book_title') IS NOT NULL
-            GROUP BY json_extract(metadata, '$.book_title'), json_extract(metadata, '$.book_author')
-            ORDER BY node_count DESC
-        """)
-        rows = cur.fetchall()
-        conn.close()
+        with _igor_db_proxy()() as conn:
+            rows = conn.execute("""
+                SELECT metadata, COUNT(*) as node_count
+                FROM memories
+                WHERE memory_type IN ('FACTUAL','INTERPRETIVE','PROCEDURAL')
+                  AND source = 'reading'
+                  AND json_extract(metadata, '$.book_title') IS NOT NULL
+                GROUP BY json_extract(metadata, '$.book_title'), json_extract(metadata, '$.book_author')
+                ORDER BY node_count DESC
+            """).fetchall()
     except Exception as e:
         return f"Error querying absorbed books: {e}"
 
@@ -730,24 +745,11 @@ registry.register(
 # ── reading_list tools ─────────────────────────────────────────────────────────
 
 
-def _rl_db() -> sqlite3.Connection:
-    import os
-
-    db_path = os.environ.get(
-        "IGOR_DB_PATH", os.path.expanduser("~/.TheIgors/igor_wild_0001/wild-0001.db")
-    )
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
 def get_reading_list(**kwargs) -> str:
     """Return the reading list, optionally filtered by status or book_type."""
     status_filter = kwargs.get("status")  # e.g. "queued", "in_progress", "completed"
     type_filter = kwargs.get("book_type")  # "fiction" | "nonfiction"
     try:
-        conn = _rl_db()
-        cur = conn.cursor()
         sql = "SELECT * FROM reading_list WHERE 1=1"
         params = []
         if status_filter:
@@ -757,9 +759,8 @@ def get_reading_list(**kwargs) -> str:
             sql += " AND book_type = ?"
             params.append(type_filter)
         sql += " ORDER BY priority, id"
-        cur.execute(sql, params)
-        rows = cur.fetchall()
-        conn.close()
+        with _igor_db_proxy()() as conn:
+            rows = conn.execute(sql, params).fetchall()
     except Exception as e:
         return f"Error reading reading_list: {e}"
 
@@ -796,37 +797,35 @@ def add_to_reading_list(**kwargs) -> str:
     if not title:
         return "title is required."
     try:
-        conn = _rl_db()
-        cur = conn.cursor()
-        cur.execute("SELECT MAX(CAST(SUBSTR(id,4) AS INTEGER)) FROM reading_list")
-        row = cur.fetchone()
-        max_n = row[0] or 0
-        new_id = f"RL_{max_n + 1:03d}"
-        cur.execute(
-            """
-            INSERT INTO reading_list
-            (id, title, author, source, book_type, reading_rate, priority, status,
-             emotional_significance, encoding_arousal, notes, added_by, added_at)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
-        """,
-            (
-                new_id,
-                title,
-                author,
-                source,
-                kwargs.get("book_type", "nonfiction"),
-                kwargs.get("reading_rate", "fast"),
-                kwargs.get("priority", 50),
-                kwargs.get("status", "queued"),
-                kwargs.get("emotional_significance"),
-                float(kwargs.get("encoding_arousal", 0.3)),
-                kwargs.get("notes"),
-                kwargs.get("added_by", "igor"),
-                _time.strftime("%Y-%m-%dT%H:%M:%S"),
-            ),
-        )
-        conn.commit()
-        conn.close()
+        with _igor_db_proxy()() as conn:
+            row = conn.execute(
+                "SELECT MAX(CAST(SUBSTR(id,4) AS INTEGER)) FROM reading_list"
+            ).fetchone()
+            max_n = row[0] or 0
+            new_id = f"RL_{max_n + 1:03d}"
+            conn.execute(
+                """
+                INSERT INTO reading_list
+                (id, title, author, source, book_type, reading_rate, priority, status,
+                 emotional_significance, encoding_arousal, notes, added_by, added_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+                (
+                    new_id,
+                    title,
+                    author,
+                    source,
+                    kwargs.get("book_type", "nonfiction"),
+                    kwargs.get("reading_rate", "fast"),
+                    kwargs.get("priority", 50),
+                    kwargs.get("status", "queued"),
+                    kwargs.get("emotional_significance"),
+                    float(kwargs.get("encoding_arousal", 0.3)),
+                    kwargs.get("notes"),
+                    kwargs.get("added_by", "igor"),
+                    _time.strftime("%Y-%m-%dT%H:%M:%S"),
+                ),
+            )
         return f"Added {new_id}: {title}"
     except Exception as e:
         return f"Error adding to reading_list: {e}"
@@ -844,24 +843,23 @@ def update_reading_status(**kwargs) -> str:
     if status not in valid:
         return f"status must be one of: {', '.join(valid)}"
     try:
-        conn = _rl_db()
-        cur = conn.cursor()
         ts = _time.strftime("%Y-%m-%dT%H:%M:%S")
-        if status == "in_progress":
-            cur.execute(
-                "UPDATE reading_list SET status=?, started_at=? WHERE id=?",
-                (status, ts, rl_id),
-            )
-        elif status == "completed":
-            cur.execute(
-                "UPDATE reading_list SET status=?, completed_at=? WHERE id=?",
-                (status, ts, rl_id),
-            )
-        else:
-            cur.execute("UPDATE reading_list SET status=? WHERE id=?", (status, rl_id))
-        conn.commit()
-        changed = cur.rowcount
-        conn.close()
+        with _igor_db_proxy()() as conn:
+            if status == "in_progress":
+                conn.execute(
+                    "UPDATE reading_list SET status=?, started_at=? WHERE id=?",
+                    (status, ts, rl_id),
+                )
+            elif status == "completed":
+                conn.execute(
+                    "UPDATE reading_list SET status=?, completed_at=? WHERE id=?",
+                    (status, ts, rl_id),
+                )
+            else:
+                conn.execute(
+                    "UPDATE reading_list SET status=? WHERE id=?", (status, rl_id)
+                )
+            changed = conn.execute("SELECT changes()").fetchone()[0]
         return (
             f"Updated {rl_id} → {status}"
             if changed
