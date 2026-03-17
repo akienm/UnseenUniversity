@@ -311,8 +311,8 @@ class Igor(IgorBase):
             console.print(f"[yellow]Word graph init failed: {_wg_e}[/]")
 
         # G37: asymmetric dual word graphs — recognition (parsing) vs generation (voice).
-        # Gate: IGOR_DUAL_WORD_GRAPHS=true  (default false — observe first, enable when ready)
-        self._dual_graphs = os.getenv("IGOR_DUAL_WORD_GRAPHS", "false").lower() in (
+        # Phase 2 enabled: default true. Override with IGOR_DUAL_WORD_GRAPHS=false to disable.
+        self._dual_graphs = os.getenv("IGOR_DUAL_WORD_GRAPHS", "true").lower() in (
             "1",
             "true",
             "yes",
@@ -340,14 +340,14 @@ class Igor(IgorBase):
         # G37: last reply text for comprehension signal; milieu tilt + n-pass gates
         self._last_reply: str = ""
         self._comprehension_signal = os.getenv(
-            "IGOR_COMPREHENSION_SIGNAL", "false"
+            "IGOR_COMPREHENSION_SIGNAL", "true"
         ).lower() in ("1", "true", "yes")
         self._milieu_tilt = os.getenv("IGOR_MILIEU_TILT", "false").lower() in (
             "1",
             "true",
             "yes",
         )
-        self._npass_reply = os.getenv("IGOR_NPASS_REPLY", "false").lower() in (
+        self._npass_reply = os.getenv("IGOR_NPASS_REPLY", "true").lower() in (
             "1",
             "true",
             "yes",
@@ -2504,7 +2504,7 @@ class Igor(IgorBase):
         _tc = _time.monotonic()
 
         # G37: comprehension signal — if prior reply was well-received, reinforce generation graph.
-        # Gate: IGOR_COMPREHENSION_SIGNAL=true (default false — wire when ready to observe)
+        # Gate: IGOR_COMPREHENSION_SIGNAL=true (default true — G37 Phase 2)
         # Positive signal heuristic: positive valence + not a correction/confusion intent.
         # This is the "did they hear what I meant?" feedback loop that shapes voice over time.
         if (
@@ -3466,6 +3466,8 @@ class Igor(IgorBase):
                 f"JOB_CREATED|id={_async_job_id}|async=true|complexity={complexity['score']:.2f}|{user_input[:80]}",
                 category="system_info",
             )
+            if thread_id and thread_id.startswith("web:"):
+                return f"{_threshold_prefix}{self._igor_lisp('Thinking about that...')}"
             return f"{_threshold_prefix}Started background job #{_async_job_id}. I'll notify you when complete."
 
         # Forensic: log tier selection decision (WO_escalation_gate)
@@ -4143,7 +4145,7 @@ class Igor(IgorBase):
                         pass
 
         # G37: n-pass reply termination — log gradient flatness after reply.
-        # Gate: IGOR_NPASS_REPLY=true (default false — observe first).
+        # Gate: IGOR_NPASS_REPLY=true (default true — G37 Phase 2).
         # Flatness ~1.0 = gradient is flat = natural stopping point.
         # Flatness ~0.0 = steep gradient = more to say (future: trigger addendum pass).
         if self._npass_reply and self._generation_graph is not None and response_text:
