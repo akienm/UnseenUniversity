@@ -26,7 +26,7 @@ from typing import Optional
 
 from .models import Memory, MemoryType
 from .scrub import scrub
-from .db_proxy import DatabaseProxy
+from .db_proxy import DatabaseProxy, make_db_proxy
 from ..igor_base import IgorBase
 
 
@@ -76,7 +76,7 @@ class Cortex(IgorBase):
         super().__init__()
         self.db_path = db_path
         self._instance_id = instance_id  # #51: scopes TWM to this instance when set
-        self._db = DatabaseProxy(db_path)
+        self._db = make_db_proxy(db_path)
         self._init_db()
         # #244: set to True after interpretive_traverse() when a meaning_to_me edge was followed
         self._last_traverse_meaning_to_me: bool = False
@@ -90,6 +90,17 @@ class Cortex(IgorBase):
         return self._db()
 
     def _init_db(self):
+        from .db_proxy import PGDatabaseProxy
+
+        if isinstance(self._db, PGDatabaseProxy):
+            # Postgres schema was already created by migrate_sqlite_to_postgres.py.
+            # Skip all SQLite-specific DDL — it contains AUTOINCREMENT syntax etc.
+            # that Postgres rejects. The _migrations table double-check below is all
+            # that's needed to confirm the DB is ready.
+            with self._conn() as conn:
+                conn.execute("SELECT 1 FROM memories LIMIT 1")
+            return
+
         with self._conn() as conn:
             # #261: one-time migration tracker — prevents costly scans on every boot
             conn.execute("""
@@ -1383,10 +1394,15 @@ class Cortex(IgorBase):
         # #260: in-process cache — avoids repeated full-table LIKE scan (55ms each)
         if self._habit_cache is not None:
             return self._habit_cache
+        from .db_proxy import PGDatabaseProxy
+
+        _habits_sql = (
+            "SELECT * FROM memories WHERE jsonb_exists(metadata, 'trigger')"
+            if isinstance(self._db, PGDatabaseProxy)
+            else "SELECT * FROM memories WHERE metadata LIKE '%\"trigger\"%'"
+        )
         with self._conn() as conn:
-            rows = conn.execute(
-                "SELECT * FROM memories WHERE metadata LIKE '%\"trigger\"%'"
-            ).fetchall()
+            rows = conn.execute(_habits_sql).fetchall()
         result = [m for m in (self._to_memory(r) for r in rows) if m.is_habit]
         self._habit_cache = result
         return result
@@ -1526,7 +1542,11 @@ class Cortex(IgorBase):
             friction_history=json.loads(row["friction_history"]),
             timestamp=datetime.fromisoformat(row["timestamp"]),
             last_accessed=_last_accessed,
-            metadata=json.loads(row["metadata"]),
+            metadata=(
+                row["metadata"]
+                if isinstance(row["metadata"], dict)
+                else json.loads(row["metadata"] or "{}")
+            ),
             portable=bool(row["portable"]) if "portable" in keys else True,
             # G46: provenance + epistemic fields
             source=row["source"] if "source" in keys and row["source"] else "",
