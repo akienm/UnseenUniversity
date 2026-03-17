@@ -2368,7 +2368,11 @@ class Igor(IgorBase):
             return f"[ERROR in background job] {exc}"
 
     def _process(
-        self, user_input: str, is_impulse: bool = False, thread_id: str | None = None
+        self,
+        user_input: str,
+        is_impulse: bool = False,
+        thread_id: str | None = None,
+        author: str | None = None,
     ) -> str:
         # Boot-ready gate: politely defer if boot pre-warm hasn't finished yet.
         # Only applies to non-impulse turns — impulses are internal and skip the gate.
@@ -2387,7 +2391,9 @@ class Igor(IgorBase):
         web_server.broadcast_activity(self._activity_state())
 
         try:
-            return self._process_inner(user_input, is_impulse, thread_id=thread_id)
+            return self._process_inner(
+                user_input, is_impulse, thread_id=thread_id, author=author
+            )
         finally:
             # [DASHBOARD] Always reset to idle on exit (#18)
             self._is_processing = False
@@ -2396,7 +2402,11 @@ class Igor(IgorBase):
             web_server.broadcast_activity(self._activity_state())
 
     def _process_inner(
-        self, user_input: str, is_impulse: bool, thread_id: str | None = None
+        self,
+        user_input: str,
+        is_impulse: bool,
+        thread_id: str | None = None,
+        author: str | None = None,
     ) -> str:
         import time as _time
 
@@ -2770,6 +2780,7 @@ class Igor(IgorBase):
                 habits,
                 milieu_state=_milieu_state,
                 meaning_to_me_context=_meaning_to_me_active,
+                author=author,
             )
         )
         if not is_impulse:
@@ -5160,7 +5171,7 @@ class Igor(IgorBase):
         ):
             synthetic = _thread_prefix + synthetic
 
-        response = self._process(synthetic, thread_id=_thread_id)
+        response = self._process(synthetic, thread_id=_thread_id, author=msg.author)
 
         # Log outgoing + deliver
         if _ctx and not _skip_ctx and response:

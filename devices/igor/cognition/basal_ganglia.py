@@ -223,6 +223,7 @@ def select_habit(
     habits: list,
     milieu_state=None,
     meaning_to_me_context: bool = False,
+    author: str | None = None,
 ) -> "tuple[Memory | None, float, list[tuple[float, Memory]]]":
     """
     Score all habits in parallel; return (winner, confidence, near_misses).
@@ -234,6 +235,9 @@ def select_habit(
     meaning_to_me_context (#244): when True (caller detected a meaning_to_me TWM
         observation this turn), habits tagged with metadata.meaning_to_me=True get
         a +0.05 salience bonus so personally significant habits win tiebreaks.
+
+    author: input author (e.g. "claude-code", "akien"). Habits with
+        metadata.author_filter set are skipped unless the author matches.
 
     Steps:
       1. Compile-phrase pre-check → PROC_HABIT_COMPILER at 0.95.
@@ -298,6 +302,11 @@ def select_habit(
             h_type = habit.metadata.get("habit_type", "")
             # G-OVN-1a: threshold habits evaluated by ResourceMonitorSource/pre-submit only
             if h_type == "threshold":
+                continue
+            # author_filter: skip habits restricted to a specific input author.
+            # Prevents CC-only habits (e.g. CC_RUN_BASH) from firing on human messages.
+            _af = habit.metadata.get("author_filter")
+            if _af and author != _af:
                 continue
             # G-OVN-1b: action-class habits (with code_ref or workflow/delegation types)
             # skip on question intents — prevent PROC_CALENDAR_CREATE, PROC_CLUSTER_SSH_CHECK

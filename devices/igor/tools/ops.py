@@ -125,6 +125,28 @@ def queue_task(task_json: str) -> str:
         return f"[ERROR] queue_task: {e}"
 
 
+# ── flush_habit_cache ──────────────────────────────────────────────────────────
+
+
+def flush_habit_cache() -> str:
+    """
+    Invalidate Igor's in-process habit cache so DB metadata changes
+    take effect without a full restart.
+    """
+    try:
+        db_path = os.environ.get("IGOR_DB_PATH", "")
+        if not db_path:
+            return "[ERROR] IGOR_DB_PATH not set"
+        from pathlib import Path as _Path
+        from ..memory.cortex import Cortex as _Cortex
+
+        cortex = _Cortex(_Path(db_path))
+        cortex.invalidate_habit_cache()
+        return "habit cache flushed — next get_habits() reloads from DB"
+    except Exception as e:
+        return f"[ERROR] flush_habit_cache: {e}"
+
+
 # ── Register tools ─────────────────────────────────────────────────────────────
 
 registry.register(
@@ -196,5 +218,17 @@ registry.register(
             "required": ["task_json"],
         },
         fn=queue_task,
+    )
+)
+
+registry.register(
+    Tool(
+        name="flush_habit_cache",
+        description=(
+            "Invalidate Igor's in-process habit cache so DB metadata changes "
+            "take effect without a full restart. Call after patching habit metadata."
+        ),
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=flush_habit_cache,
     )
 )
