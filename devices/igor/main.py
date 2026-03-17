@@ -4188,6 +4188,11 @@ class Igor(IgorBase):
                 valence=valence,
                 arousal=_ep_arousal,
                 dominance=_ep_dominance,
+                source="interaction",  # G46: provenance
+                context_of_encoding=(  # G46: amygdala analog — what was happening at encoding
+                    f"intent={parsed.intent} valence={valence:.2f} "
+                    f"arousal={_ep_arousal:.2f} complexity={complexity['score']}"
+                ),
                 metadata={
                     "user_input": user_input,
                     "response": response_text[:500],

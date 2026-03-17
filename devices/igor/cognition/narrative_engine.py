@@ -571,6 +571,11 @@ class NarrativeEngine(IgorBase):
                     parent_id=_cp_parent,
                     valence=float(cand.get("valence", 0.0)),
                     arousal=_arousal,
+                    source="narrative_engine",  # G46: provenance
+                    context_of_encoding=(  # G46: encoding context
+                        f"ne_run={self._run_count + 1} importance={importance:.2f} "
+                        f"arousal={_arousal:.2f}"
+                    ),
                     metadata=_meta,
                 )
                 self.cortex.store(mem)
