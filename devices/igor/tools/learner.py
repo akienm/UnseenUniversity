@@ -936,3 +936,100 @@ registry.register(
         fn=update_reading_status,
     )
 )
+
+
+# ── annotate_learning (#252) ───────────────────────────────────────────────────
+
+
+def annotate_learning(**kwargs) -> str:
+    """
+    Deposit a personal EXPERIENTIAL memory recording whether an approach worked.
+    Triggered by 'this worked', 'didn't work', 'mark that', etc.
+    Stores source='user_annotated', confidence=0.95 so it outweighs generic FACTUAL.
+    """
+    import uuid as _uuid
+    import time as _time
+
+    outcome = kwargs.get("outcome", "").strip()
+    worked = kwargs.get("worked", True)
+    notes = kwargs.get("notes", "").strip()
+
+    if not outcome:
+        return "Please describe what worked or didn't work."
+
+    verdict = "worked for Akien" if worked else "did not work for Akien"
+    narrative = f"Personal experience: {outcome} — {verdict}."
+    if notes:
+        narrative += f" {notes}"
+
+    mem_id = str(_uuid.uuid4())[:8]
+    ts = _time.strftime("%Y-%m-%dT%H:%M:%S")
+    meta = json.dumps(
+        {
+            "worked": worked,
+            "outcome": outcome,
+            "notes": notes,
+            "source": "user_annotated",
+        }
+    )
+
+    try:
+        with _igor_db_proxy()() as conn:
+            conn.execute(
+                """INSERT INTO memories
+                   (id, narrative, memory_type, parent_id, children_ids, link_ids,
+                    valence, activation_count, friction_history, timestamp, metadata,
+                    portable, source, confidence, context_of_encoding)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    mem_id,
+                    narrative,
+                    "EXPERIENTIAL",
+                    "CP5",  # inner state — "I have an inner life"
+                    "[]",
+                    "[]",
+                    0.6 if worked else -0.3,  # positive valence if it worked
+                    1,
+                    "[]",
+                    ts,
+                    meta,
+                    1,  # portable=True
+                    "user_annotated",
+                    0.95,  # high confidence — first-person experience
+                    "akien_annotation",
+                ),
+            )
+        return f"Noted. Deposited as personal experience [{mem_id}]: {narrative[:120]}"
+    except Exception as e:
+        return f"Error depositing experience: {e}"
+
+
+registry.register(
+    Tool(
+        name="annotate_learning",
+        description=(
+            "Record a personal experience — whether an approach, technique, or strategy "
+            "worked or didn't work for Akien. Deposits a high-confidence EXPERIENTIAL "
+            "memory. Use when Akien says 'this worked', 'that didn't work', 'mark that', etc."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "outcome": {
+                    "type": "string",
+                    "description": "What approach/technique/strategy to record.",
+                },
+                "worked": {
+                    "type": "boolean",
+                    "description": "True if it worked, False if it didn't.",
+                },
+                "notes": {
+                    "type": "string",
+                    "description": "Optional additional context.",
+                },
+            },
+            "required": ["outcome"],
+        },
+        fn=annotate_learning,
+    )
+)
