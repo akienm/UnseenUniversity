@@ -45,28 +45,9 @@ _HANDLE_CACHE: dict[str, "BookHandle"] = {}
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 
-_CALIBRE_LIBRARY = Path(
-    os.getenv(
-        "CALIBRE_LIBRARY_PATH",
-        str(
-            paths().runtime
-            / "akien"
-            / "onedrive"
-            / "AkiensMedia"
-            / "Ebooks"
-            / "Calibre Portable"
-            / "Calibre Library"
-        ),
-    )
-)
-_KINDLE_DIR = Path(
-    os.getenv(
-        "KINDLE_BOOKS_PATH",
-        str(
-            paths().runtime / "akien" / "onedrive" / "AkiensMedia" / "Ebooks" / "Kindle"
-        ),
-    )
-)
+
+_CALIBRE_LIBRARY = paths().calibre_library
+_KINDLE_DIR = paths().kindle_dir
 
 _INSTANCE_DIR = Path(
     os.getenv(

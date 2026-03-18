@@ -160,6 +160,58 @@ class PathManager:
         """Path to a named word graph SQLite DB, e.g. ~/.TheIgors/word_graph.db."""
         return self._runtime / f"{name}.db"
 
+    # ── Ebook library ─────────────────────────────────────────────────────────
+
+    @property
+    def ebooks_root(self) -> Path:
+        """Root of the AkiensMedia/Ebooks folder.
+
+        Resolution order:
+          1. EBOOKS_ROOT env var — explicit per-instance override (always wins)
+          2. Windows  (os.name == 'nt'):  ~/OneDrive/AkiensMedia/Ebooks
+          3. macOS    (sys.platform == 'darwin'):  ~/OneDrive/AkiensMedia/Ebooks
+             (falls back to ~/Library/CloudStorage/OneDrive-Personal/AkiensMedia/Ebooks
+              if the primary path doesn't exist — newer macOS OneDrive layout)
+          4. Linux: ~/.TheIgors/akien/onedrive/AkiensMedia/Ebooks  (CIFS mount)
+        """
+        import sys
+
+        override = os.getenv("EBOOKS_ROOT")
+        if override:
+            return Path(override).expanduser()
+        if os.name == "nt":
+            return Path.home() / "OneDrive" / "AkiensMedia" / "Ebooks"
+        if sys.platform == "darwin":
+            primary = Path.home() / "OneDrive" / "AkiensMedia" / "Ebooks"
+            if primary.exists():
+                return primary
+            return (
+                Path.home()
+                / "Library"
+                / "CloudStorage"
+                / "OneDrive-Personal"
+                / "AkiensMedia"
+                / "Ebooks"
+            )
+        # Linux — OneDrive accessed via CIFS mount under runtime root
+        return self._runtime / "akien" / "onedrive" / "AkiensMedia" / "Ebooks"
+
+    @property
+    def calibre_library(self) -> Path:
+        """Path to Calibre Library folder (overridable via CALIBRE_LIBRARY_PATH)."""
+        override = os.getenv("CALIBRE_LIBRARY_PATH")
+        if override:
+            return Path(override).expanduser()
+        return self.ebooks_root / "Calibre Portable" / "Calibre Library"
+
+    @property
+    def kindle_dir(self) -> Path:
+        """Path to Kindle ebooks folder (overridable via KINDLE_BOOKS_PATH)."""
+        override = os.getenv("KINDLE_BOOKS_PATH")
+        if override:
+            return Path(override).expanduser()
+        return self.ebooks_root / "Kindle"
+
     # ── Source root ───────────────────────────────────────────────────────────
 
     @property
