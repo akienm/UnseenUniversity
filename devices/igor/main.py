@@ -2318,9 +2318,7 @@ class Igor(IgorBase):
 
             # ── Nothing to process — drain network then do background work ────
             # #64: check restart/exit flags before anything else — no LLM, no arbiter
-            _instance_dir = (
-                _paths().runtime / f"igor_{self.instance_id.replace('-', '_')}"
-            )
+            _instance_dir = _paths().instance
             _exit_flag = _instance_dir / "exit.flag"
             if _exit_flag.exists():
                 try:

@@ -228,13 +228,9 @@ def restart_self(note: str = "") -> str:
     Equivalent to the /restart command but callable as a tool from any channel
     (web UI, Discord, API — not just stdin).
     """
-    instance_id = os.getenv("IGOR_INSTANCE_ID", "wild-0001")
-    flag_path = (
-        Path.home()
-        / ".TheIgors"
-        / f"igor_{instance_id.replace('-', '_')}"
-        / "restart.flag"
-    )
+    from ..paths import paths as _paths
+
+    flag_path = _paths().instance / "restart.flag"
     flag_path.parent.mkdir(parents=True, exist_ok=True)
     flag_path.write_text(note or "restart requested via tool")
     return (
@@ -524,13 +520,9 @@ def exit_self(note: str = "") -> str:
     Use for 'stop igor', 'exit igor', 'shutdown' — anything that should halt
     this instance permanently until manually restarted.
     """
-    instance_id = os.getenv("IGOR_INSTANCE_ID", "wild-0001")
-    flag_path = (
-        Path.home()
-        / ".TheIgors"
-        / f"igor_{instance_id.replace('-', '_')}"
-        / "exit.flag"
-    )
+    from ..paths import paths as _paths
+
+    flag_path = _paths().instance / "exit.flag"
     flag_path.parent.mkdir(parents=True, exist_ok=True)
     flag_path.write_text(note or "exit requested via tool")
     return "Exit flag written. I will shut down cleanly on the next loop cycle."
