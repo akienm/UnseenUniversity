@@ -85,11 +85,11 @@ class PathManager:
 
     @property
     def learn_queue(self) -> Path:
-        return self._runtime / "learn_queue.json"
+        return self.instance / "learn_queue.json"
 
     @property
     def drain_pid(self) -> Path:
-        return self._runtime / "drain_learn_queue.pid"
+        return self.instance / "drain_learn_queue.pid"
 
     @property
     def milieu(self) -> Path:
