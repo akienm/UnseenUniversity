@@ -151,9 +151,7 @@ class Milieu(IgorBase):
     def __init__(self, instance_id: str):
         super().__init__()
         self._instance_id = instance_id
-        self._path = (
-            paths().runtime / f"igor_{instance_id.replace('-', '_')}" / "milieu.json"
-        )
+        self._path = paths().instance / "milieu.json"
         # D101: persisted history ring
         self._history_path = self._path.parent / "milieu_history.json"
         _local_existed = self._path.exists()
