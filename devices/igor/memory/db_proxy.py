@@ -424,10 +424,14 @@ class _PGConnWrapper:
         else:
             translated = sql.replace("?", "%s")
         self._last_sql = translated
-        # Use a dedicated cursor for savepoint management so that RELEASE SAVEPOINT
-        # doesn't clear the result set on self._cur.
-        # This emulates SQLite's per-statement semantics: callers can safely do
-        # `try: conn.execute(...) except: pass` without aborting the transaction.
+        # SELECT statements can never abort a transaction — skip savepoint overhead.
+        # Savepoints are only needed for DDL/DML that might raise (e.g. column-already-exists
+        # patterns from _init_db), letting callers do `try: conn.execute(...) except: pass`.
+        if translated.lstrip().upper().startswith("SELECT"):
+            self._cur.execute(translated, params or ())
+            return self
+        # DML/DDL: wrap in a savepoint so a failed statement doesn't abort the transaction.
+        # Uses a dedicated cursor so RELEASE SAVEPOINT doesn't clear self._cur's result set.
         sp_cur = self._conn.cursor()
         try:
             sp_cur.execute("SAVEPOINT _igor_sp")
