@@ -485,7 +485,7 @@ class Igor(IgorBase):
             self._announce_first_boot()
         else:
             console.print(
-                f"\n[cyan]Igor-{instance_id} resumed. {self.cortex.total_count()} memories loaded.[/]"
+                f"\n[cyan]Igor instance:{instance_id} resumed. {self.cortex.total_count()} memories loaded.[/]"
             )
 
         # [WARM CONTEXT] Reload warm working memory from previous session

@@ -27,6 +27,7 @@ G37: name param allows two instances — recognition (listening) and generation
 from __future__ import annotations
 
 import math
+import os
 import re
 import threading
 from pathlib import Path
