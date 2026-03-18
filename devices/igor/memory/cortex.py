@@ -26,7 +26,7 @@ from typing import Optional
 
 from .models import Memory, MemoryType
 from .scrub import scrub
-from .db_proxy import DatabaseProxy, make_db_proxy
+from .db_proxy import DatabaseProxy, make_home_proxy, make_local_proxy
 from ..igor_base import IgorBase
 
 
@@ -76,7 +76,8 @@ class Cortex(IgorBase):
         super().__init__()
         self.db_path = db_path
         self._instance_id = instance_id  # #51: scopes TWM to this instance when set
-        self._db = make_db_proxy(db_path)
+        self._db = make_home_proxy(db_path)  # HOME: memories, edges (global truth)
+        self._local_db = make_local_proxy(db_path)  # LOCAL: ring, TWM (box-scoped)
         self._init_db()
         # #244: set to True after interpretive_traverse() when a meaning_to_me edge was followed
         self._last_traverse_meaning_to_me: bool = False
@@ -88,6 +89,10 @@ class Cortex(IgorBase):
     def _conn(self):
         """Deprecated shim — use self._db() directly."""
         return self._db()
+
+    def _local_conn(self):
+        """Context manager for LOCAL tables: ring_memory, twm_observations."""
+        return self._local_db()
 
     def _init_db(self):
         from .db_proxy import PGDatabaseProxy
@@ -1606,7 +1611,7 @@ class Cortex(IgorBase):
         """
         content = scrub(content)
         now = datetime.now().isoformat()
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             conn.execute(
                 "INSERT INTO ring_memory (category, content, timestamp, thread_id) VALUES (?, ?, ?, ?)",
                 (category, content, now, thread_id),
@@ -1643,7 +1648,7 @@ class Cortex(IgorBase):
           - str: return entries matching that thread_id OR thread_id IS NULL (global entries)
             This means per-thread reads include global context entries too.
         """
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             if category and thread_id:
                 rows = conn.execute(
                     "SELECT * FROM ring_memory WHERE category = ? "
@@ -1693,7 +1698,7 @@ class Cortex(IgorBase):
         # Build WHERE clause: content LIKE '%term%' OR ...
         clauses = " OR ".join("lower(content) LIKE ?" for _ in terms)
         params = [f"%{t}%" for t in terms] + [limit]
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             rows = conn.execute(
                 f"SELECT * FROM ring_memory WHERE {clauses} ORDER BY id DESC LIMIT ?",
                 params,
@@ -1711,7 +1716,7 @@ class Cortex(IgorBase):
 
     def get_last_restart_note(self) -> Optional[dict]:
         """Get the most recent restart note, if any."""
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             row = conn.execute(
                 "SELECT * FROM ring_memory WHERE category = 'restart_note' ORDER BY id DESC LIMIT 1"
             ).fetchone()
@@ -1760,7 +1765,7 @@ class Cortex(IgorBase):
         _sig = content_csb[:120]
         _repeat_count = 0
         metadata = dict(metadata or {})
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             _existing = conn.execute(
                 "SELECT id, metadata_json FROM twm_observations "
                 "WHERE SUBSTR(content_csb, 1, 120) = ? AND integrated = 0 "
@@ -1787,7 +1792,7 @@ class Cortex(IgorBase):
             if salience < TWM_SUPPRESS_SALIENCE_FLOOR:
                 return -1  # suppressed
 
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             cur = conn.execute(
                 """INSERT INTO twm_observations
                    (timestamp, source, content_csb, salience, metadata_json,
@@ -1880,7 +1885,7 @@ class Cortex(IgorBase):
         where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
         params.append(limit)
 
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             rows = conn.execute(
                 f"SELECT * FROM twm_observations {where} ORDER BY id ASC LIMIT ?",
                 params,
@@ -1923,7 +1928,7 @@ class Cortex(IgorBase):
         """
         if obs_id <= 0:
             return
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             # Count existing active attractor slots (excluding the target)
             active = conn.execute(
                 "SELECT id, attractor_weight FROM twm_observations "
@@ -1948,7 +1953,7 @@ class Cortex(IgorBase):
         G50: Return the current attractor TWM item (highest attractor_weight > 0.1),
         or None if no attractor is active.
         """
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             row = conn.execute(
                 "SELECT * FROM twm_observations "
                 "WHERE instance_id = ? AND attractor_weight > 0.1 "
@@ -1973,7 +1978,7 @@ class Cortex(IgorBase):
         factor=0.90 → attractor fades to ~0.1 after ~22 heartbeats (~110 minutes).
         Below 0.05 is treated as inactive.
         """
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             conn.execute(
                 "UPDATE twm_observations "
                 "SET attractor_weight = attractor_weight * ? "
@@ -1992,7 +1997,7 @@ class Cortex(IgorBase):
         D099: Return all active attractor slots (attractor_weight > 0.05), ordered by weight desc.
         Used by NE comparison pass to find shared action_pointer overlap across slots.
         """
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             rows = conn.execute(
                 "SELECT id, content_csb, attractor_weight, salience, metadata_json "
                 "FROM twm_observations "
@@ -2019,7 +2024,7 @@ class Cortex(IgorBase):
         """
         if obs_id <= 0:
             return
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             conn.execute(
                 "UPDATE twm_observations "
                 "SET attractor_weight = MAX(0.0, attractor_weight * ?) "
@@ -2038,7 +2043,7 @@ class Cortex(IgorBase):
         Called when a task completion signal is detected in the response.
         Returns count of entries cleared.
         """
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             if thread_id:
                 result = conn.execute(
                     "UPDATE twm_observations SET integrated = 1 "
@@ -2056,7 +2061,7 @@ class Cortex(IgorBase):
     def twm_count_unintegrated(self) -> int:
         """How many TWM observations are waiting to be integrated?"""
         _iid = self._instance_id
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             if _iid:
                 return conn.execute(
                     "SELECT COUNT(*) FROM twm_observations WHERE integrated = 0 AND instance_id = ?",
@@ -2069,7 +2074,7 @@ class Cortex(IgorBase):
     def twm_count(self) -> int:
         """Total TWM observation rows (fingerprint helper for NE idle gate)."""
         _iid = self._instance_id
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             if _iid:
                 return conn.execute(
                     "SELECT COUNT(*) FROM twm_observations WHERE instance_id = ?",
@@ -2080,7 +2085,7 @@ class Cortex(IgorBase):
     def twm_max_id(self) -> int:
         """Highest TWM observation id (fingerprint helper for NE idle gate)."""
         _iid = self._instance_id
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             if _iid:
                 row = conn.execute(
                     "SELECT MAX(id) FROM twm_observations WHERE instance_id = ?",
@@ -2095,7 +2100,7 @@ class Cortex(IgorBase):
         if not obs_ids:
             return
         placeholders = ",".join("?" * len(obs_ids))
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             conn.execute(
                 f"UPDATE twm_observations SET integrated = 1, integration_count = integration_count + 1 "
                 f"WHERE id IN ({placeholders})",
@@ -2104,7 +2109,7 @@ class Cortex(IgorBase):
 
     def twm_update_salience(self, obs_id: int, salience: float):
         """NE can update salience of an observation after integration."""
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             conn.execute(
                 "UPDATE twm_observations SET salience = ? WHERE id = ?",
                 (max(0.0, min(1.0, salience)), obs_id),
@@ -2112,7 +2117,7 @@ class Cortex(IgorBase):
 
     def twm_clear(self):
         """Clear all TWM observations (use sparingly — for testing/reset)."""
-        with self._conn() as conn:
+        with self._local_conn() as conn:
             conn.execute("DELETE FROM twm_observations")
 
     def twm_extend_ttl(
@@ -2132,7 +2137,7 @@ class Cortex(IgorBase):
         try:
             now = datetime.now()
             new_expiry = (now + timedelta(seconds=extension_seconds)).isoformat()
-            with self._conn() as conn:
+            with self._local_conn() as conn:
                 # Fetch current expiry
                 row = conn.execute(
                     "SELECT expires_at FROM twm_observations WHERE id = ?", (obs_id,)

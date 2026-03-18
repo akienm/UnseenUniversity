@@ -32,7 +32,7 @@ import re
 import threading
 from pathlib import Path
 
-from ..memory.db_proxy import DatabaseProxy
+from ..memory.db_proxy import DatabaseProxy, make_home_proxy
 from ..igor_base import IgorBase
 
 # ── Stopwords ─────────────────────────────────────────────────────────────────
@@ -312,7 +312,7 @@ class WordGraph(IgorBase):
         self._db_path = db_path or default_cache_path(name)
         self._lock = threading.RLock()
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
-        self._db = DatabaseProxy(self._db_path)
+        self._db = make_home_proxy(self._db_path)
         with self._db() as conn:
             conn.execute("PRAGMA journal_mode=WAL")
             conn.executescript(_SCHEMA)
