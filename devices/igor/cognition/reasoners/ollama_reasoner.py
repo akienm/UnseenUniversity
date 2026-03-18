@@ -27,13 +27,13 @@ from .base import BaseReasoner, LocalReasoner
 from ..system_prompt import build_system_prompt
 
 OLLAMA_LOCAL_MODEL = os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b")
-OLLAMA_HOST        = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-DEFAULT_MODEL      = OLLAMA_LOCAL_MODEL  # backwards-compat alias
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+DEFAULT_MODEL = OLLAMA_LOCAL_MODEL  # backwards-compat alias
 
 # ── Reasoning host — separate from embedding host (localhost nomic-embed-text) ─
 # Set OLLAMA_REASONING_HOST to a remote machine for a bigger reasoning model.
 # Embeddings always stay on localhost (embedder.py uses _ollama default directly).
-OLLAMA_REASONING_HOST  = os.getenv("OLLAMA_REASONING_HOST", OLLAMA_HOST)
+OLLAMA_REASONING_HOST = os.getenv("OLLAMA_REASONING_HOST", OLLAMA_HOST)
 OLLAMA_REASONING_MODEL = os.getenv("OLLAMA_REASONING_MODEL", OLLAMA_LOCAL_MODEL)
 
 # Client pointed at the reasoning host (may be remote)
@@ -62,8 +62,11 @@ Input: "{text}"
 """
 
 # ── Ollama call logger ──────────────────────────────────────────────────────
-_LOG_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "ollama_calls.log")
-_LOG_PATH = os.path.normpath(_LOG_PATH)
+_LOG_DIR = os.path.join(
+    os.getenv("IGOR_RUNTIME_ROOT", str(os.path.expanduser("~/.TheIgors"))), "logs"
+)
+os.makedirs(_LOG_DIR, exist_ok=True)
+_LOG_PATH = os.path.join(_LOG_DIR, "ollama_calls.log")
 
 _ollama_log = logging.getLogger("igor.ollama_calls")
 if not _ollama_log.handlers:
@@ -75,6 +78,7 @@ if not _ollama_log.handlers:
 
 
 # ── Health check ────────────────────────────────────────────────────────────
+
 
 def is_healthy(host: str = OLLAMA_REASONING_HOST, timeout: int = 5) -> bool:
     """Return True if Ollama is running at host (probes /api/tags).
@@ -88,6 +92,7 @@ def is_healthy(host: str = OLLAMA_REASONING_HOST, timeout: int = 5) -> bool:
 
 # ── CSB preparse (13-intent; drop-in for koboldcpp_reasoner.preparse) ────────
 
+
 def _rule_based_csb(user_input: str, habits: list) -> str:
     """Pure-Python fallback: produce PARSED_INPUT CSB block without LLM.
     Intent taxonomy matches thalamus.py 13-intent taxonomy (#30, G36).
@@ -95,48 +100,159 @@ def _rule_based_csb(user_input: str, habits: list) -> str:
     text = user_input.lower()
     words = text.split()
 
-    if any(w in text for w in ["hello", "hi ", "hey ", "good morning", "good evening",
-                                "howdy", "how are you"]):
+    if any(
+        w in text
+        for w in [
+            "hello",
+            "hi ",
+            "hey ",
+            "good morning",
+            "good evening",
+            "howdy",
+            "how are you",
+        ]
+    ):
         intent = "greeting"
     elif any(w in text for w in ["remember", "note that", "save", "learn that"]):
         intent = "memory_instruction"
     elif text.startswith("/"):
         intent = "command"
-    elif any(w in text for w in ["what about igor", "tell me about yourself", "what are you",
-                                  "who are you", "how do you work", "what can you do",
-                                  "how do you", "what do you do"]):
+    elif any(
+        w in text
+        for w in [
+            "what about igor",
+            "tell me about yourself",
+            "what are you",
+            "who are you",
+            "how do you work",
+            "what can you do",
+            "how do you",
+            "what do you do",
+        ]
+    ):
         intent = "meta_question"
-    elif any(w in text for w in ["explain", "how does", "how do i", "describe",
-                                  "walk me through", "why did you", "why are you",
-                                  "how does that", "what does that mean"]):
+    elif any(
+        w in text
+        for w in [
+            "explain",
+            "how does",
+            "how do i",
+            "describe",
+            "walk me through",
+            "why did you",
+            "why are you",
+            "how does that",
+            "what does that mean",
+        ]
+    ):
         intent = "explanation_request"
-    elif any(w in text for w in ["write code", "fix this", "debug", "implement", "refactor",
-                                  "code", "function", "class", "algorithm", "script", "program"]):
+    elif any(
+        w in text
+        for w in [
+            "write code",
+            "fix this",
+            "debug",
+            "implement",
+            "refactor",
+            "code",
+            "function",
+            "class",
+            "algorithm",
+            "script",
+            "program",
+        ]
+    ):
         intent = "code_task"
-    elif any(w in text for w in ["analyze", "analyse", "compare", "review", "assess",
-                                  "evaluate", "summarize", "summarise", "audit"]):
+    elif any(
+        w in text
+        for w in [
+            "analyze",
+            "analyse",
+            "compare",
+            "review",
+            "assess",
+            "evaluate",
+            "summarize",
+            "summarise",
+            "audit",
+        ]
+    ):
         intent = "analysis_task"
-    elif any(w in text for w in ["broken", "wrong", "doesn't work", "not working",
-                                  "failed", "frustrated", "annoyed"]):
+    elif any(
+        w in text
+        for w in [
+            "broken",
+            "wrong",
+            "doesn't work",
+            "not working",
+            "failed",
+            "frustrated",
+            "annoyed",
+        ]
+    ):
         intent = "complaint"
-    elif any(w in text for w in ["what do you think", "do you agree", "do you reckon",
-                                  "i think", "i feel", "i find that", "i believe",
-                                  "what's your opinion", "thoughts on"]):
+    elif any(
+        w in text
+        for w in [
+            "what do you think",
+            "do you agree",
+            "do you reckon",
+            "i think",
+            "i feel",
+            "i find that",
+            "i believe",
+            "what's your opinion",
+            "thoughts on",
+        ]
+    ):
         intent = "conversation"
-    elif any(w in text for w in ["read me", "read to me", "tell me a story", "write me a poem",
-                                  "write me a story", "let's read", "read aloud", "narrate",
-                                  "sing me", "recite", "read through",
-                                  # reading session patterns — collaborative, foreground, interactive
-                                  "start at chapter", "start reading", "reading each sentence",
-                                  "read each sentence", "let it sit", "we talk about it",
-                                  "then we talk", "then we discuss", "your assessment",
-                                  "chapter by chapter", "read together", "reading together",
-                                  "sentence by sentence"]):
+    elif any(
+        w in text
+        for w in [
+            "read me",
+            "read to me",
+            "tell me a story",
+            "write me a poem",
+            "write me a story",
+            "let's read",
+            "read aloud",
+            "narrate",
+            "sing me",
+            "recite",
+            "read through",
+            # reading session patterns — collaborative, foreground, interactive
+            "start at chapter",
+            "start reading",
+            "reading each sentence",
+            "read each sentence",
+            "let it sit",
+            "we talk about it",
+            "then we talk",
+            "then we discuss",
+            "your assessment",
+            "chapter by chapter",
+            "read together",
+            "reading together",
+            "sentence by sentence",
+        ]
+    ):
         intent = "creative_request"
     elif "?" in text:
         intent = "factual_question"
-    elif any(w in text for w in ["do ", "run ", "execute", "search", "find", "browse",
-                                  "send", "create", "delete"]):
+    elif any(
+        w in text
+        for w in [
+            "do ",
+            "run ",
+            "execute",
+            "search",
+            "find",
+            "browse",
+            "send",
+            "create",
+            "delete",
+        ]
+    ):
         intent = "action_request"
     else:
         intent = "general"
@@ -163,15 +279,35 @@ def _rule_based_csb(user_input: str, habits: list) -> str:
         signals.append("complex_structure")
     if any(w in text for w in ["code", "function", "class", "algorithm"]):
         signals.append("code_related")
-    complexity = "high" if len(signals) >= 3 else "medium" if len(signals) >= 1 else "low"
+    complexity = (
+        "high" if len(signals) >= 3 else "medium" if len(signals) >= 1 else "low"
+    )
     should_escalate = len(signals) >= 2
 
     requires_tools = intent in ("action_request", "command", "code_task") or any(
         w in text for w in ["search", "run", "execute", "file", "browse", "read"]
     )
 
-    stop_words = {"the", "a", "an", "is", "are", "was", "i", "you", "it", "in", "on", "at", "to", "for", "of", "and", "or"}
-    keywords = [w for w in re.findall(r'\b[a-zA-Z]{4,}\b', text) if w not in stop_words]
+    stop_words = {
+        "the",
+        "a",
+        "an",
+        "is",
+        "are",
+        "was",
+        "i",
+        "you",
+        "it",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+        "of",
+        "and",
+        "or",
+    }
+    keywords = [w for w in re.findall(r"\b[a-zA-Z]{4,}\b", text) if w not in stop_words]
     memory_hints = ", ".join(keywords[:4]) if keywords else "none"
 
     return (
@@ -205,7 +341,11 @@ def preparse(user_input: str, habits: list, model: str = "") -> str:
             options={"temperature": 0.1, "num_predict": 120},
         )
         elapsed = time.perf_counter() - t0
-        text = response["message"]["content"] if isinstance(response, dict) else response.message.content
+        text = (
+            response["message"]["content"]
+            if isinstance(response, dict)
+            else response.message.content
+        )
         _log_call("preparse", _model, response, elapsed)
         if "[PARSED_INPUT]" in text:
             return text.strip()
@@ -217,7 +357,12 @@ def preparse(user_input: str, habits: list, model: str = "") -> str:
 
     try:
         from ..forensic_logger import log_error
-        log_error(kind="preparse_fallback", detail=fallback_reason or "unknown", source="ollama_reasoner")
+
+        log_error(
+            kind="preparse_fallback",
+            detail=fallback_reason or "unknown",
+            source="ollama_reasoner",
+        )
     except Exception:
         pass
 
@@ -232,31 +377,33 @@ def parse_preparse_csb(csb: str, habits: list) -> dict:
             key, _, val = line.partition(":")
             fields[key.strip()] = val.strip()
 
-    intent         = fields.get("intent", "general")
-    complexity     = fields.get("complexity", "low")
-    should_esc     = fields.get("should_escalate", "false").lower() == "true"
+    intent = fields.get("intent", "general")
+    complexity = fields.get("complexity", "low")
+    should_esc = fields.get("should_escalate", "false").lower() == "true"
     requires_tools = fields.get("requires_tools", "false").lower() == "true"
 
-    score        = {"low": 0.1, "medium": 0.4, "high": 0.8}.get(complexity, 0.1)
+    score = {"low": 0.1, "medium": 0.4, "high": 0.8}.get(complexity, 0.1)
     is_multi_unit = score > 0.6 or requires_tools
-    tier_minimum  = "tier.4" if score > 0.4 else "tier.3"
+    tier_minimum = "tier.4" if score > 0.4 else "tier.3"
 
     return {
-        "intent":          intent,
+        "intent": intent,
         "should_escalate": should_esc,
-        "habit_match":     None,
-        "confidence":      0.0,
+        "habit_match": None,
+        "confidence": 0.0,
         "complexity": {
-            "score":         score,
+            "score": score,
             "signals_fired": [complexity] if complexity != "low" else [],
-            "tier_minimum":  tier_minimum,
+            "tier_minimum": tier_minimum,
             "is_multi_unit": is_multi_unit,
         },
         "_csb": csb,
     }
 
 
-def _log_call(fn_name: str, model: str, response, elapsed: float, error: str | None = None):
+def _log_call(
+    fn_name: str, model: str, response, elapsed: float, error: str | None = None
+):
     """
     Write one structured log line per Ollama call.
     Fields: function | model | elapsed_ms | tokens_in | tokens_out | tok_per_sec | ok | error
@@ -268,7 +415,9 @@ def _log_call(fn_name: str, model: str, response, elapsed: float, error: str | N
         )
         return
 
-    tokens_in  = getattr(response, "prompt_eval_count", None) or response.get("prompt_eval_count", 0)
+    tokens_in = getattr(response, "prompt_eval_count", None) or response.get(
+        "prompt_eval_count", 0
+    )
     tokens_out = getattr(response, "eval_count", None) or response.get("eval_count", 0)
     tok_per_sec = round(tokens_out / elapsed, 1) if elapsed > 0 and tokens_out else 0.0
 
@@ -281,11 +430,15 @@ def _log_call(fn_name: str, model: str, response, elapsed: float, error: str | N
 
 # ── Reasoner class ──────────────────────────────────────────────────────────
 
+
 class OllamaReasoner(LocalReasoner):
     """Full reasoning via local or remote Ollama model. Slow but free."""
 
-    def __init__(self, model: str = OLLAMA_REASONING_MODEL,
-                 host: str | None = OLLAMA_REASONING_HOST):
+    def __init__(
+        self,
+        model: str = OLLAMA_REASONING_MODEL,
+        host: str | None = OLLAMA_REASONING_HOST,
+    ):
         self.model = model
         self.host = host
         self._client = _reasoning_client
@@ -330,6 +483,7 @@ class OllamaReasoner(LocalReasoner):
         if not force_local:
             try:
                 from ..cloud_mode import is_cloud_training_active as _cloud_active
+
                 if _cloud_active():
                     raise RuntimeError("cloud_mode active — skip tier.2 Ollama")
             except RuntimeError:
@@ -343,6 +497,7 @@ class OllamaReasoner(LocalReasoner):
         # Impulse/background turns (force_local=True): 15s (IGOR_OLLAMA_IMPULSE_TIMEOUT_SECS).
         # Impulses are drop-and-move-on — no point waiting 90s for something that gets skipped anyway.
         import concurrent.futures as _cf
+
         if force_local:
             _timeout = float(os.getenv("IGOR_OLLAMA_IMPULSE_TIMEOUT_SECS", "15"))
         else:
@@ -361,44 +516,74 @@ class OllamaReasoner(LocalReasoner):
         try:
             _ex = _cf.ThreadPoolExecutor(max_workers=1)
             _fut = _ex.submit(_do_chat)
-            _ex.shutdown(wait=False)  # don't block — let thread run, we'll timeout via future
+            _ex.shutdown(
+                wait=False
+            )  # don't block — let thread run, we'll timeout via future
             try:
                 response = _fut.result(timeout=_timeout)
             except _cf.TimeoutError:
-                raise RuntimeError(f"Ollama timed out after {_timeout}s — escalating to next tier")
+                raise RuntimeError(
+                    f"Ollama timed out after {_timeout}s — escalating to next tier"
+                )
             elapsed = time.perf_counter() - t0
             _log_call("OllamaReasoner.reason", self.model, response, elapsed)
-            tokens_in  = getattr(response, "prompt_eval_count", None) or (response.get("prompt_eval_count", 0) if isinstance(response, dict) else 0)
-            tokens_out = getattr(response, "eval_count", None) or (response.get("eval_count", 0) if isinstance(response, dict) else 0)
+            tokens_in = getattr(response, "prompt_eval_count", None) or (
+                response.get("prompt_eval_count", 0)
+                if isinstance(response, dict)
+                else 0
+            )
+            tokens_out = getattr(response, "eval_count", None) or (
+                response.get("eval_count", 0) if isinstance(response, dict) else 0
+            )
             try:
                 from ..forensic_logger import log_reasoning_call as _lrc
-                _lrc(provider="ollama", model=self.model, tier="tier.2",
-                     input_tokens=tokens_in, output_tokens=tokens_out,
-                     context_chars=_context_chars,
-                     elapsed_ms=int(elapsed * 1000))
+
+                _lrc(
+                    provider="ollama",
+                    model=self.model,
+                    tier="tier.2",
+                    input_tokens=tokens_in,
+                    output_tokens=tokens_out,
+                    context_chars=_context_chars,
+                    elapsed_ms=int(elapsed * 1000),
+                )
             except Exception:
                 pass
             text = response["message"]["content"]
             if not text or not text.strip():
-                raise RuntimeError("Ollama returned blank response — escalating to next tier")
+                raise RuntimeError(
+                    "Ollama returned blank response — escalating to next tier"
+                )
             try:
                 from ..forensic_logger import log_inference_io as _liio
-                _prompt_sent = (system + "\n\n" + user_input + memory_context)
-                _liio(provider="ollama", model=self.model, tier="tier.2",
-                      prompt=_prompt_sent, response=text,
-                      elapsed_ms=int(elapsed * 1000), call_type="reason")
+
+                _prompt_sent = system + "\n\n" + user_input + memory_context
+                _liio(
+                    provider="ollama",
+                    model=self.model,
+                    tier="tier.2",
+                    prompt=_prompt_sent,
+                    response=text,
+                    elapsed_ms=int(elapsed * 1000),
+                    call_type="reason",
+                )
             except Exception:
                 pass
             return text, 0.0  # Local = no cost
         except Exception as exc:
             elapsed = time.perf_counter() - t0
-            _log_call("OllamaReasoner.reason", self.model, None, elapsed, error=str(exc))
+            _log_call(
+                "OllamaReasoner.reason", self.model, None, elapsed, error=str(exc)
+            )
             raise
 
 
 # ── preparse_dict (legacy; retained for reference) ──────────────────────────
 
-def _preparse_dict(user_input: str, habits: list[Memory], model: str = DEFAULT_MODEL) -> dict:
+
+def _preparse_dict(
+    user_input: str, habits: list[Memory], model: str = DEFAULT_MODEL
+) -> dict:
     """
     Legacy dict-returning preparse. Retained for reference only.
     Production preparse is now the CSB-format preparse() function above.
@@ -456,28 +641,68 @@ Example output:
 # ── compute_complexity ──────────────────────────────────────────────────────
 
 # Verbs that signal multi-step or heavy analytical work
-_COMPLEX_VERBS = frozenset({
-    "ingest", "read", "analyze", "analyse", "build", "write", "generate",
-    "review", "summarize", "summarise", "process", "parse", "extract",
-    "compile", "iterate", "crawl", "scrape", "import",
-})
+_COMPLEX_VERBS = frozenset(
+    {
+        "ingest",
+        "read",
+        "analyze",
+        "analyse",
+        "build",
+        "write",
+        "generate",
+        "review",
+        "summarize",
+        "summarise",
+        "process",
+        "parse",
+        "extract",
+        "compile",
+        "iterate",
+        "crawl",
+        "scrape",
+        "import",
+    }
+)
 
 # Scope modifiers that indicate bulk/whole-collection tasks
-_SCOPE_WORDS = frozenset({
-    "entire", "all", "every", "full", "complete", "whole",
-})
+_SCOPE_WORDS = frozenset(
+    {
+        "entire",
+        "all",
+        "every",
+        "full",
+        "complete",
+        "whole",
+    }
+)
 
 # Phrases/keywords that force escalation to tier.4 regardless of score
 _FORCE_TIER4_PHRASES = (
-    "use claude", "use sonnet", "use opus", "hard task",
-    "difficult task", "complex task", "hard job",
+    "use claude",
+    "use sonnet",
+    "use opus",
+    "hard task",
+    "difficult task",
+    "complex task",
+    "hard job",
 )
 
 # Tool-like action words (counting 3+ suggests multi-tool task)
-_TOOL_KEYWORDS = frozenset({
-    "search", "read", "write", "send", "create", "delete",
-    "fetch", "update", "list", "post", "get",
-})
+_TOOL_KEYWORDS = frozenset(
+    {
+        "search",
+        "read",
+        "write",
+        "send",
+        "create",
+        "delete",
+        "fetch",
+        "update",
+        "list",
+        "post",
+        "get",
+    }
+)
 
 
 def compute_complexity(user_input: str) -> dict:
@@ -550,6 +775,7 @@ def compute_complexity(user_input: str) -> dict:
 
 # ── score_memories ──────────────────────────────────────────────────────────
 
+
 def score_memories(
     query: str,
     memories: list[Memory],
@@ -607,6 +833,7 @@ Memories:
 
 # ── summarize_session ────────────────────────────────────────────────────────
 
+
 def summarize_session(
     ring_entries: list[dict],
     instance_id: str,
@@ -623,28 +850,36 @@ def summarize_session(
         return f"SESSION_SUMMARY|{instance_id}|empty_session"
 
     # ── Separate conversation turns from system events ────────────────────────
-    _NOISE = {"tool_trace", "interruptor", "latency_trace", "think_trace",
-              "integrity_check", "action_impulse", "ne_diagnostic"}
+    _NOISE = {
+        "tool_trace",
+        "interruptor",
+        "latency_trace",
+        "think_trace",
+        "integrity_check",
+        "action_impulse",
+        "ne_diagnostic",
+    }
     _CONVO = {"user_turn", "Q", "A"}
 
-    convo_entries = [
-        e for e in ring_entries
-        if e.get("category") in _CONVO
-    ][-20:]
+    convo_entries = [e for e in ring_entries if e.get("category") in _CONVO][-20:]
     system_entries = [
-        e for e in ring_entries
-        if e.get("category") not in _NOISE | _CONVO
+        e for e in ring_entries if e.get("category") not in _NOISE | _CONVO
     ][-20:]
 
-    convo_text = "\n".join(
-        f"[{e['timestamp'][11:16]}] {e['content'][:300]}"
-        for e in convo_entries
-    ) or "(no conversation turns)"
+    convo_text = (
+        "\n".join(
+            f"[{e['timestamp'][11:16]}] {e['content'][:300]}" for e in convo_entries
+        )
+        or "(no conversation turns)"
+    )
 
-    system_text = "\n".join(
-        f"[{e['timestamp'][11:16]}][{e['category']}] {e['content'][:150]}"
-        for e in system_entries
-    ) or "(no system events)"
+    system_text = (
+        "\n".join(
+            f"[{e['timestamp'][11:16]}][{e['category']}] {e['content'][:150]}"
+            for e in system_entries
+        )
+        or "(no system events)"
+    )
 
     prompt = f"""You are Igor's memory compression system. Produce a dense session summary for cold-reading by a future Igor instance that has no other context.
 
@@ -673,12 +908,15 @@ VALENCE: <positive|neutral|negative>"""
         try:
             import json as _json
             import urllib.request as _req
-            _payload = _json.dumps({
-                "model": os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini"),
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 400,
-                "temperature": 0.2,
-            }).encode()
+
+            _payload = _json.dumps(
+                {
+                    "model": os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini"),
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": 400,
+                    "temperature": 0.2,
+                }
+            ).encode()
             _http_req = _req.Request(
                 "https://openrouter.ai/api/v1/chat/completions",
                 data=_payload,
