@@ -7101,6 +7101,11 @@ def main():
 
     if args.id:
         instance_id = args.id
+    elif os.getenv("IGOR_INSTANCE_ID"):
+        # .env is re-sourced on every restart loop iteration — this lets the
+        # instance name change take effect on next code-42 restart without
+        # requiring the outer bash loop to be restarted.
+        instance_id = os.getenv("IGOR_INSTANCE_ID")
     else:
         # Resume the most recently used DB rather than always spawning a new one.
         # A fresh ID is only generated if no DB exists at all.
