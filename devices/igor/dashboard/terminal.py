@@ -57,7 +57,9 @@ def render(
         lines.append("")
 
     # ── Header ────────────────────────────────────────────────────────────────
-    lines.append(f"[bold cyan]Igor-{instance_id}[/] · Interaction #{interaction_count}")
+    lines.append(
+        f"[bold cyan]Igor instance:{instance_id}[/] · Interaction #{interaction_count}"
+    )
     if budget_line:
         lines.append(budget_line)
 
