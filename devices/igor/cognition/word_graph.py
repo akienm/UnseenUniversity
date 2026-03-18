@@ -320,6 +320,14 @@ class WordGraph(IgorBase):
         # G-WG3: doc_count write batching — flush every N docs instead of every index()
         self._pending_doc_count: int = 0
         self._DOC_FLUSH_EVERY: int = 10
+        # G-WG1: co-occurrence write batching — merge pairs in memory, flush every N docs.
+        # Each index() generated ≤2450 UPSERT rows (50×49 pairs) on a 29M-row table
+        # → 1000-4000ms per call. Batching 50 docs cuts write frequency 50x; merging
+        # in Python dict means the SQLite flush uses a single executemany with pre-summed
+        # scores instead of one-by-one increments.
+        self._cooccur_buffer: dict[tuple[str, str], float] = {}
+        self._pending_cooccur_docs: int = 0
+        self._COOCCUR_FLUSH_EVERY: int = int(os.getenv("WG_COOCCUR_FLUSH_EVERY", "50"))
 
     # ── Backward-compat properties ─────────────────────────────────────────────
 
@@ -361,6 +369,28 @@ class WordGraph(IgorBase):
                     (str(self._pending_doc_count), self._pending_doc_count),
                 )
             self._pending_doc_count = 0
+
+    def _flush_cooccur_to_db(self, conn) -> None:
+        """Write buffered co-occurrence deltas to SQLite. Must be called inside self._lock."""
+        if not self._cooccur_buffer:
+            return
+        conn.executemany(
+            """
+            INSERT INTO wg_cooccur (word_a, word_b, score) VALUES (?, ?, ?)
+            ON CONFLICT(word_a, word_b)
+            DO UPDATE SET score = score + excluded.score
+            """,
+            [(w_a, w_b, s) for (w_a, w_b), s in self._cooccur_buffer.items()],
+        )
+        self._cooccur_buffer.clear()
+        self._pending_cooccur_docs = 0
+
+    def flush_cooccur(self) -> None:
+        """Flush any pending co-occurrence data to DB. Call on shutdown or build_idf."""
+        with self._lock:
+            if self._cooccur_buffer:
+                with self._db() as conn:
+                    self._flush_cooccur_to_db(conn)
 
     # ── Indexing ───────────────────────────────────────────────────────────────
 
@@ -408,24 +438,21 @@ class WordGraph(IgorBase):
                         (str(_new_words), _new_words),
                     )
 
-                # co-occurrence edges (accumulate).
+                # co-occurrence edges (G-WG1: accumulate in memory, flush every N docs).
                 # Only pair plain words (no bigrams) and cap at 50 to prevent N²
                 # list explosion: a 200-token paragraph generates 40K pairs,
                 # blowing 1-2 GB RAM per book during bulk training.
                 _cooccur_words = [w for w in unique if "__" not in w][:50]
-                conn.executemany(
-                    """
-                    INSERT INTO wg_cooccur (word_a, word_b, score) VALUES (?, ?, 1.0)
-                    ON CONFLICT(word_a, word_b)
-                    DO UPDATE SET score = score + 1.0
-                """,
-                    [
-                        (w, w2)
-                        for w in _cooccur_words
-                        for w2 in _cooccur_words
-                        if w != w2
-                    ],
-                )
+                for _w in _cooccur_words:
+                    for _w2 in _cooccur_words:
+                        if _w != _w2:
+                            _key = (_w, _w2)
+                            self._cooccur_buffer[_key] = (
+                                self._cooccur_buffer.get(_key, 0.0) + 1.0
+                            )
+                self._pending_cooccur_docs += 1
+                if self._pending_cooccur_docs >= self._COOCCUR_FLUSH_EVERY:
+                    self._flush_cooccur_to_db(conn)
 
                 self._inc_doc_count(conn)
 
@@ -436,6 +463,7 @@ class WordGraph(IgorBase):
     def build_idf(self) -> None:
         """Compute and persist IDF weights. Call once after all index() calls."""
         self.flush_doc_count()  # G-WG3: ensure pending count is flushed before IDF uses it
+        self.flush_cooccur()  # G-WG1: flush any buffered co-occurrence data
         n = max(self._doc_count, 1)
         with self._lock:
             with self._db() as conn:
@@ -755,6 +783,11 @@ class WordGraph(IgorBase):
         is a lightweight checkpoint rather than a full serialise. The path arg
         is ignored (kept for API compatibility with callers that pass cache_path).
         """
+        # G-WG1: flush any buffered co-occurrence data before checkpoint
+        try:
+            self.flush_cooccur()
+        except Exception:
+            pass
         try:
             with self._db() as conn:
                 conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
