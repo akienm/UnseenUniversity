@@ -299,17 +299,24 @@ class Igor(IgorBase):
         # Two traversal directions on same weights: parsing (which habit?) + generation (what next?).
         self._word_graph = None
         try:
+            from .cognition.redis_word_graph import make_word_graph
             from .cognition.word_graph import WordGraph, default_cache_path
 
-            _wg_path = default_cache_path()
-            _boot_habits = self.cortex.get_habits()
-            if _wg_path.exists():
-                self._word_graph = WordGraph.load(_wg_path)
-                if not self._word_graph._word_to_ids:
-                    self._word_graph = WordGraph.build_from_habits(_boot_habits)
+            _redis_host = os.getenv("IGOR_REDIS_WORD_GRAPH_HOST", "")
+            if _redis_host:
+                # D121: Redis-backed word graph (shadow or primary)
+                self._word_graph = make_word_graph()
             else:
-                self._word_graph = WordGraph.build_from_habits(_boot_habits)
-                self._word_graph.save(_wg_path)
+                # SQLite word graph: load from JSON cache or build from habits
+                _wg_path = default_cache_path()
+                _boot_habits = self.cortex.get_habits()
+                if _wg_path.exists():
+                    self._word_graph = WordGraph.load(_wg_path)
+                    if not self._word_graph._word_to_ids:
+                        self._word_graph = WordGraph.build_from_habits(_boot_habits)
+                else:
+                    self._word_graph = WordGraph.build_from_habits(_boot_habits)
+                    self._word_graph.save(_wg_path)
             basal_ganglia.set_word_graph(self._word_graph)
             console.print(
                 f"[dim]Word graph ready ({len(self._word_graph._word_to_ids)} words, "
@@ -328,17 +335,22 @@ class Igor(IgorBase):
         self._generation_graph: "WordGraph | None" = None  # type: ignore[name-defined]
         if self._dual_graphs:
             try:
+                from .cognition.redis_word_graph import make_word_graph as _make_gg
                 from .cognition.word_graph import WordGraph, default_cache_path
 
-                _gg_path = default_cache_path("generation_graph")
-                if _gg_path.exists():
-                    self._generation_graph = WordGraph.load(_gg_path)
-                    self._generation_graph.name = "generation_graph"
-                    if not self._generation_graph._word_to_ids:
-                        self._generation_graph = WordGraph(name="generation_graph")
+                _redis_host = os.getenv("IGOR_REDIS_WORD_GRAPH_HOST", "")
+                if _redis_host:
+                    self._generation_graph = _make_gg(name="generation_graph")
                 else:
-                    # Fresh generation graph — will be seeded by reinforce_text() on reply
-                    self._generation_graph = WordGraph(name="generation_graph")
+                    _gg_path = default_cache_path("generation_graph")
+                    if _gg_path.exists():
+                        self._generation_graph = WordGraph.load(_gg_path)
+                        self._generation_graph.name = "generation_graph"
+                        if not self._generation_graph._word_to_ids:
+                            self._generation_graph = WordGraph(name="generation_graph")
+                    else:
+                        # Fresh generation graph — will be seeded by reinforce_text() on reply
+                        self._generation_graph = WordGraph(name="generation_graph")
                 console.print(
                     f"[dim]Generation graph ready "
                     f"({len(self._generation_graph._word_to_ids)} words) [G37][/]"
