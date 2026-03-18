@@ -858,6 +858,16 @@ def build_default_gateway() -> InferenceGateway:
             label="ollama_ne failed",
         )
     )
+    # Unconditional fallback: no Ollama + cloud_mode off (e.g. Windows, nighttime)
+    gw.add_edge(
+        Edge(
+            "ne",
+            "or_ne",
+            _always,
+            priority=10,
+            label="no local NE and cloud_mode off — OR fallback",
+        )
+    )
 
     # ── Edges: think ─────────────────────────────────────────────────────────
     gw.add_edge(
