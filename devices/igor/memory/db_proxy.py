@@ -347,6 +347,14 @@ _TABLE_PK: dict[str, str | tuple] = {
     "memory_blobs": "id",
     "interpretive_edges": "id",
     "lists": ("list_name", "item_key", "instance_id"),
+    # word graph tables (D126)
+    "wg_meta": "key",
+    "wg_word_lang": "word",
+    "wg_idf": "word",
+    "wg_word_docs": ("word", "doc_id"),
+    "wg_cooccur": ("word_a", "word_b"),
+    # budget tables
+    "config": "key",
 }
 
 
