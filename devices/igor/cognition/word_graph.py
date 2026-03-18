@@ -32,7 +32,8 @@ import re
 import threading
 from pathlib import Path
 
-from ..memory.db_proxy import DatabaseProxy, make_home_proxy
+from ..memory.db_proxy import DatabaseProxy, make_home_proxy, make_local_proxy
+from ..memory.graph_cache import GraphCache
 from ..igor_base import IgorBase
 
 # ── Stopwords ─────────────────────────────────────────────────────────────────
@@ -313,9 +314,12 @@ class WordGraph(IgorBase):
         self._lock = threading.RLock()
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
         self._db = make_home_proxy(self._db_path)
+        self._local_db = make_local_proxy(self._db_path)
         with self._db() as conn:
             conn.execute("PRAGMA journal_mode=WAL")
             conn.executescript(_SCHEMA)
+        # D126 Step 2: GraphCache — Redis hot-cache for wg_cooccur; gates on IGOR_REDIS_URL
+        self._cache = GraphCache(self._db, self._local_db)
         # G-WG2: predict_next cache — avoid re-aggregating 29M wg_cooccur rows
         self._predict_cache: dict[tuple, list] = {}
         # G-WG3: doc_count write batching — flush every N docs instead of every index()
@@ -372,17 +376,12 @@ class WordGraph(IgorBase):
             self._pending_doc_count = 0
 
     def _flush_cooccur_to_db(self, conn) -> None:
-        """Write buffered co-occurrence deltas to SQLite. Must be called inside self._lock."""
+        """Write buffered co-occurrence deltas via GraphCache (Redis + home DB). Must be called inside self._lock."""
         if not self._cooccur_buffer:
             return
-        conn.executemany(
-            """
-            INSERT INTO wg_cooccur (word_a, word_b, score) VALUES (?, ?, ?)
-            ON CONFLICT(word_a, word_b)
-            DO UPDATE SET score = score + excluded.score
-            """,
-            [(w_a, w_b, s) for (w_a, w_b), s in self._cooccur_buffer.items()],
-        )
+        pairs = [(w_a, w_b, s) for (w_a, w_b), s in self._cooccur_buffer.items()]
+        # D126 Step 2: GraphCache handles dual-write (Redis + Postgres) + pending-reply failover
+        self._cache.write_cooccur(pairs)
         self._cooccur_buffer.clear()
         self._pending_cooccur_docs = 0
 
@@ -559,8 +558,9 @@ class WordGraph(IgorBase):
             rows = None
 
         if rows is None:
-            with self._db() as conn:
-                if lang is not None:
+            if lang is not None:
+                # Lang-filtered: must go direct to DB (GraphCache doesn't filter by lang)
+                with self._db() as conn:
                     rows = conn.execute(
                         f"""
                         SELECT c.word_b, SUM(c.score) AS total
@@ -573,18 +573,9 @@ class WordGraph(IgorBase):
                     """,
                         words + [lang, fetch],
                     ).fetchall()
-                else:
-                    rows = conn.execute(
-                        f"""
-                        SELECT word_b, SUM(score) AS total
-                        FROM wg_cooccur
-                        WHERE word_a IN ({w_ph})
-                        GROUP BY word_b
-                        ORDER BY total DESC
-                        LIMIT ?
-                    """,
-                        words + [fetch],
-                    ).fetchall()
+            else:
+                # D126 Step 2: GraphCache (Redis → Postgres fallback)
+                rows = self._cache.get_neighbors(words, limit=fetch)
             # G-WG2: store in cache; evict half when full
             if len(self._predict_cache) >= self._PREDICT_CACHE_MAX:
                 evict = list(self._predict_cache.keys())[: self._PREDICT_CACHE_MAX // 2]
