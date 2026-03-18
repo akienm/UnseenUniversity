@@ -23,6 +23,7 @@ import urllib.request
 from urllib.error import URLError
 import ollama as _ollama
 from ...memory.models import Memory
+from ...paths import paths
 from .base import BaseReasoner, LocalReasoner
 from ..system_prompt import build_system_prompt
 
@@ -62,16 +63,13 @@ Input: "{text}"
 """
 
 # ── Ollama call logger ──────────────────────────────────────────────────────
-_LOG_DIR = os.path.join(
-    os.getenv("IGOR_RUNTIME_ROOT", str(os.path.expanduser("~/.TheIgors"))), "logs"
-)
-os.makedirs(_LOG_DIR, exist_ok=True)
-_LOG_PATH = os.path.join(_LOG_DIR, "ollama_calls.log")
+_LOG_PATH = paths().logs / "ollama_calls.log"
+paths().logs.mkdir(parents=True, exist_ok=True)
 
 _ollama_log = logging.getLogger("igor.ollama_calls")
 if not _ollama_log.handlers:
     _ollama_log.setLevel(logging.DEBUG)
-    _fh = logging.FileHandler(_LOG_PATH, encoding="utf-8")
+    _fh = logging.FileHandler(str(_LOG_PATH), encoding="utf-8")
     _fh.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
     _ollama_log.addHandler(_fh)
     _ollama_log.propagate = False  # don't bubble up to root logger

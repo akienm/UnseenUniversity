@@ -43,7 +43,7 @@ class PathManager:
         else:
             self._runtime = Path.home() / ".TheIgors"
 
-        self._instance_id = os.getenv("IGOR_INSTANCE_ID", "igor_wild_0001")
+        self._instance_id = os.getenv("IGOR_INSTANCE_ID", "Igor-wild-0001")
 
     # ── Base ──────────────────────────────────────────────────────────────────
 
