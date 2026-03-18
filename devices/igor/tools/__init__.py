@@ -31,6 +31,7 @@ from . import (
     watchlist,
     ops,
     converter,
+    sudo_relay,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
