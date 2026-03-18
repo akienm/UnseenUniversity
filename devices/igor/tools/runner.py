@@ -557,3 +557,68 @@ registry.register(
         fn=exit_self,
     )
 )
+
+
+def cluster_status(**_kwargs) -> str:
+    """Return current cluster router state — which machines are up, their load scores."""
+    try:
+        from ..cognition.cluster_router import router as _router
+
+        _router.force_refresh()
+        lines = _router.status_lines()
+        return "Cluster inference machines:\n" + "\n".join(lines)
+    except Exception as exc:
+        return f"Cluster router unavailable: {exc}"
+
+
+def set_inference_override(machine: str = "", **_kwargs) -> str:
+    """
+    Pin all local inference routing to a specific machine name (e.g. 'local', 'reasoning').
+    Pass machine="" or machine="auto" to clear the override and resume dynamic routing.
+    """
+    try:
+        from ..cognition.cluster_router import router as _router
+
+        if not machine or machine.lower() == "auto":
+            _router.clear_override()
+            return "Inference override cleared — dynamic routing resumed."
+        _router.set_override(machine)
+        return f"Inference override set → '{machine}'. All local calls routed there until cleared."
+    except Exception as exc:
+        return f"Override failed: {exc}"
+
+
+registry.register(
+    Tool(
+        name="cluster_status",
+        description=(
+            "Show the current state of the inference cluster: which Ollama machines "
+            "are healthy, their load scores, active models, and response times. "
+            "Use when asked about machine load or inference routing."
+        ),
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=cluster_status,
+    )
+)
+
+registry.register(
+    Tool(
+        name="set_inference_override",
+        description=(
+            "Pin local inference to a specific machine ('local' or 'reasoning'). "
+            "Pass machine='' or machine='auto' to resume dynamic routing. "
+            "Use when Akien says 'use yoga9i for everything' or 'route locally only'."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "machine": {
+                    "type": "string",
+                    "description": "Machine name: 'local', 'reasoning', or '' for auto",
+                },
+            },
+            "required": [],
+        },
+        fn=set_inference_override,
+    )
+)

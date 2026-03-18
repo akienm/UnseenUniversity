@@ -570,13 +570,33 @@ class InferenceGateway(IgorBase):
 
 
 def _h_ollama(prompt: str, c: PurposeConstraints, **kw) -> str:
-    """Raw Ollama /api/chat. Raises on any error or blank response."""
+    """Raw Ollama /api/chat. Raises on any error or blank response.
+
+    D120: if extra contains cluster_call_type, asks cluster_router for the best
+    (host, model) at call time. Falls back to static extra values if router returns None.
+    """
+    call_type = c.extra.get("cluster_call_type", "")
+    if call_type:
+        try:
+            from .cluster_router import router as _router
+
+            r_host, r_model = _router.route(call_type)
+        except Exception:
+            r_host, r_model = None, None
+    else:
+        r_host, r_model = None, None
+
     model = (
         kw.get("model")
+        or r_model
         or c.extra.get("model")
         or os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b")
     )
-    host = c.extra.get("host") or os.getenv("OLLAMA_HOST", "http://localhost:11434")
+    host = (
+        r_host
+        or c.extra.get("host")
+        or os.getenv("OLLAMA_HOST", "http://localhost:11434")
+    )
     payload = json.dumps(
         {
             "model": model,
@@ -643,15 +663,19 @@ def _always(ctx: InferenceContext) -> bool:
 
 
 def _local_preferred(ctx: InferenceContext) -> bool:
-    """Ollama available AND cloud training mode not active."""
-    return ctx.local_available and not ctx.cloud_active
+    """Cluster has local capacity AND cloud training mode not active. (D120)"""
+    from .cluster_router import router as _router
+
+    return _router.has_local_capacity() and not ctx.cloud_active
 
 
 def _cloud_preferred(ctx: InferenceContext) -> bool:
-    """Cloud training active OR local unavailable. Blocked for background if night mode (D071)."""
+    """Cloud training active OR no local capacity. Blocked for background if night mode (D071)."""
     if ctx.is_background and not ctx.cloud_ok_override:
         return False
-    return ctx.cloud_active or not ctx.local_available
+    from .cluster_router import router as _router
+
+    return ctx.cloud_active or not _router.has_local_capacity()
 
 
 def _cloud_ok(ctx: InferenceContext) -> bool:
@@ -662,10 +686,12 @@ def _cloud_ok(ctx: InferenceContext) -> bool:
 
 
 def _ne_local_ok(ctx: InferenceContext) -> bool:
-    """NE local model env var set, Ollama available, cloud_mode not active."""
+    """NE local model env var set, cluster has local capacity, cloud_mode not active. (D120)"""
+    from .cluster_router import router as _router
+
     return (
         bool(os.getenv("IGOR_NE_LOCAL_MODEL", ""))
-        and ctx.local_available
+        and _router.has_local_capacity("ne")
         and not ctx.cloud_active
     )
 
@@ -705,9 +731,16 @@ def build_default_gateway() -> InferenceGateway:
                 timeout_s=5.0,
                 temperature=0.1,
                 extra={
+                    # D120: host + model resolved dynamically via cluster_router at call time.
+                    # Fallback values used only if router returns (None, None).
+                    "cluster_call_type": "preparse",
                     "model": os.getenv(
                         "OLLAMA_REASONING_MODEL",
                         os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b"),
+                    ),
+                    "host": os.getenv(
+                        "OLLAMA_REASONING_HOST",
+                        os.getenv("OLLAMA_HOST", "http://localhost:11434"),
                     ),
                     "or_model": os.getenv(
                         "OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini"
@@ -723,7 +756,9 @@ def build_default_gateway() -> InferenceGateway:
                 timeout_s=3.0,
                 temperature=0.1,
                 extra={
+                    "cluster_call_type": "winnow",
                     "model": os.getenv("IGOR_WINNOW_LOCAL_MODEL", "llama3.2:1b"),
+                    "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
                     "or_model": os.getenv(
                         "OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini"
                     ),
@@ -738,7 +773,9 @@ def build_default_gateway() -> InferenceGateway:
                 timeout_s=45.0,
                 temperature=0.3,
                 extra={
+                    "cluster_call_type": "ne",
                     "model": os.getenv("IGOR_NE_LOCAL_MODEL", ""),
+                    "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
                     "or_model": os.getenv(
                         "OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini"
                     ),
@@ -754,7 +791,9 @@ def build_default_gateway() -> InferenceGateway:
                 timeout_s=8.0,
                 temperature=0.2,
                 extra={
+                    "cluster_call_type": "extraction",
                     "model": os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b"),
+                    "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
                 },
             ),
         ),
