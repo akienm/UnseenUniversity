@@ -21,8 +21,8 @@ Consumers:
 
 from __future__ import annotations
 
-import fcntl
 import json
+import sys
 import os
 import time
 from dataclasses import dataclass, asdict
@@ -31,6 +31,29 @@ from typing import Optional
 
 from ..igor_base import IgorBase
 from ..paths import paths
+
+# ── Cross-platform file locking ────────────────────────────────────────────────
+if sys.platform == "win32":
+    import msvcrt
+
+    def _flock_ex(f) -> None:
+        msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, 1)
+
+    def _flock_un(f) -> None:
+        try:
+            msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
+        except Exception:
+            pass
+
+else:
+    import fcntl
+
+    def _flock_ex(f) -> None:
+        fcntl.flock(f, fcntl.LOCK_EX)
+
+    def _flock_un(f) -> None:
+        fcntl.flock(f, fcntl.LOCK_UN)
+
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -112,7 +135,7 @@ def _contribute_to_global(state: MilieuState, alpha: float) -> None:
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(lock_path, "w") as lf:
-            fcntl.flock(lf, fcntl.LOCK_EX)
+            _flock_ex(lf)
             try:
                 if path.exists():
                     try:
@@ -134,7 +157,7 @@ def _contribute_to_global(state: MilieuState, alpha: float) -> None:
                 g.last_update = time.time()
                 path.write_text(json.dumps(asdict(g), indent=2), encoding="utf-8")
             finally:
-                fcntl.flock(lf, fcntl.LOCK_UN)
+                _flock_un(lf)
     except Exception:
         pass
 
