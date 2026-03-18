@@ -14,7 +14,6 @@ Registered tools:
 import json
 import os
 import re
-import sqlite3
 import subprocess
 import sys
 import threading
@@ -24,7 +23,7 @@ from pathlib import Path
 from typing import Optional
 
 from .registry import Tool, registry
-from ..memory.db_proxy import DatabaseProxy
+from ..memory.db_proxy import DatabaseProxy, make_home_proxy
 from ..paths import paths
 
 # ── Igor DB proxy singleton (G-DB1 W1) ────────────────────────────────────────
@@ -43,7 +42,7 @@ def _igor_db_proxy() -> DatabaseProxy:
                     str(paths().instance / "wild-0001.db"),
                 )
             )
-            _IGOR_DB_PROXY = DatabaseProxy(db)
+            _IGOR_DB_PROXY = make_home_proxy(db)
     return _IGOR_DB_PROXY
 
 

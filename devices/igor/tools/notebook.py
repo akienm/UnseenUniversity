@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Optional
 
 from .registry import Tool, registry
-from ..memory.db_proxy import DatabaseProxy
+from ..memory.db_proxy import DatabaseProxy, make_home_proxy
 from ..paths import paths
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
@@ -62,7 +62,7 @@ def _proxy(user_slug: str) -> DatabaseProxy:
     if user_slug not in _PROXIES:
         path = _db_path(user_slug)
         path.parent.mkdir(parents=True, exist_ok=True)
-        p = DatabaseProxy(path)
+        p = make_home_proxy(path)
         with p() as con:
             con.execute(_ENTRIES_SCHEMA)
         _PROXIES[user_slug] = p

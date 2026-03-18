@@ -663,12 +663,36 @@ class PGDatabaseProxy(IgorBase):
 # ── Factory ───────────────────────────────────────────────────────────────────
 
 
-def make_db_proxy(db_path: Path):
+def make_home_proxy(db_path: Path = None):
     """
-    Return PGDatabaseProxy if IGOR_DB_URL is set, else DatabaseProxy (SQLite).
-    One-line swap in Cortex.__init__: replace DatabaseProxy(db_path) with make_db_proxy(db_path).
+    Return PGDatabaseProxy for IGOR_HOME_DB_URL (global truth DB shared across
+    all Igor instances), else DatabaseProxy (SQLite fallback).
+
+    HOME tables: memories, interpretive_edges, wg_cooccur, notebooks,
+                 ResourceManager ledger/policy, reading_list.
     """
-    db_url = os.getenv("IGOR_DB_URL")
+    db_url = os.getenv("IGOR_HOME_DB_URL") or os.getenv(
+        "IGOR_DB_URL"
+    )  # backward compat
     if db_url:
         return PGDatabaseProxy(db_url)
     return DatabaseProxy(db_path)
+
+
+def make_local_proxy(db_path: Path = None):
+    """
+    Return PGDatabaseProxy for IGOR_LOCAL_DB_URL (box-scoped DB shared by all
+    instances on this machine), else DatabaseProxy (SQLite fallback — same file
+    as home proxy when running single-node).
+
+    LOCAL tables: ring_memory, twm_observations, pending_replies, per-box metrics.
+    """
+    db_url = os.getenv("IGOR_LOCAL_DB_URL")
+    if db_url:
+        return PGDatabaseProxy(db_url)
+    return DatabaseProxy(db_path)
+
+
+def make_db_proxy(db_path: Path = None):
+    """Backward-compat alias for make_home_proxy(). Prefer make_home_proxy() or make_local_proxy()."""
+    return make_home_proxy(db_path)

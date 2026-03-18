@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Optional
 
 from .registry import Tool, registry
-from ..memory.db_proxy import DatabaseProxy
+from ..memory.db_proxy import DatabaseProxy, make_home_proxy
 
 # ── Config ──────────────────────────────────────────────────────────────────
 # Soft spending cap (USD) — a local guardrail, not account balance.
@@ -56,7 +56,7 @@ def _db_proxy() -> DatabaseProxy:
     if _BUDGET_PROXY is None:
         db = _db_path()
         db.parent.mkdir(parents=True, exist_ok=True)
-        _BUDGET_PROXY = DatabaseProxy(db)
+        _BUDGET_PROXY = make_home_proxy(db)
         with _BUDGET_PROXY() as c:
             c.execute("""
                 CREATE TABLE IF NOT EXISTS spend (
