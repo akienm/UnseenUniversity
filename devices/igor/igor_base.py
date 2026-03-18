@@ -86,7 +86,15 @@ class IgorBase:
 
     def __init__(self):
         # Per-instance perf history: label → [elapsed_ms, ...]
-        self._perf_history: dict[str, list[float]] = defaultdict(list)
+        # Also called lazily via _ph property for subclasses that skip super().__init__().
+        if not hasattr(self, "_perf_history"):
+            self._perf_history: dict[str, list[float]] = defaultdict(list)
+
+    def _ensure_perf_history(self) -> dict:
+        """Lazy init for _perf_history — safe even if __init__ was not called."""
+        if not hasattr(self, "_perf_history"):
+            self._perf_history = defaultdict(list)
+        return self._perf_history
 
     @contextmanager
     def time_it(self, label: str, log_threshold_ms: float = 0.0):
@@ -103,6 +111,7 @@ class IgorBase:
             yield
         finally:
             elapsed_ms = (time.monotonic() - t0) * 1000
+            self._ensure_perf_history()
             self.record_perf(label, elapsed_ms)
             msg = f"{self.get_name()} [{label}] {elapsed_ms:.1f}ms"
             if log_threshold_ms > 0 and elapsed_ms > log_threshold_ms:
@@ -115,7 +124,7 @@ class IgorBase:
         Record one timing entry. Appends to in-memory history (last 200 per label)
         and writes to ~/.TheIgors/logs/perf_{ClassName}.log (newest at top).
         """
-        hist = self._perf_history[label]
+        hist = self._ensure_perf_history()[label]
         hist.append(elapsed_ms)
         if len(hist) > 200:
             del hist[:-200]  # keep last 200
@@ -138,13 +147,13 @@ class IgorBase:
         """
         import statistics
 
-        labels = [label] if label else list(self._perf_history.keys())
+        labels = [label] if label else list(self._ensure_perf_history().keys())
         if not labels:
             return f"{self.get_name()}: no perf data"
 
         lines = [f"{self.get_name()} perf summary:"]
         for lbl in sorted(labels):
-            vals = sorted(self._perf_history.get(lbl, []))
+            vals = sorted(self._ensure_perf_history().get(lbl, []))
             if not vals:
                 continue
             n = len(vals)

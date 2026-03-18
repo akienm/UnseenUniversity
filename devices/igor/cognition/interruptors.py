@@ -19,10 +19,11 @@ Adding a new interruptor:
 from abc import ABC, abstractmethod
 from datetime import datetime
 
+from ..igor_base import IgorBase
 from ..paths import paths
 
 
-class BaseInterruptor(ABC):
+class BaseInterruptor(ABC, IgorBase):
     """Base class for all interruptors."""
 
     name: str = "unnamed_interruptor"

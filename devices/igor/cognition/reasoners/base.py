@@ -26,6 +26,7 @@ import threading
 import urllib.request
 from abc import ABC, abstractmethod
 from ...memory.models import Memory, MemoryType
+from ...igor_base import IgorBase
 
 # ── Global exit signal ─────────────────────────────────────────────────────────
 # Set by main._stdin_reader when /exit or /quit is typed.
@@ -41,6 +42,7 @@ _RING_CONTEXT_LIMIT = 10
 # Entries stay in DB for cortex.search() / history — only filtered from live context.
 # Default 8h keeps same-day context, drops yesterday's stale actions/completions.
 import os as _os
+
 _RING_CONTEXT_MAX_AGE_HOURS = float(_os.getenv("IGOR_RING_CONTEXT_MAX_AGE_HOURS", "8"))
 
 # ── Token economy (shared across all reasoners) ────────────────────────────────
@@ -48,33 +50,40 @@ _RING_CONTEXT_MAX_AGE_HOURS = float(_os.getenv("IGOR_RING_CONTEXT_MAX_AGE_HOURS"
 # This prevents a single large command output (find, cat big file, etc.) from
 # blowing up the context window.  Big tasks should be decomposed, not ingested
 # in one shot.
-TOOL_RESULT_MAX_CHARS = 8_000    # ~2 K tokens — enough for real data; trim forces decomposition
-MAX_TURNS = int(os.getenv("IGOR_MAX_TURNS", "8"))  # env-overridable; default 8 prevents runaway agentic burns
-CONTEXT_WARN_CHARS = 80_000      # ~20 K tokens — warn earlier, prompt breaking into steps
-CONTEXT_HARD_CAP_CHARS = 120_000 # hard trim — drop oldest tool results above this
+TOOL_RESULT_MAX_CHARS = (
+    8_000  # ~2 K tokens — enough for real data; trim forces decomposition
+)
+MAX_TURNS = int(
+    os.getenv("IGOR_MAX_TURNS", "8")
+)  # env-overridable; default 8 prevents runaway agentic burns
+CONTEXT_WARN_CHARS = 80_000  # ~20 K tokens — warn earlier, prompt breaking into steps
+CONTEXT_HARD_CAP_CHARS = 120_000  # hard trim — drop oldest tool results above this
 
 # ── Cost guardrails (shared across all API reasoners) ─────────────────────────
 # IGOR_CALL_COST_WARN_USD: stop the agentic loop if a single call exceeds this.
 # IGOR_RESEARCH_MODE: set true to allow bulk reads (confluence, source files, web).
 # IGOR_RESEARCH_TOOL_CAP: max big-read tool calls per reasoning session when not in research mode.
-CALL_COST_WARN_USD  = float(os.getenv("IGOR_CALL_COST_WARN_USD", "0.30"))
-RESEARCH_TOOL_CAP   = int(os.getenv("IGOR_RESEARCH_TOOL_CAP", "5"))
-RESEARCH_MODE       = os.getenv("IGOR_RESEARCH_MODE", "false").lower() in ("1", "true", "yes")
+CALL_COST_WARN_USD = float(os.getenv("IGOR_CALL_COST_WARN_USD", "0.30"))
+RESEARCH_TOOL_CAP = int(os.getenv("IGOR_RESEARCH_TOOL_CAP", "5"))
+RESEARCH_MODE = os.getenv("IGOR_RESEARCH_MODE", "false").lower() in ("1", "true", "yes")
 
 # Tools that constitute expensive external reads — capped when not in research mode.
 # Local file reads (read_source_file, list_source_files) are free and NOT capped.
 # Only external API calls that cost money or tokens are gated.
-BIG_READ_TOOLS = frozenset({
-    "confluence_search", "confluence_get_page",
-    "web_search",
-})
+BIG_READ_TOOLS = frozenset(
+    {
+        "confluence_search",
+        "confluence_get_page",
+        "web_search",
+    }
+)
 
 # Bash command prefixes that indicate external/expensive operations via run_bash.
 # Plain file reads via bash are NOT counted — only network/search patterns.
 BASH_READ_PATTERNS = ("curl ", "wget ")
 
 
-class BaseReasoner(ABC):
+class BaseReasoner(ABC, IgorBase):
     """
     A reasoning adapter translates Igor's internal state into whatever
     protocol a specific AI speaks, executes the conversation, handles
@@ -136,7 +145,9 @@ class BaseReasoner(ABC):
             elif isinstance(c, list):
                 for block in c:
                     if isinstance(block, dict):
-                        total += len(str(block.get("text", "") or block.get("content", "")))
+                        total += len(
+                            str(block.get("text", "") or block.get("content", ""))
+                        )
                     else:
                         total += len(str(block))
         return total
@@ -165,9 +176,13 @@ class BaseReasoner(ABC):
         dropped_chars = BaseReasoner._messages_total_chars(dropped)
         trimmed = (
             [messages[0]]
-            + [{"role": "user", "content":
-                f"[CONTEXT TRIMMED: {len(dropped)} older messages ({dropped_chars // 1000}K chars) "
-                f"dropped to stay within context limit. Ask me to recap if needed.]"}]
+            + [
+                {
+                    "role": "user",
+                    "content": f"[CONTEXT TRIMMED: {len(dropped)} older messages ({dropped_chars // 1000}K chars) "
+                    f"dropped to stay within context limit. Ask me to recap if needed.]",
+                }
+            ]
             + messages[len(messages) - keep_tail :]
         )
         return trimmed
@@ -175,12 +190,15 @@ class BaseReasoner(ABC):
     # ── Shared tool-call display (#34) ────────────────────────────────────────
 
     @staticmethod
-    def print_tool_call(tag: str, turn: int, name: str, args_summary: str, result_preview: str):
+    def print_tool_call(
+        tag: str, turn: int, name: str, args_summary: str, result_preview: str
+    ):
         """
         Uniform tool-call display across all reasoners.
         tag: short reasoner label, e.g. "THINK" or "OR"
         """
         from rich.console import Console as _Console
+
         _c = _Console()
         _c.print(f"[dim][{tag} turn={turn}] ⚙ {name}({args_summary})[/]")
         _c.print(f"[dim][{tag} turn={turn}]   → {result_preview}[/]")
@@ -205,9 +223,11 @@ class BaseReasoner(ABC):
         # They remain in DB for history/search — just not injected into LLM context.
         try:
             from datetime import datetime as _dt2
+
             _cutoff = _dt2.now().timestamp() - _RING_CONTEXT_MAX_AGE_HOURS * 3600
             all_entries = [
-                e for e in all_entries
+                e
+                for e in all_entries
                 if _dt2.fromisoformat(e["timestamp"]).timestamp() >= _cutoff
             ]
         except Exception:
@@ -220,8 +240,10 @@ class BaseReasoner(ABC):
         # ── #158: TASK_SET first — active goal anchors all context ────────────
         try:
             task_sets = cortex.twm_read(
-                limit=3, include_integrated=False,
-                thread_id=thread_id, category="task_set"
+                limit=3,
+                include_integrated=False,
+                thread_id=thread_id,
+                category="task_set",
             )
             if task_sets:
                 lines.append("🎯 ACTIVE TASK (complete this before anything else):")
@@ -237,14 +259,19 @@ class BaseReasoner(ABC):
                 limit=15, include_integrated=False, thread_id=thread_id
             )
             urgent = [
-                o for o in twm_obs
+                o
+                for o in twm_obs
                 if o.get("urgency", 0.2) >= 0.7
                 and o.get("source") not in ("narrative_engine", "ne_loop_guard")
                 and o.get("category") != "task_set"  # already shown above
             ]
             if urgent:
                 lines.append("\n⚠ URGENT observations (act on these):")
-                for o in sorted(urgent, key=lambda x: x.get("urgency", 0.2) * x.get("salience", 0.5), reverse=True)[:5]:
+                for o in sorted(
+                    urgent,
+                    key=lambda x: x.get("urgency", 0.2) * x.get("salience", 0.5),
+                    reverse=True,
+                )[:5]:
                     urg = o.get("urgency", 0.2)
                     lines.append(f"  [urgency={urg:.1f}] {o['content_csb'][:150]}")
         except Exception:
@@ -261,6 +288,7 @@ class BaseReasoner(ABC):
         anchor_ts = None
         try:
             from datetime import datetime as _dt
+
             _narrative_entries = cortex.read_ring_memory(
                 limit=5, category="narrative", thread_id=thread_id
             )
@@ -279,7 +307,9 @@ class BaseReasoner(ABC):
         # "this happened 3 days ago" from "this is happening right now."
         # Same-day entries show HH:MM; older entries show YYYY-MM-DD HH:MM.
         from datetime import date as _rdate
+
         _ring_today = _rdate.today().isoformat()
+
         def _ring_ts(raw_ts: str) -> str:
             if len(raw_ts) < 10:
                 return raw_ts
@@ -291,11 +321,12 @@ class BaseReasoner(ABC):
             # Strip NE run tag for readability: "[NE#42] text" → "text"
             _arc = anchor_content
             if _arc.startswith("[NE#"):
-                _arc = _arc[_arc.find("] ") + 2:] if "] " in _arc else _arc
+                _arc = _arc[_arc.find("] ") + 2 :] if "] " in _arc else _arc
             lines.append(f"\n[Thread arc: {_arc[:240]}]")
             # Delta: ring entries AFTER the anchor timestamp, excluding narrative category
             delta = [
-                e for e in entries
+                e
+                for e in entries
                 if e["timestamp"] > anchor_ts
                 and e["category"] not in _RING_EXCLUDE
                 and e["category"] != "narrative"
@@ -314,7 +345,9 @@ class BaseReasoner(ABC):
         """Top relevant memories as a context block. Empty string if none qualify."""
         if not memories:
             return ""
-        high_rel = [m for m in memories if getattr(m, "relevance_score", 0.0) >= 0.5][:3]
+        high_rel = [m for m in memories if getattr(m, "relevance_score", 0.0) >= 0.5][
+            :3
+        ]
         if not high_rel:
             high_rel = sorted(
                 memories[:5],
@@ -324,6 +357,7 @@ class BaseReasoner(ABC):
         if not high_rel:
             return ""
         from datetime import datetime as _mdt, date as _mdate
+
         _today = _mdate.today()
         lines = ["\n\nRelevant memories:"]
         for m in high_rel:
@@ -348,7 +382,9 @@ class BaseReasoner(ABC):
                     _ts_label = "?"
             except Exception:
                 _ts_label = "?"
-            lines.append(f"- [{m.memory_type.value} | stored {_ts_label}] {m.narrative}")
+            lines.append(
+                f"- [{m.memory_type.value} | stored {_ts_label}] {m.narrative}"
+            )
         return "\n".join(lines)
 
 
@@ -361,12 +397,14 @@ def _call_ollama_raw(prompt: str, model: str, timeout: int = 5) -> str | None:
     """
     try:
         host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-        payload = json.dumps({
-            "model": model,
-            "messages": [{"role": "user", "content": prompt}],
-            "stream": False,
-            "options": {"temperature": 0.1},
-        }).encode()
+        payload = json.dumps(
+            {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "stream": False,
+                "options": {"temperature": 0.1},
+            }
+        ).encode()
         req = urllib.request.Request(
             f"{host}/api/chat",
             data=payload,
@@ -388,8 +426,24 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
     """
     try:
         import hashlib
-        _STOP = {"the", "and", "for", "that", "this", "with", "have", "from",
-                 "what", "how", "can", "you", "are", "its", "but"}
+
+        _STOP = {
+            "the",
+            "and",
+            "for",
+            "that",
+            "this",
+            "with",
+            "have",
+            "from",
+            "what",
+            "how",
+            "can",
+            "you",
+            "are",
+            "its",
+            "but",
+        }
         words = [w.lower().strip(".,?!") for w in user_input.split() if len(w) > 3]
         keywords = [w for w in words if w not in _STOP][:4]
         if not keywords or not queries:
@@ -398,19 +452,24 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
             f"When context involves [{', '.join(keywords)}], "
             f"search for [{'; '.join(queries)}]."
         )
-        node_id = "WINNOW_" + hashlib.sha256(narrative.encode()).hexdigest()[:10].upper()
+        node_id = (
+            "WINNOW_" + hashlib.sha256(narrative.encode()).hexdigest()[:10].upper()
+        )
         mem = Memory(
             id=node_id,
             narrative=narrative,
             memory_type=MemoryType.INTERPRETIVE,
             activation_count=0,
             valence=0.5,
-            metadata={"source": "winnow", "trigger": " ".join(keywords), "confidence": 0.6},
+            metadata={
+                "source": "winnow",
+                "trigger": " ".join(keywords),
+                "confidence": 0.6,
+            },
         )
         cortex.store(mem)
     except Exception:
         pass  # deposit failure must never block the caller
-
 
     def _winnow_context(self, user_input: str, cortex, word_graph=None) -> list[Memory]:
         """
@@ -427,6 +486,7 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
         the relevant context rather than dumping everything every time.
         """
         import time as _wtime
+
         _w_t0 = _wtime.monotonic()
         # Skip for trivial inputs
         if len(user_input.strip()) < 20 or user_input.strip().startswith("/"):
@@ -441,8 +501,7 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
             ring = cortex.read_ring_memory(limit=10)
             filtered = [e for e in ring if e["category"] not in _RING_EXCLUDE]
             breadcrumbs = "\n".join(
-                f"[{e['timestamp'][11:16]}] {e['content'][:80]}"
-                for e in filtered[-5:]
+                f"[{e['timestamp'][11:16]}] {e['content'][:80]}" for e in filtered[-5:]
             )
         except Exception:
             breadcrumbs = ""
@@ -453,7 +512,9 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
             try:
                 predicted = word_graph.predict_next(user_input, n=5)
                 if predicted:
-                    wg_hints = "Activated concepts: " + ", ".join(w for w, _ in predicted)
+                    wg_hints = "Activated concepts: " + ", ".join(
+                        w for w, _ in predicted
+                    )
             except Exception:
                 pass
 
@@ -469,9 +530,12 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
         queries: list[str] = []
         try:
             from ..inference_gateway import get_gateway as _gw, make_context as _mk_ctx
+
             _text = _gw().call("winnow", prompt, _mk_ctx(is_background=False))
             if _text:
-                queries = [q.strip() for q in _text.replace("\n", ",").split(",") if q.strip()][:3]
+                queries = [
+                    q.strip() for q in _text.replace("\n", ",").split(",") if q.strip()
+                ][:3]
         except Exception:
             pass
 
@@ -497,10 +561,18 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
 
         # ── Pipeline trace ─────────────────────────────────────────────────────
         try:
-            from ...cognition.forensic_logger import log_pipeline_step as _log_pt, get_turn_id as _get_turn_id
-            _log_pt(turn_id=_get_turn_id(), step="winnow",
-                    elapsed_ms=round((_wtime.monotonic() - _w_t0) * 1000),
-                    queries=len(queries), retrieved=len(results))
+            from ...cognition.forensic_logger import (
+                log_pipeline_step as _log_pt,
+                get_turn_id as _get_turn_id,
+            )
+
+            _log_pt(
+                turn_id=_get_turn_id(),
+                step="winnow",
+                elapsed_ms=round((_wtime.monotonic() - _w_t0) * 1000),
+                queries=len(queries),
+                retrieved=len(results),
+            )
         except Exception:
             pass
 
@@ -509,11 +581,13 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
 
 # ── Level 1 — Transport base classes (Change 2 / D026) ────────────────────────
 
+
 class LocalReasoner(BaseReasoner):
     """
     Base for all local-hardware reasoners (Ollama, KoboldCpp).
     No API cost. Latency varies with hardware. No tool support.
     """
+
     supports_tools: bool = False
     response_format: str = "unstructured"
     cost_model: str = "free"
@@ -527,6 +601,7 @@ class APIReasoner(BaseReasoner):
     Has budget tracking, rate limits, and reliable tool support.
     Subclasses are expected to call record_spend() and check_before_call().
     """
+
     supports_tools: bool = True
     response_format: str = "structured"
     cost_model: str = "per_token"
@@ -540,14 +615,16 @@ class BrowserReasoner(BaseReasoner):
     Zero cost. Session-fragile. No tools. NOT IMPLEMENTED.
     Declared here to reserve the interface and document the capability model.
     """
+
     supports_tools: bool = False
     response_format: str = "unstructured"
     cost_model: str = "free"
     reliability: str = "low"
     supports_context_param: bool = False
 
-    def reason(self, user_input, relevant_memories, core_patterns, instance_id,
-               cortex=None):
+    def reason(
+        self, user_input, relevant_memories, core_patterns, instance_id, cortex=None
+    ):
         raise NotImplementedError("BrowserReasoner is not yet implemented.")
 
     def name(self) -> str:
@@ -555,6 +632,7 @@ class BrowserReasoner(BaseReasoner):
 
 
 # ── Level 2 — Model family classes (Change 2 / D026) ─────────────────────────
+
 
 class ModelFamily(BaseReasoner):
     """
@@ -577,15 +655,16 @@ class ModelFamily(BaseReasoner):
         for channel in self.channels:
             try:
                 return channel.reason(
-                    user_input, relevant_memories, core_patterns, instance_id,
-                    cortex=cortex
+                    user_input,
+                    relevant_memories,
+                    core_patterns,
+                    instance_id,
+                    cortex=cortex,
                 )
             except Exception as exc:
                 last_exc = exc
                 continue
-        raise RuntimeError(
-            f"{self.name()} all channels failed. Last: {last_exc}"
-        )
+        raise RuntimeError(f"{self.name()} all channels failed. Last: {last_exc}")
 
     def name(self) -> str:
         return f"ModelFamily({', '.join(c.name() for c in self.channels)})"
