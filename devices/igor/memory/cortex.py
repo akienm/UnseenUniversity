@@ -2161,6 +2161,31 @@ class Cortex(IgorBase):
         except Exception:
             pass  # TTL extension must never crash callers
 
+    # ── D126 Step 4: Worry signal ──────────────────────────────────────────────
+
+    def worry_push(self, reason: str) -> int:
+        """
+        Push a Worry observation to TWM — internal uncertainty about Igor's own actions.
+
+        Worry semantics:
+          - category = "worry"
+          - urgency = 0.85  (high: below ethics 0.9, above user input 0.7)
+          - salience = 0.9
+          - high attractor_weight → becomes primary focus until resolved
+          - persists until explicitly resolved (no short TTL)
+
+        Triggered by PendingReplyStore when a write has failed 3+ times.
+        The Worry persists in TWM so the NE can surface it to the user on next turn.
+        """
+        return self.twm_push(
+            source="pending_replies",
+            content_csb=f"WORRY|reason:{reason[:200]}",
+            salience=0.9,
+            urgency=0.85,
+            category="worry",
+            metadata={"worry_type": "unconfirmed_write", "reason": reason[:200]},
+        )
+
     # ── #180: Investment Weights ────────────────────────────────────────────────
 
     def store_relational(
