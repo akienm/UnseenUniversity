@@ -266,6 +266,13 @@ class Igor(IgorBase):
                 conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
         except Exception:
             pass
+
+        # D119: DB-first boot — hydrate os.environ from system config graph,
+        # then sync .env into graph if mtime changed (one mechanism for all instances).
+        from .env_sync import boot_env_sync as _boot_env_sync
+
+        _boot_env_sync(self.cortex, instance_id, paths().instance / ".env")
+
         milieu_mod.init(self.instance_id)
         observer.init(self.cortex)
         self.root_id = initialize_genesis(self.cortex, instance_id)
