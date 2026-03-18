@@ -1,9 +1,9 @@
 """
 Filesystem tools.
 
-Read/write tools (sandboxed to /home/akien):
-  read_file, write_file, list_directory — paths relative to /home/akien
-  Cannot read or write outside /home/akien.
+Read/write tools (sandboxed to the user's home directory):
+  read_file, write_file, list_directory — paths relative to home dir
+  Cannot read or write outside home dir.
 
 System read-only tools (full filesystem, read only):
   read_system_file, list_system_dir — absolute paths required, no writes
@@ -18,7 +18,7 @@ from pathlib import Path
 from .registry import Tool, registry
 from ..paths import paths as _igor_paths
 
-WORKSPACE = Path("/home/akien")
+WORKSPACE = Path.home()
 WORKSPACE.mkdir(exist_ok=True)
 
 
