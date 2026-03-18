@@ -511,3 +511,49 @@ registry.register(
         fn=restart_self,
     )
 )
+
+
+def exit_self(note: str = "") -> str:
+    """
+    Signal Igor to exit cleanly (no restart) on the next main-loop iteration.
+
+    Writes ~/.TheIgors/igor_<instance_id>/exit.flag — the main loop exits with
+    code 0, which the bash/PS wrapper does NOT restart (only exit code 42 triggers
+    a restart).
+
+    Use for 'stop igor', 'exit igor', 'shutdown' — anything that should halt
+    this instance permanently until manually restarted.
+    """
+    instance_id = os.getenv("IGOR_INSTANCE_ID", "wild-0001")
+    flag_path = (
+        Path.home()
+        / ".TheIgors"
+        / f"igor_{instance_id.replace('-', '_')}"
+        / "exit.flag"
+    )
+    flag_path.parent.mkdir(parents=True, exist_ok=True)
+    flag_path.write_text(note or "exit requested via tool")
+    return "Exit flag written. I will shut down cleanly on the next loop cycle."
+
+
+registry.register(
+    Tool(
+        name="exit_self",
+        description=(
+            "Shut down Igor cleanly (no restart). Writes the exit flag; the main loop "
+            "exits with code 0 so the wrapper does not relaunch. "
+            "Use for 'stop igor', 'exit igor', 'shutdown', 'please exit'."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "note": {
+                    "type": "string",
+                    "description": "Optional reason for the shutdown",
+                },
+            },
+            "required": [],
+        },
+        fn=exit_self,
+    )
+)
