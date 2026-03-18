@@ -26,7 +26,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
 
-from igor.paths import paths
+from .paths import paths
 
 _LOG_DIR = paths().logs
 
