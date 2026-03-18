@@ -2317,12 +2317,21 @@ class Igor(IgorBase):
                 continue
 
             # ── Nothing to process — drain network then do background work ────
-            # #64: check restart flag before anything else — no LLM, no arbiter
-            _restart_flag = (
-                _paths().runtime
-                / f"igor_{self.instance_id.replace('-', '_')}"
-                / "restart.flag"
+            # #64: check restart/exit flags before anything else — no LLM, no arbiter
+            _instance_dir = (
+                _paths().runtime / f"igor_{self.instance_id.replace('-', '_')}"
             )
+            _exit_flag = _instance_dir / "exit.flag"
+            if _exit_flag.exists():
+                try:
+                    _exit_flag.unlink()
+                except Exception:
+                    pass
+                loginfo("[yellow][EXTERNAL] Exit flag detected — shutting down...[/]")
+                self._shutdown(reason="exit flag (external)")
+                sys.exit(0)
+
+            _restart_flag = _instance_dir / "restart.flag"
             if _restart_flag.exists():
                 try:
                     _restart_flag.unlink()
