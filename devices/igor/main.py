@@ -271,7 +271,7 @@ class Igor(IgorBase):
         # then sync .env into graph if mtime changed (one mechanism for all instances).
         from .env_sync import boot_env_sync as _boot_env_sync
 
-        _boot_env_sync(self.cortex, instance_id, paths().instance / ".env")
+        _boot_env_sync(self.cortex, instance_id, _paths().instance / ".env")
 
         milieu_mod.init(self.instance_id)
         observer.init(self.cortex)
