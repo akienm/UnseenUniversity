@@ -34,6 +34,7 @@ from pathlib import Path
 
 from ..memory.db_proxy import DatabaseProxy, make_home_proxy, make_local_proxy
 from ..memory.graph_cache import GraphCache
+from ..memory.pending_replies import PendingReplyStore
 from ..igor_base import IgorBase
 
 # ── Stopwords ─────────────────────────────────────────────────────────────────
@@ -318,8 +319,10 @@ class WordGraph(IgorBase):
         with self._db() as conn:
             conn.execute("PRAGMA journal_mode=WAL")
             conn.executescript(_SCHEMA)
+        # D126 Step 3: PendingReplyStore — resilience queue for failed home DB writes
+        self._pending = PendingReplyStore(self._local_db, self._db)
         # D126 Step 2: GraphCache — Redis hot-cache for wg_cooccur; gates on IGOR_REDIS_URL
-        self._cache = GraphCache(self._db, self._local_db)
+        self._cache = GraphCache(self._db, self._local_db, pending_store=self._pending)
         # G-WG2: predict_next cache — avoid re-aggregating 29M wg_cooccur rows
         self._predict_cache: dict[tuple, list] = {}
         # G-WG3: doc_count write batching — flush every N docs instead of every index()

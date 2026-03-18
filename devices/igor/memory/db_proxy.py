@@ -412,7 +412,20 @@ class _PGConnWrapper:
             pass  # handled below via flag
         return sql.replace("?", "%s")
 
+    def executescript(self, sql: str) -> "_PGConnWrapper":
+        """Run a multi-statement SQL script (SQLite compat shim for Postgres).
+        Splits on semicolons and executes each non-empty statement individually.
+        """
+        for stmt in sql.split(";"):
+            stmt = stmt.strip()
+            if stmt:
+                self.execute(stmt)
+        return self
+
     def execute(self, sql: str, params=()) -> "_PGConnWrapper":
+        # PRAGMA — SQLite-only; silently no-op on Postgres
+        if sql.lstrip().upper().startswith("PRAGMA"):
+            return self
         # INSERT OR REPLACE — full upsert with DO UPDATE SET
         if _INSERT_OR_REPLACE.search(sql):
             translated = _translate_insert_or_replace(sql)
