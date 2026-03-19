@@ -376,6 +376,18 @@ class Cortex(IgorBase):
                 "CREATE INDEX IF NOT EXISTS idx_lists_name ON lists(list_name)"
             )
 
+            # T-proc-1: active_slate — first-class DB artifact for Process Development Tools.
+            # One active slate at a time; items = JSON array of {id, title, size, status}.
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS active_slate (
+                    slate_id    TEXT PRIMARY KEY,
+                    created_at  TEXT NOT NULL,
+                    updated_at  TEXT NOT NULL,
+                    status      TEXT NOT NULL DEFAULT 'active',
+                    items       TEXT NOT NULL DEFAULT '[]'
+                )
+            """)
+
             # G-QP2: wal_checkpoint moved to main.py post-Cortex-init (G-QP3)
             # Do NOT checkpoint here — _init_db() runs on every Cortex() instantiation
             # (book_learner, tools, etc.) and would flood the DB with checkpoint contention
