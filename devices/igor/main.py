@@ -400,7 +400,7 @@ class Igor(IgorBase):
             "yes",
         )
         # local_mode: default False — use cloud for general reasoning.
-        # Set IGOR_LOCAL=true in .env to default to local KoboldCpp pool mode.
+        # Set IGOR_LOCAL=true to default to local Ollama pool mode.
         self.local_mode = os.getenv("IGOR_LOCAL", "false").lower() in (
             "true",
             "1",
@@ -2825,9 +2825,9 @@ class Igor(IgorBase):
                 self.ne.record_actual(_thalamus_habit.id if _thalamus_habit else None)
             except Exception:
                 pass
-        # #142: skip KoboldCpp preparse when thalamus is already confident.
+        # #142: skip Ollama preparse when thalamus is already confident.
         # low complexity → rule-based CSB is correct; high complexity → tier.4 forced anyway.
-        # Only medium complexity genuinely needs KoboldCpp for routing disambiguation.
+        # Only medium complexity genuinely needs Ollama for routing disambiguation.
         _thalamus_confident = (
             parsed.complexity in ("low", "high")
             and os.getenv("IGOR_SKIP_PREPARSE_ON_CONFIDENT", "true").lower() != "false"
@@ -2847,7 +2847,7 @@ class Igor(IgorBase):
             or _thalamus_habit is not None
             or not parsed.keywords  # empty input
             or is_impulse  # background work — rule-based CSB is instant; never wait on LLM
-            or _thalamus_confident  # thalamus is confident — KoboldCpp won't change the routing
+            or _thalamus_confident  # thalamus is confident — Ollama preparse won't change the routing
             or _short_input  # ≤6 words: LLM preparse overhead > benefit
             or _cloud_mode_active  # cloud mode: cloud models route fine without preparse overhead
         )
@@ -2862,7 +2862,7 @@ class Igor(IgorBase):
         ):
             _lp = self._get_latency_profile()
             if _lp["samples"] >= 5:
-                # If KoboldCpp preparse is slow → skip it; rule-based is instant and cheaper
+                # If Ollama preparse is slow → skip it; rule-based is instant and cheaper
                 _PREPARSE_SLOW_MS = int(
                     os.getenv("IGOR_LATENCY_PREPARSE_SLOW_MS", "2500")
                 )
@@ -2875,7 +2875,7 @@ class Igor(IgorBase):
                         f"[dim][LATENCY] preparse p50={_lp['preparse_ms_p50']}ms "
                         f"> {_PREPARSE_SLOW_MS}ms → skipping LLM preparse[/]"
                     )
-                # If tier.2 (local KoboldCpp reasoning) is slow → jump to tier.3
+                # If tier.2 (local Ollama reasoning) is slow → jump to tier.3
                 _TIER2_SLOW_MS = int(os.getenv("IGOR_LATENCY_TIER2_SLOW_MS", "5000"))
                 _t2 = _lp["tier_reasoning"].get("tier.2", {})
                 if _t2.get("n", 0) >= 3 and _t2.get("p50", 0) > _TIER2_SLOW_MS:
@@ -4542,7 +4542,7 @@ class Igor(IgorBase):
 
             def _ne_worker():
                 # Yield to interactive turn — if main loop is actively processing,
-                # wait briefly rather than competing for KoboldCpp
+                # wait briefly rather than competing for Ollama
                 _waited = 0.0
                 while self._is_processing and _waited < 10.0:
                     _t.sleep(0.5)

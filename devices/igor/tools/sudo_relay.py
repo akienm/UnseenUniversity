@@ -135,7 +135,6 @@ def _tail(path: Path, lines: int = 20) -> str:
 # ── Tool registration ──────────────────────────────────────────────────────────
 
 
-@registry.register
 class SudoRelayTool(Tool):
     name = "sudo_relay_run"
     description = (
@@ -162,3 +161,15 @@ class SudoRelayTool(Tool):
 
     def run(self, script: str, timeout_secs: int = DEFAULT_TIMEOUT) -> dict:
         return sudo_relay_run(script=script, timeout_secs=timeout_secs)
+
+
+registry.register(
+    Tool(
+        name=SudoRelayTool.name,
+        description=SudoRelayTool.description,
+        parameters=SudoRelayTool.parameters,
+        fn=lambda script, timeout_secs=DEFAULT_TIMEOUT: sudo_relay_run(
+            script=script, timeout_secs=timeout_secs
+        ),
+    )
+)

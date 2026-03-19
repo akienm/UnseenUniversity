@@ -60,7 +60,6 @@ _MODEL_PREFIXES = (
     "IGOR_NE_LOCAL",
     "IGOR_WINNOW_LOCAL",
     "IGOR_LOCAL_MODEL",
-    "KOBOLDCPP_",
 )
 
 

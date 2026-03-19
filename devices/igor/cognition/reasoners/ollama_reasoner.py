@@ -1,8 +1,9 @@
 """
 Ollama local reasoner — primary local inference backend.
 
-Replaces KoboldCpp for tier.2 interactive reasoning and preparse.
-Ollama is already required for nomic-embed-text embeddings; this unifies
+Tier.2 local reasoning and preparse. Supports local or remote Ollama hosts
+(OLLAMA_HOST / OLLAMA_REASONING_HOST). Ollama is already required for
+nomic-embed-text embeddings; this unifies
 all local inference under one backend so Igor can self-manage models
 (ollama pull, ollama list, etc.) without manual server restarts.
 
@@ -88,7 +89,7 @@ def is_healthy(host: str = OLLAMA_REASONING_HOST, timeout: int = 5) -> bool:
         return False
 
 
-# ── CSB preparse (13-intent; drop-in for koboldcpp_reasoner.preparse) ────────
+# ── CSB preparse (13-intent) ──────────────────────────────────────────────────
 
 
 def _rule_based_csb(user_input: str, habits: list) -> str:

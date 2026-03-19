@@ -2,7 +2,7 @@
 boot_check.py — Verify required Ollama models on cluster machines at boot.
 
 All cluster machines run Ollama. Primary local inference backend for preparse
-and tier.2 reasoning (switched from KoboldCpp so Igor can self-manage models).
+and tier.2 reasoning.
 
 Required Ollama models (checked and auto-pulled at boot):
   nomic-embed-text  — universal embedding model; must be identical across cluster

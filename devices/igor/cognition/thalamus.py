@@ -133,7 +133,6 @@ PROPER_NOUN_WHITELIST: frozenset[str] = frozenset(
         "confluence",
         "discord",
         "openrouter",
-        "koboldcpp",
         "ollama",
         "anthropic",
     }
