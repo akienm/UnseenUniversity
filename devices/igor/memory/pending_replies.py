@@ -199,7 +199,7 @@ class PendingReplyStore:
                         conn.executemany(
                             "INSERT INTO wg_cooccur (word_a, word_b, score) VALUES (?, ?, ?) "
                             "ON CONFLICT(word_a, word_b) "
-                            "DO UPDATE SET score = score + excluded.score",
+                            "DO UPDATE SET score = wg_cooccur.score + excluded.score",
                             pairs,
                         )
                 return True

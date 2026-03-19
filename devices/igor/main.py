@@ -1182,8 +1182,17 @@ class Igor(IgorBase):
                 from .tools.registry import registry as _tool_registry
 
                 tool_name = code_ref.split(":")[-1]
+                # Execution tools must only be called via explicit LLM tool calls with
+                # intentional code — never via habit auto-dispatch with message text.
+                _NO_AUTO_DISPATCH = {"run_python", "run_bash"}
                 tool = _tool_registry.get(tool_name)
-                if tool:
+                if tool_name in _NO_AUTO_DISPATCH and not args:
+                    response_text = (
+                        f"[execute_habit] {tool_name} requires explicit code — "
+                        f"cannot auto-dispatch. Pass code via args dict."
+                    )
+                    status = "error"
+                elif tool:
                     try:
                         if args:
                             response_text = tool.execute(**args)
@@ -3744,7 +3753,17 @@ class Igor(IgorBase):
 
                 tool_name = code_ref.split(":")[-1]
                 tool = _tool_registry.get(tool_name)
-                if tool:
+                # Execution tools must never be auto-dispatched with message text as code.
+                # run_python/run_bash require intentional code — never natural language.
+                # These must only be called via explicit LLM tool calls, not habit auto-dispatch.
+                _NO_AUTO_DISPATCH = {"run_python", "run_bash"}
+                if tool_name in _NO_AUTO_DISPATCH:
+                    response_text = (
+                        f"[HABIT→TOOL] {tool_name} requires explicit code — "
+                        f"cannot auto-dispatch from message text. "
+                        f"Ask me to write and run specific code."
+                    )
+                elif tool:
                     _required = tool.parameters.get("required", [])
                     try:
                         if not _required:
