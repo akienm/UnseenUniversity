@@ -67,6 +67,33 @@ _stats_fn = (
 _cortex_fn = None  # callable → Cortex; set by start(); used by /api/cc_notebook (#239)
 _igor_fn = None  # callable → Igor;   set by start(); used by /api/execute_habit (D094)
 
+# ── Shared channel mirror ─────────────────────────────────────────────────────
+# Append messages to ~/.TheIgors/cc_channel/messages.jsonl so all CC sessions
+# and Igor share a single visible discussion channel (no Igor required to read).
+
+_CHANNEL_FILE = paths().cc_channel / "messages.jsonl"
+
+
+def _channel_append(author: str, content: str, msg_type: str = "message"):
+    """Mirror a message to the shared JSONL channel. Never raises."""
+    try:
+        _CHANNEL_FILE.parent.mkdir(parents=True, exist_ok=True)
+        from datetime import timezone
+
+        ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        line = (
+            json.dumps(
+                {"ts": ts, "author": author, "type": msg_type, "content": content},
+                ensure_ascii=False,
+            )
+            + "\n"
+        )
+        with open(_CHANNEL_FILE, "a", encoding="utf-8") as f:
+            f.write(line)
+    except Exception:
+        pass  # never block the web server for channel writes
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
@@ -93,6 +120,7 @@ def send(text: str, session_id: str = "shared"):
     }
     _add_to_history(session_id, msg)
     _broadcast_to_session(session_id, json.dumps(msg))
+    _channel_append("igor", text)
 
 
 def broadcast_activity(state: dict):
@@ -226,6 +254,7 @@ async def _api_cc_send(request: Request):
             }
         )
     )
+    _channel_append("claude-code", content)
     return JSONResponse({"status": "ok"})
 
 
@@ -416,6 +445,7 @@ async def _ws_endpoint(ws: WebSocket):
                         }
                         _add_to_history(current_session, umsg)
                         _broadcast_to_session(current_session, json.dumps(umsg))
+                        _channel_append(author, content)
         except Exception:
             pass
 

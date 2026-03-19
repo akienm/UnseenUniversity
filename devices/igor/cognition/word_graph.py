@@ -361,7 +361,7 @@ class WordGraph(IgorBase):
             conn.execute(
                 "INSERT INTO wg_meta (key, value) VALUES ('doc_count', ?)"
                 " ON CONFLICT(key) DO UPDATE"
-                " SET value = CAST(CAST(value AS INTEGER) + ? AS TEXT)",
+                " SET value = CAST(CAST(wg_meta.value AS INTEGER) + ? AS TEXT)",
                 (str(self._pending_doc_count), self._pending_doc_count),
             )
             self._pending_doc_count = 0
@@ -373,7 +373,7 @@ class WordGraph(IgorBase):
                 conn.execute(
                     "INSERT INTO wg_meta (key, value) VALUES ('doc_count', ?)"
                     " ON CONFLICT(key) DO UPDATE"
-                    " SET value = CAST(CAST(value AS INTEGER) + ? AS TEXT)",
+                    " SET value = CAST(CAST(wg_meta.value AS INTEGER) + ? AS TEXT)",
                     (str(self._pending_doc_count), self._pending_doc_count),
                 )
             self._pending_doc_count = 0
@@ -437,7 +437,7 @@ class WordGraph(IgorBase):
                     conn.execute(
                         "INSERT INTO wg_meta (key, value) VALUES ('word_count', ?)"
                         " ON CONFLICT(key) DO UPDATE"
-                        " SET value = CAST(CAST(value AS INTEGER) + ? AS TEXT)",
+                        " SET value = CAST(CAST(wg_meta.value AS INTEGER) + ? AS TEXT)",
                         (str(_new_words), _new_words),
                     )
 
