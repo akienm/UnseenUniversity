@@ -241,15 +241,6 @@ class InferenceGateway(IgorBase):
 
         gw = build_default_gateway()
 
-        # Tier 2: local Ollama pools
-        try:
-            from ..brainstem.local_pool import LocalKoboldPool, BatchKoboldPool
-
-            gw._t2 = LocalKoboldPool()
-            gw._t2_batch = BatchKoboldPool(fallback=gw._t2)
-        except Exception as _e:
-            _log.getLogger(__name__).warning(f"[gateway] local pool init failed: {_e}")
-
         # Tiers 3 / 3.5 / 4: OpenRouter
         if os.getenv("OPENROUTER_API_KEY", "").strip():
             try:

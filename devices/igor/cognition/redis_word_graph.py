@@ -219,10 +219,6 @@ class RedisWordGraph(IgorBase):
         if self._shadow:
             self._sqlite.flush_doc_count()
 
-    def flush_cooccur(self) -> None:
-        if self._shadow:
-            self._sqlite.flush_cooccur()
-
     # ── Parsing direction: score() — delegates to SQLite ─────────────────────
 
     def score(

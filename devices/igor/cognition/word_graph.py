@@ -322,6 +322,14 @@ CREATE TABLE IF NOT EXISTS wg_meta (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS wg_edges (
+    word_a     TEXT NOT NULL,
+    word_b     TEXT NOT NULL,
+    similarity REAL NOT NULL,
+    PRIMARY KEY (word_a, word_b)
+);
+CREATE INDEX IF NOT EXISTS idx_wge_a ON wg_edges(word_a);
 """
 
 
@@ -359,19 +367,11 @@ class WordGraph(IgorBase):
         self._pending = PendingReplyStore(self._local_db, self._db)
         # D126 Step 2: GraphCache — Redis hot-cache for wg_cooccur; gates on IGOR_REDIS_URL
         self._cache = GraphCache(self._db, self._local_db, pending_store=self._pending)
-        # G-WG2: predict_next cache — avoid re-aggregating 29M wg_cooccur rows
+        # G-WG2: predict_next cache — avoid re-querying wg_edges on repeated context
         self._predict_cache: dict[tuple, list] = {}
         # G-WG3: doc_count write batching — flush every N docs instead of every index()
         self._pending_doc_count: int = 0
         self._DOC_FLUSH_EVERY: int = 10
-        # G-WG1: co-occurrence write batching — merge pairs in memory, flush every N docs.
-        # Each index() generated ≤2450 UPSERT rows (50×49 pairs) on a 29M-row table
-        # → 1000-4000ms per call. Batching 50 docs cuts write frequency 50x; merging
-        # in Python dict means the SQLite flush uses a single executemany with pre-summed
-        # scores instead of one-by-one increments.
-        self._cooccur_buffer: dict[tuple[str, str], float] = {}
-        self._pending_cooccur_docs: int = 0
-        self._COOCCUR_FLUSH_EVERY: int = int(os.getenv("WG_COOCCUR_FLUSH_EVERY", "50"))
 
     # ── Backward-compat properties ─────────────────────────────────────────────
 
@@ -413,23 +413,6 @@ class WordGraph(IgorBase):
                     (str(self._pending_doc_count), self._pending_doc_count),
                 )
             self._pending_doc_count = 0
-
-    def _flush_cooccur_to_db(self, conn) -> None:
-        """Write buffered co-occurrence deltas via GraphCache (Redis + home DB). Must be called inside self._lock."""
-        if not self._cooccur_buffer:
-            return
-        pairs = [(w_a, w_b, s) for (w_a, w_b), s in self._cooccur_buffer.items()]
-        # D126 Step 2: GraphCache handles dual-write (Redis + Postgres) + pending-reply failover
-        self._cache.write_cooccur(pairs)
-        self._cooccur_buffer.clear()
-        self._pending_cooccur_docs = 0
-
-    def flush_cooccur(self) -> None:
-        """Flush any pending co-occurrence data to DB. Call on shutdown or build_idf."""
-        with self._lock:
-            if self._cooccur_buffer:
-                with self._db() as conn:
-                    self._flush_cooccur_to_db(conn)
 
     # ── Indexing ───────────────────────────────────────────────────────────────
 
@@ -477,32 +460,11 @@ class WordGraph(IgorBase):
                         (str(_new_words), _new_words),
                     )
 
-                # co-occurrence edges (G-WG1: accumulate in memory, flush every N docs).
-                # Only pair plain words (no bigrams) and cap at 50 to prevent N²
-                # list explosion: a 200-token paragraph generates 40K pairs,
-                # blowing 1-2 GB RAM per book during bulk training.
-                _cooccur_words = [w for w in unique if "__" not in w][:50]
-                for _w in _cooccur_words:
-                    for _w2 in _cooccur_words:
-                        if _w != _w2:
-                            _key = (_w, _w2)
-                            self._cooccur_buffer[_key] = (
-                                self._cooccur_buffer.get(_key, 0.0) + 1.0
-                            )
-                self._pending_cooccur_docs += 1
-                if self._pending_cooccur_docs >= self._COOCCUR_FLUSH_EVERY:
-                    self._flush_cooccur_to_db(conn)
-
                 self._inc_doc_count(conn)
-
-        # G-WG2: invalidate predict_next cache — new doc changes co-occurrence scores
-        if self._predict_cache:
-            self._predict_cache.clear()
 
     def build_idf(self) -> None:
         """Compute and persist IDF weights. Call once after all index() calls."""
         self.flush_doc_count()  # G-WG3: ensure pending count is flushed before IDF uses it
-        self.flush_cooccur()  # G-WG1: flush any buffered co-occurrence data
         n = max(self._doc_count, 1)
         with self._lock:
             with self._db() as conn:
@@ -598,23 +560,34 @@ class WordGraph(IgorBase):
 
         if rows is None:
             if lang is not None:
-                # Lang-filtered: must go direct to DB (GraphCache doesn't filter by lang)
+                # Lang-filtered: join wg_word_lang to restrict results by language
                 with self._db() as conn:
                     rows = conn.execute(
                         f"""
-                        SELECT c.word_b, SUM(c.score) AS total
-                        FROM wg_cooccur c
-                        JOIN wg_word_lang l ON c.word_b = l.word
-                        WHERE c.word_a IN ({w_ph}) AND l.lang = ?
-                        GROUP BY c.word_b
+                        SELECT e.word_b, SUM(e.similarity) AS total
+                        FROM wg_edges e
+                        JOIN wg_word_lang l ON e.word_b = l.word
+                        WHERE e.word_a IN ({w_ph}) AND l.lang = ?
+                        GROUP BY e.word_b
                         ORDER BY total DESC
                         LIMIT ?
                     """,
                         words + [lang, fetch],
                     ).fetchall()
             else:
-                # D126 Step 2: GraphCache (Redis → Postgres fallback)
-                rows = self._cache.get_neighbors(words, limit=fetch)
+                # wg_edges is ~1.5M rows — query directly, no Redis needed
+                with self._db() as conn:
+                    rows = conn.execute(
+                        f"""
+                        SELECT word_b, SUM(similarity) AS total
+                        FROM wg_edges
+                        WHERE word_a IN ({w_ph})
+                        GROUP BY word_b
+                        ORDER BY total DESC
+                        LIMIT ?
+                    """,
+                        words + [fetch],
+                    ).fetchall()
             # G-WG2: store in cache; evict half when full
             if len(self._predict_cache) >= self._PREDICT_CACHE_MAX:
                 evict = list(self._predict_cache.keys())[: self._PREDICT_CACHE_MAX // 2]
@@ -653,7 +626,9 @@ class WordGraph(IgorBase):
         if max_weight <= 0:
             return 1.0
         # normalise against rough expected max (empirical: ~50 co-occurrences typical)
-        normalised = min(max_weight / 50.0, 1.0)
+        normalised = min(
+            max_weight / 1.0, 1.0
+        )  # TODO: tune threshold post-wg_edges cutover
         return 1.0 - normalised
 
     def predict_next_with_flatness(
@@ -672,7 +647,9 @@ class WordGraph(IgorBase):
         max_weight = predictions[0][1]
         if max_weight <= 0:
             return predictions, 1.0
-        normalised = min(max_weight / 50.0, 1.0)
+        normalised = min(
+            max_weight / 1.0, 1.0
+        )  # TODO: tune threshold post-wg_edges cutover
         return predictions, 1.0 - normalised
 
     # ── Graph analysis ─────────────────────────────────────────────────────────
@@ -814,11 +791,6 @@ class WordGraph(IgorBase):
         is a lightweight checkpoint rather than a full serialise. The path arg
         is ignored (kept for API compatibility with callers that pass cache_path).
         """
-        # G-WG1: flush any buffered co-occurrence data before checkpoint
-        try:
-            self.flush_cooccur()
-        except Exception:
-            pass
         try:
             with self._db() as conn:
                 conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
