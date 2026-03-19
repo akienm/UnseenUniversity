@@ -232,7 +232,7 @@ class GraphCache(IgorBase):
             with self._home() as conn:
                 conn.executemany(
                     "INSERT INTO wg_cooccur (word_a, word_b, score) VALUES (?, ?, ?) "
-                    "ON CONFLICT(word_a, word_b) DO UPDATE SET score = score + excluded.score",
+                    "ON CONFLICT(word_a, word_b) DO UPDATE SET score = wg_cooccur.score + excluded.score",
                     pairs,
                 )
         except Exception as e:
