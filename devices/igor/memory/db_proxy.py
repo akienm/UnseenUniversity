@@ -403,7 +403,7 @@ class _PGConnWrapper:
     - row_factory not needed — psycopg2.extras.RealDictCursor used at connection level
     """
 
-    __slots__ = ("_conn", "_cur", "_last_sql")
+    __slots__ = ("_conn", "_cur", "_last_sql", "_pending_scalar")
 
     def __init__(self, conn) -> None:
         import psycopg2.extras  # noqa: F401
@@ -411,6 +411,7 @@ class _PGConnWrapper:
         self._conn = conn
         self._cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         self._last_sql: str = ""
+        self._pending_scalar = None  # used to return SQLite-compat row counts
 
     def _translate(self, sql: str) -> str:
         sql = _INSERT_OR_IGNORE.sub("INSERT INTO", sql)
@@ -433,6 +434,10 @@ class _PGConnWrapper:
     def execute(self, sql: str, params=()) -> "_PGConnWrapper":
         # PRAGMA — SQLite-only; silently no-op on Postgres
         if sql.lstrip().upper().startswith("PRAGMA"):
+            return self
+        # SELECT changes() — SQLite row-count function; return last DML rowcount instead
+        if sql.strip().upper() == "SELECT CHANGES()":
+            self._pending_scalar = self._cur.rowcount if self._cur.rowcount >= 0 else 0
             return self
         # INSERT OR REPLACE — full upsert with DO UPDATE SET
         if _INSERT_OR_REPLACE.search(sql):
@@ -493,6 +498,10 @@ class _PGConnWrapper:
             return None
 
     def fetchone(self):
+        if self._pending_scalar is not None:
+            val = self._pending_scalar
+            self._pending_scalar = None
+            return (val,)  # caller does .fetchone()[0]
         row = self._cur.fetchone()
         if row is None:
             return None

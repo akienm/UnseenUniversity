@@ -334,11 +334,22 @@ def preparse(user_input: str, habits: list, model: str = "") -> str:
     fallback_reason = None
     t0 = time.perf_counter()
     try:
-        response = _reasoning_client.chat(
-            model=_model,
-            messages=[{"role": "user", "content": prompt}],
-            options={"temperature": 0.1, "num_predict": 120},
-        )
+        import concurrent.futures as _cf
+
+        def _do_preparse():
+            return _reasoning_client.chat(
+                model=_model,
+                messages=[{"role": "user", "content": prompt}],
+                options={"temperature": 0.1, "num_predict": 120},
+            )
+
+        _ex = _cf.ThreadPoolExecutor(max_workers=1)
+        _fut = _ex.submit(_do_preparse)
+        _ex.shutdown(wait=False)
+        try:
+            response = _fut.result(timeout=PREPARSE_TIMEOUT)
+        except _cf.TimeoutError:
+            raise RuntimeError(f"preparse timed out after {PREPARSE_TIMEOUT}s")
         elapsed = time.perf_counter() - t0
         text = (
             response["message"]["content"]
