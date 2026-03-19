@@ -701,10 +701,19 @@ def start(stats_fn=None, cortex_fn=None, igor_fn=None):
         return
 
     port = int(os.getenv("IGOR_WEB_PORT", "8080"))
+    ssl_cert = os.getenv("IGOR_SSL_CERT", "")
+    ssl_key = os.getenv("IGOR_SSL_KEY", "")
 
     def _run():
         app = _make_app()
-        config = uvicorn.Config(app, host="0.0.0.0", port=port, log_level="warning")
+        config = uvicorn.Config(
+            app,
+            host="0.0.0.0",
+            port=port,
+            log_level="warning",
+            ssl_certfile=ssl_cert if ssl_cert else None,
+            ssl_keyfile=ssl_key if ssl_key else None,
+        )
         server = uvicorn.Server(config)
         asyncio.run(server.serve())
 
@@ -1123,7 +1132,7 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     }
 
     function connect() {
-      ws = new WebSocket('ws://' + location.host + '/ws');
+      ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
       ws.onopen  = () => {
         setLed(true);
         _retryDelay = 2000;  // reset backoff on success
