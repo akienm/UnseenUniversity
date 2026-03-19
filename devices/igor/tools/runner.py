@@ -32,7 +32,6 @@ DEFAULT_TIMEOUT = 30  # seconds
 
 import time
 from datetime import datetime
-from ..cognition.local_pool import LocalKoboldPool
 from ..cognition.reasoners.ollama_reasoner import (
     OllamaReasoner,
     OLLAMA_LOCAL_MODEL,
@@ -121,56 +120,6 @@ registry.register(
         fn=run_bash,
     )
 )
-
-# Add benchmark tool
-registry.register(
-    Tool(
-        name="run_benchmark",
-        description=(
-            "Run standardized benchmarks for resource comparison across the cluster. "
-            "Measures and records latency for specific tasks (pre_parsing, reasoning, etc)."
-        ),
-        parameters={
-            "type": "object",
-            "properties": {
-                "hostname": {
-                    "type": "string",
-                    "description": "Target machine hostname",
-                },
-                "task": {
-                    "type": "string",
-                    "description": "Task to benchmark (pre_parsing, reasoning, etc)",
-                },
-            },
-            "required": ["hostname", "task"],
-        },
-        fn=lambda **kwargs: _run_benchmark(**kwargs),
-    )
-)
-
-
-def _run_benchmark(hostname: str, task: str) -> str:
-    """Execute standardized benchmark and record results."""
-    # Simple benchmark prompt that exercises the model
-    test_prompt = "Analyze this sentence for sentiment: 'I love coding!'"
-
-    pool = LocalKoboldPool()
-    t0 = time.perf_counter()
-
-    try:
-        if task == "pre_parsing":
-            # Use Ollama for speed test
-            reasoner = OllamaReasoner(model=OLLAMA_LOCAL_MODEL, host=OLLAMA_HOST)
-            result = reasoner.reason(test_prompt, [], [], "benchmark")
-        else:
-            raise ValueError(f"Unknown benchmark task: {task}")
-
-        latency = time.perf_counter() - t0
-        pool.record_benchmark(hostname, task, latency)
-
-        return f"Benchmark complete: {task} on {hostname} took {latency:.2f}s"
-    except Exception as e:
-        return f"Benchmark failed: {str(e)}"
 
 
 registry.register(
