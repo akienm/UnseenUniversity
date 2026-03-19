@@ -159,7 +159,7 @@ def _run_benchmark(hostname: str, task: str) -> str:
 
     try:
         if task == "pre_parsing":
-            # Use Ollama for speed test (migrated from KoboldCpp)
+            # Use Ollama for speed test
             reasoner = OllamaReasoner(model=OLLAMA_LOCAL_MODEL, host=OLLAMA_HOST)
             result = reasoner.reason(test_prompt, [], [], "benchmark")
         else:
@@ -283,7 +283,7 @@ registry.register(
             "Check whether a named process is currently running on this machine. "
             "Uses pgrep to search by process name pattern. "
             "Returns running status, PID list, and matching process lines. "
-            "Useful for: verifying Igor is up, checking if Ollama/KoboldCpp are running, "
+            "Useful for: verifying Igor is up, checking if Ollama is running, "
             "confirming background jobs are alive."
         ),
         parameters={

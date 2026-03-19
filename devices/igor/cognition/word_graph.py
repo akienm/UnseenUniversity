@@ -420,7 +420,7 @@ class WordGraph(IgorBase):
                     """
                     INSERT INTO wg_word_docs (word, doc_id, weight) VALUES (?, ?, ?)
                     ON CONFLICT(word, doc_id)
-                    DO UPDATE SET weight = MAX(weight, excluded.weight)
+                    DO UPDATE SET weight = CASE WHEN wg_word_docs.weight > excluded.weight THEN wg_word_docs.weight ELSE excluded.weight END
                 """,
                     [(w, doc_id, weight) for w in unique],
                 )

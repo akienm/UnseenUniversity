@@ -50,8 +50,7 @@ class Tool:
         """Plain text description for browser-based / text-only reasoners."""
         props = self.parameters.get("properties", {})
         params = ", ".join(
-            f"{k}: {v.get('description', v.get('type', ''))}"
-            for k, v in props.items()
+            f"{k}: {v.get('description', v.get('type', ''))}" for k, v in props.items()
         )
         return f"{self.name}({params})\n  {self.description}"
 
@@ -60,8 +59,9 @@ class ToolRegistry:
     def __init__(self):
         self._tools: dict[str, Tool] = {}
 
-    def register(self, tool: Tool):
+    def register(self, tool: "Tool"):
         self._tools[tool.name] = tool
+        return tool  # allows use as decorator (if tool is already an instance)
 
     def get(self, name: str) -> Tool | None:
         return self._tools.get(name)

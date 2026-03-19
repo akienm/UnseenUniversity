@@ -15,7 +15,7 @@ Concrete implementations:
   AnthropicReasoner(APIReasoner)    — Anthropic API
   OpenRouterReasoner(APIReasoner)   — OpenRouter API
   OllamaReasoner(LocalReasoner)     — local Ollama
-  KoboldCppReasoner(LocalReasoner)  — local KoboldCpp (batch only; interactive uses OllamaReasoner)
+  OllamaReasoner(LocalReasoner)     — local or remote Ollama (preparse + background reasoning)
 
 Eventually: no cloud inference at all. Pure habit execution replaces reasoning entirely.
 """
@@ -584,7 +584,7 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
 
 class LocalReasoner(BaseReasoner):
     """
-    Base for all local-hardware reasoners (Ollama, KoboldCpp).
+    Base for all local-hardware reasoners (Ollama).
     No API cost. Latency varies with hardware. No tool support.
     """
 
