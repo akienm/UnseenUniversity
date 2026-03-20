@@ -3721,15 +3721,30 @@ class Igor(IgorBase):
                 loginfo(f"[dim][WATCH] error: {_we}[/]")
             habit = None  # always fall through to LLM
 
-        # #248 bug 2: cognitive/passive_capture habits with no action template produce
-        # "Habit executed. [...]" debug text in responses. Fall through to LLM instead.
-        if habit and habit.metadata.get("habit_type") in (
-            "cognitive",
-            "passive_capture",
+        # #248 bug 2: habits with no action template produce "Habit executed. [...]"
+        # debug text in responses. Fall through to LLM instead for any habit type
+        # that lacks an action/actions key (cognitive, passive_capture, context_inject,
+        # interpretive, etc.).
+        if (
+            habit
+            and not habit.metadata.get("action")
+            and not habit.metadata.get("actions")
         ):
-            if not habit.metadata.get("action") and not habit.metadata.get("actions"):
+            _ht = habit.metadata.get("habit_type", "")
+            # Habits that dispatch via code_ref are fine. Habits with no
+            # action/actions AND no code_ref have nothing to execute — fall
+            # through to LLM rather than emitting "Habit executed. [...]".
+            if not habit.metadata.get("code_ref") and _ht not in (
+                "response",
+                "question",
+                "reactive",
+                "workflow",
+                "delegation",
+                "threshold",
+                "tool",
+            ):
                 self.cortex.write_ring(
-                    f"HABIT_FALLTHROUGH|id={habit.id}|reason=no_action_template",
+                    f"HABIT_FALLTHROUGH|id={habit.id}|type={_ht}|reason=no_action_template",
                     category="habit_trace",
                 )
                 habit = None
