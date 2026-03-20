@@ -393,16 +393,19 @@ class Cortex(IgorBase):
             # Decay computed on read; no background job needed.
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS tails (
-                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                    node_id     TEXT NOT NULL,
-                    weight      REAL NOT NULL DEFAULT 1.0,
-                    recorded_at TEXT NOT NULL
+                    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                    node_id      TEXT NOT NULL,
+                    weight       REAL NOT NULL DEFAULT 1.0,
+                    recorded_at  TEXT NOT NULL,
+                    trail_id     TEXT,
+                    sequence_pos INTEGER
                 )
             """)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_tails_node ON tails(node_id)")
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_tails_time ON tails(recorded_at DESC)"
             )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_tails_trail ON tails(trail_id) WHERE trail_id IS NOT NULL")
 
             # T-traces-infra: static path record — what nodes activated, in what order.
             # One trace per search() call. Permanent (no decay). Load-bearing for:
@@ -1208,8 +1211,8 @@ class Cortex(IgorBase):
                 result = self._spread_activation(result, {}, limit)
                 self._apply_recency_frequency_boost(result)
                 self._touch_last_accessed(result)
-                self._record_tails(result)  # T-tails-infra: record activation heat
-                self._record_trace(query, result)  # T-traces-infra: static path record
+                _trail_id = self._record_trace(query, result)  # T-traces-infra: static path record
+                self._record_tails(result, trail_id=_trail_id)  # T-tails-infra: record activation heat
                 self._apply_trail_training(
                     result
                 )  # T-trail-training: Hebbian edge update
@@ -1223,8 +1226,8 @@ class Cortex(IgorBase):
         result = self._spread_activation(result, {}, limit)
         self._apply_recency_frequency_boost(result)
         self._touch_last_accessed(result)
-        self._record_tails(result)  # T-tails-infra: record activation heat
-        self._record_trace(query, result)  # T-traces-infra: static path record
+        _trail_id = self._record_trace(query, result)  # T-traces-infra: static path record
+        self._record_tails(result, trail_id=_trail_id)  # T-tails-infra: record activation heat
         self._apply_trail_training(result)  # T-trail-training: Hebbian edge update
         return result
 
@@ -1258,22 +1261,25 @@ class Cortex(IgorBase):
 
     # ── Tails — decaying activation heat (T-tails-infra) ──────────────────────
 
-    def _record_tails(self, memories: list) -> None:
+    def _record_tails(self, memories: list, trail_id: str | None = None) -> None:
         """Record a tail entry for each surfaced memory. Called after search results are final.
 
         Weight = relevance_score at time of surfacing (proxy for activation strength).
+        trail_id groups this search call — same UUID as the traces entry.
+        sequence_pos records traversal order within this trail.
         Decay computed on read via TAIL_GRADIENT — no background sweep needed.
         """
         if not memories:
             return
         now_iso = datetime.now().isoformat()
         rows = [
-            (m.id, getattr(m, "relevance_score", 0.5) or 0.5, now_iso) for m in memories
+            (m.id, getattr(m, "relevance_score", 0.5) or 0.5, now_iso, trail_id, i)
+            for i, m in enumerate(memories)
         ]
         try:
             with self._conn() as conn:
                 conn.executemany(
-                    "INSERT INTO tails (node_id, weight, recorded_at) VALUES (?, ?, ?)",
+                    "INSERT INTO tails (node_id, weight, recorded_at, trail_id, sequence_pos) VALUES (?, ?, ?, ?, ?)",
                     rows,
                 )
             # Prune old entries (>7 days) to keep table bounded
@@ -1348,6 +1354,7 @@ class Cortex(IgorBase):
                 conn.execute("DELETE FROM traces WHERE recorded_at < ?", (cutoff,))
         except Exception:
             pass  # trace recording must never block search
+        return trace_id  # T-trails-infra: caller uses this as trail_id for tails
 
     def _apply_trail_training(self, memories: list) -> None:
         """
@@ -1533,21 +1540,52 @@ class Cortex(IgorBase):
             pass  # must not block caller
 
     def _get_recently_activated(self, limit: int = 30) -> list:
-        """T-db-spreading-activation: fetch recently-accessed memories to seed candidate pool.
+        """T-db-spreading-activation: fetch recently-activated memories by tail heat.
 
-        Returns memories ordered by last_accessed DESC — the warmest trail nodes.
-        Excludes structural types (ROOT, CORE_PATTERN) and memories never accessed.
+        Queries tails for nodes with highest recent heat (decay-weighted activation
+        score). Joins to memories to get full Memory objects. Excludes structural types.
+        Falls back to last_accessed if tails is empty.
         """
+        from ..cognition.temporal_gradient import TAIL_GRADIENT
+
         _SKIP = (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value)
         _excl_ph = ",".join("?" * len(_SKIP))
-        with self._conn() as conn:
-            rows = conn.execute(
-                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
-                f"WHERE last_accessed IS NOT NULL AND memory_type NOT IN ({_excl_ph}) "
-                "ORDER BY last_accessed DESC LIMIT ?",
-                list(_SKIP) + [limit],
-            ).fetchall()
-        return [self._to_memory(r) for r in rows]
+        try:
+            # Get top nodes from tails by most recent heat, last 48h
+            cutoff = (datetime.now() - timedelta(hours=48)).isoformat()
+            with self._conn() as conn:
+                tail_rows = conn.execute(
+                    "SELECT node_id, MAX(recorded_at) as last_seen "
+                    "FROM tails WHERE recorded_at > ? "
+                    "GROUP BY node_id ORDER BY last_seen DESC LIMIT ?",
+                    (cutoff, limit * 2),  # fetch extra to account for skipped types
+                ).fetchall()
+            if not tail_rows:
+                raise ValueError("tails empty")
+            # Fetch Memory objects for hot nodes
+            hot_ids = [r[0] for r in tail_rows]
+            _ph = ",".join("?" * len(hot_ids))
+            with self._conn() as conn:
+                rows = conn.execute(
+                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
+                    f"WHERE id IN ({_ph}) AND memory_type NOT IN ({_excl_ph})",
+                    hot_ids + list(_SKIP),
+                ).fetchall()
+            mems = [self._to_memory(r) for r in rows]
+            # Order by tail heat (decay-weighted)
+            heat_map = {r[0]: r[1] for r in tail_rows}
+            mems.sort(key=lambda m: heat_map.get(m.id, ""), reverse=True)
+            return mems[:limit]
+        except Exception:
+            # Fallback: last_accessed ordering
+            with self._conn() as conn:
+                rows = conn.execute(
+                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
+                    f"WHERE last_accessed IS NOT NULL AND memory_type NOT IN ({_excl_ph}) "
+                    "ORDER BY last_accessed DESC LIMIT ?",
+                    list(_SKIP) + [limit],
+                ).fetchall()
+            return [self._to_memory(r) for r in rows]
 
     def _apply_recency_frequency_boost(self, memories: list) -> None:
         """#128 + G45: apply small recency, frequency, inertia, and confidence multipliers."""
