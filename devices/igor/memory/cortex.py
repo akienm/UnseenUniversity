@@ -3092,3 +3092,170 @@ class Cortex(IgorBase):
                 (list_name, instance_id),
             ).fetchall()
         return [dict(r) for r in rows]
+
+    # ── T-graph-calving: Attractor detection + node adoption ──────────────────
+
+    def get_attractors(self, limit: int = 20) -> list:
+        """
+        T-graph-calving: Return top attractor nodes scored by activation_count × (1 + inbound_edges).
+        Attractors are emergent — not labeled, just the most activated + most-linked nodes.
+        Excludes PROCEDURAL habits (they're habits, not knowledge attractors).
+        """
+        with self._conn() as conn:
+            id_rows = conn.execute(
+                """
+                SELECT m.id
+                FROM memories m
+                LEFT JOIN interpretive_edges ie ON ie.to_id = m.id
+                WHERE m.memory_type NOT IN ('PROCEDURAL')
+                GROUP BY m.id, m.activation_count
+                ORDER BY m.activation_count * (1 + COUNT(ie.id)) DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+        ids = [r["id"] for r in id_rows]
+        return [m for m in (self.get(i) for i in ids) if m]
+
+    def node_depth(self, node_id: str, max_depth: int = 6) -> int:
+        """
+        T-graph-calving: Hop count from node to root via parent_id chain. Caps at max_depth.
+        Returns 0 if node is a root or not found.
+        """
+        try:
+            with self._conn() as conn:
+                row = conn.execute(
+                    """
+                    WITH RECURSIVE chain AS (
+                        SELECT id, parent_id, 0 AS depth
+                        FROM memories WHERE id = ?
+                        UNION ALL
+                        SELECT m.id, m.parent_id, c.depth + 1
+                        FROM memories m
+                        JOIN chain c ON m.id = c.parent_id
+                        WHERE c.depth < ?
+                          AND c.parent_id IS NOT NULL
+                          AND c.parent_id != ''
+                    )
+                    SELECT MAX(depth) FROM chain
+                    """,
+                    (node_id, max_depth),
+                ).fetchone()
+            return row[0] if row and row[0] is not None else 0
+        except Exception:
+            return 0
+
+    def adopt_orphans(self, batch_size: int = 50) -> int:
+        """
+        T-graph-calving: Find orphan nodes (no parent_id, no inbound adoption edge) and
+        link them to their nearest attractor via interpretive_edge(direction='adoption').
+        Uses embedding cosine similarity. Returns number of adoptions performed.
+
+        Gate: IGOR_NODE_ADOPTION_ENABLED must be 'true'.
+        """
+        import os as _os
+        import json as _json
+
+        if _os.getenv("IGOR_NODE_ADOPTION_ENABLED", "false").lower() != "true":
+            return 0
+
+        try:
+            import numpy as _np
+        except ImportError:
+            return 0
+
+        threshold = float(_os.getenv("IGOR_ADOPTION_THRESHOLD", "0.3"))
+
+        # Get current attractors + their embeddings
+        attractors = self.get_attractors(limit=20)
+        if not attractors:
+            return 0
+        att_ids = [a.id for a in attractors]
+        att_embs = self._get_embeddings_batch(att_ids)
+        att_pairs = [(aid, att_embs[aid]) for aid in att_ids if att_embs.get(aid)]
+        if not att_pairs:
+            return 0
+
+        # Build normalized attractor matrix
+        att_id_list = [p[0] for p in att_pairs]
+        att_matrix = _np.array([p[1] for p in att_pairs], dtype=_np.float32)
+        att_norms = _np.linalg.norm(att_matrix, axis=1, keepdims=True)
+        att_matrix_norm = att_matrix / _np.maximum(att_norms, 1e-9)
+
+        # Find orphans: no parent_id, not PROC/ROOT, no inbound adoption edge yet
+        with self._conn() as conn:
+            rows = conn.execute(
+                """
+                SELECT m.id FROM memories m
+                WHERE (m.parent_id IS NULL OR m.parent_id = '')
+                  AND m.memory_type NOT IN ('PROCEDURAL', 'ROOT')
+                  AND NOT EXISTS (
+                      SELECT 1 FROM interpretive_edges ie
+                      WHERE ie.to_id = m.id AND ie.direction = 'adoption'
+                  )
+                LIMIT ?
+                """,
+                (batch_size,),
+            ).fetchall()
+        orphan_ids = [r["id"] for r in rows]
+        if not orphan_ids:
+            return 0
+
+        orphan_embs = self._get_embeddings_batch(orphan_ids)
+
+        adopted = 0
+        for oid in orphan_ids:
+            emb = orphan_embs.get(oid)
+            if not emb:
+                continue
+            vec = _np.array(emb, dtype=_np.float32)
+            norm = float(_np.linalg.norm(vec))
+            if norm < 1e-9:
+                continue
+            vec_norm = vec / norm
+            sims = att_matrix_norm @ vec_norm
+            best_idx = int(_np.argmax(sims))
+            best_sim = float(sims[best_idx])
+            if best_sim < threshold:
+                continue
+            try:
+                self.add_interpretive_edge(
+                    att_id_list[best_idx],
+                    oid,
+                    direction="adoption",
+                    meaning_payload=f"orphan adopted; sim={best_sim:.3f}",
+                    layer="adoption",
+                )
+                adopted += 1
+            except Exception:
+                continue
+
+        return adopted
+
+    def find_calving_candidates(self, depth_threshold: int = 5) -> list[str]:
+        """
+        T-graph-calving: Return node IDs at depth > depth_threshold from their nearest root.
+        These are candidates for calving — too specialized to stay in parent tree.
+        Currently returns empty list when max tree depth < threshold (expected at launch).
+        """
+        try:
+            with self._conn() as conn:
+                rows = conn.execute(
+                    """
+                    WITH RECURSIVE chain AS (
+                        SELECT id, parent_id, 0 AS depth
+                        FROM memories
+                        WHERE parent_id IS NULL OR parent_id = ''
+                        UNION ALL
+                        SELECT m.id, m.parent_id, c.depth + 1
+                        FROM memories m
+                        JOIN chain c ON m.parent_id = c.id
+                        WHERE c.depth < 30
+                    )
+                    SELECT id FROM chain WHERE depth > ?
+                    """,
+                    (depth_threshold,),
+                ).fetchall()
+            return [r["id"] for r in rows]
+        except Exception:
+            return []
