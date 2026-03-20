@@ -253,9 +253,8 @@ def _classify_intent(text: str, keywords: list) -> str:
 
     if t.startswith("/"):
         return "command"
-    if any(
-        w in t
-        for w in ["hello", "hi ", "hey ", "good morning", "good evening", "howdy"]
+    if re.search(r"\b(hello|hey|hi|howdy)\b", t) or any(
+        w in t for w in ["good morning", "good evening"]
     ):
         return "greeting"
     if any(
@@ -298,19 +297,8 @@ def _classify_intent(text: str, keywords: list) -> str:
         ]
     ):
         return "code_task"
-    if any(
-        w in t
-        for w in [
-            "analyse",
-            "analyze",
-            "compare",
-            "summarize",
-            "summarise",
-            "what patterns",
-            "what trends",
-            "review ",
-            "audit",
-        ]
+    if re.search(r"\b(analyse|analyze|compare|summarize|summarise|audit)\b", t) or any(
+        w in t for w in ["what patterns", "what trends", "review "]
     ):
         return "analysis_task"
     if any(
