@@ -181,6 +181,14 @@ class Cortex(IgorBase):
                 except Exception:
                     pass  # Column already exists
 
+            # T-memory-sync: updated_at for swarm sync — set on every store()
+            try:
+                conn.execute(
+                    "ALTER TABLE memories ADD COLUMN updated_at TEXT DEFAULT NULL"
+                )
+            except Exception:
+                pass  # Column already exists
+
             # #128: one-time migration — promote non-empty link_ids into links_weighted (weight 0.5)
             _migrate_rows = conn.execute(
                 "SELECT id, link_ids FROM memories "
@@ -405,7 +413,9 @@ class Cortex(IgorBase):
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_tails_time ON tails(recorded_at DESC)"
             )
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_tails_trail ON tails(trail_id) WHERE trail_id IS NOT NULL")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_tails_trail ON tails(trail_id) WHERE trail_id IS NOT NULL"
+            )
 
             # T-traces-infra: static path record — what nodes activated, in what order.
             # One trace per search() call. Permanent (no decay). Load-bearing for:
@@ -480,6 +490,7 @@ class Cortex(IgorBase):
                     memory.links[related.id] = max(
                         memory.links.get(related.id, 0.0), weight
                     )
+        _now_iso = datetime.now().isoformat()
         with self._conn() as conn:
             conn.execute(
                 """
@@ -488,8 +499,8 @@ class Cortex(IgorBase):
                  valence, arousal, dominance,
                  activation_count, friction_history, timestamp, metadata, portable,
                  links_weighted, last_accessed,
-                 source, confidence, context_of_encoding)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 source, confidence, context_of_encoding, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
                     memory.id,
@@ -511,6 +522,7 @@ class Cortex(IgorBase):
                     memory.source,
                     memory.confidence,
                     memory.context_of_encoding,
+                    _now_iso,
                 ),
             )
         # #260: invalidate habit cache when a habit is stored
@@ -1211,8 +1223,12 @@ class Cortex(IgorBase):
                 result = self._spread_activation(result, {}, limit)
                 self._apply_recency_frequency_boost(result)
                 self._touch_last_accessed(result)
-                _trail_id = self._record_trace(query, result)  # T-traces-infra: static path record
-                self._record_tails(result, trail_id=_trail_id)  # T-tails-infra: record activation heat
+                _trail_id = self._record_trace(
+                    query, result
+                )  # T-traces-infra: static path record
+                self._record_tails(
+                    result, trail_id=_trail_id
+                )  # T-tails-infra: record activation heat
                 self._apply_trail_training(
                     result
                 )  # T-trail-training: Hebbian edge update
@@ -1226,8 +1242,12 @@ class Cortex(IgorBase):
         result = self._spread_activation(result, {}, limit)
         self._apply_recency_frequency_boost(result)
         self._touch_last_accessed(result)
-        _trail_id = self._record_trace(query, result)  # T-traces-infra: static path record
-        self._record_tails(result, trail_id=_trail_id)  # T-tails-infra: record activation heat
+        _trail_id = self._record_trace(
+            query, result
+        )  # T-traces-infra: static path record
+        self._record_tails(
+            result, trail_id=_trail_id
+        )  # T-tails-infra: record activation heat
         self._apply_trail_training(result)  # T-trail-training: Hebbian edge update
         return result
 
