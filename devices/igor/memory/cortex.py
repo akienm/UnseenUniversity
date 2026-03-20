@@ -660,12 +660,12 @@ class Cortex(IgorBase):
             ).fetchall()
         return [self._to_memory(r) for r in rows]
 
-    def get_by_type(self, memory_type: MemoryType) -> list:
+    def get_by_type(self, memory_type: MemoryType, limit: int = None) -> list:
+        sql = f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type = ?"
+        if limit:
+            sql += f" ORDER BY timestamp DESC LIMIT {int(limit)}"
         with self._conn() as conn:
-            rows = conn.execute(
-                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type = ?",
-                (memory_type.value,),
-            ).fetchall()
+            rows = conn.execute(sql, (memory_type.value,)).fetchall()
         return [self._to_memory(r) for r in rows]
 
     def add_child(self, parent_id: str, child_id: str):
@@ -1709,6 +1709,24 @@ class Cortex(IgorBase):
         results.sort(key=lambda m: getattr(m, "relevance_score", 0.0), reverse=True)
         return results[:limit]
 
+    def _upsert_embedding(self, memory_id: str, embedding_json: str) -> None:
+        """G-EMB1: Postgres-safe embedding upsert. INSERT OR REPLACE is SQLite-only."""
+        from .db_proxy import PGDatabaseProxy
+
+        with self._conn() as conn:
+            if isinstance(self._db, PGDatabaseProxy):
+                conn.execute(
+                    "INSERT INTO memory_embeddings(memory_id, embedding) VALUES (?, ?)"
+                    " ON CONFLICT (memory_id) DO UPDATE SET embedding = EXCLUDED.embedding",
+                    (memory_id, embedding_json),
+                )
+            else:
+                conn.execute(
+                    "INSERT OR REPLACE INTO memory_embeddings(memory_id, embedding)"
+                    " VALUES (?, ?)",
+                    (memory_id, embedding_json),
+                )
+
     def _get_or_compute_embedding(self, memory) -> Optional[list]:
         """
         G-EMB1: Return the stored embedding from memory_embeddings (separate table).
@@ -1732,12 +1750,7 @@ class Cortex(IgorBase):
 
             vec = embed(memory.narrative)
             if vec:
-                with self._conn() as conn:
-                    conn.execute(
-                        "INSERT OR REPLACE INTO memory_embeddings(memory_id, embedding)"
-                        " VALUES (?, ?)",
-                        (memory.id, json.dumps(vec)),
-                    )
+                self._upsert_embedding(memory.id, json.dumps(vec))
                 return vec
         except Exception:
             pass
@@ -1831,12 +1844,7 @@ class Cortex(IgorBase):
             try:
                 vec = _embed(text)
                 if vec:
-                    with self._conn() as conn:
-                        conn.execute(
-                            "INSERT OR REPLACE INTO memory_embeddings"
-                            "(memory_id, embedding) VALUES (?, ?)",
-                            (row["id"], _json.dumps(vec)),
-                        )
+                    self._upsert_embedding(row["id"], _json.dumps(vec))
                     updated += 1
             except Exception:
                 continue

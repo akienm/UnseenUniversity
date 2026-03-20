@@ -915,7 +915,7 @@ Reply with ONLY a JSON object — no other text:
         try:
             candidates = [
                 m
-                for m in self.cortex.get_by_type(MemoryType.EPISODIC)
+                for m in self.cortex.get_by_type(MemoryType.EPISODIC, limit=500)
                 if m.metadata.get("source") == "narrative_engine"
                 and m.metadata.get("ne_run", 0) >= min_run
                 and not m.metadata.get("merged")  # skip already-merged nodes
