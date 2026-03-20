@@ -501,6 +501,10 @@ _HELP_PHRASES = (
 _MEMORY_LOOKUP_PHRASES = (
     "do you remember",
     "what do you know about",
+    "what have you learned about",
+    "what do you know of",
+    "tell me what you know about",
+    "what have you read about",
     "did you save",
     "did you get that",
     "was that saved",
@@ -625,7 +629,7 @@ def _classify_question_traversal(text: str, intent: str) -> tuple[str, str]:
     ):
         return "", ""
 
-    # Memory verification — "do you remember", "did you save/get/store"
+    # Memory verification — "do you remember", "did you save/get/store", "what have you learned about"
     if any(
         p in t
         for p in (
@@ -636,6 +640,10 @@ def _classify_question_traversal(text: str, intent: str) -> tuple[str, str]:
             "was that saved",
             "what have you saved",
             "what do you know about",
+            "what have you learned about",
+            "what do you know of",
+            "tell me what you know about",
+            "what have you read about",
             "what's my name",
             "who am i",
         )

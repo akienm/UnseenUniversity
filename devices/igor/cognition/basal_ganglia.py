@@ -286,7 +286,7 @@ def select_habit(
         )
         # G-OVN-1d: intents where ALL response habits should fall through to LLM + winnow.
         # Canned response habits must not suppress genuine knowledge queries. (D074 expansion)
-        _KNOWLEDGE_INTENTS = frozenset({"factual_question", "knowledge_request"})
+        _KNOWLEDGE_INTENTS = frozenset({"factual_question", "knowledge_request", "memory_verify"})
 
         # Word graph pre-score: semantic signal over all habits at once (fast)
         _wg_scores: dict[str, float] = {}
