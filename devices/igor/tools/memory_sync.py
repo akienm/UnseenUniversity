@@ -126,9 +126,14 @@ def _fetch_portable(conn, since_iso: str | None, batch_size: int = 500):
 
 def _upsert_batch(conn, rows: list) -> int:
     """Upsert a batch of row dicts into memories. Returns count."""
+    import json as _json
     import psycopg2.extras
 
-    values = [tuple(r[c] for c in _SYNC_COLS) for r in rows]
+    def _adapt(v):
+        # jsonb columns come back as Python dicts/lists from psycopg2 — re-serialize
+        return _json.dumps(v) if isinstance(v, (dict, list)) else v
+
+    values = [tuple(_adapt(r[c]) for c in _SYNC_COLS) for r in rows]
     cur = conn.cursor()
     psycopg2.extras.execute_values(cur, _UPSERT_SQL, values, page_size=200)
     return len(values)
@@ -147,7 +152,8 @@ def _get_last_sync(swarm_instance_id: str, local_conn) -> str | None:
     import json
 
     try:
-        meta = json.loads(row["metadata"] or "{}")
+        raw = row["metadata"] or "{}"
+        meta = raw if isinstance(raw, dict) else json.loads(raw)
         return meta.get("last_sync_at")
     except Exception:
         return None
@@ -166,7 +172,8 @@ def _set_last_sync(swarm_instance_id: str, local_conn, ts: str) -> None:
     if not row:
         return
     try:
-        meta = json.loads(row["metadata"] or "{}")
+        raw = row["metadata"] or "{}"
+        meta = raw if isinstance(raw, dict) else json.loads(raw)
         meta["last_sync_at"] = ts
         cur.execute(
             "UPDATE memories SET metadata = %s, updated_at = %s WHERE id = %s",
