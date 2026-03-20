@@ -3721,6 +3721,34 @@ class Igor(IgorBase):
                 loginfo(f"[dim][WATCH] error: {_we}[/]")
             habit = None  # always fall through to LLM
 
+        # T-fork-primitive #297: fork habit dispatches multiple branch habits simultaneously,
+        # all sharing a traversal_context bucket (context_id passed in args).
+        if habit and habit.metadata.get("habit_type") == "fork":
+            try:
+                _fork_branches = habit.metadata.get("branches", [])
+                _fork_ctx = self.cortex.traversal_start(job_id=habit.id)
+                _fork_fired = []
+                for _branch_id in _fork_branches:
+                    try:
+                        _branch_result = self.execute_habit(
+                            _branch_id, args={"context_id": _fork_ctx}
+                        )
+                        if _branch_result.get("status") == "error":
+                            loginfo(
+                                f"[dim][FORK] branch {_branch_id} error: {_branch_result.get('result','?')[:80]}[/]"
+                            )
+                        else:
+                            _fork_fired.append(_branch_id)
+                    except Exception as _be:
+                        loginfo(f"[dim][FORK] branch {_branch_id} exception: {_be}[/]")
+                loginfo(
+                    f"[dim][FORK] {habit.id} → fired {len(_fork_fired)}/{len(_fork_branches)} branches"
+                    f" ctx={_fork_ctx[:8]}[/]"
+                )
+            except Exception as _fe:
+                loginfo(f"[dim][FORK] error: {_fe}[/]")
+            habit = None  # always fall through to LLM
+
         # #248 bug 2: habits with no action template produce "Habit executed. [...]"
         # debug text in responses. Fall through to LLM instead for any habit type
         # that lacks an action/actions key (cognitive, passive_capture, context_inject,
