@@ -367,7 +367,7 @@ async def _run_as_employer(
             user_data_dir=_EMPLOYER_PROFILE,
             channel="chrome",  # real Chrome, not bundled Chromium
             headless=True,
-            args=["--disable-blink-features=AutomationControlled"],
+            args=["--disable-blink-features=AutomationControlled", "--no-sandbox", "--disable-gpu"],
             ignore_default_args=["--enable-automation"],
         )
         page = await context.new_page()
@@ -487,7 +487,7 @@ async def _scrape_anthropic_balance() -> str:
             user_data_dir=_EMPLOYER_PROFILE,
             channel="chrome",
             headless=True,
-            args=["--disable-blink-features=AutomationControlled"],
+            args=["--disable-blink-features=AutomationControlled", "--no-sandbox", "--disable-gpu"],
             ignore_default_args=["--enable-automation"],
         )
         page = await context.new_page()
