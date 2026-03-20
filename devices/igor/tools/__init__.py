@@ -37,6 +37,7 @@ from . import (
     converter,
     sudo_relay,
     memory_sync,
+    reading_integration,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
