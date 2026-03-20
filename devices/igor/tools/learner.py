@@ -687,27 +687,34 @@ def list_absorbed_books(**_kwargs) -> str:
     try:
         with _igor_db_proxy()() as conn:
             rows = conn.execute("""
-                SELECT metadata, COUNT(*) as node_count
+                SELECT metadata
                 FROM memories
                 WHERE memory_type IN ('FACTUAL','INTERPRETIVE','PROCEDURAL')
                   AND source = 'reading'
-                  AND json_extract(metadata, '$.book_title') IS NOT NULL
-                GROUP BY json_extract(metadata, '$.book_title'), json_extract(metadata, '$.book_author')
-                ORDER BY node_count DESC
             """).fetchall()
     except Exception as e:
         return f"Error querying absorbed books: {e}"
 
-    if not rows:
-        return "No books have been absorbed yet."
+    # Group by book_title in Python — avoids json_extract (SQLite-only) vs ->>' (Postgres-only)
+    from collections import defaultdict
 
-    lines = [f"Absorbed {len(rows)} source(s):"]
-    total_nodes = 0
+    book_counts: dict = defaultdict(lambda: {"author": "", "count": 0})
     for row in rows:
         meta = json.loads(row["metadata"]) if row["metadata"] else {}
-        title = meta.get("book_title", "Unknown")
-        author = meta.get("book_author", "")
-        count = row["node_count"]
+        title = meta.get("book_title")
+        if not title:
+            continue
+        book_counts[title]["author"] = meta.get("book_author", "")
+        book_counts[title]["count"] += 1
+
+    if not book_counts:
+        return "No books have been absorbed yet."
+
+    lines = [f"Absorbed {len(book_counts)} source(s):"]
+    total_nodes = 0
+    for title, info in sorted(book_counts.items(), key=lambda x: -x[1]["count"]):
+        author = info["author"]
+        count = info["count"]
         total_nodes += count
         entry = f"  • {title}"
         if author:
