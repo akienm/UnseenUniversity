@@ -354,6 +354,13 @@ async def _run_as_employer(
     extracted_text = ""
 
     async with async_playwright() as p:
+        # Remove stale Chrome singleton locks (left by unclean exits)
+        import pathlib as _pathlib
+
+        for _lock in ["SingletonLock", "SingletonSocket"]:
+            _p = _pathlib.Path(_EMPLOYER_PROFILE) / _lock
+            if _p.exists() or _p.is_symlink():
+                _p.unlink(missing_ok=True)
         # launch_persistent_context reuses the profile's cookies, localStorage,
         # and session tokens — Igor inherits the employer's logged-in state.
         context = await p.chromium.launch_persistent_context(
@@ -469,6 +476,13 @@ async def _scrape_anthropic_balance() -> str:
     extracted_text = ""
 
     async with async_playwright() as p:
+        # Remove stale Chrome singleton locks (left by unclean exits)
+        import pathlib as _pathlib
+
+        for _lock in ["SingletonLock", "SingletonSocket"]:
+            _p = _pathlib.Path(_EMPLOYER_PROFILE) / _lock
+            if _p.exists() or _p.is_symlink():
+                _p.unlink(missing_ok=True)
         context = await p.chromium.launch_persistent_context(
             user_data_dir=_EMPLOYER_PROFILE,
             channel="chrome",
