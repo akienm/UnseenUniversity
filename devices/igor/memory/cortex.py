@@ -69,6 +69,183 @@ TWM_TTL_EXTENSION_SECONDS = int(
 )
 
 
+# ── Postgres bootstrap schema ─────────────────────────────────────────────────
+# Used by Cortex._init_pg_schema() to initialise a fresh Postgres DB.
+# SERIAL replaces AUTOINCREMENT; all columns match the current SQLite DDL path.
+_PG_SCHEMA = """
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+CREATE TABLE IF NOT EXISTS _migrations (
+    name        TEXT PRIMARY KEY,
+    applied_at  TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS memories (
+    id                  TEXT PRIMARY KEY,
+    narrative           TEXT,
+    memory_type         TEXT,
+    parent_id           TEXT,
+    children_ids        TEXT DEFAULT '[]',
+    link_ids            TEXT DEFAULT '[]',
+    valence             REAL DEFAULT 0.0,
+    activation_count    INTEGER DEFAULT 0,
+    friction_history    TEXT DEFAULT '[]',
+    timestamp           TEXT,
+    metadata            JSONB DEFAULT '{}'::jsonb,
+    embedding           TEXT,
+    arousal             REAL DEFAULT 0.0,
+    dominance           REAL DEFAULT 0.0,
+    portable            INTEGER DEFAULT 1,
+    links_weighted      TEXT DEFAULT '{}',
+    last_accessed       TEXT,
+    source              TEXT,
+    confidence          REAL DEFAULT 1.0,
+    context_of_encoding TEXT,
+    updated_at          TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_memories_metadata_gin ON memories USING GIN (metadata);
+CREATE INDEX IF NOT EXISTS idx_memories_memory_type  ON memories (memory_type);
+CREATE INDEX IF NOT EXISTS idx_memories_parent_id    ON memories (parent_id);
+CREATE INDEX IF NOT EXISTS idx_memories_activation   ON memories (activation_count DESC);
+CREATE INDEX IF NOT EXISTS idx_memories_ne_scan      ON memories (activation_count DESC) WHERE memory_type NOT IN ('ROOT', 'CORE_PATTERN');
+
+CREATE TABLE IF NOT EXISTS ring_memory (
+    id          SERIAL PRIMARY KEY,
+    category    TEXT,
+    content     TEXT,
+    timestamp   TEXT,
+    thread_id   TEXT
+);
+
+CREATE TABLE IF NOT EXISTS twm_observations (
+    id                  SERIAL PRIMARY KEY,
+    timestamp           TEXT,
+    source              TEXT,
+    content_csb         TEXT,
+    salience            REAL,
+    metadata_json       TEXT,
+    integrated          INTEGER DEFAULT 0,
+    integration_count   INTEGER DEFAULT 0,
+    expires_at          TEXT,
+    urgency             REAL DEFAULT 0.5,
+    instance_id         TEXT,
+    thread_id           TEXT,
+    category            TEXT,
+    attractor_weight    REAL DEFAULT 0.0,
+    parent_obs_id       INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_twm_integrated          ON twm_observations (integrated);
+CREATE INDEX IF NOT EXISTS idx_twm_expires_at          ON twm_observations (expires_at);
+CREATE INDEX IF NOT EXISTS idx_twm_instance_id         ON twm_observations (instance_id);
+CREATE INDEX IF NOT EXISTS idx_twm_instance_integrated ON twm_observations (instance_id, integrated, id ASC);
+
+CREATE TABLE IF NOT EXISTS memory_blobs (
+    id          SERIAL PRIMARY KEY,
+    memory_id   TEXT REFERENCES memories(id),
+    content     TEXT,
+    tags        TEXT DEFAULT '[]',
+    created_at  TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_blobs_memory_id ON memory_blobs (memory_id);
+
+CREATE TABLE IF NOT EXISTS interpretive_edges (
+    id              SERIAL PRIMARY KEY,
+    from_id         TEXT REFERENCES memories(id),
+    to_id           TEXT REFERENCES memories(id),
+    direction       TEXT,
+    condition_csb   TEXT,
+    meaning_payload TEXT,
+    action_pointer  TEXT,
+    weight          REAL DEFAULT 1.0,
+    created_at      TEXT,
+    layer           TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_edges_from_id ON interpretive_edges (from_id);
+CREATE INDEX IF NOT EXISTS idx_edges_to_id   ON interpretive_edges (to_id);
+
+CREATE TABLE IF NOT EXISTS reading_list (
+    id                      TEXT PRIMARY KEY,
+    title                   TEXT,
+    author                  TEXT,
+    source                  TEXT,
+    book_type               TEXT,
+    reading_rate            TEXT,
+    priority                INTEGER DEFAULT 5,
+    status                  TEXT DEFAULT 'pending',
+    emotional_significance  TEXT,
+    encoding_arousal        REAL DEFAULT 0.5,
+    notes                   TEXT,
+    added_by                TEXT,
+    added_at                TEXT,
+    started_at              TEXT,
+    completed_at            TEXT
+);
+
+CREATE TABLE IF NOT EXISTS lists (
+    list_name   TEXT,
+    item_key    TEXT,
+    item_value  TEXT,
+    ref_type    TEXT,
+    ref_id      TEXT,
+    instance_id TEXT DEFAULT '',
+    updated_at  TEXT,
+    PRIMARY KEY (list_name, item_key, instance_id)
+);
+
+CREATE TABLE IF NOT EXISTS memory_embeddings (
+    memory_id   TEXT PRIMARY KEY REFERENCES memories(id),
+    embedding   TEXT
+);
+
+CREATE TABLE IF NOT EXISTS active_slate (
+    slate_id    TEXT PRIMARY KEY,
+    created_at  TEXT NOT NULL,
+    updated_at  TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'active',
+    items       TEXT NOT NULL DEFAULT '[]'
+);
+
+CREATE TABLE IF NOT EXISTS tails (
+    id           SERIAL PRIMARY KEY,
+    node_id      TEXT NOT NULL,
+    weight       REAL NOT NULL DEFAULT 1.0,
+    recorded_at  TEXT NOT NULL,
+    trail_id     TEXT,
+    sequence_pos INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_tails_node  ON tails (node_id);
+CREATE INDEX IF NOT EXISTS idx_tails_time  ON tails (recorded_at DESC);
+CREATE INDEX IF NOT EXISTS idx_tails_trail ON tails (trail_id) WHERE trail_id IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS traces (
+    id          TEXT PRIMARY KEY,
+    recorded_at TEXT NOT NULL,
+    query       TEXT,
+    nodes       TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_traces_time ON traces (recorded_at DESC);
+
+CREATE TABLE IF NOT EXISTS traversal_contexts (
+    id          SERIAL PRIMARY KEY,
+    context_id  TEXT NOT NULL,
+    job_id      TEXT,
+    key         TEXT NOT NULL,
+    value       TEXT NOT NULL,
+    step        INTEGER NOT NULL DEFAULT 0,
+    recorded_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_tctx_ctx     ON traversal_contexts (context_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tctx_ctx_key ON traversal_contexts (context_id, key);
+"""
+
+
 class Cortex(IgorBase):
     """SQLite-backed memory graph."""
 
@@ -98,13 +275,15 @@ class Cortex(IgorBase):
         from .db_proxy import PGDatabaseProxy
 
         if isinstance(self._db, PGDatabaseProxy):
-            # Postgres schema was already created by migrate_sqlite_to_postgres.py.
-            # Skip all SQLite-specific DDL — it contains AUTOINCREMENT syntax etc.
-            # that Postgres rejects. The _migrations table double-check below is all
-            # that's needed to confirm the DB is ready.
-            with self._conn() as conn:
-                conn.execute("SELECT 1 FROM memories LIMIT 1")
-            return
+            # Postgres: check if already initialised; if not, bootstrap schema.
+            # Fresh DBs raise UndefinedTable — fall through to _init_pg_schema().
+            try:
+                with self._conn() as conn:
+                    conn.execute("SELECT 1 FROM memories LIMIT 1")
+                return  # already initialised
+            except Exception:
+                self._init_pg_schema()
+                return
 
         with self._conn() as conn:
             # #261: one-time migration tracker — prevents costly scans on every boot
@@ -470,6 +649,22 @@ class Cortex(IgorBase):
             # G-QP2: wal_checkpoint moved to main.py post-Cortex-init (G-QP3)
             # Do NOT checkpoint here — _init_db() runs on every Cortex() instantiation
             # (book_learner, tools, etc.) and would flood the DB with checkpoint contention
+
+    def _init_pg_schema(self) -> None:
+        """Bootstrap the full schema on a fresh Postgres DB.
+        Uses autocommit so CREATE EXTENSION works without transaction restrictions.
+        """
+        raw_conn = self._db._pool.getconn()
+        try:
+            raw_conn.autocommit = True
+            cur = raw_conn.cursor()
+            for stmt in _PG_SCHEMA.strip().split(";"):
+                stmt = stmt.strip()
+                if stmt:
+                    cur.execute(stmt)
+        finally:
+            raw_conn.autocommit = False
+            self._db._pool.putconn(raw_conn)
 
     # ── Long-term memory graph ─────────────────────────────────────────────────
 
