@@ -62,9 +62,10 @@ _SYNC_COLS = (
     "updated_at",
 )
 
+# execute_values requires a single %s placeholder for the VALUES block.
 _UPSERT_SQL = """
     INSERT INTO memories ({cols})
-    VALUES ({placeholders})
+    VALUES %s
     ON CONFLICT (id) DO UPDATE SET
         narrative          = CASE WHEN EXCLUDED.updated_at > COALESCE(memories.updated_at, '')
                                   THEN EXCLUDED.narrative ELSE memories.narrative END,
@@ -77,10 +78,7 @@ _UPSERT_SQL = """
         activation_count   = GREATEST(memories.activation_count, EXCLUDED.activation_count),
         updated_at         = GREATEST(COALESCE(memories.updated_at, ''),
                                       COALESCE(EXCLUDED.updated_at, ''))
-""".format(
-    cols=", ".join(_SYNC_COLS),
-    placeholders=", ".join(["%s"] * len(_SYNC_COLS)),
-)
+""".format(cols=", ".join(_SYNC_COLS))
 
 
 def _log(msg: str) -> None:
