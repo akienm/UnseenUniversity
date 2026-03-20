@@ -720,6 +720,24 @@ def start(stats_fn=None, cortex_fn=None, igor_fn=None):
     _server_thread = threading.Thread(target=_run, daemon=True, name="web-server")
     _server_thread.start()
 
+    # When SSL is active, also serve plain HTTP on port+1 for LAN access.
+    # e.g. http://10.0.0.229:8081/ works without cert warnings.
+    if ssl_cert and ssl_key:
+        http_port = int(os.getenv("IGOR_HTTP_PORT", str(port + 1)))
+
+        def _run_http():
+            app = _make_app()
+            config = uvicorn.Config(
+                app,
+                host="0.0.0.0",
+                port=http_port,
+                log_level="warning",
+            )
+            server = uvicorn.Server(config)
+            asyncio.run(server.serve())
+
+        threading.Thread(target=_run_http, daemon=True, name="web-server-http").start()
+
 
 def is_running() -> bool:
     return _server_thread is not None and _server_thread.is_alive()

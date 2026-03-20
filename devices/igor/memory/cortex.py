@@ -419,6 +419,29 @@ class Cortex(IgorBase):
                 "CREATE INDEX IF NOT EXISTS idx_traces_time ON traces(recorded_at DESC)"
             )
 
+            # T-traversal-context: habit-chain execution state — key/value store per job.
+            # Each traversal_start() mints a context_id (UUID). Habits read/write keys
+            # via traversal_get/traversal_set. context_id propagates through the chain
+            # via a TWM special key (TRAVERSAL_CTX_ID). Prerequisite for T-os-primitives.
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS traversal_contexts (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    context_id  TEXT NOT NULL,
+                    job_id      TEXT,
+                    key         TEXT NOT NULL,
+                    value       TEXT NOT NULL,
+                    step        INTEGER NOT NULL DEFAULT 0,
+                    recorded_at TEXT NOT NULL
+                )
+            """)
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_tctx_ctx ON traversal_contexts(context_id)"
+            )
+            conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_tctx_ctx_key "
+                "ON traversal_contexts(context_id, key)"
+            )
+
             # G-QP2: wal_checkpoint moved to main.py post-Cortex-init (G-QP3)
             # Do NOT checkpoint here — _init_db() runs on every Cortex() instantiation
             # (book_learner, tools, etc.) and would flood the DB with checkpoint contention
@@ -1347,6 +1370,69 @@ class Cortex(IgorBase):
             ]
         except Exception:
             return []
+
+    # ── Traversal context — habit-chain execution state (T-traversal-context) ──
+
+    def traversal_start(self, job_id: str = "") -> str:
+        """Mint a new traversal context_id and record its metadata row.
+
+        Returns the context_id (UUID). The caller should push it to TWM under
+        the key 'TRAVERSAL_CTX_ID' so downstream habits in the same chain can
+        retrieve it via traversal_get().
+
+        job_id is optional — pass the background job id when this chain runs
+        under job_manager so the context can be correlated with job logs.
+        """
+        import uuid as _uuid
+
+        ctx_id = str(_uuid.uuid4())
+        now = datetime.utcnow().isoformat()
+        try:
+            with self._conn() as conn:
+                conn.execute(
+                    "INSERT INTO traversal_contexts "
+                    "(context_id, job_id, key, value, step, recorded_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (ctx_id, job_id or "", "__init__", "1", 0, now),
+                )
+        except Exception:
+            pass  # must not block caller
+        return ctx_id
+
+    def traversal_get(self, context_id: str, key: str) -> Optional[str]:
+        """Return the value stored at (context_id, key), or None if not set."""
+        try:
+            with self._conn() as conn:
+                row = conn.execute(
+                    "SELECT value FROM traversal_contexts "
+                    "WHERE context_id = ? AND key = ?",
+                    (context_id, key),
+                ).fetchone()
+            return row[0] if row else None
+        except Exception:
+            return None
+
+    def traversal_set(
+        self, context_id: str, key: str, value: str, step: int = 0
+    ) -> None:
+        """Write or overwrite (context_id, key) → value.
+
+        step is informational — records which step in the chain wrote this key,
+        useful for post-hoc trace inspection.
+        """
+        now = datetime.utcnow().isoformat()
+        try:
+            with self._conn() as conn:
+                conn.execute(
+                    "INSERT INTO traversal_contexts "
+                    "(context_id, job_id, key, value, step, recorded_at) "
+                    "VALUES (?, '', ?, ?, ?, ?) "
+                    "ON CONFLICT(context_id, key) DO UPDATE SET "
+                    "value=excluded.value, step=excluded.step, recorded_at=excluded.recorded_at",
+                    (context_id, key, value, step, now),
+                )
+        except Exception:
+            pass  # must not block caller
 
     def _get_recently_activated(self, limit: int = 30) -> list:
         """T-db-spreading-activation: fetch recently-accessed memories to seed candidate pool.
