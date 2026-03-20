@@ -413,6 +413,18 @@ class Cortex(IgorBase):
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_tails_time ON tails(recorded_at DESC)"
             )
+            # Migration: trail_id + sequence_pos added after initial tails deploy —
+            # must precede the idx_tails_trail index creation
+            try:
+                conn.execute("ALTER TABLE tails ADD COLUMN trail_id TEXT DEFAULT NULL")
+            except Exception:
+                pass
+            try:
+                conn.execute(
+                    "ALTER TABLE tails ADD COLUMN sequence_pos INTEGER DEFAULT NULL"
+                )
+            except Exception:
+                pass
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_tails_trail ON tails(trail_id) WHERE trail_id IS NOT NULL"
             )
