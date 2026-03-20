@@ -1703,6 +1703,139 @@ class Cortex(IgorBase):
         except Exception:
             return []
 
+    # ── Trail inspection API (T-trails-infra) ─────────────────────────────────
+
+    def trails_through_node(self, node_id: str, limit: int = 10) -> list:
+        """Return recent trails that passed through node_id.
+
+        Each entry: {trail_id, recorded_at, node_count, nodes: [{node_id, sequence_pos, weight}]}
+        Ordered newest first.
+        """
+        try:
+            with self._conn() as conn:
+                trail_ids = [
+                    r[0]
+                    for r in conn.execute(
+                        "SELECT DISTINCT trail_id FROM tails "
+                        "WHERE node_id = ? AND trail_id IS NOT NULL "
+                        "ORDER BY recorded_at DESC LIMIT ?",
+                        (node_id, limit),
+                    ).fetchall()
+                ]
+            if not trail_ids:
+                return []
+            results = []
+            for tid in trail_ids:
+                with self._conn() as conn:
+                    rows = conn.execute(
+                        "SELECT node_id, sequence_pos, weight, recorded_at "
+                        "FROM tails WHERE trail_id = ? ORDER BY sequence_pos",
+                        (tid,),
+                    ).fetchall()
+                if rows:
+                    results.append(
+                        {
+                            "trail_id": tid,
+                            "recorded_at": rows[0][3],
+                            "node_count": len(rows),
+                            "nodes": [
+                                {
+                                    "node_id": r[0],
+                                    "sequence_pos": r[1],
+                                    "weight": round(float(r[2]), 4),
+                                }
+                                for r in rows
+                            ],
+                        }
+                    )
+            return results
+        except Exception:
+            return []
+
+    def trail_gradient(self, node_id: str, window_minutes: int = 60) -> dict:
+        """Compute the heat trend for a node — rising, flat, or fading.
+
+        Splits recent history into two equal windows and compares summed heat.
+        Returns: {trend: 'rising'|'flat'|'fading', recent_heat: float, earlier_heat: float}
+        """
+        from ..cognition.temporal_gradient import TAIL_GRADIENT
+
+        try:
+            now = datetime.now()
+            half = timedelta(minutes=window_minutes // 2)
+            full = timedelta(minutes=window_minutes)
+            mid = now - half
+            start = now - full
+
+            with self._conn() as conn:
+                rows = conn.execute(
+                    "SELECT weight, recorded_at FROM tails "
+                    "WHERE node_id = ? AND recorded_at > ? "
+                    "ORDER BY recorded_at DESC",
+                    (node_id, start.isoformat()),
+                ).fetchall()
+
+            recent_heat = 0.0
+            earlier_heat = 0.0
+            for weight, recorded_at_str in rows:
+                try:
+                    recorded_at = datetime.fromisoformat(recorded_at_str)
+                    decayed = TAIL_GRADIENT.apply_for(float(weight), recorded_at, now)
+                    if recorded_at >= mid:
+                        recent_heat += decayed
+                    else:
+                        earlier_heat += decayed
+                except Exception:
+                    continue
+
+            if earlier_heat < 1e-6:
+                trend = "rising" if recent_heat > 1e-6 else "flat"
+            elif recent_heat > earlier_heat * 1.3:
+                trend = "rising"
+            elif recent_heat < earlier_heat * 0.7:
+                trend = "fading"
+            else:
+                trend = "flat"
+
+            return {
+                "trend": trend,
+                "recent_heat": round(recent_heat, 4),
+                "earlier_heat": round(earlier_heat, 4),
+            }
+        except Exception:
+            return {"trend": "unknown", "recent_heat": 0.0, "earlier_heat": 0.0}
+
+    def hot_paths(self, limit: int = 10, since_hours: int = 24) -> list:
+        """Return the most frequently co-activated node pairs from recent trails.
+
+        Each entry: {node_a, node_b, co_count, last_seen}
+        Ordered by co_count descending.
+        """
+        try:
+            cutoff = (datetime.now() - timedelta(hours=since_hours)).isoformat()
+            with self._conn() as conn:
+                # Self-join on trail_id to find co-occurring node pairs
+                rows = conn.execute(
+                    "SELECT a.node_id, b.node_id, COUNT(*) as co_count, MAX(a.recorded_at) "
+                    "FROM tails a "
+                    "JOIN tails b ON a.trail_id = b.trail_id AND a.node_id < b.node_id "
+                    "WHERE a.trail_id IS NOT NULL AND a.recorded_at > ? "
+                    "GROUP BY a.node_id, b.node_id "
+                    "ORDER BY co_count DESC LIMIT ?",
+                    (cutoff, limit),
+                ).fetchall()
+            return [
+                {
+                    "node_a": r[0],
+                    "node_b": r[1],
+                    "co_count": r[2],
+                    "last_seen": r[3],
+                }
+                for r in rows
+            ]
+        except Exception:
+            return []
+
     # ── Traversal context — habit-chain execution state (T-traversal-context) ──
 
     def traversal_start(self, job_id: str = "") -> str:
