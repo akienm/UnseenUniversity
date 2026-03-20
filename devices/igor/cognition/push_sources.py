@@ -179,12 +179,13 @@ class HeartbeatSource(BasePushSource):
     Replaces TimerSentinel. Every MIN_INTERVAL_SEC seconds:
 
       1. Pushes time/session tick to TWM at salience 0.4.
-      2. Checks budget — if warn/critical, pushes high-salience alert.
-      3. Scans for PROCEDURAL memories with trigger='heartbeat_check'
+      2. Hot-reloads .env if mtime changed (D119 env_sync).
+      3. Checks budget — if warn/critical, pushes high-salience alert.
+      4. Scans for PROCEDURAL memories with trigger='heartbeat_check'
          and includes their conditions as context.
-      4. Sends proactive Discord alert for CRITICAL/EXHAUSTED budget
+      5. Sends proactive Discord alert for CRITICAL/EXHAUSTED budget
          (once per level per session to avoid spam).
-      5. Arbiter pending items checked via HeartbeatSource._check_arbiter() (change.33).
+      6. Arbiter pending items checked via HeartbeatSource._check_arbiter() (change.33).
     """
 
     name = "heartbeat"
@@ -229,10 +230,13 @@ class HeartbeatSource(BasePushSource):
         )
         pushed.append(obs_id)
 
-        # 2. Budget status check
+        # 2. .env hot-reload — pick up changes without full restart
+        self._check_env_sync(cortex)
+
+        # 3. Budget status check
         pushed.extend(self._check_budget(cortex))
 
-        # 3. HEARTBEAT procedural memories (user-defined conditions)
+        # 4. HEARTBEAT procedural memories (user-defined conditions)
         pushed.extend(self._check_heartbeat_memories(cortex, now))
 
         return pushed
@@ -324,6 +328,18 @@ class HeartbeatSource(BasePushSource):
             urgency=0.3,  # Change 4: heartbeat procedural check — not time-critical
         )
         return [obs_id]
+
+    def _check_env_sync(self, cortex) -> None:
+        """Hot-reload .env into os.environ if mtime changed. Non-fatal."""
+        try:
+            import os
+            from ..env_sync import boot_env_sync
+
+            instance_id = os.environ.get("IGOR_INSTANCE_ID", "wild-0001")
+            env_path = paths().instance / ".env"
+            boot_env_sync(cortex, instance_id, env_path)
+        except Exception:
+            pass
 
     def _alert_discord(self, message: str):
         """Best-effort proactive Discord alert. Silently ignores all errors."""
