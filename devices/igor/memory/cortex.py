@@ -388,6 +388,37 @@ class Cortex(IgorBase):
                 )
             """)
 
+            # T-tails-infra: decaying activation heat — biological analog.
+            # Records each node surfaced by search with its relevance weight.
+            # Decay computed on read; no background job needed.
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS tails (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    node_id     TEXT NOT NULL,
+                    weight      REAL NOT NULL DEFAULT 1.0,
+                    recorded_at TEXT NOT NULL
+                )
+            """)
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_tails_node ON tails(node_id)")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_tails_time ON tails(recorded_at DESC)"
+            )
+
+            # T-traces-infra: static path record — what nodes activated, in what order.
+            # One trace per search() call. Permanent (no decay). Load-bearing for:
+            # debugging ("why did Igor surface that?"), RED ALERT retrospective, introspection.
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS traces (
+                    id          TEXT PRIMARY KEY,
+                    recorded_at TEXT NOT NULL,
+                    query       TEXT,
+                    nodes       TEXT NOT NULL
+                )
+            """)
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_traces_time ON traces(recorded_at DESC)"
+            )
+
             # G-QP2: wal_checkpoint moved to main.py post-Cortex-init (G-QP3)
             # Do NOT checkpoint here — _init_db() runs on every Cortex() instantiation
             # (book_learner, tools, etc.) and would flood the DB with checkpoint contention
@@ -893,9 +924,79 @@ class Cortex(IgorBase):
                 pass
         return dict(sorted(counts.items(), key=lambda x: x[1], reverse=True))
 
-    def search(self, query: str, limit: int = 10, emotional_context=None) -> list:
+    @staticmethod
+    def _route_types_from_query(query_lower: str) -> list | None:
         """
-        Three-phase hybrid search (#172 + change.37).
+        T-db-type-routing: infer relevant memory types from query keywords.
+        Returns a list of MemoryType values to prioritize, or None for default (all types).
+
+        Heuristics:
+          - Procedural cues  → PROCEDURAL + INTERPRETIVE (how-to, tool use, steps)
+          - Personal cues    → EPISODIC + EXPERIENTIAL + IDENTITY (subjective, self-referential)
+          - Default          → None (all types, current behaviour)
+
+        These are additive hints, not hard filters — the Phase 0 traversal and Phase 2
+        cosine rerank will still surface other types when they're genuinely relevant.
+        """
+        _procedural_cues = {
+            "how",
+            "steps",
+            "restart",
+            "run",
+            "install",
+            "configure",
+            "enable",
+            "disable",
+            "reload",
+            "deploy",
+            "build",
+            "fix",
+            "debug",
+            "implement",
+            "set up",
+            "set",
+            "use",
+        }
+        _personal_cues = {
+            " i ",
+            " my ",
+            " me ",
+            " i'",
+            "feel",
+            "think",
+            "believe",
+            "remember",
+            "experience",
+            "did i",
+            "have i",
+        }
+
+        _words = set(query_lower.split())
+        if _words & _procedural_cues:
+            return [
+                MemoryType.PROCEDURAL.value,
+                MemoryType.INTERPRETIVE.value,
+                MemoryType.FACTUAL.value,
+            ]
+        for cue in _personal_cues:
+            if cue in query_lower:
+                return [
+                    MemoryType.EPISODIC.value,
+                    MemoryType.EXPERIENTIAL.value,
+                    MemoryType.IDENTITY.value,
+                    MemoryType.INTERPRETIVE.value,
+                ]
+        return None
+
+    def search(
+        self,
+        query: str,
+        limit: int = 10,
+        emotional_context=None,
+        memory_types: list | None = None,
+    ) -> list:
+        """
+        Three-phase hybrid search (#172 + change.37 + T-db-type-routing).
 
         Phase 0 — traversal-first (#172, always runs):
           If TWM has an active attractor, follow graph edges (parent/children/links)
@@ -909,14 +1010,48 @@ class Cortex(IgorBase):
         Phase 2 — embedding re-rank (runs when Ollama available):
           Embed the query; cosine-rank the merged candidate pool. Falls back silently
           to the pre-ranked pool if nomic-embed-text is unavailable.
+
+        Type routing (T-db-type-routing):
+          memory_types overrides auto-routing. When None, _route_types_from_query()
+          infers relevant types from query keywords. All types still represented via
+          Phase 0 traversal; type routing shapes the Phase 1 candidate pool only.
         """
         terms = query.lower().split()
+        _query_lower = query.lower()
+
+        # T-db-type-routing: determine candidate pool type filter
+        _routed_types = (
+            memory_types
+            if memory_types is not None
+            else self._route_types_from_query(_query_lower)
+        )
+        _ALWAYS_EXCLUDE = (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value)
+
         with self._conn() as conn:
-            rows = conn.execute(
-                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type NOT IN (?, ?) "
-                "ORDER BY activation_count DESC LIMIT 300",  # G-QP2: cap candidate pool; G-MEM2: no embedding blob
-                (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value),
-            ).fetchall()
+            if _routed_types:
+                # Type-routed fetch: prioritized types get 200 slots, remainder 100
+                _ph = ",".join("?" * len(_routed_types))
+                _excl_ph = ",".join("?" * len(_ALWAYS_EXCLUDE))
+                routed_rows = conn.execute(
+                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
+                    f"WHERE memory_type IN ({_ph}) AND memory_type NOT IN ({_excl_ph}) "
+                    "ORDER BY activation_count DESC LIMIT 200",
+                    _routed_types + list(_ALWAYS_EXCLUDE),
+                ).fetchall()
+                # Fill remainder from other types to keep total pool at ~300
+                remainder_rows = conn.execute(
+                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
+                    f"WHERE memory_type NOT IN ({_ph}) AND memory_type NOT IN ({_excl_ph}) "
+                    "ORDER BY activation_count DESC LIMIT 100",
+                    _routed_types + list(_ALWAYS_EXCLUDE),
+                ).fetchall()
+                rows = routed_rows + remainder_rows
+            else:
+                rows = conn.execute(
+                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type NOT IN (?, ?) "
+                    "ORDER BY activation_count DESC LIMIT 300",  # G-QP2: cap candidate pool; G-MEM2: no embedding blob
+                    _ALWAYS_EXCLUDE,
+                ).fetchall()
 
         all_memories = [self._to_memory(r) for r in rows]
 
@@ -955,6 +1090,18 @@ class Cortex(IgorBase):
         _max_terms = max(1, len(terms))
         _trav_map: dict[str, "Memory"] = {m.id: m for m in _traversal}
         _merged: dict[str, "Memory"] = dict(_trav_map)
+
+        # T-db-spreading-activation: seed candidate pool from recently-activated nodes.
+        # Warm memories (recently surfaced) get a small base presence so cosine rerank
+        # can promote them if genuinely relevant. Never forces results — Phase 2 decides.
+        try:
+            for m in self._get_recently_activated(limit=30):
+                if m.id not in _merged:
+                    m.relevance_score = 0.1  # type: ignore[attr-defined]
+                    _merged[m.id] = m
+        except Exception:
+            pass  # Spreading activation must never block search
+
         for score, m in text_scored:
             norm_score = score / _max_terms
             if m.id not in _merged:
@@ -1038,6 +1185,8 @@ class Cortex(IgorBase):
                 result = self._spread_activation(result, {}, limit)
                 self._apply_recency_frequency_boost(result)
                 self._touch_last_accessed(result)
+                self._record_tails(result)  # T-tails-infra: record activation heat
+                self._record_trace(query, result)  # T-traces-infra: static path record
                 return result
         except Exception:
             pass  # Embedding unavailable — fall through to text results
@@ -1048,6 +1197,8 @@ class Cortex(IgorBase):
         result = self._spread_activation(result, {}, limit)
         self._apply_recency_frequency_boost(result)
         self._touch_last_accessed(result)
+        self._record_tails(result)  # T-tails-infra: record activation heat
+        self._record_trace(query, result)  # T-traces-infra: static path record
         return result
 
     def _touch_last_accessed(self, memories: list) -> None:
@@ -1077,6 +1228,142 @@ class Cortex(IgorBase):
                 )
         except Exception:
             pass  # last_accessed update must never block search
+
+    # ── Tails — decaying activation heat (T-tails-infra) ──────────────────────
+
+    def _record_tails(self, memories: list) -> None:
+        """Record a tail entry for each surfaced memory. Called after search results are final.
+
+        Weight = relevance_score at time of surfacing (proxy for activation strength).
+        Decay computed on read via TAIL_GRADIENT — no background sweep needed.
+        """
+        if not memories:
+            return
+        now_iso = datetime.now().isoformat()
+        rows = [
+            (m.id, getattr(m, "relevance_score", 0.5) or 0.5, now_iso) for m in memories
+        ]
+        try:
+            with self._conn() as conn:
+                conn.executemany(
+                    "INSERT INTO tails (node_id, weight, recorded_at) VALUES (?, ?, ?)",
+                    rows,
+                )
+            # Prune old entries (>7 days) to keep table bounded
+            cutoff = (datetime.now() - timedelta(days=7)).isoformat()
+            with self._conn() as conn:
+                conn.execute("DELETE FROM tails WHERE recorded_at < ?", (cutoff,))
+        except Exception:
+            pass  # tail recording must never block search
+
+    def get_tail_heat(self, node_id: str) -> float:
+        """Return current accumulated tail heat for a node using TAIL_GRADIENT.
+
+        heat = sum(weight × TAIL_GRADIENT.factor_for(recorded_at)) over recent entries.
+        Returns 0.0 if no entries or on error.
+        """
+        from ..cognition.temporal_gradient import TAIL_GRADIENT
+
+        try:
+            with self._conn() as conn:
+                rows = conn.execute(
+                    "SELECT weight, recorded_at FROM tails WHERE node_id = ? "
+                    "ORDER BY recorded_at DESC LIMIT 50",
+                    (node_id,),
+                ).fetchall()
+            if not rows:
+                return 0.0
+            now = datetime.now()
+            total = 0.0
+            for weight, recorded_at_str in rows:
+                try:
+                    recorded_at = datetime.fromisoformat(recorded_at_str)
+                    total += TAIL_GRADIENT.apply_for(weight, recorded_at, now)
+                except Exception:
+                    continue
+            return round(total, 4)
+        except Exception:
+            return 0.0
+
+    # ── Traces — static path record (T-traces-infra) ───────────────────────────
+
+    def _record_trace(self, query: str, memories: list) -> None:
+        """Record a static trace of this search call — query + nodes activated.
+
+        Permanent record (no decay). One trace per search() call.
+        nodes stored as JSON: [{node_id, relevance, memory_type, sequence_pos}]
+        """
+        if not memories:
+            return
+        import uuid as _uuid
+        import json as _json
+
+        trace_id = str(_uuid.uuid4())
+        now_iso = datetime.now().isoformat()
+        nodes = [
+            {
+                "node_id": m.id,
+                "relevance": round(getattr(m, "relevance_score", 0.0) or 0.0, 4),
+                "memory_type": m.memory_type.value if m.memory_type else "UNKNOWN",
+                "sequence_pos": i,
+            }
+            for i, m in enumerate(memories)
+        ]
+        try:
+            with self._conn() as conn:
+                conn.execute(
+                    "INSERT INTO traces (id, recorded_at, query, nodes) VALUES (?, ?, ?, ?)",
+                    (trace_id, now_iso, query[:200], _json.dumps(nodes)),
+                )
+            # Prune traces older than 30 days
+            cutoff = (datetime.now() - timedelta(days=30)).isoformat()
+            with self._conn() as conn:
+                conn.execute("DELETE FROM traces WHERE recorded_at < ?", (cutoff,))
+        except Exception:
+            pass  # trace recording must never block search
+
+    def get_recent_traces(self, limit: int = 10) -> list:
+        """Return recent traces for Igor introspection — newest first.
+
+        Each entry: {id, recorded_at, query, nodes: [{node_id, relevance, memory_type, sequence_pos}]}
+        """
+        import json as _json
+
+        try:
+            with self._conn() as conn:
+                rows = conn.execute(
+                    "SELECT id, recorded_at, query, nodes FROM traces "
+                    "ORDER BY recorded_at DESC LIMIT ?",
+                    (limit,),
+                ).fetchall()
+            return [
+                {
+                    "id": r[0],
+                    "recorded_at": r[1],
+                    "query": r[2],
+                    "nodes": _json.loads(r[3]),
+                }
+                for r in rows
+            ]
+        except Exception:
+            return []
+
+    def _get_recently_activated(self, limit: int = 30) -> list:
+        """T-db-spreading-activation: fetch recently-accessed memories to seed candidate pool.
+
+        Returns memories ordered by last_accessed DESC — the warmest trail nodes.
+        Excludes structural types (ROOT, CORE_PATTERN) and memories never accessed.
+        """
+        _SKIP = (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value)
+        _excl_ph = ",".join("?" * len(_SKIP))
+        with self._conn() as conn:
+            rows = conn.execute(
+                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
+                f"WHERE last_accessed IS NOT NULL AND memory_type NOT IN ({_excl_ph}) "
+                "ORDER BY last_accessed DESC LIMIT ?",
+                list(_SKIP) + [limit],
+            ).fetchall()
+        return [self._to_memory(r) for r in rows]
 
     def _apply_recency_frequency_boost(self, memories: list) -> None:
         """#128 + G45: apply small recency, frequency, inertia, and confidence multipliers."""
