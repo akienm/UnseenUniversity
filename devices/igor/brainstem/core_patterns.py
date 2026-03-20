@@ -225,7 +225,7 @@ def initialize_genesis(cortex: Cortex, instance_id: str = "wild-0001") -> str:
     Returns the ROOT memory id.
     Only runs if the database is empty.
     """
-    if cortex.total_count() > 0:
+    if cortex.get("ROOT") is not None:
         _patch_genesis_procs(cortex)
         return _get_root_id(cortex)
 
