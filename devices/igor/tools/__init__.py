@@ -38,6 +38,7 @@ from . import (
     sudo_relay,
     memory_sync,
     reading_integration,
+    trail_inspector,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
