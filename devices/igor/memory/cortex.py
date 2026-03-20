@@ -1210,6 +1210,9 @@ class Cortex(IgorBase):
                 self._touch_last_accessed(result)
                 self._record_tails(result)  # T-tails-infra: record activation heat
                 self._record_trace(query, result)  # T-traces-infra: static path record
+                self._apply_trail_training(
+                    result
+                )  # T-trail-training: Hebbian edge update
                 return result
         except Exception:
             pass  # Embedding unavailable — fall through to text results
@@ -1222,6 +1225,7 @@ class Cortex(IgorBase):
         self._touch_last_accessed(result)
         self._record_tails(result)  # T-tails-infra: record activation heat
         self._record_trace(query, result)  # T-traces-infra: static path record
+        self._apply_trail_training(result)  # T-trail-training: Hebbian edge update
         return result
 
     def _touch_last_accessed(self, memories: list) -> None:
@@ -1344,6 +1348,100 @@ class Cortex(IgorBase):
                 conn.execute("DELETE FROM traces WHERE recorded_at < ?", (cutoff,))
         except Exception:
             pass  # trace recording must never block search
+
+    def _apply_trail_training(self, memories: list) -> None:
+        """
+        T-trail-training: Hebbian edge strengthening from co-activation.
+
+        For each ordered pair (A, B) in this search result:
+          ΔW = LEARNING_RATE × heat_A × heat_B
+          STDP: A fired before B → LTP multiplier; B before A → LTD multiplier.
+          Apply ΔW to existing co_activation interpretive_edge, or create one if
+          delta exceeds CREATION_THRESHOLD.
+
+        Gate: IGOR_TRAIL_TRAINING_ENABLED=true (default false).
+        Never raises — must not block search.
+        """
+        import os as _os
+
+        if _os.getenv("IGOR_TRAIL_TRAINING_ENABLED", "false").lower() != "true":
+            return
+        if not memories or len(memories) < 2:
+            return
+
+        lr = float(_os.getenv("IGOR_TRAIL_LEARNING_RATE", "0.05"))
+        creation_threshold = float(_os.getenv("IGOR_TRAIL_CREATION_THRESHOLD", "0.1"))
+        max_weight = float(_os.getenv("IGOR_TRAIL_MAX_WEIGHT", "5.0"))
+        ltp = float(_os.getenv("IGOR_TRAIL_LTP_MULTIPLIER", "1.2"))
+        ltd = float(_os.getenv("IGOR_TRAIL_LTD_MULTIPLIER", "0.8"))
+        max_pairs = int(_os.getenv("IGOR_TRAIL_PAIRS_PER_TRACE", "10"))
+
+        try:
+            # Get heats for all nodes in this trace (batch via existing get_tail_heat)
+            ids = [m.id for m in memories]
+            heats = {m_id: self.get_tail_heat(m_id) for m_id in ids}
+
+            pairs_processed = 0
+            for i, mem_a in enumerate(memories):
+                if pairs_processed >= max_pairs:
+                    break
+                heat_a = heats.get(mem_a.id, 0.0)
+                if heat_a < 1e-6:
+                    continue
+                for j, mem_b in enumerate(memories):
+                    if i == j or pairs_processed >= max_pairs:
+                        break
+                    heat_b = heats.get(mem_b.id, 0.0)
+                    if heat_b < 1e-6:
+                        continue
+
+                    delta = lr * heat_a * heat_b
+                    # STDP: i < j means A fired before B → LTP; else LTD
+                    delta *= ltp if i < j else ltd
+
+                    if delta < 1e-9:
+                        continue
+
+                    # Look for existing co_activation edge A→B
+                    existing = None
+                    try:
+                        with self._conn() as conn:
+                            row = conn.execute(
+                                "SELECT id, weight FROM interpretive_edges "
+                                "WHERE from_id=? AND to_id=? AND direction='co_activation'",
+                                (mem_a.id, mem_b.id),
+                            ).fetchone()
+                        if row:
+                            existing = row
+                    except Exception:
+                        pass
+
+                    if existing:
+                        new_weight = min(max_weight, float(existing["weight"]) + delta)
+                        try:
+                            with self._conn() as conn:
+                                conn.execute(
+                                    "UPDATE interpretive_edges SET weight=? WHERE id=?",
+                                    (new_weight, existing["id"]),
+                                )
+                        except Exception:
+                            pass
+                    elif delta >= creation_threshold:
+                        try:
+                            self.add_interpretive_edge(
+                                mem_a.id,
+                                mem_b.id,
+                                direction="co_activation",
+                                meaning_payload=f"Hebbian; delta={delta:.4f}",
+                                weight=min(delta, max_weight),
+                                layer="trail_training",
+                            )
+                        except Exception:
+                            pass
+
+                    pairs_processed += 1
+        except Exception:
+            pass  # trail training must never block search
 
     def get_recent_traces(self, limit: int = 10) -> list:
         """Return recent traces for Igor introspection — newest first.
