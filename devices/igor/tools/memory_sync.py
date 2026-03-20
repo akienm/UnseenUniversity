@@ -97,9 +97,8 @@ def _pg_connect(url: str):
     import psycopg2
     import psycopg2.extras
 
-    conn = psycopg2.connect(url)
+    conn = psycopg2.connect(url, cursor_factory=psycopg2.extras.RealDictCursor)
     conn.autocommit = False
-    psycopg2.extras.register_dict_cursor(conn)
     return conn
 
 
