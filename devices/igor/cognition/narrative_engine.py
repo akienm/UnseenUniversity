@@ -28,7 +28,7 @@ from datetime import datetime, timedelta
 from typing import Optional, List
 
 from . import reasoning_cache
-from .forensic_logger import log_ne_run, cts as _cts
+from .forensic_logger import log_ne_run, cts as _cts, log_error
 
 from ..memory.cortex import Cortex
 from ..memory.models import Memory, MemoryType
@@ -65,6 +65,7 @@ _NE_CONTENT_PREFIXES = (
     "NE_DIAG|",
     "[NE#",
     "NE_OBS_CAPPED|",
+    "NARRATIVE_GAP|",  # gap registry entries — managed by _process_gaps(), not synthesis
 )
 
 # diagnostic_filter: keywords that mark self-referential/operational noise
@@ -191,7 +192,10 @@ class NarrativeEngine(IgorBase):
                     if len(w) > 3 and "__" not in w and w not in _STOP
                 ][:3]
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                )
 
         pred = ProspectivePrediction(
             predicted_habit_id=best_habit.id if best_habit else None,
@@ -236,7 +240,10 @@ class NarrativeEngine(IgorBase):
             recent_obs = self.cortex.twm_read(limit=5, include_integrated=False)
             seed_ids = [obs["id"] for obs in recent_obs if obs.get("id")]
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+            )
 
         if delta < 0.1:
             # Correct prediction — reinforce links from predicted habit to co-active seeds
@@ -244,7 +251,10 @@ class NarrativeEngine(IgorBase):
                 try:
                     self.cortex.reinforce_links(predicted, seed_ids, +0.05)
                 except Exception as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT",
+                        detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                    )
             return
 
         self.cortex.write_ring(
@@ -257,12 +267,18 @@ class NarrativeEngine(IgorBase):
             try:
                 self.cortex.reinforce_links(predicted, seed_ids, -0.10)
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                )
         if actual_habit_id and seed_ids:
             try:
                 self.cortex.reinforce_links(actual_habit_id, seed_ids, +0.05)
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                )
 
         # Boost salience on recent TWM context proportional to surprise magnitude
         if delta >= 0.4:
@@ -271,7 +287,10 @@ class NarrativeEngine(IgorBase):
                     boosted = min(1.0, obs["salience"] + delta * 0.3)
                     self.cortex.twm_update_salience(obs["id"], boosted)
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                )
 
     # ── Trigger logic ──────────────────────────────────────────────────────────
 
@@ -369,7 +388,10 @@ class NarrativeEngine(IgorBase):
                     if not shared:
                         self.cortex.twm_decay_slot(slot["id"], factor=0.7)
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+            )
 
         # Mark filtered-out unintegrated obs as integrated so they stop counting
         # toward the trigger threshold. They've been seen — just not processable.
@@ -432,7 +454,10 @@ class NarrativeEngine(IgorBase):
 
                 _la(kind="NE_FAIL", detail="all_local_and_cloud_failed")
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                )
             self._last_run = datetime.now()
             return None
 
@@ -668,6 +693,9 @@ class NarrativeEngine(IgorBase):
             )
             impulse_count += 1
 
+        # #304: gap registry — accumulate tension + push new gaps detected this cycle
+        self._process_gaps(result)
+
         return promoted, impulse_count
 
     # ── LLM calls ─────────────────────────────────────────────────────────────
@@ -706,7 +734,10 @@ class NarrativeEngine(IgorBase):
 
                 _la(kind="NE_FAIL", detail=f"json_parse_failed raw={text[:150]!r}")
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                )
         except Exception as e:
             print(f"{_cts()}[NE] inference failed: {e}")
         return None
@@ -812,8 +843,12 @@ Reply with ONLY a JSON object — no other text:
     }}
   ],
   "action_impulses": [{{"action": "<what Igor should do>", "urgency": <0.0-1.0>, "why": "<reason>"}}],
-  "internal_state": {{"valence": <-1.0 to 1.0>, "arousal": <0.0-1.0>, "notes": "<brief>"}}
-}}"""
+  "internal_state": {{"valence": <-1.0 to 1.0>, "arousal": <0.0-1.0>, "notes": "<brief>"}},
+  "narrative_gaps": [
+    {{"question": "<causal unknown — max 15 words; e.g. 'why did X happen after Y'>", "salience": <0.0-1.0>, "threat_level": <0.0-1.0>}}
+  ]
+}}
+NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what happens next. Omit entry (empty list) if none."""
 
     # ── Traversal cursor (#236) ────────────────────────────────────────────────
 
@@ -882,7 +917,10 @@ Reply with ONLY a JSON object — no other text:
             )
             self.cortex.write_ring(snapshot, category="ne_cursor")
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+            )
 
     def _parse_ne_json(self, text: str) -> Optional[dict]:
         """Extract and parse JSON from LLM response. Returns None if unparseable."""
@@ -894,6 +932,117 @@ Reply with ONLY a JSON object — no other text:
             return json.loads(text[start:end])
         except json.JSONDecodeError:
             return None
+
+    # ── Affective narrative engine — Step 1: gap registry (#304) ───────────────
+
+    def _process_gaps(self, result: dict) -> int:
+        """
+        #304 — Gap registry in TWM.
+
+        1. Accumulate tension on existing unresolved gaps: salience rises each cycle
+           proportional to milieu arousal (tension ~ unresolved_time * arousal).
+        2. Push new gaps detected by NE into TWM as NARRATIVE_GAP| entries.
+
+        Gap entries are excluded from NE synthesis (_NE_CONTENT_PREFIXES) so they
+        never feed back into the observation stream. They float up the TWM queue
+        as salience rises, becoming visible to habits and action impulse dispatch.
+
+        Returns count of new gaps pushed this cycle.
+        """
+        # Get milieu arousal to modulate tension accumulation rate
+        _arousal = 0.3  # default if milieu unavailable
+        try:
+            _milieu_mod = __import__("igor.cognition.milieu", fromlist=["get"]).get()
+            _ms = _milieu_mod.get_state() if _milieu_mod else None
+            if _ms:
+                _arousal = max(0.1, _ms.arousal)
+        except Exception as _bare_e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"narrative_engine._process_gaps milieu: {_bare_e}",
+            )
+
+        # Read existing gap entries from active TWM
+        existing_gaps: list[dict] = []
+        try:
+            all_obs = self.cortex.twm_read(limit=100, include_integrated=False)
+            existing_gaps = [
+                o
+                for o in all_obs
+                if o.get("content_csb", "").startswith("NARRATIVE_GAP|")
+            ]
+        except Exception as _bare_e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"narrative_engine._process_gaps read: {_bare_e}",
+            )
+
+        # Accumulate tension: each unresolved cycle bumps salience by 5% × arousal
+        for gap_obs in existing_gaps:
+            current_sal = gap_obs.get("salience", 0.3)
+            new_sal = min(1.0, current_sal + 0.05 * _arousal)
+            try:
+                self.cortex.twm_update_salience(gap_obs["id"], new_sal)
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"narrative_engine._process_gaps tension: {_bare_e}",
+                )
+
+        new_gaps = result.get("narrative_gaps", [])
+        if not new_gaps:
+            return 0
+
+        # Build keyword sets from existing gaps for dedup
+        existing_keywords: list[set] = []
+        for gap_obs in existing_gaps:
+            content = gap_obs.get("content_csb", "")
+            q_part = ""
+            for part in content.split("|"):
+                if part.startswith("question="):
+                    q_part = part[9:]
+                    break
+            if q_part:
+                existing_keywords.append(
+                    {w.lower() for w in q_part.split() if len(w) > 3}
+                )
+
+        pushed = 0
+        for gap in new_gaps:
+            question = gap.get("question", "").strip()
+            salience = float(gap.get("salience", 0.3))
+            threat = float(gap.get("threat_level", 0.1))
+            if not question:
+                continue
+
+            # Dedup: skip if ≥2 significant words overlap with any existing gap
+            q_words = {w.lower() for w in question.split() if len(w) > 3}
+            is_duplicate = any(len(q_words & ex_kw) >= 2 for ex_kw in existing_keywords)
+            if is_duplicate:
+                continue
+
+            content_csb = (
+                f"NARRATIVE_GAP|question={question[:120]}"
+                f"|salience={salience:.2f}|threat={threat:.2f}"
+            )
+            try:
+                self.cortex.twm_push(
+                    source="narrative_engine",
+                    content_csb=content_csb,
+                    salience=salience,
+                    metadata={"type": "narrative_gap", "threat_level": threat},
+                    ttl_seconds=600,  # 10 min; resolved gaps decay naturally
+                    urgency=0.2 + threat * 0.4,
+                )
+                existing_keywords.append(q_words)  # prevent same-batch duplicates
+                pushed += 1
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"narrative_engine._process_gaps push: {_bare_e}",
+                )
+
+        return pushed
 
     # ── G-NE1: Episodic-to-semantic merge pass ─────────────────────────────────
 
@@ -977,7 +1126,10 @@ Reply with ONLY a JSON object — no other text:
 
                     _la(kind="NE_MERGE_FAIL", detail=str(e)[:200])
                 except Exception as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT",
+                        detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                    )
         return merged
 
     def _merge_cluster(self, cluster: list) -> None:
@@ -1010,7 +1162,10 @@ Reply with ONLY a JSON object — no other text:
             parsed = json.loads(raw[raw.find("{") : raw.rfind("}") + 1])
             merged_narrative = parsed.get("merged_narrative", merged_narrative)
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+            )
 
         mem = Memory(
             narrative=merged_narrative,
@@ -1042,4 +1197,7 @@ Reply with ONLY a JSON object — no other text:
                 ),
             )
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+            )
