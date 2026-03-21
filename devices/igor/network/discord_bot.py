@@ -46,8 +46,8 @@ def _log(event: str, **kwargs):
 
 # ── Thread-safe queues between Discord bot and Igor's main loop ───────────────
 
-incoming: queue.Queue = queue.Queue()   # Discord → Igor
-outgoing: queue.Queue = queue.Queue()   # Igor → Discord
+incoming: queue.Queue = queue.Queue()  # Discord → Igor
+outgoing: queue.Queue = queue.Queue()  # Igor → Discord
 
 _bot_thread: threading.Thread | None = None
 _client: discord.Client | None = None
@@ -81,12 +81,19 @@ class IgorBot(discord.Client):
 
     async def on_ready(self):
         guild = discord.utils.get(self.guilds, id=self.guild_id)
-        scope = f"#{self.allowed_channel_id}" if self.allowed_channel_id else "all channels"
+        scope = (
+            f"#{self.allowed_channel_id}" if self.allowed_channel_id else "all channels"
+        )
         webhook_note = " | webhook=enabled" if self._webhook_url else ""
         msg = f"[Discord] Connected as {self.user} | Server: {guild.name if guild else '?'} | Scope: {scope}{webhook_note}"
         print(msg)
-        _log("bot_ready", user=str(self.user), guild=guild.name if guild else "?",
-             scope=scope, webhook=bool(self._webhook_url))
+        _log(
+            "bot_ready",
+            user=str(self.user),
+            guild=guild.name if guild else "?",
+            scope=scope,
+            webhook=bool(self._webhook_url),
+        )
         self.loop.create_task(self._pump_outgoing())
 
     async def on_message(self, message: discord.Message):
@@ -100,21 +107,25 @@ class IgorBot(discord.Client):
         if self.allowed_channel_id and message.channel.id != self.allowed_channel_id:
             return
 
-        _log("msg_received",
-             author=str(message.author),
-             channel=str(message.channel),
-             message_id=message.id,
-             content_len=len(message.content),
-             preview=message.content[:80])
-
-        incoming.put(DiscordMessage(
-            content=message.content,
+        _log(
+            "msg_received",
             author=str(message.author),
-            channel_id=message.channel.id,
-            channel_name=str(message.channel),
-            guild_name=message.guild.name if message.guild else "DM",
+            channel=str(message.channel),
             message_id=message.id,
-        ))
+            content_len=len(message.content),
+            preview=message.content[:80],
+        )
+
+        incoming.put(
+            DiscordMessage(
+                content=message.content,
+                author=str(message.author),
+                channel_id=message.channel.id,
+                channel_name=str(message.channel),
+                guild_name=message.guild.name if message.guild else "DM",
+                message_id=message.id,
+            )
+        )
 
     async def _send_via_webhook(self, text: str) -> bool:
         """Send text via webhook. Returns True on success."""
@@ -123,11 +134,19 @@ class IgorBot(discord.Client):
         try:
             async with aiohttp.ClientSession() as session:
                 payload = {"content": text}
-                async with session.post(self._webhook_url, json=payload) as resp:
+                async with session.post(
+                    self._webhook_url,
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=15),
+                ) as resp:
                     ok = resp.status in (200, 204)
-                    _log("webhook_send",
-                         status=resp.status, ok=ok,
-                         text_len=len(text), preview=text[:60])
+                    _log(
+                        "webhook_send",
+                        status=resp.status,
+                        ok=ok,
+                        text_len=len(text),
+                        preview=text[:60],
+                    )
                     return ok
         except Exception as exc:
             _log("webhook_send_error", error=str(exc), preview=text[:60])
@@ -138,7 +157,7 @@ class IgorBot(discord.Client):
         while True:
             try:
                 channel_id, text = outgoing.get_nowait()
-                chunks = [text[i:i+1900] for i in range(0, len(text), 1900)]
+                chunks = [text[i : i + 1900] for i in range(0, len(text), 1900)]
 
                 for chunk in chunks:
                     sent = False
@@ -155,30 +174,44 @@ class IgorBot(discord.Client):
                         try:
                             channel = await self.fetch_channel(channel_id)
                             await channel.send(chunk)
-                            _log("bot_send_ok",
-                                 channel_id=channel_id,
-                                 text_len=len(chunk), preview=chunk[:60])
+                            _log(
+                                "bot_send_ok",
+                                channel_id=channel_id,
+                                text_len=len(chunk),
+                                preview=chunk[:60],
+                            )
                             sent = True
                         except discord.Forbidden as exc:
-                            _log("bot_send_forbidden",
-                                 channel_id=channel_id, error=str(exc),
-                                 hint="check bot permissions / DM privacy settings")
+                            _log(
+                                "bot_send_forbidden",
+                                channel_id=channel_id,
+                                error=str(exc),
+                                hint="check bot permissions / DM privacy settings",
+                            )
                         except discord.NotFound as exc:
-                            _log("bot_send_not_found",
-                                 channel_id=channel_id, error=str(exc))
+                            _log(
+                                "bot_send_not_found",
+                                channel_id=channel_id,
+                                error=str(exc),
+                            )
                         except Exception as exc:
-                            _log("bot_send_error",
-                                 channel_id=channel_id, error=str(exc),
-                                 preview=chunk[:60])
+                            _log(
+                                "bot_send_error",
+                                channel_id=channel_id,
+                                error=str(exc),
+                                preview=chunk[:60],
+                            )
 
                     if not sent:
-                        _log("msg_dropped",
-                             channel_id=channel_id,
-                             webhook=bool(self._webhook_url),
-                             preview=chunk[:60])
+                        _log(
+                            "msg_dropped",
+                            channel_id=channel_id,
+                            webhook=bool(self._webhook_url),
+                            preview=chunk[:60],
+                        )
 
-            except queue.Empty as _bare_e:
-                _log(f"bare except in wild_igor/igor/network/discord_bot.py: {_bare_e}")
+            except queue.Empty:
+                pass  # expected — outgoing queue is empty, poll again
             await asyncio.sleep(0.5)
 
 
