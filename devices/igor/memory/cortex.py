@@ -932,12 +932,21 @@ class Cortex(IgorBase):
 
         #272: uses _MEM_COLS_NO_EMBED — avoids loading embedding blobs for all memories.
         """
+        from .db_proxy import PGDatabaseProxy
         with self._conn() as conn:
-            rows = conn.execute(
-                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories ORDER BY id"
-            ).fetchall()
-        mems = [self._to_memory(r) for r in rows]
-        return [m for m in mems if m.metadata.get("employer_id") == employer_id]
+            if isinstance(self._db, PGDatabaseProxy):
+                rows = conn.execute(
+                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
+                    "WHERE metadata @> jsonb_build_object('employer_id', %s::text)",
+                    (employer_id,),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
+                    "WHERE metadata LIKE ?",
+                    (f'%"employer_id": "{employer_id}"%',),
+                ).fetchall()
+        return [self._to_memory(r) for r in rows]
 
     def get_children(self, parent_id: str) -> list:
         with self._conn() as conn:
@@ -2490,7 +2499,7 @@ class Cortex(IgorBase):
         from .db_proxy import PGDatabaseProxy
 
         _habits_sql = (
-            f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE jsonb_exists(metadata, 'trigger')"
+            f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE metadata ? 'trigger'"
             if isinstance(self._db, PGDatabaseProxy)
             else f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE metadata LIKE '%\"trigger\"%'"
         )
