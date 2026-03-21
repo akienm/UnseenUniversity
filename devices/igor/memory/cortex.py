@@ -3211,11 +3211,17 @@ class Cortex(IgorBase):
         #180: Return all relational/investment nodes above min_weight.
         These are INTERPRETIVE memories with metadata.source == "relational".
         """
+        from .db_proxy import PGDatabaseProxy
+
+        _rel_sql = (
+            f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type='INTERPRETIVE' "
+            'AND metadata @> \'{"source": "relational"}\''
+            if isinstance(self._db, PGDatabaseProxy)
+            else f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type='INTERPRETIVE' "
+            'AND metadata LIKE \'%"source": "relational"%\''
+        )
         with self._conn() as conn:
-            rows = conn.execute(
-                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type='INTERPRETIVE' "
-                'AND metadata LIKE \'%"source": "relational"%\''
-            ).fetchall()
+            rows = conn.execute(_rel_sql).fetchall()
         nodes = [self._to_memory(r) for r in rows]
         return [
             n
