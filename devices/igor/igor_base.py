@@ -20,6 +20,7 @@ import gc
 import inspect
 import logging
 import os
+import sys
 import time
 from collections import defaultdict
 from contextlib import contextmanager
@@ -31,11 +32,90 @@ from .paths import paths
 _LOG_DIR = paths().logs
 
 
+# ── Module-level helper for tool files that aren't class-based ────────────────
+
+
+class _EmergencySafeLogger:
+    """
+    Thin logging.Logger wrapper that falls back to sys.stderr on any logging
+    infrastructure failure.  Use via get_logger(name) in module-level tool code
+    that can't inherit IgorBase.
+
+    Usage (in tools/foo.py):
+        from ..igor_base import get_logger
+        _log = get_logger(__name__)
+        _log.warning("something went wrong: %s", exc)
+    """
+
+    def __init__(self, name: str) -> None:
+        self._name = name
+        self._logger = logging.getLogger(name)
+
+    def _emit(self, level: str, msg: str, *args) -> None:
+        try:
+            getattr(self._logger, level)(msg, *args)
+        except Exception:
+            # Logging infrastructure is broken — write to stderr so the message
+            # is never silently lost even when everything else is on fire.
+            try:
+                formatted = msg % args if args else msg
+            except Exception:
+                formatted = repr(msg)
+            print(
+                f"[STDERR-FALLBACK][{level.upper()}][{self._name}] {formatted}",
+                file=sys.stderr,
+            )
+
+    def debug(self, msg: str, *args) -> None:
+        self._emit("debug", msg, *args)
+
+    def info(self, msg: str, *args) -> None:
+        self._emit("info", msg, *args)
+
+    def warning(self, msg: str, *args) -> None:
+        self._emit("warning", msg, *args)
+
+    def error(self, msg: str, *args) -> None:
+        self._emit("error", msg, *args)
+
+    def exception(self, msg: str, *args) -> None:
+        try:
+            self._logger.exception(msg, *args)
+        except Exception:
+            try:
+                formatted = msg % args if args else msg
+            except Exception:
+                formatted = repr(msg)
+            import traceback
+
+            tb = traceback.format_exc()
+            print(
+                f"[STDERR-FALLBACK][EXCEPTION][{self._name}] {formatted}\n{tb}",
+                file=sys.stderr,
+            )
+
+
+def get_logger(name: str) -> _EmergencySafeLogger:
+    """
+    Return an emergency-safe logger for module-level code that cannot inherit
+    IgorBase (e.g. tool files with module-level functions).
+
+    The returned object has the same interface as logging.Logger (.debug,
+    .info, .warning, .error, .exception) but falls back to sys.stderr if the
+    logging infrastructure is unavailable.
+
+    Usage:
+        from ..igor_base import get_logger
+        _log = get_logger(__name__)
+    """
+    return _EmergencySafeLogger(name)
+
+
 class IgorBase:
     """Minimal diagnostic + performance base class for long-lived Igor components."""
 
     # class-level logger — one per subclass, created on first .log access
-    _logger: Optional[logging.Logger] = None
+    _logger: Optional["_EmergencySafeLogger"] = None
 
     # cached instance name — set on first _get_instance_name() call
     _instance_name: Optional[str] = None
@@ -73,13 +153,14 @@ class IgorBase:
     # ── Logging ───────────────────────────────────────────────────────────────
 
     @property
-    def log(self) -> logging.Logger:
+    def log(self) -> "_EmergencySafeLogger":
         """
-        Lazy per-class logger. Replaces scattered logging.getLogger(__name__) calls.
+        Lazy per-class logger with emergency stderr fallback.
+        Replaces scattered logging.getLogger(__name__) calls.
         Usage: self.log.debug("something happened")
         """
         if not self.__class__._logger:
-            self.__class__._logger = logging.getLogger(self.__class__.__name__)
+            self.__class__._logger = get_logger(self.__class__.__name__)
         return self.__class__._logger
 
     # ── Performance tracking ──────────────────────────────────────────────────
@@ -138,7 +219,9 @@ class IgorBase:
             existing = log_path.read_text() if log_path.exists() else ""
             log_path.write_text(line + existing)
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/igor_base.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/igor_base.py: %s", _bare_e
+            )
 
     def _perf_summary(self, label: Optional[str] = None) -> str:
         """
