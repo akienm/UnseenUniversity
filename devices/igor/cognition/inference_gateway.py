@@ -539,6 +539,21 @@ class InferenceGateway(IgorBase):
         else:
             last_error = last_error or "tier.5 inhibited (IGOR_TIER5_ENABLED not set)"
 
+        # ── tier.2/fallback: local Ollama last resort before total failure ─────
+        if self._t2:
+            try:
+                self.last_tier = "tier.2/fallback"
+                if on_tier:
+                    on_tier("tier.2/fallback")
+                text, cost = self._t2.reason(
+                    user_input, relevant, core, instance_id, force_local=True
+                )
+                return text, cost, False
+            except Exception as _e:
+                last_error = str(_e)
+                if _log_err:
+                    _log_err(kind="TIER_FAIL", source="tier.2/fallback", detail=str(_e))
+
         # ── tier.6: all inference exhausted ───────────────────────────────────
         self.last_tier = "tier.6"
         try:
