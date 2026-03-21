@@ -521,6 +521,7 @@ class NarrativeEngine(IgorBase):
         _aff_valence = _aff_ms.valence if _aff_ms else 0.0
 
         promoted = 0
+        _promoted_contents: list[str] = []  # for Step 3 gap closure scan
         for cand in result.get("memory_candidates", []):
             importance = float(cand.get("importance", 0.0))
             content = cand.get("content_csb", "")
@@ -620,6 +621,7 @@ class NarrativeEngine(IgorBase):
                     metadata=_meta,
                 )
                 self.cortex.store(mem)
+                _promoted_contents.append(content)
                 promoted += 1
 
                 # Signal A (Change 3): extend TTL of source TWM obs when importance >= 0.7
@@ -709,8 +711,8 @@ class NarrativeEngine(IgorBase):
             )
             impulse_count += 1
 
-        # #304: gap registry — accumulate tension + push new gaps detected this cycle
-        self._process_gaps(result)
+        # #304/#306: gap registry — accumulate tension, push new gaps, close resolved ones
+        self._process_gaps(result, _promoted_contents)
 
         return promoted, impulse_count
 
@@ -951,13 +953,17 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
 
     # ── Affective narrative engine — Step 1: gap registry (#304) ───────────────
 
-    def _process_gaps(self, result: dict) -> int:
+    def _process_gaps(
+        self, result: dict, promoted_contents: list[str] | None = None
+    ) -> int:
         """
-        #304 — Gap registry in TWM.
+        #304/#306 — Gap registry in TWM.
 
         1. Accumulate tension on existing unresolved gaps: salience rises each cycle
            proportional to milieu arousal (tension ~ unresolved_time * arousal).
-        2. Push new gaps detected by NE into TWM as NARRATIVE_GAP| entries.
+        2. Close gaps whose question keywords overlap with just-promoted memory content:
+           fire milieu dopamine signal (valence+arousal spike), mark gap integrated.
+        3. Push new gaps detected by NE into TWM as NARRATIVE_GAP| entries.
 
         Gap entries are excluded from NE synthesis (_NE_CONTENT_PREFIXES) so they
         never feed back into the observation stream. They float up the TWM queue
@@ -1005,11 +1011,60 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                     detail=f"narrative_engine._process_gaps tension: {_bare_e}",
                 )
 
+        # Step 3 (#306): gap closure → dopamine signal
+        # For each existing gap: if ≥2 significant keywords overlap with any just-promoted
+        # memory, the gap is resolved — fire milieu valence+arousal spike, mark integrated.
+        if promoted_contents:
+            _promo_words = set()
+            for pc in promoted_contents:
+                _promo_words.update(w.lower() for w in pc.split() if len(w) > 3)
+
+            for gap_obs in existing_gaps:
+                content = gap_obs.get("content_csb", "")
+                q_part = ""
+                for part in content.split("|"):
+                    if part.startswith("question="):
+                        q_part = part[9:]
+                        break
+                if not q_part:
+                    continue
+                q_words = {w.lower() for w in q_part.split() if len(w) > 3}
+                if len(q_words & _promo_words) >= 2:
+                    # Gap resolved — fire dopamine-analog milieu signal
+                    gap_tension = gap_obs.get("salience", 0.3)
+                    _closure_valence = min(1.0, 0.3 + gap_tension * 0.4)
+                    _closure_arousal = min(1.0, 0.4 + gap_tension * 0.3)
+                    try:
+                        _m = __import__("igor.cognition.milieu", fromlist=["get"]).get()
+                        if _m:
+                            _m.ingest_ne_state(
+                                {
+                                    "valence": _closure_valence,
+                                    "arousal": _closure_arousal,
+                                }
+                            )
+                    except Exception as _bare_e:
+                        log_error(
+                            kind="BARE_EXCEPT",
+                            detail=f"narrative_engine._process_gaps closure milieu: {_bare_e}",
+                        )
+                    try:
+                        self.cortex.twm_mark_integrated([gap_obs["id"]])
+                        self.cortex.write_ring(
+                            f"NARRATIVE_GAP_CLOSED|q={q_part[:80]}|tension={gap_tension:.2f}",
+                            category="ne_diagnostic",
+                        )
+                    except Exception as _bare_e:
+                        log_error(
+                            kind="BARE_EXCEPT",
+                            detail=f"narrative_engine._process_gaps close: {_bare_e}",
+                        )
+
         new_gaps = result.get("narrative_gaps", [])
         if not new_gaps:
             return 0
 
-        # Build keyword sets from existing gaps for dedup
+        # Build keyword sets from existing gaps for dedup (re-read: some may be closed now)
         existing_keywords: list[set] = []
         for gap_obs in existing_gaps:
             content = gap_obs.get("content_csb", "")
