@@ -374,7 +374,10 @@ def preparse(user_input: str, habits: list, model: str = "") -> str:
             source="ollama_reasoner",
         )
     except Exception as _bare_e:
-        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}")
+        log_error(
+            kind="BARE_EXCEPT",
+            detail=f"wild_igor/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
+        )
 
     return _rule_based_csb(user_input, habits)
 
@@ -466,6 +469,7 @@ class OllamaReasoner(LocalReasoner):
         cortex=None,
         thread_id: str | None = None,
         force_local: bool = False,
+        interactive_fallback: bool = False,
     ) -> tuple[str, float]:
         # Use role="analysis" system prompt when cortex is available (G57):
         # CP1-CP6 + brief identity — enough structure for local reasoning,
@@ -490,7 +494,9 @@ class OllamaReasoner(LocalReasoner):
         # Cloud training mode: skip tier.2 Ollama — escalate to cloud (#CLOUD).
         # force_local=True bypasses this gate: background/impulse turns run as long
         # as needed regardless of cloud_mode (no interactive latency requirement).
-        if not force_local:
+        # interactive_fallback=True also bypasses the gate (cloud already failed)
+        # but uses the full interactive timeout instead of the impulse timeout.
+        if not force_local and not interactive_fallback:
             try:
                 from ..cloud_mode import is_cloud_training_active as _cloud_active
 
@@ -499,7 +505,10 @@ class OllamaReasoner(LocalReasoner):
             except RuntimeError:
                 raise
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
+                )
 
         # Ollama can hang indefinitely (observed: 1164s blocking the main loop).
         # Wrap in a thread future so TimeoutError interrupts the blocking call.
@@ -508,7 +517,7 @@ class OllamaReasoner(LocalReasoner):
         # Impulses are drop-and-move-on — no point waiting 90s for something that gets skipped anyway.
         import concurrent.futures as _cf
 
-        if force_local:
+        if force_local and not interactive_fallback:
             _timeout = float(os.getenv("IGOR_OLLAMA_IMPULSE_TIMEOUT_SECS", "15"))
         else:
             _timeout = float(os.getenv("IGOR_OLLAMA_TIMEOUT_SECS", "90"))
@@ -558,7 +567,10 @@ class OllamaReasoner(LocalReasoner):
                     elapsed_ms=int(elapsed * 1000),
                 )
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
+                )
             text = response["message"]["content"]
             if not text or not text.strip():
                 raise RuntimeError(
@@ -578,7 +590,10 @@ class OllamaReasoner(LocalReasoner):
                     call_type="reason",
                 )
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
+                )
             return text, 0.0  # Local = no cost
         except Exception as exc:
             elapsed = time.perf_counter() - t0
@@ -943,7 +958,10 @@ VALENCE: <positive|neutral|negative>"""
             _log_call("summarize_session", "gpt-4o-mini", None, elapsed)
             return f"SESSION_SUMMARY|{instance_id}|{summary}"
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
+            )
 
     # Try Ollama batch model (qwen2.5:14b — better reasoning than 1B)
     _batch_model = os.getenv("OLLAMA_BATCH_MODEL", "qwen2.5:14b")
