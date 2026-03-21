@@ -562,7 +562,11 @@ class InferenceGateway(IgorBase):
                 if on_tier:
                     on_tier("tier.2/fallback")
                 text, cost = self._t2.reason(
-                    user_input, relevant, core, instance_id, force_local=True
+                    user_input,
+                    relevant,
+                    core,
+                    instance_id,
+                    interactive_fallback=True,  # bypass cloud gate, use 90s timeout
                 )
                 return text, cost, False
             except Exception as _e:
