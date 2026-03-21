@@ -62,10 +62,8 @@ CONTEXT_WARN_CHARS = 80_000  # ~20 K tokens — warn earlier, prompt breaking in
 CONTEXT_HARD_CAP_CHARS = 120_000  # hard trim — drop oldest tool results above this
 
 # ── Cost guardrails (shared across all API reasoners) ─────────────────────────
-# IGOR_CALL_COST_WARN_USD: stop the agentic loop if a single call exceeds this.
 # IGOR_RESEARCH_MODE: set true to allow bulk reads (confluence, source files, web).
 # IGOR_RESEARCH_TOOL_CAP: max big-read tool calls per reasoning session when not in research mode.
-CALL_COST_WARN_USD = float(os.getenv("IGOR_CALL_COST_WARN_USD", "0.30"))
 RESEARCH_TOOL_CAP = int(os.getenv("IGOR_RESEARCH_TOOL_CAP", "5"))
 RESEARCH_MODE = os.getenv("IGOR_RESEARCH_MODE", "false").lower() in ("1", "true", "yes")
 
