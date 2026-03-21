@@ -1,3 +1,4 @@
+import logging
 """
 Judgment functions — assess_valence, measure_friction, calculate_roi.
 
@@ -77,8 +78,8 @@ def assess_valence(interaction_text: str, response_text: str, cortex=None) -> fl
                     "input_len": len(interaction_text),
                 }, result, reasoning)
                 return result
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/judgments.py: %s", _bare_e)
 
     # ── Keyword fallback ──────────────────────────────────────────────────────
     positive = ["thank", "great", "excellent", "perfect", "yes", "good", "love", "appreciate"]

@@ -1,3 +1,4 @@
+import logging
 """
 observer.py — lightweight self-instrumentation primitive (Part D).
 
@@ -72,8 +73,8 @@ def observe(label: str, value, context: dict = None) -> None:
             else:
                 existing = path.read_text(encoding="utf-8")
         path.write_text(entry + "\n" + existing, encoding="utf-8")
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/observer.py: %s", _bare_e)
 
     # Layer 2: EXPERIENTIAL memory
     if _cortex is not None:
@@ -95,5 +96,5 @@ def observe(label: str, value, context: dict = None) -> None:
                 },
             )
             _cortex.store(m)
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/observer.py: %s", _bare_e)

@@ -169,8 +169,8 @@ class InferenceGateway(IgorBase):
                                 elapsed_ms=ms,
                                 via=current_id,
                             )
-                        except Exception:
-                            pass
+                        except Exception as _bare_e:
+                            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
                     return result
                 except Exception as exc:
                     ctx.last_elapsed_ms = round((time.monotonic() - t0) * 1000)
@@ -319,8 +319,8 @@ class InferenceGateway(IgorBase):
         _log_err = None
         try:
             from .forensic_logger import log_error as _log_err
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
 
         if local_only:
             return (
@@ -361,8 +361,8 @@ class InferenceGateway(IgorBase):
                             _log_err(
                                 kind="TIER_FAIL", source="tier.2/budget", detail=str(_e)
                             )
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
 
         # ── Background: batch impulse (always local, quality priority) ─────────
         if level == "background_batch":
@@ -395,8 +395,8 @@ class InferenceGateway(IgorBase):
                 from .cloud_mode import is_cloud_training_active as _cma
 
                 _cloud_active = _cma()
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
 
             if _cloud_active and self._t3:
                 try:
@@ -532,8 +532,8 @@ class InferenceGateway(IgorBase):
             from .forensic_logger import log_anomaly as _log_anomaly
 
             _log_anomaly(kind="TIER6", detail=f"last_error={last_error[:160]}")
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
         try:
             from ..arbiter import queue as _arb
 
@@ -544,8 +544,8 @@ class InferenceGateway(IgorBase):
                 threshold_reason="Total cloud inference failure (tiers 3-5 all failed)",
                 metadata={"tier_failures": ["tier.3", "tier.4", "tier.5"]},
             )
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
         return (
             "⚠ All cloud inference is currently unavailable. "
             "I've queued a notification for akien.",
@@ -924,24 +924,24 @@ def make_context(is_background: bool = False) -> InferenceContext:
         from .cloud_mode import is_cloud_training_active
 
         cloud_active = is_cloud_training_active()
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
 
     cloud_ok_override = True
     try:
         from .cloud_mode import is_cloud_ok_override as _cko
 
         cloud_ok_override = _cko()
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
 
     local_available = False
     try:
         from .reasoners.ollama_reasoner import is_healthy as _ollama_healthy
 
         local_available = _ollama_healthy()
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
 
     balance_ok = False
     try:
@@ -993,8 +993,8 @@ def _try_restart_local_ollama() -> bool:
     _log_anomaly = None
     try:
         from .forensic_logger import log_anomaly as _log_anomaly
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
 
     try:
         import subprocess

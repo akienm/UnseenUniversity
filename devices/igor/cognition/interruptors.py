@@ -1,3 +1,4 @@
+import logging
 """
 Interruptors — things that can push information into the TWM proactively.
 
@@ -241,8 +242,8 @@ class MilieuInterruptor(BaseInterruptor):
                 self._last_fired_tick = state.tick
                 return msg
 
-        except Exception:
-            pass  # Milieu interruptor must never crash reasoning
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/interruptors.py: %s", _bare_e)
 
         return None
 
@@ -333,6 +334,6 @@ def run_all(cortex=None) -> list[str]:
             result = interruptor.check(cortex)
             if result:
                 alerts.append(result)
-        except Exception:
-            pass  # FAIL = Further Advance In Learning, but don't crash
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/interruptors.py: %s", _bare_e)
     return alerts

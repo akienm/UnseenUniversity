@@ -210,8 +210,8 @@ class ClusterRouter:
             with urllib.request.urlopen(req_ps, timeout=2.0) as resp_ps:
                 ps_data = json.loads(resp_ps.read())
             active = len(ps_data.get("models", []))
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/cluster_router.py: %s", _bare_e)
         m.active_models = active
 
         # Load score calculation

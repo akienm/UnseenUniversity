@@ -19,6 +19,7 @@ Gate: IGOR_BACKCHANNEL=true (default false — observe first).
 """
 
 from __future__ import annotations
+import logging
 
 import os
 import re
@@ -97,8 +98,8 @@ def should_backchannel(
     if milieu_state is not None:
         try:
             arousal = float(milieu_state.arousal)
-        except (AttributeError, TypeError):
-            pass
+        except (AttributeError, TypeError) as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/backchannel.py: %s", _bare_e)
 
     # High complexity OR high arousal → "in thought" (substantive processing signal)
     if complexity == "high" or arousal > 0.6:

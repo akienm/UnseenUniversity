@@ -13,6 +13,7 @@ tracks parsing/generation weights; this tracks output vocabulary novelty.
 """
 
 from __future__ import annotations
+import logging
 
 import json
 import math
@@ -63,8 +64,8 @@ class ResponseHabituation:
         try:
             with self._path.open("w") as f:
                 json.dump(self._store, f)
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/response_habituation.py: %s", _bare_e)
 
     # ── core operations ────────────────────────────────────────────────────────
 

@@ -1,3 +1,4 @@
+import logging
 """
 env_sync.py — D119: DB-first boot configuration.
 
@@ -159,8 +160,8 @@ def _parse_env_file(env_path: Path) -> dict:
             value = value.strip().strip('"').strip("'")
             if key:
                 vars_dict[key] = value
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/env_sync.py: %s", _bare_e)
     return vars_dict
 
 

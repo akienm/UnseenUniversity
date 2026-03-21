@@ -134,8 +134,8 @@ def submit(
                 kind="ARBITER_BUILDUP",
                 detail=f"pending={pending_count}|newest={description[:80]}",
             )
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/arbiter/queue.py: {_bare_e}")
     return new_id
 
 
@@ -193,8 +193,8 @@ def _ping_discord(item_id: int, description: str):
             f"[Arbiter #{item_id}] Pending approval: {description[:140]}\n"
             f"Review with: /arbiter list",
         )
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/arbiter/queue.py: {_bare_e}")
 
 
 # ── Tool registration ─────────────────────────────────────────────────────────

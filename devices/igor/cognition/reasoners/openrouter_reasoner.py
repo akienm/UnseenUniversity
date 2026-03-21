@@ -89,8 +89,8 @@ def preparse_via_openrouter(
         try:
             from ..forensic_logger import log_error
             log_error(kind="preparse_fallback", detail=fallback_reason, source="openrouter_reasoner")
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}")
 
     return _rule_based_csb(user_input, habits)
 
@@ -270,18 +270,18 @@ def _habit_extract_worker(
             from ..forensic_logger import log_memory_op as _lm
             _lm(op="cloud_node_extracted", memory_id=mem.id,
                 detail=f"type={node_type}|tier={tier}|conf={confidence:.2f}")
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}")
 
         console.print(
             f"[dim cyan][G53] {node_type} node from {tier}: {mem.id} "
             f"conf={confidence:.2f} — {narrative[:60]}[/]"
         )
 
-    except json.JSONDecodeError:
-        pass  # Model didn't return valid JSON — ignore
-    except Exception:
-        pass  # Extraction must never crash the main loop
+    except json.JSONDecodeError as _bare_e:
+        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}")
+    except Exception as _bare_e:
+        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}")
 
 
 class OpenRouterReasoner(BaseReasoner):
@@ -326,15 +326,15 @@ class OpenRouterReasoner(BaseReasoner):
                 relevant_memories = list(relevant_memories) + [
                     m for m in _winnowed if m.id not in seen
                 ]
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}")
 
         # ── Blob expansion: append full content for high-relevance blob memories ─
         if cortex is not None:
             try:
                 cortex.expand_blob_memories(relevant_memories)
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}")
 
         content = user_input
         if preparse_csb:
@@ -391,8 +391,8 @@ class OpenRouterReasoner(BaseReasoner):
                 try:
                     from ..forensic_logger import log_anomaly as _la
                     _la(kind="CONTEXT_OVERFLOW", detail=f"model={self._model()}|turn={turn}|trimmed_to={ctx_chars}")
-                except Exception:
-                    pass
+                except Exception as _bare_e:
+                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}")
             elif ctx_chars > CONTEXT_WARN_CHARS:
                 console.print(
                     f"[yellow][OR] context ~{ctx_chars // 1000}K chars at turn {turn} "
@@ -416,8 +416,8 @@ class OpenRouterReasoner(BaseReasoner):
                 try:
                     from ..forensic_logger import log_anomaly as _la
                     _la(kind="COST_CAP_HIT", detail=f"model={self.model}|cost={total_cost:.4f}|cap={_cost_cap}|turn={turn}")
-                except Exception:
-                    pass
+                except Exception as _bare_e:
+                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}")
                 return (
                     f"⚠ Per-call cost cap ${_cost_cap:.2f} reached (${total_cost:.4f} at turn {turn}). "
                     f"Ask Akien to raise IGOR_CALL_COST_WARN_USD if deeper work is needed.",

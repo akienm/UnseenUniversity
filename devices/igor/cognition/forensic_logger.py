@@ -1,3 +1,4 @@
+import sys
 """
 Forensic Logger — WO3: Cognition Stabilization Phase 3.
 
@@ -116,8 +117,8 @@ def finalize_turn_ctx(
             f.write(entry)
 
         _purge_old_turn_traces(today)
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        sys.stderr.write(f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n")
     finally:
         _current_turn.ctx = None
 
@@ -132,8 +133,8 @@ def _purge_old_turn_traces(today: str) -> None:
             date_part = p.stem.split(".")[-1]
             if date_part.isdigit() and date_part < cutoff:
                 p.unlink(missing_ok=True)
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        sys.stderr.write(f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n")
 
 
 def _ts() -> str:
@@ -162,8 +163,8 @@ def _prepend(log_name: str, entry: str) -> None:
         else:
             existing = ""
         path.write_text(entry + "\n" + existing, encoding="utf-8")
-    except Exception:
-        pass  # Logging must never crash the main loop
+    except Exception as _bare_e:
+        sys.stderr.write(f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n")
 
 
 # ── Public log functions ──────────────────────────────────────────────────────
@@ -453,8 +454,8 @@ def log_cognition_metric(
         entry = f"{_ts()}|{metric}|{value:.4f}|{detail[:200].replace(chr(10), ' ')}\n"
         with path.open("a", encoding="utf-8") as f:
             f.write(entry)
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        sys.stderr.write(f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n")
 
 
 def log_anomaly(
@@ -473,8 +474,8 @@ def log_anomaly(
         entry = f"{_ts()}|{kind}|{detail[:200].replace(chr(10), ' ')}\n"
         with path.open("a", encoding="utf-8") as f:
             f.write(entry)
-    except Exception:
-        pass  # Logging must never crash the main loop
+    except Exception as _bare_e:
+        sys.stderr.write(f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n")
 
 
 def log_batch_call(
@@ -494,8 +495,8 @@ def log_batch_call(
         )
         with path.open("a", encoding="utf-8") as f:
             f.write(entry)
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        sys.stderr.write(f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n")
 
 
 def log_error(
@@ -603,8 +604,8 @@ def log_pipeline_step(
         turn_ctx_update(
             step, {"ms": elapsed_ms, **{k: str(v)[:80] for k, v in kwargs.items()}}
         )
-    except Exception:
-        pass  # Logging must never crash the main loop
+    except Exception as _bare_e:
+        sys.stderr.write(f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n")
 
 
 def _purge_old_pipeline_traces(today: str) -> None:
@@ -617,8 +618,8 @@ def _purge_old_pipeline_traces(today: str) -> None:
             date_part = p.stem.split(".")[-1]
             if date_part.isdigit() and date_part < cutoff:
                 p.unlink(missing_ok=True)
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        sys.stderr.write(f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n")
 
 
 # ── Inference I/O log ─────────────────────────────────────────────────────────
@@ -690,8 +691,8 @@ def log_inference_io(
 
         _purge_old_inference_io(today)
 
-    except Exception:
-        pass  # Logging must never crash the main loop
+    except Exception as _bare_e:
+        sys.stderr.write(f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n")
 
 
 def _purge_old_inference_io(today: str) -> None:
@@ -704,8 +705,8 @@ def _purge_old_inference_io(today: str) -> None:
             date_part = p.stem.split(".")[-1]
             if date_part.isdigit() and date_part < cutoff:
                 p.unlink(missing_ok=True)
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        sys.stderr.write(f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n")
 
 
 # ── Interaction log (#201) ────────────────────────────────────────────────────
@@ -748,8 +749,8 @@ def log_interaction(
             f.write(entry)
 
         _purge_old_interaction(today)
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        sys.stderr.write(f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n")
 
 
 def _purge_old_interaction(today: str) -> None:
@@ -762,8 +763,8 @@ def _purge_old_interaction(today: str) -> None:
             date_part = p.stem.split(".")[-1]
             if date_part.isdigit() and date_part < cutoff:
                 p.unlink(missing_ok=True)
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        sys.stderr.write(f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n")
 
 
 # ── Startup log (#202) ────────────────────────────────────────────────────────
@@ -820,8 +821,8 @@ def log_startup(
         if len(blocks) > _STARTUP_LOG_MAX_BOOTS + 1:
             blocks = blocks[-((_STARTUP_LOG_MAX_BOOTS + 1)) :]
         path.write_text("=== BOOT READY ===\n\n".join(blocks), encoding="utf-8")
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        sys.stderr.write(f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n")
 
 
 # ── /trace command helper (#203) ──────────────────────────────────────────────

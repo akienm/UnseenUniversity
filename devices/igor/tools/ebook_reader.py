@@ -332,8 +332,8 @@ def _parse_epub(path: Path) -> tuple[list[str], list[int], list[str]]:
                     _walk_toc(children)
                 else:
                     _walk_toc(item)  # recurse for any other container
-        except TypeError:
-            pass  # not iterable — skip gracefully
+        except TypeError as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}")
 
     _walk_toc(book.toc)
 
@@ -565,8 +565,8 @@ def _local_copy(path: Path) -> tuple[Path, bool]:
         with path.open("rb") as f:
             f.seek(0, 2)  # seek to end — cheap probe
         return path, False
-    except OSError:
-        pass
+    except OSError as _bare_e:
+        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}")
     # Copy to local tmp
     import shutil
 
@@ -601,8 +601,8 @@ def _load_book_content(
             try:
                 decrypted.unlink()
                 decrypted.parent.rmdir()
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}")
             return result
         # DRM removal failed — caller should use browse_as_employer
         asin = meta.asin or meta.path.stem.replace("_EBOK", "")
@@ -749,8 +749,8 @@ def read_chunk(handle=None, n: int = 0, handle_key: str = "", **_) -> dict:
                     detail=str(_e),
                     source="ebook_reader.read_chunk",
                 )
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}")
 
     # G54: reading → interpretive tree extraction (fire-and-forget daemon thread)
     if chunk and os.getenv("IGOR_READING_EXTRACT", "false").lower() in (
@@ -1069,8 +1069,8 @@ def _reading_extract_worker(
                     detail=str(_e),
                     source="ebook_reader._reading_extract",
                 )
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}")
 
         try:
             from .registry import registry as _reg  # noqa — for logging only
@@ -1084,16 +1084,16 @@ def _reading_extract_worker(
                 f"node={node_id} conf={confidence:.2f} "
                 f"'{narrative[:60]}'[/]"
             )
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}")
 
     except json.JSONDecodeError as _e:
         try:
             from rich.console import Console as _C
 
             _C().print(f"[dim red][G54] JSON parse error in reading extract: {_e}[/]")
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}")
     except Exception as _e:
         try:
             from rich.console import Console as _C
@@ -1101,8 +1101,8 @@ def _reading_extract_worker(
             _C().print(
                 f"[dim red][G54] Reading extract failed: {type(_e).__name__}: {_e}[/]"
             )
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}")
 
 
 # ── Persistence ────────────────────────────────────────────────────────────────
@@ -1125,8 +1125,8 @@ def _load_reading_state() -> dict:
                     detail=str(_e),
                     source="ebook_reader._load_reading_state",
                 )
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}")
     return {}
 
 
@@ -1551,8 +1551,8 @@ def _fg_reading_loop(handle_key: str, session_id: str) -> None:
                     detail=sentence[:80],
                     source="ebook_reader.fg_loop",
                 )
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}")
 
         # Chapter boundary soft prompt — gates nothing, just offers discussion
         chapter_idx = result.get("chapter", 1)

@@ -1,3 +1,4 @@
+import logging
 """
 inner_cc — Igor's internal code-reasoning tool.
 
@@ -233,12 +234,12 @@ def _deposit_nodes(nodes: list, cortex, question: str) -> int:
             if parent_cp and parent_cp.startswith("CP"):
                 try:
                     cortex.add_child(parent_cp, uid)
-                except Exception:
-                    pass
+                except Exception as _bare_e:
+                    logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/inner_cc.py: %s", _bare_e)
 
             deposited += 1
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/inner_cc.py: %s", _bare_e)
     return deposited
 
 
@@ -258,8 +259,8 @@ def _tool_inner_cc(
         from ..main import _running_instance
         if _running_instance is not None:
             cortex = _running_instance.cortex
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/inner_cc.py: %s", _bare_e)
 
     result = call_inner_cc(question=question, context=context, mode=mode, cortex=cortex)
     answer = result.get("answer", "(no answer)")

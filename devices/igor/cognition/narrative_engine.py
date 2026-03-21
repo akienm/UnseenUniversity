@@ -190,8 +190,8 @@ class NarrativeEngine(IgorBase):
                     for w, _ in predictions
                     if len(w) > 3 and "__" not in w and w not in _STOP
                 ][:3]
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
 
         pred = ProspectivePrediction(
             predicted_habit_id=best_habit.id if best_habit else None,
@@ -235,16 +235,16 @@ class NarrativeEngine(IgorBase):
         try:
             recent_obs = self.cortex.twm_read(limit=5, include_integrated=False)
             seed_ids = [obs["id"] for obs in recent_obs if obs.get("id")]
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
 
         if delta < 0.1:
             # Correct prediction — reinforce links from predicted habit to co-active seeds
             if predicted and seed_ids:
                 try:
                     self.cortex.reinforce_links(predicted, seed_ids, +0.05)
-                except Exception:
-                    pass
+                except Exception as _bare_e:
+                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
             return
 
         self.cortex.write_ring(
@@ -256,13 +256,13 @@ class NarrativeEngine(IgorBase):
         if predicted and seed_ids:
             try:
                 self.cortex.reinforce_links(predicted, seed_ids, -0.10)
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
         if actual_habit_id and seed_ids:
             try:
                 self.cortex.reinforce_links(actual_habit_id, seed_ids, +0.05)
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
 
         # Boost salience on recent TWM context proportional to surprise magnitude
         if delta >= 0.4:
@@ -270,8 +270,8 @@ class NarrativeEngine(IgorBase):
                 for obs in recent_obs:
                     boosted = min(1.0, obs["salience"] + delta * 0.3)
                     self.cortex.twm_update_salience(obs["id"], boosted)
-            except Exception:
-                pass  # salience boost is advisory — never raise
+            except Exception as _bare_e:
+                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
 
     # ── Trigger logic ──────────────────────────────────────────────────────────
 
@@ -368,8 +368,8 @@ class NarrativeEngine(IgorBase):
                     )
                     if not shared:
                         self.cortex.twm_decay_slot(slot["id"], factor=0.7)
-        except Exception:
-            pass  # focus pass is advisory — never block NE
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
 
         # Mark filtered-out unintegrated obs as integrated so they stop counting
         # toward the trigger threshold. They've been seen — just not processable.
@@ -431,8 +431,8 @@ class NarrativeEngine(IgorBase):
                 from .forensic_logger import log_anomaly as _la
 
                 _la(kind="NE_FAIL", detail="all_local_and_cloud_failed")
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
             self._last_run = datetime.now()
             return None
 
@@ -705,8 +705,8 @@ class NarrativeEngine(IgorBase):
                 from .forensic_logger import log_anomaly as _la
 
                 _la(kind="NE_FAIL", detail=f"json_parse_failed raw={text[:150]!r}")
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
         except Exception as e:
             print(f"{_cts()}[NE] inference failed: {e}")
         return None
@@ -881,8 +881,8 @@ Reply with ONLY a JSON object — no other text:
                 f"|promoted={promoted}"
             )
             self.cortex.write_ring(snapshot, category="ne_cursor")
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
 
     def _parse_ne_json(self, text: str) -> Optional[dict]:
         """Extract and parse JSON from LLM response. Returns None if unparseable."""
@@ -976,8 +976,8 @@ Reply with ONLY a JSON object — no other text:
                     from .forensic_logger import log_anomaly as _la
 
                     _la(kind="NE_MERGE_FAIL", detail=str(e)[:200])
-                except Exception:
-                    pass
+                except Exception as _bare_e:
+                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
         return merged
 
     def _merge_cluster(self, cluster: list) -> None:
@@ -1009,8 +1009,8 @@ Reply with ONLY a JSON object — no other text:
             raw = _gw().call("ne", prompt, _ctx)
             parsed = json.loads(raw[raw.find("{") : raw.rfind("}") + 1])
             merged_narrative = parsed.get("merged_narrative", merged_narrative)
-        except Exception:
-            pass  # use fallback
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")
 
         mem = Memory(
             narrative=merged_narrative,
@@ -1041,5 +1041,5 @@ Reply with ONLY a JSON object — no other text:
                     f"occurrence_dates={occurrence_dates}"
                 ),
             )
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}")

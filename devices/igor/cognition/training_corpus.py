@@ -25,6 +25,7 @@ Local source directory (for Akien's own materials):
 """
 
 from __future__ import annotations
+import logging
 
 import hashlib
 import json
@@ -69,8 +70,8 @@ def _load_index() -> dict:
     if INDEX_FILE.exists():
         try:
             return json.loads(INDEX_FILE.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/training_corpus.py: %s", _bare_e)
     return {}
 
 
@@ -123,8 +124,8 @@ def fetch(url: str, title: str, source: str = "gutenberg") -> tuple[str, str]:
                 f"(RAM {_vm.percent:.0f}%, swap {_sw.percent:.0f}%, CPU {_load_pct:.0f}%). "
                 f"Try again when the machine is less busy."
             )
-    except Exception:
-        pass  # psutil unavailable — proceed without gate
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/training_corpus.py: %s", _bare_e)
 
     # Check disk before fetching
     free_gb = _disk_free_gb()

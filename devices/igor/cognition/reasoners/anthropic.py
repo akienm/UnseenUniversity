@@ -115,15 +115,15 @@ class AnthropicReasoner(APIReasoner):
                 relevant_memories = list(relevant_memories) + [
                     m for m in _winnowed if m.id not in seen
                 ]
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
 
         # ── Blob expansion: append full content for high-relevance blob memories ─
         if cortex is not None:
             try:
                 cortex.expand_blob_memories(relevant_memories)
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
 
         memory_context = self._build_memory_context(relevant_memories)
         session_context = self._build_session_context(cortex, thread_id=thread_id)
@@ -181,8 +181,8 @@ class AnthropicReasoner(APIReasoner):
                 try:
                     from ..forensic_logger import log_anomaly as _la
                     _la(kind="CONTEXT_OVERFLOW", detail=f"model={self._model()}|turn={turn}|trimmed_to={ctx_chars}")
-                except Exception:
-                    pass
+                except Exception as _bare_e:
+                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
             elif ctx_chars > CONTEXT_WARN_CHARS:
                 console.print(
                     f"[yellow][THINK] context ~{ctx_chars // 1000}K chars at turn {turn} "
@@ -227,8 +227,8 @@ class AnthropicReasoner(APIReasoner):
                 try:
                     from ..forensic_logger import log_anomaly as _la
                     _la(kind="COST_CAP_HIT", detail=f"model={model_to_use}|cost={total_cost:.4f}|cap={_cost_cap}|turn={turn}")
-                except Exception:
-                    pass
+                except Exception as _bare_e:
+                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
                 log_reasoning_call(
                     provider="anthropic", model=model_to_use, tier="tier.5",
                     input_tokens=total_input_tokens, output_tokens=total_output_tokens,
@@ -246,8 +246,8 @@ class AnthropicReasoner(APIReasoner):
             try:
                 from ...tools.budget import record_spend as _rs
                 _rs(call_cost, model=model_to_use, note=f"turn={turn}")
-            except Exception:
-                pass  # Budget tracker optional — don't crash reasoning
+            except Exception as _bare_e:
+                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
 
             if response.stop_reason == "end_turn":
                 text = self._extract_text(response)
@@ -282,8 +282,8 @@ class AnthropicReasoner(APIReasoner):
                                     ttl_seconds=3600,
                                     urgency=0.9,
                                 )
-                            except Exception:
-                                pass
+                            except Exception as _bare_e:
+                                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
                             # change.33: submit to arbiter for akien's awareness (non-blocking)
                             try:
                                 from ...arbiter import queue as arbiter_queue
@@ -294,10 +294,10 @@ class AnthropicReasoner(APIReasoner):
                                     threshold_reason=reason[:200],
                                     metadata={"response_preview": text[:200]},
                                 )
-                            except Exception:
-                                pass  # Arbiter submit must never block reasoning
-                    except Exception:
-                        pass  # Ethics gate must never crash the reasoning loop
+                            except Exception as _bare_e:
+                                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
+                    except Exception as _bare_e:
+                        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
 
                 # ── Signal B (Change 3): extend TWM TTL on positive valence ──
                 # If response valence ≥ 0.3, the high-urgency TWM obs we included
@@ -305,8 +305,8 @@ class AnthropicReasoner(APIReasoner):
                 if cortex is not None:
                     try:
                         self._extend_twm_on_positive_valence(text, cortex)
-                    except Exception:
-                        pass  # Signal B must never block reasoning
+                    except Exception as _bare_e:
+                        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
 
                 # ── Run interruptors after final response ─────────────────
                 self._run_interruptors(cortex)
@@ -458,8 +458,8 @@ class AnthropicReasoner(APIReasoner):
             alerts = run_all(cortex)
             for alert in alerts:
                 console.print(f"[bold yellow][INTERRUPTOR] {alert}[/]")
-        except Exception:
-            pass  # Interruptors are advisory — never crash reasoning
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
 
     def _summarize_input(self, inp: dict) -> str:
         """Produce a short human-readable summary of tool input params."""

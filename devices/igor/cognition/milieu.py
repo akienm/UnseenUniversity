@@ -20,6 +20,7 @@ Consumers:
 """
 
 from __future__ import annotations
+import logging
 
 import json
 import sys
@@ -42,8 +43,8 @@ if sys.platform == "win32":
     def _flock_un(f) -> None:
         try:
             msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e)
 
 else:
     import fcntl
@@ -158,8 +159,8 @@ def _contribute_to_global(state: MilieuState, alpha: float) -> None:
                 path.write_text(json.dumps(asdict(g), indent=2), encoding="utf-8")
             finally:
                 _flock_un(lf)
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e)
 
 
 # ── Core Milieu class ──────────────────────────────────────────────────────────
@@ -205,8 +206,8 @@ class Milieu(IgorBase):
                         if k in MilieuState.__dataclass_fields__
                     }
                 )
-        except Exception:
-            pass  # Corrupt or missing — start fresh
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e)
         return MilieuState()
 
     def _read_global(self) -> "MilieuState | None":
@@ -234,8 +235,8 @@ class Milieu(IgorBase):
                         if k in MilieuState.__dataclass_fields__
                     }
                 )
-            except Exception:
-                pass  # Fall through to local
+            except Exception as _bare_e:
+                logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e)
         return self._load_global_baseline()
 
     def _push_to_remote(self) -> None:
@@ -259,8 +260,8 @@ class Milieu(IgorBase):
                 method="POST",
             )
             _req.urlopen(_req_obj, timeout=3)
-        except Exception:
-            pass  # Advisory — never block on network failure
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e)
 
     def _load_global_baseline(self) -> MilieuState:
         try:
@@ -274,8 +275,8 @@ class Milieu(IgorBase):
                         if k in MilieuState.__dataclass_fields__
                     }
                 )
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e)
         return MilieuState()
 
     def _save(self) -> None:
@@ -285,8 +286,8 @@ class Milieu(IgorBase):
                 json.dumps(asdict(self._state), indent=2),
                 encoding="utf-8",
             )
-        except Exception:
-            pass  # Never crash — milieu is advisory
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e)
         self._append_history()
 
     # ── D101: History ring buffer ──────────────────────────────────────────────
@@ -298,8 +299,8 @@ class Milieu(IgorBase):
                 data = json.loads(self._history_path.read_text(encoding="utf-8"))
                 if isinstance(data, list):
                     return data[-HISTORY_MAX:]
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e)
         return []
 
     def _save_history(self) -> None:
@@ -308,8 +309,8 @@ class Milieu(IgorBase):
                 json.dumps(self._history[-HISTORY_MAX:]),
                 encoding="utf-8",
             )
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e)
 
     def _append_history(self) -> None:
         """

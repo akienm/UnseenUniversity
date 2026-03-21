@@ -1,3 +1,4 @@
+import logging
 """
 Runner tools - execute bash commands and Python code snippets.
 
@@ -271,8 +272,8 @@ def _resolve_repo_path(repo_path: str = None, project_id: str = None) -> str:
                 _mem = _cortex.get(project_id)
                 if _mem and _mem.metadata and _mem.metadata.get("path"):
                     return _mem.metadata["path"]
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/runner.py: %s", _bare_e)
     return str(Path.home() / "TheIgors")
 
 

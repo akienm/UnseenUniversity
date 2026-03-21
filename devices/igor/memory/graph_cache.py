@@ -346,14 +346,14 @@ class GraphCache(IgorBase):
                 continue
         try:
             pipe.execute()
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/graph_cache.py: %s", _bare_e)
 
         # Record prewarm timestamp
         try:
             r.set(_KEY_REFRESH_TS, time.strftime("%Y-%m-%dT%H:%M:%S"))
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/graph_cache.py: %s", _bare_e)
 
         log.info(f"[graph_cache] prewarm complete: {loaded} words loaded")
         return loaded
@@ -402,8 +402,8 @@ class GraphCache(IgorBase):
 
         try:
             r.set(_KEY_REFRESH_TS, time.strftime("%Y-%m-%dT%H:%M:%S"))
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/graph_cache.py: %s", _bare_e)
 
         log.info(f"[graph_cache] cache_refresh: evicted={evicted} retained={retained}")
         return {"evicted": evicted, "retained": retained}

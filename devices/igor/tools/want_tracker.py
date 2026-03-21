@@ -1,3 +1,4 @@
+import logging
 """
 want_tracker.py — post-response want/request expression detector.
 
@@ -119,11 +120,11 @@ def _want_extract_worker(response_text: str, user_input: str, cortex) -> None:
         try:
             from rich.console import Console as _C
             _C().print(f"[dim cyan][WANT] Recorded: {mem_id} — {want[:60]}[/]")
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/want_tracker.py: %s", _bare_e)
 
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/want_tracker.py: %s", _bare_e)
 
 
 def check_response_for_wants(response_text: str, cortex, user_input: str = "") -> None:

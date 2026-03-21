@@ -1,3 +1,4 @@
+import logging
 """
 Unified network listener.
 
@@ -153,8 +154,8 @@ def _poll_gmail():
                     received_at=time.monotonic(),
                 ))
 
-    except Exception:
-        pass  # Never block Igor on Gmail failure; it'll retry next cycle
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/network/listener.py: %s", _bare_e)
 
 
 # ── Listener thread ────────────────────────────────────────────────────────────

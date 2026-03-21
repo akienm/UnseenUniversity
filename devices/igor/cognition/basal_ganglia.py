@@ -17,6 +17,7 @@ PROC_HABIT_COMPILER immediately at confidence 0.95.
 """
 
 from __future__ import annotations
+import logging
 
 import math
 import re
@@ -293,8 +294,8 @@ def select_habit(
         if _word_graph is not None:
             try:
                 _wg_scores = _word_graph.score(_score_text, [h.id for h in habits])
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/basal_ganglia.py: %s", _bare_e)
 
         scored = []
         near_misses: list[tuple[float, "Memory"]] = []
@@ -362,8 +363,8 @@ def select_habit(
         if _word_graph is not None:
             try:
                 _word_graph.reinforce(winner.id)
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/basal_ganglia.py: %s", _bare_e)
 
         return (winner, winner_score, [])
 
