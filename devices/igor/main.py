@@ -45,7 +45,7 @@ from .cognition.inference_gateway import (
     is_local_inference_available as _local_inference_ok,
 )
 from .cognition.reasoners.openrouter_reasoner import preparse_via_openrouter
-from .cognition.forensic_logger import log_tier_selection, cts as _cts
+from .cognition.forensic_logger import log_tier_selection, cts as _cts, log_error
 from .cognition.system_prompt import build_boot_message, invalidate_cache
 
 # LocalKoboldPool/BatchKoboldPool moved to InferenceGateway.from_env() — not imported directly here
@@ -607,7 +607,7 @@ class Igor(IgorBase):
             with self.cortex._conn() as conn:
                 rows = conn.execute(
                     """
-                    SELECT id, narrative, metadata_json, last_accessed
+                    SELECT id, narrative, metadata, last_accessed
                     FROM memories
                     WHERE memory_type = ?
                     AND (last_accessed IS NULL OR last_accessed > ?)
@@ -622,7 +622,8 @@ class Igor(IgorBase):
             open_items = []
             for r in rows:
                 try:
-                    meta = _json.loads(r["metadata_json"] or "{}")
+                    _raw = r["metadata"]
+                    meta = _raw if isinstance(_raw, dict) else _json.loads(_raw or "{}")
                 except Exception:
                     meta = {}
                 status = meta.get("status", "").lower()
@@ -879,7 +880,9 @@ class Igor(IgorBase):
             try:
                 self.cortex.add_child(mem.parent_id, mem.id)
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
     def _boot_integrity_check(self):
         """
@@ -1113,7 +1116,9 @@ class Igor(IgorBase):
                     if part.startswith("delta="):
                         _deltas.append(float(part[6:]))
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
         surprise_avg = sum(_deltas) / len(_deltas) if _deltas else None
         return {
             "memory_count": self.cortex.total_count(),
@@ -1426,7 +1431,9 @@ class Igor(IgorBase):
                 if predicted:
                     lines.append("activated: " + ", ".join(w for w, _ in predicted))
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
         # ── Top relevant memories (high relevance only) ───────────────────────
         if relevant:
@@ -1468,7 +1475,9 @@ class Igor(IgorBase):
                         "— novel territory or genuinely stumped."
                     )
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
         # ── NE prediction signal ───────────────────────────────────────────────
         if ne_pred is not None and ne_pred.predicted_habit_id is not None:
@@ -1735,13 +1744,17 @@ class Igor(IgorBase):
                 try:
                     preparse_vals.append(int(parts["preparse_ms"]))
                 except (KeyError, ValueError) as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                    )
                 try:
                     tier = parts["tier"]
                     r_ms = int(parts["reasoning_ms"])
                     tier_vals.setdefault(tier, []).append(r_ms)
                 except (KeyError, ValueError) as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                    )
         except Exception as _bare_e:
             log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
 
@@ -2042,7 +2055,10 @@ class Igor(IgorBase):
                             instance_dir / f"warm_context.{ts_str}.{slot_n}.json"
                         )
                     except Exception as _bare_e:
-                        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                        log_error(
+                            kind="BARE_EXCEPT",
+                            detail=f"wild_igor/igor/main.py: {_bare_e}",
+                        )
             console.print(
                 f"[dim][WARM] warm context expired ({age_hours:.1f}h > {ttl_hours}h TTL), "
                 f"starting cold[/]"
@@ -2073,9 +2089,14 @@ class Igor(IgorBase):
                                 f"[dim]{_cts()}[GAP] milieu partially reset toward baseline[/]"
                             )
                     except Exception as _bare_e:
-                        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                        log_error(
+                            kind="BARE_EXCEPT",
+                            detail=f"wild_igor/igor/main.py: {_bare_e}",
+                        )
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
         # 1. Session summary — always inject so it surfaces at top of ring context
         summary = ctx.get("session_summary", "")
@@ -2101,7 +2122,9 @@ class Igor(IgorBase):
                         entry["content"], category=entry.get("category", "note")
                     )
                 except Exception as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                    )
 
         # 4. TWM — only inject if TWM is empty (new instance or all expired)
         twm_items = ctx.get("twm_contents") or []
@@ -2117,7 +2140,9 @@ class Igor(IgorBase):
                         ttl_seconds=ttl_seconds,
                     )
                 except Exception as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                    )
 
         twm_restored = len(twm_items) if twm_live == 0 else 0
         console.print(
@@ -2143,7 +2168,9 @@ class Igor(IgorBase):
                 if age_h <= thread_ttl:
                     active_threads.append(t)
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
         self._conversation_threads = active_threads
         if active_threads:
             parts = []
@@ -2229,7 +2256,9 @@ class Igor(IgorBase):
                     else ("healthy" if os.getenv("OPENROUTER_API_KEY") else "no_key")
                 )
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
             _ollama_status = ""
             try:
                 _ollama_status = (
@@ -2345,7 +2374,9 @@ class Igor(IgorBase):
                 try:
                     _exit_flag.unlink()
                 except Exception as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                    )
                 loginfo("[yellow][EXTERNAL] Exit flag detected — shutting down...[/]")
                 self._shutdown(reason="exit flag (external)")
                 sys.exit(0)
@@ -2355,7 +2386,9 @@ class Igor(IgorBase):
                 try:
                     _restart_flag.unlink()
                 except Exception as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                    )
                 loginfo("[cyan][EXTERNAL] Restart flag detected — restarting...[/]")
                 self._shutdown(reason="restart flag (external)")
                 sys.exit(42)
@@ -2527,7 +2560,9 @@ class Igor(IgorBase):
                             f"[dim][INVEST] {_inode.id} (w={_iweight:.2f}, prox={_iprox}) → TWM[/]"
                         )
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
         # #179: The Wait — per-turn incubation before inference begins.
         # Lets TWM observations, milieu updates, and ring_memory settle.
@@ -2566,7 +2601,9 @@ class Igor(IgorBase):
             try:
                 self._generation_graph.reinforce_text(self._last_reply, boost=0.05)
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
         # [D] Capture raw user input to ring immediately — before any habit/reasoner processing.
         # This ensures the user's actual words survive even if a habit misfires and the Q|A
@@ -2613,7 +2650,9 @@ class Igor(IgorBase):
                         f" ({len(_window184)}/5min) → attractor[/]"
                     )
                 except Exception as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                    )
 
         # ── #158: TASK_SET — push explicit action requests to thread TWM ─────────
         # Anchors the current goal at the top of context, outcompeting ambient ring.
@@ -2796,7 +2835,9 @@ class Igor(IgorBase):
                 )
                 _ne_search_keys = _ne_pred.predicted_search_keys
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
         _fast_path_intents = {"greeting", "command"}
         # #244: check TWM for meaning_to_me signal from prior turn
@@ -2833,7 +2874,9 @@ class Igor(IgorBase):
             try:
                 self.ne.record_actual(_thalamus_habit.id if _thalamus_habit else None)
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
         # #142: skip Ollama preparse when thalamus is already confident.
         # low complexity → rule-based CSB is correct; high complexity → tier.4 forced anyway.
         # Only medium complexity genuinely needs Ollama for routing disambiguation.
@@ -2942,7 +2985,9 @@ class Igor(IgorBase):
                     if "[PARSED_INPUT]" in _text:
                         return _text.strip()
                 except Exception as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                    )
                 return _rule_based_csb(_preparse_input, habits)
 
             # #50: include NE predicted search keys in memory retrieval query
@@ -2994,7 +3039,9 @@ class Igor(IgorBase):
                                 )
                             ] + list(relevant)
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
         # #175: Time layer + #177: Looping/Mulling — interpretive traversal wired into turn.
         # Uses CP1-CP6 + top relevant memory IDs as seeds; enriches context before LLM call.
@@ -3037,7 +3084,10 @@ class Igor(IgorBase):
                         if _aro > 0.4 and _val > 0.2:
                             _milieu_bias["CP3"] = 1.0 + _aro * 0.3
                     except Exception as _bare_e:
-                        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                        log_error(
+                            kind="BARE_EXCEPT",
+                            detail=f"wild_igor/igor/main.py: {_bare_e}",
+                        )
                 _interp = self.cortex.interpretive_traverse(
                     _seed_ids,
                     max_depth=_trav_depth,
@@ -3082,7 +3132,10 @@ class Igor(IgorBase):
                             "[dim][#244] meaning_to_me thread active — salience boost pushed to TWM[/]"
                         )
                     except Exception as _bare_e:
-                        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                        log_error(
+                            kind="BARE_EXCEPT",
+                            detail=f"wild_igor/igor/main.py: {_bare_e}",
+                        )
                 if _interp:
                     # Deduplicate against existing relevant set before appending
                     _existing_ids = {m.id for m in relevant}
@@ -3116,7 +3169,9 @@ class Igor(IgorBase):
                             f"[dim][BOREDOM] level={_boredom_mod.boredom_level():.2f} — novelty forcing active[/]"
                         )
                 except Exception as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                    )
 
                 # #176 Mode B: Contextual deepening fork — appellate judge pattern.
                 # Trigger: milieu arousal spike OR high complexity with few interpretive hits.
@@ -3179,7 +3234,10 @@ class Igor(IgorBase):
                                         f"seeded at {_fork_seed_node.id[:16]}[/]"
                                     )
                     except Exception as _bare_e:
-                        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                        log_error(
+                            kind="BARE_EXCEPT",
+                            detail=f"wild_igor/igor/main.py: {_bare_e}",
+                        )
 
                 # #176 Mode A: Competitive forking — parallel traversal paths, judge picks winner.
                 # Runs N paths from different CP-anchored entry points; winning path contributes
@@ -3243,7 +3301,10 @@ class Igor(IgorBase):
                                     f"score={_best_score:.2f} +{len(_best_path[:3])} memories[/]"
                                 )
                     except Exception as _bare_e:
-                        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                        log_error(
+                            kind="BARE_EXCEPT",
+                            detail=f"wild_igor/igor/main.py: {_bare_e}",
+                        )
 
                 # #177: Mull loop — re-traverse if complexity warrants and gate enabled
                 _mull_enabled = (
@@ -3286,7 +3347,9 @@ class Igor(IgorBase):
                         _prev_ids = _mull_ids
                         _mull_pass += 1
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
         pre = parse_preparse_csb(pre_csb, habits)
         _t_after_preparse_memory = (
@@ -3379,7 +3442,9 @@ class Igor(IgorBase):
                             f"[dim][MILIEU] session_character=focused → tier eased to {_skip_to}[/]"
                         )
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
         # [#50 P2] NE habit prediction mismatch → ambiguity → bump tier.
         # If NE predicted a specific habit would fire (confidence >= 0.6) but no habit
@@ -3495,7 +3560,9 @@ class Igor(IgorBase):
                         )
                     _threshold_prefix = "⚠ " + " | ".join(_warn_parts) + "\n"
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
             _async_job_id = self.job_manager.submit_background(
                 fn=lambda _ui=user_input, _rel=list(
@@ -3843,7 +3910,10 @@ class Igor(IgorBase):
                                 metadata={"habit_id": habit.id, "code_ref": code_ref},
                             )
                         except Exception as _bare_e:
-                            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                            log_error(
+                                kind="BARE_EXCEPT",
+                                detail=f"wild_igor/igor/main.py: {_bare_e}",
+                            )
                 else:
                     response_text = f"[HABIT→TOOL] tool '{tool_name}' (code_ref={code_ref}) not in registry."
             elif habit.id == "PROC_HABIT_COMPILER":
@@ -3981,7 +4051,10 @@ class Igor(IgorBase):
                             for _c in _cands:
                                 _habit_nudge += f"\n  • {_c['content_csb'][:150]}"
                     except Exception as _bare_e:
-                        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                        log_error(
+                            kind="BARE_EXCEPT",
+                            detail=f"wild_igor/igor/main.py: {_bare_e}",
+                        )
                     _pre_csb_with_nudge = pre_csb + _habit_nudge
 
                     dashboard.print_reasoning(
@@ -4007,7 +4080,10 @@ class Igor(IgorBase):
                             habit_fired=bool(habit),
                         )
                     except Exception as _bare_e:
-                        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                        log_error(
+                            kind="BARE_EXCEPT",
+                            detail=f"wild_igor/igor/main.py: {_bare_e}",
+                        )
                     self._current_action = "reasoning"
                     web_server.broadcast_activity(self._activity_state())
 
@@ -4199,7 +4275,9 @@ class Igor(IgorBase):
                                 f"via {_clear_method}[/]"
                             )
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
         # [MOTOR CORTEX] Output response — skip if empty (e.g. impulse was suppressed)
         # G8 / #48: fast identity-threat gate before output
@@ -4242,7 +4320,10 @@ class Igor(IgorBase):
                         )
                         loginfo(f"[dim][METRICS] boot_orientation={_score:.2f}[/]")
                     except Exception as _bare_e:
-                        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                        log_error(
+                            kind="BARE_EXCEPT",
+                            detail=f"wild_igor/igor/main.py: {_bare_e}",
+                        )
 
         # G37: n-pass reply termination — log gradient flatness after reply.
         # Gate: IGOR_NPASS_REPLY=true (default true — G37 Phase 2).
@@ -4259,7 +4340,9 @@ class Igor(IgorBase):
                     detail=f"intent={parsed.intent}|resp_len={len(response_text)}",
                 )
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
         # [AMYGDALA] Assess valence
         valence = pfc.assess_valence(user_input, response_text)
@@ -4365,7 +4448,9 @@ class Igor(IgorBase):
                         ttl_seconds=600,
                     )
                 except Exception as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                    )
 
         # Update metrics
         self.last_friction = friction
@@ -4510,7 +4595,9 @@ class Igor(IgorBase):
             try:
                 self._response_habituation.observe(response_text)
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
         # Reading progress log: record what Igor read aloud in creative_request turns.
         if response_text and not is_impulse and parsed.intent == "creative_request":
@@ -4530,7 +4617,9 @@ class Igor(IgorBase):
                     category="reading_session",
                 )
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
         # [WANT TRACKER] Post-response: detect if Igor expressed a want/request to Akien.
         # Deposits EPISODIC memory so Igor remembers what he asked for across sessions.
@@ -4540,7 +4629,9 @@ class Igor(IgorBase):
 
                 _check_wants(response_text, self.cortex, user_input=user_input)
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
         # #201/#203: interaction + turn_trace — only for non-impulse, non-command turns
         if not is_impulse and not parsed.is_command:
@@ -4622,9 +4713,14 @@ class Igor(IgorBase):
                                     _ne_state.get("valence", 0.0)
                                 )
                             except (TypeError, ValueError) as _bare_e:
-                                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                                log_error(
+                                    kind="BARE_EXCEPT",
+                                    detail=f"wild_igor/igor/main.py: {_bare_e}",
+                                )
                 except Exception as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                    )
 
             self._ne_thread = threading.Thread(
                 target=_ne_worker, daemon=True, name="ne-worker"
@@ -4686,7 +4782,9 @@ class Igor(IgorBase):
                         category="consolidation",
                     )
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
         self._consolidation_thread = threading.Thread(
             target=_worker, daemon=True, name="consolidation-worker"
@@ -5402,7 +5500,9 @@ class Igor(IgorBase):
             try:
                 n = int(parts[1])
             except ValueError as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
         loginfo(f"\n[bold cyan]═ Last {n} turn trace(s) ═══════════════════════════[/]")
         loginfo(f"[dim]{_read_traces(n)}[/]")
 
@@ -5731,7 +5831,9 @@ class Igor(IgorBase):
                     ),
                 )
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
         # context: extract "because / so that / in order to" clause if present
         context = ""
@@ -6059,7 +6161,9 @@ class Igor(IgorBase):
                         snippet = txt[:120].replace("\n", " ")
                         return f"Yeth, Mashter — I recorded: {snippet}"
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
             return "I believe sho, Mashter — nothing went wrong on my end."
 
         # ── Simple factual from memory (#5) ──────────────────────────────────
@@ -6074,7 +6178,9 @@ class Igor(IgorBase):
                     if _ctx and not _ctx.slug.startswith("thread_"):
                         slug = _ctx.slug
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
             if slug:
                 return f"You are {slug}, Mashter."
             return "I don't have your name on file yet, Mashter."
@@ -6118,7 +6224,9 @@ class Igor(IgorBase):
                         return f"I don't have a long-term memory on that, but recently: {_ring_snippet}"
                     return f"I have nothing on '{subject}' in my memory, Mashter."
                 except Exception as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                    )
 
         # "What's in my notebook?" → list notebook entries
         _nb_words = ("what's in my notebook", "what have you saved")
@@ -6134,7 +6242,9 @@ class Igor(IgorBase):
 
                     return _nb.list_notebook(slug)
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
 
         # ── Word graph completion (#4) ────────────────────────────────────────
         # When confidence is high, attempt a word-graph-constructed short answer.
@@ -7107,7 +7217,9 @@ class Igor(IgorBase):
 
                 self._word_graph.save(default_cache_path())
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
         # G37: persist generation graph separately
         if self._dual_graphs and self._generation_graph is not None:
             try:
@@ -7115,13 +7227,17 @@ class Igor(IgorBase):
 
                 self._generation_graph.save(default_cache_path("generation_graph"))
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
         # WO#140 Phase 2: persist response habituation store
         if self._response_habituation is not None:
             try:
                 self._response_habituation.save()
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
         self.cortex.write_restart_note(
             reason=f"{reason} — {self.interaction_count} interactions, ${self.session_cost:.4f}",
         )
