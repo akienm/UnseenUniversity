@@ -2499,7 +2499,7 @@ class Cortex(IgorBase):
         from .db_proxy import PGDatabaseProxy
 
         _habits_sql = (
-            f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE metadata ? 'trigger'"
+            f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE jsonb_exists(metadata, 'trigger')"
             if isinstance(self._db, PGDatabaseProxy)
             else f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE metadata LIKE '%\"trigger\"%'"
         )
