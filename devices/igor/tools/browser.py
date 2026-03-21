@@ -51,7 +51,9 @@ def _make_llm():
     if or_key:
         model = os.getenv("BROWSER_USE_MODEL", "openai/gpt-4o-mini")
         return ChatOpenRouter(model=model, api_key=or_key)
-    return ChatAnthropic(model="claude-haiku-4-5-20251001")
+    return ChatAnthropic(
+        model=os.getenv("BROWSER_USE_ANTHROPIC_MODEL", "claude-haiku-4-5-20251001")
+    )
 
 
 _virtual_display = None  # module-level singleton so it isn't GC'd
@@ -178,7 +180,9 @@ async def _run_browser_agent(
             if hasattr(state, "url") and state.url:
                 final_url = state.url
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/browser.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/tools/browser.py: %s", _bare_e
+            )
         history.append(
             {
                 "step": step_num,
@@ -223,14 +227,18 @@ async def _run_browser_agent(
             if visited:
                 final_url = visited[-1]
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/browser.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/tools/browser.py: %s", _bare_e
+            )
 
         # Extract result text
         extracted = None
         try:
             extracted = result.final_result()
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/browser.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/tools/browser.py: %s", _bare_e
+            )
         if not extracted:
             try:
                 extracted = str(result)[:1000]
@@ -367,7 +375,11 @@ async def _run_as_employer(
             user_data_dir=_EMPLOYER_PROFILE,
             channel="chrome",  # real Chrome, not bundled Chromium
             headless=True,
-            args=["--disable-blink-features=AutomationControlled", "--no-sandbox", "--disable-gpu"],
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-gpu",
+            ],
             ignore_default_args=["--enable-automation"],
         )
         page = await context.new_page()
@@ -487,7 +499,11 @@ async def _scrape_anthropic_balance() -> str:
             user_data_dir=_EMPLOYER_PROFILE,
             channel="chrome",
             headless=True,
-            args=["--disable-blink-features=AutomationControlled", "--no-sandbox", "--disable-gpu"],
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-gpu",
+            ],
             ignore_default_args=["--enable-automation"],
         )
         page = await context.new_page()
