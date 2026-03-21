@@ -21,17 +21,26 @@ from ...memory.models import Memory
 from ...tools.registry import registry
 from ...tools.budget import check_budget_floor as _check_budget_floor
 from ... import tools as _tools  # noqa: F401 — registers all tools
-from .base import (BaseReasoner, MAX_TURNS, CONTEXT_WARN_CHARS, CONTEXT_HARD_CAP_CHARS,
-                   CALL_COST_WARN_USD, RESEARCH_TOOL_CAP, RESEARCH_MODE, BIG_READ_TOOLS,
-                   BASH_READ_PATTERNS, exit_requested)
+from .base import (
+    BaseReasoner,
+    MAX_TURNS,
+    CONTEXT_WARN_CHARS,
+    CONTEXT_HARD_CAP_CHARS,
+    CALL_COST_WARN_USD,
+    RESEARCH_TOOL_CAP,
+    RESEARCH_MODE,
+    BIG_READ_TOOLS,
+    BASH_READ_PATTERNS,
+    exit_requested,
+)
 from ..system_prompt import build_system_prompt
 from ..forensic_logger import log_reasoning_call, log_tool_call, log_inference_io
 from ...memory.scrub import scrub
 
 console = Console()
 
-DEFAULT_MODEL      = "anthropic/claude-sonnet-4-6"
-OPENROUTER_BASE    = "https://openrouter.ai/api/v1"
+DEFAULT_MODEL = "anthropic/claude-sonnet-4-6"
+OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 OPENROUTER_REFERER = "https://github.com/akienm/TheIgors"
 
 # _build_session_context and _build_memory_context live in BaseReasoner (WO8)
@@ -56,12 +65,14 @@ def preparse_via_openrouter(
 
     prompt = _PREPARSE_PROMPT.format(text=user_input[:300])
 
-    payload = json.dumps({
-        "model": model,
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.1,
-        "max_tokens": 120,
-    }).encode()
+    payload = json.dumps(
+        {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.1,
+            "max_tokens": 120,
+        }
+    ).encode()
     req = urllib.request.Request(
         f"{OPENROUTER_BASE}/chat/completions",
         data=payload,
@@ -82,15 +93,25 @@ def preparse_via_openrouter(
             return text
         fallback_reason = "no_parsed_input_block"
     except Exception as exc:
-        console.print(f"[yellow][PREPARSE] OR preparse failed ({exc}), using rule-based fallback[/]")
+        console.print(
+            f"[yellow][PREPARSE] OR preparse failed ({exc}), using rule-based fallback[/]"
+        )
         fallback_reason = f"exception:{type(exc).__name__}"
 
     if fallback_reason:
         try:
             from ..forensic_logger import log_error
-            log_error(kind="preparse_fallback", detail=fallback_reason, source="openrouter_reasoner")
+
+            log_error(
+                kind="preparse_fallback",
+                detail=fallback_reason,
+                source="openrouter_reasoner",
+            )
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
+            )
 
     return _rule_based_csb(user_input, habits)
 
@@ -162,12 +183,14 @@ def _habit_extract_worker(
             tier=tier,
         )
 
-        payload = json.dumps({
-            "model": cheap_model,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.1,
-            "max_tokens": 200,
-        }).encode()
+        payload = json.dumps(
+            {
+                "model": cheap_model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.1,
+                "max_tokens": 200,
+            }
+        ).encode()
         req = urllib.request.Request(
             f"{OPENROUTER_BASE}/chat/completions",
             data=payload,
@@ -188,7 +211,7 @@ def _habit_extract_worker(
 
         node_data = json.loads(result)
         node_type = node_data.get("type", "procedural").strip().lower()
-        narrative  = node_data.get("narrative", "").strip()
+        narrative = node_data.get("narrative", "").strip()
         confidence = float(node_data.get("confidence", 0.5))
 
         if not narrative or confidence < 0.6:
@@ -203,11 +226,18 @@ def _habit_extract_worker(
             # Skip if close duplicate exists
             existing = cortex.search(trigger, limit=3, min_score=0.8)
             for mem in existing:
-                if mem.metadata.get("trigger") and trigger.split()[0] in mem.metadata["trigger"]:
+                if (
+                    mem.metadata.get("trigger")
+                    and trigger.split()[0] in mem.metadata["trigger"]
+                ):
                     return
             code_ref = node_data.get("code_ref", "").strip()
             resp_tmpl = node_data.get("response_template", "").strip()
-            metadata = {"trigger": trigger, "cloud_directed": True, "extraction_tier": tier}
+            metadata = {
+                "trigger": trigger,
+                "cloud_directed": True,
+                "extraction_tier": tier,
+            }
             if code_ref:
                 metadata["code_ref"] = code_ref
             if resp_tmpl:
@@ -249,7 +279,11 @@ def _habit_extract_worker(
                 source="cloud_directed",
                 confidence=confidence,
                 context_of_encoding=f"cloud_extraction|tier={tier}|from={from_id}",
-                metadata={"from_id": from_id, "cloud_directed": True, "extraction_tier": tier},
+                metadata={
+                    "from_id": from_id,
+                    "cloud_directed": True,
+                    "extraction_tier": tier,
+                },
             )
             cortex.store(mem)
             if cortex.get(from_id):
@@ -268,10 +302,17 @@ def _habit_extract_worker(
 
         try:
             from ..forensic_logger import log_memory_op as _lm
-            _lm(op="cloud_node_extracted", memory_id=mem.id,
-                detail=f"type={node_type}|tier={tier}|conf={confidence:.2f}")
+
+            _lm(
+                op="cloud_node_extracted",
+                memory_id=mem.id,
+                detail=f"type={node_type}|tier={tier}|conf={confidence:.2f}",
+            )
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
+            )
 
         console.print(
             f"[dim cyan][G53] {node_type} node from {tier}: {mem.id} "
@@ -279,9 +320,15 @@ def _habit_extract_worker(
         )
 
     except json.JSONDecodeError as _bare_e:
-        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}")
+        log_error(
+            kind="BARE_EXCEPT",
+            detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
+        )
     except Exception as _bare_e:
-        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}")
+        log_error(
+            kind="BARE_EXCEPT",
+            detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
+        )
 
 
 class OpenRouterReasoner(BaseReasoner):
@@ -320,6 +367,7 @@ class OpenRouterReasoner(BaseReasoner):
         # Merges results with passed-in relevant_memories (deduped).
         try:
             from ..basal_ganglia import _word_graph as _wg
+
             _winnowed = self._winnow_context(user_input, cortex, word_graph=_wg)
             if _winnowed:
                 seen = {m.id for m in relevant_memories}
@@ -327,14 +375,20 @@ class OpenRouterReasoner(BaseReasoner):
                     m for m in _winnowed if m.id not in seen
                 ]
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
+            )
 
         # ── Blob expansion: append full content for high-relevance blob memories ─
         if cortex is not None:
             try:
                 cortex.expand_blob_memories(relevant_memories)
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
+                )
 
         content = user_input
         if preparse_csb:
@@ -349,9 +403,11 @@ class OpenRouterReasoner(BaseReasoner):
         _context_chars = len(system) + len(content)  # G55: layer boundary metric
         # Infer tier from model name for logging
         _m = self.model.lower()
-        _tier = ("tier.3.5" if "haiku" in _m
-                 else "tier.4" if "sonnet" in _m or "opus" in _m
-                 else "tier.3")
+        _tier = (
+            "tier.3.5"
+            if "haiku" in _m
+            else "tier.4" if "sonnet" in _m or "opus" in _m else "tier.3"
+        )
 
         messages = [{"role": "user", "content": content}]
         tools = registry.to_openai_schemas()
@@ -364,11 +420,14 @@ class OpenRouterReasoner(BaseReasoner):
 
             # ── EXIT INTERRUPT — stop at turn boundary if /exit was typed ─
             if exit_requested.is_set():
-                console.print("[yellow][OR] Exit requested — stopping at turn boundary.[/]")
+                console.print(
+                    "[yellow][OR] Exit requested — stopping at turn boundary.[/]"
+                )
                 return "Stopping — exit requested.", total_cost
 
             # ── TURN LIMIT — safety backstop (budget floor is primary gate) ──
-            if turn > MAX_TURNS:
+            # MAX_TURNS=0 means unlimited (for reading sessions etc.)
+            if MAX_TURNS > 0 and turn > MAX_TURNS:
                 console.print(
                     f"[yellow][OR] MAX_TURNS ({MAX_TURNS}) reached — stopping tool loop.[/]"
                 )
@@ -390,9 +449,16 @@ class OpenRouterReasoner(BaseReasoner):
                 )
                 try:
                     from ..forensic_logger import log_anomaly as _la
-                    _la(kind="CONTEXT_OVERFLOW", detail=f"model={self._model()}|turn={turn}|trimmed_to={ctx_chars}")
+
+                    _la(
+                        kind="CONTEXT_OVERFLOW",
+                        detail=f"model={self._model()}|turn={turn}|trimmed_to={ctx_chars}",
+                    )
                 except Exception as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT",
+                        detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
+                    )
             elif ctx_chars > CONTEXT_WARN_CHARS:
                 console.print(
                     f"[yellow][OR] context ~{ctx_chars // 1000}K chars at turn {turn} "
@@ -406,7 +472,9 @@ class OpenRouterReasoner(BaseReasoner):
             total_cost += self._estimate_cost(response.get("usage", {}))
 
             # ── PER-CALL COST CAP ─────────────────────────────────────────
-            _cost_cap = float(os.getenv("IGOR_CALL_COST_WARN_USD", str(CALL_COST_WARN_USD)))
+            _cost_cap = float(
+                os.getenv("IGOR_CALL_COST_WARN_USD", str(CALL_COST_WARN_USD))
+            )
             if total_cost > _cost_cap:
                 console.print(
                     f"[yellow][OR] Per-call cost cap ${_cost_cap:.2f} hit "
@@ -415,9 +483,16 @@ class OpenRouterReasoner(BaseReasoner):
                 )
                 try:
                     from ..forensic_logger import log_anomaly as _la
-                    _la(kind="COST_CAP_HIT", detail=f"model={self.model}|cost={total_cost:.4f}|cap={_cost_cap}|turn={turn}")
+
+                    _la(
+                        kind="COST_CAP_HIT",
+                        detail=f"model={self.model}|cost={total_cost:.4f}|cap={_cost_cap}|turn={turn}",
+                    )
                 except Exception as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT",
+                        detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
+                    )
                 return (
                     f"⚠ Per-call cost cap ${_cost_cap:.2f} reached (${total_cost:.4f} at turn {turn}). "
                     f"Ask Akien to raise IGOR_CALL_COST_WARN_USD if deeper work is needed.",
@@ -433,26 +508,35 @@ class OpenRouterReasoner(BaseReasoner):
                 usage = response.get("usage", {})
                 _elapsed_ms = int((time.perf_counter() - t0) * 1000)
                 log_reasoning_call(
-                    provider="openrouter", model=self.model, tier=_tier,
+                    provider="openrouter",
+                    model=self.model,
+                    tier=_tier,
                     input_tokens=usage.get("prompt_tokens", 0),
                     output_tokens=usage.get("completion_tokens", 0),
                     context_chars=_context_chars,
                     cost_usd=total_cost,
                     elapsed_ms=_elapsed_ms,
-                    turns=turn, response_summary=text[:120],
+                    turns=turn,
+                    response_summary=text[:120],
                 )
                 log_inference_io(
-                    provider="openrouter", model=self.model, tier=_tier,
+                    provider="openrouter",
+                    model=self.model,
+                    tier=_tier,
                     prompt=system + "\n\n" + content,
                     response=text,
-                    elapsed_ms=_elapsed_ms, call_type="reason",
+                    elapsed_ms=_elapsed_ms,
+                    call_type="reason",
                 )
                 # G53: cloud-directed habit extraction — daemon thread, never blocks
-                if (cortex is not None
-                        and _tier in ("tier.3", "tier.3.5", "tier.4")
-                        and os.getenv("IGOR_HABIT_EXTRACT", "true").lower()
-                            not in ("0", "false", "no")):
+                if (
+                    cortex is not None
+                    and _tier in ("tier.3", "tier.3.5", "tier.4")
+                    and os.getenv("IGOR_HABIT_EXTRACT", "true").lower()
+                    not in ("0", "false", "no")
+                ):
                     import threading as _threading
+
                     _t = _threading.Thread(
                         target=_habit_extract_worker,
                         args=(user_input, text, cortex, _tier),
@@ -464,11 +548,13 @@ class OpenRouterReasoner(BaseReasoner):
 
             elif finish_reason == "tool_calls" or msg.get("tool_calls"):
                 tool_calls = msg.get("tool_calls", [])
-                messages.append({
-                    "role": "assistant",
-                    "content": msg.get("content"),
-                    "tool_calls": tool_calls,
-                })
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": msg.get("content"),
+                        "tool_calls": tool_calls,
+                    }
+                )
 
                 _research_blocked = False
                 for tc in tool_calls:
@@ -481,23 +567,33 @@ class OpenRouterReasoner(BaseReasoner):
                         kwargs = {}
 
                     # ── RESEARCH GATE ──────────────────────────────────────
-                    _is_bash_read = (
-                        tool_name == "run_bash"
-                        and any(kwargs.get("command", "").lstrip().startswith(p)
-                                for p in BASH_READ_PATTERNS)
+                    _is_bash_read = tool_name == "run_bash" and any(
+                        kwargs.get("command", "").lstrip().startswith(p)
+                        for p in BASH_READ_PATTERNS
                     )
                     if tool_name in BIG_READ_TOOLS or _is_bash_read:
                         big_read_count += 1
-                        _cap = int(os.getenv("IGOR_RESEARCH_TOOL_CAP", str(RESEARCH_TOOL_CAP)))
-                        _mode = os.getenv("IGOR_RESEARCH_MODE", "false").lower() in ("1", "true", "yes")
+                        _cap = int(
+                            os.getenv("IGOR_RESEARCH_TOOL_CAP", str(RESEARCH_TOOL_CAP))
+                        )
+                        _mode = os.getenv("IGOR_RESEARCH_MODE", "false").lower() in (
+                            "1",
+                            "true",
+                            "yes",
+                        )
                         if big_read_count > _cap and not _mode:
                             console.print(
                                 f"[yellow][OR] Research tool cap ({_cap}) reached — "
                                 f"{tool_name} call #{big_read_count} blocked. "
                                 f"Set IGOR_RESEARCH_MODE=true to allow bulk reading.[/]"
                             )
-                            messages.append({"role": "tool", "tool_call_id": tc["id"],
-                                             "content": "BLOCKED: research tool cap reached — set IGOR_RESEARCH_MODE=true"})
+                            messages.append(
+                                {
+                                    "role": "tool",
+                                    "tool_call_id": tc["id"],
+                                    "content": "BLOCKED: research tool cap reached — set IGOR_RESEARCH_MODE=true",
+                                }
+                            )
                             _research_blocked = True
                             break
 
@@ -508,7 +604,9 @@ class OpenRouterReasoner(BaseReasoner):
                     result = registry.execute(tool_name, kwargs)
                     tool_elapsed = int((time.perf_counter() - t_tool) * 1000)
                     result_preview = str(result)[:120].replace("\n", " ")
-                    self.print_tool_call("OR", turn, tool_name, input_summary, result_preview)
+                    self.print_tool_call(
+                        "OR", turn, tool_name, input_summary, result_preview
+                    )
                     log_tool_call(
                         tool_name=tool_name,
                         args_summary=input_summary,
@@ -523,14 +621,18 @@ class OpenRouterReasoner(BaseReasoner):
                             category="tool_trace",
                         )
 
-                    messages.append({
-                        "role": "tool",
-                        "tool_call_id": tc["id"],
-                        "content": self._cap_tool_result(str(result)),
-                    })
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": tc["id"],
+                            "content": self._cap_tool_result(str(result)),
+                        }
+                    )
 
                 if _research_blocked:
-                    _cap = int(os.getenv("IGOR_RESEARCH_TOOL_CAP", str(RESEARCH_TOOL_CAP)))
+                    _cap = int(
+                        os.getenv("IGOR_RESEARCH_TOOL_CAP", str(RESEARCH_TOOL_CAP))
+                    )
                     return (
                         f"⚠ Research tool cap ({_cap} big-read calls) reached. "
                         f"Set IGOR_RESEARCH_MODE=true if bulk reading is needed.",
@@ -587,8 +689,8 @@ class OpenRouterReasoner(BaseReasoner):
 
     def _estimate_cost(self, usage: dict) -> float:
         """Best-effort cost estimate based on model name."""
-        inp  = usage.get("prompt_tokens", 0)
-        out  = usage.get("completion_tokens", 0)
+        inp = usage.get("prompt_tokens", 0)
+        out = usage.get("completion_tokens", 0)
         m = self.model.lower()
         if "claude-sonnet-4" in m or "claude-sonnet-4-6" in m:
             # OpenRouter adds ~5% margin over Anthropic direct

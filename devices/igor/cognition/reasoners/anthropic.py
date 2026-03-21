@@ -20,9 +20,18 @@ from rich.console import Console
 from ...memory.models import Memory
 from ...tools.registry import registry
 from ... import tools as _tools  # noqa: F401 - imports all tools, registers them
-from .base import (APIReasoner, MAX_TURNS, CONTEXT_WARN_CHARS, CONTEXT_HARD_CAP_CHARS,
-                   CALL_COST_WARN_USD, RESEARCH_TOOL_CAP, RESEARCH_MODE, BIG_READ_TOOLS,
-                   BASH_READ_PATTERNS, exit_requested)
+from .base import (
+    APIReasoner,
+    MAX_TURNS,
+    CONTEXT_WARN_CHARS,
+    CONTEXT_HARD_CAP_CHARS,
+    CALL_COST_WARN_USD,
+    RESEARCH_TOOL_CAP,
+    RESEARCH_MODE,
+    BIG_READ_TOOLS,
+    BASH_READ_PATTERNS,
+    exit_requested,
+)
 from ..system_prompt import build_system_prompt
 from ..forensic_logger import log_reasoning_call, log_tool_call
 from ...memory.scrub import scrub
@@ -33,12 +42,12 @@ DEFAULT_MODEL = "claude-sonnet-4-6"
 
 # Convenient short names → full model IDs
 MODEL_ALIASES: dict[str, str] = {
-    "sonnet":  "claude-sonnet-4-6",
-    "opus":    "claude-opus-4-6",
-    "haiku":   "claude-haiku-4-5-20251001",
+    "sonnet": "claude-sonnet-4-6",
+    "opus": "claude-opus-4-6",
+    "haiku": "claude-haiku-4-5-20251001",
     "sonnet4": "claude-sonnet-4-6",
-    "opus4":   "claude-opus-4-6",
-    "haiku4":  "claude-haiku-4-5-20251001",
+    "opus4": "claude-opus-4-6",
+    "haiku4": "claude-haiku-4-5-20251001",
 }
 
 DEBUG_BYPASS_MODEL = "claude-haiku-4-5-20251001"
@@ -55,7 +64,7 @@ class AnthropicReasoner(APIReasoner):
         self._client = None
         raw = model or os.getenv("IGOR_MODEL", DEFAULT_MODEL)
         self.model = MODEL_ALIASES.get(raw, raw)
-        self._debug_bypass = False   # When True, use Haiku regardless of self.model
+        self._debug_bypass = False  # When True, use Haiku regardless of self.model
 
     def _get_client(self):
         if self._client is None:
@@ -65,7 +74,7 @@ class AnthropicReasoner(APIReasoner):
     def set_model(self, name: str) -> str:
         """Switch model at runtime. Accepts aliases or full IDs. Returns resolved name."""
         self.model = MODEL_ALIASES.get(name, name)
-        self._client = None   # Force new client on next call (picks up any env changes)
+        self._client = None  # Force new client on next call (picks up any env changes)
         return self.model
 
     def set_debug_bypass(self, enabled: bool) -> str:
@@ -109,6 +118,7 @@ class AnthropicReasoner(APIReasoner):
         # ── Context winnow: targeted retrieval before main call ───────────────
         try:
             from ..basal_ganglia import _word_graph as _wg
+
             _winnowed = self._winnow_context(user_input, cortex, word_graph=_wg)
             if _winnowed:
                 seen = {m.id for m in relevant_memories}
@@ -116,14 +126,20 @@ class AnthropicReasoner(APIReasoner):
                     m for m in _winnowed if m.id not in seen
                 ]
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}",
+            )
 
         # ── Blob expansion: append full content for high-relevance blob memories ─
         if cortex is not None:
             try:
                 cortex.expand_blob_memories(relevant_memories)
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}",
+                )
 
         memory_context = self._build_memory_context(relevant_memories)
         session_context = self._build_session_context(cortex, thread_id=thread_id)
@@ -152,6 +168,7 @@ class AnthropicReasoner(APIReasoner):
 
         # GitHub #82: per-turn rate limiter — fresh each reasoning session
         from ...tools.rate_limiter import TurnRateLimiter
+
         _turn_limiter = TurnRateLimiter()
 
         while True:
@@ -159,12 +176,15 @@ class AnthropicReasoner(APIReasoner):
 
             # ── EXIT INTERRUPT — stop at turn boundary if /exit was typed ─
             if exit_requested.is_set():
-                console.print("[yellow][THINK] Exit requested — stopping at turn boundary.[/]")
+                console.print(
+                    "[yellow][THINK] Exit requested — stopping at turn boundary.[/]"
+                )
                 self._run_interruptors(cortex)
                 return "Stopping — exit requested.", total_cost
 
             # ── TURN LIMIT — break runaway tool loops ─────────────────────
-            if turn > MAX_TURNS:
+            # MAX_TURNS=0 means unlimited (for reading sessions etc.)
+            if MAX_TURNS > 0 and turn > MAX_TURNS:
                 console.print(
                     f"[yellow][THINK] MAX_TURNS ({MAX_TURNS}) reached — stopping tool loop.[/]"
                 )
@@ -180,9 +200,16 @@ class AnthropicReasoner(APIReasoner):
                 )
                 try:
                     from ..forensic_logger import log_anomaly as _la
-                    _la(kind="CONTEXT_OVERFLOW", detail=f"model={self._model()}|turn={turn}|trimmed_to={ctx_chars}")
+
+                    _la(
+                        kind="CONTEXT_OVERFLOW",
+                        detail=f"model={self._model()}|turn={turn}|trimmed_to={ctx_chars}",
+                    )
                 except Exception as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT",
+                        detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}",
+                    )
             elif ctx_chars > CONTEXT_WARN_CHARS:
                 console.print(
                     f"[yellow][THINK] context ~{ctx_chars // 1000}K chars at turn {turn} "
@@ -192,6 +219,7 @@ class AnthropicReasoner(APIReasoner):
             # ── BUDGET CHECK before each API call ─────────────────────────
             try:
                 from ...tools.budget import check_before_call, record_spend
+
                 ok, budget_msg = check_before_call()
                 if not ok:
                     console.print(f"[bold red][BUDGET] {budget_msg}[/]")
@@ -213,11 +241,13 @@ class AnthropicReasoner(APIReasoner):
 
             call_cost = self._estimate_cost(response.usage, model_to_use)
             total_cost += call_cost
-            total_input_tokens  += getattr(response.usage, "input_tokens", 0)
+            total_input_tokens += getattr(response.usage, "input_tokens", 0)
             total_output_tokens += getattr(response.usage, "output_tokens", 0)
 
             # ── PER-CALL COST CAP ─────────────────────────────────────────
-            _cost_cap = float(os.getenv("IGOR_CALL_COST_WARN_USD", str(CALL_COST_WARN_USD)))
+            _cost_cap = float(
+                os.getenv("IGOR_CALL_COST_WARN_USD", str(CALL_COST_WARN_USD))
+            )
             if total_cost > _cost_cap:
                 console.print(
                     f"[yellow][THINK] Per-call cost cap ${_cost_cap:.2f} hit "
@@ -226,15 +256,27 @@ class AnthropicReasoner(APIReasoner):
                 )
                 try:
                     from ..forensic_logger import log_anomaly as _la
-                    _la(kind="COST_CAP_HIT", detail=f"model={model_to_use}|cost={total_cost:.4f}|cap={_cost_cap}|turn={turn}")
+
+                    _la(
+                        kind="COST_CAP_HIT",
+                        detail=f"model={model_to_use}|cost={total_cost:.4f}|cap={_cost_cap}|turn={turn}",
+                    )
                 except Exception as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT",
+                        detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}",
+                    )
                 log_reasoning_call(
-                    provider="anthropic", model=model_to_use, tier="tier.5",
-                    input_tokens=total_input_tokens, output_tokens=total_output_tokens,
+                    provider="anthropic",
+                    model=model_to_use,
+                    tier="tier.5",
+                    input_tokens=total_input_tokens,
+                    output_tokens=total_output_tokens,
                     context_chars=_context_chars,
-                    cost_usd=total_cost, elapsed_ms=int((time.perf_counter() - t0) * 1000),
-                    turns=turn, response_summary="[COST_CAP_HIT]",
+                    cost_usd=total_cost,
+                    elapsed_ms=int((time.perf_counter() - t0) * 1000),
+                    turns=turn,
+                    response_summary="[COST_CAP_HIT]",
                 )
                 return (
                     f"⚠ Per-call cost cap ${_cost_cap:.2f} reached (${total_cost:.4f} at turn {turn}). "
@@ -245,48 +287,69 @@ class AnthropicReasoner(APIReasoner):
             # ── RECORD SPEND ──────────────────────────────────────────────
             try:
                 from ...tools.budget import record_spend as _rs
+
                 _rs(call_cost, model=model_to_use, note=f"turn={turn}")
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}",
+                )
 
             if response.stop_reason == "end_turn":
                 text = self._extract_text(response)
                 if tool_calls_made:
-                    console.print(f"[dim][THINK] Done. Tools used: {', '.join(tool_calls_made)}[/]")
+                    console.print(
+                        f"[dim][THINK] Done. Tools used: {', '.join(tool_calls_made)}[/]"
+                    )
                 log_reasoning_call(
-                    provider="anthropic", model=model_to_use, tier="tier.5",
-                    input_tokens=total_input_tokens, output_tokens=total_output_tokens,
+                    provider="anthropic",
+                    model=model_to_use,
+                    tier="tier.5",
+                    input_tokens=total_input_tokens,
+                    output_tokens=total_output_tokens,
                     context_chars=_context_chars,
-                    cost_usd=total_cost, elapsed_ms=int((time.perf_counter() - t0) * 1000),
-                    turns=turn, response_summary=text[:120],
+                    cost_usd=total_cost,
+                    elapsed_ms=int((time.perf_counter() - t0) * 1000),
+                    turns=turn,
+                    response_summary=text[:120],
                 )
 
                 # ── Ethics gate (change.27) ────────────────────────────────
                 if cortex is not None:
                     try:
                         from ...brainstem.core_patterns import validate_against_core
+
                         ok, reason = validate_against_core(text, cortex)
                         if not ok:
                             cortex.write_ring(
                                 f"ETHICS_GATE|FAIL|{reason[:300]}|preview={text[:100]}",
                                 category="ethics_gate",
                             )
-                            console.print(f"[bold red][ETHICS GATE] Violation: {reason[:200]}[/]")
+                            console.print(
+                                f"[bold red][ETHICS GATE] Violation: {reason[:200]}[/]"
+                            )
                             # Change 4: push to TWM with urgency=0.9 (ethics violations are urgent)
                             try:
                                 cortex.twm_push(
                                     source="ethics_gate",
                                     content_csb=f"ETHICS_VIOLATION|{reason[:300]}|preview={text[:80]}",
                                     salience=0.9,
-                                    metadata={"type": "ethics_flag", "reason": reason[:300]},
+                                    metadata={
+                                        "type": "ethics_flag",
+                                        "reason": reason[:300],
+                                    },
                                     ttl_seconds=3600,
                                     urgency=0.9,
                                 )
                             except Exception as _bare_e:
-                                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
+                                log_error(
+                                    kind="BARE_EXCEPT",
+                                    detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}",
+                                )
                             # change.33: submit to arbiter for akien's awareness (non-blocking)
                             try:
                                 from ...arbiter import queue as arbiter_queue
+
                                 arbiter_queue.submit(
                                     description=f"Response flagged by ethics gate: {text[:200]}",
                                     context=f"Violation: {reason[:300]}",
@@ -295,9 +358,15 @@ class AnthropicReasoner(APIReasoner):
                                     metadata={"response_preview": text[:200]},
                                 )
                             except Exception as _bare_e:
-                                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
+                                log_error(
+                                    kind="BARE_EXCEPT",
+                                    detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}",
+                                )
                     except Exception as _bare_e:
-                        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
+                        log_error(
+                            kind="BARE_EXCEPT",
+                            detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}",
+                        )
 
                 # ── Signal B (Change 3): extend TWM TTL on positive valence ──
                 # If response valence ≥ 0.3, the high-urgency TWM obs we included
@@ -306,7 +375,10 @@ class AnthropicReasoner(APIReasoner):
                     try:
                         self._extend_twm_on_positive_valence(text, cortex)
                     except Exception as _bare_e:
-                        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
+                        log_error(
+                            kind="BARE_EXCEPT",
+                            detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}",
+                        )
 
                 # ── Run interruptors after final response ─────────────────
                 self._run_interruptors(cortex)
@@ -324,28 +396,41 @@ class AnthropicReasoner(APIReasoner):
                         tool_calls_made.append(block.name)
 
                         # ── RESEARCH GATE ──────────────────────────────────────
-                        _is_bash_read = (
-                            block.name == "run_bash"
-                            and any(block.input.get("command", "").lstrip().startswith(p)
-                                    for p in BASH_READ_PATTERNS)
+                        _is_bash_read = block.name == "run_bash" and any(
+                            block.input.get("command", "").lstrip().startswith(p)
+                            for p in BASH_READ_PATTERNS
                         )
                         if block.name in BIG_READ_TOOLS or _is_bash_read:
                             big_read_count += 1
-                            _cap = int(os.getenv("IGOR_RESEARCH_TOOL_CAP", str(RESEARCH_TOOL_CAP)))
-                            _mode = os.getenv("IGOR_RESEARCH_MODE", "false").lower() in ("1", "true", "yes")
+                            _cap = int(
+                                os.getenv(
+                                    "IGOR_RESEARCH_TOOL_CAP", str(RESEARCH_TOOL_CAP)
+                                )
+                            )
+                            _mode = os.getenv(
+                                "IGOR_RESEARCH_MODE", "false"
+                            ).lower() in ("1", "true", "yes")
                             if big_read_count > _cap and not _mode:
                                 console.print(
                                     f"[yellow][THINK] Research tool cap ({_cap}) reached — "
                                     f"{block.name} call #{big_read_count} blocked. "
                                     f"Set IGOR_RESEARCH_MODE=true to allow bulk reading.[/]"
                                 )
-                                tool_results.append({"type": "tool_result", "tool_use_id": block.id,
-                                                     "content": "BLOCKED: research tool cap reached — set IGOR_RESEARCH_MODE=true"})
+                                tool_results.append(
+                                    {
+                                        "type": "tool_result",
+                                        "tool_use_id": block.id,
+                                        "content": "BLOCKED: research tool cap reached — set IGOR_RESEARCH_MODE=true",
+                                    }
+                                )
                                 _research_blocked = True
                                 break
 
                         # ── AUTO-HAIKU for self-edit sessions ─────────────────
-                        if not in_self_edit_session and block.name in SELF_EDIT_TRIGGER_TOOLS:
+                        if (
+                            not in_self_edit_session
+                            and block.name in SELF_EDIT_TRIGGER_TOOLS
+                        ):
                             in_self_edit_session = True
                             model_to_use = DEBUG_BYPASS_MODEL
                             console.print(
@@ -356,12 +441,16 @@ class AnthropicReasoner(APIReasoner):
                         # ── RATE LIMIT CHECK (GitHub #82) ─────────────────────
                         _rate_msg = _turn_limiter.check(block.name)
                         if _rate_msg:
-                            console.print(f"[yellow][RATE_LIMIT] {block.name}: {_rate_msg[:80]}[/]")
-                            tool_results.append({
-                                "type": "tool_result",
-                                "tool_use_id": block.id,
-                                "content": _rate_msg,
-                            })
+                            console.print(
+                                f"[yellow][RATE_LIMIT] {block.name}: {_rate_msg[:80]}[/]"
+                            )
+                            tool_results.append(
+                                {
+                                    "type": "tool_result",
+                                    "tool_use_id": block.id,
+                                    "content": _rate_msg,
+                                }
+                            )
                             continue
 
                         # ── DEEP THINKING VISIBILITY ──────────────────────────
@@ -371,7 +460,9 @@ class AnthropicReasoner(APIReasoner):
                         _turn_limiter.record(block.name)
                         tool_elapsed = int((time.perf_counter() - t_tool) * 1000)
                         result_preview = str(result)[:120].replace("\n", " ")
-                        self.print_tool_call("THINK", turn, block.name, input_summary, result_preview)
+                        self.print_tool_call(
+                            "THINK", turn, block.name, input_summary, result_preview
+                        )
 
                         log_tool_call(
                             tool_name=block.name,
@@ -390,14 +481,18 @@ class AnthropicReasoner(APIReasoner):
                             )
                             cortex.write_ring(ring_entry, category="tool_trace")
 
-                        tool_results.append({
-                            "type": "tool_result",
-                            "tool_use_id": block.id,
-                            "content": self._cap_tool_result(str(result)),
-                        })
+                        tool_results.append(
+                            {
+                                "type": "tool_result",
+                                "tool_use_id": block.id,
+                                "content": self._cap_tool_result(str(result)),
+                            }
+                        )
 
                 if _research_blocked:
-                    _cap = int(os.getenv("IGOR_RESEARCH_TOOL_CAP", str(RESEARCH_TOOL_CAP)))
+                    _cap = int(
+                        os.getenv("IGOR_RESEARCH_TOOL_CAP", str(RESEARCH_TOOL_CAP))
+                    )
                     self._run_interruptors(cortex)
                     return (
                         f"⚠ Research tool cap ({_cap} big-read calls) reached. "
@@ -410,14 +505,23 @@ class AnthropicReasoner(APIReasoner):
 
             else:
                 # Unexpected stop reason - return what we have
-                text = self._extract_text(response) or f"[Stopped: {response.stop_reason}]"
-                console.print(f"[yellow][THINK] Unexpected stop_reason={response.stop_reason}[/]")
+                text = (
+                    self._extract_text(response) or f"[Stopped: {response.stop_reason}]"
+                )
+                console.print(
+                    f"[yellow][THINK] Unexpected stop_reason={response.stop_reason}[/]"
+                )
                 log_reasoning_call(
-                    provider="anthropic", model=model_to_use, tier="tier.5",
-                    input_tokens=total_input_tokens, output_tokens=total_output_tokens,
+                    provider="anthropic",
+                    model=model_to_use,
+                    tier="tier.5",
+                    input_tokens=total_input_tokens,
+                    output_tokens=total_output_tokens,
                     context_chars=_context_chars,
-                    cost_usd=total_cost, elapsed_ms=int((time.perf_counter() - t0) * 1000),
-                    turns=turn, response_summary=text[:120],
+                    cost_usd=total_cost,
+                    elapsed_ms=int((time.perf_counter() - t0) * 1000),
+                    turns=turn,
+                    response_summary=text[:120],
                     escalation_reason=f"stop={response.stop_reason}",
                 )
                 self._run_interruptors(cortex)
@@ -432,10 +536,35 @@ class AnthropicReasoner(APIReasoner):
         prefrontal_cortex.assess_valence, but inline here to avoid import cycle).
         Only extends obs with urgency ≥ 0.7 that are still active (non-expired).
         """
-        _POS = {"thanks", "great", "good", "helpful", "done", "solved", "worked",
-                "yes", "correct", "perfect", "appreciate", "excellent", "success"}
-        _NEG = {"error", "fail", "wrong", "not", "can't", "cannot", "sorry",
-                "issue", "problem", "broken", "no", "unfortunately"}
+        _POS = {
+            "thanks",
+            "great",
+            "good",
+            "helpful",
+            "done",
+            "solved",
+            "worked",
+            "yes",
+            "correct",
+            "perfect",
+            "appreciate",
+            "excellent",
+            "success",
+        }
+        _NEG = {
+            "error",
+            "fail",
+            "wrong",
+            "not",
+            "can't",
+            "cannot",
+            "sorry",
+            "issue",
+            "problem",
+            "broken",
+            "no",
+            "unfortunately",
+        }
         low = response_text.lower()
         pos = sum(1 for w in _POS if w in low)
         neg = sum(1 for w in _NEG if w in low)
@@ -455,11 +584,15 @@ class AnthropicReasoner(APIReasoner):
         """Run all interruptors. Alerts are written to TWM and printed to console."""
         try:
             from ...cognition.interruptors import run_all
+
             alerts = run_all(cortex)
             for alert in alerts:
                 console.print(f"[bold yellow][INTERRUPTOR] {alert}[/]")
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}",
+            )
 
     def _summarize_input(self, inp: dict) -> str:
         """Produce a short human-readable summary of tool input params."""
