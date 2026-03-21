@@ -1,4 +1,5 @@
 import logging
+
 """
 Web server for Igor — Starlette/uvicorn, runs in a background daemon thread.
 
@@ -92,7 +93,9 @@ def _channel_append(author: str, content: str, msg_type: str = "message"):
         with open(_CHANNEL_FILE, "a", encoding="utf-8") as f:
             f.write(line)
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/web/server.py: %s", _bare_e)
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/web/server.py: %s", _bare_e
+        )
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -223,7 +226,9 @@ async def _api_outbox_list(request: Request):
                 st = p.stat()
                 files.append({"name": p.name, "size": st.st_size, "mtime": st.st_mtime})
     except OSError as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/web/server.py: %s", _bare_e)
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/web/server.py: %s", _bare_e
+        )
     return JSONResponse(files)
 
 
@@ -347,7 +352,9 @@ async def _api_dashboard(request: Request):
         try:
             data = dict(_stats_fn())
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/web/server.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/web/server.py: %s", _bare_e
+            )
     data["ts"] = _ts()
     return JSONResponse(data)
 
@@ -448,7 +455,9 @@ async def _ws_endpoint(ws: WebSocket):
                         _broadcast_to_session(current_session, json.dumps(umsg))
                         _channel_append(author, content)
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/web/server.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/web/server.py: %s", _bare_e
+            )
 
     async def _forward():
         try:
@@ -456,7 +465,9 @@ async def _ws_endpoint(ws: WebSocket):
                 payload = await q.get()
                 await ws.send_text(payload)
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/web/server.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/web/server.py: %s", _bare_e
+            )
 
     recv = asyncio.ensure_future(_receive())
     fwd = asyncio.ensure_future(_forward())
@@ -466,7 +477,9 @@ async def _ws_endpoint(ws: WebSocket):
         try:
             await t
         except asyncio.CancelledError as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/web/server.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/web/server.py: %s", _bare_e
+            )
 
     with _client_lock:
         qs = _session_clients.get(current_session, [])
@@ -890,6 +903,8 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     <label for="sender-name">Your name:</label>
     <input id="sender-name" type="text" value="akien" maxlength="32" autocomplete="off">
     <button id="cc-toggle" onclick="toggleCC()" title="Toggle Claude bridge pane">CC</button>
+    <button onclick="changeFontSize(-1)" title="Decrease font size" style="padding:0.2rem 0.5rem;font-size:0.85rem;">A-</button>
+    <button onclick="changeFontSize(1)" title="Increase font size" style="padding:0.2rem 0.5rem;font-size:0.85rem;">A+</button>
   </div>
   <div id="input-row">
     <textarea id="input" placeholder="Message Igor..." autocomplete="off" rows="4"></textarea>
@@ -933,6 +948,19 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     const _savedName = _loadName();
     if (_savedName) senderName.value = _savedName;
     senderName.addEventListener('change', () => _saveName(senderName.value));
+
+    // ── #271 Font size controls ───────────────────────────────────────────────
+    let _fontSize = parseFloat(localStorage.getItem('igor_font_size') || '0.95');
+    function _applyFontSize() {
+      document.getElementById('chat').style.fontSize = _fontSize + 'rem';
+    }
+    function changeFontSize(delta) {
+      _fontSize = Math.min(Math.max(_fontSize + delta * 0.1, 0.6), 2.0);
+      _fontSize = Math.round(_fontSize * 100) / 100;
+      localStorage.setItem('igor_font_size', String(_fontSize));
+      _applyFontSize();
+    }
+    _applyFontSize();
 
     // ── #119 Session management ──────────────────────────────────────────────
     function _renderSessionBar() {
