@@ -26,7 +26,6 @@ from .base import (
     MAX_TURNS,
     CONTEXT_WARN_CHARS,
     CONTEXT_HARD_CAP_CHARS,
-    CALL_COST_WARN_USD,
     RESEARCH_TOOL_CAP,
     RESEARCH_MODE,
     BIG_READ_TOOLS,
@@ -478,34 +477,6 @@ class OpenRouterReasoner(BaseReasoner):
             msg = choice["message"]
             finish_reason = choice.get("finish_reason", "stop")
             total_cost += self._estimate_cost(response.get("usage", {}))
-
-            # ── PER-CALL COST CAP ─────────────────────────────────────────
-            _cost_cap = float(
-                os.getenv("IGOR_CALL_COST_WARN_USD", str(CALL_COST_WARN_USD))
-            )
-            if total_cost > _cost_cap:
-                console.print(
-                    f"[yellow][OR] Per-call cost cap ${_cost_cap:.2f} hit "
-                    f"(${total_cost:.4f} at turn {turn}) — stopping. "
-                    f"Raise IGOR_CALL_COST_WARN_USD or ask Akien.[/]"
-                )
-                try:
-                    from ..forensic_logger import log_anomaly as _la
-
-                    _la(
-                        kind="COST_CAP_HIT",
-                        detail=f"model={self.model}|cost={total_cost:.4f}|cap={_cost_cap}|turn={turn}",
-                    )
-                except Exception as _bare_e:
-                    log_error(
-                        kind="BARE_EXCEPT",
-                        detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
-                    )
-                return (
-                    f"⚠ Per-call cost cap ${_cost_cap:.2f} reached (${total_cost:.4f} at turn {turn}). "
-                    f"Ask Akien to raise IGOR_CALL_COST_WARN_USD if deeper work is needed.",
-                    total_cost,
-                )
 
             if finish_reason in ("stop", "end_turn", None) or (
                 not msg.get("tool_calls") and finish_reason != "tool_calls"

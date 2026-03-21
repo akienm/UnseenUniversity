@@ -25,7 +25,6 @@ from .base import (
     MAX_TURNS,
     CONTEXT_WARN_CHARS,
     CONTEXT_HARD_CAP_CHARS,
-    CALL_COST_WARN_USD,
     RESEARCH_TOOL_CAP,
     RESEARCH_MODE,
     BIG_READ_TOOLS,
@@ -243,46 +242,6 @@ class AnthropicReasoner(APIReasoner):
             total_cost += call_cost
             total_input_tokens += getattr(response.usage, "input_tokens", 0)
             total_output_tokens += getattr(response.usage, "output_tokens", 0)
-
-            # ── PER-CALL COST CAP ─────────────────────────────────────────
-            _cost_cap = float(
-                os.getenv("IGOR_CALL_COST_WARN_USD", str(CALL_COST_WARN_USD))
-            )
-            if total_cost > _cost_cap:
-                console.print(
-                    f"[yellow][THINK] Per-call cost cap ${_cost_cap:.2f} hit "
-                    f"(${total_cost:.4f} at turn {turn}) — stopping. "
-                    f"Raise IGOR_CALL_COST_WARN_USD or ask Akien.[/]"
-                )
-                try:
-                    from ..forensic_logger import log_anomaly as _la
-
-                    _la(
-                        kind="COST_CAP_HIT",
-                        detail=f"model={model_to_use}|cost={total_cost:.4f}|cap={_cost_cap}|turn={turn}",
-                    )
-                except Exception as _bare_e:
-                    log_error(
-                        kind="BARE_EXCEPT",
-                        detail=f"wild_igor/igor/cognition/reasoners/anthropic.py: {_bare_e}",
-                    )
-                log_reasoning_call(
-                    provider="anthropic",
-                    model=model_to_use,
-                    tier="tier.5",
-                    input_tokens=total_input_tokens,
-                    output_tokens=total_output_tokens,
-                    context_chars=_context_chars,
-                    cost_usd=total_cost,
-                    elapsed_ms=int((time.perf_counter() - t0) * 1000),
-                    turns=turn,
-                    response_summary="[COST_CAP_HIT]",
-                )
-                return (
-                    f"⚠ Per-call cost cap ${_cost_cap:.2f} reached (${total_cost:.4f} at turn {turn}). "
-                    f"Ask Akien to raise IGOR_CALL_COST_WARN_USD if deeper work is needed.",
-                    total_cost,
-                )
 
             # ── RECORD SPEND ──────────────────────────────────────────────
             try:
