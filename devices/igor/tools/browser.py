@@ -41,19 +41,20 @@ _init_browser_log()
 def _make_llm():
     """
     Create an LLM for the browser agent.
-    Uses gpt-4o-mini via OpenRouter — cheap and avoids the Anthropic schema
-    strictness bug in browser_use 0.11.x where 'minimum' on integer types
-    causes repeated 400 errors. Falls back to Anthropic direct if no OR key.
+    Always routes through OpenRouter — Igor never uses Anthropic direct.
+    Default model: gpt-4o-mini (cheap; avoids Anthropic schema strictness bug
+    in browser_use 0.11.x where 'minimum' on integer types causes 400 errors).
+    Override with BROWSER_USE_MODEL env var (e.g. anthropic/claude-haiku-4-5).
     """
-    from browser_use.llm import ChatOpenRouter, ChatAnthropic
+    from browser_use.llm import ChatOpenRouter
 
     or_key = os.getenv("OPENROUTER_API_KEY", "").strip()
-    if or_key:
-        model = os.getenv("BROWSER_USE_MODEL", "openai/gpt-4o-mini")
-        return ChatOpenRouter(model=model, api_key=or_key)
-    return ChatAnthropic(
-        model=os.getenv("BROWSER_USE_ANTHROPIC_MODEL", "claude-haiku-4-5-20251001")
-    )
+    if not or_key:
+        raise RuntimeError(
+            "OPENROUTER_API_KEY not set — browser_use requires OpenRouter"
+        )
+    model = os.getenv("BROWSER_USE_MODEL", "openai/gpt-4o-mini")
+    return ChatOpenRouter(model=model, api_key=or_key)
 
 
 _virtual_display = None  # module-level singleton so it isn't GC'd
