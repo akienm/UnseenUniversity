@@ -170,7 +170,10 @@ class InferenceGateway(IgorBase):
                                 via=current_id,
                             )
                         except Exception as _bare_e:
-                            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
+                            log_error(
+                                kind="BARE_EXCEPT",
+                                detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
+                            )
                     return result
                 except Exception as exc:
                     ctx.last_elapsed_ms = round((time.monotonic() - t0) * 1000)
@@ -320,7 +323,10 @@ class InferenceGateway(IgorBase):
         try:
             from .forensic_logger import log_error as _log_err
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
+            )
 
         if local_only:
             return (
@@ -362,7 +368,10 @@ class InferenceGateway(IgorBase):
                                 kind="TIER_FAIL", source="tier.2/budget", detail=str(_e)
                             )
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
+            )
 
         # ── Background: batch impulse (always local, quality priority) ─────────
         if level == "background_batch":
@@ -396,7 +405,10 @@ class InferenceGateway(IgorBase):
 
                 _cloud_active = _cma()
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
+                )
 
             if _cloud_active and self._t3:
                 try:
@@ -411,6 +423,7 @@ class InferenceGateway(IgorBase):
                         cortex=cortex,
                         preparse_csb="",
                         thread_id=thread_id,
+                        no_tools=True,  # #301: impulses never call tools; avoids 400 "tools array too long"
                     )
                     return text, cost, True
                 except Exception as _e:
@@ -533,7 +546,10 @@ class InferenceGateway(IgorBase):
 
             _log_anomaly(kind="TIER6", detail=f"last_error={last_error[:160]}")
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
+            )
         try:
             from ..arbiter import queue as _arb
 
@@ -545,7 +561,10 @@ class InferenceGateway(IgorBase):
                 metadata={"tier_failures": ["tier.3", "tier.4", "tier.5"]},
             )
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
+            )
         return (
             "⚠ All cloud inference is currently unavailable. "
             "I've queued a notification for akien.",
@@ -925,7 +944,10 @@ def make_context(is_background: bool = False) -> InferenceContext:
 
         cloud_active = is_cloud_training_active()
     except Exception as _bare_e:
-        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
+        log_error(
+            kind="BARE_EXCEPT",
+            detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
+        )
 
     cloud_ok_override = True
     try:
@@ -933,7 +955,10 @@ def make_context(is_background: bool = False) -> InferenceContext:
 
         cloud_ok_override = _cko()
     except Exception as _bare_e:
-        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
+        log_error(
+            kind="BARE_EXCEPT",
+            detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
+        )
 
     local_available = False
     try:
@@ -941,7 +966,10 @@ def make_context(is_background: bool = False) -> InferenceContext:
 
         local_available = _ollama_healthy()
     except Exception as _bare_e:
-        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
+        log_error(
+            kind="BARE_EXCEPT",
+            detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
+        )
 
     balance_ok = False
     try:
@@ -994,7 +1022,10 @@ def _try_restart_local_ollama() -> bool:
     try:
         from .forensic_logger import log_anomaly as _log_anomaly
     except Exception as _bare_e:
-        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}")
+        log_error(
+            kind="BARE_EXCEPT",
+            detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
+        )
 
     try:
         import subprocess
