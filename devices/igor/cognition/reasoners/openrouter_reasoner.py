@@ -355,6 +355,7 @@ class OpenRouterReasoner(BaseReasoner):
         cortex=None,
         preparse_csb: str = "",
         thread_id: str | None = None,
+        no_tools: bool = False,
     ) -> tuple[str, float]:
         """Run full agentic tool loop via OpenRouter."""
         t0 = time.perf_counter()
@@ -410,7 +411,9 @@ class OpenRouterReasoner(BaseReasoner):
         )
 
         messages = [{"role": "user", "content": content}]
-        tools = registry.to_openai_schemas()
+        # #301: background/impulse calls never use tools — passing all 150+ tools causes
+        # provider 400 "tools array too long". Skip entirely when no_tools=True.
+        tools = [] if no_tools else registry.to_openai_schemas()
         total_cost = 0.0
         turn = 0
         big_read_count = 0
