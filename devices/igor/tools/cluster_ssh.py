@@ -507,3 +507,144 @@ registry.register(
         fn=_restart_ollama,
     )
 )
+
+
+# ── Tool: update_swarm (D204) ─────────────────────────────────────────────────
+
+# Commands to run on each box.
+# Git pull first; on success, touch restart.flag for every instance dir found.
+_LINUX_UPDATE_CMD = (
+    "cd ~/TheIgors && git pull --rebase origin main"
+    ' && for d in ~/.TheIgors/*/; do touch "${d}restart.flag"; done'
+    " && echo PULL_OK"
+    " && ls ~/.TheIgors/ | wc -l"
+)
+_WINDOWS_UPDATE_CMD = (
+    "cd C:\\automation\\local\\TheIgors;"
+    " git pull --rebase origin main;"
+    " if ($LASTEXITCODE -eq 0) {"
+    ' Get-ChildItem "$env:USERPROFILE\\.TheIgors" -Directory'
+    ' | ForEach-Object { New-Item -Force -ItemType File -Path "$($_.FullName)\\restart.flag" };'
+    " Write-Output 'PULL_OK';"
+    ' $count = (Get-ChildItem "$env:USERPROFILE\\.TheIgors" -Directory).Count;'
+    ' Write-Output "instances=$count"'
+    " } else { Write-Output 'PULL_FAILED' }"
+)
+
+
+def ssh_exec_all(
+    windows_cmd: str,
+    linux_cmd: str,
+    timeout: int = 60,
+) -> dict[str, str]:
+    """
+    D204: Run OS-typed commands on all SSH-capable online machines.
+    Dispatches PowerShell on Windows machines, bash on Linux machines.
+    Returns {hostname: output_string} for all attempted machines.
+    Does NOT run on the local host (caller handles local separately).
+    """
+    import socket as _socket
+
+    local_host = _socket.gethostname()
+    machines = [
+        m
+        for m in _load_machines()
+        if m.get("ip")
+        and m.get("ssh")
+        and m.get("status") == "online"
+        and m["hostname"] != local_host
+    ]
+    results: dict[str, str] = {}
+    for m in machines:
+        ip = m["ip"]
+        host = m["hostname"]
+        user = m.get("ssh_user", _DEFAULT_USER)
+        os_type = m.get("os", "linux").lower()
+        cmd = windows_cmd if os_type == "windows" else linux_cmd
+        results[host] = _ssh_run(ip, user, cmd, timeout=timeout)
+    return results
+
+
+def _update_swarm() -> str:
+    """
+    D204: Coordinated swarm update — git pull + restart flag on every box.
+
+    For each SSH-capable remote box:
+      - Run git pull --rebase origin main
+      - On success: touch ~/.TheIgors/*/restart.flag for each instance dir
+      - On failure: skip restart flags, report error
+
+    For local box: direct subprocess, same logic.
+    Restarts are fire-and-forget — the idle loop picks up restart.flag.
+
+    Returns audit log: per-box pull result + instance count.
+    """
+    import socket as _socket
+
+    lines = ["Swarm update initiated:"]
+
+    # ── 1. Remote boxes ──────────────────────────────────────────────────────
+    remote_results = ssh_exec_all(_WINDOWS_UPDATE_CMD, _LINUX_UPDATE_CMD, timeout=90)
+    for host, out in remote_results.items():
+        if "PULL_OK" in out:
+            # Extract instance count if present
+            count_match = None
+            for part in out.split():
+                if part.startswith("instances="):
+                    count_match = part.split("=", 1)[1]
+            count_str = f" ({count_match} instances)" if count_match else ""
+            lines.append(f"  ✓ {host}: pulled and flagged{count_str}")
+        elif "PULL_FAILED" in out:
+            lines.append(f"  ✗ {host}: git pull failed — restart skipped")
+        elif any(tag in out for tag in ("[exit", "[timeout", "[ssh error")):
+            lines.append(f"  ? {host}: unreachable — {out[:80]}")
+        else:
+            lines.append(f"  ~ {host}: {out[:120]}")
+
+    # ── 2. Local box ─────────────────────────────────────────────────────────
+    local_host = _socket.gethostname()
+    try:
+        result = subprocess.run(
+            ["bash", "-c", _LINUX_UPDATE_CMD],
+            capture_output=True,
+            text=True,
+            timeout=90,
+        )
+        out = (result.stdout or "").strip()
+        err = (result.stderr or "").strip()
+        combined = (out + ("\n" + err if err else "")).strip()
+        if "PULL_OK" in combined:
+            lines.append(f"  ✓ {local_host} (local): pulled and flagged")
+        else:
+            lines.append(f"  ✗ {local_host} (local): pull failed — {combined[:120]}")
+    except Exception as exc:
+        lines.append(f"  ✗ {local_host} (local): error — {exc}")
+
+    summary = "\n".join(lines)
+    try:
+        from ..cognition.forensic_logger import log_anomaly as _la
+
+        _la(kind="SWARM_UPDATE", detail=summary[:400])
+    except Exception:
+        pass
+    return summary
+
+
+registry.register(
+    Tool(
+        name="update_swarm",
+        description=(
+            "D204: Coordinated swarm update — git pull + Igor restart on all cluster boxes. "
+            "For each SSH-capable box: pull origin/main, then touch restart.flag for every "
+            "Igor instance dir (glob ~/.TheIgors/*/). Local box handled directly (no SSH). "
+            "Git pull failure on any box skips restart flags for that box. "
+            "Returns per-box audit log."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        fn=_update_swarm,
+    )
+)
