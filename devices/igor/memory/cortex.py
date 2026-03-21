@@ -1362,7 +1362,11 @@ class Cortex(IgorBase):
 
         # Supplement: activation-ranked nodes not already in traversal pool (orphans + new nodes)
         _excl_ph = ",".join("?" * len(_ALWAYS_EXCLUDE))
-        _supplement_limit = max(0, 300 - len(_traversal_pool))
+        # Skip supplement if traversal already found enough nodes — at graph scale
+        # (11k+ memories rooted at CP1-CP6) depth=3 reaches most nodes; supplement
+        # is redundant and triggers a 300-wide-row activation scan every search call.
+        _SUPPLEMENT_THRESHOLD = 80  # only supplement if graph is sparse
+        _supplement_limit = max(0, 300 - len(_traversal_pool)) if len(_traversal_pool) < _SUPPLEMENT_THRESHOLD else 0
         with self._conn() as conn:
             if _routed_types and _supplement_limit > 0:
                 _ph = ",".join("?" * len(_routed_types))
