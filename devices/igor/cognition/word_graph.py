@@ -757,6 +757,10 @@ class WordGraph(IgorBase):
                     (boost, doc_id),
                 )
 
+    # G-WG4: cap unique tokens in reinforce_text to bound the O(n²) pair count.
+    # 40 unique tokens → 1560 pairs (manageable); 200 tokens → 39800 pairs (slow).
+    _REINFORCE_TOKEN_CAP = 40
+
     def reinforce_text(self, text: str, boost: float = 0.05, lang: str = "en") -> None:
         """
         Boost co-occurrence edges for words in text — the comprehension signal loop.
@@ -769,11 +773,17 @@ class WordGraph(IgorBase):
         boost: small positive delta per edge (default 0.05 — 20× smaller than
                reinforce() doc boost, because text-level signals are coarser).
         Capped at 2.0 per edge to prevent runaway dominance.
+
+        G-WG4: unique token list capped at _REINFORCE_TOKEN_CAP to prevent
+        O(n²) pair explosion on long replies (200 tokens → 39800 pairs → slow).
         """
         tokens = tokenize_with_bigrams(text, lang=lang)
         unique = list(dict.fromkeys(tokens))
         if len(unique) < 2:
             return
+        # G-WG4: cap tokens to bound pair count (n*(n-1)) at a safe level
+        if len(unique) > self._REINFORCE_TOKEN_CAP:
+            unique = unique[: self._REINFORCE_TOKEN_CAP]
         with self._lock:
             with self._db() as conn:
                 conn.executemany(

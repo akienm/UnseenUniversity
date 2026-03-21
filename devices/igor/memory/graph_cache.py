@@ -177,11 +177,23 @@ class GraphCache(IgorBase):
             log.debug(f"[graph_cache] Redis read error: {e}")
             return None
 
+    # G-WG4: cap word list sent to Postgres to avoid slow plans on large IN (...)
+    # Postgres with 29M rows in wg_cooccur: each extra word adds ~15ms to the query.
+    # Top-20 words from the context carry most of the signal anyway.
+    _MAX_QUERY_WORDS = 20
+
     def _pg_get_neighbors(
         self, words: list[str], limit: int
     ) -> list[tuple[str, float]]:
-        """Query wg_cooccur from Postgres/SQLite home DB."""
+        """Query wg_cooccur from Postgres/SQLite home DB.
+
+        G-WG4: limits the IN (...) clause to _MAX_QUERY_WORDS to keep Postgres
+        query time bounded even for long context windows.
+        """
         try:
+            # Truncate to avoid O(n) query blowup on long word lists (G-WG4)
+            if len(words) > self._MAX_QUERY_WORDS:
+                words = words[: self._MAX_QUERY_WORDS]
             w_ph = ",".join("?" * len(words))
             with self._home() as conn:
                 rows = conn.execute(
@@ -347,13 +359,17 @@ class GraphCache(IgorBase):
         try:
             pipe.execute()
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/graph_cache.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/memory/graph_cache.py: %s", _bare_e
+            )
 
         # Record prewarm timestamp
         try:
             r.set(_KEY_REFRESH_TS, time.strftime("%Y-%m-%dT%H:%M:%S"))
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/graph_cache.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/memory/graph_cache.py: %s", _bare_e
+            )
 
         log.info(f"[graph_cache] prewarm complete: {loaded} words loaded")
         return loaded
@@ -403,7 +419,9 @@ class GraphCache(IgorBase):
         try:
             r.set(_KEY_REFRESH_TS, time.strftime("%Y-%m-%dT%H:%M:%S"))
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/graph_cache.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/memory/graph_cache.py: %s", _bare_e
+            )
 
         log.info(f"[graph_cache] cache_refresh: evicted={evicted} retained={retained}")
         return {"evicted": evicted, "retained": retained}
