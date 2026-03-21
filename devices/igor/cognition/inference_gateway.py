@@ -308,7 +308,7 @@ class InferenceGateway(IgorBase):
         core: list,
         *,
         level: str = "interactive",
-        skip_to: str = "tier.3.5",
+        skip_to: str = "tier.3.5",  # deprecated — ignored; kept for caller compat (D198)
         preparse_csb: str = "",
         thread_id: Optional[str] = None,
         cortex=None,
@@ -317,20 +317,17 @@ class InferenceGateway(IgorBase):
         on_tier: Optional[Callable[[str], None]] = None,
     ) -> "tuple[str, float, bool]":
         """
-        Route a reasoning request through the tier ladder. Single call site for
-        all inference in Igor — no tier strings or backend names leak to callers.
+        Route a reasoning request. Three call profiles, binary cloud/local decision. (D198)
 
         level:
-          "background"       NE impulses; cloud_mode → tier.3, else tier.2/impulse
-          "background_batch" PROACTIVE_HABIT; batch pool only (quality > speed)
-          "interactive"      Human turns; cascade from skip_to upward
+          "interactive"      Human turns:         cloud=sonnet | local=fastest-box
+          "background"       NE impulses:         cloud=gpt-4o-mini | local=fastest-box
+          "background_batch" Proactive habits:    always local, quality priority
 
-        skip_to: minimum starting tier for interactive turns ("tier.3"|"tier.3.5"|"tier.4").
-                 Computed by caller from preparse complexity + milieu signals.
-                 Gateway executes the cascade from that tier onward.
+        skip_to: DEPRECATED — ignored. Kept for caller compatibility.
 
-        on_tier: callback fired at each tier attempt — use for activity broadcast.
-                 Signature: (tier_label: str) -> None
+        on_tier: callback fired at each attempt — used for activity broadcast.
+                 Signature: (label: str) -> None
 
         Returns (response_text, cost_usd, used_api).
         """
@@ -344,7 +341,28 @@ class InferenceGateway(IgorBase):
                 detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
             )
 
+        # ── local_only: caller explicitly wants local (cloud_ok_override=False) ─
         if local_only:
+            if self._t2:
+                try:
+                    self.last_tier = "local/forced"
+                    if on_tier:
+                        on_tier("local/forced")
+                    text, cost = self._t2.reason(
+                        user_input,
+                        relevant,
+                        core,
+                        instance_id,
+                        cortex=cortex,
+                        thread_id=thread_id,
+                        interactive_fallback=True,
+                    )
+                    return text, cost, False
+                except Exception as _e:
+                    if _log_err:
+                        _log_err(
+                            kind="TIER_FAIL", source="local/forced", detail=str(_e)
+                        )
             return (
                 "I'm operating in local-only mode, but my local model is unavailable "
                 "right now. Please try a simpler task or remove the 'local only' constraint.",
@@ -366,9 +384,9 @@ class InferenceGateway(IgorBase):
                     )
                 if self._t2:
                     try:
-                        self.last_tier = "tier.2/budget"
+                        self.last_tier = "local/budget"
                         if on_tier:
-                            on_tier("tier.2/budget")
+                            on_tier("local/budget")
                         text, cost = self._t2.reason(
                             user_input,
                             relevant,
@@ -381,7 +399,7 @@ class InferenceGateway(IgorBase):
                     except Exception as _e:
                         if _log_err:
                             _log_err(
-                                kind="TIER_FAIL", source="tier.2/budget", detail=str(_e)
+                                kind="TIER_FAIL", source="local/budget", detail=str(_e)
                             )
         except Exception as _bare_e:
             log_error(
@@ -389,14 +407,26 @@ class InferenceGateway(IgorBase):
                 detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
             )
 
-        # ── Background: batch impulse (always local, quality priority) ─────────
+        # ── Cloud availability: single check, shared across all profiles ───────
+        _cloud_ok = False
+        try:
+            from .cloud_mode import is_cloud_training_active as _cma
+
+            _cloud_ok = bool(self._t4) and _cma()
+        except Exception as _bare_e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
+            )
+
+        # ── background_batch: always local, quality priority ──────────────────
         if level == "background_batch":
             pool = self._t2_batch or self._t2
             if pool:
                 try:
-                    self.last_tier = "tier.2/batch"
+                    self.last_tier = "local/batch"
                     if on_tier:
-                        on_tier("tier.2/batch")
+                        on_tier("local/batch")
                     if hasattr(pool, "reason_batch"):
                         text, cost = pool.reason_batch(
                             user_input, relevant, core, instance_id
@@ -409,28 +439,17 @@ class InferenceGateway(IgorBase):
                 except Exception as _e:
                     if _log_err:
                         _log_err(
-                            kind="IMPULSE_SKIP", source="tier.2/batch", detail=str(_e)
+                            kind="IMPULSE_SKIP", source="local/batch", detail=str(_e)
                         )
             return "", 0.0, False
 
-        # ── Background: impulse (cloud if active, else local) ─────────────────
+        # ── background: cloud=gpt-4o-mini | local, drop-and-move-on ──────────
         if level == "background":
-            _cloud_active = False
-            try:
-                from .cloud_mode import is_cloud_training_active as _cma
-
-                _cloud_active = _cma()
-            except Exception as _bare_e:
-                log_error(
-                    kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
-                )
-
-            if _cloud_active and self._t3:
+            if _cloud_ok and self._t3:
                 try:
-                    self.last_tier = "tier.3/impulse"
+                    self.last_tier = "cloud/background"
                     if on_tier:
-                        on_tier("tier.3/impulse")
+                        on_tier("cloud/background")
                     text, cost = self._t3.reason(
                         user_input,
                         relevant,
@@ -439,23 +458,23 @@ class InferenceGateway(IgorBase):
                         cortex=cortex,
                         preparse_csb="",
                         thread_id=thread_id,
-                        no_tools=True,  # #301: impulses never call tools; avoids 400 "tools array too long"
+                        no_tools=True,  # impulses never call tools (#301)
                     )
                     return text, cost, True
                 except Exception as _e:
                     if _log_err:
                         _log_err(
                             kind="IMPULSE_CLOUD_FAIL",
-                            source="tier.3/impulse",
+                            source="cloud/background",
                             detail=str(_e),
                         )
-                    return "", 0.0, False
+                    # fall through to local
 
             if self._t2:
                 try:
-                    self.last_tier = "tier.2/impulse"
+                    self.last_tier = "local/background"
                     if on_tier:
-                        on_tier("tier.2/impulse")
+                        on_tier("local/background")
                     text, cost = self._t2.reason(
                         user_input, relevant, core, instance_id, force_local=True
                     )
@@ -463,58 +482,20 @@ class InferenceGateway(IgorBase):
                 except Exception as _e:
                     if _log_err:
                         _log_err(
-                            kind="IMPULSE_SKIP", source="tier.2/impulse", detail=str(_e)
+                            kind="IMPULSE_SKIP",
+                            source="local/background",
+                            detail=str(_e),
                         )
             return "", 0.0, False
 
-        # ── Interactive: tier cascade from skip_to upward ─────────────────────
+        # ── interactive: cloud=sonnet | local=fastest-box ─────────────────────
         last_error = ""
 
-        if skip_to == "tier.3" and self._t3:
+        if _cloud_ok and self._t4:
             try:
-                self.last_tier = "tier.3"
+                self.last_tier = "cloud/interactive"
                 if on_tier:
-                    on_tier("tier.3")
-                text, cost = self._t3.reason(
-                    user_input,
-                    relevant,
-                    core,
-                    instance_id,
-                    cortex=cortex,
-                    preparse_csb=preparse_csb,
-                    thread_id=thread_id,
-                )
-                return text, cost, True
-            except Exception as _e:
-                last_error = str(_e)
-                if _log_err:
-                    _log_err(kind="TIER_FAIL", source="tier.3", detail=str(_e))
-
-        if skip_to in ("tier.3", "tier.3.5") and self._t35:
-            try:
-                self.last_tier = "tier.3.5"
-                if on_tier:
-                    on_tier("tier.3.5")
-                text, cost = self._t35.reason(
-                    user_input,
-                    relevant,
-                    core,
-                    instance_id,
-                    cortex=cortex,
-                    preparse_csb=preparse_csb,
-                    thread_id=thread_id,
-                )
-                return text, cost, True
-            except Exception as _e:
-                last_error = str(_e)
-                if _log_err:
-                    _log_err(kind="TIER_FAIL", source="tier.3.5", detail=str(_e))
-
-        if self._t4:
-            try:
-                self.last_tier = "tier.4"
-                if on_tier:
-                    on_tier("tier.4")
+                    on_tier("cloud/interactive")
                 text, cost = self._t4.reason(
                     user_input,
                     relevant,
@@ -528,53 +509,33 @@ class InferenceGateway(IgorBase):
             except Exception as _e:
                 last_error = str(_e)
                 if _log_err:
-                    _log_err(kind="TIER_FAIL", source="tier.4", detail=str(_e))
+                    _log_err(
+                        kind="TIER_FAIL", source="cloud/interactive", detail=str(_e)
+                    )
 
-        if (
-            os.getenv("IGOR_TIER5_ENABLED", "false").lower() in ("1", "true", "yes")
-            and self._t5
-        ):
-            try:
-                self.last_tier = "tier.5"
-                if on_tier:
-                    on_tier("tier.5")
-                text, cost = self._t5.reason(
-                    user_input,
-                    relevant,
-                    core,
-                    instance_id,
-                    cortex=cortex,
-                    preparse_csb=preparse_csb,
-                    thread_id=thread_id,
-                )
-                return text, cost, True
-            except Exception as _e:
-                last_error = str(_e)
-                if _log_err:
-                    _log_err(kind="TIER_FAIL", source="tier.5", detail=str(_e))
-        else:
-            last_error = last_error or "tier.5 inhibited (IGOR_TIER5_ENABLED not set)"
-
-        # ── tier.2/fallback: local Ollama last resort before total failure ─────
         if self._t2:
             try:
-                self.last_tier = "tier.2/fallback"
+                self.last_tier = "local/interactive"
                 if on_tier:
-                    on_tier("tier.2/fallback")
+                    on_tier("local/interactive")
                 text, cost = self._t2.reason(
                     user_input,
                     relevant,
                     core,
                     instance_id,
-                    interactive_fallback=True,  # bypass cloud gate, use 90s timeout
+                    cortex=cortex,
+                    thread_id=thread_id,
+                    interactive_fallback=True,
                 )
                 return text, cost, False
             except Exception as _e:
                 last_error = str(_e)
                 if _log_err:
-                    _log_err(kind="TIER_FAIL", source="tier.2/fallback", detail=str(_e))
+                    _log_err(
+                        kind="TIER_FAIL", source="local/interactive", detail=str(_e)
+                    )
 
-        # ── tier.6: all inference exhausted ───────────────────────────────────
+        # ── total failure: cloud + local both failed ──────────────────────────
         self.last_tier = "tier.6"
         try:
             from .forensic_logger import log_anomaly as _log_anomaly
@@ -589,11 +550,11 @@ class InferenceGateway(IgorBase):
             from ..arbiter import queue as _arb
 
             _arb.submit(
-                description="All cloud inference failed — Igor offline",
+                description="All inference failed — Igor offline",
                 context=f"Last error: {last_error[:200]}",
                 action_type="system_alert",
-                threshold_reason="Total cloud inference failure (tiers 3-5 all failed)",
-                metadata={"tier_failures": ["tier.3", "tier.4", "tier.5"]},
+                threshold_reason="Total inference failure (cloud + local both failed)",
+                metadata={"tier_failures": ["cloud/interactive", "local/interactive"]},
             )
         except Exception as _bare_e:
             log_error(
@@ -601,7 +562,7 @@ class InferenceGateway(IgorBase):
                 detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
             )
         return (
-            "⚠ All cloud inference is currently unavailable. "
+            "⚠ Both cloud and local inference are unavailable. "
             "I've queued a notification for akien.",
             0.0,
             False,
