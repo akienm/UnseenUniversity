@@ -168,7 +168,7 @@ class DatabaseProxy(IgorBase):
                 import logging
 
                 sql_snippet = (
-                    last_sql[:120].replace("\n", " ").strip()
+                    last_sql[:600].replace("\n", " ").strip()
                     if last_sql
                     else "(unknown)"
                 )
@@ -661,7 +661,7 @@ class PGDatabaseProxy(IgorBase):
                 import logging
 
                 sql_snippet = (
-                    last_sql[:120].replace("\n", " ").strip()
+                    last_sql[:600].replace("\n", " ").strip()
                     if last_sql
                     else "(unknown)"
                 )
