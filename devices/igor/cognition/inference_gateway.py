@@ -244,6 +244,22 @@ class InferenceGateway(IgorBase):
 
         gw = build_default_gateway()
 
+        # Tier 2: local Ollama (interactive fallback + background impulse)
+        try:
+            from .reasoners.ollama_reasoner import OllamaReasoner as _OR
+
+            gw._t2 = _OR(
+                model=os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b"),
+                host=os.getenv("OLLAMA_HOST", "http://localhost:11434"),
+            )
+            _log.getLogger(__name__).info(
+                f"[gateway] Ollama tier.2 ready — model={gw._t2.model}"
+            )
+        except Exception as _e:
+            _log.getLogger(__name__).warning(
+                f"[gateway] Ollama tier.2 init failed: {_e}"
+            )
+
         # Tiers 3 / 3.5 / 4: OpenRouter
         if os.getenv("OPENROUTER_API_KEY", "").strip():
             try:
