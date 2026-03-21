@@ -1426,3 +1426,225 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                 kind="BARE_EXCEPT",
                 detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
             )
+
+    # ── #310: Night consolidation (idle deep pass) ────────────────────────────
+
+    def notify_interactive(self) -> None:
+        """
+        #310: Called by main.py whenever a real interactive turn starts.
+        Resets the idle timer used by consolidation eligibility check.
+        """
+        self._last_interactive_ts: float = time.monotonic()
+
+    def is_consolidation_eligible(self) -> bool:
+        """
+        #310: Returns True when Igor has been idle long enough to warrant a deep pass.
+        Gate: IGOR_CONSOLIDATION_IDLE_MIN (default 20 min).
+        False if a deep pass is already running.
+        """
+        idle_min = float(os.getenv("IGOR_CONSOLIDATION_IDLE_MIN", "20"))
+        idle_sec = idle_min * 60.0
+        last_ts = getattr(self, "_last_interactive_ts", None)
+        if last_ts is None:
+            # Never had an interactive turn — not eligible (may be booting)
+            return False
+        elapsed = time.monotonic() - last_ts
+        if elapsed < idle_sec:
+            return False
+        if getattr(self, "_consolidation_running", False):
+            return False
+        return True
+
+    def _deep_consolidation_pass(self) -> dict:
+        """
+        #310: Deep offline consolidation pass. Runs when idle >= IGOR_CONSOLIDATION_IDLE_MIN.
+
+        Steps:
+          1. Promote TWM observations at lower threshold (0.5 instead of 0.7)
+          2. Episodic cluster merge (lower threshold: IGOR_NE_MERGE_THRESHOLD or 0.80)
+          3. Prune weak links (weight < 0.05, last_accessed > 10 days ago)
+          4. run_node_adoption() if IGOR_NODE_ADOPTION_ENABLED=true
+          5. integrate_reading() for any unembedded reading nodes
+
+        Yields on each step to check _consolidation_interrupted flag.
+        Logs results to cognition_metrics.log.
+        Returns dict of counts per step.
+        """
+        import os as _os
+        import time as _time
+
+        self._consolidation_running = True
+        self._consolidation_interrupted = False
+        t0 = _time.perf_counter()
+        counts = {
+            "promoted": 0,
+            "merged": 0,
+            "pruned": 0,
+            "adopted": 0,
+            "reading_integrated": 0,
+        }
+
+        try:
+            from .forensic_logger import log_anomaly as _la
+
+            _la(kind="CONSOLIDATION_START", detail="idle deep pass beginning")
+        except Exception:
+            pass
+
+        # Step 1: TWM promotion at 0.5 threshold
+        if not self._consolidation_interrupted:
+            try:
+                _all_raw = self.cortex.twm_read(limit=200, include_integrated=True)
+                raw_obs = self._filter_obs(_all_raw)
+                _low_thresh = 0.5
+                for cand_obs in raw_obs:
+                    if self._consolidation_interrupted:
+                        break
+                    sal = cand_obs.get("salience", 0.0)
+                    if sal < _low_thresh:
+                        continue
+                    content = cand_obs.get("content_csb", "")
+                    if self._is_self_diagnostic(content):
+                        continue
+                    if any(content.startswith(p) for p in _NE_CONTENT_PREFIXES):
+                        continue
+                    # Promote as FACTUAL node at lower importance bar
+                    mem = Memory(
+                        narrative=content[:500],
+                        memory_type=MemoryType.FACTUAL,
+                        parent_id="CP3",
+                        metadata={
+                            "source": "consolidation_pass",
+                            "promoted_at": datetime.now().isoformat(),
+                            "twm_salience": sal,
+                        },
+                    )
+                    self.cortex.store(mem)
+                    counts["promoted"] += 1
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"narrative_engine._deep_consolidation_pass step1: {_bare_e}",
+                )
+
+        # Step 2: Episodic merge at lower cosine threshold
+        if not self._consolidation_interrupted:
+            try:
+                _orig_threshold = _os.environ.get("IGOR_NE_MERGE_THRESHOLD")
+                _os.environ["IGOR_NE_MERGE_THRESHOLD"] = str(
+                    min(float(_orig_threshold or "0.85"), 0.80)
+                )
+                counts["merged"] = self._consolidation_merge_pass()
+                if _orig_threshold is not None:
+                    _os.environ["IGOR_NE_MERGE_THRESHOLD"] = _orig_threshold
+                else:
+                    del _os.environ["IGOR_NE_MERGE_THRESHOLD"]
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"narrative_engine._deep_consolidation_pass step2: {_bare_e}",
+                )
+
+        # Step 3: Weak link pruning (weight < 0.05, last_accessed > 10 days ago)
+        if not self._consolidation_interrupted:
+            try:
+                cutoff = (datetime.now() - timedelta(days=10)).isoformat()
+                with self.cortex._conn() as _conn:
+                    rows = _conn.execute(
+                        "SELECT id, links_weighted FROM memories "
+                        "WHERE links_weighted IS NOT NULL AND links_weighted != '{}' "
+                        "AND (last_accessed IS NULL OR last_accessed < ?)",
+                        (cutoff,),
+                    ).fetchall()
+                for row in rows:
+                    if self._consolidation_interrupted:
+                        break
+                    try:
+                        links = json.loads(row["links_weighted"] or "{}")
+                        pruned_links = {k: v for k, v in links.items() if v >= 0.05}
+                        if len(pruned_links) < len(links):
+                            with self.cortex._conn() as _conn:
+                                _conn.execute(
+                                    "UPDATE memories SET links_weighted = ? WHERE id = ?",
+                                    (json.dumps(pruned_links), row["id"]),
+                                )
+                            counts["pruned"] += len(links) - len(pruned_links)
+                    except Exception:
+                        continue
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"narrative_engine._deep_consolidation_pass step3: {_bare_e}",
+                )
+
+        # Step 4: Node adoption (orphan linking)
+        if not self._consolidation_interrupted:
+            if _os.getenv("IGOR_NODE_ADOPTION_ENABLED", "false").lower() == "true":
+                try:
+                    adopted = self.cortex.adopt_orphans(batch_size=100)
+                    counts["adopted"] = adopted
+                except Exception as _bare_e:
+                    log_error(
+                        kind="BARE_EXCEPT",
+                        detail=f"narrative_engine._deep_consolidation_pass step4: {_bare_e}",
+                    )
+            else:
+                counts["adopted"] = -1  # -1 = gated off
+
+        # Step 5: integrate_reading() for unembedded nodes
+        if not self._consolidation_interrupted:
+            try:
+                from ..tools.reading_integration import integrate_reading as _ir
+
+                result_str = _ir(batch="50")
+                # Parse count from result string if possible
+                import re as _re
+
+                m = _re.search(r"(\d+)", result_str or "")
+                counts["reading_integrated"] = int(m.group(1)) if m else 1
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"narrative_engine._deep_consolidation_pass step5: {_bare_e}",
+                )
+
+        elapsed_ms = int((_time.perf_counter() - t0) * 1000)
+
+        # Log to cognition_metrics.log
+        try:
+            _log_path = (
+                __import__("pathlib").Path.home()
+                / ".TheIgors"
+                / "logs"
+                / "cognition_metrics.log"
+            )
+            _log_path.parent.mkdir(parents=True, exist_ok=True)
+            _line = (
+                f"{datetime.now().isoformat()} CONSOLIDATION_DONE "
+                f"promoted={counts['promoted']} merged={counts['merged']} "
+                f"pruned={counts['pruned']} adopted={counts['adopted']} "
+                f"reading={counts['reading_integrated']} "
+                f"interrupted={self._consolidation_interrupted} "
+                f"elapsed_ms={elapsed_ms}\n"
+            )
+            with open(_log_path, "a") as _f:
+                _f.write(_line)
+        except Exception:
+            pass
+
+        try:
+            from .forensic_logger import log_anomaly as _la
+
+            _la(
+                kind="CONSOLIDATION_DONE",
+                detail=(
+                    f"promoted={counts['promoted']} merged={counts['merged']} "
+                    f"pruned={counts['pruned']} adopted={counts['adopted']} "
+                    f"elapsed_ms={elapsed_ms}"
+                ),
+            )
+        except Exception:
+            pass
+
+        self._consolidation_running = False
+        return counts

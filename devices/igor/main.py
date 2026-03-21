@@ -2397,6 +2397,7 @@ class Igor(IgorBase):
             run_background_sources(self.cortex)
             self._run_ne_background()
             self._run_consolidation_background()  # #169
+            self._run_ne_deep_consolidation()  # #310: night consolidation
             self._announce_completed_jobs()
             self._drain_action_impulses()
             self._evict_stale_threads()  # #136: purge idle thread buffers
@@ -2450,6 +2451,12 @@ class Igor(IgorBase):
             )
 
         self.interaction_count += 1
+
+        # #310: reset consolidation idle timer on each interactive turn
+        try:
+            self.ne.notify_interactive()
+        except Exception:
+            pass
 
         # [DASHBOARD] Signal processing start (#18)
         self._is_processing = True
@@ -4859,6 +4866,54 @@ class Igor(IgorBase):
             target=_worker, daemon=True, name="consolidation-worker"
         )
         self._consolidation_thread.start()
+
+    def _run_ne_deep_consolidation(self):
+        """
+        #310: Fire the NE deep consolidation pass when Igor has been idle long enough.
+        Gate: NarrativeEngine.is_consolidation_eligible() (IGOR_CONSOLIDATION_IDLE_MIN min).
+        Runs in a daemon thread so it doesn't block the main loop.
+        Interrupts itself if a new interactive turn starts (notify_interactive resets the timer,
+        and _consolidation_interrupted flag is checked between steps).
+        """
+        if getattr(self, "_ne_deep_thread", None) is not None:
+            if self._ne_deep_thread.is_alive():
+                # Already running — signal interrupt if interactive turn started
+                if not self.ne.is_consolidation_eligible():
+                    self.ne._consolidation_interrupted = True
+                return
+
+        if not self.ne.is_consolidation_eligible():
+            return
+
+        def _deep_worker():
+            import time as _t
+
+            # Wait for main loop to be idle
+            _waited = 0.0
+            while self._is_processing and _waited < 30.0:
+                _t.sleep(1.0)
+                _waited += 1.0
+            try:
+                counts = self.ne._deep_consolidation_pass()
+                summary = (
+                    f"NIGHT_CONSOLIDATION promoted={counts.get('promoted',0)} "
+                    f"merged={counts.get('merged',0)} "
+                    f"pruned={counts.get('pruned',0)} "
+                    f"adopted={counts.get('adopted',0)} "
+                    f"reading={counts.get('reading_integrated',0)}"
+                )
+                self.cortex.write_ring(summary, category="consolidation")
+                print(f"[consolidation] {summary}")
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/main.py _run_ne_deep_consolidation: {_bare_e}",
+                )
+
+        self._ne_deep_thread = threading.Thread(
+            target=_deep_worker, daemon=True, name="ne-deep-consolidation"
+        )
+        self._ne_deep_thread.start()
 
     # Keywords indicating a response is a failure/error (pass.3 NE backoff)
     _FAILURE_KEYWORDS = (
