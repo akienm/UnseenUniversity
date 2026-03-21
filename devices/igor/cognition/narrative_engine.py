@@ -1092,18 +1092,23 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
             if is_duplicate:
                 continue
 
+            # Step 4 (#307): arousal amplifies initial gap salience
+            # High arousal → gaps feel more urgent; sympathetic state confirms threat
+            arousal_boost = _arousal * 0.2
+            effective_salience = min(1.0, salience + arousal_boost)
+
             content_csb = (
                 f"NARRATIVE_GAP|question={question[:120]}"
-                f"|salience={salience:.2f}|threat={threat:.2f}"
+                f"|salience={effective_salience:.2f}|threat={threat:.2f}"
             )
             try:
                 self.cortex.twm_push(
                     source="narrative_engine",
                     content_csb=content_csb,
-                    salience=salience,
+                    salience=effective_salience,
                     metadata={"type": "narrative_gap", "threat_level": threat},
                     ttl_seconds=600,  # 10 min; resolved gaps decay naturally
-                    urgency=0.2 + threat * 0.4,
+                    urgency=0.2 + threat * 0.4 + _arousal * 0.1,
                 )
                 existing_keywords.append(q_words)  # prevent same-batch duplicates
                 pushed += 1
