@@ -753,8 +753,8 @@ class WordGraph(IgorBase):
         with self._lock:
             with self._db() as conn:
                 conn.execute(
-                    "UPDATE wg_word_docs SET weight = MIN(weight + ?, 2.0) WHERE doc_id = ?",
-                    (boost, doc_id),
+                    "UPDATE wg_word_docs SET weight = CASE WHEN weight + ? > 2.0 THEN 2.0 ELSE weight + ? END WHERE doc_id = ?",
+                    (boost, boost, doc_id),
                 )
 
     # G-WG4: cap unique tokens in reinforce_text to bound the O(n²) pair count.
@@ -788,10 +788,10 @@ class WordGraph(IgorBase):
             with self._db() as conn:
                 conn.executemany(
                     """
-                    UPDATE wg_cooccur SET score = MIN(score + ?, 2.0)
+                    UPDATE wg_cooccur SET score = CASE WHEN score + ? > 2.0 THEN 2.0 ELSE score + ? END
                     WHERE word_a = ? AND word_b = ?
                 """,
-                    [(boost, w, w2) for w in unique for w2 in unique if w != w2],
+                    [(boost, boost, w, w2) for w in unique for w2 in unique if w != w2],
                 )
 
     # ── Persistence ────────────────────────────────────────────────────────────
