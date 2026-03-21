@@ -1524,6 +1524,9 @@ class Cortex(IgorBase):
                 self._apply_trail_training(
                     result
                 )  # T-trail-training: Hebbian edge update
+                # #309: reconsolidation flag — high-importance memories go plastic under arousal
+                _rc_arousal = getattr(emotional_context, "arousal", None)
+                self._flag_for_reconsolidation(result, milieu_arousal=_rc_arousal)
                 return result
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
@@ -1543,6 +1546,9 @@ class Cortex(IgorBase):
             result, trail_id=_trail_id
         )  # T-tails-infra: record activation heat
         self._apply_trail_training(result)  # T-trail-training: Hebbian edge update
+        # #309: reconsolidation flag — high-importance memories go plastic under arousal
+        _rc_arousal = getattr(emotional_context, "arousal", None)
+        self._flag_for_reconsolidation(result, milieu_arousal=_rc_arousal)
         return result
 
     def _touch_last_accessed(self, memories: list) -> None:
@@ -1573,6 +1579,78 @@ class Cortex(IgorBase):
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
                 "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+            )
+
+    # ── #309: Memory reconsolidation flag ─────────────────────────────────────
+
+    def _flag_for_reconsolidation(
+        self,
+        memories: list,
+        milieu_arousal: float | None = None,
+    ) -> None:
+        """
+        #309: Mark retrieved memories as reconsolidate_pending when:
+          - memory importance (activation_count proxy) suggests significance (>= 0.6)
+          - milieu arousal is high (>= 0.4) — high arousal makes memories labile
+
+        If milieu_arousal is not passed in, reads milieu lazily.
+        Sets metadata.reconsolidate_pending = True and records current TWM hash
+        so NE can compare context at reconsolidation time vs encoding time.
+
+        Only writes to memories that aren't already flagged. Structural memories
+        (ROOT/CORE_PATTERN) are never flagged.
+        """
+        import os as _os
+
+        if not memories:
+            return
+        if _os.getenv("IGOR_RECONSOLIDATION_ENABLED", "true").lower() == "false":
+            return
+
+        # Get milieu arousal if not passed
+        if milieu_arousal is None:
+            try:
+                _milieu_inst = __import__(
+                    "igor.cognition.milieu", fromlist=["get"]
+                ).get()
+                _ms = _milieu_inst.get_state() if _milieu_inst else None
+                milieu_arousal = max(0.0, _ms.arousal) if _ms else 0.0
+            except Exception:
+                milieu_arousal = 0.0
+
+        if milieu_arousal < 0.4:
+            return  # low arousal — memories stay stable
+
+        _SKIP = {MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value}
+        # Rough TWM context hash for reconsolidation comparison
+        _twm_hash = str(hash(str([o.get("id") for o in self.twm_read(limit=10)])))
+
+        flagged = 0
+        for m in memories:
+            if getattr(m, "memory_type", None) and m.memory_type.value in _SKIP:
+                continue
+            if m.metadata.get("reconsolidate_pending"):
+                continue  # already flagged
+            # importance proxy: activation_count/20 + base_inertia blended
+            _importance_proxy = min(1.0, m.activation_count / 20.0 + m.inertia * 0.3)
+            if _importance_proxy < 0.6:
+                continue
+            m.metadata["reconsolidate_pending"] = True
+            m.metadata["reconsolidate_context"] = _twm_hash
+            m.metadata["reconsolidate_arousal"] = round(milieu_arousal, 3)
+            try:
+                self.store(m)
+                flagged += 1
+            except Exception as _bare_e:
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py _flag_for_reconsolidation: %s",
+                    _bare_e,
+                )
+        if flagged:
+            logging.getLogger(__name__).debug(
+                "[reconsolidation] flagged %d memories (arousal=%.2f)",
+                flagged,
+                milieu_arousal,
             )
 
     # ── Tails — decaying activation heat (T-tails-infra) ──────────────────────

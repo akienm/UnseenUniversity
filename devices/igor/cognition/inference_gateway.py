@@ -34,6 +34,7 @@ from dataclasses import dataclass, field
 from typing import Callable, Optional
 
 from ..igor_base import IgorBase
+from .forensic_logger import log_error
 
 # ── Data model ──────────────────────────────────────────────────────────────────
 
@@ -332,14 +333,7 @@ class InferenceGateway(IgorBase):
         Returns (response_text, cost_usd, used_api).
         """
         self.last_tier = ""
-        _log_err = None
-        try:
-            from .forensic_logger import log_error as _log_err
-        except Exception as _bare_e:
-            log_error(
-                kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
-            )
+        _log_err = None  # forensic hook placeholder — wired per-call when available
 
         # ── local_only: caller explicitly wants local (cloud_ok_override=False) ─
         if local_only:
@@ -408,16 +402,10 @@ class InferenceGateway(IgorBase):
             )
 
         # ── Cloud availability: single check, shared across all profiles ───────
-        _cloud_ok = False
-        try:
-            from .cloud_mode import is_cloud_training_active as _cma
-
-            _cloud_ok = bool(self._t4) and _cma()
-        except Exception as _bare_e:
-            log_error(
-                kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
-            )
+        # _t4 is only initialized when OPENROUTER_API_KEY is present (from_env).
+        # is_cloud_training_active() is a research-mode flag — NOT the availability gate.
+        # If we have a live t4 reasoner, cloud is available. (D198 fix)
+        _cloud_ok = bool(self._t4)
 
         # ── background_batch: always local, quality priority ──────────────────
         if level == "background_batch":
@@ -536,6 +524,8 @@ class InferenceGateway(IgorBase):
                     )
 
         # ── total failure: cloud + local both failed ──────────────────────────
+        # T-inference-monitor: proactive detection now lives in ResourceMonitorSource.
+        # tier.6 only logs forensically — no inline arbiter submit needed.
         self.last_tier = "tier.6"
         try:
             from .forensic_logger import log_anomaly as _log_anomaly
@@ -546,24 +536,9 @@ class InferenceGateway(IgorBase):
                 kind="BARE_EXCEPT",
                 detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
             )
-        try:
-            from ..arbiter import queue as _arb
-
-            _arb.submit(
-                description="All inference failed — Igor offline",
-                context=f"Last error: {last_error[:200]}",
-                action_type="system_alert",
-                threshold_reason="Total inference failure (cloud + local both failed)",
-                metadata={"tier_failures": ["cloud/interactive", "local/interactive"]},
-            )
-        except Exception as _bare_e:
-            log_error(
-                kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
-            )
         return (
             "⚠ Both cloud and local inference are unavailable. "
-            "I've queued a notification for akien.",
+            "I'll let you know when inference is restored.",
             0.0,
             False,
         )

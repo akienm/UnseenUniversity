@@ -57,6 +57,9 @@ class Thalamus(IgorBase):
         # Tone detection
         tone = _detect_tone(core_text)
 
+        # Structural tag detection — D201 conditions schema
+        tags = _classify_tags(core_text)
+
         routing_directive = _detect_routing_directive(core_text)
         output_complexity = _assess_output_complexity(core_text, intent)
         traversal_strategy, traversal_entry = _classify_question_traversal(
@@ -78,6 +81,7 @@ class Thalamus(IgorBase):
             traversal_strategy=traversal_strategy,
             traversal_entry=traversal_entry,
             traversal_direction=traversal_direction,
+            tags=tags,
         )
 
 
@@ -102,6 +106,9 @@ class ParsedInput:
     traversal_direction: str = (
         ""  # #182: "up"|"down"|"lateral"|"lookup"|"" — fundamental direction; strategies are shortcuts
     )
+    tags: list = field(
+        default_factory=list
+    )  # D201: structural tags detected by regex in thalamus
 
 
 _LOCAL_ONLY_PHRASES = (
@@ -797,3 +804,45 @@ def _detect_tone(text: str) -> str:
     if any(w in text_lower for w in ["?", "how", "why", "what", "curious", "explain"]):
         return "curious"
     return "neutral"
+
+
+def _classify_tags(text: str) -> list:
+    """D201: Detect structural tags from input text using regex.
+
+    Tags are a fixed enum — deterministic, zero inference cost, no silent misses.
+    All 6 classifiers are regex-based; no LLM involvement.
+    """
+    tags = []
+    # has_ticket: references a ticket ID (#N or T-xxx pattern)
+    if re.search(r"#\d+\b|T-[a-z0-9][a-z0-9-]+", text, re.IGNORECASE):
+        tags.append("has_ticket")
+    # has_code: fenced code blocks or inline backtick code
+    if re.search(r"```|`[^`\n]+`", text):
+        tags.append("has_code")
+    # has_url: http or https URL
+    if re.search(r"https?://", text):
+        tags.append("has_url")
+    # multi_turn: references prior context from this or a previous session
+    if re.search(
+        r"\b(as i said|from last session|you mentioned|as you said|earlier you|"
+        r"we discussed|last time|previously|you told me)\b",
+        text,
+        re.IGNORECASE,
+    ):
+        tags.append("multi_turn")
+    # self_referential: about Igor's own behavior, habits, memory, or architecture
+    if re.search(
+        r"\byour (habit|memory|behavior|behaviour|code|architecture|system|db|database|"
+        r"reasoning|decision|response|trigger)\b|\bigor\b|\byourself\b",
+        text,
+        re.IGNORECASE,
+    ):
+        tags.append("self_referential")
+    # has_error: contains a traceback, exception, or error message
+    if re.search(
+        r"Traceback|Error:|Exception:|errno|stack trace|exception was raised",
+        text,
+        re.IGNORECASE,
+    ):
+        tags.append("has_error")
+    return tags

@@ -475,6 +475,11 @@ class NarrativeEngine(IgorBase):
         if _merges > 0:
             print(f"{_cts()}[NE] merge: {_merges} cluster(s) → semantic nodes")
 
+        # #309: memory reconsolidation pass — update flagged memories under high arousal
+        _reconsolidated = self._reconsolidation_pass()
+        if _reconsolidated > 0:
+            print(f"{_cts()}[NE] reconsolidated: {_reconsolidated} memory/ies updated")
+
         log_ne_run(
             obs_count=len(obs_list),
             integrated=len(obs_list),
@@ -1119,6 +1124,150 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                 )
 
         return pushed
+
+    # ── #309: Memory reconsolidation pass ──────────────────────────────────────
+
+    def _reconsolidation_pass(self) -> int:
+        """
+        #309: Memory reconsolidation — retrieve flagged memories, compare against
+        current understanding, update if new context extends or contradicts stored content.
+
+        Runs each NE cycle. Only processes memories with reconsolidate_pending=True.
+        Uses a minimal LLM call (one memory at a time, capped at IGOR_RECONSOLIDATION_MAX
+        per cycle, default 2) to avoid cost blowup.
+
+        Returns count of memories actually updated.
+        """
+        import os as _os
+
+        if _os.getenv("IGOR_RECONSOLIDATION_ENABLED", "true").lower() == "false":
+            return 0
+
+        max_per_cycle = int(_os.getenv("IGOR_RECONSOLIDATION_MAX", "2"))
+
+        # Fetch pending memories directly from DB
+        try:
+            from ..memory.db_proxy import PGDatabaseProxy as _PGProxy
+
+            _is_pg = isinstance(self.cortex._db, _PGProxy)
+            _pending_sql = (
+                "SELECT id FROM memories WHERE jsonb_exists(metadata, 'reconsolidate_pending') "
+                "ORDER BY activation_count DESC LIMIT %s"
+                if _is_pg
+                else "SELECT id FROM memories WHERE metadata LIKE '%\"reconsolidate_pending\"%' "
+                "ORDER BY activation_count DESC LIMIT ?"
+            )
+            with self.cortex._conn() as conn:
+                rows = conn.execute(_pending_sql, (max_per_cycle,)).fetchall()
+        except Exception as _bare_e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"narrative_engine._reconsolidation_pass fetch: {_bare_e}",
+            )
+            return 0
+
+        if not rows:
+            return 0
+
+        # Get current milieu for context
+        try:
+            _milieu_mod = __import__("igor.cognition.milieu", fromlist=["get"]).get()
+            _ms = _milieu_mod.get_state() if _milieu_mod else None
+            _arousal = max(0.0, _ms.arousal) if _ms else 0.0
+        except Exception:
+            _arousal = 0.0
+
+        # Bail if arousal has dropped — reconsolidation window closed
+        if _arousal < 0.3:
+            return 0
+
+        # Get recent TWM as context for comparison
+        _twm_ctx = " | ".join(
+            o.get("content_csb", "")[:80] for o in self.cortex.twm_read(limit=8)
+        )
+
+        updated = 0
+        for row in rows:
+            mem = self.cortex.get(row["id"])
+            if mem is None or not mem.metadata.get("reconsolidate_pending"):
+                continue
+
+            # Build a targeted reconsolidation prompt
+            prompt = (
+                "You are reviewing an existing memory for update under emotional arousal.\n"
+                f"STORED MEMORY: {mem.narrative[:400]}\n"
+                f"CURRENT CONTEXT (recent observations): {_twm_ctx[:600]}\n\n"
+                "Does the current context extend, correct, or confirm this memory? "
+                'Reply in JSON: {"action": "update"|"confirm"|"skip", '
+                '"updated_narrative": "...", "importance_delta": -0.05..0.05, "reason": "..."}\n'
+                "If action=confirm or skip, updated_narrative may be empty. Keep narratives concise."
+            )
+
+            try:
+                from .inference_gateway import (
+                    get_gateway as _gw,
+                    make_context as _mk_ctx,
+                )
+                import json as _json
+
+                _ctx = _mk_ctx(is_background=True)
+                raw = _gw().call("ne", prompt, _ctx)
+                parsed = None
+                try:
+                    _start = raw.find("{")
+                    _end = raw.rfind("}") + 1
+                    if _start >= 0 and _end > _start:
+                        parsed = _json.loads(raw[_start:_end])
+                except Exception:
+                    pass
+
+                if parsed is None or parsed.get("action") in (None, "skip", "confirm"):
+                    # Just clear the flag — confirmed or unreadable
+                    mem.metadata.pop("reconsolidate_pending", None)
+                    mem.metadata.pop("reconsolidate_context", None)
+                    mem.metadata.pop("reconsolidate_arousal", None)
+                    self.cortex.store(mem)
+                    continue
+
+                if parsed.get("action") == "update":
+                    new_narrative = (parsed.get("updated_narrative") or "").strip()
+                    if new_narrative and len(new_narrative) > 20:
+                        mem.narrative = new_narrative[:800]
+                        delta = float(parsed.get("importance_delta", 0.0))
+                        # Adjust activation_count as importance proxy (bounded)
+                        mem.activation_count = max(
+                            0, mem.activation_count + round(delta * 10)
+                        )
+                        mem.metadata["reconsolidated_at"] = datetime.now().isoformat()
+                        mem.metadata["reconsolidated_reason"] = (
+                            parsed.get("reason") or ""
+                        )[:200]
+                        mem.metadata.pop("reconsolidate_pending", None)
+                        mem.metadata.pop("reconsolidate_context", None)
+                        mem.metadata.pop("reconsolidate_arousal", None)
+                        self.cortex.store(mem)
+                        updated += 1
+                        print(
+                            f"{_cts()}[NE] reconsolidate: {mem.id} updated "
+                            f"(arousal={_arousal:.2f}) reason={parsed.get('reason','')[:60]}"
+                        )
+                    else:
+                        # Narrative too short or empty — clear flag only
+                        mem.metadata.pop("reconsolidate_pending", None)
+                        self.cortex.store(mem)
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"narrative_engine._reconsolidation_pass update {mem.id}: {_bare_e}",
+                )
+                # Clear flag to avoid retry loop on broken memories
+                try:
+                    mem.metadata.pop("reconsolidate_pending", None)
+                    self.cortex.store(mem)
+                except Exception:
+                    pass
+
+        return updated
 
     # ── G-NE1: Episodic-to-semantic merge pass ─────────────────────────────────
 
