@@ -483,123 +483,128 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
             "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
         )
 
-    def _winnow_context(self, user_input: str, cortex, word_graph=None) -> list[Memory]:
-        """
-        Pre-call context filter — the breadcrumb step.
 
-        Before the main reasoning call, ask a cheap model:
-        "Given what we've been talking about and this new input,
-        what specific memories do you need?"
+def _winnow_context_method(
+    self, user_input: str, cortex, word_graph=None
+) -> list[Memory]:
+    """
+    Pre-call context filter — the breadcrumb step.
 
-        Returns targeted Memory objects to merge into relevant_memories.
-        Skipped if: input is short/command, IGOR_CONTEXT_WINNOW=false, no OR key.
+    Before the main reasoning call, ask a cheap model:
+    "Given what we've been talking about and this new input,
+    what specific memories do you need?"
 
-        This is the winnowing loop: smaller calls more often, converging on
-        the relevant context rather than dumping everything every time.
-        """
-        import time as _wtime
+    Returns targeted Memory objects to merge into relevant_memories.
+    Skipped if: input is short/command, IGOR_CONTEXT_WINNOW=false, no OR key.
 
-        _w_t0 = _wtime.monotonic()
-        # Skip for trivial inputs
-        if len(user_input.strip()) < 20 or user_input.strip().startswith("/"):
-            return []
-        if os.getenv("IGOR_CONTEXT_WINNOW", "true").lower() in ("false", "0", "no"):
-            return []
-        if cortex is None:
-            return []
+    This is the winnowing loop: smaller calls more often, converging on
+    the relevant context rather than dumping everything every time.
+    """
+    import time as _wtime
 
-        # ── Build compact breadcrumb trail from ring ───────────────────────────
+    _w_t0 = _wtime.monotonic()
+    # Skip for trivial inputs
+    if len(user_input.strip()) < 20 or user_input.strip().startswith("/"):
+        return []
+    if os.getenv("IGOR_CONTEXT_WINNOW", "true").lower() in ("false", "0", "no"):
+        return []
+    if cortex is None:
+        return []
+
+    # ── Build compact breadcrumb trail from ring ───────────────────────────
+    try:
+        ring = cortex.read_ring_memory(limit=10)
+        filtered = [e for e in ring if e["category"] not in _RING_EXCLUDE]
+        breadcrumbs = "\n".join(
+            f"[{e['timestamp'][11:16]}] {e['content'][:80]}" for e in filtered[-5:]
+        )
+    except Exception:
+        breadcrumbs = ""
+
+    # ── Word graph hints: concepts activated by this input ─────────────────
+    wg_hints = ""
+    if word_graph is not None:
         try:
-            ring = cortex.read_ring_memory(limit=10)
-            filtered = [e for e in ring if e["category"] not in _RING_EXCLUDE]
-            breadcrumbs = "\n".join(
-                f"[{e['timestamp'][11:16]}] {e['content'][:80]}" for e in filtered[-5:]
+            predicted = word_graph.predict_next(user_input, n=5)
+            if predicted:
+                wg_hints = "Activated concepts: " + ", ".join(w for w, _ in predicted)
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/cognition/reasoners/base.py: %s",
+                _bare_e,
             )
-        except Exception:
-            breadcrumbs = ""
 
-        # ── Word graph hints: concepts activated by this input ─────────────────
-        wg_hints = ""
-        if word_graph is not None:
-            try:
-                predicted = word_graph.predict_next(user_input, n=5)
-                if predicted:
-                    wg_hints = "Activated concepts: " + ", ".join(
-                        w for w, _ in predicted
-                    )
-            except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/cognition/reasoners/base.py: %s",
-                    _bare_e,
-                )
+    prompt = (
+        f"Context trail:\n{breadcrumbs}\n\n"
+        f"{wg_hints}\n\n"
+        f"New input: {user_input[:200]}\n\n"
+        "List 2-3 specific memory search queries (comma-separated, 2-4 words each) "
+        "to retrieve the most relevant context for responding. Be specific. No explanation."
+    )
 
-        prompt = (
-            f"Context trail:\n{breadcrumbs}\n\n"
-            f"{wg_hints}\n\n"
-            f"New input: {user_input[:200]}\n\n"
-            "List 2-3 specific memory search queries (comma-separated, 2-4 words each) "
-            "to retrieve the most relevant context for responding. Be specific. No explanation."
+    # ── Model call: inference gateway (local Ollama → OR fallback) ─────────
+    queries: list[str] = []
+    try:
+        from ..inference_gateway import get_gateway as _gw, make_context as _mk_ctx
+
+        _text = _gw().call("winnow", prompt, _mk_ctx(is_background=False))
+        if _text:
+            queries = [
+                q.strip() for q in _text.replace("\n", ",").split(",") if q.strip()
+            ][:3]
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
         )
 
-        # ── Model call: inference gateway (local Ollama → OR fallback) ─────────
-        queries: list[str] = []
-        try:
-            from ..inference_gateway import get_gateway as _gw, make_context as _mk_ctx
+    if not queries:
+        return []
 
-            _text = _gw().call("winnow", prompt, _mk_ctx(is_background=False))
-            if _text:
-                queries = [
-                    q.strip() for q in _text.replace("\n", ",").split(",") if q.strip()
-                ][:3]
+    # ── Fetch memories for each query, dedupe ─────────────────────────────
+    results: list[Memory] = []
+    seen_ids: set[str] = set()
+    for q in queries:
+        try:
+            found = cortex.search(q, limit=2)
+            for m in found:
+                if m.id not in seen_ids:
+                    seen_ids.add(m.id)
+                    results.append(m)
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
+                "bare except in wild_igor/igor/cognition/reasoners/base.py: %s",
+                _bare_e,
             )
 
-        if not queries:
-            return []
+    # ── Deposit: train the graph on what we just routed (#188) ────────────
+    if results:
+        _deposit_winnow_node(user_input, queries, cortex)
 
-        # ── Fetch memories for each query, dedupe ─────────────────────────────
-        results: list[Memory] = []
-        seen_ids: set[str] = set()
-        for q in queries:
-            try:
-                found = cortex.search(q, limit=2)
-                for m in found:
-                    if m.id not in seen_ids:
-                        seen_ids.add(m.id)
-                        results.append(m)
-            except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/cognition/reasoners/base.py: %s",
-                    _bare_e,
-                )
+    # ── Pipeline trace ─────────────────────────────────────────────────────
+    try:
+        from ...cognition.forensic_logger import (
+            log_pipeline_step as _log_pt,
+            get_turn_id as _get_turn_id,
+        )
 
-        # ── Deposit: train the graph on what we just routed (#188) ────────────
-        if results:
-            _deposit_winnow_node(user_input, queries, cortex)
+        _log_pt(
+            turn_id=_get_turn_id(),
+            step="winnow",
+            elapsed_ms=round((_wtime.monotonic() - _w_t0) * 1000),
+            queries=len(queries),
+            retrieved=len(results),
+        )
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
+        )
 
-        # ── Pipeline trace ─────────────────────────────────────────────────────
-        try:
-            from ...cognition.forensic_logger import (
-                log_pipeline_step as _log_pt,
-                get_turn_id as _get_turn_id,
-            )
+    return results
 
-            _log_pt(
-                turn_id=_get_turn_id(),
-                step="winnow",
-                elapsed_ms=round((_wtime.monotonic() - _w_t0) * 1000),
-                queries=len(queries),
-                retrieved=len(results),
-            )
-        except Exception as _bare_e:
-            logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
-            )
 
-        return results
-
+# Bind _winnow_context_method as a method on BaseReasoner.
+# It was accidentally nested inside _deposit_winnow_node (misindentation bug).
+BaseReasoner._winnow_context = _winnow_context_method  # type: ignore[attr-defined]
 
 # ── Level 1 — Transport base classes (Change 2 / D026) ────────────────────────
 

@@ -27,6 +27,7 @@ from ...memory.models import Memory
 from ...paths import paths
 from .base import BaseReasoner, LocalReasoner
 from ..system_prompt import build_system_prompt
+from ..forensic_logger import log_error
 
 OLLAMA_LOCAL_MODEL = os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b")
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
@@ -345,6 +346,9 @@ def preparse(user_input: str, habits: list, model: str = "") -> str:
 
         _ex = _cf.ThreadPoolExecutor(max_workers=1)
         _fut = _ex.submit(_do_preparse)
+        # Mark thread as daemon so Python's atexit doesn't block on it at exit
+        for _t in _ex._threads:
+            _t.daemon = True
         _ex.shutdown(wait=False)
         try:
             response = _fut.result(timeout=PREPARSE_TIMEOUT)
@@ -366,8 +370,6 @@ def preparse(user_input: str, habits: list, model: str = "") -> str:
         fallback_reason = f"exception:{type(exc).__name__}"
 
     try:
-        from ..forensic_logger import log_error
-
         log_error(
             kind="preparse_fallback",
             detail=fallback_reason or "unknown",
@@ -535,6 +537,9 @@ class OllamaReasoner(LocalReasoner):
         try:
             _ex = _cf.ThreadPoolExecutor(max_workers=1)
             _fut = _ex.submit(_do_chat)
+            # Mark thread as daemon so Python's atexit doesn't block on it at exit
+            for _t in _ex._threads:
+                _t.daemon = True
             _ex.shutdown(
                 wait=False
             )  # don't block — let thread run, we'll timeout via future

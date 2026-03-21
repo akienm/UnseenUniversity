@@ -39,6 +39,7 @@ from . import (
     memory_sync,
     reading_integration,
     trail_inspector,
+    worker_foreman,
 )
 from ..arbiter import (
     queue as _arbiter_queue,

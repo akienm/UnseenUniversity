@@ -2741,7 +2741,6 @@ class Igor(IgorBase):
 
             # Speed pressure: user typing very quickly after last response
             if self._last_response_time > 0 and (_now - self._last_response_time) < 30:
-                self._gateway._t2 and self._gateway._t2.weights.adjust("speed_pressure")
                 observer.observe(
                     "routing_signal",
                     "speed_pressure",
@@ -2754,14 +2753,12 @@ class Igor(IgorBase):
             # Speed pressure: explicit user words
             _speed_words = ("faster", "too slow", "hurry", "speed up", "quicker")
             if any(w in _lower_input for w in _speed_words):
-                self._gateway._t2 and self._gateway._t2.weights.adjust("speed_pressure")
                 observer.observe(
                     "routing_signal", "speed_pressure", {"reason": "user_words"}
                 )
 
             # Speed pressure: consecutive slow responses tracked in local_pool
             if self._consecutive_slow >= 3:
-                self._gateway._t2 and self._gateway._t2.weights.adjust("speed_pressure")
                 observer.observe(
                     "routing_signal",
                     "speed_pressure",
@@ -2778,7 +2775,6 @@ class Igor(IgorBase):
                 "conserve",
             )
             if any(w in _lower_input for w in _cost_words):
-                self._gateway._t2 and self._gateway._t2.weights.adjust("cost_pressure")
                 observer.observe(
                     "routing_signal", "cost_pressure", {"reason": "user_words"}
                 )
@@ -3814,6 +3810,79 @@ class Igor(IgorBase):
                 )
             except Exception as _fe:
                 loginfo(f"[dim][FORK] error: {_fe}[/]")
+            habit = None  # always fall through to LLM
+
+        # T-if-fork-primitive #298: if_fork is a guarded fork — branches fire only when
+        # guard expression evaluates true against milieu or TWM state.
+        # guard_field: milieu.valence | milieu.arousal | milieu.dominance | twm.attractor_salience
+        # guard_op: >= | > | <= | < | == | !=
+        # guard_value: float threshold
+        # If guard passes → fires all branches (same as fork). If not → skips, falls through.
+        if habit and habit.metadata.get("habit_type") == "if_fork":
+            try:
+                _gf = habit.metadata.get("guard_field", "")
+                _gop = habit.metadata.get("guard_op", ">=")
+                _gval = habit.metadata.get("guard_value")
+                _guard_pass = False
+                if _gf and _gval is not None:
+                    _current_val = None
+                    if _gf.startswith("milieu."):
+                        _mf = _gf[len("milieu.") :]
+                        try:
+                            from .cognition.milieu import get as _milieu_get_ifork
+
+                            _ms = _milieu_get_ifork()
+                            if _ms:
+                                _current_val = getattr(_ms, _mf, None)
+                        except Exception:
+                            pass
+                    elif _gf == "twm.attractor_salience":
+                        try:
+                            _att = self.cortex.twm_get_attractor()
+                            if _att:
+                                _current_val = _att.get("salience")
+                        except Exception:
+                            pass
+                    if _current_val is not None:
+                        _guard_pass = (
+                            (_gop == ">=" and _current_val >= _gval)
+                            or (_gop == ">" and _current_val > _gval)
+                            or (_gop == "<=" and _current_val <= _gval)
+                            or (_gop == "<" and _current_val < _gval)
+                            or (_gop == "==" and _current_val == _gval)
+                            or (_gop == "!=" and _current_val != _gval)
+                        )
+                else:
+                    _guard_pass = True  # no guard configured — fire unconditionally
+                if _guard_pass:
+                    _ifork_branches = habit.metadata.get("branches", [])
+                    _ifork_ctx = self.cortex.traversal_start(job_id=habit.id)
+                    _ifork_fired = []
+                    for _branch_id in _ifork_branches:
+                        try:
+                            _branch_result = self.execute_habit(
+                                _branch_id, args={"context_id": _ifork_ctx}
+                            )
+                            if _branch_result.get("status") == "error":
+                                loginfo(
+                                    f"[dim][IF_FORK] branch {_branch_id} error: {_branch_result.get('result','?')[:80]}[/]"
+                                )
+                            else:
+                                _ifork_fired.append(_branch_id)
+                        except Exception as _ibe:
+                            loginfo(
+                                f"[dim][IF_FORK] branch {_branch_id} exception: {_ibe}[/]"
+                            )
+                    loginfo(
+                        f"[dim][IF_FORK] {habit.id} guard {_gf}{_gop}{_gval} (val={_current_val}) "
+                        f"→ fired {len(_ifork_fired)}/{len(_ifork_branches)} branches ctx={_ifork_ctx[:8]}[/]"
+                    )
+                else:
+                    loginfo(
+                        f"[dim][IF_FORK] {habit.id} guard {_gf}{_gop}{_gval} (val={_current_val}) → skipped[/]"
+                    )
+            except Exception as _ife:
+                loginfo(f"[dim][IF_FORK] error: {_ife}[/]")
             habit = None  # always fall through to LLM
 
         # #248 bug 2: habits with no action template produce "Habit executed. [...]"

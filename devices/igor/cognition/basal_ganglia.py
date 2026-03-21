@@ -8,6 +8,7 @@ Replaces _find_habit() (first-match-wins) with a proper scoring model:
         + activation_bonus       # 0.0–0.15 (experienced habits slightly preferred)
         + inertia_bonus          # 0.0–0.10 (stable habits preferred over new)
         + valence_bonus          # 0.0–0.10 (positive-valence habits slightly preferred)
+        + conditions_bonus       # +0.08 per matched conditions field (D201)
 
 All habits scored in parallel; winner is max(scores). Tiebreak by activation_count.
 Threshold is modulated by milieu state: high arousal → lower threshold (more reactive).
@@ -126,52 +127,136 @@ def compute_decay_factor(habit, now: datetime | None = None) -> float:
     return math.exp(-days_since / tau)
 
 
+_COMPLEXITY_ORDER: dict[str, int] = {"low": 0, "medium": 1, "high": 2}
+
+
+def _conditions_match(conditions: dict, parsed) -> tuple[bool, int]:
+    """D201: Evaluate a conditions dict against a ParsedInput.
+
+    Returns (all_required_fields_passed, count_of_matched_fields).
+    Any failing field short-circuits to (False, 0).
+
+    Matching semantics:
+      intent / tone / tags / keywords  — list, OR (any element matches)
+      not_intent                        — list, negation (none must match)
+      min_complexity / max_complexity   — ordinal bound
+    All specified fields are AND'd: every field must pass.
+    """
+    if not conditions or parsed is None:
+        return False, 0
+    matched = 0
+    actual_complexity = _COMPLEXITY_ORDER.get(
+        getattr(parsed, "complexity", "medium"), 1
+    )
+    for key, val in conditions.items():
+        if key == "intent":
+            if getattr(parsed, "intent", "") in val:
+                matched += 1
+            else:
+                return False, 0
+        elif key == "not_intent":
+            if getattr(parsed, "intent", "") not in val:
+                matched += 1
+            else:
+                return False, 0
+        elif key == "tone":
+            if getattr(parsed, "tone", "") in val:
+                matched += 1
+            else:
+                return False, 0
+        elif key == "min_complexity":
+            if actual_complexity >= _COMPLEXITY_ORDER.get(val, 0):
+                matched += 1
+            else:
+                return False, 0
+        elif key == "max_complexity":
+            if actual_complexity <= _COMPLEXITY_ORDER.get(val, 2):
+                matched += 1
+            else:
+                return False, 0
+        elif key == "tags":
+            actual_tags = set(getattr(parsed, "tags", []))
+            if actual_tags & set(val):
+                matched += 1
+            else:
+                return False, 0
+        elif key == "keywords":
+            actual_kw = {kw.lower() for kw in getattr(parsed, "keywords", [])}
+            if actual_kw & {v.lower() for v in val}:
+                matched += 1
+            else:
+                return False, 0
+        # Unknown keys are ignored — forward-compat
+    return matched > 0, matched
+
+
 def _score_habit(
-    habit, raw_lower: str, keywords: set[str], now: datetime | None = None
+    habit,
+    raw_lower: str,
+    keywords: set[str],
+    now: datetime | None = None,
+    parsed=None,
 ) -> float:
     """
-    Score a single habit.  Returns 0.0 if the trigger is not in the input
-    (habits without trigger present can never win).
+    Score a single habit.  Returns 0.0 if the habit's gate conditions are not met.
+
+    Gate is determined by match_mode (D201):
+      conditions_first (default): if conditions present, all must pass; trigger optional
+      trigger_only:                trigger must match; conditions ignored
+      both:                        trigger AND conditions must both match
 
     `now` is injectable for testability (default: current UTC time).
     """
-    trigger = habit.metadata.get("trigger", "")
-    if not trigger:
-        return 0.0  # trigger required — no trigger, no score
+    metadata = habit.metadata or {}
+    trigger = metadata.get("trigger", "")
+    conditions = metadata.get("conditions")
+    match_mode = metadata.get("match_mode", "conditions_first")
 
+    # ── Trigger evaluation ────────────────────────────────────────────────────
     # Trigger formats (in priority order):
-    #   1. Pipe-separated phrases: "hello|hi|hey|howdy"
-    #      → match if ANY phrase appears as a substring.  Preferred going forward.
-    #   2. Single-token exact labels: "routing_decision", "run_python"
-    #      → exact substring match; internal pipeline signals still work.
-    #   3. Legacy space-separated lists: "hello hi hey greet good morning"
-    #      → match if ANY token of length >= 5 appears in input.
-    #      Min-5 avoids common short words ('what', 'time', 'this', 'good') that
-    #      would cause wrong habits to win via keyword_bonus on narratives.
-    #      NOTE: some legacy triggers still won't fire well; use | format for new habits.
-    trigger_lower = trigger.lower()
-    if "|" in trigger_lower:
-        # Format 1: pipe-separated alternative phrases.
-        # Use word-boundary matching so short phrases like "hi" don't match
-        # as substrings inside words ("this", "behind", etc.).
-        def _phrase_matches(phrase: str) -> bool:
-            p = phrase.strip()
-            if not p:
-                return False
-            return bool(re.search(r"\b" + re.escape(p) + r"\b", raw_lower))
+    #   1. Pipe-separated phrases: "hello|hi|hey|howdy"  — word-boundary match
+    #   2. Single-token exact labels: "routing_decision"  — substring match
+    #   3. Legacy space-separated lists — any token of length >= 5
+    trigger_ok = False
+    if trigger:
+        trigger_lower = trigger.lower()
+        if "|" in trigger_lower:
 
-        if not any(_phrase_matches(ph) for ph in trigger_lower.split("|")):
-            return 0.0
-    elif " " in trigger_lower:
-        # Format 3: legacy space-separated synonym list; filter short tokens
-        _tokens = [t for t in trigger_lower.split() if len(t) >= 5]
-        if not _tokens or not any(t in raw_lower for t in _tokens):
-            return 0.0
-    elif trigger_lower not in raw_lower:
-        # Format 2: single-token exact label
-        return 0.0
+            def _phrase_matches(phrase: str) -> bool:
+                p = phrase.strip()
+                if not p:
+                    return False
+                return bool(re.search(r"\b" + re.escape(p) + r"\b", raw_lower))
 
-    score = 1.0  # base trigger score
+            trigger_ok = any(_phrase_matches(ph) for ph in trigger_lower.split("|"))
+        elif " " in trigger_lower:
+            _tokens = [t for t in trigger_lower.split() if len(t) >= 5]
+            trigger_ok = bool(_tokens and any(t in raw_lower for t in _tokens))
+        else:
+            trigger_ok = trigger_lower in raw_lower
+
+    # ── Conditions evaluation (D201) ──────────────────────────────────────────
+    cond_ok, cond_fields = (
+        _conditions_match(conditions, parsed) if conditions else (False, 0)
+    )
+
+    # ── Gate by match_mode ────────────────────────────────────────────────────
+    if conditions:
+        if match_mode == "trigger_only":
+            if not trigger_ok:
+                return 0.0
+        elif match_mode == "both":
+            if not (trigger_ok and cond_ok):
+                return 0.0
+        else:  # conditions_first (default): conditions are the primary gate
+            if not cond_ok:
+                return 0.0
+    else:
+        # No conditions — existing behavior: trigger required
+        if not trigger_ok:
+            return 0.0
+
+    score = 1.0  # base score
 
     # keyword_bonus: overlap between parsed keywords and habit narrative words
     if keywords and habit.narrative:
@@ -192,8 +277,11 @@ def _score_habit(
     score += valence * 0.10
 
     # meaning_to_me_bonus: habits tagged as personally significant get a small boost (#244)
-    if (habit.metadata or {}).get("meaning_to_me"):
+    if metadata.get("meaning_to_me"):
         score += 0.08
+
+    # conditions_bonus: +0.08 per matched conditions field (D201)
+    score += cond_fields * 0.08
 
     # decay_factor: experienced habits decay slower; unused habits fade
     score *= compute_decay_factor(habit, now=now)
@@ -287,7 +375,9 @@ def select_habit(
         )
         # G-OVN-1d: intents where ALL response habits should fall through to LLM + winnow.
         # Canned response habits must not suppress genuine knowledge queries. (D074 expansion)
-        _KNOWLEDGE_INTENTS = frozenset({"factual_question", "knowledge_request", "memory_verify"})
+        _KNOWLEDGE_INTENTS = frozenset(
+            {"factual_question", "knowledge_request", "memory_verify"}
+        )
 
         # Word graph pre-score: semantic signal over all habits at once (fast)
         _wg_scores: dict[str, float] = {}
@@ -295,7 +385,10 @@ def select_habit(
             try:
                 _wg_scores = _word_graph.score(_score_text, [h.id for h in habits])
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/basal_ganglia.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/cognition/basal_ganglia.py: %s",
+                    _bare_e,
+                )
 
         scored = []
         near_misses: list[tuple[float, "Memory"]] = []
@@ -332,7 +425,7 @@ def select_habit(
             # fall through to LLM + winnow to get a real answer. (D074 expansion, #254)
             if h_type == "response" and parsed_intent in _KNOWLEDGE_INTENTS:
                 continue
-            s = _score_habit(habit, raw_lower, keywords, now=now)
+            s = _score_habit(habit, raw_lower, keywords, now=now, parsed=parsed)
             if s > 0:  # only apply bonus when trigger matched
                 s += _wg_scores.get(habit.id, 0.0) * 0.10  # word graph bonus: 0.0–0.10
                 # #244: meaning_to_me context bonus — personally significant habits win tiebreaks
@@ -364,7 +457,10 @@ def select_habit(
             try:
                 _word_graph.reinforce(winner.id)
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/basal_ganglia.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/cognition/basal_ganglia.py: %s",
+                    _bare_e,
+                )
 
         return (winner, winner_score, [])
 

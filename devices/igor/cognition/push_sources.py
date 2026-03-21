@@ -25,6 +25,7 @@ from typing import Optional
 
 from ..igor_base import IgorBase
 from ..paths import paths
+from .forensic_logger import log_error
 
 MACHINES_JSON = paths().machines_json
 INBOX_DIR = paths().inbox
@@ -209,7 +210,10 @@ class HeartbeatSource(BasePushSource):
         try:
             cortex.twm_decay_attractor(factor=0.90)
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}",
+            )
 
         session_mins = int((now - self._session_start).total_seconds() / 60)
         pushed = []
@@ -238,6 +242,9 @@ class HeartbeatSource(BasePushSource):
 
         # 4. HEARTBEAT procedural memories (user-defined conditions)
         pushed.extend(self._check_heartbeat_memories(cortex, now))
+
+        # 5. Orphan adoption — link FACTUAL/EPISODIC nodes to nearest CP/ID attractor
+        self._run_orphan_adoption(cortex)
 
         return pushed
 
@@ -292,7 +299,10 @@ class HeartbeatSource(BasePushSource):
 
                 _la(kind=f"BUDGET_{level}", detail=msg)
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}",
+                )
             if level in ("CRITICAL", "EXHAUSTED"):
                 self._alert_discord(f"[Igor heartbeat] {msg}")
             self._discord_alerted.add(level)
@@ -329,6 +339,32 @@ class HeartbeatSource(BasePushSource):
         )
         return [obs_id]
 
+    def _run_orphan_adoption(self, cortex) -> None:
+        """
+        T-linking-habit: Link orphaned FACTUAL/EPISODIC nodes to their nearest
+        CP/ID attractor via embedding cosine similarity.
+        Gate: IGOR_NODE_ADOPTION_ENABLED=true.
+        Runs silently — logs to forensic log only if adoptions happen or errors occur.
+        """
+        import os as _os
+
+        if _os.getenv("IGOR_NODE_ADOPTION_ENABLED", "false").lower() != "true":
+            return
+        try:
+            adopted = cortex.adopt_orphans(batch_size=50)
+            if adopted > 0:
+                from .forensic_logger import log_anomaly as _la
+
+                _la(
+                    kind="ORPHAN_ADOPTED",
+                    detail=f"adopted {adopted} nodes into attractor trees",
+                )
+        except Exception as _bare_e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/push_sources.py HeartbeatSource._run_orphan_adoption: {_bare_e}",
+            )
+
     def _check_env_sync(self, cortex) -> None:
         """Hot-reload .env into os.environ if mtime changed. Non-fatal."""
         try:
@@ -339,7 +375,10 @@ class HeartbeatSource(BasePushSource):
             env_path = paths().instance / ".env"
             boot_env_sync(cortex, instance_id, env_path)
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}",
+            )
 
     def _alert_discord(self, message: str):
         """Best-effort proactive Discord alert. Silently ignores all errors."""
@@ -353,7 +392,10 @@ class HeartbeatSource(BasePushSource):
 
             discord_bot.send(int(channel_id_str), message)
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}",
+            )
 
 
 # ── UserInputSource ───────────────────────────────────────────────────────────
@@ -392,7 +434,10 @@ class UserInputSource(BasePushSource):
             try:
                 cortex.twm_set_attractor(obs_id, weight=1.0)
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}")
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}",
+                )
         return obs_id
 
 
@@ -686,7 +731,10 @@ class MilieuSource(BasePushSource):
                 )
                 result_ids.append(regulate_id)
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}",
+            )
 
         return result_ids
 
@@ -855,9 +903,7 @@ class ResourceMonitorSource(BasePushSource):
                 "surface_message",
                 f"{field} is at {{current_value}} — check before queuing more work.",
             )
-            surface_msg = surface_tmpl.format(
-                current_value=current, field=field, verdict=verdict, **raw
-            )
+            surface_msg = surface_tmpl.format(current_value=current, field=field, **raw)
 
             # Suppress if we already pushed this habit at this or higher severity
             prev = self._last_pushed.get(habit.id)
@@ -894,7 +940,82 @@ class ResourceMonitorSource(BasePushSource):
             if hid not in tripped_ids:
                 del self._last_pushed[hid]
 
+        # T-inference-monitor: proactive inference availability check
+        pushed.extend(self._check_inference_availability(cortex))
+
         return pushed
+
+    def _check_inference_availability(self, cortex) -> list[int]:
+        """
+        T-inference-monitor: Poll cloud + local inference availability.
+        When both are down, push high-salience TWM observation so Igor
+        knows before the next turn fails. Suppresses repeats until condition clears.
+
+        Cloud = OPENROUTER_API_KEY present AND budget remaining > $0.50.
+        Local = Ollama is_healthy() returns True.
+        """
+        import os as _os
+
+        _KEY = "_inference_unavailable"
+
+        local_ok = False
+        try:
+            from .inference_gateway import is_local_inference_available
+
+            local_ok = is_local_inference_available()
+        except Exception:
+            pass
+
+        cloud_ok = False
+        try:
+            if _os.getenv("OPENROUTER_API_KEY", "").strip():
+                from ..tools.budget import budget_status
+
+                cloud_ok = budget_status().get("remaining_usd", 1.0) > 0.50
+        except Exception:
+            cloud_ok = bool(_os.getenv("OPENROUTER_API_KEY", "").strip())
+
+        if local_ok or cloud_ok:
+            # Condition cleared — reset suppression
+            self._last_pushed.pop(_KEY, None)
+            return []
+
+        # Both down — suppress if already pushed
+        if self._last_pushed.get(_KEY) == "critical":
+            return []
+
+        try:
+            obs_id = cortex.twm_push(
+                source=self.name,
+                content_csb=(
+                    "INFERENCE_UNAVAILABLE|CRITICAL"
+                    "|cloud_ok=False|local_ok=False"
+                    "|Both OpenRouter and local Ollama are unreachable. "
+                    "Inference will fail until at least one is restored."
+                ),
+                salience=0.9,
+                urgency=0.9,
+                ttl_seconds=180,
+                metadata={
+                    "kind": "inference_unavailable",
+                    "cloud_ok": False,
+                    "local_ok": False,
+                },
+            )
+            self._last_pushed[_KEY] = "critical"
+            from .forensic_logger import log_anomaly as _la
+
+            _la(
+                kind="INFERENCE_UNAVAILABLE",
+                detail="cloud_ok=False local_ok=False — ResourceMonitorSource alert pushed",
+            )
+            return [obs_id]
+        except Exception as _bare_e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/push_sources.py ResourceMonitorSource._check_inference_availability: {_bare_e}",
+            )
+            return []
 
 
 # ── SelfObservationSource ─────────────────────────────────────────────────────
@@ -1183,5 +1304,8 @@ def run_background_sources(cortex) -> int:
             ids = src.push(cortex)
             pushed += len(ids)
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}",
+            )
     return pushed

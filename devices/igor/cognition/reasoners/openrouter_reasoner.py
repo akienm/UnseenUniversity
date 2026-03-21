@@ -34,7 +34,12 @@ from .base import (
     exit_requested,
 )
 from ..system_prompt import build_system_prompt
-from ..forensic_logger import log_reasoning_call, log_tool_call, log_inference_io
+from ..forensic_logger import (
+    log_reasoning_call,
+    log_tool_call,
+    log_inference_io,
+    log_error,
+)
 from ...memory.scrub import scrub
 
 console = Console()
@@ -660,6 +665,18 @@ class OpenRouterReasoner(BaseReasoner):
         token = os.getenv("OPENROUTER_API_KEY", "").strip()
         if not token:
             raise RuntimeError("OPENROUTER_API_KEY not set")
+
+        # Guard: models that don't support assistant prefill require the final
+        # message to have role=user or role=tool.  If messages ends with an
+        # assistant role (e.g. due to tool-call exception mid-loop), append a
+        # synthetic user nudge rather than sending a 400-guaranteed payload.
+        if messages and messages[-1].get("role") == "assistant":
+            messages = messages + [
+                {
+                    "role": "user",
+                    "content": "[tool results unavailable — please continue]",
+                }
+            ]
 
         payload = {
             "model": self.model,
