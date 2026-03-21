@@ -17,6 +17,7 @@ Batch: IGOR_CONSOLIDATION_BATCH (default 20 episodics per run)
 """
 
 from __future__ import annotations
+import logging
 
 import json
 import os
@@ -46,8 +47,8 @@ def _load_checkpoint() -> dict:
     try:
         if _CHECKPOINT_FILE.exists():
             return json.loads(_CHECKPOINT_FILE.read_text())
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/consolidation.py: %s", _bare_e)
     return {"last_run_ts": 0.0, "processed_ids": []}
 
 
@@ -59,8 +60,8 @@ def _save_checkpoint(ts: float, processed_ids: list[str]) -> None:
         data["processed_ids"] = (data.get("processed_ids", []) + processed_ids)[-1000:]
         _CHECKPOINT_FILE.parent.mkdir(parents=True, exist_ok=True)
         _CHECKPOINT_FILE.write_text(json.dumps(data, indent=2))
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/consolidation.py: %s", _bare_e)
 
 
 # ── Clustering ─────────────────────────────────────────────────────────────────
@@ -287,8 +288,8 @@ def run_consolidation(cortex: Cortex) -> dict:
                 f"INVESTMENT_DECAY|updated={_decay_result['updated']}{_note}",
                 category="investment_decay",
             )
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/consolidation.py: %s", _bare_e)
 
     _last_run = now
     _save_checkpoint(now, new_processed_ids)

@@ -1,3 +1,4 @@
+import logging
 """
 Self-edit tools - Igor reads and modifies its own source code.
 This is self-modification. The inertia system applies here too.
@@ -68,8 +69,8 @@ def _log_blocked_self_edit_attempt(path: str) -> None:
         entry = f"{datetime.now().isoformat()}|SELF_EDIT_DISABLED|igor/{path}\n"
         with open(log_path, "a", encoding="utf-8") as f:
             f.write(entry)
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/self_edit.py: %s", _bare_e)
 
 
 def _resolve(path: str) -> Path:
@@ -95,8 +96,8 @@ def _log_blocked_edit(path: str):
         entry = f"{datetime.now().isoformat()}|BLOCKED_WRITE|igor/{path}\n"
         with open(log_path, "a", encoding="utf-8") as f:
             f.write(entry)
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/self_edit.py: %s", _bare_e)
 
 
 def _get_inertia(path: str) -> tuple[float, str]:

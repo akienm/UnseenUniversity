@@ -208,8 +208,8 @@ class HeartbeatSource(BasePushSource):
         # G50: decay attractor focus over time — old foci fade every heartbeat
         try:
             cortex.twm_decay_attractor(factor=0.90)
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}")
 
         session_mins = int((now - self._session_start).total_seconds() / 60)
         pushed = []
@@ -291,8 +291,8 @@ class HeartbeatSource(BasePushSource):
                 from .forensic_logger import log_anomaly as _la
 
                 _la(kind=f"BUDGET_{level}", detail=msg)
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}")
             if level in ("CRITICAL", "EXHAUSTED"):
                 self._alert_discord(f"[Igor heartbeat] {msg}")
             self._discord_alerted.add(level)
@@ -338,8 +338,8 @@ class HeartbeatSource(BasePushSource):
             instance_id = os.environ.get("IGOR_INSTANCE_ID", "wild-0001")
             env_path = paths().instance / ".env"
             boot_env_sync(cortex, instance_id, env_path)
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}")
 
     def _alert_discord(self, message: str):
         """Best-effort proactive Discord alert. Silently ignores all errors."""
@@ -352,8 +352,8 @@ class HeartbeatSource(BasePushSource):
             from ..network import discord_bot
 
             discord_bot.send(int(channel_id_str), message)
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}")
 
 
 # ── UserInputSource ───────────────────────────────────────────────────────────
@@ -391,8 +391,8 @@ class UserInputSource(BasePushSource):
         if obs_id and obs_id > 0:
             try:
                 cortex.twm_set_attractor(obs_id, weight=1.0)
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}")
         return obs_id
 
 
@@ -685,8 +685,8 @@ class MilieuSource(BasePushSource):
                     },
                 )
                 result_ids.append(regulate_id)
-        except Exception:
-            pass  # gradient alert is advisory — never block
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}")
 
         return result_ids
 
@@ -1182,6 +1182,6 @@ def run_background_sources(cortex) -> int:
         try:
             ids = src.push(cortex)
             pushed += len(ids)
-        except Exception:
-            pass  # FAIL = FAL
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}")
     return pushed

@@ -177,8 +177,8 @@ class IgorBot(discord.Client):
                              webhook=bool(self._webhook_url),
                              preview=chunk[:60])
 
-            except queue.Empty:
-                pass
+            except queue.Empty as _bare_e:
+                _log(f"bare except in wild_igor/igor/network/discord_bot.py: {_bare_e}")
             await asyncio.sleep(0.5)
 
 

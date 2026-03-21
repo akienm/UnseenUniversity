@@ -177,8 +177,8 @@ async def _run_browser_agent(
         try:
             if hasattr(state, "url") and state.url:
                 final_url = state.url
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/browser.py: %s", _bare_e)
         history.append(
             {
                 "step": step_num,
@@ -222,15 +222,15 @@ async def _run_browser_agent(
             visited = [u for u in (result.urls() or []) if u]
             if visited:
                 final_url = visited[-1]
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/browser.py: %s", _bare_e)
 
         # Extract result text
         extracted = None
         try:
             extracted = result.final_result()
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/browser.py: %s", _bare_e)
         if not extracted:
             try:
                 extracted = str(result)[:1000]

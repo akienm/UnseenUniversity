@@ -1,3 +1,4 @@
+import logging
 """
 Web server for Igor — Starlette/uvicorn, runs in a background daemon thread.
 
@@ -90,8 +91,8 @@ def _channel_append(author: str, content: str, msg_type: str = "message"):
         )
         with open(_CHANNEL_FILE, "a", encoding="utf-8") as f:
             f.write(line)
-    except Exception:
-        pass  # never block the web server for channel writes
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/web/server.py: %s", _bare_e)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -221,8 +222,8 @@ async def _api_outbox_list(request: Request):
             if p.is_file():
                 st = p.stat()
                 files.append({"name": p.name, "size": st.st_size, "mtime": st.st_mtime})
-    except OSError:
-        pass
+    except OSError as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/web/server.py: %s", _bare_e)
     return JSONResponse(files)
 
 
@@ -345,8 +346,8 @@ async def _api_dashboard(request: Request):
     if _stats_fn is not None:
         try:
             data = dict(_stats_fn())
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/web/server.py: %s", _bare_e)
     data["ts"] = _ts()
     return JSONResponse(data)
 
@@ -446,16 +447,16 @@ async def _ws_endpoint(ws: WebSocket):
                         _add_to_history(current_session, umsg)
                         _broadcast_to_session(current_session, json.dumps(umsg))
                         _channel_append(author, content)
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/web/server.py: %s", _bare_e)
 
     async def _forward():
         try:
             while True:
                 payload = await q.get()
                 await ws.send_text(payload)
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/web/server.py: %s", _bare_e)
 
     recv = asyncio.ensure_future(_receive())
     fwd = asyncio.ensure_future(_forward())
@@ -464,8 +465,8 @@ async def _ws_endpoint(ws: WebSocket):
         t.cancel()
         try:
             await t
-        except asyncio.CancelledError:
-            pass
+        except asyncio.CancelledError as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/web/server.py: %s", _bare_e)
 
     with _client_lock:
         qs = _session_clients.get(current_session, [])

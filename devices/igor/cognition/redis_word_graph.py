@@ -144,8 +144,8 @@ class RedisWordGraph(IgorBase):
             try:
                 v = r.hget(_META_KEY, "doc_count")
                 return int(v) if v else 0
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/redis_word_graph.py: %s", _bare_e)
         return self._sqlite._doc_count
 
     # ── Indexing ──────────────────────────────────────────────────────────────

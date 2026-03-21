@@ -26,6 +26,7 @@ G37: name param allows two instances — recognition (listening) and generation
 
 from __future__ import annotations
 
+import logging
 import math
 import os
 import re
@@ -794,8 +795,10 @@ class WordGraph(IgorBase):
         try:
             with self._db() as conn:
                 conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/cognition/word_graph.py: %s", _bare_e
+            )
 
     @classmethod
     def load(cls, path: Path) -> "WordGraph":

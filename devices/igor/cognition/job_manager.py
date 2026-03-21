@@ -16,6 +16,7 @@ Trigger (called from main._process()):
 """
 
 from __future__ import annotations
+import logging
 
 import json
 import threading
@@ -128,8 +129,8 @@ class JobManager(IgorBase):
                         continue
                 if j.status in _STATUS_ACTIVE:
                     self._jobs[j.job_id] = j
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/job_manager.py: %s", _bare_e)
 
     def active_count(self) -> int:
         return len(self._jobs)
@@ -175,8 +176,8 @@ class JobManager(IgorBase):
                     try:
                         data = json.loads(path.read_text(encoding="utf-8"))
                         jobs.append(Job(**data))
-                    except Exception:
-                        pass
+                    except Exception as _bare_e:
+                        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/job_manager.py: %s", _bare_e)
             return jobs
         return sorted(self._jobs.values(), key=lambda j: j.created_at, reverse=True)
 

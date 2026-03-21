@@ -1,3 +1,4 @@
+import logging
 """
 Base reasoner interface — two-level hierarchy (Change 2 / D026).
 
@@ -230,8 +231,8 @@ class BaseReasoner(ABC, IgorBase):
                 for e in all_entries
                 if _dt2.fromisoformat(e["timestamp"]).timestamp() >= _cutoff
             ]
-        except Exception:
-            pass  # on parse error keep all entries
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e)
         filtered = [e for e in all_entries if e["category"] not in _RING_EXCLUDE]
         entries = filtered[-_RING_CONTEXT_LIMIT:]
 
@@ -250,8 +251,8 @@ class BaseReasoner(ABC, IgorBase):
                 for t in task_sets:
                     goal = t["content_csb"].replace("TASK_SET|", "").strip()
                     lines.append(f"  → {goal[:200]}")
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e)
 
         # ── Change 4: inject high-urgency TWM observations ────────────────────
         try:
@@ -274,8 +275,8 @@ class BaseReasoner(ABC, IgorBase):
                 )[:5]:
                     urg = o.get("urgency", 0.2)
                     lines.append(f"  [urgency={urg:.1f}] {o['content_csb'][:150]}")
-        except Exception:
-            pass  # Never block context building
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e)
 
         if not entries:
             return "\n".join(lines) if lines else ""
@@ -300,8 +301,8 @@ class BaseReasoner(ABC, IgorBase):
                 if _age_s <= 600:  # 10 min
                     anchor_content = _latest_ne["content"]
                     anchor_ts = _ne_ts_str
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e)
 
         # Helper: format a ring-entry timestamp so Igor can distinguish
         # "this happened 3 days ago" from "this is happening right now."
@@ -468,8 +469,8 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
             },
         )
         cortex.store(mem)
-    except Exception:
-        pass  # deposit failure must never block the caller
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e)
 
     def _winnow_context(self, user_input: str, cortex, word_graph=None) -> list[Memory]:
         """
@@ -515,8 +516,8 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
                     wg_hints = "Activated concepts: " + ", ".join(
                         w for w, _ in predicted
                     )
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e)
 
         prompt = (
             f"Context trail:\n{breadcrumbs}\n\n"
@@ -536,8 +537,8 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
                 queries = [
                     q.strip() for q in _text.replace("\n", ",").split(",") if q.strip()
                 ][:3]
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e)
 
         if not queries:
             return []
@@ -552,8 +553,8 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
                     if m.id not in seen_ids:
                         seen_ids.add(m.id)
                         results.append(m)
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e)
 
         # ── Deposit: train the graph on what we just routed (#188) ────────────
         if results:
@@ -573,8 +574,8 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
                 queries=len(queries),
                 retrieved=len(results),
             )
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e)
 
         return results
 

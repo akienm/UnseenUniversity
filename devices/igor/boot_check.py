@@ -1,3 +1,4 @@
+import logging
 """
 boot_check.py — Verify required Ollama models on cluster machines at boot.
 
@@ -101,8 +102,8 @@ def _prepend_log(entry: str):
             CHANGES_LOG.read_text(encoding="utf-8") if CHANGES_LOG.exists() else ""
         )
         CHANGES_LOG.write_text(entry + "\n" + existing, encoding="utf-8")
-    except OSError:
-        pass
+    except OSError as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/boot_check.py: %s", _bare_e)
 
 
 # ── Public API ─────────────────────────────────────────────────────────────────
@@ -170,8 +171,8 @@ def run(cortex=None):
         )
         try:
             cortex.write_ring(summary, category="system_info")
-        except Exception:
-            pass  # Never crash startup
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/boot_check.py: %s", _bare_e)
 
 
 def start(cortex=None):

@@ -1,3 +1,4 @@
+import logging
 """
 Terminal dashboard — Rich panel after every interaction.
 
@@ -106,8 +107,8 @@ def render(
             lines.append(
                 f"  [dim]Word graph:  {wg_words:>10,} nodes  ({wg_docs:,} docs)[/]"
             )
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/dashboard/terminal.py: %s", _bare_e)
     lines.append(f"  [dim]Action tree: {proc:>6,} nodes[/]")
     lines.append(f"  [dim]Meaning tree:{interp:>6,} nodes{edge_str}[/]")
     lines.append(f"  [dim]Knowledge:   {fct:>6,} nodes[/]")

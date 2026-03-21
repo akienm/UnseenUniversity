@@ -10,6 +10,7 @@ Used by:
 """
 
 from __future__ import annotations
+import logging
 
 import os
 import re
@@ -57,8 +58,8 @@ def _escalation_rate() -> tuple[float, int, int]:
                 cloud = int(re.search(r"cloud=(\d+)", line).group(1))
                 total = int(re.search(r"total=(\d+)", line).group(1))
                 return rate, cloud, total
-            except Exception:
-                pass
+            except Exception as _bare_e:
+                logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/metrics.py: %s", _bare_e)
     return 0.0, 0, 0
 
 
@@ -204,8 +205,8 @@ def _consolidation_stats(cortex) -> dict | None:
                     "extracted": int(m_ex.group(1)) if m_ex else 0,
                     "skipped": int(m_sk.group(1)) if m_sk else 0,
                 }
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/metrics.py: %s", _bare_e)
     return None
 
 
@@ -305,8 +306,8 @@ def build_report(
                 _top_str = "  ".join(f"{w}({c})" for w, c, _ in _top)
                 lines.append(f"  Top 5 used:        {_top_str}")
             lines.append("")
-    except Exception:
-        pass
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/metrics.py: %s", _bare_e)
 
     # ── Word graph ────────────────────────────────────────────
     wg = _word_graph_stats()

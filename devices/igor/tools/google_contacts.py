@@ -1,3 +1,4 @@
+import logging
 """
 Google Contacts tools for Igor — via the People API.
 
@@ -235,8 +236,8 @@ def _store_contact_memory(
             },
         )
         cortex.store(mem)
-    except Exception:
-        pass  # DB write failure must never surface to caller
+    except Exception as _bare_e:
+        logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/google_contacts.py: %s", _bare_e)
 
 
 def _search_contact_memories(query: str) -> list[dict]:

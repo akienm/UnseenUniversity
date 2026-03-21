@@ -137,8 +137,8 @@ class IgorBase:
             # prepend (newest at top) using read-modify-write
             existing = log_path.read_text() if log_path.exists() else ""
             log_path.write_text(line + existing)
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning("bare except in wild_igor/igor/igor_base.py: %s", _bare_e)
 
     def _perf_summary(self, label: Optional[str] = None) -> str:
         """

@@ -183,8 +183,8 @@ def _load_queue() -> list:
                 detail=str(_e),
                 source="learner._load_queue",
             )
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/learner.py: {_bare_e}")
     return []
 
 
@@ -324,8 +324,8 @@ def _discover_urls_via_browser(topic: str) -> list[tuple[str, str]]:
 
                 try:
                     result = _json.loads(result)
-                except Exception:
-                    pass
+                except Exception as _bare_e:
+                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/learner.py: {_bare_e}")
             if isinstance(result, dict):
                 status = result.get("status", "?")
                 if status != "success":
@@ -465,8 +465,8 @@ def learn_about(user_input: str) -> str:
             from ..cognition.cloud_mode import clear_cloud_ok_override
 
             clear_cloud_ok_override(reason="learn_about tonight")
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/learner.py: {_bare_e}")
 
     # ── 1. Calibre non-fiction ─────────────────────────────────────────────
     books = _calibre_nonfiction(topic)
@@ -730,8 +730,8 @@ def list_absorbed_books(**_kwargs) -> str:
             queue = json.loads(queue_path.read_text())
             if queue:
                 lines.append(f"\nQueued to learn: {len(queue)} item(s)")
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/learner.py: {_bare_e}")
 
     return "\n".join(lines)
 
