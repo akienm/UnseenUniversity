@@ -682,6 +682,28 @@ class Cortex(IgorBase):
                 "ON traversal_contexts(context_id, key)"
             )
 
+            # D199: memories table indexes — idempotent; safe on existing DBs.
+            # These were in _PG_SCHEMA (fresh PG only) but not applied to existing DBs.
+            # CREATE INDEX IF NOT EXISTS is a no-op if already present.
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_memories_activation "
+                "ON memories(activation_count DESC)"
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_memories_type_activation "
+                "ON memories(memory_type, activation_count DESC)"
+            )
+            try:
+                # Partial index — WHERE clause syntax; SQLite 3.8+, Postgres 8.0+
+                conn.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_memories_last_accessed "
+                    "ON memories(last_accessed DESC) WHERE last_accessed IS NOT NULL"
+                )
+            except Exception as _bare_e:
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
+
             # G-QP2: wal_checkpoint moved to main.py post-Cortex-init (G-QP3)
             # Do NOT checkpoint here — _init_db() runs on every Cortex() instantiation
             # (book_learner, tools, etc.) and would flood the DB with checkpoint contention
@@ -1319,33 +1341,42 @@ class Cortex(IgorBase):
         )
         _ALWAYS_EXCLUDE = (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value)
 
+        # D199: candidate pool via traversal from CP roots + activation-index supplement.
+        # CP/ID nodes are the graph roots — traversal follows edges by ID (no table scan).
+        # Orphaned nodes (no parent path to CP roots) are caught by the activation index.
+        _CP_ROOTS = ["CP1", "CP2", "CP3", "CP4", "CP5", "CP6"]
+        _ID_ROOTS = [f"ID{i}" for i in range(1, 15)]
+        _traversal_pool = self._traversal_search(
+            _CP_ROOTS + _ID_ROOTS, depth=3, limit=200
+        )
+        _traversal_ids = {m.id for m in _traversal_pool}
+
+        # Supplement: activation-ranked nodes not already in traversal pool (orphans + new nodes)
+        _excl_ph = ",".join("?" * len(_ALWAYS_EXCLUDE))
+        _supplement_limit = max(0, 300 - len(_traversal_pool))
         with self._conn() as conn:
-            if _routed_types:
-                # Type-routed fetch: prioritized types get 200 slots, remainder 100
+            if _routed_types and _supplement_limit > 0:
                 _ph = ",".join("?" * len(_routed_types))
-                _excl_ph = ",".join("?" * len(_ALWAYS_EXCLUDE))
-                routed_rows = conn.execute(
+                rows = conn.execute(
                     f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
                     f"WHERE memory_type IN ({_ph}) AND memory_type NOT IN ({_excl_ph}) "
-                    "ORDER BY activation_count DESC LIMIT 200",
-                    _routed_types + list(_ALWAYS_EXCLUDE),
+                    "ORDER BY activation_count DESC LIMIT ?",
+                    _routed_types + list(_ALWAYS_EXCLUDE) + [_supplement_limit],
                 ).fetchall()
-                # Fill remainder from other types to keep total pool at ~300
-                remainder_rows = conn.execute(
-                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
-                    f"WHERE memory_type NOT IN ({_ph}) AND memory_type NOT IN ({_excl_ph}) "
-                    "ORDER BY activation_count DESC LIMIT 100",
-                    _routed_types + list(_ALWAYS_EXCLUDE),
-                ).fetchall()
-                rows = routed_rows + remainder_rows
-            else:
+            elif _supplement_limit > 0:
                 rows = conn.execute(
-                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type NOT IN (?, ?) "
-                    "ORDER BY activation_count DESC LIMIT 300",  # G-QP2: cap candidate pool; G-MEM2: no embedding blob
-                    _ALWAYS_EXCLUDE,
+                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
+                    f"WHERE memory_type NOT IN ({_excl_ph}) "
+                    "ORDER BY activation_count DESC LIMIT ?",
+                    list(_ALWAYS_EXCLUDE) + [_supplement_limit],
                 ).fetchall()
+            else:
+                rows = []
 
-        all_memories = [self._to_memory(r) for r in rows]
+        _supplement = [
+            self._to_memory(r) for r in rows if r["id"] not in _traversal_ids
+        ]
+        all_memories = _traversal_pool + _supplement
 
         # Filter out NE diagnostic memories — operational noise from consolidation/stall loops
         # that may have entered LTM before the self-diagnostic filter was in place (URGENT.3)
