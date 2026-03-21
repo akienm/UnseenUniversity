@@ -1,4 +1,5 @@
 import logging
+
 """
 Cortex - long-term memory storage.
 SQLite-backed graph of Memory objects.
@@ -323,14 +324,18 @@ class Cortex(IgorBase):
                     "ALTER TABLE memories ADD COLUMN embedding TEXT DEFAULT NULL"
                 )
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
 
             # G14 / #52: emotional profile columns (arousal + dominance)
             for _col in ("arousal REAL DEFAULT 0.0", "dominance REAL DEFAULT 0.0"):
                 try:
                     conn.execute(f"ALTER TABLE memories ADD COLUMN {_col}")
                 except Exception as _bare_e:
-                    logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                    logging.getLogger(__name__).warning(
+                        "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                    )
 
             # #71: portability flag — 1=portable (default), 0=instance-local
             try:
@@ -338,7 +343,9 @@ class Cortex(IgorBase):
                     "ALTER TABLE memories ADD COLUMN portable INTEGER DEFAULT 1"
                 )
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
 
             # #128: directed weighted links + last_accessed
             for _col in (
@@ -348,7 +355,9 @@ class Cortex(IgorBase):
                 try:
                     conn.execute(f"ALTER TABLE memories ADD COLUMN {_col}")
                 except Exception as _bare_e:
-                    logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                    logging.getLogger(__name__).warning(
+                        "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                    )
 
             # G46: provenance + epistemic fields
             for _col in (
@@ -359,7 +368,9 @@ class Cortex(IgorBase):
                 try:
                     conn.execute(f"ALTER TABLE memories ADD COLUMN {_col}")
                 except Exception as _bare_e:
-                    logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                    logging.getLogger(__name__).warning(
+                        "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                    )
 
             # T-memory-sync: updated_at for swarm sync — set on every store()
             try:
@@ -367,7 +378,9 @@ class Cortex(IgorBase):
                     "ALTER TABLE memories ADD COLUMN updated_at TEXT DEFAULT NULL"
                 )
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
 
             # #128: one-time migration — promote non-empty link_ids into links_weighted (weight 0.5)
             _migrate_rows = conn.execute(
@@ -383,7 +396,9 @@ class Cortex(IgorBase):
                             (json.dumps({mid: 0.5 for mid in _ids}), _row["id"]),
                         )
                 except Exception as _bare_e:
-                    logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                    logging.getLogger(__name__).warning(
+                        "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                    )
 
             # G-EMB1: separate embeddings table — keeps 16KB blobs off memories rows
             # so activation_count scans and LIKE scans don't load embedding pages.
@@ -424,7 +439,9 @@ class Cortex(IgorBase):
                     "ALTER TABLE ring_memory ADD COLUMN thread_id TEXT DEFAULT NULL"
                 )
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
 
             # TWM — Temporal Working Memory
             # Push-based sandbox. Any process can deposit observations.
@@ -457,7 +474,9 @@ class Cortex(IgorBase):
                     "ALTER TABLE twm_observations ADD COLUMN urgency REAL DEFAULT 0.2"
                 )
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
 
             # #51: instance_id column — scopes each observation to the instance that pushed it
             try:
@@ -465,7 +484,9 @@ class Cortex(IgorBase):
                     "ALTER TABLE twm_observations ADD COLUMN instance_id TEXT DEFAULT NULL"
                 )
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
 
             # #158: thread_id — per-attention-nexus isolation (mirrors ring_memory #136)
             try:
@@ -473,7 +494,9 @@ class Cortex(IgorBase):
                     "ALTER TABLE twm_observations ADD COLUMN thread_id TEXT DEFAULT NULL"
                 )
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
 
             # G50: attractor_weight — the current primary focus; one item typically non-zero
             try:
@@ -481,7 +504,9 @@ class Cortex(IgorBase):
                     "ALTER TABLE twm_observations ADD COLUMN attractor_weight REAL DEFAULT 0.0"
                 )
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
 
             # #158: category — distinguishes TASK_SET from normal observations
             try:
@@ -489,7 +514,9 @@ class Cortex(IgorBase):
                     "ALTER TABLE twm_observations ADD COLUMN category TEXT DEFAULT 'observation'"
                 )
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
 
             # D099: parent_obs_id — slot branching; child obs traces back to parent slot
             try:
@@ -497,7 +524,9 @@ class Cortex(IgorBase):
                     "ALTER TABLE twm_observations ADD COLUMN parent_obs_id INTEGER DEFAULT NULL"
                 )
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
 
             # G52: interpretive_edges — directed edges for interpretive tree traversal
             conn.execute("""
@@ -527,7 +556,9 @@ class Cortex(IgorBase):
                     "ALTER TABLE interpretive_edges ADD COLUMN layer TEXT DEFAULT ''"
                 )
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
             # #261: one-time migration — only runs if marker not yet present
             _m261 = conn.execute(
                 "SELECT 1 FROM _migrations WHERE name = 'meaning_to_me_layer_tag'"
@@ -598,13 +629,17 @@ class Cortex(IgorBase):
             try:
                 conn.execute("ALTER TABLE tails ADD COLUMN trail_id TEXT DEFAULT NULL")
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
             try:
                 conn.execute(
                     "ALTER TABLE tails ADD COLUMN sequence_pos INTEGER DEFAULT NULL"
                 )
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_tails_trail ON tails(trail_id) WHERE trail_id IS NOT NULL"
             )
@@ -742,7 +777,9 @@ class Cortex(IgorBase):
             try:
                 self._auto_wire_interpretive(memory)
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
         return memory
 
     # CP keyword affinity table for auto-wiring (#170)
@@ -848,7 +885,7 @@ class Cortex(IgorBase):
     def get(self, memory_id: str) -> Optional[Memory]:
         with self._conn() as conn:
             row = conn.execute(
-                "SELECT * FROM memories WHERE id = ?", (memory_id,)
+                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE id = ?", (memory_id,)
             ).fetchone()
         return self._to_memory(row) if row else None
 
@@ -859,7 +896,7 @@ class Cortex(IgorBase):
         """
         with self._conn() as conn:
             rows = conn.execute(
-                "SELECT * FROM memories WHERE portable = 1 "
+                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE portable = 1 "
                 "AND memory_type NOT IN ('EPISODIC', 'CREDENTIAL_REF') "
                 "ORDER BY id"
             ).fetchall()
@@ -870,16 +907,21 @@ class Cortex(IgorBase):
         #239: Return all memories tagged to a specific employer via metadata.employer_id.
         No schema change — employer_id is a metadata convention.
         Used by the cc_notebook endpoint to serve Claude's (or any employer's) notebook.
+
+        #272: uses _MEM_COLS_NO_EMBED — avoids loading embedding blobs for all memories.
         """
         with self._conn() as conn:
-            rows = conn.execute("SELECT * FROM memories ORDER BY id").fetchall()
+            rows = conn.execute(
+                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories ORDER BY id"
+            ).fetchall()
         mems = [self._to_memory(r) for r in rows]
         return [m for m in mems if m.metadata.get("employer_id") == employer_id]
 
     def get_children(self, parent_id: str) -> list:
         with self._conn() as conn:
             rows = conn.execute(
-                "SELECT * FROM memories WHERE parent_id = ?", (parent_id,)
+                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE parent_id = ?",
+                (parent_id,),
             ).fetchall()
         return [self._to_memory(r) for r in rows]
 
@@ -1154,7 +1196,9 @@ class Cortex(IgorBase):
                 if blob:
                     m.narrative = m.narrative + "\n[FULL CONTENT]\n" + blob[:blob_chars]
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
         return memories
 
     def list_blob_tags(self) -> dict[str, int]:
@@ -1167,7 +1211,9 @@ class Cortex(IgorBase):
                 for tag in json.loads(row["tags"] or "[]"):
                     counts[tag] = counts.get(tag, 0) + 1
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
         return dict(sorted(counts.items(), key=lambda x: x[1], reverse=True))
 
     @staticmethod
@@ -1328,7 +1374,9 @@ class Cortex(IgorBase):
             if _anchors:
                 _traversal = self._traversal_search(_anchors, depth=2, limit=limit * 2)
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+            )
 
         # Candidate pool: merge traversal + text results, dedup by id (#172)
         # Traversal memories are included regardless of keyword hit;
@@ -1346,7 +1394,9 @@ class Cortex(IgorBase):
                     m.relevance_score = 0.1  # type: ignore[attr-defined]
                     _merged[m.id] = m
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+            )
 
         for score, m in text_scored:
             norm_score = score / _max_terms
@@ -1400,7 +1450,10 @@ class Cortex(IgorBase):
                                     obs["id"], reason="search_signal_C_relevance>=0.6"
                                 )
                     except Exception as _bare_e:
-                        logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                        logging.getLogger(__name__).warning(
+                            "bare except in wild_igor/igor/memory/cortex.py: %s",
+                            _bare_e,
+                        )
 
                 # #66: affect-weighted retrieval — memories encoded in similar
                 # emotional state get a small relevance boost (state-dependent recall)
@@ -1442,7 +1495,9 @@ class Cortex(IgorBase):
                 )  # T-trail-training: Hebbian edge update
                 return result
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+            )
 
         # Phase 1 fallback: candidates already scored + merged (#172); return top N
         result = candidates[:limit]
@@ -1485,7 +1540,9 @@ class Cortex(IgorBase):
                     [now_iso] + ids,
                 )
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+            )
 
     # ── Tails — decaying activation heat (T-tails-infra) ──────────────────────
 
@@ -1515,7 +1572,9 @@ class Cortex(IgorBase):
             with self._conn() as conn:
                 conn.execute("DELETE FROM tails WHERE recorded_at < ?", (cutoff,))
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+            )
 
     def get_tail_heat(self, node_id: str) -> float:
         """Return current accumulated tail heat for a node using TAIL_GRADIENT.
@@ -1581,7 +1640,9 @@ class Cortex(IgorBase):
             with self._conn() as conn:
                 conn.execute("DELETE FROM traces WHERE recorded_at < ?", (cutoff,))
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+            )
         return trace_id  # T-trails-infra: caller uses this as trail_id for tails
 
     def _apply_trail_training(self, memories: list) -> None:
@@ -1649,7 +1710,10 @@ class Cortex(IgorBase):
                         if row:
                             existing = row
                     except Exception as _bare_e:
-                        logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                        logging.getLogger(__name__).warning(
+                            "bare except in wild_igor/igor/memory/cortex.py: %s",
+                            _bare_e,
+                        )
 
                     if existing:
                         new_weight = min(max_weight, float(existing["weight"]) + delta)
@@ -1660,7 +1724,10 @@ class Cortex(IgorBase):
                                     (new_weight, existing["id"]),
                                 )
                         except Exception as _bare_e:
-                            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                            logging.getLogger(__name__).warning(
+                                "bare except in wild_igor/igor/memory/cortex.py: %s",
+                                _bare_e,
+                            )
                     elif delta >= creation_threshold:
                         try:
                             self.add_interpretive_edge(
@@ -1672,11 +1739,16 @@ class Cortex(IgorBase):
                                 layer="trail_training",
                             )
                         except Exception as _bare_e:
-                            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                            logging.getLogger(__name__).warning(
+                                "bare except in wild_igor/igor/memory/cortex.py: %s",
+                                _bare_e,
+                            )
 
                     pairs_processed += 1
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+            )
 
     def get_recent_traces(self, limit: int = 10) -> list:
         """Return recent traces for Igor introspection — newest first.
@@ -1862,7 +1934,9 @@ class Cortex(IgorBase):
                     (ctx_id, job_id or "", "__init__", "1", 0, now),
                 )
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+            )
         return ctx_id
 
     def traversal_get(self, context_id: str, key: str) -> Optional[str]:
@@ -1898,7 +1972,9 @@ class Cortex(IgorBase):
                     (context_id, key, value, step, now),
                 )
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+            )
 
     def _get_recently_activated(self, limit: int = 30) -> list:
         """T-db-spreading-activation: fetch recently-activated memories by tail heat.
@@ -2105,7 +2181,9 @@ class Cortex(IgorBase):
                             anchors.append(rid)
                             seen.add(rid)
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+            )
 
         # 3: Recent TWM items with explicit memory_id in metadata
         try:
@@ -2118,7 +2196,9 @@ class Cortex(IgorBase):
                     anchors.append(mid)
                     seen.add(mid)
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+            )
 
         return anchors[:5]
 
@@ -2239,7 +2319,9 @@ class Cortex(IgorBase):
             try:
                 return json.loads(row["embedding"])
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
 
         # Not in separate table — compute via embedder and store
         try:
@@ -2250,7 +2332,9 @@ class Cortex(IgorBase):
                 self._upsert_embedding(memory.id, json.dumps(vec))
                 return vec
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+            )
         return None
 
     def _get_embeddings_batch(self, ids: list) -> dict:
@@ -2297,9 +2381,9 @@ class Cortex(IgorBase):
         from .db_proxy import PGDatabaseProxy
 
         _habits_sql = (
-            "SELECT * FROM memories WHERE jsonb_exists(metadata, 'trigger')"
+            f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE jsonb_exists(metadata, 'trigger')"
             if isinstance(self._db, PGDatabaseProxy)
-            else "SELECT * FROM memories WHERE metadata LIKE '%\"trigger\"%'"
+            else f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE metadata LIKE '%\"trigger\"%'"
         )
         with self._conn() as conn:
             rows = conn.execute(_habits_sql).fetchall()
@@ -2414,14 +2498,18 @@ class Cortex(IgorBase):
             try:
                 _links = json.loads(row["links_weighted"] or "{}")
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
         # #128: load last_accessed
         _last_accessed = None
         if "last_accessed" in keys and row["last_accessed"]:
             try:
                 _last_accessed = datetime.fromisoformat(row["last_accessed"])
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
         return Memory(
             id=row["id"],
             narrative=row["narrative"],
@@ -3049,7 +3137,9 @@ class Cortex(IgorBase):
                 category="twm_ttl_extension",
             )
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+            )
 
     # ── D126 Step 4: Worry signal ──────────────────────────────────────────────
 
@@ -3123,7 +3213,7 @@ class Cortex(IgorBase):
         """
         with self._conn() as conn:
             rows = conn.execute(
-                "SELECT * FROM memories WHERE memory_type='INTERPRETIVE' "
+                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type='INTERPRETIVE' "
                 'AND metadata LIKE \'%"source": "relational"%\''
             ).fetchall()
         nodes = [self._to_memory(r) for r in rows]
@@ -3220,7 +3310,9 @@ class Cortex(IgorBase):
                         )
                     updated += 1
                 except Exception as _bare_e:
-                    logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                    logging.getLogger(__name__).warning(
+                        "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                    )
 
         return {"updated": updated, "nre_ended": nre_ended}
 
@@ -3500,7 +3592,10 @@ class Cortex(IgorBase):
                                     ):
                                         _is_convergence = True
                         except Exception as _bare_e:
-                            logging.getLogger(__name__).warning("bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e)
+                            logging.getLogger(__name__).warning(
+                                "bare except in wild_igor/igor/memory/cortex.py: %s",
+                                _bare_e,
+                            )
                     if not _is_convergence:
                         queue.append((edge["to_id"], depth + 1, root_id))
                     # convergence node is collected but not descended — it's the lever
