@@ -507,6 +507,19 @@ class NarrativeEngine(IgorBase):
 
         # 3. Promote high-importance candidates to LTM
         # change.20a.2: self-diagnostic content → ring(ne_diagnostic), never LTM
+        #
+        # Step 2 (#305): affective frame selection.
+        # effective_importance = causal_coherence * (1-w) + milieu_alignment * w
+        # where w = 0.4 * arousal (high arousal → affect biases selection more).
+        # Frames affectively congruent with current milieu need less causal weight to promote.
+        _aff_milieu = __import__("igor.cognition.milieu", fromlist=["get"]).get()
+        try:
+            _aff_ms = _aff_milieu.get_state() if _aff_milieu else None
+        except Exception:
+            _aff_ms = None
+        _aff_arousal = max(0.0, _aff_ms.arousal if _aff_ms else 0.0)
+        _aff_valence = _aff_ms.valence if _aff_ms else 0.0
+
         promoted = 0
         for cand in result.get("memory_candidates", []):
             importance = float(cand.get("importance", 0.0))
@@ -521,7 +534,16 @@ class NarrativeEngine(IgorBase):
                 )
                 continue
 
-            if importance >= PROMOTE_THRESHOLD:
+            # Step 2 (#305): blend causal importance with affective alignment
+            _cand_valence = float(cand.get("valence", 0.0))
+            _milieu_alignment = 1.0 - abs(_cand_valence - _aff_valence) / 2.0
+            _affective_weight = 0.4 * _aff_arousal
+            _effective_importance = (
+                importance * (1.0 - _affective_weight)
+                + _milieu_alignment * _affective_weight
+            )
+
+            if _effective_importance >= PROMOTE_THRESHOLD:
                 mem_type_str = cand.get("memory_type", "episodic")
                 try:
                     mem_type = MemoryType(mem_type_str)
@@ -531,19 +553,13 @@ class NarrativeEngine(IgorBase):
                 # Track source obs IDs for Signal A TTL extension
                 source_obs_id = cand.get("source_obs_id")
 
-                # #66: amygdala analog — tag high-importance memories with current milieu
-                _milieu = (
-                    __import__("igor.cognition.milieu", fromlist=["get"]).get()
-                    if True
-                    else None
+                # #66 / #305: amygdala analog — use milieu already fetched for Step 2
+                _ms = _aff_ms
+                _arousal = _aff_arousal
+                _valence_enc = _aff_valence
+                _emotionally_charged = (
+                    _effective_importance >= 0.85 and abs(_arousal) > 0.4
                 )
-                try:
-                    _ms = _milieu.get_state() if _milieu else None
-                except Exception:
-                    _ms = None
-                _arousal = _ms.arousal if _ms else 0.0
-                _valence_enc = _ms.valence if _ms else float(cand.get("valence", 0.0))
-                _emotionally_charged = importance >= 0.85 and abs(_arousal) > 0.4
 
                 # CP parent routing: NE candidates are routed by memory_type/content
                 # CP1=uncertainty/identity threat; CP2=pattern/learning; CP3=causality;
@@ -597,9 +613,9 @@ class NarrativeEngine(IgorBase):
                     valence=float(cand.get("valence", 0.0)),
                     arousal=_arousal,
                     source="narrative_engine",  # G46: provenance
-                    context_of_encoding=(  # G46: encoding context
+                    context_of_encoding=(  # G46: encoding context; #305 affective fit
                         f"ne_run={self._run_count + 1} importance={importance:.2f} "
-                        f"arousal={_arousal:.2f}"
+                        f"effective={_effective_importance:.2f} arousal={_arousal:.2f}"
                     ),
                     metadata=_meta,
                 )
