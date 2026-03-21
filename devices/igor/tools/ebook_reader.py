@@ -36,6 +36,7 @@ from typing import Optional
 
 from .registry import Tool, registry
 from ..paths import paths
+from ..cognition.forensic_logger import log_error
 
 # ── Handle cache — survives tool-call JSON round-trips ────────────────────────
 # BookHandle objects can't be serialized. open_book stores handles here by key;
