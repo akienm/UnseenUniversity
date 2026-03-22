@@ -28,7 +28,7 @@ from typing import Optional
 
 from .models import Memory, MemoryType
 from .scrub import scrub
-from .db_proxy import DatabaseProxy, make_home_proxy, make_local_proxy
+from .db_proxy import DatabaseProxy, MEM_COLS, make_home_proxy, make_local_proxy
 from ..igor_base import IgorBase
 
 
@@ -40,14 +40,8 @@ def _safe_memory_type(value: str) -> MemoryType:
         return MemoryType.FACTUAL
 
 
-# #258: explicit column list for batch id IN fetches — excludes embedding blob
-# to avoid deserializing large vectors when cosine rerank is not needed.
-_MEM_COLS_NO_EMBED = (
-    "id, narrative, memory_type, parent_id, children_ids, link_ids, "
-    "valence, activation_count, friction_history, timestamp, metadata, "
-    "arousal, dominance, portable, links_weighted, last_accessed, "
-    "source, confidence, context_of_encoding"
-)
+# D200: column list owned by db_proxy; alias kept for the many call sites in this file.
+_MEM_COLS_NO_EMBED = MEM_COLS
 
 # #258b: in-process memory fetch cache
 # Genesis types (ROOT / CORE_PATTERN / IDENTITY) are structurally immutable → permanent.
@@ -933,6 +927,7 @@ class Cortex(IgorBase):
         #272: uses _MEM_COLS_NO_EMBED — avoids loading embedding blobs for all memories.
         """
         from .db_proxy import PGDatabaseProxy
+
         with self._conn() as conn:
             if isinstance(self._db, PGDatabaseProxy):
                 rows = conn.execute(
@@ -1355,9 +1350,7 @@ class Cortex(IgorBase):
         # Orphaned nodes (no parent path to CP roots) are caught by the activation index.
         _CP_ROOTS = ["CP1", "CP2", "CP3", "CP4", "CP5", "CP6"]
         _ID_ROOTS = [f"ID{i}" for i in range(1, 15)]
-        _traversal_pool = self._traversal_search(
-            _CP_ROOTS + _ID_ROOTS, depth=3, limit=200
-        )
+        _traversal_pool = self.traverse_from(_CP_ROOTS + _ID_ROOTS, depth=3, limit=200)
         _traversal_ids = {m.id for m in _traversal_pool}
 
         # Supplement: activation-ranked nodes not already in traversal pool (orphans + new nodes)
@@ -1366,7 +1359,11 @@ class Cortex(IgorBase):
         # (11k+ memories rooted at CP1-CP6) depth=3 reaches most nodes; supplement
         # is redundant and triggers a 300-wide-row activation scan every search call.
         _SUPPLEMENT_THRESHOLD = 80  # only supplement if graph is sparse
-        _supplement_limit = max(0, 300 - len(_traversal_pool)) if len(_traversal_pool) < _SUPPLEMENT_THRESHOLD else 0
+        _supplement_limit = (
+            max(0, 300 - len(_traversal_pool))
+            if len(_traversal_pool) < _SUPPLEMENT_THRESHOLD
+            else 0
+        )
         with self._conn() as conn:
             if _routed_types and _supplement_limit > 0:
                 _ph = ",".join("?" * len(_routed_types))
@@ -1416,7 +1413,7 @@ class Cortex(IgorBase):
         try:
             _anchors = self._get_context_anchors()
             if _anchors:
-                _traversal = self._traversal_search(_anchors, depth=2, limit=limit * 2)
+                _traversal = self.traverse_from(_anchors, depth=2, limit=limit * 2)
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
                 "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
@@ -1433,7 +1430,7 @@ class Cortex(IgorBase):
         # Warm memories (recently surfaced) get a small base presence so cosine rerank
         # can promote them if genuinely relevant. Never forces results — Phase 2 decides.
         try:
-            for m in self._get_recently_activated(limit=30):
+            for m in self.get_by_activation(limit=30):
                 if m.id not in _merged:
                     m.relevance_score = 0.1  # type: ignore[attr-defined]
                     _merged[m.id] = m
@@ -2009,9 +2006,11 @@ class Cortex(IgorBase):
         try:
             cutoff = (datetime.now() - timedelta(hours=since_hours)).isoformat()
             with self._conn() as conn:
-                # Self-join on trail_id to find co-occurring node pairs
+                # Self-join on trail_id to find co-occurring node pairs.
+                # Aliases required: _PGRowProxy collapses duplicate column names.
                 rows = conn.execute(
-                    "SELECT a.node_id, b.node_id, COUNT(*) as co_count, MAX(a.recorded_at) "
+                    "SELECT a.node_id AS node_a, b.node_id AS node_b, "
+                    "COUNT(*) AS co_count, MAX(a.recorded_at) AS last_seen "
                     "FROM tails a "
                     "JOIN tails b ON a.trail_id = b.trail_id AND a.node_id < b.node_id "
                     "WHERE a.trail_id IS NOT NULL AND a.recorded_at > ? "
@@ -2021,10 +2020,10 @@ class Cortex(IgorBase):
                 ).fetchall()
             return [
                 {
-                    "node_a": r[0],
-                    "node_b": r[1],
-                    "co_count": r[2],
-                    "last_seen": r[3],
+                    "node_a": r["node_a"],
+                    "node_b": r["node_b"],
+                    "co_count": r["co_count"],
+                    "last_seen": r["last_seen"],
                 }
                 for r in rows
             ]
@@ -2098,45 +2097,26 @@ class Cortex(IgorBase):
                 "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
             )
 
-    def _get_recently_activated(self, limit: int = 30) -> list:
+    def get_by_activation(self, limit: int = 30) -> list:
         """T-db-spreading-activation: fetch recently-activated memories by tail heat.
 
-        Queries tails for nodes with highest recent heat (decay-weighted activation
-        score). Joins to memories to get full Memory objects. Excludes structural types.
-        Falls back to last_accessed if tails is empty.
+        D200: SQL lives in db_proxy.get_activation_rows() / fetch_by_ids().
+        Falls back to last_accessed ordering if tails is empty.
         """
-        from ..cognition.temporal_gradient import TAIL_GRADIENT
-
         _SKIP = (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value)
         _excl_ph = ",".join("?" * len(_SKIP))
         try:
-            # Get top nodes from tails by most recent heat, last 48h
-            cutoff = (datetime.now() - timedelta(hours=48)).isoformat()
-            with self._conn() as conn:
-                tail_rows = conn.execute(
-                    "SELECT node_id, MAX(recorded_at) as last_seen "
-                    "FROM tails WHERE recorded_at > ? "
-                    "GROUP BY node_id ORDER BY last_seen DESC LIMIT ?",
-                    (cutoff, limit * 2),  # fetch extra to account for skipped types
-                ).fetchall()
+            tail_rows = self._db.get_activation_rows(limit * 2, since_hours=48.0)
             if not tail_rows:
                 raise ValueError("tails empty")
-            # Fetch Memory objects for hot nodes
             hot_ids = [r[0] for r in tail_rows]
-            _ph = ",".join("?" * len(hot_ids))
-            with self._conn() as conn:
-                rows = conn.execute(
-                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
-                    f"WHERE id IN ({_ph}) AND memory_type NOT IN ({_excl_ph})",
-                    hot_ids + list(_SKIP),
-                ).fetchall()
+            rows = self._db.fetch_by_ids(hot_ids, excl_types=_SKIP)
             mems = [self._to_memory(r) for r in rows]
-            # Order by tail heat (decay-weighted)
             heat_map = {r[0]: r[1] for r in tail_rows}
             mems.sort(key=lambda m: heat_map.get(m.id, ""), reverse=True)
             return mems[:limit]
         except Exception:
-            # Fallback: last_accessed ordering
+            # Fallback: last_accessed ordering (SQL stays here — rare exception path)
             with self._conn() as conn:
                 rows = conn.execute(
                     f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
@@ -2324,7 +2304,7 @@ class Cortex(IgorBase):
 
         return anchors[:5]
 
-    def _traversal_search(
+    def traverse_from(
         self,
         anchor_ids: list[str],
         depth: int = 2,
@@ -2334,6 +2314,7 @@ class Cortex(IgorBase):
         #172: BFS from anchor_ids, following all edge types (parent, children, links).
         Returns Memory objects with relevance_score = decay-weighted path score.
         Anchor nodes themselves are included at score 1.0.
+        D200: per-hop DB fetch delegates to db_proxy.fetch_by_ids().
         """
         _SKIP = {MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value}
         visited: dict[str, float] = {mid: 1.0 for mid in anchor_ids}
@@ -2345,12 +2326,7 @@ class Cortex(IgorBase):
             ids = [fid for fid, _ in frontier]
             _cached, _miss_ids = self._cache_fetch_ids(ids)
             if _miss_ids:
-                with self._conn() as conn:
-                    placeholders = ",".join("?" * len(_miss_ids))
-                    rows = conn.execute(
-                        f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE id IN ({placeholders})",
-                        _miss_ids,
-                    ).fetchall()
+                rows = self._db.fetch_by_ids(_miss_ids)
                 for _row in rows:
                     _m = self._to_memory(_row)
                     self._cache_put(_m)

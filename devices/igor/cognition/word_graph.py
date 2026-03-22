@@ -364,6 +364,21 @@ class WordGraph(IgorBase):
         with self._db() as conn:
             conn.execute("PRAGMA journal_mode=WAL")
             conn.executescript(_SCHEMA)
+        # Postgres-only: partial index for bigram filter (strpos = 0 → not a bigram).
+        # Speeds up hot_nodes(words_only=True) and bridge_words() on 29M-row table.
+        # Not added to _SCHEMA — strpos() is not SQLite syntax.
+        from ..memory.db_proxy import PGDatabaseProxy
+
+        if isinstance(self._db, PGDatabaseProxy):
+            with self._db() as conn:
+                conn.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_wgc_a_unigram"
+                    " ON wg_cooccur(word_a) WHERE strpos(word_a, '__') = 0"
+                )
+                conn.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_wgc_b_unigram"
+                    " ON wg_cooccur(word_b) WHERE strpos(word_b, '__') = 0"
+                )
         # D126 Step 3: PendingReplyStore — resilience queue for failed home DB writes
         self._pending = PendingReplyStore(self._local_db, self._db)
         # D126 Step 2: GraphCache — Redis hot-cache for wg_cooccur; gates on IGOR_REDIS_URL
