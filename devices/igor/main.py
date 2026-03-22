@@ -3721,7 +3721,8 @@ class Igor(IgorBase):
             try:
                 from .cognition.milieu import get as _milieu_get
 
-                _m_state = _milieu_get()
+                _m_obj = _milieu_get()
+                _m_state = _m_obj.get_state() if _m_obj else None
                 _milieu_str = (
                     f"v={_m_state.valence:+.2f} a={_m_state.arousal:.2f} d={_m_state.dominance:.2f}"
                     if _m_state
@@ -7382,9 +7383,7 @@ class Igor(IgorBase):
         loginfo(
             f"Session: {self.interaction_count} interactions, ${self.session_cost:.4f} cost"
         )
-        console.print(
-            f"[dim]{_cts()}Memories persisted to SQLite. See you next time.[/]"
-        )
+        console.print(f"[dim]{_cts()}Memories persisted. See you next time.[/]")
 
 
 _ID_CHARS = "23456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"  # base 34, no 0/1/l/O confusion

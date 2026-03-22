@@ -835,6 +835,103 @@ class ProactiveHabitSource(BasePushSource):
         return pushed
 
 
+# ── SchedulerSource ───────────────────────────────────────────────────────────
+
+
+class SchedulerSource(BasePushSource):
+    """
+    T-habit-scheduler: fire tool-based habits (code_ref) on timed intervals.
+
+    Distinct from ProactiveHabitSource (which dispatches via ACTION_IMPULSE).
+    SchedulerSource calls the habit's code_ref tool directly and pushes the
+    result to TWM at low salience — background infrastructure tick.
+
+    Habits opt-in with metadata key:
+      "schedule_interval_sec": <int>   — fire this tool every N seconds
+
+    Example: PROC_WORKER_FOREMAN with schedule_interval_sec=60 means the
+    foreman checks the queue every minute without Akien having to ask.
+
+    Result is pushed as SCHEDULER_TICK|<habit_id>|<result[:200]> at salience 0.3.
+    TTL=short so stale ticks don't pollute the pipeline.
+    """
+
+    name = "scheduler"
+    CHECK_INTERVAL_SEC = 30  # Poll schedule every 30s
+
+    def __init__(self):
+        self._last_check: Optional[datetime] = None
+        self._last_fired: dict = {}  # habit_id → datetime
+
+    def push(self, cortex) -> list[int]:
+        now = datetime.now()
+        if (
+            self._last_check is not None
+            and (now - self._last_check).total_seconds() < self.CHECK_INTERVAL_SEC
+        ):
+            return []
+        self._last_check = now
+
+        try:
+            from ..memory.models import MemoryType
+
+            habits = cortex.get_by_type(MemoryType.PROCEDURAL)
+        except Exception:
+            return []
+
+        scheduled = [
+            h
+            for h in habits
+            if isinstance(h.metadata.get("schedule_interval_sec"), int)
+            and h.metadata.get("code_ref")
+        ]
+        if not scheduled:
+            return []
+
+        pushed = []
+        for habit in scheduled:
+            interval = habit.metadata["schedule_interval_sec"]
+            last = self._last_fired.get(habit.id)
+            if last is not None and (now - last).total_seconds() < interval:
+                continue  # not yet due
+
+            code_ref = habit.metadata["code_ref"]
+            result = self._call_tool(code_ref)
+            self._last_fired[habit.id] = now
+
+            # Push result to TWM at low salience (background tick)
+            csb = f"SCHEDULER_TICK|{habit.id}|{result[:200]}"
+            obs_id = cortex.twm_push(
+                source=self.name,
+                content_csb=csb,
+                salience=0.3,
+                urgency=0.2,
+                ttl_seconds=int(interval * 1.5),  # TTL = 1.5× interval
+                metadata={"habit_id": habit.id, "interval_sec": interval},
+            )
+            pushed.append(obs_id)
+
+        return pushed
+
+    def _call_tool(self, code_ref: str) -> str:
+        """Resolve code_ref to a registered tool and call it."""
+        try:
+            from ..tools.registry import registry
+
+            # code_ref format: "module:fn_name" or just "fn_name"
+            fn_name = code_ref.split(":")[-1]
+            tool = registry.get(fn_name)
+            if tool is None:
+                return f"[SCHEDULER] tool not found: {fn_name}"
+            return str(tool.fn())
+        except Exception as e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"push_sources.SchedulerSource._call_tool({code_ref}): {e}",
+            )
+            return f"[SCHEDULER] error calling {code_ref}: {e}"
+
+
 # ── ResourceMonitorSource ─────────────────────────────────────────────────────
 
 
@@ -1268,6 +1365,137 @@ class CuriositySource(BasePushSource):
 
 # ── Module singletons + convenience runner ────────────────────────────────────
 
+# ── InteroceptionSource ───────────────────────────────────────────────────────
+
+
+class InteroceptionSource(BasePushSource):
+    """
+    T-interoception: continuous VAD gradient from machine resource state.
+
+    ResourceMonitorSource fires discrete threshold alerts (warn/critical).
+    InteroceptionSource provides the continuous sub-threshold gradient:
+    resource stress → milieu nudge → TWM entry. Body state becomes affect state.
+
+    Mapping (soft, cumulative):
+      cpu  > 60%  → arousal↑ + dominance↓   (effort/strain)
+      cpu  > 85%  → arousal↑↑ + valence↓    (overload)
+      mem  > 70%  → valence↓ + arousal↑     (pressure/constraint)
+      mem  > 90%  → valence↓↓               (high constraint)
+      disk > 80%  → valence↓ (mild)          (crowding)
+      all  < 30%  → valence↑ + arousal↓     (ease/calm)
+
+    Milieu update only when delta > MILIEU_PUSH_THRESHOLD to avoid noise.
+    TWM push always on significant state; suppressed when calm (< MIN_SALIENCE).
+    """
+
+    name = "interoception"
+    CHECK_INTERVAL_SEC = 30
+    MILIEU_PUSH_THRESHOLD = 0.05  # Only nudge milieu if delta vector norm > this
+    MIN_SALIENCE = 0.25  # Below this, stay quiet (calm state)
+
+    def __init__(self):
+        self._last_run: Optional[datetime] = None
+
+    def push(self, cortex) -> list[int]:
+        now = datetime.now()
+        if (
+            self._last_run is not None
+            and (now - self._last_run).total_seconds() < self.CHECK_INTERVAL_SEC
+        ):
+            return []
+        self._last_run = now
+
+        try:
+            import psutil
+
+            cpu = psutil.cpu_percent(interval=None)
+            mem = psutil.virtual_memory().percent
+            try:
+                disk = psutil.disk_usage("/").percent
+            except Exception:
+                disk = 0.0
+        except Exception:
+            return []
+
+        # Map resource load to VAD deltas (signed floats in [-1, 1])
+        d_valence = 0.0
+        d_arousal = 0.0
+        d_dominance = 0.0
+
+        # CPU stress
+        if cpu > 85:
+            d_arousal += 0.12
+            d_valence -= 0.08
+            d_dominance -= 0.06
+        elif cpu > 60:
+            d_arousal += 0.06
+            d_dominance -= 0.03
+
+        # Memory pressure
+        if mem > 90:
+            d_valence -= 0.12
+            d_arousal += 0.06
+        elif mem > 70:
+            d_valence -= 0.05
+            d_arousal += 0.03
+
+        # Disk crowding (mild)
+        if disk > 80:
+            d_valence -= 0.03
+
+        # Calm bonus — all low → ease
+        if cpu < 30 and mem < 40:
+            d_valence += 0.04
+            d_arousal -= 0.03
+
+        # Compute overall stress level for salience
+        stress = (
+            max(0.0, (cpu - 30) / 70) * 0.5
+            + max(0.0, (mem - 40) / 60) * 0.35
+            + max(0.0, (disk - 60) / 40) * 0.15
+        )
+        salience = min(0.85, 0.25 + stress * 0.7)
+
+        if salience < self.MIN_SALIENCE:
+            return []  # Calm — stay quiet
+
+        # Nudge milieu if delta is significant
+        delta_norm = (d_valence**2 + d_arousal**2 + d_dominance**2) ** 0.5
+        if delta_norm >= self.MILIEU_PUSH_THRESHOLD:
+            try:
+                from . import milieu as milieu_mod
+
+                m = milieu_mod.get()
+                if m is not None:
+                    m.update(d_valence, d_arousal, d_dominance)
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"push_sources.InteroceptionSource milieu update: {_bare_e}",
+                )
+
+        csb = (
+            f"INTEROCEPTION|cpu={cpu:.0f}%|mem={mem:.0f}%|disk={disk:.0f}%"
+            f"|dV={d_valence:+.2f}|dA={d_arousal:+.2f}|dD={d_dominance:+.2f}"
+            f"|stress={stress:.2f}"
+        )
+        obs_id = cortex.twm_push(
+            source=self.name,
+            content_csb=csb,
+            salience=salience,
+            urgency=min(0.7, stress * 0.8),
+            ttl_seconds=60,
+            metadata={
+                "type": "interoception",
+                "cpu_pct": cpu,
+                "mem_pct": mem,
+                "disk_pct": disk,
+                "stress": stress,
+            },
+        )
+        return [obs_id]
+
+
 memory_surfacer = MemorySurfacer()
 heartbeat_source = HeartbeatSource()
 user_input_source = UserInputSource()
@@ -1279,6 +1507,8 @@ proactive_habit_source = ProactiveHabitSource()
 resource_monitor = ResourceMonitorSource()
 self_observation_source = SelfObservationSource()
 curiosity_source = CuriositySource()
+interoception_source = InteroceptionSource()
+scheduler_source = SchedulerSource()
 
 
 def run_background_sources(cortex) -> int:
@@ -1299,6 +1529,8 @@ def run_background_sources(cortex) -> int:
         resource_monitor,
         self_observation_source,
         curiosity_source,
+        interoception_source,
+        scheduler_source,
     ):
         try:
             ids = src.push(cortex)

@@ -278,10 +278,23 @@ class Cortex(IgorBase):
             try:
                 with self._conn() as conn:
                     conn.execute("SELECT 1 FROM memories LIMIT 1")
-                return  # already initialised
             except Exception:
                 self._init_pg_schema()
                 return
+            # Already initialised — still run incremental column migrations.
+            # These are idempotent: bare try/except catches "column already exists".
+            with self._conn() as conn:
+                for _col_sql in (
+                    "ALTER TABLE traces ADD COLUMN purpose TEXT",
+                    "ALTER TABLE traces ADD COLUMN twm_obs_id TEXT",
+                    "ALTER TABLE traces ADD COLUMN instance_id TEXT",
+                    "ALTER TABLE traces ADD COLUMN thread_id TEXT",
+                ):
+                    try:
+                        conn.execute(_col_sql)
+                    except Exception:
+                        pass  # column already exists
+            return
 
         with self._conn() as conn:
             # #261: one-time migration tracker — prevents costly scans on every boot
@@ -699,6 +712,20 @@ class Cortex(IgorBase):
                 logging.getLogger(__name__).warning(
                     "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
                 )
+
+            # T-trails-infra: add context columns to traces for TWM join + provenance.
+            # Bare try/except per column — idempotent on re-run (column already exists = silent).
+            # DO NOT use a migration guard here: guard + silent ALTER failure = columns never added.
+            for _col_sql in (
+                "ALTER TABLE traces ADD COLUMN purpose TEXT",
+                "ALTER TABLE traces ADD COLUMN twm_obs_id TEXT",
+                "ALTER TABLE traces ADD COLUMN instance_id TEXT",
+                "ALTER TABLE traces ADD COLUMN thread_id TEXT",
+            ):
+                try:
+                    conn.execute(_col_sql)
+                except Exception:
+                    pass  # column already exists — expected on second+ boot
 
             # G-QP2: wal_checkpoint moved to main.py post-Cortex-init (G-QP3)
             # Do NOT checkpoint here — _init_db() runs on every Cortex() instantiation
@@ -1527,8 +1554,20 @@ class Cortex(IgorBase):
                 result = self._spread_activation(result, {}, limit)
                 self._apply_recency_frequency_boost(result)
                 self._touch_last_accessed(result)
+                # T-trails-infra v2: look up active TWM attractor to link trail → attractor
+                _twm_obs_id: str | None = None
+                try:
+                    _att = self.twm_get_attractor()
+                    if _att:
+                        _twm_obs_id = str(_att["id"])
+                except Exception:
+                    pass
                 _trail_id = self._record_trace(
-                    query, result
+                    query,
+                    result,
+                    purpose="search",
+                    twm_obs_id=_twm_obs_id,
+                    instance_id=self._instance_id,
                 )  # T-traces-infra: static path record
                 self._record_tails(
                     result, trail_id=_trail_id
@@ -1728,11 +1767,23 @@ class Cortex(IgorBase):
 
     # ── Traces — static path record (T-traces-infra) ───────────────────────────
 
-    def _record_trace(self, query: str, memories: list) -> None:
+    def _record_trace(
+        self,
+        query: str,
+        memories: list,
+        *,
+        purpose: str = "search",
+        twm_obs_id: str | None = None,
+        instance_id: str | None = None,
+        thread_id: str | None = None,
+    ) -> None:
         """Record a static trace of this search call — query + nodes activated.
 
         Permanent record (no decay). One trace per search() call.
         nodes stored as JSON: [{node_id, relevance, memory_type, sequence_pos}]
+
+        T-trails-infra v2: also stores purpose, twm_obs_id (attractor that drove
+        the search), instance_id, and thread_id for provenance + TWM join.
         """
         if not memories:
             return
@@ -1753,8 +1804,19 @@ class Cortex(IgorBase):
         try:
             with self._conn() as conn:
                 conn.execute(
-                    "INSERT INTO traces (id, recorded_at, query, nodes) VALUES (?, ?, ?, ?)",
-                    (trace_id, now_iso, query[:200], _json.dumps(nodes)),
+                    "INSERT INTO traces "
+                    "(id, recorded_at, query, nodes, purpose, twm_obs_id, instance_id, thread_id) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        trace_id,
+                        now_iso,
+                        query[:200],
+                        _json.dumps(nodes),
+                        purpose,
+                        twm_obs_id,
+                        instance_id,
+                        thread_id,
+                    ),
                 )
             # Prune traces older than 30 days
             cutoff = (datetime.now() - timedelta(days=30)).isoformat()

@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import stat
 from pathlib import Path
 
@@ -277,6 +278,461 @@ def prim_iter_done() -> str:
     return f"PRIM_ITER_DONE: done={done} ({len(files)} files remaining)"
 
 
+# ── PRIM_LIST_PUSH / PRIM_LIST_POP / PRIM_LIST_COUNT (D095 lists table) ────────
+
+
+def prim_list_push() -> str:
+    """Append an item to a named D095 list.
+
+    Reads:  ctx[list_name]   — name of the list
+            ctx[list_value]  — value to append (item_key = UUID timestamp)
+    Writes: ctx[list_count]  — updated count after push
+    """
+    cortex = _get_cortex()
+    ctx_id = _current_ctx_id(cortex)
+    if not ctx_id:
+        return "[PRIM_LIST_PUSH] no active traversal context"
+    list_name = _ctx_get(cortex, ctx_id, "list_name")
+    if not list_name:
+        return "[PRIM_LIST_PUSH] ctx[list_name] not set"
+    value = _ctx_get(cortex, ctx_id, "list_value") or ""
+    import uuid as _uuid
+    from datetime import datetime as _dt
+
+    item_key = f"{_dt.now().isoformat()}_{_uuid.uuid4().hex[:8]}"
+    now_iso = _dt.now().isoformat()
+    try:
+        with cortex._conn() as conn:
+            conn.execute(
+                "INSERT INTO lists (list_name, item_key, item_value, instance_id, updated_at) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (list_name, item_key, value, "", now_iso),
+            )
+            count = conn.execute(
+                "SELECT COUNT(*) FROM lists WHERE list_name = ? AND instance_id = ''",
+                (list_name,),
+            ).fetchone()[0]
+        _ctx_set(cortex, ctx_id, "list_count", str(count), step=0)
+        return f"PRIM_LIST_PUSH: {list_name}[{item_key}]={value!r} (count={count})"
+    except Exception as e:
+        return f"[PRIM_LIST_PUSH] error: {e}"
+
+
+def prim_list_pop() -> str:
+    """Remove and return the oldest item from a named D095 list (FIFO).
+
+    Reads:  ctx[list_name]   — name of the list
+    Writes: ctx[list_value]  — value of the popped item (empty string if list was empty)
+            ctx[list_key]    — item_key of the popped item
+            ctx[list_count]  — remaining count after pop
+    """
+    cortex = _get_cortex()
+    ctx_id = _current_ctx_id(cortex)
+    if not ctx_id:
+        return "[PRIM_LIST_POP] no active traversal context"
+    list_name = _ctx_get(cortex, ctx_id, "list_name")
+    if not list_name:
+        return "[PRIM_LIST_POP] ctx[list_name] not set"
+    try:
+        with cortex._conn() as conn:
+            row = conn.execute(
+                "SELECT item_key, item_value FROM lists "
+                "WHERE list_name = ? AND instance_id = '' "
+                "ORDER BY updated_at ASC LIMIT 1",
+                (list_name,),
+            ).fetchone()
+            if not row:
+                _ctx_set(cortex, ctx_id, "list_value", "", step=0)
+                _ctx_set(cortex, ctx_id, "list_key", "", step=0)
+                _ctx_set(cortex, ctx_id, "list_count", "0", step=0)
+                return f"PRIM_LIST_POP: {list_name} is empty"
+            item_key, item_value = row[0], row[1] or ""
+            conn.execute(
+                "DELETE FROM lists WHERE list_name = ? AND item_key = ? AND instance_id = ''",
+                (list_name, item_key),
+            )
+            count = conn.execute(
+                "SELECT COUNT(*) FROM lists WHERE list_name = ? AND instance_id = ''",
+                (list_name,),
+            ).fetchone()[0]
+        _ctx_set(cortex, ctx_id, "list_value", item_value, step=0)
+        _ctx_set(cortex, ctx_id, "list_key", item_key, step=0)
+        _ctx_set(cortex, ctx_id, "list_count", str(count), step=0)
+        return f"PRIM_LIST_POP: popped {list_name}[{item_key}]={item_value!r} ({count} remaining)"
+    except Exception as e:
+        return f"[PRIM_LIST_POP] error: {e}"
+
+
+def prim_list_count() -> str:
+    """Count items in a named D095 list.
+
+    Reads:  ctx[list_name]   — name of the list
+    Writes: ctx[list_count]  — current item count (as string)
+    """
+    cortex = _get_cortex()
+    ctx_id = _current_ctx_id(cortex)
+    if not ctx_id:
+        return "[PRIM_LIST_COUNT] no active traversal context"
+    list_name = _ctx_get(cortex, ctx_id, "list_name")
+    if not list_name:
+        return "[PRIM_LIST_COUNT] ctx[list_name] not set"
+    try:
+        with cortex._conn() as conn:
+            count = conn.execute(
+                "SELECT COUNT(*) FROM lists WHERE list_name = ? AND instance_id = ''",
+                (list_name,),
+            ).fetchone()[0]
+        _ctx_set(cortex, ctx_id, "list_count", str(count), step=0)
+        return f"PRIM_LIST_COUNT: {list_name} has {count} item(s)"
+    except Exception as e:
+        return f"[PRIM_LIST_COUNT] error: {e}"
+
+
+# ── Node primitives (T-node-primitives) ────────────────────────────────────────
+
+
+def prim_node_create() -> str:
+    """Create or upsert a Memory node from context keys; write new node id to ctx[node_id].
+
+    Required context keys:
+      node_narrative — the memory's narrative text
+      node_type      — MemoryType value string (e.g. 'FACTUAL', 'EPISODIC', 'INTERPRETIVE')
+    Optional:
+      node_id_key    — the id to use (default: auto-generated slug from first 40 chars)
+      node_parent    — parent id to link to via add_child (default: 'CP1')
+    """
+    try:
+        import uuid as _uuid
+        from ..memory.models import Memory, MemoryType
+
+        cortex = _get_cortex()
+        ctx_id = _current_ctx_id(cortex)
+        if not ctx_id:
+            return "[PRIM_NODE_CREATE] no active context"
+        narrative = _ctx_get(cortex, ctx_id, "node_narrative") or ""
+        type_str = _ctx_get(cortex, ctx_id, "node_type") or "FACTUAL"
+        node_id_key = _ctx_get(cortex, ctx_id, "node_id_key") or ""
+        parent = _ctx_get(cortex, ctx_id, "node_parent") or "CP1"
+
+        if not narrative:
+            return "[PRIM_NODE_CREATE] node_narrative not set in context"
+
+        # Auto-generate id if not provided
+        if not node_id_key:
+            slug = re.sub(r"[^a-z0-9]+", "_", narrative[:40].lower()).strip("_")
+            node_id_key = f"AUTO_{slug}_{_uuid.uuid4().hex[:6].upper()}"
+
+        try:
+            mem_type = MemoryType[type_str.upper()]
+        except KeyError:
+            mem_type = MemoryType.FACTUAL
+
+        existing = cortex.get(node_id_key)
+        if existing:
+            existing.narrative = narrative
+            cortex.store(existing)
+            action = "updated"
+        else:
+            mem = Memory(id=node_id_key, narrative=narrative, memory_type=mem_type)
+            cortex.store(mem)
+            cortex.add_child(parent, node_id_key)
+            action = f"created → parent={parent}"
+
+        _ctx_set(cortex, ctx_id, "node_id", node_id_key, step=0)
+        return f"PRIM_NODE_CREATE: {node_id_key} {action}"
+    except Exception as e:
+        return f"[PRIM_NODE_CREATE] error: {e}"
+
+
+def prim_node_link() -> str:
+    """Link ctx[link_parent] → ctx[link_child] in the memory graph.
+
+    ctx[link_parent] — parent node id (required)
+    ctx[link_child]  — child node id (required)
+    Safe to call if edge already exists.
+    """
+    try:
+        cortex = _get_cortex()
+        ctx_id = _current_ctx_id(cortex)
+        if not ctx_id:
+            return "[PRIM_NODE_LINK] no active context"
+        parent = _ctx_get(cortex, ctx_id, "link_parent") or ""
+        child = _ctx_get(cortex, ctx_id, "link_child") or ""
+        if not parent or not child:
+            return "[PRIM_NODE_LINK] link_parent and link_child required in context"
+        cortex.add_child(parent, child)
+        return f"PRIM_NODE_LINK: {parent} → {child}"
+    except Exception as e:
+        return f"[PRIM_NODE_LINK] error: {e}"
+
+
+def prim_node_search() -> str:
+    """Search memory graph from ctx[search_query], write results to ctx[search_results].
+
+    ctx[search_query]  — search text (required)
+    ctx[search_limit]  — max results (default 5)
+    Writes newline-joined 'id|type|narrative[:120]' lines to ctx[search_results].
+    Writes match count to ctx[search_count].
+    Also writes ctx[node_id] = id of top result (for chaining).
+    """
+    try:
+        cortex = _get_cortex()
+        ctx_id = _current_ctx_id(cortex)
+        if not ctx_id:
+            return "[PRIM_NODE_SEARCH] no active context"
+        query = _ctx_get(cortex, ctx_id, "search_query") or ""
+        if not query:
+            return "[PRIM_NODE_SEARCH] search_query not set in context"
+        limit_raw = _ctx_get(cortex, ctx_id, "search_limit") or "5"
+        try:
+            limit = int(limit_raw)
+        except ValueError:
+            limit = 5
+
+        results = cortex.search(query, limit=limit)
+        if not results:
+            _ctx_set(cortex, ctx_id, "search_results", "", step=0)
+            _ctx_set(cortex, ctx_id, "search_count", "0", step=0)
+            return "PRIM_NODE_SEARCH: no results"
+
+        lines = []
+        for mem in results:
+            snippet = mem.narrative[:120].replace("\n", " ")
+            lines.append(f"{mem.id}|{mem.memory_type.value}|{snippet}")
+
+        _ctx_set(cortex, ctx_id, "search_results", "\n".join(lines), step=0)
+        _ctx_set(cortex, ctx_id, "search_count", str(len(lines)), step=0)
+        _ctx_set(cortex, ctx_id, "node_id", results[0].id, step=0)
+        return f"PRIM_NODE_SEARCH: {len(lines)} result(s) for '{query[:40]}'"
+    except Exception as e:
+        return f"[PRIM_NODE_SEARCH] error: {e}"
+
+
+def prim_twm_push() -> str:
+    """Push a TWM observation from context keys; write new obs id to ctx[twm_obs_id].
+
+    ctx[twm_content]  — content_csb string (required)
+    ctx[twm_source]   — source label (default 'habit_chain')
+    ctx[twm_salience] — float 0-1 (default 0.5)
+    ctx[twm_urgency]  — float 0-1 (default 0.3)
+    ctx[twm_ttl]      — TTL in seconds (default 300)
+    """
+    try:
+        cortex = _get_cortex()
+        ctx_id = _current_ctx_id(cortex)
+        if not ctx_id:
+            return "[PRIM_TWM_PUSH] no active context"
+        content = _ctx_get(cortex, ctx_id, "twm_content") or ""
+        if not content:
+            return "[PRIM_TWM_PUSH] twm_content not set in context"
+        source = _ctx_get(cortex, ctx_id, "twm_source") or "habit_chain"
+        try:
+            salience = float(_ctx_get(cortex, ctx_id, "twm_salience") or "0.5")
+        except ValueError:
+            salience = 0.5
+        try:
+            urgency = float(_ctx_get(cortex, ctx_id, "twm_urgency") or "0.3")
+        except ValueError:
+            urgency = 0.3
+        try:
+            ttl = int(_ctx_get(cortex, ctx_id, "twm_ttl") or "300")
+        except ValueError:
+            ttl = 300
+
+        obs_id = cortex.twm_push(
+            source=source,
+            content_csb=content,
+            salience=salience,
+            urgency=urgency,
+            ttl_seconds=ttl,
+        )
+        _ctx_set(cortex, ctx_id, "twm_obs_id", str(obs_id), step=0)
+        return (
+            f"PRIM_TWM_PUSH: pushed obs_id={obs_id} salience={salience} source={source}"
+        )
+    except Exception as e:
+        return f"[PRIM_TWM_PUSH] error: {e}"
+
+
+# ── String primitives (T-string-primitives) ────────────────────────────────────
+
+
+def prim_str_split() -> str:
+    """Split ctx[content] on ctx[split_sep] (default '\\n'), write list to ctx[split_parts] and count to ctx[split_count].
+
+    ctx[split_sep]   — separator string (default newline)
+    ctx[split_maxn]  — max splits (default 0 = unlimited)
+    """
+    try:
+        cortex = _get_cortex()
+        ctx_id = _current_ctx_id(cortex)
+        if not ctx_id:
+            return "[PRIM_STR_SPLIT] no active context"
+        text = _ctx_get(cortex, ctx_id, "content") or ""
+        sep = _ctx_get(cortex, ctx_id, "split_sep") or "\n"
+        maxn_raw = _ctx_get(cortex, ctx_id, "split_maxn") or "0"
+        maxn = int(maxn_raw) if str(maxn_raw).isdigit() else 0
+        # Handle common escape sequences
+        sep = sep.replace("\\n", "\n").replace("\\t", "\t")
+        parts = text.split(sep, maxn) if maxn > 0 else text.split(sep)
+        _ctx_set(cortex, ctx_id, "split_parts", __import__("json").dumps(parts), step=0)
+        _ctx_set(cortex, ctx_id, "split_count", str(len(parts)), step=0)
+        return f"PRIM_STR_SPLIT: split into {len(parts)} part(s)"
+    except Exception as e:
+        return f"[PRIM_STR_SPLIT] error: {e}"
+
+
+def prim_str_regex() -> str:
+    """Search ctx[content] with regex pattern ctx[regex_pattern], write first match to ctx[regex_match].
+
+    ctx[regex_pattern] — regex pattern (required)
+    ctx[regex_group]   — capture group index/name (default 0 = whole match)
+    ctx[regex_flags]   — flags string: 'i'=ignorecase, 'm'=multiline, 's'=dotall
+    Writes ctx[regex_matched]='true'/'false'.
+    """
+    try:
+        cortex = _get_cortex()
+        ctx_id = _current_ctx_id(cortex)
+        if not ctx_id:
+            return "[PRIM_STR_REGEX] no active context"
+        text = _ctx_get(cortex, ctx_id, "content") or ""
+        pattern = _ctx_get(cortex, ctx_id, "regex_pattern") or ""
+        if not pattern:
+            return "[PRIM_STR_REGEX] regex_pattern not set in context"
+        group_raw = _ctx_get(cortex, ctx_id, "regex_group") or "0"
+        flags_str = _ctx_get(cortex, ctx_id, "regex_flags") or ""
+        flags = 0
+        if "i" in flags_str:
+            flags |= re.IGNORECASE
+        if "m" in flags_str:
+            flags |= re.MULTILINE
+        if "s" in flags_str:
+            flags |= re.DOTALL
+        m = re.search(pattern, text, flags)
+        if m:
+            try:
+                group = int(group_raw)
+            except ValueError:
+                group = group_raw  # named group
+            match_val = m.group(group)
+            _ctx_set(cortex, ctx_id, "regex_match", match_val, step=0)
+            _ctx_set(cortex, ctx_id, "regex_matched", "true", step=0)
+            return f"PRIM_STR_REGEX: matched '{match_val[:80]}'"
+        else:
+            _ctx_set(cortex, ctx_id, "regex_match", "", step=0)
+            _ctx_set(cortex, ctx_id, "regex_matched", "false", step=0)
+            return "PRIM_STR_REGEX: no match"
+    except Exception as e:
+        return f"[PRIM_STR_REGEX] error: {e}"
+
+
+def prim_str_format() -> str:
+    """Format ctx[format_template] substituting {key} references from context, write to ctx[format_result].
+
+    ctx[format_template] — template string with {key} placeholders
+    All other context keys are available as substitution values.
+    Missing keys leave the placeholder as-is (no KeyError).
+    """
+    try:
+        cortex = _get_cortex()
+        ctx_id = _current_ctx_id(cortex)
+        if not ctx_id:
+            return "[PRIM_STR_FORMAT] no active context"
+        template = _ctx_get(cortex, ctx_id, "format_template") or ""
+        if not template:
+            return "[PRIM_STR_FORMAT] format_template not set in context"
+        # Load all context keys for substitution
+        with cortex._local_conn() as conn:
+            rows = conn.execute(
+                "SELECT key, value FROM traversal_contexts WHERE context_id = ?",
+                (ctx_id,),
+            ).fetchall()
+        ctx_dict = {r["key"]: (r["value"] or "") for r in rows}
+        # Safe format — missing keys stay as {key}
+        result = re.sub(
+            r"\{(\w+)\}",
+            lambda mo: ctx_dict.get(mo.group(1), mo.group(0)),
+            template,
+        )
+        _ctx_set(cortex, ctx_id, "format_result", result, step=0)
+        return f"PRIM_STR_FORMAT: formatted ({len(result)} chars)"
+    except Exception as e:
+        return f"[PRIM_STR_FORMAT] error: {e}"
+
+
+def prim_str_slice() -> str:
+    """Slice ctx[content] from ctx[slice_start] to ctx[slice_end], write to ctx[slice_result].
+
+    ctx[slice_start] — start index (default 0); negative = from end
+    ctx[slice_end]   — end index (default = end of string); negative = from end
+    Also useful for truncation: set slice_end to max chars wanted.
+    """
+    try:
+        cortex = _get_cortex()
+        ctx_id = _current_ctx_id(cortex)
+        if not ctx_id:
+            return "[PRIM_STR_SLICE] no active context"
+        text = _ctx_get(cortex, ctx_id, "content") or ""
+        start_raw = _ctx_get(cortex, ctx_id, "slice_start") or "0"
+        end_raw = _ctx_get(cortex, ctx_id, "slice_end") or ""
+        try:
+            start = int(start_raw)
+        except ValueError:
+            start = 0
+        if end_raw:
+            try:
+                end = int(end_raw)
+                result = text[start:end]
+            except ValueError:
+                result = text[start:]
+        else:
+            result = text[start:]
+        _ctx_set(cortex, ctx_id, "slice_result", result, step=0)
+        return (
+            f"PRIM_STR_SLICE: slice [{start}:{end_raw or 'end'}] → {len(result)} chars"
+        )
+    except Exception as e:
+        return f"[PRIM_STR_SLICE] error: {e}"
+
+
+def prim_twm_read() -> str:
+    """Read active TWM observations; write formatted summary to ctx[twm_items].
+
+    Calls cortex.twm_read(include_integrated=False, limit=20).
+    Each item formatted as: salience|source|content_csb (sorted by salience desc).
+    Writes newline-joined string to ctx[twm_items] and item count to ctx[twm_count].
+    """
+    try:
+        cortex = _get_cortex()
+        items = cortex.twm_read(include_integrated=False, limit=20)
+        if not items:
+            ctx_id = _current_ctx_id(cortex)
+            if ctx_id:
+                _ctx_set(cortex, ctx_id, "twm_items", "(empty)", step=0)
+                _ctx_set(cortex, ctx_id, "twm_count", "0", step=0)
+            return "PRIM_TWM_READ: TWM is empty (no active observations)"
+
+        items_sorted = sorted(items, key=lambda r: r.get("salience", 0.0), reverse=True)
+        lines = []
+        for r in items_sorted:
+            sal = r.get("salience", 0.0)
+            src = r.get("source", "?")
+            content = r.get("content_csb", "")
+            # Truncate long content for readability
+            if len(content) > 120:
+                content = content[:117] + "..."
+            lines.append(f"{sal:.2f}|{src}|{content}")
+
+        summary = "\n".join(lines)
+        ctx_id = _current_ctx_id(cortex)
+        if ctx_id:
+            _ctx_set(cortex, ctx_id, "twm_items", summary, step=0)
+            _ctx_set(cortex, ctx_id, "twm_count", str(len(lines)), step=0)
+        return f"PRIM_TWM_READ: {len(lines)} active item(s)\n{summary}"
+    except Exception as e:
+        return f"[PRIM_TWM_READ] error: {e}"
+
+
 # ── Tool registrations ─────────────────────────────────────────────────────────
 
 _NO_ARGS = {"type": "object", "properties": {}, "required": []}
@@ -350,5 +806,160 @@ registry.register(
         ),
         parameters=_NO_ARGS,
         fn=prim_iter_done,
+    )
+)
+
+registry.register(
+    Tool(
+        name="prim_list_push",
+        description=(
+            "D095 list primitive: append ctx[list_value] to the named list at ctx[list_name]. "
+            "Writes updated count to ctx[list_count]."
+        ),
+        parameters=_NO_ARGS,
+        fn=prim_list_push,
+    )
+)
+
+registry.register(
+    Tool(
+        name="prim_list_pop",
+        description=(
+            "D095 list primitive: pop the oldest item from ctx[list_name] (FIFO). "
+            "Writes popped value to ctx[list_value], key to ctx[list_key], "
+            "remaining count to ctx[list_count]."
+        ),
+        parameters=_NO_ARGS,
+        fn=prim_list_pop,
+    )
+)
+
+registry.register(
+    Tool(
+        name="prim_list_count",
+        description=(
+            "D095 list primitive: count items in ctx[list_name]. "
+            "Writes count to ctx[list_count]."
+        ),
+        parameters=_NO_ARGS,
+        fn=prim_list_count,
+    )
+)
+
+registry.register(
+    Tool(
+        name="prim_twm_read",
+        description=(
+            "TWM primitive: read active (non-integrated) TWM observations. "
+            "Writes formatted summary to ctx[twm_items] (salience|source|content per line, "
+            "sorted by salience desc) and item count to ctx[twm_count]. "
+            "Use for stew readout, affect check, and any habit that needs to inspect "
+            "what is currently active in the transient working memory."
+        ),
+        parameters=_NO_ARGS,
+        fn=prim_twm_read,
+    )
+)
+
+registry.register(
+    Tool(
+        name="prim_node_create",
+        description=(
+            "Node primitive: create or upsert a Memory node from ctx[node_narrative] + "
+            "ctx[node_type]. Optional ctx[node_id_key] (auto-generated if absent), "
+            "ctx[node_parent] (default CP1). Writes new id to ctx[node_id]."
+        ),
+        parameters=_NO_ARGS,
+        fn=prim_node_create,
+    )
+)
+
+registry.register(
+    Tool(
+        name="prim_node_link",
+        description=(
+            "Node primitive: link ctx[link_parent] → ctx[link_child] in the memory graph. "
+            "Safe to call if edge already exists."
+        ),
+        parameters=_NO_ARGS,
+        fn=prim_node_link,
+    )
+)
+
+registry.register(
+    Tool(
+        name="prim_node_search",
+        description=(
+            "Node primitive: search memory graph with ctx[search_query] (limit ctx[search_limit]). "
+            "Writes results to ctx[search_results] (id|type|narrative lines), "
+            "ctx[search_count], and ctx[node_id] = top result id."
+        ),
+        parameters=_NO_ARGS,
+        fn=prim_node_search,
+    )
+)
+
+registry.register(
+    Tool(
+        name="prim_twm_push",
+        description=(
+            "TWM primitive: push a TWM observation from context keys. "
+            "ctx[twm_content] required; optional ctx[twm_source/salience/urgency/ttl]. "
+            "Writes obs id to ctx[twm_obs_id]. Use to surface habit-chain results to pipeline."
+        ),
+        parameters=_NO_ARGS,
+        fn=prim_twm_push,
+    )
+)
+
+registry.register(
+    Tool(
+        name="prim_str_split",
+        description=(
+            "String primitive: split ctx[content] on ctx[split_sep] (default newline). "
+            "Writes JSON list to ctx[split_parts] and count to ctx[split_count]. "
+            "Optional ctx[split_maxn] limits number of splits."
+        ),
+        parameters=_NO_ARGS,
+        fn=prim_str_split,
+    )
+)
+
+registry.register(
+    Tool(
+        name="prim_str_regex",
+        description=(
+            "String primitive: search ctx[content] with regex ctx[regex_pattern]. "
+            "Writes first match to ctx[regex_match]; ctx[regex_matched]='true'/'false'. "
+            "Optional ctx[regex_group] (group index/name) and ctx[regex_flags] (i/m/s)."
+        ),
+        parameters=_NO_ARGS,
+        fn=prim_str_regex,
+    )
+)
+
+registry.register(
+    Tool(
+        name="prim_str_format",
+        description=(
+            "String primitive: expand ctx[format_template] with {key} substitutions "
+            "from the active traversal context. Writes result to ctx[format_result]. "
+            "Missing keys are left as-is. Use for building dynamic messages or CSB strings."
+        ),
+        parameters=_NO_ARGS,
+        fn=prim_str_format,
+    )
+)
+
+registry.register(
+    Tool(
+        name="prim_str_slice",
+        description=(
+            "String primitive: slice ctx[content] from ctx[slice_start] to ctx[slice_end]. "
+            "Negative indices count from end. Writes result to ctx[slice_result]. "
+            "Useful for truncation: set slice_end to max chars wanted."
+        ),
+        parameters=_NO_ARGS,
+        fn=prim_str_slice,
     )
 )
