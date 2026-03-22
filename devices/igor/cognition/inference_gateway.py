@@ -54,6 +54,9 @@ class InferenceContext:
         True  # D071: False = night/local-only mode; gates background cloud calls
     )
     last_elapsed_ms: float = 0.0  # set by gateway after each handler attempt
+    db_colocated: bool = (
+        False  # T-inference-colocation: Postgres on same host as Ollama
+    )
 
 
 @dataclass
@@ -644,7 +647,13 @@ def _always(ctx: InferenceContext) -> bool:
 
 
 def _local_preferred(ctx: InferenceContext) -> bool:
-    """Cluster has local capacity AND cloud training mode not active. (D120)"""
+    """Cluster has local capacity AND cloud training mode not active AND not DB-colocated. (D120)
+
+    T-inference-colocation-signal: when Ollama and Postgres share a host, local inference
+    competes with the DB for RAM — skip local and prefer cloud instead.
+    """
+    if ctx.db_colocated:
+        return False  # DB on same box — avoid RAM contention with Ollama
     from .cluster_router import router as _router
 
     return _router.has_local_capacity() and not ctx.cloud_active
@@ -951,12 +960,22 @@ def make_context(is_background: bool = False) -> InferenceContext:
     except Exception:
         balance_ok = bool(os.getenv("OPENROUTER_API_KEY", ""))
 
+    # T-inference-colocation-signal: is Postgres on same host as Ollama?
+    # When true, local inference competes with DB for RAM → prefer cloud.
+    db_url = os.getenv("IGOR_HOME_DB_URL", "")
+    db_colocated = (
+        "localhost" in db_url
+        or "127.0.0.1" in db_url
+        or not db_url  # empty = SQLite path = always same box
+    )
+
     return InferenceContext(
         cloud_active=cloud_active,
         local_available=local_available,
         balance_ok=balance_ok,
         is_background=is_background,
         cloud_ok_override=cloud_ok_override,
+        db_colocated=db_colocated,
     )
 
 

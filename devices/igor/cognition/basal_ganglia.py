@@ -25,6 +25,8 @@ import re
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
+from .eval_gate import eval_gate as _eval_gate
+
 if TYPE_CHECKING:
     from ..models import Memory
     from .milieu import MilieuState
@@ -144,49 +146,48 @@ def _conditions_match(conditions: dict, parsed) -> tuple[bool, int]:
     """
     if not conditions or parsed is None:
         return False, 0
-    matched = 0
+
     actual_complexity = _COMPLEXITY_ORDER.get(
         getattr(parsed, "complexity", "medium"), 1
     )
+    # Namespace maps each condition key to its parsed value for eval_gate.
+    # not_intent reuses the "intent" field with the not_member_of op.
+    ns: dict = {
+        "intent": getattr(parsed, "intent", ""),
+        "not_intent": getattr(parsed, "intent", ""),
+        "tone": getattr(parsed, "tone", ""),
+        "min_complexity": actual_complexity,
+        "max_complexity": actual_complexity,
+        "tags": set(getattr(parsed, "tags", [])),
+        "keywords": {kw.lower() for kw in getattr(parsed, "keywords", [])},
+    }
+    # Op to use per condition key
+    _OPS = {
+        "intent": "member_of",
+        "not_intent": "not_member_of",
+        "tone": "member_of",
+        "min_complexity": ">=",
+        "max_complexity": "<=",
+        "tags": "intersects",
+        "keywords": "intersects",
+    }
+
+    matched = 0
     for key, val in conditions.items():
-        if key == "intent":
-            if getattr(parsed, "intent", "") in val:
-                matched += 1
-            else:
-                return False, 0
-        elif key == "not_intent":
-            if getattr(parsed, "intent", "") not in val:
-                matched += 1
-            else:
-                return False, 0
-        elif key == "tone":
-            if getattr(parsed, "tone", "") in val:
-                matched += 1
-            else:
-                return False, 0
+        op = _OPS.get(key)
+        if op is None:
+            continue  # unknown keys — forward-compat
+        # Normalise rhs for ops that need it
+        if key == "keywords":
+            val = {v.lower() for v in val}
         elif key == "min_complexity":
-            if actual_complexity >= _COMPLEXITY_ORDER.get(val, 0):
-                matched += 1
-            else:
-                return False, 0
+            val = _COMPLEXITY_ORDER.get(val, 0)
         elif key == "max_complexity":
-            if actual_complexity <= _COMPLEXITY_ORDER.get(val, 2):
-                matched += 1
-            else:
-                return False, 0
-        elif key == "tags":
-            actual_tags = set(getattr(parsed, "tags", []))
-            if actual_tags & set(val):
-                matched += 1
-            else:
-                return False, 0
-        elif key == "keywords":
-            actual_kw = {kw.lower() for kw in getattr(parsed, "keywords", [])}
-            if actual_kw & {v.lower() for v in val}:
-                matched += 1
-            else:
-                return False, 0
-        # Unknown keys are ignored — forward-compat
+            val = _COMPLEXITY_ORDER.get(val, 2)
+        if _eval_gate(key, op, val, ns):
+            matched += 1
+        else:
+            return False, 0
     return matched > 0, matched
 
 
@@ -452,10 +453,22 @@ def select_habit(
         )
         winner_score, winner = scored[0]
 
-        # Reinforce word graph: winning habit's word weights get a small boost
+        # Reinforce word graph: winning habit's word weights get a small boost.
+        # #338: scale by surprise (prediction flatness) — novel input → bigger reward.
         if _word_graph is not None:
             try:
-                _word_graph.reinforce(winner.id)
+                _flatness = _word_graph.gradient_flatness(_score_text)
+                _surprise = _word_graph.surprise_scale(_flatness)
+                _boost = 0.1 * _surprise
+                _word_graph.reinforce(winner.id, boost=_boost)
+                if _surprise > 1.5:
+                    logging.getLogger(__name__).debug(
+                        "surprise_reward: habit=%s flatness=%.2f scale=%.2f boost=%.3f",
+                        winner.id,
+                        _flatness,
+                        _surprise,
+                        _boost,
+                    )
             except Exception as _bare_e:
                 logging.getLogger(__name__).warning(
                     "bare except in wild_igor/igor/cognition/basal_ganglia.py: %s",

@@ -34,6 +34,15 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _pid_alive(pid: int) -> bool:
+    """Return True if a process with this PID is currently running."""
+    try:
+        os.kill(int(pid), 0)
+        return True
+    except (OSError, ProcessLookupError, ValueError):
+        return False
+
+
 def launch_next_worker() -> str:
     """
     Read the task queue and launch a worker session for the next pending ticket.
@@ -45,13 +54,34 @@ def launch_next_worker() -> str:
         if not tasks:
             return "queue is empty — nothing to launch"
 
-        # If anything is in_progress, a worker is still running
+        # If anything is in_progress, verify the worker process is still alive.
+        # Stale in_progress (no live process) resets to pending so the queue unblocks.
         in_progress = [t for t in tasks if t["status"] == "in_progress"]
         if in_progress:
-            ids = ", ".join(t["id"] for t in in_progress)
-            return f"worker already running: {ids} — waiting for completion signal"
+            pids_data: dict = {}
+            if _WORKER_PIDS_PATH.exists():
+                try:
+                    pids_data = json.loads(_WORKER_PIDS_PATH.read_text())
+                except Exception:
+                    pass
+            live = []
+            stale = []
+            for t in in_progress:
+                pid = pids_data.get(t["id"])
+                if pid and _pid_alive(pid):
+                    live.append(t)
+                else:
+                    stale.append(t)
+            for t in stale:
+                t["status"] = "pending"
+                t.pop("claimed_at", None)
+            if stale:
+                _QUEUE_PATH.write_text(json.dumps(tasks, indent=2))
+            if live:
+                ids = ", ".join(t["id"] for t in live)
+                return f"worker already running: {ids} — waiting for completion signal"
 
-        # Find next pending by priority
+        # Find next pending (skip blocked)
         pending = [t for t in tasks if t["status"] == "pending"]
         if not pending:
             done = sum(1 for t in tasks if t["status"] == "done")

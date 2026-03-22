@@ -39,15 +39,19 @@ Add a new primitive to the tool registry and it's immediately usable in step lis
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
+from ..cognition.eval_gate import eval_gate as _eval_gate
 from ..cognition.forensic_logger import log_error as _log_error
 
 _MAX_STEPS = 100  # prevent infinite loops in malformed schemas
 
 _VALID_OPS = frozenset({"==", "!=", "<", ">", "<=", ">=", "in", "not_in"})
-_BUILTIN_DOS = frozenset({"prim_set", "prim_branch", "prim_goto"})
+_BUILTIN_DOS = frozenset(
+    {"prim_set", "prim_branch", "prim_goto", "prim_emit", "prim_on_error"}
+)
 _CATALOG_PATH = Path(__file__).parent / "primitives.json"
 
 # ── catalog ─────────────────────────────────────────────────────────────────────
@@ -118,6 +122,13 @@ def validate_step(step: dict, catalog: dict | None = None) -> list[str]:
         if not isinstance(step.get("goto"), int):
             errors.append("prim_goto: 'goto' must be an integer step number")
 
+    elif do == "prim_emit":
+        if not step.get("key") and "value" not in step:
+            errors.append("prim_emit: 'key' or 'value' is required")
+
+    elif do == "prim_on_error":
+        pass  # no required args — reads ctx[__error__] implicitly
+
     elif do == "prim_branch":
         if_spec = step.get("if")
         if not isinstance(if_spec, dict):
@@ -180,30 +191,8 @@ def validate_schema_habit(habit) -> list[str]:
 
 
 def _eval_condition(ctx_val: str, op: str, cmp_val: str) -> bool:
-    """Evaluate ctx_val <op> cmp_val to a boolean."""
-    if op == "==":
-        return ctx_val == cmp_val
-    if op == "!=":
-        return ctx_val != cmp_val
-    if op == "in":
-        return cmp_val in ctx_val
-    if op == "not_in":
-        return cmp_val not in ctx_val
-    # Numeric comparisons
-    try:
-        a = float(ctx_val)
-        b = float(cmp_val)
-        if op == "<":
-            return a < b
-        if op == ">":
-            return a > b
-        if op == "<=":
-            return a <= b
-        if op == ">=":
-            return a >= b
-    except (ValueError, TypeError):
-        pass
-    return False
+    """Evaluate ctx_val <op> cmp_val to a boolean. Delegates to eval_gate."""
+    return _eval_gate("_v", op, cmp_val, {"_v": ctx_val})
 
 
 def run_schema_habit(
@@ -278,6 +267,27 @@ def run_schema_habit(
                 next_step = goto
             results.append(f"GOTO {next_step}")
 
+        elif do == "prim_emit":
+            # Read value: prefer basket key lookup, fall back to literal "value".
+            # Supports {key} template substitution from the basket.
+            key = step.get("key", "")
+            template = str(step.get("value", cortex.traversal_get(ctx_id, key) or ""))
+
+            # Substitute {varname} placeholders from basket
+            def _sub(m):
+                v = cortex.traversal_get(ctx_id, m.group(1))
+                return v if v is not None else m.group(0)
+
+            out = re.sub(r"\{(\w+)\}", _sub, template)
+            results.append(out)
+
+        elif do == "prim_on_error":
+            # Read __error__ from context and emit it — the reflex arc reads its trigger signal.
+            err_val = cortex.traversal_get(ctx_id, "__error__") or ""
+            results.append(
+                f"ON_ERROR: {err_val}" if err_val else "ON_ERROR: (no error in context)"
+            )
+
         elif do == "prim_branch":
             if_spec = step.get("if", {})
             if isinstance(if_spec, dict):
@@ -302,13 +312,23 @@ def run_schema_habit(
                     result = tool.execute()
                     results.append(str(result))
                 except Exception as _e:
-                    results.append(f"[SCHEMA:{do}] error: {_e}")
+                    err_msg = str(_e)
+                    results.append(f"[SCHEMA:{do}] error: {err_msg}")
                     _log_error(
                         kind="SCHEMA_PRIM_FAIL",
-                        detail=f"habit={habit.id}|step={current_step}|prim={do}|err={str(_e)[:120]}",
+                        detail=f"habit={habit.id}|step={current_step}|prim={do}|err={err_msg[:120]}",
                         source="schema_runner",
                     )
-                    break
+                    # T-error-continuation: on_error = pain/avoidance reflex arc.
+                    # Write error to __error__ basket key, jump to recovery step.
+                    on_error_step = step.get("on_error")
+                    if isinstance(on_error_step, int) and on_error_step in step_map:
+                        cortex.traversal_set(
+                            ctx_id, "__error__", err_msg[:500], step=current_step
+                        )
+                        next_step = on_error_step
+                    else:
+                        break
             else:
                 results.append(f"[SCHEMA] unknown primitive: {do!r}")
                 _log_error(
