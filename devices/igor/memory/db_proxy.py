@@ -37,6 +37,15 @@ _in_explain = threading.local()
 _SLOW_MS = int(os.getenv("IGOR_DB_SLOW_MS", "50"))
 _RING_SIZE = 500
 
+# D200: memory column list owned by db_proxy — cortex imports this constant so SQL
+# construction stays in the data layer. Excludes the embedding blob (large + separate table).
+MEM_COLS = (
+    "id, narrative, memory_type, parent_id, children_ids, link_ids, "
+    "valence, activation_count, friction_history, timestamp, metadata, "
+    "arousal, dominance, portable, links_weighted, last_accessed, "
+    "source, confidence, context_of_encoding"
+)
+
 # ── Dedicated DB query log ────────────────────────────────────────────────────
 # All slow queries written to db_queries.log with timestamp + turn_id tie-back.
 # turn_id links each slow query back to the forensic_logger turn for the same call.
@@ -342,6 +351,41 @@ class DatabaseProxy(IgorBase):
             "sample_size": n,
         }
 
+    # ── D200 capability methods ────────────────────────────────────────────────
+    # Cortex speaks capabilities; proxy owns SQL. Callers get raw rows and call
+    # _to_memory() themselves — proxy has no knowledge of the Memory dataclass.
+
+    def fetch_by_ids(self, ids: list, excl_types: tuple = ()) -> list:
+        """Fetch memory rows by ID list. Returns raw rows; caller maps to Memory."""
+        if not ids:
+            return []
+        ph = ",".join("?" * len(ids))
+        if excl_types:
+            excl_ph = ",".join("?" * len(excl_types))
+            sql = (
+                f"SELECT {MEM_COLS} FROM memories "
+                f"WHERE id IN ({ph}) AND memory_type NOT IN ({excl_ph})"
+            )
+            params = list(ids) + list(excl_types)
+        else:
+            sql = f"SELECT {MEM_COLS} FROM memories WHERE id IN ({ph})"
+            params = list(ids)
+        with self() as conn:
+            return conn.execute(sql, params).fetchall()
+
+    def get_activation_rows(self, limit: int, since_hours: float = 48.0) -> list:
+        """Return (node_id, last_seen) rows for hottest tails entries in the window."""
+        from datetime import datetime, timedelta
+
+        cutoff = (datetime.now() - timedelta(hours=since_hours)).isoformat()
+        with self() as conn:
+            return conn.execute(
+                "SELECT node_id, MAX(recorded_at) as last_seen "
+                "FROM tails WHERE recorded_at > ? "
+                "GROUP BY node_id ORDER BY last_seen DESC LIMIT ?",
+                (cutoff, limit),
+            ).fetchall()
+
 
 # ── Postgres backend ──────────────────────────────────────────────────────────
 
@@ -350,6 +394,8 @@ _INSERT_OR_REPLACE = re.compile(
     r"\bINSERT\s+OR\s+REPLACE\s+INTO\s+(\w+)\s*\(([^)]+)\)",
     re.IGNORECASE | re.DOTALL,
 )
+# SQLite INSTR(string, sub) → Postgres strpos(string, sub) — same semantics, 0=not found
+_INSTR_RE = re.compile(r"\bINSTR\s*\(", re.IGNORECASE)
 
 # Primary key columns for each table — used to generate ON CONFLICT clauses.
 _TABLE_PK: dict[str, str | tuple] = {
@@ -454,6 +500,8 @@ class _PGConnWrapper:
         if sql.strip().upper() == "SELECT CHANGES()":
             self._pending_scalar = self._cur.rowcount if self._cur.rowcount >= 0 else 0
             return self
+        # SQLite INSTR() → Postgres strpos() — same semantics (0 = not found)
+        sql = _INSTR_RE.sub("strpos(", sql)
         # INSERT OR REPLACE — full upsert with DO UPDATE SET
         if _INSERT_OR_REPLACE.search(sql):
             translated = _translate_insert_or_replace(sql)
@@ -488,6 +536,7 @@ class _PGConnWrapper:
         return self
 
     def executemany(self, sql: str, seq) -> "_PGConnWrapper":
+        sql = _INSTR_RE.sub("strpos(", sql)
         if _INSERT_OR_REPLACE.search(sql):
             translated = _translate_insert_or_replace(sql)
         elif _INSERT_OR_IGNORE.search(sql):
@@ -715,6 +764,39 @@ class PGDatabaseProxy(IgorBase):
             "latency_max_ms": round(lats[-1], 1) if lats else 0.0,
             "sample_size": n,
         }
+
+    # ── D200 capability methods ────────────────────────────────────────────────
+
+    def fetch_by_ids(self, ids: list, excl_types: tuple = ()) -> list:
+        """Fetch memory rows by ID list. Returns raw rows; caller maps to Memory."""
+        if not ids:
+            return []
+        ph = ",".join(["%s"] * len(ids))
+        if excl_types:
+            excl_ph = ",".join(["%s"] * len(excl_types))
+            sql = (
+                f"SELECT {MEM_COLS} FROM memories "
+                f"WHERE id IN ({ph}) AND memory_type NOT IN ({excl_ph})"
+            )
+            params = list(ids) + list(excl_types)
+        else:
+            sql = f"SELECT {MEM_COLS} FROM memories WHERE id IN ({ph})"
+            params = list(ids)
+        with self() as conn:
+            return conn.execute(sql, params).fetchall()
+
+    def get_activation_rows(self, limit: int, since_hours: float = 48.0) -> list:
+        """Return (node_id, last_seen) rows for hottest tails entries in the window."""
+        from datetime import datetime, timedelta
+
+        cutoff = (datetime.now() - timedelta(hours=since_hours)).isoformat()
+        with self() as conn:
+            return conn.execute(
+                "SELECT node_id, MAX(recorded_at) as last_seen "
+                "FROM tails WHERE recorded_at > %s "
+                "GROUP BY node_id ORDER BY last_seen DESC LIMIT %s",
+                (cutoff, limit),
+            ).fetchall()
 
 
 # ── Factory ───────────────────────────────────────────────────────────────────

@@ -39,11 +39,10 @@ Add a new primitive to the tool registry and it's immediately usable in step lis
 from __future__ import annotations
 
 import json
-import logging
 from pathlib import Path
 from typing import Any
 
-_log = logging.getLogger(__name__)
+from ..cognition.forensic_logger import log_error as _log_error
 
 _MAX_STEPS = 100  # prevent infinite loops in malformed schemas
 
@@ -62,7 +61,9 @@ def load_primitives_catalog() -> dict[str, dict]:
     try:
         data = json.loads(_CATALOG_PATH.read_text(encoding="utf-8"))
     except Exception as _e:
-        _log.warning("schema_runner: could not load primitives.json: %s", _e)
+        _log_error(
+            kind="SCHEMA_CATALOG_LOAD", detail=str(_e)[:200], source="schema_runner"
+        )
         return {}
     return {p["id"]: p for p in data.get("primitives", []) if "id" in p}
 
@@ -72,7 +73,9 @@ def load_missing_primitives() -> list[dict]:
     try:
         data = json.loads(_CATALOG_PATH.read_text(encoding="utf-8"))
     except Exception as _e:
-        _log.warning("schema_runner: could not load primitives.json: %s", _e)
+        _log_error(
+            kind="SCHEMA_CATALOG_LOAD", detail=str(_e)[:200], source="schema_runner"
+        )
         return []
     return data.get("missing", [])
 
@@ -300,20 +303,18 @@ def run_schema_habit(
                     results.append(str(result))
                 except Exception as _e:
                     results.append(f"[SCHEMA:{do}] error: {_e}")
-                    _log.warning(
-                        "schema_runner: step %d primitive %r failed: %s",
-                        current_step,
-                        do,
-                        _e,
+                    _log_error(
+                        kind="SCHEMA_PRIM_FAIL",
+                        detail=f"habit={habit.id}|step={current_step}|prim={do}|err={str(_e)[:120]}",
+                        source="schema_runner",
                     )
                     break
             else:
                 results.append(f"[SCHEMA] unknown primitive: {do!r}")
-                _log.warning(
-                    "schema_runner: habit %s step %d: unknown primitive %r",
-                    habit.id,
-                    current_step,
-                    do,
+                _log_error(
+                    kind="SCHEMA_UNKNOWN_PRIM",
+                    detail=f"habit={habit.id}|step={current_step}|prim={do!r}",
+                    source="schema_runner",
                 )
                 break
 
