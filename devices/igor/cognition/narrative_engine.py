@@ -1453,6 +1453,10 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
             return False
         if getattr(self, "_consolidation_running", False):
             return False
+        # Don't re-run until another full idle period after last consolidation
+        last_consol = getattr(self, "_last_consolidation_ts", None)
+        if last_consol is not None and (time.monotonic() - last_consol) < idle_sec:
+            return False
         return True
 
     def _deep_consolidation_pass(self) -> dict:
@@ -1646,5 +1650,6 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
         except Exception:
             pass
 
+        self._last_consolidation_ts = time.monotonic()  # prevent immediate re-run
         self._consolidation_running = False
         return counts
