@@ -1183,6 +1183,11 @@ class Igor(IgorBase):
                 response_text = habit.metadata.get(
                     "question_template", "Can you tell me more about that?"
                 )
+            elif _habit_type == "schema":
+                # T-habit-schema: execute step-list habit via schema_runner
+                from .tools.schema_runner import run_schema_habit as _run_schema
+
+                response_text = _run_schema(habit, self.cortex, "")
             elif code_ref:
                 from .tools.registry import registry as _tool_registry
 
@@ -3913,6 +3918,7 @@ class Igor(IgorBase):
                 "delegation",
                 "threshold",
                 "tool",
+                "schema",
             ):
                 self.cortex.write_ring(
                     f"HABIT_FALLTHROUGH|id={habit.id}|type={_ht}|reason=no_action_template",
@@ -3931,6 +3937,12 @@ class Igor(IgorBase):
                 response_text = habit.metadata.get(
                     "question_template", "Can you tell me more about that?"
                 )
+            elif _habit_type == "schema":
+                # T-habit-schema: execute step-list habit via schema_runner
+                from .tools.schema_runner import run_schema_habit as _run_schema
+
+                _core = getattr(parsed, "core_input", user_input)
+                response_text = _run_schema(habit, self.cortex, _core)
             elif code_ref:
                 # G11: actually dispatch to the tool. Auto-extracts args by schema:
                 # no required args → call with none; one required arg → pass user_input.
