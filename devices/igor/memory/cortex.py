@@ -45,9 +45,11 @@ _MEM_COLS_NO_EMBED = MEM_COLS
 
 # #258b: in-process memory fetch cache
 # Genesis types (ROOT / CORE_PATTERN / IDENTITY) are structurally immutable → permanent.
-# All others expire after _MEM_CACHE_TTL seconds (one turn is well under this).
+# All others expire after _MEM_CACHE_TTL seconds. 300s chosen to outlast the ~60s NE
+# cycle — avoids the repeated 800ms IN fetch from _spread_activation() that always
+# missed because 60s TTL and 60s NE interval created a perfect expiry storm (G-QP7).
 _GENESIS_MEM_TYPES = frozenset({"ROOT", "CORE_PATTERN", "IDENTITY"})
-_MEM_CACHE_TTL = 60.0  # seconds
+_MEM_CACHE_TTL = 300.0  # seconds
 
 RING_MAX = 50  # Max entries in the ring buffer
 TWM_MAX = 50  # Max observations in TWM
@@ -2319,6 +2321,10 @@ class Cortex(IgorBase):
         _SKIP = {MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value}
         visited: dict[str, float] = {mid: 1.0 for mid in anchor_ids}
         frontier: list[tuple[str, float]] = [(mid, 1.0) for mid in anchor_ids]
+        # G-QP7: collect fetched Memory objects during BFS hops; avoids a final
+        # bulk IN fetch that was always a cache miss (boundary nodes discovered at
+        # the last hop were added to `visited` but never fetched — 806ms every NE cycle).
+        fetched_mems: dict[str, "Memory"] = {}
 
         for _hop in range(depth):
             if not frontier:
@@ -2332,6 +2338,7 @@ class Cortex(IgorBase):
                     self._cache_put(_m)
                     _cached.append(_m)
             mem_map = {m.id: m for m in _cached}
+            fetched_mems.update(mem_map)
 
             next_frontier: list[tuple[str, float]] = []
             for fid, fscore in frontier:
@@ -2358,25 +2365,11 @@ class Cortex(IgorBase):
                         next_frontier.append((nid, nscore))
             frontier = next_frontier
 
-        if len(visited) <= len(anchor_ids):
+        if len(fetched_mems) <= len(anchor_ids):
             return []  # No traversal beyond anchors — graph likely sparse
 
-        all_ids = list(visited.keys())
-        _cached, _miss_ids = self._cache_fetch_ids(all_ids)
-        if _miss_ids:
-            with self._conn() as conn:
-                placeholders = ",".join("?" * len(_miss_ids))
-                _rows = conn.execute(
-                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE id IN ({placeholders})",
-                    _miss_ids,
-                ).fetchall()
-            for _row in _rows:
-                _m = self._to_memory(_row)
-                self._cache_put(_m)
-                _cached.append(_m)
-
         results = []
-        for m in _cached:
+        for m in fetched_mems.values():
             if m.memory_type in _SKIP:
                 continue
             m.relevance_score = visited.get(m.id, 0.0)  # type: ignore[attr-defined]
