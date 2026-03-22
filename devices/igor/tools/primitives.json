@@ -1,0 +1,143 @@
+{
+  "_comment": "Primitive catalog for schema-defined habits (T-primitive-registry #331).",
+  "_version": "1",
+
+  "primitives": [
+
+    {
+      "id": "prim_list_dir",
+      "category": "iteration",
+      "ctx_reads": ["dir"],
+      "ctx_writes": ["files"],
+      "args": "none",
+      "source": "tools.os_primitives:prim_list_dir",
+      "description": "List all files in ctx[dir] and write sorted JSON path list to ctx[files]."
+    },
+
+    {
+      "id": "prim_iter_next",
+      "category": "iteration",
+      "ctx_reads": ["files"],
+      "ctx_writes": ["current_file", "files"],
+      "args": "none",
+      "source": "tools.os_primitives:prim_iter_next",
+      "description": "Pop the first path from ctx[files] into ctx[current_file]; write remaining list back to ctx[files]."
+    },
+
+    {
+      "id": "prim_iter_done",
+      "category": "iteration",
+      "ctx_reads": ["files"],
+      "ctx_writes": ["done"],
+      "args": "none",
+      "source": "tools.os_primitives:prim_iter_done",
+      "description": "Check if ctx[files] is exhausted; write ctx[done]='true' or 'false'."
+    },
+
+    {
+      "id": "prim_file_meta",
+      "category": "file_io",
+      "ctx_reads": ["current_file"],
+      "ctx_writes": ["file_mtime", "file_size"],
+      "args": "none",
+      "source": "tools.os_primitives:prim_file_meta",
+      "description": "Stat ctx[current_file]; write ISO mtime to ctx[file_mtime] and byte size to ctx[file_size]."
+    },
+
+    {
+      "id": "prim_read_head",
+      "category": "file_io",
+      "ctx_reads": ["current_file", "read_head_lines"],
+      "ctx_writes": ["content"],
+      "args": "none",
+      "notes": "ctx[read_head_lines] optional; defaults to 40.",
+      "source": "tools.os_primitives:prim_read_head",
+      "description": "Read first N lines (ctx[read_head_lines], default 40) of ctx[current_file]; write to ctx[content]."
+    },
+
+    {
+      "id": "prim_type_detect",
+      "category": "file_io",
+      "ctx_reads": ["current_file"],
+      "ctx_writes": ["file_type"],
+      "args": "none",
+      "source": "tools.os_primitives:prim_type_detect",
+      "description": "Detect file type of ctx[current_file] from extension and magic bytes; write to ctx[file_type]."
+    },
+
+    {
+      "id": "prim_set",
+      "category": "control_flow",
+      "ctx_reads": [],
+      "ctx_writes": ["<key>"],
+      "args": {"required": ["key", "value"]},
+      "source": "schema_runner:builtin",
+      "description": "Write a literal string value into ctx[key]. Both key and value come from the step dict."
+    },
+
+    {
+      "id": "prim_branch",
+      "category": "control_flow",
+      "ctx_reads": ["<if.key>"],
+      "ctx_writes": [],
+      "args": {
+        "required": ["if", "goto_true", "goto_false"],
+        "if_shape": {"key": "string", "op": "string", "value": "string"},
+        "valid_ops": ["==", "!=", "<", ">", "<=", ">=", "in", "not_in"]
+      },
+      "source": "schema_runner:builtin",
+      "description": "Conditional jump. Reads ctx[if.key], applies op, jumps to goto_true or goto_false step number."
+    },
+
+    {
+      "id": "prim_goto",
+      "category": "control_flow",
+      "ctx_reads": [],
+      "ctx_writes": [],
+      "args": {"required": ["goto"]},
+      "source": "schema_runner:builtin",
+      "description": "Unconditional jump to the given step number."
+    }
+  ],
+
+  "missing": [
+    {
+      "id": "prim_count",
+      "category": "iteration",
+      "ctx_reads": ["files"],
+      "ctx_writes": ["count"],
+      "priority": "high",
+      "description": "Count items in ctx[files] JSON list; write integer string to ctx[count].",
+      "reason": "Needed to report totals at end of iteration loops (e.g. 'scanned 44 files'). Currently requires an LLM call or Python code to do what is a trivial operation."
+    },
+    {
+      "id": "prim_format",
+      "category": "control_flow",
+      "ctx_reads": ["<template_vars>"],
+      "ctx_writes": ["<target_key>"],
+      "priority": "high",
+      "args": {"required": ["template", "target_key"]},
+      "description": "String interpolation: render template string with {key} placeholders filled from ctx; write result to ctx[target_key].",
+      "reason": "Needed to build dynamic output strings (e.g. 'Scanned {count} files in {dir}'). Without this, schema habits can't produce meaningful summary messages without an LLM call."
+    },
+    {
+      "id": "prim_filter",
+      "category": "iteration",
+      "ctx_reads": ["files", "filter_type"],
+      "ctx_writes": ["files"],
+      "priority": "medium",
+      "description": "Filter ctx[files] by extension or type; keep only files matching ctx[filter_type]; write filtered list back to ctx[files].",
+      "reason": "Schema habits need to process only certain file types (e.g. only .py files) without iterating and discarding — a pre-filter is more efficient and readable."
+    },
+    {
+      "id": "prim_log",
+      "category": "context",
+      "ctx_reads": ["<message_key>"],
+      "ctx_writes": [],
+      "priority": "medium",
+      "args": {"required": ["message"]},
+      "description": "Write a message (literal string or ctx key reference) to ring_memory with category='schema'.",
+      "reason": "Schema habits need a way to emit structured trace entries for debugging without side-effecting the response. Currently no primitive supports this."
+    }
+  ]
+}
