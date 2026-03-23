@@ -4752,6 +4752,19 @@ class Igor(IgorBase):
                 habit_fired=(_turn_habit is not None),
             )
 
+        # T-anticipation-pull: action-completion hookpoint (revised 2026-03-23).
+        # Reply fires = completion signal. Ordinary completions: ring ACK only.
+        # Noteworthy (NE surprise delta >= 0.4): ring flag for NE deeper look.
+        if response_text and not is_impulse:
+            try:
+                from .cognition.anticipation import record_completion as _rec_completion
+
+                _rec_completion(user_input, response_text, self.cortex)
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                )
+
         self._apply_resolution_reward()
         return response_text
 

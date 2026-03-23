@@ -165,6 +165,57 @@ def weighted_ticket_score(priority: int, tags: list[str]) -> float:
     return float(priority) - _WEIGHT * v
 
 
+def record_completion(input_text: str, reply_text: str, cortex) -> None:
+    """
+    Action-completion hookpoint — called after each non-impulse reply.
+
+    Revised design (T-anticipation-pull, 2026-03-23):
+    HOOKPOINT: reply fires = completion signal. No discrete ticket close needed.
+    The chain reaches its natural endpoint; salience drops as new content fills
+    attentional space. No explicit "close" event required.
+
+    Classification via NE surprise delta (from most recent NE_SURPRISE ring entry):
+      ORDINARY (delta < 0.4):  COMPLETION_ACK ring entry — no durable store.
+      NOTEWORTHY (delta >= 0.4): COMPLETION_NOTEWORTHY ring entry — flags for
+        NE re-engagement; EPISODIC store decided downstream by the NE.
+
+    Never raises — action-completion is advisory, not load-bearing.
+    """
+    if cortex is None:
+        return
+    try:
+        # Extract surprise delta from most recent NE_SURPRISE ring entry
+        _delta = 0.0
+        try:
+            recent = cortex.read_ring_memory(limit=5, category="ne_prediction")
+            for entry in recent:
+                txt = (
+                    entry.get("content", "") if isinstance(entry, dict) else str(entry)
+                )
+                if "NE_SURPRISE" in txt and "delta=" in txt:
+                    parts = dict(p.split("=", 1) for p in txt.split("|") if "=" in p)
+                    _delta = float(parts.get("delta", 0.0))
+                    break
+        except Exception:
+            _delta = 0.0
+
+        _snippet = input_text[:60].replace("|", "/")
+        if _delta >= 0.4:
+            # Noteworthy: prediction violated → flag for NE deeper look
+            cortex.write_ring(
+                f"COMPLETION_NOTEWORTHY|delta={_delta:.2f}|input={_snippet}",
+                category="completion_trace",
+            )
+        else:
+            # Ordinary: chain satisfied, no residual impulse; ring ACK only
+            cortex.write_ring(
+                f"COMPLETION_ACK|ordinary|delta={_delta:.2f}|input={_snippet}",
+                category="completion_trace",
+            )
+    except Exception:
+        pass  # advisory — never raises
+
+
 def history_summary() -> str:
     """Return a human-readable summary of closure history (for diagnostics)."""
     history = _load()

@@ -327,5 +327,81 @@ class TestHistorySummary(unittest.TestCase):
             tmp.unlink(missing_ok=True)
 
 
+class _MockCortex:
+    """Minimal cortex stub for record_completion tests."""
+
+    def __init__(self, ring_entries=None):
+        self._ring = ring_entries or []
+        self.written = []
+
+    def read_ring_memory(self, limit=5, category=None):
+        return self._ring[:limit]
+
+    def write_ring(self, content, category=None):
+        self.written.append({"content": content, "category": category})
+
+
+class TestRecordCompletion(unittest.TestCase):
+    def test_none_cortex_is_noop(self):
+        """No cortex → silent no-op, no exception."""
+        ant.record_completion("hello", "hi there", None)  # should not raise
+
+    def test_ordinary_turn_writes_ack(self):
+        """Low NE surprise (delta < 0.4) → COMPLETION_ACK ring entry."""
+        cortex = _MockCortex(
+            ring_entries=[{"content": "NE_SURPRISE|predicted=X|actual=Y|delta=0.25"}]
+        )
+        ant.record_completion("ordinary input", "ordinary reply", cortex)
+        self.assertEqual(len(cortex.written), 1)
+        self.assertIn("COMPLETION_ACK", cortex.written[0]["content"])
+        self.assertIn("ordinary", cortex.written[0]["content"])
+        self.assertEqual(cortex.written[0]["category"], "completion_trace")
+
+    def test_noteworthy_turn_writes_noteworthy(self):
+        """High NE surprise (delta >= 0.4) → COMPLETION_NOTEWORTHY ring entry."""
+        cortex = _MockCortex(
+            ring_entries=[{"content": "NE_SURPRISE|predicted=X|actual=None|delta=0.80"}]
+        )
+        ant.record_completion("surprise input", "unexpected reply", cortex)
+        self.assertEqual(len(cortex.written), 1)
+        self.assertIn("COMPLETION_NOTEWORTHY", cortex.written[0]["content"])
+        self.assertEqual(cortex.written[0]["category"], "completion_trace")
+
+    def test_no_ne_surprise_in_ring_defaults_ordinary(self):
+        """Ring has no NE_SURPRISE entries → delta=0.0 → COMPLETION_ACK."""
+        cortex = _MockCortex(ring_entries=[{"content": "LATENCY|total_ms=120"}])
+        ant.record_completion("hello", "reply", cortex)
+        self.assertEqual(len(cortex.written), 1)
+        self.assertIn("COMPLETION_ACK", cortex.written[0]["content"])
+
+    def test_at_boundary_040_is_noteworthy(self):
+        """Exactly 0.4 is noteworthy (>= threshold)."""
+        cortex = _MockCortex(
+            ring_entries=[{"content": "NE_SURPRISE|predicted=A|actual=B|delta=0.40"}]
+        )
+        ant.record_completion("border input", "border reply", cortex)
+        self.assertIn("COMPLETION_NOTEWORTHY", cortex.written[0]["content"])
+
+    def test_pipe_in_input_is_sanitised(self):
+        """Pipe characters in input are replaced to avoid CSB parsing issues."""
+        cortex = _MockCortex()
+        ant.record_completion("input|with|pipes", "reply", cortex)
+        written = cortex.written[0]["content"]
+        # snippet should replace | with /
+        self.assertNotIn("input|with", written)
+
+    def test_cortex_exception_does_not_raise(self):
+        """If cortex.read_ring_memory raises, record_completion swallows it."""
+
+        class BadCortex:
+            def read_ring_memory(self, **_):
+                raise RuntimeError("db offline")
+
+            def write_ring(self, *_, **__):
+                pass
+
+        ant.record_completion("hello", "reply", BadCortex())  # must not raise
+
+
 if __name__ == "__main__":
     unittest.main()
