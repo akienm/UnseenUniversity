@@ -772,6 +772,24 @@ class WordGraph(IgorBase):
                     (boost, boost, doc_id),
                 )
 
+    def surprise_scale(self, flatness: float) -> float:
+        """
+        #338: Sparse reward — scale reinforcement by prediction surprise.
+
+        flatness (from gradient_flatness) is [0,1]:
+          0.0 = expected/routine input (steep gradient) → scale = 1.0, no bonus
+          1.0 = novel/surprising input (flat gradient)  → scale = 1 + MULTIPLIER
+
+        Gate: IGOR_SURPRISE_REWARD_ENABLED (default false).
+        Returns 1.0 when gate is off — caller multiplies boost by this unchanged.
+        """
+        import os as _os
+
+        if _os.getenv("IGOR_SURPRISE_REWARD_ENABLED", "false").lower() != "true":
+            return 1.0
+        multiplier = float(_os.getenv("IGOR_SURPRISE_MULTIPLIER", "2.0"))
+        return 1.0 + max(0.0, min(1.0, flatness)) * multiplier
+
     # G-WG4: cap unique tokens in reinforce_text to bound the O(n²) pair count.
     # 40 unique tokens → 1560 pairs (manageable); 200 tokens → 39800 pairs (slow).
     _REINFORCE_TOKEN_CAP = 40

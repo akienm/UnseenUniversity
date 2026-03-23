@@ -237,8 +237,9 @@ class HeartbeatSource(BasePushSource):
         # 2. .env hot-reload — pick up changes without full restart
         self._check_env_sync(cortex)
 
-        # 3. Budget status check
+        # 3. Budget status check + burn trajectory
         pushed.extend(self._check_budget(cortex))
+        pushed.extend(self._check_burn_trajectory(cortex))
 
         # 4. HEARTBEAT procedural memories (user-defined conditions)
         pushed.extend(self._check_heartbeat_memories(cortex, now))
@@ -307,6 +308,59 @@ class HeartbeatSource(BasePushSource):
                 self._alert_discord(f"[Igor heartbeat] {msg}")
             self._discord_alerted.add(level)
 
+        return [obs_id]
+
+    def _check_burn_trajectory(self, cortex) -> list[int]:
+        """Push TWM alert if burn rate is high AND days_remaining is low. Once per session."""
+        try:
+            from ..tools.budget import get_balance_trajectory
+
+            traj = get_balance_trajectory(window_hours=48.0)
+        except Exception:
+            return []
+
+        if traj["trend"] == "no_data" or traj["sample_count"] < 2:
+            return []
+
+        burn = traj["burn_per_day"]
+        dr = traj["days_remaining"]
+
+        # Only alert on burn_fast (>$20/day) OR moderate burn with <3 days remaining
+        if burn < 5.0:
+            return []
+        if dr > 5.0 and burn < 20.0:
+            return []  # Moderate burn, plenty of time — stay quiet
+
+        alert_key = f"burn_fast_{int(burn)}"
+        if alert_key in self._discord_alerted:
+            return []
+
+        dr_str = f"{dr:.1f}d" if dr != float("inf") else "∞"
+        msg = (
+            f"BURN_TRAJECTORY|${burn:.2f}/day ({traj['trend']}) — "
+            f"~{dr_str} remaining at this rate. "
+            f"Balance: ${traj['balance_now']:.2f}. "
+            f"Window: {traj['oldest_sample_age_h']:.0f}h, {traj['sample_count']} samples."
+        )
+        urgency = 0.8 if burn > 20 else 0.5
+        obs_id = cortex.twm_push(
+            source=self.name,
+            content_csb=msg,
+            salience=urgency,
+            metadata={"burn_per_day": burn, "days_remaining": dr},
+            ttl_seconds=3600,
+            urgency=urgency,
+        )
+        self._discord_alerted.add(alert_key)
+        try:
+            from .forensic_logger import log_anomaly as _la
+
+            _la(kind="BURN_TRAJECTORY", detail=msg)
+        except Exception as _bare_e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}",
+            )
         return [obs_id]
 
     def _check_heartbeat_memories(self, cortex, now: datetime) -> list[int]:

@@ -18,7 +18,9 @@ with timing, token counts, and tokens/sec so we can tune model selection.
 import json
 import logging
 import os
+import queue as _queue
 import re
+import threading as _threading
 import time
 import urllib.request
 from urllib.error import URLError
@@ -335,25 +337,32 @@ def preparse(user_input: str, habits: list, model: str = "") -> str:
     fallback_reason = None
     t0 = time.perf_counter()
     try:
-        import concurrent.futures as _cf
+        _result_q: _queue.Queue = _queue.Queue()
 
         def _do_preparse():
-            return _reasoning_client.chat(
-                model=_model,
-                messages=[{"role": "user", "content": prompt}],
-                options={"temperature": 0.1, "num_predict": 120},
-            )
+            try:
+                _result_q.put(
+                    (
+                        _reasoning_client.chat(
+                            model=_model,
+                            messages=[{"role": "user", "content": prompt}],
+                            options={"temperature": 0.1, "num_predict": 120},
+                        ),
+                        None,
+                    )
+                )
+            except Exception as _e:
+                _result_q.put((None, _e))
 
-        _ex = _cf.ThreadPoolExecutor(max_workers=1)
-        _fut = _ex.submit(_do_preparse)
-        # Mark thread as daemon so Python's atexit doesn't block on it at exit
-        for _t in _ex._threads:
-            _t.daemon = True
-        _ex.shutdown(wait=False)
+        _t = _threading.Thread(target=_do_preparse, daemon=True)
+        _t.start()
         try:
-            response = _fut.result(timeout=PREPARSE_TIMEOUT)
-        except _cf.TimeoutError:
+            _resp, _err = _result_q.get(timeout=PREPARSE_TIMEOUT)
+        except _queue.Empty:
             raise RuntimeError(f"preparse timed out after {PREPARSE_TIMEOUT}s")
+        if _err:
+            raise _err
+        response = _resp
         elapsed = time.perf_counter() - t0
         text = (
             response["message"]["content"]
@@ -517,38 +526,46 @@ class OllamaReasoner(LocalReasoner):
         # Interactive turns: 90s (IGOR_OLLAMA_TIMEOUT_SECS).
         # Impulse/background turns (force_local=True): 15s (IGOR_OLLAMA_IMPULSE_TIMEOUT_SECS).
         # Impulses are drop-and-move-on — no point waiting 90s for something that gets skipped anyway.
-        import concurrent.futures as _cf
-
         if force_local and not interactive_fallback:
             _timeout = float(os.getenv("IGOR_OLLAMA_IMPULSE_TIMEOUT_SECS", "15"))
         else:
             _timeout = float(os.getenv("IGOR_OLLAMA_TIMEOUT_SECS", "90"))
 
+        _chat_q: _queue.Queue = _queue.Queue()
+
         def _do_chat():
-            return self._client.chat(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user_input + memory_context},
-                ],
-            )
+            try:
+                _chat_q.put(
+                    (
+                        self._client.chat(
+                            model=self.model,
+                            messages=[
+                                {"role": "system", "content": system},
+                                {
+                                    "role": "user",
+                                    "content": user_input + memory_context,
+                                },
+                            ],
+                        ),
+                        None,
+                    )
+                )
+            except Exception as _e:
+                _chat_q.put((None, _e))
 
         t0 = time.perf_counter()
         try:
-            _ex = _cf.ThreadPoolExecutor(max_workers=1)
-            _fut = _ex.submit(_do_chat)
-            # Mark thread as daemon so Python's atexit doesn't block on it at exit
-            for _t in _ex._threads:
-                _t.daemon = True
-            _ex.shutdown(
-                wait=False
-            )  # don't block — let thread run, we'll timeout via future
+            _chat_thread = _threading.Thread(target=_do_chat, daemon=True)
+            _chat_thread.start()
             try:
-                response = _fut.result(timeout=_timeout)
-            except _cf.TimeoutError:
+                _resp, _err = _chat_q.get(timeout=_timeout)
+            except _queue.Empty:
                 raise RuntimeError(
                     f"Ollama timed out after {_timeout}s — escalating to next tier"
                 )
+            if _err:
+                raise _err
+            response = _resp
             elapsed = time.perf_counter() - t0
             _log_call("OllamaReasoner.reason", self.model, response, elapsed)
             tokens_in = getattr(response, "prompt_eval_count", None) or (
