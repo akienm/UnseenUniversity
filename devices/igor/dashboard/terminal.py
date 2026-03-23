@@ -1,4 +1,5 @@
 import logging
+
 """
 Terminal dashboard — Rich panel after every interaction.
 
@@ -108,7 +109,9 @@ def render(
                 f"  [dim]Word graph:  {wg_words:>10,} nodes  ({wg_docs:,} docs)[/]"
             )
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/dashboard/terminal.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/dashboard/terminal.py: %s", _bare_e
+            )
     lines.append(f"  [dim]Action tree: {proc:>6,} nodes[/]")
     lines.append(f"  [dim]Meaning tree:{interp:>6,} nodes{edge_str}[/]")
     lines.append(f"  [dim]Knowledge:   {fct:>6,} nodes[/]")
@@ -154,11 +157,12 @@ def render(
     lines.append("")
     graph_pct = _get_graph_pct()
     local_pct = _get_local_pct()
-    cloud_gate_str = f"  [bold]CloudMode:[/] {'[green]ON[/]' if cloud_mode_active else '[dim]off[/]'}"
+    cloud_mode_str = f"[green]ON[/]" if cloud_mode_active else "[dim]OFF[/]"
     lines.append(
         f"[bold]Graph:[/] {graph_pct}%  "
-        f"[bold]Cloud%:[/] {upstream_pct}%{cloud_gate_str}  "
         f"[bold]Local:[/] {local_pct}%  "
+        f"[bold]cloud_mode:[/] {cloud_mode_str}  "
+        f"[bold]cloud calls:[/] {upstream_pct}%  "
         f"[bold]TWM:[/] {twm_depth}"
     )
     if latency_samples and len(latency_samples) >= 2:
