@@ -41,6 +41,7 @@ from . import (
     trail_inspector,
     worker_foreman,
     template_tools,
+    routing_tools,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
