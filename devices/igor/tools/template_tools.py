@@ -5,27 +5,30 @@ TEMPLATE nodes are PROCEDURAL Memory nodes with metadata.template_schema.
 They are the language primitives of the matrix layer — macros that expand
 into habits at seed time. At runtime there are only habits firing.
 
-Three-layer node structure (T-template-schema design):
-  slot_manifest     — named slots with type constraints and defaults
-  expansion_schema  — habit dicts with {slot_name} and {slot_name|filter} placeholders
+Three-layer node structure (T-template-schema design, D209):
+  slot_manifest     — named slots with type_hint, required, default, validator
+  expansion_schema  — Jinja2 templates producing habit dicts; {{slot}} and {{slot|filter}}
   instantiation_contract — postconditions: produces, condition_signature, invariants, edge_policy
+
+Substitution engine: Jinja2 (schema_version 1).
+  - {{slot_name}} — basic substitution
+  - {{slot_name|upper}}, |lower|, |snake|, |title| — built-in Jinja2 filters + custom
+  - {%- if slot -%}...{%- endif -%} — conditional habit inclusion
+  - {%- for item in list_slot -%}...{%- endfor -%} — loop to produce N habits from list slot
+
+TEMPLATE nodes are NEVER executed directly by the habit executor — they have no trigger
+and carry tag 'template'. The BG executor guard skips any node where 'template' in tags.
 """
 
 import json
 import re
 import uuid
 import logging
+from jinja2 import Environment, StrictUndefined, TemplateSyntaxError, UndefinedError
 from ..memory.models import Memory, MemoryType
 from ..cognition.forensic_logger import log_error
 
 logger = logging.getLogger(__name__)
-
-_SLOT_FILTERS = {
-    "upper": str.upper,
-    "lower": str.lower,
-    "snake": lambda s: s.lower().replace(" ", "_").replace("-", "_"),
-    "title": str.title,
-}
 
 _SLOT_TYPES = {
     "str": str,
@@ -34,39 +37,47 @@ _SLOT_TYPES = {
     "bool": bool,
 }
 
-_SLOT_PATTERN = re.compile(r"\{(\w+(?:\|\w+)?)\}")
+# Jinja2 environment — strict: missing variables raise UndefinedError
+_jinja = Environment(undefined=StrictUndefined)
+_jinja.filters["snake"] = lambda s: s.lower().replace(" ", "_").replace("-", "_")
 
 
-def _apply_slot(slot_ref: str, params: dict) -> str:
-    """Resolve a slot reference like 'slot_name' or 'slot_name|filter'."""
-    if "|" in slot_ref:
-        name, filt = slot_ref.split("|", 1)
-        val = str(params.get(name, f"{{{slot_ref}}}"))
-        return _SLOT_FILTERS.get(filt, lambda s: s)(val)
-    return str(params.get(slot_ref, f"{{{slot_ref}}}"))
-
-
-def _substitute(text: str, params: dict) -> str:
-    """Replace {slot} and {slot|filter} in a string."""
-    return _SLOT_PATTERN.sub(lambda m: _apply_slot(m.group(1), params), text)
-
-
-def _substitute_deep(obj, params: dict):
-    """Recursively substitute {slot} refs in all string values of a dict/list."""
+def _render(obj, params: dict):
+    """Recursively render Jinja2 templates in all string values of a dict/list."""
     if isinstance(obj, str):
-        return _substitute(obj, params)
+        try:
+            return _jinja.from_string(obj).render(**params)
+        except (TemplateSyntaxError, UndefinedError) as e:
+            raise ValueError(f"Jinja2 render failed on {obj!r}: {e}") from e
     elif isinstance(obj, dict):
-        return {k: _substitute_deep(v, params) for k, v in obj.items()}
+        return {k: _render(v, params) for k, v in obj.items()}
     elif isinstance(obj, list):
-        return [_substitute_deep(item, params) for item in obj]
+        return [_render(item, params) for item in obj]
     return obj  # int/float/bool pass through unchanged
+
+
+def _validate_slot_value(name: str, value, validator: dict) -> list:
+    """Run validator constraints on a resolved slot value. Returns list of errors."""
+    errors = []
+    if "min" in validator and value < validator["min"]:
+        errors.append(f"slot '{name}': {value} < min {validator['min']}")
+    if "max" in validator and value > validator["max"]:
+        errors.append(f"slot '{name}': {value} > max {validator['max']}")
+    if "enum" in validator and value not in validator["enum"]:
+        errors.append(f"slot '{name}': '{value}' not in enum {validator['enum']}")
+    if "pattern" in validator:
+        if not re.search(validator["pattern"], str(value)):
+            errors.append(
+                f"slot '{name}': '{value}' does not match pattern {validator['pattern']!r}"
+            )
+    return errors
 
 
 def _validate_slots(slot_manifest: list, params: dict) -> tuple:
     """
     Validate params against slot_manifest.
     Returns (resolved_params, errors).
-    Applies type coercion and fills defaults.
+    Applies type coercion, fills defaults, runs validator constraints.
     """
     resolved = {}
     errors = []
@@ -84,6 +95,10 @@ def _validate_slots(slot_manifest: list, params: dict) -> tuple:
                 errors.append(
                     f"slot '{name}': cannot coerce '{params[name]}' to {hint}: {e}"
                 )
+                continue
+            validator = slot.get("validator")
+            if validator:
+                errors.extend(_validate_slot_value(name, resolved[name], validator))
         elif slot.get("required", True):
             errors.append(f"required slot '{name}' not provided")
         else:
@@ -155,14 +170,15 @@ def instantiate_template(template_id: str, params_json: str) -> str:
             f"  - {e}" for e in slot_errors
         )
 
-    # Layer 2: expand expansion_schema
+    # Layer 2: expand expansion_schema via Jinja2
     expansion_schema = schema.get("expansion_schema", [])
     if not expansion_schema:
         return f"ERROR: template '{template_id}' has empty expansion_schema"
 
-    expanded_items = [
-        _substitute_deep(item, resolved_params) for item in expansion_schema
-    ]
+    try:
+        expanded_items = [_render(item, resolved_params) for item in expansion_schema]
+    except ValueError as e:
+        return f"ERROR: expansion_schema render failed: {e}"
 
     # Layer 3: check instantiation_contract invariants
     contract = schema.get("instantiation_contract", {})
@@ -172,8 +188,20 @@ def instantiate_template(template_id: str, params_json: str) -> str:
             f"  - {v}" for v in violations
         )
 
-    # Seed each expanded item as a Memory node
+    # Collision detection — check for id clashes before any stores
     pattern_name = schema.get("pattern_name", "UNKNOWN")
+    collisions = []
+    for item in expanded_items:
+        candidate_id = item.get("id")
+        if candidate_id and cortex.get(candidate_id):
+            collisions.append(candidate_id)
+    if collisions:
+        return (
+            f"ERROR: collision — node(s) already exist: {', '.join(collisions)}. "
+            "Use distinct slot values or delete existing nodes first."
+        )
+
+    # Seed each expanded item as a Memory node
     seeded_ids = []
     for item in expanded_items:
         item_copy = dict(item)
