@@ -44,19 +44,24 @@ class InferenceContext:
     """
     Live routing-state snapshot. Constructed fresh before each gateway.call().
     Passed to every edge condition; handlers may read last_elapsed_ms.
+
+    D211 routing: local-first. Cloud only when:
+      - is_user_turn AND complexity in {medium, high}  (quality/voice matters)
+      - research_mode AND cloud_ok_override            (research quality)
+      - no local capacity                              (fallback)
     """
 
-    cloud_active: bool  # is_cloud_training_active()
+    cloud_active: bool  # is_cloud_training_active() — time-of-day + intent
     local_available: bool  # Ollama health check passed
     balance_ok: bool  # OR api key present AND balance above floor
     is_background: bool  # impulse / background turn (no latency requirement)
-    cloud_ok_override: bool = (
-        True  # D071: False = night/local-only mode; gates background cloud calls
-    )
+    cloud_ok_override: bool = True  # D071: False = night/local-only; gates background
     last_elapsed_ms: float = 0.0  # set by gateway after each handler attempt
-    db_colocated: bool = (
-        False  # T-inference-colocation: Postgres on same host as Ollama
-    )
+    db_colocated: bool = False  # D205: Postgres on same host as Ollama
+    # D211: routing intent signals
+    is_user_turn: bool = False  # this call is part of a reply to a human
+    research_mode: bool = False  # call chain is research (book reader, web extract)
+    complexity: str = "low"  # low | medium | high — from thalamus parsed_input
 
 
 @dataclass
@@ -319,6 +324,8 @@ class InferenceGateway(IgorBase):
         instance_id: str = "",
         local_only: bool = False,
         on_tier: Optional[Callable[[str], None]] = None,
+        is_user_turn: bool = False,  # D211: human web turn
+        complexity: str = "low",  # D211: low|medium|high from thalamus
     ) -> "tuple[str, float, bool]":
         """
         Route a reasoning request. Three call profiles, binary cloud/local decision. (D198)
@@ -479,8 +486,34 @@ class InferenceGateway(IgorBase):
                         )
             return "", 0.0, False
 
-        # ── interactive: cloud=sonnet | local=fastest-box ─────────────────────
+        # ── interactive: D211 local-first for low complexity, else cloud-first ──
         last_error = ""
+
+        # D211: user turn + low complexity → try local first, cloud as fallback.
+        # Any other case (medium/high complexity, pipeline call) → cloud-first.
+        _local_first = is_user_turn and complexity == "low" and self._t2
+
+        if _local_first:
+            try:
+                self.last_tier = "local/interactive"
+                if on_tier:
+                    on_tier("local/interactive")
+                text, cost = self._t2.reason(
+                    user_input,
+                    relevant,
+                    core,
+                    instance_id,
+                    cortex=cortex,
+                    thread_id=thread_id,
+                    interactive_fallback=True,
+                )
+                return text, cost, False
+            except Exception as _e:
+                last_error = str(_e)
+                if _log_err:
+                    _log_err(
+                        kind="TIER_FAIL", source="local/interactive", detail=str(_e)
+                    )
 
         if _cloud_ok and self._t4:
             try:
@@ -504,7 +537,7 @@ class InferenceGateway(IgorBase):
                         kind="TIER_FAIL", source="cloud/interactive", detail=str(_e)
                     )
 
-        if self._t2:
+        if not _local_first and self._t2:
             try:
                 self.last_tier = "local/interactive"
                 if on_tier:
@@ -647,25 +680,37 @@ def _always(ctx: InferenceContext) -> bool:
 
 
 def _local_preferred(ctx: InferenceContext) -> bool:
-    """Cluster has local capacity AND cloud training mode not active AND not DB-colocated. (D120)
-
-    T-inference-colocation-signal: when Ollama and Postgres share a host, local inference
-    competes with the DB for RAM — skip local and prefer cloud instead.
+    """
+    D211: Local-first. True unless a specific reason to use cloud exists.
+    Reasons to prefer cloud:
+      - is_user_turn AND complexity medium|high  (voice quality matters)
+      - research_mode                            (research quality)
+      - db_colocated                             (RAM contention with Postgres)
+      - no local capacity                        (nothing available)
     """
     if ctx.db_colocated:
-        return False  # DB on same box — avoid RAM contention with Ollama
-    from .cluster_router import router as _router
-
-    return _router.has_local_capacity() and not ctx.cloud_active
-
-
-def _cloud_preferred(ctx: InferenceContext) -> bool:
-    """Cloud training active OR no local capacity. Blocked for background if night mode (D071)."""
-    if ctx.is_background and not ctx.cloud_ok_override:
         return False
     from .cluster_router import router as _router
 
-    return ctx.cloud_active or not _router.has_local_capacity()
+    if not _router.has_local_capacity():
+        return False
+    # Cloud preferred for user turns when complexity warrants it
+    if ctx.is_user_turn and ctx.complexity in ("medium", "high"):
+        return False
+    # Cloud preferred for research
+    if ctx.research_mode:
+        return False
+    return True
+
+
+def _cloud_preferred(ctx: InferenceContext) -> bool:
+    """
+    D211: Cloud preferred when local_preferred is False AND cloud is viable.
+    Blocked for background if night mode (D071).
+    """
+    if ctx.is_background and not ctx.cloud_ok_override:
+        return False
+    return not _local_preferred(ctx)
 
 
 def _cloud_ok(ctx: InferenceContext) -> bool:
@@ -916,8 +961,18 @@ def build_default_gateway() -> InferenceGateway:
 # ── Context factory ───────────────────────────────────────────────────────────────
 
 
-def make_context(is_background: bool = False) -> InferenceContext:
-    """Build a fresh InferenceContext by checking live system state."""
+def make_context(
+    is_background: bool = False,
+    is_user_turn: bool = False,
+    research_mode: bool = False,
+    complexity: str = "low",
+) -> InferenceContext:
+    """Build a fresh InferenceContext by checking live system state.
+
+    D211: callers pass is_user_turn, research_mode, complexity to drive routing.
+    main.py sets is_user_turn=True for human web turns.
+    Pipeline calls set research_mode=True for book/web research chains.
+    """
     cloud_active = False
     try:
         from .cloud_mode import is_cloud_training_active
@@ -976,6 +1031,9 @@ def make_context(is_background: bool = False) -> InferenceContext:
         is_background=is_background,
         cloud_ok_override=cloud_ok_override,
         db_colocated=db_colocated,
+        is_user_turn=is_user_turn,
+        research_mode=research_mode,
+        complexity=complexity,
     )
 
 

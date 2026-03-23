@@ -1,4 +1,5 @@
 import logging
+
 """
 boot_check.py — Verify required Ollama models on cluster machines at boot.
 
@@ -23,7 +24,7 @@ from typing import Optional
 from urllib.request import urlopen, Request
 from urllib.error import URLError
 
-from igor.paths import paths
+from .paths import paths
 
 MACHINES_JSON = paths().machines_json
 CHANGES_LOG = paths().claudecode / "changes.log"
@@ -103,7 +104,9 @@ def _prepend_log(entry: str):
         )
         CHANGES_LOG.write_text(entry + "\n" + existing, encoding="utf-8")
     except OSError as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/boot_check.py: %s", _bare_e)
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/boot_check.py: %s", _bare_e
+        )
 
 
 # ── Public API ─────────────────────────────────────────────────────────────────
@@ -172,7 +175,9 @@ def run(cortex=None):
         try:
             cortex.write_ring(summary, category="system_info")
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/boot_check.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/boot_check.py: %s", _bare_e
+            )
 
 
 def start(cortex=None):

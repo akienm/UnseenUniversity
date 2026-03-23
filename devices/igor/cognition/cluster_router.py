@@ -69,6 +69,7 @@ _PROBE_TIMEOUT = float(os.getenv("CLUSTER_PROBE_TIMEOUT", "3"))
 _NETWORK_WEIGHT = {"wired": 1.0, "wifi": 0.7}
 _RAM_WEIGHT = {32: 1.0, 16: 0.8, 8: 0.5}
 
+
 def _ram_weight(ram_gb: int) -> float:
     return _RAM_WEIGHT.get(ram_gb, 0.6)
 
@@ -80,10 +81,10 @@ class MachineInfo:
     primary_model: str  # default model for "local" calls
     reasoning_model: str = ""  # reasoning-specialised model (if available)
     is_local: bool = False  # True = can read os.getloadavg()
-    hostname: str = ""        # D211: canonical hostname for in_use_now() lookup
+    hostname: str = ""  # D211: canonical hostname for in_use_now() lookup
     network_type: str = "wifi"  # D211: wired | wifi
-    ram_gb: int = 16            # D211: for ram_weight scoring
-    is_db_host: bool = False    # D211: db_host role → score penalty
+    ram_gb: int = 16  # D211: for ram_weight scoring
+    is_db_host: bool = False  # D211: db_host role → score penalty
 
     # Runtime state — updated by _refresh()
     healthy: bool = False
@@ -115,6 +116,7 @@ class MachineInfo:
         if self.hostname:
             try:
                 from ..tools.routing_tools import in_use_now
+
                 if in_use_now(self.hostname):
                     return 0.0
             except Exception:
@@ -127,7 +129,14 @@ class MachineInfo:
         else:
             capability_score = 1.0
         override_bonus = 2.0 if self.name == override_name else 1.0
-        return self.load_score * network_w * ram_w * db_penalty * capability_score * override_bonus
+        return (
+            self.load_score
+            * network_w
+            * ram_w
+            * db_penalty
+            * capability_score
+            * override_bonus
+        )
 
 
 # ── ClusterRouter ─────────────────────────────────────────────────────────────
@@ -243,7 +252,7 @@ class ClusterRouter:
             f"[cluster_router] machines: "
             + ", ".join(
                 f"{m.name}@{m.ollama_host} (reasoning={bool(m.reasoning_model)})"
-                for m in machines
+                for m in self._machines.values()
             )
         )
 
@@ -279,7 +288,9 @@ class ClusterRouter:
                 ps_data = json.loads(resp_ps.read())
             active = len(ps_data.get("models", []))
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/cluster_router.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/cognition/cluster_router.py: %s", _bare_e
+            )
         m.active_models = active
 
         # Load score calculation
@@ -354,9 +365,7 @@ class ClusterRouter:
             reverse=True,
         )
         return [
-            (m.ollama_host, m.model_for(call_type))
-            for s, m in scored[:n]
-            if s > 0.0
+            (m.ollama_host, m.model_for(call_type)) for s, m in scored[:n] if s > 0.0
         ]
 
     def has_local_capacity(self, call_type: str = "local") -> bool:

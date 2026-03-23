@@ -2559,7 +2559,7 @@ class Igor(IgorBase):
                             _iprox, 0.7
                         )
                         self.cortex.twm_push(
-                            content=f"[INVESTMENT] High-investment node active: {_inode.narrative[:120]}",
+                            content_csb=f"[INVESTMENT] High-investment node active: {_inode.narrative[:120]}",
                             salience=min(1.0, _iweight * _prox_mod),
                             urgency=0.0,
                             source="investment_check",
@@ -3120,7 +3120,7 @@ class Igor(IgorBase):
                         and _recent[-1] == "up"
                     ):
                         self.cortex.twm_push(
-                            content=f"META_COGNITION|I've traced upward (causal/'why?') for {len(_recent)} consecutive turns. "
+                            content_csb=f"META_COGNITION|I've traced upward (causal/'why?') for {len(_recent)} consecutive turns. "
                             f"This is deep problem territory — I may be searching for a lever.",
                             source="meta_cognition",
                             salience=0.5,
@@ -4245,6 +4245,8 @@ class Igor(IgorBase):
                             instance_id=self.instance_id,
                             local_only=_local_only,
                             on_tier=_on_tier,
+                            is_user_turn=True,
+                            complexity=parsed.complexity,
                         )
                     _log_pt(
                         turn_id=_turn_id,

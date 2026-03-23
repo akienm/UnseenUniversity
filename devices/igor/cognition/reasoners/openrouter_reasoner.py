@@ -228,7 +228,7 @@ def _habit_extract_worker(
             if not trigger:
                 return
             # Skip if close duplicate exists
-            existing = cortex.search(trigger, limit=3, min_score=0.8)
+            existing = cortex.search(trigger, limit=3)
             for mem in existing:
                 if (
                     mem.metadata.get("trigger")
@@ -308,9 +308,9 @@ def _habit_extract_worker(
             from ..forensic_logger import log_memory_op as _lm
 
             _lm(
-                op="cloud_node_extracted",
-                memory_id=mem.id,
-                detail=f"type={node_type}|tier={tier}|conf={confidence:.2f}",
+                operation="cloud_node_extracted",
+                memory_type=node_type,
+                narrative_snippet=f"tier={tier}|conf={confidence:.2f}|id={mem.id}",
             )
         except Exception as _bare_e:
             log_error(
