@@ -343,7 +343,7 @@ class InferenceGateway(IgorBase):
         Returns (response_text, cost_usd, used_api).
         """
         self.last_tier = ""
-        _log_err = None  # forensic hook placeholder — wired per-call when available
+        _log_err = log_error  # forensic hook — wired to log_error for TIER_FAIL entries
 
         # ── local_only: caller explicitly wants local (cloud_ok_override=False) ─
         if local_only:
@@ -528,6 +528,7 @@ class InferenceGateway(IgorBase):
                     cortex=cortex,
                     preparse_csb=preparse_csb,
                     thread_id=thread_id,
+                    no_tools=True,  # 161 tools → provider 400; interactive turns are conversational
                 )
                 return text, cost, True
             except Exception as _e:
