@@ -77,28 +77,38 @@ _CHANNEL_FILE = paths().cc_channel / "messages.jsonl"
 
 
 def _channel_append(author: str, content: str, msg_type: str = "message"):
-    """Mirror a message to the shared JSONL channel. Never raises."""
+    """Mirror a message to the shared JSONL channel and Postgres. Never raises."""
     try:
         _CHANNEL_FILE.parent.mkdir(parents=True, exist_ok=True)
         from datetime import timezone
 
         ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        line = (
-            json.dumps(
-                {"ts": ts, "author": author, "type": msg_type, "content": content},
-                ensure_ascii=False,
-            )
-            + "\n"
-        )
+        entry = {"ts": ts, "author": author, "type": msg_type, "content": content}
+        line = json.dumps(entry, ensure_ascii=False) + "\n"
         with open(_CHANNEL_FILE, "a", encoding="utf-8") as f:
             f.write(line)
+        # Mirror to Postgres channel_messages so MCP channel_read sees Igor replies
+        _pg_url = os.environ.get("IGOR_HOME_DB_URL", "") or os.environ.get("IGOR_DB_URL", "")
+        if _pg_url:
+            try:
+                import psycopg2
+                conn = psycopg2.connect(_pg_url)
+                with conn:
+                    with conn.cursor() as c:
+                        c.execute(
+                            "INSERT INTO channel_messages (ts, author, type, content) "
+                            "VALUES (%s, %s, %s, %s)",
+                            (ts, author, msg_type, content),
+                        )
+                conn.close()
+            except Exception as _pg_e:
+                logging.getLogger(__name__).debug(
+                    "channel_append PG write failed (non-fatal): %s", _pg_e
+                )
     except Exception as _bare_e:
         logging.getLogger(__name__).warning(
             "bare except in wild_igor/igor/web/server.py: %s", _bare_e
         )
-
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
 
 
 def _ts() -> str:
