@@ -13,6 +13,7 @@ Endpoints:
   GET  /api/outbox/{file}   → download file from outbox
   GET  /api/dashboard       → JSON stats snapshot
   POST /api/bridge_chat     → proxy to claude_bridge on 8082
+  GET  /api/system_health   → JSON cluster resource state (machine health, load, models)
 
 WebSocket message protocol (JSON):
   Client → server: {"type": "message", "content": "hello igor"}
@@ -88,10 +89,13 @@ def _channel_append(author: str, content: str, msg_type: str = "message"):
         with open(_CHANNEL_FILE, "a", encoding="utf-8") as f:
             f.write(line)
         # Mirror to Postgres channel_messages so MCP channel_read sees Igor replies
-        _pg_url = os.environ.get("IGOR_HOME_DB_URL", "") or os.environ.get("IGOR_DB_URL", "")
+        _pg_url = os.environ.get("IGOR_HOME_DB_URL", "") or os.environ.get(
+            "IGOR_DB_URL", ""
+        )
         if _pg_url:
             try:
                 import psycopg2
+
                 conn = psycopg2.connect(_pg_url)
                 with conn:
                     with conn.cursor() as c:
@@ -277,6 +281,66 @@ async def _api_cc_send(request: Request):
 async def _api_health(request: Request):
     """GET /api/health — simple liveness check; always returns 200 if server is up."""
     return JSONResponse({"status": "ok"})
+
+
+async def _api_system_health(request: Request):
+    """
+    GET /api/system_health — cluster resource visibility (#232).
+
+    Returns JSON with one entry per configured inference machine:
+      {
+        "ts": "...",
+        "override": null | "machine_name",
+        "machines": [
+          {
+            "name": "local",
+            "ollama_host": "http://localhost:11434",
+            "healthy": true,
+            "load_score": 0.85,
+            "response_ms": 42,
+            "active_models": 1,
+            "primary_model": "llama3",
+            "reasoning_model": "",
+            "is_local": true,
+            "network_type": "wired",
+            "ram_gb": 32
+          },
+          ...
+        ]
+      }
+
+    load_score: 0.0 = saturated/down, 1.0 = idle.
+    Returns the most recently cached probe results (refreshed automatically every
+    CLUSTER_REFRESH_SEC by the background thread). Does not force a re-probe.
+    """
+    try:
+        from ..cognition.cluster_router import router as _router
+        import os as _os
+
+        override = (
+            _router._override or _os.getenv("IGOR_INFERENCE_OVERRIDE", "") or None
+        )
+        machines = []
+        for m in _router._machines.values():
+            machines.append(
+                {
+                    "name": m.name,
+                    "ollama_host": m.ollama_host,
+                    "healthy": m.healthy,
+                    "load_score": round(m.load_score, 3),
+                    "response_ms": round(m.response_ms),
+                    "active_models": m.active_models,
+                    "primary_model": m.primary_model,
+                    "reasoning_model": m.reasoning_model,
+                    "is_local": m.is_local,
+                    "network_type": m.network_type,
+                    "ram_gb": m.ram_gb,
+                }
+            )
+        return JSONResponse({"ts": _ts(), "override": override, "machines": machines})
+    except Exception as e:
+        logging.getLogger(__name__).warning("_api_system_health error: %s", e)
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 
 async def _api_cc_notebook(request: Request):
@@ -682,6 +746,7 @@ def _make_app() -> Starlette:
         Route("/api/outbox", _api_outbox_list),
         Route("/api/outbox/{filename}", _api_outbox_download),
         Route("/api/health", _api_health),
+        Route("/api/system_health", _api_system_health),
         Route("/api/dashboard", _api_dashboard),
         Route("/api/sessions", _api_sessions),
         Route("/api/milieu/global", _api_milieu_global),
