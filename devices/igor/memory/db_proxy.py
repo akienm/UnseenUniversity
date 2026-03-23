@@ -550,6 +550,11 @@ class _PGConnWrapper:
         return self
 
     @property
+    def rowcount(self) -> int:
+        """Mirrors sqlite3.Cursor.rowcount — rows affected by last DML statement."""
+        return self._cur.rowcount if self._cur.rowcount >= 0 else 0
+
+    @property
     def lastrowid(self):
         """Return last inserted row id via LASTVAL() — mirrors sqlite3.Cursor.lastrowid."""
         try:
