@@ -40,6 +40,7 @@ from . import (
     reading_integration,
     trail_inspector,
     worker_foreman,
+    template_tools,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
