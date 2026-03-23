@@ -1114,8 +1114,11 @@ class ResourceMonitorSource(BasePushSource):
             from .inference_gateway import is_local_inference_available
 
             local_ok = is_local_inference_available()
-        except Exception:
-            pass
+        except Exception as _e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/push_sources.py is_local_inference_available: {_e}",
+            )
 
         cloud_ok = False
         try:

@@ -2460,8 +2460,11 @@ class Igor(IgorBase):
         # #310: reset consolidation idle timer on each interactive turn
         try:
             self.ne.notify_interactive()
-        except Exception:
-            pass
+        except Exception as _bare_e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/main.py ne.notify_interactive: {_bare_e}",
+            )
 
         # [DASHBOARD] Signal processing start (#18)
         self._is_processing = True
@@ -3847,15 +3850,21 @@ class Igor(IgorBase):
                             _ms = _milieu_get_ifork()
                             if _ms:
                                 _current_val = getattr(_ms, _mf, None)
-                        except Exception:
-                            pass
+                        except Exception as _bare_e:
+                            log_error(
+                                kind="BARE_EXCEPT",
+                                detail=f"wild_igor/igor/main.py if_fork milieu read: {_bare_e}",
+                            )
                     elif _gf == "twm.attractor_salience":
                         try:
                             _att = self.cortex.twm_get_attractor()
                             if _att:
                                 _current_val = _att.get("salience")
-                        except Exception:
-                            pass
+                        except Exception as _bare_e:
+                            log_error(
+                                kind="BARE_EXCEPT",
+                                detail=f"wild_igor/igor/main.py if_fork TWM attractor read: {_bare_e}",
+                            )
                     if _current_val is not None:
                         _guard_pass = (
                             (_gop == ">=" and _current_val >= _gval)
