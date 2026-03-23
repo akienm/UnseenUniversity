@@ -6313,8 +6313,10 @@ class Igor(IgorBase):
             return "I believe sho, Mashter — nothing went wrong on my end."
 
         # ── Simple factual from memory (#5) ──────────────────────────────────
-        # "What's my name?" / "Who am I?" → user context, no LLM needed
-        _name_words = ("what's my name", "what is my name", "who am i")
+        # "What's my name?" → user context lookup, no LLM needed.
+        # "Who am I?" intentionally excluded — that's an identity question routed
+        # through PROC_RESP_WHO_AM_I context_inject + LLM (G-HB3 / D075).
+        _name_words = ("what's my name", "what is my name")
         if any(p in t for p in _name_words):
             # Try thread context first
             slug = None

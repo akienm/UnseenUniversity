@@ -518,7 +518,9 @@ _MEMORY_LOOKUP_PHRASES = (
     "did you store",
     "what's my name",
     "what is my name",
-    "who am i",
+    # "who am i" intentionally excluded — identity question routes through
+    # PROC_RESP_WHO_AM_I context_inject + LLM; output_complexity must be "medium"
+    # so _build_think_context + D072 vigilance gate run (G-HB3 / D075).
     "what have you saved",
     "what's in my notebook",
 )
