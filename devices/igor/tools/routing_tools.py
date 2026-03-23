@@ -48,8 +48,10 @@ def _load_overrides() -> dict:
     try:
         if _OVERRIDES_JSON.exists():
             return json.loads(_OVERRIDES_JSON.read_text())
-    except Exception:
-        pass
+    except Exception as _e:
+        logging.getLogger("forensic").warning(
+            "[routing_tools._load_overrides] corrupt overrides file — resetting: %s", _e
+        )
     return {}
 
 

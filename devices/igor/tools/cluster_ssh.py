@@ -626,7 +626,7 @@ def _update_swarm() -> str:
 
         _la(kind="SWARM_UPDATE", detail=summary[:400])
     except Exception:
-        pass
+        pass  # forensic_logger unavailable — non-fatal, swarm update still returned
     return summary
 
 

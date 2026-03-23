@@ -63,6 +63,6 @@ def eval_gate(key: str, op: str, value: Any, namespace: dict) -> bool:
         if op == ">=":
             return a >= b
     except (ValueError, TypeError):
-        pass
+        pass  # type coercion failed — inputs are untrusted; fall through to False
 
     return False

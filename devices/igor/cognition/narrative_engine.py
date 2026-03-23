@@ -1218,8 +1218,11 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                     _end = raw.rfind("}") + 1
                     if _start >= 0 and _end > _start:
                         parsed = _json.loads(raw[_start:_end])
-                except Exception:
-                    pass
+                except Exception as _e:
+                    log_error(
+                        kind="BARE_EXCEPT",
+                        detail=f"wild_igor/igor/cognition/narrative_engine.py reconsolidate JSON parse: {_e}",
+                    )
 
                 if parsed is None or parsed.get("action") in (None, "skip", "confirm"):
                     # Just clear the flag — confirmed or unreadable
@@ -1264,8 +1267,11 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                 try:
                     mem.metadata.pop("reconsolidate_pending", None)
                     self.cortex.store(mem)
-                except Exception:
-                    pass
+                except Exception as _e:
+                    log_error(
+                        kind="BARE_EXCEPT",
+                        detail=f"wild_igor/igor/cognition/narrative_engine.py reconsolidate store: {_e}",
+                    )
 
         return updated
 
@@ -1493,7 +1499,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
 
             _la(kind="CONSOLIDATION_START", detail="idle deep pass beginning")
         except Exception:
-            pass
+            pass  # forensic_logger unavailable — non-fatal, consolidation continues
 
         # Step 1: TWM promotion at 0.5 threshold
         if not self._consolidation_interrupted:
@@ -1634,7 +1640,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
             with open(_log_path, "a") as _f:
                 _f.write(_line)
         except Exception:
-            pass
+            pass  # consolidation log write unavailable — non-fatal
 
         try:
             from .forensic_logger import log_anomaly as _la
@@ -1648,7 +1654,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                 ),
             )
         except Exception:
-            pass
+            pass  # forensic_logger unavailable — non-fatal, consolidation still done
 
         self._last_consolidation_ts = time.monotonic()  # prevent immediate re-run
         self._consolidation_running = False

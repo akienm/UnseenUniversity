@@ -70,8 +70,11 @@ def launch_next_worker() -> str:
                     pids_data = json.loads(_WORKER_PIDS_PATH.read_text())
                     daemon_entry = pids_data.get("daemon", {})
                     daemon_pid = daemon_entry.get("konsole_pid")
-                except Exception:
-                    pass
+                except Exception as _e:
+                    log_error(
+                        kind="BARE_EXCEPT",
+                        detail=f"wild_igor/igor/tools/worker_foreman.py pids read: {_e}",
+                    )
             daemon_alive = daemon_pid and _pid_alive(daemon_pid)
             if daemon_alive:
                 ids = ", ".join(t["id"] for t in in_progress)

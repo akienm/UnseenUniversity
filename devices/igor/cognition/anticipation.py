@@ -32,9 +32,12 @@ Gate: IGOR_ANTICIPATION_ENABLED (default true) — can be disabled for testing.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import time
 from pathlib import Path
+
+_log = logging.getLogger("forensic")
 
 from ..paths import paths
 
@@ -65,8 +68,8 @@ def _load() -> list[dict]:
         data = json.loads(p.read_text(encoding="utf-8"))
         if isinstance(data, list):
             return data
-    except Exception:
-        pass
+    except Exception as _e:
+        _log.warning("[anticipation._load] corrupt history file — resetting: %s", _e)
     return []
 
 
@@ -76,8 +79,8 @@ def _save(history: list[dict]) -> None:
     try:
         _history_path().parent.mkdir(parents=True, exist_ok=True)
         _history_path().write_text(json.dumps(trimmed, indent=2), encoding="utf-8")
-    except Exception:
-        pass
+    except Exception as _e:
+        _log.warning("[anticipation._save] could not persist closure history: %s", _e)
 
 
 # ── Public API ───────────────────────────────────────────────────────────────

@@ -1560,8 +1560,11 @@ class Cortex(IgorBase):
                     _att = self.twm_get_attractor()
                     if _att:
                         _twm_obs_id = str(_att["id"])
-                except Exception:
-                    pass
+                except Exception as _e:
+                    logging.getLogger("forensic").warning(
+                        "[cortex.search] twm_get_attractor failed during trail record: %s",
+                        _e,
+                    )
                 _trail_id = self._record_trace(
                     query,
                     result,

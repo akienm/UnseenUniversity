@@ -119,8 +119,12 @@ class MachineInfo:
 
                 if in_use_now(self.hostname):
                     return 0.0
-            except Exception:
-                pass
+            except Exception as _e:
+                logging.getLogger("forensic").warning(
+                    "[cluster_router.score] in_use_now failed for %s: %s",
+                    self.hostname,
+                    _e,
+                )
         network_w = _NETWORK_WEIGHT.get(self.network_type, 0.7)
         ram_w = _ram_weight(self.ram_gb)
         db_penalty = 0.2 if self.is_db_host else 1.0
