@@ -4630,7 +4630,14 @@ class Igor(IgorBase):
             self.interaction_count >= ContextInterruptor.URGENT_AT
             and not self._context_flush_done
         ):
-            self._pre_compaction_flush()
+            self._context_flush_done = (
+                True  # guard before thread starts — prevents double-fire
+            )
+            threading.Thread(
+                target=self._pre_compaction_flush,
+                daemon=True,
+                name="precompact-flush",
+            ).start()
 
         # Part C — stamp response time; track consecutive slow responses; latency instrumentation (#139)
         import time as _t

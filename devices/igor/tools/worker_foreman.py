@@ -54,32 +54,28 @@ def launch_next_worker() -> str:
         if not tasks:
             return "queue is empty — nothing to launch"
 
-        # If anything is in_progress, verify the worker process is still alive.
-        # Stale in_progress (no live process) resets to pending so the queue unblocks.
+        # If anything is in_progress, check if the daemon is alive.
+        # One daemon runs one ticket at a time — daemon alive means work is in progress.
+        # Only reset in_progress tickets if the daemon is dead (stale claim from a crash).
         in_progress = [t for t in tasks if t["status"] == "in_progress"]
         if in_progress:
-            pids_data: dict = {}
+            daemon_pid = None
             if _WORKER_PIDS_PATH.exists():
                 try:
                     pids_data = json.loads(_WORKER_PIDS_PATH.read_text())
+                    daemon_entry = pids_data.get("daemon", {})
+                    daemon_pid = daemon_entry.get("konsole_pid")
                 except Exception:
                     pass
-            live = []
-            stale = []
+            daemon_alive = daemon_pid and _pid_alive(daemon_pid)
+            if daemon_alive:
+                ids = ", ".join(t["id"] for t in in_progress)
+                return f"worker already running: {ids} — waiting for completion signal"
+            # Daemon is dead — reset stale in_progress claims so queue unblocks
             for t in in_progress:
-                pid = pids_data.get(t["id"])
-                if pid and _pid_alive(pid):
-                    live.append(t)
-                else:
-                    stale.append(t)
-            for t in stale:
                 t["status"] = "pending"
                 t.pop("claimed_at", None)
-            if stale:
-                _QUEUE_PATH.write_text(json.dumps(tasks, indent=2))
-            if live:
-                ids = ", ".join(t["id"] for t in live)
-                return f"worker already running: {ids} — waiting for completion signal"
+            _QUEUE_PATH.write_text(json.dumps(tasks, indent=2))
 
         # Find next pending (skip blocked)
         pending = [t for t in tasks if t["status"] == "pending"]
