@@ -18,6 +18,11 @@ from pathlib import Path
 
 from .registry import Tool, registry
 from ..paths import paths
+from ..cognition.anticipation import (
+    weighted_ticket_score,
+    record_closure,
+    history_summary,
+)
 
 _QUEUE_PATH = paths().cc_channel / "queue.json"
 _WORKER_PIDS_PATH = paths().cc_channel / "worker_pids.json"
@@ -84,7 +89,12 @@ def launch_next_worker() -> str:
             blocked = sum(1 for t in tasks if t["status"] == "blocked")
             return f"queue clear — {done} done, {blocked} blocked, nothing pending"
 
-        pending_sorted = sorted(pending, key=lambda t: t.get("priority", 99))
+        pending_sorted = sorted(
+            pending,
+            key=lambda t: weighted_ticket_score(
+                t.get("priority", 99), t.get("tags", [])
+            ),
+        )
         next_ticket = pending_sorted[0]
         ticket_id = next_ticket["id"]
 
@@ -121,7 +131,7 @@ def launch_next_worker() -> str:
 
 def check_worker_queue() -> str:
     """
-    Return a summary of the current task queue state.
+    Return a summary of the current task queue state plus anticipation history.
     """
     try:
         tasks = _load_queue()
@@ -138,10 +148,24 @@ def check_worker_queue() -> str:
 
         summary = ", ".join(f"{v} {k}" for k, v in counts.items() if v > 0)
         lines = [f"queue: {summary}"] + items
+        lines.append(history_summary())
         return "\n".join(lines)
 
     except Exception as e:
         return f"[ERROR] check_worker_queue: {e}"
+
+
+def record_worker_closure(ticket_id: str, tags: list, valence: float) -> str:
+    """
+    Record that a ticket was completed with this closure valence.
+    Called by sprint skill at step 8 to feed the anticipation history.
+    valence should be in [-1.0, 1.0]; use 0.5 as a default positive proxy.
+    """
+    try:
+        record_closure(ticket_id, tags, valence)
+        return f"recorded closure: {ticket_id} v={valence:+.2f} tags={tags}"
+    except Exception as e:
+        return f"[ERROR] record_worker_closure: {e}"
 
 
 # ── Register tools ──────────────────────────────────────────────────────────
@@ -176,5 +200,40 @@ registry.register(
             "required": [],
         },
         fn=lambda: check_worker_queue(),
+    )
+)
+
+registry.register(
+    Tool(
+        name="record_worker_closure",
+        description=(
+            "Record that a work ticket was completed and how good it felt to finish it. "
+            "Call at sprint completion with the ticket id, its tags, and a valence score "
+            "[-1.0 to 1.0] (use 0.5 as a default positive proxy when no milieu data). "
+            "Feeds the anticipation history so future ticket selection is weighted by "
+            "predicted closure valence."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "ticket_id": {
+                    "type": "string",
+                    "description": "The ticket ID that was just completed (e.g. 'T-foo-bar')",
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Tags from the ticket (e.g. ['routing', 'tests'])",
+                },
+                "valence": {
+                    "type": "number",
+                    "description": "Closure valence [-1.0, 1.0]; 0.5 = default positive",
+                },
+            },
+            "required": ["ticket_id", "tags", "valence"],
+        },
+        fn=lambda ticket_id, tags, valence: record_worker_closure(
+            ticket_id, tags, float(valence)
+        ),
     )
 )
