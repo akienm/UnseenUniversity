@@ -64,6 +64,15 @@ _PROBE_TIMEOUT = float(os.getenv("CLUSTER_PROBE_TIMEOUT", "3"))
 # ── Machine spec ──────────────────────────────────────────────────────────────
 
 
+# ── Network + RAM weights (D211) ─────────────────────────────────────────────
+
+_NETWORK_WEIGHT = {"wired": 1.0, "wifi": 0.7}
+_RAM_WEIGHT = {32: 1.0, 16: 0.8, 8: 0.5}
+
+def _ram_weight(ram_gb: int) -> float:
+    return _RAM_WEIGHT.get(ram_gb, 0.6)
+
+
 @dataclass
 class MachineInfo:
     name: str
@@ -71,6 +80,10 @@ class MachineInfo:
     primary_model: str  # default model for "local" calls
     reasoning_model: str = ""  # reasoning-specialised model (if available)
     is_local: bool = False  # True = can read os.getloadavg()
+    hostname: str = ""        # D211: canonical hostname for in_use_now() lookup
+    network_type: str = "wifi"  # D211: wired | wifi
+    ram_gb: int = 16            # D211: for ram_weight scoring
+    is_db_host: bool = False    # D211: db_host role → score penalty
 
     # Runtime state — updated by _refresh()
     healthy: bool = False
@@ -92,15 +105,29 @@ class MachineInfo:
         return bool(self.primary_model)
 
     def score(self, call_type: str, override_name: str = "") -> float:
+        """
+        D211: score = network_weight × (1-load) × ram_weight × db_penalty × capability × override
+        Returns 0.0 if unhealthy, can't serve, or currently in-use by a human.
+        """
         if not self.healthy or not self.can_serve(call_type):
             return 0.0
+        # In-use check (D211) — zero out if human is on this machine
+        if self.hostname:
+            try:
+                from ..tools.routing_tools import in_use_now
+                if in_use_now(self.hostname):
+                    return 0.0
+            except Exception:
+                pass
+        network_w = _NETWORK_WEIGHT.get(self.network_type, 0.7)
+        ram_w = _ram_weight(self.ram_gb)
+        db_penalty = 0.2 if self.is_db_host else 1.0
         if call_type in _NEEDS_REASONING and not self.reasoning_model:
-            # Has primary model but no reasoning model — can serve but at half weight
             capability_score = 0.5
         else:
             capability_score = 1.0
         override_bonus = 2.0 if self.name == override_name else 1.0
-        return self.load_score * capability_score * override_bonus
+        return self.load_score * network_w * ram_w * db_penalty * capability_score * override_bonus
 
 
 # ── ClusterRouter ─────────────────────────────────────────────────────────────
@@ -170,7 +197,48 @@ class ClusterRouter:
                 )
 
         self._machines = {m.name: m for m in machines}
+        self._enrich_from_machines_json()
         self._built = True
+
+    def _enrich_from_machines_json(self) -> None:
+        """
+        D211: Enrich MachineInfo with network_type, ram_gb, roles from machines.json.
+        Matches by IP address (ollama_host contains the IP).
+        """
+        machines_json = os.path.expanduser("~/.TheIgors/local/machines.json")
+        try:
+            with open(machines_json) as f:
+                data = json.load(f)
+        except Exception:
+            return
+
+        # Build IP→machine_spec lookup
+        ip_map: dict[str, dict] = {}
+        for spec in data.get("machines", []):
+            ip = spec.get("ip")
+            if ip:
+                ip_map[ip] = spec
+
+        for m in self._machines.values():
+            # Match by IP in ollama_host URL or is_local (localhost)
+            spec = None
+            if m.is_local:
+                # Find the machine with igor_home role or akiendelllinux hostname
+                for s in data.get("machines", []):
+                    if "igor_home" in s.get("roles", []):
+                        spec = s
+                        break
+            else:
+                for ip, s in ip_map.items():
+                    if ip in m.ollama_host:
+                        spec = s
+                        break
+
+            if spec:
+                m.hostname = spec.get("hostname", m.hostname)
+                m.network_type = spec.get("network_type", "wifi")
+                m.ram_gb = spec.get("ram_gb", 16)
+                m.is_db_host = "db_host" in spec.get("roles", [])
         _log.info(
             f"[cluster_router] machines: "
             + ", ".join(
@@ -272,6 +340,24 @@ class ClusterRouter:
             return None, None  # → cloud
 
         return best.ollama_host, best.model_for(call_type)
+
+    def route_batch(self, n: int, call_type: str = "local") -> list[tuple[str, str]]:
+        """
+        D211: Return up to n (host_url, model) pairs for parallel batch work.
+        One per available machine, ranked by score. Used by background/reading workers.
+        """
+        self._refresh()
+        override = self._override or os.getenv("IGOR_INFERENCE_OVERRIDE", "")
+        scored = sorted(
+            [(m.score(call_type, override), m) for m in self._machines.values()],
+            key=lambda x: x[0],
+            reverse=True,
+        )
+        return [
+            (m.ollama_host, m.model_for(call_type))
+            for s, m in scored[:n]
+            if s > 0.0
+        ]
 
     def has_local_capacity(self, call_type: str = "local") -> bool:
         """
