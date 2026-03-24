@@ -91,13 +91,6 @@ DATA_DIR = (
 CHANGE_LOG_PATH = _paths().claudecode / "changes.log"
 CHANGE_REQUEST_PATH = _paths().claudecode / "change_request.txt"
 
-# ── Input debounce (#146) ──────────────────────────────────────────────────────
-# Buffer multi-line turns (fits-and-starts chat). Lines accumulate until the
-# sender is idle for DEBOUNCE_SECS, then the batch is processed as one turn.
-# Commands (/...) always bypass debounce and are processed immediately.
-# #200: stdin debounce kept but short (handles multi-line pastes).
-# Network messages are dispatched immediately — no debounce needed there.
-DEBOUNCE_SECS = float(os.getenv("IGOR_INPUT_DEBOUNCE_MS", "500")) / 1000.0
 
 # ── Self-repair / turn revision detection (G64) ────────────────────────────────
 # When a user revises their own prior statement ("Yes! ... Oh wait, I can't"),
@@ -105,8 +98,8 @@ DEBOUNCE_SECS = float(os.getenv("IGOR_INPUT_DEBOUNCE_MS", "500")) / 1000.0
 # first. The debounce bandaid merged them by time; G64 models the relationship.
 #
 # Two paths:
-#   1. Same-batch: messages arrive within DEBOUNCE_SECS → _smart_merge() labels
-#      them [STATEMENT] / [REVISION] instead of plain \n-joining.
+#   1. Same-batch: consecutive messages arrive before worker finishes prior turn →
+#      _smart_merge() labels them [STATEMENT] / [REVISION] instead of plain \n-joining.
 #   2. Cross-turn: new turn arrives after Igor responded → _detect_self_repair()
 #      checks ring_memory for the prior human turn and writes a [SELF-REPAIR]
 #      context note so the LLM interprets the revised meaning.
@@ -220,6 +213,9 @@ def _nexus_twm_ttl(thread_id: str | None) -> int:
 
 # ── Stdin thread ───────────────────────────────────────────────────────────────
 
+# Sentinel object — distinguishes "EOF/Ctrl-D" from "queue empty" in run() loop.
+_STDIN_EOF = object()
+
 
 def _stdin_reader(stdin_queue: queue.Queue):
     """
@@ -228,6 +224,8 @@ def _stdin_reader(stdin_queue: queue.Queue):
     while waiting for human input.
     Sets _exit_requested immediately on /exit or /quit so the agentic
     loop can stop at the next turn boundary without waiting for the full call.
+    Uses _STDIN_EOF sentinel (not None) to signal EOF so get_nowait() can
+    distinguish "nothing in queue" (returns None) from "EOF received".
     """
     while True:
         try:
@@ -237,7 +235,7 @@ def _stdin_reader(stdin_queue: queue.Queue):
                 # Do NOT set exit_requested here: headless mode hits EOF on stdin
                 # immediately (/dev/null), but web sessions must keep working.
                 # exit_requested is only for explicit /exit or /quit commands.
-                stdin_queue.put(None)
+                stdin_queue.put(_STDIN_EOF)
                 break
             text = line.rstrip("\n")
             if text.strip().lower() in ("/exit", "/quit"):
@@ -245,7 +243,7 @@ def _stdin_reader(stdin_queue: queue.Queue):
             stdin_queue.put(text)
         except (KeyboardInterrupt, EOFError):
             _exit_requested.set()  # Ctrl+C / hard interrupt — intentional stop
-            stdin_queue.put(None)
+            stdin_queue.put(_STDIN_EOF)
             break
 
 
@@ -411,6 +409,9 @@ class Igor(IgorBase):
         self._ne_last_twm_fingerprint: tuple[int, int] = (0, 0)  # (obs_count, max_id)
         self._ne_last_run_time: float = 0.0  # monotonic; idle gate cooldown
         self._consolidation_thread: threading.Thread | None = None  # #169
+        self._distillation_thread: threading.Thread | None = (
+            None  # T-distillation-daemon
+        )
         self._context_flush_done: bool = (
             False  # change.32: set after pre-compaction flush
         )
@@ -2310,10 +2311,6 @@ class Igor(IgorBase):
         )
         t.start()
 
-        # #146 stdin debounce state — local to run() (single-threaded consumer)
-        _stdin_buffer: list[str] = []
-        _stdin_last_time: float = 0.0
-
         console.print(f"[bold cyan]{'═' * 60}[/]")
         console.print(f"[bold cyan]  IGOR {self.instance_id} — BOOT COMPLETE[/]")
         console.print(
@@ -2322,54 +2319,32 @@ class Igor(IgorBase):
         console.print(f"[bold cyan]{'═' * 60}[/]\n")
 
         while True:
-            # ── Stdin: collect lines into debounce buffer ─────────────────────
-            # Commands (/...) bypass debounce and flush any pending buffer first.
-            # Regular lines accumulate until DEBOUNCE_SECS of idle, then process.
+            # ── Stdin: process each line immediately (#200 — no debounce) ────
+            # Commands (/...) run inline (ordering critical).
+            # Regular lines are dispatched to the per-thread stdin worker so the
+            # main loop never blocks on LLM inference.
             try:
                 _line = stdin_queue.get_nowait()
             except queue.Empty:
                 _line = None
 
-            if _line is not None:
-                if _line is None:
-                    # EOF sentinel from stdin reader (Ctrl-D / KeyboardInterrupt)
-                    if _stdin_buffer:
-                        self._process(
-                            _smart_merge(_stdin_buffer), thread_id="stdin:main"
-                        )
-                    self._shutdown(reason="EOF/Ctrl-D")
-                    break
-
+            if _line is _STDIN_EOF:
+                # EOF sentinel from stdin reader (Ctrl-D / KeyboardInterrupt)
+                self._shutdown(reason="EOF/Ctrl-D")
+                break
+            elif _line is not None:
                 _stripped = _line.strip()
                 if not _stripped:
                     pass  # ignore blank lines
                 elif _stripped.startswith("/"):
-                    # Command: flush any buffered input first, then process immediately
-                    if _stdin_buffer:
-                        self._process(
-                            _smart_merge(_stdin_buffer), thread_id="stdin:main"
-                        )
-                        _stdin_buffer.clear()
-                        _stdin_last_time = 0.0
+                    # Command: process inline immediately
                     self._process(_stripped, thread_id="stdin:main")
                     if _exit_requested.is_set():
                         self._shutdown(reason="quit via /quit")
                         break
                 else:
-                    # Regular line: add to buffer, reset idle timer
-                    _stdin_buffer.append(_stripped)
-                    _stdin_last_time = time.time()
-                    loginfo(f"[dim](stdin buffering...)[/]")
-
-            # ── Flush stdin buffer if idle for DEBOUNCE_SECS ─────────────────
-            if _stdin_buffer and time.time() - _stdin_last_time >= DEBOUNCE_SECS:
-                self._process(_smart_merge(_stdin_buffer), thread_id="stdin:main")
-                _stdin_buffer.clear()
-                _stdin_last_time = 0.0
-                if _exit_requested.is_set():
-                    self._shutdown(reason="quit via /quit")
-                    break
-                continue
+                    # Regular line: dispatch to per-thread stdin worker (non-blocking)
+                    self._enqueue_stdin(_stripped)
 
             # ── Nothing to process — drain network then do background work ────
             # #64: check restart/exit flags before anything else — no LLM, no arbiter
@@ -2402,6 +2377,7 @@ class Igor(IgorBase):
             run_background_sources(self.cortex)
             self._run_ne_background()
             self._run_consolidation_background()  # #169
+            self._run_distillation_background()  # T-distillation-daemon
             self._run_ne_deep_consolidation()  # #310: night consolidation
             self._announce_completed_jobs()
             self._drain_action_impulses()
@@ -4911,6 +4887,51 @@ class Igor(IgorBase):
         )
         self._consolidation_thread.start()
 
+    def _run_distillation_background(self):
+        """
+        T-distillation-daemon: Fire EPISODIC→EXPERIENTIAL distillation in a background thread.
+        Runs at most once per IGOR_DISTILLATION_INTERVAL_SECS (default 2h).
+        Uses local LLM only; never blocks the interaction loop.
+        """
+        if getattr(self, "_distillation_thread", None) is not None:
+            if self._distillation_thread.is_alive():
+                return  # already running
+
+        from .cognition.distillation import (
+            run_distillation,
+            should_run as _should_distill,
+        )
+
+        if not _should_distill():
+            return
+
+        def _worker():
+            import time as _t
+
+            _waited = 0.0
+            while self._is_processing and _waited < 30.0:
+                _t.sleep(1.0)
+                _waited += 1.0
+            try:
+                result = run_distillation(self.cortex)
+                if result.get("extracted", 0) > 0 or result.get("graduated", 0) > 0:
+                    self.cortex.write_ring(
+                        f"DISTILLATION|episodics={result.get('episodics_reviewed', 0)}"
+                        f"|extracted={result.get('extracted', 0)}"
+                        f"|graduated={result.get('graduated', 0)}",
+                        category="distillation",
+                    )
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/main.py distillation: {_bare_e}",
+                )
+
+        self._distillation_thread = threading.Thread(
+            target=_worker, daemon=True, name="distillation-worker"
+        )
+        self._distillation_thread.start()
+
     def _run_ne_deep_consolidation(self):
         """
         #310: Fire the NE deep consolidation pass when Igor has been idle long enough.
@@ -5377,6 +5398,48 @@ class Igor(IgorBase):
                 self._process_network_msg(msg, thread_id)
             except Exception as _e:
                 loginfo(f"[yellow][WORKER/{thread_id}] Error: {_e}[/]")
+
+    def _enqueue_stdin(self, text: str) -> None:
+        """
+        #200: Dispatch a stdin line to the "stdin:main" per-thread worker.
+
+        Reuses the same thread_queue infrastructure as network messages.
+        Worker calls self._process(text) so LLM inference runs off the main loop.
+        """
+        _tid = "stdin:main"
+        if _tid not in self._thread_queues:
+            self._thread_queues[_tid] = queue.Queue()
+        self._thread_queues[_tid].put(text)
+
+        worker = self._thread_workers.get(_tid)
+        if worker is None or not worker.is_alive():
+            t = threading.Thread(
+                target=self._stdin_worker,
+                args=(self._thread_queues[_tid],),
+                daemon=True,
+                name="worker-stdin:main",
+            )
+            self._thread_workers[_tid] = t
+            t.start()
+
+    def _stdin_worker(self, q: queue.Queue) -> None:
+        """
+        #200: Stdin worker — drains text queue sequentially, exits when idle 5s.
+
+        Runs in a daemon thread. Each item is a raw stripped stdin line.
+        Consecutive lines arriving before the worker finishes the first are
+        queued — _smart_merge() inside _process_inner() handles revision labeling.
+        """
+        while True:
+            try:
+                text = q.get(timeout=5.0)
+            except queue.Empty:
+                break  # idle — exits; restarted on next message
+
+            try:
+                self._process(text, thread_id="stdin:main")
+            except Exception as _e:
+                loginfo(f"[yellow][WORKER/stdin] Error: {_e}[/]")
 
     @staticmethod
     def _igor_lisp(text: str) -> str:
