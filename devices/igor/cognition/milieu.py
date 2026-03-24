@@ -44,7 +44,9 @@ if sys.platform == "win32":
         try:
             msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e
+            )
 
 else:
     import fcntl
@@ -160,7 +162,9 @@ def _contribute_to_global(state: MilieuState, alpha: float) -> None:
             finally:
                 _flock_un(lf)
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e)
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e
+        )
 
 
 # ── Core Milieu class ──────────────────────────────────────────────────────────
@@ -207,7 +211,9 @@ class Milieu(IgorBase):
                     }
                 )
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e
+            )
         return MilieuState()
 
     def _read_global(self) -> "MilieuState | None":
@@ -236,7 +242,9 @@ class Milieu(IgorBase):
                     }
                 )
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e
+                )
         return self._load_global_baseline()
 
     def _push_to_remote(self) -> None:
@@ -261,7 +269,9 @@ class Milieu(IgorBase):
             )
             _req.urlopen(_req_obj, timeout=3)
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e
+            )
 
     def _load_global_baseline(self) -> MilieuState:
         try:
@@ -276,7 +286,9 @@ class Milieu(IgorBase):
                     }
                 )
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e
+            )
         return MilieuState()
 
     def _save(self) -> None:
@@ -287,7 +299,9 @@ class Milieu(IgorBase):
                 encoding="utf-8",
             )
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e
+            )
         self._append_history()
 
     # ── D101: History ring buffer ──────────────────────────────────────────────
@@ -300,7 +314,9 @@ class Milieu(IgorBase):
                 if isinstance(data, list):
                     return data[-HISTORY_MAX:]
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e
+            )
         return []
 
     def _save_history(self) -> None:
@@ -310,7 +326,9 @@ class Milieu(IgorBase):
                 encoding="utf-8",
             )
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e
+            )
 
     def _append_history(self) -> None:
         """
@@ -552,6 +570,33 @@ class Milieu(IgorBase):
         self._save()
         if self.delta(_prev) >= SPIKE_THRESHOLD:
             _contribute_to_global(s, GLOBAL_ALPHA_SPIKE)
+
+    def nudge_vad(self, dv: float, da: float, dd: float) -> MilieuState:
+        """
+        T-interoception: Apply signed VAD deltas directly to current state.
+
+        Used by InteroceptionSource to apply resource-derived gradients without
+        the friction→arousal remapping that update() performs. Deltas are additive
+        (not EMA blend toward a target) so small repeated nudges accumulate naturally.
+
+        dv, da, dd each in [-1, 1]; clamped after addition to keep state in range.
+        Contributes to global milieu on any change (routine alpha).
+        """
+        _prev = self.snapshot()
+        s = self._state
+        s.valence = self._clamp(s.valence + dv)
+        s.arousal = self._clamp(s.arousal + da)
+        s.dominance = self._clamp(s.dominance + dd)
+        s.last_update = time.time()
+        self._save()
+        self._session_samples.append((s.valence, s.arousal, s.dominance))
+        _alpha = (
+            GLOBAL_ALPHA_SPIKE
+            if self.delta(_prev) >= SPIKE_THRESHOLD
+            else GLOBAL_ALPHA_ROUTINE
+        )
+        _contribute_to_global(s, _alpha)
+        return s
 
     def get_state(self) -> MilieuState:
         """Return current state (read-only view)."""

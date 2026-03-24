@@ -17,6 +17,7 @@ All push via cortex.twm_push(). None of them block or crash the main loop.
 """
 
 import hashlib
+import os
 import re
 from collections import Counter
 from datetime import datetime
@@ -1535,28 +1536,139 @@ class InteroceptionSource(BasePushSource):
     T-interoception: continuous VAD gradient from machine resource state.
 
     ResourceMonitorSource fires discrete threshold alerts (warn/critical).
-    InteroceptionSource provides the continuous sub-threshold gradient:
-    resource stress → milieu nudge → TWM entry. Body state becomes affect state.
+    InteroceptionSource provides the always-on sub-threshold gradient:
+    resource state → milieu nudge (via nudge_vad) → TWM entry.
+    Body state becomes affect state — including positive registration for ease.
 
-    Mapping (soft, cumulative):
-      cpu  > 60%  → arousal↑ + dominance↓   (effort/strain)
-      cpu  > 85%  → arousal↑↑ + valence↓    (overload)
-      mem  > 70%  → valence↓ + arousal↑     (pressure/constraint)
-      mem  > 90%  → valence↓↓               (high constraint)
-      disk > 80%  → valence↓ (mild)          (crowding)
-      all  < 30%  → valence↑ + arousal↓     (ease/calm)
+    Mapping (additive deltas applied via Milieu.nudge_vad):
+      cpu  > 85%  → arousal↑↑ + valence↓ + dominance↓   (overload)
+      cpu  > 60%  → arousal↑  + dominance↓               (effort/strain)
+      cpu  35-60% → mild positive valence                 (capable, responsive)
+      cpu  < 35%  → valence↑  + arousal↓                 (ease/calm)
+      mem  > 90%  → valence↓↓ + arousal↑                 (high constraint)
+      mem  > 70%  → valence↓  + arousal↑                 (pressure)
+      disk > 80%  → valence↓ (mild)                       (crowding)
+      db_latency_ms > 200  → dominance↓ + arousal↑        (contention)
+      infer_latency > 5s   → arousal↑  + valence↓ (mild)  (waiting)
+      cluster reachable    → dominance↑ (small)            (agency available)
+      cluster unreachable  → dominance↓                    (reduced agency)
 
-    Milieu update only when delta > MILIEU_PUSH_THRESHOLD to avoid noise.
-    TWM push always on significant state; suppressed when calm (< MIN_SALIENCE).
+    Milieu always nudged when any VAD delta is non-zero (positive included).
+    TWM push suppressed when salience < MIN_TWM_SALIENCE (calm is quiet but still felt).
+
+    Temporal accumulation: tracks recent stress samples; sustained high stress
+    amplifies arousal proportional to streak length (capped at SUSTAIN_MAX).
     """
 
     name = "interoception"
     CHECK_INTERVAL_SEC = 30
-    MILIEU_PUSH_THRESHOLD = 0.05  # Only nudge milieu if delta vector norm > this
-    MIN_SALIENCE = 0.25  # Below this, stay quiet (calm state)
+    MILIEU_PUSH_THRESHOLD = (
+        0.02  # Nudge milieu if delta vector norm > this (lower: catches calm+)
+    )
+    MIN_TWM_SALIENCE = 0.25  # Below this, skip TWM push (calm — stay quiet externally)
+    SUSTAIN_WINDOW = 6  # Keep last N stress samples for temporal accumulation
+    SUSTAIN_THRESHOLD = 0.35  # Stress level considered "sustained" when > this
+    SUSTAIN_MAX = 0.08  # Max arousal boost from sustained load
 
     def __init__(self):
         self._last_run: Optional[datetime] = None
+        self._stress_history: list[float] = []  # ring of recent stress values
+
+    def _compute_vad(
+        self,
+        cpu: float,
+        mem: float,
+        disk: float,
+        db_latency_ms: float,
+        infer_latency_s: float,
+        cluster_reachable: bool,
+    ) -> tuple[float, float, float, float]:
+        """
+        Map resource readings to (dV, dA, dD, stress) deltas.
+        All deltas are small signed floats suitable for nudge_vad().
+        """
+        d_valence = 0.0
+        d_arousal = 0.0
+        d_dominance = 0.0
+
+        # CPU — graduated: ease → capable → strain → overload
+        if cpu > 85:
+            d_arousal += 0.10
+            d_valence -= 0.06
+            d_dominance -= 0.05
+        elif cpu > 60:
+            d_arousal += 0.05
+            d_dominance -= 0.03
+        elif cpu > 35:
+            # Capable zone — small positive valence (system is responsive)
+            d_valence += 0.02
+        else:
+            # Idle/easy — ease
+            d_valence += 0.04
+            d_arousal -= 0.02
+
+        # Memory pressure
+        if mem > 90:
+            d_valence -= 0.10
+            d_arousal += 0.05
+        elif mem > 70:
+            d_valence -= 0.04
+            d_arousal += 0.02
+
+        # Disk crowding (mild)
+        if disk > 80:
+            d_valence -= 0.02
+
+        # DB latency — contention degrades dominance
+        if db_latency_ms > 500:
+            d_dominance -= 0.05
+            d_arousal += 0.03
+        elif db_latency_ms > 200:
+            d_dominance -= 0.02
+            d_arousal += 0.01
+
+        # Inference latency — waiting erodes ease
+        if infer_latency_s > 10:
+            d_arousal += 0.04
+            d_valence -= 0.03
+        elif infer_latency_s > 5:
+            d_arousal += 0.02
+            d_valence -= 0.01
+
+        # Cluster reachability — agency affects dominance
+        if cluster_reachable:
+            d_dominance += 0.02
+        else:
+            d_dominance -= 0.03
+
+        # Compute scalar stress for salience + sustain tracking (cpu-dominant)
+        stress = (
+            max(0.0, (cpu - 30) / 70) * 0.5
+            + max(0.0, (mem - 40) / 60) * 0.30
+            + max(0.0, (disk - 60) / 40) * 0.10
+            + min(0.05, db_latency_ms / 10000) * 0.10
+        )
+        return d_valence, d_arousal, d_dominance, stress
+
+    def _sustained_arousal_boost(self, stress: float) -> float:
+        """
+        Temporal accumulation: if stress has been above SUSTAIN_THRESHOLD for
+        multiple consecutive samples, return an extra arousal nudge.
+        Proportional to streak length, capped at SUSTAIN_MAX.
+        """
+        self._stress_history.append(stress)
+        if len(self._stress_history) > self.SUSTAIN_WINDOW:
+            self._stress_history = self._stress_history[-self.SUSTAIN_WINDOW :]
+        # Count trailing high-stress samples (from end)
+        streak = 0
+        for s in reversed(self._stress_history):
+            if s >= self.SUSTAIN_THRESHOLD:
+                streak += 1
+            else:
+                break
+        if streak < 2:
+            return 0.0
+        return min(self.SUSTAIN_MAX, (streak - 1) * 0.015)
 
     def push(self, cortex) -> list[int]:
         now = datetime.now()
@@ -1579,49 +1691,51 @@ class InteroceptionSource(BasePushSource):
         except Exception:
             return []
 
-        # Map resource load to VAD deltas (signed floats in [-1, 1])
-        d_valence = 0.0
-        d_arousal = 0.0
-        d_dominance = 0.0
+        # DB latency — read from cortex db_proxy metrics if available
+        db_latency_ms = 0.0
+        try:
+            if cortex is not None and hasattr(cortex, "_db"):
+                metrics = cortex._db.get_metrics()
+                db_latency_ms = metrics.get("latency_p50_ms", 0.0) or 0.0
+        except Exception:
+            pass
 
-        # CPU stress
-        if cpu > 85:
-            d_arousal += 0.12
-            d_valence -= 0.08
-            d_dominance -= 0.06
-        elif cpu > 60:
-            d_arousal += 0.06
-            d_dominance -= 0.03
+        # Inference latency — read from inference_gateway if available
+        infer_latency_s = 0.0
+        try:
+            from .inference_gateway import get_last_latency_s
 
-        # Memory pressure
-        if mem > 90:
-            d_valence -= 0.12
-            d_arousal += 0.06
-        elif mem > 70:
-            d_valence -= 0.05
-            d_arousal += 0.03
+            infer_latency_s = get_last_latency_s() or 0.0
+        except Exception:
+            pass
 
-        # Disk crowding (mild)
-        if disk > 80:
-            d_valence -= 0.03
+        # Cluster reachability — any machine in machines_json with status ok
+        cluster_reachable = False
+        try:
+            import json as _json
 
-        # Calm bonus — all low → ease
-        if cpu < 30 and mem < 40:
-            d_valence += 0.04
-            d_arousal -= 0.03
+            _mj = MACHINES_JSON
+            if _mj and Path(_mj).exists():
+                _data = _json.loads(Path(_mj).read_text(encoding="utf-8"))
+                _machines = (
+                    _data if isinstance(_data, list) else _data.get("machines", [])
+                )
+                cluster_reachable = any(
+                    m.get("status", "") in ("ok", "active", "online")
+                    for m in _machines
+                    if isinstance(m, dict)
+                )
+        except Exception:
+            pass
 
-        # Compute overall stress level for salience
-        stress = (
-            max(0.0, (cpu - 30) / 70) * 0.5
-            + max(0.0, (mem - 40) / 60) * 0.35
-            + max(0.0, (disk - 60) / 40) * 0.15
+        d_valence, d_arousal, d_dominance, stress = self._compute_vad(
+            cpu, mem, disk, db_latency_ms, infer_latency_s, cluster_reachable
         )
-        salience = min(0.85, 0.25 + stress * 0.7)
 
-        if salience < self.MIN_SALIENCE:
-            return []  # Calm — stay quiet
+        # Temporal accumulation: boost arousal when stress is sustained
+        d_arousal += self._sustained_arousal_boost(stress)
 
-        # Nudge milieu if delta is significant
+        # Always nudge milieu when any delta is non-zero (positive states included)
         delta_norm = (d_valence**2 + d_arousal**2 + d_dominance**2) ** 0.5
         if delta_norm >= self.MILIEU_PUSH_THRESHOLD:
             try:
@@ -1629,15 +1743,23 @@ class InteroceptionSource(BasePushSource):
 
                 m = milieu_mod.get()
                 if m is not None:
-                    m.update(d_valence, d_arousal, d_dominance)
+                    m.nudge_vad(d_valence, d_arousal, d_dominance)
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"push_sources.InteroceptionSource milieu update: {_bare_e}",
+                    detail=f"push_sources.InteroceptionSource milieu nudge: {_bare_e}",
                 )
+
+        # TWM push — only when notable (calm is felt via milieu but not surfaced as TWM obs)
+        # stress=0 → salience=0 < MIN_TWM_SALIENCE=0.25 → calm stays quiet in TWM
+        salience = min(0.85, stress * 0.7)
+        if salience < self.MIN_TWM_SALIENCE:
+            return []
 
         csb = (
             f"INTEROCEPTION|cpu={cpu:.0f}%|mem={mem:.0f}%|disk={disk:.0f}%"
+            f"|db_p50={db_latency_ms:.0f}ms|infer={infer_latency_s:.1f}s"
+            f"|cluster={'ok' if cluster_reachable else 'none'}"
             f"|dV={d_valence:+.2f}|dA={d_arousal:+.2f}|dD={d_dominance:+.2f}"
             f"|stress={stress:.2f}"
         )
@@ -1652,6 +1774,9 @@ class InteroceptionSource(BasePushSource):
                 "cpu_pct": cpu,
                 "mem_pct": mem,
                 "disk_pct": disk,
+                "db_latency_ms": db_latency_ms,
+                "infer_latency_s": infer_latency_s,
+                "cluster_reachable": cluster_reachable,
                 "stress": stress,
             },
         )
