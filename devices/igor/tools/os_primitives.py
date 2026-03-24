@@ -698,13 +698,15 @@ def prim_str_slice() -> str:
 def prim_twm_read() -> str:
     """Read active TWM observations; write formatted summary to ctx[twm_items].
 
-    Calls cortex.twm_read(include_integrated=False, limit=20).
-    Each item formatted as: salience|source|content_csb (sorted by salience desc).
+    Calls cortex.twm_read(include_integrated=False, limit=50).
+    Entries grouped by salience (sorted desc). Each item formatted as:
+      [{category}|sal={salience:.2f}|urg={urgency:.2f}] {content snippet}
     Writes newline-joined string to ctx[twm_items] and item count to ctx[twm_count].
+    NE impulses (ACTION_IMPULSE| prefix) are included — they live in TWM.
     """
     try:
         cortex = _get_cortex()
-        items = cortex.twm_read(include_integrated=False, limit=20)
+        items = cortex.twm_read(include_integrated=False, limit=50)
         if not items:
             ctx_id = _current_ctx_id(cortex)
             if ctx_id:
@@ -715,13 +717,12 @@ def prim_twm_read() -> str:
         items_sorted = sorted(items, key=lambda r: r.get("salience", 0.0), reverse=True)
         lines = []
         for r in items_sorted:
+            cat = r.get("category", "observation")
             sal = r.get("salience", 0.0)
-            src = r.get("source", "?")
+            urg = r.get("urgency", 0.5)
             content = r.get("content_csb", "")
-            # Truncate long content for readability
-            if len(content) > 120:
-                content = content[:117] + "..."
-            lines.append(f"{sal:.2f}|{src}|{content}")
+            snippet = content[:120] + "…" if len(content) > 120 else content
+            lines.append(f"[{cat}|sal={sal:.2f}|urg={urg:.2f}] {snippet}")
 
         summary = "\n".join(lines)
         ctx_id = _current_ctx_id(cortex)
