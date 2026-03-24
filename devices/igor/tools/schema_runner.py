@@ -200,11 +200,30 @@ def run_schema_habit(
 ) -> str:
     """Execute a schema-defined habit from its step list.
 
+    Basket schema (D216):
+        The basket is the traversal context — a key-value store in traversal_contexts.
+        Reserved keys (written by the runtime, not by steps):
+            __status__   : running | halted | complete | error | branched | timeout
+            __error__    : last exception message (set on error, cleared on recovery step)
+            __init__     : '1' — presence flag written by traversal_start
+        Standard input keys (written at init, readable by steps):
+            input        : alias for user_input (the trigger text)
+            node_id      : habit.id of the executing node
+            trigger_type : 'schema' (or override from ctx_override)
+        Declared defaults:
+            basket_schema in metadata: {field: default_value} dict merged before step 1.
+            Priority order: basket_schema < ctx_init < user_input/node_id < ctx_override.
+        Write-back contract:
+            Ephemeral-only. Basket lives for this chain execution only.
+            Persistence happens via explicit prim_emit (returns to caller) or tool
+            code_refs that write to DB. No auto-persist on completion.
+
     Args:
-        habit:        Memory object with metadata["steps"] and optional metadata["ctx_init"].
+        habit:        Memory object with metadata["steps"] and optional metadata["ctx_init"]
+                      and/or metadata["basket_schema"].
         cortex:       Cortex instance (used for traversal_start / traversal_set/get).
-        user_input:   Original user message — stored in ctx[user_input] for step access.
-        ctx_override: Optional dict of ctx values applied after ctx_init (highest priority).
+        user_input:   Original user message — stored in ctx[input] and ctx[user_input].
+        ctx_override: Optional dict of ctx values applied last (highest priority).
                       Allows callers (e.g. run_habit) to pass runtime args into the habit.
 
     Returns:
@@ -226,17 +245,34 @@ def run_schema_habit(
     if not step_map:
         return f"[SCHEMA] habit {habit.id}: step list has no valid step entries"
 
-    # ── init traversal context ──────────────────────────────────────────────────
+    # ── init traversal context (basket) ────────────────────────────────────────
     ctx_id = cortex.traversal_start(job_id=f"schema:{habit.id}")
 
+    # Layer 1: basket_schema defaults (declared by habit author)
+    basket_schema = habit.metadata.get("basket_schema", {})
+    for k, v in basket_schema.items():
+        if not str(k).startswith("__"):  # reserved keys are runtime-only
+            cortex.traversal_set(ctx_id, str(k), str(v), step=0)
+
+    # Layer 2: ctx_init (legacy — kept for backwards compat; same semantics)
     ctx_init = habit.metadata.get("ctx_init", {})
     for k, v in ctx_init.items():
         cortex.traversal_set(ctx_id, str(k), str(v), step=0)
+
+    # Layer 3: standard input keys
+    cortex.traversal_set(ctx_id, "node_id", habit.id, step=0)
+    cortex.traversal_set(ctx_id, "trigger_type", "schema", step=0)
     if user_input:
         cortex.traversal_set(ctx_id, "user_input", user_input, step=0)
+        cortex.traversal_set(ctx_id, "input", user_input, step=0)
+
+    # Layer 4: caller overrides (highest priority)
     if ctx_override:
         for k, v in ctx_override.items():
             cortex.traversal_set(ctx_id, str(k), str(v), step=0)
+
+    # Reserved: __status__ starts as running
+    cortex.traversal_set(ctx_id, "__status__", "running", step=0)
 
     # ── step execution loop ─────────────────────────────────────────────────────
     from .registry import registry as _tool_registry
@@ -328,6 +364,12 @@ def run_schema_habit(
                         )
                         next_step = on_error_step
                     else:
+                        cortex.traversal_set(
+                            ctx_id, "__status__", "error", step=current_step
+                        )
+                        cortex.traversal_set(
+                            ctx_id, "__error__", err_msg[:500], step=current_step
+                        )
                         break
             else:
                 results.append(f"[SCHEMA] unknown primitive: {do!r}")
@@ -347,6 +389,12 @@ def run_schema_habit(
         results.append(
             f"[SCHEMA] reached MAX_STEPS ({_MAX_STEPS}) — possible infinite loop in {habit.id}"
         )
+        cortex.traversal_set(ctx_id, "__status__", "timeout", step=iterations)
+    else:
+        # Normal completion — check if status was already set to error/branched
+        current_status = cortex.traversal_get(ctx_id, "__status__") or "running"
+        if current_status == "running":
+            cortex.traversal_set(ctx_id, "__status__", "complete", step=iterations)
 
     return "\n".join(results) if results else f"[SCHEMA] {habit.id}: no output"
 
