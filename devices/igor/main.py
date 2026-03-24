@@ -1349,6 +1349,39 @@ class Igor(IgorBase):
 
         return think, reply
 
+    @staticmethod
+    def _extract_tool_call(text: str) -> tuple[str, dict, str]:
+        """
+        D222: Extract an LLM-emitted tool call from response text.
+
+        Parses <tool>name</tool><tool_args>{json}</tool_args> blocks.
+        Returns (tool_name, tool_kwargs, cleaned_text) where cleaned_text
+        has the tool blocks removed. tool_name is "" if no block present.
+        """
+        import re, json as _json
+
+        tool_match = re.search(r"<tool>(.*?)</tool>", text, re.DOTALL | re.IGNORECASE)
+        if not tool_match:
+            return "", {}, text
+
+        tool_name = tool_match.group(1).strip()
+        args_match = re.search(
+            r"<tool_args>(.*?)</tool_args>", text, re.DOTALL | re.IGNORECASE
+        )
+        tool_kwargs: dict = {}
+        if args_match:
+            try:
+                tool_kwargs = _json.loads(args_match.group(1).strip())
+            except Exception:
+                tool_kwargs = {}
+
+        # Strip tool blocks from text so they don't appear in the reply
+        cleaned = re.sub(r"<tool>.*?</tool>", "", text, flags=re.DOTALL | re.IGNORECASE)
+        cleaned = re.sub(
+            r"<tool_args>.*?</tool_args>", "", cleaned, flags=re.DOTALL | re.IGNORECASE
+        )
+        return tool_name, tool_kwargs, cleaned.strip()
+
     # ── #145 Step 2: Think call ─────────────────────────────────────────────────
 
     def _think_call(
@@ -4256,6 +4289,28 @@ class Igor(IgorBase):
                     category="think_trace",
                 )
                 response_text = _reply_block
+
+        # [D222] LLM tool dispatch — extract and execute <tool>/<tool_args> blocks
+        if response_text and not habit:
+            _tool_name, _tool_kwargs, _cleaned = self._extract_tool_call(response_text)
+            if _tool_name:
+                response_text = _cleaned
+                try:
+                    from .tools.registry import registry as _tool_reg
+
+                    _tool_result = _tool_reg.execute(_tool_name, _tool_kwargs)
+                    self.cortex.write_ring(
+                        f"TOOL_RESULT|{_tool_name}|{str(_tool_result)[:500]}",
+                        category="tool_result",
+                    )
+                    if response_text:
+                        response_text = f"{response_text}\n\n[{_tool_name} result: {str(_tool_result)[:400]}]"
+                    else:
+                        response_text = (
+                            f"[{_tool_name} result: {str(_tool_result)[:400]}]"
+                        )
+                except Exception as _te:
+                    log_error(kind="LLM_TOOL_DISPATCH", detail=f"{_tool_name}: {_te}")
 
         # ── G31 / #158: TASK_SET completion detection — keyword fast-path + semantic ─
         # Sentence-level co-occurrence (signal + task keyword) as fast path.
