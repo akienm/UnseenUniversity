@@ -26,7 +26,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
-from .models import Memory, MemoryType
+from .models import Memory, MemoryType, MemoryScope, default_scope
 from .scrub import scrub
 from .db_proxy import DatabaseProxy, MEM_COLS, make_home_proxy, make_local_proxy
 from ..igor_base import IgorBase
@@ -99,7 +99,8 @@ CREATE TABLE IF NOT EXISTS memories (
     source              TEXT,
     confidence          REAL DEFAULT 1.0,
     context_of_encoding TEXT,
-    updated_at          TEXT
+    updated_at          TEXT,
+    scope               TEXT DEFAULT 'class'
 );
 
 CREATE INDEX IF NOT EXISTS idx_memories_metadata_gin ON memories USING GIN (metadata);
@@ -289,11 +290,22 @@ class Cortex(IgorBase):
                     "ALTER TABLE traces ADD COLUMN twm_obs_id TEXT",
                     "ALTER TABLE traces ADD COLUMN instance_id TEXT",
                     "ALTER TABLE traces ADD COLUMN thread_id TEXT",
+                    "ALTER TABLE memories ADD COLUMN scope TEXT DEFAULT 'class'",
                 ):
                     try:
                         conn.execute(_col_sql)
                     except Exception:
                         pass  # column already exists
+                # #123: backfill scope from memory_type (idempotent)
+                conn.execute(
+                    "UPDATE memories SET scope = 'instance' "
+                    "WHERE memory_type IN ('EPISODIC', 'EXPERIENTIAL', 'CREDENTIAL_REF') "
+                    "AND scope = 'class'"
+                )
+                conn.execute(
+                    "UPDATE memories SET scope = 'instance' "
+                    "WHERE portable = 0 AND scope = 'class'"
+                )
             return
 
         with self._conn() as conn:
@@ -390,6 +402,27 @@ class Cortex(IgorBase):
                 logging.getLogger(__name__).warning(
                     "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
                 )
+
+            # #123: scope column — class/instance/session; replaces portable boolean
+            try:
+                conn.execute(
+                    "ALTER TABLE memories ADD COLUMN scope TEXT DEFAULT 'class'"
+                )
+            except Exception as _bare_e:
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
+            # Backfill: instance-type memories → scope='instance' (idempotent)
+            conn.execute(
+                "UPDATE memories SET scope = 'instance' "
+                "WHERE memory_type IN ('EPISODIC', 'EXPERIENTIAL', 'CREDENTIAL_REF') "
+                "AND scope = 'class'"
+            )
+            # Honor explicit portable=0 rows not covered by type mapping
+            conn.execute(
+                "UPDATE memories SET scope = 'instance' "
+                "WHERE portable = 0 AND scope = 'class'"
+            )
 
             # #128: one-time migration — promote non-empty link_ids into links_weighted (weight 0.5)
             _migrate_rows = conn.execute(
@@ -787,8 +820,8 @@ class Cortex(IgorBase):
                  valence, arousal, dominance,
                  activation_count, friction_history, timestamp, metadata, portable,
                  links_weighted, last_accessed,
-                 source, confidence, context_of_encoding, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 source, confidence, context_of_encoding, updated_at, scope)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
                     memory.id,
@@ -811,6 +844,7 @@ class Cortex(IgorBase):
                     memory.confidence,
                     memory.context_of_encoding,
                     _now_iso,
+                    memory.scope.value if memory.scope else "class",
                 ),
             )
         # #260: invalidate habit cache when a habit is stored
@@ -936,13 +970,12 @@ class Cortex(IgorBase):
 
     def get_portable(self) -> list:
         """
-        #71: Return all portable=True memories — the set an offspring instance should inherit.
-        Excludes EPISODIC, CREDENTIAL_REF, and any memory explicitly marked portable=False.
+        #71/#123: Return class-scoped memories — the set an offspring instance should inherit.
+        Uses scope='class' (set by #123 migration from memory_type + portable flag).
         """
         with self._conn() as conn:
             rows = conn.execute(
-                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE portable = 1 "
-                "AND memory_type NOT IN ('EPISODIC', 'CREDENTIAL_REF') "
+                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE scope = 'class' "
                 "ORDER BY id"
             ).fetchall()
         return [self._to_memory(r) for r in rows]
@@ -2793,6 +2826,11 @@ class Cortex(IgorBase):
                 else json.loads(row["metadata"] or "{}")
             ),
             portable=bool(row["portable"]) if "portable" in keys else True,
+            scope=(
+                MemoryScope(row["scope"])
+                if "scope" in keys and row["scope"]
+                else default_scope(_safe_memory_type(row["memory_type"]))
+            ),
             # G46: provenance + epistemic fields
             source=row["source"] if "source" in keys and row["source"] else "",
             confidence=(
