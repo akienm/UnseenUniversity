@@ -406,14 +406,15 @@ def select_habit(
                 _af_list = _af if isinstance(_af, list) else [_af]
                 if author not in _af_list:
                     continue
-            # G-OVN-1b: action-class habits (with code_ref or workflow/delegation types)
-            # skip on question intents — prevent PROC_CALENDAR_CREATE, PROC_CLUSTER_SSH_CHECK
-            # etc. from misfiring when a question happens to match their trigger vocabulary.
+            # G-OVN-1b: action-class habits skip on question intents — prevent
+            # PROC_CALENDAR_CREATE, PROC_CLUSTER_SSH_CHECK, PROC_WG_PREPARSE_TUNING etc.
+            # from misfiring when a question mentions their trigger vocabulary.
+            # Fix: removed incorrect `and code_ref` carve-out — ALL action/proactive/workflow/
+            # delegation/reactive habits skip on question intents regardless of code_ref.
             if (
-                h_type in ("action", "proactive")
-                and habit.metadata.get("code_ref")
-                or h_type in ("workflow", "delegation", "reactive")
-            ) and parsed_intent in _QUESTION_INTENTS:
+                h_type in ("action", "proactive", "workflow", "delegation", "reactive")
+                and parsed_intent in _QUESTION_INTENTS
+            ):
                 continue
             # G-OVN-1c: response habits flagged suppress_on_factual_intent skip on
             # factual_question — prevents "I don't know that one" canned responses from
