@@ -1421,7 +1421,36 @@ class Cortex(IgorBase):
         _supplement = [
             self._to_memory(r) for r in rows if r["id"] not in _traversal_ids
         ]
-        all_memories = _traversal_pool + _supplement
+
+        # T-orphan-threshold-fix: always rescue true orphans (parent_id IS NULL)
+        # regardless of traversal pool size. The 80-node supplement gate closes at
+        # graph scale (11k+ nodes), making rootless nodes permanently invisible.
+        # This pass is cheap: small fixed limit, targets only nodes with null parent.
+        _orphan_rescue: list = []
+        try:
+            with self._conn() as conn:
+                _orphan_rows = conn.execute(
+                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
+                    f"WHERE parent_id IS NULL AND memory_type NOT IN ({_excl_ph}) "
+                    "ORDER BY activation_count DESC LIMIT 20",
+                    list(_ALWAYS_EXCLUDE),
+                ).fetchall()
+            _seen_ids = _traversal_ids | {m.id for m in _supplement}
+            _orphan_rescue = [
+                self._to_memory(r) for r in _orphan_rows if r["id"] not in _seen_ids
+            ]
+            if _orphan_rescue:
+                logging.getLogger("forensic").debug(
+                    "[cortex.search] orphan rescue: %d rootless nodes added to pool",
+                    len(_orphan_rescue),
+                )
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/memory/cortex.py orphan rescue: %s",
+                _bare_e,
+            )
+
+        all_memories = _traversal_pool + _supplement + _orphan_rescue
 
         # Filter out NE diagnostic memories — operational noise from consolidation/stall loops
         # that may have entered LTM before the self-diagnostic filter was in place (URGENT.3)
