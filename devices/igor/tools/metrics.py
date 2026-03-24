@@ -178,6 +178,111 @@ registry.register(
 )
 
 
+def _get_tool_registry_report(top: int = 20, **_) -> str:
+    """
+    Return per-tool call count, error rate, p50/p95 latency from the live ToolRegistry.
+    Sorted by call count descending. Shows top N tools.
+    """
+    from .registry import registry as _registry
+
+    stats = _registry.tool_stats()
+    if not stats:
+        return "No tool calls recorded yet this session."
+
+    lines = [f"TOOL REGISTRY — {len(stats)} tools called this session (top {top}):\n"]
+    for tool_name, d in list(stats.items())[:top]:
+        p50 = f"{d['p50_ms']}ms" if d["p50_ms"] is not None else "—"
+        p95 = f"{d['p95_ms']}ms" if d["p95_ms"] is not None else "—"
+        err_pct = f"{d['error_rate']:.0%}" if d["errors"] > 0 else "0%"
+        lines.append(
+            f"  {tool_name:<36} {d['calls']:4}x  err={err_pct}  p50={p50}  p95={p95}"
+        )
+    return "\n".join(lines)
+
+
+registry.register(
+    Tool(
+        name="get_tool_registry_report",
+        description=(
+            "Return per-tool call statistics for this session: call count, error rate, "
+            "p50/p95 latency. Sorted by call count. "
+            "Use to understand which tools are called most, which fail, and which are slow. "
+            "Feeds /audit thread-hygiene check."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "top": {
+                    "type": "integer",
+                    "description": "Max tools to show (default 20).",
+                }
+            },
+            "required": [],
+        },
+        fn=_get_tool_registry_report,
+    )
+)
+
+
+def _get_daemon_report(**_) -> str:
+    """Return DaemonSupervisor status: all registered threads, alive/dead, uptime."""
+    try:
+        from ..cognition.daemon_supervisor import supervisor as _sup
+
+        return _sup.report_str()
+    except Exception as e:
+        return f"Error reading daemon supervisor: {e}"
+
+
+registry.register(
+    Tool(
+        name="get_daemon_report",
+        description=(
+            "Return the live status of all Igor daemon threads: name, alive/dead, "
+            "uptime in seconds, and health check result (if defined). "
+            "Use to check for dead threads, thread leaks, or as part of /audit. "
+            "Covers: network-listener, discord-bot, web-server, boot-check, "
+            "ne-worker, consolidation-worker, distillation-worker, ne-deep-consolidation."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        fn=_get_daemon_report,
+    )
+)
+
+
+def _get_network_proxy_report(**_) -> str:
+    """Return NetworkProxy per-host call stats: call count, error rate, p50/p95 latency."""
+    try:
+        from ..network.proxy import proxy as _proxy
+
+        return _proxy.report_str()
+    except Exception as e:
+        return f"Error reading network proxy: {e}"
+
+
+registry.register(
+    Tool(
+        name="get_network_proxy_report",
+        description=(
+            "Return per-host outbound HTTP call statistics tracked by NetworkProxy: "
+            "call count, error rate, p50/p95 latency. "
+            "Use to check external endpoint health or as part of /audit. "
+            "Shows hosts called via proxy.get() / proxy.post() / proxy.post_json()."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        fn=_get_network_proxy_report,
+    )
+)
+
+
 registry.register(
     Tool(
         name="get_metrics_report",

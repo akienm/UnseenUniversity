@@ -240,6 +240,12 @@ def start():
     _bot_thread = threading.Thread(target=run, daemon=True, name="discord-bot")
     _bot_thread.start()
     _log("bot_thread_launched", allowed_channel=allowed_channel)
+    try:
+        from ..cognition.daemon_supervisor import supervisor as _sup
+
+        _sup.register("discord-bot", _bot_thread, health_fn=is_running)
+    except Exception:
+        pass
 
 
 def is_running() -> bool:

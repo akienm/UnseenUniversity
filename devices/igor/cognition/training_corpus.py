@@ -32,7 +32,7 @@ import json
 import os
 import shutil
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -50,6 +50,14 @@ MIN_PARA_CHARS = 60
 MAX_PARAS_PER_BOOK = int(os.getenv("IGOR_TRAINING_MAX_PARAS", "800"))
 # Disk free threshold below which eviction triggers (GB)
 EVICT_THRESHOLD_GB = float(os.getenv("IGOR_DISK_WARN_GB", "1.0"))
+
+# Spacing effect: inter-trial intervals for re-training passes (days).
+# Each completed pass advances to the next interval; last interval repeats.
+# Override with IGOR_TRAINING_SPACING_DAYS as comma-separated ints.
+_default_spacing = "1,3,7,21"
+SPACING_INTERVALS_DAYS: list[int] = [
+    int(x) for x in os.getenv("IGOR_TRAINING_SPACING_DAYS", _default_spacing).split(",")
+]
 
 
 def _book_id(url_or_path: str) -> str:
@@ -71,7 +79,10 @@ def _load_index() -> dict:
         try:
             return json.loads(INDEX_FILE.read_text(encoding="utf-8"))
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/training_corpus.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/cognition/training_corpus.py: %s",
+                _bare_e,
+            )
     return {}
 
 
@@ -125,7 +136,9 @@ def fetch(url: str, title: str, source: str = "gutenberg") -> tuple[str, str]:
                 f"Try again when the machine is less busy."
             )
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/training_corpus.py: %s", _bare_e)
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/cognition/training_corpus.py: %s", _bare_e
+        )
 
     # Check disk before fetching
     free_gb = _disk_free_gb()
@@ -315,6 +328,138 @@ def train(book_id: str, word_graph: "WordGraph", wg_save_path: Path) -> str:
         f"status={meta['status']}. "
         f"Word graph saved.{evict_note}"
     )
+
+
+# ── Spacing / inter-trial intervals ────────────────────────────────────────────
+
+
+def _next_pass_ts(pass_count: int, anchor_ts: str) -> str:
+    """
+    Compute the ISO timestamp for the next training pass.
+    pass_count: how many passes have already been completed.
+    anchor_ts: ISO timestamp of the last training event.
+    The gap is SPACING_INTERVALS_DAYS[pass_count], clamped to last element.
+    """
+    idx = min(pass_count, len(SPACING_INTERVALS_DAYS) - 1)
+    gap_days = SPACING_INTERVALS_DAYS[idx]
+    anchor_dt = datetime.fromisoformat(anchor_ts).replace(tzinfo=None)
+    next_dt = anchor_dt + timedelta(days=gap_days)
+    return next_dt.strftime("%Y-%m-%dT%H:%M:%S")
+
+
+def schedule_training_passes(reset: bool = False) -> str:
+    """
+    Schedule inter-trial re-training passes for all complete books.
+    Sets next_pass_ts based on train_ts + first spacing interval.
+    If reset=True, clears pass_count and resets next_pass_ts from train_ts.
+    Returns a summary.
+    """
+    index = _load_index()
+    scheduled = []
+    already = []
+
+    for book_id, meta in index.items():
+        if meta["status"] != "complete":
+            continue
+        train_ts = meta.get("train_ts")
+        if not train_ts:
+            continue  # never finished a pass — skip
+
+        existing_next = meta.get("next_pass_ts")
+        pass_count = meta.get("pass_count", 0)
+
+        if reset:
+            meta["pass_count"] = 0
+            meta["next_pass_ts"] = _next_pass_ts(0, train_ts)
+            scheduled.append(meta["title"][:40])
+        elif existing_next:
+            already.append(meta["title"][:40])
+        else:
+            meta["next_pass_ts"] = _next_pass_ts(pass_count, train_ts)
+            meta["pass_count"] = pass_count
+            scheduled.append(meta["title"][:40])
+
+    if scheduled or reset:
+        _save_index(index)
+
+    lines = [
+        f"schedule_training_passes: {len(scheduled)} scheduled, {len(already)} already had a schedule."
+    ]
+    if scheduled:
+        lines.append(
+            f"  Newly scheduled ({len(scheduled)}): "
+            + ", ".join(scheduled[:5])
+            + (" ..." if len(scheduled) > 5 else "")
+        )
+    lines.append(f"  Spacing intervals: {SPACING_INTERVALS_DAYS} days")
+    return "\n".join(lines)
+
+
+def train_due_passes(dry_run: bool = False) -> str:
+    """
+    Run a re-training pass for all books where next_pass_ts <= now.
+    Resets para_cursor to 0 (full re-scan), increments pass_count,
+    sets next_pass_ts to the next spacing interval.
+    If dry_run=True, just report what would run without training.
+    Returns a summary.
+    """
+    from ..cognition.word_graph import WordGraph, default_cache_path
+
+    index = _load_index()
+    now_str = _now()
+    due = [
+        (book_id, meta)
+        for book_id, meta in index.items()
+        if meta.get("next_pass_ts")
+        and meta["next_pass_ts"] <= now_str
+        and meta["status"] == "complete"
+    ]
+
+    if not due:
+        return f"No training passes due (now={now_str})."
+
+    if dry_run:
+        lines = [f"Due for re-training ({len(due)} books):"]
+        for book_id, meta in due:
+            lines.append(
+                f"  {meta['title'][:50]}: pass #{meta.get('pass_count', 0)+1}, "
+                f"next_pass_ts={meta['next_pass_ts']}"
+            )
+        return "\n".join(lines)
+
+    wg = WordGraph.load(default_cache_path())
+    save_path = default_cache_path()
+    results = []
+
+    for book_id, meta in due:
+        if _disk_free_gb() < 0.2:
+            results.append("Disk critically low — stopping.")
+            break
+
+        text_path = CORPUS_DIR / f"{book_id}.txt"
+        if not text_path.exists():
+            results.append(
+                f"  Skipped '{meta['title'][:40]}': text file missing (needs re-fetch)."
+            )
+            continue
+
+        pass_num = meta.get("pass_count", 0) + 1
+        # Reset cursor for a full re-scan
+        meta["para_cursor"] = 0
+        _save_index(index)
+
+        msg = train(book_id, wg, save_path)
+
+        # Advance spacing schedule
+        meta["pass_count"] = pass_num
+        meta["next_pass_ts"] = _next_pass_ts(pass_num, meta["train_ts"])
+        _save_index(index)
+
+        results.append(f"  Pass #{pass_num} — {msg}")
+
+    lines = [f"train_due_passes: {len(due)} due, {len(results)} processed:"]
+    lines.extend(results)
+    return "\n".join(lines)
 
 
 # ── Eviction ───────────────────────────────────────────────────────────────────

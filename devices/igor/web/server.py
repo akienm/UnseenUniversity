@@ -808,6 +808,12 @@ def start(stats_fn=None, cortex_fn=None, igor_fn=None):
 
     _server_thread = threading.Thread(target=_run, daemon=True, name="web-server")
     _server_thread.start()
+    try:
+        from ..cognition.daemon_supervisor import supervisor as _sup
+
+        _sup.register("web-server", _server_thread, health_fn=is_running)
+    except Exception:
+        pass
 
     # When SSL is active, also serve plain HTTP on port+1 for LAN access.
     # e.g. http://10.0.0.229:8081/ works without cert warnings.
