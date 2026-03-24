@@ -654,24 +654,16 @@ class HabitCandidateSource(BasePushSource):
         self._last_run = now
 
         try:
-            from ..memory.models import MemoryType
-
-            eligible_types = [t for t in MemoryType if t.value not in self._SKIP_TYPES]
-            all_mems = []
-            for mt in eligible_types:
-                all_mems.extend(cortex.get_by_type(mt))
+            candidates = cortex.get_hot_nodes(
+                threshold=self.ACTIVATION_THRESH,
+                skip_types=self._SKIP_TYPES,
+                limit=5,
+            )
         except Exception:
             return []
 
-        candidates = [
-            m for m in all_mems if m.activation_count >= self.ACTIVATION_THRESH
-        ]
         if not candidates:
             return []
-
-        # Sort by activation_count desc; cap at top 5 per cycle to avoid noise
-        candidates.sort(key=lambda m: m.activation_count, reverse=True)
-        candidates = candidates[:5]
 
         pushed = []
         for mem in candidates:
