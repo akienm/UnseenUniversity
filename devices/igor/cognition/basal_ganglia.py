@@ -336,6 +336,16 @@ def select_habit(
 
     Never raises — habit selection must not crash the main loop.
     """
+
+    def _emit_bg(data: dict) -> None:
+        """Emit BG scoring summary to TurnContext (turn_trace). Fire-and-forget."""
+        try:
+            from .forensic_logger import turn_ctx_update as _tcu
+
+            _tcu("bg_scoring", data)
+        except Exception:
+            pass
+
     try:
         # Use core_input (thread-context stripped) for habit trigger matching.
         # parsed.raw contains the full input including prepended thread history;
@@ -348,12 +358,32 @@ def select_habit(
         if any(p in raw_lower for p in COMPILE_PHRASES):
             compiler = next((h for h in habits if h.id == "PROC_HABIT_COMPILER"), None)
             if compiler:
+                _emit_bg(
+                    {
+                        "pre_check": "compile_phrase",
+                        "winner": "PROC_HABIT_COMPILER",
+                        "winner_score": 0.95,
+                        "top": [],
+                        "near_misses": 0,
+                        "rationale": "compile_phrase_match",
+                    }
+                )
                 return (compiler, 0.95, [])
 
         # ── 1b. Notebook save-intent pre-check ───────────────────────────────
         if any(p in raw_lower for p in NOTEBOOK_PHRASES):
             saver = next((h for h in habits if h.id == "PROC_NOTEBOOK_SAVE"), None)
             if saver:
+                _emit_bg(
+                    {
+                        "pre_check": "notebook_phrase",
+                        "winner": "PROC_NOTEBOOK_SAVE",
+                        "winner_score": 0.93,
+                        "top": [],
+                        "near_misses": 0,
+                        "rationale": "notebook_phrase_match",
+                    }
+                )
                 return (saver, 0.93, [])
 
         # ── 2. Parallel scoring ───────────────────────────────────────────────
@@ -447,6 +477,17 @@ def select_habit(
         near_misses = near_misses[:3]  # cap — tiebreaker prompt stays small
 
         if not scored:
+            _emit_bg(
+                {
+                    "threshold": round(threshold, 4),
+                    "winner": None,
+                    "winner_score": 0.0,
+                    "top": [],
+                    "near_misses": len(near_misses),
+                    "near_miss_ids": [h.id for _, h in near_misses],
+                    "rationale": "no_candidates_above_threshold",
+                }
+            )
             return (None, 0.0, near_misses)
 
         # ── 3. Winner-take-all (lateral inhibition) ───────────────────────────
@@ -479,6 +520,23 @@ def select_habit(
                     _bare_e,
                 )
 
+        _emit_bg(
+            {
+                "threshold": round(threshold, 4),
+                "winner": winner.id,
+                "winner_score": round(winner_score, 4),
+                "top": [
+                    {
+                        "id": h.id,
+                        "score": round(s, 4),
+                        "type": h.metadata.get("habit_type", ""),
+                    }
+                    for s, h in scored[:5]
+                ],
+                "near_misses": len(near_misses),
+                "rationale": "max_score_wins",
+            }
+        )
         return (winner, winner_score, [])
 
     except Exception:
