@@ -400,9 +400,12 @@ def select_habit(
                 continue
             # author_filter: skip habits restricted to a specific input author.
             # Prevents CC-only habits (e.g. CC_RUN_BASH) from firing on human messages.
+            # Supports both string ("akien") and list (["akien", "user"]) formats.
             _af = habit.metadata.get("author_filter")
-            if _af and author != _af:
-                continue
+            if _af:
+                _af_list = _af if isinstance(_af, list) else [_af]
+                if author not in _af_list:
+                    continue
             # G-OVN-1b: action-class habits (with code_ref or workflow/delegation types)
             # skip on question intents — prevent PROC_CALENDAR_CREATE, PROC_CLUSTER_SSH_CHECK
             # etc. from misfiring when a question happens to match their trigger vocabulary.
