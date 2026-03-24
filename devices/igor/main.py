@@ -2662,8 +2662,8 @@ class Igor(IgorBase):
 
         # Handle commands
         if parsed.is_command:
-            self._handle_command(parsed.command, user_input)
-            return ""
+            if self._handle_command(parsed.command, user_input) is not False:
+                return ""
 
         # [ARBITER INTERCEPT] Conversational approve/deny when items are pending
         _lower = user_input.strip().lower()
@@ -5655,8 +5655,11 @@ class Igor(IgorBase):
             "hygiene": self._cmd_hygiene,  # #152
             "trace": self._cmd_trace,  # #203: last N turn traces
         }
-        fn = commands.get(command, self._cmd_unknown)
+        fn = commands.get(command, None)
+        if fn is None:
+            return False  # unknown command — fall through to habit/LLM pipeline
         fn(raw)
+        return True
 
     def _cmd_help(self, _):
         local_state = "ON" if self.local_mode else "OFF"
