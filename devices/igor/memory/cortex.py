@@ -1021,6 +1021,37 @@ class Cortex(IgorBase):
             rows = conn.execute(sql, (memory_type.value,)).fetchall()
         return [self._to_memory(r) for r in rows]
 
+    def get_hot_nodes(
+        self,
+        threshold: int = 5,
+        skip_types: set | None = None,
+        limit: int = 10,
+    ) -> list:
+        """Return top nodes by activation_count, skipping specified types.
+
+        Interim fix for T-no-row-scans: single indexed query instead of
+        full-table scan per type. Real fix: read from hot_attractors/TWM.
+        """
+        skip = skip_types or set()
+        if skip:
+            placeholders = ",".join("?" * len(skip))
+            sql = (
+                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
+                f"WHERE activation_count >= ? AND memory_type NOT IN ({placeholders}) "
+                f"ORDER BY activation_count DESC LIMIT {int(limit)}"
+            )
+            params = (threshold, *skip)
+        else:
+            sql = (
+                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
+                f"WHERE activation_count >= ? "
+                f"ORDER BY activation_count DESC LIMIT {int(limit)}"
+            )
+            params = (threshold,)
+        with self._conn() as conn:
+            rows = conn.execute(sql, params).fetchall()
+        return [self._to_memory(r) for r in rows]
+
     def add_child(self, parent_id: str, child_id: str):
         parent = self.get(parent_id)
         if parent and child_id not in parent.children_ids:

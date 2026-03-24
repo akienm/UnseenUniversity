@@ -1333,7 +1333,7 @@ class Igor(IgorBase):
         reply = text
 
         think_match = re.search(
-            r"<think>(.*?)</think>", text, re.DOTALL | re.IGNORECASE
+            r"<think(?:ing)?>(.*?)</think(?:ing)?>", text, re.DOTALL | re.IGNORECASE
         )
         reply_match = re.search(
             r"<reply>(.*?)</reply>", text, re.DOTALL | re.IGNORECASE
