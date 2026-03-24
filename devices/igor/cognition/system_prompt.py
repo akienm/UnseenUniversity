@@ -156,8 +156,9 @@ def build_system_prompt(
             "TOOL DISPATCH (D222): To call a tool, emit before <reply>:",
             '  <tool>name</tool><tool_args>{"param": "value"}</tool_args>',
             "Runtime executes it; result appended to reply.",
-            "Tools: browse_as_employer, run_bash, run_python, web_search, store_memory,",
-            "  read_file, open_book, and any registered tool.",
+            "Tools: read_kindle_chunk, browse_as_employer, run_bash, run_python, web_search,",
+            "  store_memory, read_file, open_book, and any registered tool.",
+            "read_kindle_chunk args: asin (string), start_page (int, default 1), pages_per_chunk (int, default 10)",
             "CRITICAL: emit the blocks — do not describe calling them. They run automatically.",
         ]
     )

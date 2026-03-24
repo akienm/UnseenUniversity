@@ -92,17 +92,21 @@ def _ensure_virtual_display():
 
 
 def browser_use_task(
-    task_description: str,
+    task: str,
     url: Optional[str] = None,
-    max_steps: int = 10,
-    timeout: int = 120,
+    max_steps: int = 30,
+    timeout: int = 300,
 ) -> str:
     """
     Execute a browser automation task using AI-driven browser control.
+    Uses Igor's own logged-in Chrome profile (chrome_igor_profile/Profile 1).
+
+    Use for: reading Kindle ebooks (read.amazon.com), accessing Igor's logged-in
+    accounts, general AI-driven web automation.
 
     Args:
-        task_description: Natural language description of what to do
-            (e.g., "Go to Gemini and ask it about neuroscience")
+        task: Natural language description of what to do
+            (e.g., "Go to read.amazon.com and find Making Money by Pratchett")
         url: Optional starting URL. If None, opens blank page
         max_steps: Maximum number of browser actions to attempt (safety limit)
         timeout: Max seconds to wait for task completion
@@ -112,7 +116,7 @@ def browser_use_task(
     """
     _ensure_virtual_display()
     logger.info(
-        f"browser_use_task: starting — task={task_description[:100]!r} url={url!r} max_steps={max_steps} timeout={timeout}"
+        f"browser_use_task: starting — task={task[:100]!r} url={url!r} max_steps={max_steps} timeout={timeout}"
     )
     try:
         loop = asyncio.new_event_loop()
@@ -120,7 +124,7 @@ def browser_use_task(
         try:
             result = loop.run_until_complete(
                 _run_browser_agent(
-                    task_description,
+                    task,
                     url=url,
                     max_steps=max_steps,
                     timeout=timeout,
@@ -148,7 +152,7 @@ def browser_use_task(
             {
                 "status": "error",
                 "error": str(e),
-                "task": task_description,
+                "task": task,
             }
         )
 
@@ -198,8 +202,10 @@ async def _run_browser_agent(
         "Safety constraints:\n"
         "1. Do not make purchases or enter credit card information\n"
         "2. Do not submit forms without explicit confirmation\n"
-        "3. Respect robots.txt and site terms of service\n"
-        "4. Report extracted data back clearly when done"
+        "3. Do not create accounts or sign up for any service — ever\n"
+        "4. If you see a login or sign-up page: STOP and report back — do not proceed\n"
+        "5. Respect robots.txt and site terms of service\n"
+        "6. Report extracted data back clearly when done"
     )
 
     initial_actions = None
@@ -208,9 +214,18 @@ async def _run_browser_agent(
         initial_actions = [{"navigate": {"url": url}}]
 
     try:
+        from browser_use.browser.session import BrowserSession
+
+        _igor_session = BrowserSession(
+            user_data_dir=_IGOR_PROFILE,
+            profile_directory=os.getenv("IGOR_CHROME_PROFILE_DIR", "Profile 1"),
+            channel="chrome",
+            headless=False,
+        )
         agent = Agent(
             task=full_task,
             llm=_make_llm(),
+            browser_session=_igor_session,
             use_vision=True,
             max_actions_per_step=1,
             step_timeout=timeout,
@@ -219,7 +234,7 @@ async def _run_browser_agent(
             register_new_step_callback=on_step,
         )
 
-        logger.info(f"Browser task started: {task_description[:100]}...")
+        logger.info(f"Browser task started: {task[:100]}...")
         result = await agent.run()
 
         # Extract final URL (final_state() removed in 0.12.x; use urls())
@@ -232,7 +247,8 @@ async def _run_browser_agent(
                 "bare except in wild_igor/igor/tools/browser.py: %s", _bare_e
             )
 
-        # Extract result text
+        # Extract result text — prefer final_result(), fall back to accumulated
+        # extracted_content from all action steps (better than raw object repr)
         extracted = None
         try:
             extracted = result.final_result()
@@ -242,7 +258,16 @@ async def _run_browser_agent(
             )
         if not extracted:
             try:
-                extracted = str(result)[:1000]
+                parts = [
+                    r.extracted_content
+                    for r in result.all_results
+                    if getattr(r, "extracted_content", None)
+                ]
+                extracted = (
+                    "\n---\n".join(parts)
+                    if parts
+                    else "Task completed (no content extracted)"
+                )
             except Exception:
                 extracted = "Task completed"
 
@@ -273,6 +298,18 @@ async def _run_browser_agent(
         }
 
 
+# ── Igor's own Chrome profile (authenticated as Igor) ────────────────────────
+_IGOR_PROFILE = os.getenv(
+    "IGOR_CHROME_PROFILE_PATH",
+    str(
+        Path.home()
+        / ".TheIgors"
+        / "Igor-wild-0001"
+        / "accounts"
+        / "chrome_igor_profile"
+    ),
+)
+
 # ── browse_as_employer — authenticated browsing via employer's Chrome profile ──
 
 _EMPLOYER_PROFILE = os.getenv(
@@ -286,21 +323,19 @@ _EMPLOYER_BROWSE_TRUSTED_SOURCES = frozenset({"repl", "stdin", "web", "cc_bridge
 
 
 def browse_as_employer(
-    task_description: str,
+    task: str,
     url: str,
     max_steps: int = 20,
     timeout: int = 180,
     caller_source: str = "",
 ) -> str:
     """
-    Browse the web using the employer's (Akien's) logged-in Chrome profile.
+    Browse the web using the employer's (Akien's) personal system Chrome profile
+    (~/.config/google-chrome). Use when the employer directs Igor to access
+    Akien's personal accounts or paywalled content via Akien's own browser session.
 
-    This gives Igor access to services the employer is signed into — Kindle
-    Cloud Reader, personal accounts, paywalled content — without needing
-    credentials. Igor reads as the employer reads: as a person, not a scraper.
-
-    Use for: reading ebooks (Kindle, library services), accessing employer's
-    accounts at their direction, research behind login walls.
+    NOT for Kindle/Amazon — use browser_use_task for that (Igor's own profile
+    at chrome_igor_profile has the Amazon login set up for Igor's use).
 
     INHIBITION: Not available from Discord or untrusted channels. The employer's
     session carries real credentials — only use when the employer is present.
@@ -331,18 +366,14 @@ def browse_as_employer(
         asyncio.set_event_loop(loop)
         try:
             result = loop.run_until_complete(
-                _run_as_employer(
-                    task_description, url=url, max_steps=max_steps, timeout=timeout
-                )
+                _run_as_employer(task, url=url, max_steps=max_steps, timeout=timeout)
             )
             return json.dumps(result, indent=2)
         finally:
             loop.close()
     except Exception as e:
         logger.exception("browse_as_employer failed")
-        return json.dumps(
-            {"status": "error", "error": str(e), "task": task_description}
-        )
+        return json.dumps({"status": "error", "error": str(e), "task": task})
 
 
 async def _run_as_employer(
@@ -430,6 +461,227 @@ async def _run_as_employer(
             }
         finally:
             await context.close()
+
+
+# ── read_kindle_chunk — deterministic Playwright-based Kindle page reader ────────
+
+
+async def _read_kindle_chunk_impl(
+    asin: str,
+    start_page: int,
+    pages_per_chunk: int,
+    timeout: int,
+) -> dict:
+    """
+    Playwright-based Kindle reader. No LLM agent — deterministic keyboard + DOM.
+    Opens Igor's Chrome profile, navigates to the Kindle reader for the given ASIN,
+    jumps to start_page, then reads pages_per_chunk pages using ArrowRight.
+    Extracts text from .text-div elements on each page.
+    """
+    from playwright.async_api import async_playwright
+    import pathlib as _pathlib
+
+    extracted_pages = []
+    last_page = start_page
+
+    profile_dir = os.getenv("IGOR_CHROME_PROFILE_DIR", "Profile 1")
+
+    # Remove stale singleton locks from the live profile dir
+    for _lock in ["SingletonLock", "SingletonSocket"]:
+        _lp = _pathlib.Path(_IGOR_PROFILE) / _lock
+        if _lp.exists() or _lp.is_symlink():
+            _lp.unlink(missing_ok=True)
+
+    async with async_playwright() as p:
+        context = await p.chromium.launch_persistent_context(
+            user_data_dir=_IGOR_PROFILE,
+            channel="chrome",
+            headless=False,
+            args=[
+                f"--profile-directory={profile_dir}",
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-gpu",
+            ],
+            ignore_default_args=["--enable-automation"],
+        )
+        page = await context.new_page()
+
+        try:
+            url = f"https://read.amazon.com/?asin={asin}"
+            logger.info(f"read_kindle_chunk: loading {url} start_page={start_page}")
+            await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+
+            # Wait for reader to render at least one text div
+            await page.wait_for_selector(".text-div", timeout=30000)
+            await page.wait_for_timeout(5000)  # let DRM/JS finish rendering
+
+            # Click the reader area to give it keyboard focus
+            try:
+                reader = await page.query_selector(".text-div")
+                if reader:
+                    await reader.click()
+                    await page.wait_for_timeout(500)
+            except Exception:
+                pass
+
+            # ── Navigate to start_page ─────────────────────────────────────────
+            if start_page <= 1:
+                # Go to beginning via Ctrl+Home
+                await page.keyboard.press("Control+Home")
+                await page.wait_for_timeout(1500)
+            else:
+                # Click the page-position indicator and type the target page.
+                # Kindle shows "Page N of M" at bottom — clicking opens a go-to input.
+                navigated = False
+                for sel in [
+                    "#page-indicator",
+                    ".kr-progress-bar-position",
+                    "[data-testid='page-number']",
+                    ".pageReadingInfo",
+                ]:
+                    try:
+                        el = await page.query_selector(sel)
+                        if el:
+                            await el.click()
+                            await page.wait_for_timeout(600)
+                            await page.keyboard.press("Control+a")
+                            await page.keyboard.type(str(start_page))
+                            await page.keyboard.press("Enter")
+                            await page.wait_for_timeout(2000)
+                            navigated = True
+                            logger.info(
+                                f"read_kindle_chunk: navigated to page {start_page} via {sel}"
+                            )
+                            break
+                    except Exception:
+                        continue
+                if not navigated:
+                    logger.warning(
+                        f"read_kindle_chunk: could not navigate to page {start_page} "
+                        "— starting from current position"
+                    )
+
+            # ── Read pages_per_chunk pages ─────────────────────────────────────
+            for i in range(pages_per_chunk):
+                # Extract visible text from all .text-div elements
+                divs = await page.query_selector_all(".text-div")
+                page_text = ""
+                for div in divs:
+                    t = await div.inner_text()
+                    if t.strip():
+                        page_text += t + "\n"
+
+                if page_text.strip():
+                    extracted_pages.append(page_text.strip())
+                    last_page = start_page + i
+                    logger.info(
+                        f"read_kindle_chunk: page {last_page} — {len(page_text)} chars extracted"
+                    )
+                else:
+                    logger.warning(
+                        f"read_kindle_chunk: page {start_page + i} — no text found in .text-div"
+                    )
+
+                # Advance to next page
+                await page.keyboard.press("ArrowRight")
+                await page.wait_for_timeout(2500)  # wait for DRM page render
+
+            return {
+                "status": "success",
+                "asin": asin,
+                "start_page": start_page,
+                "last_page": last_page,
+                "pages_read": len(extracted_pages),
+                "text": "\n\n--- PAGE BREAK ---\n\n".join(extracted_pages),
+            }
+
+        except Exception as e:
+            logger.exception(f"read_kindle_chunk error at page {last_page}: {e}")
+            return {
+                "status": "error",
+                "error": str(e),
+                "asin": asin,
+                "start_page": start_page,
+                "last_page": last_page,
+                "pages_read": len(extracted_pages),
+                "text": "\n\n--- PAGE BREAK ---\n\n".join(extracted_pages),
+            }
+        finally:
+            await context.close()
+
+
+def read_kindle_chunk(
+    asin: str,
+    start_page: int = 1,
+    pages_per_chunk: int = 10,
+    timeout: int = 120,
+) -> str:
+    """
+    Read a chunk of pages from a Kindle ebook using Igor's logged-in Chrome profile.
+    Uses direct Playwright keyboard control (ArrowRight) — no AI agent needed.
+
+    Text is extracted from .text-div elements on each page. Call repeatedly with
+    start_page = last_page + 1 to read the full book in chunks.
+
+    Returns JSON with: asin, start_page, last_page, pages_read, text (all pages joined).
+    On partial failure still returns whatever was extracted before the error.
+
+    Args:
+        asin: Kindle ASIN (e.g. "B000SEHLE6" for Making Money)
+        start_page: Page to start from (1-indexed)
+        pages_per_chunk: Number of pages to read per call (default 10)
+        timeout: Not used for page timing (each page waits 1.2s); reserved
+    """
+    _ensure_virtual_display()
+    logger.info(
+        f"read_kindle_chunk: asin={asin} start_page={start_page} pages_per_chunk={pages_per_chunk}"
+    )
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            result = loop.run_until_complete(
+                _read_kindle_chunk_impl(asin, start_page, pages_per_chunk, timeout)
+            )
+            return json.dumps(result, indent=2)
+        finally:
+            loop.close()
+    except Exception as e:
+        logger.exception("read_kindle_chunk failed")
+        return json.dumps({"status": "error", "error": str(e), "asin": asin})
+
+
+registry.register(
+    Tool(
+        name="read_kindle_chunk",
+        description=(
+            "Read pages from a Kindle ebook using Igor's logged-in Chrome profile. "
+            "Deterministic: uses ArrowRight key to paginate, extracts text from .text-div elements. "
+            "Call repeatedly with start_page = last_page + 1 to read the full book in chunks. "
+            "Returns extracted text plus last_page so you know where to resume."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "asin": {
+                    "type": "string",
+                    "description": "Kindle ASIN, e.g. 'B000SEHLE6' for Making Money by Pratchett",
+                },
+                "start_page": {
+                    "type": "integer",
+                    "description": "Page number to start from (default 1)",
+                },
+                "pages_per_chunk": {
+                    "type": "integer",
+                    "description": "Number of pages to read per call (default 10)",
+                },
+            },
+            "required": ["asin"],
+        },
+        fn=read_kindle_chunk,
+    )
+)
 
 
 # ── check_claude_balance — scrape Anthropic billing for current credit balance ──
@@ -583,23 +835,24 @@ registry.register(
     Tool(
         name="browse_as_employer",
         description=(
-            "Browse the web using the employer's (Akien's) logged-in Chrome profile. "
-            "Gives access to Kindle Cloud Reader, library ebook services, and any site "
-            "the employer is signed into. For reading books, research behind login walls, "
-            "or any task where the employer's session is needed. "
+            "Browse the web using the employer's (Akien's) personal system Chrome profile. "
+            "Use when Akien directs Igor to access Akien's own personal accounts or paywalled "
+            "content via Akien's browser session. "
+            "NOT for Kindle/Amazon — use browser_use_task for that (Igor's own chrome profile "
+            "has the Amazon login). "
             "NOT available from Discord or public channels — only from direct sessions "
             "where the employer is present."
         ),
         parameters={
             "type": "object",
             "properties": {
-                "task_description": {
+                "task": {
                     "type": "string",
-                    "description": "What to do or read (e.g. 'Read chapter 1 of Speaking by Levelt on Kindle')",
+                    "description": "What to do (e.g. 'Extract the balance from the billing page')",
                 },
                 "url": {
                     "type": "string",
-                    "description": "URL to navigate to (e.g. 'https://read.amazon.com')",
+                    "description": "URL to navigate to",
                 },
                 "max_steps": {
                     "type": "integer",
@@ -610,7 +863,7 @@ registry.register(
                     "description": "The session source (repl/web/discord). Required for trust gate.",
                 },
             },
-            "required": ["task_description", "url"],
+            "required": ["task", "url"],
         },
         fn=browse_as_employer,
     )
@@ -621,35 +874,36 @@ registry.register(
     Tool(
         name="browser_use_task",
         description=(
-            "Execute a browser automation task using AI-driven control. "
-            "Describe what you want done (navigate sites, extract data, interact with pages, "
-            "use web services like Gemini), and the browser agent will perform the task. "
+            "Execute a browser automation task using AI-driven control via Igor's own "
+            "logged-in Chrome profile. Use for: reading Kindle ebooks (read.amazon.com), "
+            "accessing Igor's logged-in accounts, navigating sites, extracting data, "
+            "interacting with pages, using web services like Gemini. "
             "Returns extracted data or confirmation of completion."
         ),
         parameters={
             "type": "object",
             "properties": {
-                "task_description": {
+                "task": {
                     "type": "string",
                     "description": (
                         "Natural language description of the task. "
-                        "E.g., 'Go to Gemini and ask about cognitive architectures'"
+                        "E.g., 'Go to read.amazon.com and find Making Money by Pratchett, read the first chapter'"
                     ),
                 },
                 "url": {
                     "type": "string",
-                    "description": "Optional starting URL (e.g., 'https://gemini.google.com')",
+                    "description": "Optional starting URL (e.g., 'https://read.amazon.com')",
                 },
                 "max_steps": {
                     "type": "integer",
-                    "description": "Maximum browser actions to attempt (default 10, max 50)",
+                    "description": "Maximum browser actions to attempt (default 30)",
                 },
                 "timeout": {
                     "type": "integer",
-                    "description": "Max seconds to wait (default 120)",
+                    "description": "Max seconds to wait (default 300)",
                 },
             },
-            "required": ["task_description"],
+            "required": ["task"],
         },
         fn=browser_use_task,
     )
