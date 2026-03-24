@@ -1341,9 +1341,10 @@ class Cortex(IgorBase):
         limit: int = 10,
         emotional_context=None,
         memory_types: list | None = None,
+        word_graph=None,
     ) -> list:
         """
-        Three-phase hybrid search (#172 + change.37 + T-db-type-routing).
+        Three-phase hybrid search (#172 + change.37 + T-db-type-routing + T-308-hebbian).
 
         Phase 0 — traversal-first (#172, always runs):
           If TWM has an active attractor, follow graph edges (parent/children/links)
@@ -1362,6 +1363,11 @@ class Cortex(IgorBase):
           memory_types overrides auto-routing. When None, _route_types_from_query()
           infers relevant types from query keywords. All types still represented via
           Phase 0 traversal; type routing shapes the Phase 1 candidate pool only.
+
+        Hebbian bridge (T-308, IGOR_HEBBIAN_BRIDGE=true):
+          word_graph: if provided and env gate is on, applies wg_boost_search()
+          to candidate scores after Phase 1, and record_retrieval_boost() after
+          result selection to feed high-importance retrievals back into the word graph.
         """
         terms = query.lower().split()
         _query_lower = query.lower()
@@ -1486,6 +1492,21 @@ class Cortex(IgorBase):
         if not candidates:
             return []
 
+        # T-308: Hebbian bridge Part 1 — word graph → candidate score boost
+        if word_graph is not None:
+            try:
+                from ..cognition.hebbian_bridge import wg_boost_search
+
+                _wg_boosts = wg_boost_search(word_graph, query, candidates)
+                for _m in candidates:
+                    if _m.id in _wg_boosts:
+                        _cur = getattr(_m, "relevance_score", 0.0) or 0.0
+                        _m.relevance_score = min(1.0, _cur + _wg_boosts[_m.id])  # type: ignore[attr-defined]
+            except Exception as _bare_e:
+                logging.getLogger(__name__).debug(
+                    "hebbian wg_boost_search skipped: %s", _bare_e
+                )
+
         # Phase 2: embedding re-rank
         try:
             from ..cognition.embedder import embed, cosine_similarity
@@ -1551,9 +1572,23 @@ class Cortex(IgorBase):
 
                 result = [m for _, m in scored[:limit]]
                 # G9: spreading activation — boost graph neighbors
-                result = self._spread_activation(result, {}, limit)
+                result = self._spread_activation(
+                    result, {}, limit, word_graph=word_graph
+                )
                 self._apply_recency_frequency_boost(result)
                 self._touch_last_accessed(result)
+                # T-308: Hebbian bridge Part 2 — memory → word graph feedback
+                if word_graph is not None:
+                    try:
+                        from ..cognition.hebbian_bridge import record_retrieval_boost
+
+                        _arousal = getattr(emotional_context, "arousal", 0.5) or 0.5
+                        for _m in result:
+                            record_retrieval_boost(word_graph, _m, _arousal)
+                    except Exception as _bare_e:
+                        logging.getLogger(__name__).debug(
+                            "hebbian record_retrieval_boost skipped: %s", _bare_e
+                        )
                 # T-trails-infra v2: look up active TWM attractor to link trail → attractor
                 _twm_obs_id: str | None = None
                 try:
@@ -1590,9 +1625,21 @@ class Cortex(IgorBase):
         # Phase 1 fallback: candidates already scored + merged (#172); return top N
         result = candidates[:limit]
         # G9: spreading activation — boost graph neighbors
-        result = self._spread_activation(result, {}, limit)
+        result = self._spread_activation(result, {}, limit, word_graph=word_graph)
         self._apply_recency_frequency_boost(result)
         self._touch_last_accessed(result)
+        # T-308: Hebbian bridge Part 2 — memory → word graph feedback (Phase 1 fallback)
+        if word_graph is not None:
+            try:
+                from ..cognition.hebbian_bridge import record_retrieval_boost
+
+                _arousal = getattr(emotional_context, "arousal", 0.5) or 0.5
+                for _m in result:
+                    record_retrieval_boost(word_graph, _m, _arousal)
+            except Exception as _bare_e:
+                logging.getLogger(__name__).debug(
+                    "hebbian record_retrieval_boost skipped: %s", _bare_e
+                )
         _trail_id = self._record_trace(
             query, result
         )  # T-traces-infra: static path record
@@ -2223,6 +2270,7 @@ class Cortex(IgorBase):
         activated: list,
         all_memories: dict,
         limit: int,
+        word_graph=None,
     ) -> list:
         """
         Given a list of activated Memory objects (with .relevance_score set),
@@ -2232,6 +2280,10 @@ class Cortex(IgorBase):
         Neighbors already in `activated` get a small relevance bump.
         New neighbors below the original activation threshold are appended
         at decayed relevance and sorted back into the result.
+
+        T-308 (word_graph): if provided and IGOR_HEBBIAN_BRIDGE is on, calls
+        wg_predict_for_activation() to get predicted words from activated nodes,
+        then scores already-loaded neighbors by narrative overlap.
 
         Returns the merged list (max `limit` items).
         """
@@ -2304,6 +2356,31 @@ class Cortex(IgorBase):
                     continue
                 m.relevance_score = neighbor_scores[m.id]  # type: ignore[attr-defined]
                 new_neighbors.append(m)
+
+        # T-308: Hebbian bridge Part 3 — spreading activation word graph extension.
+        # Predict next-words for each activated node; score already-loaded neighbors
+        # by narrative overlap with predictions. No extra DB calls — works on loaded data.
+        if word_graph is not None:
+            try:
+                from ..cognition.hebbian_bridge import wg_predict_for_activation
+
+                _wg_words = wg_predict_for_activation(word_graph, activated)
+                if _wg_words:
+                    _all_loaded = activated + new_neighbors
+                    _activated_ids = {m.id for m in activated}
+                    for _m in _all_loaded:
+                        if _m.id in _activated_ids:
+                            continue
+                        _narr = (getattr(_m, "narrative", None) or "").lower()
+                        _hits = sum(1 for w in _wg_words if w in _narr)
+                        if _hits > 0:
+                            _boost = min(0.05, _hits * 0.01)
+                            _cur = getattr(_m, "relevance_score", 0.0) or 0.0
+                            _m.relevance_score = min(1.0, _cur + _boost)  # type: ignore[attr-defined]
+            except Exception as _bare_e:
+                logging.getLogger(__name__).debug(
+                    "hebbian wg_predict_for_activation skipped: %s", _bare_e
+                )
 
         merged = activated + new_neighbors
         merged.sort(key=lambda m: getattr(m, "relevance_score", 0.0), reverse=True)
