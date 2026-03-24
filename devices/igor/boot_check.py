@@ -187,3 +187,9 @@ def start(cortex=None):
     """
     t = threading.Thread(target=run, args=(cortex,), daemon=True, name="boot-check")
     t.start()
+    try:
+        from .cognition.daemon_supervisor import supervisor as _sup
+
+        _sup.register("boot-check", t)
+    except Exception:
+        pass

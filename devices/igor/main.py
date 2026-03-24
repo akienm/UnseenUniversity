@@ -4822,6 +4822,12 @@ class Igor(IgorBase):
                 target=_ne_worker, daemon=True, name="ne-worker"
             )
             self._ne_thread.start()
+            try:
+                from .cognition.daemon_supervisor import supervisor as _sup
+
+                _sup.register("ne-worker", self._ne_thread)
+            except Exception:
+                pass
         finally:
             self._ne_spawn_lock.release()
 
@@ -4886,6 +4892,12 @@ class Igor(IgorBase):
             target=_worker, daemon=True, name="consolidation-worker"
         )
         self._consolidation_thread.start()
+        try:
+            from .cognition.daemon_supervisor import supervisor as _sup
+
+            _sup.register("consolidation-worker", self._consolidation_thread)
+        except Exception:
+            pass
 
     def _run_distillation_background(self):
         """
@@ -4931,6 +4943,12 @@ class Igor(IgorBase):
             target=_worker, daemon=True, name="distillation-worker"
         )
         self._distillation_thread.start()
+        try:
+            from .cognition.daemon_supervisor import supervisor as _sup
+
+            _sup.register("distillation-worker", self._distillation_thread)
+        except Exception:
+            pass
 
     def _run_ne_deep_consolidation(self):
         """
@@ -4979,6 +4997,12 @@ class Igor(IgorBase):
             target=_deep_worker, daemon=True, name="ne-deep-consolidation"
         )
         self._ne_deep_thread.start()
+        try:
+            from .cognition.daemon_supervisor import supervisor as _sup
+
+            _sup.register("ne-deep-consolidation", self._ne_deep_thread)
+        except Exception:
+            pass
 
     # Keywords indicating a response is a failure/error (pass.3 NE backoff)
     _FAILURE_KEYWORDS = (
