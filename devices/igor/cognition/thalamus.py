@@ -249,6 +249,21 @@ def _extract_keywords(text: str) -> list:
     return result
 
 
+def _graph_weight_intent_hint(text: str, keywords: list) -> str | None:
+    """Stub hook for future graph-weight-based intent correction.
+
+    Future interface: accept an injected WordGraph instance, call
+    predict_next(text), map top-N predicted tokens to intent categories via
+    seeded edges (e.g. wg_edges("peers", "_intent_conversation") with high
+    weight). Return the winning category string, or None to fall through to
+    the lexical cascade below.
+
+    Currently returns None (no-op) — wire the word graph here once Thalamus
+    gains a constructor-injected WordGraph (follow-up L ticket).
+    """
+    return None
+
+
 def _classify_intent(text: str, keywords: list) -> str:
     """
     #93 phase 1 / G36: Expanded 13-intent taxonomy.
@@ -257,6 +272,42 @@ def _classify_intent(text: str, keywords: list) -> str:
              complaint | conversation | command | creative_request | general
     """
     t = text.lower()
+
+    # Graph-weight hook: checked first; returns non-None when graph signals
+    # override the lexical cascade (currently always None — stub only).
+    _graph_hint = _graph_weight_intent_hint(t, keywords)
+    if _graph_hint is not None:
+        return _graph_hint
+
+    # Relational-pronoun guard: peer/vision language with process signals
+    # routes to conversation BEFORE code_task/action_request can fire.
+    # Fixes misclassification of "you and I work as peers, drive Claude's
+    # process" → code_task (root cause: CC_FIND_TICKETS misfire f5bff77c).
+    _peer_signals = (
+        "you and i",
+        "you and me",
+        "as peers",
+        "peer relationship",
+        "working together",
+        "we work",
+        "side by side",
+    )
+    _vision_signals = (
+        "drive your",
+        "drive my",
+        "drive claude",
+        "your process",
+        "our process",
+        "my process",
+        "end state",
+        "end goal",
+        "aspire",
+        "vision for",
+        "what we're building",
+        "what we are building",
+    )
+    if any(p in t for p in _peer_signals) and any(v in t for v in _vision_signals):
+        return "conversation"
 
     if t.startswith("/"):
         return "command"
