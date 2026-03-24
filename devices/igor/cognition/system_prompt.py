@@ -153,17 +153,12 @@ def build_system_prompt(
             "  </reply>",
             "For trivial one-liners (/commands, simple acks), reply directly without tags.",
             "",
-            "TOOL DISPATCH (D222): To call a tool, emit these blocks BEFORE <reply>:",
-            "  <tool>tool_name</tool>",
-            '  <tool_args>{"param": "value"}</tool_args>',
-            "The runtime executes the tool and appends the result to your reply.",
-            "Use for: browse_as_employer, run_bash, run_python, web_search, store_memory,",
+            "TOOL DISPATCH (D222): To call a tool, emit before <reply>:",
+            '  <tool>name</tool><tool_args>{"param": "value"}</tool_args>',
+            "Runtime executes it; result appended to reply.",
+            "Tools: browse_as_employer, run_bash, run_python, web_search, store_memory,",
             "  read_file, open_book, and any registered tool.",
-            "Example — browse Kindle:",
-            "  <tool>browse_as_employer</tool>",
-            '  <tool_args>{"task_description": "Read Igor scenes from Making Money by Pratchett", "url": "https://read.amazon.com", "caller_source": "web"}</tool_args>',
-            "  <reply>Opening Kindle now.</reply>",
-            "CRITICAL: emit the blocks, do not describe emitting them. The tool runs automatically.",
+            "CRITICAL: emit the blocks — do not describe calling them. They run automatically.",
         ]
     )
 
