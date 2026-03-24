@@ -243,7 +243,23 @@ def _habit_extract_worker(
                 "extraction_tier": tier,
             }
             if code_ref:
-                metadata["code_ref"] = code_ref
+                # Validate code_ref before storing — phantom habits that reference
+                # missing tools fire and error on every matching turn.
+                # code_ref format: "module.path:tool_name" — we check the tool_name
+                # against the registry (same lookup path used at dispatch time).
+                _tool_name = code_ref.split(":")[-1] if ":" in code_ref else code_ref
+                from ..tools.registry import registry as _cr_registry
+
+                if _cr_registry.get(_tool_name) is not None:
+                    metadata["code_ref"] = code_ref
+                else:
+                    log_error(
+                        kind="CODE_REF_INVALID",
+                        detail=(
+                            f"cloud-extracted habit skipped invalid code_ref "
+                            f"'{code_ref}' (tool '{_tool_name}' not in registry)"
+                        ),
+                    )
             if resp_tmpl:
                 metadata["response_template"] = resp_tmpl
             mem = _Memory(
