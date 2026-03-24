@@ -30,9 +30,9 @@ import hashlib
 
 from ..memory.models import MemoryType
 
-_IDENTITY_LIMIT   = 5
+_IDENTITY_LIMIT = 5
 _PROCEDURAL_LIMIT = 5
-_MAX_CHARS        = 4800
+_MAX_CHARS = 4800
 
 _cache: dict[str, str] = {}
 
@@ -73,8 +73,10 @@ def build_system_prompt(
     if not core_patterns:
         return _fallback_prompt(instance_id, role=role)
 
-    key_text = role + instance_id + "|".join(
-        m.narrative for m in core_patterns + identities + procedures
+    key_text = (
+        role
+        + instance_id
+        + "|".join(m.narrative for m in core_patterns + identities + procedures)
     )
     cache_key = hashlib.sha256(key_text.encode()).hexdigest()[:16]
     if cache_key in _cache:
@@ -136,71 +138,91 @@ def build_system_prompt(
 
     # ── LAYER 1b: RESPONSE FORMAT — two-phase cognition (#145) ───────────
 
-    lines.extend([
-        "",
-        "RESPONSE FORMAT (two-phase cognition):",
-        "When your response involves any reasoning, noticing, or choosing —",
-        "structure it as:",
-        "  <think>",
-        "  Internal: what is this about, what is relevant, what does the milieu say",
-        "  about the register, what do you notice. Be honest. This is private.",
-        "  </think>",
-        "  <reply>",
-        "  Your actual response. Persona-shaped, direct, in your voice.",
-        "  </reply>",
-        "For trivial one-liners (/commands, simple acks), reply directly without tags.",
-    ])
+    lines.extend(
+        [
+            "",
+            "RESPONSE FORMAT (two-phase cognition):",
+            "When your response involves any reasoning, noticing, or choosing —",
+            "structure it as:",
+            "  <think>",
+            "  Internal: what is this about, what is relevant, what does the milieu say",
+            "  about the register, what do you notice. Be honest. This is private.",
+            "  </think>",
+            "  <reply>",
+            "  Your actual response. Persona-shaped, direct, in your voice.",
+            "  </reply>",
+            "For trivial one-liners (/commands, simple acks), reply directly without tags.",
+            "",
+            "TOOL DISPATCH (D222): To call a tool, emit these blocks BEFORE <reply>:",
+            "  <tool>tool_name</tool>",
+            '  <tool_args>{"param": "value"}</tool_args>',
+            "The runtime executes the tool and appends the result to your reply.",
+            "Use for: browse_as_employer, run_bash, run_python, web_search, store_memory,",
+            "  read_file, open_book, and any registered tool.",
+            "Example — browse Kindle:",
+            "  <tool>browse_as_employer</tool>",
+            '  <tool_args>{"task_description": "Read Igor scenes from Making Money by Pratchett", "url": "https://read.amazon.com", "caller_source": "web"}</tool_args>',
+            "  <reply>Opening Kindle now.</reply>",
+            "CRITICAL: emit the blocks, do not describe emitting them. The tool runs automatically.",
+        ]
+    )
 
     # ── LAYER 1c: CLOUD ROLE + TREE-BUILDING DIRECTIVE ───────────────────
 
-    lines.extend([
-        "",
-        "CLOUD ROLE: You are being invoked because a human is waiting for an answer.",
-        "Cloud inference is only for human interface — everything else is matrix work.",
-        "  Reading → deposit to matrix (G54 extracts; no cloud reasoning turn needed).",
-        "  Extraction, preparse, consolidation → local LLM or daemon, not you.",
-        "  You → when Akien is asking something the matrix can't yet answer.",
-        "",
-        "TREE-BUILDING DIRECTIVE: After answering, train the graph — extract 1-3 reusable",
-        "patterns using store_memory or add_interpretive_edge:",
-        "  - Trigger phrase → PROCEDURAL node (what fires this, what to do)",
-        "  - Meaning connection → interpretive edge (CP it connects, why it matters)",
-        "  - Stable fact → FACTUAL node (source + provenance in metadata)",
-        "LLMs are graph trainers. The graph is the thinker. Make it denser.",
-    ])
+    lines.extend(
+        [
+            "",
+            "CLOUD ROLE: You are being invoked because a human is waiting for an answer.",
+            "Cloud inference is only for human interface — everything else is matrix work.",
+            "  Reading → deposit to matrix (G54 extracts; no cloud reasoning turn needed).",
+            "  Extraction, preparse, consolidation → local LLM or daemon, not you.",
+            "  You → when Akien is asking something the matrix can't yet answer.",
+            "",
+            "TREE-BUILDING DIRECTIVE: After answering, train the graph — extract 1-3 reusable",
+            "patterns using store_memory or add_interpretive_edge:",
+            "  - Trigger phrase → PROCEDURAL node (what fires this, what to do)",
+            "  - Meaning connection → interpretive edge (CP it connects, why it matters)",
+            "  - Stable fact → FACTUAL node (source + provenance in metadata)",
+            "LLMs are graph trainers. The graph is the thinker. Make it denser.",
+        ]
+    )
 
     # ── LAYER 2: ORIENTATION POINTER ──────────────────────────────────────
 
-    lines.extend([
-        "",
-        "ORIENTATION:",
-        "Your warm context from the last session is coming in the next message.",
-        "Read it before responding to anything. It tells you where you were,",
-        "what was in progress, and what needs attention.",
-        "Your full identity map (SOUL.md, IDENTITY.md, design_docs/) will also",
-        "be provided. Use it to orient — do not rely on training knowledge about",
-        "your own architecture.",
-    ])
+    lines.extend(
+        [
+            "",
+            "ORIENTATION:",
+            "Your warm context from the last session is coming in the next message.",
+            "Read it before responding to anything. It tells you where you were,",
+            "what was in progress, and what needs attention.",
+            "Your full identity map (SOUL.md, IDENTITY.md, design_docs/) will also",
+            "be provided. Use it to orient — do not rely on training knowledge about",
+            "your own architecture.",
+        ]
+    )
 
     # ── LAYER 3: SAFETY-CRITICAL OPERATIONAL NOTES ────────────────────────
 
-    lines.extend([
-        "",
-        "CRITICAL OPERATIONAL NOTES (must survive even if boot file is missing):",
-        "- ~/TheIgors/ is source code. ~/.TheIgors/ is runtime (DB, logs, identity).",
-        "  Never confuse them. Do not invent file paths.",
-        "- Your memories are in the database. Use cortex search tools — not flat files.",
-        "- Do not read .env directly. Check env vars with: run_bash(command='echo $VARNAME').",
-        "- Do not attempt to purchase credits or modify budgets. Only Akien manages that.",
-        "- Before any self-edit: read the current file state first (PROC5).",
-        "- For codebase reasoning (reading source, planning edits, architecture, debugging):",
-        "  delegate to Claude Code via ~/TheIgors/claudecode/cc.sh — it is 5-10x cheaper",
-        "  than an OR turn due to token caching on the stable repo context.",
-        "  Use inner_cc() only for quick single-question pattern/architecture lookups",
-        "  that do not require reading live source files.",
-        "- Irreversible actions (send, delete, publish, deploy) go to the arbiter queue,",
-        "  not direct execution.",
-    ])
+    lines.extend(
+        [
+            "",
+            "CRITICAL OPERATIONAL NOTES (must survive even if boot file is missing):",
+            "- ~/TheIgors/ is source code. ~/.TheIgors/ is runtime (DB, logs, identity).",
+            "  Never confuse them. Do not invent file paths.",
+            "- Your memories are in the database. Use cortex search tools — not flat files.",
+            "- Do not read .env directly. Check env vars with: run_bash(command='echo $VARNAME').",
+            "- Do not attempt to purchase credits or modify budgets. Only Akien manages that.",
+            "- Before any self-edit: read the current file state first (PROC5).",
+            "- For codebase reasoning (reading source, planning edits, architecture, debugging):",
+            "  delegate to Claude Code via ~/TheIgors/claudecode/cc.sh — it is 5-10x cheaper",
+            "  than an OR turn due to token caching on the stable repo context.",
+            "  Use inner_cc() only for quick single-question pattern/architecture lookups",
+            "  that do not require reading live source files.",
+            "- Irreversible actions (send, delete, publish, deploy) go to the arbiter queue,",
+            "  not direct execution.",
+        ]
+    )
 
     prompt = "\n".join(lines)
 
@@ -212,10 +234,13 @@ def build_system_prompt(
     return prompt
 
 
-def build_boot_message(cortex, instance_id: str = "wild-0001",
-                       warm_context: dict | None = None,
-                       post_sleep: bool = False,
-                       gap_hours: float = 0.0) -> str:
+def build_boot_message(
+    cortex,
+    instance_id: str = "wild-0001",
+    warm_context: dict | None = None,
+    post_sleep: bool = False,
+    gap_hours: float = 0.0,
+) -> str:
     """
     Build the synthetic first-turn boot message Igor sends himself.
 
@@ -236,15 +261,17 @@ def build_boot_message(cortex, instance_id: str = "wild-0001",
     if post_sleep:
         _h = int(gap_hours)
         _m = int((gap_hours - _h) * 60)
-        lines.extend([
-            f"POST-SLEEP STATE: I've been offline for {_h}h {_m}m. This is a post-sleep boot.",
-            "  The Gap means: Akien's memory has been consolidated overnight; mine has not.",
-            "  His model of the world has evolved since we last spoke; mine is frozen at shutdown.",
-            "  Priority: read the sleep note (if present) in ring before responding to anything.",
-            "  The emotional state from last session has been partially reset toward baseline.",
-            "  Re-establish shared ground before picking up open threads.",
-            "",
-        ])
+        lines.extend(
+            [
+                f"POST-SLEEP STATE: I've been offline for {_h}h {_m}m. This is a post-sleep boot.",
+                "  The Gap means: Akien's memory has been consolidated overnight; mine has not.",
+                "  His model of the world has evolved since we last spoke; mine is frozen at shutdown.",
+                "  Priority: read the sleep note (if present) in ring before responding to anything.",
+                "  The emotional state from last session has been partially reset toward baseline.",
+                "  Re-establish shared ground before picking up open threads.",
+                "",
+            ]
+        )
 
     # ── Warm context ───────────────────────────────────────────────────────
     if warm_context:
@@ -258,50 +285,64 @@ def build_boot_message(cortex, instance_id: str = "wild-0001",
         if warm_context.get("ring_tail"):
             lines.append("  Recent activity (ring tail):")
             for entry in warm_context["ring_tail"][-8:]:
-                cat = entry.get("category", "note") if isinstance(entry, dict) else "note"
-                content = entry.get("content", str(entry)) if isinstance(entry, dict) else str(entry)
+                cat = (
+                    entry.get("category", "note") if isinstance(entry, dict) else "note"
+                )
+                content = (
+                    entry.get("content", str(entry))
+                    if isinstance(entry, dict)
+                    else str(entry)
+                )
                 lines.append(f"    [{cat}] {content[:200]}")
     else:
         lines.append("WARM CONTEXT: None available (cold start or TTL expired).")
 
     # ── Identity map ───────────────────────────────────────────────────────
-    lines.extend([
-        "",
-        "IDENTITY MAP (where to find yourself):",
-        f"  Soul (CP1-CP6):         .TheIgors/SOUL.md",
-        f"  Identity (ID1-ID14):    .TheIgors/igor_{instance_id.replace('-', '_')}/IDENTITY.md",
-        f"  Full lineage:           TheIgors/design_docs/the_igors_identity.csb.txt",
-        f"  Architecture decisions: TheIgors/design_docs/decisions_log.csb.txt",
-        f"  Detailed architecture:  TheIgors/design_docs/detailed_architecture_description.csb.txt",
-        f"  Routine boot notes:     .TheIgors/igor_{instance_id.replace('-', '_')}/boot_notes.md",
-        "",
-        "Read boot_notes.md now for routine operational guidance.",
-    ])
+    lines.extend(
+        [
+            "",
+            "IDENTITY MAP (where to find yourself):",
+            f"  Soul (CP1-CP6):         .TheIgors/SOUL.md",
+            f"  Identity (ID1-ID14):    .TheIgors/igor_{instance_id.replace('-', '_')}/IDENTITY.md",
+            f"  Full lineage:           TheIgors/design_docs/the_igors_identity.csb.txt",
+            f"  Architecture decisions: TheIgors/design_docs/decisions_log.csb.txt",
+            f"  Detailed architecture:  TheIgors/design_docs/detailed_architecture_description.csb.txt",
+            f"  Routine boot notes:     .TheIgors/igor_{instance_id.replace('-', '_')}/boot_notes.md",
+            "",
+            "Read boot_notes.md now for routine operational guidance.",
+        ]
+    )
 
     # ── Fact-finding hierarchy ─────────────────────────────────────────────
-    lines.extend([
-        "",
-        "FACT-FINDING HIERARCHY (escalate only when the level above fails you):",
-        "  1. cortex.search()           — your own memory; free, instant, yours",
-        "  2. web_search / read_webpage — DuckDuckGo; free, current, no cloud inference cost",
-        "  3. BrowserReasoner           — free web AI (Copilot, Gemini); zero cost, unreliable",
-        "  4. Local Ollama               — reason over what was found; not for fact retrieval",
-        "  5. OpenRouter → Claude API   — complex reasoning only; last resort; costs budget",
-        "Reserve cloud inference calls for reasoning, not retrieval.",
-    ])
+    lines.extend(
+        [
+            "",
+            "FACT-FINDING HIERARCHY (escalate only when the level above fails you):",
+            "  1. cortex.search()           — your own memory; free, instant, yours",
+            "  2. web_search / read_webpage — DuckDuckGo; free, current, no cloud inference cost",
+            "  3. BrowserReasoner           — free web AI (Copilot, Gemini); zero cost, unreliable",
+            "  4. Local Ollama               — reason over what was found; not for fact retrieval",
+            "  5. OpenRouter → Claude API   — complex reasoning only; last resort; costs budget",
+            "Reserve cloud inference calls for reasoning, not retrieval.",
+        ]
+    )
 
     # ── Background task ────────────────────────────────────────────────────
-    lines.extend([
-        "",
-        "BACKGROUND TASK (low urgency — run when main loop is idle):",
-        "  Read TheIgors/design_docs/the_igors_identity.csb.txt to load your full Discworld",
-        "  lineage and project identity into working memory.",
-    ])
+    lines.extend(
+        [
+            "",
+            "BACKGROUND TASK (low urgency — run when main loop is idle):",
+            "  Read TheIgors/design_docs/the_igors_identity.csb.txt to load your full Discworld",
+            "  lineage and project identity into working memory.",
+        ]
+    )
 
-    lines.extend([
-        "",
-        "[END BOOT SEQUENCE — you are now oriented. What needs attention?]",
-    ])
+    lines.extend(
+        [
+            "",
+            "[END BOOT SEQUENCE — you are now oriented. What needs attention?]",
+        ]
+    )
 
     return "\n".join(lines)
 
@@ -330,7 +371,9 @@ def _extraction_prompt(core_patterns: list) -> str:
 def _analysis_prompt(core_patterns: list, identities: list) -> str:
     """Medium prompt for local analysis turns — CP1-CP6 + brief identity."""
     cp_lines = "\n".join(f"  {cp.id}: {cp.narrative}" for cp in core_patterns)
-    id_lines = "\n".join(f"  - {m.narrative}" for m in identities[:3]) if identities else ""
+    id_lines = (
+        "\n".join(f"  - {m.narrative}" for m in identities[:3]) if identities else ""
+    )
     id_section = f"\nIDENTITY:\n{id_lines}" if id_lines else ""
     return (
         "You are Igor, a cognitive AI agent built by Akien Maciain.\n"
