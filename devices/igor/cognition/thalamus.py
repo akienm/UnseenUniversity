@@ -28,11 +28,17 @@ class Thalamus(IgorBase):
             # "CC:" etc. — the actual current message starts there.
             import re as _re
 
-            _msg_start = _re.search(
-                r"\[(?:Web message|Discord message|Email) from [^\]]+\]:|CC:", text
+            # Use finditer + take LAST match — thread history contains prior
+            # [Web message from X]: tags; search() finds the first (old) one,
+            # making core_text a multi-sentence blob → wrong output_complexity.
+            _matches = list(
+                _re.finditer(
+                    r"\[(?:Web message|Discord message|Email) from [^\]]+\]:|CC:",
+                    text,
+                )
             )
-            if _msg_start:
-                core_text = text[_msg_start.start() :]
+            if _matches:
+                core_text = text[_matches[-1].start() :]
 
         # Strip [Routing directive: ...] suffix injected by CC bridge messages.
         # This prevents directive text ("background jobs", "inline") from
