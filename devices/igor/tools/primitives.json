@@ -150,6 +150,17 @@
     },
 
     {
+      "id": "prim_ring_read",
+      "category": "ring",
+      "ctx_reads": ["ring_limit", "ring_category"],
+      "ctx_writes": ["ring_entries", "ring_count"],
+      "args": "none",
+      "notes": "ring_limit defaults to 20. ring_category optional (e.g. IGOR_SAID, IGOR_HEARD). Entries returned chronological (oldest first).",
+      "source": "tools.os_primitives:prim_ring_read",
+      "description": "Read recent ring memory entries; write formatted summary to ctx[ring_entries] and count to ctx[ring_count]. Use to inspect recent IGOR_SAID/IGOR_HEARD conversation history."
+    },
+
+    {
       "id": "prim_str_split",
       "category": "string",
       "ctx_reads": ["content", "split_sep", "split_maxn"],

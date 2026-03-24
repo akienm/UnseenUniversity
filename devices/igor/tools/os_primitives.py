@@ -1,6 +1,7 @@
 """
 OS primitive tools — PRIM_LIST_DIR, PRIM_FILE_META, PRIM_READ_HEAD,
-PRIM_TYPE_DETECT, PRIM_ITER_NEXT, PRIM_ITER_DONE  (T-os-primitives).
+PRIM_TYPE_DETECT, PRIM_ITER_NEXT, PRIM_ITER_DONE  (T-os-primitives);
+PRIM_RING_READ (T-ring-read-tool).
 
 Six reusable habits that compose "for each file, do X" loops entirely from
 habits already in the graph. Each primitive reads its inputs from the active
@@ -734,6 +735,56 @@ def prim_twm_read() -> str:
         return f"[PRIM_TWM_READ] error: {e}"
 
 
+def prim_ring_read() -> str:
+    """Read recent ring memory entries (IGOR_SAID, IGOR_HEARD, etc.).
+
+    Reads ctx[ring_limit] (default 20) and ctx[ring_category] (optional filter).
+    Returns entries in chronological order (oldest first).
+    Writes formatted summary to ctx[ring_entries] and count to ctx[ring_count].
+
+    Common categories: IGOR_SAID, IGOR_HEARD, restart_note, TWM_PULSE.
+    Leave ring_category unset to read all categories.
+    """
+    try:
+        cortex = _get_cortex()
+        ctx_id = _current_ctx_id(cortex)
+
+        limit = 20
+        category = None
+        if ctx_id:
+            raw_limit = _ctx_get(cortex, ctx_id, "ring_limit")
+            if raw_limit and raw_limit.isdigit():
+                limit = int(raw_limit)
+            raw_cat = _ctx_get(cortex, ctx_id, "ring_category")
+            if raw_cat:
+                category = raw_cat.strip()
+
+        entries = cortex.read_ring_memory(limit=limit, category=category or None)
+        if not entries:
+            if ctx_id:
+                _ctx_set(cortex, ctx_id, "ring_entries", "(empty)", step=0)
+                _ctx_set(cortex, ctx_id, "ring_count", "0", step=0)
+            cat_note = f" (category={category})" if category else ""
+            return f"PRIM_RING_READ: ring memory is empty{cat_note}"
+
+        lines = []
+        for r in entries:
+            cat = r.get("category", "")
+            ts = r.get("timestamp", "")[:19]  # trim to seconds
+            content = r.get("content", "")
+            snippet = content[:160] + "…" if len(content) > 160 else content
+            lines.append(f"[{cat}|{ts}] {snippet}")
+
+        summary = "\n".join(lines)
+        if ctx_id:
+            _ctx_set(cortex, ctx_id, "ring_entries", summary, step=0)
+            _ctx_set(cortex, ctx_id, "ring_count", str(len(lines)), step=0)
+        cat_note = f" category={category}" if category else ""
+        return f"PRIM_RING_READ: {len(lines)} entries{cat_note}\n{summary}"
+    except Exception as e:
+        return f"[PRIM_RING_READ] error: {e}"
+
+
 # ── Tool registrations ─────────────────────────────────────────────────────────
 
 _NO_ARGS = {"type": "object", "properties": {}, "required": []}
@@ -844,6 +895,20 @@ registry.register(
         ),
         parameters=_NO_ARGS,
         fn=prim_list_count,
+    )
+)
+
+registry.register(
+    Tool(
+        name="prim_ring_read",
+        description=(
+            "Ring memory primitive: read recent ring memory entries (IGOR_SAID, IGOR_HEARD, etc.). "
+            "Reads ctx[ring_limit] (default 20) and ctx[ring_category] (optional filter). "
+            "Writes formatted summary to ctx[ring_entries] (category|timestamp|content per line) "
+            "and count to ctx[ring_count]. Use to inspect recent conversation history."
+        ),
+        parameters=_NO_ARGS,
+        fn=prim_ring_read,
     )
 )
 
