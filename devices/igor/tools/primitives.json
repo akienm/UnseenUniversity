@@ -1,6 +1,7 @@
 {
   "_comment": "Primitive catalog for schema-defined habits (T-primitive-registry #331).",
-  "_version": "1",
+  "_version": "2",
+  "_survey": "T-primitive-survey 2026-03-24g: completeness survey against 3 target programs.",
 
   "primitives": [
 
@@ -66,6 +67,132 @@
     },
 
     {
+      "id": "prim_list_push",
+      "category": "list",
+      "ctx_reads": ["list_name", "list_value"],
+      "ctx_writes": ["list_count"],
+      "args": "none",
+      "source": "tools.os_primitives:prim_list_push",
+      "description": "Append ctx[list_value] to persistent named list ctx[list_name] (D095 lists table); write updated count to ctx[list_count]."
+    },
+
+    {
+      "id": "prim_list_pop",
+      "category": "list",
+      "ctx_reads": ["list_name"],
+      "ctx_writes": ["list_value", "list_key", "list_count"],
+      "args": "none",
+      "source": "tools.os_primitives:prim_list_pop",
+      "description": "Remove oldest item (FIFO) from persistent named list ctx[list_name]; write item to ctx[list_value], key to ctx[list_key], remaining count to ctx[list_count]."
+    },
+
+    {
+      "id": "prim_list_count",
+      "category": "list",
+      "ctx_reads": ["list_name"],
+      "ctx_writes": ["list_count"],
+      "args": "none",
+      "source": "tools.os_primitives:prim_list_count",
+      "description": "Count items in persistent named list ctx[list_name]; write count to ctx[list_count]."
+    },
+
+    {
+      "id": "prim_node_create",
+      "category": "memory",
+      "ctx_reads": ["node_narrative", "node_type", "node_id_key", "node_parent"],
+      "ctx_writes": ["node_id"],
+      "args": "none",
+      "notes": "node_id_key and node_parent optional. node_parent defaults to CP1.",
+      "source": "tools.os_primitives:prim_node_create",
+      "description": "Create or upsert a Memory node from ctx[node_narrative] + ctx[node_type]; link under ctx[node_parent] (default CP1); write id to ctx[node_id]."
+    },
+
+    {
+      "id": "prim_node_link",
+      "category": "memory",
+      "ctx_reads": ["link_parent", "link_child"],
+      "ctx_writes": [],
+      "args": "none",
+      "source": "tools.os_primitives:prim_node_link",
+      "description": "Link ctx[link_parent] → ctx[link_child] in the memory graph. Idempotent."
+    },
+
+    {
+      "id": "prim_node_search",
+      "category": "memory",
+      "ctx_reads": ["search_query", "search_limit"],
+      "ctx_writes": ["search_results", "search_count", "node_id"],
+      "args": "none",
+      "notes": "search_limit optional; default 5. ctx[node_id] set to top result id.",
+      "source": "tools.os_primitives:prim_node_search",
+      "description": "Search cortex.search() with ctx[search_query]; write newline-joined 'id|type|narrative' list to ctx[search_results], count to ctx[search_count], top id to ctx[node_id]."
+    },
+
+    {
+      "id": "prim_twm_push",
+      "category": "twm",
+      "ctx_reads": ["twm_content", "twm_source", "twm_salience", "twm_urgency", "twm_ttl"],
+      "ctx_writes": ["twm_obs_id"],
+      "args": "none",
+      "notes": "twm_source/salience/urgency/ttl optional; defaults: habit_chain, 0.5, 0.3, 300.",
+      "source": "tools.os_primitives:prim_twm_push",
+      "description": "Push ctx[twm_content] as a TWM observation; write obs id to ctx[twm_obs_id]. Use for salience signals, alerts, work-in-progress observations."
+    },
+
+    {
+      "id": "prim_twm_read",
+      "category": "twm",
+      "ctx_reads": [],
+      "ctx_writes": ["twm_items", "twm_count"],
+      "args": "none",
+      "source": "tools.os_primitives:prim_twm_read",
+      "description": "Read active TWM observations; write newline-joined summary to ctx[twm_items] and count to ctx[twm_count]."
+    },
+
+    {
+      "id": "prim_str_split",
+      "category": "string",
+      "ctx_reads": ["content", "split_sep", "split_maxn"],
+      "ctx_writes": ["split_parts", "split_count"],
+      "args": "none",
+      "notes": "split_sep defaults to newline. split_maxn defaults to 0 (unlimited).",
+      "source": "tools.os_primitives:prim_str_split",
+      "description": "Split ctx[content] on ctx[split_sep]; write JSON list to ctx[split_parts] and count to ctx[split_count]."
+    },
+
+    {
+      "id": "prim_str_regex",
+      "category": "string",
+      "ctx_reads": ["content", "regex_pattern", "regex_group", "regex_flags"],
+      "ctx_writes": ["regex_match", "regex_matched"],
+      "args": "none",
+      "notes": "regex_group defaults to 0 (whole match). regex_flags: 'i','m','s'.",
+      "source": "tools.os_primitives:prim_str_regex",
+      "description": "Regex-search ctx[content] with ctx[regex_pattern]; write first match to ctx[regex_match], 'true'/'false' to ctx[regex_matched]."
+    },
+
+    {
+      "id": "prim_str_format",
+      "category": "string",
+      "ctx_reads": ["format_template", "<all ctx keys>"],
+      "ctx_writes": ["format_result"],
+      "args": "none",
+      "source": "tools.os_primitives:prim_str_format",
+      "description": "String-interpolate ctx[format_template] substituting {key} placeholders from context; write result to ctx[format_result]. Missing keys left as-is."
+    },
+
+    {
+      "id": "prim_str_slice",
+      "category": "string",
+      "ctx_reads": ["content", "slice_start", "slice_end"],
+      "ctx_writes": ["slice_result"],
+      "args": "none",
+      "notes": "slice_start defaults to 0. slice_end defaults to end of string. Negatives count from end.",
+      "source": "tools.os_primitives:prim_str_slice",
+      "description": "Slice ctx[content][slice_start:slice_end]; write to ctx[slice_result]. Useful for truncation."
+    },
+
+    {
       "id": "prim_set",
       "category": "control_flow",
       "ctx_reads": [],
@@ -98,46 +225,276 @@
       "source": "schema_runner:builtin",
       "description": "Unconditional jump to the given step number."
     }
+
   ],
 
   "missing": [
-    {
-      "id": "prim_count",
-      "category": "iteration",
-      "ctx_reads": ["files"],
-      "ctx_writes": ["count"],
-      "priority": "high",
-      "description": "Count items in ctx[files] JSON list; write integer string to ctx[count].",
-      "reason": "Needed to report totals at end of iteration loops (e.g. 'scanned 44 files'). Currently requires an LLM call or Python code to do what is a trivial operation."
-    },
-    {
-      "id": "prim_format",
-      "category": "control_flow",
-      "ctx_reads": ["<template_vars>"],
-      "ctx_writes": ["<target_key>"],
-      "priority": "high",
-      "args": {"required": ["template", "target_key"]},
-      "description": "String interpolation: render template string with {key} placeholders filled from ctx; write result to ctx[target_key].",
-      "reason": "Needed to build dynamic output strings (e.g. 'Scanned {count} files in {dir}'). Without this, schema habits can't produce meaningful summary messages without an LLM call."
-    },
     {
       "id": "prim_filter",
       "category": "iteration",
       "ctx_reads": ["files", "filter_type"],
       "ctx_writes": ["files"],
       "priority": "medium",
-      "description": "Filter ctx[files] by extension or type; keep only files matching ctx[filter_type]; write filtered list back to ctx[files].",
-      "reason": "Schema habits need to process only certain file types (e.g. only .py files) without iterating and discarding — a pre-filter is more efficient and readable."
+      "kind": "thin_wrapper",
+      "needed_by": ["book_reader"],
+      "description": "Filter ctx[files] JSON path list by extension or type (ctx[filter_type]); write filtered list back to ctx[files].",
+      "reason": "Schema habits need to process only certain file types (e.g. only .epub files) without iterating and discarding."
     },
     {
       "id": "prim_log",
       "category": "context",
-      "ctx_reads": ["<message_key>"],
+      "ctx_reads": ["log_message"],
       "ctx_writes": [],
       "priority": "medium",
-      "args": {"required": ["message"]},
-      "description": "Write a message (literal string or ctx key reference) to ring_memory with category='schema'.",
-      "reason": "Schema habits need a way to emit structured trace entries for debugging without side-effecting the response. Currently no primitive supports this."
+      "kind": "thin_wrapper",
+      "needed_by": ["book_reader", "worker_monitor", "cc_design_loop"],
+      "args": "none",
+      "description": "Write ctx[log_message] to ring_memory with category='schema'. Structured trace for debugging without side-effecting the response.",
+      "reason": "Schema habits need lightweight tracing. prim_twm_push is wrong tool (TWM is for salience signals, not debug traces)."
+    },
+    {
+      "id": "prim_cc_post",
+      "category": "channel",
+      "ctx_reads": ["cc_message", "cc_author"],
+      "ctx_writes": ["cc_ok"],
+      "priority": "high",
+      "kind": "thin_wrapper",
+      "needed_by": ["worker_monitor", "cc_design_loop"],
+      "description": "Post ctx[cc_message] to the shared CC channel as ctx[cc_author] (default 'igor'); write 'true'/'false' to ctx[cc_ok].",
+      "reason": "Both worker monitor and design loop need to write to the channel without LLM overhead. channel.py post() is one HTTP call — trivial wrapper."
+    },
+    {
+      "id": "prim_cc_read",
+      "category": "channel",
+      "ctx_reads": ["cc_limit"],
+      "ctx_writes": ["cc_messages", "cc_count"],
+      "priority": "medium",
+      "kind": "thin_wrapper",
+      "needed_by": ["cc_design_loop"],
+      "description": "Read last ctx[cc_limit] (default 10) messages from CC channel; write newline-joined 'author: text' to ctx[cc_messages] and count to ctx[cc_count].",
+      "reason": "Design loop habit needs to inspect channel state without an LLM call."
+    },
+    {
+      "id": "prim_job_list",
+      "category": "worker",
+      "ctx_reads": ["job_status_filter"],
+      "ctx_writes": ["job_list", "job_count"],
+      "priority": "medium",
+      "kind": "thin_wrapper",
+      "needed_by": ["worker_monitor"],
+      "description": "List jobs from job_manager; ctx[job_status_filter] = 'active'|'all' (default 'active'); write newline-joined 'id|status|title' to ctx[job_list] and count to ctx[job_count].",
+      "reason": "Worker monitor needs to enumerate job state without LLM. job_manager.active_count() + list is one Python call."
+    },
+    {
+      "id": "prim_job_status",
+      "category": "worker",
+      "ctx_reads": ["job_id"],
+      "ctx_writes": ["job_status", "job_progress", "job_summary"],
+      "priority": "medium",
+      "kind": "thin_wrapper",
+      "needed_by": ["worker_monitor"],
+      "description": "Get status of ctx[job_id]; write status string to ctx[job_status], progress pct to ctx[job_progress], summary to ctx[job_summary].",
+      "reason": "Worker monitor needs per-job status checks for threshold-based TWM alerts."
+    },
+    {
+      "id": "prim_daemon_list",
+      "category": "worker",
+      "ctx_reads": [],
+      "ctx_writes": ["daemon_list", "daemon_count"],
+      "priority": "medium",
+      "kind": "thin_wrapper",
+      "needed_by": ["worker_monitor"],
+      "description": "List registered daemons from DaemonSupervisor; write newline-joined 'name|status|last_ping' to ctx[daemon_list] and count to ctx[daemon_count].",
+      "reason": "Worker monitor habit needs to see all registered daemons without calling into NE."
+    },
+    {
+      "id": "prim_daemon_ping",
+      "category": "worker",
+      "ctx_reads": ["daemon_name"],
+      "ctx_writes": ["daemon_ok", "daemon_last_ping"],
+      "priority": "low",
+      "kind": "thin_wrapper",
+      "needed_by": ["worker_monitor"],
+      "description": "Check health of ctx[daemon_name] via DaemonSupervisor; write 'true'/'false' to ctx[daemon_ok] and last ping ISO timestamp to ctx[daemon_last_ping].",
+      "reason": "Per-daemon health check allows targeted alerts rather than full scan."
+    },
+    {
+      "id": "prim_machines_status",
+      "category": "worker",
+      "ctx_reads": [],
+      "ctx_writes": ["machines_report"],
+      "priority": "low",
+      "kind": "thin_wrapper",
+      "needed_by": ["worker_monitor"],
+      "description": "Call get_machine_availability(); write formatted report to ctx[machines_report].",
+      "reason": "Worker monitor can include cluster availability in its summary without an LLM call."
+    },
+    {
+      "id": "prim_decision_store",
+      "category": "meta",
+      "ctx_reads": ["decision_text", "decision_id"],
+      "ctx_writes": ["decision_ok"],
+      "priority": "medium",
+      "kind": "thin_wrapper",
+      "needed_by": ["cc_design_loop"],
+      "description": "Store ctx[decision_text] as a design decision via decision_manager; ctx[decision_id] optional (auto-generated); write 'true'/'false' to ctx[decision_ok].",
+      "reason": "Design loop habit should be able to persist decisions directly without routing through NE."
+    },
+    {
+      "id": "prim_book_find",
+      "category": "book",
+      "ctx_reads": ["book_query"],
+      "ctx_writes": ["book_list", "book_count"],
+      "priority": "medium",
+      "kind": "thin_wrapper",
+      "needed_by": ["book_reader"],
+      "description": "Search Calibre library for ctx[book_query]; write newline-joined 'title|author|format|path' to ctx[book_list] and count to ctx[book_count].",
+      "reason": "Book reader habit needs to locate books without an LLM call. ebook_reader.find_book() exists — one-line wrapper."
+    },
+    {
+      "id": "prim_book_open",
+      "category": "book",
+      "ctx_reads": ["book_path"],
+      "ctx_writes": ["book_handle", "book_title", "book_sentence_count"],
+      "priority": "medium",
+      "kind": "thin_wrapper",
+      "needed_by": ["book_reader"],
+      "description": "Open book at ctx[book_path] via ebook_reader.open_book(); write handle key to ctx[book_handle], title to ctx[book_title], sentence count to ctx[book_sentence_count].",
+      "reason": "Book reader habit needs to open books and track handle across steps."
+    },
+    {
+      "id": "prim_book_read_chunk",
+      "category": "book",
+      "ctx_reads": ["book_handle", "book_chunk_n"],
+      "ctx_writes": ["content", "book_position"],
+      "priority": "medium",
+      "kind": "thin_wrapper",
+      "needed_by": ["book_reader"],
+      "description": "Read next ctx[book_chunk_n] (default 1) sentences from ctx[book_handle]; write text to ctx[content], current position to ctx[book_position]. Advances internal reading state.",
+      "reason": "Book reader habit needs to iterate through book content chunk-by-chunk. ebook_reader.read_chunk() exists."
+    },
+    {
+      "id": "prim_wg_ingest",
+      "category": "learning",
+      "ctx_reads": ["content", "wg_source"],
+      "ctx_writes": ["wg_nodes_added", "wg_edges_added"],
+      "priority": "high",
+      "kind": "new_semantics",
+      "needed_by": ["book_reader"],
+      "description": "Feed ctx[content] into the word graph (tokenize → bigram extraction → weight update); write new node count to ctx[wg_nodes_added] and edge count to ctx[wg_edges_added].",
+      "reason": "The whole point of the book reader as a schema habit is autonomous ingestion into the word graph. This is the core learning primitive. No existing primitive covers it — word_graph.train_on_text() needs a wrapper with forensic logging and progress tracking."
+    },
+    {
+      "id": "prim_habit_update",
+      "category": "meta",
+      "ctx_reads": ["habit_id", "habit_field", "habit_value"],
+      "ctx_writes": ["habit_ok"],
+      "priority": "low",
+      "kind": "new_semantics",
+      "needed_by": ["cc_design_loop"],
+      "description": "Update a field (trigger, metadata key, inertia) on habit ctx[habit_id]; write 'true'/'false' to ctx[habit_ok].",
+      "reason": "Design loop habit needs to self-modify habits (calibration) without going through the LLM. Requires safe write path — habit self-edit is high-inertia and needs its own gate, not just a cortex.store() wrapper."
+    },
+    {
+      "id": "prim_thalamus_parse",
+      "category": "meta",
+      "ctx_reads": ["content"],
+      "ctx_writes": ["parsed_intent", "parsed_tone", "parsed_complexity"],
+      "priority": "low",
+      "kind": "new_semantics",
+      "needed_by": ["cc_design_loop"],
+      "description": "Run thalamus intent/tone/complexity classification on ctx[content] (zero-inference: graph traversal only); write results to ctx[parsed_intent], ctx[parsed_tone], ctx[parsed_complexity].",
+      "reason": "Design loop habit needs to classify incoming CC messages to route them without an LLM call. Exposes thalamus as a primitive — requires adding a non-NE code path through thalamus.classify_standalone()."
     }
-  ]
+  ],
+
+  "survey": {
+    "_note": "T-primitive-survey 2026-03-24g. For each target program: step enumeration + primitive classification.",
+
+    "book_reader": {
+      "description": "Autonomous ebook ingestion: find book → open → read chunks → ingest to word graph → store memory nodes → loop.",
+      "steps": [
+        {"step": "find book in Calibre",         "primitive": "prim_book_find",       "status": "missing", "kind": "thin_wrapper"},
+        {"step": "open book, get handle",          "primitive": "prim_book_open",       "status": "missing", "kind": "thin_wrapper"},
+        {"step": "read next chunk",                "primitive": "prim_book_read_chunk", "status": "missing", "kind": "thin_wrapper"},
+        {"step": "check end of book",              "primitive": "prim_iter_done",       "status": "exists"},
+        {"step": "detect file type",               "primitive": "prim_type_detect",     "status": "exists"},
+        {"step": "filter to ebook extensions",     "primitive": "prim_filter",          "status": "missing", "kind": "thin_wrapper"},
+        {"step": "ingest text to word graph",      "primitive": "prim_wg_ingest",       "status": "missing", "kind": "new_semantics"},
+        {"step": "store passage as memory node",   "primitive": "prim_node_create",     "status": "exists"},
+        {"step": "link passage under book node",   "primitive": "prim_node_link",       "status": "exists"},
+        {"step": "format progress message",        "primitive": "prim_str_format",      "status": "exists"},
+        {"step": "log to ring_memory",             "primitive": "prim_log",             "status": "missing", "kind": "thin_wrapper"},
+        {"step": "loop back",                      "primitive": "prim_goto",            "status": "exists"},
+        {"step": "branch on done",                 "primitive": "prim_branch",          "status": "exists"}
+      ],
+      "missing_count": 5,
+      "blocking": ["prim_book_find", "prim_book_open", "prim_book_read_chunk", "prim_wg_ingest"]
+    },
+
+    "worker_monitor": {
+      "description": "Periodic daemon / job health check: scan jobs → scan daemons → check machines → TWM-push any alerts → post summary to channel.",
+      "steps": [
+        {"step": "list active jobs",               "primitive": "prim_job_list",        "status": "missing", "kind": "thin_wrapper"},
+        {"step": "get per-job status",             "primitive": "prim_job_status",      "status": "missing", "kind": "thin_wrapper"},
+        {"step": "list daemons",                   "primitive": "prim_daemon_list",     "status": "missing", "kind": "thin_wrapper"},
+        {"step": "ping individual daemon",         "primitive": "prim_daemon_ping",     "status": "missing", "kind": "thin_wrapper"},
+        {"step": "get machine availability",       "primitive": "prim_machines_status", "status": "missing", "kind": "thin_wrapper"},
+        {"step": "push alert to TWM",              "primitive": "prim_twm_push",        "status": "exists"},
+        {"step": "count jobs/daemons",             "primitive": "prim_list_count",      "status": "exists"},
+        {"step": "format summary report",          "primitive": "prim_str_format",      "status": "exists"},
+        {"step": "post summary to CC channel",     "primitive": "prim_cc_post",         "status": "missing", "kind": "thin_wrapper"},
+        {"step": "branch on alert threshold",      "primitive": "prim_branch",          "status": "exists"},
+        {"step": "log trace to ring_memory",       "primitive": "prim_log",             "status": "missing", "kind": "thin_wrapper"}
+      ],
+      "missing_count": 6,
+      "blocking": ["prim_job_list", "prim_daemon_list", "prim_cc_post"]
+    },
+
+    "cc_design_loop": {
+      "description": "CC channel monitoring: read messages → classify intent → route to decision store or habit update → post acknowledgement.",
+      "steps": [
+        {"step": "read recent CC messages",        "primitive": "prim_cc_read",         "status": "missing", "kind": "thin_wrapper"},
+        {"step": "classify message intent",        "primitive": "prim_thalamus_parse",  "status": "missing", "kind": "new_semantics"},
+        {"step": "search memory for context",      "primitive": "prim_node_search",     "status": "exists"},
+        {"step": "store design decision",          "primitive": "prim_decision_store",  "status": "missing", "kind": "thin_wrapper"},
+        {"step": "update habit (calibration)",     "primitive": "prim_habit_update",    "status": "missing", "kind": "new_semantics"},
+        {"step": "push new observation to TWM",    "primitive": "prim_twm_push",        "status": "exists"},
+        {"step": "format acknowledgement",         "primitive": "prim_str_format",      "status": "exists"},
+        {"step": "post ack to CC channel",         "primitive": "prim_cc_post",         "status": "missing", "kind": "thin_wrapper"},
+        {"step": "slice message text",             "primitive": "prim_str_slice",       "status": "exists"},
+        {"step": "branch on intent",               "primitive": "prim_branch",          "status": "exists"},
+        {"step": "log trace",                      "primitive": "prim_log",             "status": "missing", "kind": "thin_wrapper"}
+      ],
+      "missing_count": 5,
+      "blocking": ["prim_cc_read", "prim_cc_post", "prim_thalamus_parse"]
+    }
+  },
+
+  "gap_ranking": {
+    "_note": "Gaps ranked by how many target programs need them. Implement in this order.",
+    "rank": [
+      {"id": "prim_cc_post",         "needed_by_count": 2, "programs": ["worker_monitor", "cc_design_loop"], "kind": "thin_wrapper",  "priority": "high",   "effort": "XS"},
+      {"id": "prim_log",             "needed_by_count": 3, "programs": ["book_reader", "worker_monitor", "cc_design_loop"], "kind": "thin_wrapper", "priority": "medium", "effort": "XS"},
+      {"id": "prim_wg_ingest",       "needed_by_count": 1, "programs": ["book_reader"],    "kind": "new_semantics", "priority": "high",   "effort": "S"},
+      {"id": "prim_job_list",        "needed_by_count": 1, "programs": ["worker_monitor"], "kind": "thin_wrapper",  "priority": "medium", "effort": "XS"},
+      {"id": "prim_daemon_list",     "needed_by_count": 1, "programs": ["worker_monitor"], "kind": "thin_wrapper",  "priority": "medium", "effort": "XS"},
+      {"id": "prim_cc_read",         "needed_by_count": 1, "programs": ["cc_design_loop"], "kind": "thin_wrapper",  "priority": "medium", "effort": "XS"},
+      {"id": "prim_decision_store",  "needed_by_count": 1, "programs": ["cc_design_loop"], "kind": "thin_wrapper",  "priority": "medium", "effort": "XS"},
+      {"id": "prim_book_find",       "needed_by_count": 1, "programs": ["book_reader"],    "kind": "thin_wrapper",  "priority": "medium", "effort": "XS"},
+      {"id": "prim_book_open",       "needed_by_count": 1, "programs": ["book_reader"],    "kind": "thin_wrapper",  "priority": "medium", "effort": "XS"},
+      {"id": "prim_book_read_chunk", "needed_by_count": 1, "programs": ["book_reader"],    "kind": "thin_wrapper",  "priority": "medium", "effort": "XS"},
+      {"id": "prim_filter",          "needed_by_count": 1, "programs": ["book_reader"],    "kind": "thin_wrapper",  "priority": "medium", "effort": "XS"},
+      {"id": "prim_job_status",      "needed_by_count": 1, "programs": ["worker_monitor"], "kind": "thin_wrapper",  "priority": "medium", "effort": "XS"},
+      {"id": "prim_machines_status", "needed_by_count": 1, "programs": ["worker_monitor"], "kind": "thin_wrapper",  "priority": "low",    "effort": "XS"},
+      {"id": "prim_daemon_ping",     "needed_by_count": 1, "programs": ["worker_monitor"], "kind": "thin_wrapper",  "priority": "low",    "effort": "XS"},
+      {"id": "prim_thalamus_parse",  "needed_by_count": 1, "programs": ["cc_design_loop"], "kind": "new_semantics", "priority": "low",    "effort": "M"},
+      {"id": "prim_habit_update",    "needed_by_count": 1, "programs": ["cc_design_loop"], "kind": "new_semantics", "priority": "low",    "effort": "M"}
+    ],
+    "catalog_debt": {
+      "_note": "These primitives exist in os_primitives.py but were missing from catalog v1. Now documented above.",
+      "added_in_v2": ["prim_list_push", "prim_list_pop", "prim_list_count", "prim_node_create", "prim_node_link", "prim_node_search", "prim_twm_push", "prim_twm_read", "prim_str_split", "prim_str_regex", "prim_str_format", "prim_str_slice"],
+      "removed_from_missing": ["prim_count (covered by prim_list_count)", "prim_format (covered by prim_str_format)"]
+    }
+  }
 }
