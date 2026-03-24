@@ -1,9 +1,95 @@
 """
 Metrics tool — Igor can call get_metrics_report to examine his own internals.
 Also provides get_error_log to review recent runtime errors.
+Also provides get_milieu_state to read current affective state.
 """
 
+import time
+
 from .registry import Tool, registry
+
+# ── Milieu helpers ────────────────────────────────────────────────────────────
+
+
+def _emotion_label(valence: float, arousal: float, dominance: float) -> str:
+    """Derive a human-readable dominant emotion label from VAD coordinates."""
+    if abs(valence) < 0.1 and abs(arousal) < 0.1:
+        return "neutral"
+    if valence >= 0.2 and arousal >= 0.2:
+        return "engaged/excited"
+    if valence >= 0.2 and arousal < -0.1:
+        return "content/calm"
+    if valence >= 0.1 and abs(arousal) < 0.15:
+        return "positive/steady"
+    if valence <= -0.2 and arousal >= 0.2:
+        if dominance < 0.0:
+            return "stressed/overwhelmed"
+        return "anxious/activated"
+    if valence <= -0.2 and arousal < -0.1:
+        return "subdued/depressed"
+    if valence <= -0.1 and abs(arousal) < 0.15:
+        return "mildly negative"
+    if abs(valence) < 0.15 and arousal >= 0.2:
+        if dominance > 0.2:
+            return "alert/focused"
+        return "restless/unsettled"
+    if abs(valence) < 0.15 and arousal < -0.1:
+        return "tired/inactive"
+    return "mixed"
+
+
+def _get_milieu_state(**_) -> str:
+    """Return current milieu state: valence, arousal, dominance, emotion label, gradients."""
+    try:
+        from ..cognition.milieu import get as _get_milieu_singleton
+
+        milieu = _get_milieu_singleton()
+        if milieu is None:
+            return "Milieu not initialized — Igor may not be fully booted."
+
+        s = milieu.get_state()
+        aro_grad = milieu.gradient("arousal")
+        val_grad = milieu.gradient("valence")
+        emotion = _emotion_label(s.valence, s.arousal, s.dominance)
+
+        hist = milieu.session_histogram()
+        session_char = hist.get("session_character", "unknown")
+        sample_count = hist.get("sample_count", 0)
+
+        age_s = int(time.time() - s.last_update) if s.last_update > 0 else None
+        age_str = f"{age_s}s ago" if age_s is not None else "unknown"
+
+        lines = [
+            f"MILIEU STATE (tick={s.tick}, last_update={age_str}):",
+            f"  valence   = {s.valence:+.3f}  (gradient {val_grad:+.4f})",
+            f"  arousal   = {s.arousal:+.3f}  (gradient {aro_grad:+.4f})",
+            f"  dominance = {s.dominance:+.3f}",
+            f"  emotion   = {emotion}",
+            f"  session   = {session_char} ({sample_count} samples this session)",
+        ]
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Error reading milieu state: {e}"
+
+
+registry.register(
+    Tool(
+        name="get_milieu_state",
+        description=(
+            "Return current affective state: valence, arousal, dominance, "
+            "dominant emotion label, per-dim gradients (rising/falling), and "
+            "session character (bouncy/stressed/focused/calm/neutral). "
+            "Use to inspect your own emotional register — check mood, notice if "
+            "arousal is climbing, or report your current state to Akien."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        fn=_get_milieu_state,
+    )
+)
 
 
 def _get_metrics_report(cortex_db_path: str = "", **_) -> str:
