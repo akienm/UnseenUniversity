@@ -21,12 +21,17 @@ and carry tag 'template'. The BG executor guard skips any node where 'template' 
 """
 
 import json
+import os
 import re
+import urllib.request
 import uuid
 import logging
 from jinja2 import Environment, StrictUndefined, TemplateSyntaxError, UndefinedError
 from ..memory.models import Memory, MemoryType
 from ..cognition.forensic_logger import log_error
+
+_OPENROUTER_BASE = "https://openrouter.ai/api/v1"
+_CHEAP_MODEL = None  # resolved lazily from env
 
 logger = logging.getLogger(__name__)
 
@@ -325,6 +330,194 @@ def validate_template_schema(template_json: str) -> str:
     return f"VALID: pattern={pattern}, slots={n_slots}, expands={n_expands}, produces={produces}"
 
 
+# ── LLM helper ───────────────────────────────────────────────────────────────
+
+
+def _cheap_model() -> str:
+    global _CHEAP_MODEL
+    if _CHEAP_MODEL is None:
+        _CHEAP_MODEL = os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
+    return _CHEAP_MODEL
+
+
+def _llm_call(system: str, user: str, max_tokens: int = 512) -> str:
+    """
+    Minimal OpenRouter call using the cheap model.
+    Returns the raw text content or raises RuntimeError.
+    """
+    api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("OPENROUTER_API_KEY not set — cannot call LLM")
+    payload = json.dumps(
+        {
+            "model": _cheap_model(),
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            "max_tokens": max_tokens,
+            "temperature": 0.0,
+        }
+    ).encode()
+    req = urllib.request.Request(
+        f"{_OPENROUTER_BASE}/chat/completions",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://github.com/akienm/TheIgors",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read())
+        return data["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        raise RuntimeError(f"LLM call failed: {e}") from e
+
+
+# ── Pattern recognition ───────────────────────────────────────────────────────
+
+
+def recognize_pattern(code_or_description: str) -> str:
+    """
+    Given Python code or a habit/process description, identify which Engram
+    template pattern it best matches.
+
+    Uses list_templates() to get the 21-pattern inventory, then asks the cheap
+    LLM model to classify the input.
+
+    Returns JSON: {"pattern_name": str, "template_id": str, "confidence": float,
+                   "reasoning": str}
+    or an error string starting with "ERROR:".
+    """
+    if not code_or_description.strip():
+        return "ERROR: code_or_description is empty"
+
+    template_summary = list_templates()
+    if template_summary.startswith("No TEMPLATE"):
+        return "ERROR: no TEMPLATE nodes found in matrix — run seed_templates.py first"
+
+    system = (
+        "You are an Engram pattern classifier. "
+        "Engram is a macro language for Igor's habit matrix. "
+        "There are 21 named patterns. Each is a structural template for how a habit or "
+        "habit chain is organised. "
+        "Given the list of patterns below and a code/description input, "
+        "identify the SINGLE best matching pattern. "
+        "Reply ONLY with valid JSON: "
+        '{"pattern_name": "...", "template_id": "...", "confidence": 0.0-1.0, "reasoning": "one sentence"}'
+        " — no markdown, no extra text."
+    )
+    user = (
+        f"Available patterns:\n{template_summary}\n\n"
+        f"Input to classify:\n{code_or_description[:3000]}"
+    )
+
+    try:
+        raw = _llm_call(system, user, max_tokens=256)
+        # Validate it's parseable JSON with required keys
+        parsed = json.loads(raw)
+        for key in ("pattern_name", "template_id", "confidence", "reasoning"):
+            if key not in parsed:
+                raise ValueError(f"missing key '{key}'")
+        logger.info(
+            "RECOGNIZE_PATTERN|pattern=%s|confidence=%.2f",
+            parsed["pattern_name"],
+            parsed["confidence"],
+        )
+        return json.dumps(parsed)
+    except (RuntimeError, json.JSONDecodeError, ValueError) as e:
+        log_error(kind="TEMPLATE_RECOGNIZE", detail=str(e))
+        return f"ERROR: {e}"
+
+
+# ── Template parameterization ─────────────────────────────────────────────────
+
+
+def parameterize_template(code_or_description: str, pattern_name: str) -> str:
+    """
+    Given Python code or a habit/process description and an Engram pattern name,
+    extract the slot values that would be needed to instantiate that template.
+
+    Looks up the template's slot_manifest to know what slots exist, then asks
+    the cheap LLM model to extract values from the input text.
+
+    Returns JSON: {"template_id": str, "pattern_name": str,
+                   "params": {slot_name: value, ...}, "missing": [slot_names]}
+    or an error string starting with "ERROR:".
+    """
+    if not code_or_description.strip():
+        return "ERROR: code_or_description is empty"
+    if not pattern_name.strip():
+        return "ERROR: pattern_name is empty"
+
+    # Find the template node by pattern_name
+    cortex = _get_cortex()
+    all_procedural = cortex.get_by_type(MemoryType.PROCEDURAL, limit=200)
+    template_node = None
+    for m in all_procedural:
+        schema = m.metadata.get("template_schema", {})
+        if schema.get("pattern_name", "").upper() == pattern_name.upper():
+            template_node = m
+            break
+
+    if template_node is None:
+        return f"ERROR: no TEMPLATE node found for pattern '{pattern_name}'"
+
+    schema = template_node.metadata["template_schema"]
+    slot_manifest = schema.get("slot_manifest", [])
+    if not slot_manifest:
+        return f"ERROR: template '{template_node.id}' has no slot_manifest"
+
+    slots_desc = "\n".join(
+        f"  {s['name']} ({s.get('type_hint','str')}, "
+        f"{'required' if s.get('required', True) else 'optional'}"
+        f"{', default=' + repr(s['default']) if 'default' in s else ''}): "
+        f"{s.get('description', '')}"
+        for s in slot_manifest
+    )
+
+    system = (
+        "You are an Engram template parameterizer. "
+        f"The pattern is {pattern_name}. "
+        "Given the slot definitions below and the input code/description, "
+        "extract a value for each slot. "
+        "Reply ONLY with valid JSON: "
+        '{"template_id": "...", "pattern_name": "...", '
+        '"params": {slot_name: extracted_value, ...}, '
+        '"missing": [slot_names_you_could_not_extract]}'
+        " — no markdown, no extra text."
+    )
+    user = (
+        f"Template id: {template_node.id}\n"
+        f"Pattern: {pattern_name}\n\n"
+        f"Slots:\n{slots_desc}\n\n"
+        f"Input to parameterize:\n{code_or_description[:3000]}"
+    )
+
+    try:
+        raw = _llm_call(system, user, max_tokens=512)
+        parsed = json.loads(raw)
+        for key in ("template_id", "pattern_name", "params", "missing"):
+            if key not in parsed:
+                raise ValueError(f"missing key '{key}'")
+        # Ensure template_id is correct
+        parsed["template_id"] = template_node.id
+        parsed["pattern_name"] = schema["pattern_name"]
+        logger.info(
+            "PARAMETERIZE_TEMPLATE|template=%s|params=%s|missing=%s",
+            template_node.id,
+            list(parsed["params"].keys()),
+            parsed["missing"],
+        )
+        return json.dumps(parsed)
+    except (RuntimeError, json.JSONDecodeError, ValueError) as e:
+        log_error(kind="TEMPLATE_PARAMETERIZE", detail=str(e))
+        return f"ERROR: {e}"
+
+
 # ── Tool registration ────────────────────────────────────────────────────────
 
 from .registry import Tool, registry  # noqa: E402
@@ -371,5 +564,44 @@ registry.register(
             "template_json": "string — JSON object representing a template_schema",
         },
         fn=validate_template_schema,
+    )
+)
+
+registry.register(
+    Tool(
+        name="recognize_pattern",
+        description=(
+            "Given Python code or a habit/process description, identify which Engram "
+            "template pattern it best matches. Uses the 21-pattern inventory from the "
+            "matrix and LLM classification. "
+            "Returns JSON: {pattern_name, template_id, confidence, reasoning}."
+        ),
+        parameters={
+            "code_or_description": (
+                "string — Python code snippet or plain-language description of a habit/process"
+            ),
+        },
+        fn=recognize_pattern,
+    )
+)
+
+registry.register(
+    Tool(
+        name="parameterize_template",
+        description=(
+            "Given Python code or a habit/process description plus a pattern name, "
+            "extract the slot values needed to instantiate that Engram template. "
+            "Returns JSON: {template_id, pattern_name, params, missing}. "
+            "Use recognize_pattern first if you don't know the pattern name."
+        ),
+        parameters={
+            "code_or_description": (
+                "string — Python code snippet or plain-language description of a habit/process"
+            ),
+            "pattern_name": (
+                "string — Engram pattern name (e.g. CACHED_PROBE, THRESHOLD_ALERT)"
+            ),
+        },
+        fn=parameterize_template,
     )
 )
