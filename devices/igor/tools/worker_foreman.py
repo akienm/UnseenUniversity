@@ -171,6 +171,37 @@ def record_worker_closure(ticket_id: str, tags: list, valence: float) -> str:
         return f"[ERROR] record_worker_closure: {e}"
 
 
+def foreman_scan() -> str:
+    """
+    Check the task queue and act:
+    - If pending tickets exist → launch the next worker.
+    - If all done/blocked or empty → return a brief summary for TWM deposit.
+
+    Called by PROC_WORKER_FOREMAN habit when BOREDOM_DETECTED fires.
+    Bridges idle-time awareness → concrete work handoff.
+    """
+    try:
+        tasks = _load_queue()
+        if not tasks:
+            return "queue is empty — no work pending"
+
+        counts = {"pending": 0, "in_progress": 0, "blocked": 0, "done": 0}
+        for t in tasks:
+            s = t.get("status", "unknown")
+            counts[s] = counts.get(s, 0) + 1
+
+        if counts["pending"] > 0:
+            # Work available — launch the next worker
+            return launch_next_worker()
+
+        # Nothing pending — report state so Igor knows he's genuinely idle
+        parts = [f"{v} {k}" for k, v in counts.items() if v > 0]
+        return f"queue clear: {', '.join(parts)} — no pending work"
+
+    except Exception as e:
+        return f"[ERROR] foreman_scan: {e}"
+
+
 # ── Register tools ──────────────────────────────────────────────────────────
 
 registry.register(
@@ -238,5 +269,23 @@ registry.register(
         fn=lambda ticket_id, tags, valence: record_worker_closure(
             ticket_id, tags, float(valence)
         ),
+    )
+)
+
+registry.register(
+    Tool(
+        name="foreman_scan",
+        description=(
+            "Check the task queue and launch the next worker if work is pending, "
+            "or return a queue summary if everything is done or blocked. "
+            "Called by PROC_WORKER_FOREMAN when Igor detects idle boredom. "
+            "No arguments needed."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        fn=lambda: foreman_scan(),
     )
 )

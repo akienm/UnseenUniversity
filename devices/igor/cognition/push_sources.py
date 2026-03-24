@@ -1420,6 +1420,111 @@ class CuriositySource(BasePushSource):
         return [obs_id]
 
 
+class BoredomSource(BasePushSource):
+    """
+    Fires BOREDOM_DETECTED when milieu arousal has been flat for WINDOW_MINS.
+
+    Calibration (2026-03-23): boredom = SLIGHT negative — mild aversive drift,
+    enough to make stillness less comfortable than motion. Too strong = anxiety
+    freeze. Too weak = no effect. "Slight is load-bearing."
+
+    Rolling window: tracks last WINDOW_MINS arousal samples (1/min). When the
+    mean is below AROUSAL_THRESH the system is in a no-mind attractor. Fire
+    BOREDOM_DETECTED → ACTION_IMPULSE → foreman_scan (via PROC_WORKER_FOREMAN
+    habit) to check for pending work.
+
+    Also nudges milieu with a slight negative valence so there's mild aversive
+    pressure — stillness is slightly less comfortable than doing something.
+
+    COOLDOWN_SEC prevents re-firing within the window duration so we don't
+    cascade into anxiety.
+    """
+
+    name = "boredom_detector"
+    MIN_INTERVAL_SEC = 60  # sample every minute
+    WINDOW_MINS = int(os.getenv("IGOR_BOREDOM_WINDOW_MINS", "20"))
+    AROUSAL_THRESH = float(os.getenv("IGOR_BOREDOM_AROUSAL_THRESH", "0.05"))
+    COOLDOWN_SEC = 1200  # 20-min cooldown after each fire
+
+    def __init__(self):
+        self._last_run: Optional[datetime] = None
+        self._last_fired: Optional[datetime] = None
+        self._arousal_window: list[float] = []
+
+    def push(self, cortex) -> list[int]:
+        now = datetime.now()
+        if (
+            self._last_run is not None
+            and (now - self._last_run).total_seconds() < self.MIN_INTERVAL_SEC
+        ):
+            return []
+        self._last_run = now
+
+        # Sample current arousal
+        try:
+            from . import milieu as milieu_mod
+
+            m = milieu_mod.get()
+            if m is None:
+                return []
+            arousal = m.get_state().arousal
+        except Exception:
+            return []
+
+        # Maintain rolling window (drop samples older than WINDOW_MINS)
+        self._arousal_window.append(arousal)
+        if len(self._arousal_window) > self.WINDOW_MINS:
+            self._arousal_window.pop(0)
+
+        # Need a full window before we judge
+        if len(self._arousal_window) < self.WINDOW_MINS:
+            return []
+
+        # Cooldown check — don't re-fire within window duration
+        if (
+            self._last_fired is not None
+            and (now - self._last_fired).total_seconds() < self.COOLDOWN_SEC
+        ):
+            return []
+
+        mean_arousal = sum(self._arousal_window) / len(self._arousal_window)
+        if mean_arousal >= self.AROUSAL_THRESH:
+            return []  # Still engaged — stay quiet
+
+        # Boredom detected — apply slight aversive nudge
+        try:
+            from . import milieu as milieu_mod
+
+            m = milieu_mod.get()
+            if m is not None:
+                m.update(valence=-0.08, friction=0.05)  # slight discomfort of stillness
+        except Exception as _e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/push_sources.py BoredomSource milieu nudge: {_e}",
+            )
+
+        self._last_fired = now
+
+        obs_id = cortex.twm_push(
+            source=self.name,
+            content_csb=(
+                f"BOREDOM_DETECTED|mean_arousal={mean_arousal:.3f}"
+                f"|window_mins={self.WINDOW_MINS}"
+                f"|action=check_worker_queue"
+            ),
+            salience=0.6,
+            urgency=0.55,
+            ttl_seconds=900,
+            metadata={
+                "type": "boredom_detected",
+                "mean_arousal": mean_arousal,
+                "action_pointer": "check_worker_queue,foreman_scan",
+            },
+        )
+        return [obs_id]
+
+
 # ── Module singletons + convenience runner ────────────────────────────────────
 
 # ── InteroceptionSource ───────────────────────────────────────────────────────
@@ -1564,6 +1669,7 @@ proactive_habit_source = ProactiveHabitSource()
 resource_monitor = ResourceMonitorSource()
 self_observation_source = SelfObservationSource()
 curiosity_source = CuriositySource()
+boredom_source = BoredomSource()
 interoception_source = InteroceptionSource()
 scheduler_source = SchedulerSource()
 
@@ -1586,6 +1692,7 @@ def run_background_sources(cortex) -> int:
         resource_monitor,
         self_observation_source,
         curiosity_source,
+        boredom_source,
         interoception_source,
         scheduler_source,
     ):
