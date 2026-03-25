@@ -21,6 +21,7 @@ memory_candidates with importance > 0.7 are promoted to LTM automatically.
 """
 
 import json
+import logging
 import os
 import time
 from dataclasses import dataclass, field
@@ -44,6 +45,11 @@ NE_MAX_INTERVAL_SEC = 300  # Maximum seconds between NE runs (5 min)
 PROMOTE_THRESHOLD = 0.7  # importance >= this → goes to LTM
 NE_CURSOR_HISTORY = 5  # How many cycles to keep in topic_history
 NE_OSCILLATION_DEPTH = 3  # Cycles on same topic with no new promotions → oscillating
+
+# D228 step 2: prediction error training
+_PE_HEAT_THRESHOLD = 0.3  # min spread heat to count as a predicted node
+_PE_REINFORCE_DELTA = 0.05  # strengthen correct predictions by this amount
+_PE_WEAKEN_DELTA = 0.02  # weaken wrong predictions by this amount
 
 # WO7: NE loop prevention — comprehensive guards
 
@@ -443,6 +449,26 @@ class NarrativeEngine(IgorBase):
         # Watermark for cache invalidation — max obs id already in hand
         max_twm_id = max((o["id"] for o in obs_list), default=0)
 
+        # D228 step 2: collect seed memory IDs from TWM before inference, for prediction error
+        _pe_seed_ids: list = []
+        _pe_predicted_heat: dict = {}
+        if os.getenv("IGOR_PREDICTION_ERROR_ENABLED", "false").lower() == "true":
+            try:
+                _pe_seed_ids = [
+                    obs["metadata"]["memory_id"]
+                    for obs in obs_list
+                    if obs.get("metadata", {}).get("memory_id")
+                ]
+                if _pe_seed_ids:
+                    _pe_predicted_heat = self.cortex.spreading_activation(
+                        _pe_seed_ids, depth=2
+                    )
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                )
+
         # Call LLM: reasoning cache first, then inference gateway (NE purpose).
         # Gateway routes: cloud_mode active → OR; local NE model set → Ollama → OR fallback.
         result = self._call_inference(prompt, max_twm_id)
@@ -462,7 +488,15 @@ class NarrativeEngine(IgorBase):
             return None
 
         # Process NE output
-        promoted, impulses = self._apply_output(result, obs_list, verbose=verbose)
+        promoted, impulses, _pe_promoted_ids = self._apply_output(
+            result, obs_list, verbose=verbose
+        )
+
+        # D228 step 2: prediction error → per-turn graph training
+        if _pe_seed_ids and _pe_predicted_heat and _pe_promoted_ids:
+            self._train_prediction_error(
+                _pe_seed_ids, _pe_predicted_heat, _pe_promoted_ids
+            )
 
         # #236: update traversal cursor after output is applied (knows actual promoted count)
         self._update_cursor(result, promoted)
@@ -495,9 +529,10 @@ class NarrativeEngine(IgorBase):
 
     def _apply_output(
         self, result: dict, obs_list: list[dict], verbose: bool = True
-    ) -> tuple[int, int]:
+    ) -> tuple[int, int, list]:
         """Apply NE output: update salience, mark integrated, promote to LTM.
-        Returns (promoted_count, impulse_count) for forensic logging."""
+        Returns (promoted_count, impulse_count, promoted_ids) for forensic logging
+        and prediction error training."""
 
         # 1. Update salience for any obs the NE re-scored
         for update in result.get("salience_updates", []):
@@ -521,12 +556,17 @@ class NarrativeEngine(IgorBase):
         try:
             _aff_ms = _aff_milieu.get_state() if _aff_milieu else None
         except Exception as e:
-            log_error(kind="TOOL_FAIL", detail=f"milieu state fetch failed: {e}")  # non-fatal
+            log_error(
+                kind="TOOL_FAIL", detail=f"milieu state fetch failed: {e}"
+            )  # non-fatal
             _aff_ms = None
         _aff_arousal = max(0.0, _aff_ms.arousal if _aff_ms else 0.0)
         _aff_valence = _aff_ms.valence if _aff_ms else 0.0
 
         promoted = 0
+        promoted_ids: list[str] = (
+            []
+        )  # D228 step 2: collected for prediction error training
         _promoted_contents: list[str] = []  # for Step 3 gap closure scan
         for cand in result.get("memory_candidates", []):
             importance = float(cand.get("importance", 0.0))
@@ -628,6 +668,7 @@ class NarrativeEngine(IgorBase):
                 )
                 self.cortex.store(mem)
                 _promoted_contents.append(content)
+                promoted_ids.append(mem.id)
                 promoted += 1
 
                 # Signal A (Change 3): extend TTL of source TWM obs when importance >= 0.7
@@ -720,7 +761,56 @@ class NarrativeEngine(IgorBase):
         # #304/#306: gap registry — accumulate tension, push new gaps, close resolved ones
         self._process_gaps(result, _promoted_contents)
 
-        return promoted, impulse_count
+        return promoted, impulse_count, promoted_ids
+
+    # ── Prediction error training ──────────────────────────────────────────────
+
+    def _train_prediction_error(
+        self,
+        seed_ids: list,
+        predicted_heat: dict,
+        promoted_ids: list,
+    ) -> None:
+        """D228 step 2: prediction error → per-turn graph training.
+
+        Edges that predicted correctly (spreading_activation predicted hot AND
+        the node was actually promoted to LTM) are strengthened via reinforce_links.
+        Edges that missed (predicted hot but not promoted) are weakened.
+
+        Gated by IGOR_PREDICTION_ERROR_ENABLED=true. Never raises.
+        """
+        try:
+            promoted_set = set(promoted_ids)
+            predicted_hot = {
+                nid
+                for nid, heat in predicted_heat.items()
+                if heat >= _PE_HEAT_THRESHOLD
+            }
+            hits = predicted_hot & promoted_set
+            misses = predicted_hot - promoted_set
+
+            for seed_id in seed_ids:
+                if hits:
+                    self.cortex.reinforce_links(
+                        seed_id, list(hits), _PE_REINFORCE_DELTA
+                    )
+                if misses:
+                    self.cortex.reinforce_links(
+                        seed_id, list(misses), -_PE_WEAKEN_DELTA
+                    )
+
+            logging.getLogger("forensic").debug(
+                "[NE] prediction_error: seeds=%d predicted_hot=%d hits=%d misses=%d",
+                len(seed_ids),
+                len(predicted_hot),
+                len(hits),
+                len(misses),
+            )
+        except Exception as _bare_e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+            )
 
     # ── LLM calls ─────────────────────────────────────────────────────────────
 
@@ -1176,7 +1266,9 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
             _ms = _milieu_mod.get_state() if _milieu_mod else None
             _arousal = max(0.0, _ms.arousal) if _ms else 0.0
         except Exception as e:
-            log_error(kind="TOOL_FAIL", detail=f"arousal fetch failed: {e}")  # non-fatal
+            log_error(
+                kind="TOOL_FAIL", detail=f"arousal fetch failed: {e}"
+            )  # non-fatal
             _arousal = 0.0
 
         # Bail if arousal has dropped — reconsolidation window closed
