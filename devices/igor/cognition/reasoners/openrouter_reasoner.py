@@ -11,9 +11,12 @@ Prefix responses with [model-name] when show_model_tag=True.
 
 import json
 import os
+import threading
 import time
 import urllib.request
 import urllib.error
+
+_HEARTBEAT_SECS = int(os.getenv("IGOR_CLOUD_HEARTBEAT_SECS", "45"))
 
 from rich.console import Console
 
@@ -488,7 +491,18 @@ class OpenRouterReasoner(BaseReasoner):
                     f"— consider breaking into smaller steps[/]"
                 )
 
-            response = self._call_api(messages, tools, system=system)
+            _hb = threading.Timer(
+                _HEARTBEAT_SECS,
+                lambda _t=turn: console.print(
+                    f"[dim yellow][OR] Still thinking... (turn {_t}, cloud reasoning in progress)[/]"
+                ),
+            )
+            _hb.daemon = True
+            _hb.start()
+            try:
+                response = self._call_api(messages, tools, system=system)
+            finally:
+                _hb.cancel()
             choice = response["choices"][0]
             msg = choice["message"]
             finish_reason = choice.get("finish_reason", "stop")
