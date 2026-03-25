@@ -1,4 +1,5 @@
 import logging
+
 """
 Runner tools - execute bash commands and Python code snippets.
 
@@ -60,6 +61,15 @@ def _run(args: list[str], timeout: int, input_text: str = "") -> str:
             parts.append(f"[stderr]\n{result.stderr}")
         if result.returncode != 0:
             parts.append(f"[exit code: {result.returncode}]")
+
+        # Track exit code 127 (command not found) as misfire
+        if result.returncode == 127 and args:
+            from .misfire_counter import get_misfire_counter
+
+            command_str = " ".join(args) if isinstance(args, list) else str(args)
+            counter = get_misfire_counter()
+            counter.record_bash_exit(command_str, result.returncode)
+
         return "\n".join(parts).strip() or "(no output)"
     except subprocess.TimeoutExpired:
         return f"[TIMEOUT] Process exceeded {timeout}s limit and was killed."
@@ -273,7 +283,9 @@ def _resolve_repo_path(repo_path: str = None, project_id: str = None) -> str:
                 if _mem and _mem.metadata and _mem.metadata.get("path"):
                     return _mem.metadata["path"]
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/runner.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/tools/runner.py: %s", _bare_e
+            )
     return str(Path.home() / "TheIgors")
 
 

@@ -138,12 +138,34 @@ class ToolRegistry:
         except Exception as e:
             elapsed_ms = int((time.perf_counter() - t0) * 1000)
             self._record(name, elapsed_ms, False)
+
+            # Track repeated tool errors as misfires
+            error_type = type(e).__name__
+            self._record_misfire(name, error_type)
+
             return f"Error executing {name}: {e}"
 
     def _record(self, name: str, elapsed_ms: int, success: bool) -> None:
         if name not in self._stats:
             self._stats[name] = ToolStats()
         self._stats[name].record(elapsed_ms, success)
+
+    def _record_misfire(self, tool_name: str, error_type: str) -> None:
+        """Record a tool error for misfire tracking."""
+        try:
+            from .misfire_counter import get_misfire_counter
+
+            counter = get_misfire_counter()
+            counter.record_tool_error(
+                tool_name, error_type, dispatch_path="tool_execute"
+            )
+        except Exception as e:
+            # Log but don't fail — misfire tracking is non-critical
+            import logging
+
+            logging.getLogger(__name__).debug(
+                f"Failed to record misfire for {tool_name}: {e}"
+            )
 
     def tool_stats(self) -> dict[str, dict]:
         """Return per-tool stats dict, sorted by call count descending."""
