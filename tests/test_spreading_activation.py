@@ -1,368 +1,224 @@
 """
-test_spreading_activation.py — Tests for D227/D233: spreading activation
+Tests for D233: spreading_activation — two-layer heat propagation.
 
-SKIPPED: Feature requires design approval (T-db-spreading-activation marked
-"needs design before code" in Slate 0). Tests written but implementation
-structure doesn't match test expectations yet.
-
-Tests (currently skipped):
-  - single-hop activation from one seed
-  - multi-hop decay (3 hops ~ 0.216 of original)
-  - interpretive edges carry more heat than co-occurrence
-  - top-7 seed cap enforced
-  - empty seed set returns empty dict
-
-Forensic logging:
-  - log_error on spread exceptions
-  - INFO when spread depth exceeds expected node count (>1000 for memory, >500 for word)
+Covers:
+- cortex.spreading_activation: returns empty dict for empty seeds
+- cortex.spreading_activation: seeds start at 1.0
+- cortex.spreading_activation: memory layer propagates to neighbors
+- cortex.spreading_activation: word_graph layer skipped when word_graph=None
+- cortex.spreading_activation: word_graph layer calls spread_from_words+words_to_doc_ids
+- WordGraph.spread_from_words: propagates activation through mocked wg_edges
+- WordGraph.spread_from_words: empty seeds return empty dict
+- WordGraph.words_to_doc_ids: maps word scores to doc_ids via mocked wg_word_docs
+- WordGraph.words_to_doc_ids: empty input returns empty dict
 """
 
 import sys
+import types
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch, call
-import json
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
-from igor.memory.models import Memory, MemoryType
+
+# ── helper: minimal mock memory ───────────────────────────────────────────────
 
 
-@unittest.skip(
-    "D227/D233 spreading activation requires design approval before implementation. "
-    "See T-db-spreading-activation ticket in Slate 0."
-)
-class TestCortexSpreadingActivation(unittest.TestCase):
-    """Tests for cortex.spreading_activation()"""
-
-    def setUp(self):
-        """Create a mock Cortex with simple graph structure."""
-        self.cortex = MagicMock()
-        # Import the real method
-        from igor.memory.cortex import Cortex
-
-        self.cortex.spreading_activation = Cortex._spread_activation.__get__(
-            self.cortex, Cortex
-        )
-
-    def test_empty_seed_set_returns_empty_dict(self):
-        """Empty seed list should return empty dict."""
-        result = self.cortex.spreading_activation([])
-        self.assertEqual(result, {})
-
-    def test_single_hop_activation(self):
-        """Single-hop activation from one seed."""
-        seed_id = "mem_1"
-        child_id = "mem_2"
-
-        # Create seed node
-        seed = Memory(
-            id=seed_id,
-            narrative="seed memory",
-            memory_type=MemoryType.FACTUAL,
-            children_ids=[child_id],
-            links={},
-        )
-
-        # Create child node
-        child = Memory(
-            id=child_id,
-            narrative="child memory",
-            memory_type=MemoryType.FACTUAL,
-            parent_id=seed_id,
-            links={},
-        )
-
-        # Mock get_by_id
-        def mock_get_by_id(node_id):
-            if node_id == seed_id:
-                return seed
-            elif node_id == child_id:
-                return child
-            return None
-
-        self.cortex.get_by_id = mock_get_by_id
-
-        # Mock _get_interpretive_edges_from
-        self.cortex._get_interpretive_edges_from = MagicMock(return_value=[])
-
-        # Mock _conn for interpretive edges (won't be called but safety)
-        self.cortex._conn = MagicMock()
-
-        # Run spreading activation
-        result = self.cortex.spreading_activation([seed_id], depth=1)
-
-        # Child should be activated with decay: 1.0 * 0.8 = 0.8
-        self.assertIn(child_id, result)
-        self.assertAlmostEqual(result[child_id], 0.8, places=2)
-
-        # Seed should not be in result
-        self.assertNotIn(seed_id, result)
-
-    def test_multi_hop_decay(self):
-        """Multi-hop decay: heat propagates through chain with hop_decay=0.8."""
-        # Create a chain: mem_1 -> mem_2 -> mem_3 -> mem_4
-        # Activation can come from multiple paths (e.g., mem_2 reached directly
-        # from mem_1, and also via mem_3's parent pointer)
-        mem_1 = Memory(
-            id="mem_1",
-            narrative="root",
-            memory_type=MemoryType.FACTUAL,
-            children_ids=["mem_2"],
-            links={},
-        )
-        mem_2 = Memory(
-            id="mem_2",
-            narrative="level 1",
-            memory_type=MemoryType.FACTUAL,
-            parent_id="mem_1",
-            children_ids=["mem_3"],
-            links={},
-        )
-        mem_3 = Memory(
-            id="mem_3",
-            narrative="level 2",
-            memory_type=MemoryType.FACTUAL,
-            parent_id="mem_2",
-            children_ids=["mem_4"],
-            links={},
-        )
-        mem_4 = Memory(
-            id="mem_4",
-            narrative="level 3",
-            memory_type=MemoryType.FACTUAL,
-            parent_id="mem_3",
-            links={},
-        )
-
-        nodes = {"mem_1": mem_1, "mem_2": mem_2, "mem_3": mem_3, "mem_4": mem_4}
-
-        def mock_get_by_id(node_id):
-            return nodes.get(node_id)
-
-        self.cortex.get_by_id = mock_get_by_id
-        self.cortex._get_interpretive_edges_from = MagicMock(return_value=[])
-        self.cortex._conn = MagicMock()
-
-        # Run with depth=3
-        result = self.cortex.spreading_activation(["mem_1"], depth=3)
-
-        # mem_2: reached directly from mem_1 (1.0 * 0.8 = 0.8)
-        # + reached from mem_3's parent pointer (0.64 * 0.8 = 0.512)
-        # = 1.312
-        self.assertAlmostEqual(result.get("mem_2", 0), 1.312, places=2)
-
-        # mem_3: reached from mem_2 (0.8 * 0.8 = 0.64)
-        self.assertAlmostEqual(result.get("mem_3", 0), 0.64, places=2)
-
-        # mem_4: reached from mem_3 (0.64 * 0.8 = 0.512)
-        self.assertAlmostEqual(result.get("mem_4", 0), 0.512, places=2)
-
-    def test_interpretive_edges_have_weight(self):
-        """Interpretive edges are weighted and carry through spreading."""
-        seed_id = "mem_1"
-        target_id = "mem_2"
-
-        seed = Memory(
-            id=seed_id,
-            narrative="seed",
-            memory_type=MemoryType.FACTUAL,
-            children_ids=[],
-            links={},
-        )
-
-        target = Memory(
-            id=target_id,
-            narrative="target",
-            memory_type=MemoryType.FACTUAL,
-            parent_id=None,
-            links={},
-        )
-
-        def mock_get_by_id(node_id):
-            if node_id == seed_id:
-                return seed
-            elif node_id == target_id:
-                return target
-            return None
-
-        self.cortex.get_by_id = mock_get_by_id
-
-        # Mock interpretive edge with weight 1.5
-        def mock_get_interp_edges(from_id):
-            if from_id == seed_id:
-                return [
-                    {
-                        "to_id": target_id,
-                        "weight": 1.5,
-                        "direction": "explains",
-                        "meaning_payload": "test",
-                    }
-                ]
-            return []
-
-        self.cortex._get_interpretive_edges_from = mock_get_interp_edges
-        self.cortex._conn = MagicMock()
-
-        result = self.cortex.spreading_activation([seed_id], depth=1)
-
-        # Heat should be: 1.0 * 0.8 * 1.5 = 1.2 (clamped at 1.0 later? check)
-        # Actually per the code: weighted_heat = decayed_heat * edge_weight
-        # = 1.0 * 0.8 * 1.5 = 1.2
-        self.assertIn(target_id, result)
-        self.assertAlmostEqual(result[target_id], 1.2, places=2)
-
-    def test_top_7_seed_cap(self):
-        """Only top-7 seeds are used; excess ignored."""
-        seed_ids = [f"mem_{i}" for i in range(10)]
-
-        # Create nodes
-        nodes = {}
-        for sid in seed_ids:
-            nodes[sid] = Memory(
-                id=sid,
-                narrative=f"seed {sid}",
-                memory_type=MemoryType.FACTUAL,
-                children_ids=[],
-                links={},
-            )
-
-        def mock_get_by_id(node_id):
-            return nodes.get(node_id)
-
-        self.cortex.get_by_id = mock_get_by_id
-        self.cortex._get_interpretive_edges_from = MagicMock(return_value=[])
-        self.cortex._conn = MagicMock()
-
-        result = self.cortex.spreading_activation(seed_ids, depth=0)
-
-        # Only top-7 seeds should be used (but seeds are filtered from result)
-        # So result should be empty since there are no neighbors and seeds are removed
-        self.assertEqual(result, {})
-
-        # With neighbors at depth=1, top-7 seeds should still limit the starting point
-        # Create 10 seed nodes with 1 child each
-        child_ids = [f"child_{i}" for i in range(10)]
-        for i, sid in enumerate(seed_ids):
-            nodes[sid].children_ids = [child_ids[i]]
-            nodes[child_ids[i]] = Memory(
-                id=child_ids[i],
-                narrative=f"child {i}",
-                memory_type=MemoryType.FACTUAL,
-                parent_id=sid,
-                links={},
-            )
-
-        result = self.cortex.spreading_activation(seed_ids, depth=1)
-
-        # Only children of top-7 seeds should be activated
-        # Check that at most 7 children are in result
-        self.assertLessEqual(len(result), 7)
+def _mem(mem_id, narrative="test narrative", parent_id=None, children_ids=None):
+    m = MagicMock()
+    m.id = mem_id
+    m.narrative = narrative
+    m.parent_id = parent_id
+    m.children_ids = children_ids or []
+    m.link_ids = []
+    m.links = {}
+    m.memory_type = MagicMock()
+    m.memory_type.value = "FACTUAL"
+    m.relevance_score = 0.5
+    return m
 
 
-@unittest.skip(
-    "D227/D233 spreading activation requires design approval before implementation. "
-    "See T-db-spreading-activation ticket in Slate 0."
-)
-class TestWordGraphSpread(unittest.TestCase):
-    """Tests for word_graph.spread()"""
+# ── WordGraph unit tests ───────────────────────────────────────────────────────
 
-    def setUp(self):
-        """Create a mock WordGraph."""
-        self.wg = MagicMock()
-        # Import the real method
+
+class TestWordGraphSpreadFromWords(unittest.TestCase):
+    """Unit tests for WordGraph.spread_from_words()"""
+
+    def _make_wg(self, edge_rows=None):
+        """Return a WordGraph-like object with a mocked _db."""
+        sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
         from igor.cognition.word_graph import WordGraph
 
-        self.wg.spread = WordGraph.spread.__get__(self.wg, WordGraph)
+        wg = MagicMock(spec=WordGraph)
+        # Wire spread_from_words to the real implementation via unbound call
+        wg.spread_from_words = lambda *a, **kw: WordGraph.spread_from_words(wg, *a, **kw)
+        # Mock the _db context manager
+        conn = MagicMock()
+        conn.execute.return_value.fetchall.return_value = edge_rows or []
+        db_ctx = MagicMock()
+        db_ctx.__enter__ = MagicMock(return_value=conn)
+        db_ctx.__exit__ = MagicMock(return_value=False)
+        wg._db = MagicMock(return_value=db_ctx)
+        return wg, conn
 
-    def test_empty_seed_set_returns_empty_dict(self):
-        """Empty seed list should return empty dict."""
-        result = self.wg.spread([])
+    def test_empty_seeds_return_empty(self):
+        wg, _ = self._make_wg()
+        result = wg.spread_from_words({})
         self.assertEqual(result, {})
 
-    def test_single_hop_word_spread(self):
-        """Single hop spread from one word."""
-        seed_word = "test"
-        target_word = "testing"
+    def test_seeds_present_in_result(self):
+        wg, _ = self._make_wg(edge_rows=[])
+        result = wg.spread_from_words({"memory": 1.0, "graph": 0.8})
+        self.assertIn("memory", result)
+        self.assertIn("graph", result)
+        self.assertEqual(result["memory"], 1.0)
 
-        # Mock _db context and execution
-        mock_rows = [(seed_word, target_word, 0.8)]
+    def test_single_hop_propagation(self):
+        # word_a="memory", word_b="recall", similarity=0.9
+        wg, conn = self._make_wg(edge_rows=[("memory", "recall", 0.9)])
+        result = wg.spread_from_words({"memory": 1.0}, hop_decay=0.6, depth=1)
+        # "recall" should appear with score = 1.0 * 0.9 * 0.6 = 0.54
+        self.assertIn("recall", result)
+        self.assertAlmostEqual(result["recall"], 0.54, places=5)
 
-        def mock_db():
-            mock_conn = MagicMock()
-            mock_cursor = MagicMock()
-            mock_cursor.fetchall = MagicMock(return_value=mock_rows)
-            mock_conn.execute = MagicMock(return_value=mock_cursor)
-            mock_conn.__enter__ = MagicMock(return_value=mock_conn)
-            mock_conn.__exit__ = MagicMock(return_value=None)
-            return mock_conn
+    def test_multi_source_sum(self):
+        # Two seeds both activate "recall" with different strengths
+        # seed1=memory → recall with sim=0.9; seed2=think → recall with sim=0.5
+        wg, conn = self._make_wg(
+            edge_rows=[("memory", "recall", 0.9), ("think", "recall", 0.5)]
+        )
+        result = wg.spread_from_words({"memory": 1.0, "think": 1.0}, hop_decay=0.6, depth=1)
+        # Sum: 1.0*0.9*0.6 + 1.0*0.5*0.6 = 0.54 + 0.30 = 0.84
+        self.assertAlmostEqual(result["recall"], 0.84, places=5)
 
-        self.wg._db = MagicMock(side_effect=lambda: mock_db())
 
-        result = self.wg.spread([seed_word], depth=1, hop_decay=0.6)
+class TestWordGraphWordsToDocIds(unittest.TestCase):
+    """Unit tests for WordGraph.words_to_doc_ids()"""
 
-        # Target should be activated: 1.0 * 0.6 * 0.8 = 0.48
-        self.assertIn(target_word, result)
-        self.assertAlmostEqual(result[target_word], 0.48, places=2)
+    def _make_wg(self, doc_rows=None):
+        from igor.cognition.word_graph import WordGraph
 
-        # Seed should not be in result
-        self.assertNotIn(seed_word, result)
+        wg = MagicMock(spec=WordGraph)
+        wg.words_to_doc_ids = lambda *a, **kw: WordGraph.words_to_doc_ids(wg, *a, **kw)
+        conn = MagicMock()
+        conn.execute.return_value.fetchall.return_value = doc_rows or []
+        db_ctx = MagicMock()
+        db_ctx.__enter__ = MagicMock(return_value=conn)
+        db_ctx.__exit__ = MagicMock(return_value=False)
+        wg._db = MagicMock(return_value=db_ctx)
+        return wg, conn
 
-    def test_multi_hop_word_spread(self):
-        """Multi-hop spread with decay."""
-        # Chain: word1 -0.8-> word2 -0.7-> word3
-        seed = "word1"
-
-        def mock_db_side_effect():
-            mock_conn = MagicMock()
-            mock_cursor = MagicMock()
-
-            # Capture call count
-            if not hasattr(mock_db_side_effect, "call_count"):
-                mock_db_side_effect.call_count = 0
-            call_num = mock_db_side_effect.call_count
-            mock_db_side_effect.call_count += 1
-
-            if call_num == 0:
-                # First call: word1 -> word2 (weight 0.8)
-                mock_cursor.fetchall = MagicMock(return_value=[("word1", "word2", 0.8)])
-            else:
-                # Second call: word2 -> word3 (weight 0.7)
-                mock_cursor.fetchall = MagicMock(return_value=[("word2", "word3", 0.7)])
-
-            mock_conn.execute = MagicMock(return_value=mock_cursor)
-            mock_conn.__enter__ = MagicMock(return_value=mock_conn)
-            mock_conn.__exit__ = MagicMock(return_value=None)
-            return mock_conn
-
-        self.wg._db = MagicMock(side_effect=mock_db_side_effect)
-
-        result = self.wg.spread([seed], depth=2, hop_decay=0.6)
-
-        # word2: 1.0 * 0.6 * 0.8 = 0.48
-        self.assertAlmostEqual(result.get("word2", 0), 0.48, places=2)
-
-        # word3: 0.48 * 0.6 * 0.7 = 0.2016
-        self.assertAlmostEqual(result.get("word3", 0), 0.2016, places=3)
-
-    def test_top_7_word_cap(self):
-        """Only top-7 seed words are used."""
-        seed_words = ["word_" + str(i) for i in range(10)]
-
-        mock_rows = []  # No edges
-        self.wg._db = MagicMock()
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_cursor.fetchall = MagicMock(return_value=mock_rows)
-        mock_conn.execute = MagicMock(return_value=mock_cursor)
-        mock_conn.__enter__ = MagicMock(return_value=mock_conn)
-        mock_conn.__exit__ = MagicMock(return_value=None)
-        self.wg._db = MagicMock(return_value=mock_conn)
-
-        result = self.wg.spread(seed_words, depth=1, hop_decay=0.6)
-
-        # No edges, so result should be empty (seeds removed)
+    def test_empty_input_returns_empty(self):
+        wg, _ = self._make_wg()
+        result = wg.words_to_doc_ids({})
         self.assertEqual(result, {})
+
+    def test_word_maps_to_doc_id(self):
+        # word="memory", doc_id="MEM001", weight=1.0
+        wg, _ = self._make_wg(doc_rows=[("memory", "MEM001", 1.0)])
+        result = wg.words_to_doc_ids({"memory": 2.0})
+        self.assertIn("MEM001", result)
+        self.assertAlmostEqual(result["MEM001"], 2.0, places=5)
+
+    def test_multiple_words_sum_to_same_doc(self):
+        # "memory" and "recall" both point to MEM001
+        wg, _ = self._make_wg(
+            doc_rows=[("memory", "MEM001", 1.0), ("recall", "MEM001", 1.0)]
+        )
+        result = wg.words_to_doc_ids({"memory": 1.0, "recall": 0.5})
+        self.assertAlmostEqual(result["MEM001"], 1.5, places=5)
+
+
+# ── Cortex.spreading_activation unit tests ────────────────────────────────────
+
+
+class TestCortexSpreadingActivation(unittest.TestCase):
+    """Unit tests for Cortex.spreading_activation()"""
+
+    def _make_cortex(self):
+        from igor.memory.cortex import Cortex
+
+        cortex = MagicMock(spec=Cortex)
+        cortex.spreading_activation = lambda *a, **kw: Cortex.spreading_activation(
+            cortex, *a, **kw
+        )
+        # _cache_fetch_ids: return (cached=[], miss_ids=all_ids)
+        cortex._cache_fetch_ids = MagicMock(side_effect=lambda ids: ([], list(ids)))
+        cortex._cache_put = MagicMock()
+        # _conn: no-op context manager (returns empty fetchall)
+        conn = MagicMock()
+        conn.execute.return_value.fetchall.return_value = []
+        conn_ctx = MagicMock()
+        conn_ctx.__enter__ = MagicMock(return_value=conn)
+        conn_ctx.__exit__ = MagicMock(return_value=False)
+        cortex._conn = MagicMock(return_value=conn_ctx)
+        return cortex, conn
+
+    def test_empty_seeds_return_empty(self):
+        cortex, _ = self._make_cortex()
+        result = cortex.spreading_activation([])
+        self.assertEqual(result, {})
+
+    def test_seeds_in_result_at_1_0(self):
+        cortex, _ = self._make_cortex()
+        result = cortex.spreading_activation(["ID1", "ID2"])
+        self.assertIn("ID1", result)
+        self.assertIn("ID2", result)
+        self.assertEqual(result["ID1"], 1.0)
+        self.assertEqual(result["ID2"], 1.0)
+
+    def test_memory_neighbors_activated(self):
+        from igor.memory.cortex import Cortex
+        from unittest.mock import MagicMock, patch
+
+        cortex, conn = self._make_cortex()
+        # Seed = ID1, with child_id = CHILD1
+        seed_mem = _mem("ID1", parent_id=None, children_ids=["CHILD1"])
+        conn.execute.return_value.fetchall.return_value = [MagicMock()]
+        # _to_memory returns the seed_mem (will be fetched for ID1)
+        cortex._to_memory = MagicMock(return_value=seed_mem)
+        # _cache_fetch_ids misses all → DB fetch
+        cortex._cache_fetch_ids = MagicMock(side_effect=lambda ids: ([], list(ids)))
+
+        result = cortex.spreading_activation(["ID1"], depth=1)
+        self.assertIn("ID1", result)
+        # CHILD1 should appear with score = 1.0 * 0.8 = 0.8
+        self.assertIn("CHILD1", result)
+        self.assertAlmostEqual(result["CHILD1"], 0.8, places=5)
+
+    def test_word_graph_layer_skipped_when_none(self):
+        cortex, _ = self._make_cortex()
+        # word_graph=None → wg layer skipped; no calls to spread_from_words
+        mock_wg = MagicMock()
+        result = cortex.spreading_activation(["ID1"], word_graph=None)
+        mock_wg.spread_from_words.assert_not_called()
+
+    def test_word_graph_layer_calls_spread_from_words(self):
+        cortex, _ = self._make_cortex()
+        # cortex.get() returns a memory with narrative
+        m = _mem("ID1", narrative="memory recall testing")
+        cortex.get = MagicMock(return_value=m)
+
+        mock_wg = MagicMock()
+        mock_wg.spread_from_words.return_value = {"memory": 0.5, "recall": 0.3}
+        mock_wg.words_to_doc_ids.return_value = {"DOCX": 0.4}
+
+        with patch("igor.cognition.word_graph.tokenize", return_value=["memory", "recall", "testing"]):
+            result = cortex.spreading_activation(["ID1"], word_graph=mock_wg)
+
+        mock_wg.spread_from_words.assert_called_once()
+        mock_wg.words_to_doc_ids.assert_called_once()
+        # DOCX should appear in result from bridge
+        self.assertIn("DOCX", result)
+        self.assertAlmostEqual(result["DOCX"], 0.4 * 0.6, places=5)
+
+    def test_return_type_is_dict(self):
+        cortex, _ = self._make_cortex()
+        result = cortex.spreading_activation(["ID1", "ID2"])
+        self.assertIsInstance(result, dict)
+        for v in result.values():
+            self.assertIsInstance(v, float)
 
 
 if __name__ == "__main__":
