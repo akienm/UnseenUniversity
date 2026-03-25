@@ -50,12 +50,7 @@ _HANDLE_CACHE: dict[str, "BookHandle"] = {}
 _CALIBRE_LIBRARY = paths().calibre_library
 _KINDLE_DIR = paths().kindle_dir
 
-_INSTANCE_DIR = Path(
-    os.getenv(
-        "IGOR_DB_PATH",
-        str(paths().instance / "wild-0001.db"),
-    )
-).parent
+_INSTANCE_DIR = paths().instance
 _READING_STATE_PATH = _INSTANCE_DIR / "reading_state.json"
 
 _DEDRM_DIR = Path(__file__).parent / "ebook_drm"
@@ -930,14 +925,11 @@ _READING_CORTEX_CACHE: dict = (
 
 
 def _get_cortex_for_reading():
-    db_path = os.getenv("IGOR_DB_PATH", "")
-    if not db_path:
-        return None
-    if db_path not in _READING_CORTEX_CACHE:
+    if "default" not in _READING_CORTEX_CACHE:
         from ..memory.cortex import Cortex
 
-        _READING_CORTEX_CACHE[db_path] = Cortex(Path(db_path))
-    return _READING_CORTEX_CACHE[db_path]
+        _READING_CORTEX_CACHE["default"] = Cortex(None)
+    return _READING_CORTEX_CACHE["default"]
 
 
 def _reading_extract_worker(
@@ -1313,8 +1305,6 @@ def list_reading_memories(book_title: str = "", limit: int = 20, **_) -> str:
     Use to review what Igor has learned from reading and tune the extraction.
     """
     cortex = _get_cortex_for_reading()
-    if cortex is None:
-        return "IGOR_DB_PATH not set — cannot access memory store."
     try:
         with cortex._conn() as conn:
             if book_title:

@@ -4,7 +4,7 @@ Incoming messages are queued for Igor to process.
 Igor can send messages back via the send_discord_message tool.
 
 Forensic logging: every inbound and outbound event is logged to
-  wild_igor/logs/discord.log
+  ~/.TheIgors/<instance>/logs/discord.log
 so we can diagnose dropped replies after the fact.
 
 Outgoing delivery modes (in priority order):
@@ -28,8 +28,10 @@ from ..cognition.forensic_logger import log_error
 
 # ── Forensic logger ──────────────────────────────────────────────────────────
 
-_LOG_DIR = Path(__file__).parent.parent.parent / "logs"
-_LOG_DIR.mkdir(exist_ok=True)
+from ..paths import paths as _paths_fn
+
+_LOG_DIR = _paths_fn().logs
+_LOG_DIR.mkdir(parents=True, exist_ok=True)
 _LOG_PATH = _LOG_DIR / "discord.log"
 
 _discord_log = logging.getLogger("igor.discord")
@@ -247,7 +249,9 @@ def start():
 
         _sup.register("discord-bot", _bot_thread, health_fn=is_running)
     except Exception as e:
-        log_error(kind="TOOL_FAIL", detail=f"daemon supervisor registration failed: {e}")
+        log_error(
+            kind="TOOL_FAIL", detail=f"daemon supervisor registration failed: {e}"
+        )
 
 
 def is_running() -> bool:

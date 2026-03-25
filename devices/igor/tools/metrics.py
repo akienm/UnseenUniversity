@@ -100,16 +100,9 @@ def _get_metrics_report(cortex_db_path: str = "", **_) -> str:
     try:
         from ..cognition.metrics import build_report
 
-        cortex = None
-        if not cortex_db_path:
-            import os
+        from ..memory.cortex import Cortex
 
-            cortex_db_path = os.getenv("IGOR_DB_PATH", "")
-        if cortex_db_path:
-            from pathlib import Path
-            from ..memory.cortex import Cortex
-
-            cortex = Cortex(Path(cortex_db_path))
+        cortex = Cortex(None)
         return build_report(cortex=cortex)
     except Exception as e:
         return f"Error generating metrics: {e}"

@@ -21,10 +21,9 @@ from ..paths import paths
 
 
 def _get_cortex():
-    db_path = os.getenv("IGOR_DB_PATH", "memory/igor.db")
     from ..memory.cortex import Cortex
 
-    return Cortex(Path(db_path))
+    return Cortex(None)
 
 
 def list_watchlist() -> str:

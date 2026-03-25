@@ -1,4 +1,5 @@
 import logging
+
 """
 Google Contacts tools for Igor — via the People API.
 
@@ -204,10 +205,7 @@ def _store_contact_memory(
         from igor.memory.models import Memory, MemoryType
         from igor.paths import paths as _paths
 
-        db_path = _P(
-            os.environ.get("IGOR_DB_PATH", str(_paths().instance / "wild-0001.db"))
-        )
-        cortex = Cortex(db_path)
+        cortex = Cortex(None)
 
         parts = [f"Contact: {name}"]
         if email:
@@ -237,7 +235,9 @@ def _store_contact_memory(
         )
         cortex.store(mem)
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/google_contacts.py: %s", _bare_e)
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/tools/google_contacts.py: %s", _bare_e
+        )
 
 
 def _search_contact_memories(query: str) -> list[dict]:
@@ -250,10 +250,7 @@ def _search_contact_memories(query: str) -> list[dict]:
         from igor.memory.cortex import Cortex
         from igor.paths import paths as _paths
 
-        db_path = _P(
-            os.environ.get("IGOR_DB_PATH", str(_paths().instance / "wild-0001.db"))
-        )
-        cortex = Cortex(db_path)
+        cortex = Cortex(None)
         results = cortex.search(query, limit=5, min_score=0.3)
         contacts = []
         for m in results:

@@ -47,13 +47,10 @@ _VALID_TYPES = frozenset(
 
 
 def _get_cortex():
-    """Open a Cortex instance from IGOR_DB_PATH. Raises ValueError if not set."""
+    """Open a Cortex instance routed to the home DB."""
     from ..memory.cortex import Cortex as _Cortex
 
-    db_path = os.environ.get("IGOR_DB_PATH", "")
-    if not db_path:
-        raise ValueError("IGOR_DB_PATH not set")
-    return _Cortex(Path(db_path))
+    return _Cortex(None)
 
 
 # ── store_memory ──────────────────────────────────────────────────────────────
@@ -113,7 +110,8 @@ def store_memory(
             valence=v,
             arousal=a,
             source="self_edit",
-            context_of_encoding=context or f"deposited during turn {datetime.now().strftime('%Y-%m-%dT%H:%M')}",
+            context_of_encoding=context
+            or f"deposited during turn {datetime.now().strftime('%Y-%m-%dT%H:%M')}",
             metadata={"turn_deposited": True},
         )
         cortex = _get_cortex()

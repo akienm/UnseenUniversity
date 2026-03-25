@@ -29,13 +29,7 @@ def inspect_trail(node_id: str = "", limit: str = "5") -> str:
     except Exception:
         _limit = 5
 
-    db_path = Path(
-        os.environ.get(
-            "IGOR_DB_PATH",
-            str(Path.home() / ".TheIgors" / "Igor-wild-0001" / "wild-0001.db"),
-        )
-    )
-    cortex = Cortex(db_path)
+    cortex = Cortex(None)
 
     lines = []
 
@@ -101,13 +95,7 @@ def trail_hot_paths(limit: str = "10", since_hours: str = "24") -> str:
     except Exception:
         _limit, _hours = 10, 24
 
-    db_path = Path(
-        os.environ.get(
-            "IGOR_DB_PATH",
-            str(Path.home() / ".TheIgors" / "Igor-wild-0001" / "wild-0001.db"),
-        )
-    )
-    cortex = Cortex(db_path)
+    cortex = Cortex(None)
     paths = cortex.hot_paths(limit=_limit, since_hours=_hours)
 
     if not paths:

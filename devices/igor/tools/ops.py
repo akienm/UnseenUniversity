@@ -37,14 +37,10 @@ def store_decision(decision_id: str, summary: str, status: str = "defined") -> s
     status:      defined | planned | implemented (default: defined)
     """
     try:
-        db_path = os.environ.get("IGOR_DB_PATH", "")
-        if not db_path:
-            return "[ERROR] IGOR_DB_PATH not set"
-        from pathlib import Path as _Path
         from ..memory.cortex import Cortex as _Cortex
         from ..memory.models import Memory as _Mem, MemoryType as _MT
 
-        cortex = _Cortex(_Path(db_path))
+        cortex = _Cortex(None)
         mem = _Mem(
             id=decision_id,
             narrative=f"{decision_id}: {summary}",
@@ -73,13 +69,9 @@ def store_session_note(session_id: str, summary: str) -> str:
     summary:    one-line theme + next steps
     """
     try:
-        db_path = os.environ.get("IGOR_DB_PATH", "")
-        if not db_path:
-            return "[ERROR] IGOR_DB_PATH not set"
-        from pathlib import Path as _Path
         from ..memory.cortex import Cortex as _Cortex
 
-        cortex = _Cortex(_Path(db_path))
+        cortex = _Cortex(None)
         cortex.write_ring(
             content=json.dumps(
                 {"session": session_id, "summary": summary, "ts": _now_iso()}
@@ -134,13 +126,9 @@ def flush_habit_cache() -> str:
     take effect without a full restart.
     """
     try:
-        db_path = os.environ.get("IGOR_DB_PATH", "")
-        if not db_path:
-            return "[ERROR] IGOR_DB_PATH not set"
-        from pathlib import Path as _Path
         from ..memory.cortex import Cortex as _Cortex
 
-        cortex = _Cortex(_Path(db_path))
+        cortex = _Cortex(None)
         cortex.invalidate_habit_cache()
         return "habit cache flushed — next get_habits() reloads from DB"
     except Exception as e:

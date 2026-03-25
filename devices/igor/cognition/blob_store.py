@@ -26,9 +26,10 @@ logger = logging.getLogger(__name__)
 
 
 def _get_instance_dir() -> Path:
-    """Get the instance directory from IGOR_DB_PATH."""
-    db_path = os.getenv("IGOR_DB_PATH", "memory/igor.db")
-    return Path(db_path).parent
+    """Get the instance directory."""
+    from wild_igor.igor.paths import paths as _paths
+
+    return _paths().instance
 
 
 def _get_blob_index_path() -> Path:

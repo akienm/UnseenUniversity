@@ -43,11 +43,8 @@ logger = logging.getLogger(__name__)
 
 def _get_cortex() -> Optional[Cortex]:
     """Get cortex for current instance."""
-    db_path = os.getenv("IGOR_DB_PATH", "")
-    if not db_path:
-        return None
     try:
-        return Cortex(Path(db_path))
+        return Cortex(None)
     except Exception as e:
         logger.error(f"Failed to get cortex: {e}")
         return None
@@ -55,12 +52,10 @@ def _get_cortex() -> Optional[Cortex]:
 
 def _get_word_graph() -> Optional[WordGraph]:
     """Get word graph for current instance."""
-    db_path = os.getenv("IGOR_DB_PATH", "")
-    if not db_path:
-        return None
     try:
-        instance_dir = Path(db_path).parent
-        wg_path = instance_dir / "igor_word_graph.db"
+        from ..paths import paths as _paths
+
+        wg_path = _paths().word_graph("word_graph")
         return WordGraph(str(wg_path))
     except Exception as e:
         logger.error(f"Failed to get word graph: {e}")
@@ -68,9 +63,10 @@ def _get_word_graph() -> Optional[WordGraph]:
 
 
 def _get_instance_dir() -> Path:
-    """Get the instance directory from IGOR_DB_PATH."""
-    db_path = os.getenv("IGOR_DB_PATH", "memory/igor.db")
-    return Path(db_path).parent
+    """Get the instance directory."""
+    from ..paths import paths as _paths
+
+    return _paths().instance
 
 
 def _get_blob_index_path() -> Path:
