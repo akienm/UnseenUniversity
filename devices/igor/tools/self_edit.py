@@ -1,4 +1,5 @@
 import logging
+
 """
 Self-edit tools - Igor reads and modifies its own source code.
 This is self-modification. The inertia system applies here too.
@@ -70,7 +71,9 @@ def _log_blocked_self_edit_attempt(path: str) -> None:
         with open(log_path, "a", encoding="utf-8") as f:
             f.write(entry)
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/self_edit.py: %s", _bare_e)
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/tools/self_edit.py: %s", _bare_e
+        )
 
 
 def _resolve(path: str) -> Path:
@@ -97,7 +100,9 @@ def _log_blocked_edit(path: str):
         with open(log_path, "a", encoding="utf-8") as f:
             f.write(entry)
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/self_edit.py: %s", _bare_e)
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/tools/self_edit.py: %s", _bare_e
+        )
 
 
 def _get_inertia(path: str) -> tuple[float, str]:
@@ -120,14 +125,11 @@ def _path_to_module_name(rel_path: str) -> str:
 
 
 def _get_self_edit_cortex():
-    """Return a Cortex instance for self-edit memory writes. None if DB path unset."""
-    db_path = os.getenv("IGOR_DB_PATH", "")
-    if not db_path:
-        return None
+    """Return a Cortex instance for self-edit memory writes."""
     try:
         from ..memory.cortex import Cortex
 
-        return Cortex(Path(db_path))
+        return Cortex(None)
     except Exception:
         return None
 

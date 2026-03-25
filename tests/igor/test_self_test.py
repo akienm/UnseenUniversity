@@ -46,22 +46,25 @@ class TestSelfTest(unittest.TestCase):
         self.consolidate_content = consolidate_content
 
     def test_get_instance_dir(self):
-        """Verify instance directory path generation."""
-        with patch.dict(os.environ, {"IGOR_DB_PATH": "/tmp/test.db"}):
-            instance_dir = self.get_instance_dir()
-            self.assertEqual(instance_dir, Path("/tmp"))
+        """Verify instance directory path uses paths().instance (not IGOR_DB_PATH)."""
+        from igor.paths import paths as _paths
+
+        instance_dir = self.get_instance_dir()
+        self.assertEqual(instance_dir, _paths().instance)
 
     def test_get_blob_index_path(self):
-        """Verify blob_index.json path."""
-        with patch.dict(os.environ, {"IGOR_DB_PATH": "/tmp/test.db"}):
-            path = self.get_blob_index_path()
-            self.assertEqual(path, Path("/tmp/blob_index.json"))
+        """Verify blob_index.json path is under paths().instance."""
+        from igor.paths import paths as _paths
+
+        path = self.get_blob_index_path()
+        self.assertEqual(path, _paths().instance / "blob_index.json")
 
     def test_get_test_log_path(self):
-        """Verify test log path."""
-        with patch.dict(os.environ, {"IGOR_DB_PATH": "/tmp/test.db"}):
-            path = self.get_test_log_path()
-            self.assertEqual(path, Path("/tmp/self_test_log.jsonl"))
+        """Verify test log path is under paths().instance."""
+        from igor.paths import paths as _paths
+
+        path = self.get_test_log_path()
+        self.assertEqual(path, _paths().instance / "self_test_log.jsonl")
 
     def test_update_blob_index_status_new_entry(self):
         """Test creating new blob_index entry."""

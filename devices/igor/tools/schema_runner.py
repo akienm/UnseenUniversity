@@ -440,14 +440,9 @@ def run_habit(
         return _err(f"max depth {max_depth} reached (stack: {sorted(_cs)})")
 
     if cortex is None:
-        db = _os.getenv("IGOR_DB_PATH", "")
-        if not db:
-            from ..paths import paths as _paths
-
-            db = str(_paths().instance / "wild-0001.db")
         from ..memory.cortex import Cortex as _Cortex
 
-        cortex = _Cortex(_Path(db))
+        cortex = _Cortex(None)
 
     habit = cortex.get(habit_id)
     if habit is None:

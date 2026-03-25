@@ -20,9 +20,9 @@ from .registry import Tool, registry
 
 
 def _get_cortex():
-    db_path = os.getenv("IGOR_DB_PATH", "memory/igor.db")
     from ..memory.cortex import Cortex
-    return Cortex(Path(db_path))
+
+    return Cortex(None)
 
 
 def add_interpretive_edge(
@@ -101,9 +101,11 @@ def interpretive_traverse(
         )
         if not memories:
             return "No interpretive memories reachable from those nodes."
-        lines = [f"Interpretive traverse from [{', '.join(seed_list)}]:",
-                 f"  depth={max_depth}  min_weight={min_weight}  found={len(memories)}",
-                 ""]
+        lines = [
+            f"Interpretive traverse from [{', '.join(seed_list)}]:",
+            f"  depth={max_depth}  min_weight={min_weight}  found={len(memories)}",
+            "",
+        ]
         for i, mem in enumerate(memories, 1):
             lines.append(f"  {i}. [{mem.id}] {mem.narrative[:120]}")
         return "\n".join(lines)
@@ -125,7 +127,9 @@ def get_interpretive_edges(from_id: str, **_) -> str:
         lines = [f"Interpretive edges from {from_id} ({len(edges)} total):"]
         for e in edges:
             arrow = "──►" if e["direction"] == "activation" else "─╌►"
-            payload_preview = e["meaning_payload"][:60] if e["meaning_payload"] else "(none)"
+            payload_preview = (
+                e["meaning_payload"][:60] if e["meaning_payload"] else "(none)"
+            )
             lines.append(
                 f"  [{e['id']}] {arrow} {e['to_id']}"
                 f"  w={e['weight']:.2f}  {payload_preview}"
@@ -137,60 +141,100 @@ def get_interpretive_edges(from_id: str, **_) -> str:
         return f"Error reading interpretive edges: {e}"
 
 
-registry.register(Tool(
-    name="add_interpretive_edge",
-    description=(
-        "G52: Add a directed edge in the interpretive tree between two memory nodes. "
-        "CP1-CP6 are root nodes. direction: 'activation' or 'inhibition'. "
-        "Use this to grow the interpretive layer when a new meaning connection is discovered."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "from_id": {"type": "string", "description": "Source memory id (often CP1-CP6 or an INTERPRETIVE memory)"},
-            "to_id": {"type": "string", "description": "Target memory id"},
-            "direction": {"type": "string", "enum": ["activation", "inhibition"], "description": "Edge type"},
-            "condition_csb": {"type": "string", "description": "CSB string: when this edge fires; empty = always"},
-            "meaning_payload": {"type": "string", "description": "What reaching to_id means about self/situation"},
-            "action_pointer": {"type": "string", "description": "Memory id or code_ref of next action tree to explore"},
-            "weight": {"type": "number", "description": "Edge strength [0.0, 1.0]", "default": 1.0},
+registry.register(
+    Tool(
+        name="add_interpretive_edge",
+        description=(
+            "G52: Add a directed edge in the interpretive tree between two memory nodes. "
+            "CP1-CP6 are root nodes. direction: 'activation' or 'inhibition'. "
+            "Use this to grow the interpretive layer when a new meaning connection is discovered."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "from_id": {
+                    "type": "string",
+                    "description": "Source memory id (often CP1-CP6 or an INTERPRETIVE memory)",
+                },
+                "to_id": {"type": "string", "description": "Target memory id"},
+                "direction": {
+                    "type": "string",
+                    "enum": ["activation", "inhibition"],
+                    "description": "Edge type",
+                },
+                "condition_csb": {
+                    "type": "string",
+                    "description": "CSB string: when this edge fires; empty = always",
+                },
+                "meaning_payload": {
+                    "type": "string",
+                    "description": "What reaching to_id means about self/situation",
+                },
+                "action_pointer": {
+                    "type": "string",
+                    "description": "Memory id or code_ref of next action tree to explore",
+                },
+                "weight": {
+                    "type": "number",
+                    "description": "Edge strength [0.0, 1.0]",
+                    "default": 1.0,
+                },
+            },
+            "required": ["from_id", "to_id"],
         },
-        "required": ["from_id", "to_id"],
-    },
-    fn=add_interpretive_edge,
-))
+        fn=add_interpretive_edge,
+    )
+)
 
-registry.register(Tool(
-    name="interpretive_traverse",
-    description=(
-        "G52: Traverse the interpretive tree from seed memory nodes. "
-        "Returns INTERPRETIVE memories reachable via activation edges in breadth-first order. "
-        "Use to find meaning schemas relevant to the current context."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "from_ids": {"type": "string", "description": "Comma-separated list of memory ids to start from"},
-            "max_depth": {"type": "integer", "description": "Maximum traversal depth (default 3)", "default": 3},
-            "min_weight": {"type": "number", "description": "Skip edges below this weight (default 0.1)", "default": 0.1},
+registry.register(
+    Tool(
+        name="interpretive_traverse",
+        description=(
+            "G52: Traverse the interpretive tree from seed memory nodes. "
+            "Returns INTERPRETIVE memories reachable via activation edges in breadth-first order. "
+            "Use to find meaning schemas relevant to the current context."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "from_ids": {
+                    "type": "string",
+                    "description": "Comma-separated list of memory ids to start from",
+                },
+                "max_depth": {
+                    "type": "integer",
+                    "description": "Maximum traversal depth (default 3)",
+                    "default": 3,
+                },
+                "min_weight": {
+                    "type": "number",
+                    "description": "Skip edges below this weight (default 0.1)",
+                    "default": 0.1,
+                },
+            },
+            "required": ["from_ids"],
         },
-        "required": ["from_ids"],
-    },
-    fn=interpretive_traverse,
-))
+        fn=interpretive_traverse,
+    )
+)
 
-registry.register(Tool(
-    name="get_interpretive_edges",
-    description=(
-        "G52: List all outgoing interpretive edges from a memory node. "
-        "Shows direction, target, weight, meaning_payload, and condition."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "from_id": {"type": "string", "description": "Memory id to get edges from"},
+registry.register(
+    Tool(
+        name="get_interpretive_edges",
+        description=(
+            "G52: List all outgoing interpretive edges from a memory node. "
+            "Shows direction, target, weight, meaning_payload, and condition."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "from_id": {
+                    "type": "string",
+                    "description": "Memory id to get edges from",
+                },
+            },
+            "required": ["from_id"],
         },
-        "required": ["from_id"],
-    },
-    fn=get_interpretive_edges,
-))
+        fn=get_interpretive_edges,
+    )
+)

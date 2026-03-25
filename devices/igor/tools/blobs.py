@@ -15,9 +15,9 @@ from .registry import Tool, registry
 
 def _get_cortex():
     """Get the cortex singleton from the running Igor instance."""
-    db_path = os.getenv("IGOR_DB_PATH", "memory/igor.db")
     from ..memory.cortex import Cortex
-    return Cortex(Path(db_path))
+
+    return Cortex(None)
 
 
 def store_reference(
@@ -61,7 +61,9 @@ def get_reference(memory_id: str, **_) -> str:
         if content is None:
             return f"No blob found for memory_id='{memory_id}'"
         mem = cortex.get(memory_id)
-        header = f"[{memory_id}] {mem.narrative if mem else '(narrative not found)'}\n\n"
+        header = (
+            f"[{memory_id}] {mem.narrative if mem else '(narrative not found)'}\n\n"
+        )
         return header + content
     except Exception as e:
         return f"[ERROR retrieving blob] {e}"
@@ -80,7 +82,9 @@ def search_references(tags: str, match_all: bool = False, **_) -> str:
         results = cortex.search_by_tags(tag_list, match_all=bool(match_all))
         if not results:
             return f"No reference blobs found matching tags: {', '.join(tag_list)}"
-        lines = [f"Found {len(results)} reference blob(s) matching [{', '.join(tag_list)}]:"]
+        lines = [
+            f"Found {len(results)} reference blob(s) matching [{', '.join(tag_list)}]:"
+        ]
         for r in results:
             lines.append(
                 f"\n  [{r['memory_id']}] {r['narrative'][:80]}\n"
@@ -93,7 +97,9 @@ def search_references(tags: str, match_all: bool = False, **_) -> str:
         return f"[ERROR searching blobs] {e}"
 
 
-def store_design_doc_pair(name: str, csb_content: str, distilled_content: str, model_id: str = "unknown", **_) -> str:
+def store_design_doc_pair(
+    name: str, csb_content: str, distilled_content: str, model_id: str = "unknown", **_
+) -> str:
     """
     Store a design doc as two blobs (#68): raw CSB + model-tagged distilled summary.
 
@@ -135,7 +141,9 @@ def load_design_doc(name: str, model_id: str = "", **_) -> str:
 
         # Try distilled first if model_id provided
         if model_id:
-            distilled = cortex.search_by_tags([f"model={model_id}", "distilled", name], match_all=True)
+            distilled = cortex.search_by_tags(
+                [f"model={model_id}", "distilled", name], match_all=True
+            )
             if distilled:
                 mem_id = distilled[0]["memory_id"]
                 content = cortex.get_blob(mem_id)
@@ -148,13 +156,17 @@ def load_design_doc(name: str, model_id: str = "", **_) -> str:
             mem_id = raw[0]["memory_id"]
             content = cortex.get_blob(mem_id)
             if content:
-                note = f"\n\n[NOTE: distilled not found for model={model_id or '?'} — regenerate with store_design_doc_pair]" if model_id else ""
+                note = (
+                    f"\n\n[NOTE: distilled not found for model={model_id or '?'} — regenerate with store_design_doc_pair]"
+                    if model_id
+                    else ""
+                )
                 return f"[RAW_CSB:{name}]{note}\n\n{content}"
 
         # Filesystem fallback
-        import os as _os
         from pathlib import Path as _Path
-        repo_root = _Path(_os.getenv("IGOR_DB_PATH", "memory/igor.db")).parent.parent
+
+        repo_root = _Path(__file__).parent.parent.parent.parent
         for fname in [f"{name}.csb.txt", f"{name}.txt", f"design_docs/{name}.csb.txt"]:
             fpath = repo_root / fname
             if fpath.exists():
@@ -182,116 +194,146 @@ def list_reference_tags(**_) -> str:
 
 # ── Register tools ─────────────────────────────────────────────────────────────
 
-registry.register(Tool(
-    name="store_reference",
-    description=(
-        "Store a reference document (research notes, code, transcripts, full articles) "
-        "with a brief narrative description and comma-separated tags. "
-        "The narrative participates in normal memory search; "
-        "the full content is retrievable by tag or memory ID. "
-        "Use this when you want to preserve something verbatim for later retrieval."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "narrative": {
-                "type": "string",
-                "description": "Brief description: what this is and why it matters (1-2 sentences)",
+registry.register(
+    Tool(
+        name="store_reference",
+        description=(
+            "Store a reference document (research notes, code, transcripts, full articles) "
+            "with a brief narrative description and comma-separated tags. "
+            "The narrative participates in normal memory search; "
+            "the full content is retrievable by tag or memory ID. "
+            "Use this when you want to preserve something verbatim for later retrieval."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "narrative": {
+                    "type": "string",
+                    "description": "Brief description: what this is and why it matters (1-2 sentences)",
+                },
+                "content": {
+                    "type": "string",
+                    "description": "Full verbatim content to preserve",
+                },
+                "tags": {
+                    "type": "string",
+                    "description": "Comma-separated tags, e.g. 'neuroscience,baddeley,working-memory'",
+                },
             },
-            "content": {
-                "type": "string",
-                "description": "Full verbatim content to preserve",
-            },
-            "tags": {
-                "type": "string",
-                "description": "Comma-separated tags, e.g. 'neuroscience,baddeley,working-memory'",
-            },
+            "required": ["narrative", "content", "tags"],
         },
-        "required": ["narrative", "content", "tags"],
-    },
-    fn=store_reference,
-))
+        fn=store_reference,
+    )
+)
 
-registry.register(Tool(
-    name="get_reference",
-    description="Retrieve full content of a stored reference blob by its memory ID.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "memory_id": {
-                "type": "string",
-                "description": "The 8-character memory ID returned when the blob was stored",
+registry.register(
+    Tool(
+        name="get_reference",
+        description="Retrieve full content of a stored reference blob by its memory ID.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "memory_id": {
+                    "type": "string",
+                    "description": "The 8-character memory ID returned when the blob was stored",
+                },
             },
+            "required": ["memory_id"],
         },
-        "required": ["memory_id"],
-    },
-    fn=get_reference,
-))
+        fn=get_reference,
+    )
+)
 
-registry.register(Tool(
-    name="search_references",
-    description=(
-        "Search stored reference blobs by tag. "
-        "Returns matching blobs with previews and memory IDs. "
-        "Use get_reference() to fetch full content."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "tags": {
-                "type": "string",
-                "description": "Comma-separated tags to search for",
+registry.register(
+    Tool(
+        name="search_references",
+        description=(
+            "Search stored reference blobs by tag. "
+            "Returns matching blobs with previews and memory IDs. "
+            "Use get_reference() to fetch full content."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "tags": {
+                    "type": "string",
+                    "description": "Comma-separated tags to search for",
+                },
+                "match_all": {
+                    "type": "boolean",
+                    "description": "If true, only return blobs matching ALL tags (default: any tag matches)",
+                },
             },
-            "match_all": {
-                "type": "boolean",
-                "description": "If true, only return blobs matching ALL tags (default: any tag matches)",
+            "required": ["tags"],
+        },
+        fn=search_references,
+    )
+)
+
+registry.register(
+    Tool(
+        name="list_reference_tags",
+        description="List all tags used across stored reference blobs, with usage counts.",
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=list_reference_tags,
+    )
+)
+
+registry.register(
+    Tool(
+        name="store_design_doc_pair",
+        description=(
+            "Store a design document as two blobs: authoritative raw CSB + compact distilled summary. "
+            "The distilled version is model-tagged for cache-miss detection. "
+            "Use when storing/updating any design_docs/*.csb.txt content."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Short identifier, e.g. 'mission' or 'architecture'",
+                },
+                "csb_content": {
+                    "type": "string",
+                    "description": "Full authoritative CSB source text",
+                },
+                "distilled_content": {
+                    "type": "string",
+                    "description": "Compact summary (~60-70% fewer tokens)",
+                },
+                "model_id": {
+                    "type": "string",
+                    "description": "Model ID that generated the distilled version",
+                },
             },
+            "required": ["name", "csb_content", "distilled_content"],
         },
-        "required": ["tags"],
-    },
-    fn=search_references,
-))
+        fn=store_design_doc_pair,
+    )
+)
 
-registry.register(Tool(
-    name="list_reference_tags",
-    description="List all tags used across stored reference blobs, with usage counts.",
-    parameters={"type": "object", "properties": {}, "required": []},
-    fn=list_reference_tags,
-))
-
-registry.register(Tool(
-    name="store_design_doc_pair",
-    description=(
-        "Store a design document as two blobs: authoritative raw CSB + compact distilled summary. "
-        "The distilled version is model-tagged for cache-miss detection. "
-        "Use when storing/updating any design_docs/*.csb.txt content."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "name": {"type": "string", "description": "Short identifier, e.g. 'mission' or 'architecture'"},
-            "csb_content": {"type": "string", "description": "Full authoritative CSB source text"},
-            "distilled_content": {"type": "string", "description": "Compact summary (~60-70% fewer tokens)"},
-            "model_id": {"type": "string", "description": "Model ID that generated the distilled version"},
+registry.register(
+    Tool(
+        name="load_design_doc",
+        description=(
+            "Smart-load a design document. Checks distilled blob (model-matched) first, "
+            "then raw CSB blob, then filesystem. Pass model_id for cache-hit detection."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Design doc name, e.g. 'mission' or 'architecture'",
+                },
+                "model_id": {
+                    "type": "string",
+                    "description": "Current model ID (for distilled cache lookup)",
+                },
+            },
+            "required": ["name"],
         },
-        "required": ["name", "csb_content", "distilled_content"],
-    },
-    fn=store_design_doc_pair,
-))
-
-registry.register(Tool(
-    name="load_design_doc",
-    description=(
-        "Smart-load a design document. Checks distilled blob (model-matched) first, "
-        "then raw CSB blob, then filesystem. Pass model_id for cache-hit detection."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "name": {"type": "string", "description": "Design doc name, e.g. 'mission' or 'architecture'"},
-            "model_id": {"type": "string", "description": "Current model ID (for distilled cache lookup)"},
-        },
-        "required": ["name"],
-    },
-    fn=load_design_doc,
-))
+        fn=load_design_doc,
+    )
+)

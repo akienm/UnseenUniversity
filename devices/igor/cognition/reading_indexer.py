@@ -75,11 +75,8 @@ Extract ONLY facts with confidence >= 0.6. Respond ONLY with the JSON array."""
 
 def _get_cortex() -> Optional[Cortex]:
     """Get cortex for current instance."""
-    db_path = os.getenv("IGOR_DB_PATH", "")
-    if not db_path:
-        return None
     try:
-        return Cortex(Path(db_path))
+        return Cortex(None)
     except Exception as e:
         logger.error(f"Failed to get cortex: {e}")
         return None

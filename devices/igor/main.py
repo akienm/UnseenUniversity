@@ -86,7 +86,7 @@ _IGOR_DB_ENV = os.getenv("IGOR_DB_PATH")
 DATA_DIR = (
     Path(_IGOR_DB_ENV).expanduser().parent
     if _IGOR_DB_ENV
-    else Path(__file__).parent.parent / "data"
+    else _paths().instance / "data"
 )
 CHANGE_LOG_PATH = _paths().claudecode / "changes.log"
 CHANGE_REQUEST_PATH = _paths().claudecode / "change_request.txt"

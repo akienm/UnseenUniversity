@@ -32,17 +32,11 @@ _IGOR_DB_PROXY_LOCK = threading.Lock()
 
 
 def _igor_db_proxy() -> DatabaseProxy:
-    """Return (or create) the singleton DatabaseProxy for IGOR_DB_PATH."""
+    """Return (or create) the singleton DatabaseProxy for the home DB."""
     global _IGOR_DB_PROXY
     with _IGOR_DB_PROXY_LOCK:
         if _IGOR_DB_PROXY is None:
-            db = Path(
-                os.environ.get(
-                    "IGOR_DB_PATH",
-                    str(paths().instance / "wild-0001.db"),
-                )
-            )
-            _IGOR_DB_PROXY = make_home_proxy(db)
+            _IGOR_DB_PROXY = make_home_proxy()
     return _IGOR_DB_PROXY
 
 
@@ -184,7 +178,9 @@ def _load_queue() -> list:
                 source="learner._load_queue",
             )
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/learner.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/learner.py: {_bare_e}"
+            )
     return []
 
 
@@ -325,7 +321,10 @@ def _discover_urls_via_browser(topic: str) -> list[tuple[str, str]]:
                 try:
                     result = _json.loads(result)
                 except Exception as _bare_e:
-                    log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/learner.py: {_bare_e}")
+                    log_error(
+                        kind="BARE_EXCEPT",
+                        detail=f"wild_igor/igor/tools/learner.py: {_bare_e}",
+                    )
             if isinstance(result, dict):
                 status = result.get("status", "?")
                 if status != "success":
@@ -466,7 +465,9 @@ def learn_about(user_input: str) -> str:
 
             clear_cloud_ok_override(reason="learn_about tonight")
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/learner.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/learner.py: {_bare_e}"
+            )
 
     # ── 1. Calibre non-fiction ─────────────────────────────────────────────
     books = _calibre_nonfiction(topic)
@@ -731,7 +732,9 @@ def list_absorbed_books(**_kwargs) -> str:
             if queue:
                 lines.append(f"\nQueued to learn: {len(queue)} item(s)")
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/learner.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/learner.py: {_bare_e}"
+            )
 
     return "\n".join(lines)
 

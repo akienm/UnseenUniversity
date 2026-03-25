@@ -273,15 +273,12 @@ def _resolve_repo_path(repo_path: str = None, project_id: str = None) -> str:
         return repo_path
     if project_id:
         try:
-            db_path = os.environ.get("IGOR_DB_PATH", "")
-            if db_path:
-                from pathlib import Path as _Path
-                from ..memory.cortex import Cortex as _Cortex
+            from ..memory.cortex import Cortex as _Cortex
 
-                _cortex = _Cortex(_Path(db_path))
-                _mem = _cortex.get(project_id)
-                if _mem and _mem.metadata and _mem.metadata.get("path"):
-                    return _mem.metadata["path"]
+            _cortex = _Cortex(None)
+            _mem = _cortex.get(project_id)
+            if _mem and _mem.metadata and _mem.metadata.get("path"):
+                return _mem.metadata["path"]
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
                 "bare except in wild_igor/igor/tools/runner.py: %s", _bare_e
@@ -353,13 +350,9 @@ def list_projects() -> str:
     Returns a formatted summary of each project (id, path, github_repo).
     """
     try:
-        db_path = os.environ.get("IGOR_DB_PATH", "")
-        if not db_path:
-            return "[ERROR] IGOR_DB_PATH not set"
-        from pathlib import Path as _Path
         from ..memory.cortex import Cortex as _Cortex
 
-        _cortex = _Cortex(_Path(db_path))
+        _cortex = _Cortex(None)
         items = _cortex.list_all("lists.projects")
         if not items:
             return "(no projects registered)"

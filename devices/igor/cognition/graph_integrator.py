@@ -38,11 +38,8 @@ logger = logging.getLogger(__name__)
 
 def _get_cortex() -> Optional[Cortex]:
     """Get cortex for current instance."""
-    db_path = os.getenv("IGOR_DB_PATH", "")
-    if not db_path:
-        return None
     try:
-        return Cortex(Path(db_path))
+        return Cortex(None)
     except Exception as e:
         logger.error(f"Failed to get cortex: {e}")
         return None
@@ -65,9 +62,10 @@ def _fetch_fact_clouds(cortex: Cortex, content_id: str) -> list[dict]:
             SELECT id, narrative, metadata
             FROM memories
             WHERE memory_type = 'FACTUAL'
-            AND id LIKE 'FACT_CLOUD_%'
+            AND id LIKE ?
             ORDER BY id
             """,
+            ("FACT_CLOUD_%",),
         ).fetchall()
 
     fact_clouds = []
@@ -75,7 +73,8 @@ def _fetch_fact_clouds(cortex: Cortex, content_id: str) -> list[dict]:
         mem_id = row[0]
         narrative = row[1]
         try:
-            metadata = json.loads(row[2] or "{}")
+            raw_meta = row[2] or {}
+            metadata = raw_meta if isinstance(raw_meta, dict) else json.loads(raw_meta)
             chapter_idx = metadata.get("chapter_idx", -1)
             chunk_idx = metadata.get("chunk_idx", -1)
             confidence = metadata.get("extraction_confidence", 0.6)

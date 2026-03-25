@@ -48,17 +48,22 @@ def _gh_api(method: str, path: str, data: dict | None = None):
 
 # ── Tool functions ─────────────────────────────────────────────────────────────
 
+
 def create_work_order(title: str, description: str, labels: list | None = None) -> str:
     """Create a GitHub issue as a work order."""
     try:
         repo = _repo()
         if labels is None:
             labels = ["work-order"]
-        result = _gh_api("POST", f"/repos/{repo}/issues", {
-            "title": title,
-            "body": description,
-            "labels": labels,
-        })
+        result = _gh_api(
+            "POST",
+            f"/repos/{repo}/issues",
+            {
+                "title": title,
+                "body": description,
+                "labels": labels,
+            },
+        )
         number = result["number"]
         url = result["html_url"]
         return f"Work order #{number} created: {title}\n{url}"
@@ -84,8 +89,11 @@ def close_work_order(number: int, resolution: str) -> str:
     """Close a work order with a resolution comment."""
     try:
         repo = _repo()
-        _gh_api("POST", f"/repos/{repo}/issues/{number}/comments",
-                {"body": f"**Resolution:**\n\n{resolution}"})
+        _gh_api(
+            "POST",
+            f"/repos/{repo}/issues/{number}/comments",
+            {"body": f"**Resolution:**\n\n{resolution}"},
+        )
         _gh_api("PATCH", f"/repos/{repo}/issues/{number}", {"state": "closed"})
         return f"Work order #{number} closed."
     except Exception as e:
@@ -148,20 +156,17 @@ def sync_github_issues(state: str = "all", limit: int = 50, **_) -> str:
     from datetime import datetime as _dt
     import os as _os
 
-    db_path = _os.getenv("IGOR_DB_PATH", "memory/igor.db")
-    from pathlib import Path as _Path
     from ..memory.cortex import Cortex as _Cortex
-    cortex = _Cortex(_Path(db_path))
+
+    cortex = _Cortex(None)
 
     # Find last synced_at across all github+issue blobs
     try:
         existing = cortex.search_by_tags(["github", "issue"])
-        sync_times = [
-            b.get("created_at", "")
-            for b in existing
-        ]
+        sync_times = [b.get("created_at", "") for b in existing]
         # Use metadata synced_at if available
         import json as _json
+
         sync_times_meta = []
         for b in existing:
             mem = cortex.get(b["memory_id"])
@@ -217,7 +222,11 @@ def sync_github_issues(state: str = "all", limit: int = 50, **_) -> str:
             content=content,
             tags=tags,
             source_id=source_id,
-            extra_metadata={"issue_number": num, "issue_state": state_label, "synced_at": now},
+            extra_metadata={
+                "issue_number": num,
+                "issue_state": state_label,
+                "synced_at": now,
+            },
         )
         if was_created:
             created_count += 1
@@ -234,105 +243,132 @@ def sync_github_issues(state: str = "all", limit: int = 50, **_) -> str:
 
 # ── Register tools ─────────────────────────────────────────────────────────────
 
-registry.register(Tool(
-    name="create_work_order",
-    description=(
-        "Create a GitHub issue as a work order. Use when akien describes a task or pastes "
-        "a change block. After creating, confirm: 'that's work order #N: {title} - {url}'. "
-        "On completion, close the issue with close_work_order and reference '#N' in any commit."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "title": {"type": "string", "description": "Short imperative title"},
-            "description": {"type": "string", "description": "Full task description"},
-            "labels": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Labels (default: ['work-order'])",
+registry.register(
+    Tool(
+        name="create_work_order",
+        description=(
+            "Create a GitHub issue as a work order. Use when akien describes a task or pastes "
+            "a change block. After creating, confirm: 'that's work order #N: {title} - {url}'. "
+            "On completion, close the issue with close_work_order and reference '#N' in any commit."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Short imperative title"},
+                "description": {
+                    "type": "string",
+                    "description": "Full task description",
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Labels (default: ['work-order'])",
+                },
             },
+            "required": ["title", "description"],
         },
-        "required": ["title", "description"],
-    },
-    fn=create_work_order,
-))
+        fn=create_work_order,
+    )
+)
 
-registry.register(Tool(
-    name="update_work_order",
-    description="Post a status update comment on a work order.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "number": {"type": "integer", "description": "Issue number"},
-            "status": {"type": "string", "description": "in-progress | blocked | complete"},
-            "comment": {"type": "string", "description": "Update comment text"},
-        },
-        "required": ["number", "status", "comment"],
-    },
-    fn=update_work_order,
-))
-
-registry.register(Tool(
-    name="close_work_order",
-    description="Close a work order with a resolution summary.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "number": {"type": "integer", "description": "Issue number"},
-            "resolution": {"type": "string", "description": "What was done to resolve it"},
-        },
-        "required": ["number", "resolution"],
-    },
-    fn=close_work_order,
-))
-
-registry.register(Tool(
-    name="list_work_orders",
-    description="List GitHub work orders. state: open|closed|all, limit default 10.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "state": {"type": "string", "description": "open | closed | all (default: open)"},
-            "limit": {"type": "integer", "description": "Max results to return (default: 10)"},
-        },
-        "required": [],
-    },
-    fn=list_work_orders,
-))
-
-registry.register(Tool(
-    name="get_work_order",
-    description="Get full detail on a specific work order including all comments.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "number": {"type": "integer", "description": "Issue number"},
-        },
-        "required": ["number"],
-    },
-    fn=get_work_order,
-))
-
-registry.register(Tool(
-    name="sync_github_issues",
-    description=(
-        "Sync GitHub issues into blob storage for searchable reference. "
-        "Incremental: only fetches issues updated since last sync. "
-        "First run does a full fetch. Safe to call repeatedly — upserts, no duplicates."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "state": {
-                "type": "string",
-                "description": "open | closed | all (default: all)",
+registry.register(
+    Tool(
+        name="update_work_order",
+        description="Post a status update comment on a work order.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "number": {"type": "integer", "description": "Issue number"},
+                "status": {
+                    "type": "string",
+                    "description": "in-progress | blocked | complete",
+                },
+                "comment": {"type": "string", "description": "Update comment text"},
             },
-            "limit": {
-                "type": "integer",
-                "description": "Max issues to fetch per sync (default: 50)",
-            },
+            "required": ["number", "status", "comment"],
         },
-        "required": [],
-    },
-    fn=sync_github_issues,
-))
+        fn=update_work_order,
+    )
+)
+
+registry.register(
+    Tool(
+        name="close_work_order",
+        description="Close a work order with a resolution summary.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "number": {"type": "integer", "description": "Issue number"},
+                "resolution": {
+                    "type": "string",
+                    "description": "What was done to resolve it",
+                },
+            },
+            "required": ["number", "resolution"],
+        },
+        fn=close_work_order,
+    )
+)
+
+registry.register(
+    Tool(
+        name="list_work_orders",
+        description="List GitHub work orders. state: open|closed|all, limit default 10.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "state": {
+                    "type": "string",
+                    "description": "open | closed | all (default: open)",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Max results to return (default: 10)",
+                },
+            },
+            "required": [],
+        },
+        fn=list_work_orders,
+    )
+)
+
+registry.register(
+    Tool(
+        name="get_work_order",
+        description="Get full detail on a specific work order including all comments.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "number": {"type": "integer", "description": "Issue number"},
+            },
+            "required": ["number"],
+        },
+        fn=get_work_order,
+    )
+)
+
+registry.register(
+    Tool(
+        name="sync_github_issues",
+        description=(
+            "Sync GitHub issues into blob storage for searchable reference. "
+            "Incremental: only fetches issues updated since last sync. "
+            "First run does a full fetch. Safe to call repeatedly — upserts, no duplicates."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "state": {
+                    "type": "string",
+                    "description": "open | closed | all (default: all)",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Max issues to fetch per sync (default: 50)",
+                },
+            },
+            "required": [],
+        },
+        fn=sync_github_issues,
+    )
+)

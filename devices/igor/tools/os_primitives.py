@@ -37,14 +37,9 @@ from .registry import Tool, registry
 
 
 def _get_cortex():
-    db_path = os.getenv("IGOR_DB_PATH", "")
-    if not db_path:
-        from ..paths import paths
-
-        db_path = str(paths().instance / "wild-0001.db")
     from ..memory.cortex import Cortex
 
-    return Cortex(Path(db_path))
+    return Cortex(None)
 
 
 def _current_ctx_id(cortex) -> str | None:
