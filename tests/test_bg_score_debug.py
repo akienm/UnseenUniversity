@@ -216,5 +216,239 @@ class TestBGScoreDebugRobustness(unittest.TestCase):
             fl.turn_ctx_update = orig
 
 
+class TestApplyIntentGate(unittest.TestCase):
+    """Tests for _apply_intent_gate: intent-based habit filtering."""
+
+    def test_intent_gate_passes_on_action_intent(self):
+        """Action-type habits pass gate on non-question intents."""
+        from igor.cognition import basal_ganglia
+        from igor.memory.models import Memory, MemoryType
+
+        habit = Memory(
+            id="PROC_ACTION",
+            narrative="test action",
+            memory_type=MemoryType.PROCEDURAL,
+            metadata={"habit_type": "action"},
+        )
+        # Should pass on action_request intent
+        result = basal_ganglia._apply_intent_gate(habit, "action_request")
+        self.assertTrue(result)
+
+    def test_intent_gate_blocks_action_on_question_intent(self):
+        """Action-type habits fail gate on question intents."""
+        from igor.cognition import basal_ganglia
+        from igor.memory.models import Memory, MemoryType
+
+        habit = Memory(
+            id="PROC_ACTION",
+            narrative="test action",
+            memory_type=MemoryType.PROCEDURAL,
+            metadata={"habit_type": "action"},
+        )
+        # Should fail on factual_question intent
+        result = basal_ganglia._apply_intent_gate(habit, "factual_question")
+        self.assertFalse(result)
+
+    def test_intent_gate_blocks_workflow_on_question_intent(self):
+        """Workflow-type habits also fail on question intents."""
+        from igor.cognition import basal_ganglia
+        from igor.memory.models import Memory, MemoryType
+
+        habit = Memory(
+            id="PROC_WORKFLOW",
+            narrative="test workflow",
+            memory_type=MemoryType.PROCEDURAL,
+            metadata={"habit_type": "workflow"},
+        )
+        # Should fail on knowledge_request intent
+        result = basal_ganglia._apply_intent_gate(habit, "knowledge_request")
+        self.assertFalse(result)
+
+    def test_intent_gate_response_fails_on_knowledge_intent(self):
+        """Response habits fail on knowledge intents."""
+        from igor.cognition import basal_ganglia
+        from igor.memory.models import Memory, MemoryType
+
+        habit = Memory(
+            id="PROC_RESPONSE",
+            narrative="test response",
+            memory_type=MemoryType.PROCEDURAL,
+            metadata={"habit_type": "response"},
+        )
+        # Should fail on factual_question intent
+        result = basal_ganglia._apply_intent_gate(habit, "factual_question")
+        self.assertFalse(result)
+
+    def test_intent_gate_response_passes_on_action_intent(self):
+        """Response habits pass on action intent."""
+        from igor.cognition import basal_ganglia
+        from igor.memory.models import Memory, MemoryType
+
+        habit = Memory(
+            id="PROC_RESPONSE",
+            narrative="test response",
+            memory_type=MemoryType.PROCEDURAL,
+            metadata={"habit_type": "response"},
+        )
+        # Should pass on action_request intent
+        result = basal_ganglia._apply_intent_gate(habit, "action_request")
+        self.assertTrue(result)
+
+    def test_intent_gate_threshold_always_fails(self):
+        """Threshold-type habits always fail gate."""
+        from igor.cognition import basal_ganglia
+        from igor.memory.models import Memory, MemoryType
+
+        habit = Memory(
+            id="PROC_THRESHOLD",
+            narrative="test threshold",
+            memory_type=MemoryType.PROCEDURAL,
+            metadata={"habit_type": "threshold"},
+        )
+        # Threshold habits always fail (evaluated separately)
+        result = basal_ganglia._apply_intent_gate(habit, "action_request")
+        self.assertFalse(result)
+
+    def test_intent_gate_author_filter_blocks_wrong_author(self):
+        """Author filter blocks habits restricted to different authors."""
+        from igor.cognition import basal_ganglia
+        from igor.memory.models import Memory, MemoryType
+
+        habit = Memory(
+            id="PROC_CC_ONLY",
+            narrative="cc-only habit",
+            memory_type=MemoryType.PROCEDURAL,
+            metadata={"habit_type": "action", "author_filter": "claude-code"},
+        )
+        # Should fail when author is not "claude-code"
+        result = basal_ganglia._apply_intent_gate(
+            habit, "action_request", author="akien"
+        )
+        self.assertFalse(result)
+
+    def test_intent_gate_author_filter_passes_matching_author(self):
+        """Author filter passes when author matches."""
+        from igor.cognition import basal_ganglia
+        from igor.memory.models import Memory, MemoryType
+
+        habit = Memory(
+            id="PROC_CC_ONLY",
+            narrative="cc-only habit",
+            memory_type=MemoryType.PROCEDURAL,
+            metadata={"habit_type": "action", "author_filter": "claude-code"},
+        )
+        # Should pass when author matches
+        result = basal_ganglia._apply_intent_gate(
+            habit, "action_request", author="claude-code"
+        )
+        self.assertTrue(result)
+
+
+class TestApplySpecificityBonus(unittest.TestCase):
+    """Tests for _apply_specificity_bonus: specificity scoring."""
+
+    def test_specificity_bonus_zero_without_conditions(self):
+        """Specificity bonus is 0 when no conditions present."""
+        from igor.cognition import basal_ganglia
+        from igor.memory.models import Memory, MemoryType
+
+        habit = Memory(
+            id="PROC_TEST",
+            narrative="test habit",
+            memory_type=MemoryType.PROCEDURAL,
+            metadata={"habit_type": "action"},  # No conditions
+        )
+        parsed = _make_parsed("test input")
+        bonus = basal_ganglia._apply_specificity_bonus(
+            habit, parsed=parsed, _wg_scores={}, meaning_to_me_context=False
+        )
+        self.assertEqual(bonus, 0.0)
+
+    def test_specificity_bonus_positive_with_matching_conditions(self):
+        """Specificity bonus > 0 when condition fields match."""
+        from igor.cognition import basal_ganglia
+        from igor.memory.models import Memory, MemoryType
+
+        habit = Memory(
+            id="PROC_TEST",
+            narrative="test habit",
+            memory_type=MemoryType.PROCEDURAL,
+            metadata={
+                "habit_type": "action",
+                "conditions": {"intent": ["action_request"]},
+            },
+        )
+        parsed = _make_parsed("test input", intent="action_request")
+        bonus = basal_ganglia._apply_specificity_bonus(
+            habit, parsed=parsed, _wg_scores={}, meaning_to_me_context=False
+        )
+        self.assertGreater(bonus, 0.0)
+
+    def test_specificity_bonus_includes_word_graph_score(self):
+        """Specificity bonus includes word graph score."""
+        from igor.cognition import basal_ganglia
+        from igor.memory.models import Memory, MemoryType
+
+        habit = Memory(
+            id="PROC_TEST",
+            narrative="test habit",
+            memory_type=MemoryType.PROCEDURAL,
+            metadata={"habit_type": "action"},
+        )
+        parsed = _make_parsed("test input")
+        # Provide word graph score for this habit
+        wg_scores = {"PROC_TEST": 0.5}
+        bonus = basal_ganglia._apply_specificity_bonus(
+            habit, parsed=parsed, _wg_scores=wg_scores, meaning_to_me_context=False
+        )
+        # Word graph bonus = 0.5 * 0.10 = 0.05
+        self.assertAlmostEqual(bonus, 0.05, places=2)
+
+    def test_specificity_bonus_includes_meaning_to_me_context(self):
+        """Specificity bonus includes meaning_to_me context bonus."""
+        from igor.cognition import basal_ganglia
+        from igor.memory.models import Memory, MemoryType
+
+        habit = Memory(
+            id="PROC_TEST",
+            narrative="test habit",
+            memory_type=MemoryType.PROCEDURAL,
+            metadata={"habit_type": "action", "meaning_to_me": True},
+        )
+        parsed = _make_parsed("test input")
+        bonus = basal_ganglia._apply_specificity_bonus(
+            habit, parsed=parsed, _wg_scores={}, meaning_to_me_context=True
+        )
+        # Meaning_to_me bonus = 0.05
+        self.assertAlmostEqual(bonus, 0.05, places=2)
+
+    def test_specificity_bonus_combines_all_bonuses(self):
+        """Specificity bonus combines conditions + word graph + meaning_to_me."""
+        from igor.cognition import basal_ganglia
+        from igor.memory.models import Memory, MemoryType
+
+        habit = Memory(
+            id="PROC_TEST",
+            narrative="test habit",
+            memory_type=MemoryType.PROCEDURAL,
+            metadata={
+                "habit_type": "action",
+                "conditions": {"intent": ["action_request"]},
+                "meaning_to_me": True,
+            },
+        )
+        parsed = _make_parsed("test input", intent="action_request")
+        wg_scores = {"PROC_TEST": 0.5}
+        bonus = basal_ganglia._apply_specificity_bonus(
+            habit,
+            parsed=parsed,
+            _wg_scores=wg_scores,
+            meaning_to_me_context=True,
+        )
+        # conditions_bonus (1 field * 0.08) + word_graph (0.5 * 0.10) + meaning_to_me (0.05)
+        # = 0.08 + 0.05 + 0.05 = 0.18
+        self.assertAlmostEqual(bonus, 0.18, places=2)
+
+
 if __name__ == "__main__":
     unittest.main()
