@@ -1104,6 +1104,7 @@ class Igor(IgorBase):
         Igor owns all state; web server calls this via stats_fn, never touches cortex directly.
         """
         from .arbiter import queue as arbiter_queue
+        from .tools.watchlist import count_error_watchlist
 
         ring = self.cortex.read_ring_memory(limit=8)
         # #121: NE surprise signal — last 8 entries + rolling avg delta
@@ -1127,6 +1128,7 @@ class Igor(IgorBase):
             "last_valence": self.last_valence,
             "last_friction": self.last_friction,
             "arbiter_pending": arbiter_queue.count_pending(),
+            "watchlist_count": count_error_watchlist(),
             "ring_recent": [
                 {
                     "category": r["category"],
@@ -2350,6 +2352,21 @@ class Igor(IgorBase):
             f"[bold cyan]  memories={self.cortex.total_count()}  habits={len(self.cortex.get_habits())}  web=:{os.getenv('IGOR_WEB_PORT', '8080')}[/]"
         )
         console.print(f"[bold cyan]{'═' * 60}[/]\n")
+
+        # Report if watchlist has unresolved issues
+        try:
+            from .tools.watchlist import read_error_watchlist
+
+            watchlist_entries = read_error_watchlist()
+            if watchlist_entries:
+                console.print(
+                    f"[yellow]⚠ WATCHLIST: {len(watchlist_entries)} unresolved issue(s) — review with /list_watchlist[/]"
+                )
+                for i, entry in enumerate(watchlist_entries[-3:], 1):  # show last 3
+                    console.print(f"  {i}. {entry['timestamp']}: {entry['error'][:80]}")
+                console.print()
+        except Exception as _bare_e:
+            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
 
         while True:
             # ── Stdin: process each line immediately (#200 — no debounce) ────
