@@ -500,6 +500,7 @@ class OllamaReasoner(LocalReasoner):
                 f"- {m.narrative}" for m in relevant_memories[:5]
             )
 
+        _query_chars = len(user_input)  # raw query before context append
         _context_chars = len(system) + len(user_input) + len(memory_context)  # G55
 
         # Cloud training mode: skip tier.2 Ollama — escalate to cloud (#CLOUD).
@@ -586,6 +587,10 @@ class OllamaReasoner(LocalReasoner):
                     input_tokens=tokens_in,
                     output_tokens=tokens_out,
                     context_chars=_context_chars,
+                    query_chars=_query_chars,
+                    response_chars=len(
+                        (response.get("message") or {}).get("content") or ""
+                    ),
                     elapsed_ms=int(elapsed * 1000),
                 )
             except Exception as _bare_e:

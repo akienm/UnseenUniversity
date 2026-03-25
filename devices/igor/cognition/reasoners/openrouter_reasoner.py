@@ -414,6 +414,7 @@ class OpenRouterReasoner(BaseReasoner):
                     detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
                 )
 
+        _query_chars = len(user_input)  # raw query before context append
         content = user_input
         if preparse_csb:
             content = preparse_csb + "\n\n" + content
@@ -523,6 +524,8 @@ class OpenRouterReasoner(BaseReasoner):
                     input_tokens=usage.get("prompt_tokens", 0),
                     output_tokens=usage.get("completion_tokens", 0),
                     context_chars=_context_chars,
+                    query_chars=_query_chars,
+                    response_chars=len(text),
                     cost_usd=total_cost,
                     elapsed_ms=_elapsed_ms,
                     turns=turn,
