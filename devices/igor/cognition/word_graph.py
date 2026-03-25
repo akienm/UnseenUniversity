@@ -668,6 +668,89 @@ class WordGraph(IgorBase):
         )  # TODO: tune threshold post-wg_edges cutover
         return predictions, 1.0 - normalised
 
+    # ── D233: spreading activation ─────────────────────────────────────────────
+
+    def spread_from_words(
+        self,
+        seed_words: dict,
+        hop_decay: float = 0.6,
+        depth: int = 2,
+    ) -> dict:
+        """D233: Spread activation from seed words through wg_edges.
+
+        Returns dict[word, activation_score] with multi-source summed activations.
+        hop_decay: multiplier applied per hop (default 0.6).
+        depth: number of hops to propagate.
+
+        Used by cortex.spreading_activation() as the word-graph layer.
+        """
+        scores: dict = dict(seed_words)
+        current_frontier = dict(seed_words)
+        for _ in range(depth):
+            if not current_frontier:
+                break
+            words_list = list(current_frontier.keys())
+            ph = ",".join("?" * len(words_list))
+            try:
+                with self._db() as conn:
+                    rows = conn.execute(
+                        f"SELECT word_a, word_b, similarity FROM wg_edges"
+                        f" WHERE word_a IN ({ph})",
+                        words_list,
+                    ).fetchall()
+            except Exception as _e:
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/cognition/word_graph.py spread_from_words: %s",
+                    _e,
+                )
+                break
+            next_frontier: dict = {}
+            for row in rows:
+                word_a, word_b, sim = row[0], row[1], float(row[2])
+                spread = current_frontier.get(word_a, 0.0) * sim * hop_decay
+                if spread > 0:
+                    next_frontier[word_b] = next_frontier.get(word_b, 0.0) + spread
+            for w, s in next_frontier.items():
+                scores[w] = scores.get(w, 0.0) + s
+            current_frontier = next_frontier
+        return scores
+
+    def words_to_doc_ids(self, word_scores: dict, limit: int = 50) -> dict:
+        """D233: Bridge — map word activation scores to doc_id activations.
+
+        Queries wg_word_docs for top-`limit` words by activation score.
+        Returns dict[doc_id, float] with activations summed across all words
+        that link to a given doc_id.
+
+        Used by cortex.spreading_activation() to bridge the word-graph layer
+        into the memory graph (content index bridge).
+        """
+        if not word_scores:
+            return {}
+        top_words = sorted(word_scores, key=word_scores.__getitem__, reverse=True)[
+            :limit
+        ]
+        ph = ",".join("?" * len(top_words))
+        try:
+            with self._db() as conn:
+                rows = conn.execute(
+                    f"SELECT word, doc_id, weight FROM wg_word_docs WHERE word IN ({ph})",
+                    top_words,
+                ).fetchall()
+        except Exception as _e:
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/cognition/word_graph.py words_to_doc_ids: %s",
+                _e,
+            )
+            return {}
+        doc_scores: dict = {}
+        for row in rows:
+            word, doc_id, weight = row[0], row[1], float(row[2])
+            activation = word_scores.get(word, 0.0) * weight
+            if activation > 0:
+                doc_scores[doc_id] = doc_scores.get(doc_id, 0.0) + activation
+        return doc_scores
+
     # ── Graph analysis ─────────────────────────────────────────────────────────
 
     def top_hubs(
