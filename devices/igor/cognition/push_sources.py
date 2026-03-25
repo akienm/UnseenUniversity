@@ -370,10 +370,10 @@ class HeartbeatSource(BasePushSource):
         try:
             from ..memory.models import MemoryType
 
-            mems = cortex.get_by_type(MemoryType.PROCEDURAL)
-            hb_mems = [
-                m for m in mems if m.metadata.get("trigger") == "heartbeat_check"
-            ]
+            # T-no-row-scans: SQL filter by trigger metadata
+            hb_mems = cortex.get_procedural_by_metadata_key(
+                "trigger", value="heartbeat_check"
+            )
         except Exception:
             return []
 
@@ -826,11 +826,13 @@ class ProactiveHabitSource(BasePushSource):
         try:
             from ..memory.models import MemoryType
 
-            habits = cortex.get_by_type(MemoryType.PROCEDURAL)
+            # T-no-row-scans: SQL filter by habit_type metadata
+            proactive = cortex.get_procedural_by_metadata_key(
+                "habit_type", value="proactive"
+            )
         except Exception:
             return []
 
-        proactive = [h for h in habits if h.metadata.get("habit_type") == "proactive"]
         if not proactive:
             return []
 

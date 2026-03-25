@@ -57,16 +57,13 @@ def build_system_prompt(
 
     try:
         core_patterns = cortex.get_by_type(MemoryType.CORE_PATTERN)
-        identities = sorted(
-            cortex.get_by_type(MemoryType.IDENTITY),
-            key=lambda m: m.activation_count,
-            reverse=True,
-        )[:_IDENTITY_LIMIT]
-        procedures = sorted(
-            cortex.get_by_type(MemoryType.PROCEDURAL),
-            key=lambda m: m.activation_count,
-            reverse=True,
-        )[:_PROCEDURAL_LIMIT]
+        # T-no-row-scans: SQL ordering by activation_count instead of fetch+sort+slice
+        identities = cortex.get_by_type(
+            MemoryType.IDENTITY, limit=_IDENTITY_LIMIT, order_by="activation_count"
+        )
+        procedures = cortex.get_by_type(
+            MemoryType.PROCEDURAL, limit=_PROCEDURAL_LIMIT, order_by="activation_count"
+        )
     except Exception:
         return _fallback_prompt(instance_id, role=role)
 

@@ -1290,14 +1290,17 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
         min_cluster = int(_os.getenv("IGOR_NE_MERGE_MIN_CLUSTER", "3"))
         window = int(_os.getenv("IGOR_NE_MERGE_WINDOW", "10"))
 
-        # 1. Fetch recent EPISODIC memories promoted by this NE instance
+        # 1. Fetch recent EPISODIC memories promoted by this NE instance (T-no-row-scans: SQL filter)
         min_run = max(0, self._run_count - window)
         try:
+            # SQL filters by source; remaining filters done in Python on smaller result set
+            all_ne_episodics = self.cortex.get_by_type_and_source(
+                MemoryType.EPISODIC, "narrative_engine", limit=500
+            )
             candidates = [
                 m
-                for m in self.cortex.get_by_type(MemoryType.EPISODIC, limit=500)
-                if m.metadata.get("source") == "narrative_engine"
-                and m.metadata.get("ne_run", 0) >= min_run
+                for m in all_ne_episodics
+                if m.metadata.get("ne_run", 0) >= min_run
                 and not m.metadata.get("merged")  # skip already-merged nodes
             ]
         except Exception:
