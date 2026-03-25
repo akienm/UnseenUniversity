@@ -440,9 +440,28 @@ def _restart_ollama(machine: str = "") -> str:
     """
     import socket
     import time as _time
+    import logging as _logging
 
     local_host = socket.gethostname()
     is_local = machine in ("", "localhost", "127.0.0.1", local_host)
+
+    # Check if machine is in use by a human before restarting
+    target_host = local_host if is_local else machine
+    try:
+        from .routing_tools import in_use_now
+
+        if in_use_now(target_host):
+            _logging.getLogger("forensic").warning(
+                "[restart_ollama] %s is currently in use — skipping restart",
+                target_host,
+            )
+            return f"Skipped restart on {target_host}: machine is currently in use by a human."
+    except Exception as _e:
+        _logging.getLogger("forensic").warning(
+            "[restart_ollama] in_use_now check failed for %s: %s",
+            target_host,
+            _e,
+        )
 
     if is_local:
         try:
