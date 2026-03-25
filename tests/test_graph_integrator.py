@@ -1,6 +1,7 @@
 """Tests for graph_integrator module."""
 
 import json
+import uuid
 import pytest
 from pathlib import Path
 from datetime import datetime
@@ -83,12 +84,14 @@ def test_create_book_anchor_node_no_author(cortex_test):
 
 def test_fetch_fact_clouds(cortex_test):
     """Test fetching FACT_CLOUD nodes."""
-    content_id = "550e8400-e29b-41d4-a716-446655440000"
+    # Use a unique content_id per test run to avoid Postgres data pollution
+    content_id = f"test-content-{uuid.uuid4().hex[:8]}"
+    id_prefix = f"FACT_CLOUD_TEST{uuid.uuid4().hex[:6]}"
 
     # Create some FACT_CLOUD nodes
     for i in range(3):
         mem = Memory(
-            id=f"FACT_CLOUD_{i:08d}",
+            id=f"{id_prefix}_{i:04d}",
             narrative=f"Fact {i}",
             memory_type=MemoryType.FACTUAL,
             source="reading_indexer",
@@ -170,7 +173,8 @@ def test_integrate_graph_complete(cortex_test, monkeypatch, tmp_path):
     # Verify anchor node was created
     with cortex_test._conn() as conn:
         anchor = conn.execute(
-            "SELECT id FROM memories WHERE id LIKE 'BOOK_%'",
+            "SELECT id FROM memories WHERE id LIKE ?",
+            ("BOOK_%",),
         ).fetchone()
 
     if anchor:
@@ -179,7 +183,8 @@ def test_integrate_graph_complete(cortex_test, monkeypatch, tmp_path):
         # Verify edges were created
         with cortex_test._conn() as conn:
             edges = conn.execute(
-                "SELECT from_id, to_id, weight FROM interpretive_edges WHERE from_id LIKE 'BOOK_%'",
+                "SELECT from_id, to_id, weight FROM interpretive_edges WHERE from_id LIKE ?",
+                ("BOOK_%",),
             ).fetchall()
 
         # Should have edges from anchor to facts
