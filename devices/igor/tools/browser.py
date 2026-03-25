@@ -234,7 +234,7 @@ async def _run_browser_agent(
             register_new_step_callback=on_step,
         )
 
-        logger.info(f"Browser task started: {task[:100]}...")
+        logger.info(f"Browser task started: {task_description[:100]}...")
         result = await agent.run()
 
         # Extract final URL (final_state() removed in 0.12.x; use urls())
@@ -465,6 +465,40 @@ async def _run_as_employer(
 
 # ── read_kindle_chunk — deterministic Playwright-based Kindle page reader ────────
 
+_CDP_PORT = int(os.getenv("IGOR_CHROME_CDP_PORT", "9222"))
+
+
+def _cdp_ready(port: int = _CDP_PORT) -> bool:
+    """Return True if Chrome is already listening for CDP connections."""
+    import urllib.request
+
+    try:
+        urllib.request.urlopen(f"http://localhost:{port}/json/version", timeout=2)
+        return True
+    except Exception:
+        return False
+
+
+def _launch_chrome_cdp(profile_path: str, port: int = _CDP_PORT) -> None:
+    """
+    Launch Chrome as a real OS subprocess with remote debugging enabled.
+    Chrome runs in the user session and has full GNOME keyring access,
+    so encrypted cookies (Amazon session etc.) are decrypted automatically.
+    """
+    import subprocess
+
+    profile_dir = os.getenv("IGOR_CHROME_PROFILE_DIR", "Profile 1")
+    cmd = [
+        "google-chrome",
+        f"--user-data-dir={profile_path}",
+        f"--profile-directory={profile_dir}",
+        f"--remote-debugging-port={port}",
+        "--no-first-run",
+        "--no-default-browser-check",
+    ]
+    logger.info(f"read_kindle_chunk: launching Chrome CDP — {' '.join(cmd)}")
+    subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
 
 async def _read_kindle_chunk_impl(
     asin: str,
@@ -474,36 +508,33 @@ async def _read_kindle_chunk_impl(
 ) -> dict:
     """
     Playwright-based Kindle reader. No LLM agent — deterministic keyboard + DOM.
-    Opens Igor's Chrome profile, navigates to the Kindle reader for the given ASIN,
-    jumps to start_page, then reads pages_per_chunk pages using ArrowRight.
+    Connects to Chrome via CDP (launched as real subprocess so GNOME keyring
+    decrypts Amazon cookies automatically). Navigates to the Kindle reader for
+    the given ASIN, jumps to start_page, reads pages_per_chunk pages via ArrowRight.
     Extracts text from .text-div elements on each page.
     """
+    import asyncio
     from playwright.async_api import async_playwright
-    import pathlib as _pathlib
 
     extracted_pages = []
     last_page = start_page
 
-    profile_dir = os.getenv("IGOR_CHROME_PROFILE_DIR", "Profile 1")
-
-    # Remove stale singleton locks from the live profile dir
-    for _lock in ["SingletonLock", "SingletonSocket"]:
-        _lp = _pathlib.Path(_IGOR_PROFILE) / _lock
-        if _lp.exists() or _lp.is_symlink():
-            _lp.unlink(missing_ok=True)
+    # Ensure Chrome is running with CDP — launch if not already up
+    if not _cdp_ready(_CDP_PORT):
+        _launch_chrome_cdp(_IGOR_PROFILE, _CDP_PORT)
+        for _ in range(30):
+            await asyncio.sleep(1)
+            if _cdp_ready(_CDP_PORT):
+                break
+        else:
+            raise RuntimeError(f"Chrome CDP not ready on port {_CDP_PORT} after 30s")
+        await asyncio.sleep(1)  # brief extra settle after CDP reports ready
 
     async with async_playwright() as p:
-        context = await p.chromium.launch_persistent_context(
-            user_data_dir=_IGOR_PROFILE,
-            channel="chrome",
-            headless=False,
-            args=[
-                f"--profile-directory={profile_dir}",
-                "--disable-blink-features=AutomationControlled",
-                "--no-sandbox",
-                "--disable-gpu",
-            ],
-            ignore_default_args=["--enable-automation"],
+        browser = await p.chromium.connect_over_cdp(f"http://localhost:{_CDP_PORT}")
+        # Use the existing context (already has authenticated cookies)
+        context = (
+            browser.contexts[0] if browser.contexts else await browser.new_context()
         )
         page = await context.new_page()
 
@@ -527,11 +558,9 @@ async def _read_kindle_chunk_impl(
 
             # ── Navigate to start_page ─────────────────────────────────────────
             if start_page <= 1:
-                # Go to beginning via Ctrl+Home
                 await page.keyboard.press("Control+Home")
                 await page.wait_for_timeout(1500)
             else:
-                # Click the page-position indicator and type the target page.
                 # Kindle shows "Page N of M" at bottom — clicking opens a go-to input.
                 navigated = False
                 for sel in [
@@ -564,7 +593,6 @@ async def _read_kindle_chunk_impl(
 
             # ── Read pages_per_chunk pages ─────────────────────────────────────
             for i in range(pages_per_chunk):
-                # Extract visible text from all .text-div elements
                 divs = await page.query_selector_all(".text-div")
                 page_text = ""
                 for div in divs:
@@ -583,9 +611,8 @@ async def _read_kindle_chunk_impl(
                         f"read_kindle_chunk: page {start_page + i} — no text found in .text-div"
                     )
 
-                # Advance to next page
                 await page.keyboard.press("ArrowRight")
-                await page.wait_for_timeout(2500)  # wait for DRM page render
+                await page.wait_for_timeout(2500)
 
             return {
                 "status": "success",
@@ -608,7 +635,8 @@ async def _read_kindle_chunk_impl(
                 "text": "\n\n--- PAGE BREAK ---\n\n".join(extracted_pages),
             }
         finally:
-            await context.close()
+            await page.close()
+            # Leave Chrome running — next chunk call connects to same session
 
 
 def read_kindle_chunk(

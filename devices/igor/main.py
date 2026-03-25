@@ -4291,7 +4291,9 @@ class Igor(IgorBase):
                 response_text = _reply_block
 
         # [D222] LLM tool dispatch — extract and execute <tool>/<tool_args> blocks
-        if response_text and not habit:
+        # Note: intentionally no `not habit` guard — tool blocks should fire even
+        # when a habit also ran (e.g. PROC_BROWSER_TASK fires but LLM emits <tool>).
+        if response_text:
             _tool_name, _tool_kwargs, _cleaned = self._extract_tool_call(response_text)
             if _tool_name:
                 response_text = _cleaned
