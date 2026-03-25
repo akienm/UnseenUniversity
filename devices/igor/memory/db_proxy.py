@@ -820,6 +820,11 @@ def make_home_proxy(db_path: Path = None):
     )  # backward compat
     if db_url:
         return PGDatabaseProxy(db_url)
+    # SQLite fallback: use explicit path, then IGOR_DB_PATH env var
+    if db_path is None:
+        env_path = os.getenv("IGOR_DB_PATH")
+        if env_path:
+            db_path = Path(env_path)
     return DatabaseProxy(db_path)
 
 

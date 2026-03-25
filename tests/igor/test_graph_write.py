@@ -86,6 +86,9 @@ class TestStoreMemory(unittest.TestCase):
         result = store_memory("Should be blocked", "FACTUAL")
         self.assertIn("BLOCKED", result)
 
+    @unittest.skipUnless(
+        os.getenv("IGOR_HOME_DB_URL"), "IGOR_HOME_DB_URL not set — Postgres required"
+    )
     def test_no_db_path_still_works(self):
         """IGOR_DB_PATH is no longer required — Postgres handles it via IGOR_HOME_DB_URL."""
         from igor.tools.graph_write import store_memory

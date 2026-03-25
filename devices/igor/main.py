@@ -2335,7 +2335,7 @@ class Igor(IgorBase):
             last_roi=self.last_roi,
             last_action="Genesis state loaded",
             milieu_state=milieu_mod.get().get_state() if milieu_mod.get() else None,
-            active_jobs=self.job_manager.active_count(),
+            job_list=self.job_manager.list_jobs(),
             word_graph=self._word_graph,
         )
 
@@ -4682,10 +4682,10 @@ class Igor(IgorBase):
             cloud_calls=self.cloud_calls,
             milieu_state=milieu_mod.get().get_state() if milieu_mod.get() else None,
             last_tier=getattr(self, "_current_tier", ""),
-            active_jobs=(
-                self.job_manager.active_count()
+            job_list=(
+                self.job_manager.list_jobs()
                 if hasattr(self, "job_manager") and self.job_manager
-                else 0
+                else None
             ),
             word_graph=self._word_graph,
             latency_samples=self._latency_samples,

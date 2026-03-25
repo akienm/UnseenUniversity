@@ -36,7 +36,7 @@ def render(
     cloud_calls: int = 0,
     milieu_state=None,
     last_tier: str = "",
-    active_jobs: int = 0,
+    job_list: list | None = None,
     word_graph=None,
     latency_samples: list | None = None,
     inference_data: dict | None = None,  # per-turn inference details
@@ -141,11 +141,14 @@ def render(
     preparse = inf.get("preparse", "")
     winnow = inf.get("winnow", "")
     ne_info = inf.get("ne", "")
-    header = f"{intent}/{tier}" if intent else tier
-    tok_str = f"in={t_in} out={t_out}" if t_in or t_out else "tokens=—"
-    cost_str = f"${cost:.4f}" if cost else "—"
-    lat_str = f"{lat_ms/1000:.1f}s" if lat_ms else "—"
-    lines.append(f"[bold]Turn:[/] {header}  {tok_str}  {cost_str}  {lat_str}")
+    header = f"{intent}/{tier}" if (intent and tier) else (intent or tier or "—")
+    if t_in or t_out or cost or lat_ms:
+        tok_str = f"in={t_in} out={t_out}"
+        cost_str = f"${cost:.4f}" if cost else "$—"
+        lat_str = f"{lat_ms/1000:.1f}s" if lat_ms else "—s"
+        lines.append(f"[bold]Turn:[/] {header}  {tok_str}  {cost_str}  {lat_str}")
+    else:
+        lines.append(f"[bold]Turn:[/] {header}  (no inference data)")
     if preparse:
         lines.append(f"  preparse  {preparse}")
     if winnow:
@@ -162,9 +165,9 @@ def render(
         f"[bold]Graph:[/] {graph_pct}%  "
         f"[bold]Local:[/] {local_pct}%  "
         f"[bold]cloud_mode:[/] {cloud_mode_str}  "
-        f"[bold]cloud calls:[/] {upstream_pct}%  "
-        f"[bold]TWM:[/] {twm_depth}"
+        f"[bold]cloud calls:[/] {upstream_pct}%"
     )
+    lines.append(f"  [bold]TWM:[/] {twm_depth}")
     if latency_samples and len(latency_samples) >= 2:
         _OUTLIER_MS = 60_000
         clean = [s for s in latency_samples if s <= _OUTLIER_MS]
@@ -181,8 +184,12 @@ def render(
             f"[bold]Latency p50/p95:[/]  {p50:,}ms / {p95:,}ms"
             f"  [dim](n={len(stats_samples)})[/]{excl_note}"
         )
-    if active_jobs:
-        lines.append(f"[bold yellow]Active jobs:[/] {active_jobs}")
+    if job_list:
+        for j in job_list:
+            pct_str = f" {j.progress_pct():.0f}%" if j.total_units > 0 else ""
+            lines.append(
+                f"  [bold yellow]job:[/] {j.title[:44]}  [{j.status}]{pct_str}"
+            )
 
     # ══ SECTION 4: HOW HE'S DOING ════════════════════════════════════════════
     lines.append("")
