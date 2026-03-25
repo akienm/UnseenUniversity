@@ -33,6 +33,7 @@ from typing import Any
 
 from . import discord_bot
 from ..web import server as web_server
+from ..cognition.forensic_logger import log_error
 
 # ── Unified queue ─────────────────────────────────────────────────────────────
 incoming: queue.Queue = queue.Queue()  # All sources → Igor
@@ -213,8 +214,8 @@ def start():
         from ..cognition.daemon_supervisor import supervisor as _sup
 
         _sup.register("network-listener", _listener_thread, health_fn=is_running)
-    except Exception:
-        pass
+    except Exception as e:
+        log_error(kind="TOOL_FAIL", detail=f"daemon supervisor registration failed: {e}")
 
 
 def is_running() -> bool:

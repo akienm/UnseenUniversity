@@ -24,6 +24,8 @@ from pathlib import Path
 import discord
 import aiohttp
 
+from ..cognition.forensic_logger import log_error
+
 # ── Forensic logger ──────────────────────────────────────────────────────────
 
 _LOG_DIR = Path(__file__).parent.parent.parent / "logs"
@@ -244,8 +246,8 @@ def start():
         from ..cognition.daemon_supervisor import supervisor as _sup
 
         _sup.register("discord-bot", _bot_thread, health_fn=is_running)
-    except Exception:
-        pass
+    except Exception as e:
+        log_error(kind="TOOL_FAIL", detail=f"daemon supervisor registration failed: {e}")
 
 
 def is_running() -> bool:

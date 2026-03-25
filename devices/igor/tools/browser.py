@@ -17,6 +17,7 @@ from typing import Optional
 
 from .registry import Tool, registry
 from ..paths import paths
+from ..cognition.forensic_logger import log_error
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -553,8 +554,8 @@ async def _read_kindle_chunk_impl(
                 if reader:
                     await reader.click()
                     await page.wait_for_timeout(500)
-            except Exception:
-                pass
+            except Exception as e:
+                log_error(kind="TOOL_FAIL", detail=f"reader focus click failed: {e}")  # non-fatal
 
             # ── Navigate to start_page ─────────────────────────────────────────
             if start_page <= 1:

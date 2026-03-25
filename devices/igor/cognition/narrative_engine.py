@@ -520,7 +520,8 @@ class NarrativeEngine(IgorBase):
         _aff_milieu = __import__("igor.cognition.milieu", fromlist=["get"]).get()
         try:
             _aff_ms = _aff_milieu.get_state() if _aff_milieu else None
-        except Exception:
+        except Exception as e:
+            log_error(kind="TOOL_FAIL", detail=f"milieu state fetch failed: {e}")  # non-fatal
             _aff_ms = None
         _aff_arousal = max(0.0, _aff_ms.arousal if _aff_ms else 0.0)
         _aff_valence = _aff_ms.valence if _aff_ms else 0.0
@@ -1174,7 +1175,8 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
             _milieu_mod = __import__("igor.cognition.milieu", fromlist=["get"]).get()
             _ms = _milieu_mod.get_state() if _milieu_mod else None
             _arousal = max(0.0, _ms.arousal) if _ms else 0.0
-        except Exception:
+        except Exception as e:
+            log_error(kind="TOOL_FAIL", detail=f"arousal fetch failed: {e}")  # non-fatal
             _arousal = 0.0
 
         # Bail if arousal has dropped — reconsolidation window closed

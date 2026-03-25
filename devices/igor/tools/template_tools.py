@@ -131,8 +131,8 @@ def _check_invariants(
                             violations.append(
                                 f"invariant: code_ref '{code_ref}' not found in tool registry"
                             )
-                    except Exception:
-                        pass  # registry not available — skip check
+                    except Exception as e:
+                        log_error(kind="TOOL_FAIL", detail=f"registry check failed: {e}")  # non-fatal
     return violations
 
 

@@ -343,8 +343,10 @@ def select_habit(
             from .forensic_logger import turn_ctx_update as _tcu
 
             _tcu("bg_scoring", data)
-        except Exception:
-            pass
+        except Exception as e:
+            from .forensic_logger import log_error
+
+            log_error(kind="TOOL_FAIL", detail=f"emit_bg failed: {e}")  # non-fatal
 
     try:
         # Use core_input (thread-context stripped) for habit trigger matching.
