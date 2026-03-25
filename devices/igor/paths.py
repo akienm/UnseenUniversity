@@ -61,7 +61,7 @@ class PathManager:
 
     @property
     def logs(self) -> Path:
-        return self._runtime / "logs"
+        return self._runtime / "local" / "logs"
 
     @property
     def cache(self) -> Path:
@@ -93,7 +93,7 @@ class PathManager:
 
     @property
     def milieu(self) -> Path:
-        return self._runtime / "milieu_global.json"
+        return self.instance / "milieu_global.json"
 
     @property
     def benchmarks(self) -> Path:
@@ -157,8 +157,8 @@ class PathManager:
     # ── Named files (word graph) ──────────────────────────────────────────────
 
     def word_graph(self, name: str = "word_graph") -> Path:
-        """Path to a named word graph SQLite DB, e.g. ~/.TheIgors/word_graph.db."""
-        return self._runtime / f"{name}.db"
+        """Path to a named word graph SQLite DB, e.g. ~/.TheIgors/Igor-wild-0001/word_graph.db."""
+        return self.instance / f"{name}.db"
 
     # ── Ebook library ─────────────────────────────────────────────────────────
 

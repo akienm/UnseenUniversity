@@ -55,7 +55,9 @@ class MisfireCounter:
             window_hours: Rolling window duration in hours (default 24)
         """
         if log_path is None:
-            log_path = Path.home() / ".TheIgors" / "logs" / "misfire_log.jsonl"
+            from ..paths import paths as _paths
+
+            log_path = _paths().logs / "misfire_log.jsonl"
 
         self.log_path = Path(log_path)
         self.threshold = threshold

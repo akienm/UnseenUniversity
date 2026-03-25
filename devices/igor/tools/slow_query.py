@@ -13,8 +13,9 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from .registry import Tool, registry
+from ..paths import paths
 
-_LOG_PATH = Path.home() / ".TheIgors" / "logs" / "db_queries.log"
+_LOG_PATH = paths().logs / "db_queries.log"
 _DEFAULT_TOP_N = 10
 
 
