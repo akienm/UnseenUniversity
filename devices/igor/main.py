@@ -1364,6 +1364,30 @@ class Igor(IgorBase):
 
         tool_match = re.search(r"<tool>(.*?)</tool>", text, re.DOTALL | re.IGNORECASE)
         if not tool_match:
+            # Fallback: OpenAI-style <tool_call>{json}</tool_call>
+            tc_match = re.search(
+                r"<tool_call>(.*?)</tool_call>", text, re.DOTALL | re.IGNORECASE
+            )
+            if tc_match:
+                try:
+                    payload = _json.loads(tc_match.group(1).strip())
+                    _name = payload.get("name", "")
+                    _kwargs = (
+                        payload.get("parameters")
+                        or payload.get("arguments")
+                        or payload.get("args")
+                        or {}
+                    )
+                    if _name:
+                        _cleaned = re.sub(
+                            r"<tool_call>.*?</tool_call>",
+                            "",
+                            text,
+                            flags=re.DOTALL | re.IGNORECASE,
+                        )
+                        return _name, _kwargs, _cleaned.strip()
+                except Exception:
+                    pass
             return "", {}, text
 
         tool_name = tool_match.group(1).strip()
@@ -4324,11 +4348,17 @@ class Igor(IgorBase):
         if response_text:
             _tool_name, _tool_kwargs, _cleaned = self._extract_tool_call(response_text)
             if _tool_name:
+                console.print(
+                    f"[dim cyan][TOOL] dispatch → {_tool_name}  args={list(_tool_kwargs.keys())}[/]"
+                )
                 response_text = _cleaned
                 try:
                     from .tools.registry import registry as _tool_reg
 
                     _tool_result = _tool_reg.execute(_tool_name, _tool_kwargs)
+                    console.print(
+                        f"[dim cyan][TOOL] {_tool_name} ✓  result={str(_tool_result)[:200]}[/]"
+                    )
                     self.cortex.write_ring(
                         f"TOOL_RESULT|{_tool_name}|{str(_tool_result)[:500]}",
                         category="tool_result",
@@ -4340,6 +4370,7 @@ class Igor(IgorBase):
                             f"[{_tool_name} result: {str(_tool_result)[:400]}]"
                         )
                 except Exception as _te:
+                    console.print(f"[yellow][TOOL] {_tool_name} ✗  {_te}[/]")
                     log_error(kind="LLM_TOOL_DISPATCH", detail=f"{_tool_name}: {_te}")
 
         # ── G31 / #158: TASK_SET completion detection — keyword fast-path + semantic ─
