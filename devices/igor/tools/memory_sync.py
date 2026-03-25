@@ -33,10 +33,11 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from .registry import Tool, registry
+from ..paths import paths
 
 logger = logging.getLogger("igor.tools.memory_sync")
 
-_SYNC_LOG = Path.home() / ".TheIgors" / "logs" / "memory_sync.log"
+_SYNC_LOG = paths().logs / "memory_sync.log"
 
 # Columns synced (no embedding — can be recomputed; keeps sync fast)
 _SYNC_COLS = (
