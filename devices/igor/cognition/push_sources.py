@@ -12,6 +12,7 @@ Sources:
   MilieuSource          — pushes ambient emotional state into TWM (60s timer)
   SelfObservationSource — watches Igor's own output for inward watch habit patterns (#243)
   CuriositySource       — fires idle-curiosity impulse when TWM has no active focus (#246)
+  ConsolidationReplay   — replays FACT_CLOUD nodes during quiet periods, strengthens co-occurrence edges (D228)
 
 All push via cortex.twm_push(). None of them block or crash the main loop.
 """
@@ -1789,6 +1790,7 @@ curiosity_source = CuriositySource()
 boredom_source = BoredomSource()
 interoception_source = InteroceptionSource()
 scheduler_source = SchedulerSource()
+consolidation_replay = None  # Lazy loaded to avoid circular import
 
 
 def run_background_sources(cortex) -> int:
@@ -1797,6 +1799,12 @@ def run_background_sources(cortex) -> int:
     Returns total count of observations pushed this call.
     Exceptions are swallowed — a broken source must not crash the loop.
     """
+    global consolidation_replay
+    if consolidation_replay is None:
+        from .replay import ConsolidationReplay
+
+        consolidation_replay = ConsolidationReplay()
+
     pushed = 0
     for src in (
         heartbeat_source,
@@ -1812,6 +1820,7 @@ def run_background_sources(cortex) -> int:
         boredom_source,
         interoception_source,
         scheduler_source,
+        consolidation_replay,
     ):
         try:
             ids = src.push(cortex)
