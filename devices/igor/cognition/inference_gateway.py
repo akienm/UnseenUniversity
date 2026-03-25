@@ -441,33 +441,9 @@ class InferenceGateway(IgorBase):
                         )
             return "", 0.0, False
 
-        # ── background: cloud=gpt-4o-mini | local, drop-and-move-on ──────────
+        # ── background: Ollama primary, drop if fails (D234: OR is scarce luxury) ──
+        # Background impulses don't warrant OR budget — quality doesn't matter here.
         if level == "background":
-            if _cloud_ok and self._t3:
-                try:
-                    self.last_tier = "cloud/background"
-                    if on_tier:
-                        on_tier("cloud/background")
-                    text, cost = self._t3.reason(
-                        user_input,
-                        relevant,
-                        core,
-                        instance_id,
-                        cortex=cortex,
-                        preparse_csb="",
-                        thread_id=thread_id,
-                        no_tools=True,  # impulses never call tools (#301)
-                    )
-                    return text, cost, True
-                except Exception as _e:
-                    if _log_err:
-                        _log_err(
-                            kind="IMPULSE_CLOUD_FAIL",
-                            source="cloud/background",
-                            detail=str(_e),
-                        )
-                    # fall through to local
-
             if self._t2:
                 try:
                     self.last_tier = "local/background"
@@ -486,14 +462,13 @@ class InferenceGateway(IgorBase):
                         )
             return "", 0.0, False
 
-        # ── interactive: D211 local-first for low complexity, else cloud-first ──
+        # ── interactive: D234 Ollama primary; OR luxury fallback for quality path ──
+        # Ollama fires first always. OR is the luxury/tone path — scarce budget.
+        # OR fallback only when: user turn + medium/high complexity + budget ok.
         last_error = ""
+        _quality_path = is_user_turn and complexity in ("medium", "high")
 
-        # D211: user turn + low complexity → try local first, cloud as fallback.
-        # Any other case (medium/high complexity, pipeline call) → cloud-first.
-        _local_first = is_user_turn and complexity == "low" and self._t2
-
-        if _local_first:
+        if self._t2:
             try:
                 self.last_tier = "local/interactive"
                 if on_tier:
@@ -515,7 +490,8 @@ class InferenceGateway(IgorBase):
                         kind="TIER_FAIL", source="local/interactive", detail=str(_e)
                     )
 
-        if _cloud_ok and self._t4:
+        # OR luxury path: quality matters + budget ok
+        if _quality_path and _cloud_ok and self._t4:
             try:
                 self.last_tier = "cloud/interactive"
                 if on_tier:
@@ -536,28 +512,6 @@ class InferenceGateway(IgorBase):
                 if _log_err:
                     _log_err(
                         kind="TIER_FAIL", source="cloud/interactive", detail=str(_e)
-                    )
-
-        if not _local_first and self._t2:
-            try:
-                self.last_tier = "local/interactive"
-                if on_tier:
-                    on_tier("local/interactive")
-                text, cost = self._t2.reason(
-                    user_input,
-                    relevant,
-                    core,
-                    instance_id,
-                    cortex=cortex,
-                    thread_id=thread_id,
-                    interactive_fallback=True,
-                )
-                return text, cost, False
-            except Exception as _e:
-                last_error = str(_e)
-                if _log_err:
-                    _log_err(
-                        kind="TIER_FAIL", source="local/interactive", detail=str(_e)
                     )
 
         # ── total failure: cloud + local both failed ──────────────────────────
@@ -682,12 +636,12 @@ def _always(ctx: InferenceContext) -> bool:
 
 def _local_preferred(ctx: InferenceContext) -> bool:
     """
-    D211: Local-first. True unless a specific reason to use cloud exists.
-    Reasons to prefer cloud:
-      - is_user_turn AND complexity medium|high  (voice quality matters)
-      - research_mode                            (research quality)
-      - db_colocated                             (RAM contention with Postgres)
-      - no local capacity                        (nothing available)
+    D234: Ollama primary. True unless local is physically unavailable.
+    Ollama fires before OR regardless of complexity — OR is scarce budget.
+    Reasons to route directly to OR:
+      - research_mode  (research quality, large context — model capability matters)
+      - db_colocated   (RAM contention with Postgres on same host)
+      - no local capacity (nothing available)
     """
     if ctx.db_colocated:
         return False
@@ -695,10 +649,7 @@ def _local_preferred(ctx: InferenceContext) -> bool:
 
     if not _router.has_local_capacity():
         return False
-    # Cloud preferred for user turns when complexity warrants it
-    if ctx.is_user_turn and ctx.complexity in ("medium", "high"):
-        return False
-    # Cloud preferred for research
+    # Research mode: model capability matters more than budget
     if ctx.research_mode:
         return False
     return True
@@ -706,7 +657,7 @@ def _local_preferred(ctx: InferenceContext) -> bool:
 
 def _cloud_preferred(ctx: InferenceContext) -> bool:
     """
-    D211: Cloud preferred when local_preferred is False AND cloud is viable.
+    D234: OR path when local is physically unavailable or research quality required.
     Blocked for background if night mode (D071).
     """
     if ctx.is_background and not ctx.cloud_ok_override:
