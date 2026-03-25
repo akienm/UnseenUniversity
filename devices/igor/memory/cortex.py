@@ -2441,6 +2441,126 @@ class Cortex(IgorBase):
                 ).fetchall()
             return [self._to_memory(r) for r in rows]
 
+    # D233: spreading activation ───────────────────────────────────────────────
+
+    def spreading_activation(
+        self,
+        seed_nodes: list,
+        depth: int = 2,
+        word_graph=None,
+    ) -> dict:
+        """D233: Two-layer spreading activation from seed memory nodes.
+
+        Returns dict[node_id, float] with combined activation heat.
+        Seeds = memory IDs (callers pass TWM top-7 per Miller's Law).
+
+        Layer 1 — word-graph (hop_decay=0.6, feeds predict_next):
+          Seed narratives → word tokenization → wg_edges spreading.
+          Bridge: hot words → memories via wg_word_docs content index.
+          Requires word_graph parameter; skipped when None.
+
+        Layer 2 — memory graph (hop_decay=0.8, feeds cortex.search):
+          Seed IDs → parent/children/links traversal for `depth` hops.
+
+        Activations summed (not max) across seeds and layers.
+        """
+        scores: dict = {}
+        if not seed_nodes:
+            return scores
+
+        _log = logging.getLogger(__name__)
+        _forensic = logging.getLogger("forensic")
+        _MEM_HOP_DECAY = 0.8
+
+        # Seed memories start at 1.0
+        for nid in seed_nodes:
+            scores[nid] = scores.get(nid, 0.0) + 1.0
+
+        # ── Layer 2: memory graph spreading (hop_decay=0.8) ─────────────────
+        try:
+            current_frontier = {nid: 1.0 for nid in seed_nodes}
+            for _ in range(depth):
+                if not current_frontier:
+                    break
+                next_frontier: dict = {}
+                _cached, _miss_ids = self._cache_fetch_ids(
+                    list(current_frontier.keys())
+                )
+                if _miss_ids:
+                    with self._conn() as conn:
+                        _ph = ",".join("?" * len(_miss_ids))
+                        _rows = conn.execute(
+                            f"SELECT {_MEM_COLS_NO_EMBED} FROM memories"
+                            f" WHERE id IN ({_ph})",
+                            _miss_ids,
+                        ).fetchall()
+                    for _row in _rows:
+                        _m = self._to_memory(_row)
+                        self._cache_put(_m)
+                        _cached.append(_m)
+                for m in _cached:
+                    base = current_frontier.get(m.id, 0.0)
+                    spread = base * _MEM_HOP_DECAY
+                    adj: list = []
+                    if getattr(m, "parent_id", None):
+                        adj.append((m.parent_id, spread))
+                    for cid in getattr(m, "children_ids", []) or []:
+                        adj.append((cid, spread))
+                    for lid in getattr(m, "link_ids", []) or []:
+                        adj.append((lid, spread))
+                    for lnk_id, lnk_w in (getattr(m, "links", {}) or {}).items():
+                        adj.append((lnk_id, base * float(lnk_w) * _MEM_HOP_DECAY))
+                    for adj_id, adj_spread in adj:
+                        next_frontier[adj_id] = (
+                            next_frontier.get(adj_id, 0.0) + adj_spread
+                        )
+                for nid, s in next_frontier.items():
+                    scores[nid] = scores.get(nid, 0.0) + s
+                current_frontier = next_frontier
+        except Exception as _bare_e:
+            _log.warning(
+                "bare except in wild_igor/igor/memory/cortex.py"
+                " spreading_activation memory layer: %s",
+                _bare_e,
+            )
+
+        # ── Layer 1: word-graph spreading (hop_decay=0.6) + bridge ──────────
+        if word_graph is not None:
+            try:
+                from ..cognition.word_graph import tokenize
+
+                seed_word_scores: dict = {}
+                for nid in seed_nodes:
+                    m = self.get(nid)
+                    if m and m.narrative:
+                        for w in tokenize(m.narrative):
+                            seed_word_scores[w] = seed_word_scores.get(w, 0.0) + 1.0
+                if seed_word_scores:
+                    wg_activations = word_graph.spread_from_words(
+                        seed_word_scores, hop_decay=0.6, depth=depth
+                    )
+                    doc_activations = word_graph.words_to_doc_ids(wg_activations)
+                    _WG_BRIDGE_SCALE = 0.6
+                    for doc_id, act in doc_activations.items():
+                        scores[doc_id] = (
+                            scores.get(doc_id, 0.0) + act * _WG_BRIDGE_SCALE
+                        )
+                    _forensic.debug(
+                        "[cortex.spreading_activation] wg layer:"
+                        " %d word seeds → %d wg words → %d docs",
+                        len(seed_word_scores),
+                        len(wg_activations),
+                        len(doc_activations),
+                    )
+            except Exception as _bare_e:
+                _log.warning(
+                    "bare except in wild_igor/igor/memory/cortex.py"
+                    " spreading_activation wg layer: %s",
+                    _bare_e,
+                )
+
+        return scores
+
     def _apply_recency_frequency_boost(self, memories: list) -> None:
         """#128 + G45: apply small recency, frequency, inertia, and confidence multipliers."""
         now = datetime.now()
