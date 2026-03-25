@@ -1013,10 +1013,26 @@ class Cortex(IgorBase):
             ).fetchall()
         return [self._to_memory(r) for r in rows]
 
-    def get_by_type(self, memory_type: MemoryType, limit: int = None) -> list:
+    def get_by_type(
+        self,
+        memory_type: MemoryType,
+        limit: int = None,
+        order_by: str = "timestamp",
+    ) -> list:
+        """Get memories by type, optionally ordered by activation_count (T-no-row-scans).
+
+        Args:
+            memory_type: type to filter by
+            limit: max results
+            order_by: 'timestamp' (default, DESC) or 'activation_count' (DESC)
+        """
         sql = f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type = ?"
+        if order_by == "activation_count":
+            sql += " ORDER BY activation_count DESC"
+        elif order_by == "timestamp":
+            sql += " ORDER BY timestamp DESC"
         if limit:
-            sql += f" ORDER BY timestamp DESC LIMIT {int(limit)}"
+            sql += f" LIMIT {int(limit)}"
         with self._conn() as conn:
             rows = conn.execute(sql, (memory_type.value,)).fetchall()
         return [self._to_memory(r) for r in rows]
@@ -1050,6 +1066,48 @@ class Cortex(IgorBase):
             params = (threshold,)
         with self._conn() as conn:
             rows = conn.execute(sql, params).fetchall()
+        return [self._to_memory(r) for r in rows]
+
+    def get_by_type_and_source(
+        self, memory_type: MemoryType, source: str, limit: int | None = None
+    ) -> list:
+        """T-no-row-scans: SQL filter by both type and source.
+
+        Replaces fetch-then-filter pattern for narrative_engine consolidation.
+        """
+        sql = f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type = ? AND source = ?"
+        params = (memory_type.value, source)
+        if limit:
+            sql += f" ORDER BY timestamp DESC LIMIT {int(limit)}"
+        with self._conn() as conn:
+            rows = conn.execute(sql, params).fetchall()
+        return [self._to_memory(r) for r in rows]
+
+    def get_procedural_by_metadata_key(
+        self, key: str, value: str | None = None, limit: int | None = None
+    ) -> list:
+        """T-no-row-scans: SQL filter PROCEDURAL by metadata key.
+
+        Replaces fetch-then-filter pattern for push sources (heartbeat, proactive, scheduler).
+        If value is None, just checks key exists. Otherwise matches value exactly.
+        """
+        sql = f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type = ?"
+        params = [MemoryType.PROCEDURAL.value]
+
+        if value is not None:
+            # Use JSON extraction for exact match (PostgreSQL jsonb->'key' = value)
+            sql += " AND json_extract(metadata, ?) = ?"
+            params.extend([f"$.{key}", value])
+        else:
+            # Just check key exists
+            sql += " AND json_extract(metadata, ?) IS NOT NULL"
+            params.append(f"$.{key}")
+
+        if limit:
+            sql += f" ORDER BY timestamp DESC LIMIT {int(limit)}"
+
+        with self._conn() as conn:
+            rows = conn.execute(sql, tuple(params)).fetchall()
         return [self._to_memory(r) for r in rows]
 
     def add_child(self, parent_id: str, child_id: str):
