@@ -191,6 +191,113 @@ def _conditions_match(conditions: dict, parsed) -> tuple[bool, int]:
     return matched > 0, matched
 
 
+def _apply_intent_gate(
+    habit,
+    parsed_intent: str,
+    author: str | None = None,
+) -> bool:
+    """
+    D201 intent gate: determine if a habit should be scored based on parsed intent and metadata.
+
+    Returns True if the habit passes all gates (should be scored).
+    Returns False if the habit should be skipped due to intent or author filter.
+
+    Gates (in order):
+      1. Threshold habits skip (evaluated separately by ResourceMonitorSource)
+      2. Author filter: skip if habit restricts to a different author
+      3. Action-class skip on question intents: prevent tools from misfiring
+      4. Response habits skip on factual intent (suppress_on_factual_intent flag)
+      5. Response habits skip on knowledge intents (all responses fall through on factual/knowledge)
+    """
+    metadata = habit.metadata or {}
+    h_type = metadata.get("habit_type", "")
+
+    # G-OVN-1a: threshold habits evaluated by ResourceMonitorSource/pre-submit only
+    if h_type == "threshold":
+        return False
+
+    # author_filter: skip if restricted to a different input author
+    _af = metadata.get("author_filter")
+    if _af:
+        _af_list = _af if isinstance(_af, list) else [_af]
+        if author not in _af_list:
+            return False
+
+    # Intent-based gates
+    _QUESTION_INTENTS = frozenset(
+        {
+            "factual_question",
+            "knowledge_request",
+            "meta_question",
+            "explanation_request",
+            "general",
+            "conversation",
+        }
+    )
+    _KNOWLEDGE_INTENTS = frozenset(
+        {"factual_question", "knowledge_request", "memory_verify"}
+    )
+
+    # G-OVN-1b: action-class habits skip on question intents
+    if (
+        h_type in ("action", "proactive", "workflow", "delegation", "reactive")
+        and parsed_intent in _QUESTION_INTENTS
+    ):
+        return False
+
+    # G-OVN-1c: response habits with suppress_on_factual_intent flag
+    if (
+        h_type == "response"
+        and metadata.get("suppress_on_factual_intent")
+        and parsed_intent == "factual_question"
+    ):
+        return False
+
+    # G-OVN-1d: ALL response habits skip on factual/knowledge intents
+    if h_type == "response" and parsed_intent in _KNOWLEDGE_INTENTS:
+        return False
+
+    return True
+
+
+def _apply_specificity_bonus(
+    habit,
+    parsed=None,
+    _wg_scores: dict | None = None,
+    meaning_to_me_context: bool = False,
+) -> float:
+    """
+    Calculate total specificity bonus for a habit.
+
+    Specificity bonus includes:
+      1. conditions_bonus: +0.08 per matched conditions field (D201)
+      2. word_graph_bonus: 0.0–0.10 based on semantic alignment
+      3. meaning_to_me context bonus: +0.05 if habit is personally significant
+
+    Returns the total bonus amount to add to the base score.
+    """
+    if _wg_scores is None:
+        _wg_scores = {}
+
+    bonus = 0.0
+
+    # conditions_bonus: +0.08 per matched conditions field (D201)
+    metadata = habit.metadata or {}
+    conditions = metadata.get("conditions")
+    if conditions and parsed:
+        cond_ok, cond_fields = _conditions_match(conditions, parsed)
+        bonus += cond_fields * 0.08
+
+    # word_graph_bonus: semantic alignment with input
+    bonus += _wg_scores.get(habit.id, 0.0) * 0.10
+
+    # meaning_to_me context bonus: personally significant habits win tiebreaks (#244)
+    if meaning_to_me_context and metadata.get("meaning_to_me"):
+        bonus += 0.05
+
+    return bonus
+
+
 def _score_habit(
     habit,
     raw_lower: str,
@@ -280,9 +387,6 @@ def _score_habit(
     # meaning_to_me_bonus: habits tagged as personally significant get a small boost (#244)
     if metadata.get("meaning_to_me"):
         score += 0.08
-
-    # conditions_bonus: +0.08 per matched conditions field (D201)
-    score += cond_fields * 0.08
 
     # decay_factor: experienced habits decay slower; unused habits fade
     score *= compute_decay_factor(habit, now=now)
@@ -393,25 +497,6 @@ def select_habit(
         now = datetime.now(timezone.utc)
         parsed_intent = getattr(parsed, "intent", "") or ""
 
-        # G-OVN-1: intents where tool-dispatch/threshold habits should never fire.
-        # Threshold habits are evaluated separately by ResourceMonitorSource + pre-submit hook.
-        # Action habits with code_ref should not misfire on question vocabulary.
-        _QUESTION_INTENTS = frozenset(
-            {
-                "factual_question",
-                "knowledge_request",
-                "meta_question",
-                "explanation_request",
-                "general",
-                "conversation",
-            }
-        )
-        # G-OVN-1d: intents where ALL response habits should fall through to LLM + winnow.
-        # Canned response habits must not suppress genuine knowledge queries. (D074 expansion)
-        _KNOWLEDGE_INTENTS = frozenset(
-            {"factual_question", "knowledge_request", "memory_verify"}
-        )
-
         # Word graph pre-score: semantic signal over all habits at once (fast)
         _wg_scores: dict[str, float] = {}
         if _word_graph is not None:
@@ -426,48 +511,18 @@ def select_habit(
         scored = []
         near_misses: list[tuple[float, "Memory"]] = []
         for habit in habits:
-            h_type = habit.metadata.get("habit_type", "")
-            # G-OVN-1a: threshold habits evaluated by ResourceMonitorSource/pre-submit only
-            if h_type == "threshold":
+            # Apply intent gate: skip habits that shouldn't be scored based on intent/author
+            if not _apply_intent_gate(habit, parsed_intent, author=author):
                 continue
-            # author_filter: skip habits restricted to a specific input author.
-            # Prevents CC-only habits (e.g. CC_RUN_BASH) from firing on human messages.
-            # Supports both string ("akien") and list (["akien", "user"]) formats.
-            _af = habit.metadata.get("author_filter")
-            if _af:
-                _af_list = _af if isinstance(_af, list) else [_af]
-                if author not in _af_list:
-                    continue
-            # G-OVN-1b: action-class habits skip on question intents — prevent
-            # PROC_CALENDAR_CREATE, PROC_CLUSTER_SSH_CHECK, PROC_WG_PREPARSE_TUNING etc.
-            # from misfiring when a question mentions their trigger vocabulary.
-            # Fix: removed incorrect `and code_ref` carve-out — ALL action/proactive/workflow/
-            # delegation/reactive habits skip on question intents regardless of code_ref.
-            if (
-                h_type in ("action", "proactive", "workflow", "delegation", "reactive")
-                and parsed_intent in _QUESTION_INTENTS
-            ):
-                continue
-            # G-OVN-1c: response habits flagged suppress_on_factual_intent skip on
-            # factual_question — prevents "I don't know that one" canned responses from
-            # firing when the intent is a genuine knowledge query (#248, bug 3).
-            if (
-                h_type == "response"
-                and habit.metadata.get("suppress_on_factual_intent")
-                and parsed_intent == "factual_question"
-            ):
-                continue
-            # G-OVN-1d: ALL response habits skip on factual_question or knowledge_request.
-            # Canned responses must never suppress genuine knowledge/factual queries;
-            # fall through to LLM + winnow to get a real answer. (D074 expansion, #254)
-            if h_type == "response" and parsed_intent in _KNOWLEDGE_INTENTS:
-                continue
+
             s = _score_habit(habit, raw_lower, keywords, now=now, parsed=parsed)
             if s > 0:  # only apply bonus when trigger matched
-                s += _wg_scores.get(habit.id, 0.0) * 0.10  # word graph bonus: 0.0–0.10
-                # #244: meaning_to_me context bonus — personally significant habits win tiebreaks
-                if meaning_to_me_context and habit.metadata.get("meaning_to_me"):
-                    s += 0.05
+                s += _apply_specificity_bonus(
+                    habit,
+                    parsed=parsed,
+                    _wg_scores=_wg_scores,
+                    meaning_to_me_context=meaning_to_me_context,
+                )
             if s >= threshold:
                 scored.append((s, habit))
             elif s >= THRESHOLD_MIN:
