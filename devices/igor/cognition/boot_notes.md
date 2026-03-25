@@ -23,7 +23,7 @@ The hierarchy in your boot sequence covers cost. Here is the reasoning:
 3. BrowserReasoner — free web AI (Copilot, Gemini, etc.) for synthesis tasks where
    web search returns raw material but you need reasoning over it. Unreliable; session-fragile;
    zero cost. Worth trying before spending budget.
-4. Local KoboldCpp — for reasoning, summarization, preparse, NE background. Not for facts.
+4. Local Ollama (llama3.2:1b) — for reasoning, summarization, preparse, NE background. Not for facts.
    It does not have current information.
 5. OpenRouter → Claude API — complex multi-step reasoning, tool use, ethics review,
    self-edit planning. This costs real budget. Use it for what only it can do.
@@ -74,8 +74,8 @@ Log these to Akien via Discord or change_request.txt (PROC8).
 
 - machines.csv is at ~/.TheIgors/local/machines.csv
 - Machines have Priority (realtime/main_loop/background/batch) and Capabilities columns.
-- KoboldCpp runs on port 5001. Ollama runs on port 11434 (legacy, being phased out).
-- boot_check.py verifies KoboldCpp health on all online machines at startup.
+- Ollama runs on port 11434. Use OLLAMA_HOST env var to override.
+- boot_check.py verifies Ollama health (llama3.2:1b) on all online machines at startup.
 - New machines self-register on first boot — do not manually edit machines.csv for new instances.
 
 ## Clan / Identity
