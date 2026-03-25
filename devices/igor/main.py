@@ -3937,6 +3937,7 @@ class Igor(IgorBase):
         # debug text in responses. Fall through to LLM instead for any habit type
         # that lacks an action/actions key (cognitive, passive_capture, context_inject,
         # interpretive, etc.).
+        # T-habit-metadata-leak: response habits without response_template should also fall through
         if (
             habit
             and not habit.metadata.get("action")
@@ -3946,19 +3947,28 @@ class Igor(IgorBase):
             # Habits that dispatch via code_ref are fine. Habits with no
             # action/actions AND no code_ref have nothing to execute — fall
             # through to LLM rather than emitting "Habit executed. [...]".
-            if not habit.metadata.get("code_ref") and _ht not in (
-                "response",
-                "question",
-                "reactive",
-                "workflow",
-                "delegation",
-                "threshold",
-                "tool",
-                "schema",
+            # Also fall through if it's a response habit without response_template.
+            if not habit.metadata.get("code_ref") and (
+                _ht
+                not in (
+                    "response",
+                    "question",
+                    "reactive",
+                    "workflow",
+                    "delegation",
+                    "threshold",
+                    "tool",
+                    "schema",
+                )
+                or (_ht == "response" and not habit.metadata.get("response_template"))
             ):
                 self.cortex.write_ring(
                     f"HABIT_FALLTHROUGH|id={habit.id}|type={_ht}|reason=no_action_template",
                     category="habit_trace",
+                )
+                log_error(
+                    kind="HABIT_RESPONSE_MISSING_TEMPLATE",
+                    detail=f"response habit {habit.id} has no action/response_template; falling through to LLM",
                 )
                 habit = None
 
@@ -4062,9 +4072,10 @@ class Igor(IgorBase):
 
                     response_text = _random.choice(_actions)
                 else:
-                    response_text = habit.metadata.get(
-                        "action",
-                        f"Habit executed. [{habit.id}: {habit.narrative[:80]}]",
+                    response_text = (
+                        habit.metadata.get("action")
+                        or habit.metadata.get("response_template")
+                        or f"Habit executed. [{habit.id}: {habit.narrative[:80]}]"
                     )
             self.cortex.record_activation(habit.id, 0.05)
             _log_pt(
