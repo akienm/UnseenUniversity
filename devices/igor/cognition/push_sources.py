@@ -13,11 +13,13 @@ Sources:
   SelfObservationSource — watches Igor's own output for inward watch habit patterns (#243)
   CuriositySource       — fires idle-curiosity impulse when TWM has no active focus (#246)
   ConsolidationReplay   — replays FACT_CLOUD nodes during quiet periods, strengthens co-occurrence edges (D228)
+  ThreadCoherenceSource — measures context retention across turns via bg_scoring.top node overlap (T-thread-coherence)
 
 All push via cortex.twm_push(). None of them block or crash the main loop.
 """
 
 import hashlib
+import json
 import os
 import re
 from collections import Counter
@@ -1693,7 +1695,9 @@ class InteroceptionSource(BasePushSource):
                 metrics = cortex._db.get_metrics()
                 db_latency_ms = metrics.get("latency_p50_ms", 0.0) or 0.0
         except Exception as e:
-            log_error(kind="TOOL_FAIL", detail=f"db metrics fetch failed: {e}")  # non-fatal
+            log_error(
+                kind="TOOL_FAIL", detail=f"db metrics fetch failed: {e}"
+            )  # non-fatal
 
         # Inference latency — read from inference_gateway if available
         infer_latency_s = 0.0
@@ -1702,7 +1706,9 @@ class InteroceptionSource(BasePushSource):
 
             infer_latency_s = get_last_latency_s() or 0.0
         except Exception as e:
-            log_error(kind="TOOL_FAIL", detail=f"inference latency fetch failed: {e}")  # non-fatal
+            log_error(
+                kind="TOOL_FAIL", detail=f"inference latency fetch failed: {e}"
+            )  # non-fatal
 
         # Cluster reachability — any machine in machines_json with status ok
         cluster_reachable = False
@@ -1721,7 +1727,9 @@ class InteroceptionSource(BasePushSource):
                     if isinstance(m, dict)
                 )
         except Exception as e:
-            log_error(kind="TOOL_FAIL", detail=f"cluster reachability check failed: {e}")  # non-fatal
+            log_error(
+                kind="TOOL_FAIL", detail=f"cluster reachability check failed: {e}"
+            )  # non-fatal
 
         d_valence, d_arousal, d_dominance, stress = self._compute_vad(
             cpu, mem, disk, db_latency_ms, infer_latency_s, cluster_reachable
@@ -1778,6 +1786,145 @@ class InteroceptionSource(BasePushSource):
         return [obs_id]
 
 
+# ── ThreadCoherenceSource ─────────────────────────────────────────────────────
+
+
+class ThreadCoherenceSource(BasePushSource):
+    """
+    T-thread-coherence: measures conversational context retention across turns.
+
+    After each turn, computes a coherence score by comparing the activated
+    node sets (bg_scoring.top) between consecutive turns on the same thread.
+    Low overlap = thread drift. Pushes THREAD_COHERENCE signal to TWM.
+
+    Substrate: turn_trace.YYYYMMDD.log — reads last 2 entries.
+    Node extraction: bg_scoring.top list (habit IDs + WINNOW_* interpretive memories).
+    Score: weighted Jaccard — sum(min weights) / sum(max weights) over union.
+
+    TWM signal: THREAD_COHERENCE|score=0.xx|shared=N|prev=M|curr=K|drift=yes/no
+      - score >= 0.3  : thread maintained
+      - score <  0.15 : drift detected → PROC_THREAD_DRIFT fires
+
+    Rate-limited: checks every CHECK_INTERVAL_SEC; fires once per new turn.
+    Cross-thread turns skipped (different thread_id = unrelated context).
+    """
+
+    name = "thread_coherence"
+    CHECK_INTERVAL_SEC = 30
+    DRIFT_THRESHOLD = float(os.getenv("IGOR_THREAD_DRIFT_THRESHOLD", "0.15"))
+
+    def __init__(self):
+        self._last_run: Optional[datetime] = None
+        self._last_turn_id: Optional[str] = None
+
+    def _parse_turn_traces(self, log_path: Path) -> list:
+        """Parse turn trace log file. Returns list of trace dicts, oldest first."""
+        try:
+            text = log_path.read_text(encoding="utf-8")
+        except Exception:
+            return []
+        blocks = [b.strip() for b in text.split("=== END ===") if b.strip()]
+        traces = []
+        for block in blocks:
+            brace = block.find("{")
+            if brace == -1:
+                continue
+            try:
+                traces.append(json.loads(block[brace:]))
+            except Exception:
+                pass
+        return traces
+
+    def _extract_nodes(self, trace: dict) -> dict:
+        """Return {node_id: score} from bg_scoring.top."""
+        try:
+            top = trace.get("bg_scoring", {}).get("top", [])
+            return {
+                entry["id"]: float(entry["score"])
+                for entry in top
+                if "id" in entry and "score" in entry
+            }
+        except Exception:
+            return {}
+
+    @staticmethod
+    def weighted_jaccard(a: dict, b: dict) -> float:
+        """Weighted Jaccard similarity: sum(min) / sum(max) over union of keys."""
+        if not a or not b:
+            return 0.0
+        all_keys = set(a) | set(b)
+        numerator = sum(min(a.get(k, 0.0), b.get(k, 0.0)) for k in all_keys)
+        denominator = sum(max(a.get(k, 0.0), b.get(k, 0.0)) for k in all_keys)
+        return numerator / denominator if denominator > 0.0 else 0.0
+
+    def push(self, cortex) -> list:
+        now = datetime.now()
+        if (
+            self._last_run is not None
+            and (now - self._last_run).total_seconds() < self.CHECK_INTERVAL_SEC
+        ):
+            return []
+        self._last_run = now
+
+        # Locate today's (or yesterday's) turn trace log
+        today = now.strftime("%Y%m%d")
+        log_dir = paths().logs
+        log_path = log_dir / f"turn_trace.{today}.log"
+        if not log_path.exists():
+            from datetime import timedelta
+
+            yesterday = (now - timedelta(days=1)).strftime("%Y%m%d")
+            log_path = log_dir / f"turn_trace.{yesterday}.log"
+        if not log_path.exists():
+            return []
+
+        traces = self._parse_turn_traces(log_path)
+        if len(traces) < 2:
+            return []
+
+        curr = traces[-1]
+        prev = traces[-2]
+
+        # Skip if already scored this turn
+        curr_id = curr.get("turn_id")
+        if curr_id and curr_id == self._last_turn_id:
+            return []
+        self._last_turn_id = curr_id
+
+        # Only compare turns on the same thread (different threads = unrelated context)
+        if curr.get("thread_id") != prev.get("thread_id"):
+            return []
+
+        curr_nodes = self._extract_nodes(curr)
+        prev_nodes = self._extract_nodes(prev)
+        if not curr_nodes or not prev_nodes:
+            return []
+
+        score = self.weighted_jaccard(prev_nodes, curr_nodes)
+        shared = len(set(curr_nodes) & set(prev_nodes))
+        is_drift = score < self.DRIFT_THRESHOLD
+
+        obs_id = cortex.twm_push(
+            source=self.name,
+            content_csb=(
+                f"THREAD_COHERENCE|score={score:.3f}|shared={shared}"
+                f"|prev={len(prev_nodes)}|curr={len(curr_nodes)}"
+                f"|drift={'yes' if is_drift else 'no'}"
+            ),
+            salience=0.55 if is_drift else 0.25,
+            urgency=0.45 if is_drift else 0.15,
+            ttl_seconds=180 if is_drift else 90,
+            metadata={
+                "type": "thread_coherence",
+                "score": round(score, 4),
+                "shared_nodes": shared,
+                "curr_turn_id": curr_id,
+                "drift": is_drift,
+            },
+        )
+        return [obs_id]
+
+
 memory_surfacer = MemorySurfacer()
 heartbeat_source = HeartbeatSource()
 user_input_source = UserInputSource()
@@ -1792,6 +1939,7 @@ curiosity_source = CuriositySource()
 boredom_source = BoredomSource()
 interoception_source = InteroceptionSource()
 scheduler_source = SchedulerSource()
+thread_coherence_source = ThreadCoherenceSource()
 consolidation_replay = None  # Lazy loaded to avoid circular import
 
 
@@ -1822,6 +1970,7 @@ def run_background_sources(cortex) -> int:
         boredom_source,
         interoception_source,
         scheduler_source,
+        thread_coherence_source,
         consolidation_replay,
     ):
         try:
