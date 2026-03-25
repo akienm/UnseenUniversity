@@ -1692,8 +1692,8 @@ class InteroceptionSource(BasePushSource):
             if cortex is not None and hasattr(cortex, "_db"):
                 metrics = cortex._db.get_metrics()
                 db_latency_ms = metrics.get("latency_p50_ms", 0.0) or 0.0
-        except Exception:
-            pass
+        except Exception as e:
+            log_error(kind="TOOL_FAIL", detail=f"db metrics fetch failed: {e}")  # non-fatal
 
         # Inference latency — read from inference_gateway if available
         infer_latency_s = 0.0
@@ -1701,8 +1701,8 @@ class InteroceptionSource(BasePushSource):
             from .inference_gateway import get_last_latency_s
 
             infer_latency_s = get_last_latency_s() or 0.0
-        except Exception:
-            pass
+        except Exception as e:
+            log_error(kind="TOOL_FAIL", detail=f"inference latency fetch failed: {e}")  # non-fatal
 
         # Cluster reachability — any machine in machines_json with status ok
         cluster_reachable = False
@@ -1720,8 +1720,8 @@ class InteroceptionSource(BasePushSource):
                     for m in _machines
                     if isinstance(m, dict)
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            log_error(kind="TOOL_FAIL", detail=f"cluster reachability check failed: {e}")  # non-fatal
 
         d_valence, d_arousal, d_dominance, stress = self._compute_vad(
             cpu, mem, disk, db_latency_ms, infer_latency_s, cluster_reachable

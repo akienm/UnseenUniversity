@@ -23,6 +23,7 @@ from typing import Optional
 
 from .registry import Tool, registry
 from ..memory.db_proxy import DatabaseProxy
+from ..cognition.forensic_logger import log_error
 
 # ── Config ──────────────────────────────────────────────────────────────────
 # Soft spending cap (USD) — a local guardrail, not account balance.
@@ -134,8 +135,8 @@ def fetch_openrouter_balance() -> dict | None:
                         result["used"],
                     ),
                 )
-        except Exception:
-            pass  # history write is non-fatal
+        except Exception as e:
+            log_error(kind="TOOL_FAIL", detail=f"history write failed: {e}")  # non-fatal
         return result
     except Exception:
         return None

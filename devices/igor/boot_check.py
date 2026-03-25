@@ -25,6 +25,7 @@ from urllib.request import urlopen, Request
 from urllib.error import URLError
 
 from .paths import paths
+from .cognition.forensic_logger import log_error
 
 MACHINES_JSON = paths().machines_json
 CHANGES_LOG = paths().claudecode / "changes.log"
@@ -191,5 +192,5 @@ def start(cortex=None):
         from .cognition.daemon_supervisor import supervisor as _sup
 
         _sup.register("boot-check", t)
-    except Exception:
-        pass
+    except Exception as e:
+        log_error(kind="TOOL_FAIL", detail=f"daemon supervisor registration failed: {e}")

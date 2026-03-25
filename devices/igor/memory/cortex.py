@@ -22,6 +22,7 @@ import json
 import os
 import sqlite3
 import time
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
@@ -30,6 +31,24 @@ from .models import Memory, MemoryType, MemoryScope, default_scope
 from .scrub import scrub
 from .db_proxy import DatabaseProxy, MEM_COLS, make_home_proxy, make_local_proxy
 from ..igor_base import IgorBase
+from ..cognition.forensic_logger import log_error
+
+
+@dataclass
+class SearchRequest:
+    """Request parameters for cortex.search().
+
+    Encapsulates all search options before D233 lands (spreading-activation scores).
+    """
+
+    query: str
+    limit: int = 10
+    depth: str = "medium"  # "shallow" | "medium" | "deep"
+    emotional_context: Optional[object] = None
+    memory_types: Optional[list] = None
+    word_graph: Optional[object] = None
+    seed_nodes: Optional[list] = field(default_factory=lambda: None)
+    threshold: float = 0.0
 
 
 def _safe_memory_type(value: str) -> MemoryType:
@@ -294,8 +313,10 @@ class Cortex(IgorBase):
                 ):
                     try:
                         conn.execute(_col_sql)
-                    except Exception:
-                        pass  # column already exists
+                    except Exception as e:
+                        log_error(
+                            kind="TOOL_FAIL", detail=f"column creation: {e}"
+                        )  # idempotent
                 # #123: backfill scope from memory_type (idempotent)
                 conn.execute(
                     "UPDATE memories SET scope = 'instance' "
@@ -757,8 +778,10 @@ class Cortex(IgorBase):
             ):
                 try:
                     conn.execute(_col_sql)
-                except Exception:
-                    pass  # column already exists — expected on second+ boot
+                except Exception as e:
+                    log_error(
+                        kind="TOOL_FAIL", detail=f"column creation: {e}"
+                    )  # idempotent
 
             # G-QP2: wal_checkpoint moved to main.py post-Cortex-init (G-QP3)
             # Do NOT checkpoint here — _init_db() runs on every Cortex() instantiation
@@ -1459,8 +1482,8 @@ class Cortex(IgorBase):
 
     def search(
         self,
-        query: str,
-        limit: int = 10,
+        query_or_request: str | SearchRequest,
+        limit: int | None = None,
         emotional_context=None,
         memory_types: list | None = None,
         word_graph=None,
@@ -1468,10 +1491,19 @@ class Cortex(IgorBase):
         """
         Three-phase hybrid search (#172 + change.37 + T-db-type-routing + T-308-hebbian).
 
+        Args:
+          query_or_request: Either a search query string (legacy) or SearchRequest dataclass.
+                           When passed a string, remaining args (limit, emotional_context, etc.)
+                           are used to construct SearchRequest for backwards compatibility.
+          limit: (legacy) limit parameter; ignored if query_or_request is SearchRequest.
+          emotional_context: (legacy) emotional context; ignored if query_or_request is SearchRequest.
+          memory_types: (legacy) memory type filter; ignored if query_or_request is SearchRequest.
+          word_graph: (legacy) word graph for Hebbian bridge; ignored if query_or_request is SearchRequest.
+
         Phase 0 — traversal-first (#172, always runs):
           If TWM has an active attractor, follow graph edges (parent/children/links)
-          from anchor memory nodes to depth=2. Produces association-chain candidates
-          before any similarity computation.
+          from anchor memory nodes to depth=N (where N depends on depth tier).
+          Produces association-chain candidates before any similarity computation.
 
         Phase 1 — text scoring (always runs):
           Naive keyword search over all non-structural memories. Results merged with
@@ -1491,13 +1523,27 @@ class Cortex(IgorBase):
           to candidate scores after Phase 1, and record_retrieval_boost() after
           result selection to feed high-importance retrievals back into the word graph.
         """
+        # Parse arguments: support both legacy string-based and new SearchRequest interface
+        if isinstance(query_or_request, SearchRequest):
+            req = query_or_request
+        else:
+            # Legacy string interface: construct SearchRequest from positional args
+            req = SearchRequest(
+                query=query_or_request,
+                limit=limit if limit is not None else 10,
+                emotional_context=emotional_context,
+                memory_types=memory_types,
+                word_graph=word_graph,
+            )
+
+        query = req.query
         terms = query.lower().split()
         _query_lower = query.lower()
 
         # T-db-type-routing: determine candidate pool type filter
         _routed_types = (
-            memory_types
-            if memory_types is not None
+            req.memory_types
+            if req.memory_types is not None
             else self._route_types_from_query(_query_lower)
         )
         _ALWAYS_EXCLUDE = (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value)
@@ -1599,7 +1645,7 @@ class Cortex(IgorBase):
         try:
             _anchors = self._get_context_anchors()
             if _anchors:
-                _traversal = self.traverse_from(_anchors, depth=2, limit=limit * 2)
+                _traversal = self.traverse_from(_anchors, depth=2, limit=req.limit * 2)
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
                 "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
@@ -1638,17 +1684,17 @@ class Cortex(IgorBase):
             _merged.values(),
             key=lambda m: getattr(m, "relevance_score", 0.0),
             reverse=True,
-        )[: limit * 2]
+        )[: req.limit * 2]
 
         if not candidates:
             return []
 
         # T-308: Hebbian bridge Part 1 — word graph → candidate score boost
-        if word_graph is not None:
+        if req.word_graph is not None:
             try:
                 from ..cognition.hebbian_bridge import wg_boost_search
 
-                _wg_boosts = wg_boost_search(word_graph, query, candidates)
+                _wg_boosts = wg_boost_search(req.word_graph, query, candidates)
                 for _m in candidates:
                     if _m.id in _wg_boosts:
                         _cur = getattr(_m, "relevance_score", 0.0) or 0.0
@@ -1699,19 +1745,21 @@ class Cortex(IgorBase):
 
                 # #66: affect-weighted retrieval — memories encoded in similar
                 # emotional state get a small relevance boost (state-dependent recall)
-                if emotional_context is not None:
+                if req.emotional_context is not None:
                     for sim, m in scored:
                         v_sim = (
                             1.0
                             - abs(
-                                getattr(m, "valence", 0.0) - emotional_context.valence
+                                getattr(m, "valence", 0.0)
+                                - req.emotional_context.valence
                             )
                             / 2.0
                         )
                         a_sim = (
                             1.0
                             - abs(
-                                getattr(m, "arousal", 0.0) - emotional_context.arousal
+                                getattr(m, "arousal", 0.0)
+                                - req.emotional_context.arousal
                             )
                             / 2.0
                         )
@@ -1721,21 +1769,21 @@ class Cortex(IgorBase):
                         reverse=True,
                     )
 
-                result = [m for _, m in scored[:limit]]
+                result = [m for _, m in scored[: req.limit]]
                 # G9: spreading activation — boost graph neighbors
                 result = self._spread_activation(
-                    result, {}, limit, word_graph=word_graph
+                    result, {}, req.limit, word_graph=req.word_graph
                 )
                 self._apply_recency_frequency_boost(result)
                 self._touch_last_accessed(result)
                 # T-308: Hebbian bridge Part 2 — memory → word graph feedback
-                if word_graph is not None:
+                if req.word_graph is not None:
                     try:
                         from ..cognition.hebbian_bridge import record_retrieval_boost
 
-                        _arousal = getattr(emotional_context, "arousal", 0.5) or 0.5
+                        _arousal = getattr(req.emotional_context, "arousal", 0.5) or 0.5
                         for _m in result:
-                            record_retrieval_boost(word_graph, _m, _arousal)
+                            record_retrieval_boost(req.word_graph, _m, _arousal)
                     except Exception as _bare_e:
                         logging.getLogger(__name__).debug(
                             "hebbian record_retrieval_boost skipped: %s", _bare_e
@@ -1765,7 +1813,7 @@ class Cortex(IgorBase):
                     result
                 )  # T-trail-training: Hebbian edge update
                 # #309: reconsolidation flag — high-importance memories go plastic under arousal
-                _rc_arousal = getattr(emotional_context, "arousal", None)
+                _rc_arousal = getattr(req.emotional_context, "arousal", None)
                 self._flag_for_reconsolidation(result, milieu_arousal=_rc_arousal)
                 return result
         except Exception as _bare_e:
@@ -1774,19 +1822,21 @@ class Cortex(IgorBase):
             )
 
         # Phase 1 fallback: candidates already scored + merged (#172); return top N
-        result = candidates[:limit]
+        result = candidates[: req.limit]
         # G9: spreading activation — boost graph neighbors
-        result = self._spread_activation(result, {}, limit, word_graph=word_graph)
+        result = self._spread_activation(
+            result, {}, req.limit, word_graph=req.word_graph
+        )
         self._apply_recency_frequency_boost(result)
         self._touch_last_accessed(result)
         # T-308: Hebbian bridge Part 2 — memory → word graph feedback (Phase 1 fallback)
-        if word_graph is not None:
+        if req.word_graph is not None:
             try:
                 from ..cognition.hebbian_bridge import record_retrieval_boost
 
-                _arousal = getattr(emotional_context, "arousal", 0.5) or 0.5
+                _arousal = getattr(req.emotional_context, "arousal", 0.5) or 0.5
                 for _m in result:
-                    record_retrieval_boost(word_graph, _m, _arousal)
+                    record_retrieval_boost(req.word_graph, _m, _arousal)
             except Exception as _bare_e:
                 logging.getLogger(__name__).debug(
                     "hebbian record_retrieval_boost skipped: %s", _bare_e
@@ -1799,7 +1849,7 @@ class Cortex(IgorBase):
         )  # T-tails-infra: record activation heat
         self._apply_trail_training(result)  # T-trail-training: Hebbian edge update
         # #309: reconsolidation flag — high-importance memories go plastic under arousal
-        _rc_arousal = getattr(emotional_context, "arousal", None)
+        _rc_arousal = getattr(req.emotional_context, "arousal", None)
         self._flag_for_reconsolidation(result, milieu_arousal=_rc_arousal)
         return result
 

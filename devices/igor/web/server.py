@@ -46,6 +46,7 @@ from ..paths import paths
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocket
+from ..cognition.forensic_logger import log_error
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 _INSTANCE_DIR = paths().instance
@@ -812,8 +813,8 @@ def start(stats_fn=None, cortex_fn=None, igor_fn=None):
         from ..cognition.daemon_supervisor import supervisor as _sup
 
         _sup.register("web-server", _server_thread, health_fn=is_running)
-    except Exception:
-        pass
+    except Exception as e:
+        log_error(kind="TOOL_FAIL", detail=f"daemon supervisor registration failed: {e}")
 
     # When SSL is active, also serve plain HTTP on port+1 for LAN access.
     # e.g. http://10.0.0.229:8081/ works without cert warnings.
