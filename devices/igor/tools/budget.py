@@ -41,10 +41,11 @@ _BALANCE_CACHE_TTL_SEC = 3600
 _balance_cache: dict = {}  # keys: purchased, used, balance, fetched_at
 
 
-# ── DB path (same directory as main memory DB) ────────────────────────────
+# ── DB path — instance dir, not source tree ──────────────────────────────
 def _db_path() -> Path:
-    base = os.getenv("IGOR_DB_PATH", "memory/igor.db")
-    return Path(base).parent / "claude_budget.db"
+    from ..paths import paths as _paths
+
+    return _paths().instance / "claude_budget.db"
 
 
 _BUDGET_PROXY: Optional[DatabaseProxy] = None
