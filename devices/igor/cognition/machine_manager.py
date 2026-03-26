@@ -90,9 +90,57 @@ class MachineRecord:
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
 
+_schema_ensured = False
+
+
+def _ensure_schema() -> None:
+    """Create machines table if it doesn't exist (idempotent, runs once per process)."""
+    global _schema_ensured
+    if _schema_ensured:
+        return
+    import psycopg2
+
+    try:
+        conn = psycopg2.connect(_DB_URL)
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS machines (
+                hostname        TEXT PRIMARY KEY,
+                display_name    TEXT,
+                ip              TEXT,
+                os              TEXT DEFAULT 'linux',
+                cpu             TEXT,
+                ram_gb          INTEGER,
+                gpu             TEXT,
+                storage         TEXT,
+                hardware_model  TEXT,
+                network_type    TEXT DEFAULT 'wifi',
+                status          TEXT DEFAULT 'online',
+                ollama_port     INTEGER DEFAULT 11434,
+                ollama_model    TEXT DEFAULT 'llama3.2:1b',
+                ollama_model_batch TEXT,
+                inference_rank  INTEGER,
+                in_use_hours    JSONB DEFAULT '[]',
+                in_use_until    TEXT,
+                roles           JSONB DEFAULT '[]',
+                aliases         JSONB DEFAULT '[]',
+                ssh_enabled     BOOLEAN DEFAULT false,
+                ssh_user        TEXT DEFAULT 'igor_wild_0001',
+                notes           TEXT,
+                updated_at      TEXT DEFAULT to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS')
+            )
+        """)
+        conn.commit()
+        conn.close()
+        _schema_ensured = True
+        _log.debug("[machine_manager] machines table ready")
+    except Exception as exc:
+        _log.error("[machine_manager] _ensure_schema failed: %s", exc)
+
 
 def _fetch_machines() -> list[MachineRecord]:
     """Load all machines from DB, ordered by inference_rank."""
+    _ensure_schema()
     import psycopg2
 
     try:
