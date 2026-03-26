@@ -156,11 +156,19 @@ class IgorBase:
     def log(self) -> "_EmergencySafeLogger":
         """
         Lazy per-class logger with emergency stderr fallback.
-        Replaces scattered logging.getLogger(__name__) calls.
+        Logger name is the module path (igor.cognition.narrative_engine) so
+        Python's logging hierarchy routes records to the correct area handler.
         Usage: self.log.debug("something happened")
         """
         if not self.__class__._logger:
-            self.__class__._logger = get_logger(self.__class__.__name__)
+            _module = type(self).__module__ or ""
+            # Strip wild_igor. prefix so names sit under igor.* hierarchy
+            _name = (
+                _module[len("wild_igor.") :]
+                if _module.startswith("wild_igor.")
+                else (_module or self.__class__.__name__)
+            )
+            self.__class__._logger = get_logger(_name)
         return self.__class__._logger
 
     # ── Performance tracking ──────────────────────────────────────────────────

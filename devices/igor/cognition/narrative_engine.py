@@ -709,9 +709,9 @@ class NarrativeEngine(IgorBase):
                 )
 
         if summary:
-            print(f"{_cts()}[NE] arc: {summary[:240]}")
+            self.log.info("[NE] arc: %s", summary[:240])
         if verbose and promoted > 0:
-            print(f"{_cts()}[NE] promoted={promoted} to LTM")
+            self.log.debug("[NE] promoted=%d to LTM", promoted)
 
         # 5. Push action impulses back into TWM so they can be acted on
         # Dedup: don't re-push an impulse whose action keywords already appear in a

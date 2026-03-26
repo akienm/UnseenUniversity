@@ -66,6 +66,11 @@ from .paths import paths as _paths
 
 console = Console()
 
+# Wire the igor.* logging hierarchy — console + per-area file handlers (#343)
+from .logging_setup import setup_logging as _setup_logging
+
+_setup_logging(_paths().logs)
+
 
 def loginfo(msg, **kw):
     """

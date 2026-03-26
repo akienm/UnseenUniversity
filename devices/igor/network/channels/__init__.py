@@ -27,6 +27,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 
+from ...igor_base import IgorBase
+
 # Lazy imports for circular dependency avoidance
 import sys
 from importlib import import_module
@@ -87,12 +89,14 @@ class ChannelFailure:
 # ── Channel Base Class ────────────────────────────────────────────────────
 
 
-class Channel(ABC):
+class Channel(ABC, IgorBase):
     """
     Abstract acquisition channel.
 
     Each channel implements a single acquire method that maps a query
     to content or reports failure.
+
+    Inherits IgorBase: self.log routes to igor.network.* hierarchy automatically.
     """
 
     def __init__(
@@ -118,6 +122,7 @@ class Channel(ABC):
         max_attempts: Retry count
         backoff_sec: Backoff seconds between retries
         """
+        IgorBase.__init__(self)
         self.name = name
         self.constraints = constraints
         self.cost_per_call_usd = cost_per_call_usd
