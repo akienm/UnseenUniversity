@@ -1557,6 +1557,47 @@ class Igor(IgorBase):
             if ids:
                 lines.append(f"near-miss habits: {ids}")
 
+        # ── Pending actions (prospective memory) ───────────────────────────────
+        # Read recent pending_action ring entries. For each tool: if a RESOLVED entry
+        # exists, surface it in place of the PENDING — so Igor sees what just completed
+        # rather than an open intent. Resolved entries age out naturally after ~1 turn.
+        try:
+            _pa_entries = self.cortex.read_ring_memory(
+                limit=10, category="pending_action"
+            )
+            if _pa_entries:
+                # Map tool_name → most recent resolved result
+                _resolved: dict[str, str] = {}
+                for _e in _pa_entries:
+                    _c = _e.get("content", "")
+                    if _c.startswith("RESOLVED|"):
+                        _parts = _c.split("|", 2)
+                        if len(_parts) >= 2:
+                            _resolved[_parts[1]] = _c
+                # Build display: PENDING replaced by RESOLVED where available
+                _intent_lines = []
+                _seen: set[str] = set()
+                for _e in reversed(_pa_entries):
+                    _c = _e.get("content", "")
+                    if not _c.startswith("PENDING_ACTION|"):
+                        continue
+                    _parts = _c.split("|", 2)
+                    if len(_parts) < 2:
+                        continue
+                    _tname = _parts[1]
+                    if _tname in _seen:
+                        continue
+                    _seen.add(_tname)
+                    if _tname in _resolved:
+                        _intent_lines.append(f"  {_resolved[_tname][:150]}")
+                    else:
+                        _intent_lines.append(f"  {_c[:150]}")
+                if _intent_lines:
+                    lines.append("open intents:")
+                    lines.extend(_intent_lines[-3:])
+        except Exception:
+            pass
+
         return "\n".join(lines)
 
     def _try_habit_tiebreaker(
@@ -2522,6 +2563,7 @@ class Igor(IgorBase):
         self._current_action = "parsing"
         self._current_tier = ""
         web_server.broadcast_activity(self._activity_state())
+        console.print(f"[dim]{_cts()}[→] parsing[/]")
 
         try:
             return self._process_inner(
@@ -3019,6 +3061,7 @@ class Igor(IgorBase):
                 # #50: merge NE predicted search keys — topics the NE predicted before input arrived
                 if _ne_search_keys:
                     _search_query = _search_query + " " + " ".join(_ne_search_keys)
+                console.print(f"[dim]{_cts()}[→] memory search[/]")
                 candidates = self.cortex.search(
                     _search_query.strip(), emotional_context=_milieu_state
                 )
@@ -3032,6 +3075,7 @@ class Igor(IgorBase):
 
             self._current_action = "preparse"
             web_server.broadcast_activity(self._activity_state())
+            console.print(f"[dim]{_cts()}[→] preparse (LLM)[/]")
             # Inference gateway routes preparse: local Ollama → OR cheap fallback.
             # cloud_mode active → OR directly. Gateway handles all routing decisions.
             from .cognition.inference_gateway import (
@@ -4157,6 +4201,7 @@ class Igor(IgorBase):
                     self._current_action = "reasoning"
                     self._current_tier = t
                     web_server.broadcast_activity(self._activity_state())
+                    console.print(f"[dim]{_cts()}[→] reasoning ({t})[/]")
 
                 if is_impulse:
                     # #29: PROACTIVE_HABIT impulses stay local (batch pool, quality priority)
@@ -4351,6 +4396,10 @@ class Igor(IgorBase):
                 console.print(
                     f"[dim cyan][TOOL] dispatch → {_tool_name}  args={list(_tool_kwargs.keys())}[/]"
                 )
+                self.cortex.write_ring(
+                    f"PENDING_ACTION|{_tool_name}|args={list(_tool_kwargs.keys())}",
+                    category="pending_action",
+                )
                 response_text = _cleaned
                 try:
                     from .tools.registry import registry as _tool_reg
@@ -4360,17 +4409,77 @@ class Igor(IgorBase):
                         f"[dim cyan][TOOL] {_tool_name} ✓  result={str(_tool_result)[:200]}[/]"
                     )
                     self.cortex.write_ring(
+                        f"RESOLVED|{_tool_name}|{str(_tool_result)[:300]}",
+                        category="pending_action",
+                    )
+                    self.cortex.write_ring(
                         f"TOOL_RESULT|{_tool_name}|{str(_tool_result)[:500]}",
                         category="tool_result",
                     )
-                    if response_text:
-                        response_text = f"{response_text}\n\n[{_tool_name} result: {str(_tool_result)[:400]}]"
-                    else:
+                    # Second-pass synthesis: feed tool result back through local reasoning
+                    # so Igor actually responds to what the tool returned, not his prior guess.
+                    console.print(
+                        f"[dim cyan][TOOL] synthesizing result → local pass[/]"
+                    )
+                    try:
+                        from .brainstem.core_patterns import get_core_patterns as _gcp
+
+                        _synth_prompt = (
+                            f"[TOOL_RESULT]\n"
+                            f"Tool: {_tool_name}\n"
+                            f"Result:\n{str(_tool_result)[:2000]}\n\n"
+                            f"[ORIGINAL_REQUEST]\n{user_input}\n\n"
+                            f"Report ONLY what the tool actually returned above. "
+                            f"Do NOT add, infer, or expand beyond the actual result. "
+                            f"If content is sparse, a macro placeholder, or XML storage format, say so. "
+                            f"Quote the actual content or links verbatim."
+                        )
+                        _synth_text, _synth_cost, _ = self._gateway.reason(
+                            _synth_prompt,
+                            relevant,
+                            _gcp(self.cortex),
+                            level="interactive",
+                            cortex=self.cortex,
+                            instance_id=self.instance_id,
+                            thread_id=thread_id,
+                            local_only=True,
+                            is_user_turn=True,
+                            complexity=(
+                                getattr(parsed, "complexity", "medium")
+                                if parsed
+                                else "medium"
+                            ),
+                        )
+                        _synth_ok = _synth_text and not any(
+                            _synth_text.startswith(p)
+                            for p in (
+                                "⚠",
+                                "I'm operating in local-only",
+                                "I'm operating in",
+                            )
+                        )
+                        if _synth_ok:
+                            response_text = _synth_text
+                            console.print(
+                                f"[dim cyan][TOOL] synthesis done ({len(_synth_text)} chars)[/]"
+                            )
+                        else:
+                            # Synthesis failed — drop _cleaned (may contain LLM speculation)
+                            # and show only the actual tool result.
+                            response_text = (
+                                f"[{_tool_name} result: {str(_tool_result)[:800]}]"
+                            )
+                    except Exception as _se:
+                        log_error(kind="TOOL_SYNTH", detail=f"{_tool_name}: {_se}")
                         response_text = (
-                            f"[{_tool_name} result: {str(_tool_result)[:400]}]"
+                            f"[{_tool_name} result: {str(_tool_result)[:800]}]"
                         )
                 except Exception as _te:
                     console.print(f"[yellow][TOOL] {_tool_name} ✗  {_te}[/]")
+                    self.cortex.write_ring(
+                        f"RESOLVED|{_tool_name}|ERROR: {str(_te)[:200]}",
+                        category="pending_action",
+                    )
                     log_error(kind="LLM_TOOL_DISPATCH", detail=f"{_tool_name}: {_te}")
 
         # ── G31 / #158: TASK_SET completion detection — keyword fast-path + semantic ─
