@@ -708,10 +708,10 @@ class NarrativeEngine(IgorBase):
                     thread_id=_narrative_thread_id,
                 )
 
-        if verbose and (promoted > 0 or summary):
-            print(
-                f"{_cts()}[NE] promoted={promoted} to LTM | summary: {summary[:80]}..."
-            )
+        if summary:
+            print(f"{_cts()}[NE] arc: {summary[:240]}")
+        if verbose and promoted > 0:
+            print(f"{_cts()}[NE] promoted={promoted} to LTM")
 
         # 5. Push action impulses back into TWM so they can be acted on
         # Dedup: don't re-push an impulse whose action keywords already appear in a
