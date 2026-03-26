@@ -44,6 +44,7 @@ from . import (
     routing_tools,
     graph_write,
     self_trainer,
+    output_trainer,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
