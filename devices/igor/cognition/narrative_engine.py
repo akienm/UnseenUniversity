@@ -469,28 +469,47 @@ class NarrativeEngine(IgorBase):
                     detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
                 )
 
-        # Call LLM: reasoning cache first, then inference gateway (NE purpose).
-        # Gateway routes: cloud_mode active → OR; local NE model set → Ollama → OR fallback.
-        result = self._call_inference(prompt, max_twm_id)
-        if result is None:
-            if verbose:
-                print("[NE] Cloud NE call failed — skipping this cycle.")
-            try:
-                from .forensic_logger import log_anomaly as _la
+        # Always write deterministic arc — no inference needed, always current.
+        _det_arc = self._build_deterministic_arc(obs_list)
+        if _det_arc:
+            _arc_thread_id = None
+            _tc: dict = {}
+            for _o in obs_list:
+                _tid = _o.get("thread_id")
+                if _tid:
+                    _tc[_tid] = _tc.get(_tid, 0) + 1
+            if _tc:
+                _arc_thread_id = max(_tc, key=_tc.get)
+            self.cortex.write_ring(
+                f"[NE#{self._run_count + 1}] {_det_arc}",
+                category="narrative",
+                thread_id=_arc_thread_id,
+            )
+            self.log.info("[NE] arc: %s", _det_arc)
 
-                _la(kind="NE_FAIL", detail="all_local_and_cloud_failed")
-            except Exception as _bare_e:
-                log_error(
-                    kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+        # LLM path: LTM promotion + action impulses.
+        # Gated by IGOR_NE_LLM_ENABLED (default false — det arc sufficient for now).
+        promoted, impulses, _pe_promoted_ids = 0, [], []
+        result = None
+
+        if os.getenv("IGOR_NE_LLM_ENABLED", "false").lower() == "true":
+            result = self._call_inference(prompt, max_twm_id)
+            if result is None:
+                if verbose:
+                    print("[NE] LLM call failed — arc written, skipping promotion.")
+                try:
+                    from .forensic_logger import log_anomaly as _la
+
+                    _la(kind="NE_FAIL", detail="all_local_and_cloud_failed")
+                except Exception as _bare_e:
+                    log_error(
+                        kind="BARE_EXCEPT",
+                        detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                    )
+            else:
+                promoted, impulses, _pe_promoted_ids = self._apply_output(
+                    result, obs_list, verbose=verbose
                 )
-            self._last_run = datetime.now()
-            return None
-
-        # Process NE output
-        promoted, impulses, _pe_promoted_ids = self._apply_output(
-            result, obs_list, verbose=verbose
-        )
 
         # D228 step 2: prediction error → per-turn graph training
         if _pe_seed_ids and _pe_predicted_heat and _pe_promoted_ids:
@@ -499,7 +518,8 @@ class NarrativeEngine(IgorBase):
             )
 
         # #236: update traversal cursor after output is applied (knows actual promoted count)
-        self._update_cursor(result, promoted)
+        if result is not None:
+            self._update_cursor(result, promoted)
 
         self._last_run = datetime.now()
         self._run_count += 1
@@ -908,6 +928,41 @@ class NarrativeEngine(IgorBase):
             total += line_len
         dropped = len(obs_list) - len(kept_reversed)
         return list(reversed(kept_reversed)), dropped
+
+    def _build_deterministic_arc(self, obs_list: list) -> str:
+        """
+        Build a narrative arc from current state without any LLM call.
+        Uses top observations by sort weight + milieu valence.
+        Written every NE cycle — always current, zero inference cost.
+        """
+        if not obs_list:
+            return ""
+        # Extract content snippets from top 3 observations
+        snippets = []
+        for obs in obs_list[:3]:
+            raw = obs.get("content_csb", "")
+            # Strip category prefix (e.g. "USER_INPUT|" → keep rest)
+            if "|" in raw:
+                raw = raw.split("|", 1)[-1]
+            snippet = raw[:80].strip()
+            if snippet:
+                snippets.append(snippet)
+        if not snippets:
+            return ""
+        # Optionally enrich with milieu valence
+        _valence_str = ""
+        try:
+            _mil = __import__("igor.cognition.milieu", fromlist=["get"]).get()
+            _ms = _mil.get_state() if _mil else None
+            if _ms:
+                _v = _ms.valence
+                _valence_str = (
+                    " (positive)" if _v > 0.3 else " (negative)" if _v < -0.3 else ""
+                )
+        except Exception:
+            pass
+        focus = "; ".join(snippets)
+        return f"Igor is engaged with{_valence_str}: {focus}."
 
     def _get_last_narrative(self) -> str:
         """Fetch the last NE narrative fragment from ring_memory for continuity."""

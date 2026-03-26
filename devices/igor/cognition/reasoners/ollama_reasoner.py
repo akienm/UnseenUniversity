@@ -572,6 +572,7 @@ class OllamaReasoner(LocalReasoner):
                                     "content": user_input + memory_context,
                                 },
                             ],
+                            keep_alive=-1,  # pin model in VRAM — no cold-start on next call
                         ),
                         None,
                     )
