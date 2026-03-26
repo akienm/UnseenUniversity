@@ -241,13 +241,12 @@ def _call_local_llm(prompt: str) -> Optional[dict]:
     """Call Ollama to synthesize a distillation candidate."""
     try:
         import ollama as _ollama
+        from .cluster_router import route as _route
 
-        _host = os.getenv(
-            "OLLAMA_REASONING_HOST", os.getenv("OLLAMA_HOST", "http://localhost:11434")
-        )
-        _model = os.getenv(
-            "OLLAMA_REASONING_MODEL", os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b")
-        )
+        _host, _model = _route("extraction")
+        if not _host:
+            _host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+            _model = os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b")
         _client = _ollama.Client(host=_host)
         response = _client.chat(
             model=_model,

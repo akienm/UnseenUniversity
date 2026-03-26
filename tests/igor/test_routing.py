@@ -1,463 +1,337 @@
 """
-test_routing.py — Tests for D211 cluster router: score formula, in_use_now, route_batch.
+test_routing.py — Tests for #342 simplified router: machine_manager + cluster_router.
 
-Uses temp files to avoid touching live machine_overrides.json.
-No network calls — probing is bypassed by pre-setting machine state.
+No network calls — DB and Ollama probing are mocked throughout.
 """
 
-import json
 import sys
-import os
-import tempfile
 import unittest
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-# Ensure project root is on path
 sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
-from igor.cognition.cluster_router import (
-    MachineInfo,
-    ClusterRouter,
-    _response_time_to_score,
-    _NETWORK_WEIGHT,
-    _ram_weight,
-)
+from igor.cognition.machine_manager import MachineRecord
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
 
-def _healthy_machine(**kwargs) -> MachineInfo:
-    """Return a healthy MachineInfo with sensible defaults."""
-    defaults = dict(
-        name="test",
-        ollama_host="http://10.0.0.1:11434",
-        primary_model="qwen2.5:7b",
-        reasoning_model="deepseek-r1:7b",
-        is_local=False,
-        hostname="testhost",
-        network_type="wired",
-        ram_gb=32,
-        is_db_host=False,
-        healthy=True,
-        load_score=1.0,
-        active_models=0,
-        response_ms=50.0,
+def _machine(
+    hostname="testhost",
+    ip="10.0.0.1",
+    inference_rank=1,
+    in_use_hours=None,
+    in_use_until=None,
+    status="online",
+    ollama_model="llama3.2:1b",
+    ollama_model_batch=None,
+    network_type="wired",
+    ram_gb=32,
+    roles=None,
+    aliases=None,
+) -> MachineRecord:
+    return MachineRecord(
+        hostname=hostname,
+        display_name=hostname,
+        ip=ip,
+        os="linux",
+        cpu="i7",
+        ram_gb=ram_gb,
+        network_type=network_type,
+        status=status,
+        ollama_port=11434,
+        ollama_model=ollama_model,
+        ollama_model_batch=ollama_model_batch,
+        inference_rank=inference_rank,
+        in_use_hours=in_use_hours or [],
+        in_use_until=in_use_until,
+        roles=roles or [],
+        aliases=aliases or [],
+        ssh_enabled=False,
+        ssh_user=None,
+        notes=None,
     )
-    defaults.update(kwargs)
-    return MachineInfo(**defaults)
 
 
-# ── _response_time_to_score ───────────────────────────────────────────────────
+# ── MachineRecord ─────────────────────────────────────────────────────────────
 
 
-class TestResponseTimeScore(unittest.TestCase):
-    def test_fast_idle(self):
-        s = _response_time_to_score(0, 0)
-        self.assertAlmostEqual(s, 1.0)
+class TestMachineRecord(unittest.TestCase):
+    def test_ollama_host_with_ip(self):
+        m = _machine(ip="10.0.0.99")
+        self.assertEqual(m.ollama_host, "http://10.0.0.99:11434")
 
-    def test_2000ms_zero(self):
-        s = _response_time_to_score(2000, 0)
-        self.assertAlmostEqual(s, 0.0)
+    def test_ollama_host_no_ip(self):
+        m = _machine(ip=None)
+        self.assertIn("localhost", m.ollama_host)
 
-    def test_active_inference_penalty(self):
-        # 4 active models → penalty = min(4×0.25, 1.0) = 1.0 → score 0
-        s = _response_time_to_score(0, 4)
-        self.assertAlmostEqual(s, 0.0)
+    def test_model_for_extraction_prefers_batch(self):
+        m = _machine(ollama_model="llama3.2:1b", ollama_model_batch="qwen2.5:14b")
+        self.assertEqual(m.model_for("extraction"), "qwen2.5:14b")
+        self.assertEqual(m.model_for("batch"), "qwen2.5:14b")
 
-    def test_partial_penalty(self):
-        # 1 active model at 0ms: latency=1.0, penalty=0.25 → 0.75
-        s = _response_time_to_score(0, 1)
-        self.assertAlmostEqual(s, 0.75)
-
-    def test_combined_latency_and_active(self):
-        # 500ms = latency 0.75; 1 active = penalty 0.25 → 0.75 * 0.75 = 0.5625
-        s = _response_time_to_score(500, 1)
-        self.assertAlmostEqual(s, 0.5625)
+    def test_model_for_other_uses_default(self):
+        m = _machine(ollama_model="llama3.2:1b", ollama_model_batch="qwen2.5:14b")
+        self.assertEqual(m.model_for("tier2"), "llama3.2:1b")
+        self.assertEqual(m.model_for("preparse"), "llama3.2:1b")
 
 
-# ── MachineInfo.score ─────────────────────────────────────────────────────────
+# ── is_in_use ─────────────────────────────────────────────────────────────────
 
 
-class TestMachineScore(unittest.TestCase):
-    def test_unhealthy_returns_zero(self):
-        m = _healthy_machine(healthy=False)
-        self.assertEqual(m.score("local"), 0.0)
+class TestIsInUse(unittest.TestCase):
+    """Tests for machine_manager.is_in_use — mocks get_machine."""
 
-    def test_cannot_serve_returns_zero(self):
-        # embeddings always requires is_local=True
-        m = _healthy_machine(is_local=False)
-        self.assertEqual(m.score("embeddings"), 0.0)
+    def _run(self, m: MachineRecord) -> bool:
+        from igor.cognition.machine_manager import is_in_use
 
-    def test_full_score_wired_32gb_no_db(self):
-        m = _healthy_machine(
-            load_score=1.0, network_type="wired", ram_gb=32, is_db_host=False
-        )
-        # network=1.0, ram=1.0, db=1.0, capability=1.0, override=1.0
-        self.assertAlmostEqual(m.score("local"), 1.0)
+        with patch("igor.cognition.machine_manager.get_machine", return_value=m):
+            with patch("igor.cognition.machine_manager._write_override"):
+                return is_in_use(m.hostname)
 
-    def test_wifi_reduces_score(self):
-        m = _healthy_machine(load_score=1.0, network_type="wifi")
-        # 1.0 * 0.7 * 1.0 * 1.0 = 0.7
-        self.assertAlmostEqual(m.score("local"), 0.7)
+    def test_no_hours_no_override_available(self):
+        m = _machine(in_use_hours=[], in_use_until=None)
+        self.assertFalse(self._run(m))
 
-    def test_16gb_ram_weight(self):
-        m = _healthy_machine(load_score=1.0, network_type="wired", ram_gb=16)
-        # 1.0 * 1.0 * 0.8 * 1.0 = 0.8
-        self.assertAlmostEqual(m.score("local"), 0.8)
+    def test_indefinite_override_blocks(self):
+        m = _machine(in_use_until="indefinite")
+        self.assertTrue(self._run(m))
 
-    def test_8gb_ram_weight(self):
-        m = _healthy_machine(load_score=1.0, network_type="wired", ram_gb=8)
-        # 1.0 * 1.0 * 0.5 = 0.5
-        self.assertAlmostEqual(m.score("local"), 0.5)
-
-    def test_db_host_penalty(self):
-        m = _healthy_machine(
-            load_score=1.0, network_type="wired", ram_gb=32, is_db_host=True
-        )
-        # db_penalty = 0.2
-        self.assertAlmostEqual(m.score("local"), 0.2)
-
-    def test_override_bonus(self):
-        m = _healthy_machine(
-            name="yoga", load_score=1.0, network_type="wired", ram_gb=32
-        )
-        score_with = m.score("local", override_name="yoga")
-        score_without = m.score("local", override_name="")
-        self.assertAlmostEqual(score_with / score_without, 2.0)
-
-    def test_reasoning_without_reasoning_model(self):
-        m = _healthy_machine(
-            reasoning_model="", load_score=1.0, network_type="wired", ram_gb=32
-        )
-        # capability_score = 0.5 for reasoning calls without reasoning model
-        s = m.score("tier2")
-        self.assertAlmostEqual(s, 0.5)
-
-    def test_reasoning_with_reasoning_model(self):
-        m = _healthy_machine(
-            reasoning_model="deepseek-r1:7b",
-            load_score=1.0,
-            network_type="wired",
-            ram_gb=32,
-        )
-        s = m.score("tier2")
-        self.assertAlmostEqual(s, 1.0)
-
-    def test_load_reduces_score(self):
-        m = _healthy_machine(load_score=0.5, network_type="wired", ram_gb=32)
-        self.assertAlmostEqual(m.score("local"), 0.5)
-
-
-class TestInUseNowInScore(unittest.TestCase):
-    """Score returns 0.0 when in_use_now() is True."""
-
-    def test_in_use_zeros_score(self):
-        m = _healthy_machine(hostname="testhost", load_score=1.0)
-        with patch("igor.cognition.cluster_router.MachineInfo.score") as mock_score:
-            # We test the real path: in_use_now import and call
-            pass
-
-        # Patch at the import path used inside cluster_router
-        with patch("igor.tools.routing_tools.in_use_now", return_value=True):
-            # Re-import to pick up patch isn't easy with nested imports;
-            # instead test via ClusterRouter.route
-            pass
-
-    def test_in_use_now_clears_score_via_patch(self):
-        """score() returns 0 when in_use_now() returns True for the machine hostname."""
-        m = _healthy_machine(hostname="busyhost", load_score=1.0)
-        # Patch in_use_now at the location cluster_router imports it from
-        with patch("igor.tools.routing_tools.in_use_now", return_value=True):
-            result = m.score("local")
-        self.assertEqual(result, 0.0)
-
-        with patch("igor.tools.routing_tools.in_use_now", return_value=False):
-            result = m.score("local")
-        self.assertGreater(result, 0.0)
-
-
-# ── in_use_now ────────────────────────────────────────────────────────────────
-
-
-class TestInUseNow(unittest.TestCase):
-    """Tests for routing_tools.in_use_now — uses temp files."""
-
-    def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.tmp_path = Path(self.tmp.name)
-        self.machines_json = self.tmp_path / "machines.json"
-        self.overrides_json = self.tmp_path / "machine_overrides.json"
-
-    def tearDown(self):
-        self.tmp.cleanup()
-
-    def _patch_paths(self, fn):
-        """Decorator-style: run fn with routing_tools paths patched to tmp."""
-        import igor.tools.routing_tools as rt
-
-        orig_machines = rt._MACHINES_JSON
-        orig_overrides = rt._OVERRIDES_JSON
-        rt._MACHINES_JSON = self.machines_json
-        rt._OVERRIDES_JSON = self.overrides_json
-        try:
-            return fn()
-        finally:
-            rt._MACHINES_JSON = orig_machines
-            rt._OVERRIDES_JSON = orig_overrides
-
-    def _write_machines(self, machines: list[dict]):
-        self.machines_json.write_text(json.dumps({"machines": machines}))
-
-    def _write_overrides(self, data: dict):
-        self.overrides_json.write_text(json.dumps(data))
-
-    def test_no_override_no_windows_returns_false(self):
-        self._write_machines(
-            [{"hostname": "testhost", "in_use_hours": [], "aliases": []}]
-        )
-
-        def run():
-            from igor.tools.routing_tools import in_use_now
-
-            return in_use_now("testhost")
-
-        result = self._patch_paths(run)
-        self.assertFalse(result)
-
-    def test_indefinite_override_returns_true(self):
-        self._write_machines(
-            [{"hostname": "testhost", "in_use_hours": [], "aliases": []}]
-        )
-        self._write_overrides({"testhost": {"in_use": True, "until": None}})
-
-        def run():
-            from igor.tools.routing_tools import in_use_now
-
-            return in_use_now("testhost")
-
-        result = self._patch_paths(run)
-        self.assertTrue(result)
-
-    def test_expired_override_returns_false(self):
-        self._write_machines(
-            [{"hostname": "testhost", "in_use_hours": [], "aliases": []}]
-        )
-        past = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
-        self._write_overrides({"testhost": {"in_use": True, "until": past}})
-
-        def run():
-            from igor.tools.routing_tools import in_use_now
-
-            return in_use_now("testhost")
-
-        result = self._patch_paths(run)
-        self.assertFalse(result)
-
-    def test_future_override_returns_true(self):
-        self._write_machines(
-            [{"hostname": "testhost", "in_use_hours": [], "aliases": []}]
-        )
+    def test_future_override_blocks(self):
         future = (datetime.now(timezone.utc) + timedelta(hours=2)).isoformat()
-        self._write_overrides({"testhost": {"in_use": True, "until": future}})
+        m = _machine(in_use_until=future)
+        self.assertTrue(self._run(m))
 
-        def run():
-            from igor.tools.routing_tools import in_use_now
-
-            return in_use_now("testhost")
-
-        result = self._patch_paths(run)
-        self.assertTrue(result)
+    def test_expired_override_clears_and_returns_false(self):
+        past = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+        m = _machine(in_use_until=past)
+        # Expired → should return False (and write None to clear)
+        result = self._run(m)
+        self.assertFalse(result)
 
     def test_in_use_hours_window_active(self):
-        """When current hour falls inside an in_use_hours window."""
-        current_hour = datetime.now().hour
-        # Window spans 6 hours centered on current hour
-        start = current_hour
-        end = (current_hour + 1) % 24
+        hour = datetime.now().hour
+        # Window that includes current hour
+        start = hour
+        end = (hour + 1) % 24
         if start < end:
-            self._write_machines(
-                [
-                    {
-                        "hostname": "testhost",
-                        "in_use_hours": [[start, end]],
-                        "aliases": [],
-                    }
-                ]
-            )
+            m = _machine(in_use_hours=[[start, end]])
+            self.assertTrue(self._run(m))
 
-            def run():
-                from igor.tools.routing_tools import in_use_now
-
-                return in_use_now("testhost")
-
-            result = self._patch_paths(run)
-            self.assertTrue(result)
-
-    def test_in_use_hours_window_outside(self):
-        """When current hour is outside all in_use_hours windows."""
-        current_hour = datetime.now().hour
-        # Window clearly in the past 2 hours if possible
-        start = (current_hour + 2) % 24
-        end = (current_hour + 3) % 24
-        if start < end and end != current_hour:
-            self._write_machines(
-                [
-                    {
-                        "hostname": "testhost",
-                        "in_use_hours": [[start, end]],
-                        "aliases": [],
-                    }
-                ]
-            )
-
-            def run():
-                from igor.tools.routing_tools import in_use_now
-
-                return in_use_now("testhost")
-
-            result = self._patch_paths(run)
-            self.assertFalse(result)
+    def test_in_use_hours_window_not_active(self):
+        hour = datetime.now().hour
+        # Window 3 hours ahead — not current
+        start = (hour + 3) % 24
+        end = (hour + 4) % 24
+        if start < end:
+            m = _machine(in_use_hours=[[start, end]])
+            self.assertFalse(self._run(m))
 
     def test_unknown_host_returns_false(self):
-        self._write_machines(
-            [{"hostname": "otherhost", "in_use_hours": [], "aliases": []}]
-        )
+        from igor.cognition.machine_manager import is_in_use
 
-        def run():
-            from igor.tools.routing_tools import in_use_now
+        with patch("igor.cognition.machine_manager.get_machine", return_value=None):
+            self.assertFalse(is_in_use("nonexistent"))
 
-            return in_use_now("unknownhost")
 
-        result = self._patch_paths(run)
-        self.assertFalse(result)
+# ── resolve_alias ─────────────────────────────────────────────────────────────
+
+
+class TestResolveAlias(unittest.TestCase):
+    def test_hostname_match(self):
+        from igor.cognition.machine_manager import resolve_alias
+
+        m = _machine(hostname="akiendell", aliases=["the dell", "my desktop"])
+        with patch(
+            "igor.cognition.machine_manager.get_ranked_machines", return_value=[m]
+        ):
+            self.assertEqual(resolve_alias("akiendell"), "akiendell")
+
+    def test_alias_match(self):
+        from igor.cognition.machine_manager import resolve_alias
+
+        m = _machine(hostname="akiendell", aliases=["the dell", "my desktop"])
+        with patch(
+            "igor.cognition.machine_manager.get_ranked_machines", return_value=[m]
+        ):
+            self.assertEqual(resolve_alias("the dell"), "akiendell")
+            self.assertEqual(resolve_alias("MY DESKTOP"), "akiendell")
+
+    def test_no_match_returns_none(self):
+        from igor.cognition.machine_manager import resolve_alias
+
+        m = _machine(hostname="akiendell", aliases=["the dell"])
+        with patch(
+            "igor.cognition.machine_manager.get_ranked_machines", return_value=[m]
+        ):
+            self.assertIsNone(resolve_alias("yoga"))
+
+
+# ── cluster_router.route ──────────────────────────────────────────────────────
+
+
+class TestRoute(unittest.TestCase):
+    """Tests for cluster_router.route — mocks get_ranked_machines and _is_ollama_healthy."""
+
+    def _route(self, machines, healthy_hosts=None, env_override=""):
+        """Run route("tier2") with mocked machine list and health."""
+        from igor.cognition import cluster_router
+
+        if healthy_hosts is None:
+            # All online machines are healthy by default
+            healthy_hosts = {m.ollama_host for m in machines if m.status == "online"}
+
+        def _fake_healthy(host):
+            return host in healthy_hosts
+
+        def _fake_in_use(hostname):
+            m = next((x for x in machines if x.hostname == hostname), None)
+            if m is None:
+                return False
+            from igor.cognition.machine_manager import is_in_use as _real
+
+            with patch("igor.cognition.machine_manager.get_machine", return_value=m):
+                with patch("igor.cognition.machine_manager._write_override"):
+                    return _real(hostname)
+
+        with patch(
+            "igor.cognition.cluster_router.get_ranked_machines", return_value=machines
+        ):
+            with patch(
+                "igor.cognition.cluster_router._is_ollama_healthy",
+                side_effect=_fake_healthy,
+            ):
+                with patch(
+                    "igor.cognition.cluster_router.is_in_use", side_effect=_fake_in_use
+                ):
+                    with patch.dict(
+                        "os.environ", {"IGOR_INFERENCE_OVERRIDE": env_override}
+                    ):
+                        return cluster_router.route("tier2")
+
+    def test_returns_first_available(self):
+        machines = [
+            _machine(hostname="a", ip="10.0.0.1", inference_rank=1),
+            _machine(hostname="b", ip="10.0.0.2", inference_rank=2),
+        ]
+        host, model = self._route(machines)
+        self.assertEqual(host, "http://10.0.0.1:11434")
+
+    def test_skips_in_use_machine(self):
+        hour = datetime.now().hour
+        machines = [
+            _machine(
+                hostname="a",
+                ip="10.0.0.1",
+                inference_rank=1,
+                in_use_hours=[[hour, (hour + 1) % 24]] if hour < 23 else [],
+            ),
+            _machine(hostname="b", ip="10.0.0.2", inference_rank=2),
+        ]
+        if datetime.now().hour < 23:
+            host, model = self._route(machines)
+            self.assertEqual(host, "http://10.0.0.2:11434")
+
+    def test_skips_unhealthy_machine(self):
+        machines = [
+            _machine(hostname="a", ip="10.0.0.1", inference_rank=1),
+            _machine(hostname="b", ip="10.0.0.2", inference_rank=2),
+        ]
+        host, model = self._route(machines, healthy_hosts={"http://10.0.0.2:11434"})
+        self.assertEqual(host, "http://10.0.0.2:11434")
+
+    def test_returns_none_none_when_all_down(self):
+        machines = [_machine(hostname="a", ip="10.0.0.1", inference_rank=1)]
+        host, model = self._route(machines, healthy_hosts=set())
+        self.assertIsNone(host)
+        self.assertIsNone(model)
+
+    def test_override_reorders_machines(self):
+        machines = [
+            _machine(hostname="a", ip="10.0.0.1", inference_rank=1),
+            _machine(hostname="b", ip="10.0.0.2", inference_rank=2),
+        ]
+        host, model = self._route(machines, env_override="b")
+        self.assertEqual(host, "http://10.0.0.2:11434")
+
+    def test_offline_machine_skipped(self):
+        machines = [
+            _machine(hostname="a", ip="10.0.0.1", inference_rank=1, status="offline"),
+            _machine(hostname="b", ip="10.0.0.2", inference_rank=2),
+        ]
+        host, model = self._route(machines)
+        self.assertEqual(host, "http://10.0.0.2:11434")
+
+    def test_batch_model_used_for_extraction(self):
+        from igor.cognition import cluster_router
+
+        machines = [
+            _machine(
+                hostname="a",
+                ip="10.0.0.1",
+                inference_rank=1,
+                ollama_model="llama3.2:1b",
+                ollama_model_batch="qwen2.5:14b",
+            ),
+        ]
+        with patch(
+            "igor.cognition.cluster_router.get_ranked_machines", return_value=machines
+        ):
+            with patch(
+                "igor.cognition.cluster_router._is_ollama_healthy", return_value=True
+            ):
+                with patch(
+                    "igor.cognition.cluster_router.is_in_use", return_value=False
+                ):
+                    host, model = cluster_router.route("extraction")
+        self.assertEqual(model, "qwen2.5:14b")
 
 
 # ── route_batch ───────────────────────────────────────────────────────────────
 
 
 class TestRouteBatch(unittest.TestCase):
-    """Tests for ClusterRouter.route_batch."""
+    def _route_batch(self, machines, n, healthy_hosts=None):
+        from igor.cognition import cluster_router
 
-    def _make_router_with_machines(self, machines: list[MachineInfo]) -> ClusterRouter:
-        """Return a ClusterRouter with pre-built machine dict, bypassing env/file loading."""
-        r = ClusterRouter()
-        r._machines = {m.name: m for m in machines}
-        r._built = True
-        r._last_refresh = float("inf")  # skip refresh
-        return r
+        if healthy_hosts is None:
+            healthy_hosts = {m.ollama_host for m in machines if m.status == "online"}
 
-    def test_route_batch_returns_best_n(self):
+        with patch(
+            "igor.cognition.cluster_router.get_ranked_machines", return_value=machines
+        ):
+            with patch(
+                "igor.cognition.cluster_router._is_ollama_healthy",
+                side_effect=lambda h: h in healthy_hosts,
+            ):
+                with patch(
+                    "igor.cognition.cluster_router.is_in_use", return_value=False
+                ):
+                    return cluster_router.route_batch(n, "extraction")
+
+    def test_returns_up_to_n(self):
         machines = [
-            _healthy_machine(name="a", ollama_host="http://a:11434", load_score=0.9),
-            _healthy_machine(name="b", ollama_host="http://b:11434", load_score=0.5),
-            _healthy_machine(name="c", ollama_host="http://c:11434", load_score=0.3),
+            _machine(hostname="a", ip="10.0.0.1", inference_rank=1),
+            _machine(hostname="b", ip="10.0.0.2", inference_rank=2),
+            _machine(hostname="c", ip="10.0.0.3", inference_rank=3),
         ]
-        r = self._make_router_with_machines(machines)
-        # Patch in_use_now to always return False
-        with patch("igor.tools.routing_tools.in_use_now", return_value=False):
-            result = r.route_batch(2, "local")
+        result = self._route_batch(machines, 2)
         self.assertEqual(len(result), 2)
-        # Best score first = machine a
-        self.assertEqual(result[0][0], "http://a:11434")
-        self.assertEqual(result[1][0], "http://b:11434")
 
-    def test_route_batch_excludes_unhealthy(self):
+    def test_excludes_unhealthy(self):
         machines = [
-            _healthy_machine(name="a", ollama_host="http://a:11434", load_score=0.9),
-            _healthy_machine(
-                name="b", ollama_host="http://b:11434", healthy=False, load_score=0.5
-            ),
+            _machine(hostname="a", ip="10.0.0.1", inference_rank=1),
+            _machine(hostname="b", ip="10.0.0.2", inference_rank=2),
         ]
-        r = self._make_router_with_machines(machines)
-        with patch("igor.tools.routing_tools.in_use_now", return_value=False):
-            result = r.route_batch(5, "local")
+        result = self._route_batch(machines, 5, healthy_hosts={"http://10.0.0.2:11434"})
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0][0], "http://a:11434")
+        self.assertEqual(result[0][0], "http://10.0.0.2:11434")
 
-    def test_route_batch_n_larger_than_machines(self):
-        machines = [
-            _healthy_machine(name="a", ollama_host="http://a:11434"),
-        ]
-        r = self._make_router_with_machines(machines)
-        with patch("igor.tools.routing_tools.in_use_now", return_value=False):
-            result = r.route_batch(10, "local")
-        self.assertEqual(len(result), 1)
-
-    def test_route_batch_empty_when_all_in_use(self):
-        machines = [
-            _healthy_machine(name="a", ollama_host="http://a:11434", hostname="ahost"),
-            _healthy_machine(name="b", ollama_host="http://b:11434", hostname="bhost"),
-        ]
-        r = self._make_router_with_machines(machines)
-        with patch("igor.tools.routing_tools.in_use_now", return_value=True):
-            result = r.route_batch(5, "local")
+    def test_n_zero_returns_empty(self):
+        machines = [_machine(hostname="a", ip="10.0.0.1", inference_rank=1)]
+        result = self._route_batch(machines, 0)
         self.assertEqual(result, [])
-
-    def test_route_batch_n_zero_returns_empty(self):
-        machines = [_healthy_machine(name="a", ollama_host="http://a:11434")]
-        r = self._make_router_with_machines(machines)
-        with patch("igor.tools.routing_tools.in_use_now", return_value=False):
-            result = r.route_batch(0, "local")
-        self.assertEqual(result, [])
-
-
-# ── ClusterRouter.route (single best) ────────────────────────────────────────
-
-
-class TestClusterRouterRoute(unittest.TestCase):
-    def _make_router_with_machines(self, machines: list[MachineInfo]) -> ClusterRouter:
-        r = ClusterRouter()
-        r._machines = {m.name: m for m in machines}
-        r._built = True
-        r._last_refresh = float("inf")
-        return r
-
-    def test_returns_best_machine(self):
-        machines = [
-            _healthy_machine(
-                name="low", ollama_host="http://low:11434", load_score=0.3
-            ),
-            _healthy_machine(
-                name="high", ollama_host="http://high:11434", load_score=0.9
-            ),
-        ]
-        r = self._make_router_with_machines(machines)
-        with patch("igor.tools.routing_tools.in_use_now", return_value=False):
-            host, model = r.route("local")
-        self.assertEqual(host, "http://high:11434")
-
-    def test_returns_none_none_when_all_unhealthy(self):
-        machines = [
-            _healthy_machine(name="a", ollama_host="http://a:11434", healthy=False),
-        ]
-        r = self._make_router_with_machines(machines)
-        host, model = r.route("local")
-        self.assertIsNone(host)
-        self.assertIsNone(model)
-
-    def test_override_promotes_lower_scored_machine(self):
-        machines = [
-            _healthy_machine(
-                name="fast", ollama_host="http://fast:11434", load_score=0.9
-            ),
-            _healthy_machine(
-                name="slow", ollama_host="http://slow:11434", load_score=0.1
-            ),
-        ]
-        r = self._make_router_with_machines(machines)
-        r._override = "slow"
-        with patch("igor.tools.routing_tools.in_use_now", return_value=False):
-            host, model = r.route("local")
-        # slow's score = 0.1 * 2.0 (override) = 0.2 > fast's 0.9? No — fast still wins.
-        # But if fast score is low enough, slow wins:
-        # fast=0.9, slow=0.1*2=0.2 → fast still wins.
-        # Set fast much lower:
-        machines[0].load_score = 0.05
-        with patch("igor.tools.routing_tools.in_use_now", return_value=False):
-            host, model = r.route("local")
-        self.assertEqual(host, "http://slow:11434")
 
 
 if __name__ == "__main__":
