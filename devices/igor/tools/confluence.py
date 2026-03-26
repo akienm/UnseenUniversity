@@ -75,8 +75,17 @@ def _client():
     return base, auth
 
 
-def confluence_get_page(page_id: str = "", title: str = "", space_key: str = "") -> str:
-    """Fetch a Confluence page by ID, or by title+space_key."""
+def confluence_get_page(
+    page_id: str = "", title: str = "", space_key: str = "", url: str = ""
+) -> str:
+    """Fetch a Confluence page by ID, URL, or by title+space_key."""
+    # Extract page_id from a Confluence URL if provided
+    if url and not page_id:
+        import re as _re
+
+        _m = _re.search(r"/pages/(\d+)", url)
+        if _m:
+            page_id = _m.group(1)
     _throttle_page_fetch()
     try:
         base, auth = _client()
@@ -296,6 +305,43 @@ def confluence_update_page(
         return f"Error updating page: {e}"
 
 
+def confluence_get_page_children(
+    page_id: str = "", url: str = "", limit: int = 25
+) -> str:
+    """List child pages of a Confluence page. Returns titles, IDs, and URLs."""
+    if url and not page_id:
+        _m = re.search(r"/pages/(\d+)", url)
+        if _m:
+            page_id = _m.group(1)
+    if not page_id:
+        return "Provide either page_id or a Confluence page URL."
+    try:
+        base, auth = _client()
+        domain = os.getenv("CONFLUENCE_DOMAIN", "")
+        headers = {"Accept": "application/json"}
+        r = requests.get(
+            f"{base}/pages/{page_id}/children",
+            auth=auth,
+            headers=headers,
+            params={"limit": limit},
+            timeout=_CONFLUENCE_TIMEOUT,
+        )
+        r.raise_for_status()
+        children = r.json().get("results", [])
+        if not children:
+            return f"Page {page_id} has no child pages."
+        lines = [f"Children of page {page_id} ({len(children)} pages):"]
+        for child in children:
+            webui = child.get("_links", {}).get("webui", "")
+            lines.append(
+                f"  {child['title']} (ID: {child['id']})\n"
+                f"    https://{domain}/wiki{webui}"
+            )
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Error fetching children: {e}"
+
+
 # ── Register all tools ──────────────────────────────────────────────────────
 
 registry.register(
@@ -361,6 +407,32 @@ registry.register(
             "required": ["space_key", "title", "body_html"],
         },
         fn=confluence_create_page,
+    )
+)
+
+registry.register(
+    Tool(
+        name="confluence_get_page_children",
+        description="List child pages of a Confluence page. Accepts page_id or a Confluence URL. Returns titles, IDs, and URLs of all children.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "page_id": {
+                    "type": "string",
+                    "description": "Numeric Confluence page ID",
+                },
+                "url": {
+                    "type": "string",
+                    "description": "Full Confluence page URL (page_id extracted automatically)",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Max children to return (default 25)",
+                },
+            },
+            "required": [],
+        },
+        fn=confluence_get_page_children,
     )
 )
 

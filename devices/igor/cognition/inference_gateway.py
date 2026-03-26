@@ -485,9 +485,19 @@ class InferenceGateway(IgorBase):
                 return text, cost, False
             except Exception as _e:
                 last_error = str(_e)
+                _kind = (
+                    "STALL"
+                    if (
+                        "timed out" in last_error.lower()
+                        or "timeout" in last_error.lower()
+                    )
+                    else "DOWN"
+                )
                 if _log_err:
                     _log_err(
-                        kind="TIER_FAIL", source="local/interactive", detail=str(_e)
+                        kind=f"TIER_FAIL_{_kind}",
+                        source="local/interactive",
+                        detail=str(_e),
                     )
 
         # OR luxury path: quality matters + budget ok
@@ -513,6 +523,32 @@ class InferenceGateway(IgorBase):
                     _log_err(
                         kind="TIER_FAIL", source="cloud/interactive", detail=str(_e)
                     )
+
+        # ── last-resort local retry: cloud failed (or wasn't tried), retry Ollama ──
+        # Cloud fail → try local once more before giving up entirely.
+        # Skip retry if the first local failure was a timeout — it'll just stall again.
+        # Only retry on connection errors (host was briefly unreachable, may have recovered).
+        _was_timeout = (
+            "timed out" in last_error.lower() or "timeout" in last_error.lower()
+        )
+        if self._t2 and last_error and not _was_timeout:
+            try:
+                self.last_tier = "local/retry"
+                if on_tier:
+                    on_tier("local/retry")
+                text, cost = self._t2.reason(
+                    user_input,
+                    relevant,
+                    core,
+                    instance_id,
+                    cortex=cortex,
+                    thread_id=thread_id,
+                    interactive_fallback=True,
+                )
+                return text, cost, False
+            except Exception as _e:
+                if _log_err:
+                    _log_err(kind="TIER_FAIL", source="local/retry", detail=str(_e))
 
         # ── total failure: cloud + local both failed ──────────────────────────
         # T-inference-monitor: proactive detection now lives in ResourceMonitorSource.
