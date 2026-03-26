@@ -4063,66 +4063,106 @@ class Igor(IgorBase):
                 _core = getattr(parsed, "core_input", user_input)
                 response_text = _run_schema(habit, self.cortex, _core)
             elif code_ref:
-                # G11: actually dispatch to the tool. Auto-extracts args by schema:
-                # no required args → call with none; one required arg → pass user_input.
-                # Multi-arg tools can't be auto-dispatched; describe and skip habit.
-                from .tools.registry import registry as _tool_registry
+                # D247/D248/D250: build basket (concern-tree keys) + run inhibition chain.
+                # basket travels with this execution thread; keys are concern.slot (not
+                # generator_node_id) per D250. Provenance attaches to TWM push metadata.
+                from .cognition.inhibition_chain import default_chain as _ichain
+                from .cognition.forensic_logger import (
+                    log_cognition_metric as _lcm_inh,
+                )
 
-                tool_name = code_ref.split(":")[-1]
-                tool = _tool_registry.get(tool_name)
-                # Execution tools must never be auto-dispatched with message text as code.
-                # run_python/run_bash require intentional code — never natural language.
-                # These must only be called via explicit LLM tool calls, not habit auto-dispatch.
-                _NO_AUTO_DISPATCH = {"run_python", "run_bash"}
-                if tool_name in _NO_AUTO_DISPATCH:
-                    response_text = (
-                        f"[HABIT→TOOL] {tool_name} requires explicit code — "
-                        f"cannot auto-dispatch from message text. "
-                        f"Ask me to write and run specific code."
+                _basket = {
+                    "requester.identity": author or "unknown",
+                    "node_id": habit.id,
+                    "trigger_type": _habit_type,
+                    "__status__": "running",
+                }
+                _inhibited, _inh_reason = _ichain().run(_basket, self.cortex)
+
+                if _inhibited:
+                    # Serve cached result from basket (twm.check_result = "hit:<csb>").
+                    _csb = _basket.get("twm.check_result", "hit:")
+                    _cached = _csb[4:] if _csb.startswith("hit:") else ""
+                    _parts = _cached.split("|", 2)
+                    response_text = _parts[2] if len(_parts) > 2 else _cached
+                    _basket["__status__"] = "inhibited"
+                    _lcm_inh(
+                        metric="inhibition_gate",
+                        value=1.0,
+                        detail=(
+                            f"habit={habit.id}"
+                            f" node={_basket.get('inhibition.node')}"
+                            f" reason={_inh_reason}"
+                        ),
                     )
-                elif tool:
-                    _required = tool.parameters.get("required", [])
-                    try:
-                        if not _required:
-                            response_text = tool.execute()
-                        elif len(_required) == 1:
-                            # Pass core_input (routing directive stripped) not raw user_input
-                            _core = getattr(parsed, "core_input", user_input)
-                            response_text = tool.execute(**{_required[0]: _core})
-                        else:
-                            # Can't auto-dispatch multi-arg tool — ask for what's needed
-                            _arg_list = ", ".join(_required)
-                            response_text = (
-                                f"I want to run {tool_name} for that, "
-                                f"but I need: {_arg_list}. Can you provide those?"
-                            )
-                    except Exception as _ce:
-                        response_text = f"[HABIT→TOOL] Error running {tool_name}: {_ce}"
-
-                    # If the habit declares a short TTL, push result to TWM so it
-                    # self-cleans (time, CPU temp, etc. become stale almost immediately).
-                    _ttl = habit.metadata.get("twm_ttl_seconds")
-                    if (
-                        _ttl is not None
-                        and response_text
-                        and not str(response_text).startswith("[HABIT→TOOL]")
-                    ):
-                        try:
-                            self.cortex.twm_push(
-                                source=f"habit:{habit.id}",
-                                content_csb=f"HABIT_RESULT|{habit.id}|{str(response_text)[:200]}",
-                                salience=0.5,
-                                urgency=0.3,
-                                ttl_seconds=int(_ttl),
-                                metadata={"habit_id": habit.id, "code_ref": code_ref},
-                            )
-                        except Exception as _bare_e:
-                            log_error(
-                                kind="BARE_EXCEPT",
-                                detail=f"wild_igor/igor/main.py: {_bare_e}",
-                            )
                 else:
-                    response_text = f"[HABIT→TOOL] tool '{tool_name}' (code_ref={code_ref}) not in registry."
+                    # G11: actually dispatch to the tool. Auto-extracts args by schema:
+                    # no required args → call with none; one required arg → pass user_input.
+                    # Multi-arg tools can't be auto-dispatched; describe and skip habit.
+                    from .tools.registry import registry as _tool_registry
+
+                    tool_name = code_ref.split(":")[-1]
+                    tool = _tool_registry.get(tool_name)
+                    # Execution tools must never be auto-dispatched with message text as code.
+                    # run_python/run_bash require intentional code — never natural language.
+                    # These must only be called via explicit LLM tool calls, not habit auto-dispatch.
+                    _NO_AUTO_DISPATCH = {"run_python", "run_bash"}
+                    if tool_name in _NO_AUTO_DISPATCH:
+                        response_text = (
+                            f"[HABIT→TOOL] {tool_name} requires explicit code — "
+                            f"cannot auto-dispatch from message text. "
+                            f"Ask me to write and run specific code."
+                        )
+                    elif tool:
+                        _required = tool.parameters.get("required", [])
+                        try:
+                            if not _required:
+                                response_text = tool.execute()
+                            elif len(_required) == 1:
+                                # Pass core_input (routing directive stripped) not raw user_input
+                                _core = getattr(parsed, "core_input", user_input)
+                                response_text = tool.execute(**{_required[0]: _core})
+                            else:
+                                # Can't auto-dispatch multi-arg tool — ask for what's needed
+                                _arg_list = ", ".join(_required)
+                                response_text = (
+                                    f"I want to run {tool_name} for that, "
+                                    f"but I need: {_arg_list}. Can you provide those?"
+                                )
+                        except Exception as _ce:
+                            response_text = (
+                                f"[HABIT→TOOL] Error running {tool_name}: {_ce}"
+                            )
+
+                        # If the habit declares a short TTL, push result to TWM so it
+                        # self-cleans (time, CPU temp, etc. become stale almost immediately).
+                        # D247: basket provenance attached to metadata.
+                        _ttl = habit.metadata.get("twm_ttl_seconds")
+                        if (
+                            _ttl is not None
+                            and response_text
+                            and not str(response_text).startswith("[HABIT→TOOL]")
+                        ):
+                            try:
+                                self.cortex.twm_push(
+                                    source=f"habit:{habit.id}",
+                                    content_csb=f"HABIT_RESULT|{habit.id}|{str(response_text)[:200]}",
+                                    salience=0.5,
+                                    urgency=0.3,
+                                    ttl_seconds=int(_ttl),
+                                    metadata={
+                                        "habit_id": habit.id,
+                                        "code_ref": code_ref,
+                                        "requester": _basket.get("requester.identity"),
+                                    },
+                                )
+                            except Exception as _bare_e:
+                                log_error(
+                                    kind="BARE_EXCEPT",
+                                    detail=f"wild_igor/igor/main.py: {_bare_e}",
+                                )
+                    else:
+                        response_text = f"[HABIT→TOOL] tool '{tool_name}' (code_ref={code_ref}) not in registry."
             elif habit.id == "PROC_HABIT_COMPILER":
                 # Phase 2: parse user input and store a structured PROCEDURAL memory
                 # Guard: never compile from CC bridge messages or internal impulses
