@@ -310,14 +310,13 @@ class Igor(IgorBase):
                 # D121: Redis-backed word graph (shadow or primary)
                 self._word_graph = make_word_graph()
             else:
-                # SQLite word graph: load from JSON cache or build from habits
+                # Word graph: load from DB (Postgres or SQLite), rebuild from habits only if empty.
+                # _wg_path.exists() was wrong for Postgres-backed graphs: the file never exists
+                # but the DB already has data. Always load() first; _word_to_ids checks live DB.
                 _wg_path = default_cache_path()
                 _boot_habits = self.cortex.get_habits()
-                if _wg_path.exists():
-                    self._word_graph = WordGraph.load(_wg_path)
-                    if not self._word_graph._word_to_ids:
-                        self._word_graph = WordGraph.build_from_habits(_boot_habits)
-                else:
+                self._word_graph = WordGraph.load(_wg_path)
+                if not self._word_graph._word_to_ids:
                     self._word_graph = WordGraph.build_from_habits(_boot_habits)
                     self._word_graph.save(_wg_path)
             basal_ganglia.set_word_graph(self._word_graph)
@@ -345,13 +344,12 @@ class Igor(IgorBase):
                 if _redis_host:
                     self._generation_graph = _make_gg(name="generation_graph")
                 else:
+                    # Same fix as recognition graph: load() always works for Postgres-backed
+                    # graphs regardless of whether the SQLite file path exists.
                     _gg_path = default_cache_path("generation_graph")
-                    if _gg_path.exists():
-                        self._generation_graph = WordGraph.load(_gg_path)
-                        self._generation_graph.name = "generation_graph"
-                        if not self._generation_graph._word_to_ids:
-                            self._generation_graph = WordGraph(name="generation_graph")
-                    else:
+                    self._generation_graph = WordGraph.load(_gg_path)
+                    self._generation_graph.name = "generation_graph"
+                    if not self._generation_graph._word_to_ids:
                         # Fresh generation graph — will be seeded by reinforce_text() on reply
                         self._generation_graph = WordGraph(name="generation_graph")
                 console.print(
