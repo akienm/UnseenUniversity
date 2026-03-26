@@ -470,8 +470,19 @@ class OllamaReasoner(LocalReasoner):
     """Full reasoning via local or remote Ollama model. Slow but free.
     Host and model are resolved dynamically via cluster_router at each call."""
 
-    def __init__(self):
-        pass  # no frozen host/model — resolved per-call via cluster_router
+    def __init__(self, model=None, host=None):
+        pass  # model/host ignored — resolved per-call via cluster_router
+
+    @property
+    def model(self) -> str:
+        """Best current model from cluster_router (for logging)."""
+        try:
+            from ..cluster_router import route as _route
+
+            _, m = _route("tier2")
+            return m or DEFAULT_MODEL
+        except Exception:
+            return DEFAULT_MODEL
 
     def name(self) -> str:
         try:
