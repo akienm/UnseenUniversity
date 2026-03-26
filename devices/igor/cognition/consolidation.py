@@ -48,7 +48,9 @@ def _load_checkpoint() -> dict:
         if _CHECKPOINT_FILE.exists():
             return json.loads(_CHECKPOINT_FILE.read_text())
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/consolidation.py: %s", _bare_e)
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/cognition/consolidation.py: %s", _bare_e
+        )
     return {"last_run_ts": 0.0, "processed_ids": []}
 
 
@@ -61,7 +63,9 @@ def _save_checkpoint(ts: float, processed_ids: list[str]) -> None:
         _CHECKPOINT_FILE.parent.mkdir(parents=True, exist_ok=True)
         _CHECKPOINT_FILE.write_text(json.dumps(data, indent=2))
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/consolidation.py: %s", _bare_e)
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/cognition/consolidation.py: %s", _bare_e
+        )
 
 
 # ── Clustering ─────────────────────────────────────────────────────────────────
@@ -148,12 +152,12 @@ def _call_local_llm(prompt: str, cortex: Cortex) -> Optional[dict]:
         import ollama as _ollama
         import os as _os
 
-        _host = _os.getenv(
-            "OLLAMA_REASONING_HOST", _os.getenv("OLLAMA_HOST", "http://localhost:11434")
-        )
-        _model = _os.getenv(
-            "OLLAMA_REASONING_MODEL", _os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b")
-        )
+        from .cluster_router import route as _route
+
+        _host, _model = _route("extraction")
+        if not _host:
+            _host = _os.getenv("OLLAMA_HOST", "http://localhost:11434")
+            _model = _os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b")
         _client = _ollama.Client(host=_host)
         response = _client.chat(
             model=_model,
@@ -289,7 +293,9 @@ def run_consolidation(cortex: Cortex) -> dict:
                 category="investment_decay",
             )
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/consolidation.py: %s", _bare_e)
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/cognition/consolidation.py: %s", _bare_e
+        )
 
     _last_run = now
     _save_checkpoint(now, new_processed_ids)

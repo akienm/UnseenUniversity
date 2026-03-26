@@ -315,27 +315,29 @@ async def _api_system_health(request: Request):
     CLUSTER_REFRESH_SEC by the background thread). Does not force a re-probe.
     """
     try:
-        from ..cognition.cluster_router import router as _router
         import os as _os
+        from ..cognition.machine_manager import get_ranked_machines, is_in_use
+        from ..cognition.cluster_router import _health_cache, _health_lock
 
-        override = (
-            _router._override or _os.getenv("IGOR_INFERENCE_OVERRIDE", "") or None
-        )
+        override = _os.getenv("IGOR_INFERENCE_OVERRIDE", "") or None
         machines = []
-        for m in _router._machines.values():
+        for m in get_ranked_machines():
+            with _health_lock:
+                cached = _health_cache.get(m.ollama_host)
+            healthy = cached[0] if cached is not None else None
             machines.append(
                 {
-                    "name": m.name,
+                    "hostname": m.hostname,
+                    "display_name": m.display_name,
                     "ollama_host": m.ollama_host,
-                    "healthy": m.healthy,
-                    "load_score": round(m.load_score, 3),
-                    "response_ms": round(m.response_ms),
-                    "active_models": m.active_models,
-                    "primary_model": m.primary_model,
-                    "reasoning_model": m.reasoning_model,
+                    "healthy": healthy,
+                    "in_use": is_in_use(m.hostname),
+                    "inference_rank": m.inference_rank,
+                    "model": m.ollama_model,
                     "is_local": m.is_local,
                     "network_type": m.network_type,
                     "ram_gb": m.ram_gb,
+                    "status": m.status,
                 }
             )
         return JSONResponse({"ts": _ts(), "override": override, "machines": machines})
@@ -814,7 +816,9 @@ def start(stats_fn=None, cortex_fn=None, igor_fn=None):
 
         _sup.register("web-server", _server_thread, health_fn=is_running)
     except Exception as e:
-        log_error(kind="TOOL_FAIL", detail=f"daemon supervisor registration failed: {e}")
+        log_error(
+            kind="TOOL_FAIL", detail=f"daemon supervisor registration failed: {e}"
+        )
 
     # When SSL is active, also serve plain HTTP on port+1 for LAN access.
     # e.g. http://10.0.0.229:8081/ works without cert warnings.

@@ -1,104 +1,31 @@
 """
-routing_tools.py — D211: Machine availability signal tools.
+routing_tools.py — Machine availability tools for Igor (#342).
 
-Igor (or Akien via habit) can mark a machine in-use or available.
-Overrides are persisted in ~/.TheIgors/local/machine_overrides.json.
+Delegates to machine_manager (DB-backed). Replaces flat machine_overrides.json.
 
-in_use_now(hostname) checks:
-  1. machine_overrides.json explicit override (with optional TTL)
-  2. machines.json in_use_hours [[start, end]] against current local hour
+Tools exposed:
+  set_machine_in_use(machine, ttl_hours)  — mark machine as in-use
+  clear_machine_in_use(machine)           — return machine to routing
+  get_machine_availability()              — show current status
 """
 
-import json
 import logging
-from datetime import datetime, timezone, timedelta
-from pathlib import Path
-
-from ..paths import paths
 
 logger = logging.getLogger(__name__)
 
-_MACHINES_JSON = paths().runtime / "local" / "machines.json"
-_OVERRIDES_JSON = paths().runtime / "local" / "machine_overrides.json"
 
-
-# ── shared helpers ─────────────────────────────────────────────────────────────
-
-
-def _load_machines() -> list[dict]:
-    try:
-        return json.loads(_MACHINES_JSON.read_text()).get("machines", [])
-    except Exception:
-        return []
-
-
-def _resolve_alias(name: str) -> str | None:
-    """Resolve a hostname or alias to canonical hostname. Returns None if not found."""
-    name_lower = name.lower().strip()
-    for m in _load_machines():
-        if m["hostname"].lower() == name_lower:
-            return m["hostname"]
-        for alias in m.get("aliases", []):
-            if alias.lower() == name_lower:
-                return m["hostname"]
-    return None
-
-
-def _load_overrides() -> dict:
-    try:
-        if _OVERRIDES_JSON.exists():
-            return json.loads(_OVERRIDES_JSON.read_text())
-    except Exception as _e:
-        logging.getLogger("forensic").warning(
-            "[routing_tools._load_overrides] corrupt overrides file — resetting: %s", _e
-        )
-    return {}
-
-
-def _save_overrides(data: dict) -> None:
-    _OVERRIDES_JSON.parent.mkdir(parents=True, exist_ok=True)
-    _OVERRIDES_JSON.write_text(json.dumps(data, indent=2))
+# ── Thin wrappers around machine_manager ──────────────────────────────────────
 
 
 def in_use_now(hostname: str) -> bool:
-    """
-    True if the machine should not be used for inference right now.
-    Checks explicit overrides first, then in_use_hours windows.
-    """
-    now_utc = datetime.now(timezone.utc)
-    now_local_hour = datetime.now().hour
+    """True if machine should not receive inference right now."""
+    try:
+        from ..cognition.machine_manager import is_in_use
 
-    # 1. Explicit override
-    overrides = _load_overrides()
-    if hostname in overrides:
-        entry = overrides[hostname]
-        until = entry.get("until")
-        if until is None:
-            return True  # indefinite
-        try:
-            until_dt = datetime.fromisoformat(until)
-            if until_dt.tzinfo is None:
-                until_dt = until_dt.replace(tzinfo=timezone.utc)
-            if now_utc < until_dt:
-                return True
-            # Expired — clean it up silently
-            del overrides[hostname]
-            _save_overrides(overrides)
-        except (ValueError, TypeError):
-            return True
-
-    # 2. in_use_hours windows from machines.json
-    for m in _load_machines():
-        if m["hostname"] == hostname:
-            for start, end in m.get("in_use_hours", []):
-                if start <= now_local_hour < end:
-                    return True
-            break
-
-    return False
-
-
-# ── Tools ─────────────────────────────────────────────────────────────────────
+        return is_in_use(hostname)
+    except Exception as _e:
+        logger.warning("[routing_tools.in_use_now] machine_manager failed: %s", _e)
+        return False
 
 
 def set_machine_in_use(machine: str, ttl_hours: float = 0) -> str:
@@ -107,23 +34,9 @@ def set_machine_in_use(machine: str, ttl_hours: float = 0) -> str:
     machine: hostname or alias (e.g. 'yoga9i', 'the dell', 'akiendell')
     ttl_hours: 0 = indefinite until cleared; >0 = expires after N hours
     """
-    hostname = _resolve_alias(machine)
-    if not hostname:
-        return f"ERROR: '{machine}' not found in machines list. Known: {[m['hostname'] for m in _load_machines()]}"
+    from ..cognition.machine_manager import set_machine_override
 
-    overrides = _load_overrides()
-    until = None
-    if ttl_hours > 0:
-        until = (datetime.now(timezone.utc) + timedelta(hours=ttl_hours)).isoformat()
-
-    overrides[hostname] = {"in_use": True, "until": until}
-    _save_overrides(overrides)
-
-    ttl_str = f" for {ttl_hours}h" if ttl_hours > 0 else " (until cleared)"
-    logger.info(
-        "MACHINE_IN_USE|set|host=%s|ttl=%s", hostname, ttl_hours or "indefinite"
-    )
-    return f"{hostname} marked in-use{ttl_str} — excluded from inference routing."
+    return set_machine_override(machine, ttl_hours)
 
 
 def clear_machine_in_use(machine: str) -> str:
@@ -131,52 +44,16 @@ def clear_machine_in_use(machine: str) -> str:
     Mark a machine as available — return it to inference routing.
     machine: hostname or alias (e.g. 'yoga9i', 'the dell', 'akiendell')
     """
-    hostname = _resolve_alias(machine)
-    if not hostname:
-        return f"ERROR: '{machine}' not found. Known: {[m['hostname'] for m in _load_machines()]}"
+    from ..cognition.machine_manager import clear_machine_override
 
-    overrides = _load_overrides()
-    if hostname in overrides:
-        del overrides[hostname]
-        _save_overrides(overrides)
-        logger.info("MACHINE_IN_USE|clear|host=%s", hostname)
-        return f"{hostname} cleared — available for inference routing."
-    return f"{hostname} had no override set (already available)."
+    return clear_machine_override(machine)
 
 
 def get_machine_availability() -> str:
     """Show current availability status of all inference machines."""
-    machines = _load_machines()
-    if not machines:
-        return "No machines found in machines.json."
+    from ..cognition.machine_manager import get_availability_report
 
-    lines = []
-    for m in machines:
-        hostname = m["hostname"]
-        rank = m.get("inference_rank", "-")
-        if rank == "-":
-            continue  # offline/no-rank machines
-        status = m.get("status", "unknown")
-        if status != "online":
-            lines.append(f"  rank={rank} {hostname:20s} OFFLINE")
-            continue
-        in_use = in_use_now(hostname)
-        overrides = _load_overrides()
-        override_note = ""
-        if hostname in overrides:
-            until = overrides[hostname].get("until")
-            override_note = f" [manual override{', until ' + until[:16] if until else ', indefinite'}]"
-        elif in_use:
-            override_note = f" [in_use_hours window]"
-        state = "IN USE" if in_use else "available"
-        net = m.get("network_type", "?")
-        ram = m.get("ram_gb", "?")
-        roles = ",".join(m.get("roles", [])) or "-"
-        lines.append(
-            f"  rank={rank} {hostname:20s} {state:10s} {net:5s} {ram}GB  roles={roles}{override_note}"
-        )
-
-    return "Machine availability:\n" + "\n".join(lines)
+    return get_availability_report()
 
 
 # ── Tool registration ──────────────────────────────────────────────────────────
@@ -204,7 +81,7 @@ registry.register(
         name="clear_machine_in_use",
         description=(
             "Mark a machine as available — return it to inference routing. "
-            "Use when you leave a machine ('I'm moving away from akiendell', 'done with the yoga'). "
+            "Use when you leave a machine ('leaving my desk', 'heading to the living room'). "
             "machine = hostname or alias."
         ),
         parameters={

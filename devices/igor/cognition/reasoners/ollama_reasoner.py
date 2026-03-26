@@ -1,15 +1,13 @@
 """
 Ollama local reasoner — primary local inference backend.
 
-Tier.2 local reasoning and preparse. Supports local or remote Ollama hosts
-(OLLAMA_HOST / OLLAMA_REASONING_HOST). Ollama is already required for
-nomic-embed-text embeddings; this unifies
-all local inference under one backend so Igor can self-manage models
-(ollama pull, ollama list, etc.) without manual server restarts.
+Tier.2 local reasoning and preparse. Host selection is dynamic via
+cluster_router — never frozen at import time. Embeddings always stay on
+localhost (embedder.py uses _ollama default directly).
 
 Config:
-  OLLAMA_LOCAL_MODEL  — local 1B model for preparse + tier.2 (default: llama3.2:1b)
-  OLLAMA_HOST         — host override (default: http://localhost:11434)
+  OLLAMA_LOCAL_MODEL  — fallback model if router returns none (default: llama3.2:1b)
+  OLLAMA_HOST         — fallback host if router returns none (default: http://localhost:11434)
 
 Call logging: every Ollama call writes a structured entry to ollama_calls.log
 with timing, token counts, and tokens/sec so we can tune model selection.
@@ -35,18 +33,22 @@ OLLAMA_LOCAL_MODEL = os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b")
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 DEFAULT_MODEL = OLLAMA_LOCAL_MODEL  # backwards-compat alias
 
-# ── Reasoning host — separate from embedding host (localhost nomic-embed-text) ─
-# Set OLLAMA_REASONING_HOST to a remote machine for a bigger reasoning model.
-# Embeddings always stay on localhost (embedder.py uses _ollama default directly).
-OLLAMA_REASONING_HOST = os.getenv("OLLAMA_REASONING_HOST", OLLAMA_HOST)
-OLLAMA_REASONING_MODEL = os.getenv("OLLAMA_REASONING_MODEL", OLLAMA_LOCAL_MODEL)
 
-# Client pointed at the reasoning host (may be remote)
-_reasoning_client = (
-    _ollama.Client(host=OLLAMA_REASONING_HOST)
-    if OLLAMA_REASONING_HOST != OLLAMA_HOST
-    else _ollama
-)
+def _get_client_and_model(call_type: str) -> tuple[object, str]:
+    """Ask cluster_router for the best host+model. Falls back to localhost."""
+    try:
+        from ..cluster_router import route as _route
+
+        host, model = _route(call_type)
+        if host and model:
+            client = _ollama.Client(host=host) if host != OLLAMA_HOST else _ollama
+            return client, model
+    except Exception as _e:
+        logging.getLogger(__name__).warning(
+            "[ollama_reasoner] cluster_router failed (%s) — using localhost", _e
+        )
+    return _ollama, OLLAMA_LOCAL_MODEL
+
 
 PREPARSE_TIMEOUT = 8  # seconds
 
@@ -82,9 +84,17 @@ if not _ollama_log.handlers:
 # ── Health check ────────────────────────────────────────────────────────────
 
 
-def is_healthy(host: str = OLLAMA_REASONING_HOST, timeout: int = 5) -> bool:
+def is_healthy(host: str | None = None, timeout: int = 5) -> bool:
     """Return True if Ollama is running at host (probes /api/tags).
-    Defaults to OLLAMA_REASONING_HOST so main.py health checks the right box."""
+    If host is None, probes the current best routed host."""
+    if host is None:
+        try:
+            from ..cluster_router import route as _route
+
+            routed_host, _ = _route("tier2")
+            host = routed_host or OLLAMA_HOST
+        except Exception:
+            host = OLLAMA_HOST
     try:
         with urllib.request.urlopen(f"{host}/api/tags", timeout=timeout) as resp:
             return resp.status == 200
@@ -327,12 +337,13 @@ def _rule_based_csb(user_input: str, habits: list) -> str:
 def preparse(user_input: str, habits: list, model: str = "") -> str:
     """
     Pre-parse user input via Ollama → PARSED_INPUT CSB block.
-    Uses OLLAMA_REASONING_HOST + OLLAMA_REASONING_MODEL (may be remote).
+    Host and model selected dynamically via cluster_router at call time.
     Falls back to _rule_based_csb on timeout or error.
     Returns a CSB string (always — never raises).
     Logs fallback events to errors.log for telemetry (#30).
     """
-    _model = model or OLLAMA_REASONING_MODEL
+    _client, _routed_model = _get_client_and_model("preparse")
+    _model = model or _routed_model
     prompt = _PREPARSE_PROMPT.format(text=user_input[:300])
     fallback_reason = None
     t0 = time.perf_counter()
@@ -343,7 +354,7 @@ def preparse(user_input: str, habits: list, model: str = "") -> str:
             try:
                 _result_q.put(
                     (
-                        _reasoning_client.chat(
+                        _client.chat(
                             model=_model,
                             messages=[{"role": "user", "content": prompt}],
                             options={"temperature": 0.1, "num_predict": 120},
@@ -456,20 +467,20 @@ def _log_call(
 
 
 class OllamaReasoner(LocalReasoner):
-    """Full reasoning via local or remote Ollama model. Slow but free."""
+    """Full reasoning via local or remote Ollama model. Slow but free.
+    Host and model are resolved dynamically via cluster_router at each call."""
 
-    def __init__(
-        self,
-        model: str = OLLAMA_REASONING_MODEL,
-        host: str | None = OLLAMA_REASONING_HOST,
-    ):
-        self.model = model
-        self.host = host
-        self._client = _reasoning_client
+    def __init__(self):
+        pass  # no frozen host/model — resolved per-call via cluster_router
 
     def name(self) -> str:
-        label = self.host or "local"
-        return f"Ollama/{self.model}@{label}"
+        try:
+            from ..cluster_router import route as _route
+
+            host, model = _route("tier2")
+            return f"Ollama/{model or DEFAULT_MODEL}@{host or 'localhost'}"
+        except Exception:
+            return f"Ollama/{DEFAULT_MODEL}@localhost"
 
     def reason(
         self,
@@ -502,6 +513,9 @@ class OllamaReasoner(LocalReasoner):
 
         _query_chars = len(user_input)  # raw query before context append
         _context_chars = len(system) + len(user_input) + len(memory_context)  # G55
+
+        # Resolve host + model dynamically via cluster_router
+        _client, _model = _get_client_and_model("tier2")
 
         # Cloud training mode: skip tier.2 Ollama — escalate to cloud (#CLOUD).
         # force_local=True bypasses this gate: background/impulse turns run as long
@@ -538,8 +552,8 @@ class OllamaReasoner(LocalReasoner):
             try:
                 _chat_q.put(
                     (
-                        self._client.chat(
-                            model=self.model,
+                        _client.chat(
+                            model=_model,
                             messages=[
                                 {"role": "system", "content": system},
                                 {
@@ -568,7 +582,7 @@ class OllamaReasoner(LocalReasoner):
                 raise _err
             response = _resp
             elapsed = time.perf_counter() - t0
-            _log_call("OllamaReasoner.reason", self.model, response, elapsed)
+            _log_call("OllamaReasoner.reason", _model, response, elapsed)
             tokens_in = getattr(response, "prompt_eval_count", None) or (
                 response.get("prompt_eval_count", 0)
                 if isinstance(response, dict)
