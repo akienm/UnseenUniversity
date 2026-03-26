@@ -113,7 +113,7 @@ class PathManager:
 
     @property
     def ssh_key(self) -> Path:
-        return self._runtime / "igor_id_rsa"
+        return self._runtime / "local" / "igor_id_rsa"
 
     @property
     def claudecode(self) -> Path:
