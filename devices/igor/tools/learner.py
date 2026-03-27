@@ -1454,6 +1454,214 @@ registry.register(
 )
 
 
+# ── Calibre Igor-tagged book ingest ────────────────────────────────────────────
+
+_CALIBRE_DB = Path(
+    "/home/akien/.TheIgors/akien/onedrive/AkiensMedia/Ebooks"
+    "/Calibre Portable/Calibre Library/metadata.db"
+)
+
+# Subjects that indicate programming/tech — used for arousal classification
+_CALIBRE_PROG_SUBJECTS = {
+    "computers",
+    "programming",
+    "software",
+    "computer science",
+    "python",
+    "javascript",
+    "java",
+    "c#",
+    "c++",
+    "ruby",
+    "algorithms",
+    "data structures",
+    "machine learning",
+    "artificial intelligence",
+    "web development",
+    "computer programming",
+    "software engineering",
+    "open source",
+    "linux",
+    "unix",
+    "database",
+    "electronics",
+    "electrical",
+    "engineering",
+    "circuits",
+}
+
+# Title keywords that indicate programming/tech when subject tags are sparse
+_CALIBRE_PROG_TITLE_KW = {
+    "python",
+    "javascript",
+    "java",
+    "linux",
+    "unix",
+    "algorithm",
+    "programming",
+    "software",
+    "coding",
+    "developer",
+    "kubernetes",
+    "docker",
+    "sql",
+    "api",
+    "devops",
+    "agile",
+    "c#",
+    ".net",
+    "wpf",
+    "asp.net",
+    "selenium",
+    "playwright",
+    "automation",
+    "refactoring",
+    "compiler",
+    "debugger",
+    "programmer",
+    "electronics",
+    "electrical",
+    "circuits",
+    "engineering",
+}
+
+
+def ingest_calibre_igor_books(**_kwargs) -> str:
+    """Scan Calibre for books tagged 'Igor' and add new ones to reading_list.
+
+    Programming/tech books → arousal=0.65, priority 150+.
+    Everything else → arousal=0.20, priority 600+.
+    Idempotent by calibre://{id} source URL.
+    Igor tag overrides SKIP categories — manual curation wins.
+    Called daily by PROC_CALIBRE_INGEST.
+    """
+    import sqlite3
+
+    if not _CALIBRE_DB.exists():
+        return f"[ingest_calibre_igor_books] Calibre DB not found: {_CALIBRE_DB}"
+
+    # ── Load Igor-tagged books from Calibre ────────────────────────────────────
+    try:
+        cal = sqlite3.connect(str(_CALIBRE_DB))
+        cal.row_factory = sqlite3.Row
+        cur = cal.cursor()
+
+        cur.execute("""
+            SELECT DISTINCT b.id, b.title, a.name AS author
+            FROM books b
+            JOIN books_tags_link btl ON b.id = btl.book
+            JOIN tags t ON btl.tag = t.id AND lower(t.name) = 'igor'
+            LEFT JOIN books_authors_link bal ON b.id = bal.book
+            LEFT JOIN authors a ON bal.author = a.id
+            ORDER BY b.title
+        """)
+        igor_books = [dict(r) for r in cur.fetchall()]
+
+        # Fetch all tags per book in one query
+        book_ids = [b["id"] for b in igor_books]
+        tags_by_id: dict[int, set] = {}
+        if book_ids:
+            placeholders = ",".join("?" * len(book_ids))
+            cur.execute(
+                f"SELECT btl.book, t.name FROM books_tags_link btl "
+                f"JOIN tags t ON btl.tag = t.id WHERE btl.book IN ({placeholders})",
+                book_ids,
+            )
+            for row in cur.fetchall():
+                tags_by_id.setdefault(row[0], set()).add(row[1].lower())
+        cal.close()
+    except Exception as e:
+        return f"[ingest_calibre_igor_books] Calibre read error: {e}"
+
+    # ── Fetch existing calibre:// sources to skip duplicates ──────────────────
+    try:
+        with _igor_db_proxy()() as conn:
+            rows = conn.execute(
+                "SELECT source FROM reading_list WHERE source LIKE ?",
+                ("calibre://%",),
+            ).fetchall()
+        existing_sources = {r[0] for r in rows if r[0]}
+    except Exception as e:
+        return f"[ingest_calibre_igor_books] DB error fetching existing: {e}"
+
+    # ── Classify and ingest ────────────────────────────────────────────────────
+    prog_count = 0
+    other_count = 0
+
+    # Get current max priority in each range to avoid collisions on re-runs
+    try:
+        with _igor_db_proxy()() as conn:
+            r = conn.execute(
+                "SELECT MAX(priority) FROM reading_list WHERE priority BETWEEN 150 AND 299"
+            ).fetchone()
+            prog_pri = (r[0] or 149) + 1
+            r = conn.execute(
+                "SELECT MAX(priority) FROM reading_list WHERE priority BETWEEN 600 AND 799"
+            ).fetchone()
+            other_pri = (r[0] or 599) + 1
+    except Exception:
+        prog_pri = 150
+        other_pri = 600
+
+    for book in igor_books:
+        source = f"calibre://{book['id']}"
+        if source in existing_sources:
+            continue
+
+        tags = tags_by_id.get(book["id"], set())
+        title_words = set(book["title"].lower().split())
+
+        is_prog = bool(tags & _CALIBRE_PROG_SUBJECTS) or bool(
+            title_words & _CALIBRE_PROG_TITLE_KW
+        )
+
+        if is_prog:
+            arousal = 0.65
+            priority = prog_pri
+            prog_pri += 1
+            prog_count += 1
+        else:
+            arousal = 0.20
+            priority = other_pri
+            other_pri += 1
+            other_count += 1
+
+        add_to_reading_list(
+            title=book["title"],
+            author=book["author"] or "Unknown",
+            source=source,
+            book_type="calibre-igor",
+            encoding_arousal=arousal,
+            priority=priority,
+            added_by="igor_self",
+            notes=f"tags={','.join(sorted(tags))[:80]}",
+        )
+        existing_sources.add(source)
+
+    summary = (
+        f"[ingest_calibre_igor_books] added={prog_count + other_count} "
+        f"(prog={prog_count} other={other_count}) skipped={len(igor_books) - prog_count - other_count}"
+    )
+    try:
+        from ..cognition.forensic_logger import log_anomaly as _la
+
+        _la(kind="CALIBRE_INGEST_DONE", detail=summary)
+    except Exception:
+        pass
+
+    return summary
+
+
+registry.register(
+    Tool(
+        name="ingest_calibre_igor_books",
+        description="Scan Calibre for books tagged 'Igor' and add new ones to reading_list. Programming books get arousal=0.65 (above psychology/neuroscience); other books get arousal=0.20 (after gutenberg fiction). Idempotent — safe to re-run as Akien tags more books. Called daily by PROC_CALIBRE_INGEST.",
+        parameters={"type": "object", "properties": {}},
+        fn=ingest_calibre_igor_books,
+    )
+)
+
+
 registry.register(
     Tool(
         name="annotate_learning",
