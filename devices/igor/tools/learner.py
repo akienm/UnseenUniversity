@@ -1296,6 +1296,164 @@ registry.register(
 )
 
 
+# ── Nightly turn-trace self-review ─────────────────────────────────────────────
+
+
+def _parse_turn_trace_logs(log_dirs: list, since_hours: int = 24) -> list[dict]:
+    """
+    Walk turn_trace.*.log files in log_dirs modified within since_hours.
+    Return list of parsed turn dicts for cloud-escape turns
+    (reasoning.tier contains 'cloud' AND habit_exec has no habit_id).
+    """
+    import glob as _glob
+    import json as _json
+    import re as _re
+    import time as _time
+
+    cutoff = _time.time() - since_hours * 3600
+    escapes = []
+
+    for log_dir in log_dirs:
+        pattern = str(Path(log_dir) / "turn_trace.*.log")
+        for fpath in _glob.glob(pattern):
+            try:
+                if Path(fpath).stat().st_mtime < cutoff:
+                    continue
+                text = Path(fpath).read_text(encoding="utf-8", errors="replace")
+                parts = _re.split(r"(?=^=== turn )", text, flags=_re.MULTILINE)
+                dec = _json.JSONDecoder()
+                for part in parts:
+                    if not part.strip():
+                        continue
+                    m = _re.match(r"^=== turn ([^\s]+)[^\n]+\n(.*)", part, _re.DOTALL)
+                    if not m:
+                        continue
+                    turn_id = m.group(1)
+                    body = m.group(2).strip()
+                    try:
+                        obj, _ = dec.raw_decode(body)
+                    except Exception:
+                        continue
+                    reasoning_tier = obj.get("reasoning", {}).get("tier", "")
+                    habit_id = obj.get("habit_exec", {}).get("habit_id", "")
+                    if "cloud" in reasoning_tier and not habit_id:
+                        escapes.append(
+                            {
+                                "turn_id": turn_id,
+                                "ts": obj.get("ts", ""),
+                                "input": obj.get("input", "")[:200],
+                                "intent": obj.get("thalamus", {}).get("intent", ""),
+                                "routing_tier": obj.get("routing", {}).get("tier", ""),
+                                "cost_usd": obj.get("TOTAL", {}).get("cost_usd", 0.0),
+                                "bg_winner": obj.get("bg_scoring", {}).get(
+                                    "winner", ""
+                                ),
+                            }
+                        )
+            except Exception:
+                continue
+
+    return escapes
+
+
+def review_turn_traces(**_kwargs) -> str:
+    """
+    Nightly self-review: scan recent turn traces for cloud escalations where no
+    habit fired. Each unique escape is added to reading_list as book_type=cloud-escape-gap
+    so Akien and Claude can review and build plugs. Deposits one summary NARRATIVE_GAP
+    into twm_observations so PROC_FLAG_ANOMALY surfaces it.
+    Called by SchedulerSource via PROC_TRACE_REVIEW once per day.
+    """
+    import time as _time
+    from datetime import datetime, timezone
+
+    log_dirs = [
+        paths().runtime / "logs",  # ~/.TheIgors/logs/ (legacy)
+        paths().logs,  # ~/.TheIgors/local/logs/ (current)
+    ]
+    escapes = _parse_turn_trace_logs(log_dirs, since_hours=24)
+    if not escapes:
+        return "[review_turn_traces] no cloud escapes in last 24h"
+
+    # Fetch already-queued trace sources to avoid duplicates
+    try:
+        with _igor_db_proxy()() as conn:
+            rows = conn.execute(
+                "SELECT source FROM reading_list WHERE book_type = 'cloud-escape-gap'"
+            ).fetchall()
+        existing_sources = {r[0] for r in rows if r[0]}
+    except Exception as e:
+        return f"[review_turn_traces] DB error fetching existing: {e}"
+
+    queued = []
+    for esc in escapes:
+        source = f"trace://{esc['turn_id']}"
+        if source in existing_sources:
+            continue
+        inp_clean = esc["input"].replace("\n", " ")[:120]
+        title = f"Cloud escape [{esc['intent']}]: {inp_clean}"
+        result = add_to_reading_list(
+            title=title,
+            source=source,
+            book_type="cloud-escape-gap",
+            encoding_arousal=0.6,
+            priority=10,
+            added_by="trace_review",
+            notes=f"tier={esc['routing_tier']} bg={esc['bg_winner'][:30]} ts={esc['ts']}",
+        )
+        if not result.startswith("Error"):
+            queued.append(esc["turn_id"])
+            existing_sources.add(source)
+
+    # Deposit a summary NARRATIVE_GAP into TWM so flag_top_gap can surface it
+    if queued:
+        summary_q = f"I escalated to cloud {len(queued)} time(s) recently without a habit firing — what plugs are missing?"
+        try:
+            ts_now = datetime.now(timezone.utc)
+            expires = ts_now.strftime("%Y-%m-%dT%H:%M:%S")  # will be extended below
+            from datetime import timedelta
+
+            expires = (ts_now + timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M:%S")
+            with _igor_db_proxy()() as conn:
+                conn.execute(
+                    """INSERT INTO twm_observations
+                       (content_csb, salience, expires_at, timestamp, source, urgency)
+                       VALUES (%s, %s, %s, %s, %s, %s)""",
+                    (
+                        f"NARRATIVE_GAP|question={summary_q}|salience=0.75|threat=0.1",
+                        0.75,
+                        expires,
+                        ts_now.strftime("%Y-%m-%dT%H:%M:%S"),
+                        "trace_review",
+                        0.5,
+                    ),
+                )
+        except Exception:
+            pass  # non-fatal — reading_list entries are the durable artifact
+
+    summary = (
+        f"[review_turn_traces] new_escapes={len(queued)} total_found={len(escapes)}"
+    )
+    try:
+        from ..cognition.forensic_logger import log_anomaly as _la
+
+        _la(kind="TRACE_REVIEW_DONE", detail=summary)
+    except Exception:
+        pass
+
+    return summary
+
+
+registry.register(
+    Tool(
+        name="review_turn_traces",
+        description="Nightly self-review: scan turn trace logs for cloud escalations with no habit firing; deposit each as cloud-escape-gap in reading_list and post a summary NARRATIVE_GAP to TWM. Called daily by PROC_TRACE_REVIEW.",
+        parameters={"type": "object", "properties": {}},
+        fn=review_turn_traces,
+    )
+)
+
+
 registry.register(
     Tool(
         name="annotate_learning",
