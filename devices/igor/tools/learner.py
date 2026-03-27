@@ -1461,7 +1461,8 @@ _CALIBRE_DB = Path(
     "/Calibre Portable/Calibre Library/metadata.db"
 )
 
-# Subjects that indicate programming/tech — used for arousal classification
+# Tag sets for secondary-tier classification of Igor-tagged books.
+# Checked in priority order — first match wins.
 _CALIBRE_PROG_SUBJECTS = {
     "computers",
     "programming",
@@ -1489,8 +1490,6 @@ _CALIBRE_PROG_SUBJECTS = {
     "engineering",
     "circuits",
 }
-
-# Title keywords that indicate programming/tech when subject tags are sparse
 _CALIBRE_PROG_TITLE_KW = {
     "python",
     "javascript",
@@ -1524,15 +1523,100 @@ _CALIBRE_PROG_TITLE_KW = {
     "circuits",
     "engineering",
 }
+_CALIBRE_NEURO_TAGS = {
+    "neurology",
+    "neuroscience",
+    "neuropsychology",
+    "neural networks",
+    "neural networks (computer science)",
+    "brain",
+    "consciousness",
+    "physiological psychology",
+    "human anatomy & physiology",
+    "life sciences",
+    "cognitive neuroscience",
+}
+_CALIBRE_PSYCH_TAGS = {
+    "psychology",
+    "applied psychology",
+    "cognitive psychology",
+    "conflict (psychology)",
+    "ego (psychology)",
+    "pscyhology",
+    "pyschology",
+    "psychological aspects",
+    "physiological aspects",
+    "emotions",
+    "time - psychological aspects",
+    "personality",
+    "psychiatry",
+    "consciousness - physiological aspects",
+    "emotions - physiological aspects",
+}
+_CALIBRE_FICTION_TAGS = {
+    "fiction",
+    "fantasy fiction",
+    "visionary fiction",
+    "literary",
+    "fantasy",
+}
+_CALIBRE_CULTURE_TAGS = {
+    "culture",
+    "history",
+    "social science",
+    "sociology",
+    "civilization",
+    "anthropology",
+    "social history",
+    "world",
+    "history & surveys",
+}
+_CALIBRE_HEALTH_TAGS = {
+    "health",
+    "health & fitness",
+    "health and hygiene",
+    "men's health",
+    "medical",
+    "mind & body",
+    "mental health",
+    "exercise",
+    "men - health and hygiene",
+}
+
+
+def _calibre_classify(tags: set, title: str) -> tuple:
+    """Return (arousal, tier_name) for a calibre-igor book.
+
+    Tier order (highest first):
+      akien → computers → neurology → psychology → culture → other → fiction → health
+    """
+    t = tags  # already lowercased by caller
+    title_words = set(title.lower().split())
+
+    if "akien" in t:
+        return 0.85, "akien"
+    if t & _CALIBRE_PROG_SUBJECTS or title_words & _CALIBRE_PROG_TITLE_KW:
+        return 0.65, "computers"
+    if t & _CALIBRE_NEURO_TAGS:
+        return 0.62, "neurology"
+    if t & _CALIBRE_PSYCH_TAGS:
+        return 0.55, "psychology"
+    if t & _CALIBRE_CULTURE_TAGS:
+        return 0.25, "culture"
+    if t & _CALIBRE_FICTION_TAGS:
+        return 0.18, "fiction"
+    if t & _CALIBRE_HEALTH_TAGS:
+        return 0.12, "health"
+    return 0.20, "other"
 
 
 def ingest_calibre_igor_books(**_kwargs) -> str:
-    """Scan Calibre for books tagged 'Igor' and add new ones to reading_list.
+    """Scan Calibre for books tagged 'Igor', insert new ones and update mis-tiered ones.
 
-    Programming/tech books → arousal=0.65, priority 150+.
-    Everything else → arousal=0.20, priority 600+.
-    Idempotent by calibre://{id} source URL.
+    Tier map (arousal): akien=0.85, computers=0.65, neurology=0.62,
+      psychology=0.55, culture=0.25, other=0.20, fiction=0.18, health=0.12.
     Igor tag overrides SKIP categories — manual curation wins.
+    Idempotent by calibre://{id} source URL; re-run after adding Calibre tags.
     Called daily by PROC_CALIBRE_INGEST.
     """
     import sqlite3
@@ -1557,9 +1641,8 @@ def ingest_calibre_igor_books(**_kwargs) -> str:
         """)
         igor_books = [dict(r) for r in cur.fetchall()]
 
-        # Fetch all tags per book in one query
         book_ids = [b["id"] for b in igor_books]
-        tags_by_id: dict[int, set] = {}
+        tags_by_id: dict = {}
         if book_ids:
             placeholders = ",".join("?" * len(book_ids))
             cur.execute(
@@ -1573,74 +1656,84 @@ def ingest_calibre_igor_books(**_kwargs) -> str:
     except Exception as e:
         return f"[ingest_calibre_igor_books] Calibre read error: {e}"
 
-    # ── Fetch existing calibre:// sources to skip duplicates ──────────────────
+    # ── Fetch existing calibre:// entries with their current arousal ───────────
     try:
         with _igor_db_proxy()() as conn:
             rows = conn.execute(
-                "SELECT source FROM reading_list WHERE source LIKE ?",
+                "SELECT source, encoding_arousal FROM reading_list WHERE source LIKE ?",
                 ("calibre://%",),
             ).fetchall()
-        existing_sources = {r[0] for r in rows if r[0]}
+        existing: dict = {r[0]: float(r[1]) for r in rows if r[0]}
     except Exception as e:
         return f"[ingest_calibre_igor_books] DB error fetching existing: {e}"
 
-    # ── Classify and ingest ────────────────────────────────────────────────────
-    prog_count = 0
-    other_count = 0
-
-    # Get current max priority in each range to avoid collisions on re-runs
+    # ── Seed per-tier priority counters from current DB maxima ────────────────
+    _tier_ranges = {
+        "akien": (15, 29),
+        "computers": (210, 239),
+        "neurology": (240, 269),
+        "psychology": (320, 359),
+        "culture": (400, 449),
+        "other": (600, 649),
+        "fiction": (650, 699),
+        "health": (700, 749),
+    }
+    pri_counters: dict = {}
     try:
         with _igor_db_proxy()() as conn:
-            r = conn.execute(
-                "SELECT MAX(priority) FROM reading_list WHERE priority BETWEEN 150 AND 299"
-            ).fetchone()
-            prog_pri = (r[0] or 149) + 1
-            r = conn.execute(
-                "SELECT MAX(priority) FROM reading_list WHERE priority BETWEEN 600 AND 799"
-            ).fetchone()
-            other_pri = (r[0] or 599) + 1
+            for tier, (lo, hi) in _tier_ranges.items():
+                r = conn.execute(
+                    "SELECT MAX(priority) FROM reading_list WHERE priority BETWEEN ? AND ?",
+                    (lo, hi),
+                ).fetchone()
+                pri_counters[tier] = (r[0] or lo - 1) + 1
     except Exception:
-        prog_pri = 150
-        other_pri = 600
+        pri_counters = {t: lo for t, (lo, _) in _tier_ranges.items()}
+
+    # ── Classify and insert/update ────────────────────────────────────────────
+    inserted: dict = {}  # tier → count
+    updated: dict = {}
+    skipped = 0
 
     for book in igor_books:
         source = f"calibre://{book['id']}"
-        if source in existing_sources:
-            continue
-
         tags = tags_by_id.get(book["id"], set())
-        title_words = set(book["title"].lower().split())
+        arousal, tier = _calibre_classify(tags, book["title"])
+        notes = f"tier={tier} tags={','.join(sorted(tags))[:70]}"
 
-        is_prog = bool(tags & _CALIBRE_PROG_SUBJECTS) or bool(
-            title_words & _CALIBRE_PROG_TITLE_KW
-        )
-
-        if is_prog:
-            arousal = 0.65
-            priority = prog_pri
-            prog_pri += 1
-            prog_count += 1
+        if source not in existing:
+            priority = pri_counters.get(tier, 600)
+            pri_counters[tier] = priority + 1
+            add_to_reading_list(
+                title=book["title"],
+                author=book["author"] or "Unknown",
+                source=source,
+                book_type="calibre-igor",
+                encoding_arousal=arousal,
+                priority=priority,
+                added_by="igor_self",
+                notes=notes,
+            )
+            inserted[tier] = inserted.get(tier, 0) + 1
+        elif abs(existing[source] - arousal) > 0.001:
+            # Arousal changed (re-tiered) — update in place
+            try:
+                with _igor_db_proxy()() as conn:
+                    conn.execute(
+                        "UPDATE reading_list SET encoding_arousal=?, notes=? WHERE source=?",
+                        (arousal, notes, source),
+                    )
+                updated[tier] = updated.get(tier, 0) + 1
+            except Exception:
+                pass
         else:
-            arousal = 0.20
-            priority = other_pri
-            other_pri += 1
-            other_count += 1
+            skipped += 1
 
-        add_to_reading_list(
-            title=book["title"],
-            author=book["author"] or "Unknown",
-            source=source,
-            book_type="calibre-igor",
-            encoding_arousal=arousal,
-            priority=priority,
-            added_by="igor_self",
-            notes=f"tags={','.join(sorted(tags))[:80]}",
-        )
-        existing_sources.add(source)
-
+    total_in = sum(inserted.values())
+    total_up = sum(updated.values())
     summary = (
-        f"[ingest_calibre_igor_books] added={prog_count + other_count} "
-        f"(prog={prog_count} other={other_count}) skipped={len(igor_books) - prog_count - other_count}"
+        f"[ingest_calibre_igor_books] inserted={total_in} updated={total_up} "
+        f"skipped={skipped} tiers={inserted or updated}"
     )
     try:
         from ..cognition.forensic_logger import log_anomaly as _la
@@ -1655,7 +1748,7 @@ def ingest_calibre_igor_books(**_kwargs) -> str:
 registry.register(
     Tool(
         name="ingest_calibre_igor_books",
-        description="Scan Calibre for books tagged 'Igor' and add new ones to reading_list. Programming books get arousal=0.65 (above psychology/neuroscience); other books get arousal=0.20 (after gutenberg fiction). Idempotent — safe to re-run as Akien tags more books. Called daily by PROC_CALIBRE_INGEST.",
+        description="Scan Calibre for books tagged 'Igor' and insert/update reading_list entries. Tiers by secondary tag: akien=0.85, computers=0.65, neurology=0.62, psychology=0.55, culture=0.25, other=0.20, fiction=0.18, health=0.12. Idempotent — re-run after Akien tags more books in Calibre. Called daily by PROC_CALIBRE_INGEST.",
         parameters={"type": "object", "properties": {}},
         fn=ingest_calibre_igor_books,
     )
