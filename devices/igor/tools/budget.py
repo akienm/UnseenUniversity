@@ -136,7 +136,9 @@ def fetch_openrouter_balance() -> dict | None:
                     ),
                 )
         except Exception as e:
-            log_error(kind="TOOL_FAIL", detail=f"history write failed: {e}")  # non-fatal
+            log_error(
+                kind="TOOL_FAIL", detail=f"history write failed: {e}"
+            )  # non-fatal
         return result
     except Exception:
         return None
@@ -296,7 +298,7 @@ def budget_status() -> dict:
             "spending_cap": cap,
             "local_spent": spent_local,
             "fetched_at": real["fetched_at"],
-            "warn": remaining < (total_purchased * WARN_FRACTION),
+            "warn": remaining < 10.0,
             "critical": remaining < CRITICAL_USD,
         }
     else:
@@ -309,7 +311,7 @@ def budget_status() -> dict:
             "spending_cap": cap,
             "local_spent": spent_local,
             "pct_used": pct_used,
-            "warn": remaining < (cap * WARN_FRACTION),
+            "warn": remaining < 10.0,
             "critical": remaining < CRITICAL_USD,
         }
 

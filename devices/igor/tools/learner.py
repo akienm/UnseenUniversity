@@ -809,7 +809,7 @@ def add_to_reading_list(**kwargs) -> str:
     try:
         with _igor_db_proxy()() as conn:
             row = conn.execute(
-                "SELECT MAX(CAST(SUBSTR(id,4) AS INTEGER)) FROM reading_list"
+                "SELECT MAX(CAST(SUBSTRING(id FROM 4) AS INTEGER)) FROM reading_list WHERE id ~ '^RL_[0-9]+$'"
             ).fetchone()
             max_n = row[0] or 0
             new_id = f"RL_{max_n + 1:03d}"
@@ -1012,6 +1012,69 @@ def annotate_learning(**kwargs) -> str:
         return f"Noted. Deposited as personal experience [{mem_id}]: {narrative[:120]}"
     except Exception as e:
         return f"Error depositing experience: {e}"
+
+
+def learn_top_gap(**_kwargs) -> str:
+    """
+    Self-directed curiosity drain. Reads the highest-salience unexpired NARRATIVE_GAP
+    from TWM (twm_observations), extracts the question, adds it to reading_list.
+    Called by SchedulerSource via PROC_CURIOSITY_DRAIN every 30 min.
+    """
+    import time as _time
+
+    try:
+        with _igor_db_proxy()() as conn:
+            row = conn.execute(
+                """SELECT content_csb FROM twm_observations
+                   WHERE content_csb LIKE %s
+                     AND (expires_at IS NULL OR expires_at > to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS'))
+                   ORDER BY salience DESC LIMIT 1""",
+                ("NARRATIVE_GAP|%",),
+            ).fetchone()
+    except Exception as e:
+        return f"[learn_top_gap] DB error: {e}"
+
+    if not row:
+        return "[learn_top_gap] no active gaps — nothing to queue"
+
+    content = row[0] if isinstance(row, (list, tuple)) else row["content_csb"]
+    # Parse: NARRATIVE_GAP|question=...|salience=...|threat=...
+    question = ""
+    for part in content.split("|"):
+        if part.startswith("question="):
+            question = part[len("question=") :]
+            break
+
+    if not question:
+        return f"[learn_top_gap] could not parse question from: {content[:80]}"
+
+    result = add_to_reading_list(
+        title=question,
+        book_type="curiosity",
+        encoding_arousal=0.5,
+        priority=30,
+        added_by="igor_self",
+        notes="Self-queued from NARRATIVE_GAP",
+    )
+
+    try:
+        from ..cognition.forensic_logger import log_anomaly as _la
+
+        _la(kind="CURIOSITY_QUEUED", detail=f"queued: {question[:120]} → {result}")
+    except Exception:
+        pass
+
+    return result
+
+
+registry.register(
+    Tool(
+        name="learn_top_gap",
+        description="Self-directed curiosity drain: reads highest-salience NARRATIVE_GAP from TWM and queues topic to reading_list. Called by SchedulerSource via PROC_CURIOSITY_DRAIN.",
+        parameters={"type": "object", "properties": {}},
+        fn=learn_top_gap,
+    )
+)
 
 
 registry.register(

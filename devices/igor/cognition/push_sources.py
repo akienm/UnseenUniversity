@@ -265,8 +265,8 @@ class HeartbeatSource(BasePushSource):
         remaining = s["remaining_usd"]
         total = s.get("purchased_usd") or s.get("spending_cap", 0)
         src = s.get("source", "local_tracking")
-        if remaining > total * 0.20 and not s["critical"]:
-            return []  # Balance fine — stay quiet
+        if remaining > 10.0 and not s["critical"]:
+            return []  # Balance fine — stay quiet (>$10 remaining)
 
         if remaining <= 0:
             level, salience = "EXHAUSTED", 1.0
