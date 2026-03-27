@@ -1755,6 +1755,101 @@ registry.register(
 )
 
 
+# ── Reading list → learn_queue feeder ─────────────────────────────────────────
+
+_FEEDER_BATCH = 20  # items to move into learn_queue.json per run
+
+
+def feed_reading_list(**_kwargs) -> str:
+    """Pull the top-priority pending/queued items from reading_list into learn_queue.json.
+
+    Reads reading_list WHERE status IN ('pending','queued') ORDER BY
+    encoding_arousal DESC, priority ASC LIMIT _FEEDER_BATCH, converts each
+    to a learn_queue.json entry (url=source, title, cloud_ok=True for URLs /
+    False for calibre:// so drain runner uses local inference for ebooks),
+    deduplicates against existing queue by URL, appends new entries, then
+    spawns drain_learn_queue.py if not already running.
+
+    Called hourly by PROC_READING_FEEDER.
+    """
+    # ── Fetch top items from reading_list ─────────────────────────────────────
+    try:
+        with _igor_db_proxy()() as conn:
+            rows = conn.execute(
+                """SELECT source, title, author, encoding_arousal
+                   FROM reading_list
+                   WHERE status IN ('pending', 'queued') AND source IS NOT NULL AND source != ''
+                   ORDER BY encoding_arousal DESC, priority ASC
+                   LIMIT ?""",
+                (_FEEDER_BATCH,),
+            ).fetchall()
+    except Exception as e:
+        return f"[feed_reading_list] DB error: {e}"
+
+    if not rows:
+        return "[feed_reading_list] reading_list is empty — nothing to feed"
+
+    # ── Load existing queue, dedup by url ─────────────────────────────────────
+    existing_q = _load_queue()
+    existing_urls = {e.get("url") for e in existing_q}
+    pending_in_q = sum(1 for e in existing_q if not e.get("done"))
+
+    added = 0
+    for row in rows:
+        source = row[0]
+        title = row[1] or source
+        author = row[2] or ""
+
+        if source in existing_urls:
+            continue
+
+        # calibre:// sources → local inference (no cloud spend for bulk ebooks)
+        cloud_ok = not source.startswith("calibre://")
+
+        label = f"{title} — {author}".strip(" —") if author else title
+        existing_q.append(
+            {
+                "url": source,
+                "title": label[:100],
+                "cloud_ok": cloud_ok,
+                "done": False,
+            }
+        )
+        existing_urls.add(source)
+        added += 1
+
+    if added:
+        _save_queue(existing_q)
+
+    # ── Start drain runner if not already running ──────────────────────────────
+    launched = False
+    if pending_in_q + added > 0:
+        launched = _launch_queue_runner()
+
+    summary = (
+        f"[feed_reading_list] added={added} already_queued={pending_in_q} "
+        f"drain_launched={launched}"
+    )
+    try:
+        from ..cognition.forensic_logger import log_anomaly as _la
+
+        _la(kind="READING_FEEDER_RUN", detail=summary)
+    except Exception:
+        pass
+
+    return summary
+
+
+registry.register(
+    Tool(
+        name="feed_reading_list",
+        description="Pull top-priority items from reading_list (by encoding_arousal DESC) into learn_queue.json and start the drain runner. Feeds up to 20 items per call. Called hourly by PROC_READING_FEEDER. Safe to call manually to kick off reading.",
+        parameters={"type": "object", "properties": {}},
+        fn=feed_reading_list,
+    )
+)
+
+
 registry.register(
     Tool(
         name="annotate_learning",
