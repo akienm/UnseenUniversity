@@ -1077,6 +1077,225 @@ registry.register(
 )
 
 
+# ── Arch doc ingest ────────────────────────────────────────────────────────────
+
+# Files in design_docs_for_igor/ that Igor should know as self-defining material.
+# Tuple: (relative_path, priority, encoding_arousal)
+_ARCH_DOCS = [
+    # Core identity — highest priority
+    ("design_docs_for_igor/igor_identity_master.dsb", 1, 0.95),
+    ("design_docs_for_igor/decisions_log.dsb", 1, 0.95),
+    ("design_docs_for_igor/ethical_framework.dsb", 1, 0.95),
+    # Architecture + capabilities
+    ("design_docs_for_igor/architecture_root.dsb", 2, 0.90),
+    ("design_docs_for_igor/capabilities_index.dsb", 2, 0.90),
+    ("design_docs_for_igor/cognition_pipeline.dsb", 2, 0.90),
+    ("design_docs_for_igor/engram_language.dsb", 2, 0.90),
+    ("design_docs_for_igor/inertia_registry.dsb", 2, 0.88),
+    # Subsystems + supporting docs
+    ("design_docs_for_igor/gap_analysis.dsb", 3, 0.85),
+    ("design_docs_for_igor/glossary.dsb", 3, 0.85),
+    ("design_docs_for_igor/failure_modes.dsb", 3, 0.85),
+    ("design_docs_for_igor/dev_process.dsb", 3, 0.83),
+    ("design_docs_for_igor/subsystem_cognition.dsb", 3, 0.83),
+    ("design_docs_for_igor/subsystem_memory.dsb", 3, 0.83),
+    ("design_docs_for_igor/subsystem_inference.dsb", 3, 0.83),
+    ("design_docs_for_igor/subsystem_tools.dsb", 3, 0.80),
+    ("design_docs_for_igor/subsystem_reading.dsb", 3, 0.80),
+    ("design_docs_for_igor/subsystem_self_edit.dsb", 3, 0.80),
+    ("design_docs_for_igor/subsystem_cluster.dsb", 3, 0.78),
+    ("design_docs_for_igor/subsystem_web_network.dsb", 3, 0.75),
+]
+
+_REPO_ROOT = Path(__file__).parent.parent.parent.parent
+
+
+def ingest_arch_docs(**_kwargs) -> str:
+    """
+    Queue Igor's own architecture docs into reading_list at high encoding_arousal.
+    Idempotent — skips entries already present by source URL.
+    Called once at setup or on demand. NOT scheduled.
+    """
+    queued = []
+    skipped = []
+    errors = []
+
+    # Fetch already-queued sources to avoid duplicates
+    try:
+        with _igor_db_proxy()() as conn:
+            rows = conn.execute(
+                "SELECT source FROM reading_list WHERE book_type = 'igor-architecture'"
+            ).fetchall()
+        existing_sources = {r[0] for r in rows if r[0]}
+    except Exception as e:
+        return f"[ingest_arch_docs] DB error fetching existing: {e}"
+
+    for rel_path, priority, arousal in _ARCH_DOCS:
+        full_path = _REPO_ROOT / rel_path
+        source_url = f"file://{full_path}"
+
+        if source_url in existing_sources:
+            skipped.append(rel_path)
+            continue
+
+        if not full_path.exists():
+            errors.append(f"missing: {rel_path}")
+            continue
+
+        # Use filename stem as title for readability
+        title = full_path.stem.replace("_", " ").title()
+        result = add_to_reading_list(
+            title=title,
+            source=source_url,
+            book_type="igor-architecture",
+            encoding_arousal=arousal,
+            priority=priority,
+            added_by="arch_ingest",
+            notes=f"Igor self-architecture doc — {rel_path}",
+        )
+        if result.startswith("Error"):
+            errors.append(f"{rel_path}: {result}")
+        else:
+            queued.append(result)
+
+    summary = f"[ingest_arch_docs] queued={len(queued)} skipped={len(skipped)} errors={len(errors)}"
+    try:
+        from ..cognition.forensic_logger import log_anomaly as _la
+
+        _la(
+            kind="ARCH_INGEST_DONE",
+            detail=summary + (f" | errors: {errors}" if errors else ""),
+        )
+    except Exception:
+        pass
+
+    return summary
+
+
+registry.register(
+    Tool(
+        name="ingest_arch_docs",
+        description="Queue Igor's own architecture design docs (decisions_log, capabilities_index, subsystem docs, etc.) into reading_list at high priority and encoding_arousal. Idempotent — safe to call multiple times.",
+        parameters={"type": "object", "properties": {}},
+        fn=ingest_arch_docs,
+    )
+)
+
+
+# ── Self-directed gap flagging ──────────────────────────────────────────────────
+
+_GAP_FLAG_SALIENCE_THRESHOLD = 0.7
+_GAP_FLAG_COOLDOWN_SEC = 900  # don't re-flag the same question within 15 min
+_gap_flag_last: dict[str, float] = {}  # question → last flagged timestamp
+
+
+def flag_top_gap(**_kwargs) -> str:
+    """
+    If the highest-salience unexpired NARRATIVE_GAP exceeds the threshold, post
+    an 'I noticed:' message to the channel so Akien sees Igor noticing things.
+    Called by SchedulerSource via PROC_FLAG_ANOMALY every 5 min.
+    Writes directly to channel_messages (Postgres) + messages.jsonl.
+    """
+    import json as _json
+    import time as _time
+    from datetime import datetime, timezone
+
+    # Query highest-salience unexpired NARRATIVE_GAP
+    try:
+        with _igor_db_proxy()() as conn:
+            row = conn.execute(
+                """SELECT content_csb, salience FROM twm_observations
+                   WHERE content_csb LIKE %s
+                     AND (expires_at IS NULL OR expires_at > to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS'))
+                   ORDER BY salience DESC LIMIT 1""",
+                ("NARRATIVE_GAP|%",),
+            ).fetchone()
+    except Exception as e:
+        return f"[flag_top_gap] DB error: {e}"
+
+    if not row:
+        return "[flag_top_gap] no active gaps"
+
+    content = row[0] if isinstance(row, (list, tuple)) else row["content_csb"]
+    salience = float(row[1] if isinstance(row, (list, tuple)) else row["salience"])
+
+    if salience < _GAP_FLAG_SALIENCE_THRESHOLD:
+        return f"[flag_top_gap] top gap salience={salience:.2f} below threshold — quiet"
+
+    # Parse question
+    question = ""
+    for part in content.split("|"):
+        if part.startswith("question="):
+            question = part[len("question=") :]
+            break
+    if not question:
+        return f"[flag_top_gap] could not parse question from: {content[:80]}"
+
+    # Cooldown — don't spam the same question
+    now = _time.time()
+    if (
+        question in _gap_flag_last
+        and now - _gap_flag_last[question] < _GAP_FLAG_COOLDOWN_SEC
+    ):
+        return f"[flag_top_gap] cooldown active for: {question[:60]}"
+    _gap_flag_last[question] = now
+
+    message = f"[Igor notices] {question} (salience={salience:.2f})"
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    # Write to Postgres channel_messages
+    try:
+        import os as _os
+        import psycopg2 as _pg
+
+        pg_url = _os.environ.get("IGOR_HOME_DB_URL", "") or _os.environ.get(
+            "IGOR_DB_URL", ""
+        )
+        if pg_url:
+            conn_pg = _pg.connect(pg_url)
+            with conn_pg:
+                with conn_pg.cursor() as c:
+                    c.execute(
+                        "INSERT INTO channel_messages (ts, author, type, content) VALUES (%s, %s, %s, %s)",
+                        (ts, "igor", "message", message),
+                    )
+            conn_pg.close()
+    except Exception:
+        pass  # non-fatal — JSONL write below is the backup
+
+    # Write to JSONL channel file
+    try:
+        channel_file = paths().cc_channel / "messages.jsonl"
+        channel_file.parent.mkdir(parents=True, exist_ok=True)
+        entry = _json.dumps(
+            {"ts": ts, "author": "igor", "type": "message", "content": message},
+            ensure_ascii=False,
+        )
+        with open(channel_file, "a", encoding="utf-8") as f:
+            f.write(entry + "\n")
+    except Exception:
+        pass  # non-fatal
+
+    try:
+        from ..cognition.forensic_logger import log_anomaly as _la
+
+        _la(kind="GAP_FLAGGED", detail=f"salience={salience:.2f} q={question[:120]}")
+    except Exception:
+        pass
+
+    return f"[flag_top_gap] flagged: {question[:80]}"
+
+
+registry.register(
+    Tool(
+        name="flag_top_gap",
+        description="Check if any high-salience NARRATIVE_GAP exists in TWM; if so, post '[Igor notices]: {question}' to the channel as author=igor. Called every 5 min by PROC_FLAG_ANOMALY.",
+        parameters={"type": "object", "properties": {}},
+        fn=flag_top_gap,
+    )
+)
+
+
 registry.register(
     Tool(
         name="annotate_learning",
