@@ -462,13 +462,14 @@ class InferenceGateway(IgorBase):
                         )
             return "", 0.0, False
 
-        # ── interactive: D234 Ollama primary; OR luxury fallback for quality path ──
-        # Ollama fires first always. OR is the luxury/tone path — scarce budget.
-        # OR fallback only when: user turn + medium/high complexity + budget ok.
+        # ── interactive: D254 human turns → cloud direct; D234 Ollama primary for background ──
+        # D254: human turns (is_user_turn=True) skip Ollama entirely — go straight to cloud.
+        # Ollama reserved for background/non-human interactive turns.
+        # Cloud budget exhaustion is the only condition that falls back to Ollama for human turns.
         last_error = ""
         _quality_path = is_user_turn and complexity in ("medium", "high")
 
-        if self._t2:
+        if self._t2 and not is_user_turn:
             try:
                 self.last_tier = "local/interactive"
                 if on_tier:
@@ -500,8 +501,8 @@ class InferenceGateway(IgorBase):
                         detail=str(_e),
                     )
 
-        # OR luxury path: quality matters + budget ok
-        if _quality_path and _cloud_ok and self._t4:
+        # Cloud path: always for human turns (D254); quality path for non-human (D234)
+        if (is_user_turn or _quality_path) and _cloud_ok and self._t4:
             try:
                 self.last_tier = "cloud/interactive"
                 if on_tier:
@@ -528,10 +529,11 @@ class InferenceGateway(IgorBase):
         # Cloud fail → try local once more before giving up entirely.
         # Skip retry if the first local failure was a timeout — it'll just stall again.
         # Only retry on connection errors (host was briefly unreachable, may have recovered).
+        # D254: human turns always allowed to retry Ollama as budget-exhaustion fallback.
         _was_timeout = (
             "timed out" in last_error.lower() or "timeout" in last_error.lower()
         )
-        if self._t2 and last_error and not _was_timeout:
+        if self._t2 and last_error and (is_user_turn or not _was_timeout):
             try:
                 self.last_tier = "local/retry"
                 if on_tier:
