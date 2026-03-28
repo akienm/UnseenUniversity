@@ -141,6 +141,19 @@ registry.register(
 # ── Tool: cluster_status ──────────────────────────────────────────────────────
 
 
+def _ping(ip: str) -> bool:
+    """ICMP ping — returns True if box responds, False if unreachable. Near-instant (2s max)."""
+    try:
+        result = subprocess.run(
+            ["ping", "-c", "1", "-W", "2", ip],
+            capture_output=True,
+            timeout=4,
+        )
+        return result.returncode == 0
+    except Exception:
+        return False
+
+
 def _ollama_models(ip: str, port: int = 11434, timeout: int = 5) -> list[str] | None:
     """Return list of model names from Ollama HTTP API, or None on failure."""
     try:
@@ -167,6 +180,12 @@ def _cluster_status() -> str:
         ip = m["ip"]
         host = m["hostname"]
         port = m.get("ollama_port", 11434)
+        # Ping first — fast reachability check
+        alive = _ping(ip)
+        ping_str = "PING ✓" if alive else "PING ✗"
+        if not alive:
+            lines.append(f"  {host:<18} {ping_str}  (unreachable)")
+            continue
         # Ollama health via HTTP (works regardless of SSH/PATH issues)
         models = _ollama_models(ip, port)
         if models is None:
@@ -177,10 +196,10 @@ def _cluster_status() -> str:
         if m.get("ssh"):
             user = m.get("ssh_user", _DEFAULT_USER)
             result = _ssh_run(ip, user, "echo ssh_ok", timeout=8)
-            ssh_str = "SSH ✓" if "ssh_ok" in result else f"SSH ✗"
+            ssh_str = "SSH ✓" if "ssh_ok" in result else "SSH ✗"
         else:
             ssh_str = "SSH —"
-        lines.append(f"  {host:<18} {ollama_str:<28} {ssh_str}")
+        lines.append(f"  {host:<18} {ping_str}  {ollama_str:<28} {ssh_str}")
     return "\n".join(lines)
 
 
@@ -354,6 +373,21 @@ def get_cluster_loads(force_refresh: bool = False) -> dict[str, dict]:
 
         ip = m["ip"]
         user = m.get("ssh_user", _DEFAULT_USER)
+
+        # Ping first — if box is truly down, skip the SSH load check entirely
+        if not _ping(ip):
+            entry = {
+                "verdict": "unreachable",
+                "cpu": 0,
+                "ram": 0,
+                "swap": 0,
+                "ts": now,
+                "ping": False,
+            }
+            _LOAD_CACHE[host] = entry
+            result[host] = entry
+            continue
+
         raw = _ssh_run(ip, user, _LOAD_CMD, timeout=10)
 
         try:
@@ -373,9 +407,18 @@ def get_cluster_loads(force_refresh: bool = False) -> dict[str, dict]:
                 "ram": ram,
                 "swap": swap,
                 "ts": now,
+                "ping": True,
             }
         except Exception:
-            entry = {"verdict": "unreachable", "cpu": 0, "ram": 0, "swap": 0, "ts": now}
+            # Ping succeeded but SSH load check failed — box is up but SSH load cmd broken
+            entry = {
+                "verdict": "unreachable",
+                "cpu": 0,
+                "ram": 0,
+                "swap": 0,
+                "ts": now,
+                "ping": True,
+            }
 
         _LOAD_CACHE[host] = entry
         result[host] = entry
