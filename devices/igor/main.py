@@ -5617,7 +5617,25 @@ class Igor(IgorBase):
           - The main loop never blocks on LLM inference.
           - Conversation order per thread_id is preserved (sequential worker per thread).
           - A second message arriving while LLM is in-flight gets queued, not dropped.
+
+        T-restart-flag-turn-entry: restart.flag is also checked here so a cc_send ping
+        triggers restart even when the idle loop is blocked by a long background task.
         """
+        # Fast-path management interrupt: check restart.flag on every network drain.
+        # Complements the idle-loop check — guarantees pickup within one turn cycle
+        # even when PROC_FLAG_ANOMALY or consolidation keeps the idle loop occupied.
+        _rflag = self._instance_dir() / "restart.flag"
+        if _rflag.exists():
+            try:
+                _rflag.unlink()
+            except Exception as _e:
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"_drain_network restart.flag: {_e}"
+                )
+            loginfo("[cyan][EXTERNAL] Restart flag detected (drain) — restarting...[/]")
+            self._shutdown(reason="restart flag (drain entry)")
+            sys.exit(42)
+
         while True:
             try:
                 msg = net_listener.incoming.get_nowait()
