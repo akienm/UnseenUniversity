@@ -52,17 +52,26 @@ def _ssh_run(ip: str, user: str, command: str, timeout: int = _SSH_TIMEOUT) -> s
     key = str(_KEY_PATH)
     cmd = [
         "ssh",
+        "-n",  # redirect stdin from /dev/null — prevents tty blocking
         "-i",
         key,
         "-o",
         "StrictHostKeyChecking=no",
         "-o",
         "ConnectTimeout=8",
+        "-o",
+        "BatchMode=yes",  # fail immediately if interactive auth required
         f"{user}@{ip}",
         command,
     ]
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            stdin=subprocess.DEVNULL,
+        )
         out = (result.stdout or "").strip()
         err = (result.stderr or "").strip()
         if result.returncode != 0 and not out:
