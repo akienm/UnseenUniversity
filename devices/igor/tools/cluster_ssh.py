@@ -316,12 +316,24 @@ registry.register(
 
 # ── G40: Cluster load awareness ───────────────────────────────────────────────
 
-# Psutil one-liner — same metrics as local _resource_load_dict()
+# Psutil one-liner — Linux: uses os.getloadavg() for 1-min load average
 _LOAD_CMD = (
     'python3 -c "'
     "import psutil,os,json;"
     "load1,*_=os.getloadavg();"
     "cpu=load1/(os.cpu_count() or 1)*100;"
+    "vm=psutil.virtual_memory();"
+    "sw=psutil.swap_memory();"
+    "print(json.dumps({'cpu':round(cpu,1),'ram':round(vm.percent,1),'swap':round(sw.percent,1)}))"
+    '"'
+)
+
+# Windows: os.getloadavg() doesn't exist; use psutil.cpu_percent() instead.
+# Igor's venv has psutil, so 'python' (not 'python3') resolves to venv Python via PATH.
+_WINDOWS_LOAD_CMD = (
+    'python -c "'
+    "import psutil,json;"
+    "cpu=psutil.cpu_percent(interval=0.5);"
     "vm=psutil.virtual_memory();"
     "sw=psutil.swap_memory();"
     "print(json.dumps({'cpu':round(cpu,1),'ram':round(vm.percent,1),'swap':round(sw.percent,1)}))"
@@ -388,7 +400,9 @@ def get_cluster_loads(force_refresh: bool = False) -> dict[str, dict]:
             result[host] = entry
             continue
 
-        raw = _ssh_run(ip, user, _LOAD_CMD, timeout=10)
+        os_type = m.get("os", "linux").lower()
+        load_cmd = _WINDOWS_LOAD_CMD if os_type == "windows" else _LOAD_CMD
+        raw = _ssh_run(ip, user, load_cmd, timeout=10)
 
         try:
             metrics = json.loads(raw.strip())
