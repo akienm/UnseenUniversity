@@ -348,11 +348,15 @@ def get_cluster_loads(force_refresh: bool = False) -> dict[str, dict]:
     Returns {hostname: {verdict, cpu, ram, swap}} — cached for 60s.
     verdict: "ok" | "warn" | "critical" | "unreachable"
 
+    Checks run in parallel (ThreadPoolExecutor) — max wall time = one machine's timeout.
+    Timeout raised to 20s to tolerate loaded Windows boxes (WMI can be slow under load).
+
     Thresholds (same as local IGOR_LOAD_* env vars):
       CPU warn ≥ 80%, RAM warn ≥ 80%, swap warn ≥ 40%
       CPU crit ≥ 95%, RAM crit ≥ 92%, swap crit ≥ 75%
     """
     import time as _time
+    from concurrent.futures import ThreadPoolExecutor, as_completed
 
     now = _time.time()
 
@@ -369,6 +373,7 @@ def get_cluster_loads(force_refresh: bool = False) -> dict[str, dict]:
         if m.get("ip") and m.get("ssh") and m.get("status") == "online"
     ]
     result = {}
+    to_check: list[dict] = []
 
     for m in machines:
         host = m["hostname"]
@@ -379,14 +384,19 @@ def get_cluster_loads(force_refresh: bool = False) -> dict[str, dict]:
             and now - cached.get("ts", 0) < _LOAD_CACHE_TTL_SEC
         ):
             result[host] = cached
-            continue
+        else:
+            to_check.append(m)
 
+    if not to_check:
+        return result
+
+    def _check_one(m: dict) -> tuple[str, dict]:
+        host = m["hostname"]
         ip = m["ip"]
         user = m.get("ssh_user", _DEFAULT_USER)
 
-        # Ping first — if box is truly down, skip the SSH load check entirely
         if not _ping(ip):
-            entry = {
+            return host, {
                 "verdict": "unreachable",
                 "cpu": 0,
                 "ram": 0,
@@ -394,13 +404,10 @@ def get_cluster_loads(force_refresh: bool = False) -> dict[str, dict]:
                 "ts": now,
                 "ping": False,
             }
-            _LOAD_CACHE[host] = entry
-            result[host] = entry
-            continue
 
         os_type = m.get("os", "linux").lower()
         load_cmd = _WINDOWS_LOAD_CMD if os_type == "windows" else _LOAD_CMD
-        raw = _ssh_run(ip, user, load_cmd, timeout=10)
+        raw = _ssh_run(ip, user, load_cmd, timeout=20)
 
         try:
             metrics = json.loads(raw.strip())
@@ -413,7 +420,7 @@ def get_cluster_loads(force_refresh: bool = False) -> dict[str, dict]:
                 verdict = "warn"
             else:
                 verdict = "ok"
-            entry = {
+            return host, {
                 "verdict": verdict,
                 "cpu": cpu,
                 "ram": ram,
@@ -422,8 +429,7 @@ def get_cluster_loads(force_refresh: bool = False) -> dict[str, dict]:
                 "ping": True,
             }
         except Exception:
-            # Ping succeeded but SSH load check failed — box is up but SSH load cmd broken
-            entry = {
+            return host, {
                 "verdict": "unreachable",
                 "cpu": 0,
                 "ram": 0,
@@ -432,8 +438,23 @@ def get_cluster_loads(force_refresh: bool = False) -> dict[str, dict]:
                 "ping": True,
             }
 
-        _LOAD_CACHE[host] = entry
-        result[host] = entry
+    with ThreadPoolExecutor(max_workers=len(to_check)) as pool:
+        futures = {pool.submit(_check_one, m): m for m in to_check}
+        for fut in as_completed(futures, timeout=25):
+            try:
+                host, entry = fut.result()
+            except Exception:
+                host = futures[fut]["hostname"]
+                entry = {
+                    "verdict": "unreachable",
+                    "cpu": 0,
+                    "ram": 0,
+                    "swap": 0,
+                    "ts": now,
+                    "ping": False,
+                }
+            _LOAD_CACHE[host] = entry
+            result[host] = entry
 
     return result
 
