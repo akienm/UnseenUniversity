@@ -428,7 +428,12 @@ def get_cluster_loads(force_refresh: bool = False) -> dict[str, dict]:
                 "ts": now,
                 "ping": True,
             }
-        except Exception:
+        except Exception as _e:
+            import logging as _logging
+
+            _logging.getLogger(__name__).warning(
+                "cluster_load check failed for %s: raw=%r err=%s", host, raw[:200], _e
+            )
             return host, {
                 "verdict": "unreachable",
                 "cpu": 0,
