@@ -695,10 +695,10 @@ def _update_swarm() -> str:
 
     lines = ["Swarm update initiated:"]
 
-    # ── 1. Remote boxes — load pre-screen then parallel SSH ──────────────────
-    # G40: check cluster loads first (10s SSH, 60s cached).
-    # Skip boxes that are critical or unreachable — they'll catch the next update.
-    loads = get_cluster_loads()
+    # ── 1. Remote boxes — ping-gate then parallel SSH git pull ───────────────
+    # Skips the SSH load-check pre-screen: that spawns SSH subprocesses which
+    # can linger after timeout and exhaust Windows MaxSessions before the git
+    # pull attempts. Ping is cheap, fast, and sufficient for "box is up" check.
     all_remote = [
         m
         for m in _load_machines()
@@ -710,21 +710,10 @@ def _update_swarm() -> str:
     eligible: list[dict] = []
     for m in all_remote:
         host = m["hostname"]
-        load_info = loads.get(host, {})
-        verdict = load_info.get("verdict", "unreachable")
-        if verdict == "critical":
-            cpu = load_info.get("cpu", 0)
-            lines.append(f"  ~ {host}: skipped (load=critical, cpu={cpu:.0f}%)")
-        elif verdict == "unreachable" and not load_info.get("ping"):
-            # Ping failed — box is genuinely down
-            lines.append(f"  ~ {host}: skipped (ping failed — box appears down)")
-        else:
-            # ok, warn, or ssh_load_failed (Windows MaxSessions) — attempt the update
-            if load_info.get("ssh_load_failed"):
-                lines.append(
-                    f"  ! {host}: SSH load check timed out (MaxSessions?) — attempting update anyway"
-                )
+        if _ping(m["ip"]):
             eligible.append(m)
+        else:
+            lines.append(f"  ~ {host}: skipped (ping failed — box appears down)")
 
     remote_results = ssh_exec_all(
         _WINDOWS_UPDATE_CMD, _LINUX_UPDATE_CMD, timeout=30, machines=eligible
