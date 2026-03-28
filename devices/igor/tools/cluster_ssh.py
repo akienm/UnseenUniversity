@@ -554,33 +554,46 @@ _WINDOWS_UPDATE_CMD = (
 def ssh_exec_all(
     windows_cmd: str,
     linux_cmd: str,
-    timeout: int = 60,
+    timeout: int = 20,
+    machines: list[dict] | None = None,
 ) -> dict[str, str]:
     """
     D204: Run OS-typed commands on all SSH-capable online machines.
     Dispatches PowerShell on Windows machines, bash on Linux machines.
     Returns {hostname: output_string} for all attempted machines.
     Does NOT run on the local host (caller handles local separately).
+
+    Runs machines in parallel (ThreadPoolExecutor, max 3 workers).
+    Pass a pre-filtered `machines` list to skip certain hosts (e.g. overloaded boxes).
     """
     import socket as _socket
+    from concurrent.futures import ThreadPoolExecutor, as_completed
 
     local_host = _socket.gethostname()
-    machines = [
-        m
-        for m in _load_machines()
-        if m.get("ip")
-        and m.get("ssh")
-        and m.get("status") == "online"
-        and m["hostname"] != local_host
-    ]
-    results: dict[str, str] = {}
-    for m in machines:
+    if machines is None:
+        machines = [
+            m
+            for m in _load_machines()
+            if m.get("ip")
+            and m.get("ssh")
+            and m.get("status") == "online"
+            and m["hostname"] != local_host
+        ]
+
+    def _run_one(m: dict) -> tuple[str, str]:
         ip = m["ip"]
         host = m["hostname"]
         user = m.get("ssh_user", _DEFAULT_USER)
         os_type = m.get("os", "linux").lower()
         cmd = windows_cmd if os_type == "windows" else linux_cmd
-        results[host] = _ssh_run(ip, user, cmd, timeout=timeout)
+        return host, _ssh_run(ip, user, cmd, timeout=timeout)
+
+    results: dict[str, str] = {}
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        futures = {pool.submit(_run_one, m): m["hostname"] for m in machines}
+        for fut in as_completed(futures):
+            host, out = fut.result()
+            results[host] = out
     return results
 
 
@@ -602,8 +615,31 @@ def _update_swarm() -> str:
 
     lines = ["Swarm update initiated:"]
 
-    # ── 1. Remote boxes ──────────────────────────────────────────────────────
-    remote_results = ssh_exec_all(_WINDOWS_UPDATE_CMD, _LINUX_UPDATE_CMD, timeout=90)
+    # ── 1. Remote boxes — load pre-screen then parallel SSH ──────────────────
+    # G40: check cluster loads first (10s SSH, 60s cached).
+    # Skip boxes that are critical or unreachable — they'll catch the next update.
+    loads = get_cluster_loads()
+    all_remote = [
+        m
+        for m in _load_machines()
+        if m.get("ip")
+        and m.get("ssh")
+        and m.get("status") == "online"
+        and m["hostname"] != _socket.gethostname()
+    ]
+    eligible: list[dict] = []
+    for m in all_remote:
+        host = m["hostname"]
+        verdict = loads.get(host, {}).get("verdict", "unreachable")
+        if verdict in ("critical", "unreachable"):
+            cpu = loads.get(host, {}).get("cpu", 0)
+            lines.append(f"  ~ {host}: skipped (load={verdict}, cpu={cpu:.0f}%)")
+        else:
+            eligible.append(m)
+
+    remote_results = ssh_exec_all(
+        _WINDOWS_UPDATE_CMD, _LINUX_UPDATE_CMD, timeout=20, machines=eligible
+    )
     for host, out in remote_results.items():
         if "PULL_OK" in out:
             # Extract instance count if present
