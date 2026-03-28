@@ -429,11 +429,15 @@ def get_cluster_loads(force_refresh: bool = False) -> dict[str, dict]:
                 "ping": True,
             }
         except Exception as _e:
-            import logging as _logging
+            try:
+                import time as _t
 
-            _logging.getLogger(__name__).warning(
-                "cluster_load check failed for %s: raw=%r err=%s", host, raw[:200], _e
-            )
+                with open("/tmp/igor_load_debug.log", "a") as _dbg:
+                    _dbg.write(
+                        f"{_t.time():.1f} load_fail host={host} raw={raw!r:.200} err={_e}\n"
+                    )
+            except Exception:
+                pass
             return host, {
                 "verdict": "unreachable",
                 "cpu": 0,
