@@ -629,13 +629,17 @@ _LINUX_UPDATE_CMD = (
 )
 _WINDOWS_UPDATE_CMD = (
     "cd C:\\automation\\local\\TheIgors;"
+    " git stash;"
     " git pull --rebase origin main;"
     " if ($LASTEXITCODE -eq 0) {"
-    ' Get-ChildItem "$env:USERPROFILE\\.TheIgors" -Directory'
-    ' | ForEach-Object { New-Item -Force -ItemType File -Path "$($_.FullName)\\restart.flag" };'
+    " git stash pop;"
+    " $dirs = Get-ChildItem C:\\Users -Directory |"
+    " ForEach-Object { Join-Path $_.FullName '.TheIgors' } |"
+    " Where-Object { Test-Path $_ } |"
+    " ForEach-Object { Get-ChildItem $_ -Directory };"
+    " $dirs | ForEach-Object { New-Item -Force -ItemType File -Path (Join-Path $_.FullName 'restart.flag') | Out-Null };"
     " Write-Output 'PULL_OK';"
-    ' $count = (Get-ChildItem "$env:USERPROFILE\\.TheIgors" -Directory).Count;'
-    ' Write-Output "instances=$count"'
+    ' Write-Output "instances=$($dirs.Count)"'
     " } else { Write-Output 'PULL_FAILED' }"
 )
 
