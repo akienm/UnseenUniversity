@@ -70,6 +70,18 @@ NOTEBOOK_PHRASES: tuple[str, ...] = (
     "save this to the notebook",
 )
 
+# Management command phrases → direct habit dispatch at 0.97, bypassing BG scoring.
+# When these match, the habit's code_ref executes the tool without any LLM call.
+# Keeps management commands responsive even under heavy inference load.
+MANAGEMENT_PHRASES: dict[str, str] = {
+    "update swarm": "PROC_SWARM_UPDATE",
+    "swarm update": "PROC_SWARM_UPDATE",
+    "pull and restart": "PROC_SWARM_UPDATE",
+    "cluster status": "PROC_CLUSTER_STATUS",
+    "check cluster": "PROC_CLUSTER_STATUS",
+    "cluster load": "PROC_CLUSTER_STATUS",
+}
+
 # ── Threshold constants ────────────────────────────────────────────────────────
 
 BASE_THRESHOLD = 0.50  # minimum score for any habit to fire
@@ -491,6 +503,25 @@ def select_habit(
                     }
                 )
                 return (saver, 0.93, [])
+
+        # ── 1c. Management command pre-check ─────────────────────────────────
+        # Direct dispatch for operational commands — bypasses BG scoring entirely.
+        # Ensures management habits fire even under heavy inference load.
+        for phrase, habit_id in MANAGEMENT_PHRASES.items():
+            if phrase in raw_lower:
+                mgmt_habit = next((h for h in habits if h.id == habit_id), None)
+                if mgmt_habit:
+                    _emit_bg(
+                        {
+                            "pre_check": "management_phrase",
+                            "winner": habit_id,
+                            "winner_score": 0.97,
+                            "top": [],
+                            "near_misses": 0,
+                            "rationale": f"management_phrase_match:{phrase}",
+                        }
+                    )
+                    return (mgmt_habit, 0.97, [])
 
         # ── 2. Parallel scoring ───────────────────────────────────────────────
         threshold = _compute_threshold(milieu_state)
