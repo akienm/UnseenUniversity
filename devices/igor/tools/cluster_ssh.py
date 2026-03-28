@@ -328,16 +328,14 @@ _LOAD_CMD = (
     '"'
 )
 
-# Windows: os.getloadavg() doesn't exist; use psutil.cpu_percent() instead.
-# Igor's venv has psutil, so 'python' (not 'python3') resolves to venv Python via PATH.
+# Windows: use PowerShell WMI — no Python PATH dependency.
+# ConvertTo-Json -Compress avoids quote-escaping issues through SSH.
 _WINDOWS_LOAD_CMD = (
-    'python -c "'
-    "import psutil,json;"
-    "cpu=psutil.cpu_percent(interval=0.5);"
-    "vm=psutil.virtual_memory();"
-    "sw=psutil.swap_memory();"
-    "print(json.dumps({'cpu':round(cpu,1),'ram':round(vm.percent,1),'swap':round(sw.percent,1)}))"
-    '"'
+    "$cpu=[math]::Round((Get-CimInstance Win32_Processor"
+    " | Measure-Object LoadPercentage -Average).Average,1);"
+    " $os=Get-CimInstance Win32_OperatingSystem;"
+    " $ram=[math]::Round((1-$os.FreePhysicalMemory/$os.TotalVisibleMemorySize)*100,1);"
+    " [PSCustomObject]@{cpu=$cpu;ram=$ram;swap=0} | ConvertTo-Json -Compress"
 )
 
 _LOAD_CACHE: dict[str, dict] = {}  # hostname → {verdict, cpu, ram, swap, ts}
