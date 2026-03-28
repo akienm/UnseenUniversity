@@ -428,23 +428,18 @@ def get_cluster_loads(force_refresh: bool = False) -> dict[str, dict]:
                 "ts": now,
                 "ping": True,
             }
-        except Exception as _e:
-            try:
-                import time as _t
-
-                with open("/tmp/igor_load_debug.log", "a") as _dbg:
-                    _dbg.write(
-                        f"{_t.time():.1f} load_fail host={host} raw={raw!r:.200} err={_e}\n"
-                    )
-            except Exception:
-                pass
+        except Exception:
+            # Ping ok but SSH load check failed — box is up but SSH busy (MaxSessions on Windows
+            # can be exhausted by the running Igor process).  Mark "warn" so the swarm update
+            # still attempts a git pull instead of silently skipping the box.
             return host, {
-                "verdict": "unreachable",
+                "verdict": "warn",
                 "cpu": 0,
                 "ram": 0,
                 "swap": 0,
                 "ts": now,
                 "ping": True,
+                "ssh_load_failed": True,
             }
 
     with ThreadPoolExecutor(max_workers=len(to_check)) as pool:
@@ -715,15 +710,24 @@ def _update_swarm() -> str:
     eligible: list[dict] = []
     for m in all_remote:
         host = m["hostname"]
-        verdict = loads.get(host, {}).get("verdict", "unreachable")
-        if verdict in ("critical", "unreachable"):
-            cpu = loads.get(host, {}).get("cpu", 0)
-            lines.append(f"  ~ {host}: skipped (load={verdict}, cpu={cpu:.0f}%)")
+        load_info = loads.get(host, {})
+        verdict = load_info.get("verdict", "unreachable")
+        if verdict == "critical":
+            cpu = load_info.get("cpu", 0)
+            lines.append(f"  ~ {host}: skipped (load=critical, cpu={cpu:.0f}%)")
+        elif verdict == "unreachable" and not load_info.get("ping"):
+            # Ping failed — box is genuinely down
+            lines.append(f"  ~ {host}: skipped (ping failed — box appears down)")
         else:
+            # ok, warn, or ssh_load_failed (Windows MaxSessions) — attempt the update
+            if load_info.get("ssh_load_failed"):
+                lines.append(
+                    f"  ! {host}: SSH load check timed out (MaxSessions?) — attempting update anyway"
+                )
             eligible.append(m)
 
     remote_results = ssh_exec_all(
-        _WINDOWS_UPDATE_CMD, _LINUX_UPDATE_CMD, timeout=20, machines=eligible
+        _WINDOWS_UPDATE_CMD, _LINUX_UPDATE_CMD, timeout=30, machines=eligible
     )
     for host, out in remote_results.items():
         if "PULL_OK" in out:
