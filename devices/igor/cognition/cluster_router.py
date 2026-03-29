@@ -44,6 +44,13 @@ _BATCH_TYPES = frozenset(["extraction", "batch"])
 _health_cache: dict[str, tuple[bool, float]] = {}  # host → (healthy, timestamp)
 _health_lock = threading.Lock()
 
+# ── No-machine warning rate limiter ──────────────────────────────────────────
+# When a batch of N items all hit route() simultaneously, we'd get N warnings.
+# Emit one WARNING per call_type per 60s; rest are DEBUG.
+_no_machine_warn: dict[str, float] = {}  # call_type → last warn timestamp
+_no_machine_warn_lock = threading.Lock()
+_NO_MACHINE_WARN_INTERVAL = 60.0
+
 
 def _is_ollama_healthy(host_url: str) -> bool:
     """Probe Ollama /api/tags with TTL cache. Returns True if reachable."""
@@ -115,7 +122,19 @@ def route(call_type: str) -> tuple[Optional[str], Optional[str]]:
         )
         return host, model
 
-    _log.warning("[cluster_router] no local machine available for %s", call_type)
+    now = time.monotonic()
+    with _no_machine_warn_lock:
+        last = _no_machine_warn.get(call_type, 0.0)
+        if now - last >= _NO_MACHINE_WARN_INTERVAL:
+            _log.warning(
+                "[cluster_router] no local machine available for %s", call_type
+            )
+            _no_machine_warn[call_type] = now
+        else:
+            _log.debug(
+                "[cluster_router] no local machine available for %s (suppressed)",
+                call_type,
+            )
     return None, None
 
 
