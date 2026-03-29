@@ -289,12 +289,7 @@ class Igor(IgorBase):
         try:
             from .cognition.response_habituation import ResponseHabituation as _RH
 
-            _rh_path = (
-                Path.home()
-                / ".TheIgors"
-                / f"igor_{self.instance_id.replace('-', '_')}"
-                / "response_habituation.json"
-            )
+            _rh_path = _paths().instance / "response_habituation.json"
             self._response_habituation = _RH(_rh_path)
         except Exception as _bare_e:
             log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
@@ -973,8 +968,7 @@ class Igor(IgorBase):
             console.print(f"[dim][IDENTITY] SOUL.md write failed: {e}[/]")
 
         # ── IDENTITY.md — ID1-ID14 ───────────────────────────────────────────
-        instance_dir_name = f"igor_{self.instance_id.replace('-', '_')}"
-        instance_dir = theigors_dir / instance_dir_name
+        instance_dir = _paths().instance
         instance_dir.mkdir(parents=True, exist_ok=True)
 
         ids = self.cortex.get_by_type(MemoryType.IDENTITY)
@@ -1086,9 +1080,8 @@ class Igor(IgorBase):
         )
 
     def _instance_dir(self) -> Path:
-        """~/.TheIgors/igor_{instance_id}/ — consistent with _export_portable_identity."""
-        name = f"igor_{self.instance_id.replace('-', '_')}"
-        d = _paths().runtime / name
+        """~/.TheIgors/<instance_id>/ — canonical instance dir from paths singleton."""
+        d = _paths().instance
         d.mkdir(parents=True, exist_ok=True)
         return d
 
