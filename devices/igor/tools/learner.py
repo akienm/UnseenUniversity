@@ -701,36 +701,72 @@ def list_absorbed_books(**_kwargs) -> str:
 
     book_counts: dict = defaultdict(lambda: {"author": "", "count": 0})
     for row in rows:
-        meta = json.loads(row["metadata"]) if row["metadata"] else {}
+        raw = row["metadata"]
+        meta = raw if isinstance(raw, dict) else (json.loads(raw) if raw else {})
         title = meta.get("book_title")
         if not title:
             continue
         book_counts[title]["author"] = meta.get("book_author", "")
         book_counts[title]["count"] += 1
 
-    if not book_counts:
-        return "No books have been absorbed yet."
+    # Also query reading_list for completed items
+    completed_items: list[dict] = []
+    try:
+        with _igor_db_proxy()() as conn:
+            rl_rows = conn.execute("""
+                SELECT source, title, completed_at
+                FROM reading_list
+                WHERE status = 'completed'
+                ORDER BY completed_at DESC NULLS LAST
+            """).fetchall()
+            for r in rl_rows:
+                completed_items.append(
+                    {
+                        "source": r[0],
+                        "title": r[1],
+                        "completed_at": r[2],
+                    }
+                )
+    except Exception as _e:
+        pass  # reading_list may not exist in all instances
 
-    lines = [f"Absorbed {len(book_counts)} source(s):"]
-    total_nodes = 0
-    for title, info in sorted(book_counts.items(), key=lambda x: -x[1]["count"]):
-        author = info["author"]
-        count = info["count"]
-        total_nodes += count
-        entry = f"  • {title}"
-        if author:
-            entry += f" — {author}"
-        entry += f"  ({count} nodes)"
-        lines.append(entry)
-    lines.append(f"\nTotal: {total_nodes} knowledge nodes")
+    lines = []
+
+    # Section 1: reading_list completed
+    if completed_items:
+        lines.append(f"Reading pipeline — {len(completed_items)} completed:")
+        for item in completed_items[:20]:
+            title = item.get("title") or item.get("source", "")[:60]
+            completed_at = (item.get("completed_at") or "")[:10]
+            lines.append(f"  ✓ {title}  ({completed_at})")
+        if len(completed_items) > 20:
+            lines.append(f"  … and {len(completed_items) - 20} more")
+    else:
+        lines.append("Reading pipeline — no completed items yet.")
+
+    # Section 2: memory nodes deposited from reading
+    if book_counts:
+        lines.append(f"\nKnowledge nodes built — {len(book_counts)} source(s):")
+        total_nodes = 0
+        for title, info in sorted(book_counts.items(), key=lambda x: -x[1]["count"]):
+            author = info["author"]
+            count = info["count"]
+            total_nodes += count
+            entry = f"  • {title}"
+            if author:
+                entry += f" — {author}"
+            entry += f"  ({count} nodes)"
+            lines.append(entry)
+        lines.append(f"  Total: {total_nodes} knowledge nodes")
 
     # Also show queue
     queue_path = paths().learn_queue
     if queue_path.exists():
         try:
             queue = json.loads(queue_path.read_text())
-            if queue:
-                lines.append(f"\nQueued to learn: {len(queue)} item(s)")
+            active = [e for e in queue if not e.get("done")]
+            if active:
+                lines.append(f"\nCurrently in drain queue: {len(active)} item(s)")
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/learner.py: {_bare_e}"
