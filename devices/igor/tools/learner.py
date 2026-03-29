@@ -1791,8 +1791,26 @@ def feed_reading_list(**_kwargs) -> str:
 
     # ── Load existing queue, dedup by url ─────────────────────────────────────
     existing_q = _load_queue()
-    existing_urls = {e.get("url") for e in existing_q}
-    pending_in_q = sum(1 for e in existing_q if not e.get("done"))
+    done_urls = {e.get("url") for e in existing_q if e.get("done")}
+    existing_urls = {e.get("url") for e in existing_q if not e.get("done")}
+    pending_in_q = len(existing_urls)
+
+    # Sync: mark reading_list entries completed for drain-runner-finished items,
+    # then trim done entries from the queue so the file doesn't grow unbounded
+    # and so the next feeder run can load new items.
+    if done_urls:
+        try:
+            with _igor_db_proxy()() as conn:
+                for url in done_urls:
+                    conn.execute(
+                        "UPDATE reading_list SET status='completed', completed_at=?"
+                        " WHERE source=? AND status NOT IN ('completed', 'paused')",
+                        (datetime.now().isoformat(), url),
+                    )
+        except Exception as _e:
+            pass
+        existing_q = [e for e in existing_q if not e.get("done")]
+        _save_queue(existing_q)
 
     added = 0
     for row in rows:
