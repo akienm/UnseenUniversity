@@ -1637,6 +1637,42 @@ class Cortex(IgorBase):
 
         all_memories = _traversal_pool + _supplement + _orphan_rescue
 
+        # G-FACTUAL-RETRIEVAL1 fix: FACTUAL keyword supplement.
+        # Book/reading FACTUALs are typically orphans (parent_id IS NULL, activation_count=0).
+        # The activation-based supplement gate skips them at graph scale (traversal always
+        # finds ≥80 nodes → supplement=0). Orphan rescue picks only 20 by activation_count,
+        # which is useless when all orphans are at zero. This pass directly keyword-searches
+        # FACTUAL nodes — bypasses connectivity and activation gates entirely.
+        if terms:
+            _fk_seen = {m.id for m in all_memories}
+            _fk_conds = " OR ".join("LOWER(narrative) LIKE %s" for _ in terms[:6])
+            _fk_params = [f"%{t.lower()}%" for t in terms[:6]]
+            try:
+                with self._conn() as conn:
+                    _fk_rows = conn.execute(
+                        f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
+                        f"WHERE memory_type = %s AND ({_fk_conds}) "
+                        "ORDER BY activation_count DESC LIMIT 60",
+                        [MemoryType.FACTUAL.value] + _fk_params,
+                    ).fetchall()
+                _factual_kw = [
+                    self._to_memory(r) for r in _fk_rows if r["id"] not in _fk_seen
+                ]
+                if _factual_kw:
+                    logging.getLogger("forensic").debug(
+                        "[cortex.search] factual-kw-supplement: %d book nodes added "
+                        "for query %r",
+                        len(_factual_kw),
+                        query[:60],
+                    )
+                    all_memories = all_memories + _factual_kw
+            except Exception as _fk_e:
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py "
+                    "factual_kw_supplement: %s",
+                    _fk_e,
+                )
+
         # Filter out NE diagnostic memories — operational noise from consolidation/stall loops
         # that may have entered LTM before the self-diagnostic filter was in place (URGENT.3)
         _NE_DIAG = ("consolidation", "stall", "loop detected", "recursive", "ne_diag")
