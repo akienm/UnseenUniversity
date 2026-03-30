@@ -699,7 +699,21 @@ def _classify_question_traversal(text: str, intent: str) -> tuple[str, str]:
     ):
         return "", ""
 
-    # Memory verification — "do you remember", "did you save/get/store", "what have you learned about"
+    # Knowledge retrieval — "what do you know about X" asks about book/graph knowledge,
+    # not recent ring memory. Use semantic_anchor so traversal starts at the topic node.
+    if any(
+        p in t
+        for p in (
+            "what do you know about",
+            "what do you know of",
+            "what have you learned about",
+            "what have you read about",
+            "tell me what you know about",
+        )
+    ):
+        return "factual_leaf", "semantic_anchor"
+
+    # Memory verification — "do you remember", "did you save/get/store" — ring_recent is correct
     if any(
         p in t
         for p in (
@@ -709,11 +723,6 @@ def _classify_question_traversal(text: str, intent: str) -> tuple[str, str]:
             "did you store",
             "was that saved",
             "what have you saved",
-            "what do you know about",
-            "what have you learned about",
-            "what do you know of",
-            "tell me what you know about",
-            "what have you read about",
             "what's my name",
             "who am i",
         )
