@@ -1643,27 +1643,42 @@ class Cortex(IgorBase):
         # finds ≥80 nodes → supplement=0). Orphan rescue picks only 20 by activation_count,
         # which is useless when all orphans are at zero. This pass directly keyword-searches
         # FACTUAL nodes — bypasses connectivity and activation gates entirely.
-        if terms:
+        #
+        # Stop-word filter: raw terms include "what", "do", "you", "know", "about" etc.
+        # These match almost every conversational FACTUAL. Filter to content words (≥4 chars,
+        # not in stop list) so the ILIKE anchors on meaningful tokens like "hebbian", "neuron".
+        _STOP = frozenset(
+            "what do you know about where when who how why tell give explain list me "
+            "is are was were the a an and or of to in for on at by with".split()
+        )
+        _fk_terms = [t for t in terms if len(t) >= 4 and t not in _STOP]
+        _factual_kw: list = []  # tracked at outer scope so Phase 2 can force them in
+        if _fk_terms:
+            # Per-term queries (LIMIT 20 each) so rare terms like "hebbian" always get
+            # their nodes — a single OR query fills the LIMIT with generic-term matches
+            # and specific-term nodes fall outside the window.
             _fk_seen = {m.id for m in all_memories}
-            _fk_conds = " OR ".join("LOWER(narrative) LIKE %s" for _ in terms[:6])
-            _fk_params = [f"%{t.lower()}%" for t in terms[:6]]
+            _fk_ids: set[str] = set()
             try:
-                with self._conn() as conn:
-                    _fk_rows = conn.execute(
-                        f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
-                        f"WHERE memory_type = %s AND ({_fk_conds}) "
-                        "ORDER BY activation_count DESC LIMIT 60",
-                        [MemoryType.FACTUAL.value] + _fk_params,
-                    ).fetchall()
-                _factual_kw = [
-                    self._to_memory(r) for r in _fk_rows if r["id"] not in _fk_seen
-                ]
+                for _fkt in _fk_terms[:6]:
+                    with self._conn() as conn:
+                        _fk_rows = conn.execute(
+                            f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
+                            "WHERE memory_type = %s AND LOWER(narrative) LIKE %s "
+                            "ORDER BY activation_count DESC LIMIT 20",
+                            [MemoryType.FACTUAL.value, f"%{_fkt.lower()}%"],
+                        ).fetchall()
+                    for _r in _fk_rows:
+                        if _r["id"] not in _fk_seen and _r["id"] not in _fk_ids:
+                            _fk_ids.add(_r["id"])
+                            _factual_kw.append(self._to_memory(_r))
                 if _factual_kw:
-                    logging.getLogger("forensic").debug(
+                    logging.getLogger(__name__).info(
                         "[cortex.search] factual-kw-supplement: %d book nodes added "
-                        "for query %r",
+                        "for query %r (terms=%r)",
                         len(_factual_kw),
                         query[:60],
+                        _fk_terms[:6],
                     )
                     all_memories = all_memories + _factual_kw
             except Exception as _fk_e:
@@ -1738,6 +1753,18 @@ class Cortex(IgorBase):
             key=lambda m: getattr(m, "relevance_score", 0.0),
             reverse=True,
         )[: req.limit * 2]
+
+        # G-FACTUAL-RETRIEVAL1 Phase 2 force-inject: FACTUAL supplement nodes may have
+        # been dropped by the Phase 1 top-k cutoff (EPISODICs containing the probe text
+        # score 7/7 on raw terms, pushing FACTUALs like "Hebbian..." to position 30+).
+        # Force the supplement nodes into the candidate pool so Phase 2 embedding rerank
+        # can correctly evaluate their cosine similarity to the query.
+        if _factual_kw:
+            _cand_ids = {m.id for m in candidates}
+            for _fkm in _factual_kw:
+                if _fkm.id not in _cand_ids:
+                    _fkm.relevance_score = 0.01  # type: ignore[attr-defined]
+                    candidates.append(_fkm)
 
         if not candidates:
             return []
