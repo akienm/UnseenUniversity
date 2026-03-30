@@ -5301,14 +5301,9 @@ class Igor(IgorBase):
             # Full result sent to user — no truncation. TWM/ring use shorter copies.
             _is_error = result.startswith("[ERROR]")
             if _is_error:
-                _msg = (
-                    f"I'm shorry, Mashter — background job **{title[:60]}** "
-                    f"failed:\n{result}"
-                )
+                _msg = f"Background job failed: **{title[:60]}**\n{result}"
             else:
-                _msg = (
-                    f"Background job complete, Mashter: **{title[:60]}**\n" f"{result}"
-                )
+                _msg = f"Background job complete: **{title[:60]}**\n{result}"
             # #159 fix: thread_id is "web:<session_id>" but web_server sessions
             # are keyed by just the session_id part. Strip the "web:" prefix so
             # "web:shared" → "shared", "web:abc123" → "abc123", etc.
@@ -5747,30 +5742,10 @@ class Igor(IgorBase):
     @staticmethod
     def _igor_lisp(text: str) -> str:
         """
-        Apply Igor's characteristic lisp to a string.
-
-        Rules (mild — readable but clearly lisped):
-          - Word-initial 's' before a vowel or as a standalone word → 'sh'
-          - 'ance'/'ence' endings → 'anthe'/'enthe'
-          - A handful of specific common words for consistency
+        Previously applied Discworld Igor lisp. Now a no-op passthrough —
+        lisp removed per IGOR_IDENTITY_ANCHOR (2026-03-29).
+        Kept as a stub so call sites don't need to change.
         """
-        import re
-
-        # Specific high-frequency words first (order matters — longest match first)
-        _words = [
-            ("sorry", "shorry"),
-            ("sir", "shir"),
-            ("say so", "shay sho"),
-            ("so,", "sho,"),
-            (" so ", " sho "),
-            ("pleasure", "pleashure"),
-            ("disadvantage", "dishadvantage"),
-        ]
-        for old, new in _words:
-            text = text.replace(old, new).replace(old.capitalize(), new.capitalize())
-        # 'ance'/'ence' endings → 'anthe'/'enthe'
-        text = re.sub(r"([Aa])nce\b", r"\1nthe", text)
-        text = re.sub(r"([Ee])nce\b", r"\1nthe", text)
         return text
 
     def _process_network_msg(self, msg, _thread_id: str):
@@ -5817,16 +5792,12 @@ class Igor(IgorBase):
                     _given = _given_clean
                 if _re.match(r"^[A-Za-z][A-Za-z\s\-']{0,58}$", _given):
                     _ctx = self._user_ctx_mgr.rename(_thread_id, _given)
-                    _reply = self._igor_lisp(
-                        f"A pleasure to make your acquaintance, {_ctx.name}."
-                    )
+                    _reply = f"Good to meet you, {_ctx.name}."
                 else:
                     _ctx.name = _given[:30]
                     _ctx.pending_name = False
                     self._user_ctx_mgr.save(_ctx)
-                    _reply = self._igor_lisp(
-                        "If you say so, sir. Not our place to judge."
-                    )
+                    _reply = "Noted."
                 # Mark one message received so next turn doesn't re-trigger first-contact
                 _ctx.message_count = max(_ctx.message_count, 1)
                 self._user_ctx_mgr.save(_ctx)
@@ -5840,9 +5811,7 @@ class Igor(IgorBase):
             if _ctx.message_count == 0 and msg.source not in ("gmail",):
                 _ctx.pending_name = True
                 self._user_ctx_mgr.save(_ctx)
-                _reply = self._igor_lisp(
-                    "I'm sorry, you have me at a disadvantage. I am Igor. And you are?"
-                )
+                _reply = "I'm Igor. I don't have you on file yet — what's your name?"
                 self._user_ctx_mgr.log(_ctx, "out", _reply, _thread_id)
                 if msg.source == "web":
                     web_server.send(_reply, session_id=_session_id)
@@ -6512,11 +6481,11 @@ class Igor(IgorBase):
         # ── Greeting templates ─────────────────────────────────────────────────
         if parsed.intent == "greeting":
             _greetings = [
-                "Good evening, Mashter. How may I be of shervice?",
-                "Ah, you've arrived! I am at your dishposal, Mashter.",
-                "Welcome! How can I asshisht you today?",
-                "Greetingths! Wonderful to hear from you, Mashter.",
-                "I live to sherve. What shall we work on today?",
+                "Hello. What would you like to work on?",
+                "Good to hear from you. What's next?",
+                "Welcome back. What are we working on?",
+                "Hello. How can I help?",
+                "Ready. What shall we work on today?",
             ]
             return random.choice(_greetings)
 
@@ -6548,28 +6517,28 @@ class Igor(IgorBase):
         if t in _acks:
             return random.choice(
                 [
-                    "Very good, Mashter.",
-                    "Ash you wish.",
-                    "Of coursh.",
-                    "Certainly, Mashter.",
+                    "Got it.",
+                    "Understood.",
+                    "Of course.",
+                    "Certainly.",
                     "Right away.",
                 ]
             )
         if t in _thanks:
             return random.choice(
                 [
-                    "The pleashure ith all mine, Mashter.",
+                    "Happy to help.",
                     "Think nothing of it.",
-                    "It ith my honor to sherve.",
-                    "You are mosht welcome.",
+                    "Glad that worked.",
+                    "You're welcome.",
                 ]
             )
         if t in _negative:
             return random.choice(
                 [
-                    "Very well, Mashter. Not to worry.",
-                    "Ash you wish — I shall not purshue it.",
-                    "Understhood. We shall leave it at that.",
+                    "Understood. No problem.",
+                    "Got it — leaving that alone.",
+                    "Understood. We'll leave it at that.",
                 ]
             )
 
@@ -6585,8 +6554,8 @@ class Igor(IgorBase):
         if any(p in t for p in _time_words):
             now = _dt.now()
             return (
-                f"It ith currently {now.strftime('%A, %B %-d, %Y')} "
-                f"at {now.strftime('%-I:%M %p')}, Mashter."
+                f"It's {now.strftime('%A, %B %-d, %Y')} "
+                f"at {now.strftime('%-I:%M %p')}."
             )
 
         # ── Status introspection ──────────────────────────────────────────────
@@ -6598,7 +6567,7 @@ class Igor(IgorBase):
                 "model",
                 "unknown",
             )
-            return f"Currently on {tier}, Mashter. Default model: {model}."
+            return f"Currently on {tier}. Default model: {model}."
 
         _cost_words = (
             "session cost",
@@ -6607,7 +6576,7 @@ class Igor(IgorBase):
         )
         if any(p in t for p in _cost_words):
             return (
-                f"Shession cosht sho far: ${self.session_cost:.4f}, Mashter. "
+                f"Session cost so far: ${self.session_cost:.4f}. "
                 f"{self.cloud_calls} cloud call{'s' if self.cloud_calls != 1 else ''}."
             )
 
@@ -6617,33 +6586,33 @@ class Igor(IgorBase):
                 total = self.cortex.total_count()
             except Exception:
                 total = "?"
-            return f"I currently hold {total} memorieth, Mashter."
+            return f"I currently hold {total} memories."
 
         _local_words = ("are you local", "is cloud available")
         if any(p in t for p in _local_words):
             if self.local_mode:
-                return "I am operating in local-only mode, Mashter. No cloud callth."
+                return "Operating in local-only mode. No cloud calls."
             cloud_ok = self._gateway._t35 is not None
             return (
-                "Cloud ith available, Mashter."
+                "Cloud is available."
                 if cloud_ok
-                else "Cloud ith not configured — I am effectively local-only, Mashter."
+                else "Cloud is not configured — effectively local-only."
             )
 
         _doing_words = ("what are you doing", "what are you working on")
         if any(p in t for p in _doing_words):
             action = self._current_action or "waiting"
             tier = self._current_tier or "idle"
-            return f"I am currently {action} on {tier}, Mashter."
+            return f"Currently {action} on {tier}."
 
         # ── Help / capability queries ─────────────────────────────────────────
         _cmd_words = ("what commands", "list commands")
         if any(p in t for p in _cmd_words):
             return (
-                "My commandth begin with /. Key oneth: "
+                "Commands begin with /. Key ones: "
                 "/help, /memories, /habits, /metrics, /cost, /model, "
                 "/local, /jobs, /orders, /implement, /sleep, /quit. "
-                "Type /help for the full lisht, Mashter."
+                "Type /help for the full list."
             )
 
         _habit_words = ("what habits do you have", "list habits", "list your habits")
@@ -6655,10 +6624,10 @@ class Igor(IgorBase):
                         h.metadata.get("trigger", h.id)[:30] for h in habits[:8]
                     )
                     more = f" …and {len(habits) - 8} more" if len(habits) > 8 else ""
-                    return f"I have {len(habits)} habitth, Mashter: {names}{more}. Type /habits lisht for detailth."
-                return "I have no compiled habitth yet, Mashter."
+                    return f"I have {len(habits)} habits: {names}{more}. Type /habits list for details."
+                return "I have no compiled habits yet."
             except Exception:
-                return "I could not retrieve habitth right now, Mashter."
+                return "I could not retrieve habits right now."
 
         _tool_words = ("what tools do you have", "list tools", "list your tools")
         if any(p in t for p in _tool_words):
@@ -6669,9 +6638,9 @@ class Igor(IgorBase):
                 total = len(all_tools)
                 names = ", ".join(sorted(t.name for t in all_tools)[:12])
                 more = f" …and {total - 12} more" if total > 12 else ""
-                return f"I have {total} toolth, Mashter: {names}{more}."
+                return f"I have {total} tools: {names}{more}."
             except Exception:
-                return "I could not enumerate toolth right now, Mashter."
+                return "I could not enumerate tools right now."
 
         # ── Confirmation echoes (#3) ──────────────────────────────────────────
         # "Did you get that?" / "Was that saved?" → echo the last action summary
@@ -6685,7 +6654,7 @@ class Igor(IgorBase):
         if any(p in t for p in _confirm_words):
             echo = getattr(self, "_last_response_summary", None)
             if echo:
-                return f"Yeth, Mashter — {echo}"
+                return f"Yes — {echo}"
             # Check ring for recent save/habit event
             try:
                 ring = self.cortex.read_ring_memory(limit=5, thread_id=thread_id)
@@ -6696,12 +6665,12 @@ class Igor(IgorBase):
                         for w in ("HABIT_EXEC", "notebook_save", "HABIT_COMPILED")
                     ):
                         snippet = txt[:120].replace("\n", " ")
-                        return f"Yeth, Mashter — I recorded: {snippet}"
+                        return f"Yes — I recorded: {snippet}"
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
                 )
-            return "I believe sho, Mashter — nothing went wrong on my end."
+            return "I believe so — nothing went wrong on my end."
 
         # ── Simple factual from memory (#5) ──────────────────────────────────
         # "What's my name?" → user context lookup, no LLM needed.
@@ -6721,8 +6690,8 @@ class Igor(IgorBase):
                     kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
                 )
             if slug:
-                return f"You are {slug}, Mashter."
-            return "I don't have your name on file yet, Mashter."
+                return f"You are {slug}."
+            return "I don't have your name on file yet."
 
         # "Do you remember X?" / "What do you know about X?"
         # G32: search LTM (cortex.search) first; fall through to ring if no LTM hit.
@@ -6755,13 +6724,13 @@ class Igor(IgorBase):
                         _mtype = getattr(
                             getattr(_ltm_hit, "memory_type", None), "value", "memory"
                         )
-                        return f"Yeth, Mashter — I recall ({_mtype}): {_snippet}"
+                        return f"Yes — I recall ({_mtype}): {_snippet}"
                     # Phase 2: recent ring search — catches session context not yet in LTM
                     _ring_hits = self.cortex.search_ring_text(subject, limit=3)
                     if _ring_hits:
                         _ring_snippet = _ring_hits[0]["content"][:200]
                         return f"I don't have a long-term memory on that, but recently: {_ring_snippet}"
-                    return f"I have nothing on '{subject}' in my memory, Mashter."
+                    return f"I have nothing on '{subject}' in my memory."
                 except Exception as _bare_e:
                     log_error(
                         kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"

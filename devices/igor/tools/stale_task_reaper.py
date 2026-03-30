@@ -1,0 +1,103 @@
+"""
+stale_task_reaper.py — Auto-shelve stale TASK_SET memories (T-stale-task-reaper).
+
+TASK_SET memories with no resolved status older than STALE_HOURS get marked
+"shelved" so consolidation stops re-promoting them and NE stops arcing on them.
+
+Observed failure mode (2026-03-29): T-book-learner-hash-lookup TASK_SET promoted
+every 20min by consolidation for 195+ min, causing NE arc loop + console spam.
+
+Called by PROC_STALE_TASK_REAPER (cognitive habit, schedule 45min).
+Forensic log: ~/.TheIgors/logs/stale_task_reaper.log
+"""
+
+import json
+import os
+from datetime import datetime, timezone
+from pathlib import Path
+
+_DB_URL = os.getenv(
+    "IGOR_HOME_DB_URL",
+    "postgresql://igor:choose_a_password@127.0.0.1/igor_wild_0001",
+)
+_STALE_HOURS = int(os.getenv("IGOR_STALE_TASK_HOURS", "2"))
+_LOG_FILE = Path.home() / ".TheIgors" / "logs" / "stale_task_reaper.log"
+
+_RESOLVED_STATUSES = {"done", "closed", "shelved", "dismissed", "completed"}
+
+
+def _flog(msg: str) -> None:
+    ts = datetime.now(timezone.utc).isoformat()
+    try:
+        _LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(_LOG_FILE, "a") as f:
+            f.write(f"{ts}  {msg}\n")
+    except Exception:
+        pass
+
+
+def run_stale_task_reaper(db_url: str | None = None) -> dict:
+    """
+    Find TASK_SET memories older than STALE_HOURS with no resolved status,
+    mark them shelved. Returns {"shelved": count, "ids": [...]} .
+    """
+    import psycopg2
+
+    url = db_url or _DB_URL
+    conn = psycopg2.connect(url)
+    conn.autocommit = True
+    shelved_ids = []
+
+    try:
+        with conn.cursor() as cur:
+            # Find candidates: TASK_SET, old enough, status not resolved
+            cur.execute(
+                """
+                SELECT id, metadata
+                FROM memories
+                WHERE memory_type = 'TASK_SET'
+                  AND "timestamp" < to_char(NOW() - (%s || ' hours')::interval, 'YYYY-MM-DD"T"HH24:MI:SS')
+                  AND (
+                      metadata->>'status' IS NULL
+                      OR metadata->>'status' NOT IN ('done','closed','shelved','dismissed','completed')
+                  )
+                """,
+                (_STALE_HOURS,),
+            )
+            rows = cur.fetchall()
+
+            for mem_id, meta_raw in rows:
+                meta = (
+                    meta_raw
+                    if isinstance(meta_raw, dict)
+                    else json.loads(meta_raw or "{}")
+                )
+                meta["status"] = "shelved"
+                meta["shelved_by"] = "PROC_STALE_TASK_REAPER"
+                meta["shelved_at"] = datetime.now(timezone.utc).isoformat()
+                meta["shelved_reason"] = f"no resolution after {_STALE_HOURS}h"
+
+                cur.execute(
+                    "UPDATE memories SET metadata = %s::jsonb, updated_at = NOW() WHERE id = %s",
+                    (json.dumps(meta), mem_id),
+                )
+                shelved_ids.append(mem_id)
+
+    finally:
+        conn.close()
+
+    count = len(shelved_ids)
+    _flog(f"RUN  shelved={count}  stale_hours={_STALE_HOURS}  ids={shelved_ids}")
+    if count:
+        print(f"[stale_task_reaper] shelved {count} stale TASK_SET(s): {shelved_ids}")
+    else:
+        print(
+            f"[stale_task_reaper] no stale TASK_SETs found (threshold={_STALE_HOURS}h)"
+        )
+
+    return {"shelved": count, "ids": shelved_ids}
+
+
+if __name__ == "__main__":
+    result = run_stale_task_reaper()
+    print(result)
