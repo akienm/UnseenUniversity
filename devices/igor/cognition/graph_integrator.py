@@ -127,16 +127,23 @@ def _create_book_anchor_node(
     content_id_short = content_id[:8].upper()
     node_id = f"BOOK_{content_id_short}"
 
-    # Check if it already exists
+    # Check if an anchor for this content_id already exists.
+    # Use metadata lookup, not ID — post-D256 migration renamed BOOK_xxx IDs
+    # to timestamp IDs, so ID-based lookup would miss the existing node.
     with cortex._conn() as conn:
         existing = conn.execute(
-            "SELECT id FROM memories WHERE id = ?",
-            (node_id,),
+            "SELECT id FROM memories "
+            "WHERE metadata->>'content_id' = ? "
+            "AND metadata->>'is_book_anchor' = 'true' LIMIT 1",
+            (content_id,),
         ).fetchone()
 
     if existing:
-        logger.info(f"ROOT node {node_id} already exists")
-        return node_id
+        existing_id = existing[0]
+        logger.info(
+            f"ROOT anchor for content_id={content_id!r} already exists: {existing_id}"
+        )
+        return existing_id
 
     # Create the anchor node
     narrative = f"Book: {title}"

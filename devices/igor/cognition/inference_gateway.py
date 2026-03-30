@@ -559,7 +559,21 @@ class InferenceGateway(IgorBase):
         try:
             from .forensic_logger import log_anomaly as _log_anomaly
 
-            _log_anomaly(kind="TIER6", detail=f"last_error={last_error[:160]}")
+            try:
+                import psutil as _psutil
+
+                _cpu = _psutil.cpu_percent(interval=0.1)
+                _mem = _psutil.virtual_memory()
+                _resource_detail = (
+                    f"cpu={_cpu:.0f}% mem_used={_mem.percent:.0f}% "
+                    f"mem_avail_mb={_mem.available // 1024 // 1024}"
+                )
+            except Exception:
+                _resource_detail = "resource_stats=unavailable"
+            _log_anomaly(
+                kind="TIER6",
+                detail=f"last_error={last_error[:120]} | {_resource_detail}",
+            )
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
