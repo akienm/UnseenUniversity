@@ -816,6 +816,16 @@ class Cortex(IgorBase):
         links to those memories (weight = relevance_score * arousal_factor).
         Only pass link_to for live-interaction stores — not genesis/boot.
         """
+        # D256: replace default uuid4()[:8] IDs with timestamp node IDs.
+        # Only replaces the bare 8-char lowercase hex default — named IDs
+        # (BOOK_xxx, CP1, ROOT, etc.) pass through so callers with deterministic
+        # content-hash IDs continue to work until they migrate to new_node_id().
+        _mid = memory.id or ""
+        _is_uuid_default = len(_mid) == 8 and all(c in "0123456789abcdef" for c in _mid)
+        if _is_uuid_default:
+            from .node_id import new_node_id as _new_node_id
+
+            memory.id = _new_node_id()
         memory.narrative = scrub(memory.narrative)
         # Scrub string values in metadata to prevent credential leakage (#19)
         if memory.metadata:
@@ -870,6 +880,13 @@ class Cortex(IgorBase):
                     memory.scope.value if memory.scope else "class",
                 ),
             )
+        # D256: register node in node_registry + Redis cache (non-fatal)
+        try:
+            from .node_id import register_node as _register_node
+
+            _register_node(memory.id, "memories", memory.id)
+        except Exception:
+            pass
         # #260: invalidate habit cache when a habit is stored
         if memory.is_habit:
             self._habit_cache = None

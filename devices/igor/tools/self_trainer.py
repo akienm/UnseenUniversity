@@ -21,7 +21,6 @@ import json
 import logging
 import os
 import re
-import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
@@ -31,14 +30,15 @@ logger = logging.getLogger(__name__)
 # ── Config ────────────────────────────────────────────────────────────────────
 
 CLOUD_COST_THRESHOLD = 0.0005  # cost_usd above this → LLM inference fired
-GAP_KEYWORD_THRESHOLD = 1  # memories must contain at least this many query tokens
+GAP_KEYWORD_THRESHOLD = 3  # query tokens that must appear in matrix to count as covered
 MIN_INPUT_LEN = 20  # skip trivially short inputs
 MIN_RESPONSE_LEN = 30  # skip trivially short responses
 MAX_DEPOSITS_PER_RUN = 10  # cap deposits per pass
 DEFAULT_LOOKBACK_MINUTES = 120
 
-# Skip inputs that are meta-injections or commands, not organic queries
-_SKIP_PREFIXES = ("CC:", "[BOOT", "[NE#", "IGOR_", "RESTART", "SCHEDULER_TICK")
+# Skip inputs that are meta-injections or system noise, not organic queries
+# NOTE: "CC:" is intentionally NOT skipped — CC messages contain real semantic content
+_SKIP_PREFIXES = ("[BOOT", "[NE#", "IGOR_", "RESTART", "SCHEDULER_TICK")
 
 # Common English stopwords — excluded from keyword overlap check
 _STOPWORDS = {
@@ -154,6 +154,26 @@ class SelfTrainer:
             ts = datetime.fromisoformat(ts_str)
             input_text = in_part[3:] if in_part.startswith("IN:") else ""
             response_text = out_part[4:] if out_part.startswith("OUT:") else ""
+
+            # Strip synthetic wrappers — extract the actual user query from:
+            #   "[Thread context — ...] ... [Web message from X]: <query>"
+            #   "CC: <query>\n[Routing directive:...]"
+            if "[Web message from" in input_text:
+                # Extract everything after the last ]: delimiter
+                raw = input_text.split("[Web message from", 1)[1]
+                input_text = (
+                    raw.split("]:", 1)[-1].strip() if "]:" in raw else input_text
+                )
+            elif input_text.startswith("CC: "):
+                # Strip "CC: " prefix and routing directive footer
+                # Note: \n is collapsed to space in log, so match both forms
+                raw = input_text[4:]
+                raw = re.split(r"[\n ]\[Routing directive", raw, 1)[0]
+                input_text = raw.strip()
+            elif "[Thread context" in input_text:
+                # Unknown thread-context format — skip (can't extract cleanly)
+                return None
+
             return {
                 "ts": ts,
                 "turn_id": turn_id,
@@ -204,6 +224,82 @@ class SelfTrainer:
                 logger.warning("SelfTrainer: failed reading %s — %s", path, exc)
 
         return results
+
+    def _read_candidate_turns_from_db(
+        self, lookback_minutes: int, seen_inputs: set[str]
+    ) -> list[dict]:
+        """
+        Phase 2: read cloud turns directly from EPISODIC memories in Postgres.
+        Supplements log-file reading — catches turns where logs are thin or missing.
+        Deduplicates against seen_inputs (content hash) to avoid double-training.
+        """
+        import psycopg2
+
+        cutoff_iso = (datetime.now() - timedelta(minutes=lookback_minutes)).isoformat()
+        results = []
+        try:
+            conn = psycopg2.connect(self.db_url)
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT metadata->>'user_input', metadata->>'response',
+                           metadata->>'tier_hint', id
+                    FROM memories
+                    WHERE memory_type = 'EPISODIC'
+                      AND jsonb_exists(metadata, 'used_api')
+                      AND metadata->>'used_api' = 'true'
+                      AND "timestamp" > %s
+                    ORDER BY "timestamp" DESC
+                    LIMIT 50
+                    """,
+                    (cutoff_iso,),
+                )
+                rows = cur.fetchall()
+            conn.close()
+        except Exception as exc:
+            logger.warning("SelfTrainer: DB read failed — %s", exc)
+            return []
+
+        for user_input, response, tier_hint, mem_id in rows:
+            if not user_input or not response:
+                continue
+            # Apply same extraction logic as log parser
+            extracted = self._extract_user_query(user_input)
+            if extracted is None:
+                continue
+            if len(extracted) < MIN_INPUT_LEN or len(response) < MIN_RESPONSE_LEN:
+                continue
+            if any(extracted.startswith(p) for p in _SKIP_PREFIXES):
+                continue
+            key = extracted[:80]
+            if key in seen_inputs:
+                continue
+            seen_inputs.add(key)
+            results.append(
+                {
+                    "ts": datetime.now(),  # approximate
+                    "turn_id": mem_id,
+                    "tier": tier_hint or "tier.?",
+                    "cost": 0.01,  # unknown; treat as cloud
+                    "input_text": extracted,
+                    "response_text": response,
+                }
+            )
+        return results
+
+    @staticmethod
+    def _extract_user_query(input_text: str) -> Optional[str]:
+        """Extract the clean user query from a synthetic input string."""
+        if "[Web message from" in input_text:
+            raw = input_text.split("[Web message from", 1)[1]
+            return raw.split("]:", 1)[-1].strip() if "]:" in raw else None
+        if input_text.startswith("CC: "):
+            raw = input_text[4:]
+            raw = re.split(r"[\n ]\[Routing directive", raw, 1)[0]
+            return raw.strip()
+        if "[Thread context" in input_text:
+            return None
+        return input_text.strip()
 
     # ── Gap detection ─────────────────────────────────────────────────────────
 
@@ -259,7 +355,9 @@ class SelfTrainer:
         Insert a FACTUAL memory from a cloud LLM response.
         Returns the memory ID. ON CONFLICT DO NOTHING is idempotent.
         """
-        mem_id = f"ST_{turn_id[:6]}_{uuid.uuid4().hex[:4]}"
+        from ..memory.node_id import new_node_id
+
+        mem_id = new_node_id()
         narrative = f"Q: {input_text}\nA: {response_text}"
         now = datetime.now().isoformat()
         metadata = json.dumps(
@@ -308,7 +406,11 @@ class SelfTrainer:
         """
         from ..cognition.forensic_logger import log_cognition_metric
 
+        # Merge log-file and DB sources; deduplicate by input content
         turns = self._read_candidate_turns(lookback_minutes)
+        seen_inputs = {t["input_text"][:80] for t in turns}
+        db_turns = self._read_candidate_turns_from_db(lookback_minutes, seen_inputs)
+        turns = turns + db_turns
         stats = {
             "scanned": len(turns),
             "covered": 0,
