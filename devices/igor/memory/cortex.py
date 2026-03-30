@@ -310,6 +310,8 @@ class Cortex(IgorBase):
                     "ALTER TABLE traces ADD COLUMN instance_id TEXT",
                     "ALTER TABLE traces ADD COLUMN thread_id TEXT",
                     "ALTER TABLE memories ADD COLUMN scope TEXT DEFAULT 'class'",
+                    # D260: engram program cell storage — idempotent, already-exists caught below
+                    "ALTER TABLE memories ADD COLUMN payload TEXT DEFAULT NULL",
                 ):
                     try:
                         conn.execute(_col_sql)
