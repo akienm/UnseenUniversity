@@ -2538,6 +2538,46 @@ class Igor(IgorBase):
             # Strip <think> block — same as _process_inner does for foreground replies
             if response_text:
                 _, response_text = self._split_think_reply(response_text)
+            # Execute any tool call in the LLM response — foreground dispatch lives in
+            # _process_inner; bg jobs need the same extraction or store_memory / etc.
+            # calls are returned as literal text and never actually run.
+            if response_text:
+                _tool_name, _tool_kwargs, _cleaned = self._extract_tool_call(
+                    response_text
+                )
+                if _tool_name:
+                    self.cortex.write_ring(
+                        f"PENDING_ACTION|{_tool_name}|args={list(_tool_kwargs.keys())}",
+                        category="pending_action",
+                    )
+                    response_text = _cleaned
+                    try:
+                        from .tools.registry import registry as _bg_tool_reg
+
+                        _tool_result = _bg_tool_reg.execute(_tool_name, _tool_kwargs)
+                        self.cortex.write_ring(
+                            f"RESOLVED|{_tool_name}|{str(_tool_result)[:300]}",
+                            category="pending_action",
+                        )
+                        self.cortex.write_ring(
+                            f"TOOL_RESULT|{_tool_name}|{str(_tool_result)[:500]}",
+                            category="tool_result",
+                        )
+                        import logging as _bg_log
+
+                        _bg_log.getLogger(__name__).info(
+                            "[bg_reason] tool executed: %s → %s",
+                            _tool_name,
+                            str(_tool_result)[:200],
+                        )
+                    except Exception as _tool_exc:
+                        import logging as _bg_log
+
+                        _bg_log.getLogger(__name__).warning(
+                            "[bg_reason] tool dispatch failed: %s: %s",
+                            _tool_name,
+                            _tool_exc,
+                        )
             return response_text or "(no response)"
         except Exception as exc:
             return f"[ERROR in background job] {exc}"
