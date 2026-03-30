@@ -4059,6 +4059,51 @@ class Igor(IgorBase):
                 loginfo(f"[dim][IF_FORK] error: {_ife}[/]")
             habit = None  # always fall through to LLM
 
+        # D260/D261: engram habit — execute payload cell via node_executor.
+        # Fires effects (EMITIF→channels, FORKIF→spawned cursors, BRANCHIF→next_node),
+        # then falls through to LLM for response generation.
+        if habit and habit.metadata.get("habit_type") == "engram" and habit.payload:
+            try:
+                from .cognition.node_executor import execute_node as _exec_node
+
+                # Find which trigger key matches user_input (first substring match)
+                _eng_triggers = habit.metadata.get("triggers", {})
+                _eng_input_lower = (user_input or "").lower()
+                _fired_trigger = next(
+                    (k for k in _eng_triggers if k.lower() in _eng_input_lower),
+                    next(iter(_eng_triggers), ""),  # fallback: first key
+                )
+                _eng_basket = {
+                    "requester.identity": author or "unknown",
+                    "node_id": habit.id,
+                    "user_input": user_input or "",
+                    "_cortex": self.cortex,
+                    "_salience": (
+                        _thalamus_confidence if "_thalamus_confidence" in dir() else 0.5
+                    ),
+                }
+                _eng_result = _exec_node(habit, _fired_trigger, _eng_basket)
+                loginfo(
+                    f"[dim][ENGRAM] {habit.id} trigger={_fired_trigger!r} "
+                    f"instructions={_eng_result.instructions_run} "
+                    f"stopped_by={_eng_result.stopped_by} "
+                    f"next_node={_eng_result.next_node} "
+                    f"spawned={_eng_result.spawned}[/]"
+                )
+                if _eng_result.next_node:
+                    self.cortex.write_ring(
+                        f"ENGRAM_BRANCH|from={habit.id}|to={_eng_result.next_node}",
+                        category="habit_trace",
+                    )
+                for _spawned_id in _eng_result.spawned:
+                    self.cortex.write_ring(
+                        f"ENGRAM_FORK|from={habit.id}|to={_spawned_id}",
+                        category="habit_trace",
+                    )
+            except Exception as _eng_e:
+                loginfo(f"[dim][ENGRAM] error: {_eng_e}[/]")
+            habit = None  # always fall through to LLM
+
         # #248 bug 2: habits with no action template produce "Habit executed. [...]"
         # debug text in responses. Fall through to LLM instead for any habit type
         # that lacks an action/actions key (cognitive, passive_capture, context_inject,
@@ -4085,6 +4130,7 @@ class Igor(IgorBase):
                     "threshold",
                     "tool",
                     "schema",
+                    "engram",
                 )
                 or (_ht == "response" and not habit.metadata.get("response_template"))
             ):
