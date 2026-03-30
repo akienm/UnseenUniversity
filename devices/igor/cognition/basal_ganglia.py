@@ -36,12 +36,19 @@ if TYPE_CHECKING:
 # Injected at boot by main.py. None until set — all code paths must guard.
 
 _word_graph = None
+_cortex = None
 
 
 def set_word_graph(wg) -> None:
     """Inject the WordGraph instance at boot — called from main.py."""
     global _word_graph
     _word_graph = wg
+
+
+def set_cortex(cx) -> None:
+    """Inject the Cortex instance at boot — called from main.py."""
+    global _cortex
+    _cortex = cx
 
 
 # ── Compile-phrase pre-check ───────────────────────────────────────────────────
@@ -421,6 +428,44 @@ def _compute_threshold(milieu_state=None) -> float:
     return max(THRESHOLD_MIN, min(THRESHOLD_MAX, t))
 
 
+# ── Inhibition propagation ────────────────────────────────────────────────────
+
+
+def _inhibit_neighbors(winner_id: str, near_miss_ids: list[str]) -> None:
+    """
+    After BG winner selected: write inhibition edges from winner to any
+    near-miss habits that share an existing interpretive edge with the winner.
+
+    Uses direction="inhibition" + layer="bg_inhibition" — already respected by
+    graph traversal (cortex._find_related skips inhibited subtrees).
+
+    Graceful no-op if _cortex is None or winner has no edges yet.
+    Logs BG_INHIBITION to ring(ne_diagnostic) when edges are written.
+    """
+    if _cortex is None or not near_miss_ids:
+        return
+    try:
+        edges = _cortex.get_interpretive_edges(winner_id)
+        neighbor_ids = {e["to_id"] for e in edges}
+        targets = [nid for nid in near_miss_ids if nid in neighbor_ids]
+        if not targets:
+            return
+        for target_id in targets:
+            _cortex.add_interpretive_edge(
+                from_id=winner_id,
+                to_id=target_id,
+                direction="inhibition",
+                weight=0.3,
+                layer="bg_inhibition",
+            )
+        _cortex.write_ring(
+            f"BG_INHIBITION|winner={winner_id}|targets={len(targets)}",
+            category="ne_diagnostic",
+        )
+    except Exception as _e:
+        logging.getLogger(__name__).debug("_inhibit_neighbors: %s", _e)
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 
@@ -607,6 +652,9 @@ def select_habit(
                     "bare except in wild_igor/igor/cognition/basal_ganglia.py: %s",
                     _bare_e,
                 )
+
+        # Propagate inhibition: winner suppresses graph-connected near-misses.
+        _inhibit_neighbors(winner.id, [h.id for _, h in scored[1:5]])
 
         _emit_bg(
             {

@@ -193,6 +193,11 @@ def _smart_merge(texts: "list[str]") -> str:
 # it without a circular import. We import and re-expose it here for _stdin_reader.
 from .cognition.reasoners.base import exit_requested as _exit_requested
 
+# ── D259: Human author routing ────────────────────────────────────────────────
+# Authors that count as "human" for cloud routing: their background jobs get
+# is_user_turn=True so cloud escalation is always available (never capped to Ollama).
+_HUMAN_AUTHORS: frozenset = frozenset({"claude-code", "akien"})
+
 # ── #184: Attention nexus classification ───────────────────────────────────────
 
 
@@ -315,6 +320,7 @@ class Igor(IgorBase):
                     self._word_graph = WordGraph.build_from_habits(_boot_habits)
                     self._word_graph.save(_wg_path)
             basal_ganglia.set_word_graph(self._word_graph)
+            basal_ganglia.set_cortex(self.cortex)
             console.print(
                 f"[dim]Word graph ready ({len(self._word_graph._word_to_ids)} words, "
                 f"{len(_boot_habits)} habits)[/]"
@@ -2489,6 +2495,7 @@ class Igor(IgorBase):
             self._run_ne_background()
             self._run_consolidation_background()  # #169
             self._run_distillation_background()  # T-distillation-daemon
+            self._run_factual_compression_background()  # T-factual-compression
             self._run_ne_deep_consolidation()  # #310: night consolidation
             self._announce_completed_jobs()
             self._drain_action_impulses()
@@ -2501,11 +2508,16 @@ class Igor(IgorBase):
         relevant: list,
         skip_to: str,
         preparse_csb: str,
+        is_user_turn: bool = False,
+        complexity: str = "low",
     ) -> str:
         """
         G4 / #27: Thread-safe reasoning wrapper for background jobs.
         Called from job_manager background threads — must not write shared agent state.
         Returns response text (or error string).
+
+        D259: is_user_turn=True when originating author is human/claude-code — ensures
+        cloud escalation is available even in background job context.
         """
         try:
             from .brainstem.core_patterns import get_core_patterns
@@ -2520,6 +2532,8 @@ class Igor(IgorBase):
                 preparse_csb=preparse_csb,
                 cortex=self.cortex,
                 instance_id=self.instance_id,
+                is_user_turn=is_user_turn,
+                complexity=complexity,
             )
             # Strip <think> block — same as _process_inner does for foreground replies
             if response_text:
@@ -3665,10 +3679,18 @@ class Igor(IgorBase):
                     kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
                 )
 
+            # D259: human authors (claude-code, akien) get is_user_turn=True so
+            # background job synthesis can escalate to cloud when Ollama fails.
+            _bg_is_user = author in _HUMAN_AUTHORS
+            _bg_complexity = parsed.complexity if _bg_is_user else "low"
             _async_job_id = self.job_manager.submit_background(
                 fn=lambda _ui=user_input, _rel=list(
                     relevant
-                ), _sk=_skip_to, _pc=pre_csb: (self._bg_reason(_ui, _rel, _sk, _pc)),
+                ), _sk=_skip_to, _pc=pre_csb, _iu=_bg_is_user, _cx=_bg_complexity: (
+                    self._bg_reason(
+                        _ui, _rel, _sk, _pc, is_user_turn=_iu, complexity=_cx
+                    )
+                ),
                 title=parsed.core_input[:80],
                 completions_queue=self._job_completions,
                 thread_id=thread_id or "",
@@ -5208,6 +5230,60 @@ class Igor(IgorBase):
             from .cognition.daemon_supervisor import supervisor as _sup
 
             _sup.register("distillation-worker", self._distillation_thread)
+        except Exception:
+            pass
+
+    def _run_factual_compression_background(self):
+        """
+        T-factual-compression: Fire FACTUAL→INTERPRETIVE concept compression in a background thread.
+        Runs at most once per IGOR_FACTUAL_COMPRESSION_INTERVAL_SECS (default 4h).
+        Uses local LLM only; never blocks the interaction loop.
+        """
+        if getattr(self, "_factual_compression_thread", None) is not None:
+            if self._factual_compression_thread.is_alive():
+                return  # already running
+
+        from .cognition.factual_compression import (
+            run_factual_compression,
+            should_run as _should_compress,
+        )
+
+        if not _should_compress():
+            return
+
+        def _worker():
+            import time as _t
+
+            _waited = 0.0
+            while self._is_processing and _waited < 30.0:
+                _t.sleep(1.0)
+                _waited += 1.0
+            try:
+                result = run_factual_compression(self.cortex)
+                if result.get("compressed", 0) > 0:
+                    self.cortex.write_ring(
+                        f"FACTUAL_COMPRESSION|reviewed={result.get('factuals_reviewed', 0)}"
+                        f"|clusters={result.get('clusters_found', 0)}"
+                        f"|compressed={result.get('compressed', 0)}"
+                        f"|skipped={result.get('skipped', 0)}",
+                        category="distillation",
+                    )
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/main.py factual_compression: {_bare_e}",
+                )
+
+        self._factual_compression_thread = threading.Thread(
+            target=_worker, daemon=True, name="factual-compression-worker"
+        )
+        self._factual_compression_thread.start()
+        try:
+            from .cognition.daemon_supervisor import supervisor as _sup
+
+            _sup.register(
+                "factual-compression-worker", self._factual_compression_thread
+            )
         except Exception:
             pass
 

@@ -45,6 +45,7 @@ NE_MAX_INTERVAL_SEC = 300  # Maximum seconds between NE runs (5 min)
 PROMOTE_THRESHOLD = 0.7  # importance >= this → goes to LTM
 NE_CURSOR_HISTORY = 5  # How many cycles to keep in topic_history
 NE_OSCILLATION_DEPTH = 3  # Cycles on same topic with no new promotions → oscillating
+NARRATIVE_GAP_MAX_AGE_MINUTES = 60  # Auto-close gaps unresolved longer than this
 
 # D228 step 2: prediction error training
 _PE_HEAT_THRESHOLD = 0.3  # min spread heat to count as a predicted node
@@ -523,6 +524,31 @@ class NarrativeEngine(IgorBase):
 
         self._last_run = datetime.now()
         self._run_count += 1
+
+        # Binding: detect coalitions from TWM-seeded heat field (T-binding phase 1)
+        try:
+            from .coalition import detect_coalitions as _detect_coalitions
+
+            _bind_seeds = [
+                o.get("metadata", {}).get("memory_id")
+                for o in obs_list
+                if o.get("metadata", {}).get("memory_id")
+            ]
+            if len(_bind_seeds) >= 2:
+                _bind_heat = self.cortex.spreading_activation(_bind_seeds, depth=1)
+                _coalitions = _detect_coalitions(self.cortex, _bind_heat)
+                if _coalitions:
+                    _top = _coalitions[0]
+                    self.cortex.write_ring(
+                        f"COALITION|size={_top['size']}|weight={_top['weight']}"
+                        f"|centroid={_top['centroid']}",
+                        category="ne_diagnostic",
+                    )
+        except Exception as _bare_e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"narrative_engine.binding: {_bare_e}",
+            )
 
         # G-NE1: episodic-to-semantic merge pass (runs every cycle; conservative defaults)
         _merges = self._consolidation_merge_pass()
@@ -1150,8 +1176,43 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                 detail=f"narrative_engine._process_gaps read: {_bare_e}",
             )
 
-        # Accumulate tension: each unresolved cycle bumps salience by 5% × arousal
+        # Accumulate tension: each unresolved cycle bumps salience by 5% × arousal.
+        # If a gap has been open longer than NARRATIVE_GAP_MAX_AGE_MINUTES, auto-close it.
+        _now = datetime.now()
+        _max_age_sec = NARRATIVE_GAP_MAX_AGE_MINUTES * 60
         for gap_obs in existing_gaps:
+            # Check age via first_pushed_at in metadata
+            meta = gap_obs.get("metadata", {})
+            _first_pushed = meta.get("first_pushed_at")
+            if _first_pushed:
+                try:
+                    _age_sec = (
+                        _now - datetime.fromisoformat(_first_pushed)
+                    ).total_seconds()
+                    if _age_sec > _max_age_sec:
+                        # Auto-close: gap unresolved past max age
+                        content = gap_obs.get("content_csb", "")
+                        q_part = ""
+                        for part in content.split("|"):
+                            if part.startswith("question="):
+                                q_part = part[9:]
+                                break
+                        age_min = int(_age_sec // 60)
+                        try:
+                            self.cortex.twm_mark_integrated([gap_obs["id"]])
+                            self.cortex.write_ring(
+                                f"NARRATIVE_GAP_TIMEDOUT|q={q_part[:80]}|age_min={age_min}",
+                                category="ne_diagnostic",
+                            )
+                        except Exception as _bare_e:
+                            log_error(
+                                kind="BARE_EXCEPT",
+                                detail=f"narrative_engine._process_gaps timeout: {_bare_e}",
+                            )
+                        continue  # Skip tension accumulation for closed gap
+                except (ValueError, TypeError):
+                    pass  # malformed timestamp — fall through to normal accumulation
+
             current_sal = gap_obs.get("salience", 0.3)
             new_sal = min(1.0, current_sal + 0.05 * _arousal)
             try:
@@ -1257,7 +1318,11 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                     source="narrative_engine",
                     content_csb=content_csb,
                     salience=effective_salience,
-                    metadata={"type": "narrative_gap", "threat_level": threat},
+                    metadata={
+                        "type": "narrative_gap",
+                        "threat_level": threat,
+                        "first_pushed_at": datetime.now().isoformat(),
+                    },
                     ttl_seconds=600,  # 10 min; resolved gaps decay naturally
                     urgency=0.2 + threat * 0.4 + _arousal * 0.1,
                 )
