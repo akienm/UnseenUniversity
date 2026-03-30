@@ -84,6 +84,10 @@ def _db_proxy() -> DatabaseProxy:
                     used       REAL    NOT NULL
                 )
             """)
+            c.execute("""
+                CREATE INDEX IF NOT EXISTS idx_bh_timestamp
+                ON balance_history (timestamp)
+            """)
     return _BUDGET_PROXY
 
 
