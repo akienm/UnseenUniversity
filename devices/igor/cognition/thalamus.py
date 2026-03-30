@@ -387,6 +387,10 @@ def _classify_intent(text: str, keywords: list) -> str:
             "who invented",
             "when did",
             "where is",
+            "what do you know about",
+            "what do you know of",
+            "what have you learned about",
+            "what have you read about",
         ]
     ):
         return "factual_question"
