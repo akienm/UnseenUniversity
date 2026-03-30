@@ -6019,10 +6019,8 @@ class Igor(IgorBase):
                     ttl_seconds=300,
                 )
                 _pushed += 1
-            log.debug(
-                "[thread-buffer] pushed %d turns to TWM thread_id=%s",
-                _pushed,
-                _thread_id,
+            loginfo(
+                f"[dim][thread-buffer] pushed {_pushed} turns to TWM thread_id={_thread_id}[/]"
             )
 
         ri = msg.reply_info or {}
