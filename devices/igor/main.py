@@ -6552,7 +6552,11 @@ class Igor(IgorBase):
         import random
         from datetime import datetime as _dt
 
-        t = user_input.lower().strip().rstrip("!.?")
+        # Use core_input (routing-directive-stripped) so subject extraction doesn't
+        # inherit routing directive tokens ("background", "async", "inline") into
+        # _subj_terms, causing false relevance gate passes.
+        _t0_text = getattr(parsed, "core_input", user_input) or user_input
+        t = _t0_text.lower().strip().rstrip("!.?")
 
         # ── Greeting templates ─────────────────────────────────────────────────
         if parsed.intent == "greeting":
