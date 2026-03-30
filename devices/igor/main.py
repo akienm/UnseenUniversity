@@ -5987,6 +5987,44 @@ class Igor(IgorBase):
 
         # ── Build synthetic input ─────────────────────────────────────────────
         _thread_prefix = self._get_thread_context_prefix(_thread_id)
+
+        # T-thread-buffer: push last N thread turns into TWM at high salience so
+        # pre-LLM cognition (BG scoring, thalamus, memory retrieval) can anchor
+        # on recent exchanges — not just the LLM via _thread_prefix.
+        _tb = self._thread_buffers.get(_thread_id)
+        if _tb and _tb.get("history"):
+            _hist = _tb["history"]
+            _pushed = 0
+            if len(_hist) >= 1:
+                _u, _r = _hist[-1]
+                self.cortex.twm_push(
+                    source="thread.recent_user",
+                    content_csb=_u[:300],
+                    salience=0.9,
+                    ttl_seconds=300,
+                )
+                self.cortex.twm_push(
+                    source="thread.recent_igor",
+                    content_csb=_r[:300],
+                    salience=0.85,
+                    ttl_seconds=300,
+                )
+                _pushed += 2
+            if len(_hist) >= 2:
+                _u2, _ = _hist[-2]
+                self.cortex.twm_push(
+                    source="thread.prior_user",
+                    content_csb=_u2[:300],
+                    salience=0.7,
+                    ttl_seconds=300,
+                )
+                _pushed += 1
+            log.debug(
+                "[thread-buffer] pushed %d turns to TWM thread_id=%s",
+                _pushed,
+                _thread_id,
+            )
+
         ri = msg.reply_info or {}
 
         # User context block (compact, injected before the message body)
