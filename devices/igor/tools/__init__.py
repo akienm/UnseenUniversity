@@ -45,6 +45,7 @@ from . import (
     graph_write,
     self_trainer,
     output_trainer,
+    stale_task_reaper,
 )
 from ..arbiter import (
     queue as _arbiter_queue,

@@ -98,6 +98,21 @@ def run_stale_task_reaper(db_url: str | None = None) -> dict:
     return {"shelved": count, "ids": shelved_ids}
 
 
+from .registry import Tool, registry  # noqa: E402
+
+registry.register(
+    Tool(
+        name="run_stale_task_reaper",
+        description=(
+            "Scan TASK_SET memories older than IGOR_STALE_TASK_HOURS (default 2h) "
+            "with no resolved status and mark them shelved. "
+            "Called by PROC_STALE_TASK_REAPER on schedule."
+        ),
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=run_stale_task_reaper,
+    )
+)
+
 if __name__ == "__main__":
     result = run_stale_task_reaper()
     print(result)
