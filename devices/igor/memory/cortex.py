@@ -263,6 +263,85 @@ CREATE INDEX IF NOT EXISTS idx_tctx_ctx     ON traversal_contexts (context_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tctx_ctx_key ON traversal_contexts (context_id, key);
 """
 
+# ── Versioned schema migrations (T-migration-runner) ─────────────────────────
+# Ordered list of (name, sql) tuples. _run_schema_migrations() checks the
+# _migrations table and only runs each entry once per box. Adding a new column
+# = append one tuple. Works for both Postgres and SQLite.
+# Names must be stable — changing a name causes it to re-run.
+_SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
+    # memories columns
+    ("m001_embedding", "ALTER TABLE memories ADD COLUMN embedding TEXT DEFAULT NULL"),
+    ("m002_arousal", "ALTER TABLE memories ADD COLUMN arousal REAL DEFAULT 0.0"),
+    ("m003_dominance", "ALTER TABLE memories ADD COLUMN dominance REAL DEFAULT 0.0"),
+    ("m004_portable", "ALTER TABLE memories ADD COLUMN portable INTEGER DEFAULT 1"),
+    (
+        "m005_links_weighted",
+        "ALTER TABLE memories ADD COLUMN links_weighted TEXT DEFAULT '{}'",
+    ),
+    (
+        "m006_last_accessed",
+        "ALTER TABLE memories ADD COLUMN last_accessed TEXT DEFAULT NULL",
+    ),
+    ("m007_source", "ALTER TABLE memories ADD COLUMN source TEXT DEFAULT ''"),
+    ("m008_confidence", "ALTER TABLE memories ADD COLUMN confidence REAL DEFAULT 1.0"),
+    (
+        "m009_context_of_encoding",
+        "ALTER TABLE memories ADD COLUMN context_of_encoding TEXT DEFAULT ''",
+    ),
+    ("m010_updated_at", "ALTER TABLE memories ADD COLUMN updated_at TEXT DEFAULT NULL"),
+    ("m011_scope", "ALTER TABLE memories ADD COLUMN scope TEXT DEFAULT 'class'"),
+    (
+        "m012_payload",
+        "ALTER TABLE memories ADD COLUMN payload TEXT DEFAULT NULL",
+    ),  # D260
+    # ring_memory columns
+    (
+        "m013_ring_thread_id",
+        "ALTER TABLE ring_memory ADD COLUMN thread_id TEXT DEFAULT NULL",
+    ),
+    # twm_observations columns
+    (
+        "m014_twm_urgency",
+        "ALTER TABLE twm_observations ADD COLUMN urgency REAL DEFAULT 0.2",
+    ),
+    (
+        "m015_twm_instance_id",
+        "ALTER TABLE twm_observations ADD COLUMN instance_id TEXT DEFAULT NULL",
+    ),
+    (
+        "m016_twm_thread_id",
+        "ALTER TABLE twm_observations ADD COLUMN thread_id TEXT DEFAULT NULL",
+    ),
+    (
+        "m017_twm_attractor_weight",
+        "ALTER TABLE twm_observations ADD COLUMN attractor_weight REAL DEFAULT 0.0",
+    ),
+    (
+        "m018_twm_category",
+        "ALTER TABLE twm_observations ADD COLUMN category TEXT DEFAULT 'observation'",
+    ),
+    (
+        "m019_twm_parent_obs_id",
+        "ALTER TABLE twm_observations ADD COLUMN parent_obs_id INTEGER DEFAULT NULL",
+    ),
+    # interpretive_edges columns
+    (
+        "m020_ie_layer",
+        "ALTER TABLE interpretive_edges ADD COLUMN layer TEXT DEFAULT ''",
+    ),
+    # tails columns
+    ("m021_tails_trail_id", "ALTER TABLE tails ADD COLUMN trail_id TEXT DEFAULT NULL"),
+    (
+        "m022_tails_sequence_pos",
+        "ALTER TABLE tails ADD COLUMN sequence_pos INTEGER DEFAULT NULL",
+    ),
+    # traces columns
+    ("m023_traces_purpose", "ALTER TABLE traces ADD COLUMN purpose TEXT"),
+    ("m024_traces_twm_obs_id", "ALTER TABLE traces ADD COLUMN twm_obs_id TEXT"),
+    ("m025_traces_instance_id", "ALTER TABLE traces ADD COLUMN instance_id TEXT"),
+    ("m026_traces_thread_id", "ALTER TABLE traces ADD COLUMN thread_id TEXT"),
+]
+
 
 class Cortex(IgorBase):
     """SQLite-backed memory graph."""
@@ -301,25 +380,10 @@ class Cortex(IgorBase):
             except Exception:
                 self._init_pg_schema()
                 return
-            # Already initialised — still run incremental column migrations.
-            # These are idempotent: bare try/except catches "column already exists".
+            # Already initialised — run versioned schema migrations + scope backfill.
             with self._conn() as conn:
-                for _col_sql in (
-                    "ALTER TABLE traces ADD COLUMN purpose TEXT",
-                    "ALTER TABLE traces ADD COLUMN twm_obs_id TEXT",
-                    "ALTER TABLE traces ADD COLUMN instance_id TEXT",
-                    "ALTER TABLE traces ADD COLUMN thread_id TEXT",
-                    "ALTER TABLE memories ADD COLUMN scope TEXT DEFAULT 'class'",
-                    # D260: engram program cell storage — idempotent, already-exists caught below
-                    "ALTER TABLE memories ADD COLUMN payload TEXT DEFAULT NULL",
-                ):
-                    try:
-                        conn.execute(_col_sql)
-                    except Exception as e:
-                        log_error(
-                            kind="TOOL_FAIL", detail=f"column creation: {e}"
-                        )  # idempotent
-                # #123: backfill scope from memory_type (idempotent)
+                self._run_schema_migrations(conn)
+                # #123: backfill scope from memory_type (idempotent data migration)
                 conn.execute(
                     "UPDATE memories SET scope = 'instance' "
                     "WHERE memory_type IN ('EPISODIC', 'EXPERIENTIAL', 'CREDENTIAL_REF') "
@@ -362,119 +426,6 @@ class Cortex(IgorBase):
                 "CREATE INDEX IF NOT EXISTS idx_activation ON memories(activation_count DESC)"
             )
 
-            # change.37: embedding column — added via migration so existing DBs are not broken
-            try:
-                conn.execute(
-                    "ALTER TABLE memories ADD COLUMN embedding TEXT DEFAULT NULL"
-                )
-            except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                )
-
-            # G14 / #52: emotional profile columns (arousal + dominance)
-            for _col in ("arousal REAL DEFAULT 0.0", "dominance REAL DEFAULT 0.0"):
-                try:
-                    conn.execute(f"ALTER TABLE memories ADD COLUMN {_col}")
-                except Exception as _bare_e:
-                    logging.getLogger(__name__).warning(
-                        "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                    )
-
-            # #71: portability flag — 1=portable (default), 0=instance-local
-            try:
-                conn.execute(
-                    "ALTER TABLE memories ADD COLUMN portable INTEGER DEFAULT 1"
-                )
-            except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                )
-
-            # #128: directed weighted links + last_accessed
-            for _col in (
-                "links_weighted TEXT DEFAULT '{}'",
-                "last_accessed TEXT DEFAULT NULL",
-            ):
-                try:
-                    conn.execute(f"ALTER TABLE memories ADD COLUMN {_col}")
-                except Exception as _bare_e:
-                    logging.getLogger(__name__).warning(
-                        "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                    )
-
-            # G46: provenance + epistemic fields
-            for _col in (
-                "source TEXT DEFAULT ''",
-                "confidence REAL DEFAULT 1.0",
-                "context_of_encoding TEXT DEFAULT ''",
-            ):
-                try:
-                    conn.execute(f"ALTER TABLE memories ADD COLUMN {_col}")
-                except Exception as _bare_e:
-                    logging.getLogger(__name__).warning(
-                        "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                    )
-
-            # T-memory-sync: updated_at for swarm sync — set on every store()
-            try:
-                conn.execute(
-                    "ALTER TABLE memories ADD COLUMN updated_at TEXT DEFAULT NULL"
-                )
-            except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                )
-
-            # #123: scope column — class/instance/session; replaces portable boolean
-            try:
-                conn.execute(
-                    "ALTER TABLE memories ADD COLUMN scope TEXT DEFAULT 'class'"
-                )
-            except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                )
-            # Backfill: instance-type memories → scope='instance' (idempotent)
-            conn.execute(
-                "UPDATE memories SET scope = 'instance' "
-                "WHERE memory_type IN ('EPISODIC', 'EXPERIENTIAL', 'CREDENTIAL_REF') "
-                "AND scope = 'class'"
-            )
-            # Honor explicit portable=0 rows not covered by type mapping
-            conn.execute(
-                "UPDATE memories SET scope = 'instance' "
-                "WHERE portable = 0 AND scope = 'class'"
-            )
-
-            # D260: payload column — engram program cells + data fields
-            try:
-                conn.execute(
-                    "ALTER TABLE memories ADD COLUMN payload TEXT DEFAULT NULL"
-                )
-            except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                )
-
-            # #128: one-time migration — promote non-empty link_ids into links_weighted (weight 0.5)
-            _migrate_rows = conn.execute(
-                "SELECT id, link_ids FROM memories "
-                "WHERE links_weighted = '{}' AND link_ids != '[]' AND link_ids IS NOT NULL"
-            ).fetchall()
-            for _row in _migrate_rows:
-                try:
-                    _ids = json.loads(_row["link_ids"] or "[]")
-                    if _ids:
-                        conn.execute(
-                            "UPDATE memories SET links_weighted = ? WHERE id = ?",
-                            (json.dumps({mid: 0.5 for mid in _ids}), _row["id"]),
-                        )
-                except Exception as _bare_e:
-                    logging.getLogger(__name__).warning(
-                        "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                    )
-
             # G-EMB1: separate embeddings table — keeps 16KB blobs off memories rows
             # so activation_count scans and LIKE scans don't load embedding pages.
             conn.execute("""
@@ -508,16 +459,6 @@ class Cortex(IgorBase):
                     thread_id TEXT DEFAULT NULL
                 )
             """)
-            # #136 P2: thread_id column — lazy migration for existing DBs
-            try:
-                conn.execute(
-                    "ALTER TABLE ring_memory ADD COLUMN thread_id TEXT DEFAULT NULL"
-                )
-            except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                )
-
             # TWM — Temporal Working Memory
             # Push-based sandbox. Any process can deposit observations.
             # NE reads, integrates, updates salience, promotes to LTM.
@@ -541,68 +482,6 @@ class Cortex(IgorBase):
                 "CREATE INDEX IF NOT EXISTS idx_twm_salience ON twm_observations(salience)"
             )
 
-            # Change 4: urgency column (idempotent migration)
-            # Urgency = time-sensitivity (0-1); distinct from salience (importance).
-            # Noise expires on schedule; urgent items demand faster attention.
-            try:
-                conn.execute(
-                    "ALTER TABLE twm_observations ADD COLUMN urgency REAL DEFAULT 0.2"
-                )
-            except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                )
-
-            # #51: instance_id column — scopes each observation to the instance that pushed it
-            try:
-                conn.execute(
-                    "ALTER TABLE twm_observations ADD COLUMN instance_id TEXT DEFAULT NULL"
-                )
-            except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                )
-
-            # #158: thread_id — per-attention-nexus isolation (mirrors ring_memory #136)
-            try:
-                conn.execute(
-                    "ALTER TABLE twm_observations ADD COLUMN thread_id TEXT DEFAULT NULL"
-                )
-            except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                )
-
-            # G50: attractor_weight — the current primary focus; one item typically non-zero
-            try:
-                conn.execute(
-                    "ALTER TABLE twm_observations ADD COLUMN attractor_weight REAL DEFAULT 0.0"
-                )
-            except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                )
-
-            # #158: category — distinguishes TASK_SET from normal observations
-            try:
-                conn.execute(
-                    "ALTER TABLE twm_observations ADD COLUMN category TEXT DEFAULT 'observation'"
-                )
-            except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                )
-
-            # D099: parent_obs_id — slot branching; child obs traces back to parent slot
-            try:
-                conn.execute(
-                    "ALTER TABLE twm_observations ADD COLUMN parent_obs_id INTEGER DEFAULT NULL"
-                )
-            except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                )
-
             # G52: interpretive_edges — directed edges for interpretive tree traversal
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS interpretive_edges (
@@ -625,32 +504,6 @@ class Cortex(IgorBase):
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_ie_to ON interpretive_edges(to_id)"
             )
-            # #244: layer column — tags edges by semantic layer (e.g. 'meaning_to_me')
-            try:
-                conn.execute(
-                    "ALTER TABLE interpretive_edges ADD COLUMN layer TEXT DEFAULT ''"
-                )
-            except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                )
-            # #261: one-time migration — only runs if marker not yet present
-            _m261 = conn.execute(
-                "SELECT 1 FROM _migrations WHERE name = 'meaning_to_me_layer_tag'"
-            ).fetchone()
-            if not _m261:
-                conn.execute("""
-                    UPDATE interpretive_edges
-                    SET layer = 'meaning_to_me'
-                    WHERE (from_id LIKE 'CP%' OR from_id LIKE 'ID%')
-                      AND (layer IS NULL OR layer = '')
-                    """)
-                from datetime import datetime as _dt261
-
-                conn.execute(
-                    "INSERT OR IGNORE INTO _migrations(name, applied_at) VALUES (?, ?)",
-                    ("meaning_to_me_layer_tag", _dt261.now().isoformat()),
-                )
             # D095: lists table — cross-type enumeration primitive
             # One table for all named lists: tags, projects, capabilities, per-master-notebook data.
             # instance_id="" = global (not NULL — avoids SQLite NULL-in-PK ambiguity).
@@ -699,22 +552,6 @@ class Cortex(IgorBase):
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_tails_time ON tails(recorded_at DESC)"
             )
-            # Migration: trail_id + sequence_pos added after initial tails deploy —
-            # must precede the idx_tails_trail index creation
-            try:
-                conn.execute("ALTER TABLE tails ADD COLUMN trail_id TEXT DEFAULT NULL")
-            except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                )
-            try:
-                conn.execute(
-                    "ALTER TABLE tails ADD COLUMN sequence_pos INTEGER DEFAULT NULL"
-                )
-            except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
-                )
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_tails_trail ON tails(trail_id) WHERE trail_id IS NOT NULL"
             )
@@ -779,25 +616,115 @@ class Cortex(IgorBase):
                     "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
                 )
 
-            # T-trails-infra: add context columns to traces for TWM join + provenance.
-            # Bare try/except per column — idempotent on re-run (column already exists = silent).
-            # DO NOT use a migration guard here: guard + silent ALTER failure = columns never added.
-            for _col_sql in (
-                "ALTER TABLE traces ADD COLUMN purpose TEXT",
-                "ALTER TABLE traces ADD COLUMN twm_obs_id TEXT",
-                "ALTER TABLE traces ADD COLUMN instance_id TEXT",
-                "ALTER TABLE traces ADD COLUMN thread_id TEXT",
-            ):
+            # T-migration-runner: run after all CREATE TABLEs so every target table exists
+            self._run_schema_migrations(conn)
+            # #261: one-time data migration — tag meaning_to_me layer on interpretive edges
+            # Must run after _run_schema_migrations adds the layer column.
+            _m261 = conn.execute(
+                "SELECT 1 FROM _migrations WHERE name = 'meaning_to_me_layer_tag'"
+            ).fetchone()
+            if not _m261:
+                conn.execute("""
+                    UPDATE interpretive_edges
+                    SET layer = 'meaning_to_me'
+                    WHERE (from_id LIKE 'CP%' OR from_id LIKE 'ID%')
+                      AND (layer IS NULL OR layer = '')
+                    """)
+                from datetime import datetime as _dt261
+
+                conn.execute(
+                    "INSERT OR IGNORE INTO _migrations(name, applied_at) VALUES (?, ?)",
+                    ("meaning_to_me_layer_tag", _dt261.now().isoformat()),
+                )
+            # #128: one-time data migration — promote non-empty link_ids into links_weighted
+            # Must run after _run_schema_migrations adds the links_weighted column.
+            _migrate_rows = conn.execute(
+                "SELECT id, link_ids FROM memories "
+                "WHERE links_weighted = '{}' AND link_ids != '[]' AND link_ids IS NOT NULL"
+            ).fetchall()
+            for _row in _migrate_rows:
                 try:
-                    conn.execute(_col_sql)
-                except Exception as e:
-                    log_error(
-                        kind="TOOL_FAIL", detail=f"column creation: {e}"
-                    )  # idempotent
+                    _ids = json.loads(_row["link_ids"] or "[]")
+                    if _ids:
+                        conn.execute(
+                            "UPDATE memories SET links_weighted = ? WHERE id = ?",
+                            (json.dumps({mid: 0.5 for mid in _ids}), _row["id"]),
+                        )
+                except Exception as _bare_e:
+                    logging.getLogger(__name__).warning(
+                        "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                    )
+            # #123: backfill scope from memory_type (idempotent data migration)
+            conn.execute(
+                "UPDATE memories SET scope = 'instance' "
+                "WHERE memory_type IN ('EPISODIC', 'EXPERIENTIAL', 'CREDENTIAL_REF') "
+                "AND scope = 'class'"
+            )
+            conn.execute(
+                "UPDATE memories SET scope = 'instance' "
+                "WHERE portable = 0 AND scope = 'class'"
+            )
 
             # G-QP2: wal_checkpoint moved to main.py post-Cortex-init (G-QP3)
             # Do NOT checkpoint here — _init_db() runs on every Cortex() instantiation
             # (book_learner, tools, etc.) and would flood the DB with checkpoint contention
+
+    def _run_schema_migrations(self, conn) -> None:
+        """Apply any unapplied entries from _SCHEMA_MIGRATIONS.
+
+        Checks _migrations table by name; skips already-applied entries.
+        Handles "column already exists" silently (expected on Postgres where fresh
+        schema bootstrap pre-creates columns). Real errors are logged and the
+        migration is left unrecorded so it retries next boot.
+        """
+        import datetime as _dt_mig
+
+        applied: set[str] = set()
+        try:
+            rows = conn.execute("SELECT name FROM _migrations").fetchall()
+            applied = {(r["name"] if hasattr(r, "__getitem__") else r[0]) for r in rows}
+        except Exception as _e:
+            log.debug("[migration] could not read _migrations: %s", _e)
+
+        _mlog = logging.getLogger(__name__)
+        for name, sql in _SCHEMA_MIGRATIONS:
+            if name in applied:
+                _mlog.debug("[migration] skip %s (already applied)", name)
+                continue
+            try:
+                conn.execute(sql)
+                try:
+                    conn.execute(
+                        "INSERT INTO _migrations(name, applied_at) VALUES (?, ?)",
+                        (name, _dt_mig.datetime.now().isoformat()),
+                    )
+                except Exception:
+                    pass  # duplicate key = already recorded by concurrent boot
+                _mlog.info("[migration] applied %s", name)
+            except Exception as _e:
+                _emsg = str(_e).lower()
+                if any(
+                    s in _emsg
+                    for s in (
+                        "duplicate column name",
+                        "duplicate column",
+                        "already exists",
+                        "duplicatecolumn",
+                    )
+                ):
+                    # Column pre-exists (SQLite: "duplicate column name", Postgres: "already exists")
+                    try:
+                        conn.execute(
+                            "INSERT INTO _migrations(name, applied_at) VALUES (?, ?)",
+                            (name, _dt_mig.datetime.now().isoformat()),
+                        )
+                    except Exception:
+                        pass
+                    _mlog.debug(
+                        "[migration] %s — column pre-exists, marked applied", name
+                    )
+                else:
+                    log_error(kind="MIGRATION_FAIL", detail=f"{name}: {_e}")
 
     def _init_pg_schema(self) -> None:
         """Bootstrap the full schema on a fresh Postgres DB.
