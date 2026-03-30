@@ -445,6 +445,16 @@ class Cortex(IgorBase):
                 "WHERE portable = 0 AND scope = 'class'"
             )
 
+            # D260: payload column — engram program cells + data fields
+            try:
+                conn.execute(
+                    "ALTER TABLE memories ADD COLUMN payload TEXT DEFAULT NULL"
+                )
+            except Exception as _bare_e:
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                )
+
             # #128: one-time migration — promote non-empty link_ids into links_weighted (weight 0.5)
             _migrate_rows = conn.execute(
                 "SELECT id, link_ids FROM memories "
@@ -853,8 +863,8 @@ class Cortex(IgorBase):
                  valence, arousal, dominance,
                  activation_count, friction_history, timestamp, metadata, portable,
                  links_weighted, last_accessed,
-                 source, confidence, context_of_encoding, updated_at, scope)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 source, confidence, context_of_encoding, updated_at, scope, payload)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
                     memory.id,
@@ -878,6 +888,7 @@ class Cortex(IgorBase):
                     memory.context_of_encoding,
                     _now_iso,
                     memory.scope.value if memory.scope else "class",
+                    json.dumps(memory.payload) if memory.payload is not None else None,
                 ),
             )
         # D256: register node in node_registry + Redis cache (non-fatal)
@@ -3181,6 +3192,16 @@ class Cortex(IgorBase):
                 row["context_of_encoding"]
                 if "context_of_encoding" in keys and row["context_of_encoding"]
                 else ""
+            ),
+            # D260: engram program payload
+            payload=(
+                (
+                    row["payload"]
+                    if isinstance(row["payload"], dict)
+                    else json.loads(row["payload"])
+                )
+                if "payload" in keys and row["payload"]
+                else None
             ),
         )
 

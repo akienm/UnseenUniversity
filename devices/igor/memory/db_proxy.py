@@ -43,7 +43,7 @@ MEM_COLS = (
     "id, narrative, memory_type, parent_id, children_ids, link_ids, "
     "valence, activation_count, friction_history, timestamp, metadata, "
     "arousal, dominance, portable, links_weighted, last_accessed, "
-    "source, confidence, context_of_encoding, scope"
+    "source, confidence, context_of_encoding, scope, payload"
 )
 
 # ── Dedicated DB query log ────────────────────────────────────────────────────

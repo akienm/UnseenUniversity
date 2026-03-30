@@ -7,7 +7,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Any, Dict, Optional
 
 
 class MemoryType(Enum):
@@ -105,10 +105,20 @@ class Memory:
     )
     # #123: scope — class/instance/session; set by __post_init__ from memory_type if not provided
     scope: Optional["MemoryScope"] = None
+    # D260: engram program payload — triggers dict + named cells + data fields
+    # payload.NARRATIVE is the canonical embedding source (falls back to self.narrative)
+    payload: Optional[Dict[str, Any]] = None
 
     def __post_init__(self):
         if self.scope is None:
             self.scope = default_scope(self.memory_type)
+
+    @property
+    def embedding_text(self) -> str:
+        """D260: canonical text for embedding — payload.NARRATIVE if present, else narrative."""
+        if self.payload and self.payload.get("NARRATIVE"):
+            return self.payload["NARRATIVE"]
+        return self.narrative
 
     @property
     def inertia(self) -> float:
