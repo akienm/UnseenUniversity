@@ -20,7 +20,6 @@ change.37: memories table now has an `embedding` column (TEXT, nullable JSON).
 
 import json
 import os
-import sqlite3
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
