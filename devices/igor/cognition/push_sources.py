@@ -1977,9 +1977,10 @@ class ProprioceptionSource(BasePushSource):
             if root_found:
                 from ..memory.db_proxy import MEM_COLS
 
-                rows = cortex._db.execute(
-                    f"SELECT {MEM_COLS} FROM memories WHERE id LIKE 'INTERP_FACIA_%' LIMIT 200"
-                ).fetchall()
+                with cortex._db() as conn:
+                    rows = conn.execute(
+                        f"SELECT {MEM_COLS} FROM memories WHERE id LIKE 'INTERP_FACIA_%' LIMIT 200"
+                    ).fetchall()
                 facia_nodes = [cortex._to_memory(r) for r in rows]
 
             # Push root node itself
