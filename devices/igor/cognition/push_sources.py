@@ -14,6 +14,7 @@ Sources:
   CuriositySource       — fires idle-curiosity impulse when TWM has no active focus (#246)
   ConsolidationReplay   — replays FACT_CLOUD nodes during quiet periods, strengthens co-occurrence edges (D228)
   ThreadCoherenceSource — measures context retention across turns via bg_scoring.top node overlap (T-thread-coherence)
+  ProprioceptionSource  — keeps TOOL_REGISTRY_ROOT + facia neighbors warm in TWM (tools are body parts, not lookup table)
 
 All push via cortex.twm_push(). None of them block or crash the main loop.
 """
@@ -1927,6 +1928,94 @@ class ThreadCoherenceSource(BasePushSource):
 
 memory_surfacer = MemorySurfacer()
 heartbeat_source = HeartbeatSource()
+
+
+class ProprioceptionSource(BasePushSource):
+    """
+    T-proprioception-source: keeps tool facia nodes warm in TWM on a slow heartbeat.
+
+    Tools are body parts — they should be continuously present as background
+    self-awareness, not retrieved on demand. This is the motor body sense,
+    parallel to InteroceptionSource (visceral) and distinct from it.
+
+    Mechanism: finds TOOL_REGISTRY_ROOT in LTM, fetches its graph neighbors
+    (INTERP_FACIA_* nodes), pushes each to TWM at low salience (0.35) with
+    category=body.motor. Always warm → spreading activation does the rest
+    when tool-adjacent topics are live.
+    """
+
+    name = "proprioception"
+    CHECK_INTERVAL_SEC = 60
+    TOOL_SALIENCE = 0.35
+    TOOL_TTL_SEC = 120
+
+    def __init__(self):
+        self._last_run: Optional[datetime] = None
+
+    def push(self, cortex) -> list[int]:
+        now = datetime.now()
+        if (
+            self._last_run
+            and (now - self._last_run).total_seconds() < self.CHECK_INTERVAL_SEC
+        ):
+            return []
+        self._last_run = now
+
+        ids = []
+        try:
+            # Find TOOL_REGISTRY_ROOT by direct ID or search
+            root = cortex.get("TOOL_REGISTRY_ROOT")
+            root_found = root is not None
+            if not root_found:
+                results = cortex.search("TOOL_REGISTRY_ROOT tool registry", limit=1)
+                root = results[0] if results else None
+                root_found = root is not None
+
+            # Fetch facia nodes by ID prefix — all tool facing memories
+            facia_nodes = (
+                cortex.search(
+                    "tool facia entry point", limit=50, memory_types=["INTERPRETIVE"]
+                )
+                if root_found
+                else []
+            )
+            facia_nodes = [n for n in facia_nodes if "FACIA" in n.id.upper()]
+
+            # Push root node itself
+            if root_found:
+                obs_id = cortex.twm_push(
+                    source="proprioception",
+                    content_csb=f"TOOL_REGISTRY_ROOT|{root.narrative[:120]}",
+                    salience=self.TOOL_SALIENCE + 0.05,
+                    ttl_seconds=self.TOOL_TTL_SEC,
+                    metadata={"category": "body.motor", "node_id": root.id},
+                )
+                if obs_id:
+                    ids.append(obs_id)
+
+            # Push facia neighbors
+            for node in facia_nodes[:30]:
+                obs_id = cortex.twm_push(
+                    source="proprioception",
+                    content_csb=f"FACIA|{node.id}|{node.narrative[:100]}",
+                    salience=self.TOOL_SALIENCE,
+                    ttl_seconds=self.TOOL_TTL_SEC,
+                    metadata={"category": "body.motor", "node_id": node.id},
+                )
+                if obs_id:
+                    ids.append(obs_id)
+
+            cortex.write_ring(
+                f"PROPRIOCEPTION|tools={len(facia_nodes)}|root_found={root_found}",
+                category="proprioception",
+            )
+        except Exception as _e:
+            log_error(kind="PROPRIOCEPTION_FAIL", detail=str(_e))
+
+        return ids
+
+
+proprioception_source = ProprioceptionSource()
 user_input_source = UserInputSource()
 machines_watcher = MachinesWatcher()
 inbox_watcher = InboxWatcher()
@@ -1969,6 +2058,7 @@ def run_background_sources(cortex) -> int:
         curiosity_source,
         boredom_source,
         interoception_source,
+        proprioception_source,
         scheduler_source,
         thread_coherence_source,
         consolidation_replay,
