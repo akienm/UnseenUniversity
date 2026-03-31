@@ -68,7 +68,7 @@ def get_tool_registry_report(filter_text: str = "", **_) -> str:
     """
     try:
         from .registry import registry
-        import wild_igor.igor.tools  # noqa — ensures all tools are registered
+        from .. import tools as _tools_pkg  # noqa — ensures all tools are registered
 
         tools = sorted(registry._tools.values(), key=lambda x: x.name)
         if filter_text:
