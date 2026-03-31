@@ -385,7 +385,15 @@ def call_inner_cc_long(
     for turn in range(max_turns):
         try:
             data = _make_or_request(messages, model, max_tokens=800, temperature=0.2)
-            raw = data["choices"][0]["message"]["content"].strip()
+            raw = (data["choices"][0]["message"].get("content") or "").strip()
+            if not raw:
+                # OR returned null/empty content (e.g. finish_reason=tool_calls)
+                finish = data["choices"][0].get("finish_reason", "unknown")
+                _log_error(
+                    kind="INNER_CC_FAIL",
+                    detail=f"empty content at turn {turn}, finish_reason={finish}",
+                )
+                break
             messages.append({"role": "assistant", "content": raw})
 
             # If the response is valid JSON with an "answer" key, treat as final.
