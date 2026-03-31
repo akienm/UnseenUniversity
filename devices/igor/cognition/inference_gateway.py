@@ -469,7 +469,37 @@ class InferenceGateway(IgorBase):
         last_error = ""
         _quality_path = is_user_turn and complexity in ("medium", "high")
 
-        if self._t2 and not is_user_turn:
+        # D268: MODE override — check TWM for active min_tier entry before tier selection.
+        # Habit PROC_READING_BOOTSTRAP (and future mode habits) push:
+        #   twm_push(content_csb="MODE|...|min_tier=tier.4", category="mode_override", ttl_seconds=N)
+        # If active, force cloud path regardless of is_user_turn / complexity.
+        _force_cloud_mode = False
+        if cortex is not None:
+            try:
+                _mode_entries = cortex.twm_read(
+                    limit=5, category="mode_override", include_integrated=True
+                )
+                for _me in reversed(_mode_entries):
+                    _csb = _me.get("content_csb", "")
+                    if "min_tier=tier.4" in _csb:
+                        _force_cloud_mode = True
+                        try:
+                            from .forensic_logger import (
+                                log_cognition_metric as _lcm_mode,
+                            )
+
+                            _lcm_mode(
+                                metric="mode_override",
+                                value=1.0,
+                                detail=f"min_tier=tier.4 from TWM: {_csb[:80]}",
+                            )
+                        except Exception:
+                            pass
+                        break
+            except Exception as _mode_e:
+                log_error(kind="MODE_READ_FAIL", detail=str(_mode_e))
+
+        if self._t2 and not is_user_turn and not _force_cloud_mode:
             try:
                 self.last_tier = "local/interactive"
                 if on_tier:
@@ -501,8 +531,13 @@ class InferenceGateway(IgorBase):
                         detail=str(_e),
                     )
 
-        # Cloud path: always for human turns (D254); quality path for non-human (D234)
-        if (is_user_turn or _quality_path) and _cloud_ok and self._t4:
+        # Cloud path: always for human turns (D254); quality path for non-human (D234);
+        # D268: forced when MODE override is active (e.g. reading bootstrap min_tier=tier.4)
+        if (
+            (is_user_turn or _quality_path or _force_cloud_mode)
+            and _cloud_ok
+            and self._t4
+        ):
             try:
                 self.last_tier = "cloud/interactive"
                 if on_tier:
