@@ -1979,7 +1979,8 @@ class ProprioceptionSource(BasePushSource):
 
                 with cortex._db() as conn:
                     rows = conn.execute(
-                        f"SELECT {MEM_COLS} FROM memories WHERE id LIKE 'INTERP_FACIA_%' LIMIT 200"
+                        f"SELECT {MEM_COLS} FROM memories WHERE id LIKE %s LIMIT 200",
+                        ("INTERP_FACIA_%",),
                     ).fetchall()
                 facia_nodes = [cortex._to_memory(r) for r in rows]
 
