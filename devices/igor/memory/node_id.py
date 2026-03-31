@@ -198,6 +198,12 @@ def _registry_pg(
         conn.autocommit = True
         parsed = parse_node_id(node_id)
         created_at = parsed.get("datetime")
+
+        # Skip registration for non-timestamp IDs (fixture nodes like PROC_TRAINING_PASS)
+        if created_at is None:
+            conn.close()
+            return
+
         mach = machine_id or _swarm_name() or socket.gethostname()
         with conn.cursor() as cur:
             cur.execute(
