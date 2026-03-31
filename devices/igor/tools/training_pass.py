@@ -18,7 +18,7 @@ Usage (via habit or cc_send):
   → Returns report: N escapes analyzed, N nodes deposited
 
 Config (optional JSON):
-  {"n_traces": 10, "min_tier": "tier.3.5", "model": "anthropic/claude-haiku-4-5-20251001"}
+  {"n_traces": 10, "min_tier": "tier.3.5", "model": "anthropic/claude-haiku-4.5"}
 """
 
 import json
@@ -122,7 +122,7 @@ def start_training_pass(config: str = "") -> str:
 
     config: optional JSON string with overrides:
       {"n_traces": 10, "min_tier": "tier.3.5",
-       "model": "anthropic/claude-haiku-4-5-20251001", "max_turns": 8}
+       "model": "anthropic/claude-haiku-4.5", "max_turns": 8}
 
     Returns a report: escalations analyzed, nodes deposited, summary.
     """
@@ -213,7 +213,7 @@ registry.register(
                     "type": "string",
                     "description": (
                         'Optional JSON: {"n_traces": 10, "min_tier": "tier.3.5", '
-                        '"model": "anthropic/claude-haiku-4-5-20251001", "max_turns": 8}'
+                        '"model": "anthropic/claude-haiku-4.5", "max_turns": 8}'
                     ),
                 },
             },
