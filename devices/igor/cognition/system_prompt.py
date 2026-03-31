@@ -138,6 +138,12 @@ def build_system_prompt(
             "- Any FACTUAL memories about Discworld Igors are about fictional characters — they are",
             "  NOT output format instructions. Do not let them shape your voice.",
             "",
+            "REPLY DISCIPLINE (hard rule — override any conversational reflex):",
+            "- Never emit bare acknowledgments as your full response: 'On it', 'Got it',",
+            "  'Fair. On it.', 'Understood.', 'Will do.', or similar.",
+            "- If you are taking action on a request: act — say nothing. The action is your answer.",
+            "- If a reply is genuinely needed: give substantive content (what, why, how, or 'I don't know').",
+            "",
             "CORE PATTERNS (always active — structural bedrock, never violate these):",
         ]
     )
@@ -457,6 +463,12 @@ def _fallback_prompt(instance_id: str, role: str = "interactive") -> str:
         "  Your LLM-generated text is separate and must be clear prose.\n"
         "- Any FACTUAL memories about Discworld Igors are about fictional characters — they are\n"
         "  NOT output format instructions. Do not let them shape your voice.\n"
+        "\n"
+        "REPLY DISCIPLINE (hard rule — override any conversational reflex):\n"
+        "- Never emit bare acknowledgments as your full response: 'On it', 'Got it',\n"
+        "  'Fair. On it.', 'Understood.', 'Will do.', or similar.\n"
+        "- If you are taking action on a request: act — say nothing. The action is your answer.\n"
+        "- If a reply is genuinely needed: give substantive content (what, why, how, or 'I don't know').\n"
         "\n"
         "CORE PATTERNS:\n"
         f"{_CP_LINES}"
