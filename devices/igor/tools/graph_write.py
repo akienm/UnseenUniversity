@@ -123,6 +123,20 @@ def store_memory(
         return f"[store_memory ERROR] {e}"
 
 
+# ── store_factual ─────────────────────────────────────────────────────────────
+
+
+def store_factual(narrative: str) -> str:
+    """
+    Deposit a single-arg FACTUAL memory via habit auto-dispatch.
+
+    Thin wrapper around store_memory — defaults memory_type to FACTUAL.
+    Called by PROC_TASK_STORE_MEMORY when narrative is the only arg (habit
+    auto-dispatch can only pass one required arg from message text).
+    """
+    return store_memory(narrative=narrative, memory_type="FACTUAL")
+
+
 # ── link_memory ───────────────────────────────────────────────────────────────
 
 
@@ -225,6 +239,28 @@ registry.register(
             "required": ["narrative", "memory_type"],
         },
         fn=store_memory,
+    )
+)
+
+registry.register(
+    Tool(
+        name="store_factual",
+        description=(
+            "Deposit a FACTUAL memory node from message text — single-arg habit dispatch. "
+            "Wraps store_memory with memory_type=FACTUAL. "
+            "Triggered by PROC_TASK_STORE_MEMORY when Igor receives 'store a factual memory: <content>'."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "narrative": {
+                    "type": "string",
+                    "description": "The content of the factual memory to deposit.",
+                },
+            },
+            "required": ["narrative"],
+        },
+        fn=store_factual,
     )
 )
 

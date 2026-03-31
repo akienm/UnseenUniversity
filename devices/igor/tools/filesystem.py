@@ -13,6 +13,7 @@ Self-awareness tools:
 """
 
 import os
+import re
 import shutil
 from pathlib import Path
 from .registry import Tool, registry
@@ -470,6 +471,50 @@ registry.register(
             "required": ["path"],
         },
         fn=read_file,
+    )
+)
+
+_PATH_RE = re.compile(r"(~/\S+|/home/\S+|TheIgors/\S+)")
+
+
+def read_file_from_text(text: str) -> str:
+    """
+    Read a file by extracting the path from natural language text.
+
+    Called by PROC_TASK_READ_FILE via single-arg habit auto-dispatch where
+    core_input still carries the "CC: read ~/..." prefix. Extracts the first
+    path-like token (~/..., /home/..., or TheIgors/...) and calls read_file.
+    """
+    m = _PATH_RE.search(text)
+    if not m:
+        return f"[read_file_from_text] No file path found in: {text!r}"
+    path = m.group(1)
+    # Expand ~/... to an absolute path so _safe_path resolves it correctly.
+    if path.startswith("~/"):
+        path = str(Path.home()) + path[1:]
+    return read_file(path)
+
+
+registry.register(
+    Tool(
+        name="read_file_from_text",
+        description=(
+            "Read a file by extracting its path from natural language text. "
+            "Called by PROC_TASK_READ_FILE when the habit receives 'read ~/TheIgors/...' "
+            "and core_input includes prefixes like 'CC: '. "
+            "Extracts the first ~/..., /home/..., or TheIgors/... path from the text."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "description": "Natural language text containing a file path.",
+                },
+            },
+            "required": ["text"],
+        },
+        fn=read_file_from_text,
     )
 )
 
