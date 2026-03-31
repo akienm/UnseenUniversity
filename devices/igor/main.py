@@ -4144,6 +4144,11 @@ class Igor(IgorBase):
                 )
                 habit = None
 
+        # D266: track whether response_text came from a code_ref tool dispatch (not LLM).
+        # If True, _extract_tool_call must be skipped — raw tool output (e.g. file content)
+        # may contain <tool>name</tool> tags in docs that would misfire as tool calls.
+        _response_from_tool_dispatch = False
+
         if habit:
             dashboard.print_habit_trigger(habit)
             _habit_trigger = habit.metadata.get("trigger", "")
@@ -4232,6 +4237,67 @@ class Igor(IgorBase):
                             response_text = (
                                 f"[HABIT→TOOL] Error running {tool_name}: {_ce}"
                             )
+
+                        # D266: code_ref result is raw tool output (not LLM text).
+                        # Mark so _extract_tool_call is skipped — file content may contain
+                        # <tool>name</tool> tags in documentation that would misfire.
+                        # For large results (>200 chars), synthesize into natural response.
+                        _response_from_tool_dispatch = True
+                        if (
+                            response_text
+                            and not str(response_text).startswith("[HABIT→TOOL]")
+                            and len(str(response_text)) > 200
+                        ):
+                            try:
+                                from .brainstem.core_patterns import (
+                                    get_core_patterns as _gcp_cr,
+                                )
+
+                                _cr_synth_prompt = (
+                                    f"[TOOL_RESULT]\n"
+                                    f"Tool: {tool_name}\n"
+                                    f"Result:\n{str(response_text)[:2000]}\n\n"
+                                    f"[ORIGINAL_REQUEST]\n{user_input}\n\n"
+                                    f"Report ONLY what the tool actually returned above. "
+                                    f"Do NOT add, infer, or expand beyond the actual result. "
+                                    f"If content is sparse, a macro placeholder, or XML storage format, say so. "
+                                    f"Quote the actual content or links verbatim."
+                                )
+                                _cr_synth_text, _cr_synth_cost, _ = (
+                                    self._gateway.reason(
+                                        _cr_synth_prompt,
+                                        relevant,
+                                        _gcp_cr(self.cortex),
+                                        level="interactive",
+                                        cortex=self.cortex,
+                                        instance_id=self.instance_id,
+                                        thread_id=thread_id,
+                                        local_only=True,
+                                        is_user_turn=True,
+                                        complexity=(
+                                            getattr(parsed, "complexity", "medium")
+                                            if parsed
+                                            else "medium"
+                                        ),
+                                    )
+                                )
+                                if _cr_synth_text and not any(
+                                    _cr_synth_text.startswith(p)
+                                    for p in (
+                                        "⚠",
+                                        "I'm operating in local-only",
+                                        "I'm operating in",
+                                    )
+                                ):
+                                    response_text = _cr_synth_text
+                                    console.print(
+                                        f"[dim cyan][CODE_REF] synthesis done ({len(_cr_synth_text)} chars)[/]"
+                                    )
+                            except Exception as _cr_se:
+                                log_error(
+                                    kind="CODE_REF_SYNTH",
+                                    detail=f"{tool_name}: {_cr_se}",
+                                )
 
                         # If the habit declares a short TTL, push result to TWM so it
                         # self-cleans (time, CPU temp, etc. become stale almost immediately).
@@ -4560,7 +4626,9 @@ class Igor(IgorBase):
         # [D222] LLM tool dispatch — extract and execute <tool>/<tool_args> blocks
         # Note: intentionally no `not habit` guard — tool blocks should fire even
         # when a habit also ran (e.g. PROC_BROWSER_TASK fires but LLM emits <tool>).
-        if response_text:
+        # D266: skip when _response_from_tool_dispatch=True — raw tool output (file content,
+        # command output) may contain <tool>name</tool> tags from documentation that misfire.
+        if response_text and not _response_from_tool_dispatch:
             _tool_name, _tool_kwargs, _cleaned = self._extract_tool_call(response_text)
             if _tool_name:
                 console.print(
