@@ -93,8 +93,8 @@ def start_reading_bootstrap(config: str = "") -> str:
                 """
                 SELECT id, title, emotional_significance, encoding_arousal
                 FROM reading_list
-                WHERE emotional_significance > %s AND status = 'pending'
-                ORDER BY emotional_significance DESC, encoding_arousal DESC
+                WHERE emotional_significance::float > %s AND status = 'pending'
+                ORDER BY emotional_significance::float DESC, encoding_arousal::float DESC
                 LIMIT %s
                 """,
                 (min_sig, n_docs),
