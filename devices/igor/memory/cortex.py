@@ -3097,7 +3097,11 @@ class Cortex(IgorBase):
             dominance=row["dominance"] if "dominance" in keys else 0.0,
             activation_count=row["activation_count"],
             friction_history=json.loads(row["friction_history"]),
-            timestamp=datetime.fromisoformat(row["timestamp"]),
+            timestamp=(
+                datetime.fromisoformat(row["timestamp"])
+                if isinstance(row["timestamp"], str)
+                else (row["timestamp"] or datetime.now())
+            ),
             last_accessed=_last_accessed,
             metadata=(
                 row["metadata"]
