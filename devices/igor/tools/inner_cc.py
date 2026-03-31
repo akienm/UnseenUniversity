@@ -44,8 +44,10 @@ OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 OPENROUTER_REFERER = "https://github.com/akienm/TheIgors"
 
 # Model constants — env-var overridable
+# Note: OpenRouter models (e.g., anthropic/claude-haiku-4.5) differ from
+# Anthropic direct models (e.g., claude-haiku-4-5-20251001). These are OR IDs.
 _DEFAULT_MODEL = os.getenv("INNER_CC_MODEL", "openai/gpt-4o-mini")
-_HAIKU_MODEL = os.getenv("INNER_CC_HAIKU_MODEL", "anthropic/claude-haiku-4-5-20251001")
+_HAIKU_MODEL = os.getenv("INNER_CC_HAIKU_MODEL", "anthropic/claude-haiku-4.5")
 _SONNET_MODEL = os.getenv("INNER_CC_SONNET_MODEL", "anthropic/claude-sonnet-4-6")
 
 # ── System prompt — code-focused extraction ──────────────────────────────────
