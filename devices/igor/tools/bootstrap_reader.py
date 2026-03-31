@@ -3,7 +3,7 @@ bootstrap_reader.py — Reading bootstrap mode tool (D268).
 
 Activates a TWM mode override that forces inference_gateway to use tier.4
 (Sonnet via OpenRouter) for all turns while the mode is active. Used to
-seed high-quality INTERPRETIVE memories from identity_weight > 0.8 docs —
+seed high-quality INTERPRETIVE memories from emotional_significance > 0.8 docs —
 the bootstrap investment that enables matrix-based self-evaluation later.
 
 Usage (via habit or cc_send):
@@ -36,11 +36,11 @@ def start_reading_bootstrap(config: str = "") -> str:
     Activate reading bootstrap mode.
 
     Pushes MODE|reading_bootstrap|min_tier=tier.4 to TWM with TTL,
-    queries reading_list for identity_weight > 0.8 pending docs,
+    queries reading_list for emotional_significance > 0.8 pending docs,
     records OR balance baseline for ROI tracking.
 
     config: optional JSON string with overrides:
-      {"n_docs": 5, "ttl_seconds": 1800, "min_identity_weight": 0.8}
+      {"n_docs": 5, "ttl_seconds": 1800, "min_emotional_significance": 0.8}
 
     Returns a report: mode TTL, queued doc list, baseline balance.
     """
@@ -53,7 +53,7 @@ def start_reading_bootstrap(config: str = "") -> str:
 
     n_docs = int(params.get("n_docs", 5))
     ttl_seconds = int(params.get("ttl_seconds", 1800))
-    min_iw = float(params.get("min_identity_weight", 0.8))
+    min_sig = float(params.get("min_emotional_significance", 0.8))
 
     # ── 1. Record OR balance baseline ────────────────────────────────────────
     _balance_str = "unavailable"
@@ -80,7 +80,7 @@ def start_reading_bootstrap(config: str = "") -> str:
     except Exception as _te:
         return f"[bootstrap_reader ERROR] TWM push failed: {_te}"
 
-    # ── 3. Query reading_list for high-identity docs ──────────────────────────
+    # ── 3. Query reading_list for high-significance docs ─────────────────────
     queued_titles: list[str] = []
     try:
         import psycopg2
@@ -91,18 +91,18 @@ def start_reading_bootstrap(config: str = "") -> str:
             cur = conn.cursor()
             cur.execute(
                 """
-                SELECT id, title, identity_weight, arousal
+                SELECT id, title, emotional_significance, encoding_arousal
                 FROM reading_list
-                WHERE identity_weight > %s AND status = 'pending'
-                ORDER BY identity_weight DESC, arousal DESC
+                WHERE emotional_significance > %s AND status = 'pending'
+                ORDER BY emotional_significance DESC, encoding_arousal DESC
                 LIMIT %s
                 """,
-                (min_iw, n_docs),
+                (min_sig, n_docs),
             )
             rows = cur.fetchall()
             conn.close()
             queued_titles = [
-                f"  [{r[0][:10]}] {str(r[1] or '')[:55]} (iw={r[2]:.2f})" for r in rows
+                f"  [{r[0][:10]}] {str(r[1] or '')[:55]} (sig={r[2]:.2f})" for r in rows
             ]
     except Exception as _qe:
         queued_titles = [f"  [query failed: {_qe}]"]
@@ -117,7 +117,7 @@ def start_reading_bootstrap(config: str = "") -> str:
     return (
         f"Bootstrap mode active — {ttl_mins}min, min_tier=tier.4\n"
         f"OR balance baseline: {_balance_str}\n"
-        f"Top {n_docs} docs (identity_weight>{min_iw}):\n{doc_block}\n"
+        f"Top {n_docs} docs (emotional_significance>{min_sig}):\n{doc_block}\n"
         f"Normal routing resumes automatically when TTL expires."
     )
 
