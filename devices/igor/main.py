@@ -4293,10 +4293,18 @@ class Igor(IgorBase):
                                     console.print(
                                         f"[dim cyan][CODE_REF] synthesis done ({len(_cr_synth_text)} chars)[/]"
                                     )
+                                else:
+                                    # Synthesis skipped (local-only / unavailable) — cap raw output
+                                    response_text = (
+                                        f"[{tool_name}] {str(response_text)[:800]}"
+                                    )
                             except Exception as _cr_se:
                                 log_error(
                                     kind="CODE_REF_SYNTH",
                                     detail=f"{tool_name}: {_cr_se}",
+                                )
+                                response_text = (
+                                    f"[{tool_name}] {str(response_text)[:800]}"
                                 )
 
                         # If the habit declares a short TTL, push result to TWM so it
