@@ -6116,32 +6116,9 @@ class Igor(IgorBase):
         if _ctx and not _skip_ctx and response:
             self._user_ctx_mgr.log(_ctx, "out", response, _thread_id)
         if msg.source == "web" and response:
+            # D263: web_server.send → _channel_append("igor", ...) writes to channel_messages
+            # CC-sourced turns are source="web" so this already handles channel visibility
             web_server.send(response, session_id=_session_id)
-        # D263: CC-sourced turns post Igor's response to channel_messages
-        if msg.author == "claude-code" and response:
-            _cc_ts = (
-                __import__("datetime")
-                .datetime.now(__import__("datetime").timezone.utc)
-                .strftime("%Y-%m-%dT%H:%M:%SZ")
-            )
-            try:
-                import os as _os2
-                import psycopg2 as _pg2
-
-                _pg_url2 = _os2.environ.get("IGOR_HOME_DB_URL", "") or _os2.environ.get(
-                    "IGOR_DB_URL", ""
-                )
-                if _pg_url2:
-                    _c2 = _pg2.connect(_pg_url2)
-                    with _c2:
-                        with _c2.cursor() as _cur2:
-                            _cur2.execute(
-                                "INSERT INTO channel_messages (ts, author, type, content) VALUES (%s, %s, %s, %s)",
-                                (_cc_ts, "igor", "message", response),
-                            )
-                    _c2.close()
-            except Exception as _e2:
-                loginfo(f"[dim][D263] cc channel post failed: {_e2}[/]")
 
         if (
             response
