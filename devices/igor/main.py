@@ -4264,13 +4264,11 @@ class Igor(IgorBase):
                         response_text = f"[HABIT→TOOL] tool '{tool_name}' (code_ref={code_ref}) not in registry."
             elif habit.id == "PROC_HABIT_COMPILER":
                 # Phase 2: parse user input and store a structured PROCEDURAL memory
-                # Guard: never compile from CC bridge messages or internal impulses
-                _is_cc_msg = (
-                    user_input.startswith("CC:") or "[CC_MESSAGE|" in user_input
-                )
+                # Guard: skip impulses and NE action impulses only.
+                # CC bridge messages ARE allowed — Claude/Akien can compile habits via cc_send.
                 _is_impulse_input = user_input.startswith("[NE action impulse]")
-                if is_impulse or _is_cc_msg or _is_impulse_input:
-                    response_text = "(habit compilation skipped — CC/impulse inputs are not compilable)"
+                if is_impulse or _is_impulse_input:
+                    response_text = "(habit compilation skipped — impulse inputs are not compilable)"
                 else:
                     response_text = self._compile_habit_from_input(user_input)
             elif habit.id == "PROC_NOTEBOOK_SAVE":
