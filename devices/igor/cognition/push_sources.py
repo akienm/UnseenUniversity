@@ -1971,15 +1971,16 @@ class ProprioceptionSource(BasePushSource):
                 root = results[0] if results else None
                 root_found = root is not None
 
-            # Fetch facia nodes by ID prefix — all tool facing memories
-            facia_nodes = (
-                cortex.search(
-                    "tool facia entry point", limit=50, memory_types=["INTERPRETIVE"]
-                )
-                if root_found
-                else []
-            )
-            facia_nodes = [n for n in facia_nodes if "FACIA" in n.id.upper()]
+            # Fetch facia nodes by ID prefix — direct pattern query, no semantic search.
+            # Proprioception is direct knowledge, not retrieval: you know where your arm is.
+            facia_nodes = []
+            if root_found:
+                from ..memory.db_proxy import MEM_COLS
+
+                rows = cortex._db.execute(
+                    f"SELECT {MEM_COLS} FROM memories WHERE id LIKE 'INTERP_FACIA_%' LIMIT 200"
+                ).fetchall()
+                facia_nodes = [cortex._to_memory(r) for r in rows]
 
             # Push root node itself
             if root_found:
