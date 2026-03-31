@@ -4318,6 +4318,29 @@ class Igor(IgorBase):
                 success=True,
                 elapsed_ms=0,
             )
+            # T-on-it-fork: response habit with fork_bg=true spawns background execution
+            if habit.metadata.get("fork_bg"):
+                _fork_input = f"[BG-TASK] {user_input}"
+                _fork_rel = self.cortex.search(_fork_input, limit=10)
+                _fork_iu = author in _HUMAN_AUTHORS
+                self.job_manager.submit_background(
+                    fn=lambda _ui=_fork_input, _rel=_fork_rel, _iu=_fork_iu: (
+                        self._bg_reason(
+                            _ui,
+                            _rel,
+                            "tier.2",
+                            "",
+                            is_user_turn=_iu,
+                            complexity="medium",
+                        )
+                    ),
+                    title=f"fork:{user_input[:60]}",
+                    completions_queue=self._job_completions,
+                    thread_id=thread_id or "",
+                )
+                loginfo(
+                    f"[dim][on-it-fork] spawned background task habit={habit.id}[/]"
+                )
         else:
             # ── tier.0: pure Python response — zero LLM cost (#154) ───────────
             # Gate: output_complexity=="low" AND not an impulse AND not local_only.
