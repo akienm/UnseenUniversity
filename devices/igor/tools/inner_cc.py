@@ -33,6 +33,7 @@ Long-running mode (D269):
 
 import json
 import os
+import urllib.error
 import urllib.request
 import uuid
 from typing import Optional
@@ -284,8 +285,16 @@ def _make_or_request(
         headers=headers,
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return json.loads(resp.read())
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read())
+    except urllib.error.HTTPError as http_err:
+        body = ""
+        try:
+            body = http_err.read().decode(errors="replace")[:400]
+        except Exception:
+            pass
+        raise RuntimeError(f"HTTP {http_err.code} from OR: {body}") from http_err
 
 
 # ── Single-shot call (original behaviour, unchanged) ─────────────────────────
