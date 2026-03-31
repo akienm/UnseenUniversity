@@ -47,6 +47,7 @@ from . import (
     output_trainer,
     stale_task_reaper,
     bootstrap_reader,
+    training_pass,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
