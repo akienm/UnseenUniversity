@@ -4287,6 +4287,11 @@ class Igor(IgorBase):
                         or habit.metadata.get("response_template")
                         or f"Habit executed. [{habit.id}: {habit.narrative[:80]}]"
                     )
+                # Substitute {user_input} placeholder in action templates
+                if response_text and "{user_input}" in str(response_text):
+                    response_text = str(response_text).replace(
+                        "{user_input}", user_input
+                    )
             self.cortex.record_activation(habit.id, 0.05)
             _log_pt(
                 turn_id=_turn_id,
