@@ -125,8 +125,8 @@ def goal_adopt(task_description: str) -> str:
     """
     Adopt a task as an active GOAL_TACTICAL goal (D275).
     Called when Igor says 'On it' — this IS the moment of commitment.
-    Stores goal as EPISODIC memory (instance-scoped, retrievable next turn).
-    Posts to channel so the goal is visible.
+    Stores goal as GOAL memory (instance-scoped) + pushes to TWM with high salience
+    so it persists across turns. Posts to channel for visibility.
     Returns short confirmation so Igor knows to proceed with step 1.
     """
     try:
@@ -143,18 +143,30 @@ def goal_adopt(task_description: str) -> str:
             narrative=(
                 f"ACTIVE GOAL (adopted {ts.strftime('%H:%M')}): {task_short}\n"
                 f"Status: in_progress. Strategy: follow PROC_CODE_A_TICKET if ticket, "
-                f"else identify files and plan first."
+                f"else identify files and plan first. Close with goal_close when done."
             ),
-            memory_type=_MT.EPISODIC,
+            memory_type=_MT.GOAL,
             metadata={
                 "goal_active": True,
                 "goal_type": "TACTICAL",
                 "source_message": task_short,
                 "adopted_at": ts.isoformat(),
+                "failure_count": 0,
                 "why": "D275 — task→goal adoption. On it = commitment moment.",
             },
         )
         cortex.store(mem)
+
+        # Push to TWM with high salience + 2h TTL so goal persists across turns
+        cortex.twm_push(
+            source="goal_adopt",
+            content_csb=f"ACTIVE_GOAL|id={goal_id}|task={task_short[:80]}",
+            salience=0.85,
+            urgency=0.7,
+            ttl_seconds=7200,
+            category="goal",
+            metadata={"goal_id": goal_id, "goal_type": "TACTICAL"},
+        )
 
         # Post to shared channel so goal is visible across sessions
         try:
@@ -178,6 +190,77 @@ def goal_adopt(task_description: str) -> str:
         return f"On it. Goal set: {task_short[:80]}. Proceeding."
     except Exception as e:
         return f"[ERROR] goal_adopt: {e}"
+
+
+def goal_scan() -> str:
+    """
+    Scan for active GOAL memories (D275). Returns current tactical goals.
+    Call at start of a turn to restore goal continuity across sessions.
+    """
+    try:
+        from ..memory.cortex import Cortex as _Cortex
+        from ..memory.models import MemoryType as _MT
+
+        cortex = _Cortex(None)
+        goals = cortex.get_by_type(_MT.GOAL)
+        active = [g for g in goals if g.metadata.get("goal_active")]
+        if not active:
+            return "No active goals."
+        lines = []
+        for g in active:
+            adopted = g.metadata.get("adopted_at", "?")[:16]
+            task = g.metadata.get("source_message", g.narrative[:60])
+            fails = g.metadata.get("failure_count", 0)
+            lines.append(f"- {g.id}: {task[:80]} (adopted {adopted}, fails={fails})")
+        return "Active goals:\n" + "\n".join(lines)
+    except Exception as e:
+        return f"[ERROR] goal_scan: {e}"
+
+
+def goal_close(goal_id: str) -> str:
+    """
+    Mark a GOAL_TACTICAL as completed (D275).
+    Sets goal_active=False, records outcome in narrative.
+    Call when success_condition is met.
+    """
+    try:
+        from ..memory.cortex import Cortex as _Cortex
+
+        cortex = _Cortex(None)
+        goal = cortex.get(goal_id)
+        if goal is None:
+            return f"[ERROR] goal_close: goal {goal_id!r} not found"
+        if not goal.metadata.get("goal_active"):
+            return f"Goal {goal_id} already closed."
+
+        # Update metadata
+        goal.metadata["goal_active"] = False
+        goal.metadata["closed_at"] = datetime.now(timezone.utc).isoformat()
+        goal.narrative = goal.narrative.rstrip() + "\nStatus: CLOSED (goal achieved)."
+        cortex.store(goal)
+
+        # Post to channel
+        try:
+            _ch_path = paths().cc_channel / "messages.jsonl"
+            ts_str = datetime.now(timezone.utc).strftime("%H:%M:%S")
+            import json as _json
+
+            entry = _json.dumps(
+                {
+                    "ts": ts_str,
+                    "author": "igor",
+                    "content": f"Goal closed: {goal_id} — {goal.metadata.get('source_message', '')[:60]}",
+                    "session": "igor",
+                }
+            )
+            with open(_ch_path, "a") as _f:
+                _f.write(entry + "\n")
+        except Exception:
+            pass
+
+        return f"Goal {goal_id} closed. Well done."
+    except Exception as e:
+        return f"[ERROR] goal_close: {e}"
 
 
 # ── flush_habit_cache ──────────────────────────────────────────────────────────
@@ -290,7 +373,7 @@ registry.register(
         description=(
             "Adopt a task as an active GOAL_TACTICAL goal (D275). "
             "Called when Igor commits to a task ('On it'). "
-            "Stores goal as EPISODIC memory and posts to channel."
+            "Stores GOAL memory + pushes to TWM for cross-turn persistence."
         ),
         parameters={
             "type": "object",
@@ -303,5 +386,39 @@ registry.register(
             "required": ["task_description"],
         },
         fn=goal_adopt,
+    )
+)
+
+registry.register(
+    Tool(
+        name="goal_scan",
+        description=(
+            "Scan for active GOAL memories (D275). "
+            "Returns current tactical goals with adoption time and failure count. "
+            "Call at start of turn to restore goal continuity."
+        ),
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=goal_scan,
+    )
+)
+
+registry.register(
+    Tool(
+        name="goal_close",
+        description=(
+            "Mark a GOAL_TACTICAL as completed (D275). "
+            "Sets goal_active=False. Call when success_condition is met."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "goal_id": {
+                    "type": "string",
+                    "description": "The goal ID to close (format: GOAL_YYYYMMDDHHMMSSuuuuuu)",
+                },
+            },
+            "required": ["goal_id"],
+        },
+        fn=goal_close,
     )
 )

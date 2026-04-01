@@ -26,6 +26,7 @@ class MemoryType(Enum):
     CREDENTIAL_REF = (
         "CREDENTIAL_REF"  # #71: credential pointer — what exists + where, NOT the value
     )
+    GOAL = "GOAL"  # D275: active goal node — TACTICAL (completable) or STRATEGIC (orientation)
 
 
 class MemoryScope(Enum):
@@ -39,6 +40,7 @@ _INSTANCE_SCOPE_TYPES = {
     MemoryType.EPISODIC,
     MemoryType.EXPERIENTIAL,
     MemoryType.CREDENTIAL_REF,
+    MemoryType.GOAL,  # D275: active goals are instance-scoped — each Igor has its own
 }
 
 
@@ -64,6 +66,7 @@ BASE_INERTIA = {
     MemoryType.FACTUAL: 0.25,
     MemoryType.REFERENCE: 0.40,  # blobs are intentionally stored — higher base inertia
     MemoryType.CREDENTIAL_REF: 0.50,  # credential refs are stable until env changes
+    MemoryType.GOAL: 0.15,  # D275: goals are ephemeral — low base inertia, kept hot via TWM
 }
 
 
