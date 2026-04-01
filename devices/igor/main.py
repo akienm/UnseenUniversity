@@ -3003,6 +3003,28 @@ class Igor(IgorBase):
             _meaning_to_me_active = bool(_mtm_obs)
         except Exception as _bare_e:
             log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
+        # D275: check TWM for active GOAL — extract keywords for BG goal-context boost
+        _active_goal_keywords: "set[str] | None" = None
+        try:
+            _goal_obs = self.cortex.twm_read(
+                limit=1, include_integrated=False, category="goal"
+            )
+            if _goal_obs:
+                _gkw_raw = (_goal_obs[0].metadata or {}).get("goal_id", "")
+                # Also pull source_message from the GOAL memory if available
+                _goal_mem = self.cortex.get(_gkw_raw) if _gkw_raw else None
+                _gtask = (
+                    (_goal_mem.metadata or {}).get("source_message", "")
+                    if _goal_mem
+                    else ""
+                )
+                if _gtask:
+                    _active_goal_keywords = set(_gtask.lower().split())
+        except Exception as _bare_e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/main.py goal_kwds: {_bare_e}",
+            )
         _tc_bg = _time.monotonic()
         _thalamus_habit, _thalamus_confidence, _thalamus_near_misses = (
             basal_ganglia.select_habit(
@@ -3011,6 +3033,7 @@ class Igor(IgorBase):
                 milieu_state=_milieu_state,
                 meaning_to_me_context=_meaning_to_me_active,
                 author=author,
+                active_goal_keywords=_active_goal_keywords,
             )
         )
         if not is_impulse:
