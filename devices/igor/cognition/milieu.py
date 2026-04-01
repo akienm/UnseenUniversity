@@ -74,6 +74,12 @@ AROUSAL_SLOPE_N = 5  # look back N rows for slope computation
 DECAY_VALENCE = 0.96  # fastest — mood is volatile, fades quickly
 DECAY_AROUSAL = 0.97  # medium — activation persists somewhat longer
 DECAY_DOMINANCE = 0.99  # slowest — sense of control is most stable
+HOMEOSTATIC_VALENCE_SETPOINT = float(
+    os.getenv("IGOR_HOMEOSTATIC_VALENCE_SETPOINT", "0.1")
+)
+HOMEOSTATIC_AROUSAL_SETPOINT = float(
+    os.getenv("IGOR_HOMEOSTATIC_AROUSAL_SETPOINT", "0.05")
+)
 
 # NE's self-assessment is a softer hint than direct interaction signals
 NE_ALPHA_UP = 0.10
@@ -505,8 +511,12 @@ class Milieu(IgorBase):
         G16 / #56: every GLOBAL_SYNC_TICKS ticks, blend gently toward global baseline.
         """
         s = self._state
-        s.valence *= DECAY_VALENCE
-        s.arousal *= DECAY_AROUSAL
+        s.valence = s.valence * DECAY_VALENCE + (
+            HOMEOSTATIC_VALENCE_SETPOINT * (1.0 - DECAY_VALENCE)
+        )
+        s.arousal = s.arousal * DECAY_AROUSAL + (
+            HOMEOSTATIC_AROUSAL_SETPOINT * (1.0 - DECAY_AROUSAL)
+        )
         s.dominance = s.dominance * DECAY_DOMINANCE + (0.3 * (1.0 - DECAY_DOMINANCE))
 
         # G16: periodic pull toward global — keeps long sessions from drifting too far
