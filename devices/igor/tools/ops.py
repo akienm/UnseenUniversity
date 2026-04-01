@@ -100,7 +100,8 @@ def queue_task(task_json: str) -> str:
         _QUEUE_PATH.parent.mkdir(parents=True, exist_ok=True)
         tasks = []
         if _QUEUE_PATH.exists():
-            tasks = json.loads(_QUEUE_PATH.read_text())
+            content = _QUEUE_PATH.read_text().strip()
+            tasks = json.loads(content) if content else []
 
         existing_ids = {t["id"] for t in tasks}
         if task["id"] in existing_ids:
