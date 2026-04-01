@@ -54,6 +54,16 @@ def _make_parsed(text="", intent="action_request"):
 class TestAuthorFilterListSupport(unittest.TestCase):
     """author_filter stored as list must work correctly in select_habit."""
 
+    def setUp(self):
+        from igor.cognition import basal_ganglia
+
+        basal_ganglia._refractory_map.clear()
+
+    def tearDown(self):
+        from igor.cognition import basal_ganglia
+
+        basal_ganglia._refractory_map.clear()
+
     def _run_select(self, habits, text, author):
         from igor.cognition.basal_ganglia import select_habit
 

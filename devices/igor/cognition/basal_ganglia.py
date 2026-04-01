@@ -19,6 +19,7 @@ PROC_HABIT_COMPILER immediately at confidence 0.95.
 
 from __future__ import annotations
 import logging
+import os
 
 import math
 import re
@@ -100,6 +101,14 @@ MANAGEMENT_PHRASES: dict[str, str] = {
 BASE_THRESHOLD = 0.50  # minimum score for any habit to fire
 THRESHOLD_MIN = 0.30
 THRESHOLD_MAX = 0.70
+
+# ── Refractory period constants (T-refractory-period) ─────────────────────────
+
+_REFRACTORY_TTL_SEC = float(os.getenv("IGOR_REFRACTORY_TTL_SEC", "600"))  # 10 min
+_REFRACTORY_FACTOR = float(os.getenv("IGOR_REFRACTORY_FACTOR", "0.1"))  # 10% score
+
+# T-refractory-period: in-process refractory state — cleared on restart
+_refractory_map: dict[str, float] = {}  # habit_id → expiry_timestamp (UTC epoch)
 
 
 # ── Internal scoring ──────────────────────────────────────────────────────────
@@ -416,6 +425,19 @@ def _score_habit(
     # decay_factor: experienced habits decay slower; unused habits fade
     score *= compute_decay_factor(habit, now=now)
 
+    # T-refractory-period: suppress recently-fired habits
+    if habit.id in _refractory_map:
+        expiry = _refractory_map[habit.id]
+        ts = (
+            now.timestamp()
+            if now is not None
+            else datetime.now(timezone.utc).timestamp()
+        )
+        if ts < expiry:
+            score *= _REFRACTORY_FACTOR
+        else:
+            del _refractory_map[habit.id]  # expired — clean up
+
     return score
 
 
@@ -700,6 +722,10 @@ def select_habit(
                 "near_misses": len(near_misses),
                 "rationale": "max_score_wins",
             }
+        )
+        # T-refractory-period: mark winner as recently fired
+        _refractory_map[winner.id] = (
+            datetime.now(timezone.utc).timestamp() + _REFRACTORY_TTL_SEC
         )
         return (winner, winner_score, [])
 

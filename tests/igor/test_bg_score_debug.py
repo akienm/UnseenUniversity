@@ -48,6 +48,16 @@ def _make_parsed(text, intent="action_request"):
 class TestBGScoreDebugWinnerPath(unittest.TestCase):
     """Winner path emits bg_scoring to TurnContext."""
 
+    def setUp(self):
+        from igor.cognition import basal_ganglia
+
+        basal_ganglia._refractory_map.clear()
+
+    def tearDown(self):
+        from igor.cognition import basal_ganglia
+
+        basal_ganglia._refractory_map.clear()
+
     def _run(self, habits, text):
         from igor.cognition import basal_ganglia
 
