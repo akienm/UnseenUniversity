@@ -334,6 +334,38 @@ def goal_close(goal_id: str) -> str:
         return f"[ERROR] goal_close: {e}"
 
 
+# ── close_goal_by_ticket ───────────────────────────────────────────────────────
+
+
+def close_goal_by_ticket(ticket_id: str) -> str:
+    """
+    T-goal-close-habit: Find active GOAL whose source_message contains ticket_id
+    and mark it inactive (goal_active=False).
+    Single-arg wrapper — habit dispatch requires exactly one required argument.
+    Returns confirmation or "no active goal found for <ticket_id>".
+    """
+    try:
+        from ..memory.cortex import Cortex as _Cortex
+        from ..memory.models import MemoryType as _MT
+
+        cortex = _Cortex(None)
+        goals = cortex.get_by_type(_MT.GOAL)
+        active = [g for g in goals if g.metadata.get("goal_active")]
+        for goal in active:
+            src = goal.metadata.get("source_message", goal.narrative)
+            if ticket_id.lower() in src.lower():
+                goal.metadata["goal_active"] = False
+                goal.metadata["closed_at"] = datetime.now(timezone.utc).isoformat()
+                goal.narrative = (
+                    goal.narrative.rstrip() + "\nStatus: CLOSED (goal achieved)."
+                )
+                cortex.store(goal)
+                return f"[goal_close] closed goal for {ticket_id} (goal_id={goal.id})"
+        return f"[goal_close] no active goal found for {ticket_id}"
+    except Exception as e:
+        return f"[goal_close] error: {e}"
+
+
 # ── flush_habit_cache ──────────────────────────────────────────────────────────
 
 
@@ -504,5 +536,28 @@ registry.register(
             "required": ["goal_id"],
         },
         fn=goal_close,
+    )
+)
+
+registry.register(
+    Tool(
+        name="close_goal_by_ticket",
+        description=(
+            "T-goal-close-habit: Find active GOAL by ticket_id in source_message "
+            "and mark it inactive (goal_active=False). "
+            "Single-arg wrapper for habit dispatch. "
+            "Use when user says 'close goal T-xxx' or 'goal done'."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "ticket_id": {
+                    "type": "string",
+                    "description": "Ticket ID to find in active goal source_message (e.g. T-phase-d-ex4)",
+                },
+            },
+            "required": ["ticket_id"],
+        },
+        fn=close_goal_by_ticket,
     )
 )
