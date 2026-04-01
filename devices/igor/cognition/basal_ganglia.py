@@ -475,6 +475,7 @@ def select_habit(
     milieu_state=None,
     meaning_to_me_context: bool = False,
     author: str | None = None,
+    active_goal_keywords: "set[str] | None" = None,
 ) -> "tuple[Memory | None, float, list[tuple[float, Memory]]]":
     """
     Score all habits in parallel; return (winner, confidence, near_misses).
@@ -622,6 +623,27 @@ def select_habit(
                 }
             )
             return (None, 0.0, near_misses)
+
+        # ── 2b. Goal-context boost (D275 lateral inhibition) ─────────────────
+        # When an active GOAL is in TWM, habits whose trigger overlaps with the
+        # goal's keywords get +0.20 boost. Unrelated action habits get -0.15
+        # penalty. This makes goal-relevant habits win over noise action nodes.
+        if active_goal_keywords and scored:
+            boosted = []
+            for s, habit in scored:
+                trigger = habit.metadata.get("trigger", "").lower()
+                trigger_words = set(trigger.replace("|", " ").split())
+                if active_goal_keywords & trigger_words:
+                    s = min(1.0, s + 0.20)  # goal-relevant: boost
+                elif habit.metadata.get("habit_type") == "action":
+                    s = max(0.0, s - 0.15)  # unrelated action: dampen
+                boosted.append((s, habit))
+            # Re-filter: damped action habits may fall below threshold
+            scored = [(s, h) for s, h in boosted if s >= threshold]
+            near_misses_extra = [
+                (s, h) for s, h in boosted if THRESHOLD_MIN <= s < threshold
+            ]
+            near_misses = (near_misses + near_misses_extra)[:3]
 
         # ── 3. Winner-take-all (lateral inhibition) ───────────────────────────
         # Primary sort: descending score; tiebreak: descending activation_count
