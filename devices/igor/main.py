@@ -200,6 +200,97 @@ from .cognition.reasoners.base import exit_requested as _exit_requested
 # is_user_turn=True so cloud escalation is always available (never capped to Ollama).
 _HUMAN_AUTHORS: frozenset = frozenset({"claude-code", "akien"})
 
+# ── D279: Predictive coding — gap deposit on cloud escalation ─────────────────
+# When Igor escalates to cloud (tier.3+) for a non-human-author turn, deposit a
+# NARRATIVE_GAP observation into TWM so the NE / curiosity drain can pick it up.
+# Refractory dict: topic_key → expiry epoch (float). Suppresses duplicate deposits
+# for 30 minutes per topic so a busy conversation doesn't flood TWM.
+_gap_refractory: dict[str, float] = {}
+_GAP_REFRACTORY_TTL: float = 1800.0  # 30 minutes
+
+
+def _deposit_prediction_error(
+    query: str,
+    reply: str,
+    tier: str,
+    author: str | None,
+    cortex: object,
+) -> None:
+    """
+    Deposit a NARRATIVE_GAP TWM observation when cloud inference fires for a
+    non-human-author turn. Called immediately after gateway.reason() returns
+    used_api=True in the interactive path. Swallows all exceptions — must never
+    crash Igor.
+
+    Args:
+        query:  The user_input text sent to the reasoner.
+        reply:  The response_text returned by the reasoner.
+        tier:   Igor's _current_tier string at the time of the call (e.g.
+                "cloud/interactive").
+        author: The turn author string (may be None).
+        cortex: The live Cortex instance — used for twm_push.
+    """
+    try:
+        import time as _t
+
+        # Skip human-author turns — they always hit cloud by design (D259).
+        if author in _HUMAN_AUTHORS:
+            return
+
+        # Refractory gate: one deposit per topic per 30 min.
+        topic_key = query.lower().strip()[:60]
+        now = _t.time()
+        if _gap_refractory.get(topic_key, 0.0) > now:
+            return
+        _gap_refractory[topic_key] = now + _GAP_REFRACTORY_TTL
+
+        # Build content and metadata.
+        import datetime as _dt
+
+        iso_ts = _dt.datetime.now().isoformat()
+        narrative = f"Prediction error tier={tier}: {query[:200]}"
+        content_csb = f"NARRATIVE_GAP|question={query[:120]}|tier={tier}"
+        meta = {
+            "type": "prediction_error_gap",
+            "query": query[:400],
+            "reply": reply[:400],
+            "tier": tier,
+            "deposited_at": iso_ts,
+        }
+
+        # Deposit into TWM.
+        cortex.twm_push(
+            source="predictive_coding",
+            content_csb=content_csb,
+            salience=0.6,
+            metadata=meta,
+            ttl_seconds=1800,
+            urgency=0.3,
+        )
+
+        # Forensic log — append to predictive_coding.log, swallow errors.
+        try:
+            from .paths import paths as _paths_fn
+
+            _log_dir = _paths_fn().logs
+            _log_dir.mkdir(parents=True, exist_ok=True)
+            _log_path = _log_dir / "predictive_coding.log"
+            _entry = f"{iso_ts}|topic={topic_key}|tier={tier}\n"
+            with _log_path.open("a", encoding="utf-8") as _lf:
+                _lf.write(_entry)
+        except Exception:
+            pass
+
+    except Exception as _bare_e:
+        try:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"_deposit_prediction_error: {_bare_e}",
+            )
+        except Exception:
+            pass
+
+
 # ── T-deadend-ack-filter: suppress tier.2 bare acknowledgments ────────────────
 # tier.2 Ollama (small local model) doesn't reliably follow system_prompt.py:142
 # which bans bare acknowledgments. Filter them here, before they reach the channel.
@@ -4658,6 +4749,23 @@ class Igor(IgorBase):
                     _m = milieu_mod.get()
                     if _m is not None:
                         _m.ingest_surprise(_skip_to, self._current_tier)
+
+                    # D279: predictive coding — deposit NARRATIVE_GAP when cloud fires
+                    # for a non-human-author turn (human authors always hit cloud by design).
+                    if used_api:
+                        try:
+                            _deposit_prediction_error(
+                                query=user_input,
+                                reply=response_text or "",
+                                tier=self._current_tier,
+                                author=author,
+                                cortex=self.cortex,
+                            )
+                        except Exception as _bare_e:
+                            log_error(
+                                kind="BARE_EXCEPT",
+                                detail=f"D279 gap deposit: {_bare_e}",
+                            )
 
         # [TWO-PHASE] Split think + reply blocks (#145)
         # Applied to non-habit LLM responses only. Think block logged to ring (think_trace),
