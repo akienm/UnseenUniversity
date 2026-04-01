@@ -87,6 +87,12 @@ MANAGEMENT_PHRASES: dict[str, str] = {
     "cluster status": "PROC_CLUSTER_STATUS",
     "check cluster": "PROC_CLUSTER_STATUS",
     "cluster load": "PROC_CLUSTER_STATUS",
+    # D275: task→goal adoption — direct dispatch so goal_adopt always wins over
+    # PROC_CHECK_IGOR_QUEUE and other cognitive habits that score on 'ticket' tokens.
+    "work ticket": "20260324123708036175",
+    "work the ticket": "20260324123708036175",
+    "implement ticket": "20260324123708036175",
+    "fix ticket": "20260324123708036175",
 }
 
 # ── Threshold constants ────────────────────────────────────────────────────────
