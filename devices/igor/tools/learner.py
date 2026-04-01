@@ -793,7 +793,7 @@ registry.register(
 
 def get_reading_list(**kwargs) -> str:
     """Return the reading list, optionally filtered by status or book_type."""
-    status_filter = kwargs.get("status")  # e.g. "queued", "in_progress", "completed"
+    status_filter = kwargs.get("status")  # e.g. "pending", "in_progress", "completed"
     type_filter = kwargs.get("book_type")  # "fiction" | "nonfiction"
     try:
         sql = "SELECT * FROM reading_list WHERE 1=1"
@@ -814,7 +814,7 @@ def get_reading_list(**kwargs) -> str:
         return "No entries match."
 
     _STATUS_ICON = {
-        "queued": "○",
+        "pending": "○",
         "in_progress": "▶",
         "completed": "✓",
         "needs_acquisition": "?",
@@ -864,7 +864,7 @@ def add_to_reading_list(**kwargs) -> str:
                     kwargs.get("book_type", "nonfiction"),
                     kwargs.get("reading_rate", "fast"),
                     kwargs.get("priority", 50),
-                    kwargs.get("status", "queued"),
+                    kwargs.get("status", "pending"),
                     kwargs.get("emotional_significance"),
                     float(kwargs.get("encoding_arousal", 0.3)),
                     kwargs.get("notes"),
@@ -885,7 +885,7 @@ def update_reading_status(**kwargs) -> str:
     status = kwargs.get("status", "").strip()
     if not rl_id or not status:
         return "id and status are required."
-    valid = ("queued", "in_progress", "completed", "needs_acquisition", "paused")
+    valid = ("pending", "in_progress", "completed", "needs_acquisition", "paused")
     if status not in valid:
         return f"status must be one of: {', '.join(valid)}"
     try:
@@ -918,7 +918,7 @@ def update_reading_status(**kwargs) -> str:
 registry.register(
     Tool(
         name="get_reading_list",
-        description="Show Igor's permanent reading list. Filter by status (queued/in_progress/completed/needs_acquisition/paused) or book_type (fiction/nonfiction).",
+        description="Show Igor's permanent reading list. Filter by status (pending/in_progress/completed/needs_acquisition/paused) or book_type (fiction/nonfiction).",
         parameters={
             "type": "object",
             "properties": {
@@ -1797,9 +1797,9 @@ _FEEDER_BATCH = 20  # items to move into learn_queue.json per run
 
 
 def feed_reading_list(**_kwargs) -> str:
-    """Pull the top-priority pending/queued items from reading_list into learn_queue.json.
+    """Pull the top-priority pending items from reading_list into learn_queue.json.
 
-    Reads reading_list WHERE status IN ('pending','queued') ORDER BY
+    Reads reading_list WHERE status = 'pending' ORDER BY
     encoding_arousal DESC, priority ASC LIMIT _FEEDER_BATCH, converts each
     to a learn_queue.json entry (url=source, title, cloud_ok=True for URLs /
     False for calibre:// so drain runner uses local inference for ebooks),
@@ -1814,7 +1814,7 @@ def feed_reading_list(**_kwargs) -> str:
             rows = conn.execute(
                 """SELECT source, title, author, encoding_arousal
                    FROM reading_list
-                   WHERE status IN ('pending', 'queued') AND source IS NOT NULL AND source != ''
+                   WHERE status = 'pending' AND source IS NOT NULL AND source != ''
                    ORDER BY encoding_arousal DESC, priority ASC
                    LIMIT ?""",
                 (_FEEDER_BATCH,),
