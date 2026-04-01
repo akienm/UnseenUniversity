@@ -107,6 +107,22 @@ def _extract_ticket_id(source_message: str) -> str | None:
     return None
 
 
+_QUEUE_FILE = Path.home() / ".TheIgors" / "cc_channel" / "queue.json"
+
+
+def _load_ticket(ticket_id: str) -> dict | None:
+    """Read ticket data directly from queue.json (avoids _run_bash truncation)."""
+    try:
+        with open(_QUEUE_FILE) as f:
+            tasks = json.load(f)
+        for t in tasks:
+            if t.get("id") == ticket_id:
+                return t
+    except Exception:
+        pass
+    return None
+
+
 def _run_grep_patterns(patterns: list, search_root: str) -> str:
     """
     Run grep -rn for each pattern under search_root.
@@ -182,15 +198,13 @@ def run_goal_continuation(**_) -> str:
                 out = _run_bash(["python3", str(_CC_QUEUE), "show", ticket_id])
                 msg = f"[GOAL STEP 1] Ticket {ticket_id} details: {out[:400]}"
                 _post_to_channel(msg)
-                # Parse grep_for from ticket JSON
-                try:
-                    ticket_data = json.loads(out)
+                # Load grep_for directly from queue.json (avoids _run_bash 500-char truncation)
+                ticket_data = _load_ticket(ticket_id)
+                if ticket_data:
                     grep_for = ticket_data.get("grep_for", [])
                     if grep_for:
                         goal.metadata["grep_for"] = grep_for
                         _flog(f"STEP1 parsed grep_for={grep_for} from {ticket_id}")
-                except (json.JSONDecodeError, Exception):
-                    pass  # ticket output not JSON — no grep_for
                 goal.metadata["current_step"] = 2
                 cortex.store(goal)
                 _flog(f"STEP1 ticket={ticket_id} result={out[:80]}")
