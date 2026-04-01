@@ -49,6 +49,7 @@ from . import (
     bootstrap_reader,
     training_pass,
     memory_query,
+    boredom_idle,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
