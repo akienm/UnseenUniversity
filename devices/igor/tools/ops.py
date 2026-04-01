@@ -192,6 +192,77 @@ def goal_adopt(task_description: str) -> str:
         return f"[ERROR] goal_adopt: {e}"
 
 
+def goal_fail_active() -> str:
+    """
+    Executive function failure response (D276).
+    Finds the most recently adopted active GOAL, increments failure_count.
+    If failure_count < 3: searches for alternative approach and returns it.
+    If failure_count >= 3: posts escalation to channel (persistence hunting exhausted).
+    Call when Igor detects a strategy isn't working.
+    """
+    try:
+        from ..memory.cortex import Cortex as _Cortex
+        from ..memory.models import MemoryType as _MT
+
+        cortex = _Cortex(None)
+        goals = cortex.get_by_type(_MT.GOAL)
+        active = [g for g in goals if g.metadata.get("goal_active")]
+        if not active:
+            return "No active goal to mark as failed."
+
+        # Most recently adopted
+        active.sort(key=lambda g: g.metadata.get("adopted_at", ""), reverse=True)
+        goal = active[0]
+        goal.metadata["failure_count"] = goal.metadata.get("failure_count", 0) + 1
+        fails = goal.metadata["failure_count"]
+        task = goal.metadata.get("source_message", goal.narrative[:60])
+        cortex.store(goal)
+
+        if fails >= 3:
+            # Escalate: persistence hunting exhausted — post to channel
+            try:
+                _ch_path = paths().cc_channel / "messages.jsonl"
+                import json as _json
+
+                entry = _json.dumps(
+                    {
+                        "ts": datetime.now(timezone.utc).strftime("%H:%M:%S"),
+                        "author": "igor",
+                        "content": f"STUCK on goal: {task[:80]} (failed {fails}x). Need help or a different approach.",
+                        "session": "igor",
+                    }
+                )
+                with open(_ch_path, "a") as _f:
+                    _f.write(entry + "\n")
+            except Exception:
+                pass
+            return f"Stuck on goal after {fails} attempts: {task[:80]}. Posted to channel. Waiting for guidance."
+
+        # Persistence hunt: search for alternative approaches
+        try:
+            alternatives = cortex.search(
+                f"{task} alternative approach different method try instead",
+                limit=2,
+                exclude_types=[_MT.GOAL],
+            )
+            if alternatives:
+                alt_text = "; ".join(a.narrative[:60] for a in alternatives)
+                return (
+                    f"Strategy failed (attempt {fails}/3). "
+                    f"Trying alternative: {alt_text[:120]}. "
+                    f"Adapting approach now."
+                )
+        except Exception:
+            pass
+
+        return (
+            f"Strategy failed (attempt {fails}/3). "
+            f"Searching for a different lever. Re-reading the goal: {task[:80]}."
+        )
+    except Exception as e:
+        return f"[ERROR] goal_fail_active: {e}"
+
+
 def goal_scan() -> str:
     """
     Scan for active GOAL memories (D275). Returns current tactical goals.
@@ -386,6 +457,19 @@ registry.register(
             "required": ["task_description"],
         },
         fn=goal_adopt,
+    )
+)
+
+registry.register(
+    Tool(
+        name="goal_fail_active",
+        description=(
+            "Executive function failure response (D276). "
+            "Finds active GOAL, increments failure_count, searches for alternative approach. "
+            "Call when strategy isn't working. After 3 failures: posts escalation to channel."
+        ),
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=goal_fail_active,
     )
 )
 
