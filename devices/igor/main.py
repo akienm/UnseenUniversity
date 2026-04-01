@@ -8108,8 +8108,10 @@ def _make_instance_id(host: str = "wild") -> str:
 def main():
     # SIGTERM → clean exit (exit 0). Without this, kill sends the process down
     # the crash path in the igor startup script, triggering the auto-fixer
-    # unnecessarily. SIGINT (Ctrl-C) already raises KeyboardInterrupt → exit 130.
+    # unnecessarily. SIGINT → explicit sys.exit(130) so atexit handlers (readline,
+    # Rich console flush) always run regardless of which thread receives the signal.
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    signal.signal(signal.SIGINT, lambda *_: sys.exit(130))
 
     env_path = Path(__file__).parent.parent / ".env"
     load_dotenv(env_path)
