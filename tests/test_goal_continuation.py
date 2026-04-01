@@ -50,9 +50,11 @@ _CORTEX_PATH = "wild_igor.igor.memory.cortex.Cortex"
 _MT_PATH = "wild_igor.igor.memory.models.MemoryType"
 
 
-def _run_step(goal, bash_returns=None):
+def _run_step(goal, bash_returns=None, ticket_data=None):
     """
     Call run_goal_continuation with one goal and mock I/O.
+    - bash_returns: list of strings returned sequentially by _run_bash.
+    - ticket_data: dict returned by _load_ticket (grep_for parsing in step 1).
     Returns (result_str, posted_messages).
     """
     from wild_igor.igor.tools import goal_continuation as gc
@@ -70,6 +72,8 @@ def _run_step(goal, bash_returns=None):
         _MT_PATH, mock_mt
     ), patch.object(
         gc, "_run_bash", side_effect=lambda _: next(bash_iter, "(no output)")
+    ), patch.object(
+        gc, "_load_ticket", return_value=ticket_data
     ), patch.object(
         gc, "_post_to_channel", side_effect=posted.append
     ), patch.object(
@@ -112,33 +116,41 @@ class TestGoalContinuationSteps(unittest.TestCase):
         self.assertTrue(any("ready" in m.lower() for m in posted))
 
     def test_step1_show_with_grep_for(self):
-        """Step 1 parses grep_for from ticket JSON and stores it in goal metadata."""
+        """Step 1 loads grep_for from _load_ticket and stores it in goal metadata."""
         goal = _make_goal(step=1)
-        ticket_json = json.dumps(
-            {
+        result, posted, _ = _run_step(
+            goal,
+            bash_returns=["show output (display)"],
+            ticket_data={
                 "id": "T-test-001",
                 "title": "Test ticket",
                 "grep_for": ["wg_cooccur", "wg_bigram"],
-            }
+            },
         )
-        result, posted, _ = _run_step(goal, bash_returns=[ticket_json])
         self.assertIn("details posted", result)
         self.assertEqual(goal.metadata["current_step"], 2)
         self.assertEqual(goal.metadata.get("grep_for"), ["wg_cooccur", "wg_bigram"])
         self.assertTrue(any("GOAL STEP 1" in m for m in posted))
 
     def test_step1_show_no_grep_for(self):
-        """Step 1 with no grep_for in ticket JSON stores nothing, still advances."""
+        """Step 1 with ticket having no grep_for stores nothing, still advances."""
         goal = _make_goal(step=1)
-        ticket_json = json.dumps({"id": "T-test-001", "title": "No grep ticket"})
-        result, posted, _ = _run_step(goal, bash_returns=[ticket_json])
+        result, posted, _ = _run_step(
+            goal,
+            bash_returns=["show output"],
+            ticket_data={"id": "T-test-001", "title": "No grep ticket"},
+        )
         self.assertEqual(goal.metadata["current_step"], 2)
         self.assertNotIn("grep_for", goal.metadata)
 
-    def test_step1_non_json_output_is_safe(self):
-        """Step 1 with non-JSON ticket output doesn't crash, still advances."""
+    def test_step1_ticket_not_found_is_safe(self):
+        """Step 1 with _load_ticket returning None doesn't crash, still advances."""
         goal = _make_goal(step=1)
-        result, posted, _ = _run_step(goal, bash_returns=["not valid json {{{"])
+        result, posted, _ = _run_step(
+            goal,
+            bash_returns=["show output"],
+            ticket_data=None,
+        )
         self.assertEqual(goal.metadata["current_step"], 2)
         self.assertNotIn("error", result.lower())
 
