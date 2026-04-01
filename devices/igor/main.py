@@ -10,6 +10,7 @@ Usage:
 import argparse
 import os
 import queue
+import signal
 import sys
 import threading
 import time
@@ -8105,6 +8106,11 @@ def _make_instance_id(host: str = "wild") -> str:
 
 
 def main():
+    # SIGTERM → clean exit (exit 0). Without this, kill sends the process down
+    # the crash path in the igor startup script, triggering the auto-fixer
+    # unnecessarily. SIGINT (Ctrl-C) already raises KeyboardInterrupt → exit 130.
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+
     env_path = Path(__file__).parent.parent / ".env"
     load_dotenv(env_path)
 
