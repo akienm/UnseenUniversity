@@ -10,6 +10,7 @@ Usage:
 import argparse
 import os
 import queue
+import re
 import signal
 import sys
 import threading
@@ -198,6 +199,22 @@ from .cognition.reasoners.base import exit_requested as _exit_requested
 # Authors that count as "human" for cloud routing: their background jobs get
 # is_user_turn=True so cloud escalation is always available (never capped to Ollama).
 _HUMAN_AUTHORS: frozenset = frozenset({"claude-code", "akien"})
+
+# ── T-deadend-ack-filter: suppress tier.2 bare acknowledgments ────────────────
+# tier.2 Ollama (small local model) doesn't reliably follow system_prompt.py:142
+# which bans bare acknowledgments. Filter them here, before they reach the channel.
+_BARE_ACK_PATTERNS = re.compile(
+    r"^\s*(fair[\.\!]?\s*on\s+it[\.\!]?|on\s+it[\.\!]?|got\s+it[\.\!]?|"
+    r"understood[\.\!]?|will\s+do[\.\!]?|noted[\.\!]?|okay[\.\!]?|ok[\.\!]?|"
+    r"sure[\.\!]?|acknowledged[\.\!]?|roger[\.\!]?)\s*$",
+    re.IGNORECASE,
+)
+
+
+def _is_bare_ack(text: str) -> bool:
+    """Return True if text is nothing but a bare acknowledgment (suppress these)."""
+    return bool(_BARE_ACK_PATTERNS.match(text.strip()))
+
 
 # ── #184: Attention nexus classification ───────────────────────────────────────
 
@@ -6218,7 +6235,15 @@ class Igor(IgorBase):
         if msg.source == "web" and response:
             # D263: web_server.send → _channel_append("igor", ...) writes to channel_messages
             # CC-sourced turns are source="web" so this already handles channel visibility
-            web_server.send(response, session_id=_session_id)
+            # T-deadend-ack-filter: suppress bare acks before they hit the channel
+            if _is_bare_ack(response):
+                import logging as _logging
+
+                _logging.getLogger(__name__).info(
+                    "bare-ack suppressed: %r", response[:80]
+                )
+            else:
+                web_server.send(response, session_id=_session_id)
 
         if (
             response
