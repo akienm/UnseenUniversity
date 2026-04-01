@@ -366,6 +366,81 @@ def close_goal_by_ticket(ticket_id: str) -> str:
         return f"[goal_close] error: {e}"
 
 
+# ── read_queue_top ─────────────────────────────────────────────────────────────
+
+
+def read_queue_top() -> str:
+    """
+    T-goal-queue-consumer: Read the top pending ticket from the work queue.
+    Returns ticket id + title if found, or 'no pending tickets' if queue is empty.
+    Used by PROC_QUEUE_DRAIN to pick the next ticket to work autonomously.
+    """
+    import json as _json
+    from pathlib import Path as _Path
+
+    queue_file = _Path.home() / ".TheIgors" / "cc_channel" / "queue.json"
+    try:
+        with open(queue_file) as f:
+            tasks = _json.load(f)
+        pending = [
+            t
+            for t in tasks
+            if t.get("status") == "pending" and t.get("worker") == "claude"
+        ]
+        if not pending:
+            return "no pending tickets"
+        pending.sort(key=lambda t: (t.get("priority", 99), t.get("id", "")))
+        top = pending[0]
+        return f"top ticket: {top['id']} — {top.get('title', '(no title)')}"
+    except Exception as e:
+        return f"[read_queue_top] error: {e}"
+
+
+# ── adopt_top_queue_ticket ─────────────────────────────────────────────────────
+
+
+def adopt_top_queue_ticket() -> str:
+    """
+    T-goal-queue-consumer: If no active GOAL exists, pick the top pending ticket
+    and adopt it as a goal. Called by PROC_QUEUE_DRAIN on a 30-min schedule.
+    Returns what was adopted, or why nothing was adopted.
+    """
+    try:
+        from ..memory.cortex import Cortex as _Cortex
+        from ..memory.models import MemoryType as _MT
+        import json as _json
+        from pathlib import Path as _Path
+
+        # Check for active goals — don't pile on
+        cortex = _Cortex(None)
+        goals = cortex.get_by_type(_MT.GOAL)
+        active = [g for g in goals if g.metadata.get("goal_active")]
+        if active:
+            task = active[0].metadata.get("source_message", active[0].narrative[:60])
+            return f"[queue_drain] active goal already exists: {task[:80]} — skipping"
+
+        # Read top pending ticket
+        queue_file = _Path.home() / ".TheIgors" / "cc_channel" / "queue.json"
+        with open(queue_file) as f:
+            tasks = _json.load(f)
+        pending = [
+            t
+            for t in tasks
+            if t.get("status") == "pending" and t.get("worker") == "claude"
+        ]
+        if not pending:
+            return "[queue_drain] no pending tickets — queue empty"
+        pending.sort(key=lambda t: (t.get("priority", 99), t.get("id", "")))
+        top = pending[0]
+        ticket_id = top["id"]
+
+        # Adopt it via goal_adopt (defined in this module)
+        result = goal_adopt(f"work ticket {ticket_id}")
+        return f"[queue_drain] adopted {ticket_id}: {result[:120]}"
+    except Exception as e:
+        return f"[queue_drain] error: {e}"
+
+
 # ── flush_habit_cache ──────────────────────────────────────────────────────────
 
 
@@ -536,6 +611,33 @@ registry.register(
             "required": ["goal_id"],
         },
         fn=goal_close,
+    )
+)
+
+registry.register(
+    Tool(
+        name="read_queue_top",
+        description=(
+            "T-goal-queue-consumer: Read the top pending ticket from the work queue. "
+            "Returns ticket id + title, or 'no pending tickets' if queue is empty. "
+            "Used by PROC_QUEUE_DRAIN to inspect the queue without adopting."
+        ),
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=read_queue_top,
+    )
+)
+
+registry.register(
+    Tool(
+        name="adopt_top_queue_ticket",
+        description=(
+            "T-goal-queue-consumer: If no active GOAL exists, pick the top pending ticket "
+            "from the work queue and adopt it as a goal (calls goal_adopt). "
+            "No-ops if a goal is already active or queue is empty. "
+            "Called by PROC_QUEUE_DRAIN on a 30-min schedule."
+        ),
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=adopt_top_queue_ticket,
     )
 )
 
