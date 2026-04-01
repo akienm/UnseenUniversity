@@ -50,6 +50,7 @@ from . import (
     training_pass,
     memory_query,
     boredom_idle,
+    goal_continuation,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
