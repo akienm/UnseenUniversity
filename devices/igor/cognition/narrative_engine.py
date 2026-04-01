@@ -1271,6 +1271,17 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                             kind="BARE_EXCEPT",
                             detail=f"narrative_engine._process_gaps close: {_bare_e}",
                         )
+                    # D277: dopamine → word graph weight update (close the learning loop).
+                    # Gap resolved = training signal. Strengthen word paths that led here.
+                    try:
+                        _wg = getattr(self.cortex, "word_graph", None)
+                        if _wg is not None and q_part:
+                            _wg.reinforce_text(q_part, boost=0.05)
+                    except Exception as _bare_e:
+                        log_error(
+                            kind="BARE_EXCEPT",
+                            detail=f"narrative_engine gap closure wg reinforce: {_bare_e}",
+                        )
 
         new_gaps = result.get("narrative_gaps", [])
         if not new_gaps:
