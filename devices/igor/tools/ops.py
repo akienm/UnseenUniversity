@@ -118,6 +118,68 @@ def queue_task(task_json: str) -> str:
         return f"[ERROR] queue_task: {e}"
 
 
+# ── goal_adopt ─────────────────────────────────────────────────────────────────
+
+
+def goal_adopt(task_description: str) -> str:
+    """
+    Adopt a task as an active GOAL_TACTICAL goal (D275).
+    Called when Igor says 'On it' — this IS the moment of commitment.
+    Stores goal as EPISODIC memory (instance-scoped, retrievable next turn).
+    Posts to channel so the goal is visible.
+    Returns short confirmation so Igor knows to proceed with step 1.
+    """
+    try:
+        from ..memory.cortex import Cortex as _Cortex
+        from ..memory.models import Memory as _Mem, MemoryType as _MT
+
+        ts = datetime.now(timezone.utc)
+        goal_id = f"GOAL_{ts.strftime('%Y%m%d%H%M%S%f')}"
+        task_short = task_description[:120].strip()
+
+        cortex = _Cortex(None)
+        mem = _Mem(
+            id=goal_id,
+            narrative=(
+                f"ACTIVE GOAL (adopted {ts.strftime('%H:%M')}): {task_short}\n"
+                f"Status: in_progress. Strategy: follow PROC_CODE_A_TICKET if ticket, "
+                f"else identify files and plan first."
+            ),
+            memory_type=_MT.EPISODIC,
+            metadata={
+                "goal_active": True,
+                "goal_type": "TACTICAL",
+                "source_message": task_short,
+                "adopted_at": ts.isoformat(),
+                "why": "D275 — task→goal adoption. On it = commitment moment.",
+            },
+        )
+        cortex.store(mem)
+
+        # Post to shared channel so goal is visible across sessions
+        try:
+            _ch_path = paths().cc_channel / "messages.jsonl"
+            _ch_path.parent.mkdir(parents=True, exist_ok=True)
+            import json as _json
+
+            entry = _json.dumps(
+                {
+                    "ts": ts.strftime("%H:%M:%S"),
+                    "author": "igor",
+                    "content": f"Goal adopted: {task_short}. Proceeding with step 1.",
+                    "session": "igor",
+                }
+            )
+            with open(_ch_path, "a") as _f:
+                _f.write(entry + "\n")
+        except Exception:
+            pass  # channel post is best-effort
+
+        return f"On it. Goal set: {task_short[:80]}. Proceeding."
+    except Exception as e:
+        return f"[ERROR] goal_adopt: {e}"
+
+
 # ── flush_habit_cache ──────────────────────────────────────────────────────────
 
 
@@ -219,5 +281,27 @@ registry.register(
         ),
         parameters={"type": "object", "properties": {}, "required": []},
         fn=flush_habit_cache,
+    )
+)
+
+registry.register(
+    Tool(
+        name="goal_adopt",
+        description=(
+            "Adopt a task as an active GOAL_TACTICAL goal (D275). "
+            "Called when Igor commits to a task ('On it'). "
+            "Stores goal as EPISODIC memory and posts to channel."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "task_description": {
+                    "type": "string",
+                    "description": "The task or goal description from the triggering message",
+                },
+            },
+            "required": ["task_description"],
+        },
+        fn=goal_adopt,
     )
 )
