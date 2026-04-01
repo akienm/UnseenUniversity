@@ -10,14 +10,16 @@ run_goal_continuation():
   - Checks current_step in goal metadata (default: 0)
   - Executes the appropriate mechanical step:
       step 0: claim the ticket (cc_queue.py claim {ticket_id})
-      step 1: show the ticket (cc_queue.py show {ticket_id})
-      step 2+: posts "[GOAL ACTIVE] {task}: next step is intelligence work — ready" to channel
-               so the LLM generates the plan on the next user interaction
+      step 1: show the ticket; parse grep_for field and store in goal metadata
+      step 2: if grep_for present — run grep for each pattern, post results
+              if grep_for absent  — skip (no-op, advance to step 3)
+      step 3: post "[GOAL READY]" signal so LLM can take over
+      step 4+: LLM territory, no further auto-advance
   - Advances current_step in goal metadata
   - Posts result to channel as igor
 
 Called by PROC_GOAL_CONTINUATION (scheduler, schedule_interval_sec=120).
-Rate-limited: skips if step already at 2+ (hand-off to LLM from there).
+Rate-limited: skips if step already at 4+ (hand-off to LLM from there).
 Forensic log: ~/.TheIgors/logs/goal_continuation.log
 """
 
@@ -105,16 +107,35 @@ def _extract_ticket_id(source_message: str) -> str | None:
     return None
 
 
+def _run_grep_patterns(patterns: list, search_root: str) -> str:
+    """
+    Run grep -rn for each pattern under search_root.
+    Returns a summary of matches (truncated to 600 chars total).
+    """
+    lines = []
+    for pattern in patterns[:4]:  # cap at 4 patterns
+        out = _run_bash(
+            ["grep", "-rn", "--include=*.py", pattern, search_root],
+        )
+        # Trim output per pattern
+        trimmed = out[:300] if len(out) > 300 else out
+        lines.append(f"grep '{pattern}':\n{trimmed}")
+    combined = "\n\n".join(lines)
+    return combined[:1200] if len(combined) > 1200 else combined
+
+
 def run_goal_continuation(**_) -> str:
     """
     D274: Drive mechanical progress on active GOAL memories.
 
     Step 0: claim the ticket
-    Step 1: show ticket details + post to channel
-    Step 2+: hand-off to LLM (post ready signal, stop auto-advancing)
+    Step 1: show ticket details; parse grep_for into goal metadata
+    Step 2: if grep_for present — run grep, post results; else skip
+    Step 3: post GOAL READY signal; LLM takes over from here
+    Step 4+: LLM territory, no further auto-advance
 
     Called every 2 minutes by PROC_GOAL_CONTINUATION scheduler.
-    Skips if no active goals, or if already at step 2+.
+    Skips if no active goals, or if already at step 4+.
     """
     try:
         from ..memory.cortex import Cortex as _Cortex
@@ -148,19 +169,28 @@ def run_goal_continuation(**_) -> str:
                 _flog(f"STEP0 ticket={ticket_id} result={out[:80]}")
                 return f"[goal_continuation] claimed {ticket_id}: {out[:80]}"
             else:
-                # No ticket ID — hand off immediately
+                # No ticket ID — skip straight to ready
                 msg = f"[GOAL ACTIVE] {task[:100]} — no ticket ID found, ready for LLM planning"
                 _post_to_channel(msg)
-                goal.metadata["current_step"] = 2
+                goal.metadata["current_step"] = 4
                 cortex.store(goal)
-                return f"[goal_continuation] no ticket ID in goal, posted ready signal"
+                return "[goal_continuation] no ticket ID in goal, posted ready signal"
 
         elif step == 1:
-            # Step 1: show ticket details
+            # Step 1: show ticket details; extract grep_for if present
             if ticket_id:
                 out = _run_bash(["python3", str(_CC_QUEUE), "show", ticket_id])
                 msg = f"[GOAL STEP 1] Ticket {ticket_id} details: {out[:400]}"
                 _post_to_channel(msg)
+                # Parse grep_for from ticket JSON
+                try:
+                    ticket_data = json.loads(out)
+                    grep_for = ticket_data.get("grep_for", [])
+                    if grep_for:
+                        goal.metadata["grep_for"] = grep_for
+                        _flog(f"STEP1 parsed grep_for={grep_for} from {ticket_id}")
+                except (json.JSONDecodeError, Exception):
+                    pass  # ticket output not JSON — no grep_for
                 goal.metadata["current_step"] = 2
                 cortex.store(goal)
                 _flog(f"STEP1 ticket={ticket_id} result={out[:80]}")
@@ -171,19 +201,39 @@ def run_goal_continuation(**_) -> str:
                 return "[goal_continuation] step 1 skip — no ticket ID"
 
         elif step == 2:
-            # Step 2: post ready signal — LLM takes over from here
+            # Step 2: grep step — only if grep_for was stored in step 1
+            grep_for = goal.metadata.get("grep_for", [])
+            if grep_for and ticket_id:
+                search_root = str(Path.home() / "TheIgors" / "wild_igor" / "igor")
+                results = _run_grep_patterns(grep_for, search_root)
+                msg = f"[GOAL STEP 2] Search results for {ticket_id}:\n{results}"
+                _post_to_channel(msg)
+                goal.metadata["current_step"] = 3
+                cortex.store(goal)
+                _flog(f"STEP2 grep done for {ticket_id}, patterns={grep_for}")
+                return f"[goal_continuation] grep step done for {ticket_id}"
+            else:
+                # No grep_for — skip straight to ready
+                goal.metadata["current_step"] = 3
+                cortex.store(goal)
+                _flog(f"STEP2 skip (no grep_for) for ticket={ticket_id}")
+                return "[goal_continuation] step 2 skip — no grep_for"
+
+        elif step == 3:
+            # Step 3: post ready signal — LLM takes over from here
+            grep_steps = "0-2" if goal.metadata.get("grep_for") else "0-1"
             msg = (
                 f"[GOAL READY] {task[:100]} — mechanical steps done. "
-                f"Steps 0-1 complete. Ready for implementation planning."
+                f"Steps {grep_steps} complete. Ready for implementation planning."
             )
             _post_to_channel(msg)
-            goal.metadata["current_step"] = 3  # advance past ready so we don't re-post
+            goal.metadata["current_step"] = 4
             cortex.store(goal)
-            _flog(f"STEP2 posted ready for ticket={ticket_id}")
+            _flog(f"STEP3 posted ready for ticket={ticket_id}")
             return f"[goal_continuation] posted ready signal for {ticket_id}"
 
         else:
-            # Step 3+: goal is in LLM territory — don't auto-advance
+            # Step 4+: goal is in LLM territory — don't auto-advance
             return f"[goal_continuation] step={step} — LLM territory, skipping"
 
     except Exception as e:
@@ -198,8 +248,10 @@ registry.register(
         name="run_goal_continuation",
         description=(
             "D274: Drive mechanical progress on active GOAL memories. "
-            "Step 0: claim ticket. Step 1: show ticket. Step 2: post ready signal. "
-            "Step 3+: LLM handles. Called by PROC_GOAL_CONTINUATION on 2-min schedule."
+            "Step 0: claim ticket. Step 1: show ticket + parse grep_for. "
+            "Step 2: grep codebase (if grep_for present). "
+            "Step 3: post GOAL READY signal. Step 4+: LLM handles. "
+            "Called by PROC_GOAL_CONTINUATION on 2-min schedule."
         ),
         parameters={"type": "object", "properties": {}, "required": []},
         fn=run_goal_continuation,
