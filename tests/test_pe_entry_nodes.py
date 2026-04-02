@@ -17,11 +17,13 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from wild_igor.igor.tools.pe_chain import (
+    _MAX_ATTEMPTS,
     _extract_grep_patterns,
     _parse_file_list,
     _parse_hypothesis,
     _validate_hypothesis,
     pe_claim,
+    pe_close_loop,
     pe_entry_init,
     pe_hypothesize,
     pe_implement,
@@ -741,3 +743,118 @@ class TestPeTest:
             with patch.dict("sys.modules", {"wild_igor.igor.tools.ops": None}):
                 result = pe_test(basket)
         assert "test_result" in result
+
+
+# ── pe_close_loop ─────────────────────────────────────────────────────────────
+
+
+def _passing_basket(ticket_id="T-test", file="wild_igor/igor/tools/pe_chain.py"):
+    """Basket in the state just before pe_close_loop: test passed, edit applied."""
+    return {
+        "ticket_id": ticket_id,
+        "goal_id": "GOAL_123",
+        "test_result": "pass",
+        "attempt_count": 0,
+        "hypothesis": {
+            "file": file,
+            "old_string": "pe_chain",
+            "new_string": "pe_chain",
+        },
+        "implement_result": "ok",
+        "implement_skipped": False,
+        "ticket_description": "Fix something",
+        "actual": "some code",
+    }
+
+
+def _failing_basket(**kwargs):
+    b = _passing_basket(**kwargs)
+    b["test_result"] = "fail: AssertionError at line 42"
+    return b
+
+
+class TestPeCloseLoop:
+    def test_pass_path_commits_and_closes(self):
+        basket = _passing_basket()
+        with (
+            patch(
+                "wild_igor.igor.tools.pe_chain._run_bash", return_value="[main abc] fix"
+            ),
+            patch("wild_igor.igor.tools.pe_chain._post_to_channel"),
+            patch("wild_igor.igor.tools.pe_chain.close_goal_by_ticket", create=True),
+        ):
+            with patch.dict("sys.modules", {"wild_igor.igor.tools.ops": None}):
+                result = pe_close_loop(basket)
+        assert "commit_result" in result
+        assert "escalate_reason" not in result
+
+    def test_pass_path_skips_commit_when_no_edit(self):
+        basket = _passing_basket()
+        basket["implement_skipped"] = True
+        with (
+            patch("wild_igor.igor.tools.pe_chain._run_bash") as mock_bash,
+            patch("wild_igor.igor.tools.pe_chain._post_to_channel"),
+        ):
+            with patch.dict("sys.modules", {"wild_igor.igor.tools.ops": None}):
+                result = pe_close_loop(basket)
+        assert result["commit_result"] == "skipped: no edit applied"
+        # git commit should NOT be called; cc_queue done IS called (also via _run_bash)
+        git_calls = [c for c in mock_bash.call_args_list if "git" in str(c)]
+        assert git_calls == [], f"Expected no git calls, got: {git_calls}"
+
+    def test_escalates_after_max_attempts(self):
+        basket = _failing_basket()
+        basket["attempt_count"] = _MAX_ATTEMPTS
+        with (
+            patch("wild_igor.igor.tools.pe_chain._run_bash", return_value="ok"),
+            patch("wild_igor.igor.tools.pe_chain._post_to_channel"),
+        ):
+            result = pe_close_loop(basket)
+        assert "escalate_reason" in result
+        assert "exhausted" in result["escalate_reason"]
+
+    def test_replan_called_on_first_failure(self):
+        basket = _failing_basket()
+        # Replan returns pass on second attempt
+        call_count = {"n": 0}
+
+        def fake_tier2(prompt, timeout=30):
+            call_count["n"] += 1
+            return '{"file": "wild_igor/igor/tools/pe_chain.py", "old_string": "pe_chain", "new_string": "pe_chain"}'
+
+        with (
+            patch("wild_igor.igor.tools.pe_chain._call_tier2", side_effect=fake_tier2),
+            patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", REPO_ROOT),
+            patch(
+                "wild_igor.igor.tools.pe_chain._run_bash",
+                side_effect=lambda cmd, **_: (
+                    "61 passed" if "pytest" in str(cmd) or "-m" in str(cmd) else "ok"
+                ),
+            ),
+            patch("wild_igor.igor.tools.pe_chain._post_to_channel"),
+        ):
+            with patch.dict("sys.modules", {"wild_igor.igor.tools.ops": None}):
+                result = pe_close_loop(basket)
+        # tier.2 was called at least once for replan
+        assert call_count["n"] >= 1
+        assert basket["attempt_count"] >= 1
+
+    def test_error_passthrough(self):
+        basket = {"error": "prior error", "test_result": "pass"}
+        with patch("wild_igor.igor.tools.pe_chain._run_bash") as mock_bash:
+            result = pe_close_loop(basket)
+        assert result["error"] == "prior error"
+        mock_bash.assert_not_called()
+
+    def test_attempt_count_increments_on_replan(self):
+        basket = _failing_basket()
+        basket["attempt_count"] = _MAX_ATTEMPTS - 1  # one attempt left before escalate
+
+        with (
+            patch("wild_igor.igor.tools.pe_chain._call_tier2", return_value=None),
+            patch("wild_igor.igor.tools.pe_chain._run_bash", return_value="ok"),
+            patch("wild_igor.igor.tools.pe_chain._post_to_channel"),
+        ):
+            result = pe_close_loop(basket)
+        # Should have hit max and escalated
+        assert "escalate_reason" in result
