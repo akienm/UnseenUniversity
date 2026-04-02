@@ -201,6 +201,7 @@ class HeartbeatSource(BasePushSource):
         self._last_run: Optional[datetime] = None
         self._session_start: datetime = datetime.now()
         self._discord_alerted: set = set()  # prevent repeat alerts same session
+        self._twm_trigger_dispatched: set = set()  # TWM entry IDs already dispatched
 
     def push(self, cortex) -> list[int]:
         now = datetime.now()
@@ -257,6 +258,9 @@ class HeartbeatSource(BasePushSource):
 
         # 4. HEARTBEAT procedural memories (user-defined conditions)
         pushed.extend(self._check_heartbeat_memories(cortex, now))
+
+        # 4b. TWM-trigger habits — fire proactive impulse when TWM contains the key
+        pushed.extend(self._check_twm_trigger_habits(cortex))
 
         # 5. Orphan adoption — link FACTUAL/EPISODIC nodes to nearest CP/ID attractor
         self._run_orphan_adoption(cortex)
@@ -406,6 +410,82 @@ class HeartbeatSource(BasePushSource):
             urgency=0.3,  # Change 4: heartbeat procedural check — not time-critical
         )
         return [obs_id]
+
+    def _check_twm_trigger_habits(self, cortex) -> list[int]:
+        """
+        D300: Fire proactive impulses for habits that declare `twm_trigger` in metadata.
+
+        For each PROCEDURAL habit with `twm_trigger: "KEY"`, check if TWM has a
+        recent non-expired entry with category=key.lower(). If found AND not already
+        dispatched for this TWM entry ID, push an ACTION_IMPULSE with source="proactive_habit"
+        so _drain_action_impulses() picks it up → BG scores the habit → code_ref fires.
+
+        Deduplication: _twm_trigger_dispatched tracks TWM entry IDs to prevent
+        re-firing on the same TWM entry. Eviction from TWM (by run_coding_sprint or
+        TTL) clears the entry naturally; dispatched IDs are pruned here to avoid unbounded growth.
+        """
+        try:
+            trigger_habits = cortex.get_procedural_by_metadata_key("twm_trigger")
+        except Exception:
+            return []
+
+        if not trigger_habits:
+            return []
+
+        pushed = []
+        for habit in trigger_habits:
+            trigger_key = habit.metadata.get("twm_trigger", "")
+            if not trigger_key:
+                continue
+            category = trigger_key.lower()
+
+            # Check TWM for a live entry in this category
+            try:
+                recent = cortex.twm_read(limit=5, include_integrated=False)
+            except Exception:
+                continue
+
+            matched = [
+                e
+                for e in recent
+                if e.get("category") == category
+                and trigger_key in e.get("content_csb", "")
+            ]
+            if not matched:
+                continue
+
+            twm_entry = matched[0]
+            entry_id = twm_entry["id"]
+
+            # Dedup: don't re-fire for the same TWM entry
+            if entry_id in self._twm_trigger_dispatched:
+                continue
+
+            self._twm_trigger_dispatched.add(entry_id)
+            # Prune dispatched set if it grows large (entries expired long ago)
+            if len(self._twm_trigger_dispatched) > 200:
+                self._twm_trigger_dispatched.clear()
+
+            # Push proactive impulse — _drain_action_impulses picks this up
+            obs_id = cortex.twm_push(
+                source="proactive_habit",
+                content_csb=(
+                    f"ACTION_IMPULSE|urgency=0.8|{habit.metadata.get('code_ref', habit.id)}|"
+                    f"why:{trigger_key}_in_TWM|habit={habit.id}"
+                ),
+                salience=0.8,
+                metadata={
+                    "type": "action_impulse",
+                    "habit_id": habit.id,
+                    "twm_trigger": trigger_key,
+                    "twm_entry_id": entry_id,
+                },
+                ttl_seconds=120,
+                urgency=0.7,
+            )
+            pushed.append(obs_id)
+
+        return pushed
 
     def _run_orphan_adoption(self, cortex) -> None:
         """
