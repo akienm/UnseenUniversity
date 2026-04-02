@@ -1070,20 +1070,40 @@ class Cortex(IgorBase):
         Replaces fetch-then-filter pattern for push sources (heartbeat, proactive, scheduler).
         If value is None, just checks key exists. Otherwise matches value exactly.
         """
-        sql = f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type = ?"
-        params = [MemoryType.PROCEDURAL.value]
+        from .db_proxy import PGDatabaseProxy
 
-        if value is not None:
-            # Use JSON extraction for exact match (PostgreSQL jsonb->'key' = value)
-            sql += " AND json_extract(metadata, ?) = ?"
-            params.extend([f"$.{key}", value])
+        is_pg = isinstance(self._db, PGDatabaseProxy)
+
+        if is_pg:
+            # Postgres: use jsonb_exists() / jsonb ->> operator
+            # Never use metadata ? 'key' — db_proxy translates ? → %s (breaks jsonb operator)
+            if value is not None:
+                sql = (
+                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
+                    f"WHERE memory_type = %s AND jsonb_exists(metadata, %s) "
+                    f"AND metadata->>{repr(key)} = %s"
+                )
+                params = [MemoryType.PROCEDURAL.value, key, value]
+            else:
+                sql = (
+                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
+                    f"WHERE memory_type = %s AND jsonb_exists(metadata, %s)"
+                )
+                params = [MemoryType.PROCEDURAL.value, key]
+            if limit:
+                sql += f" ORDER BY timestamp DESC LIMIT {int(limit)}"
         else:
-            # Just check key exists
-            sql += " AND json_extract(metadata, ?) IS NOT NULL"
-            params.append(f"$.{key}")
-
-        if limit:
-            sql += f" ORDER BY timestamp DESC LIMIT {int(limit)}"
+            # SQLite
+            sql = f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type = ?"
+            params = [MemoryType.PROCEDURAL.value]
+            if value is not None:
+                sql += " AND json_extract(metadata, ?) = ?"
+                params.extend([f"$.{key}", value])
+            else:
+                sql += " AND json_extract(metadata, ?) IS NOT NULL"
+                params.append(f"$.{key}")
+            if limit:
+                sql += f" ORDER BY timestamp DESC LIMIT {int(limit)}"
 
         with self._conn() as conn:
             rows = conn.execute(sql, tuple(params)).fetchall()
