@@ -744,6 +744,7 @@ def read_chunk(handle=None, n: int = 0, handle_key: str = "", **_) -> dict:
                     source="ebook_reader",
                     salience=0.65,
                     ttl_seconds=_STEW_TTL_SECS,
+                    category="reading_stew",
                 )
         except Exception as _e:
             try:

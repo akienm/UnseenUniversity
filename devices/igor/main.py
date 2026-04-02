@@ -3853,8 +3853,15 @@ class Igor(IgorBase):
 
             # D259: human authors (claude-code, akien) get is_user_turn=True so
             # background job synthesis can escalate to cloud when Ollama fails.
-            _bg_is_user = author in _HUMAN_AUTHORS
-            _bg_complexity = parsed.complexity if _bg_is_user else "low"
+            # T-llm-tool-dispatch: [CODING SPRINT] messages always need cloud escalation
+            # regardless of author — OR's agentic loop handles multi-step tool execution.
+            _is_coding_sprint = user_input.lstrip().startswith("[CODING SPRINT]")
+            _bg_is_user = (author in _HUMAN_AUTHORS) or _is_coding_sprint
+            _bg_complexity = (
+                (parsed.complexity if _bg_is_user else "low")
+                if not _is_coding_sprint
+                else "high"
+            )
             _async_job_id = self.job_manager.submit_background(
                 fn=lambda _ui=user_input, _rel=list(
                     relevant
