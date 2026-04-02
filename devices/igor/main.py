@@ -3112,10 +3112,11 @@ class Igor(IgorBase):
         except Exception as _bare_e:
             log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
         # D275: check TWM for active GOAL — extract keywords for BG goal-context boost
+        # T-goal-adopt-category: read from category="active_goal" (synced with goal_adopt push)
         _active_goal_keywords: "set[str] | None" = None
         try:
             _goal_obs = self.cortex.twm_read(
-                limit=1, include_integrated=False, category="goal"
+                limit=1, include_integrated=False, category="active_goal"
             )
             if _goal_obs:
                 _gkw_raw = (_goal_obs[0].metadata or {}).get("goal_id", "")
