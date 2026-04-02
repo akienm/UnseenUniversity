@@ -439,18 +439,17 @@ class HeartbeatSource(BasePushSource):
                 continue
             category = trigger_key.lower()
 
-            # Check TWM for a live entry in this category
+            # Check TWM for a live entry in this category — query by category directly
+            # to avoid ORDER BY id ASC / limit=5 missing newer entries buried under
+            # READING_STEW / FACIA entries (D301 fix: category-targeted TWM scan)
             try:
-                recent = cortex.twm_read(limit=5, include_integrated=False)
+                recent = cortex.twm_read(
+                    limit=10, include_integrated=False, category=category
+                )
             except Exception:
                 continue
 
-            matched = [
-                e
-                for e in recent
-                if e.get("category") == category
-                and trigger_key in e.get("content_csb", "")
-            ]
+            matched = [e for e in recent if trigger_key in e.get("content_csb", "")]
             if not matched:
                 continue
 
