@@ -3528,7 +3528,11 @@ class Cortex(IgorBase):
                     (category,),
                 )
             deleted = cur.rowcount
-        log.debug("[cortex] twm_evict_category %r: deleted %d rows", category, deleted)
+        import logging as _logging
+
+        _logging.getLogger(__name__).debug(
+            "[cortex] twm_evict_category %r: deleted %d rows", category, deleted
+        )
         return deleted
 
     def twm_get_active_goal(self) -> str | None:
