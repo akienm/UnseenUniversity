@@ -730,6 +730,22 @@ def prim_twm_read() -> str:
         return f"[PRIM_TWM_READ] error: {e}"
 
 
+def prim_twm_read_active_goal() -> str:
+    """
+    Read the current ACTIVE_GOAL from TWM.
+    Returns the goal text, or 'No active goal set.' if none.
+    Lets Igor introspect what goal his working memory is currently holding.
+    """
+    try:
+        cortex = _get_cortex()
+        goal = cortex.twm_get_active_goal()
+        if goal:
+            return goal
+        return "No active goal set."
+    except Exception as e:
+        return f"[PRIM_TWM_READ_ACTIVE_GOAL] error: {e}"
+
+
 def prim_ring_read() -> str:
     """Read recent ring memory entries (IGOR_SAID, IGOR_HEARD, etc.).
 
@@ -1022,5 +1038,19 @@ registry.register(
         ),
         parameters=_NO_ARGS,
         fn=prim_str_slice,
+    )
+)
+
+registry.register(
+    Tool(
+        name="prim_twm_read_active_goal",
+        description=(
+            "TWM primitive: read the current ACTIVE_GOAL from TWM. "
+            "Returns the goal text, or 'No active goal set.' if none is held. "
+            "Use for goal-aware introspection — lets a habit chain check what Igor "
+            "is currently working on without a basket read."
+        ),
+        parameters=_NO_ARGS,
+        fn=prim_twm_read_active_goal,
     )
 )

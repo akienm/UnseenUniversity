@@ -571,3 +571,55 @@ class TestJsonSerialisability:
         """Template node tags must mention predictive_coding (D279/D298 lineage)."""
         tags = TEMPLATE_NODE["metadata"]["tags"]
         assert "predictive_coding" in tags or "prediction_error" in tags
+
+
+# ── 7. TWM EMITIF opcode check (D300) ────────────────────────────────────────
+
+
+class TestTwmEmitif:
+    """Verify the cognitive_milieu EMITIF instruction exists in observe_cell (D300)."""
+
+    def setup_method(self):
+        self.cell = TEMPLATE_SCHEMA["expansion_schema"][0]["payload"]["observe_cell"]
+
+    def test_cell_contains_cognitive_milieu_emitif(self):
+        """At least one EMITIF must target cognitive_milieu channel (D300 TWM write)."""
+        found = any(
+            isinstance(instr, list)
+            and len(instr) == 5
+            and instr[0] == "EMITIF"
+            and instr[4] == "cognitive_milieu"
+            for instr in self.cell
+        )
+        assert found, "No EMITIF targeting cognitive_milieu in observe_cell"
+
+    def test_cognitive_milieu_emitif_key_is_delta(self):
+        """The cognitive_milieu EMITIF must write key 'DELTA' (D300)."""
+        found = any(
+            isinstance(instr, list)
+            and len(instr) == 5
+            and instr[0] == "EMITIF"
+            and instr[2] == "DELTA"
+            and instr[4] == "cognitive_milieu"
+            for instr in self.cell
+        )
+        assert found, "No EMITIF writing DELTA to cognitive_milieu"
+
+    def test_cognitive_milieu_emitif_precedes_forkif(self):
+        """The cognitive_milieu EMITIF must appear before FORKIF in the cell."""
+        emitif_idx = None
+        forkif_idx = None
+        for i, instr in enumerate(self.cell):
+            if (
+                isinstance(instr, list)
+                and len(instr) == 5
+                and instr[0] == "EMITIF"
+                and instr[4] == "cognitive_milieu"
+                and emitif_idx is None
+            ):
+                emitif_idx = i
+            if isinstance(instr, list) and instr[0] == "FORKIF" and forkif_idx is None:
+                forkif_idx = i
+        assert emitif_idx is not None, "No cognitive_milieu EMITIF found"
+        assert forkif_idx is not None, "No FORKIF found"
+        assert emitif_idx < forkif_idx, "cognitive_milieu EMITIF must precede FORKIF"
