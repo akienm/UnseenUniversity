@@ -5,7 +5,7 @@ Replaces the OR agentic loop with an Igor-native step chain.
 Each step is a Python function that reads from and writes into a basket dict.
 The basket is a plain Python dict (shared working memory for one engram run).
 
-Chain structure (this module handles ENTRY through HYPOTHESIZE):
+Chain structure (this module handles ENTRY through TEST):
   pe_entry_init(basket)    — extract ticket_id from active GOAL, seed constants
   pe_claim(basket)         — claim the ticket in cc_queue
   pe_read_ticket(basket)   — load ticket description + files into basket
@@ -13,9 +13,10 @@ Chain structure (this module handles ENTRY through HYPOTHESIZE):
                              present, else call tier.2 Ollama to identify files
   pe_observe(basket)       — two-pass: grep for relevant section, read that section
   pe_hypothesize(basket)   — tier.2: (description + actual) → structured edit JSON
+  pe_implement(basket)     — apply hypothesis edit to file (pure tool)
+  pe_test(basket)          — run tests → basket[test_result] (pure tool)
 
-Higher steps (IMPLEMENT, TEST, CLOSE) are in
-subsequent pe-* tickets and will be added here as they land.
+Higher steps (CLOSE loop) are in T-pe-close-loop.
 
 Entry point:
   run_pe_chain(**_) → str   — called as code_ref by PROC_PE_CHAIN habit
@@ -650,12 +651,110 @@ def pe_hypothesize(basket: dict) -> dict:
     return basket
 
 
+# ── IMPLEMENT ────────────────────────────────────────────────────────────────
+
+
+def pe_implement(basket: dict) -> dict:
+    """
+    IMPLEMENT step: apply basket[hypothesis] edit to the target file.
+
+    Reads basket[hypothesis]: {file, old_string, new_string}
+    Skips (sets implement_skipped=True) if hypothesis is None or has errors.
+    Writes to basket:
+      implement_result   str   — "ok" | "skipped: <reason>" | "error: <msg>"
+      implement_skipped  bool  — True if no valid hypothesis to apply
+    """
+    if basket.get("error"):
+        return basket
+
+    hypothesis = basket.get("hypothesis")
+    hypothesis_error = basket.get("hypothesis_error")
+
+    if not hypothesis or hypothesis_error:
+        reason = hypothesis_error or "no hypothesis"
+        basket["implement_result"] = f"skipped: {reason}"
+        basket["implement_skipped"] = True
+        _flog(f"IMPLEMENT: skipped — {reason}")
+        return basket
+
+    filepath = _REPO_ROOT / hypothesis["file"]
+    old_string = hypothesis["old_string"]
+    new_string = hypothesis["new_string"]
+
+    try:
+        content = filepath.read_text(errors="replace")
+        if old_string not in content:
+            basket["implement_result"] = (
+                f"error: old_string not in {hypothesis['file']}"
+            )
+            basket["implement_skipped"] = True
+            _flog(f"IMPLEMENT: old_string not found in {hypothesis['file']}")
+            return basket
+
+        new_content = content.replace(old_string, new_string, 1)
+        filepath.write_text(new_content)
+        basket["implement_result"] = "ok"
+        basket["implement_skipped"] = False
+        _flog(
+            f"IMPLEMENT: applied edit in {hypothesis['file']} "
+            f"old_len={len(old_string)} new_len={len(new_string)}"
+        )
+    except Exception as e:
+        basket["implement_result"] = f"error: {e}"
+        basket["implement_skipped"] = True
+        _flog(f"IMPLEMENT: exception: {e}")
+
+    return basket
+
+
+# ── TEST ──────────────────────────────────────────────────────────────────────
+
+
+def pe_test(basket: dict) -> dict:
+    """
+    TEST step: run the test suite, store result in basket.
+
+    Calls run_tests() from ops.py if available, else falls back to
+    subprocess pytest invocation.
+
+    Reads from basket: (nothing required)
+    Writes to basket:
+      test_result  str  — "pass" | "fail: <details>"
+    """
+    if basket.get("error"):
+        return basket
+
+    # Try ops.run_tests first (registered tool)
+    try:
+        from .ops import run_tests as _run_tests
+
+        raw = _run_tests()
+        passed = "passed" in raw and "failed" not in raw and "error" not in raw.lower()
+        basket["test_result"] = "pass" if passed else f"fail: {raw[:300]}"
+        _flog(f"TEST (ops.run_tests): {basket['test_result'][:80]}")
+        return basket
+    except Exception:
+        pass
+
+    # Fallback: direct pytest subprocess
+    result = _run_bash(
+        ["python", "-m", "pytest", "tests/", "-x", "-q", "--tb=short"],
+        timeout=120,
+    )
+    passed = (
+        "passed" in result and "failed" not in result and "error" not in result.lower()
+    )
+    basket["test_result"] = "pass" if passed else f"fail: {result[:300]}"
+    _flog(f"TEST (pytest): {basket['test_result'][:80]}")
+    return basket
+
+
 # ── Chain entry point ─────────────────────────────────────────────────────────
 
 
 def run_pe_entry_chain(basket: dict | None = None) -> dict:
     """
-    Run the ENTRY → CLAIM → READ_TICKET → SITUATE → OBSERVE → HYPOTHESIZE chain.
+    Run ENTRY → CLAIM → READ_TICKET → SITUATE → OBSERVE → HYPOTHESIZE → IMPLEMENT → TEST.
 
     Returns the populated basket dict.
     Caller checks basket.get("error") for failure.
@@ -677,14 +776,20 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
     if basket.get("error"):
         return basket
     basket = pe_hypothesize(basket)
+    if basket.get("error"):
+        return basket
+    basket = pe_implement(basket)
+    if basket.get("error"):
+        return basket
+    basket = pe_test(basket)
     return basket
 
 
 def run_pe_chain(**_) -> str:
     """
     Full PROC_CODE_A_TICKET chain — code_ref entry point.
-    Currently runs ENTRY → CLAIM → READ_TICKET → SITUATE → OBSERVE → HYPOTHESIZE.
-    Further steps (IMPLEMENT, TEST, CLOSE) will be added as T-pe-* tickets land.
+    Runs ENTRY → CLAIM → READ_TICKET → SITUATE → OBSERVE → HYPOTHESIZE → IMPLEMENT → TEST.
+    CLOSE loop (commit + close goal + REPLAN) comes in T-pe-close-loop.
 
     Returns a status string for the channel.
     """
@@ -695,10 +800,10 @@ def run_pe_chain(**_) -> str:
         return f"[pe_chain] error: {basket['error']}"
 
     summary = (
-        f"[pe_chain] hypothesize done: "
+        f"[pe_chain] test done: "
         f"ticket={basket.get('ticket_id')} "
-        f"hypothesis_file={basket.get('hypothesis', {}).get('file', 'none')} "
-        f"hypothesis_error={basket.get('hypothesis_error')}"
+        f"implement={basket.get('implement_result', '?')} "
+        f"test_result={basket.get('test_result', '?')}"
     )
     _flog(f"CHAIN: {summary}")
     return summary
