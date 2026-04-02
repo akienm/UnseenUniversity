@@ -1,0 +1,122 @@
+"""
+tests/test_run_tests_tool.py — Unit tests for ops.run_tests()
+"""
+
+import sys
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+# Ensure the project root is on sys.path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+
+def _import_run_tests():
+    """Import run_tests without triggering DB connections in ops.py module load."""
+    import importlib
+    import types
+
+    # Build a minimal fake package tree so ops.py imports don't explode
+    for pkg in [
+        "wild_igor",
+        "wild_igor.igor",
+        "wild_igor.igor.tools",
+        "wild_igor.igor.memory",
+        "wild_igor.igor.paths",
+    ]:
+        if pkg not in sys.modules:
+            sys.modules[pkg] = types.ModuleType(pkg)
+
+    # Stub registry so Tool/registry.register calls are no-ops
+    fake_registry_mod = types.ModuleType("wild_igor.igor.tools.registry")
+
+    class _Tool:
+        def __init__(self, **kwargs):
+            pass
+
+    class _Registry:
+        def register(self, tool):
+            pass
+
+    fake_registry_mod.Tool = _Tool
+    fake_registry_mod.registry = _Registry()
+    sys.modules["wild_igor.igor.tools.registry"] = fake_registry_mod
+
+    # Stub paths
+    fake_paths_mod = types.ModuleType("wild_igor.igor.paths")
+    fake_paths_mod.paths = MagicMock()
+    sys.modules["wild_igor.igor.paths"] = fake_paths_mod
+
+    # Stub psycopg2 so module-level DB code doesn't fail
+    if "psycopg2" not in sys.modules:
+        fake_pg = types.ModuleType("psycopg2")
+        fake_pg.connect = MagicMock()
+        sys.modules["psycopg2"] = fake_pg
+
+    # Now import the module fresh (or reuse cached)
+    mod_name = "wild_igor.igor.tools.ops"
+    if mod_name in sys.modules:
+        del sys.modules[mod_name]
+
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        mod_name,
+        Path(__file__).parent.parent / "wild_igor" / "igor" / "tools" / "ops.py",
+    )
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[mod_name] = mod
+    spec.loader.exec_module(mod)
+    return mod.run_tests
+
+
+def _get_run_tests():
+    """Cache the imported function across tests."""
+    if not hasattr(_get_run_tests, "_fn"):
+        _get_run_tests._fn = _import_run_tests()
+    return _get_run_tests._fn
+
+
+def test_run_tests_returns_string():
+    """run_tests() should always return a string."""
+    run_tests = _get_run_tests()
+
+    fake_result = MagicMock()
+    fake_result.stdout = "1 passed\n"
+    fake_result.stderr = ""
+
+    with patch("subprocess.run", return_value=fake_result):
+        result = run_tests()
+
+    assert isinstance(result, str)
+    assert len(result) > 0
+
+
+def test_run_tests_truncates_long_output():
+    """run_tests() should return only the last 30 lines when output exceeds 30 lines."""
+    run_tests = _get_run_tests()
+
+    lines = [f"line {i}" for i in range(50)]
+    fake_result = MagicMock()
+    fake_result.stdout = "\n".join(lines)
+    fake_result.stderr = ""
+
+    with patch("subprocess.run", return_value=fake_result):
+        result = run_tests()
+
+    returned_lines = result.splitlines()
+    assert len(returned_lines) == 30
+    # Must be the LAST 30 lines
+    assert returned_lines[0] == "line 20"
+    assert returned_lines[-1] == "line 49"
+
+
+def test_run_tests_handles_exception():
+    """run_tests() should return an error string when subprocess raises."""
+    run_tests = _get_run_tests()
+
+    with patch("subprocess.run", side_effect=RuntimeError("pytest not found")):
+        result = run_tests()
+
+    assert isinstance(result, str)
+    assert "[run_tests] error:" in result
+    assert "pytest not found" in result
