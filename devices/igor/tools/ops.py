@@ -158,13 +158,14 @@ def goal_adopt(task_description: str) -> str:
         cortex.store(mem)
 
         # Push to TWM with high salience + 2h TTL so goal persists across turns
+        # T-goal-adopt-category: category="active_goal" so twm_get_active_goal() finds it
         cortex.twm_push(
             source="goal_adopt",
             content_csb=f"ACTIVE_GOAL|id={goal_id}|task={task_short[:80]}",
             salience=0.85,
             urgency=0.7,
             ttl_seconds=7200,
-            category="goal",
+            category="active_goal",
             metadata={"goal_id": goal_id, "goal_type": "TACTICAL"},
         )
 
