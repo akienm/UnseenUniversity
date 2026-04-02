@@ -435,7 +435,15 @@ def read_queue_top() -> str:
         ]
         if not pending:
             return "no pending tickets"
-        pending.sort(key=lambda t: (t.get("priority", 99), t.get("id", "")))
+
+        def _sort_prio(t):
+            p = t.get("priority")
+            try:
+                return (int(p), t.get("id", ""))
+            except (TypeError, ValueError):
+                return (99, t.get("id", ""))
+
+        pending.sort(key=_sort_prio)
         top = pending[0]
         return f"top ticket: {top['id']} — {top.get('title', '(no title)')}"
     except Exception as e:
@@ -476,7 +484,15 @@ def adopt_top_queue_ticket() -> str:
         ]
         if not pending:
             return "[queue_drain] no pending tickets — queue empty"
-        pending.sort(key=lambda t: (t.get("priority", 99), t.get("id", "")))
+
+        def _sort_prio(t):
+            p = t.get("priority")
+            try:
+                return (int(p), t.get("id", ""))
+            except (TypeError, ValueError):
+                return (99, t.get("id", ""))
+
+        pending.sort(key=_sort_prio)
         top = pending[0]
         ticket_id = top["id"]
 
