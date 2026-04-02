@@ -159,7 +159,8 @@ class Memory:
     @property
     def is_habit(self) -> bool:
         # #128: any memory with a trigger can be a habit — not gated on PROCEDURAL type
-        return bool(self.metadata.get("trigger"))
+        # D302: code_ref habits are also habits — needed for MANAGEMENT_PHRASES dispatch
+        return bool(self.metadata.get("trigger") or self.metadata.get("code_ref"))
 
     def __repr__(self):
         return (
