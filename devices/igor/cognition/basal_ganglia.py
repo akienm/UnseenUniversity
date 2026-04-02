@@ -94,6 +94,24 @@ MANAGEMENT_PHRASES: dict[str, str] = {
     "work the ticket": "20260324123708036175",
     "implement ticket": "20260324123708036175",
     "fix ticket": "20260324123708036175",
+    # D302: coding cascade direct dispatch — bypass BG so these always fire reliably
+    # even when tier.2 LLM generates intent text instead of tool call JSON.
+    "adopt top ticket": "PROC_QUEUE_DRAIN",
+    "adopt ticket": "PROC_QUEUE_DRAIN",
+    "queue drain": "PROC_QUEUE_DRAIN",
+    "goal continuation": "PROC_GOAL_CONTINUATION",
+    "continue goal": "PROC_GOAL_CONTINUATION",
+    "advance goal": "PROC_GOAL_CONTINUATION",
+    "coding sprint": "PROC_CODING_SPRINT",
+    "run coding sprint": "PROC_CODING_SPRINT",
+    "close goal": "PROC_CLOSE_GOAL",
+    "close the goal": "PROC_CLOSE_GOAL",
+    "mark goal done": "PROC_CLOSE_GOAL",
+    "goal done": "PROC_CLOSE_GOAL",
+    "read active goal": "PROC_TWM_READ_GOAL",
+    "what is my goal": "PROC_TWM_READ_GOAL",
+    "check active goal": "PROC_TWM_READ_GOAL",
+    "what goal": "PROC_TWM_READ_GOAL",
 }
 
 # ── Threshold constants ────────────────────────────────────────────────────────
