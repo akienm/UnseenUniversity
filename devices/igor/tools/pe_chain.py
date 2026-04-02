@@ -5,12 +5,14 @@ Replaces the OR agentic loop with an Igor-native step chain.
 Each step is a Python function that reads from and writes into a basket dict.
 The basket is a plain Python dict (shared working memory for one engram run).
 
-Chain structure (this module handles ENTRY through READ_TICKET):
+Chain structure (this module handles ENTRY through SITUATE):
   pe_entry_init(basket)    — extract ticket_id from active GOAL, seed constants
   pe_claim(basket)         — claim the ticket in cc_queue
   pe_read_ticket(basket)   — load ticket description + files into basket
+  pe_situate(basket)       — resolve plan_files: use ticket's required_files if
+                             present, else call tier.2 Ollama to identify files
 
-Higher steps (SITUATE, OBSERVE, HYPOTHESIZE, IMPLEMENT, TEST, CLOSE) are in
+Higher steps (OBSERVE, HYPOTHESIZE, IMPLEMENT, TEST, CLOSE) are in
 subsequent pe-* tickets and will be added here as they land.
 
 Entry point:
@@ -207,12 +209,140 @@ def pe_read_ticket(basket: dict) -> dict:
     return basket
 
 
+# ── SITUATE ───────────────────────────────────────────────────────────────────
+
+_SITUATE_PROMPT = """\
+List the Python source files that need to change to implement this ticket.
+One file path per line. File paths only — no explanation, no line numbers.
+
+Ticket: {description}
+
+Files:"""
+
+_REPO_ROOT = Path.home() / "TheIgors"
+
+
+def _call_tier2(prompt: str, timeout: int = 30) -> str | None:
+    """
+    Call Ollama tier.2 directly. Returns raw response text or None on failure.
+    Uses cluster_router for host/model selection; falls back to localhost defaults.
+    """
+    try:
+        from ..cognition.cluster_router import route as _route
+
+        host, model = _route("tier2")
+    except Exception:
+        host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+        model = os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b")
+
+    try:
+        import json as _json
+        import urllib.request
+
+        payload = _json.dumps(
+            {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "stream": False,
+                "options": {"temperature": 0.1},
+            }
+        ).encode()
+        req = urllib.request.Request(
+            f"{host}/api/chat",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = _json.loads(resp.read())
+        text = data.get("message", {}).get("content", "").strip()
+        return text or None
+    except Exception as e:
+        log.warning("[pe_chain] _call_tier2 failed: %s", e)
+        return None
+
+
+def _parse_file_list(raw: str) -> list[str]:
+    """
+    Extract file paths from a raw LLM response.
+    Accepts one path per line; filters to lines that look like Python paths.
+    Validates paths exist under repo root. Returns list (may be empty).
+    """
+    paths_found = []
+    for line in raw.splitlines():
+        line = line.strip().strip("`").strip("'\"").strip()
+        if not line or line.startswith("#"):
+            continue
+        # Must look like a path (contains / or ends with .py)
+        if "/" not in line and not line.endswith(".py"):
+            continue
+        # Strip leading ./ if present
+        if line.startswith("./"):
+            line = line[2:]
+        # Validate it exists under repo root
+        candidate = _REPO_ROOT / line
+        if candidate.exists():
+            paths_found.append(line)
+        else:
+            log.debug("[pe_chain] situate: path not found: %s", line)
+    return paths_found
+
+
+def pe_situate(basket: dict) -> dict:
+    """
+    SITUATE step: resolve plan_files — which files need to change?
+
+    If basket["plan_files"] is already non-empty (from ticket's required_files),
+    use those directly — no LLM call needed.
+
+    If plan_files is empty, call tier.2 Ollama with a tight prompt:
+    "given this ticket description, list the files to change."
+    Parse the response to extract valid file paths.
+
+    Reads from basket: ticket_description, plan_files (may be [])
+    Writes to basket:
+      plan_files      list[str]  — resolved file paths (updated if was empty)
+      situate_source  str        — "ticket_required_files" | "tier2_ollama" | "empty"
+    """
+    if basket.get("error"):
+        return basket
+
+    if not basket.get("ticket_description"):
+        basket["error"] = "pe_situate: no ticket_description in basket"
+        return basket
+
+    # Fast path: required_files already populated from ticket
+    if basket.get("plan_files"):
+        basket["situate_source"] = "ticket_required_files"
+        _flog(f"SITUATE: using ticket required_files: {basket['plan_files']}")
+        return basket
+
+    # Slow path: call tier.2 to figure out which files
+    description = basket["ticket_description"]
+    prompt = _SITUATE_PROMPT.format(description=description[:600])
+    _flog(f"SITUATE: calling tier.2 (no required_files in ticket)")
+
+    raw = _call_tier2(prompt, timeout=30)
+    if not raw:
+        # Tier.2 unavailable — leave plan_files empty, chain can continue with grep
+        basket["plan_files"] = []
+        basket["situate_source"] = "empty"
+        _flog("SITUATE: tier.2 unavailable — plan_files empty")
+        return basket
+
+    files = _parse_file_list(raw)
+    basket["plan_files"] = files
+    basket["situate_source"] = "tier2_ollama"
+    _flog(f"SITUATE: tier.2 returned {len(files)} files: {files}")
+    return basket
+
+
 # ── Chain entry point ─────────────────────────────────────────────────────────
 
 
 def run_pe_entry_chain(basket: dict | None = None) -> dict:
     """
-    Run the ENTRY → CLAIM → READ_TICKET chain.
+    Run the ENTRY → CLAIM → READ_TICKET → SITUATE chain.
 
     Returns the populated basket dict.
     Caller checks basket.get("error") for failure.
@@ -225,14 +355,17 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
     if basket.get("error"):
         return basket
     basket = pe_read_ticket(basket)
+    if basket.get("error"):
+        return basket
+    basket = pe_situate(basket)
     return basket
 
 
 def run_pe_chain(**_) -> str:
     """
     Full PROC_CODE_A_TICKET chain — code_ref entry point.
-    Currently runs ENTRY → CLAIM → READ_TICKET.
-    Further steps (SITUATE, OBSERVE, HYPOTHESIZE, IMPLEMENT, TEST, CLOSE)
+    Currently runs ENTRY → CLAIM → READ_TICKET → SITUATE.
+    Further steps (OBSERVE, HYPOTHESIZE, IMPLEMENT, TEST, CLOSE)
     will be added as T-pe-* tickets land.
 
     Returns a status string for the channel.
@@ -244,11 +377,10 @@ def run_pe_chain(**_) -> str:
         return f"[pe_chain] error: {basket['error']}"
 
     summary = (
-        f"[pe_chain] entry_chain done: "
+        f"[pe_chain] situate done: "
         f"ticket={basket.get('ticket_id')} "
-        f"claim={str(basket.get('claim_result',''))[:40]} "
-        f"desc_len={len(basket.get('ticket_description',''))} "
-        f"plan_files={basket.get('plan_files', [])}"
+        f"plan_files={basket.get('plan_files', [])} "
+        f"situate_source={basket.get('situate_source','?')}"
     )
     _flog(f"CHAIN: {summary}")
     return summary
@@ -264,8 +396,8 @@ try:
             name="run_pe_chain",
             description=(
                 "Run the PROC_CODE_A_TICKET coding sprint chain. "
-                "Reads active GOAL, claims ticket, loads description. "
-                "Chain: ENTRY → CLAIM → READ_TICKET (more steps coming). "
+                "Reads active GOAL, claims ticket, loads description, situates files. "
+                "Chain: ENTRY → CLAIM → READ_TICKET → SITUATE (more steps coming). "
                 "Called by PROC_PE_CHAIN habit when coding sprint begins."
             ),
             fn=run_pe_chain,

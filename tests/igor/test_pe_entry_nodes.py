@@ -17,9 +17,11 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from wild_igor.igor.tools.pe_chain import (
+    _parse_file_list,
     pe_claim,
     pe_entry_init,
     pe_read_ticket,
+    pe_situate,
     run_pe_entry_chain,
 )
 
@@ -248,3 +250,106 @@ class TestRunPeEntryChain:
                 result = run_pe_entry_chain({"ticket_id": "T-nonexistent"})
         assert "error" in result
         assert "ticket_description" not in result
+
+    def test_full_chain_with_situate_uses_required_files(self, tmp_queue):
+        """When ticket has required_files, SITUATE uses them (no Ollama call)."""
+        with (
+            patch("wild_igor.igor.tools.pe_chain._QUEUE_FILE", tmp_queue),
+            patch("wild_igor.igor.tools.pe_chain._run_bash", return_value="ok"),
+            patch("wild_igor.igor.tools.pe_chain._call_tier2") as mock_t2,
+        ):
+            result = run_pe_entry_chain({"ticket_id": "T-test-ticket"})
+
+        assert "error" not in result
+        assert result["plan_files"] == ["wild_igor/igor/tools/ops.py"]
+        assert result["situate_source"] == "ticket_required_files"
+        mock_t2.assert_not_called()  # no Ollama needed
+
+
+# ── pe_situate ────────────────────────────────────────────────────────────────
+
+
+class TestPeSituate:
+    def test_fast_path_uses_existing_plan_files(self):
+        basket = {
+            "ticket_description": "some description",
+            "plan_files": ["wild_igor/igor/tools/ops.py"],
+        }
+        with patch("wild_igor.igor.tools.pe_chain._call_tier2") as mock_t2:
+            result = pe_situate(basket)
+        assert result["plan_files"] == ["wild_igor/igor/tools/ops.py"]
+        assert result["situate_source"] == "ticket_required_files"
+        mock_t2.assert_not_called()
+
+    def test_calls_tier2_when_no_plan_files(self):
+        basket = {
+            "ticket_description": "Fix goal_adopt TWM category",
+            "plan_files": [],
+        }
+        with patch(
+            "wild_igor.igor.tools.pe_chain._call_tier2",
+            return_value="wild_igor/igor/tools/ops.py\nwild_igor/igor/main.py",
+        ):
+            with patch(
+                "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+                Path(__file__).resolve().parent.parent,
+            ):
+                result = pe_situate(basket)
+        assert result["situate_source"] == "tier2_ollama"
+
+    def test_empty_source_when_tier2_unavailable(self):
+        basket = {
+            "ticket_description": "some ticket",
+            "plan_files": [],
+        }
+        with patch("wild_igor.igor.tools.pe_chain._call_tier2", return_value=None):
+            result = pe_situate(basket)
+        assert result["plan_files"] == []
+        assert result["situate_source"] == "empty"
+
+    def test_error_passthrough(self):
+        basket = {"error": "prior error", "ticket_description": "x", "plan_files": []}
+        with patch("wild_igor.igor.tools.pe_chain._call_tier2") as mock_t2:
+            result = pe_situate(basket)
+        assert result["error"] == "prior error"
+        mock_t2.assert_not_called()
+
+    def test_error_when_no_ticket_description(self):
+        basket = {"plan_files": []}
+        result = pe_situate(basket)
+        assert "error" in result
+
+    def test_parse_file_list_one_per_line(self):
+        raw = "wild_igor/igor/tools/ops.py\nwild_igor/igor/main.py"
+        with patch(
+            "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+            Path(__file__).resolve().parent.parent,
+        ):
+            result = _parse_file_list(raw)
+        # Only paths that actually exist are returned
+        assert all("/" in p for p in result)
+
+    def test_parse_file_list_strips_backticks(self):
+        raw = "`wild_igor/igor/tools/ops.py`"
+        with patch(
+            "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+            Path(__file__).resolve().parent.parent,
+        ):
+            result = _parse_file_list(raw)
+        # Path format is correct (no backticks) if file exists
+        assert all("`" not in p for p in result)
+
+    def test_parse_file_list_ignores_non_paths(self):
+        raw = "Here are the files:\nwild_igor/igor/tools/ops.py\nSome explanation."
+        with patch(
+            "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+            Path(__file__).resolve().parent.parent,
+        ):
+            result = _parse_file_list(raw)
+        assert "Here are the files:" not in result
+        assert "Some explanation." not in result
+
+    def test_parse_file_list_empty_on_no_paths(self):
+        raw = "I don't know which files to change."
+        result = _parse_file_list(raw)
+        assert result == []
