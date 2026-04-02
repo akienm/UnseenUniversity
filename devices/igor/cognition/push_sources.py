@@ -465,26 +465,47 @@ class HeartbeatSource(BasePushSource):
             if len(self._twm_trigger_dispatched) > 200:
                 self._twm_trigger_dispatched.clear()
 
-            # Push proactive impulse — _drain_action_impulses picks this up
+            # D301 fix: call code_ref directly (like SchedulerSource) instead of
+            # routing through ACTION_IMPULSE → TWM → _drain_action_impulses.
+            # ACTION_IMPULSE gets buried under READING_STEW (50+ non-integrated entries,
+            # oldest-first scan limit=20 never reaches the new high-ID impulse).
+            # Trigger condition already confirmed — no BG scoring needed.
+            code_ref = habit.metadata.get("code_ref", "")
+            if not code_ref:
+                continue
+            result = self._call_twm_trigger_tool(code_ref)
             obs_id = cortex.twm_push(
-                source="proactive_habit",
-                content_csb=(
-                    f"ACTION_IMPULSE|urgency=0.8|{habit.metadata.get('code_ref', habit.id)}|"
-                    f"why:{trigger_key}_in_TWM|habit={habit.id}"
-                ),
-                salience=0.8,
+                source="twm_trigger",
+                content_csb=f"TWM_TRIGGER_FIRED|{habit.id}|{result[:200]}",
+                salience=0.6,
                 metadata={
-                    "type": "action_impulse",
                     "habit_id": habit.id,
                     "twm_trigger": trigger_key,
                     "twm_entry_id": entry_id,
                 },
                 ttl_seconds=120,
-                urgency=0.7,
+                urgency=0.5,
             )
             pushed.append(obs_id)
 
         return pushed
+
+    def _call_twm_trigger_tool(self, code_ref: str) -> str:
+        """Call a twm_trigger habit's code_ref directly (D301 fix)."""
+        try:
+            from ..tools.registry import registry
+
+            fn_name = code_ref.split(":")[-1]
+            tool = registry.get(fn_name)
+            if tool is None:
+                return f"[twm_trigger] tool not found: {fn_name}"
+            return str(tool.fn())
+        except Exception as e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"push_sources.HeartbeatSource._call_twm_trigger_tool({code_ref}): {e}",
+            )
+            return f"[twm_trigger] error calling {code_ref}: {e}"
 
     def _run_orphan_adoption(self, cortex) -> None:
         """
