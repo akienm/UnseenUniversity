@@ -2100,7 +2100,8 @@ class ProprioceptionSource(BasePushSource):
                     content_csb=f"TOOL_REGISTRY_ROOT|{root.narrative[:120]}",
                     salience=self.TOOL_SALIENCE + 0.05,
                     ttl_seconds=self.TOOL_TTL_SEC,
-                    metadata={"category": "body.motor", "node_id": root.id},
+                    category="body.motor",
+                    metadata={"node_id": root.id},
                 )
                 if obs_id:
                     ids.append(obs_id)
@@ -2112,7 +2113,8 @@ class ProprioceptionSource(BasePushSource):
                     content_csb=f"FACIA|{node.id}|{node.narrative[:100]}",
                     salience=self.TOOL_SALIENCE,
                     ttl_seconds=self.TOOL_TTL_SEC,
-                    metadata={"category": "body.motor", "node_id": node.id},
+                    category="body.motor",
+                    metadata={"node_id": node.id},
                 )
                 if obs_id:
                     ids.append(obs_id)
