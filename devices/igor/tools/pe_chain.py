@@ -5,14 +5,15 @@ Replaces the OR agentic loop with an Igor-native step chain.
 Each step is a Python function that reads from and writes into a basket dict.
 The basket is a plain Python dict (shared working memory for one engram run).
 
-Chain structure (this module handles ENTRY through SITUATE):
+Chain structure (this module handles ENTRY through OBSERVE):
   pe_entry_init(basket)    — extract ticket_id from active GOAL, seed constants
   pe_claim(basket)         — claim the ticket in cc_queue
   pe_read_ticket(basket)   — load ticket description + files into basket
   pe_situate(basket)       — resolve plan_files: use ticket's required_files if
                              present, else call tier.2 Ollama to identify files
+  pe_observe(basket)       — two-pass: grep for relevant section, read that section
 
-Higher steps (OBSERVE, HYPOTHESIZE, IMPLEMENT, TEST, CLOSE) are in
+Higher steps (HYPOTHESIZE, IMPLEMENT, TEST, CLOSE) are in
 subsequent pe-* tickets and will be added here as they land.
 
 Entry point:
@@ -337,12 +338,166 @@ def pe_situate(basket: dict) -> dict:
     return basket
 
 
+# ── OBSERVE ───────────────────────────────────────────────────────────────────
+
+_OBSERVE_CONTEXT_LINES = 40  # lines before+after grep hit to capture
+_OBSERVE_MAX_SECTION = 120  # max lines to read per file section
+
+
+def _extract_grep_patterns(ticket_description: str) -> list[str]:
+    """
+    Extract search patterns from ticket description without LLM.
+    Heuristics: function/class/habit/variable names, habit IDs (PROC_*),
+    ticket IDs (T-*), and quoted strings.
+    Returns up to 4 patterns, most specific first.
+    """
+    patterns = []
+
+    # Quoted strings (most specific — usually exact names)
+    patterns += re.findall(r'["\']([A-Za-z_][\w_]{2,})["\']', ticket_description)
+
+    # PROC_ habit IDs
+    patterns += re.findall(r"\bPROC_[A-Z_]+\b", ticket_description)
+
+    # camelCase or UPPER_CASE identifiers (likely function/variable names)
+    patterns += re.findall(r"\b[a-z][a-z_]+_[a-z_]+\b", ticket_description)
+
+    # de-duplicate preserving order
+    seen: set[str] = set()
+    deduped = []
+    for p in patterns:
+        if p not in seen and len(p) > 3:
+            seen.add(p)
+            deduped.append(p)
+
+    return deduped[:4]
+
+
+def _grep_file(pattern: str, filepath: str) -> list[int]:
+    """
+    Grep a single file for pattern. Returns list of matching line numbers.
+    Uses subprocess grep -n. Returns [] on failure or no match.
+    """
+    try:
+        result = subprocess.run(
+            ["grep", "-n", pattern, filepath],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        line_nums = []
+        for line in result.stdout.splitlines():
+            parts = line.split(":", 1)
+            if parts[0].isdigit():
+                line_nums.append(int(parts[0]))
+        return line_nums
+    except Exception:
+        return []
+
+
+def _read_file_section(
+    filepath: str, center_line: int, context: int = _OBSERVE_CONTEXT_LINES
+) -> str:
+    """
+    Read a section of a file centred on center_line with context lines.
+    Returns the section as a string with line numbers prefixed.
+    Caps at _OBSERVE_MAX_SECTION lines total.
+    """
+    try:
+        path = _REPO_ROOT / filepath
+        lines = path.read_text(errors="replace").splitlines()
+        start = max(0, center_line - context - 1)
+        end = min(len(lines), center_line + context)
+        # Cap total
+        if end - start > _OBSERVE_MAX_SECTION:
+            half = _OBSERVE_MAX_SECTION // 2
+            start = max(0, center_line - half - 1)
+            end = min(len(lines), center_line + half)
+        section_lines = [
+            f"{start + i + 1}: {lines[start + i]}" for i in range(end - start)
+        ]
+        return "\n".join(section_lines)
+    except Exception as e:
+        return f"[read_file_section error: {e}]"
+
+
+def pe_observe(basket: dict) -> dict:
+    """
+    OBSERVE step: two-pass grep+read to load relevant file sections into basket.
+
+    Pass 1 (map): grep for patterns derived from ticket_description across plan_files.
+                  Finds which line in each file is most relevant.
+                  Writes basket["line_ranges"]: {filepath: center_line}
+
+    Pass 2 (drill): read each file section centred on the matched line.
+                    Writes basket["actual"]: concatenation of all sections.
+                    Small context, high signal — not the full file.
+
+    If no grep matches found, falls back to reading the first N lines of each file.
+
+    Reads from basket: ticket_description, plan_files
+    Writes to basket:
+      line_ranges   dict[str, int]  — {filepath: best_match_line}
+      actual        str             — concatenated file sections (numbered lines)
+      observe_hits  int             — number of grep matches found
+    """
+    if basket.get("error"):
+        return basket
+
+    plan_files = basket.get("plan_files", [])
+    ticket_description = basket.get("ticket_description", "")
+
+    if not plan_files:
+        # No files to observe — leave actual empty, HYPOTHESIZE will adapt
+        basket["line_ranges"] = {}
+        basket["actual"] = ""
+        basket["observe_hits"] = 0
+        _flog("OBSERVE: no plan_files — skipping")
+        return basket
+
+    patterns = _extract_grep_patterns(ticket_description)
+    _flog(f"OBSERVE: patterns={patterns} files={plan_files}")
+
+    line_ranges: dict[str, int] = {}
+
+    # Pass 1: grep each file with each pattern, collect best hit per file
+    for filepath in plan_files:
+        best_line = None
+        for pattern in patterns:
+            hits = _grep_file(pattern, str(_REPO_ROOT / filepath))
+            if hits:
+                best_line = hits[0]
+                break  # first pattern match wins for this file
+        if best_line is not None:
+            line_ranges[filepath] = best_line
+        else:
+            # No grep match — use line 1 as fallback (read from top)
+            line_ranges[filepath] = 1
+
+    basket["line_ranges"] = line_ranges
+    basket["observe_hits"] = sum(1 for f in plan_files if line_ranges.get(f, 1) > 1)
+
+    # Pass 2: read each section
+    sections = []
+    for filepath, center_line in line_ranges.items():
+        header = f"\n# === {filepath} (around line {center_line}) ===\n"
+        section = _read_file_section(filepath, center_line)
+        sections.append(header + section)
+
+    basket["actual"] = "\n".join(sections)
+    _flog(
+        f"OBSERVE: {len(plan_files)} files, {basket['observe_hits']} grep hits, "
+        f"actual_len={len(basket['actual'])}"
+    )
+    return basket
+
+
 # ── Chain entry point ─────────────────────────────────────────────────────────
 
 
 def run_pe_entry_chain(basket: dict | None = None) -> dict:
     """
-    Run the ENTRY → CLAIM → READ_TICKET → SITUATE chain.
+    Run the ENTRY → CLAIM → READ_TICKET → SITUATE → OBSERVE chain.
 
     Returns the populated basket dict.
     Caller checks basket.get("error") for failure.
@@ -358,14 +513,17 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
     if basket.get("error"):
         return basket
     basket = pe_situate(basket)
+    if basket.get("error"):
+        return basket
+    basket = pe_observe(basket)
     return basket
 
 
 def run_pe_chain(**_) -> str:
     """
     Full PROC_CODE_A_TICKET chain — code_ref entry point.
-    Currently runs ENTRY → CLAIM → READ_TICKET → SITUATE.
-    Further steps (OBSERVE, HYPOTHESIZE, IMPLEMENT, TEST, CLOSE)
+    Currently runs ENTRY → CLAIM → READ_TICKET → SITUATE → OBSERVE.
+    Further steps (HYPOTHESIZE, IMPLEMENT, TEST, CLOSE)
     will be added as T-pe-* tickets land.
 
     Returns a status string for the channel.
@@ -377,10 +535,11 @@ def run_pe_chain(**_) -> str:
         return f"[pe_chain] error: {basket['error']}"
 
     summary = (
-        f"[pe_chain] situate done: "
+        f"[pe_chain] observe done: "
         f"ticket={basket.get('ticket_id')} "
         f"plan_files={basket.get('plan_files', [])} "
-        f"situate_source={basket.get('situate_source','?')}"
+        f"observe_hits={basket.get('observe_hits', 0)} "
+        f"actual_len={len(basket.get('actual', ''))}"
     )
     _flog(f"CHAIN: {summary}")
     return summary
