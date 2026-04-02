@@ -58,19 +58,22 @@ class TestGoalContinuationStep3TwmPush:
 class TestRunCodingSprintSkipPaths:
     """run_coding_sprint() must return skip messages when preconditions unmet."""
 
-    def test_no_active_goal_in_twm_returns_skip(self):
+    def test_no_active_goal_in_twm_falls_back_to_goal_memory(self):
         """
-        If twm_get_active_goal() returns None, run_coding_sprint returns skip msg.
+        If twm_get_active_goal() returns None but there's an active GOAL memory,
+        run_coding_sprint falls back to source_message from the GOAL memory.
+        If there's no active GOAL memory either, returns the GOAL memory skip msg.
         """
         from wild_igor.igor.tools.ops import run_coding_sprint
 
         mock_cortex = MagicMock()
         mock_cortex.twm_get_active_goal.return_value = None
+        mock_cortex.get_by_type.return_value = []  # no active GOAL memories
 
         with patch("wild_igor.igor.memory.cortex.Cortex", return_value=mock_cortex):
             result = run_coding_sprint()
 
-        assert "no ACTIVE_GOAL in TWM" in result
+        assert "no active GOAL memory" in result
         assert "skipping" in result
 
     def test_no_active_goal_memory_returns_skip(self):
