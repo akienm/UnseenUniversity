@@ -3492,7 +3492,9 @@ class Cortex(IgorBase):
                 "instance_id": r["instance_id"] if "instance_id" in r.keys() else None,
                 "thread_id": r["thread_id"] if "thread_id" in r.keys() else None,
                 "category": r["category"] if "category" in r.keys() else "observation",
-                "metadata": json.loads(r["metadata_json"]),
+                "metadata": (
+                    json.loads(r["metadata_json"]) if r["metadata_json"] else {}
+                ),
                 "integrated": bool(r["integrated"]),
                 "integration_count": r["integration_count"],
                 "expires_at": r["expires_at"],
