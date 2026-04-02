@@ -809,6 +809,8 @@ def run_coding_sprint() -> str:
             f"Details: {goal.narrative[:200]}\n\n"
             "Please implement this. Use the design docs and existing code patterns. "
             "Run tests when done."
+            "\n\nBefore starting: call store_plan with your ticket ID and a 2-3 sentence implementation plan. "
+            "This persists your plan across restarts. Example: store_plan('T-deadend-ack-filter', 'Read main.py response path, add post_response_filter() before channel post, test with bare ack phrases')"
         )
 
         # Write to channel (Postgres + JSONL, same pattern as goal_continuation)
@@ -864,5 +866,132 @@ registry.register(
         ),
         parameters={"type": "object", "properties": {}, "required": []},
         fn=run_coding_sprint,
+    )
+)
+
+
+# ── store_plan ─────────────────────────────────────────────────────────────────
+
+_DB_URL = os.getenv(
+    "IGOR_HOME_DB_URL",
+    "postgresql://igor:choose_a_password@127.0.0.1/igor_wild_0001",
+)
+
+
+def store_plan(ticket_id: str, plan_text: str) -> str:
+    """
+    T-thread-context-persistence: Upsert implementation plan to traversal_contexts.
+    Call at the start of a coding sprint to persist the plan across restarts.
+    ticket_id: e.g. "T-deadend-ack-filter"
+    plan_text:  2-3 sentence implementation plan
+    """
+    try:
+        import psycopg2 as _pg
+
+        conn = _pg.connect(_DB_URL)
+        now = _now_iso()
+        with conn:
+            with conn.cursor() as c:
+                c.execute(
+                    """
+                    INSERT INTO traversal_contexts (context_id, key, value, step, recorded_at)
+                    VALUES (%s, %s, %s, 0, %s)
+                    ON CONFLICT (context_id, key) DO UPDATE SET
+                        value       = EXCLUDED.value,
+                        recorded_at = EXCLUDED.recorded_at
+                    """,
+                    (ticket_id, "plan", plan_text, now),
+                )
+        conn.close()
+        return f"[store_plan] plan stored for {ticket_id}: {plan_text[:80]}"
+    except Exception as e:
+        return f"[ERROR] store_plan: {e}"
+
+
+def read_active_goal_plan() -> str:
+    """
+    T-thread-context-persistence: Read stored implementation plan for the active goal.
+    Zero-arg — called by PROC_ACTIVE_GOAL_CONTEXT_REFRESH on a 2-min schedule.
+    Surfaces the plan to TWM so BG scoring sees it as context on every turn.
+    """
+    try:
+        import re as _re
+        import psycopg2 as _pg
+
+        from ..memory.cortex import Cortex as _Cortex
+        from ..memory.models import MemoryType as _MT
+
+        cortex = _Cortex(None)
+        goals = cortex.get_by_type(_MT.GOAL)
+        active = [g for g in goals if g.metadata.get("goal_active")]
+        if not active:
+            return "[active_goal_plan] no active GOAL memory"
+
+        goal = sorted(
+            active,
+            key=lambda g: g.metadata.get("adopted_at", ""),
+            reverse=True,
+        )[0]
+        source_msg = goal.metadata.get("source_message", goal.narrative[:120])
+        m = _re.search(r"\b(T-[\w-]+)\b", source_msg)
+        ticket_id = m.group(1) if m else None
+        if ticket_id is None:
+            return f"[active_goal_plan] no ticket ID found in goal: {source_msg[:80]}"
+
+        conn = _pg.connect(_DB_URL)
+        with conn:
+            with conn.cursor() as c:
+                c.execute(
+                    "SELECT value FROM traversal_contexts WHERE context_id = %s AND key = 'plan'",
+                    (ticket_id,),
+                )
+                row = c.fetchone()
+        conn.close()
+
+        if row is None:
+            return f"[active_goal_plan] no plan stored for {ticket_id}"
+
+        plan_text = row[0]
+        return f"[active_goal_plan] {ticket_id}: {plan_text[:400]}"
+    except Exception as e:
+        return f"[ERROR] read_active_goal_plan: {e}"
+
+
+registry.register(
+    Tool(
+        name="store_plan",
+        description=(
+            "T-thread-context-persistence: Persist implementation plan for a ticket to traversal_contexts. "
+            "Call at the start of a coding sprint so the plan survives restarts. "
+            "Upserts context_id=ticket_id, key='plan'."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "ticket_id": {
+                    "type": "string",
+                    "description": "Ticket ID e.g. T-deadend-ack-filter",
+                },
+                "plan_text": {
+                    "type": "string",
+                    "description": "2-3 sentence implementation plan",
+                },
+            },
+            "required": ["ticket_id", "plan_text"],
+        },
+        fn=store_plan,
+    )
+)
+
+registry.register(
+    Tool(
+        name="read_active_goal_plan",
+        description=(
+            "T-thread-context-persistence: Read stored implementation plan for the active goal. "
+            "Zero-arg — called by PROC_ACTIVE_GOAL_CONTEXT_REFRESH every 2 minutes. "
+            "Surfaces the plan so BG scoring sees it as context on every turn."
+        ),
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=read_active_goal_plan,
     )
 )
