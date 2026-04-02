@@ -94,6 +94,11 @@ MANAGEMENT_PHRASES: dict[str, str] = {
     "work the ticket": "20260324123708036175",
     "implement ticket": "20260324123708036175",
     "fix ticket": "20260324123708036175",
+    # D302a: self-management direct dispatch
+    "restart self": "PROC_RESTART_SELF",
+    "restart_self": "PROC_RESTART_SELF",
+    "flush habit cache": "PROC_FLUSH_HABIT_CACHE",
+    "flush_habit_cache": "PROC_FLUSH_HABIT_CACHE",
     # D302: coding cascade direct dispatch — bypass BG so these always fire reliably
     # even when tier.2 LLM generates intent text instead of tool call JSON.
     "adopt top ticket": "PROC_QUEUE_DRAIN",
