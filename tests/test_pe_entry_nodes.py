@@ -24,9 +24,11 @@ from wild_igor.igor.tools.pe_chain import (
     pe_claim,
     pe_entry_init,
     pe_hypothesize,
+    pe_implement,
     pe_observe,
     pe_read_ticket,
     pe_situate,
+    pe_test,
     run_pe_entry_chain,
 )
 
@@ -621,3 +623,121 @@ class TestPeHypothesisize:
         ):
             result = pe_hypothesize(basket)
         assert "hypothesis_raw" in result
+
+
+# ── pe_implement ──────────────────────────────────────────────────────────────
+
+
+class TestPeImplement:
+    def test_applies_edit_to_file(self, tmp_path):
+        target = tmp_path / "target.py"
+        target.write_text('x = "old_value"\n')
+        basket = {
+            "hypothesis": {
+                "file": "target.py",
+                "old_string": '"old_value"',
+                "new_string": '"new_value"',
+            },
+            "hypothesis_error": None,
+        }
+        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", tmp_path):
+            result = pe_implement(basket)
+        assert result["implement_result"] == "ok"
+        assert result["implement_skipped"] is False
+        assert '"new_value"' in target.read_text()
+
+    def test_skips_when_no_hypothesis(self):
+        basket = {"hypothesis": None, "hypothesis_error": None}
+        result = pe_implement(basket)
+        assert result["implement_skipped"] is True
+        assert "skipped" in result["implement_result"]
+
+    def test_skips_when_hypothesis_error(self):
+        basket = {
+            "hypothesis": {"file": "x.py", "old_string": "a", "new_string": "b"},
+            "hypothesis_error": "validation failed",
+        }
+        result = pe_implement(basket)
+        assert result["implement_skipped"] is True
+
+    def test_error_passthrough(self):
+        basket = {"error": "prior", "hypothesis": None, "hypothesis_error": None}
+        result = pe_implement(basket)
+        assert result["error"] == "prior"
+        assert "implement_result" not in result
+
+    def test_error_when_old_string_not_in_file(self, tmp_path):
+        target = tmp_path / "f.py"
+        target.write_text("some content\n")
+        basket = {
+            "hypothesis": {
+                "file": "f.py",
+                "old_string": "NONEXISTENT_ZXQ",
+                "new_string": "y",
+            },
+            "hypothesis_error": None,
+        }
+        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", tmp_path):
+            result = pe_implement(basket)
+        assert result["implement_skipped"] is True
+        assert "error" in result["implement_result"]
+
+    def test_only_replaces_first_occurrence(self, tmp_path):
+        target = tmp_path / "f.py"
+        target.write_text('a = "x"\nb = "x"\n')
+        basket = {
+            "hypothesis": {"file": "f.py", "old_string": '"x"', "new_string": '"y"'},
+            "hypothesis_error": None,
+        }
+        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", tmp_path):
+            pe_implement(basket)
+        content = target.read_text()
+        assert content.count('"y"') == 1
+        assert content.count('"x"') == 1  # second occurrence untouched
+
+
+# ── pe_test ───────────────────────────────────────────────────────────────────
+
+
+class TestPeTest:
+    def test_pass_result_when_tests_pass(self):
+        basket = {}
+        with patch(
+            "wild_igor.igor.tools.pe_chain._run_bash",
+            return_value="61 passed in 0.9s",
+        ):
+            with patch(
+                "wild_igor.igor.tools.pe_chain.pe_test.__module__",
+                create=True,
+            ):
+                # Patch ops.run_tests to raise ImportError so we use fallback
+                with patch.dict("sys.modules", {"wild_igor.igor.tools.ops": None}):
+                    result = pe_test(basket)
+        assert result["test_result"] == "pass"
+
+    def test_fail_result_when_tests_fail(self):
+        basket = {}
+        with patch(
+            "wild_igor.igor.tools.pe_chain._run_bash",
+            return_value="3 failed, 58 passed in 1.2s\nFAILED tests/test_x.py",
+        ):
+            with patch.dict("sys.modules", {"wild_igor.igor.tools.ops": None}):
+                result = pe_test(basket)
+        assert result["test_result"].startswith("fail:")
+
+    def test_error_passthrough(self):
+        basket = {"error": "prior error"}
+        with patch("wild_igor.igor.tools.pe_chain._run_bash") as mock_bash:
+            result = pe_test(basket)
+        assert result["error"] == "prior error"
+        mock_bash.assert_not_called()
+
+    def test_test_result_always_set_on_success(self):
+        basket = {}
+        with patch(
+            "wild_igor.igor.tools.pe_chain._run_bash",
+            return_value="5 passed in 0.1s",
+        ):
+            with patch.dict("sys.modules", {"wild_igor.igor.tools.ops": None}):
+                result = pe_test(basket)
+        assert "test_result" in result
