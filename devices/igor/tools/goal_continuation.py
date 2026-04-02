@@ -241,6 +241,16 @@ def run_goal_continuation(**_) -> str:
                 f"Steps {grep_steps} complete. Ready for implementation planning."
             )
             _post_to_channel(msg)
+            # D300: TWM is inter-subsystem channel — write GOAL_READY so
+            # PROC_CODING_SPRINT fires reactively when it sees the signal.
+            cortex.twm_push(
+                source="goal_continuation",
+                content_csb=f"GOAL_READY|{ticket_id or goal.id}",
+                salience=0.85,
+                category="goal_ready",
+                ttl_seconds=600,  # 10 minutes — sprint must fire within this window
+                urgency=0.8,
+            )
             goal.metadata["current_step"] = 4
             cortex.store(goal)
             _flog(f"STEP3 posted ready for ticket={ticket_id}")

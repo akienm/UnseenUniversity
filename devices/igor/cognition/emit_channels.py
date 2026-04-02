@@ -88,6 +88,9 @@ class CognitiveMilieuChannel(EmitChannel):
     name = "cognitive_milieu"
     bidirectional = True
 
+    # TTL for ACTIVE_GOAL entries — 5 minutes (goal is live context, not long-term)
+    _ACTIVE_GOAL_TTL = 300
+
     def write(self, key: str, value: Any, basket: dict) -> None:
         # TWM push requires cortex — pulled from basket if available
         cortex = basket.get("_cortex")
@@ -97,12 +100,39 @@ class CognitiveMilieuChannel(EmitChannel):
             )
             return
         try:
-            cortex.twm_push(
-                source=f"engram:{key}",
-                content_csb=str(value),
-                salience=float(basket.get("_salience", 0.5)),
-            )
-            log.debug("[emit:cognitive_milieu] TWM push %r = %r", key, value)
+            # ACTIVE_GOAL singleton: evict any prior ACTIVE_GOAL entries before pushing.
+            # A new parsed goal always replaces the old one (goal shift).
+            if key == "ACTIVE_GOAL":
+                cortex.twm_evict_category("active_goal")
+                cortex.twm_push(
+                    source=f"engram:{key}",
+                    content_csb=f"ACTIVE_GOAL|{value}",
+                    salience=float(basket.get("_salience", 0.7)),
+                    category="active_goal",
+                    ttl_seconds=self._ACTIVE_GOAL_TTL,
+                    urgency=0.65,
+                )
+                log.debug(
+                    "[emit:cognitive_milieu] ACTIVE_GOAL singleton push: %r", value
+                )
+                # T-twm-relevance-decay: goal shift → immediately re-score all TWM entries
+                try:
+                    updated = cortex.twm_apply_goal_decay()
+                    log.debug(
+                        "[emit:cognitive_milieu] goal-decay on shift: %d entries updated",
+                        updated,
+                    )
+                except Exception as _e:
+                    log.warning(
+                        "[emit:cognitive_milieu] twm_apply_goal_decay failed: %s", _e
+                    )
+            else:
+                cortex.twm_push(
+                    source=f"engram:{key}",
+                    content_csb=str(value),
+                    salience=float(basket.get("_salience", 0.5)),
+                )
+                log.debug("[emit:cognitive_milieu] TWM push %r = %r", key, value)
         except Exception as e:
             log.warning("[emit:cognitive_milieu] twm_push failed: %s", e)
 
@@ -148,6 +178,71 @@ class DiscordChannel(EmitChannel):
         log.warning("[emit:discord] not yet implemented — key=%r value=%r", key, value)
 
 
+class MemoryChannel(EmitChannel):
+    """Store a memory in the cortex (D295).
+
+    Key: memory type string (EPISODIC, PROCEDURAL, INTERPRETIVE, etc.)
+    Value: content string for the memory narrative
+
+    Reads from basket:
+      _mem_tags: list of strings (default [])
+      _mem_identity_weight: float (default 0.5)
+      _mem_salience: float (default 0.5)
+      _cortex: Cortex instance (required)
+    """
+
+    name = "memory"
+    bidirectional = False
+
+    def write(self, key: str, value: Any, basket: dict) -> None:
+        cortex = basket.get("_cortex")
+        if cortex is None:
+            log.warning("[emit:memory] no _cortex in basket — cannot store memory")
+            return
+        try:
+            from ..memory.models import Memory, MemoryType
+
+            # Resolve memory type from key
+            try:
+                mem_type = MemoryType(key)
+            except ValueError:
+                log.warning(
+                    "[emit:memory] unknown memory type %r (valid: %s)",
+                    key,
+                    [mt.value for mt in MemoryType],
+                )
+                return
+
+            # Extract basket fields
+            tags = basket.get("_mem_tags", [])
+            identity_weight = float(basket.get("_mem_identity_weight", 0.5))
+            salience = float(basket.get("_mem_salience", 0.5))
+
+            # Create and store memory
+            memory = Memory(
+                narrative=str(value),
+                memory_type=mem_type,
+                source="engram",
+                confidence=0.7,
+                context_of_encoding="engram_emit",
+                metadata={
+                    "tags": tags,
+                    "identity_weight": identity_weight,
+                },
+                arousal=salience,
+            )
+            cortex.store(memory)
+            log.debug(
+                "[emit:memory] stored %s: %r (tags=%s, arousal=%.2f)",
+                mem_type.value,
+                str(value)[:50],
+                tags,
+                salience,
+            )
+        except Exception as e:
+            log.warning("[emit:memory] store failed: %s", e)
+
+
 # ── Registry ──────────────────────────────────────────────────────────────────
 
 
@@ -191,6 +286,7 @@ def get_registry() -> EmitChannelRegistry:
             ConsoleChannel(),
             WebChannel(),
             DiscordChannel(),
+            MemoryChannel(),
         ):
             _registry.register(ch)
     return _registry

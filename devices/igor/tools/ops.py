@@ -334,6 +334,52 @@ def goal_close(goal_id: str) -> str:
         return f"[ERROR] goal_close: {e}"
 
 
+# ── close_goal (None-safe wrapper) ────────────────────────────────────────────
+
+
+def close_goal(goal_id: str = None) -> dict:
+    """
+    Mark an active GOAL memory as completed (T-goal-close-habit).
+
+    If goal_id is None, closes the most recently adopted active GOAL.
+    Updates metadata: goal_active=False, status="completed", completed_at=<iso>.
+    Returns {"closed": goal_id, "title": <source_message>} on success,
+    {"closed": None, "reason": "no active goal"} if nothing to close.
+    """
+    try:
+        from ..memory.cortex import Cortex as _Cortex
+        from ..memory.models import MemoryType as _MT
+
+        cortex = _Cortex(None)
+
+        if goal_id is None:
+            # Find the most recently adopted active GOAL
+            goals = cortex.get_by_type(_MT.GOAL)
+            active = [g for g in goals if g.metadata.get("goal_active")]
+            if not active:
+                return {"closed": None, "reason": "no active goal"}
+            active.sort(key=lambda g: g.metadata.get("adopted_at", ""), reverse=True)
+            goal = active[0]
+            goal_id = goal.id
+        else:
+            goal = cortex.get(goal_id)
+            if goal is None:
+                return {"closed": None, "reason": f"goal {goal_id!r} not found"}
+            if not goal.metadata.get("goal_active"):
+                return {"closed": None, "reason": f"goal {goal_id} already closed"}
+
+        ts = datetime.now(timezone.utc).isoformat()
+        title = goal.metadata.get("source_message", goal.narrative[:60])
+        goal.metadata["goal_active"] = False
+        goal.metadata["status"] = "completed"
+        goal.metadata["completed_at"] = ts
+        goal.narrative = goal.narrative.rstrip() + "\nStatus: COMPLETED."
+        cortex.store(goal)
+        return {"closed": goal_id, "title": title}
+    except Exception as e:
+        return {"closed": None, "reason": f"error: {e}"}
+
+
 # ── close_goal_by_ticket ───────────────────────────────────────────────────────
 
 
@@ -643,6 +689,28 @@ registry.register(
 
 registry.register(
     Tool(
+        name="close_goal",
+        description=(
+            "T-goal-close-habit: Mark an active GOAL as completed. "
+            "If goal_id is omitted, closes the most recently adopted active GOAL. "
+            "Returns {closed: goal_id, title: ...} or {closed: None, reason: ...}."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "goal_id": {
+                    "type": "string",
+                    "description": "Goal ID to close (GOAL_YYYYMMDDHHMMSSuuuuuu); omit to close most recent active",
+                },
+            },
+            "required": [],
+        },
+        fn=close_goal,
+    )
+)
+
+registry.register(
+    Tool(
         name="close_goal_by_ticket",
         description=(
             "T-goal-close-habit: Find active GOAL by ticket_id in source_message "
@@ -661,5 +729,115 @@ registry.register(
             "required": ["ticket_id"],
         },
         fn=close_goal_by_ticket,
+    )
+)
+
+
+# ── run_coding_sprint ──────────────────────────────────────────────────────────
+
+
+def run_coding_sprint() -> str:
+    """
+    T-programming-engrams: First-cut coding sprint (D300).
+    Fires when TWM contains GOAL_READY (via PROC_CODING_SPRINT habit).
+    Reads ACTIVE_GOAL + active GOAL memory details, then posts a structured
+    coding prompt to the channel for LLM pickup.
+
+    Reactive cascade: goal_continuation step 3 writes GOAL_READY to TWM →
+    PROC_CODING_SPRINT fires this tool → prompt posted → LLM takes over.
+
+    After posting the prompt, GOAL_READY is evicted from TWM (consumed).
+    """
+    try:
+        import re as _re
+
+        from ..memory.cortex import Cortex as _Cortex
+        from ..memory.models import MemoryType as _MT
+
+        cortex = _Cortex(None)
+
+        # 1. Get active goal text from TWM
+        active_goal = cortex.twm_get_active_goal()
+        if not active_goal:
+            return "[coding_sprint] no ACTIVE_GOAL in TWM — skipping"
+
+        # 2. Get active GOAL memory for ticket details / narrative
+        goals = cortex.get_by_type(_MT.GOAL)
+        active = [g for g in goals if g.metadata.get("goal_active")]
+        if not active:
+            return "[coding_sprint] no active GOAL memory — skipping"
+        goal = sorted(
+            active,
+            key=lambda g: g.metadata.get("adopted_at", ""),
+            reverse=True,
+        )[0]
+
+        # 3. Extract ticket_id from goal source_message
+        source_msg = goal.metadata.get("source_message", "")
+        m = _re.search(r"\b(T-[\w-]+)\b", source_msg)
+        ticket_id = m.group(1) if m else None
+
+        # 4. Post structured coding prompt to channel
+        prompt = (
+            f"[CODING SPRINT] Goal: {active_goal}\n"
+            f"Ticket: {ticket_id or 'none'}\n"
+            f"Details: {goal.narrative[:200]}\n\n"
+            "Please implement this. Use the design docs and existing code patterns. "
+            "Run tests when done."
+        )
+
+        # Write to channel (Postgres + JSONL, same pattern as goal_continuation)
+        _DB_URL = os.getenv(
+            "IGOR_HOME_DB_URL",
+            "postgresql://igor:choose_a_password@127.0.0.1/igor_wild_0001",
+        )
+        _ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        try:
+            import psycopg2 as _pg
+
+            conn_pg = _pg.connect(_DB_URL)
+            with conn_pg:
+                with conn_pg.cursor() as c:
+                    c.execute(
+                        "INSERT INTO channel_messages (ts, author, type, content) VALUES (%s, %s, %s, %s)",
+                        (_ts, "igor", "message", prompt),
+                    )
+            conn_pg.close()
+        except Exception:
+            pass
+        try:
+            _ch_path = paths().cc_channel / "messages.jsonl"
+            _ch_path.parent.mkdir(parents=True, exist_ok=True)
+            _entry = json.dumps(
+                {"ts": _ts, "author": "igor", "type": "message", "content": prompt},
+                ensure_ascii=False,
+            )
+            with open(_ch_path, "a", encoding="utf-8") as _f:
+                _f.write(_entry + "\n")
+        except Exception:
+            pass
+
+        # 5. Evict GOAL_READY from TWM — signal consumed
+        cortex.twm_evict_category("goal_ready")
+
+        return (
+            f"[coding_sprint] posted sprint prompt for {ticket_id or active_goal[:40]}"
+        )
+
+    except Exception as e:
+        return f"[coding_sprint] error: {e}"
+
+
+registry.register(
+    Tool(
+        name="run_coding_sprint",
+        description=(
+            "T-programming-engrams: Fire a coding sprint when TWM contains GOAL_READY (D300). "
+            "Reads ACTIVE_GOAL + active GOAL memory, posts a structured coding prompt "
+            "to the channel for LLM pickup, then evicts GOAL_READY from TWM. "
+            "Called by PROC_CODING_SPRINT habit on twm_trigger=GOAL_READY."
+        ),
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=run_coding_sprint,
     )
 )

@@ -4196,6 +4196,7 @@ class Igor(IgorBase):
         # then falls through to LLM for response generation.
         if habit and habit.metadata.get("habit_type") == "engram" and habit.payload:
             try:
+                import json
                 from .cognition.node_executor import execute_node as _exec_node
 
                 # Find which trigger key matches user_input (first substring match)
@@ -4214,24 +4215,106 @@ class Igor(IgorBase):
                         _thalamus_confidence if "_thalamus_confidence" in dir() else 0.5
                     ),
                 }
-                _eng_result = _exec_node(habit, _fired_trigger, _eng_basket)
-                loginfo(
-                    f"[dim][ENGRAM] {habit.id} trigger={_fired_trigger!r} "
-                    f"instructions={_eng_result.instructions_run} "
-                    f"stopped_by={_eng_result.stopped_by} "
-                    f"next_node={_eng_result.next_node} "
-                    f"spawned={_eng_result.spawned}[/]"
-                )
-                if _eng_result.next_node:
-                    self.cortex.write_ring(
-                        f"ENGRAM_BRANCH|from={habit.id}|to={_eng_result.next_node}",
-                        category="habit_trace",
+
+                # T-engram-cursor-traversal: Traversal loop for BRANCHIF nodes.
+                # Loop detection via visit_log (snapshot matching).
+                _visit_log = {}  # node_id → basket snapshot string
+                _all_spawned = []  # Accumulate all spawned IDs across cursor path
+                _current_node = habit
+
+                while True:
+                    _eng_result = _exec_node(_current_node, _fired_trigger, _eng_basket)
+                    loginfo(
+                        f"[dim][ENGRAM] {_current_node.id} trigger={_fired_trigger!r} "
+                        f"instructions={_eng_result.instructions_run} "
+                        f"stopped_by={_eng_result.stopped_by} "
+                        f"next_node={_eng_result.next_node} "
+                        f"spawned={_eng_result.spawned}[/]"
                     )
-                for _spawned_id in _eng_result.spawned:
+
+                    # Accumulate spawned IDs from this node
+                    _all_spawned.extend(_eng_result.spawned)
+
+                    # Write branch if next_node set
+                    if _eng_result.next_node:
+                        self.cortex.write_ring(
+                            f"ENGRAM_BRANCH|from={_current_node.id}|to={_eng_result.next_node}",
+                            category="habit_trace",
+                        )
+
+                    # Check if we should continue traversal
+                    if not _eng_result.next_node:
+                        break  # No more branches — traversal ends
+
+                    # Fetch next node from cortex
+                    _next_memory = self.cortex.get(_eng_result.next_node)
+                    if not _next_memory:
+                        loginfo(
+                            f"[dim][ENGRAM] next_node {_eng_result.next_node} not found, stopping[/]"
+                        )
+                        break
+
+                    # Build basket snapshot for loop detection
+                    # Exclude internal keys (starting with _)
+                    _basket_snapshot = {
+                        k: v for k, v in _eng_basket.items() if not k.startswith("_")
+                    }
+                    _snapshot_json = json.dumps(
+                        _basket_snapshot, sort_keys=True, default=str
+                    )
+
+                    # Check for loops
+                    if _eng_result.next_node in _visit_log:
+                        if _visit_log[_eng_result.next_node] == _snapshot_json:
+                            loginfo(
+                                f"[dim][ENGRAM] loop detected at {_eng_result.next_node}, stopping[/]"
+                            )
+                            break
+
+                    # Record visit and continue
+                    _visit_log[_eng_result.next_node] = _snapshot_json
+                    _current_node = _next_memory
+                    _fired_trigger = (
+                        _eng_result.next_trigger
+                        or "__entry__"  # Use next_trigger if set (D296), else "__entry__"
+                    )
+
+                # Dispatch all accumulated spawned IDs as background jobs
+                for _spawned_id in _all_spawned:
                     self.cortex.write_ring(
                         f"ENGRAM_FORK|from={habit.id}|to={_spawned_id}",
                         category="habit_trace",
                     )
+
+                    # Dispatch as background job with basket snapshot context
+                    _spawned_node = self.cortex.get(_spawned_id)
+                    if _spawned_node:
+                        _basket_snapshot = {
+                            k: v
+                            for k, v in _eng_basket.items()
+                            if not k.startswith("_")
+                        }
+
+                        # Define fork execution closure with default args to capture values
+                        def _exec_fork(
+                            _node=_spawned_node,
+                            _cortex_ref=self.cortex,
+                            _basket_data=_basket_snapshot,
+                        ):
+                            # Rebuild basket with cortex reference for fork execution
+                            _fork_basket = dict(_basket_data)
+                            _fork_basket["_cortex"] = _cortex_ref
+                            return _exec_node(_node, "__entry__", _fork_basket)
+
+                        _fork_async_id = self.job_manager.submit_background(
+                            fn=_exec_fork,
+                            title=f"engram_fork:{_spawned_id[:16]}",
+                            completions_queue=self._job_completions,
+                            thread_id=thread_id or "",
+                        )
+                        loginfo(
+                            f"[dim][ENGRAM] spawned fork #{_fork_async_id} → {_spawned_id}[/]"
+                        )
             except Exception as _eng_e:
                 loginfo(f"[dim][ENGRAM] error: {_eng_e}[/]")
             habit = None  # always fall through to LLM

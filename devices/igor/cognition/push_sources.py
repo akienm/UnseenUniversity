@@ -220,6 +220,15 @@ class HeartbeatSource(BasePushSource):
                 detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}",
             )
 
+        # T-twm-relevance-decay: goal-relevance-weighted TTL shortening every heartbeat
+        try:
+            cortex.twm_apply_goal_decay()
+        except Exception as _bare_e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/push_sources.py twm_apply_goal_decay: {_bare_e}",
+            )
+
         session_mins = int((now - self._session_start).total_seconds() / 60)
         pushed = []
 

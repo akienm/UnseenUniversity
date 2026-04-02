@@ -3486,6 +3486,64 @@ class Cortex(IgorBase):
             for r in rows
         ]
 
+    def twm_evict_category(self, category: str) -> int:
+        """
+        Delete all TWM observations with the given category for this instance.
+        Returns count of rows deleted.
+        Used for singleton categories (e.g. active_goal) where a new entry
+        must replace all prior ones (goal shift / T-twm-goal-slot).
+        """
+        _iid = self._instance_id
+        with self._local_conn() as conn:
+            if _iid:
+                cur = conn.execute(
+                    "DELETE FROM twm_observations WHERE category = ? AND instance_id = ?",
+                    (category, _iid),
+                )
+            else:
+                cur = conn.execute(
+                    "DELETE FROM twm_observations WHERE category = ?",
+                    (category,),
+                )
+            deleted = cur.rowcount
+        log.debug("[cortex] twm_evict_category %r: deleted %d rows", category, deleted)
+        return deleted
+
+    def twm_get_active_goal(self) -> str | None:
+        """
+        Return the text of the current ACTIVE_GOAL from TWM, or None if unset.
+
+        Reads the most recent non-expired entry in category='active_goal'.
+        Content format is "ACTIVE_GOAL|<goal_text>" — strips the prefix.
+        Used by goal-queue-consumer guard and any code needing to know
+        what Igor is currently working on (T-twm-goal-slot).
+        """
+        _iid = self._instance_id
+        from datetime import datetime
+
+        now = datetime.now().isoformat()
+        with self._local_conn() as conn:
+            clauses = ["category = ?"]
+            params: list = ["active_goal"]
+            if _iid:
+                clauses.append("instance_id = ?")
+                params.append(_iid)
+            clauses.append("(expires_at IS NULL OR expires_at > ?)")
+            params.append(now)
+            where = "WHERE " + " AND ".join(clauses)
+            row = conn.execute(
+                f"SELECT content_csb FROM twm_observations {where} ORDER BY id DESC LIMIT 1",
+                params,
+            ).fetchone()
+        if row is None:
+            return None
+        content = row["content_csb"]
+        # Strip "ACTIVE_GOAL|" prefix if present
+        prefix = "ACTIVE_GOAL|"
+        if content.startswith(prefix):
+            return content[len(prefix) :]
+        return content
+
     # ── G50: TWM Attractor ─────────────────────────────────────────────────────
 
     def twm_set_attractor(self, obs_id: int, weight: float = 1.0) -> None:
@@ -3732,6 +3790,110 @@ class Cortex(IgorBase):
             logging.getLogger(__name__).warning(
                 "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
             )
+
+    # ── T-twm-relevance-decay: goal-relevance-weighted TTL shortening ─────────
+
+    def twm_relevance_score(self, entry_content: str, goal_text: str) -> float:
+        """
+        Score how relevant a TWM entry is to the active goal.
+        Uses token overlap — cheap, no inference.
+        Returns 0.0–1.0. 0.5 if goal_text is None/empty (neutral).
+        """
+        if not goal_text or not entry_content:
+            return 0.5  # neutral — no goal set, no decay penalty
+        goal_tokens = set(goal_text.lower().split())
+        entry_tokens = set(entry_content.lower().split())
+        if not entry_tokens:
+            return 0.5
+        overlap = len(goal_tokens & entry_tokens)
+        return min(1.0, overlap / max(len(entry_tokens), 1))
+
+    def twm_apply_goal_decay(self) -> int:
+        """
+        Apply goal-relevance multiplier to TWM TTLs.
+
+        For each non-expired, non-integrated TWM entry (excluding ACTIVE_GOAL itself):
+          relevance = twm_relevance_score(entry.content_csb, active_goal)
+          decay_multiplier = 1.0 + (1.0 - relevance) * GOAL_DECAY_PENALTY
+          Shorten expires_at proportionally for low-relevance entries.
+
+        Returns count of entries updated.
+
+        GOAL_DECAY_PENALTY controls how aggressively off-topic entries are shortened.
+        Default 2.0 means: irrelevant entry (relevance=0) has TTL shrunk by 3× vs
+        relevant entry (relevance=1, no change).
+        Range 1.0–5.0 via IGOR_TWM_GOAL_DECAY_PENALTY env var.
+        """
+        goal_text = self.twm_get_active_goal()
+        if not goal_text:
+            return 0  # no goal set — nothing to do
+
+        penalty = float(os.getenv("IGOR_TWM_GOAL_DECAY_PENALTY", "2.0"))
+        penalty = max(1.0, min(5.0, penalty))
+
+        now = datetime.now()
+        now_ts = now.isoformat()
+        updated = 0
+
+        try:
+            with self._local_conn() as conn:
+                rows = conn.execute(
+                    "SELECT id, content_csb, expires_at FROM twm_observations "
+                    "WHERE integrated = 0 AND category != 'active_goal' "
+                    "AND (expires_at IS NULL OR expires_at > ?)",
+                    (now_ts,),
+                ).fetchall()
+
+                for row in rows:
+                    obs_id = row["id"]
+                    content = row["content_csb"] or ""
+                    expires_at_str = row["expires_at"]
+
+                    if expires_at_str is None:
+                        # No TTL — nothing to shorten
+                        continue
+
+                    relevance = self.twm_relevance_score(content, goal_text)
+                    if relevance >= 1.0:
+                        # Fully relevant — no change
+                        continue
+
+                    decay_multiplier = 1.0 + (1.0 - relevance) * penalty
+                    # decay_multiplier > 1.0 means remaining time shrinks
+
+                    try:
+                        expires_dt = datetime.fromisoformat(expires_at_str)
+                    except ValueError:
+                        continue
+
+                    remaining_secs = (expires_dt - now).total_seconds()
+                    if remaining_secs <= 0:
+                        continue
+
+                    new_remaining = remaining_secs / decay_multiplier
+                    new_expires = (now + timedelta(seconds=new_remaining)).isoformat()
+
+                    # Only shorten — never extend via this path
+                    if new_expires < expires_at_str:
+                        conn.execute(
+                            "UPDATE twm_observations SET expires_at = ? WHERE id = ?",
+                            (new_expires, obs_id),
+                        )
+                        updated += 1
+
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/memory/cortex.py twm_apply_goal_decay: %s",
+                _bare_e,
+            )
+
+        logging.getLogger(__name__).debug(
+            "[cortex] twm_apply_goal_decay: goal=%r penalty=%.1f updated=%d",
+            goal_text[:40],
+            penalty,
+            updated,
+        )
+        return updated
 
     # ── D126 Step 4: Worry signal ──────────────────────────────────────────────
 
