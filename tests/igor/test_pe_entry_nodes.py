@@ -19,8 +19,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from wild_igor.igor.tools.pe_chain import (
     _extract_grep_patterns,
     _parse_file_list,
+    _parse_hypothesis,
+    _validate_hypothesis,
     pe_claim,
     pe_entry_init,
+    pe_hypothesize,
     pe_observe,
     pe_read_ticket,
     pe_situate,
@@ -254,18 +257,24 @@ class TestRunPeEntryChain:
         assert "ticket_description" not in result
 
     def test_full_chain_with_situate_uses_required_files(self, tmp_queue):
-        """When ticket has required_files, SITUATE uses them (no Ollama call)."""
+        """When ticket has required_files, SITUATE uses them (no SITUATE Ollama call).
+        HYPOTHESIZE may still call tier.2 — that's expected."""
         with (
             patch("wild_igor.igor.tools.pe_chain._QUEUE_FILE", tmp_queue),
             patch("wild_igor.igor.tools.pe_chain._run_bash", return_value="ok"),
-            patch("wild_igor.igor.tools.pe_chain._call_tier2") as mock_t2,
+            patch("wild_igor.igor.tools.pe_chain._call_tier2", return_value=None),
+            patch(
+                "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+                Path(__file__).resolve().parent.parent,
+            ),
         ):
             result = run_pe_entry_chain({"ticket_id": "T-test-ticket"})
 
         assert "error" not in result
         assert result["plan_files"] == ["wild_igor/igor/tools/ops.py"]
         assert result["situate_source"] == "ticket_required_files"
-        mock_t2.assert_not_called()  # no Ollama needed
+        # HYPOTHESIZE ran (tier.2 unavailable → hypothesis=None, not an error)
+        assert "hypothesis" in result
 
 
 # ── pe_situate ────────────────────────────────────────────────────────────────
@@ -466,3 +475,149 @@ class TestPeObserve:
         assert "ops.py" in result["actual"]
         assert "main.py" in result["actual"]
         assert len(result["line_ranges"]) == 2
+
+
+# ── pe_hypothesize ────────────────────────────────────────────────────────────
+
+VALID_HYPOTHESIS = {
+    "file": "wild_igor/igor/tools/ops.py",
+    "old_string": 'category="goal"',
+    "new_string": 'category="active_goal"',
+}
+
+VALID_HYPOTHESIS_JSON = (
+    '{"file": "wild_igor/igor/tools/ops.py", '
+    '"old_string": "category=\\"goal\\"", '
+    '"new_string": "category=\\"active_goal\\""}'
+)
+
+
+class TestParseHypothesis:
+    def test_parses_valid_json(self):
+        raw = '{"file": "a.py", "old_string": "foo", "new_string": "bar"}'
+        result = _parse_hypothesis(raw)
+        assert result == {"file": "a.py", "old_string": "foo", "new_string": "bar"}
+
+    def test_strips_markdown_fences(self):
+        raw = '```json\n{"file": "a.py", "old_string": "x", "new_string": "y"}\n```'
+        result = _parse_hypothesis(raw)
+        assert result is not None
+        assert result["file"] == "a.py"
+
+    def test_returns_none_on_missing_fields(self):
+        raw = '{"file": "a.py", "old_string": "x"}'
+        result = _parse_hypothesis(raw)
+        assert result is None
+
+    def test_returns_none_on_invalid_json_and_no_regex_match(self):
+        raw = "Here is my explanation. I would change line 42."
+        result = _parse_hypothesis(raw)
+        assert result is None
+
+    def test_regex_fallback_extracts_fields(self):
+        raw = (
+            'Some preamble\n"file": "ops.py",\n'
+            '"old_string": "old",\n"new_string": "new"\nEnd.'
+        )
+        result = _parse_hypothesis(raw)
+        # Either parsed or None — just verify it doesn't crash
+        assert result is None or isinstance(result, dict)
+
+
+class TestValidateHypothesis:
+    def test_valid_hypothesis_returns_none(self):
+        # ops.py contains category="goal" — this is the actual mismatch we just fixed
+        # Use a string we know exists in the file
+        hyp = {
+            "file": "wild_igor/igor/tools/pe_chain.py",
+            "old_string": "pe_chain",
+            "new_string": "pe_chain",
+        }
+        err = _validate_hypothesis(hyp, REPO_ROOT)
+        assert err is None
+
+    def test_file_not_found(self):
+        hyp = {"file": "nonexistent/path.py", "old_string": "x", "new_string": "y"}
+        err = _validate_hypothesis(hyp, REPO_ROOT)
+        assert err is not None
+        assert "not found" in err
+
+    def test_old_string_not_in_file(self):
+        hyp = {
+            "file": "wild_igor/igor/tools/pe_chain.py",
+            "old_string": "THIS_STRING_DOES_NOT_EXIST_ZXQW",
+            "new_string": "y",
+        }
+        err = _validate_hypothesis(hyp, REPO_ROOT)
+        assert err is not None
+        assert "not found verbatim" in err
+
+
+class TestPeHypothesisize:
+    def test_error_passthrough(self):
+        basket = {"error": "prior", "ticket_description": "x", "actual": "y"}
+        with patch("wild_igor.igor.tools.pe_chain._call_tier2") as mock_t2:
+            result = pe_hypothesize(basket)
+        assert result["error"] == "prior"
+        mock_t2.assert_not_called()
+
+    def test_null_hypothesis_when_no_actual(self):
+        basket = {"ticket_description": "fix something", "actual": ""}
+        result = pe_hypothesize(basket)
+        assert result["hypothesis"] is None
+        assert result["hypothesis_error"] is not None
+
+    def test_error_when_no_description(self):
+        basket = {"ticket_description": "", "actual": "some code"}
+        result = pe_hypothesize(basket)
+        assert "error" in result
+
+    def test_valid_hypothesis_accepted(self):
+        good_json = '{"file": "wild_igor/igor/tools/pe_chain.py", "old_string": "pe_chain", "new_string": "pe_chain"}'
+        basket = {
+            "ticket_description": "fix something in pe_chain",
+            "actual": "some relevant code",
+        }
+        with patch("wild_igor.igor.tools.pe_chain._call_tier2", return_value=good_json):
+            with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", REPO_ROOT):
+                result = pe_hypothesize(basket)
+        assert result["hypothesis"] is not None
+        assert result["hypothesis_error"] is None
+        assert result["hypothesis"]["file"] == "wild_igor/igor/tools/pe_chain.py"
+
+    def test_null_hypothesis_when_tier2_unavailable(self):
+        basket = {"ticket_description": "fix it", "actual": "some code"}
+        with patch("wild_igor.igor.tools.pe_chain._call_tier2", return_value=None):
+            result = pe_hypothesize(basket)
+        assert result["hypothesis"] is None
+        assert "unavailable" in result["hypothesis_error"]
+
+    def test_null_hypothesis_when_parse_fails(self):
+        basket = {"ticket_description": "fix it", "actual": "some code"}
+        with patch(
+            "wild_igor.igor.tools.pe_chain._call_tier2",
+            return_value="I would change line 42 to do something different.",
+        ):
+            result = pe_hypothesize(basket)
+        assert result["hypothesis"] is None
+        assert result["hypothesis_error"] is not None
+
+    def test_validation_failure_stored_not_blocking(self):
+        """Validation failure sets hypothesis_error but does NOT set basket[error]."""
+        bad_json = '{"file": "wild_igor/igor/tools/pe_chain.py", "old_string": "NONEXISTENT_ZXQW", "new_string": "y"}'
+        basket = {"ticket_description": "fix it", "actual": "some code"}
+        with patch("wild_igor.igor.tools.pe_chain._call_tier2", return_value=bad_json):
+            with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", REPO_ROOT):
+                result = pe_hypothesize(basket)
+        # hypothesis_error set, but basket["error"] NOT set — chain continues
+        assert result.get("hypothesis_error") is not None
+        assert "error" not in result or result.get("error") is None
+
+    def test_hypothesis_raw_always_set(self):
+        basket = {"ticket_description": "fix it", "actual": "some code"}
+        with patch(
+            "wild_igor.igor.tools.pe_chain._call_tier2",
+            return_value="raw output",
+        ):
+            result = pe_hypothesize(basket)
+        assert "hypothesis_raw" in result

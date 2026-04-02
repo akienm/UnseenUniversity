@@ -5,15 +5,16 @@ Replaces the OR agentic loop with an Igor-native step chain.
 Each step is a Python function that reads from and writes into a basket dict.
 The basket is a plain Python dict (shared working memory for one engram run).
 
-Chain structure (this module handles ENTRY through OBSERVE):
+Chain structure (this module handles ENTRY through HYPOTHESIZE):
   pe_entry_init(basket)    — extract ticket_id from active GOAL, seed constants
   pe_claim(basket)         — claim the ticket in cc_queue
   pe_read_ticket(basket)   — load ticket description + files into basket
   pe_situate(basket)       — resolve plan_files: use ticket's required_files if
                              present, else call tier.2 Ollama to identify files
   pe_observe(basket)       — two-pass: grep for relevant section, read that section
+  pe_hypothesize(basket)   — tier.2: (description + actual) → structured edit JSON
 
-Higher steps (HYPOTHESIZE, IMPLEMENT, TEST, CLOSE) are in
+Higher steps (IMPLEMENT, TEST, CLOSE) are in
 subsequent pe-* tickets and will be added here as they land.
 
 Entry point:
@@ -492,12 +493,169 @@ def pe_observe(basket: dict) -> dict:
     return basket
 
 
+# ── HYPOTHESIZE ───────────────────────────────────────────────────────────────
+
+_HYPOTHESIZE_PROMPT = """\
+You are making a focused code change. Output ONLY a JSON object — no explanation.
+
+Ticket: {description}
+
+Relevant code:
+{actual}
+
+Output a JSON object with exactly these fields:
+{{
+  "file": "<relative file path>",
+  "old_string": "<exact string to replace — must exist verbatim in the file>",
+  "new_string": "<replacement string>"
+}}
+
+Rules:
+- old_string must appear verbatim in the code above
+- Make the smallest change that satisfies the ticket
+- Do not change anything outside the old_string → new_string replacement
+
+JSON:"""
+
+
+def _parse_hypothesis(raw: str) -> dict | None:
+    """
+    Parse a structured edit JSON from LLM output.
+    Returns dict with {file, old_string, new_string} or None on failure.
+    Tries full JSON parse first, then regex extraction as fallback.
+    """
+    # Strip markdown code fences if present
+    text = raw.strip()
+    if text.startswith("```"):
+        lines = text.splitlines()
+        text = "\n".join(l for l in lines if not l.strip().startswith("```")).strip()
+
+    # Try full JSON parse
+    try:
+        obj = json.loads(text)
+        if all(k in obj for k in ("file", "old_string", "new_string")):
+            return obj
+    except Exception:
+        pass
+
+    # Fallback: extract fields with regex
+    try:
+        file_m = re.search(r'"file"\s*:\s*"([^"]+)"', text)
+        old_m = re.search(r'"old_string"\s*:\s*"((?:[^"\\]|\\.)*)"', text, re.DOTALL)
+        new_m = re.search(r'"new_string"\s*:\s*"((?:[^"\\]|\\.)*)"', text, re.DOTALL)
+        if file_m and old_m and new_m:
+            return {
+                "file": file_m.group(1),
+                "old_string": old_m.group(1).replace('\\"', '"').replace("\\n", "\n"),
+                "new_string": new_m.group(1).replace('\\"', '"').replace("\\n", "\n"),
+            }
+    except Exception:
+        pass
+
+    return None
+
+
+def _validate_hypothesis(hypothesis: dict, repo_root: Path) -> str | None:
+    """
+    Validate that hypothesis["old_string"] exists verbatim in hypothesis["file"].
+    Returns None if valid, or an error string explaining why it's invalid.
+    """
+    filepath = repo_root / hypothesis.get("file", "")
+    if not filepath.exists():
+        return f"file not found: {hypothesis.get('file')}"
+    try:
+        content = filepath.read_text(errors="replace")
+        if hypothesis["old_string"] not in content:
+            return f"old_string not found verbatim in {hypothesis['file']}"
+        return None
+    except Exception as e:
+        return f"read error: {e}"
+
+
+def pe_hypothesize(basket: dict) -> dict:
+    """
+    HYPOTHESIZE step: tier.2 call → structured edit JSON.
+
+    Given basket[ticket_description] and basket[actual] (observed code section),
+    calls Ollama with a tight prompt asking for a minimal, exact edit.
+
+    Output format: {"file": str, "old_string": str, "new_string": str}
+
+    Validates that old_string exists verbatim in the target file before accepting.
+    On validation failure: stores error in basket[hypothesis_error] but does NOT
+    set basket[error] — IMPLEMENT can still run with a degraded/empty hypothesis,
+    or REPLAN can retry.
+
+    Reads from basket: ticket_description, actual, plan_files
+    Writes to basket:
+      hypothesis        dict | None  — {file, old_string, new_string} or None
+      hypothesis_raw    str          — raw LLM output (for debugging)
+      hypothesis_error  str | None   — validation error if hypothesis invalid
+    """
+    if basket.get("error"):
+        return basket
+
+    description = basket.get("ticket_description", "")
+    actual = basket.get("actual", "")
+
+    if not description:
+        basket["error"] = "pe_hypothesize: no ticket_description in basket"
+        return basket
+
+    if not actual:
+        # No observed code — hypothesis can't be grounded; set null and continue
+        basket["hypothesis"] = None
+        basket["hypothesis_raw"] = ""
+        basket["hypothesis_error"] = "no actual code observed — hypothesis ungrounded"
+        _flog("HYPOTHESIZE: no actual — skipping tier.2 call")
+        return basket
+
+    prompt = _HYPOTHESIZE_PROMPT.format(
+        description=description[:400],
+        actual=actual[:2000],  # cap to avoid overwhelming small model
+    )
+    _flog(f"HYPOTHESIZE: calling tier.2 prompt_len={len(prompt)}")
+
+    raw = _call_tier2(prompt, timeout=45)
+    basket["hypothesis_raw"] = raw or ""
+
+    if not raw:
+        basket["hypothesis"] = None
+        basket["hypothesis_error"] = "tier.2 unavailable"
+        _flog("HYPOTHESIZE: tier.2 unavailable")
+        return basket
+
+    hypothesis = _parse_hypothesis(raw)
+    if not hypothesis:
+        basket["hypothesis"] = None
+        basket["hypothesis_error"] = f"parse failed: {raw[:120]}"
+        _flog(f"HYPOTHESIZE: parse failed: {raw[:80]}")
+        return basket
+
+    # Validate old_string exists in file
+    err = _validate_hypothesis(hypothesis, _REPO_ROOT)
+    if err:
+        basket["hypothesis"] = hypothesis  # keep for debugging
+        basket["hypothesis_error"] = f"validation failed: {err}"
+        _flog(f"HYPOTHESIZE: validation failed: {err}")
+        return basket
+
+    basket["hypothesis"] = hypothesis
+    basket["hypothesis_error"] = None
+    _flog(
+        f"HYPOTHESIZE: valid edit in {hypothesis['file']} "
+        f"old_len={len(hypothesis['old_string'])} "
+        f"new_len={len(hypothesis['new_string'])}"
+    )
+    return basket
+
+
 # ── Chain entry point ─────────────────────────────────────────────────────────
 
 
 def run_pe_entry_chain(basket: dict | None = None) -> dict:
     """
-    Run the ENTRY → CLAIM → READ_TICKET → SITUATE → OBSERVE chain.
+    Run the ENTRY → CLAIM → READ_TICKET → SITUATE → OBSERVE → HYPOTHESIZE chain.
 
     Returns the populated basket dict.
     Caller checks basket.get("error") for failure.
@@ -516,15 +674,17 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
     if basket.get("error"):
         return basket
     basket = pe_observe(basket)
+    if basket.get("error"):
+        return basket
+    basket = pe_hypothesize(basket)
     return basket
 
 
 def run_pe_chain(**_) -> str:
     """
     Full PROC_CODE_A_TICKET chain — code_ref entry point.
-    Currently runs ENTRY → CLAIM → READ_TICKET → SITUATE → OBSERVE.
-    Further steps (HYPOTHESIZE, IMPLEMENT, TEST, CLOSE)
-    will be added as T-pe-* tickets land.
+    Currently runs ENTRY → CLAIM → READ_TICKET → SITUATE → OBSERVE → HYPOTHESIZE.
+    Further steps (IMPLEMENT, TEST, CLOSE) will be added as T-pe-* tickets land.
 
     Returns a status string for the channel.
     """
@@ -535,11 +695,10 @@ def run_pe_chain(**_) -> str:
         return f"[pe_chain] error: {basket['error']}"
 
     summary = (
-        f"[pe_chain] observe done: "
+        f"[pe_chain] hypothesize done: "
         f"ticket={basket.get('ticket_id')} "
-        f"plan_files={basket.get('plan_files', [])} "
-        f"observe_hits={basket.get('observe_hits', 0)} "
-        f"actual_len={len(basket.get('actual', ''))}"
+        f"hypothesis_file={basket.get('hypothesis', {}).get('file', 'none')} "
+        f"hypothesis_error={basket.get('hypothesis_error')}"
     )
     _flog(f"CHAIN: {summary}")
     return summary
