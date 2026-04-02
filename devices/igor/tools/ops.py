@@ -827,7 +827,7 @@ def run_coding_sprint() -> str:
                 with conn_pg.cursor() as c:
                     c.execute(
                         "INSERT INTO channel_messages (ts, author, type, content) VALUES (%s, %s, %s, %s)",
-                        (_ts, "igor", "message", prompt),
+                        (_ts, "claude-code", "message", prompt),
                     )
             conn_pg.close()
         except Exception:
@@ -836,7 +836,12 @@ def run_coding_sprint() -> str:
             _ch_path = paths().cc_channel / "messages.jsonl"
             _ch_path.parent.mkdir(parents=True, exist_ok=True)
             _entry = json.dumps(
-                {"ts": _ts, "author": "igor", "type": "message", "content": prompt},
+                {
+                    "ts": _ts,
+                    "author": "claude-code",
+                    "type": "message",
+                    "content": prompt,
+                },
                 ensure_ascii=False,
             )
             with open(_ch_path, "a", encoding="utf-8") as _f:
