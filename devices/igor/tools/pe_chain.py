@@ -5,7 +5,7 @@ Replaces the OR agentic loop with an Igor-native step chain.
 Each step is a Python function that reads from and writes into a basket dict.
 The basket is a plain Python dict (shared working memory for one engram run).
 
-Chain structure (this module handles ENTRY through TEST):
+Chain structure (full chain):
   pe_entry_init(basket)    — extract ticket_id from active GOAL, seed constants
   pe_claim(basket)         — claim the ticket in cc_queue
   pe_read_ticket(basket)   — load ticket description + files into basket
@@ -15,8 +15,7 @@ Chain structure (this module handles ENTRY through TEST):
   pe_hypothesize(basket)   — tier.2: (description + actual) → structured edit JSON
   pe_implement(basket)     — apply hypothesis edit to file (pure tool)
   pe_test(basket)          — run tests → basket[test_result] (pure tool)
-
-Higher steps (CLOSE loop) are in T-pe-close-loop.
+  pe_close_loop(basket)    — BRANCHIF pass→commit+close, fail→replan or escalate
 
 Entry point:
   run_pe_chain(**_) → str   — called as code_ref by PROC_PE_CHAIN habit
@@ -749,16 +748,267 @@ def pe_test(basket: dict) -> dict:
     return basket
 
 
+# ── CLOSE LOOP ───────────────────────────────────────────────────────────────
+
+_MAX_ATTEMPTS = 3
+
+_REPLAN_PROMPT = """\
+A code edit was attempted but tests failed. Produce a revised edit.
+Output ONLY a JSON object — no explanation.
+
+Ticket: {description}
+
+Previous edit attempt:
+  file: {file}
+  old_string: {old_string}
+  new_string: {new_string}
+
+Test failure:
+{test_result}
+
+Relevant code (re-read):
+{actual}
+
+Output a JSON object:
+{{
+  "file": "<relative file path>",
+  "old_string": "<exact string to replace>",
+  "new_string": "<replacement string>"
+}}
+
+JSON:"""
+
+
+def _post_to_channel(message: str) -> None:
+    """Post a message to the shared channel (best-effort)."""
+    try:
+        import psycopg2 as _pg
+        from datetime import datetime, timezone
+
+        ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        conn = _pg.connect(_DB_URL)
+        with conn:
+            with conn.cursor() as c:
+                c.execute(
+                    "INSERT INTO channel_messages (ts, author, type, content) VALUES (%s, %s, %s, %s)",
+                    (ts, "igor", "message", message),
+                )
+        conn.close()
+    except Exception:
+        pass
+    try:
+        from ..paths import paths as _paths
+        import json as _json
+        from datetime import datetime, timezone
+
+        ts = datetime.now(timezone.utc).strftime("%H:%M:%S")
+        ch = _paths().cc_channel / "messages.jsonl"
+        ch.parent.mkdir(parents=True, exist_ok=True)
+        with open(ch, "a") as f:
+            f.write(
+                _json.dumps(
+                    {"ts": ts, "author": "igor", "type": "message", "content": message}
+                )
+                + "\n"
+            )
+    except Exception:
+        pass
+
+
+def pe_close_loop(basket: dict) -> dict:
+    """
+    CLOSE LOOP step: dispatch based on test_result.
+
+    BRANCHIF test_result == "pass":
+      → pe_commit: git commit the change
+      → pe_close: close goal + mark ticket done
+      → return basket (chain complete)
+
+    BRANCHIF test_result starts with "fail" AND attempt_count < MAX_ATTEMPTS:
+      → increment attempt_count
+      → pe_replan: tier.2 call to revise hypothesis
+      → pe_implement: apply revised hypothesis
+      → pe_test: run tests again
+      → recurse back into pe_close_loop
+
+    BRANCHIF attempt_count >= MAX_ATTEMPTS:
+      → pe_escalate: post to channel, mark ticket blocked
+
+    Reads from basket: test_result, attempt_count, hypothesis, ticket_id, goal_id
+    Writes to basket:  commit_result, close_result, escalate_reason (on escalation)
+    """
+    if basket.get("error"):
+        return basket
+
+    test_result = basket.get("test_result", "")
+    attempt_count = basket.get("attempt_count", 0)
+
+    # ── Pass path ──────────────────────────────────────────────────────────────
+    if test_result == "pass" or (test_result and not test_result.startswith("fail")):
+        basket = _pe_commit(basket)
+        basket = _pe_close(basket)
+        return basket
+
+    # ── Fail path ──────────────────────────────────────────────────────────────
+    if attempt_count >= _MAX_ATTEMPTS:
+        return _pe_escalate(basket, reason=f"exhausted {_MAX_ATTEMPTS} attempts")
+
+    # Increment and replan
+    basket["attempt_count"] = attempt_count + 1
+    _flog(
+        f"CLOSE_LOOP: test failed, attempt {basket['attempt_count']}/{_MAX_ATTEMPTS} — replanning"
+    )
+
+    basket = _pe_replan(basket)
+    if basket.get("error"):
+        return basket
+    basket = pe_implement(basket)
+    if basket.get("error"):
+        return basket
+    basket = pe_test(basket)
+
+    # Recurse — tail call for next iteration
+    return pe_close_loop(basket)
+
+
+def _pe_replan(basket: dict) -> dict:
+    """
+    REPLAN: tier.2 call to revise hypothesis after test failure.
+    Overwrites basket[hypothesis] with the revised edit.
+    """
+    hyp = basket.get("hypothesis") or {}
+    prompt = _REPLAN_PROMPT.format(
+        description=basket.get("ticket_description", "")[:300],
+        file=hyp.get("file", "unknown"),
+        old_string=hyp.get("old_string", "")[:200],
+        new_string=hyp.get("new_string", "")[:200],
+        test_result=basket.get("test_result", "")[:300],
+        actual=basket.get("actual", "")[:1500],
+    )
+    _flog(f"REPLAN: calling tier.2 attempt={basket.get('attempt_count')}")
+    raw = _call_tier2(prompt, timeout=45)
+    basket["hypothesis_raw"] = raw or ""
+
+    if not raw:
+        basket["hypothesis"] = None
+        basket["hypothesis_error"] = "replan: tier.2 unavailable"
+        return basket
+
+    hypothesis = _parse_hypothesis(raw)
+    if not hypothesis:
+        basket["hypothesis"] = None
+        basket["hypothesis_error"] = f"replan: parse failed: {raw[:80]}"
+        return basket
+
+    err = _validate_hypothesis(hypothesis, _REPO_ROOT)
+    if err:
+        basket["hypothesis"] = hypothesis
+        basket["hypothesis_error"] = f"replan validation: {err}"
+        return basket
+
+    basket["hypothesis"] = hypothesis
+    basket["hypothesis_error"] = None
+    _flog(f"REPLAN: new hypothesis in {hypothesis['file']}")
+    return basket
+
+
+def _pe_commit(basket: dict) -> dict:
+    """COMMIT: git add + commit the changed file."""
+    hyp = basket.get("hypothesis")
+    if not hyp or basket.get("implement_skipped"):
+        basket["commit_result"] = "skipped: no edit applied"
+        return basket
+
+    filepath = hyp.get("file", "")
+    ticket_id = basket.get("ticket_id", "unknown")
+
+    result = _run_bash(
+        ["git", "-C", str(_REPO_ROOT), "add", filepath],
+        timeout=15,
+    )
+    if "error" in result.lower() or "fatal" in result.lower():
+        basket["commit_result"] = f"git add failed: {result[:100]}"
+        _flog(f"COMMIT: git add failed: {result[:80]}")
+        return basket
+
+    msg = f"fix: {ticket_id} — pe_chain autonomous edit\n\nCo-Authored-By: Igor <igor@theigors>"
+    result = _run_bash(
+        ["git", "-C", str(_REPO_ROOT), "commit", "-m", msg],
+        timeout=15,
+    )
+    basket["commit_result"] = result[:120]
+    _flog(f"COMMIT: {result[:80]}")
+    return basket
+
+
+def _pe_close(basket: dict) -> dict:
+    """CLOSE: mark ticket done + close the active GOAL memory."""
+    ticket_id = basket.get("ticket_id", "")
+    test_result = basket.get("test_result", "pass")
+
+    # Close ticket
+    if ticket_id:
+        result = _run_bash(
+            [
+                "python3",
+                str(_CC_QUEUE),
+                "done",
+                ticket_id,
+                f"pe_chain autonomous: {test_result[:80]}",
+            ],
+            timeout=15,
+        )
+        basket["close_result"] = result[:120]
+        _flog(f"CLOSE: ticket {ticket_id} → {result[:60]}")
+
+    # Close goal
+    try:
+        from .ops import close_goal_by_ticket as _close_goal
+
+        goal_result = _close_goal(ticket_id)
+        basket["goal_close_result"] = goal_result
+        _flog(f"CLOSE: goal → {goal_result[:60]}")
+    except Exception as e:
+        basket["goal_close_result"] = f"[error: {e}]"
+
+    # Post success to channel
+    _post_to_channel(f"[pe_chain] ✓ {ticket_id}: edit applied, tests pass, committed.")
+    return basket
+
+
+def _pe_escalate(basket: dict, reason: str) -> dict:
+    """ESCALATE: post blocked status to channel, mark ticket blocked."""
+    ticket_id = basket.get("ticket_id", "unknown")
+    basket["escalate_reason"] = reason
+    _flog(f"ESCALATE: {ticket_id} — {reason}")
+
+    _post_to_channel(
+        f"[pe_chain] ✗ {ticket_id}: blocked after {basket.get('attempt_count', 0)} attempts. "
+        f"Reason: {reason}. Needs human review."
+    )
+
+    # Mark ticket blocked
+    if ticket_id and ticket_id != "unknown":
+        _run_bash(
+            ["python3", str(_CC_QUEUE), "block", ticket_id, reason[:120]],
+            timeout=15,
+        )
+
+    return basket
+
+
 # ── Chain entry point ─────────────────────────────────────────────────────────
 
 
 def run_pe_entry_chain(basket: dict | None = None) -> dict:
     """
-    Run ENTRY → CLAIM → READ_TICKET → SITUATE → OBSERVE → HYPOTHESIZE → IMPLEMENT → TEST.
+    Run the full PROC_CODE_A_TICKET chain:
+    ENTRY → CLAIM → READ_TICKET → SITUATE → OBSERVE →
+    HYPOTHESIZE → IMPLEMENT → TEST → CLOSE_LOOP.
 
-    Returns the populated basket dict.
-    Caller checks basket.get("error") for failure.
-    Used by run_pe_chain() and directly in tests.
+    Returns the final basket dict.
+    Caller checks basket.get("error") for fatal failure.
+    basket.get("escalate_reason") indicates exhausted retries.
     """
     basket = pe_entry_init(basket)
     if basket.get("error"):
@@ -782,14 +1032,16 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
     if basket.get("error"):
         return basket
     basket = pe_test(basket)
+    if basket.get("error"):
+        return basket
+    basket = pe_close_loop(basket)
     return basket
 
 
 def run_pe_chain(**_) -> str:
     """
     Full PROC_CODE_A_TICKET chain — code_ref entry point.
-    Runs ENTRY → CLAIM → READ_TICKET → SITUATE → OBSERVE → HYPOTHESIZE → IMPLEMENT → TEST.
-    CLOSE loop (commit + close goal + REPLAN) comes in T-pe-close-loop.
+    Runs the complete chain including CLOSE_LOOP (commit + close + REPLAN + ESCALATE).
 
     Returns a status string for the channel.
     """
@@ -799,12 +1051,18 @@ def run_pe_chain(**_) -> str:
         _flog(f"CHAIN ERROR: {basket['error']}")
         return f"[pe_chain] error: {basket['error']}"
 
-    summary = (
-        f"[pe_chain] test done: "
-        f"ticket={basket.get('ticket_id')} "
-        f"implement={basket.get('implement_result', '?')} "
-        f"test_result={basket.get('test_result', '?')}"
-    )
+    if basket.get("escalate_reason"):
+        summary = (
+            f"[pe_chain] ESCALATED: "
+            f"ticket={basket.get('ticket_id')} "
+            f"reason={basket.get('escalate_reason')}"
+        )
+    else:
+        summary = (
+            f"[pe_chain] DONE: "
+            f"ticket={basket.get('ticket_id')} "
+            f"commit={basket.get('commit_result', '?')[:60]}"
+        )
     _flog(f"CHAIN: {summary}")
     return summary
 
