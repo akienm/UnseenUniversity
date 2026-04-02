@@ -995,3 +995,37 @@ registry.register(
         fn=read_active_goal_plan,
     )
 )
+
+
+def run_tests() -> str:
+    """Run the test suite. Returns last 30 lines of output."""
+    import subprocess
+    from pathlib import Path
+
+    repo = Path.home() / "TheIgors"
+    venv_python = repo / "venv" / "bin" / "python"
+    try:
+        result = subprocess.run(
+            [str(venv_python), "-m", "pytest", "tests/", "-x", "-q"],
+            capture_output=True,
+            text=True,
+            timeout=120,
+            cwd=str(repo),
+        )
+        out = (result.stdout + result.stderr).strip()
+        lines = out.splitlines()
+        return "\n".join(lines[-30:]) if len(lines) > 30 else out
+    except Exception as e:
+        return f"[run_tests] error: {e}"
+
+
+registry.register(
+    Tool(
+        name="run_tests",
+        description=(
+            "Run the test suite (pytest tests/ -x -q). Returns last 30 lines. Zero args."
+        ),
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=run_tests,
+    )
+)

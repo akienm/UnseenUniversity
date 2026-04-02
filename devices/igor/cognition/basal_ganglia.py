@@ -117,6 +117,11 @@ MANAGEMENT_PHRASES: dict[str, str] = {
     "what is my goal": "PROC_TWM_READ_GOAL",
     "check active goal": "PROC_TWM_READ_GOAL",
     "what goal": "PROC_TWM_READ_GOAL",
+    # PROC_CODE_A_TICKET: test runner direct dispatch
+    "run tests": "PROC_RUN_TESTS",
+    "run the tests": "PROC_RUN_TESTS",
+    "check tests": "PROC_RUN_TESTS",
+    "tests pass": "PROC_RUN_TESTS",
 }
 
 # ── Threshold constants ────────────────────────────────────────────────────────
