@@ -17,9 +17,11 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from wild_igor.igor.tools.pe_chain import (
+    _extract_grep_patterns,
     _parse_file_list,
     pe_claim,
     pe_entry_init,
+    pe_observe,
     pe_read_ticket,
     pe_situate,
     run_pe_entry_chain,
@@ -353,3 +355,114 @@ class TestPeSituate:
         raw = "I don't know which files to change."
         result = _parse_file_list(raw)
         assert result == []
+
+
+# ── pe_observe ────────────────────────────────────────────────────────────────
+
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+class TestExtractGrepPatterns:
+    def test_extracts_quoted_strings(self):
+        desc = "Fix 'goal_adopt' to use category='active_goal'"
+        patterns = _extract_grep_patterns(desc)
+        assert "goal_adopt" in patterns or "active_goal" in patterns
+
+    def test_extracts_proc_ids(self):
+        desc = "PROC_GREETING fires on substantive messages"
+        patterns = _extract_grep_patterns(desc)
+        assert "PROC_GREETING" in patterns
+
+    def test_extracts_snake_case_names(self):
+        desc = "twm_get_active_goal queries wrong category"
+        patterns = _extract_grep_patterns(desc)
+        assert any("twm" in p for p in patterns)
+
+    def test_caps_at_four_patterns(self):
+        desc = "'alpha' 'beta' 'gamma' 'delta' 'epsilon' PROC_X PROC_Y"
+        patterns = _extract_grep_patterns(desc)
+        assert len(patterns) <= 4
+
+    def test_deduplicates(self):
+        desc = "'goal_adopt' and 'goal_adopt' again"
+        patterns = _extract_grep_patterns(desc)
+        assert patterns.count("goal_adopt") == 1
+
+    def test_empty_description(self):
+        patterns = _extract_grep_patterns("")
+        assert patterns == []
+
+
+class TestPeObserve:
+    def test_skips_when_no_plan_files(self):
+        basket = {"ticket_description": "some ticket", "plan_files": []}
+        result = pe_observe(basket)
+        assert "error" not in result
+        assert result["actual"] == ""
+        assert result["observe_hits"] == 0
+        assert result["line_ranges"] == {}
+
+    def test_error_passthrough(self):
+        basket = {"error": "prior", "plan_files": ["x"], "ticket_description": "y"}
+        result = pe_observe(basket)
+        assert result["error"] == "prior"
+        assert "actual" not in result
+
+    def test_reads_real_file_section(self):
+        """pe_observe reads a real file from the repo."""
+        basket = {
+            "ticket_description": "Fix goal_adopt category mismatch",
+            "plan_files": ["wild_igor/igor/tools/ops.py"],
+        }
+        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", REPO_ROOT):
+            result = pe_observe(basket)
+        assert "error" not in result
+        assert result["actual"] != ""
+        assert "ops.py" in result["actual"]
+        # Should contain line numbers
+        assert ": " in result["actual"]
+
+    def test_actual_is_section_not_full_file(self):
+        """actual should be much shorter than the full file."""
+        basket = {
+            "ticket_description": "Fix goal_adopt category='active_goal'",
+            "plan_files": ["wild_igor/igor/tools/ops.py"],
+        }
+        full_file = (REPO_ROOT / "wild_igor/igor/tools/ops.py").read_text()
+        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", REPO_ROOT):
+            result = pe_observe(basket)
+        assert len(result["actual"]) < len(full_file)
+
+    def test_grep_hit_increments_observe_hits(self):
+        basket = {
+            "ticket_description": "Fix 'goal_adopt' category mismatch",
+            "plan_files": ["wild_igor/igor/tools/ops.py"],
+        }
+        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", REPO_ROOT):
+            result = pe_observe(basket)
+        # goal_adopt exists in ops.py — should get a grep hit
+        assert result["observe_hits"] >= 1
+
+    def test_line_ranges_populated(self):
+        basket = {
+            "ticket_description": "Fix 'goal_adopt' category",
+            "plan_files": ["wild_igor/igor/tools/ops.py"],
+        }
+        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", REPO_ROOT):
+            result = pe_observe(basket)
+        assert "wild_igor/igor/tools/ops.py" in result["line_ranges"]
+
+    def test_multiple_files(self):
+        basket = {
+            "ticket_description": "Fix 'goal_adopt' in ops and main",
+            "plan_files": [
+                "wild_igor/igor/tools/ops.py",
+                "wild_igor/igor/main.py",
+            ],
+        }
+        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", REPO_ROOT):
+            result = pe_observe(basket)
+        assert "ops.py" in result["actual"]
+        assert "main.py" in result["actual"]
+        assert len(result["line_ranges"]) == 2
