@@ -1,10 +1,12 @@
 """
-node_executor.py — Engram node executor (D260).
+node_executor.py — Engram node executor (D260, D290, D291, D295, D296).
 
 Executes one payload cell from a Memory node given a basket.
 Called when the cognition cursor lands on a node that has a payload.
 
 Instruction set:
+  LABEL    [@name]                           — no-op marker; local jump target for BRANCHIF
+  STOPIF   [condition]                       — conditional terminator; if true, stop execution
   EMITIF   [condition, key, value, channel]  — emit value to channel if condition; cursor continues
   BRANCHIF [condition, target_node_id]       — jump to target if condition; cell stops
   FORKIF   [condition, target_node_id]       — spawn new cursor at target if condition; cursor continues
@@ -19,15 +21,22 @@ Value format in EMITIF:
   ["basket", key]            — resolved from basket at execution time
   ["payload", field]         — resolved from payload data fields (non-cell fields only)
 
+BRANCHIF targets (D296):
+  "@label_name"              — jump to local LABEL node in same cell
+  "node_id"                  — set next_node and break; next_trigger = None → "__entry__"
+  "node_id#trigger_name"     — set next_node and next_trigger; branch to custom trigger
+
 Data guard:
   The executor only executes payload fields named in memory.triggers.values().
   All other payload fields (NARRATIVE, links, emotional_value, etc.) are data —
   the executor never reads them except for ["payload", field] value lookups in EMITIF.
 
 Returns ExecutionResult:
-  next_node : Optional[str]  — set if BRANCHIF fired
-  spawned   : list[str]      — node IDs queued by FORKIF
-  basket    : dict           — same basket dict, mutated in place by EMITIF→basket channel
+  next_node   : Optional[str]  — set if BRANCHIF fired with bare node ID or node_id#trigger
+  next_trigger: Optional[str]  — trigger name for next_node (D296); None → use "__entry__"
+  spawned     : list[str]      — node IDs queued by FORKIF
+  basket      : dict           — same basket dict, mutated in place by EMITIF→basket channel
+  stopped_by  : str            — implicit_end | ENDIF | BRANCHIF | STOPIF | limit
 """
 
 from __future__ import annotations
@@ -46,11 +55,14 @@ _MAX_INSTRUCTIONS = 200  # guard against runaway cells
 
 @dataclass
 class ExecutionResult:
-    next_node: Optional[str] = None  # set if BRANCHIF fired
+    next_node: Optional[str] = None  # set if BRANCHIF fired with bare node ID
+    next_trigger: Optional[str] = (
+        None  # trigger name for next_node (D296), or None for "__entry__"
+    )
     spawned: list[str] = field(default_factory=list)  # FORKIF targets
     basket: dict = field(default_factory=dict)
     instructions_run: int = 0
-    stopped_by: str = "implicit_end"  # implicit_end | ENDIF | BRANCHIF | limit
+    stopped_by: str = "implicit_end"  # implicit_end | ENDIF | BRANCHIF | STOPIF | limit
 
 
 # ── Condition evaluation ──────────────────────────────────────────────────────
@@ -138,8 +150,9 @@ def execute_node(memory, fired_trigger: str, basket: dict) -> ExecutionResult:
 
     registry = get_registry()
     n = 0
+    i = 0  # index-based loop for BRANCHIF @label jumps
 
-    for instruction in cell:
+    while i < len(cell):
         if n >= _MAX_INSTRUCTIONS:
             log.warning(
                 "[node_executor] %s: hit MAX_INSTRUCTIONS (%d) in cell %r",
@@ -151,8 +164,9 @@ def execute_node(memory, fired_trigger: str, basket: dict) -> ExecutionResult:
             break
 
         n += 1
+        instruction = cell[i]
 
-        # ENDIF — explicit terminator
+        # ENDIF — explicit terminator (check as string literal first)
         if instruction == "ENDIF":
             result.stopped_by = "ENDIF"
             break
@@ -161,17 +175,61 @@ def execute_node(memory, fired_trigger: str, basket: dict) -> ExecutionResult:
             log.warning(
                 "[node_executor] %s: malformed instruction %r", memory.id, instruction
             )
+            i += 1
             continue
 
         op = instruction[0]
 
+        # Early check for LABEL and STOPIF which are handled specially
+        if op not in ("LABEL", "STOPIF", "EMITIF", "BRANCHIF", "FORKIF"):
+            log.warning(
+                "[node_executor] unknown instruction op %r in %s", op, memory.id
+            )
+            i += 1
+            continue
+
+        # ── LABEL [@name] ──────────────────────────────────────────────────────
+        if op == "LABEL":
+            # No-op marker; used as jump target by BRANCHIF @label
+            if len(instruction) < 2:
+                log.warning(
+                    "[node_executor] LABEL expects 1 arg, got %d",
+                    len(instruction) - 1,
+                )
+            log.debug(
+                "[node_executor] LABEL: %s → %s",
+                memory.id,
+                instruction[1] if len(instruction) > 1 else "unnamed",
+            )
+            i += 1
+
+        # ── STOPIF [condition] ─────────────────────────────────────────────────
+        elif op == "STOPIF":
+            if len(instruction) != 2:
+                log.warning(
+                    "[node_executor] STOPIF expects 1 arg, got %d",
+                    len(instruction) - 1,
+                )
+                i += 1
+                continue
+            _, condition = instruction
+            if _eval_condition(condition, basket):
+                result.stopped_by = "STOPIF"
+                log.debug(
+                    "[node_executor] STOPIF fired: %s (condition true)",
+                    memory.id,
+                )
+                break
+            i += 1
+
         # ── EMITIF [condition, key, value, channel] ───────────────────────────
-        if op == "EMITIF":
+        elif op == "EMITIF":
             if len(instruction) != 5:
                 log.warning(
                     "[node_executor] EMITIF expects 4 args, got %d",
                     len(instruction) - 1,
                 )
+                i += 1
                 continue
             _, condition, key, value, channel = instruction
             if _eval_condition(condition, basket):
@@ -184,25 +242,73 @@ def execute_node(memory, fired_trigger: str, basket: dict) -> ExecutionResult:
                     key,
                     resolved,
                 )
+            i += 1
 
-        # ── BRANCHIF [condition, target_node_id] ─────────────────────────────
+        # ── BRANCHIF [condition, target_node_id] or [condition, "node_id#trigger_name"] ────────
         elif op == "BRANCHIF":
             if len(instruction) != 3:
                 log.warning(
                     "[node_executor] BRANCHIF expects 2 args, got %d",
                     len(instruction) - 1,
                 )
+                i += 1
                 continue
             _, condition, target = instruction
             if _eval_condition(condition, basket):
-                result.next_node = str(target)
-                result.stopped_by = "BRANCHIF"
-                log.debug(
-                    "[node_executor] BRANCHIF fired: %s → %s",
-                    memory.id,
-                    target,
-                )
-                break  # cell stops on branch
+                target_str = str(target)
+                # Check if target is a local @label
+                if target_str.startswith("@"):
+                    # Scan cell for ["LABEL", target_str] and jump to that index
+                    label_found = False
+                    for label_idx, instr in enumerate(cell):
+                        if (
+                            isinstance(instr, list)
+                            and len(instr) >= 2
+                            and instr[0] == "LABEL"
+                            and instr[1] == target_str
+                        ):
+                            i = label_idx
+                            log.debug(
+                                "[node_executor] BRANCHIF jumped to label: %s → %s (index %d)",
+                                memory.id,
+                                target_str,
+                                label_idx,
+                            )
+                            label_found = True
+                            break
+                    if not label_found:
+                        log.warning(
+                            "[node_executor] BRANCHIF @label not found: %s → %s",
+                            memory.id,
+                            target_str,
+                        )
+                        result.stopped_by = "BRANCHIF"
+                        break
+                else:
+                    # Check for node_id#trigger_name syntax (D296)
+                    if "#" in target_str:
+                        node_id, trigger_name = target_str.split("#", 1)
+                        result.next_node = node_id
+                        result.next_trigger = trigger_name
+                        log.debug(
+                            "[node_executor] BRANCHIF fired with trigger: %s → %s#%s",
+                            memory.id,
+                            node_id,
+                            trigger_name,
+                        )
+                    else:
+                        # Bare node ID: set next_node, next_trigger = None
+                        result.next_node = target_str
+                        result.next_trigger = None
+                        log.debug(
+                            "[node_executor] BRANCHIF fired: %s → %s",
+                            memory.id,
+                            target_str,
+                        )
+                    result.stopped_by = "BRANCHIF"
+                    break
+            else:
+                i += 1
 
         # ── FORKIF [condition, target_node_id] ───────────────────────────────
         elif op == "FORKIF":
@@ -211,21 +317,20 @@ def execute_node(memory, fired_trigger: str, basket: dict) -> ExecutionResult:
                     "[node_executor] FORKIF expects 2 args, got %d",
                     len(instruction) - 1,
                 )
+                i += 1
                 continue
             _, condition, target = instruction
             if _eval_condition(condition, basket):
-                result.spawned.append(str(target))
-                log.debug(
-                    "[node_executor] FORKIF spawned: %s → %s",
-                    memory.id,
-                    target,
-                )
+                target_str = str(target) if target is not None else ""
+                if target_str and target_str != "None":
+                    result.spawned.append(target_str)
+                    log.debug(
+                        "[node_executor] FORKIF spawned: %s → %s",
+                        memory.id,
+                        target_str,
+                    )
             # cursor continues regardless
-
-        else:
-            log.warning(
-                "[node_executor] unknown instruction op %r in %s", op, memory.id
-            )
+            i += 1
 
     result.instructions_run = n
     return result
