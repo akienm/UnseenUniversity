@@ -772,16 +772,25 @@ def run_coding_sprint() -> str:
 
         cortex = _Cortex(None)
 
-        # 1. Get active goal text from TWM
-        active_goal = cortex.twm_get_active_goal()
-        if not active_goal:
-            return "[coding_sprint] no ACTIVE_GOAL in TWM — skipping"
-
         # 2. Get active GOAL memory for ticket details / narrative
         goals = cortex.get_by_type(_MT.GOAL)
         active = [g for g in goals if g.metadata.get("goal_active")]
         if not active:
             return "[coding_sprint] no active GOAL memory — skipping"
+
+        # 1. Get active goal text — TWM preferred; fall back to GOAL memory source_message
+        # ACTIVE_GOAL has 2h TTL and may have expired between adoption and sprint
+        active_goal = cortex.twm_get_active_goal()
+        if not active_goal:
+            # Fall back: use the active GOAL memory's source_message
+            goal_mem = sorted(
+                active,
+                key=lambda g: g.metadata.get("adopted_at", ""),
+                reverse=True,
+            )[0]
+            active_goal = goal_mem.metadata.get(
+                "source_message", goal_mem.narrative[:100]
+            )
         goal = sorted(
             active,
             key=lambda g: g.metadata.get("adopted_at", ""),
