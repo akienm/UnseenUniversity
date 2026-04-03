@@ -15,14 +15,18 @@ def _import_run_tests():
     import importlib
     import types
 
-    # Build a minimal fake package tree so ops.py imports don't explode
-    for pkg in [
+    # Save originals for all modules we may stub, so we can restore after load
+    _stub_pkgs = [
         "wild_igor",
         "wild_igor.igor",
         "wild_igor.igor.tools",
         "wild_igor.igor.memory",
         "wild_igor.igor.paths",
-    ]:
+    ]
+    _orig_mods = {pkg: sys.modules.get(pkg) for pkg in _stub_pkgs}
+
+    # Build a minimal fake package tree so ops.py imports don't explode
+    for pkg in _stub_pkgs:
         if pkg not in sys.modules:
             sys.modules[pkg] = types.ModuleType(pkg)
 
@@ -41,7 +45,7 @@ def _import_run_tests():
     fake_registry_mod.registry = _Registry()
     sys.modules["wild_igor.igor.tools.registry"] = fake_registry_mod
 
-    # Stub paths
+    # Stub paths (unconditional — ops.py needs a callable paths at import time)
     fake_paths_mod = types.ModuleType("wild_igor.igor.paths")
     fake_paths_mod.paths = MagicMock()
     sys.modules["wild_igor.igor.paths"] = fake_paths_mod
@@ -66,6 +70,14 @@ def _import_run_tests():
     mod = importlib.util.module_from_spec(spec)
     sys.modules[mod_name] = mod
     spec.loader.exec_module(mod)
+
+    # Restore all real modules so other test files aren't polluted by our stubs
+    for pkg, orig in _orig_mods.items():
+        if orig is not None:
+            sys.modules[pkg] = orig
+        else:
+            sys.modules.pop(pkg, None)
+
     return mod.run_tests
 
 
