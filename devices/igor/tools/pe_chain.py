@@ -291,6 +291,148 @@ def _parse_file_list(raw: str) -> list[str]:
     return paths_found
 
 
+
+# ── PLAN ──────────────────────────────────────────────────────────────────────
+
+_PLAN_PROMPT = """You are planning a code change for a software ticket.
+
+Ticket ID: {ticket_id}
+Description: {description}
+
+Write a brief implementation plan. Format exactly as:
+PLAN: <what file(s) to change and what you will change>
+TEST: <one sentence: how to verify the fix works>
+
+Be specific. Mention function/file/class names. Two lines only."""
+
+
+def pe_plan(basket: dict) -> dict:
+    """
+    PLAN step: generate implementation plan before touching any files.
+
+    If ticket has a 'plan' key, use it directly (fast path).
+    Otherwise call tier.2 Ollama to generate plan_summary + test_criterion.
+    Calls store_plan() for durable record. Non-fatal if tier.2 unavailable.
+
+    Reads from basket: ticket_id, ticket_description, ticket (raw dict)
+    Writes to basket:
+      plan_summary    str  — 1-2 sentence plan
+      test_criterion  str  — how to verify the fix
+      plan_source     str  — "ticket_plan" | "tier2_ollama" | "ticket_description"
+    """
+    if basket.get("error"):
+        return basket
+
+    ticket_id = basket.get("ticket_id", "unknown")
+    description = basket.get("ticket_description", "")
+    ticket = basket.get("ticket") or {}
+
+    if ticket.get("plan"):
+        basket["plan_summary"] = ticket["plan"]
+        basket["test_criterion"] = ticket.get("test_criterion", "")
+        basket["plan_source"] = "ticket_plan"
+        _flog(f"PLAN: using ticket.plan for {ticket_id}")
+        return basket
+
+    if description:
+        prompt = _PLAN_PROMPT.format(
+            ticket_id=ticket_id, description=description[:600]
+        )
+        _flog(f"PLAN: calling tier.2 for {ticket_id}")
+        raw = _call_tier2(prompt, timeout=30)
+        if raw:
+            plan_summary = ""
+            test_criterion = ""
+            for line in raw.splitlines():
+                line = line.strip()
+                if line.startswith("PLAN:"):
+                    plan_summary = line[5:].strip()
+                elif line.startswith("TEST:"):
+                    test_criterion = line[5:].strip()
+            basket["plan_summary"] = plan_summary or raw[:200]
+            basket["test_criterion"] = test_criterion
+            basket["plan_source"] = "tier2_ollama"
+            _flog(f"PLAN: tier.2 plan={basket['plan_summary'][:80]}")
+        else:
+            basket["plan_summary"] = description[:200]
+            basket["test_criterion"] = ""
+            basket["plan_source"] = "ticket_description"
+            _flog("PLAN: tier.2 unavailable — using ticket description as plan")
+    else:
+        basket["plan_summary"] = f"Implement {ticket_id}"
+        basket["test_criterion"] = ""
+        basket["plan_source"] = "empty"
+
+    if basket.get("plan_summary"):
+        try:
+            from .ops import store_plan as _store_plan
+            _store_plan(ticket_id, basket["plan_summary"])
+        except Exception as e:
+            log.warning("[pe_chain] pe_plan: store_plan failed: %s", e)
+
+    return basket
+
+
+# ── FILTER ────────────────────────────────────────────────────────────────────
+
+_FILTER_HIGH_INERTIA = frozenset(
+    ["brainstem/", "memory/models.py", "cognition/reasoners/base.py"]
+)
+
+
+def pe_filter(basket: dict) -> dict:
+    """
+    FILTER step: pre-implementation safety checklist.
+
+    Checks:
+      1. plan_defined: basket["plan_summary"] is present
+      2. test_defined: basket["test_criterion"] is present (warn if missing)
+      3. not_high_inertia: plan_files don't include HIGH inertia paths (hard fail)
+
+    Escalates only on HIGH inertia violation. Other issues warn and proceed.
+
+    Reads from basket: plan_summary, test_criterion, plan_files
+    Writes to basket:
+      filter_result  str   — "PASS" | "WARN: reasons" | "FAIL: reasons"
+      filter_checks  dict  — check_name → bool
+    """
+    if basket.get("error"):
+        return basket
+
+    checks: dict[str, bool] = {}
+    warnings: list[str] = []
+    hard_fails: list[str] = []
+
+    checks["plan_defined"] = bool(basket.get("plan_summary"))
+    if not checks["plan_defined"]:
+        warnings.append("no plan_summary")
+
+    checks["test_defined"] = bool(basket.get("test_criterion"))
+    if not checks["test_defined"]:
+        warnings.append("no test_criterion")
+
+    plan_files = basket.get("plan_files") or []
+    hi_files = [f for f in plan_files if any(h in f for h in _FILTER_HIGH_INERTIA)]
+    checks["not_high_inertia"] = len(hi_files) == 0
+    if hi_files:
+        hard_fails.append(f"HIGH inertia files: {hi_files}")
+
+    basket["filter_checks"] = checks
+
+    if hard_fails:
+        basket["filter_result"] = f"FAIL: {';'.join(hard_fails)}"
+        basket["escalate_reason"] = f"filter_fail: {basket['filter_result']}"
+        _flog(f"FILTER: {basket['filter_result']} — escalating")
+    elif warnings:
+        basket["filter_result"] = f"WARN: {';'.join(warnings)}"
+        _flog(f"FILTER: {basket['filter_result']} — proceeding with warnings")
+    else:
+        basket["filter_result"] = "PASS"
+        _flog(f"FILTER: PASS for {basket.get('ticket_id')}")
+
+    return basket
+
+
 def pe_situate(basket: dict) -> dict:
     """
     SITUATE step: resolve plan_files — which files need to change?
@@ -898,6 +1040,86 @@ def _post_to_channel(message: str) -> None:
         pass
 
 
+
+# ── PROBE ─────────────────────────────────────────────────────────────────────
+
+
+def pe_probe(basket: dict) -> dict:
+    """
+    PROBE step: optional post-implementation behavioral test via cc_send.
+
+    Reads ticket["probe_criterion"] — if absent, skip (non-fatal).
+    If present: inject probe stimulus via cc_send, wait 3s, read last 3 Igor
+    channel messages, check if response matches "expect:" line in criterion.
+
+    Reads from basket: ticket (raw dict), ticket_id
+    Writes to basket:
+      probe_result  str  — "PASS" | "SKIP: reason" | "FAIL: reason"
+    On FAIL: sets basket["escalate_reason"] = "probe_fail: ..."
+    """
+    if basket.get("error"):
+        return basket
+
+    ticket = basket.get("ticket") or {}
+    probe_criterion = ticket.get("probe_criterion", "")
+    if not probe_criterion:
+        basket["probe_result"] = "SKIP: no probe_criterion"
+        _flog(f"PROBE: skip — no probe_criterion for {basket.get('ticket_id')}")
+        return basket
+
+    try:
+        import time
+        import urllib.request
+        import json as _json
+
+        stimulus = probe_criterion[:200]
+        payload = _json.dumps({"content": f"[probe] {stimulus}"}).encode()
+        req = urllib.request.Request(
+            "http://localhost:8080/api/cc_send",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=5):
+            pass
+        _flog(f"PROBE: sent stimulus: {stimulus[:60]}")
+        time.sleep(3)
+
+        # Read recent channel for Igor's response
+        req2 = urllib.request.Request(
+            "http://localhost:8080/api/channel_read?limit=3"
+        )
+        with urllib.request.urlopen(req2, timeout=5) as resp:
+            data = _json.loads(resp.read())
+        messages = data if isinstance(data, list) else data.get("messages", [])
+        igor_msgs = [m.get("content", "") for m in messages if m.get("author") == "igor"]
+
+        expected = ""
+        for line in probe_criterion.splitlines():
+            if line.lower().startswith("expect:"):
+                expected = line[7:].strip().lower()
+
+        if expected:
+            found = any(expected in m.lower() for m in igor_msgs)
+            if found:
+                basket["probe_result"] = "PASS"
+                _flog("PROBE: PASS — expected pattern found")
+            else:
+                basket["probe_result"] = f"FAIL: expected '{expected}' not in Igor response"
+                basket["escalate_reason"] = f"probe_fail: {basket['probe_result']}"
+                _flog(f"PROBE: {basket['probe_result']}")
+        else:
+            basket["probe_result"] = "PASS: stimulus sent, no expected pattern"
+            _flog("PROBE: PASS (no expected pattern)")
+
+    except Exception as e:
+        log.warning("[pe_chain] pe_probe failed: %s", e)
+        basket["probe_result"] = f"SKIP: probe error ({e})"
+        _flog(f"PROBE: skip due to error: {e}")
+
+    return basket
+
+
 def pe_close_loop(basket: dict) -> dict:
     """
     CLOSE LOOP step: dispatch based on test_result.
@@ -1097,8 +1319,8 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
 def run_pe_entry_chain(basket: dict | None = None) -> dict:
     """
     Run the full PROC_CODE_A_TICKET chain:
-    ENTRY → CLAIM → READ_TICKET → SITUATE → OBSERVE → STORE_OBSERVE_RESULTS →
-    HYPOTHESIZE → IMPLEMENT → TEST → CLOSE_LOOP.
+    ENTRY → CLAIM → READ_TICKET → PLAN → FILTER → SITUATE → OBSERVE →
+    STORE_OBSERVE_RESULTS → HYPOTHESIZE → IMPLEMENT → TEST → PROBE → CLOSE_LOOP.
 
     Returns the final basket dict.
     Caller checks basket.get("error") for fatal failure.
@@ -1112,6 +1334,12 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
         return basket
     basket = pe_read_ticket(basket)
     if basket.get("error"):
+        return basket
+    basket = pe_plan(basket)
+    if basket.get("error"):
+        return basket
+    basket = pe_filter(basket)
+    if basket.get("escalate_reason"):
         return basket
     basket = pe_situate(basket)
     if basket.get("error"):
@@ -1129,6 +1357,9 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
     if basket.get("error"):
         return basket
     basket = pe_test(basket)
+    if basket.get("error"):
+        return basket
+    basket = pe_probe(basket)
     if basket.get("error"):
         return basket
     basket = pe_close_loop(basket)
@@ -1174,8 +1405,8 @@ try:
             name="run_pe_chain",
             description=(
                 "Run the PROC_CODE_A_TICKET coding sprint chain. "
-                "Reads active GOAL, claims ticket, loads description, situates files. "
-                "Chain: ENTRY → CLAIM → READ_TICKET → SITUATE (more steps coming). "
+                "Chain: ENTRY → CLAIM → READ_TICKET → PLAN → FILTER → SITUATE → "
+                "OBSERVE → HYPOTHESIZE → IMPLEMENT → TEST → PROBE → CLOSE_LOOP. "
                 "Called by PROC_PE_CHAIN habit when coding sprint begins."
             ),
             fn=run_pe_chain,
