@@ -156,6 +156,45 @@ class TestExtractTrigger(unittest.TestCase):
         self.assertNotIn("run", trigger)
         self.assertIn("fast", trigger)
 
+    def test_strips_web_message_prefix(self):
+        """Web message prefix should not contaminate trigger keywords."""
+        inp = (
+            "TALKING WITH: Akien | relationship: operator\n"
+            "[Web message from akien]: you are?"
+        )
+        trigger = self.trainer._extract_trigger(inp)
+        self.assertNotIn("talking", trigger)
+        self.assertNotIn("relationship", trigger)
+        self.assertNotIn("operator", trigger)
+
+    def test_strips_thread_context_prefix(self):
+        """Full thread context + TALKING WITH prefix stripped before keyword extraction."""
+        inp = (
+            "[Thread context — recent exchanges in this channel:]\n"
+            "  User: hello\n"
+            "  Igor: Hello. Ready when you are.\n"
+            "TALKING WITH: Akien | relationship: operator\n"
+            "[Web message from akien]: how do you feel about threading?"
+        )
+        trigger = self.trainer._extract_trigger(inp)
+        self.assertNotIn("talking", trigger)
+        self.assertNotIn("akien", trigger)
+        self.assertIn("threading", trigger)
+
+    def test_strip_input_prefix_web_message(self):
+        from igor.tools.output_trainer import OutputTrainer
+
+        inp = "TALKING WITH: Akien | relationship: operator\n[Web message from akien]: you are?"
+        result = OutputTrainer._strip_input_prefix(inp)
+        self.assertEqual(result, "you are?")
+
+    def test_strip_input_prefix_plain_text(self):
+        from igor.tools.output_trainer import OutputTrainer
+
+        inp = "what is a basket dict"
+        result = OutputTrainer._strip_input_prefix(inp)
+        self.assertEqual(result, "what is a basket dict")
+
 
 class TestTriggerAlreadyCovered(unittest.TestCase):
     def setUp(self):
