@@ -12,6 +12,7 @@ Chain structure (full chain):
   pe_situate(basket)       — resolve plan_files: use ticket's required_files if
                              present, else call tier.2 Ollama to identify files
   pe_observe(basket)       — two-pass: grep for relevant section, read that section
+  pe_store_observe_results(basket) — deposit grep findings as FACTUAL memory (non-fatal)
   pe_hypothesize(basket)   — tier.2: (description + actual) → structured edit JSON
   pe_implement(basket)     — apply hypothesis edit to file (pure tool)
   pe_test(basket)          — run tests → basket[test_result] (pure tool)
@@ -490,6 +491,59 @@ def pe_observe(basket: dict) -> dict:
         f"OBSERVE: {len(plan_files)} files, {basket['observe_hits']} grep hits, "
         f"actual_len={len(basket['actual'])}"
     )
+    return basket
+
+
+# ── STORE_OBSERVE_RESULTS ─────────────────────────────────────────────────────
+
+
+def pe_store_observe_results(basket: dict) -> dict:
+    """
+    STORE_OBSERVE_RESULTS: deposit OBSERVE findings as a FACTUAL memory.
+
+    If observe_hits > 0, stores a compact summary of grep results in Igor's
+    long-term graph via store_factual. Builds a persistent codebase knowledge
+    base from exploration sessions — Igor remembers what he found, not just
+    what he coded.
+
+    Non-fatal: store failure is logged and skipped; chain continues.
+
+    Reads from basket: ticket_id, ticket_description, actual, observe_hits, plan_files
+    Writes to basket:
+      observe_stored_id  str | None  — memory ID deposited, or None if skipped
+    """
+    if basket.get("error"):
+        return basket
+
+    hits = basket.get("observe_hits", 0)
+    actual = basket.get("actual", "")
+    ticket_id = basket.get("ticket_id", "?")
+    ticket_description = basket.get("ticket_description", "")
+    plan_files = basket.get("plan_files", [])
+
+    if not actual or hits == 0:
+        basket["observe_stored_id"] = None
+        _flog("STORE_OBSERVE_RESULTS: no hits — skipping deposit")
+        return basket
+
+    files_str = ", ".join(plan_files[:5])
+    summary = (
+        f"Codebase search for [{ticket_id}]: {ticket_description[:80]}. "
+        f"Files: {files_str}. "
+        f"Grep hits: {hits}. "
+        f"Excerpt: {actual[:400]}"
+    )
+
+    try:
+        from .graph_write import store_factual as _store_factual
+
+        result = _store_factual(summary)
+        basket["observe_stored_id"] = result
+        _flog(f"STORE_OBSERVE_RESULTS: deposited — {result[:60]}")
+    except Exception as e:
+        basket["observe_stored_id"] = None
+        _flog(f"STORE_OBSERVE_RESULTS: store failed ({e}) — continuing")
+
     return basket
 
 
@@ -1014,7 +1068,7 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
 def run_pe_entry_chain(basket: dict | None = None) -> dict:
     """
     Run the full PROC_CODE_A_TICKET chain:
-    ENTRY → CLAIM → READ_TICKET → SITUATE → OBSERVE →
+    ENTRY → CLAIM → READ_TICKET → SITUATE → OBSERVE → STORE_OBSERVE_RESULTS →
     HYPOTHESIZE → IMPLEMENT → TEST → CLOSE_LOOP.
 
     Returns the final basket dict.
@@ -1034,6 +1088,9 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
     if basket.get("error"):
         return basket
     basket = pe_observe(basket)
+    if basket.get("error"):
+        return basket
+    basket = pe_store_observe_results(basket)
     if basket.get("error"):
         return basket
     basket = pe_hypothesize(basket)
