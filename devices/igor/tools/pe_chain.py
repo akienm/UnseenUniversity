@@ -977,7 +977,7 @@ def _pe_close(basket: dict) -> dict:
 
 
 def _pe_escalate(basket: dict, reason: str) -> dict:
-    """ESCALATE: post blocked status to channel, mark ticket blocked."""
+    """ESCALATE: post blocked status to channel, mark ticket blocked, close goal."""
     ticket_id = basket.get("ticket_id", "unknown")
     basket["escalate_reason"] = reason
     _flog(f"ESCALATE: {ticket_id} — {reason}")
@@ -993,6 +993,17 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
             ["python3", str(_CC_QUEUE), "block", ticket_id, reason[:120]],
             timeout=15,
         )
+
+    # Close the active GOAL so the habit does not re-trigger the chain
+    try:
+        from .ops import close_goal_by_ticket as _close_goal
+
+        goal_result = _close_goal(ticket_id)
+        basket["goal_close_result"] = goal_result
+        _flog(f"ESCALATE: goal closed → {goal_result[:60]}")
+    except Exception as e:
+        basket["goal_close_result"] = f"[error: {e}]"
+        _flog(f"ESCALATE: goal close error: {e}")
 
     return basket
 
