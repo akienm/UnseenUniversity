@@ -286,6 +286,11 @@ class TestRunPeEntryChain:
                 "wild_igor.igor.tools.pe_chain._REPO_ROOT",
                 Path(__file__).resolve().parent.parent,
             ),
+            patch("wild_igor.igor.tools.pe_chain._post_to_channel"),
+            patch(
+                "wild_igor.igor.tools.pe_chain.pe_test",
+                side_effect=lambda b: {**b, "test_result": "pass"},
+            ),
         ):
             result = run_pe_entry_chain({"ticket_id": "T-test-ticket"})
 
