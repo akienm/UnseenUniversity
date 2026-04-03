@@ -96,9 +96,9 @@ class TestRunCodingSprintSkipPaths:
         assert "no active GOAL memory" in result
         assert "skipping" in result
 
-    def test_with_active_goal_posts_prompt_and_evicts(self):
+    def test_with_active_goal_runs_chain_and_evicts(self):
         """
-        Happy path: active goal in TWM + active GOAL memory → posts prompt
+        Happy path: active goal in TWM + active GOAL memory → calls run_pe_chain
         and evicts GOAL_READY from TWM.
         """
         from wild_igor.igor.tools.ops import run_coding_sprint
@@ -115,16 +115,22 @@ class TestRunCodingSprintSkipPaths:
         mock_goal.narrative = "ACTIVE GOAL: implement T-programming-engrams"
         mock_cortex.get_by_type.return_value = [mock_goal]
 
+        mock_chain = MagicMock(
+            return_value="[pe_chain] DONE: ticket=T-programming-engrams"
+        )
+
+        # run_coding_sprint does `from .pe_chain import run_pe_chain` inside the
+        # function body — patch the source so the local binding picks up the mock.
         with patch("wild_igor.igor.memory.cortex.Cortex", return_value=mock_cortex):
-            # Patch out the channel writes so no DB/file I/O runs
-            with patch("psycopg2.connect", side_effect=Exception("no db in test")):
-                with patch("builtins.open", side_effect=Exception("no file in test")):
-                    result = run_coding_sprint()
+            with patch("wild_igor.igor.tools.pe_chain.run_pe_chain", mock_chain):
+                result = run_coding_sprint()
 
         assert "coding_sprint" in result
         assert "T-programming-engrams" in result
-        # Must evict GOAL_READY after posting
+        # Must evict GOAL_READY before running chain
         mock_cortex.twm_evict_category.assert_called_once_with("goal_ready")
+        # Must call pe_chain
+        mock_chain.assert_called_once()
 
 
 # ── PROC_CODING_SPRINT habit schema ───────────────────────────────────────────
