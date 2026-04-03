@@ -119,6 +119,19 @@ _STOPWORDS = {
     "if",
     "then",
     "so",
+    # Channel metadata tokens — prevent these from becoming trigger keywords
+    "talking",
+    "relationship",
+    "operator",
+    "message",
+    "akien",
+    "thread",
+    "context",
+    "recent",
+    "exchanges",
+    "channel",
+    "talking",
+    "with",
 }
 
 
@@ -225,12 +238,40 @@ class OutputTrainer:
     # ── Trigger extraction ────────────────────────────────────────────────────
 
     @staticmethod
+    def _strip_input_prefix(text: str) -> str:
+        """
+        Strip TALKING WITH / relationship header to get actual user message.
+
+        Formatted inputs look like:
+          "TALKING WITH: Akien | relationship: operator\n[Web message from akien]: you are?"
+        or "[Thread context...]\nTALKING WITH: ...\n[Web message from akien]: <msg>"
+
+        Without stripping, trigger keywords come from the metadata header
+        ('talking', 'akien', 'relationship', 'operator') not the actual message.
+        """
+        # [Web message from X]: <message>
+        m = re.search(r"\[Web message from [^\]]+\]:\s*(.+)", text, re.DOTALL)
+        if m:
+            return m.group(1).strip()
+        # [CC: X]: <message>
+        m = re.search(r"\[CC:[^\]]*\]:\s*(.+)", text, re.DOTALL)
+        if m:
+            return m.group(1).strip()
+        # TALKING WITH: header — take everything after last newline before content
+        m = re.search(r"TALKING WITH:.*?(?:\n(.+))", text, re.DOTALL)
+        if m:
+            return m.group(1).strip()
+        return text
+
+    @staticmethod
     def _extract_trigger(input_text: str) -> str:
         """
         Extract top keywords from input as BG trigger string.
         Space-separated, 4-6 tokens, stopwords removed, min 4 chars.
+        Strips metadata prefix first so trigger reflects actual message content.
         """
-        tokens = re.findall(r"[a-zA-Z]{4,}", input_text.lower())
+        stripped = OutputTrainer._strip_input_prefix(input_text)
+        tokens = re.findall(r"[a-zA-Z]{4,}", stripped.lower())
         meaningful = [t for t in tokens if t not in _STOPWORDS][:6]
         return " ".join(meaningful)
 
