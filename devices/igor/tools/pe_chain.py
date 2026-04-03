@@ -494,6 +494,35 @@ def pe_observe(basket: dict) -> dict:
     return basket
 
 
+# ── RUN_BASH (public basket-aware wrapper) ────────────────────────────────────
+
+
+def pe_run_bash(basket: dict) -> dict:
+    """
+    RUN_BASH step: run basket["bash_cmd"], write output to basket["bash_output"].
+
+    Layer 4 node — wraps _run_bash() as a basket-aware step function.
+    Used by tpl-layer4-run-bash code_ref slot.
+
+    Reads from basket: bash_cmd (str | list)
+    Writes to basket:
+      bash_output  str  — stdout+stderr, capped at 600 chars
+    """
+    if basket.get("error"):
+        return basket
+
+    cmd = basket.get("bash_cmd")
+    if not cmd:
+        basket["error"] = "pe_run_bash: no bash_cmd in basket"
+        return basket
+
+    args = cmd if isinstance(cmd, list) else cmd.split()
+    out = _run_bash(args, timeout=basket.get("bash_timeout", 30))
+    basket["bash_output"] = out
+    _flog(f"RUN_BASH: cmd={str(args)[:60]} output_len={len(out)}")
+    return basket
+
+
 # ── STORE_OBSERVE_RESULTS ─────────────────────────────────────────────────────
 
 
