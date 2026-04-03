@@ -432,7 +432,7 @@ def read_queue_top() -> str:
         pending = [
             t
             for t in tasks
-            if t.get("status") == "pending" and t.get("worker") == "claude"
+            if t.get("status") == "pending" and t.get("worker") == "igor"
         ]
         if not pending:
             return "no pending tickets"
@@ -481,7 +481,7 @@ def adopt_top_queue_ticket() -> str:
         pending = [
             t
             for t in tasks
-            if t.get("status") == "pending" and t.get("worker") == "claude"
+            if t.get("status") == "pending" and t.get("worker") == "igor"
         ]
         if not pending:
             return "[queue_drain] no pending tickets — queue empty"
@@ -803,59 +803,13 @@ def run_coding_sprint() -> str:
         m = _re.search(r"\b(T-[\w-]+)\b", source_msg)
         ticket_id = m.group(1) if m else None
 
-        # 4. Post structured coding prompt to channel
-        prompt = (
-            f"[CODING SPRINT] Goal: {active_goal}\n"
-            f"Ticket: {ticket_id or 'none'}\n"
-            f"Details: {goal.narrative[:200]}\n\n"
-            "Please implement this. Use the design docs and existing code patterns. "
-            "Run tests when done."
-            "\n\nBefore starting: call store_plan with your ticket ID and a 2-3 sentence implementation plan. "
-            "This persists your plan across restarts. Example: store_plan('T-deadend-ack-filter', 'Read main.py response path, add post_response_filter() before channel post, test with bare ack phrases')"
-        )
+        # 4. Run pe_chain directly — Igor executes the coding sprint natively
+        # (replaces old pattern of posting [CODING SPRINT] to channel for CC pickup)
+        cortex.twm_evict_category("goal_ready")  # consume signal before chain runs
+        from .pe_chain import run_pe_chain as _run_pe_chain
 
-        # Write to channel (Postgres + JSONL, same pattern as goal_continuation)
-        _DB_URL = os.getenv(
-            "IGOR_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/igor_wild_0001",
-        )
-        _ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        try:
-            import psycopg2 as _pg
-
-            conn_pg = _pg.connect(_DB_URL)
-            with conn_pg:
-                with conn_pg.cursor() as c:
-                    c.execute(
-                        "INSERT INTO channel_messages (ts, author, type, content) VALUES (%s, %s, %s, %s)",
-                        (_ts, "claude-code", "message", prompt),
-                    )
-            conn_pg.close()
-        except Exception:
-            pass
-        try:
-            _ch_path = paths().cc_channel / "messages.jsonl"
-            _ch_path.parent.mkdir(parents=True, exist_ok=True)
-            _entry = json.dumps(
-                {
-                    "ts": _ts,
-                    "author": "claude-code",
-                    "type": "message",
-                    "content": prompt,
-                },
-                ensure_ascii=False,
-            )
-            with open(_ch_path, "a", encoding="utf-8") as _f:
-                _f.write(_entry + "\n")
-        except Exception:
-            pass
-
-        # 5. Evict GOAL_READY from TWM — signal consumed
-        cortex.twm_evict_category("goal_ready")
-
-        return (
-            f"[coding_sprint] posted sprint prompt for {ticket_id or active_goal[:40]}"
-        )
+        chain_result = _run_pe_chain()
+        return f"[coding_sprint] chain done for {ticket_id or active_goal[:40]}: {chain_result[:120]}"
 
     except Exception as e:
         return f"[coding_sprint] error: {e}"
