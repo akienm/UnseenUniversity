@@ -216,13 +216,28 @@ class TestPeReadTicket:
 
 class TestRunPeEntryChain:
     def test_full_chain_populates_basket(self, tmp_queue):
-        """Full chain: basket seeded with ticket_id → claim → read."""
+        """Full chain: basket seeded with ticket_id → claim → read → test pass."""
         with (
             patch("wild_igor.igor.tools.pe_chain._QUEUE_FILE", tmp_queue),
             patch(
                 "wild_igor.igor.tools.pe_chain._run_bash",
                 return_value="Claimed T-test-ticket",
             ),
+            patch("wild_igor.igor.tools.pe_chain._call_tier2", return_value=None),
+            patch(
+                "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+                Path(__file__).resolve().parent.parent,
+            ),
+            patch("wild_igor.igor.tools.pe_chain._post_to_channel"),
+            patch(
+                "wild_igor.igor.tools.pe_chain.pe_test",
+                side_effect=lambda b: {**b, "test_result": "pass"},
+            ),
+            patch(
+                "wild_igor.igor.tools.pe_chain._pe_commit",
+                side_effect=lambda b: {**b, "commit_result": "ok"},
+            ),
+            patch("wild_igor.igor.tools.pe_chain._pe_close", side_effect=lambda b: b),
         ):
             result = run_pe_entry_chain({"ticket_id": "T-test-ticket"})
 
