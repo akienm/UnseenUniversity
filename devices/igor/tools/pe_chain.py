@@ -801,7 +801,7 @@ def _post_to_channel(message: str) -> None:
         import json as _json
         from datetime import datetime, timezone
 
-        ts = datetime.now(timezone.utc).strftime("%H:%M:%S")
+        ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         ch = _paths().cc_channel / "messages.jsonl"
         ch.parent.mkdir(parents=True, exist_ok=True)
         with open(ch, "a") as f:
