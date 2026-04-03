@@ -43,7 +43,7 @@ _OPEN_PATH = "builtins.open"
 
 
 def _make_ticket(
-    id: str, priority: int = 5, status: str = "pending", worker: str = "claude"
+    id: str, priority: int = 5, status: str = "pending", worker: str = "igor"
 ) -> dict:
     return {
         "id": id,
@@ -123,14 +123,14 @@ class TestReadQueueTop(unittest.TestCase):
         result = self._call(tickets)
         self.assertEqual(result, "no pending tickets")
 
-    def test_filters_non_claude_worker(self):
-        """Only returns tickets with worker=='claude'."""
+    def test_filters_non_igor_worker(self):
+        """Only returns tickets with worker=='igor'."""
         tickets = [
             _make_ticket("T-foreman", priority=1, worker="foreman"),
-            _make_ticket("T-claude", priority=2, worker="claude"),
+            _make_ticket("T-igor", priority=2, worker="igor"),
         ]
         result = self._call(tickets)
-        self.assertIn("T-claude", result)
+        self.assertIn("T-igor", result)
 
     def test_includes_title_in_result(self):
         """Result contains the ticket title."""
