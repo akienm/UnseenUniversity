@@ -30,6 +30,7 @@ from wild_igor.igor.tools.pe_chain import (
     pe_observe,
     pe_read_ticket,
     pe_situate,
+    pe_store_observe_results,
     pe_test,
     run_pe_entry_chain,
 )
@@ -499,6 +500,76 @@ class TestPeObserve:
         assert "ops.py" in result["actual"]
         assert "main.py" in result["actual"]
         assert len(result["line_ranges"]) == 2
+
+
+# ── pe_store_observe_results ─────────────────────────────────────────────────
+
+
+class TestPeStoreObserveResults:
+    def test_skips_when_no_hits(self):
+        basket = {
+            "ticket_id": "T-test",
+            "ticket_description": "fix something",
+            "actual": "",
+            "observe_hits": 0,
+            "plan_files": [],
+        }
+        result = pe_store_observe_results(basket)
+        assert result["observe_stored_id"] is None
+
+    def test_skips_when_no_actual(self):
+        basket = {
+            "ticket_id": "T-test",
+            "ticket_description": "fix something",
+            "actual": "",
+            "observe_hits": 3,
+            "plan_files": ["foo.py"],
+        }
+        result = pe_store_observe_results(basket)
+        assert result["observe_stored_id"] is None
+
+    def test_passes_through_on_error_basket(self):
+        basket = {"error": "prior step failed"}
+        result = pe_store_observe_results(basket)
+        assert result["error"] == "prior step failed"
+        assert "observe_stored_id" not in result
+
+    def test_calls_store_factual_on_hits(self):
+        basket = {
+            "ticket_id": "T-abc",
+            "ticket_description": "add freshness signal",
+            "actual": "def some_function(): pass",
+            "observe_hits": 2,
+            "plan_files": ["wild_igor/igor/memory/cortex.py"],
+        }
+        with patch(
+            "wild_igor.igor.tools.graph_write.store_factual",
+            return_value="stored mem123: Codebase search",
+        ) as mock_store:
+            result = pe_store_observe_results(basket)
+        # store_factual was called with a summary containing key fields
+        assert mock_store.called
+        call_arg = mock_store.call_args[0][0]
+        assert "T-abc" in call_arg
+        assert "cortex.py" in call_arg
+        assert result["observe_stored_id"] == "stored mem123: Codebase search"
+
+    def test_non_fatal_on_store_failure(self):
+        basket = {
+            "ticket_id": "T-xyz",
+            "ticket_description": "fix bug",
+            "actual": "some code",
+            "observe_hits": 1,
+            "plan_files": ["foo.py"],
+        }
+        with patch(
+            "wild_igor.igor.tools.graph_write.store_factual",
+            side_effect=RuntimeError("cortex down"),
+        ):
+            result = pe_store_observe_results(basket)
+        # Chain continues — no error set, stored_id is None
+        assert result.get("error") is None
+        assert result["observe_stored_id"] is None
 
 
 # ── pe_hypothesize ────────────────────────────────────────────────────────────
