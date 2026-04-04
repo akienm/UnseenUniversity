@@ -835,7 +835,9 @@ def pe_hypothesize(basket: dict) -> dict:
 
     prompt = _HYPOTHESIZE_PROMPT.format(
         description=description[:400],
-        actual=actual[:2000],  # cap to avoid overwhelming small model
+        actual=actual[
+            :4000
+        ],  # cap to avoid overwhelming small model (4000 = ~120-line section)
     )
     _flog(f"HYPOTHESIZE: calling tier.2 prompt_len={len(prompt)}")
 

@@ -946,6 +946,7 @@ class TestPeCloseLoop:
             patch("wild_igor.igor.tools.pe_chain._run_bash", return_value="ok"),
             patch("wild_igor.igor.tools.pe_chain._post_to_channel"),
         ):
-            result = pe_close_loop(basket)
+            with patch.dict("sys.modules", {"wild_igor.igor.tools.ops": None}):
+                result = pe_close_loop(basket)
         # Should have hit max and escalated
         assert "escalate_reason" in result
