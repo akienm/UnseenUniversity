@@ -339,6 +339,43 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
     ("m024_traces_twm_obs_id", "ALTER TABLE traces ADD COLUMN twm_obs_id TEXT"),
     ("m025_traces_instance_id", "ALTER TABLE traces ADD COLUMN instance_id TEXT"),
     ("m026_traces_thread_id", "ALTER TABLE traces ADD COLUMN thread_id TEXT"),
+    # T-interpretive-edges-cascade: add ON DELETE CASCADE to interpretive_edges FKs
+    # so deleted memories don't leave dangling edge references (36K+ edges in live DB).
+    # Drop existing unnamed FKs and recreate with explicit names + CASCADE.
+    (
+        "m027_ie_from_cascade_drop",
+        "ALTER TABLE interpretive_edges DROP CONSTRAINT IF EXISTS interpretive_edges_from_id_fkey",
+    ),
+    (
+        "m028_ie_from_cascade_add",
+        "ALTER TABLE interpretive_edges ADD CONSTRAINT interpretive_edges_from_id_fkey"
+        " FOREIGN KEY (from_id) REFERENCES memories(id) ON DELETE CASCADE",
+    ),
+    (
+        "m029_ie_to_cascade_drop",
+        "ALTER TABLE interpretive_edges DROP CONSTRAINT IF EXISTS interpretive_edges_to_id_fkey",
+    ),
+    (
+        "m030_ie_to_cascade_add",
+        "ALTER TABLE interpretive_edges ADD CONSTRAINT interpretive_edges_to_id_fkey"
+        " FOREIGN KEY (to_id) REFERENCES memories(id) ON DELETE CASCADE",
+    ),
+    # Orphan cleanup: remove any edges whose from_id or to_id no longer exists in memories.
+    (
+        "m031_ie_orphan_cleanup",
+        "DELETE FROM interpretive_edges WHERE from_id NOT IN (SELECT id FROM memories)"
+        " OR to_id NOT IN (SELECT id FROM memories)",
+    ),
+    # T-interpretive-edges-cascade: add ON DELETE CASCADE to memory_blobs FK too.
+    (
+        "m032_blobs_cascade_drop",
+        "ALTER TABLE memory_blobs DROP CONSTRAINT IF EXISTS memory_blobs_memory_id_fkey",
+    ),
+    (
+        "m033_blobs_cascade_add",
+        "ALTER TABLE memory_blobs ADD CONSTRAINT memory_blobs_memory_id_fkey"
+        " FOREIGN KEY (memory_id) REFERENCES memories(id) ON DELETE CASCADE",
+    ),
 ]
 
 
