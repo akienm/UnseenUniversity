@@ -2628,6 +2628,11 @@ class Igor(IgorBase):
                 self._evict_stale_threads()  # #136: purge idle thread buffers
                 time.sleep(0.5)
             except Exception as _loop_exc:
+                import sys as _sys
+                import subprocess as _sp
+                import traceback as _trb
+
+                _full_tb = _trb.format_exc()
                 log_error(
                     kind="MAIN_LOOP_CRASH",
                     detail=f"Unhandled exception in main loop: {type(_loop_exc).__name__}: {_loop_exc}",
@@ -2638,7 +2643,36 @@ class Igor(IgorBase):
                     )
                 except Exception:
                     pass
-                raise
+
+                # T-cc-call-into-igor: invoke Claude Code from Python so it gets
+                # the full structured traceback (not just the last 80 log lines).
+                # Skip if debug_session.flag is present — a CC session is already active.
+                # Exit 42 afterwards → bash restart loop fires without calling CC again.
+                _debug_flag = _paths().instance / "debug_session.flag"
+                if not _debug_flag.exists():
+                    _prompt = (
+                        f"Igor crashed with an unhandled exception in the main loop.\n\n"
+                        f"Exception: {type(_loop_exc).__name__}: {_loop_exc}\n\n"
+                        f"Full traceback:\n{_full_tb}\n\n"
+                        "Task: diagnose the root cause, fix the code in ~/TheIgors/wild_igor/, "
+                        "run tests (cd ~/TheIgors && source venv/bin/activate && "
+                        "python -m pytest tests/ -x -q), commit the fix, then exit cleanly. "
+                        "Do not restart Igor — the startup script will restart it after you exit."
+                    )
+                    try:
+                        _sp.run(
+                            ["claude", "--dangerously-skip-permissions", "-p", _prompt],
+                            timeout=600,
+                        )
+                    except Exception as _cc_e:
+                        log_error(
+                            kind="CC_AUTO_FIX_FAIL",
+                            detail=f"Could not launch CC auto-fixer: {_cc_e}",
+                        )
+                # Exit 42 = restart signal: bash loop restarts Igor cleanly.
+                # Bash crash-detection (which also calls CC) only fires for non-42 exits,
+                # so this prevents double-invocation of CC.
+                _sys.exit(42)
 
     def _bg_reason(
         self,
