@@ -651,6 +651,16 @@ def select_habit(
                     _bare_e,
                 )
 
+        # T-bg-inhibition-timing: load habits suppressed by prior BG selections.
+        # Lateral inhibition fires DURING scoring (not after) so near-miss candidates
+        # enter competition already penalised — winner emerges from a filtered pool.
+        _inhibited_ids: set[str] = set()
+        if _cortex is not None:
+            try:
+                _inhibited_ids = _cortex.get_inhibited_habit_ids([h.id for h in habits])
+            except Exception as _bare_e:
+                logging.getLogger(__name__).debug("bg_inhibition preload: %s", _bare_e)
+
         scored = []
         near_misses: list[tuple[float, "Memory"]] = []
         for habit in habits:
@@ -666,6 +676,10 @@ def select_habit(
                     _wg_scores=_wg_scores,
                     meaning_to_me_context=meaning_to_me_context,
                 )
+                # BG lateral inhibition: habits suppressed by a prior winner take
+                # a graded score penalty so the dominant winner consistently wins.
+                if habit.id in _inhibited_ids:
+                    s = max(0.0, s - 0.15)
             if s >= threshold:
                 scored.append((s, habit))
             elif s >= THRESHOLD_MIN:

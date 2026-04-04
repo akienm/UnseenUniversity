@@ -4215,6 +4215,25 @@ class Cortex(IgorBase):
             ).fetchall()
         return [dict(r) for r in rows]
 
+    def get_inhibited_habit_ids(self, candidate_ids: list[str]) -> set[str]:
+        """
+        T-bg-inhibition-timing: Return the subset of candidate_ids that have
+        incoming bg_inhibition edges (i.e. were previously suppressed as near-misses).
+        Used by select_habit() to apply score penalties BEFORE winner selection.
+        Gracefully returns empty set if no candidates or on error.
+        """
+        if not candidate_ids:
+            return set()
+        with self._conn() as conn:
+            placeholders = ",".join(["?"] * len(candidate_ids))
+            rows = conn.execute(
+                f"SELECT DISTINCT to_id FROM interpretive_edges "
+                f"WHERE direction='inhibition' AND layer='bg_inhibition' "
+                f"AND to_id IN ({placeholders})",
+                candidate_ids,
+            ).fetchall()
+        return {r["to_id"] for r in rows}
+
     def get_meaning_to_me(self, limit: int = 50) -> list["Memory"]:
         """
         #244: Return Memory objects reachable via meaning_to_me layer edges.
