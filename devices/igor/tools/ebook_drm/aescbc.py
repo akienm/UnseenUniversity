@@ -101,7 +101,7 @@ class BlockCipher:
         numBlocks, numExtraBytes = divmod(len(self.bytesToDecrypt), self.blockSize)
         if more == None:  # no more calls to decrypt, should have all the data
             if numExtraBytes  != 0:
-                raise DecryptNotBlockAlignedError, 'Data not block aligned on decrypt'
+                raise DecryptNotBlockAlignedError('Data not block aligned on decrypt')
 
         # hold back some bytes in case last decrypt has zero len
         if (more != None) and (numExtraBytes == 0) and (numBlocks >0) :
@@ -143,7 +143,7 @@ class padWithPadLen(Pad):
     def removePad(self, paddedBinaryString, blockSize):
         """ Remove padding from a binary string """
         if not(0<len(paddedBinaryString)):
-            raise DecryptNotBlockAlignedError, 'Expected More Data'
+            raise DecryptNotBlockAlignedError('Expected More Data')
         return paddedBinaryString[:-ord(paddedBinaryString[-1])]
 
 class noPadding(Pad):
@@ -173,11 +173,11 @@ class Rijndael(BlockCipher):
         self.blockSize  = blockSize  # blockSize is in bytes
         self.padding    = padding    # change default to noPadding() to get normal ECB behavior
 
-        assert( keySize%4==0 and NrTable[4].has_key(keySize/4)),'key size must be 16,20,24,29 or 32 bytes'
-        assert( blockSize%4==0 and NrTable.has_key(blockSize/4)), 'block size must be 16,20,24,29 or 32 bytes'
+        assert( keySize%4==0 and NrTable[4].has_key(keySize//4)),'key size must be 16,20,24,29 or 32 bytes'
+        assert( blockSize%4==0 and blockSize//4 in NrTable), 'block size must be 16,20,24,29 or 32 bytes'
 
-        self.Nb = self.blockSize/4          # Nb is number of columns of 32 bit words
-        self.Nk = keySize/4                 # Nk is the key length in 32-bit words
+        self.Nb = self.blockSize//4          # Nb is number of columns of 32 bit words
+        self.Nk = keySize//4                 # Nk is the key length in 32-bit words
         self.Nr = NrTable[self.Nb][self.Nk] # The number of rounds (Nr) is a function of
                                             # the block (Nb) and key (Nk) sizes.
         if key != None:
@@ -451,7 +451,7 @@ class AES(Rijndael):
     def __init__(self, key = None, padding = padWithPadLen(), keySize=16):
         """ Initialize AES, keySize is in bytes """
         if  not (keySize == 16 or keySize == 24 or keySize == 32) :
-            raise BadKeySizeError, 'Illegal AES key size, must be 16, 24, or 32 bytes'
+            raise BadKeySizeError('Illegal AES key size, must be 16, 24, or 32 bytes')
 
         Rijndael.__init__( self, key, padding=padding, keySize=keySize, blockSize=16 )
 
