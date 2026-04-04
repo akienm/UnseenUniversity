@@ -395,6 +395,93 @@ def check_before_call() -> tuple[bool, str]:
     return True, f"Budget OK: ${remaining:.2f} remaining (source={s['source']})."
 
 
+# ── costs.log query (T-costs-log) ────────────────────────────────────────────
+
+
+def query_costs_log(window_days: float = 1.0) -> dict:
+    """
+    Read costs.log and sum inference spend for the last N days.
+
+    costs.log format: ts|inference|provider|model|tier|cost_usd|tokens_in|tokens_out|caller
+    Returns: {total_usd, by_provider, by_tier, by_model, row_count, window_days}
+    """
+    from ..paths import paths as _paths
+    from datetime import timezone
+
+    log_path = _paths().logs / "costs.log"
+    if not log_path.exists():
+        return {
+            "total_usd": 0.0,
+            "by_provider": {},
+            "by_tier": {},
+            "by_model": {},
+            "row_count": 0,
+            "window_days": window_days,
+            "note": "costs.log not found — no inference calls logged yet",
+        }
+
+    cutoff_ts = datetime.now(timezone.utc).timestamp() - window_days * 86400
+    total = 0.0
+    by_provider: dict[str, float] = {}
+    by_tier: dict[str, float] = {}
+    by_model: dict[str, float] = {}
+    row_count = 0
+
+    try:
+        with open(log_path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split("|")
+                if len(parts) < 7:
+                    continue
+                try:
+                    # ts field: ISO format with timezone
+                    ts_str = parts[0]
+                    ts = datetime.fromisoformat(
+                        ts_str.replace("Z", "+00:00")
+                    ).timestamp()
+                    if ts < cutoff_ts:
+                        continue
+                    provider = parts[2]
+                    model = parts[3]
+                    tier = parts[4]
+                    cost = float(parts[5])
+                    total += cost
+                    by_provider[provider] = by_provider.get(provider, 0.0) + cost
+                    by_tier[tier] = by_tier.get(tier, 0.0) + cost
+                    by_model[model] = by_model.get(model, 0.0) + cost
+                    row_count += 1
+                except (ValueError, IndexError):
+                    continue
+    except Exception as e:
+        return {
+            "total_usd": 0.0,
+            "by_provider": {},
+            "by_tier": {},
+            "by_model": {},
+            "row_count": 0,
+            "window_days": window_days,
+            "note": f"read error: {e}",
+        }
+
+    return {
+        "total_usd": round(total, 6),
+        "by_provider": {
+            k: round(v, 6) for k, v in sorted(by_provider.items(), key=lambda x: -x[1])
+        },
+        "by_tier": {
+            k: round(v, 6) for k, v in sorted(by_tier.items(), key=lambda x: -x[1])
+        },
+        "by_model": {
+            k: round(v, 6) for k, v in sorted(by_model.items(), key=lambda x: -x[1])
+        },
+        "row_count": row_count,
+        "window_days": window_days,
+    }
+
+
 # ── Tool functions (exposed to Igor) ─────────────────────────────────────────
 
 
@@ -559,5 +646,54 @@ registry.register(
         description="Alias for check_openrouter_balance. Use that instead.",
         parameters={"type": "object", "properties": {}, "required": []},
         fn=_tool_check_balance,
+    )
+)
+
+
+def _tool_costs_log(window_days: float = 1.0, **_) -> str:
+    """Show inference spend from costs.log for the last N days."""
+    data = query_costs_log(float(window_days))
+    if "note" in data and data["row_count"] == 0:
+        return data["note"]
+    lines = [
+        f"Inference costs — last {window_days:.0f}d ({data['row_count']} calls): ${data['total_usd']:.4f}",
+    ]
+    if data["by_tier"]:
+        lines.append(
+            "  By tier: "
+            + " | ".join(f"{k}=${v:.4f}" for k, v in data["by_tier"].items())
+        )
+    if data["by_provider"]:
+        lines.append(
+            "  By provider: "
+            + " | ".join(f"{k}=${v:.4f}" for k, v in data["by_provider"].items())
+        )
+    if data["by_model"]:
+        top_models = list(data["by_model"].items())[:5]
+        lines.append(
+            "  Top models: " + " | ".join(f"{m}=${c:.4f}" for m, c in top_models)
+        )
+    return "\n".join(lines)
+
+
+registry.register(
+    Tool(
+        name="inference_costs_log",
+        description=(
+            "Show inference spend from costs.log broken down by tier, provider, and model. "
+            "window_days: lookback window in days (default 1 = today). "
+            "Use 7 for weekly totals. Feeds priority decisions: which tiers burn fastest."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "window_days": {
+                    "type": "number",
+                    "description": "Lookback window in days (default 1)",
+                },
+            },
+            "required": [],
+        },
+        fn=_tool_costs_log,
     )
 )
