@@ -18,6 +18,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from wild_igor.igor.tools.pe_chain import (
     _MAX_ATTEMPTS,
+    _CODE_EXPANSION,
+    _expand_patterns_with_synonyms,
     _extract_grep_patterns,
     _parse_file_list,
     _parse_hypothesis,
@@ -414,10 +416,10 @@ class TestExtractGrepPatterns:
         patterns = _extract_grep_patterns(desc)
         assert any("twm" in p for p in patterns)
 
-    def test_caps_at_four_patterns(self):
+    def test_caps_at_six_patterns(self):
         desc = "'alpha' 'beta' 'gamma' 'delta' 'epsilon' PROC_X PROC_Y"
         patterns = _extract_grep_patterns(desc)
-        assert len(patterns) <= 4
+        assert len(patterns) <= 6
 
     def test_deduplicates(self):
         desc = "'goal_adopt' and 'goal_adopt' again"
@@ -427,6 +429,52 @@ class TestExtractGrepPatterns:
     def test_empty_description(self):
         patterns = _extract_grep_patterns("")
         assert patterns == []
+
+    def test_expands_register_to_registry(self):
+        # "register" in ticket → also grep for "registry"
+        desc = "Fix the tool register call in the chain"
+        patterns = _extract_grep_patterns(desc)
+        assert "registry" in patterns or "Tool(" in patterns
+
+    def test_expands_habit_to_proc(self):
+        desc = "habit seeding is broken for new types"
+        patterns = _extract_grep_patterns(desc)
+        assert "PROC_" in patterns or "seed_habits" in patterns
+
+    def test_expansion_adds_at_most_two_extra(self):
+        # Even with multiple expansion-eligible base patterns, cap at 6 total
+        desc = "register habit tool"
+        patterns = _extract_grep_patterns(desc)
+        assert len(patterns) <= 6
+
+    def test_no_expansion_when_no_match(self):
+        # No expansion key in description — only base patterns returned
+        desc = "something completely unrelated zorp quux"
+        patterns = _extract_grep_patterns(desc)
+        # No expansion means fewer patterns (only what regex extracts)
+        for p in patterns:
+            assert p not in _CODE_EXPANSION.values()
+
+
+class TestExpandPatternsWithSynonyms:
+    def test_returns_empty_for_unknown_patterns(self):
+        assert _expand_patterns_with_synonyms(["zorp", "quux"]) == []
+
+    def test_expands_first_matching_pattern(self):
+        extras = _expand_patterns_with_synonyms(["register_tool"])
+        assert "registry" in extras or "Tool(" in extras
+
+    def test_caps_at_two_extras(self):
+        # Multiple matching base patterns — still max 2 extras
+        extras = _expand_patterns_with_synonyms(
+            ["register_tool", "habit_type", "memory_node"]
+        )
+        assert len(extras) <= 2
+
+    def test_no_duplicates_with_base(self):
+        # If base already contains an expansion value, don't re-add it
+        extras = _expand_patterns_with_synonyms(["register_tool", "registry"])
+        assert extras.count("registry") == 0
 
 
 class TestPeObserve:
