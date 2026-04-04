@@ -83,6 +83,8 @@ _STOP_WORDS = frozenset(
         "can",
         "i",
         "you",
+        "your",
+        "their",
         "he",
         "she",
         "it",
@@ -127,22 +129,36 @@ _STOP_WORDS = frozenset(
 )
 
 
+_THREAD_CTX_PREFIX_RE = re.compile(r"^\[Thread context[^\]]*\]\s*", re.IGNORECASE)
+_TALKING_WITH_PREFIX_RE = re.compile(r"^TALKING WITH:[^\]]*\]:\s*", re.IGNORECASE)
+_USER_LABEL_RE = re.compile(r"^\s*User:\s*", re.IGNORECASE)
+
+
 def _topic_from_input(text: str, max_chars: int = 40) -> str:
     """
     Extract a normalised topic keyword from input text.
+    - Strip boilerplate prefixes (thread context, TALKING WITH, etc.)
     - Lowercase, strip punctuation
     - Take first meaningful non-stop word (≥4 chars)
     - Fall back to first 40 chars of lowercased text
     """
     if not text:
         return "unknown"
-    clean = re.sub(r"[^\w\s]", " ", text.lower())
+    # Strip injected prefixes so they don't poison topic extraction
+    stripped = _THREAD_CTX_PREFIX_RE.sub("", text)
+    stripped = _TALKING_WITH_PREFIX_RE.sub("", stripped)
+    # After stripping thread context, the text often starts "User: <message>  Igor: ..."
+    # Extract just the first User turn
+    user_m = _USER_LABEL_RE.match(stripped)
+    if user_m:
+        stripped = stripped[user_m.end() :]
+    clean = re.sub(r"[^\w\s]", " ", stripped.lower())
     words = clean.split()
     for w in words:
         if len(w) >= 4 and w not in _STOP_WORDS:
             return w
     # Fall back: first 40 chars, whitespace-collapsed
-    return " ".join(text.lower().split())[:max_chars].strip() or "unknown"
+    return " ".join(stripped.lower().split())[:max_chars].strip() or "unknown"
 
 
 # ── Log parsers ───────────────────────────────────────────────────────────────
