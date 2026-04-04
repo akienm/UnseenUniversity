@@ -376,6 +376,27 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "ALTER TABLE memory_blobs ADD CONSTRAINT memory_blobs_memory_id_fkey"
         " FOREIGN KEY (memory_id) REFERENCES memories(id) ON DELETE CASCADE",
     ),
+    # T-memory-tsvector-index: GIN indexes for full-text + trigram search.
+    # Eliminates sequential LIKE %...% scans on the memories table.
+    # m034/m035: payload indexes as specified in ticket.
+    # m036: narrative trigram — narrative is the hot-path for FACTUAL keyword supplement
+    #       (LOWER(narrative) LIKE %s at graph scale = full table scan every 30s).
+    # All require pg_trgm (already installed). No CONCURRENTLY — runs inside migration tx.
+    (
+        "m034_memories_payload_tsvector_gin",
+        "CREATE INDEX IF NOT EXISTS idx_memories_payload_gin"
+        " ON memories USING GIN (to_tsvector('english', COALESCE(payload, '')))",
+    ),
+    (
+        "m035_memories_payload_trgm_gin",
+        "CREATE INDEX IF NOT EXISTS idx_memories_payload_trgm"
+        " ON memories USING GIN (payload gin_trgm_ops)",
+    ),
+    (
+        "m036_memories_narrative_trgm_gin",
+        "CREATE INDEX IF NOT EXISTS idx_memories_narrative_trgm"
+        " ON memories USING GIN (narrative gin_trgm_ops)",
+    ),
 ]
 
 
@@ -1658,12 +1679,26 @@ class Cortex(IgorBase):
             try:
                 for _fkt in _fk_terms[:6]:
                     with self._conn() as conn:
+                        # T-memory-tsvector-index: use GIN tsvector index when
+                        # available (Postgres). plainto_tsquery is exact-stem match;
+                        # fall through to trigram LIKE if tsvector returns nothing
+                        # (e.g. very short tokens, numbers, proper nouns).
                         _fk_rows = conn.execute(
                             f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
-                            "WHERE memory_type = %s AND LOWER(narrative) LIKE %s "
+                            "WHERE memory_type = %s "
+                            "AND to_tsvector('english', narrative) "
+                            "   @@ plainto_tsquery('english', %s) "
                             "ORDER BY activation_count DESC LIMIT 20",
-                            [MemoryType.FACTUAL.value, f"%{_fkt.lower()}%"],
+                            [MemoryType.FACTUAL.value, _fkt],
                         ).fetchall()
+                        if not _fk_rows:
+                            # Fallback: trigram LIKE for partial/non-English tokens
+                            _fk_rows = conn.execute(
+                                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
+                                "WHERE memory_type = %s AND narrative ILIKE %s "
+                                "ORDER BY activation_count DESC LIMIT 20",
+                                [MemoryType.FACTUAL.value, f"%{_fkt}%"],
+                            ).fetchall()
                     for _r in _fk_rows:
                         if _r["id"] not in _fk_seen and _r["id"] not in _fk_ids:
                             _fk_ids.add(_r["id"])
