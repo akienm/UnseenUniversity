@@ -807,17 +807,45 @@ class InboxWatcher(BasePushSource):
         pushed = []
         for filename in sorted(new_files):
             csb = f"INBOX_FILE|{filename}|{now.strftime('%Y-%m-%dT%H:%M')}"
+            urgency, salience = self._urgency_for_file(INBOX_DIR / filename)
             obs_id = cortex.twm_push(
                 source=self.name,
                 content_csb=csb,
-                salience=0.9,
+                salience=salience,
                 metadata={"filename": filename, "inbox": str(INBOX_DIR)},
                 ttl_seconds=3600,
-                urgency=0.8,  # Change 4: new inbox file — Igor should act on this soon
+                urgency=urgency,
             )
             pushed.append(obs_id)
 
         return pushed
+
+    @staticmethod
+    def _urgency_for_file(path) -> tuple:
+        """
+        Peek at the first 512 bytes of an inbox file to determine urgency.
+        Returns (urgency, salience).
+        - Explicit urgency keywords → (0.8, 0.9)  high
+        - Low-priority / background markers → (0.2, 0.4)  background
+        - Default → (0.5, 0.6)  medium
+        """
+        _URGENT_WORDS = {"urgent", "asap", "immediately", "right now", "emergency"}
+        _LOW_WORDS = {
+            "no rush",
+            "background",
+            "low priority",
+            "when you get a chance",
+            "non-urgent",
+        }
+        try:
+            snippet = path.read_text(encoding="utf-8", errors="replace")[:512].lower()
+        except OSError:
+            return 0.5, 0.6
+        if any(w in snippet for w in _URGENT_WORDS):
+            return 0.8, 0.9
+        if any(w in snippet for w in _LOW_WORDS):
+            return 0.2, 0.4
+        return 0.5, 0.6
 
 
 # ── HabitCandidateSource ──────────────────────────────────────────────────────
