@@ -20,8 +20,12 @@ Adding a new subscriber (Discord, web, etc.):
 from __future__ import annotations
 
 import logging
+import logging.handlers
 import time
 from pathlib import Path
+
+_LOG_MAX_BYTES = 50 * 1024 * 1024  # 50 MB per file
+_LOG_BACKUP_COUNT = 3  # keep .1 .2 .3
 
 # ── Console handler ───────────────────────────────────────────────────────────
 
@@ -113,7 +117,12 @@ def _add_file(
     for h in logger.handlers:
         if isinstance(h, logging.FileHandler) and h.baseFilename == path_str:
             return
-    handler = logging.FileHandler(path_str, encoding="utf-8")
+    handler = logging.handlers.RotatingFileHandler(
+        path_str,
+        maxBytes=_LOG_MAX_BYTES,
+        backupCount=_LOG_BACKUP_COUNT,
+        encoding="utf-8",
+    )
     handler.setLevel(level)
     handler.setFormatter(fmt)
     logger.addHandler(handler)
