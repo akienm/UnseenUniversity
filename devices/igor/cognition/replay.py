@@ -55,6 +55,7 @@ class ConsolidationReplay(IgorBase):
     """
 
     name: str = "consolidation_replay"
+    TIMING_TIER: str = "slow"
     MIN_INTERVAL_SEC = 300  # At least 5 min between replays
     NO_ACTIVITY_THRESHOLD_SEC = 600  # 10 min threshold for "quiet period"
     TIMESTAMP_PROXIMITY_SEC = 120  # Nodes within 120s are co-deposited
