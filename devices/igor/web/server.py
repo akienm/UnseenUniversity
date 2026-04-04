@@ -368,6 +368,14 @@ async def _api_metrics(request: Request):
     except Exception:
         pass
 
+    # Self-training stats (T-self-training-metrics)
+    try:
+        from ..cognition.metrics import _self_training_stats
+
+        payload["self_training"] = _self_training_stats(n_days=7)
+    except Exception:
+        pass
+
     return JSONResponse(payload)
 
 

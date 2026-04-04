@@ -59,7 +59,9 @@ def _escalation_rate() -> tuple[float, int, int]:
                 total = int(re.search(r"total=(\d+)", line).group(1))
                 return rate, cloud, total
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/metrics.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/cognition/metrics.py: %s", _bare_e
+                )
     return 0.0, 0, 0
 
 
@@ -206,8 +208,97 @@ def _consolidation_stats(cortex) -> dict | None:
                     "skipped": int(m_sk.group(1)) if m_sk else 0,
                 }
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/metrics.py: %s", _bare_e)
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/cognition/metrics.py: %s", _bare_e
+        )
     return None
+
+
+def _self_training_stats(n_days: int = 7) -> dict:
+    """
+    Parse cognition_metrics.log for self_training_pass entries.
+    cognition_metrics.log is append-only (oldest first), so we read the full
+    file and scan all lines.
+
+    Returns:
+        last_run: ISO timestamp of last pass, or None
+        last_scanned: int
+        last_gaps: int
+        last_deposited: int
+        total_deposited: int  — all-time from deposited= fields
+        gap_rate_7d: float   — avg gaps/scanned over last 7 days (0.0 if no scans)
+        daily_gap_rates: list[tuple[str, float]]  — (date_str, rate) last 7 days
+    """
+    from datetime import datetime, timezone, timedelta
+
+    path = _LOGS_DIR / "cognition_metrics.log"
+    if not path.exists():
+        return {}
+
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return {}
+
+    now = datetime.now(timezone.utc)
+    cutoff_7d = now - timedelta(days=n_days)
+
+    last_run: str | None = None
+    last_scanned = last_gaps = last_deposited = 0
+    total_deposited = 0
+
+    # daily accumulator: date_str → (scanned, gaps)
+    daily: dict[str, tuple[int, int]] = defaultdict(lambda: (0, 0))
+
+    for line in lines:
+        if "|self_training_pass|" not in line:
+            continue
+        ts_str = line.split("|", 1)[0]
+        try:
+            ts = datetime.fromisoformat(ts_str).replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+
+        m_sc = re.search(r"scanned=(\d+)", line)
+        m_ga = re.search(r"gaps=(\d+)", line)
+        m_de = re.search(r"deposited=(\d+)", line)
+        scanned = int(m_sc.group(1)) if m_sc else 0
+        gaps = int(m_ga.group(1)) if m_ga else 0
+        deposited = int(m_de.group(1)) if m_de else 0
+
+        total_deposited += deposited
+        last_run = ts_str[:19]
+        last_scanned = scanned
+        last_gaps = gaps
+        last_deposited = deposited
+
+        if ts >= cutoff_7d and scanned > 0:
+            date_key = ts_str[:10]
+            prev_sc, prev_ga = daily[date_key]
+            daily[date_key] = (prev_sc + scanned, prev_ga + gaps)
+
+    # Compute per-day gap rates for the last 7 days
+    daily_gap_rates: list[tuple[str, float]] = []
+    for i in range(n_days - 1, -1, -1):
+        day = (now - timedelta(days=i)).strftime("%Y-%m-%d")
+        sc, ga = daily.get(day, (0, 0))
+        rate = ga / sc if sc > 0 else None
+        if rate is not None:
+            daily_gap_rates.append((day, round(rate, 3)))
+
+    total_7d_scanned = sum(sc for sc, _ in daily.values())
+    total_7d_gaps = sum(ga for _, ga in daily.values())
+    gap_rate_7d = total_7d_gaps / total_7d_scanned if total_7d_scanned > 0 else 0.0
+
+    return {
+        "last_run": last_run,
+        "last_scanned": last_scanned,
+        "last_gaps": last_gaps,
+        "last_deposited": last_deposited,
+        "total_deposited": total_deposited,
+        "gap_rate_7d": round(gap_rate_7d, 3),
+        "daily_gap_rates": daily_gap_rates,
+    }
 
 
 def build_report(
@@ -307,7 +398,9 @@ def build_report(
                 lines.append(f"  Top 5 used:        {_top_str}")
             lines.append("")
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/metrics.py: %s", _bare_e)
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/cognition/metrics.py: %s", _bare_e
+        )
 
     # ── Word graph ────────────────────────────────────────────
     wg = _word_graph_stats()
@@ -385,6 +478,32 @@ def build_report(
         )
     else:
         lines.append("  (no consolidation runs logged yet)")
+    lines.append("")
+
+    # ── Self-training (T-self-training-metrics) ────────────────
+    st = _self_training_stats(n_days=7)
+    lines.append("SELF-TRAINING  (last 7 days)")
+    if st.get("last_run"):
+        lines.append(f"  Last run:          {st['last_run']}")
+        lines.append(
+            f"  Last pass:         scanned={st['last_scanned']}  "
+            f"gaps={st['last_gaps']}  deposited={st['last_deposited']}"
+        )
+        lines.append(f"  Total deposited:   {st['total_deposited']}  (all-time)")
+        gap_rate = st["gap_rate_7d"]
+        trend = (
+            "→ densifying"
+            if gap_rate < 0.1
+            else ("→ learning" if gap_rate < 0.5 else "→ sparse")
+        )
+        lines.append(f"  7-day gap rate:    {gap_rate:.1%}  {trend}")
+        if st["daily_gap_rates"]:
+            daily_str = "  ".join(
+                f"{d[5:]}:{r:.0%}" for d, r in st["daily_gap_rates"][-5:]
+            )
+            lines.append(f"  Daily gap rates:   {daily_str}")
+    else:
+        lines.append("  (no self-training runs logged yet)")
     lines.append("")
 
     lines.append("═" * 54)
