@@ -693,9 +693,12 @@ class PGDatabaseProxy(IgorBase):
         import psycopg2
         from psycopg2 import pool as pg_pool
 
+        # T-connection-pool-resize: minconn=3 so background sources (NE, push_sources,
+        # cortex search) don't queue behind each other at startup. maxconn=20 headroom
+        # for multi-thread contention under load. Still well within PG default max_conn.
         self._pool = pg_pool.ThreadedConnectionPool(
-            minconn=1,
-            maxconn=10,
+            minconn=3,
+            maxconn=20,
             dsn=db_url,
         )
 
