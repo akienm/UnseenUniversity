@@ -430,6 +430,16 @@ class Igor(IgorBase):
                     self._word_graph.save(_wg_path)
             basal_ganglia.set_word_graph(self._word_graph)
             basal_ganglia.set_cortex(self.cortex)
+            # T-learning-retrieval-signal: register word graph for retrieval reinforcement
+            try:
+                from .cognition.hebbian_bridge import set_word_graph as _hb_set_wg
+
+                _hb_set_wg(self._word_graph)
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/main.py hebbian_bridge.set_word_graph: {_bare_e}",
+                )
             console.print(
                 f"[dim]Word graph ready ({len(self._word_graph._word_to_ids)} words, "
                 f"{len(_boot_habits)} habits)[/]"

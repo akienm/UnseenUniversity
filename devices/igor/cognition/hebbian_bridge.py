@@ -27,6 +27,59 @@ _ENABLED = os.getenv("IGOR_HEBBIAN_BRIDGE", "false").lower() in ("1", "true", "y
 # Score caps
 _WG_BOOST_MAX = 0.10  # max per-candidate boost from wg predictions
 _ARSL_BOOST_CAP = 0.15  # max per-retrieval wg reinforce (at arousal=1.0)
+_QUERY_BOOST_BASE = 0.04  # T-learning-retrieval-signal: base boost for rank-1 result
+
+# ── T-learning-retrieval-signal: global word graph ref ────────────────────────
+# set_word_graph() is called from main.py after word graph is initialised.
+# Allows cortex.search() to call reinforce_query_tokens() without needing the
+# word_graph passed through every call site.
+_wg_ref = None
+
+
+def set_word_graph(word_graph) -> None:
+    """Register the global word graph instance for retrieval-signal reinforcement."""
+    global _wg_ref
+    _wg_ref = word_graph
+
+
+def get_word_graph():
+    """Return the registered word graph, or None if not yet initialised."""
+    return _wg_ref
+
+
+def reinforce_query_tokens(query: str, results: list) -> None:
+    """
+    T-learning-retrieval-signal: reinforce query tokens proportional to 1/rank
+    for each top result. Teaches the word graph: "these query words reliably
+    retrieve high-quality content."
+
+    Uses reinforce_text(query, boost) so all co-occurrence edges between query
+    words get strengthened, plus reinforce(doc_id, boost) to strengthen the
+    (word → doc) connections for the retrieved memory.
+
+    Rank-1 result: boost = _QUERY_BOOST_BASE
+    Rank-2:        boost = _QUERY_BOOST_BASE / 2
+    Rank-3+:       boost = _QUERY_BOOST_BASE / rank  (diminishing)
+    Cap at rank 3 to bound learning signal per search call.
+    """
+    if not _ENABLED or _wg_ref is None or not results or not query.strip():
+        return
+    try:
+        for rank, mem in enumerate(results[:3], start=1):
+            boost = _QUERY_BOOST_BASE / rank
+            # Reinforce query-side co-occurrences
+            _wg_ref.reinforce_text(query, boost=boost)
+            # Reinforce doc connections for retrieved memory
+            _doc_id = getattr(mem, "id", None)
+            if _doc_id:
+                _wg_ref.reinforce(_doc_id, boost=boost)
+        forensic.debug(
+            "[hebbian_bridge] query_reinforce: query=%r top=%d results boosted",
+            query[:40],
+            min(3, len(results)),
+        )
+    except Exception as e:
+        log.debug("[hebbian_bridge] reinforce_query_tokens error: %s", e)
 
 
 def wg_boost_search(
