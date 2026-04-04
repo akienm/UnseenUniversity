@@ -431,6 +431,45 @@ def pe_filter(basket: dict) -> dict:
     return basket
 
 
+def _situate_from_memory(ticket_id: str) -> list[str]:
+    """
+    Check Igor's memory for a prior pe_store_observe_results deposit for this ticket.
+    Returns the file list from the deposit, or [] if not found.
+
+    Deposit format: "Codebase search for [{ticket_id}]: ... Files: f1, f2. Grep hits: ..."
+    Non-fatal: any DB error returns [].
+    """
+    try:
+        import psycopg2
+
+        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
+        cur = conn.cursor()
+        prefix = f"Codebase search for [{ticket_id}]:"
+        cur.execute(
+            """
+            SELECT narrative FROM memories
+            WHERE memory_type = 'FACTUAL'
+              AND narrative LIKE %s
+            ORDER BY timestamp DESC LIMIT 1
+            """,
+            (prefix + "%",),
+        )
+        row = cur.fetchone()
+        conn.close()
+        if not row:
+            return []
+        # Extract "Files: f1, f2. Grep hits:" section
+        m = re.search(r"Files:\s*(.*?)\.\s*Grep hits:", row[0])
+        if not m:
+            return []
+        raw_files = m.group(1)
+        files = [f.strip() for f in raw_files.split(",") if f.strip()]
+        return files
+    except Exception as e:
+        log.debug("_situate_from_memory: lookup failed (%s) — continuing to tier.2", e)
+        return []
+
+
 def pe_situate(basket: dict) -> dict:
     """
     SITUATE step: resolve plan_files — which files need to change?
@@ -445,7 +484,7 @@ def pe_situate(basket: dict) -> dict:
     Reads from basket: ticket_description, plan_files (may be [])
     Writes to basket:
       plan_files      list[str]  — resolved file paths (updated if was empty)
-      situate_source  str        — "ticket_required_files" | "tier2_ollama" | "empty"
+      situate_source  str        — "ticket_required_files" | "prior_observe_memory" | "tier2_ollama" | "empty"
     """
     if basket.get("error"):
         return basket
@@ -460,10 +499,22 @@ def pe_situate(basket: dict) -> dict:
         _flog(f"SITUATE: using ticket required_files: {basket['plan_files']}")
         return basket
 
+    # Memory path: check prior observe deposits for this ticket before tier.2
+    ticket_id = basket.get("ticket_id", "")
+    if ticket_id:
+        prior_files = _situate_from_memory(ticket_id)
+        if prior_files:
+            basket["plan_files"] = prior_files
+            basket["situate_source"] = "prior_observe_memory"
+            _flog(
+                f"SITUATE: recalled {len(prior_files)} files from prior observe deposit"
+            )
+            return basket
+
     # Slow path: call tier.2 to figure out which files
     description = basket["ticket_description"]
     prompt = _SITUATE_PROMPT.format(description=description[:600])
-    _flog(f"SITUATE: calling tier.2 (no required_files in ticket)")
+    _flog(f"SITUATE: calling tier.2 (no required_files or prior memory for ticket)")
 
     raw = _call_tier2(prompt, timeout=30)
     if not raw:
