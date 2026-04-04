@@ -23,6 +23,7 @@ import hashlib
 import json
 import os
 import re
+import time
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
@@ -34,6 +35,37 @@ from .forensic_logger import log_error
 
 MACHINES_JSON = paths().machines_json
 INBOX_DIR = paths().inbox
+
+# ── T-procedural-shared-cache: shared PROCEDURAL memory cache (30s TTL) ──────
+# HabitCandidateSource, ResourceMonitorSource, SelfObservationSource, and
+# CuriositySource all call cortex.get_by_type(PROCEDURAL) independently — 4+
+# full table scans per minute. This cache funnels all callers to one scan per
+# 30s. Write-through invalidation: call invalidate_procedural_cache() after
+# any cortex.store() that adds/modifies a PROCEDURAL memory.
+_procedural_cache: list | None = None
+_procedural_cache_ts: float = 0.0
+_PROCEDURAL_CACHE_TTL: float = 30.0
+
+
+def get_cached_procedural(cortex) -> list:
+    """Return cached PROCEDURAL memories, refreshing if older than 30s."""
+    global _procedural_cache, _procedural_cache_ts
+    now = time.monotonic()
+    if (
+        _procedural_cache is None
+        or (now - _procedural_cache_ts) >= _PROCEDURAL_CACHE_TTL
+    ):
+        from ..memory.models import MemoryType as _MT
+
+        _procedural_cache = cortex.get_by_type(_MT.PROCEDURAL)
+        _procedural_cache_ts = now
+    return _procedural_cache
+
+
+def invalidate_procedural_cache() -> None:
+    """Force next get_cached_procedural() to re-fetch from DB."""
+    global _procedural_cache_ts
+    _procedural_cache_ts = 0.0
 
 
 # ── Base ──────────────────────────────────────────────────────────────────────
@@ -1035,9 +1067,7 @@ class SchedulerSource(BasePushSource):
         self._last_check = now
 
         try:
-            from ..memory.models import MemoryType
-
-            habits = cortex.get_by_type(MemoryType.PROCEDURAL)
+            habits = get_cached_procedural(cortex)
         except Exception:
             return []
 
@@ -1129,9 +1159,7 @@ class ResourceMonitorSource(BasePushSource):
         self._last_check = now
 
         try:
-            from ..memory.models import MemoryType
-
-            habits = cortex.get_by_type(MemoryType.PROCEDURAL)
+            habits = get_cached_procedural(cortex)
         except Exception:
             return []
 
@@ -1345,9 +1373,7 @@ class SelfObservationSource(BasePushSource):
 
         # Load inward watch habits
         try:
-            from ..memory.models import MemoryType
-
-            habits = cortex.get_by_type(MemoryType.PROCEDURAL)
+            habits = get_cached_procedural(cortex)
             inward_habits = [
                 h
                 for h in habits
@@ -1482,9 +1508,7 @@ class CuriositySource(BasePushSource):
 
         # Gather topics from watch habits
         try:
-            from ..memory.models import MemoryType
-
-            habits = cortex.get_by_type(MemoryType.PROCEDURAL)
+            habits = get_cached_procedural(cortex)
             topics = [
                 h.metadata.get("watch_label") or h.metadata.get("trigger", "")
                 for h in habits
