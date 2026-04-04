@@ -4698,6 +4698,42 @@ class Igor(IgorBase):
                 success=True,
                 elapsed_ms=0,
             )
+            # T-behavior-milieu-loop: close the behavior→milieu feedback loop.
+            # Action outcome feeds back into emotional state so future habit selection
+            # is modulated by past success/failure (biological closed-loop behavior).
+            try:
+                from .cognition.emit_channels import EmotionalMilieuChannel as _EMC
+
+                _emc = _EMC()
+                _result_str = str(response_text or "")
+                _basket: dict = {}
+                _is_habit_error = _result_str.startswith("[ERROR]") or (
+                    "error" in _result_str[:60].lower() and len(_result_str) < 200
+                )
+                if _is_habit_error:
+                    # Error: arousal spike (alerting) + valence dip (negative outcome)
+                    _emc.write("arousal", "+0.08", _basket)
+                    _emc.write("valence", "-0.05", _basket)
+                    # Write negative interpretive edge: habit → failure_node (weight=-0.3)
+                    try:
+                        _fail_id = f"FAIL_{habit.id}"
+                        self.cortex.add_interpretive_edge(
+                            from_id=habit.id,
+                            to_id=_fail_id,
+                            direction="inhibition",
+                            weight=-0.3,
+                            layer="behavior_outcome",
+                        )
+                    except Exception:
+                        pass
+                else:
+                    # Success: small dominance boost (confidence in action repertoire)
+                    _emc.write("dominance", "+0.03", _basket)
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/main.py behavior_milieu_loop: {_bare_e}",
+                )
             # T-on-it-fork: response habit with fork_bg=true spawns background execution
             if habit.metadata.get("fork_bg"):
                 _fork_input = f"[BG-TASK] {user_input}"
