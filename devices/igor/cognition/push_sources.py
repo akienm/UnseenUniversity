@@ -74,6 +74,12 @@ def invalidate_procedural_cache() -> None:
 
 class BasePushSource(IgorBase):
     name: str = "unnamed_source"
+    # T-oscillatory-timing-tiers: biological timing tier for this source.
+    # fast (2s)   — interoception, milieu, inbox: near-real-time body/environment sensing
+    # medium (30s) — memory surfacing, NE consolidation, resource monitoring
+    # slow (300s)  — strategic review, boredom, habit candidate discovery
+    # run_background_sources() gates entire tier groups by wall-clock interval.
+    TIMING_TIER: str = "medium"
 
     def push(self, cortex) -> list[int]:
         """
@@ -228,6 +234,7 @@ class HeartbeatSource(BasePushSource):
     """
 
     name = "heartbeat"
+    TIMING_TIER = "slow"
     MIN_INTERVAL_SEC = 300  # 5 minutes
 
     def __init__(self):
@@ -719,6 +726,7 @@ class InboxWatcher(BasePushSource):
     """
 
     name = "inbox_watcher"
+    TIMING_TIER = "fast"
     CHECK_INTERVAL_SEC = 5
 
     def __init__(self):
@@ -779,6 +787,7 @@ class HabitCandidateSource(BasePushSource):
     """
 
     name = "habit_candidate"
+    TIMING_TIER = "slow"
     MIN_INTERVAL_SEC = 600  # Full pass every 10 minutes
     ACTIVATION_THRESH = 5  # Activations before flagging as candidate
     CANDIDATE_TTL_SEC = 3600  # Don't re-surface a candidate within 1 hour
@@ -850,6 +859,7 @@ class MilieuSource(BasePushSource):
     """
 
     name = "milieu"
+    TIMING_TIER = "fast"
     MIN_INTERVAL_SEC = 60
 
     def __init__(self):
@@ -1460,6 +1470,7 @@ class CuriositySource(BasePushSource):
     """
 
     name = "curiosity"
+    TIMING_TIER = "slow"
     MIN_INTERVAL_SEC = 300  # At most every 5 minutes
     IDLE_URGENCY_MAX = 0.35  # Only fire when max TWM urgency < this
     TOPIC_COOLDOWN_SEC = 600  # Same topic won't fire again within 10 min
@@ -1574,6 +1585,7 @@ class BoredomSource(BasePushSource):
     """
 
     name = "boredom_detector"
+    TIMING_TIER = "slow"
     MIN_INTERVAL_SEC = 60  # sample every minute
     WINDOW_MINS = int(os.getenv("IGOR_BOREDOM_WINDOW_MINS", "20"))
     AROUSAL_THRESH = float(os.getenv("IGOR_BOREDOM_AROUSAL_THRESH", "0.05"))
@@ -1693,6 +1705,7 @@ class InteroceptionSource(BasePushSource):
     """
 
     name = "interoception"
+    TIMING_TIER = "fast"
     CHECK_INTERVAL_SEC = 30
     MILIEU_PUSH_THRESHOLD = (
         0.02  # Nudge milieu if delta vector norm > this (lower: catches calm+)
@@ -2162,6 +2175,7 @@ class SelfTestSource(BasePushSource):
     """
 
     name = "self_test"
+    TIMING_TIER = "slow"
     _INTERVAL = 900  # 15 minutes
 
     def __init__(self):
@@ -2257,18 +2271,50 @@ scheduler_source = SchedulerSource()
 thread_coherence_source = ThreadCoherenceSource()
 consolidation_replay = None  # Lazy loaded to avoid circular import
 
+# ── T-oscillatory-timing-tiers: hierarchical dispatch ─────────────────────────
+# Mirrors biological theta/beta/gamma cortex-BG loops.
+# fast (2s)   — interoception, milieu, inbox: continuous body/environment sensing
+# medium (30s) — memory surfacing, resource monitoring, NE consolidation
+# slow (300s)  — strategic review, boredom, habit candidate discovery
+#
+# Each tier is gated by wall-clock elapsed time so infrequent main-loop calls
+# (e.g. during heavy inference) don't accumulate stale-call debt.
+
+_TIER_INTERVALS: dict[str, float] = {"fast": 2.0, "medium": 30.0, "slow": 300.0}
+_tier_last_ts: dict[str, float] = {"fast": 0.0, "medium": 0.0, "slow": 0.0}
+
 
 def run_background_sources(cortex) -> int:
     """
-    Run all timer-based sources. Call once per main loop iteration.
+    Run timer-based sources grouped by timing tier (T-oscillatory-timing-tiers).
+    Call once per main loop iteration.
+
+    Tiers dispatched only when their wall-clock interval has elapsed:
+      fast   (2s)   — interoception, milieu, inbox
+      medium (30s)  — memory surfacing, resource monitoring, scheduling
+      slow   (300s) — heartbeat, boredom, habit candidates, self-test
+
     Returns total count of observations pushed this call.
-    Exceptions are swallowed — a broken source must not crash the loop.
+    Exceptions per-source are swallowed — a broken source must not crash the loop.
     """
+    import time as _time
+
     global consolidation_replay
     if consolidation_replay is None:
         from .replay import ConsolidationReplay
 
         consolidation_replay = ConsolidationReplay()
+
+    now_ts = _time.monotonic()
+    # Determine which tiers are due this call
+    due_tiers: set[str] = set()
+    for tier, interval in _TIER_INTERVALS.items():
+        if now_ts - _tier_last_ts[tier] >= interval:
+            due_tiers.add(tier)
+            _tier_last_ts[tier] = now_ts
+
+    if not due_tiers:
+        return 0
 
     pushed = 0
     for src in (
@@ -2290,6 +2336,9 @@ def run_background_sources(cortex) -> int:
         thread_coherence_source,
         consolidation_replay,
     ):
+        tier = getattr(src, "TIMING_TIER", "medium")
+        if tier not in due_tiers:
+            continue
         try:
             ids = src.push(cortex)
             pushed += len(ids)
