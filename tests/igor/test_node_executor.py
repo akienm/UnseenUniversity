@@ -777,3 +777,81 @@ class TestMcpCallInstruction:
             result = execute_node(memory, "my_trigger", basket)
 
         assert basket["out"] == "dynamic_result"
+
+
+class TestForkifBasketSharing:
+    """Tests documenting T-basket-fork-sharing semantics.
+
+    FORKIF spawns node IDs for background dispatch. The dispatch layer (main.py)
+    passes the same basket dict by reference — no copy-on-fork. These tests verify
+    that execute_node returns the original basket object and that FORKIF correctly
+    populates spawned IDs for the dispatch layer to handle.
+    """
+
+    def test_forkif_returns_same_basket_object(self):
+        """execute_node returns the exact same basket dict (identity), not a copy."""
+        memory = MockMemory(
+            "test_mem",
+            payload={"exec_cell": [["FORKIF", True, "spawned_node"], "ENDIF"]},
+            metadata={"triggers": {"trigger": "exec_cell"}},
+        )
+        basket = {"ctx": "value"}
+        result = execute_node(memory, "trigger", basket)
+
+        assert result.basket is basket  # same object — no copy
+
+    def test_forkif_spawned_node_ids_returned_for_dispatch(self):
+        """FORKIF populates result.spawned with node IDs for the dispatch layer."""
+        memory = MockMemory(
+            "test_mem",
+            payload={
+                "exec_cell": [
+                    ["FORKIF", True, "worker_a"],
+                    ["FORKIF", True, "worker_b"],
+                    "ENDIF",
+                ]
+            },
+            metadata={"triggers": {"trigger": "exec_cell"}},
+        )
+        basket = {}
+        result = execute_node(memory, "trigger", basket)
+
+        assert result.spawned == ["worker_a", "worker_b"]
+
+    def test_forkif_false_condition_does_not_spawn(self):
+        """FORKIF with false condition does not add to spawned."""
+        memory = MockMemory(
+            "test_mem",
+            payload={"exec_cell": [["FORKIF", False, "worker_a"], "ENDIF"]},
+            metadata={"triggers": {"trigger": "exec_cell"}},
+        )
+        result = execute_node(memory, "trigger", {})
+
+        assert result.spawned == []
+
+    def test_emitif_to_basket_visible_to_subsequent_fork_reads(self):
+        """EMITIF→basket writes before FORKIF are present in basket when fork runs.
+
+        Since forks share the parent basket by reference, values written before
+        the FORKIF are immediately visible. This test verifies the basket state
+        after execute_node completes contains all writes including pre-fork ones.
+        """
+        memory = MockMemory(
+            "test_mem",
+            payload={
+                "exec_cell": [
+                    ["EMITIF", True, "pre_fork_key", "pre_fork_val", "basket"],
+                    ["FORKIF", True, "worker_node"],
+                    ["EMITIF", True, "post_fork_key", "post_fork_val", "basket"],
+                    "ENDIF",
+                ]
+            },
+            metadata={"triggers": {"trigger": "exec_cell"}},
+        )
+        basket = {}
+        result = execute_node(memory, "trigger", basket)
+
+        # Both pre- and post-fork writes land in the same shared basket
+        assert basket["pre_fork_key"] == "pre_fork_val"
+        assert basket["post_fork_key"] == "post_fork_val"
+        assert result.spawned == ["worker_node"]
