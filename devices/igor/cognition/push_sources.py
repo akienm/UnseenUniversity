@@ -15,6 +15,7 @@ Sources:
   ConsolidationReplay   — replays FACT_CLOUD nodes during quiet periods, strengthens co-occurrence edges (D228)
   ThreadCoherenceSource — measures context retention across turns via bg_scoring.top node overlap (T-thread-coherence)
   ProprioceptionSource  — keeps TOOL_REGISTRY_ROOT + facia neighbors warm in TWM (tools are body parts, not lookup table)
+  SelfTestSource        — scans blob_index for untested items, runs consolidate_content() every 15min (T-self-test-wire)
 
 All push via cortex.twm_push(). None of them block or crash the main loop.
 """
@@ -2153,7 +2154,94 @@ class ProprioceptionSource(BasePushSource):
         return ids
 
 
+class SelfTestSource(BasePushSource):
+    """
+    T-self-test-wire: background daemon that scans blob_index.json for ingested
+    items not yet tested, runs consolidate_content() on one per cycle, then pushes
+    a LEARNING_GAP TWM observation if miss_rate > 0.5. Fires every 15 minutes.
+    """
+
+    name = "self_test"
+    _INTERVAL = 900  # 15 minutes
+
+    def __init__(self):
+        super().__init__()
+        self._last_run: float = 0.0
+        self._blob_index_path: "Path | None" = None
+
+    def push(self, cortex) -> list:
+        now = time.monotonic()
+        if now - self._last_run < self._INTERVAL:
+            return []
+        self._last_run = now
+
+        try:
+            from ..paths import paths as _paths
+
+            self._blob_index_path = _paths().instance / "blob_index.json"
+            if not self._blob_index_path.exists():
+                return []
+
+            index = {}
+            try:
+                index = __import__("json").loads(self._blob_index_path.read_text())
+            except Exception:
+                return []
+
+            # Find first untested content_id
+            untested = [
+                cid
+                for cid, meta in index.items()
+                if isinstance(meta, dict) and meta.get("status") == "ingested"
+            ]
+            if not untested:
+                return []
+
+            content_id = untested[0]
+            from .self_test import consolidate_content
+
+            results = consolidate_content(content_id)
+
+            ids: list = []
+            if not results:
+                return ids
+
+            # Aggregate miss rate across chapters
+            total_q = sum(r.get("questions", 0) for r in results)
+            total_m = sum(r.get("misses", 0) for r in results)
+            miss_rate = total_m / total_q if total_q > 0 else 0.0
+
+            if miss_rate > 0.5:
+                obs_id = cortex.twm_push(
+                    source=self.name,
+                    content_csb=(
+                        f"LEARNING_GAP|content_id={content_id}"
+                        f"|miss_rate={miss_rate:.0%}|questions={total_q}"
+                    ),
+                    salience=0.65,
+                    category="self_test",
+                    ttl_seconds=1800,
+                )
+                if obs_id:
+                    ids.append(obs_id)
+                cortex.write_ring(
+                    f"SELF_TEST|content={content_id}|miss={miss_rate:.0%}|label=gap",
+                    category="learning",
+                )
+            else:
+                cortex.write_ring(
+                    f"SELF_TEST|content={content_id}|miss={miss_rate:.0%}|label=ok",
+                    category="learning",
+                )
+            return ids
+
+        except Exception as _e:
+            log_error(kind="SELF_TEST_FAIL", detail=str(_e))
+            return []
+
+
 proprioception_source = ProprioceptionSource()
+self_test_source = SelfTestSource()
 user_input_source = UserInputSource()
 machines_watcher = MachinesWatcher()
 inbox_watcher = InboxWatcher()
@@ -2197,6 +2285,7 @@ def run_background_sources(cortex) -> int:
         boredom_source,
         interoception_source,
         proprioception_source,
+        self_test_source,
         scheduler_source,
         thread_coherence_source,
         consolidation_replay,
