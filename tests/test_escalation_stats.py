@@ -77,6 +77,25 @@ class TestTopicFromInput:
         result = _topic_from_input("is a to of in on")
         assert isinstance(result, str)
 
+    def test_thread_context_prefix_stripped(self):
+        # Bug fix: "[Thread context...]" prefix was poisoning topic extraction
+        text = "[Thread context — recent exchanges in this channel:]   User: how do you feel about threading?"
+        result = _topic_from_input(text)
+        assert result != "thread", "Thread context prefix must not become the topic"
+        assert result == "feel"
+
+    def test_thread_context_greeting_skips_prefix(self):
+        text = "[Thread context — recent exchanges in this channel:]   User: howdy   Igor: Hello there!"
+        result = _topic_from_input(text)
+        assert result != "thread"
+        assert result == "howdy"
+
+    def test_talking_with_prefix_stripped(self):
+        text = "TALKING WITH: Akien | relationship: operator [Web message from akien]: how is your threading looking?"
+        result = _topic_from_input(text)
+        assert result != "talking"
+        assert result == "threading"
+
 
 # ── _cloud_tier_re ────────────────────────────────────────────────────────────
 
