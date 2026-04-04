@@ -28,6 +28,7 @@ from pathlib import Path
 
 from .registry import Tool, registry
 from ..paths import paths
+from .channel_post import post_to_channel as _post_to_channel
 
 _LOG_FILE = Path.home() / ".TheIgors" / "logs" / "boredom_idle.log"
 _DB_URL = os.getenv(
@@ -64,36 +65,6 @@ def _flog(msg: str) -> None:
         _LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
         with open(_LOG_FILE, "a") as f:
             f.write(f"{ts}  {msg}\n")
-    except Exception:
-        pass
-
-
-def _post_to_channel(message: str) -> None:
-    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    # Postgres channel
-    try:
-        import psycopg2 as _pg
-
-        conn_pg = _pg.connect(_DB_URL)
-        with conn_pg:
-            with conn_pg.cursor() as c:
-                c.execute(
-                    "INSERT INTO channel_messages (ts, author, type, content) VALUES (%s, %s, %s, %s)",
-                    (ts, "igor", "message", message),
-                )
-        conn_pg.close()
-    except Exception:
-        pass
-    # JSONL fallback
-    try:
-        channel_file = paths().cc_channel / "messages.jsonl"
-        channel_file.parent.mkdir(parents=True, exist_ok=True)
-        entry = json.dumps(
-            {"ts": ts, "author": "igor", "type": "message", "content": message},
-            ensure_ascii=False,
-        )
-        with open(channel_file, "a", encoding="utf-8") as f:
-            f.write(entry + "\n")
     except Exception:
         pass
 
