@@ -205,11 +205,12 @@ class TestSelfTest(unittest.TestCase):
 
         answer = self.igor_answer_from_graph(mock_cortex, "What is learning?")
 
-        # Should have called search
+        # Should have called search with the question
         mock_cortex.search.assert_called_once()
         call_args = mock_cortex.search.call_args
         self.assertEqual(call_args[0][0], "What is learning?")
-        self.assertEqual(call_args[1]["depth"], "shallow")
+        # T-self-test-wire: new impl uses limit= not depth= (graph-native, no Gemini)
+        self.assertIn("limit", call_args[1])
 
         # Answer should contain the narrative
         self.assertIn("relevant knowledge", answer)
@@ -253,13 +254,17 @@ class TestSelfTest(unittest.TestCase):
     def test_consolidate_content_no_metadata(
         self, mock_get_chunks, mock_metadata, mock_wg, mock_cortex
     ):
-        """Test consolidate_content when blob metadata is unavailable."""
+        """Test consolidate_content when blob metadata is unavailable.
+        T-self-test-wire: new impl continues with a virtual chapter (no early return),
+        so get_chunks is skipped (guarded by 'if metadata else []') but metadata IS read.
+        """
         mock_cortex.return_value = MagicMock()
         mock_metadata.return_value = None
 
         self.consolidate_content("test-content-123")
 
-        # Should log error and return early
+        # metadata was checked (no early return in new impl), chunks skipped
+        mock_metadata.assert_called_once()
         mock_get_chunks.assert_not_called()
 
 
