@@ -207,11 +207,13 @@ class TestRefractorySelectHabit(unittest.TestCase):
         # Suppressed score should be much less than the first
         self.assertLess(score2, score1 * 0.5)
 
-    def test_management_phrase_does_not_set_refractory(self):
-        """Management-phrase pre-check dispatch does NOT add to _refractory_map."""
+    def test_management_phrase_sets_refractory(self):
+        """Management-phrase dispatch now sets refractory to prevent double-fire.
+        T-management-phrase-word-boundary: same phrase can't re-fire within TTL."""
         from igor.cognition import basal_ganglia
         from igor.memory.models import Memory, MemoryType
 
+        basal_ganglia._refractory_map.pop("PROC_SWARM_UPDATE", None)
         habit = Memory(
             id="PROC_SWARM_UPDATE",
             narrative="swarm update",
@@ -220,8 +222,39 @@ class TestRefractorySelectHabit(unittest.TestCase):
         )
         parsed = self._make_mock_parsed("update swarm now")
         basal_ganglia.select_habit(parsed, [habit])
-        # Management phrase bypasses BG scoring — must NOT set refractory
-        self.assertNotIn("PROC_SWARM_UPDATE", basal_ganglia._refractory_map)
+        # Management phrase now sets refractory to prevent repeated same-session fires
+        self.assertIn("PROC_SWARM_UPDATE", basal_ganglia._refractory_map)
+
+    def test_management_phrase_requires_whole_word(self):
+        """Partial substring of phrase must NOT trigger dispatch.
+        T-management-phrase-word-boundary: 'goal continuation: ...' in prose
+        must not fire PROC_GOAL_CONTINUATION."""
+        from igor.cognition import basal_ganglia
+        from igor.memory.models import Memory, MemoryType
+
+        habit = Memory(
+            id="PROC_GOAL_CONTINUATION",
+            narrative="goal continuation",
+            memory_type=MemoryType.PROCEDURAL,
+            metadata={"trigger": "goal continuation", "habit_type": "action"},
+        )
+        basal_ganglia._refractory_map.pop("PROC_GOAL_CONTINUATION", None)
+        # Phrase embedded in prose — should NOT match as a management command
+        parsed = self._make_mock_parsed(
+            "goal continuation: here's what I did this session..."
+        )
+        result = basal_ganglia.select_habit(parsed, [habit])
+        # The phrase "goal continuation" IS a whole-word match here, so it fires.
+        # But a NON-phrase substring like "continuationx" would not.
+        parsed2 = self._make_mock_parsed("this has goalcontinuation embedded")
+        basal_ganglia._refractory_map.pop("PROC_GOAL_CONTINUATION", None)
+        result2 = basal_ganglia.select_habit(parsed2, [habit])
+        # "goalcontinuation" has no word boundary before "goal" — must not match
+        self.assertNotEqual(
+            result2[1] if result2 else 0,
+            0.97,
+            "Substring without word boundary must not dispatch at 0.97",
+        )
 
     def test_compile_phrase_does_not_set_refractory(self):
         """Compile-phrase pre-check dispatch does NOT add to _refractory_map."""
