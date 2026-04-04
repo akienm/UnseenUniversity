@@ -2544,6 +2544,19 @@ class Igor(IgorBase):
         except Exception as _bare_e:
             log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
 
+        # T-daemon-supervisor-polling: start active watchdog now that all threads
+        # are registered. Writes restart.flag if ne-worker or consolidation-worker dies.
+        try:
+            from .cognition.daemon_supervisor import supervisor as _dsup
+
+            _restart_flag_path = str(_paths().instance / "restart.flag")
+            _dsup.start_polling(restart_flag_path=_restart_flag_path)
+        except Exception as _bare_e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/main.py daemon supervisor poll start: {_bare_e}",
+            )
+
         while True:
             # ── Stdin: process each line immediately (#200 — no debounce) ────
             # Commands (/...) run inline (ordering critical).

@@ -9,15 +9,23 @@ Design (T-daemon-supervisor):
   - register(name, thread, health_fn=None) — called once per thread after .start()
   - status() → list of dicts: name, alive, uptime_s, healthy (None if no health_fn)
   - report_str() → formatted string for /audit and get_daemon_report tool
+  - start_polling(restart_flag_path, poll_interval, critical_names) — active watchdog
 
-Scope: registry + observability only. Shutdown is NOT orchestrated here — all
-registered threads are daemon=True and die with the main process by design (D009).
+T-daemon-supervisor-polling: polling thread (5s) detects dead critical threads and
+writes restart.flag so Igor can recover automatically instead of running silently
+broken. Non-critical thread deaths are logged but don't trigger restart.
 """
 
+import logging
 import time
 import threading
 from dataclasses import dataclass, field
 from typing import Callable
+
+log = logging.getLogger(__name__)
+
+# Critical threads whose death warrants a restart
+_DEFAULT_CRITICAL = frozenset({"ne-worker", "consolidation-worker"})
 
 
 @dataclass
@@ -34,6 +42,7 @@ class DaemonSupervisor:
     def __init__(self):
         self._lock = threading.Lock()
         self._entries: dict[str, _DaemonEntry] = {}
+        self._polling_started: bool = False
 
     def register(
         self,
@@ -95,6 +104,71 @@ class DaemonSupervisor:
                 f"\n⚠ {len(dead)} dead thread(s): {', '.join(r['name'] for r in dead)}"
             )
         return "\n".join(lines)
+
+    def start_polling(
+        self,
+        restart_flag_path: str | None = None,
+        poll_interval: float = 5.0,
+        critical_names: frozenset[str] | None = None,
+    ) -> None:
+        """Start a daemon watchdog thread that polls registered threads every
+        `poll_interval` seconds. If a critical thread dies, writes restart.flag
+        (triggering Igor restart) and logs DAEMON_DEAD forensically.
+        Non-critical deaths are logged at WARNING level only.
+        Call once from Igor boot after all threads are registered."""
+        if self._polling_started:
+            return
+        self._polling_started = True
+        _critical = critical_names if critical_names is not None else _DEFAULT_CRITICAL
+        _restart_path = restart_flag_path
+
+        def _poll_loop():
+            _alerted: set[str] = set()  # names already alerted this lifetime
+            while True:
+                time.sleep(poll_interval)
+                try:
+                    rows = self.status()
+                    for r in rows:
+                        if not r["alive"] and r["name"] not in _alerted:
+                            _alerted.add(r["name"])
+                            if r["name"] in _critical:
+                                log.error(
+                                    "DAEMON_DEAD critical thread %s died after %.0fs — writing restart.flag",
+                                    r["name"],
+                                    r["uptime_s"],
+                                )
+                                try:
+                                    from ..cognition.forensic_logger import (
+                                        log_error as _fe,
+                                    )
+
+                                    _fe(
+                                        kind="DAEMON_DEAD",
+                                        detail=f"critical thread {r['name']} died after {r['uptime_s']}s",
+                                    )
+                                except Exception:
+                                    pass
+                                if _restart_path:
+                                    try:
+                                        open(_restart_path, "w").close()
+                                    except Exception as _e:
+                                        log.error(
+                                            "DAEMON_DEAD: could not write restart.flag: %s",
+                                            _e,
+                                        )
+                            else:
+                                log.warning(
+                                    "DAEMON_DEAD non-critical thread %s died after %.0fs",
+                                    r["name"],
+                                    r["uptime_s"],
+                                )
+                except Exception as _e:
+                    log.debug("daemon_supervisor poll error: %s", _e)
+
+        _t = threading.Thread(
+            target=_poll_loop, daemon=True, name="daemon-supervisor-poll"
+        )
+        _t.start()
 
 
 # Module-level singleton
