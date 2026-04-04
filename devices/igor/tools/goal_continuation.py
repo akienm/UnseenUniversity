@@ -81,6 +81,43 @@ def _extract_ticket_id(source_message: str) -> str | None:
 
 
 _QUEUE_FILE = Path.home() / ".TheIgors" / "cc_channel" / "queue.json"
+_CHANNEL_FILE = Path.home() / ".TheIgors" / "cc_channel" / "messages.jsonl"
+
+# D259 human-author gate: set of authors treated as human-driven.
+# Must match _HUMAN_AUTHORS in main.py.
+_HUMAN_AUTHORS: frozenset = frozenset({"claude-code", "akien"})
+_HUMAN_IDLE_LIMIT_S: float = 1800.0  # 30 min — skip if no human activity beyond this
+# Claim attempt cap: prevent indefinite re-claims on crash+restart cycles.
+_MAX_CLAIM_ATTEMPTS: int = 3
+
+
+def _is_human_recently_active() -> bool:
+    """
+    D259 gate: return True if a human author posted to cc_channel in the
+    last _HUMAN_IDLE_LIMIT_S seconds. Fail-open (returns True) on error so
+    transient FS issues don't permanently block goal continuation.
+    """
+    try:
+        if not _CHANNEL_FILE.exists():
+            return True
+        cutoff = datetime.now(timezone.utc).timestamp() - _HUMAN_IDLE_LIMIT_S
+        with open(_CHANNEL_FILE) as fh:
+            lines = fh.readlines()
+        for line in reversed(lines[-30:]):
+            try:
+                msg = json.loads(line)
+                if msg.get("author") in _HUMAN_AUTHORS:
+                    ts_raw = msg.get("ts", "")
+                    ts = datetime.fromisoformat(
+                        ts_raw.replace("Z", "+00:00")
+                    ).timestamp()
+                    if ts >= cutoff:
+                        return True
+            except Exception:
+                continue
+        return False
+    except Exception:
+        return True  # fail open
 
 
 def _load_ticket(ticket_id: str) -> dict | None:
@@ -127,6 +164,12 @@ def run_goal_continuation(**_) -> str:
     Skips if no active goals, or if already at step 4+.
     """
     try:
+        # D259 human-author gate: only advance goals when a human was recently active.
+        # Prevents goal auto-advancement during fully-unattended background runs.
+        if not _is_human_recently_active():
+            _flog("SKIP — no human activity in last 30 minutes (D259 gate)")
+            return "[goal_continuation] skipped — no human activity in last 30 minutes"
+
         from ..memory.cortex import Cortex as _Cortex
         from ..memory.models import MemoryType as _MT
 
@@ -150,12 +193,30 @@ def run_goal_continuation(**_) -> str:
         if step == 0:
             # Step 0: claim the ticket
             if ticket_id:
+                # Claim attempt cap: crash+restart must not re-claim indefinitely.
+                attempts = int(goal.metadata.get("claim_attempt_count", 0))
+                if attempts >= _MAX_CLAIM_ATTEMPTS:
+                    _flog(
+                        f"STEP0 cap: claim_attempt_count={attempts} >= {_MAX_CLAIM_ATTEMPTS}"
+                        f" for {ticket_id} — manual intervention required"
+                    )
+                    _post_to_channel(
+                        f"[GOAL BLOCKED] {ticket_id} — claim attempt cap reached"
+                        f" ({attempts} attempts). Manual intervention needed."
+                    )
+                    return (
+                        f"[goal_continuation] claim attempt cap for {ticket_id}"
+                        f" ({attempts} attempts)"
+                    )
+                goal.metadata["claim_attempt_count"] = attempts + 1
                 out = _run_bash(["python3", str(_CC_QUEUE), "claim", ticket_id])
                 msg = f"[GOAL STEP 0] Claiming {ticket_id}: {out[:200]}"
                 _post_to_channel(msg)
                 goal.metadata["current_step"] = 1
                 cortex.store(goal)
-                _flog(f"STEP0 ticket={ticket_id} result={out[:80]}")
+                _flog(
+                    f"STEP0 ticket={ticket_id} attempt={attempts + 1} result={out[:80]}"
+                )
                 return f"[goal_continuation] claimed {ticket_id}: {out[:80]}"
             else:
                 # No ticket ID — skip straight to ready
