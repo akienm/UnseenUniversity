@@ -2734,6 +2734,20 @@ class Igor(IgorBase):
             self._current_action = "idle"
             self._current_tier = ""
             web_server.broadcast_activity(self._activity_state())
+            # T-warm-context-post-turn: persist warm context after every
+            # non-impulse turn so a crash never loses more than 30s of state.
+            # Throttled to avoid DB hammering on rapid-fire sessions.
+            if not is_impulse:
+                _now = time.monotonic()
+                if _now - getattr(self, "_last_warm_save_time", 0.0) >= 30.0:
+                    try:
+                        self._save_warm_context()
+                        self._last_warm_save_time = _now
+                    except Exception as _bare_e:
+                        log_error(
+                            kind="BARE_EXCEPT",
+                            detail=f"wild_igor/igor/main.py _save_warm_context post-turn: {_bare_e}",
+                        )
 
     def _process_inner(
         self,
