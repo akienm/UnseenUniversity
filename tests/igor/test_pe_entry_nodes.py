@@ -21,6 +21,7 @@ from wild_igor.igor.tools.pe_chain import (
     _extract_grep_patterns,
     _parse_file_list,
     _parse_hypothesis,
+    _situate_from_memory,
     _validate_hypothesis,
     pe_claim,
     pe_close_loop,
@@ -950,3 +951,76 @@ class TestPeCloseLoop:
                 result = pe_close_loop(basket)
         # Should have hit max and escalated
         assert "escalate_reason" in result
+
+
+class TestSituateFromMemory:
+    """Unit tests for _situate_from_memory — prior observe deposit lookup."""
+
+    def test_returns_files_when_deposit_found(self):
+        narrative = (
+            "Codebase search for [T-foo]: fix the thing. "
+            "Files: wild_igor/igor/tools/pe_chain.py, wild_igor/igor/main.py. "
+            "Grep hits: 3. Excerpt: some code"
+        )
+        mock_cur = MagicMock()
+        mock_cur.fetchone.return_value = (narrative,)
+        mock_conn = MagicMock()
+        mock_conn.cursor.return_value = mock_cur
+        # psycopg2 is imported locally inside _situate_from_memory
+        with patch("psycopg2.connect", return_value=mock_conn):
+            result = _situate_from_memory("T-foo")
+        assert result == [
+            "wild_igor/igor/tools/pe_chain.py",
+            "wild_igor/igor/main.py",
+        ]
+
+    def test_returns_empty_when_no_deposit(self):
+        mock_cur = MagicMock()
+        mock_cur.fetchone.return_value = None
+        mock_conn = MagicMock()
+        mock_conn.cursor.return_value = mock_cur
+        with patch("psycopg2.connect", return_value=mock_conn):
+            result = _situate_from_memory("T-nonexistent")
+        assert result == []
+
+    def test_returns_empty_on_db_error(self):
+        with patch("psycopg2.connect", side_effect=Exception("conn refused")):
+            result = _situate_from_memory("T-any")
+        assert result == []
+
+    def test_situate_uses_memory_before_tier2(self):
+        """pe_situate hits memory path before tier.2 when ticket_id present."""
+        basket = {
+            "ticket_description": "fix something",
+            "plan_files": [],
+            "ticket_id": "T-foo",
+        }
+        with patch(
+            "wild_igor.igor.tools.pe_chain._situate_from_memory",
+            return_value=["wild_igor/igor/tools/pe_chain.py"],
+        ) as mock_mem:
+            with patch("wild_igor.igor.tools.pe_chain._call_tier2") as mock_tier2:
+                result = pe_situate(basket)
+        mock_mem.assert_called_once_with("T-foo")
+        mock_tier2.assert_not_called()
+        assert result["situate_source"] == "prior_observe_memory"
+        assert result["plan_files"] == ["wild_igor/igor/tools/pe_chain.py"]
+
+    def test_situate_falls_through_to_tier2_when_no_memory(self):
+        """pe_situate calls tier.2 when memory has no prior deposit."""
+        basket = {
+            "ticket_description": "fix something",
+            "plan_files": [],
+            "ticket_id": "T-bar",
+        }
+        with patch(
+            "wild_igor.igor.tools.pe_chain._situate_from_memory",
+            return_value=[],
+        ):
+            with patch(
+                "wild_igor.igor.tools.pe_chain._call_tier2",
+                return_value="wild_igor/igor/tools/pe_chain.py",
+            ) as mock_tier2:
+                result = pe_situate(basket)
+        mock_tier2.assert_called_once()
+        assert result["situate_source"] == "tier2_ollama"
