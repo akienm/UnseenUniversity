@@ -1899,6 +1899,16 @@ class Cortex(IgorBase):
                         logging.getLogger(__name__).debug(
                             "hebbian record_retrieval_boost skipped: %s", _bare_e
                         )
+                # T-learning-retrieval-signal: reinforce query tokens proportional
+                # to 1/rank for top results so the query-side word graph learns.
+                try:
+                    from ..cognition.hebbian_bridge import reinforce_query_tokens
+
+                    reinforce_query_tokens(query, result)
+                except Exception as _bare_e:
+                    logging.getLogger(__name__).debug(
+                        "reinforce_query_tokens skipped: %s", _bare_e
+                    )
                 # T-trails-infra v2: look up active TWM attractor to link trail → attractor
                 _twm_obs_id: str | None = None
                 try:
@@ -1952,6 +1962,15 @@ class Cortex(IgorBase):
                 logging.getLogger(__name__).debug(
                     "hebbian record_retrieval_boost skipped: %s", _bare_e
                 )
+        # T-learning-retrieval-signal: reinforce query tokens (Phase 1 fallback path)
+        try:
+            from ..cognition.hebbian_bridge import reinforce_query_tokens
+
+            reinforce_query_tokens(query, result)
+        except Exception as _bare_e:
+            logging.getLogger(__name__).debug(
+                "reinforce_query_tokens skipped: %s", _bare_e
+            )
         _trail_id = self._record_trace(
             query, result
         )  # T-traces-infra: static path record
