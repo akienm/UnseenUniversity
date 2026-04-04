@@ -609,8 +609,16 @@ def select_habit(
         # ── 1c. Management command pre-check ─────────────────────────────────
         # Direct dispatch for operational commands — bypasses BG scoring entirely.
         # Ensures management habits fire even under heavy inference load.
+        # T-management-phrase-word-boundary: whole-word match (not substring) so
+        # "goal continuation: here's what I did" doesn't fire PROC_GOAL_CONTINUATION.
+        # Also honours refractory period so repeated phrase in same message can't
+        # double-fire (e.g. multi-turn context containing the phrase).
+        _now_ts = datetime.now(timezone.utc).timestamp()
         for phrase, habit_id in MANAGEMENT_PHRASES.items():
-            if phrase in raw_lower:
+            if re.search(r"\b" + re.escape(phrase) + r"\b", raw_lower):
+                # Refractory check: skip if this habit fired recently
+                if habit_id in _refractory_map and _refractory_map[habit_id] > _now_ts:
+                    continue
                 mgmt_habit = next((h for h in habits if h.id == habit_id), None)
                 if mgmt_habit:
                     _emit_bg(
@@ -623,6 +631,8 @@ def select_habit(
                             "rationale": f"management_phrase_match:{phrase}",
                         }
                     )
+                    # Mark refractory so the same phrase can't re-fire this cycle
+                    _refractory_map[habit_id] = _now_ts + _REFRACTORY_TTL_SEC
                     return (mgmt_habit, 0.97, [])
 
         # ── 2. Parallel scoring ───────────────────────────────────────────────
