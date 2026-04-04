@@ -151,6 +151,22 @@ def cts() -> str:
     return datetime.now().strftime("%H%M%S ")
 
 
+def _append(log_name: str, entry: str, max_bytes: int = 50 * 1024 * 1024) -> None:
+    """Append one line to a log file (chronological order). Rotate to .old at max_bytes."""
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        path = LOG_DIR / log_name
+        if path.exists() and path.stat().st_size > max_bytes:
+            old = path.with_suffix(".old")
+            if old.exists():
+                old.unlink()
+            path.rename(old)
+        with open(path, "a", encoding="utf-8") as _f:
+            _f.write(entry + "\n")
+    except Exception as _bare_e:
+        sys.stderr.write(f"[forensic_logger] _append error: {_bare_e}\n")
+
+
 def _prepend(log_name: str, entry: str) -> None:
     """Prepend one CSB line to a log file. Rotate to .old if > 10 MB."""
     try:
@@ -213,6 +229,12 @@ def log_reasoning_call(
         + f"|resp={response_summary[:120].replace(chr(10), ' ')}"
     )
     _prepend("reasoning_calls.log", entry)
+    # T-costs-log: append to costs.log (chronological, append-only) for budget queries
+    if cost_usd > 0:
+        _append(
+            "costs.log",
+            f"{_ts()}|inference|{provider}|{model}|{tier or 'unknown'}|{cost_usd:.6f}|{input_tokens}|{output_tokens}|log_reasoning_call",
+        )
 
 
 def log_ne_run(
