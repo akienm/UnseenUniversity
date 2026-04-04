@@ -4294,25 +4294,18 @@ class Igor(IgorBase):
                         category="habit_trace",
                     )
 
-                    # Dispatch as background job with basket snapshot context
+                    # Dispatch as background job — fork shares parent basket (T-basket-fork-sharing).
+                    # No copy-on-fork: the fork reads from and emits back into _eng_basket
+                    # directly. Thread safety: Python GIL ensures atomic dict get/set;
+                    # parallel forks should write to distinct keys to avoid races.
                     _spawned_node = self.cortex.get(_spawned_id)
                     if _spawned_node:
-                        _basket_snapshot = {
-                            k: v
-                            for k, v in _eng_basket.items()
-                            if not k.startswith("_")
-                        }
-
                         # Define fork execution closure with default args to capture values
                         def _exec_fork(
                             _node=_spawned_node,
-                            _cortex_ref=self.cortex,
-                            _basket_data=_basket_snapshot,
+                            _shared_basket=_eng_basket,
                         ):
-                            # Rebuild basket with cortex reference for fork execution
-                            _fork_basket = dict(_basket_data)
-                            _fork_basket["_cortex"] = _cortex_ref
-                            return _exec_node(_node, "__entry__", _fork_basket)
+                            return _exec_node(_node, "__entry__", _shared_basket)
 
                         _fork_async_id = self.job_manager.submit_background(
                             fn=_exec_fork,

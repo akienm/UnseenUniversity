@@ -9,7 +9,7 @@ Instruction set:
   STOPIF   [condition]                                — conditional terminator; if true, stop execution
   EMITIF   [condition, key, value, channel]           — emit value to channel if condition; cursor continues
   BRANCHIF [condition, target_node_id]                — jump to target if condition; cell stops
-  FORKIF   [condition, target_node_id]                — spawn new cursor at target if condition; cursor continues
+  FORKIF   [condition, target_node_id]                — spawn new cursor at target if condition; cursor continues. Fork shares parent basket by reference (T-basket-fork-sharing): child reads from and emits back into the same basket dict.
   MCPCALL  [tool_name, args_basket_key, out_basket_key] — call tool registry fn; store result in basket; synchronous v1 (D307)
   ENDIF                                               — explicit end; cursor stops (implicit if absent)
 
