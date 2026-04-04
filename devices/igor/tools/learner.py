@@ -1791,6 +1791,113 @@ registry.register(
 )
 
 
+# ── Readings design-session ingest (T-readings-ingest) ───────────────────────
+
+_READINGS_DIR = Path.home() / "TheIgorsProject" / "akien" / "Readings"
+_READINGS_EXTS = {".txt", ".md", ".rst"}
+# Files to skip (meta files, not design sessions)
+_READINGS_SKIP_PATTERNS = {"learn_queue", "README", ".gitignore"}
+
+
+def ingest_readings_design_sessions(**_kwargs) -> str:
+    """
+    Queue TheIgorsProject/akien/Readings/ text files into reading_list
+    as high-arousal design-session documents.
+
+    These are the early Akien+Claude/Gemini/Igor conversations that shaped
+    Igor's architecture — foundational context for Igor's self-model.
+
+    Idempotent: skips files already present by source URL (file://).
+    book_type='design-session', encoding_arousal=0.90, priority=1.
+    """
+    if not _READINGS_DIR.exists():
+        return f"[ingest_readings] SKIP — {_READINGS_DIR} not found"
+
+    queued: list[str] = []
+    skipped: list[str] = []
+    errors: list[str] = []
+
+    try:
+        with _igor_db_proxy()() as conn:
+            rows = conn.execute(
+                "SELECT source FROM reading_list WHERE book_type = 'design-session'"
+            ).fetchall()
+        existing_sources = {r[0] for r in rows if r[0]}
+    except Exception as e:
+        return f"[ingest_readings] DB error fetching existing: {e}"
+
+    for path in sorted(_READINGS_DIR.iterdir()):
+        if not path.is_file():
+            continue
+        if path.suffix.lower() not in _READINGS_EXTS:
+            continue
+        if any(pat in path.stem for pat in _READINGS_SKIP_PATTERNS):
+            continue
+
+        source_url = f"file://{path.resolve()}"
+        if source_url in existing_sources:
+            skipped.append(path.name)
+            continue
+
+        # Parse date from filename prefix (YYYYMMDD or YYYYMMDDHHMMSS)
+        import re as _re
+
+        date_m = _re.match(r"^(\d{8})", path.stem)
+        date_prefix = date_m.group(1) if date_m else ""
+        raw_title = (
+            _re.sub(r"^\d{8,14}[._]?", "", path.stem)
+            .replace("_", " ")
+            .replace(".", " ")
+            .strip()
+        )
+        title = (
+            f"{date_prefix[:4]}-{date_prefix[4:6]}-{date_prefix[6:8]} {raw_title}".strip(
+                " -"
+            )
+            if date_prefix
+            else raw_title
+        ) or path.stem
+
+        result = add_to_reading_list(
+            title=title,
+            source=source_url,
+            book_type="design-session",
+            encoding_arousal=0.90,
+            priority=1,
+            added_by="readings_ingest",
+            notes=f"Early design session — {path.name}",
+        )
+        if isinstance(result, str) and result.startswith("Error"):
+            errors.append(f"{path.name}: {result}")
+        else:
+            queued.append(path.name)
+
+    summary = f"[ingest_readings] queued={len(queued)} skipped={len(skipped)} errors={len(errors)}"
+    try:
+        from ..cognition.forensic_logger import log_anomaly as _la
+
+        _la(kind="READINGS_INGEST_DONE", detail=summary)
+    except Exception:
+        pass
+
+    return summary
+
+
+registry.register(
+    Tool(
+        name="ingest_readings_design_sessions",
+        description=(
+            "Queue TheIgorsProject/akien/Readings/ design-session transcripts into "
+            "reading_list. These are foundational Akien+AI conversations that shaped "
+            "Igor's architecture. High encoding_arousal=0.90, priority=1. "
+            "Idempotent — safe to re-run after new files are added."
+        ),
+        parameters={"type": "object", "properties": {}},
+        fn=ingest_readings_design_sessions,
+    )
+)
+
+
 # ── Reading list → learn_queue feeder ─────────────────────────────────────────
 
 _FEEDER_BATCH = 20  # items to move into learn_queue.json per run
