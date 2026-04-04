@@ -2599,17 +2599,33 @@ class Igor(IgorBase):
                 self._shutdown(reason="restart flag (external)")
                 sys.exit(42)
 
-            self._drain_network()
-            run_background_sources(self.cortex)
-            self._run_ne_background()
-            self._run_consolidation_background()  # #169
-            self._run_distillation_background()  # T-distillation-daemon
-            self._run_factual_compression_background()  # T-factual-compression
-            self._run_ne_deep_consolidation()  # #310: night consolidation
-            self._announce_completed_jobs()
-            self._drain_action_impulses()
-            self._evict_stale_threads()  # #136: purge idle thread buffers
-            time.sleep(0.5)
+            # T-main-loop-exception: guard background work so any unhandled
+            # exception triggers graceful shutdown before the process dies.
+            # SystemExit (sys.exit calls) propagates unmodified.
+            try:
+                self._drain_network()
+                run_background_sources(self.cortex)
+                self._run_ne_background()
+                self._run_consolidation_background()  # #169
+                self._run_distillation_background()  # T-distillation-daemon
+                self._run_factual_compression_background()  # T-factual-compression
+                self._run_ne_deep_consolidation()  # #310: night consolidation
+                self._announce_completed_jobs()
+                self._drain_action_impulses()
+                self._evict_stale_threads()  # #136: purge idle thread buffers
+                time.sleep(0.5)
+            except Exception as _loop_exc:
+                log_error(
+                    kind="MAIN_LOOP_CRASH",
+                    detail=f"Unhandled exception in main loop: {type(_loop_exc).__name__}: {_loop_exc}",
+                )
+                try:
+                    self._shutdown(
+                        reason=f"main loop crash: {type(_loop_exc).__name__}"
+                    )
+                except Exception:
+                    pass
+                raise
 
     def _bg_reason(
         self,
