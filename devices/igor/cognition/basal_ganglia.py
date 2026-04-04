@@ -20,6 +20,7 @@ PROC_HABIT_COMPILER immediately at confidence 0.95.
 from __future__ import annotations
 import logging
 import os
+import random
 
 import math
 import re
@@ -134,6 +135,22 @@ THRESHOLD_MAX = 0.70
 
 _REFRACTORY_TTL_SEC = float(os.getenv("IGOR_REFRACTORY_TTL_SEC", "600"))  # 10 min
 _REFRACTORY_FACTOR = float(os.getenv("IGOR_REFRACTORY_FACTOR", "0.1"))  # 10% score
+
+# ── Stochastic habit noise (T-stochastic-habit-noise) ─────────────────────────
+# Epsilon-greedy noise prevents winner-take-all lock-in on habitual responses.
+# Gated by IGOR_HABIT_NOISE_ENABLED (default off) — safe to enable incrementally.
+
+_HABIT_NOISE_ENABLED: bool = os.getenv("IGOR_HABIT_NOISE_ENABLED", "false").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+_HABIT_NOISE_PROB: float = float(
+    os.getenv("IGOR_HABIT_NOISE_PROB", "0.08")
+)  # 8% per habit per turn
+_HABIT_NOISE_SIGMA: float = float(
+    os.getenv("IGOR_HABIT_NOISE_SIGMA", "0.05")
+)  # ±0.05 Gaussian
 
 # T-refractory-period: in-process refractory state — cleared on restart
 _refractory_map: dict[str, float] = {}  # habit_id → expiry_timestamp (UTC epoch)
@@ -680,6 +697,11 @@ def select_habit(
                 # a graded score penalty so the dominant winner consistently wins.
                 if habit.id in _inhibited_ids:
                     s = max(0.0, s - 0.15)
+                # T-stochastic-habit-noise: epsilon-greedy jitter prevents lock-in
+                # on the habitually dominant response. Fires ~8% of the time per
+                # habit; small Gaussian perturbation (±0.05) keeps competition alive.
+                if _HABIT_NOISE_ENABLED and random.random() < _HABIT_NOISE_PROB:
+                    s = max(0.0, s + random.gauss(0, _HABIT_NOISE_SIGMA))
             if s >= threshold:
                 scored.append((s, habit))
             elif s >= THRESHOLD_MIN:
@@ -741,9 +763,12 @@ def select_habit(
                 _surprise = _word_graph.surprise_scale(_flatness)
                 _boost = 0.1 * _surprise
                 _word_graph.reinforce(winner.id, boost=_boost)
-                if _surprise > 1.5:
-                    logging.getLogger(__name__).debug(
-                        "surprise_reward: habit=%s flatness=%.2f scale=%.2f boost=%.3f",
+                # T-surprise-reward-enable: log every surprise event at INFO so
+                # we can measure frequency and tune IGOR_SURPRISE_MULTIPLIER.
+                # surprise_scale() returns 1.0 (no-op) when gate is off.
+                if _surprise > 1.0:
+                    logging.getLogger(__name__).info(
+                        "SURPRISE_REWARD habit=%s flatness=%.3f scale=%.3f boost=%.4f",
                         winner.id,
                         _flatness,
                         _surprise,
