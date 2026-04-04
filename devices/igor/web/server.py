@@ -33,6 +33,7 @@ import json
 import os
 import queue
 import threading
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -70,6 +71,12 @@ _stats_fn = (
 )
 _cortex_fn = None  # callable → Cortex; set by start(); used by /api/cc_notebook (#239)
 _igor_fn = None  # callable → Igor;   set by start(); used by /api/execute_habit (D094)
+
+# ── Health / metrics state ────────────────────────────────────────────────────
+# T-health-endpoint: lightweight state updated on every incoming message.
+# Never locked — monotonic float writes are atomic on CPython.
+_boot_ts: float = time.monotonic()
+_last_input_ts: float = 0.0  # updated by cc_send + WS receive path
 
 # ── Shared channel mirror ─────────────────────────────────────────────────────
 # Append messages to ~/.TheIgors/cc_channel/messages.jsonl so all CC sessions
@@ -264,6 +271,8 @@ async def _api_cc_send(request: Request):
     content = body.get("content", "").strip()
     if not content:
         return JSONResponse({"error": "empty content"}, status_code=400)
+    global _last_input_ts
+    _last_input_ts = time.monotonic()
     incoming.put({"content": content, "author": "claude-code"})
     _broadcast(
         json.dumps(
@@ -280,8 +289,86 @@ async def _api_cc_send(request: Request):
 
 
 async def _api_health(request: Request):
-    """GET /api/health — simple liveness check; always returns 200 if server is up."""
-    return JSONResponse({"status": "ok"})
+    """GET /api/health — T-health-endpoint: liveness probe with runtime state.
+    Always returns 200 if the server is up. Callers detect degraded via 'status' field.
+    """
+    now = time.monotonic()
+    uptime_s = round(now - _boot_ts, 1)
+    last_input_ago_s = round(now - _last_input_ts, 1) if _last_input_ts > 0 else None
+    active_threads = threading.active_count()
+
+    # Daemon supervisor snapshot (non-fatal if unavailable)
+    dead_daemons: list[str] = []
+    try:
+        from ..cognition.daemon_supervisor import supervisor as _dsup
+
+        dead_daemons = [r["name"] for r in _dsup.status() if not r["alive"]]
+    except Exception:
+        pass
+
+    status = "ok" if not dead_daemons else "degraded"
+    body = {
+        "status": status,
+        "uptime_s": uptime_s,
+        "last_input_ago_s": last_input_ago_s,
+        "active_threads": active_threads,
+        "ts": _ts(),
+    }
+    if dead_daemons:
+        body["dead_daemons"] = dead_daemons
+    return JSONResponse(body)
+
+
+def _swap_pct() -> float | None:
+    """Read swap usage % from /proc/meminfo. Returns None if unavailable."""
+    try:
+        info: dict[str, int] = {}
+        with open("/proc/meminfo") as fh:
+            for line in fh:
+                parts = line.split()
+                if len(parts) >= 2:
+                    info[parts[0].rstrip(":")] = int(parts[1])
+        total = info.get("SwapTotal", 0)
+        if total == 0:
+            return 0.0
+        free = info.get("SwapFree", 0)
+        return round((total - free) / total * 100, 1)
+    except Exception:
+        return None
+
+
+async def _api_metrics(request: Request):
+    """GET /api/metrics — T-health-endpoint: SRE metrics snapshot.
+    Returns turn count, tier escalation rates, cortex query latency, swap %, threads.
+    """
+    now = time.monotonic()
+    payload: dict = {
+        "uptime_s": round(now - _boot_ts, 1),
+        "active_threads": threading.active_count(),
+        "swap_pct": _swap_pct(),
+        "ts": _ts(),
+    }
+
+    # Igor stats (turn count, session cost, activity tier)
+    if _stats_fn is not None:
+        try:
+            stats = dict(_stats_fn())
+            payload["memory_count"] = stats.get("memory_count")
+            payload["session_cost_usd"] = stats.get("session_cost")
+            payload["current_tier"] = stats.get("tier")
+            payload["busy"] = stats.get("busy")
+        except Exception:
+            pass
+
+    # Daemon supervisor thread status
+    try:
+        from ..cognition.daemon_supervisor import supervisor as _dsup
+
+        payload["daemon_threads"] = _dsup.status()
+    except Exception:
+        pass
+
+    return JSONResponse(payload)
 
 
 async def _api_system_health(request: Request):
@@ -512,6 +599,8 @@ async def _ws_endpoint(ws: WebSocket):
                     content = msg.get("content", "").strip()
                     author = msg.get("author", "web-user")
                     if content:
+                        global _last_input_ts
+                        _last_input_ts = time.monotonic()
                         incoming.put(
                             {
                                 "content": content,
@@ -749,6 +838,9 @@ def _make_app() -> Starlette:
         Route("/api/outbox", _api_outbox_list),
         Route("/api/outbox/{filename}", _api_outbox_download),
         Route("/api/health", _api_health),
+        Route("/api/metrics", _api_metrics),
+        Route("/health", _api_health),  # top-level liveness probe (k8s-style)
+        Route("/metrics", _api_metrics),  # top-level metrics probe
         Route("/api/system_health", _api_system_health),
         Route("/api/dashboard", _api_dashboard),
         Route("/api/sessions", _api_sessions),
