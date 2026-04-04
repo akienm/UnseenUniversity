@@ -291,7 +291,6 @@ def _parse_file_list(raw: str) -> list[str]:
     return paths_found
 
 
-
 # ── PLAN ──────────────────────────────────────────────────────────────────────
 
 _PLAN_PROMPT = """You are planning a code change for a software ticket.
@@ -335,9 +334,7 @@ def pe_plan(basket: dict) -> dict:
         return basket
 
     if description:
-        prompt = _PLAN_PROMPT.format(
-            ticket_id=ticket_id, description=description[:600]
-        )
+        prompt = _PLAN_PROMPT.format(ticket_id=ticket_id, description=description[:600])
         _flog(f"PLAN: calling tier.2 for {ticket_id}")
         raw = _call_tier2(prompt, timeout=30)
         if raw:
@@ -366,6 +363,7 @@ def pe_plan(basket: dict) -> dict:
     if basket.get("plan_summary"):
         try:
             from .ops import store_plan as _store_plan
+
             _store_plan(ticket_id, basket["plan_summary"])
         except Exception as e:
             log.warning("[pe_chain] pe_plan: store_plan failed: %s", e)
@@ -1040,7 +1038,6 @@ def _post_to_channel(message: str) -> None:
         pass
 
 
-
 # ── PROBE ─────────────────────────────────────────────────────────────────────
 
 
@@ -1086,13 +1083,13 @@ def pe_probe(basket: dict) -> dict:
         time.sleep(3)
 
         # Read recent channel for Igor's response
-        req2 = urllib.request.Request(
-            "http://localhost:8080/api/channel_read?limit=3"
-        )
+        req2 = urllib.request.Request("http://localhost:8080/api/channel_read?limit=3")
         with urllib.request.urlopen(req2, timeout=5) as resp:
             data = _json.loads(resp.read())
         messages = data if isinstance(data, list) else data.get("messages", [])
-        igor_msgs = [m.get("content", "") for m in messages if m.get("author") == "igor"]
+        igor_msgs = [
+            m.get("content", "") for m in messages if m.get("author") == "igor"
+        ]
 
         expected = ""
         for line in probe_criterion.splitlines():
@@ -1105,7 +1102,9 @@ def pe_probe(basket: dict) -> dict:
                 basket["probe_result"] = "PASS"
                 _flog("PROBE: PASS — expected pattern found")
             else:
-                basket["probe_result"] = f"FAIL: expected '{expected}' not in Igor response"
+                basket["probe_result"] = (
+                    f"FAIL: expected '{expected}' not in Igor response"
+                )
                 basket["escalate_reason"] = f"probe_fail: {basket['probe_result']}"
                 _flog(f"PROBE: {basket['probe_result']}")
         else:
@@ -1411,8 +1410,65 @@ try:
             ),
             fn=run_pe_chain,
             parameters={"type": "object", "properties": {}, "required": []},
-            tags=["coding_sprint", "pe_chain", "goal"],
         )
     )
+
+    # ── 0-arg wrappers for standalone habit dispatch ──────────────────────────
+    # pe_plan/pe_filter/pe_probe take basket:dict and can't be dispatched
+    # directly. These wrappers load context from the active GOAL and run the
+    # step — called by PROC_PLAN / PROC_FILTER / PROC_PROBE habits.
+
+    def run_pe_plan(**_) -> str:
+        """0-arg entry point: load active ticket context, run PLAN step."""
+        basket: dict = {}
+        pe_entry_init(basket)
+        pe_read_ticket(basket)
+        pe_plan(basket)
+        return basket.get("plan_summary") or basket.get("error") or "[pe_plan] done"
+
+    def run_pe_filter(**_) -> str:
+        """0-arg entry point: load active ticket context, run FILTER step."""
+        basket: dict = {}
+        pe_entry_init(basket)
+        pe_read_ticket(basket)
+        pe_plan(basket)  # ensure plan_summary + test_criterion are present
+        pe_filter(basket)
+        warnings = basket.get("filter_warnings", [])
+        return "FILTER OK" if not warnings else "FILTER WARN: " + "; ".join(warnings)
+
+    def run_pe_probe(**_) -> str:
+        """0-arg entry point: load active ticket context, run PROBE step."""
+        basket: dict = {}
+        pe_entry_init(basket)
+        pe_read_ticket(basket)
+        pe_probe(basket)
+        return basket.get("probe_result") or basket.get("error") or "[pe_probe] done"
+
+    for _fn, _name, _desc in [
+        (
+            run_pe_plan,
+            "run_pe_plan",
+            "Run PLAN step for active ticket (PROC_PLAN habit).",
+        ),
+        (
+            run_pe_filter,
+            "run_pe_filter",
+            "Run FILTER step for active ticket (PROC_FILTER habit).",
+        ),
+        (
+            run_pe_probe,
+            "run_pe_probe",
+            "Run PROBE step for active ticket (PROC_PROBE habit).",
+        ),
+    ]:
+        registry.register(
+            Tool(
+                name=_name,
+                description=_desc,
+                fn=_fn,
+                parameters={"type": "object", "properties": {}, "required": []},
+            )
+        )
+
 except Exception as _reg_err:
     log.warning("[pe_chain] tool registration failed: %s", _reg_err)
