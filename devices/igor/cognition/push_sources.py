@@ -88,6 +88,50 @@ class BasePushSource(IgorBase):
         """
         raise NotImplementedError
 
+    def milieu_scale(self, salience: float, urgency: float) -> tuple[float, float]:
+        """
+        T-milieu-source-aware-salience: Scale salience/urgency by current milieu.
+
+        Under high arousal (stress/overload), low-priority background observations
+        are suppressed so the NE's attention narrows to urgent signals.
+        Under low arousal (idle/calm), background observations are boosted slightly
+        to fill the quiet-period TWM with exploratory content.
+
+        Scaling rule:
+          arousal in [-1, 1]; baseline 0.
+          high arousal (>0.3)  → suppress: salience × (1 - 0.3 × arousal_excess)
+          low arousal  (<-0.2) → boost:    salience × (1 + 0.15 × idle_depth)
+          neutral              → no change (scale=1.0)
+
+        Urgency is not scaled — only salience (background relevance) changes.
+        Returns (scaled_salience, urgency) clamped to [0.0, 1.0].
+        Fail-open: returns unmodified values if milieu is unavailable.
+        """
+        try:
+            from . import milieu as _milieu_mod
+
+            m = _milieu_mod.get()
+            if m is None:
+                return salience, urgency
+            state = m.get_state()
+            arousal = state.arousal  # [-1, 1]
+            if arousal > 0.3:
+                # Suppress background noise under stress
+                excess = arousal - 0.3
+                scale = max(0.3, 1.0 - 0.3 * excess)
+            elif arousal < -0.2:
+                # Boost exploratory surfacing during idle
+                idle_depth = abs(arousal + 0.2)
+                scale = min(1.2, 1.0 + 0.15 * idle_depth)
+            else:
+                scale = 1.0
+            return (
+                max(0.0, min(1.0, salience * scale)),
+                urgency,  # urgency unchanged — it signals criticality, not relevance
+            )
+        except Exception:
+            return salience, urgency  # fail-open
+
 
 # ── MemorySurfacer ─────────────────────────────────────────────────────────────
 
@@ -196,13 +240,15 @@ class MemorySurfacer(BasePushSource):
                 f"{mem.narrative[:200]}"
             )
             salience = min(0.6, 0.3 + mem.activation_count * 0.01)
+            # T-milieu-source-aware-salience: suppress LTM surfacing under high arousal
+            salience, _urg = self.milieu_scale(salience, 0.1)
             obs_id = cortex.twm_push(
                 source=self.name,
                 content_csb=csb,
                 salience=salience,
                 metadata={"memory_id": mem.id, "memory_type": mem.memory_type.value},
                 ttl_seconds=600,
-                urgency=0.1,  # Change 4: background LTM surfacing — lowest time-sensitivity
+                urgency=_urg,  # background LTM surfacing — lowest time-sensitivity
             )
             pushed.append(obs_id)
             pushed_ids.add(mem.id)
@@ -279,13 +325,15 @@ class HeartbeatSource(BasePushSource):
             f"day={now.strftime('%A')}|"
             f"session_age={session_mins}min"
         )
+        # T-milieu-source-aware-salience: time ticks are low-priority; suppress under stress
+        _sal, _urg = self.milieu_scale(0.4, 0.3)
         obs_id = cortex.twm_push(
             source=self.name,
             content_csb=csb,
-            salience=0.4,
+            salience=_sal,
             metadata={"session_minutes": session_mins},
             ttl_seconds=600,
-            urgency=0.3,  # Change 4: HeartbeatSource — scheduled, not time-critical
+            urgency=_urg,
         )
         pushed.append(obs_id)
 
