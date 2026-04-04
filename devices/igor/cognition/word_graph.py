@@ -863,12 +863,16 @@ class WordGraph(IgorBase):
           0.0 = expected/routine input (steep gradient) → scale = 1.0, no bonus
           1.0 = novel/surprising input (flat gradient)  → scale = 1 + MULTIPLIER
 
-        Gate: IGOR_SURPRISE_REWARD_ENABLED (default false).
+        Gate: IGOR_SURPRISE_REWARD_ENABLED (default true — T-surprise-reward-enable).
         Returns 1.0 when gate is off — caller multiplies boost by this unchanged.
         """
         import os as _os
 
-        if _os.getenv("IGOR_SURPRISE_REWARD_ENABLED", "false").lower() != "true":
+        if _os.getenv("IGOR_SURPRISE_REWARD_ENABLED", "true").lower() not in (
+            "1",
+            "true",
+            "yes",
+        ):
             return 1.0
         multiplier = float(_os.getenv("IGOR_SURPRISE_MULTIPLIER", "2.0"))
         return 1.0 + max(0.0, min(1.0, flatness)) * multiplier
