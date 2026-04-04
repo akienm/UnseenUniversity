@@ -536,13 +536,81 @@ def pe_situate(basket: dict) -> dict:
 _OBSERVE_CONTEXT_LINES = 40  # lines before+after grep hit to capture
 _OBSERVE_MAX_SECTION = 120  # max lines to read per file section
 
+# Static code synonym table for TheIgors codebase.
+# Maps a keyword → [related code identifiers to also grep for].
+# Used by _expand_patterns_with_synonyms to add 1-2 extra patterns
+# without an LLM call. Keys are lowercase; matching is case-insensitive.
+_CODE_EXPANSION: dict[str, list[str]] = {
+    "register": ["registry", "Tool("],
+    "habit": ["PROC_", "seed_habits"],
+    "tool": ["Tool(", "registry"],
+    "memory": ["Memory(", "MemoryType"],
+    "observe": ["pe_observe", "store_observe"],
+    "situate": ["pe_situate", "plan_files"],
+    "filter": ["pe_filter", "filter_checks"],
+    "chain": ["pe_chain", "run_pe_chain"],
+    "tier": ["_call_tier2", "OllamaReasoner"],
+    "ollama": ["_call_tier2", "OllamaReasoner"],
+    "embed": ["embed_text", "nomic-embed"],
+    "session": ["session_manager", "current_session"],
+    "cortex": ["get_memories", "cortex.py"],
+    "thalamus": ["TWM", "thalamus.py"],
+    "engram": ["node_executor", "pe_entry_nodes"],
+    "inject": ["context_inject", "cc_channel"],
+    "basket": ["pe_chain", "plan_files"],
+}
+
+
+def _expand_patterns_with_synonyms(
+    patterns: list[str], description: str = ""
+) -> list[str]:
+    """
+    Expand patterns using the static code synonym table.
+    Two sources checked in order:
+      1. Base patterns — if an expansion key appears as a substring (e.g.
+         "register" in "tool_register"), add the key's expansions.
+      2. Raw description — whole-word matches for expansion keys (e.g. the
+         word "register" or "habit" in plain English text).
+    Returns the extra patterns only (caller appends to base list).
+    Stops after 2 extras — keeps observation tight.
+    """
+    extra: list[str] = []
+    seen = set(patterns)
+
+    # Source 1: check base patterns for key substrings
+    for pattern in patterns:
+        p_lower = pattern.lower()
+        for key, expansions in _CODE_EXPANSION.items():
+            if key in p_lower:
+                for exp in expansions:
+                    if exp not in seen:
+                        seen.add(exp)
+                        extra.append(exp)
+                break  # one expansion source per base pattern
+        if len(extra) >= 2:
+            return extra
+
+    # Source 2: scan raw description for whole-word key matches
+    if description:
+        desc_lower = description.lower()
+        for key, expansions in _CODE_EXPANSION.items():
+            if re.search(r"\b" + re.escape(key) + r"\b", desc_lower):
+                for exp in expansions:
+                    if exp not in seen:
+                        seen.add(exp)
+                        extra.append(exp)
+                if len(extra) >= 2:
+                    break
+
+    return extra[:2]
+
 
 def _extract_grep_patterns(ticket_description: str) -> list[str]:
     """
     Extract search patterns from ticket description without LLM.
     Heuristics: function/class/habit/variable names, habit IDs (PROC_*),
-    ticket IDs (T-*), and quoted strings.
-    Returns up to 4 patterns, most specific first.
+    ticket IDs (T-*), and quoted strings. Then expands with code synonyms.
+    Returns up to 6 patterns, most specific first (base patterns + ≤2 synonyms).
     """
     patterns = []
 
@@ -563,7 +631,9 @@ def _extract_grep_patterns(ticket_description: str) -> list[str]:
             seen.add(p)
             deduped.append(p)
 
-    return deduped[:4]
+    base = deduped[:4]
+    expansions = _expand_patterns_with_synonyms(base, ticket_description)
+    return (base + expansions)[:6]
 
 
 def _grep_file(pattern: str, filepath: str) -> list[int]:
