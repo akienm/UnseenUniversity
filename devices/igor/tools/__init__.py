@@ -51,6 +51,10 @@ from . import (
     memory_query,
     boredom_idle,
     goal_continuation,
+    pe_chain,
+    habit_chunker,
+    or_model_refresh,
+    memory_snapshot,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
