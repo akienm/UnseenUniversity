@@ -1,5 +1,5 @@
 """
-test_node_executor.py — Tests for engram node executor (D260, D290, D291).
+test_node_executor.py — Tests for engram node executor (D260, D290, D291, D307).
 
 Tests for execute_node() function including:
   - LABEL instruction (no-op marker for jump targets)
@@ -7,6 +7,7 @@ Tests for execute_node() function including:
   - BRANCHIF with @label targets (local jumps)
   - BRANCHIF with bare node IDs (existing behavior)
   - EMITIF, FORKIF, ENDIF instructions
+  - MCPCALL instruction (tool registry dispatch, D307)
   - Condition evaluation
   - Value resolution
 """
@@ -654,3 +655,125 @@ class TestBranchifWithTrigger:
         assert result.next_node == "node_2026_04_01"
         assert result.next_trigger == "on_success_v2"
         assert basket.get("skipped") is None
+
+
+class TestMcpCallInstruction:
+    """Tests for MCPCALL instruction (D307 — tool registry dispatch)."""
+
+    def _make_memory(self, cell):
+        return MockMemory(
+            "test_mem",
+            payload={"exec_cell": cell},
+            metadata={"triggers": {"my_trigger": "exec_cell"}},
+        )
+
+    def test_mcpcall_calls_registered_tool(self):
+        """MCPCALL dispatches to a registered tool and stores result in basket."""
+        from unittest.mock import patch, MagicMock
+        from wild_igor.igor.tools.registry import Tool, ToolRegistry
+
+        mock_tool = Tool(
+            name="test_echo",
+            description="test",
+            parameters={},
+            fn=lambda text="": f"echo:{text}",
+        )
+        mock_registry = ToolRegistry()
+        mock_registry.register(mock_tool)
+
+        memory = self._make_memory(
+            [
+                ["MCPCALL", "test_echo", "call_args", "call_result"],
+                "ENDIF",
+            ]
+        )
+        basket = {"call_args": {"text": "hello"}}
+
+        with patch(
+            "wild_igor.igor.cognition.node_executor._tool_registry", mock_registry
+        ):
+            result = execute_node(memory, "my_trigger", basket)
+
+        assert result.stopped_by == "ENDIF"
+        assert basket["call_result"] == "echo:hello"
+
+    def test_mcpcall_unknown_tool_stores_error(self):
+        """MCPCALL with unknown tool name writes __error__ to basket; execution continues."""
+        from unittest.mock import patch
+        from wild_igor.igor.tools.registry import ToolRegistry
+
+        empty_registry = ToolRegistry()
+        memory = self._make_memory(
+            [
+                ["MCPCALL", "nonexistent_tool", "args", "result"],
+                ["EMITIF", True, "after", "yes", "basket"],
+                "ENDIF",
+            ]
+        )
+        basket = {}
+
+        with patch(
+            "wild_igor.igor.cognition.node_executor._tool_registry", empty_registry
+        ):
+            result = execute_node(memory, "my_trigger", basket)
+
+        assert "__error__" in basket["result"]
+        assert basket.get("after") == "yes"  # execution continues past error
+
+    def test_mcpcall_tool_exception_stores_error(self):
+        """MCPCALL stores __error__ in basket when tool raises; execution continues."""
+        from unittest.mock import patch
+        from wild_igor.igor.tools.registry import Tool, ToolRegistry
+
+        def boom(**_):
+            raise RuntimeError("tool exploded")
+
+        mock_tool = Tool(name="boom_tool", description="", parameters={}, fn=boom)
+        mock_registry = ToolRegistry()
+        mock_registry.register(mock_tool)
+
+        memory = self._make_memory(
+            [
+                ["MCPCALL", "boom_tool", "args", "out"],
+                ["EMITIF", True, "continued", "yes", "basket"],
+                "ENDIF",
+            ]
+        )
+        basket = {}
+
+        with patch(
+            "wild_igor.igor.cognition.node_executor._tool_registry", mock_registry
+        ):
+            result = execute_node(memory, "my_trigger", basket)
+
+        assert "tool exploded" in basket["out"]["__error__"]
+        assert basket.get("continued") == "yes"
+
+    def test_mcpcall_tool_name_from_basket(self):
+        """MCPCALL resolves tool name from basket when given [\"basket\", key]."""
+        from unittest.mock import patch
+        from wild_igor.igor.tools.registry import Tool, ToolRegistry
+
+        mock_tool = Tool(
+            name="dynamic_tool",
+            description="",
+            parameters={},
+            fn=lambda: "dynamic_result",
+        )
+        mock_registry = ToolRegistry()
+        mock_registry.register(mock_tool)
+
+        memory = self._make_memory(
+            [
+                ["MCPCALL", ["basket", "tool_key"], "args", "out"],
+                "ENDIF",
+            ]
+        )
+        basket = {"tool_key": "dynamic_tool", "args": {}}
+
+        with patch(
+            "wild_igor.igor.cognition.node_executor._tool_registry", mock_registry
+        ):
+            result = execute_node(memory, "my_trigger", basket)
+
+        assert basket["out"] == "dynamic_result"
