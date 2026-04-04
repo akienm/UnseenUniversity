@@ -1,16 +1,17 @@
 """
-node_executor.py — Engram node executor (D260, D290, D291, D295, D296).
+node_executor.py — Engram node executor (D260, D290, D291, D295, D296, D307).
 
 Executes one payload cell from a Memory node given a basket.
 Called when the cognition cursor lands on a node that has a payload.
 
 Instruction set:
-  LABEL    [@name]                           — no-op marker; local jump target for BRANCHIF
-  STOPIF   [condition]                       — conditional terminator; if true, stop execution
-  EMITIF   [condition, key, value, channel]  — emit value to channel if condition; cursor continues
-  BRANCHIF [condition, target_node_id]       — jump to target if condition; cell stops
-  FORKIF   [condition, target_node_id]       — spawn new cursor at target if condition; cursor continues
-  ENDIF                                       — explicit end; cursor stops (implicit if absent)
+  LABEL    [@name]                                    — no-op marker; local jump target for BRANCHIF
+  STOPIF   [condition]                                — conditional terminator; if true, stop execution
+  EMITIF   [condition, key, value, channel]           — emit value to channel if condition; cursor continues
+  BRANCHIF [condition, target_node_id]                — jump to target if condition; cell stops
+  FORKIF   [condition, target_node_id]                — spawn new cursor at target if condition; cursor continues
+  MCPCALL  [tool_name, args_basket_key, out_basket_key] — call tool registry fn; store result in basket; synchronous v1 (D307)
+  ENDIF                                               — explicit end; cursor stops (implicit if absent)
 
 Condition format:
   True / False                — constant
@@ -47,6 +48,7 @@ from typing import Any, Optional
 
 from .eval_gate import eval_gate
 from .emit_channels import get_registry
+from ..tools.registry import registry as _tool_registry
 
 log = logging.getLogger(__name__)
 
@@ -181,7 +183,7 @@ def execute_node(memory, fired_trigger: str, basket: dict) -> ExecutionResult:
         op = instruction[0]
 
         # Early check for LABEL and STOPIF which are handled specially
-        if op not in ("LABEL", "STOPIF", "EMITIF", "BRANCHIF", "FORKIF"):
+        if op not in ("LABEL", "STOPIF", "EMITIF", "BRANCHIF", "FORKIF", "MCPCALL"):
             log.warning(
                 "[node_executor] unknown instruction op %r in %s", op, memory.id
             )
@@ -330,6 +332,52 @@ def execute_node(memory, fired_trigger: str, basket: dict) -> ExecutionResult:
                         target_str,
                     )
             # cursor continues regardless
+            i += 1
+
+        # ── MCPCALL [tool_name, args_basket_key, out_basket_key] ─────────────
+        elif op == "MCPCALL":
+            if len(instruction) != 4:
+                log.warning(
+                    "[node_executor] MCPCALL expects 3 args, got %d",
+                    len(instruction) - 1,
+                )
+                i += 1
+                continue
+            _, tool_name, args_basket_key, out_basket_key = instruction
+            # tool_name may be a literal string or ["basket", key]
+            resolved_tool_name = _resolve_value(tool_name, basket, payload)
+            args = basket.get(str(args_basket_key)) or {}
+            if not isinstance(args, dict):
+                args = {}
+            tool = _tool_registry.get(str(resolved_tool_name))
+            if tool is None:
+                log.warning(
+                    "[node_executor] MCPCALL: unknown tool %r in %s",
+                    resolved_tool_name,
+                    memory.id,
+                )
+                basket[str(out_basket_key)] = {
+                    "__error__": f"unknown tool: {resolved_tool_name}"
+                }
+            else:
+                try:
+                    call_result = tool.fn(**args)
+                    basket[str(out_basket_key)] = call_result
+                    log.debug(
+                        "[node_executor] MCPCALL: %s → %s.%s = %r",
+                        memory.id,
+                        resolved_tool_name,
+                        out_basket_key,
+                        str(call_result)[:80],
+                    )
+                except Exception as exc:
+                    log.warning(
+                        "[node_executor] MCPCALL error: %s → %s: %s",
+                        memory.id,
+                        resolved_tool_name,
+                        exc,
+                    )
+                    basket[str(out_basket_key)] = {"__error__": str(exc)}
             i += 1
 
     result.instructions_run = n
