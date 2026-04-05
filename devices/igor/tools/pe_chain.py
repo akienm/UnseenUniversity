@@ -92,6 +92,38 @@ def _extract_ticket_id(text: str) -> str | None:
     return match.group(1) if match else None
 
 
+def _evict_goal_ready_twm(ticket_id: str) -> None:
+    """
+    Expire any GOAL_READY TWM observations for this ticket.
+
+    Called after SCOPE_GUARD escalation or pe_claim abort so
+    PROC_CODING_SPRINT stops re-firing the same failing chain.
+    Non-fatal — logs and returns on any error.
+    """
+    try:
+        import psycopg2
+
+        conn = psycopg2.connect(_DB_URL)
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE twm_observations
+                    SET expires_at = NOW(),
+                        salience = 0,
+                        attractor_weight = 0
+                    WHERE content_csb LIKE %s
+                      AND (expires_at IS NULL OR expires_at > NOW())
+                    """,
+                    (f"%GOAL_READY%{ticket_id}%",),
+                )
+                rows = cur.rowcount
+        conn.close()
+        _flog(f"TWM_EVICT: evicted {rows} GOAL_READY slot(s) for {ticket_id}")
+    except Exception as exc:
+        _flog(f"TWM_EVICT: failed — {exc}")
+
+
 def _get_active_goal() -> dict | None:
     """Return the most recently adopted active GOAL memory, or None."""
     try:
@@ -178,6 +210,8 @@ def pe_claim(basket: dict) -> dict:
     if "not pending" in result or "not found" in result:
         basket["error"] = f"pe_claim: cannot claim — {result.strip()}"
         _flog(f"CLAIM: aborting chain — {result.strip()}")
+        # Evict GOAL_READY so PROC_CODING_SPRINT doesn't immediately re-fire
+        _evict_goal_ready_twm(ticket_id)
     return basket
 
 
@@ -1491,6 +1525,8 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
 
     basket = _scope_guard(basket)
     if basket.get("escalate_reason"):
+        # Evict GOAL_READY so sprint doesn't immediately re-fire the blocked chain
+        _evict_goal_ready_twm(basket.get("ticket_id", ""))
         return basket
     basket = pe_implement(basket)
     if basket.get("error"):
