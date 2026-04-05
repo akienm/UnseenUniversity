@@ -779,7 +779,15 @@ class InboxWatcher(BasePushSource):
 
     def __init__(self):
         self._last_check: Optional[datetime] = None
-        self._known_files: set = set()
+        # Pre-seed with existing files so restart doesn't re-surface old inbox items
+        try:
+            self._known_files: set = (
+                {p.name for p in INBOX_DIR.iterdir() if p.is_file()}
+                if INBOX_DIR.exists()
+                else set()
+            )
+        except OSError:
+            self._known_files = set()
 
     def push(self, cortex) -> list[int]:
         now = datetime.now()
