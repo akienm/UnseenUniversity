@@ -240,7 +240,7 @@ def run_consolidation(cortex: Cortex) -> dict:
 
     for cluster in clusters:
         snippets = "\n".join(
-            f"  [{i+1}] {m.narrative[:200]}" for i, m in enumerate(cluster)
+            f"  [{i+1}] {m.narrative[:400]}" for i, m in enumerate(cluster)
         )
         prompt = _EXTRACTION_PROMPT.format(n=len(cluster), snippets=snippets)
         result = _call_local_llm(prompt, cortex)
