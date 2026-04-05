@@ -30,6 +30,9 @@ logger = logging.getLogger(__name__)
 # ── Config ────────────────────────────────────────────────────────────────────
 
 CLOUD_COST_THRESHOLD = 0.0005  # cost_usd above this → LLM inference fired
+OLLAMA_TIERS = frozenset(
+    {"tier.2"}
+)  # local inference tiers — cost=0 but still train-worthy
 GAP_KEYWORD_THRESHOLD = 3  # query tokens that must appear in matrix to count as covered
 MIN_INPUT_LEN = 20  # skip trivially short inputs
 MIN_RESPONSE_LEN = 30  # skip trivially short responses
@@ -188,7 +191,7 @@ class SelfTrainer:
     def _read_candidate_turns(self, lookback_minutes: int) -> list[dict]:
         """
         Return interaction log entries where LLM inference likely fired:
-          - cost > CLOUD_COST_THRESHOLD
+          - cost > CLOUD_COST_THRESHOLD (cloud), OR tier in OLLAMA_TIERS (local, cost=0)
           - input_text doesn't start with a skip prefix
           - input / response have minimum length
           - within lookback window
@@ -206,7 +209,9 @@ class SelfTrainer:
                             continue
                         if parsed["ts"] < cutoff:
                             continue
-                        if parsed["cost"] < CLOUD_COST_THRESHOLD:
+                        is_cloud = parsed["cost"] >= CLOUD_COST_THRESHOLD
+                        is_ollama = parsed["tier"] in OLLAMA_TIERS
+                        if not is_cloud and not is_ollama:
                             continue
                         if len(parsed["input_text"]) < MIN_INPUT_LEN:
                             continue
@@ -229,13 +234,15 @@ class SelfTrainer:
         self, lookback_minutes: int, seen_inputs: set[str]
     ) -> list[dict]:
         """
-        Phase 2: read cloud turns directly from EPISODIC memories in Postgres.
+        Phase 2: read cloud and Ollama turns from EPISODIC memories in Postgres.
         Supplements log-file reading — catches turns where logs are thin or missing.
+        Includes: used_api=true (cloud) OR tier_hint in OLLAMA_TIERS (local inference).
         Deduplicates against seen_inputs (content hash) to avoid double-training.
         """
         import psycopg2
 
         cutoff_iso = (datetime.now() - timedelta(minutes=lookback_minutes)).isoformat()
+        ollama_tiers_list = list(OLLAMA_TIERS)
         results = []
         try:
             conn = psycopg2.connect(self.db_url)
@@ -246,13 +253,15 @@ class SelfTrainer:
                            metadata->>'tier_hint', id
                     FROM memories
                     WHERE memory_type = 'EPISODIC'
-                      AND jsonb_exists(metadata, 'used_api')
-                      AND metadata->>'used_api' = 'true'
+                      AND (
+                        (jsonb_exists(metadata, 'used_api') AND metadata->>'used_api' = 'true')
+                        OR metadata->>'tier_hint' = ANY(%s)
+                      )
                       AND "timestamp" > %s
                     ORDER BY "timestamp" DESC
                     LIMIT 50
                     """,
-                    (cutoff_iso,),
+                    (ollama_tiers_list, cutoff_iso),
                 )
                 rows = cur.fetchall()
             conn.close()
@@ -422,7 +431,7 @@ class SelfTrainer:
             log_cognition_metric(
                 metric="self_training_pass",
                 value=0.0,
-                detail="scanned=0 (no cloud turns in window)",
+                detail="scanned=0 (no cloud or Ollama turns in window)",
             )
             return stats
 
