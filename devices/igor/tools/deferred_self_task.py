@@ -201,18 +201,191 @@ def push_deferred_result_to_twm(
     """
     Called from IgorAgent._process_completions when a deferred_self_task job
     completes. Pushes result to TWM so it is visible on the next turn.
+
+    Predictions (note:prediction:...) use source="deferred_prediction" so
+    evaluate_deferred_predictions() can find and compare them.
     """
     if not title.startswith("deferred_self_task:"):
         return  # not a deferred self-task job — skip
     try:
+        is_prediction = ":note:prediction:" in title or result.startswith(
+            "self_note: prediction:"
+        )
+        source = "deferred_prediction" if is_prediction else "deferred_self_task"
         cortex.twm_push(
             content_csb=f"DEFERRED_RESULT|job_id={job_id}|{result[:300]}",
-            source="deferred_self_task",
+            source=source,
             salience=0.85,
-            urgency=0.35,  # visible but not screaming
+            urgency=0.35,
             ttl_seconds=600,
             thread_id=thread_id or None,
         )
-        logger.info("deferred_self_task: pushed result to TWM job_id=%s", job_id)
+        logger.info(
+            "deferred_self_task: pushed result to TWM job_id=%s source=%s",
+            job_id,
+            source,
+        )
     except Exception as e:
         logger.warning("deferred_self_task: TWM push failed job_id=%s: %s", job_id, e)
+
+
+# ── Prediction comparison (T-predictive-self-modeling) ────────────────────────
+
+_STOPWORDS = frozenset(
+    {
+        "a",
+        "an",
+        "the",
+        "and",
+        "or",
+        "in",
+        "of",
+        "to",
+        "is",
+        "it",
+        "i",
+        "my",
+        "me",
+        "we",
+        "be",
+        "as",
+        "at",
+        "by",
+        "do",
+        "if",
+        "on",
+        "so",
+        "up",
+        "that",
+        "this",
+        "with",
+        "for",
+        "not",
+        "no",
+        "but",
+        "from",
+        "will",
+        "was",
+        "are",
+        "has",
+        "had",
+        "have",
+        "can",
+        "may",
+        "should",
+        "would",
+        "could",
+        "when",
+        "than",
+        "then",
+        "just",
+        "some",
+        "any",
+        "all",
+        "one",
+        "two",
+        "more",
+        "find",
+        "get",
+        "use",
+        "see",
+        "new",
+        "via",
+        "its",
+    }
+)
+_MATCH_THRESHOLD = 0.15  # Jaccard overlap to count as a match
+
+
+def _tokenize(text: str) -> frozenset[str]:
+    """Lowercase word tokens, strip punctuation, remove stopwords."""
+    words = re.findall(r"[a-z][a-z0-9_-]*", text.lower())
+    return frozenset(w for w in words if w not in _STOPWORDS and len(w) >= 3)
+
+
+def compare_prediction_to_result(
+    prediction_text: str, result_text: str
+) -> tuple[float, str]:
+    """
+    Compare a prediction text to an actual deferred result.
+
+    Returns (score, label) where:
+      score — Jaccard overlap on non-trivial word tokens [0.0, 1.0]
+      label — "MATCH" if score >= threshold, "MISMATCH" otherwise
+
+    Threshold is intentionally low (0.15): predictions are often vague
+    but should share a few key words with a relevant result.
+    """
+    pred_words = _tokenize(prediction_text)
+    result_words = _tokenize(result_text)
+    if not pred_words or not result_words:
+        return 0.0, "NO_COMPARISON"
+    intersection = len(pred_words & result_words)
+    union = len(pred_words | result_words)
+    score = intersection / union if union > 0 else 0.0
+    label = "MATCH" if score >= _MATCH_THRESHOLD else "MISMATCH"
+    return score, label
+
+
+def evaluate_deferred_predictions(cortex: "Cortex") -> None:
+    """
+    Scan TWM for unpaired deferred_prediction entries and compare to
+    deferred_self_task results from the same session window.
+
+    On MATCH  → resolution reward (milieu) + PREDICTION_MATCH ring entry.
+    On MISMATCH → PREDICTION_MISMATCH ring entry (NE surprise path).
+
+    Called from IgorAgent._announce_completed_jobs after deferred results land.
+    Never raises — advisory signal only.
+    """
+    try:
+        items = cortex.twm_read(limit=30)
+        predictions = [i for i in items if i.get("source") == "deferred_prediction"]
+        results = [i for i in items if i.get("source") == "deferred_self_task"]
+
+        if not predictions or not results:
+            return
+
+        for pred in predictions:
+            pred_text = pred.get("content_csb", "")
+            # Strip the DEFERRED_RESULT|job_id=..| prefix to get bare prediction
+            bare_pred = re.sub(r"^DEFERRED_RESULT\|[^|]+\|", "", pred_text)
+
+            for res in results:
+                res_text = re.sub(
+                    r"^DEFERRED_RESULT\|[^|]+\|", "", res.get("content_csb", "")
+                )
+                score, label = compare_prediction_to_result(bare_pred, res_text)
+                if label == "NO_COMPARISON":
+                    continue
+
+                logger.info(
+                    "prediction_eval: %s score=%.3f pred=%r result=%r",
+                    label,
+                    score,
+                    bare_pred[:60],
+                    res_text[:60],
+                )
+
+                cortex.write_ring(
+                    f"PREDICTION_{label}|score={score:.3f}"
+                    f"|pred={bare_pred[:80]}"
+                    f"|result={res_text[:80]}",
+                    category="prediction_trace",
+                )
+
+                if label == "MATCH":
+                    try:
+                        from ..cognition import milieu as milieu_mod
+
+                        _m = milieu_mod.get()
+                        if _m is not None:
+                            # Small positive reward for accurate prediction
+                            _m.ingest_resolution_reward(min(score * 2.0, 0.8))
+                    except Exception as _e:
+                        logger.warning("prediction_eval: milieu reward failed: %s", _e)
+
+                break  # one comparison per prediction is enough
+
+    except Exception as exc:
+        logger.warning("evaluate_deferred_predictions failed: %s", exc)
