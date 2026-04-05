@@ -52,6 +52,7 @@ from . import (
     boredom_idle,
     goal_continuation,
     scope_guard,
+    after_action_reviewer,
     pe_chain,
     habit_chunker,
     or_model_refresh,
