@@ -62,6 +62,7 @@ from . import (
     memory_provenance,
     deferred_self_task,
     skill_filter,
+    skill_importer,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
