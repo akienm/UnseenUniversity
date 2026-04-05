@@ -175,6 +175,9 @@ def pe_claim(basket: dict) -> dict:
     result = _run_bash(["python3", str(_CC_QUEUE), "claim", ticket_id])
     basket["claim_result"] = result
     _flog(f"CLAIM: {ticket_id} → {result[:80]}")
+    if "not pending" in result or "not found" in result:
+        basket["error"] = f"pe_claim: cannot claim — {result.strip()}"
+        _flog(f"CLAIM: aborting chain — {result.strip()}")
     return basket
 
 
@@ -1451,6 +1454,15 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
     basket = pe_entry_init(basket)
     if basket.get("error"):
         return basket
+    ticket_id = basket.get("ticket_id")
+    if ticket_id:
+        _ticket = _load_ticket(ticket_id)
+        if _ticket and _ticket.get("worker") not in (None, "", "igor"):
+            worker = _ticket["worker"]
+            msg = f"pe_chain: ticket {ticket_id} has worker={worker} — skipping (Igor only works worker=igor tickets)"
+            basket["error"] = msg
+            _flog(f"ENTRY: {msg}")
+            return basket
     basket = pe_claim(basket)
     if basket.get("error"):
         return basket
