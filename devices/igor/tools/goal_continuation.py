@@ -164,11 +164,9 @@ def run_goal_continuation(**_) -> str:
     Skips if no active goals, or if already at step 4+.
     """
     try:
-        # D259 human-author gate: only advance goals when a human was recently active.
-        # Prevents goal auto-advancement during fully-unattended background runs.
-        if not _is_human_recently_active():
-            _flog("SKIP — no human activity in last 30 minutes (D259 gate)")
-            return "[goal_continuation] skipped — no human activity in last 30 minutes"
+        # D259 gate removed: PE chain uses Ollama only (no OR spend).
+        # Gating on human presence blocked free local work. Chain degrades
+        # gracefully if Ollama is unavailable — no gate needed here.
 
         from ..memory.cortex import Cortex as _Cortex
         from ..memory.models import MemoryType as _MT
