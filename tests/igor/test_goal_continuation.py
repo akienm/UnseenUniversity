@@ -48,6 +48,7 @@ def _make_goal(
 # via `from ..memory.cortex import Cortex as _Cortex` — patch the source.
 _CORTEX_PATH = "wild_igor.igor.memory.cortex.Cortex"
 _MT_PATH = "wild_igor.igor.memory.models.MemoryType"
+_HUMAN_GATE_PATH = "wild_igor.igor.tools.goal_continuation._is_human_recently_active"
 
 
 def _run_step(goal, bash_returns=None, ticket_data=None):
@@ -78,6 +79,8 @@ def _run_step(goal, bash_returns=None, ticket_data=None):
         gc, "_post_to_channel", side_effect=posted.append
     ), patch.object(
         gc, "_flog"
+    ), patch(
+        _HUMAN_GATE_PATH, return_value=True
     ):
         result = gc.run_goal_continuation()
 
@@ -96,7 +99,7 @@ class TestGoalContinuationSteps(unittest.TestCase):
         mock_mt.GOAL = "GOAL"
         with patch(_CORTEX_PATH, return_value=mock_cortex), patch(
             _MT_PATH, mock_mt
-        ), patch.object(gc, "_flog"):
+        ), patch.object(gc, "_flog"), patch(_HUMAN_GATE_PATH, return_value=True):
             result = gc.run_goal_continuation()
         self.assertIn("no active goals", result)
 
@@ -184,6 +187,8 @@ class TestGoalContinuationSteps(unittest.TestCase):
             gc, "_post_to_channel"
         ), patch.object(
             gc, "_flog"
+        ), patch(
+            _HUMAN_GATE_PATH, return_value=True
         ):
             result = gc.run_goal_continuation()
 
@@ -229,6 +234,8 @@ class TestGoalContinuationSteps(unittest.TestCase):
             gc, "_post_to_channel", side_effect=posted.append
         ), patch.object(
             gc, "_flog"
+        ), patch(
+            _HUMAN_GATE_PATH, return_value=True
         ):
             result = gc.run_goal_continuation()
 
