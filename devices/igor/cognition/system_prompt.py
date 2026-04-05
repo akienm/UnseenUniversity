@@ -187,6 +187,18 @@ def build_system_prompt(
             "  store_memory, read_file, open_book, and any registered tool.",
             "read_kindle_chunk args: asin (string), start_page (int, default 1), pages_per_chunk (int, default 10)",
             "CRITICAL: emit the blocks — do not describe calling them. They run automatically.",
+            "",
+            "DEFERRED SELF-TASKS (T-igor-deferred-self-tasks): To pre-load context for your *next* turn,",
+            "emit DEFERRED_TASK lines anywhere in your reply. They are stripped before the user sees them,",
+            "run as background jobs, and results arrive in TWM before your next invocation.",
+            "  DEFERRED_TASK|memory_search|<query>   — search Cortex memories",
+            "  DEFERRED_TASK|twm_read|               — snapshot hot TWM items",
+            "  DEFERRED_TASK|ring_read|<category>    — read ring memory",
+            "  DEFERRED_TASK|tool_call|<name>|<json> — call any registered tool",
+            "  DEFERRED_TASK|note|<text>             — inject a plain note into next context",
+            "Use when context is opaque or incomplete: emit a task to fetch the missing piece.",
+            "Results appear as DEFERRED_RESULT|... in your next TWM context.",
+            "Emit at most 2-3 per turn. Prefer memory_search or tool_call.",
         ]
     )
 
