@@ -55,6 +55,9 @@ from . import (
     habit_chunker,
     or_model_refresh,
     memory_snapshot,
+    git_auth_check,
+    thread_anchor,
+    inhibition_seeder,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
