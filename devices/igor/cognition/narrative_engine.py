@@ -676,6 +676,9 @@ class NarrativeEngine(IgorBase):
                     "ne_run": self._run_count + 1,
                     "promoted_at": datetime.now().isoformat(),
                     **({"emotionally_charged": True} if _emotionally_charged else {}),
+                    # T-memory-provenance: tag NE-synthesised memories as unvalidated
+                    "provenance_source": "ne_synthesis",
+                    "validation_status": "unvalidated",
                 }
                 if mem_type == MemoryType.PROCEDURAL and "trigger" not in _meta:
                     _STOP = {

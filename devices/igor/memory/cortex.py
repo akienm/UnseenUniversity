@@ -3782,6 +3782,23 @@ class Cortex(IgorBase):
                 (obs_id,),
             )
 
+    def twm_lower_urgency(self, obs_id: int, new_urgency: float = 0.2) -> None:
+        """
+        T-urgency-provenance: lower urgency on a TWM observation.
+        Used when provenance tracing finds an item's urgency is manufactured
+        (no content-grounded reason). Clamps new_urgency to [0.0, 0.64].
+        Never raises urgency and never touches high-urgency items (≥0.65).
+        """
+        if obs_id <= 0:
+            return
+        new_urgency = max(0.0, min(0.64, new_urgency))
+        with self._local_conn() as conn:
+            conn.execute(
+                "UPDATE twm_observations SET urgency = ? "
+                "WHERE id = ? AND urgency < 0.65",
+                (new_urgency, obs_id),
+            )
+
     def twm_clear_task_set(self, thread_id: str | None = None) -> int:
         """
         #158: Mark all TASK_SET entries for this thread as integrated (completed).
