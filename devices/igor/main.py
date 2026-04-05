@@ -6081,6 +6081,20 @@ class Igor(IgorBase):
             )
             loginfo(f"\n[green][JOBS] Job #{job_id} '{title[:50]}' completed.[/]\n")
 
+        # T-predictive-self-modeling: after draining all completions, compare
+        # any deferred predictions to their corresponding fetch results.
+        try:
+            from .tools.deferred_self_task import (
+                evaluate_deferred_predictions as _eval_preds,
+            )
+
+            _eval_preds(self.cortex)
+        except Exception as _bare_e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/main.py evaluate_deferred_predictions: {_bare_e}",
+            )
+
     def _drain_action_impulses(self):
         """
         Consume pending NE action_impulses from TWM (change.25).
