@@ -228,7 +228,7 @@ def get_serials2(path=STORAGE2):
                 if len(userdata_utf8) > 0:
                     dsns.append(userdata_utf8)
         except:
-            print "Error getting one of the device serial name keys"
+            print("Error getting one of the device serial name keys")
             traceback.print_exc()
             pass
     dsns = list(set(dsns))
