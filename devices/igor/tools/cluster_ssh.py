@@ -794,3 +794,116 @@ registry.register(
         fn=_update_swarm,
     )
 )
+
+# ── Tool: stop_swarm (T-stop-swarm-engram) ────────────────────────────────────
+
+_LINUX_STOP_CMD = (
+    'for d in ~/.TheIgors/*/; do touch "${d}exit.flag"; done'
+    " && echo STOP_OK"
+    " && ls ~/.TheIgors/ | wc -l"
+)
+_WINDOWS_STOP_CMD = (
+    "$dirs = Get-ChildItem C:\\Users -Directory |"
+    " ForEach-Object { Join-Path $_.FullName '.TheIgors' } |"
+    " Where-Object { Test-Path $_ } |"
+    " ForEach-Object { Get-ChildItem $_ -Directory };"
+    " $dirs | ForEach-Object { New-Item -Force -ItemType File -Path (Join-Path $_.FullName 'exit.flag') | Out-Null };"
+    " Write-Output 'STOP_OK';"
+    ' Write-Output "instances=$($dirs.Count)"'
+)
+
+
+def stop_swarm(**_) -> str:
+    """
+    T-stop-swarm-engram: Gracefully stop all Igor instances across the swarm.
+
+    Drops exit.flag in every instance dir (~/.TheIgors/*/) on each online box.
+    The main loop checks exit.flag at each idle cycle and exits with code 0.
+    Code 0 = the bash wrapper does NOT restart (unlike code 42 / restart.flag).
+
+    Analogous to update_swarm but for maintenance windows, not upgrades.
+    Returns per-box audit log.
+    """
+    import socket as _socket
+
+    lines = ["Swarm stop initiated (exit.flag on all instances):"]
+
+    all_remote = [
+        m
+        for m in _load_machines()
+        if m.get("ip")
+        and m.get("ssh")
+        and m.get("status") == "online"
+        and m["hostname"] != _socket.gethostname()
+    ]
+    eligible: list[dict] = []
+    for m in all_remote:
+        if _ping(m["ip"]):
+            eligible.append(m)
+        else:
+            lines.append(
+                f"  ~ {m['hostname']}: skipped (ping failed — box appears down)"
+            )
+
+    remote_results = ssh_exec_all(
+        _WINDOWS_STOP_CMD, _LINUX_STOP_CMD, timeout=15, machines=eligible
+    )
+    for host, out in remote_results.items():
+        if "STOP_OK" in out:
+            count_match = None
+            for part in out.split():
+                if part.startswith("instances="):
+                    count_match = part.split("=", 1)[1]
+            count_str = f" ({count_match} instances)" if count_match else ""
+            lines.append(f"  ✓ {host}: exit.flag dropped{count_str}")
+        elif any(tag in out for tag in ("[exit", "[timeout", "[ssh error")):
+            lines.append(f"  ? {host}: unreachable — {out[:80]}")
+        else:
+            lines.append(f"  ~ {host}: {out[:120]}")
+
+    # Local box — drop exit.flag for all local instance dirs
+    local_host = _socket.gethostname()
+    try:
+        result = subprocess.run(
+            ["bash", "-c", _LINUX_STOP_CMD],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        out = (result.stdout or "").strip()
+        err = (result.stderr or "").strip()
+        combined = (out + ("\n" + err if err else "")).strip()
+        if "STOP_OK" in combined:
+            lines.append(f"  ✓ {local_host} (local): exit.flag dropped")
+        else:
+            lines.append(f"  ✗ {local_host} (local): error — {combined[:120]}")
+    except Exception as exc:
+        lines.append(f"  ✗ {local_host} (local): error — {exc}")
+
+    summary = "\n".join(lines)
+    try:
+        from ..cognition.forensic_logger import log_anomaly as _la
+
+        _la(kind="SWARM_STOP", detail=summary[:400])
+    except Exception:
+        pass
+    return summary
+
+
+registry.register(
+    Tool(
+        name="stop_swarm",
+        description=(
+            "T-stop-swarm-engram: Gracefully stop all Igor instances across the swarm. "
+            "Drops exit.flag in ~/.TheIgors/*/ on every online box via SSH. "
+            "exit.flag causes Igor to exit with code 0 (no restart). "
+            "Use for maintenance windows. Analogous to update_swarm."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        fn=stop_swarm,
+    )
+)
