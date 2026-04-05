@@ -1751,7 +1751,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                         continue
                     # Promote as FACTUAL node at lower importance bar
                     mem = Memory(
-                        narrative=content[:500],
+                        narrative=content[:2000],
                         memory_type=MemoryType.FACTUAL,
                         parent_id="CP3",
                         metadata={
