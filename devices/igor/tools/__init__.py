@@ -60,6 +60,7 @@ from . import (
     inhibition_seeder,
     urgency_provenance,
     memory_provenance,
+    deferred_self_task,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
