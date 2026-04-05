@@ -58,6 +58,8 @@ from . import (
     git_auth_check,
     thread_anchor,
     inhibition_seeder,
+    urgency_provenance,
+    memory_provenance,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
