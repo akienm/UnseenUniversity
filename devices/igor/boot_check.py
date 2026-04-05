@@ -191,6 +191,8 @@ def start(cortex=None):
     try:
         from .cognition.daemon_supervisor import supervisor as _sup
 
-        _sup.register("boot-check", t)
+        _sup.register("boot-check", t, one_shot=True)
     except Exception as e:
-        log_error(kind="TOOL_FAIL", detail=f"daemon supervisor registration failed: {e}")
+        log_error(
+            kind="TOOL_FAIL", detail=f"daemon supervisor registration failed: {e}"
+        )
