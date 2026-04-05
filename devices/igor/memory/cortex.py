@@ -397,6 +397,14 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "CREATE INDEX IF NOT EXISTS idx_memories_narrative_trgm"
         " ON memories USING GIN (narrative gin_trgm_ops)",
     ),
+    # T-slow-query: tsvector GIN on narrative so cortex.search() factual-kw-supplement
+    # uses index rather than computing to_tsvector() on every FACTUAL row (~18k rows,
+    # 174ms per query). payload index (m034) was wrong column — this is the hot path.
+    (
+        "m037_memories_narrative_tsvector_gin",
+        "CREATE INDEX IF NOT EXISTS idx_memories_narrative_tsvector"
+        " ON memories USING GIN (to_tsvector('english', narrative))",
+    ),
 ]
 
 
