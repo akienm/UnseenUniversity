@@ -6016,30 +6016,15 @@ class Igor(IgorBase):
             # "web:shared" → "shared", "web:abc123" → "abc123", etc.
             # Non-web sources (discord:*, gmail:*) can't route to web — use "shared".
             if tid.startswith("cc:"):
-                # D263: CC-sourced bg job — post completion to channel_messages
-                _cc_ts2 = (
-                    __import__("datetime")
-                    .datetime.now(__import__("datetime").timezone.utc)
-                    .strftime("%Y-%m-%dT%H:%M:%SZ")
-                )
+                # D263: CC-sourced bg job — post completion to cc channel.
+                # T-job-result-lost: use post_to_channel (PG + JSONL fallback)
+                # instead of inline DB write; log errors at WARNING not INFO.
                 try:
-                    import os as _os3
-                    import psycopg2 as _pg3
+                    from .tools.channel_post import post_to_channel as _cc_post
 
-                    _pg_url3 = _os3.environ.get(
-                        "IGOR_HOME_DB_URL", ""
-                    ) or _os3.environ.get("IGOR_DB_URL", "")
-                    if _pg_url3:
-                        _c3 = _pg3.connect(_pg_url3)
-                        with _c3:
-                            with _c3.cursor() as _cur3:
-                                _cur3.execute(
-                                    "INSERT INTO channel_messages (ts, author, type, content) VALUES (%s, %s, %s, %s)",
-                                    (_cc_ts2, "igor", "message", _msg),
-                                )
-                        _c3.close()
+                    _cc_post(_msg)
                 except Exception as _e3:
-                    loginfo(f"[dim][D263] cc bg-job channel post failed: {_e3}[/]")
+                    log.warning("[D263] cc bg-job channel post failed: %s", _e3)
             elif tid.startswith("web:"):
                 _session = tid[4:] or "shared"
                 web_server.send(_msg, session_id=_session)
