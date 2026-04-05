@@ -297,7 +297,10 @@ def _deposit_prediction_error(
 _BARE_ACK_PATTERNS = re.compile(
     r"^\s*(fair[\.\!]?\s*on\s+it[\.\!]?|on\s+it[\.\!]?|got\s+it[\.\!]?|"
     r"understood[\.\!]?|will\s+do[\.\!]?|noted[\.\!]?|okay[\.\!]?|ok[\.\!]?|"
-    r"sure[\.\!]?|acknowledged[\.\!]?|roger[\.\!]?)\s*$",
+    r"sure[\.\!]?|acknowledged[\.\!]?|roger[\.\!]?|copy\s+that[\.\!]?|"
+    r"sounds\s+good[\.\!]?|absolutely[\.\!]?|alright[\.\!]?|right[\.\!]?|"
+    r"yep[\.\!]?|yup[\.\!]?|indeed[\.\!]?|certainly[\.\!]?|of\s+course[\.\!]?|"
+    r"i\s+see[\.\!]?|affirmative[\.\!]?)\s*$",
     re.IGNORECASE,
 )
 
@@ -305,6 +308,33 @@ _BARE_ACK_PATTERNS = re.compile(
 def _is_bare_ack(text: str) -> bool:
     """Return True if text is nothing but a bare acknowledgment (suppress these)."""
     return bool(_BARE_ACK_PATTERNS.match(text.strip()))
+
+
+# ── epic-polish: raw tool leak filter ─────────────────────────────────────────
+# Catches tool results that leaked into response_text and would otherwise post
+# raw internal format (CSB pipe-separated, JSON blobs) to the channel.
+# Two patterns:
+#   1. [tool_name result: ...] — synthesis-failed fallback from _extract_tool_call
+#   2. STATUS|key=value|... — CSB-format tool output treated as response text
+_RAW_TOOL_RESULT_RE = re.compile(
+    r"^\s*\[[a-z_]+\s+result:\s*[\{\[]",  # [run_bash result: {...]
+    re.IGNORECASE,
+)
+_CSB_TOOL_LEAK_RE = re.compile(
+    r"^\s*\[[a-z_]+\]\s*(NOT_RUNNING|RUNNING|OK|FAIL|ERROR|PASS|SKIP)\|",
+    re.IGNORECASE,
+)
+
+
+def _is_raw_tool_leak(text: str) -> bool:
+    """
+    Return True if response_text is a raw internal tool result that should not
+    reach the channel. Catches:
+      - [run_bash result: {"id": ...}]  (synthesis-failed fallback)
+      - [check_process] NOT_RUNNING|name=...  (CSB format leak)
+    """
+    t = text.strip()
+    return bool(_RAW_TOOL_RESULT_RE.match(t) or _CSB_TOOL_LEAK_RE.match(t))
 
 
 # ── #184: Attention nexus classification ───────────────────────────────────────
@@ -6571,12 +6601,18 @@ class Igor(IgorBase):
         if msg.source == "web" and response:
             # D263: web_server.send → _channel_append("igor", ...) writes to channel_messages
             # CC-sourced turns are source="web" so this already handles channel visibility
-            # T-deadend-ack-filter: suppress bare acks before they hit the channel
+            # epic-polish: suppress bare acks and raw tool leaks before channel post
             if _is_bare_ack(response):
                 import logging as _logging
 
                 _logging.getLogger(__name__).info(
                     "bare-ack suppressed: %r", response[:80]
+                )
+            elif _is_raw_tool_leak(response):
+                import logging as _logging
+
+                _logging.getLogger(__name__).info(
+                    "raw-tool-leak suppressed: %r", response[:120]
                 )
             else:
                 web_server.send(response, session_id=_session_id)
