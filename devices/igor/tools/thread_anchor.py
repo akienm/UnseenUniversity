@@ -86,9 +86,8 @@ def read_thread_anchor(cortex, limit: int = 3) -> str:
         )
         rows: list[tuple[str, str]] = []
         with cortex._db() as conn:
-            cur = conn.cursor()
-            cur.execute(sql, [MemoryType.EPISODIC.value, limit])
-            rows = cur.fetchall()
+            conn.execute(sql, [MemoryType.EPISODIC.value, limit])
+            rows = conn.fetchall()
 
         if not rows:
             return ""
