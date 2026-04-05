@@ -5629,6 +5629,35 @@ class Igor(IgorBase):
                 )
 
         self._apply_resolution_reward()
+
+        # T-igor-deferred-self-tasks: scan reply for DEFERRED_TASK| blocks.
+        # Strip them from the visible reply, dispatch as background jobs.
+        # Results arrive via TWM on the *next* turn.
+        if response_text and not is_impulse:
+            try:
+                from .tools.deferred_self_task import (
+                    parse_deferred_tasks as _parse_dt,
+                    dispatch_deferred_task as _dispatch_dt,
+                    strip_deferred_tasks as _strip_dt,
+                )
+
+                _dt_tasks = _parse_dt(response_text)
+                if _dt_tasks:
+                    response_text = _strip_dt(response_text)
+                    for _dt in _dt_tasks:
+                        _dispatch_dt(
+                            _dt,
+                            cortex=self.cortex,
+                            job_manager=self.job_manager,
+                            completions_queue=self._job_completions,
+                            thread_id=thread_id or "",
+                        )
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/main.py deferred_self_task: {_bare_e}",
+                )
+
         return response_text
 
     def _run_ne_background(self):
@@ -6011,6 +6040,27 @@ class Igor(IgorBase):
                 web_server.send(_msg, session_id=_session)
             else:
                 web_server.send(_msg, session_id="shared")
+
+            # T-igor-deferred-self-tasks: deferred self-task results go to TWM
+            # as context for the next turn — not as ACTION_IMPULSE noise.
+            if title.startswith("deferred_self_task:"):
+                try:
+                    from .tools.deferred_self_task import (
+                        push_deferred_result_to_twm as _push_dt,
+                    )
+
+                    _push_dt(self.cortex, job_id, title, result, tid)
+                except Exception as _bare_e:
+                    log_error(
+                        kind="BARE_EXCEPT",
+                        detail=f"wild_igor/igor/main.py push_deferred_result_to_twm: {_bare_e}",
+                    )
+                self.cortex.write_ring(
+                    f"DEFERRED_RESULT|id={job_id}|title={title[:60]}|result={result[:200]}",
+                    category="system_info",
+                    thread_id=tid or None,
+                )
+                continue  # skip generic ACTION_IMPULSE + user notification
 
             # Keep TWM impulse for NE integration (internal awareness only)
             self.cortex.twm_push(
