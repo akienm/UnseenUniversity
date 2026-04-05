@@ -2,12 +2,18 @@
 Memory and tool discovery queries — D272.
 
 Functions for Igor to introspect his own tools, capabilities, and memory structure.
+Includes memory_search (sync in-turn memory lookup) and find_tool (fuzzy tool name
+resolution by keyword overlap against names+descriptions).
 """
 
+import logging
 import os
 import json
+import re
 
 from .registry import Tool, registry
+
+logger = logging.getLogger(__name__)
 
 
 def _get_cortex():
@@ -97,6 +103,102 @@ def get_tool_registry_report(filter_text: str = "", **_) -> str:
         return f"[ERROR listing tools] {e}"
 
 
+def memory_search(query: str, limit: int = 5, **_) -> str:
+    """
+    Search Igor's memory store by keyword overlap. Returns top matches as a
+    readable string. Synchronous — result available immediately in this turn.
+
+    Use this when you need to look up what you know about a topic without
+    waiting for a deferred task. For large background lookups use
+    DEFERRED_TASK|memory_search|<query> instead.
+    """
+    try:
+        from ..memory.cortex import Cortex
+
+        cortex = Cortex(None)
+        results = cortex.search(query, limit=int(limit))
+        if not results:
+            return f"memory_search({query!r}): no results"
+        lines = [f"memory_search({query!r}): {len(results)} hit(s)"]
+        for m in results:
+            lines.append(f"  [{m.memory_type}] {m.id} — {m.narrative[:120]}")
+        logger.debug("memory_search: query=%r hits=%d", query, len(results))
+        return "\n".join(lines)
+    except Exception as e:
+        logger.warning("memory_search: error — %s", e)
+        return f"memory_search({query!r}): error — {e}"
+
+
+def find_tool(query: str, limit: int = 5, **_) -> str:
+    """
+    Find registered tools by keyword overlap against tool names and descriptions.
+    Useful when you know roughly what a tool does but not its exact name.
+
+    Returns the top matching tool names and their descriptions.
+    Example: find_tool("search memory") → memory_search, list_unvalidated_memories, …
+    """
+    try:
+        from .registry import registry
+
+        def _tok(text: str) -> frozenset:
+            # Split on underscores/hyphens first so tool_name → ["tool", "name"]
+            text = re.sub(r"[_\-]", " ", text.lower())
+            words = re.findall(r"[a-z][a-z0-9]*", text)
+            stopwords = {
+                "the",
+                "a",
+                "an",
+                "to",
+                "for",
+                "of",
+                "in",
+                "is",
+                "it",
+                "and",
+                "or",
+                "by",
+                "be",
+                "as",
+                "at",
+                "do",
+                "if",
+                "on",
+            }
+            return frozenset(w for w in words if w not in stopwords and len(w) >= 3)
+
+        query_tok = _tok(query)
+        if not query_tok:
+            return "find_tool: query too short or all stopwords"
+
+        scored = []
+        for tool in registry._tools.values():
+            text = f"{tool.name} {tool.description or ''}"
+            tool_tok = _tok(text)
+            if not tool_tok:
+                continue
+            inter = len(query_tok & tool_tok)
+            union = len(query_tok | tool_tok)
+            score = inter / union if union else 0.0
+            if score > 0:
+                scored.append((score, tool.name, tool.description or ""))
+
+        scored.sort(reverse=True)
+        top = scored[: int(limit)]
+        if not top:
+            return f"find_tool({query!r}): no matching tools"
+
+        lines = [f"find_tool({query!r}): {len(top)} match(es)"]
+        for score, name, desc in top:
+            lines.append(
+                f"  {name} (score={score:.2f}) — {desc.split(chr(10))[0][:80]}"
+            )
+        logger.debug("find_tool: query=%r top=%s", query, [n for _, n, _ in top])
+        return "\n".join(lines)
+    except Exception as e:
+        logger.warning("find_tool: error — %s", e)
+        return f"find_tool({query!r}): error — {e}"
+
+
 # ── Registration ──────────────────────────────────────────────────────────────
 
 registry.register(
@@ -133,5 +235,57 @@ registry.register(
             "required": [],
         },
         fn=get_tool_registry_report,
+    )
+)
+
+registry.register(
+    Tool(
+        name="memory_search",
+        description=(
+            "Search Igor's memory store by keyword overlap. Returns top matches synchronously "
+            "in the current turn. Use for quick lookups. For large background lookups use "
+            "DEFERRED_TASK|memory_search|<query> instead."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Search terms to match against memory narratives",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Max results to return (default 5)",
+                },
+            },
+            "required": ["query"],
+        },
+        fn=memory_search,
+    )
+)
+
+registry.register(
+    Tool(
+        name="find_tool",
+        description=(
+            "Find registered tools by keyword overlap against tool names and descriptions. "
+            "Use when you know roughly what a tool does but not its exact name. "
+            "Example: find_tool('search memory') resolves to memory_search."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Keywords describing what the tool does",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Max results to return (default 5)",
+                },
+            },
+            "required": ["query"],
+        },
+        fn=find_tool,
     )
 )
