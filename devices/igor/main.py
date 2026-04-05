@@ -5317,6 +5317,27 @@ class Igor(IgorBase):
             self._update_conversation_thread(
                 user_input, response_text, parsed.intent, _milieu_state
             )
+            # [THREAD ANCHOR] T-thread-to-fallthrough: write compact anchor so context
+            # continuity survives window trimming. Anchor is EPISODIC + thread_anchor=true
+            # metadata — queried by recency in base._build_session_context().
+            if response_text:
+                try:
+                    from .tools.thread_anchor import (
+                        write_thread_anchor as _write_anchor,
+                    )
+
+                    _write_anchor(
+                        cortex=self.cortex,
+                        user_input=user_input,
+                        response_text=response_text,
+                        intent=parsed.intent,
+                        turn_n=self.interaction_count,
+                    )
+                except Exception as _bare_e:
+                    log_error(
+                        kind="BARE_EXCEPT",
+                        detail=f"thread anchor write: {_bare_e}",
+                    )
             # G11: index exchange text into word graph so prediction improves over time.
             # Keyed by thread+monotonic tick to avoid collisions across restarts.
             if self._word_graph is not None and response_text:

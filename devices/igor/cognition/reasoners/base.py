@@ -239,6 +239,23 @@ class BaseReasoner(ABC, IgorBase):
 
         lines = []
 
+        # ── T-thread-to-fallthrough: thread anchor — orientation before all else ──
+        # Reads the most recent turn-anchors from DB (EPISODIC, thread_anchor=true).
+        # These survive context window trimming because they are written to persistent
+        # storage at each turn boundary, not assembled from the live context window.
+        # Prepended first so a post-trim Igor knows what conversation it is in
+        # before reading any task goal, urgency signal, or ring entry.
+        try:
+            from ...tools.thread_anchor import read_thread_anchor as _read_anchor
+
+            _anchor_block = _read_anchor(cortex, limit=3)
+            if _anchor_block:
+                lines.append(_anchor_block)
+        except Exception as _bare_e:
+            logging.getLogger(__name__).warning(
+                "thread anchor read failed: %s", _bare_e
+            )
+
         # ── #158: TASK_SET first — active goal anchors all context ────────────
         try:
             task_sets = cortex.twm_read(
