@@ -413,6 +413,101 @@ def close_goal_by_ticket(ticket_id: str) -> str:
         return f"[goal_close] error: {e}"
 
 
+# ── close_task_by_name ────────────────────────────────────────────────────────
+
+
+_TASK_CLOSE_PHRASES = (
+    "we're done with",
+    "we are done with",
+    "not now",
+    "cancel that",
+    "cancel",
+    "mark it done",
+    "mark as done",
+    "that's complete",
+    "that is complete",
+    "we're not doing",
+    "we are not doing",
+    "skip",
+    "done with",
+    "close",
+    "finished with",
+    "drop",
+)
+
+
+def close_task_by_name(text: str) -> str:
+    """
+    T-close-task-tool: Extract task name from natural language, find matching
+    EPISODIC/GOAL/TASK memories, mark them status=closed.
+
+    Handles phrases like:
+      "we're done with the ebook indexer"
+      "cancel that thread buffer work"
+      "mark it done — T-foo-bar"
+
+    Tries exact substring match in narrative first; falls back to semantic search.
+    Single-arg wrapper for habit dispatch compatibility.
+    """
+    try:
+        from ..memory.cortex import Cortex as _Cortex
+        from ..memory.models import MemoryType as _MT
+
+        # Extract task name by stripping common closure phrases
+        name = text.strip()
+        name_lower = name.lower()
+        for phrase in _TASK_CLOSE_PHRASES:
+            if name_lower.startswith(phrase):
+                name = name[len(phrase) :].strip(" :-–—")
+                break
+        if not name:
+            return "[close_task] no task name extracted from input"
+
+        cortex = _Cortex(None)
+
+        # Phase 1: exact substring match across EPISODIC + GOAL memories
+        candidates = []
+        for mt in (_MT.EPISODIC, _MT.GOAL):
+            mems = cortex.get_by_type(mt)
+            for m in mems:
+                if name.lower() in m.narrative.lower():
+                    if m.metadata.get("status") != "closed":
+                        candidates.append(m)
+
+        # Phase 2: semantic search fallback if no exact match
+        if not candidates:
+            results = cortex.search(name, limit=3)
+            candidates = [
+                m
+                for m in results
+                if m.metadata.get("status") != "closed"
+                and m.memory_type in (_MT.EPISODIC, _MT.GOAL)
+            ]
+
+        if not candidates:
+            return f"[close_task] no open task found matching {name!r}"
+
+        # Close all matching candidates (usually 1)
+        closed_ids = []
+        ts = datetime.now(timezone.utc).isoformat()
+        for m in candidates:
+            m.metadata["status"] = "closed"
+            m.metadata["closed_at"] = ts
+            m.metadata["closed_by"] = "close_task_by_name"
+            if m.memory_type == _MT.GOAL:
+                m.metadata["goal_active"] = False
+            m.narrative = m.narrative.rstrip() + "\nStatus: CLOSED."
+            cortex.store(m)
+            closed_ids.append(m.id)
+
+        label = candidates[0].narrative[:60].replace("\n", " ")
+        return (
+            f"[close_task] closed {len(closed_ids)} task(s) matching {name!r}: {label}…"
+        )
+    except Exception as e:
+        return f"[close_task] error: {e}"
+
+
 # ── read_queue_top ─────────────────────────────────────────────────────────────
 
 
@@ -723,6 +818,29 @@ registry.register(
             "required": [],
         },
         fn=close_goal,
+    )
+)
+
+registry.register(
+    Tool(
+        name="close_task_by_name",
+        description=(
+            "T-close-task-tool: Extract task name from natural language and mark "
+            "matching EPISODIC/GOAL memories as closed. "
+            "Handles: 'we're done with X', 'cancel X', 'mark it done', etc. "
+            "Tries exact substring match then semantic search fallback."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "description": "Natural language phrase describing the task to close (e.g. 'we are done with the ebook indexer')",
+                },
+            },
+            "required": ["text"],
+        },
+        fn=close_task_by_name,
     )
 )
 
