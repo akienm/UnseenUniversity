@@ -133,6 +133,26 @@ registry.register(
 )
 
 
+# bash → run_bash alias: LLMs naturally call "bash" — route to run_bash transparently
+registry.register(
+    Tool(
+        name="bash",
+        description=(
+            "Alias for run_bash. Run a bash command and return stdout+stderr. "
+            "Timeout default 30s."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "command": {"type": "string"},
+                "timeout": {"type": "integer"},
+            },
+            "required": ["command"],
+        },
+        fn=run_bash,
+    )
+)
+
 registry.register(
     Tool(
         name="run_python",
