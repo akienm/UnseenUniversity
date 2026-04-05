@@ -34,6 +34,7 @@ class _DaemonEntry:
     thread: threading.Thread
     started_at: float = field(default_factory=time.monotonic)
     health_fn: Callable[[], bool] | None = None
+    one_shot: bool = False  # if True, natural exit is expected — no DAEMON_DEAD alert
 
 
 class DaemonSupervisor:
@@ -49,13 +50,20 @@ class DaemonSupervisor:
         name: str,
         thread: threading.Thread,
         health_fn: Callable[[], bool] | None = None,
+        one_shot: bool = False,
     ) -> None:
-        """Register a daemon thread. Call after thread.start()."""
+        """Register a daemon thread. Call after thread.start().
+
+        one_shot=True: thread is expected to exit after completing its task.
+        Natural termination is not alarmed — no DAEMON_DEAD warning logged.
+        Use for startup tasks (boot-check, warmup, etc.), not persistent workers.
+        """
         with self._lock:
             self._entries[name] = _DaemonEntry(
                 name=name,
                 thread=thread,
                 health_fn=health_fn,
+                one_shot=one_shot,
             )
 
     def status(self) -> list[dict]:
@@ -78,6 +86,7 @@ class DaemonSupervisor:
                     "alive": alive,
                     "uptime_s": round(now - e.started_at, 1),
                     "healthy": healthy,
+                    "one_shot": e.one_shot,
                 }
             )
         return rows
@@ -131,6 +140,9 @@ class DaemonSupervisor:
                     for r in rows:
                         if not r["alive"] and r["name"] not in _alerted:
                             _alerted.add(r["name"])
+                            # one_shot threads are expected to exit — no alert
+                            if r.get("one_shot"):
+                                continue
                             if r["name"] in _critical:
                                 log.error(
                                     "DAEMON_DEAD critical thread %s died after %.0fs — writing restart.flag",
