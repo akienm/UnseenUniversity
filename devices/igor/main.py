@@ -5703,7 +5703,7 @@ class Igor(IgorBase):
             try:
                 from .cognition.daemon_supervisor import supervisor as _sup
 
-                _sup.register("ne-worker", self._ne_thread)
+                _sup.register("ne-worker", self._ne_thread, one_shot=True)
             except Exception:
                 pass
         finally:
@@ -5773,7 +5773,9 @@ class Igor(IgorBase):
         try:
             from .cognition.daemon_supervisor import supervisor as _sup
 
-            _sup.register("consolidation-worker", self._consolidation_thread)
+            _sup.register(
+                "consolidation-worker", self._consolidation_thread, one_shot=True
+            )
         except Exception:
             pass
 
