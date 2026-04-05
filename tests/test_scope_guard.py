@@ -7,19 +7,12 @@ so they fail silently when Cortex/channel_post aren't available in test — that
 We test the classification logic and the escalation decision directly.
 """
 
-import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-# Stub out the lazy imports that run_scope_guard uses internally so they don't
-# attempt a real DB connection in tests.
-_fake_cortex_mod = MagicMock()
-_fake_cortex_mod.Cortex = MagicMock(return_value=MagicMock())
-sys.modules.setdefault("wild_igor.igor.memory.cortex", _fake_cortex_mod)
-
-_fake_channel_mod = MagicMock()
-sys.modules.setdefault("wild_igor.igor.tools.channel_post", _fake_channel_mod)
+# Note: scope_guard imports cortex/channel_post lazily inside try/except blocks,
+# so they fail silently without DB in tests — no module-level stubs needed.
 
 from wild_igor.igor.tools.scope_guard import (
     _classify_tier,
