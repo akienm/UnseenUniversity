@@ -51,6 +51,7 @@ from . import (
     memory_query,
     boredom_idle,
     goal_continuation,
+    scope_guard,
     pe_chain,
     habit_chunker,
     or_model_refresh,

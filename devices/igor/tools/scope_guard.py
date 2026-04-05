@@ -1,0 +1,148 @@
+"""
+scope_guard.py — T-scope-guard-proc: inertia-aware write gate for the PE chain.
+
+run_scope_guard(basket): checks basket['hypothesis']['file'] against the tier table,
+computes op_delta (read=0/write=1/delete=2), posts a scope_decision to ring, and
+escalates (basket['pe_status']='escalated') if the target file is HIGH inertia
+and the op is a write or delete.
+
+Called from pe_chain.py between HYPOTHESIZE and IMPLEMENT.
+Forensic log: ~/.TheIgors/logs/scope_guard.log
+"""
+
+from __future__ import annotations
+
+import os
+from datetime import datetime, timezone
+from pathlib import Path
+
+from .registry import Tool, registry
+
+_LOG_FILE = Path.home() / ".TheIgors" / "logs" / "scope_guard.log"
+
+# ── Tier table ────────────────────────────────────────────────────────────────
+# Ordered: first match wins. Matches are path-prefix checks against the
+# basket hypothesis file path (relative or absolute — both handled).
+
+_TIER_TABLE: list[tuple[str, str]] = [
+    # HIGH — brainstem and core models: never touch without explicit approval
+    ("wild_igor/igor/brainstem/", "HIGH"),
+    ("igor/brainstem/", "HIGH"),
+    ("wild_igor/igor/memory/models.py", "HIGH"),
+    ("igor/memory/models.py", "HIGH"),
+    ("wild_igor/igor/cognition/reasoners/base.py", "HIGH"),
+    ("igor/cognition/reasoners/base.py", "HIGH"),
+    # MEDIUM — cognition, cortex, anthropic adapter, main
+    ("wild_igor/igor/cognition/", "MEDIUM"),
+    ("igor/cognition/", "MEDIUM"),
+    ("wild_igor/igor/memory/cortex.py", "MEDIUM"),
+    ("igor/memory/cortex.py", "MEDIUM"),
+    ("wild_igor/igor/anthropic.py", "MEDIUM"),
+    ("igor/anthropic.py", "MEDIUM"),
+    ("wild_igor/igor/main.py", "MEDIUM"),
+    ("igor/main.py", "MEDIUM"),
+]
+
+# ── Op delta ─────────────────────────────────────────────────────────────────
+_OP_DELTA: dict[str, int] = {
+    "read": 0,
+    "write": 1,
+    "delete": 2,
+}
+_DEFAULT_OP = "write"  # HYPOTHESIZE always produces an edit
+
+
+def _flog(msg: str) -> None:
+    ts = datetime.now(timezone.utc).isoformat()
+    try:
+        _LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(_LOG_FILE, "a") as f:
+            f.write(f"{ts}  {msg}\n")
+    except Exception:
+        pass
+
+
+def _classify_tier(file_path: str) -> str:
+    """Return HIGH/MEDIUM/LOW for a given file path using the tier table."""
+    # Normalise: strip leading slashes and home prefix for consistent matching
+    norm = file_path.replace("\\", "/")
+    home = str(Path.home()).replace("\\", "/")
+    if norm.startswith(home):
+        norm = norm[len(home) :].lstrip("/")
+
+    for prefix, tier in _TIER_TABLE:
+        if norm.startswith(prefix) or ("/" + prefix) in ("/" + norm):
+            return tier
+    return "LOW"
+
+
+def run_scope_guard(basket: dict) -> dict:
+    """
+    SCOPE_GUARD step for the PE chain.
+
+    Reads basket['hypothesis']['file'] and basket.get('op_type', 'write').
+    Classifies the target file's inertia tier.
+    Posts a scope_decision entry to ring for audit.
+    Escalates (basket['pe_status']='escalated') if tier==HIGH and op_delta>=1.
+
+    Non-fatal: if hypothesis is missing or already has an error, returns basket as-is.
+    """
+    hypothesis = basket.get("hypothesis")
+    if not hypothesis or basket.get("hypothesis_error"):
+        _flog("SCOPE_GUARD: skipped — no valid hypothesis")
+        return basket
+
+    target_file = hypothesis.get("file", "")
+    op_type = basket.get("op_type", _DEFAULT_OP)
+    tier = _classify_tier(target_file)
+    op_delta = _OP_DELTA.get(op_type, 1)
+
+    # Ring audit entry
+    ring_entry = (
+        f"scope_decision: file={target_file} tier={tier} op={op_type} delta={op_delta}"
+    )
+    try:
+        from ..memory.cortex import Cortex as _Cortex
+
+        cortex = _Cortex(None)
+        cortex.write_ring(ring_entry, category="scope_decision")
+    except Exception as exc:
+        _flog(f"SCOPE_GUARD: ring write failed — {exc}")
+
+    if tier == "HIGH" and op_delta >= 1:
+        reason = (
+            f"SCOPE_GUARD: {target_file} is HIGH inertia — "
+            f"{op_type} requires human approval"
+        )
+        basket["pe_status"] = "escalated"
+        basket["escalate_reason"] = reason
+        _flog(f"ESCALATED: file={target_file} tier=HIGH op={op_type}")
+        try:
+            from .channel_post import post_to_channel as _post
+
+            _post(
+                f"[SCOPE_GUARD] Escalated: {target_file} — HIGH inertia {op_type} blocked."
+            )
+        except Exception as exc:
+            _flog(f"SCOPE_GUARD: channel post failed — {exc}")
+    else:
+        _flog(f"PASS: file={target_file} tier={tier} op={op_type}")
+
+    return basket
+
+
+# ── Register ──────────────────────────────────────────────────────────────────
+
+registry.register(
+    Tool(
+        name="run_scope_guard",
+        description=(
+            "T-scope-guard-proc: PE chain inertia gate. Checks basket['hypothesis']['file'] "
+            "against tier table (HIGH/MEDIUM/LOW). Posts scope_decision to ring. "
+            "Escalates basket if HIGH inertia file + write/delete op. "
+            "Called between HYPOTHESIZE and IMPLEMENT in pe_chain."
+        ),
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=lambda **_: "scope_guard: use run_scope_guard(basket) directly from pe_chain",
+    )
+)

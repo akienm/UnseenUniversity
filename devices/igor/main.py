@@ -3918,7 +3918,12 @@ class Igor(IgorBase):
                 "general",  # catch-all fallback — if unclassified, keep foreground
             }
         )
-        _intent_blocks_bg = parsed.intent in _INTERACTIVE_INTENTS
+        # D313: CC design messages (author=claude-code) must always stay foreground —
+        # background jobs drop replies silently. Intent classification alone is unreliable
+        # for cc_send design patterns (e.g. action_request routes to background).
+        _intent_blocks_bg = (
+            parsed.intent in _INTERACTIVE_INTENTS or author == "claude-code"
+        )
         _async_job_id: str | None = None
         if (
             not is_impulse

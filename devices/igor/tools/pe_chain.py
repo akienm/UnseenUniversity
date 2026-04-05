@@ -1487,6 +1487,11 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
     basket = pe_hypothesize(basket)
     if basket.get("error"):
         return basket
+    from .scope_guard import run_scope_guard as _scope_guard
+
+    basket = _scope_guard(basket)
+    if basket.get("escalate_reason"):
+        return basket
     basket = pe_implement(basket)
     if basket.get("error"):
         return basket
