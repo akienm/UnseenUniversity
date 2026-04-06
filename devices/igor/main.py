@@ -4349,7 +4349,10 @@ class Igor(IgorBase):
                 # T-engram-cursor-traversal: Traversal loop for BRANCHIF nodes.
                 # Loop detection via visit_log (snapshot matching).
                 _visit_log = {}  # node_id → basket snapshot string
-                _all_spawned = []  # Accumulate all spawned IDs across cursor path
+                _all_spawned = (
+                    []
+                )  # Accumulate all spawned IDs across cursor path (FORKIF)
+                _all_spawned_fresh = []  # Accumulate SPAWNIF IDs (empty basket)
                 _current_node = habit
 
                 while True:
@@ -4364,6 +4367,7 @@ class Igor(IgorBase):
 
                     # Accumulate spawned IDs from this node
                     _all_spawned.extend(_eng_result.spawned)
+                    _all_spawned_fresh.extend(_eng_result.spawned_fresh)
 
                     # Write branch if next_node set
                     if _eng_result.next_node:
@@ -4437,6 +4441,32 @@ class Igor(IgorBase):
                         )
                         loginfo(
                             f"[dim][ENGRAM] spawned fork #{_fork_async_id} → {_spawned_id}[/]"
+                        )
+
+                # Dispatch SPAWNIF targets with fresh empty baskets (T-spawnif-new-opcode)
+                for _spawned_id in _all_spawned_fresh:
+                    self.cortex.write_ring(
+                        f"ENGRAM_SPAWN|from={habit.id}|to={_spawned_id}",
+                        category="habit_trace",
+                    )
+
+                    # SPAWNIF child starts with an empty basket — no parent state shared.
+                    _spawned_node = self.cortex.get(_spawned_id)
+                    if _spawned_node:
+
+                        def _exec_spawn(
+                            _node=_spawned_node,
+                        ):
+                            return _exec_node(_node, "__entry__", {})
+
+                        _spawn_async_id = self.job_manager.submit_background(
+                            fn=_exec_spawn,
+                            title=f"engram_spawn:{_spawned_id[:16]}",
+                            completions_queue=self._job_completions,
+                            thread_id=thread_id or "",
+                        )
+                        loginfo(
+                            f"[dim][ENGRAM] spawned fresh #{_spawn_async_id} → {_spawned_id}[/]"
                         )
             except Exception as _eng_e:
                 loginfo(f"[dim][ENGRAM] error: {_eng_e}[/]")

@@ -10,6 +10,7 @@ Instruction set:
   EMITIF   [condition, key, value, channel]           — emit value to channel if condition; cursor continues
   BRANCHIF [condition, target_node_id]                — jump to target if condition; cell stops
   FORKIF   [condition, target_node_id]                — spawn new cursor at target if condition; cursor continues. Fork shares parent basket by reference (T-basket-fork-sharing): child reads from and emits back into the same basket dict.
+  SPAWNIF  [condition, target_node_id]                — spawn new cursor at target with empty basket if condition; cursor continues. Child starts fresh (no parent basket state).
   MCPCALL  [tool_name, args_basket_key, out_basket_key] — call tool registry fn; store result in basket; synchronous v1 (D307)
   ENDIF                                               — explicit end; cursor stops (implicit if absent)
 
@@ -35,7 +36,8 @@ Data guard:
 Returns ExecutionResult:
   next_node   : Optional[str]  — set if BRANCHIF fired with bare node ID or node_id#trigger
   next_trigger: Optional[str]  — trigger name for next_node (D296); None → use "__entry__"
-  spawned     : list[str]      — node IDs queued by FORKIF
+  spawned     : list[str]      — node IDs queued by FORKIF (shared basket)
+  spawned_fresh: list[str]    — node IDs queued by SPAWNIF (empty basket)
   basket      : dict           — same basket dict, mutated in place by EMITIF→basket channel
   stopped_by  : str            — implicit_end | ENDIF | BRANCHIF | STOPIF | limit
 """
@@ -61,7 +63,10 @@ class ExecutionResult:
     next_trigger: Optional[str] = (
         None  # trigger name for next_node (D296), or None for "__entry__"
     )
-    spawned: list[str] = field(default_factory=list)  # FORKIF targets
+    spawned: list[str] = field(default_factory=list)  # FORKIF targets (shared basket)
+    spawned_fresh: list[str] = field(
+        default_factory=list
+    )  # SPAWNIF targets (empty basket)
     basket: dict = field(default_factory=dict)
     instructions_run: int = 0
     stopped_by: str = "implicit_end"  # implicit_end | ENDIF | BRANCHIF | STOPIF | limit
@@ -183,7 +188,15 @@ def execute_node(memory, fired_trigger: str, basket: dict) -> ExecutionResult:
         op = instruction[0]
 
         # Early check for LABEL and STOPIF which are handled specially
-        if op not in ("LABEL", "STOPIF", "EMITIF", "BRANCHIF", "FORKIF", "MCPCALL"):
+        if op not in (
+            "LABEL",
+            "STOPIF",
+            "EMITIF",
+            "BRANCHIF",
+            "FORKIF",
+            "SPAWNIF",
+            "MCPCALL",
+        ):
             log.warning(
                 "[node_executor] unknown instruction op %r in %s", op, memory.id
             )
@@ -328,6 +341,28 @@ def execute_node(memory, fired_trigger: str, basket: dict) -> ExecutionResult:
                     result.spawned.append(target_str)
                     log.debug(
                         "[node_executor] FORKIF spawned: %s → %s",
+                        memory.id,
+                        target_str,
+                    )
+            # cursor continues regardless
+            i += 1
+
+        # ── SPAWNIF [condition, target_node_id] ──────────────────────────────
+        elif op == "SPAWNIF":
+            if len(instruction) != 3:
+                log.warning(
+                    "[node_executor] SPAWNIF expects 2 args, got %d",
+                    len(instruction) - 1,
+                )
+                i += 1
+                continue
+            _, condition, target = instruction
+            if _eval_condition(condition, basket):
+                target_str = str(target) if target is not None else ""
+                if target_str and target_str != "None":
+                    result.spawned_fresh.append(target_str)
+                    log.debug(
+                        "[node_executor] SPAWNIF spawned fresh: %s → %s",
                         memory.id,
                         target_str,
                     )
