@@ -20,7 +20,6 @@ from .registry import Tool, registry
 
 log = logging.getLogger(__name__)
 
-_LOG_FILE = Path.home() / ".TheIgors" / "logs" / "memory_count.log"
 _STAMP_FILE = Path.home() / ".TheIgors" / "logs" / "memory_count.last_run"
 _DB_URL = os.getenv(
     "IGOR_HOME_DB_URL",
@@ -28,14 +27,6 @@ _DB_URL = os.getenv(
 )
 
 
-def _flog(msg: str) -> None:
-    ts = datetime.now(timezone.utc).isoformat()
-    try:
-        _LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(_LOG_FILE, "a") as f:
-            f.write(f"{ts}  {msg}\n")
-    except Exception:
-        pass
 
 
 def run_memory_snapshot() -> str:
@@ -81,7 +72,7 @@ def run_memory_snapshot() -> str:
         conn.close()
     except Exception as exc:
         msg = f"memory_snapshot: DB error — {exc}"
-        _flog(msg)
+        log.info(msg)
         log.warning("[memory_snapshot] %s", exc)
         return msg
 
@@ -98,7 +89,7 @@ def run_memory_snapshot() -> str:
         "total": total,
         "by_type": by_type,
     }
-    _flog(json.dumps(record))
+    log.info(json.dumps(record))
     log.info("[memory_snapshot] %d total memories on %s", total, today)
 
     summary = f"memory_snapshot {today}: {total} total — " + ", ".join(

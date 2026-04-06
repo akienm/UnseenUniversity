@@ -26,7 +26,6 @@ from .registry import Tool, registry
 
 log = logging.getLogger(__name__)
 
-_LOG_FILE = Path.home() / ".TheIgors" / "logs" / "or_model_refresh.log"
 _OR_MODELS_URL = "https://openrouter.ai/api/v1/models"
 
 # Env vars that hold OR model IDs — checked and updated on refresh
@@ -38,14 +37,6 @@ _MODEL_ENV_VARS = [
 ]
 
 
-def _flog(msg: str) -> None:
-    ts = datetime.now(timezone.utc).isoformat()
-    try:
-        _LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(_LOG_FILE, "a") as f:
-            f.write(f"{ts}  {msg}\n")
-    except Exception:
-        pass
 
 
 def _fetch_or_models() -> list[str]:
@@ -118,14 +109,14 @@ def refresh_or_models() -> str:
     Called by PROC_OR_MODEL_REFRESH habit when Igor detects a 400 invalid-model error.
     Returns a summary string suitable for posting to the channel.
     """
-    _flog("refresh_or_models: starting")
+    log.info("refresh_or_models: starting")
     candidates = _fetch_or_models()
     if not candidates:
         msg = "OR model refresh: could not fetch /models (offline or auth error)"
-        _flog(msg)
+        log.info(msg)
         return msg
 
-    _flog(f"refresh_or_models: fetched {len(candidates)} models")
+    log.info(f"refresh_or_models: fetched {len(candidates)} models")
     changes: list[str] = []
     no_change: list[str] = []
 
@@ -135,7 +126,7 @@ def refresh_or_models() -> str:
             continue
         best = _find_closest(current, candidates)
         if best is None:
-            _flog(f"  {var}: {current!r} → no match found")
+            log.info(f"  {var}: {current!r} → no match found")
             continue
         if best == current:
             no_change.append(f"{var}={current}")
@@ -143,7 +134,7 @@ def refresh_or_models() -> str:
             os.environ[var] = best
             change_line = f"{var}: {current!r} → {best!r}"
             changes.append(change_line)
-            _flog(f"  UPDATED {change_line}")
+            log.info(f"  UPDATED {change_line}")
             log.info("[or_model_refresh] %s", change_line)
 
     if changes:
@@ -151,7 +142,7 @@ def refresh_or_models() -> str:
     else:
         summary = f"OR model refresh: all {len(no_change)} models still valid"
 
-    _flog(f"refresh_or_models: done — {summary}")
+    log.info(f"refresh_or_models: done — {summary}")
     return summary
 
 

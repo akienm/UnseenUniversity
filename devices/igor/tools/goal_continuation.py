@@ -24,16 +24,18 @@ Forensic log: ~/.TheIgors/logs/goal_continuation.log
 """
 
 import json
+import logging
 import os
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
 from .registry import Tool, registry
+
+log = logging.getLogger(__name__)
 from ..paths import paths
 from .channel_post import post_to_channel as _post_to_channel
 
-_LOG_FILE = Path.home() / ".TheIgors" / "logs" / "goal_continuation.log"
 _DB_URL = os.getenv(
     "IGOR_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/igor_wild_0001",
@@ -41,14 +43,6 @@ _DB_URL = os.getenv(
 _CC_QUEUE = Path.home() / "TheIgors" / "claudecode" / "cc_queue.py"
 
 
-def _flog(msg: str) -> None:
-    ts = datetime.now(timezone.utc).isoformat()
-    try:
-        _LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(_LOG_FILE, "a") as f:
-            f.write(f"{ts}  {msg}\n")
-    except Exception:
-        pass
 
 
 def _run_bash(cmd: list) -> str:
@@ -184,7 +178,7 @@ def run_goal_continuation(**_) -> str:
         task = goal.metadata.get("source_message", goal.narrative[:80])
         step = int(goal.metadata.get("current_step", 0))
 
-        _flog(f"CHECK goal={goal.id} step={step} task={task[:60]}")
+        log.info(f"CHECK goal={goal.id} step={step} task={task[:60]}")
 
         ticket_id = _extract_ticket_id(task)
 
@@ -194,7 +188,7 @@ def run_goal_continuation(**_) -> str:
                 # Claim attempt cap: crash+restart must not re-claim indefinitely.
                 attempts = int(goal.metadata.get("claim_attempt_count", 0))
                 if attempts >= _MAX_CLAIM_ATTEMPTS:
-                    _flog(
+                    log.info(
                         f"STEP0 cap: claim_attempt_count={attempts} >= {_MAX_CLAIM_ATTEMPTS}"
                         f" for {ticket_id} — manual intervention required"
                     )
@@ -212,7 +206,7 @@ def run_goal_continuation(**_) -> str:
                 _post_to_channel(msg)
                 goal.metadata["current_step"] = 1
                 cortex.store(goal)
-                _flog(
+                log.info(
                     f"STEP0 ticket={ticket_id} attempt={attempts + 1} result={out[:80]}"
                 )
                 return f"[goal_continuation] claimed {ticket_id}: {out[:80]}"
@@ -236,10 +230,10 @@ def run_goal_continuation(**_) -> str:
                     grep_for = ticket_data.get("grep_for", [])
                     if grep_for:
                         goal.metadata["grep_for"] = grep_for
-                        _flog(f"STEP1 parsed grep_for={grep_for} from {ticket_id}")
+                        log.info(f"STEP1 parsed grep_for={grep_for} from {ticket_id}")
                 goal.metadata["current_step"] = 2
                 cortex.store(goal)
-                _flog(f"STEP1 ticket={ticket_id} result={out[:80]}")
+                log.info(f"STEP1 ticket={ticket_id} result={out[:80]}")
                 return f"[goal_continuation] ticket {ticket_id} details posted"
             else:
                 goal.metadata["current_step"] = 2
@@ -256,13 +250,13 @@ def run_goal_continuation(**_) -> str:
                 _post_to_channel(msg)
                 goal.metadata["current_step"] = 3
                 cortex.store(goal)
-                _flog(f"STEP2 grep done for {ticket_id}, patterns={grep_for}")
+                log.info(f"STEP2 grep done for {ticket_id}, patterns={grep_for}")
                 return f"[goal_continuation] grep step done for {ticket_id}"
             else:
                 # No grep_for — skip straight to ready
                 goal.metadata["current_step"] = 3
                 cortex.store(goal)
-                _flog(f"STEP2 skip (no grep_for) for ticket={ticket_id}")
+                log.info(f"STEP2 skip (no grep_for) for ticket={ticket_id}")
                 return "[goal_continuation] step 2 skip — no grep_for"
 
         elif step == 3:
@@ -285,7 +279,7 @@ def run_goal_continuation(**_) -> str:
             )
             goal.metadata["current_step"] = 4
             cortex.store(goal)
-            _flog(f"STEP3 posted ready for ticket={ticket_id}")
+            log.info(f"STEP3 posted ready for ticket={ticket_id}")
             return f"[goal_continuation] posted ready signal for {ticket_id}"
 
         else:
@@ -293,7 +287,7 @@ def run_goal_continuation(**_) -> str:
             return f"[goal_continuation] step={step} — LLM territory, skipping"
 
     except Exception as e:
-        _flog(f"ERROR: {e}")
+        log.info(f"ERROR: {e}")
         return f"[goal_continuation] error: {e}"
 
 
