@@ -265,10 +265,12 @@ Files:"""
 _REPO_ROOT = Path.home() / "TheIgors"
 
 
-def _call_tier2(prompt: str, timeout: int = 30) -> str | None:
+def _call_tier2(prompt: str, timeout: int = 0) -> str | None:
     """
     Call Ollama tier.2 directly. Returns raw response text or None on failure.
     Uses cluster_router for host/model selection; falls back to localhost defaults.
+    timeout=0 means no timeout — pe_chain is always background work, no human waiting.
+    Human-facing turns have their own timeout in ollama_reasoner.py.
     """
     try:
         from ..cognition.cluster_router import route as _route
@@ -296,7 +298,7 @@ def _call_tier2(prompt: str, timeout: int = 30) -> str | None:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with urllib.request.urlopen(req, timeout=timeout or None) as resp:
             data = _json.loads(resp.read())
         text = data.get("message", {}).get("content", "").strip()
         return text or None
@@ -376,7 +378,7 @@ def pe_plan(basket: dict) -> dict:
     if description:
         prompt = _PLAN_PROMPT.format(ticket_id=ticket_id, description=description[:600])
         _flog(f"PLAN: calling tier.2 for {ticket_id}")
-        raw = _call_tier2(prompt, timeout=30)
+        raw = _call_tier2(prompt)
         if raw:
             plan_summary = ""
             test_criterion = ""
@@ -556,7 +558,7 @@ def pe_situate(basket: dict) -> dict:
     prompt = _SITUATE_PROMPT.format(description=description[:600])
     _flog(f"SITUATE: calling tier.2 (no required_files or prior memory for ticket)")
 
-    raw = _call_tier2(prompt, timeout=30)
+    raw = _call_tier2(prompt)
     if not raw:
         # Tier.2 unavailable — leave plan_files empty, chain can continue with grep
         basket["plan_files"] = []
@@ -1002,7 +1004,7 @@ def pe_hypothesize(basket: dict) -> dict:
     )
     _flog(f"HYPOTHESIZE: calling tier.2 prompt_len={len(prompt)}")
 
-    raw = _call_tier2(prompt, timeout=45)
+    raw = _call_tier2(prompt)
     basket["hypothesis_raw"] = raw or ""
 
     if not raw:
@@ -1353,7 +1355,7 @@ def _pe_replan(basket: dict) -> dict:
         actual=basket.get("actual", "")[:1500],
     )
     _flog(f"REPLAN: calling tier.2 attempt={basket.get('attempt_count')}")
-    raw = _call_tier2(prompt, timeout=45)
+    raw = _call_tier2(prompt)
     basket["hypothesis_raw"] = raw or ""
 
     if not raw:
