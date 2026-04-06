@@ -126,7 +126,7 @@ def render(
                 "reading": "[magenta]reading[/]",
             }.get(src, "[dim]self[/]")
             lines.append(
-                f"  [green]↑[/] {src_tag} {h['id'][:16]}: {h['narrative'][:44]}"
+                f"  [green]↑[/] {src_tag} {h['id'][:16]}: {(h.get('narrative') or '')[:44]}"
             )
 
     # ══ SECTION 2: INFERENCE ══════════════════════════════════════════════════
