@@ -6722,7 +6722,11 @@ class Igor(IgorBase):
             )
         elif msg.source == "web" and msg.author == "claude-code":
             # D263: no routing directive — allow fork_bg habits to fire
-            synthetic = f"CC: {msg.content}"
+            # Avoid double-prefix if content already starts with "CC:"
+            _cc_content = msg.content.strip()
+            synthetic = (
+                _cc_content if _cc_content.startswith("CC:") else f"CC: {_cc_content}"
+            )
         elif msg.source == "web" and msg.content.strip().startswith("/"):
             synthetic = msg.content.strip()
         elif msg.source == "web":
