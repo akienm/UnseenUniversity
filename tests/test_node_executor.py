@@ -855,3 +855,148 @@ class TestForkifBasketSharing:
         assert basket["pre_fork_key"] == "pre_fork_val"
         assert basket["post_fork_key"] == "post_fork_val"
         assert result.spawned == ["worker_node"]
+
+
+class TestSpawnifInstruction:
+    """Tests for SPAWNIF instruction (T-spawnif-new-opcode)."""
+
+    def test_spawnif_fires_on_true_condition(self):
+        """SPAWNIF with True condition appends to spawned_fresh."""
+        memory = MockMemory(
+            "test_mem",
+            payload={
+                "exec_cell": [
+                    ["SPAWNIF", True, "child_node"],
+                    "ENDIF",
+                ]
+            },
+            metadata={"triggers": {"trigger": "exec_cell"}},
+        )
+        result = execute_node(memory, "trigger", {})
+        assert result.spawned_fresh == ["child_node"]
+        assert result.stopped_by == "ENDIF"
+
+    def test_spawnif_does_not_fire_on_false_condition(self):
+        """SPAWNIF with False condition does not append to spawned_fresh."""
+        memory = MockMemory(
+            "test_mem",
+            payload={
+                "exec_cell": [
+                    ["SPAWNIF", False, "child_node"],
+                    "ENDIF",
+                ]
+            },
+            metadata={"triggers": {"trigger": "exec_cell"}},
+        )
+        result = execute_node(memory, "trigger", {})
+        assert result.spawned_fresh == []
+        assert result.stopped_by == "ENDIF"
+
+    def test_spawnif_appends_to_spawned_fresh_not_spawned(self):
+        """SPAWNIF must not pollute result.spawned (FORKIF list)."""
+        memory = MockMemory(
+            "test_mem",
+            payload={
+                "exec_cell": [
+                    ["SPAWNIF", True, "fresh_child"],
+                    "ENDIF",
+                ]
+            },
+            metadata={"triggers": {"trigger": "exec_cell"}},
+        )
+        result = execute_node(memory, "trigger", {})
+        assert result.spawned_fresh == ["fresh_child"]
+        assert result.spawned == []
+
+    def test_spawnif_cursor_continues_after_fire(self):
+        """SPAWNIF does not stop the cursor — execution continues past it."""
+        memory = MockMemory(
+            "test_mem",
+            payload={
+                "exec_cell": [
+                    ["SPAWNIF", True, "child_node"],
+                    ["EMITIF", True, "after_spawn", "yes", "basket"],
+                    "ENDIF",
+                ]
+            },
+            metadata={"triggers": {"trigger": "exec_cell"}},
+        )
+        basket = {}
+        result = execute_node(memory, "trigger", basket)
+        assert result.spawned_fresh == ["child_node"]
+        assert basket.get("after_spawn") == "yes"
+        assert result.stopped_by == "ENDIF"
+
+    def test_spawnif_cursor_continues_when_condition_false(self):
+        """Cursor continues after SPAWNIF even when condition is false."""
+        memory = MockMemory(
+            "test_mem",
+            payload={
+                "exec_cell": [
+                    ["SPAWNIF", False, "child_node"],
+                    ["EMITIF", True, "reached", 1, "basket"],
+                    "ENDIF",
+                ]
+            },
+            metadata={"triggers": {"trigger": "exec_cell"}},
+        )
+        basket = {}
+        result = execute_node(memory, "trigger", basket)
+        assert result.spawned_fresh == []
+        assert basket.get("reached") == 1
+
+    def test_spawnif_wrong_arg_count_logs_and_continues(self):
+        """SPAWNIF with wrong arg count should log warning and continue."""
+        memory = MockMemory(
+            "test_mem",
+            payload={
+                "exec_cell": [
+                    ["SPAWNIF", True],  # Missing target — only 2 elements
+                    ["EMITIF", True, "key1", "value1", "basket"],
+                    "ENDIF",
+                ]
+            },
+            metadata={"triggers": {"trigger": "exec_cell"}},
+        )
+        basket = {}
+        result = execute_node(memory, "trigger", basket)
+        assert result.spawned_fresh == []
+        assert basket.get("key1") == "value1"
+        assert result.stopped_by == "ENDIF"
+
+    def test_spawnif_basket_condition_gate(self):
+        """SPAWNIF with basket condition fires only when gate passes."""
+        memory = MockMemory(
+            "test_mem",
+            payload={
+                "exec_cell": [
+                    ["SPAWNIF", ["mode", "==", "fresh"], "child_node"],
+                    "ENDIF",
+                ]
+            },
+            metadata={"triggers": {"trigger": "exec_cell"}},
+        )
+        # Condition false — no spawn
+        result = execute_node(memory, "trigger", {"mode": "shared"})
+        assert result.spawned_fresh == []
+
+        # Condition true — spawns
+        result = execute_node(memory, "trigger", {"mode": "fresh"})
+        assert result.spawned_fresh == ["child_node"]
+
+    def test_spawnif_and_forkif_coexist(self):
+        """SPAWNIF and FORKIF in same cell populate separate lists."""
+        memory = MockMemory(
+            "test_mem",
+            payload={
+                "exec_cell": [
+                    ["FORKIF", True, "shared_child"],
+                    ["SPAWNIF", True, "fresh_child"],
+                    "ENDIF",
+                ]
+            },
+            metadata={"triggers": {"trigger": "exec_cell"}},
+        )
+        result = execute_node(memory, "trigger", {})
+        assert result.spawned == ["shared_child"]
+        assert result.spawned_fresh == ["fresh_child"]
