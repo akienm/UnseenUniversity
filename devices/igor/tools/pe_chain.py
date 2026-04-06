@@ -47,10 +47,6 @@ _DB_URL = os.getenv(
 )
 
 
-
-
-
-
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
@@ -255,13 +251,72 @@ Files:"""
 _REPO_ROOT = Path.home() / "TheIgors"
 
 
+_CLOUD_PROGRAMMING_MODEL = os.getenv(
+    "IGOR_CLOUD_PROGRAMMING_MODEL", "deepseek/deepseek-r1"
+)
+
+
+def _call_cloud_programming(prompt: str) -> str | None:
+    """
+    Call OR DeepSeek for pe_chain steps when IGOR_CLOUD_PROGRAMMING=true.
+    Uses IGOR_CLOUD_PROGRAMMING_MODEL (default: deepseek/deepseek-r1).
+    No timeout — background work, no human waiting.
+    """
+    import json as _json
+    import urllib.request
+
+    or_key = os.getenv("OPENROUTER_API_KEY", "")
+    if not or_key:
+        log.warning(
+            "[pe_chain] IGOR_CLOUD_PROGRAMMING=true but OPENROUTER_API_KEY not set"
+        )
+        return None
+
+    model = _CLOUD_PROGRAMMING_MODEL
+    log.info("[pe_chain] cloud_programming: calling %s", model)
+
+    try:
+        payload = _json.dumps(
+            {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "stream": False,
+                "temperature": 0.1,
+            }
+        ).encode()
+        req = urllib.request.Request(
+            "https://openrouter.ai/api/v1/chat/completions",
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {or_key}",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=None) as resp:
+            data = _json.loads(resp.read())
+        text = (
+            data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+        )
+        log.info("[pe_chain] cloud_programming: got %d chars", len(text))
+        return text or None
+    except Exception as e:
+        log.warning("[pe_chain] _call_cloud_programming failed: %s", e)
+        return None
+
+
 def _call_tier2(prompt: str, timeout: int = 0) -> str | None:
     """
     Call Ollama tier.2 directly. Returns raw response text or None on failure.
     Uses cluster_router for host/model selection; falls back to localhost defaults.
     timeout=0 means no timeout — pe_chain is always background work, no human waiting.
     Human-facing turns have their own timeout in ollama_reasoner.py.
+
+    If IGOR_CLOUD_PROGRAMMING=true, routes to OR DeepSeek instead of local Ollama.
     """
+    if os.getenv("IGOR_CLOUD_PROGRAMMING", "").lower() in ("1", "true", "yes"):
+        return _call_cloud_programming(prompt)
+
     try:
         from ..cognition.cluster_router import route as _route
 
