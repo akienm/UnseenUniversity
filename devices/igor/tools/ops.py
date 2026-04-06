@@ -891,6 +891,14 @@ def run_coding_sprint() -> str:
 
         cortex = _Cortex(None)
 
+        # Guard: only proceed if GOAL_READY is in TWM — prevents double-fire when
+        # called by SchedulerSource on a tick before goal_continuation completes step 3.
+        goal_ready_entries = cortex.twm_read(
+            category="goal_ready", include_integrated=False
+        )
+        if not goal_ready_entries:
+            return "[coding_sprint] no GOAL_READY in TWM — skipping (scheduler tick)"
+
         # 2. Get active GOAL memory for ticket details / narrative
         goals = cortex.get_by_type(_MT.GOAL)
         active = [g for g in goals if g.metadata.get("goal_active")]
