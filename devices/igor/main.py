@@ -2990,16 +2990,25 @@ class Igor(IgorBase):
                         _cc_logger.info(f"CC gate: reload_module tool missing")
                         return _result
                 else:
-                    # "CC: run_goal_continuation"
-                    _tool = _cc_registry.get(_cc_cmd)
+                    # "CC: run_goal_continuation" — only dispatch if first word is a known tool.
+                    # If not found, fall through to normal processing (conversational message).
+                    _first_word = _cc_cmd.split()[0] if _cc_cmd.split() else ""
+                    _tool = _cc_registry.get(_first_word) or _cc_registry.get(_cc_cmd)
                     if _tool:
-                        _result = _tool.execute()
-                        _cc_logger.info(f"CC gate matched: {_cc_cmd}")
+                        # Single-word tool (no args) or exact match
+                        _args = (
+                            _cc_cmd[len(_first_word) :].strip()
+                            if _tool == _cc_registry.get(_first_word)
+                            else ""
+                        )
+                        _result = _tool.execute(**{"args": _args} if _args else {})
+                        _cc_logger.info(f"CC gate matched: {_first_word}")
                         return _result
                     else:
-                        _result = f"CC: tool '{_cc_cmd}' not found in registry"
-                        _cc_logger.info(f"CC gate: {_cc_cmd} not found")
-                        return _result
+                        # Not a tool — fall through to normal habit/reasoning pipeline
+                        _cc_logger.info(
+                            f"CC gate: '{_first_word}' not a tool, falling through"
+                        )
             except Exception as _cc_e:
                 _result = f"CC: error executing {_cc_cmd}: {_cc_e}"
                 _cc_logger.info(f"CC gate exception: {_cc_e}")
