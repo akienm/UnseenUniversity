@@ -59,7 +59,6 @@ class TestMemorySnapshot:
         with (
             patch("wild_igor.igor.tools.memory_snapshot.datetime") as mock_dt,
             patch("wild_igor.igor.tools.memory_snapshot._STAMP_FILE", stamp),
-            patch("wild_igor.igor.tools.memory_snapshot._LOG_FILE", log),
             patch("psycopg2.connect", return_value=mock_conn),
         ):
             mock_dt.now.side_effect = lambda tz=None: MagicMock(

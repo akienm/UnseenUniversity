@@ -77,8 +77,6 @@ def _run_step(goal, bash_returns=None, ticket_data=None):
         gc, "_load_ticket", return_value=ticket_data
     ), patch.object(
         gc, "_post_to_channel", side_effect=posted.append
-    ), patch.object(
-        gc, "_flog"
     ), patch(
         _HUMAN_GATE_PATH, return_value=True
     ):
@@ -99,7 +97,7 @@ class TestGoalContinuationSteps(unittest.TestCase):
         mock_mt.GOAL = "GOAL"
         with patch(_CORTEX_PATH, return_value=mock_cortex), patch(
             _MT_PATH, mock_mt
-        ), patch.object(gc, "_flog"), patch(_HUMAN_GATE_PATH, return_value=True):
+        ), patch(_HUMAN_GATE_PATH, return_value=True):
             result = gc.run_goal_continuation()
         self.assertIn("no active goals", result)
 
@@ -185,8 +183,6 @@ class TestGoalContinuationSteps(unittest.TestCase):
             gc, "_run_bash", side_effect=lambda c: bash_called.append(c) or "(no)"
         ), patch.object(
             gc, "_post_to_channel"
-        ), patch.object(
-            gc, "_flog"
         ), patch(
             _HUMAN_GATE_PATH, return_value=True
         ):
@@ -232,8 +228,6 @@ class TestGoalContinuationSteps(unittest.TestCase):
             _MT_PATH, mock_mt
         ), patch.object(gc, "_run_bash"), patch.object(
             gc, "_post_to_channel", side_effect=posted.append
-        ), patch.object(
-            gc, "_flog"
         ), patch(
             _HUMAN_GATE_PATH, return_value=True
         ):
