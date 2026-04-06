@@ -43,8 +43,6 @@ _DB_URL = os.getenv(
 _CC_QUEUE = Path.home() / "TheIgors" / "claudecode" / "cc_queue.py"
 
 
-
-
 def _run_bash(cmd: list) -> str:
     """Run a subprocess command, return stdout+stderr."""
     try:
@@ -181,6 +179,20 @@ def run_goal_continuation(**_) -> str:
         log.info(f"CHECK goal={goal.id} step={step} task={task[:60]}")
 
         ticket_id = _extract_ticket_id(task)
+
+        # Guard: close goal if ticket is already done/closed
+        if ticket_id:
+            ticket_data = _load_ticket(ticket_id)
+            if ticket_data and ticket_data.get("status") in ("done", "closed"):
+                log.info(
+                    f"GOAL_CLOSE: {ticket_id} is already {ticket_data['status']} — archiving goal"
+                )
+                goal.metadata["goal_active"] = False
+                goal.metadata["closed_reason"] = (
+                    f"ticket already {ticket_data['status']}"
+                )
+                cortex.store(goal)
+                return f"[goal_continuation] goal closed — {ticket_id} already {ticket_data['status']}"
 
         if step == 0:
             # Step 0: claim the ticket
