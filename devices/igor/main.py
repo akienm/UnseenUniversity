@@ -2831,6 +2831,16 @@ class Igor(IgorBase):
             return self._process_inner(
                 user_input, is_impulse, thread_id=thread_id, author=author
             )
+        except Exception as _process_exc:
+            log_error(
+                kind="PROCESS_CRASH",
+                detail=f"_process_inner raised: {type(_process_exc).__name__}: {_process_exc}",
+            )
+            import traceback as _tb
+
+            console.print(f"[red][ERROR] Turn crashed: {_process_exc}[/]")
+            console.print(f"[dim]{_tb.format_exc()}[/]")
+            return None
         finally:
             # [DASHBOARD] Always reset to idle on exit (#18)
             self._is_processing = False
