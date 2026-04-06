@@ -717,6 +717,7 @@ def list_absorbed_books(**_kwargs) -> str:
                 SELECT source, title, completed_at
                 FROM reading_list
                 WHERE status = 'completed'
+                  AND (source IS NULL OR source NOT LIKE 'trace://%')
                 ORDER BY completed_at DESC NULLS LAST
             """).fetchall()
             for r in rl_rows:
