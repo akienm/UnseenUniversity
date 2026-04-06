@@ -207,7 +207,10 @@ def pe_claim(basket: dict) -> dict:
     result = _run_bash(["python3", str(_CC_QUEUE), "claim", ticket_id])
     basket["claim_result"] = result
     _flog(f"CLAIM: {ticket_id} → {result[:80]}")
-    if "not pending" in result or "not found" in result:
+    if "in_progress, not pending" in result:
+        # Ticket already claimed by goal_continuation step 0 — this is our ticket, proceed
+        _flog(f"CLAIM: {ticket_id} already in_progress — proceeding (goal owns it)")
+    elif "not pending" in result or "not found" in result:
         basket["error"] = f"pe_claim: cannot claim — {result.strip()}"
         _flog(f"CLAIM: aborting chain — {result.strip()}")
         # Evict GOAL_READY so PROC_CODING_SPRINT doesn't immediately re-fire
