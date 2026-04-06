@@ -15,6 +15,7 @@ Forensic log: ~/.TheIgors/logs/escalation_stats.log
 """
 
 import json
+import logging
 import os
 import re
 from collections import defaultdict
@@ -23,6 +24,8 @@ from pathlib import Path
 
 from .registry import Tool, registry
 
+log = logging.getLogger(__name__)
+
 # ── Config ────────────────────────────────────────────────────────────────────
 
 _DB_URL = os.getenv(
@@ -30,7 +33,6 @@ _DB_URL = os.getenv(
     "postgresql://igor:choose_a_password@127.0.0.1/igor_wild_0001",
 )
 
-_LOG_FILE = Path.home() / ".TheIgors" / "logs" / "escalation_stats.log"
 
 # Cloud tiers — anything above local Ollama (tier.2)
 _CLOUD_TIER_RE = re.compile(r"tier\.(3|3\.5|4|5)$")
@@ -41,17 +43,8 @@ _ESC_INPUT_RE = re.compile(r"\|input=(.+?)(?:\|[a-z_]+=|$)")
 _ESC_TS_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})")
 
 
-# ── Forensic logger ───────────────────────────────────────────────────────────
 
 
-def _flog(msg: str) -> None:
-    ts = datetime.now(timezone.utc).isoformat()
-    try:
-        _LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(_LOG_FILE, "a") as f:
-            f.write(f"{ts}  {msg}\n")
-    except Exception:
-        pass
 
 
 # ── Topic extraction ──────────────────────────────────────────────────────────
@@ -161,7 +154,6 @@ def _topic_from_input(text: str, max_chars: int = 40) -> str:
     return " ".join(stripped.lower().split())[:max_chars].strip() or "unknown"
 
 
-# ── Log parsers ───────────────────────────────────────────────────────────────
 
 
 def _parse_turn_trace_logs(
@@ -189,7 +181,7 @@ def _parse_turn_trace_logs(
         try:
             content = log_path.read_text(encoding="utf-8", errors="replace")
         except OSError as e:
-            _flog(f"WARN  cannot read {log_path}: {e}")
+            log.info(f"WARN  cannot read {log_path}: {e}")
             continue
 
         # Split on turn boundaries
@@ -252,7 +244,7 @@ def _parse_escalation_log(
     try:
         lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
     except OSError as e:
-        _flog(f"WARN  cannot read escalation.log: {e}")
+        log.info(f"WARN  cannot read escalation.log: {e}")
         return results
 
     for line in lines:
@@ -291,7 +283,6 @@ def _parse_escalation_log(
     return results
 
 
-# ── Core logic ────────────────────────────────────────────────────────────────
 
 
 def _collect_cloud_calls(
@@ -386,7 +377,7 @@ def get_escalation_stats(**_) -> str:
         this_week_start = now - timedelta(days=7)
         prev_week_start = now - timedelta(days=14)
 
-        _flog(f"START  window={prev_week_start.date()}..{now.date()}")
+        log.info(f"START  window={prev_week_start.date()}..{now.date()}")
 
         this_week_entries = _collect_cloud_calls(logs_dir, this_week_start, now)
         prev_week_entries = _collect_cloud_calls(
@@ -398,7 +389,7 @@ def get_escalation_stats(**_) -> str:
 
         report = _format_report(this_week_by_topic, prev_week_by_topic, now)
 
-        _flog(
+        log.info(
             f"DONE  this_week={sum(this_week_by_topic.values())}"
             f"  prev_week={sum(prev_week_by_topic.values())}"
             f"  topics={len(set(this_week_by_topic) | set(prev_week_by_topic))}"
@@ -407,7 +398,7 @@ def get_escalation_stats(**_) -> str:
 
     except Exception as e:
         msg = f"Error generating escalation stats: {e}"
-        _flog(f"ERROR  {msg}")
+        log.info(f"ERROR  {msg}")
         return msg
 
 

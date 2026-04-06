@@ -12,6 +12,7 @@ Forensic log: ~/.TheIgors/logs/stale_task_reaper.log
 """
 
 import json
+import logging
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,19 +22,10 @@ _DB_URL = os.getenv(
     "postgresql://igor:choose_a_password@127.0.0.1/igor_wild_0001",
 )
 _STALE_HOURS = int(os.getenv("IGOR_STALE_TASK_HOURS", "2"))
-_LOG_FILE = Path.home() / ".TheIgors" / "logs" / "stale_task_reaper.log"
 
 _RESOLVED_STATUSES = {"done", "closed", "shelved", "dismissed", "completed"}
 
-
-def _flog(msg: str) -> None:
-    ts = datetime.now(timezone.utc).isoformat()
-    try:
-        _LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(_LOG_FILE, "a") as f:
-            f.write(f"{ts}  {msg}\n")
-    except Exception:
-        pass
+log = logging.getLogger(__name__)
 
 
 def run_stale_task_reaper(db_url: str | None = None) -> dict:
@@ -87,7 +79,7 @@ def run_stale_task_reaper(db_url: str | None = None) -> dict:
         conn.close()
 
     count = len(shelved_ids)
-    _flog(f"RUN  shelved={count}  stale_hours={_STALE_HOURS}  ids={shelved_ids}")
+    log.info(f"RUN  shelved={count}  stale_hours={_STALE_HOURS}  ids={shelved_ids}")
     if count:
         print(f"[stale_task_reaper] shelved {count} stale TASK_SET(s): {shelved_ids}")
     else:

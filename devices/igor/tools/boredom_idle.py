@@ -20,6 +20,7 @@ Forensic log: ~/.TheIgors/logs/boredom_idle.log
 """
 
 import json
+import logging
 import os
 import random
 import time
@@ -27,10 +28,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .registry import Tool, registry
+
+log = logging.getLogger(__name__)
 from ..paths import paths
 from .channel_post import post_to_channel as _post_to_channel
 
-_LOG_FILE = Path.home() / ".TheIgors" / "logs" / "boredom_idle.log"
 _DB_URL = os.getenv(
     "IGOR_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/igor_wild_0001",
@@ -59,14 +61,6 @@ _TOPIC_NODE_IDS = [
 ]
 
 
-def _flog(msg: str) -> None:
-    ts = datetime.now(timezone.utc).isoformat()
-    try:
-        _LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(_LOG_FILE, "a") as f:
-            f.write(f"{ts}  {msg}\n")
-    except Exception:
-        pass
 
 
 def _is_bored() -> tuple[bool, str]:
@@ -116,7 +110,7 @@ def _get_ef_wonder() -> str | None:
         snippet = pick.narrative[:120].strip()
         return f"[Igor wonders] {question_text} — {snippet}..."
     except Exception as e:
-        _flog(f"ef_wonder error: {e}")
+        log.info(f"ef_wonder error: {e}")
         return None
 
 
@@ -158,7 +152,7 @@ def _get_topic_wonder() -> str | None:
         snippet = pick.narrative[:120].strip()
         return f"[Igor wonders about {topic_name}] {snippet}..."
     except Exception as e:
-        _flog(f"topic_wonder error: {e}")
+        log.info(f"topic_wonder error: {e}")
         return None
 
 
@@ -179,7 +173,7 @@ def run_boredom_check(**_) -> str:
 
     # Milieu check
     is_bored, reason = _is_bored()
-    _flog(f"CHECK bored={is_bored} {reason}")
+    log.info(f"CHECK bored={is_bored} {reason}")
 
     if not is_bored:
         return f"[boredom_idle] not settled — {reason} — no idle traversal"
@@ -204,7 +198,7 @@ def run_boredom_check(**_) -> str:
 
     _post_to_channel(wonder)
     _last_posted = now
-    _flog(f"POST {wonder[:120]}")
+    log.info(f"POST {wonder[:120]}")
 
     return f"[boredom_idle] posted: {wonder[:80]}"
 

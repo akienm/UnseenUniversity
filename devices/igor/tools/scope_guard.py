@@ -12,13 +12,14 @@ Forensic log: ~/.TheIgors/logs/scope_guard.log
 
 from __future__ import annotations
 
+import logging
 import os
-from datetime import datetime, timezone
 from pathlib import Path
 
 from .registry import Tool, registry
 
-_LOG_FILE = Path.home() / ".TheIgors" / "logs" / "scope_guard.log"
+log = logging.getLogger(__name__)
+
 
 # ── Tier table ────────────────────────────────────────────────────────────────
 # Ordered: first match wins. Matches are path-prefix checks against the
@@ -52,16 +53,6 @@ _OP_DELTA: dict[str, int] = {
 _DEFAULT_OP = "write"  # HYPOTHESIZE always produces an edit
 
 
-def _flog(msg: str) -> None:
-    ts = datetime.now(timezone.utc).isoformat()
-    try:
-        _LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(_LOG_FILE, "a") as f:
-            f.write(f"{ts}  {msg}\n")
-    except Exception:
-        pass
-
-
 def _classify_tier(file_path: str) -> str:
     """Return HIGH/MEDIUM/LOW for a given file path using the tier table."""
     # Normalise: strip leading slashes and home prefix for consistent matching
@@ -89,7 +80,7 @@ def run_scope_guard(basket: dict) -> dict:
     """
     hypothesis = basket.get("hypothesis")
     if not hypothesis or basket.get("hypothesis_error"):
-        _flog("SCOPE_GUARD: skipped — no valid hypothesis")
+        log.info("SCOPE_GUARD: skipped — no valid hypothesis")
         return basket
 
     target_file = hypothesis.get("file", "")
@@ -107,7 +98,7 @@ def run_scope_guard(basket: dict) -> dict:
         cortex = _Cortex(None)
         cortex.write_ring(ring_entry, category="scope_decision")
     except Exception as exc:
-        _flog(f"SCOPE_GUARD: ring write failed — {exc}")
+        log.info(f"SCOPE_GUARD: ring write failed — {exc}")
 
     if tier == "HIGH" and op_delta >= 1:
         reason = (
@@ -116,7 +107,7 @@ def run_scope_guard(basket: dict) -> dict:
         )
         basket["pe_status"] = "escalated"
         basket["escalate_reason"] = reason
-        _flog(f"ESCALATED: file={target_file} tier=HIGH op={op_type}")
+        log.info(f"ESCALATED: file={target_file} tier=HIGH op={op_type}")
         try:
             from .channel_post import post_to_channel as _post
 
@@ -124,9 +115,9 @@ def run_scope_guard(basket: dict) -> dict:
                 f"[SCOPE_GUARD] Escalated: {target_file} — HIGH inertia {op_type} blocked."
             )
         except Exception as exc:
-            _flog(f"SCOPE_GUARD: channel post failed — {exc}")
+            log.info(f"SCOPE_GUARD: channel post failed — {exc}")
     else:
-        _flog(f"PASS: file={target_file} tier={tier} op={op_type}")
+        log.info(f"PASS: file={target_file} tier={tier} op={op_type}")
 
     return basket
 

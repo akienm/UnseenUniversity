@@ -39,7 +39,6 @@ MIN_RESPONSE_LEN = 50
 # Authors whose turns qualify for after-action review
 _REVIEW_AUTHORS = frozenset({"claude-code", "akien"})
 
-_LOG_FILE = Path.home() / ".TheIgors" / "logs" / "after_action_review.log"
 _DB_URL = os.getenv(
     "IGOR_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/igor_wild_0001",
@@ -63,14 +62,6 @@ Format as bullet points. Be specific. Max 200 words total. If nothing significan
 """
 
 
-def _flog(msg: str) -> None:
-    ts = datetime.now().isoformat()
-    try:
-        _LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(_LOG_FILE, "a") as f:
-            f.write(f"{ts}  {msg}\n")
-    except Exception:
-        pass
 
 
 def _call_ollama(prompt: str) -> Optional[str]:
@@ -218,7 +209,7 @@ def run_after_action_review(
 
         log_dir = _paths().logs
     except Exception as exc:
-        _flog(f"ERROR: import failed — {exc}")
+        logger.info(f"ERROR: import failed — {exc}")
         return f"[after_action_review] error: {exc}"
 
     cutoff = datetime.now() - timedelta(minutes=lookback_minutes)
@@ -241,7 +232,7 @@ def run_after_action_review(
             logger.warning("after_action_reviewer: log read failed %s — %s", p, exc)
 
     if not turns:
-        _flog("no CC turns in window")
+        logger.info("no CC turns in window")
         return "[after_action_review] no CC turns in window"
 
     deposited = 0
@@ -252,7 +243,7 @@ def run_after_action_review(
 
         conn = psycopg2.connect(_DB_URL)
     except Exception as exc:
-        _flog(f"ERROR: DB connect failed — {exc}")
+        logger.info(f"ERROR: DB connect failed — {exc}")
         return f"[after_action_review] DB error: {exc}"
 
     try:
@@ -271,18 +262,18 @@ def run_after_action_review(
             learning = _call_ollama(prompt)
 
             if learning and learning.strip().upper() == "SKIP":
-                _flog(f"SKIP: turn={turn['turn_id'][:8]} (Ollama: nothing significant)")
+                logger.info(f"SKIP: turn={turn['turn_id'][:8]} (Ollama: nothing significant)")
                 skipped += 1
                 continue
 
             if not learning:
                 # Ollama unavailable — fall back to raw Q&A deposit
                 learning = f"Q: {turn['user_input'][:400]}\nA: {turn['response'][:400]}"
-                _flog(f"FALLBACK: turn={turn['turn_id'][:8]} (Ollama unavailable)")
+                logger.info(f"FALLBACK: turn={turn['turn_id'][:8]} (Ollama unavailable)")
 
             mem_id = _deposit_learning(conn, turn["turn_id"], turn["author"], learning)
             deposited += 1
-            _flog(
+            logger.info(
                 f"DEPOSITED: turn={turn['turn_id'][:8]} author={turn['author']}"
                 f" mem={mem_id[:8]} learning_len={len(learning)}"
             )
@@ -298,7 +289,7 @@ def run_after_action_review(
         conn.close()
 
     summary = f"scanned={len(turns)} deposited={deposited} skipped={skipped}"
-    _flog(f"DONE: {summary}")
+    logger.info(f"DONE: {summary}")
     return f"[after_action_review] {summary}"
 
 

@@ -108,6 +108,21 @@ def setup_logging(log_dir: Path) -> None:
         area_logger.propagate = True
         _add_file(area_logger, log_dir / filename, logging.INFO, fmt)
 
+    # Per-module file handlers — auto-register for all igor/tools/*.py modules
+    # so that logging.getLogger("igor.tools.<name>") goes to <name>.log
+    _tools_dir = Path(__file__).parent / "tools"
+    for _tool_file in sorted(_tools_dir.glob("*.py")):
+        if _tool_file.stem.startswith("_"):
+            continue
+        _mod_logger = logging.getLogger(f"igor.tools.{_tool_file.stem}")
+        _mod_logger.propagate = True
+        _add_file(_mod_logger, log_dir / f"{_tool_file.stem}.log", logging.INFO, fmt)
+
+    # tree_index in memory/ has its own forensic log
+    _tree_logger = logging.getLogger("igor.memory.tree_index")
+    _tree_logger.propagate = True
+    _add_file(_tree_logger, log_dir / "tree_index.log", logging.INFO, fmt)
+
 
 def _add_file(
     logger: logging.Logger, path: Path, level: int, fmt: logging.Formatter

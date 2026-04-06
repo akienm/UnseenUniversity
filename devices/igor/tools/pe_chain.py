@@ -41,24 +41,14 @@ log = logging.getLogger(__name__)
 
 _CC_QUEUE = Path.home() / "TheIgors" / "claudecode" / "cc_queue.py"
 _QUEUE_FILE = Path.home() / ".TheIgors" / "cc_channel" / "queue.json"
-_LOG_FILE = Path.home() / ".TheIgors" / "logs" / "pe_chain.log"
 _DB_URL = os.getenv(
     "IGOR_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/igor_wild_0001",
 )
 
 
-# ── Logging ───────────────────────────────────────────────────────────────────
 
 
-def _flog(msg: str) -> None:
-    ts = datetime.now(timezone.utc).isoformat()
-    try:
-        _LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(_LOG_FILE, "a") as f:
-            f.write(f"{ts}  {msg}\n")
-    except Exception:
-        pass
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -119,9 +109,9 @@ def _evict_goal_ready_twm(ticket_id: str) -> None:
                 )
                 rows = cur.rowcount
         conn.close()
-        _flog(f"TWM_EVICT: evicted {rows} GOAL_READY slot(s) for {ticket_id}")
+        log.info(f"TWM_EVICT: evicted {rows} GOAL_READY slot(s) for {ticket_id}")
     except Exception as exc:
-        _flog(f"TWM_EVICT: failed — {exc}")
+        log.info(f"TWM_EVICT: failed — {exc}")
 
 
 def _get_active_goal() -> dict | None:
@@ -165,27 +155,27 @@ def pe_entry_init(basket: dict | None = None) -> dict:
     if basket.get("ticket_id"):
         basket.setdefault("attempt_count", 0)
         basket.setdefault("expected", "tests pass, requirements met")
-        _flog(f"ENTRY: ticket_id already set: {basket['ticket_id']}")
+        log.info(f"ENTRY: ticket_id already set: {basket['ticket_id']}")
         return basket
 
     goal = _get_active_goal()
     if not goal:
         basket["error"] = "pe_entry_init: no active GOAL memory found"
-        _flog("ENTRY: no active goal")
+        log.info("ENTRY: no active goal")
         return basket
 
     task = goal.metadata.get("source_message", goal.narrative[:120])
     ticket_id = _extract_ticket_id(task)
     if not ticket_id:
         basket["error"] = f"pe_entry_init: no ticket ID in goal: {task[:80]}"
-        _flog(f"ENTRY: no ticket_id in goal task: {task[:60]}")
+        log.info(f"ENTRY: no ticket_id in goal task: {task[:60]}")
         return basket
 
     basket["ticket_id"] = ticket_id
     basket["goal_id"] = goal.id
     basket["attempt_count"] = 0
     basket["expected"] = "tests pass, requirements met"
-    _flog(f"ENTRY: ticket_id={ticket_id} goal={goal.id}")
+    log.info(f"ENTRY: ticket_id={ticket_id} goal={goal.id}")
     return basket
 
 
@@ -206,13 +196,13 @@ def pe_claim(basket: dict) -> dict:
 
     result = _run_bash(["python3", str(_CC_QUEUE), "claim", ticket_id])
     basket["claim_result"] = result
-    _flog(f"CLAIM: {ticket_id} → {result[:80]}")
+    log.info(f"CLAIM: {ticket_id} → {result[:80]}")
     if "in_progress, not pending" in result:
         # Ticket already claimed by goal_continuation step 0 — this is our ticket, proceed
-        _flog(f"CLAIM: {ticket_id} already in_progress — proceeding (goal owns it)")
+        log.info(f"CLAIM: {ticket_id} already in_progress — proceeding (goal owns it)")
     elif "not pending" in result or "not found" in result:
         basket["error"] = f"pe_claim: cannot claim — {result.strip()}"
-        _flog(f"CLAIM: aborting chain — {result.strip()}")
+        log.info(f"CLAIM: aborting chain — {result.strip()}")
         # Evict GOAL_READY so PROC_CODING_SPRINT doesn't immediately re-fire
         _evict_goal_ready_twm(ticket_id)
     return basket
@@ -239,13 +229,13 @@ def pe_read_ticket(basket: dict) -> dict:
     ticket = _load_ticket(ticket_id)
     if not ticket:
         basket["error"] = f"pe_read_ticket: ticket {ticket_id!r} not found in queue"
-        _flog(f"READ_TICKET: {ticket_id} not found")
+        log.info(f"READ_TICKET: {ticket_id} not found")
         return basket
 
     basket["ticket_description"] = ticket.get("description") or ticket.get("title", "")
     basket["ticket_title"] = ticket.get("title", "")
     basket["plan_files"] = ticket.get("required_files") or []
-    _flog(
+    log.info(
         f"READ_TICKET: {ticket_id} desc_len={len(basket['ticket_description'])} "
         f"plan_files={basket['plan_files']}"
     )
@@ -275,7 +265,7 @@ def _call_tier2(prompt: str, timeout: int = 0) -> str | None:
     try:
         from ..cognition.cluster_router import route as _route
 
-        host, model = _route("tier2")
+        host, model = _route("batch")
     except Exception:
         host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
         model = os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b")
@@ -372,12 +362,12 @@ def pe_plan(basket: dict) -> dict:
         basket["plan_summary"] = ticket["plan"]
         basket["test_criterion"] = ticket.get("test_criterion", "")
         basket["plan_source"] = "ticket_plan"
-        _flog(f"PLAN: using ticket.plan for {ticket_id}")
+        log.info(f"PLAN: using ticket.plan for {ticket_id}")
         return basket
 
     if description:
         prompt = _PLAN_PROMPT.format(ticket_id=ticket_id, description=description[:600])
-        _flog(f"PLAN: calling tier.2 for {ticket_id}")
+        log.info(f"PLAN: calling tier.2 for {ticket_id}")
         raw = _call_tier2(prompt)
         if raw:
             plan_summary = ""
@@ -391,12 +381,12 @@ def pe_plan(basket: dict) -> dict:
             basket["plan_summary"] = plan_summary or raw[:200]
             basket["test_criterion"] = test_criterion
             basket["plan_source"] = "tier2_ollama"
-            _flog(f"PLAN: tier.2 plan={basket['plan_summary'][:80]}")
+            log.info(f"PLAN: tier.2 plan={basket['plan_summary'][:80]}")
         else:
             basket["plan_summary"] = description[:200]
             basket["test_criterion"] = ""
             basket["plan_source"] = "ticket_description"
-            _flog("PLAN: tier.2 unavailable — using ticket description as plan")
+            log.info("PLAN: tier.2 unavailable — using ticket description as plan")
     else:
         basket["plan_summary"] = f"Implement {ticket_id}"
         basket["test_criterion"] = ""
@@ -462,13 +452,13 @@ def pe_filter(basket: dict) -> dict:
     if hard_fails:
         basket["filter_result"] = f"FAIL: {';'.join(hard_fails)}"
         basket["escalate_reason"] = f"filter_fail: {basket['filter_result']}"
-        _flog(f"FILTER: {basket['filter_result']} — escalating")
+        log.info(f"FILTER: {basket['filter_result']} — escalating")
     elif warnings:
         basket["filter_result"] = f"WARN: {';'.join(warnings)}"
-        _flog(f"FILTER: {basket['filter_result']} — proceeding with warnings")
+        log.info(f"FILTER: {basket['filter_result']} — proceeding with warnings")
     else:
         basket["filter_result"] = "PASS"
-        _flog(f"FILTER: PASS for {basket.get('ticket_id')}")
+        log.info(f"FILTER: PASS for {basket.get('ticket_id')}")
 
     return basket
 
@@ -538,7 +528,7 @@ def pe_situate(basket: dict) -> dict:
     # Fast path: required_files already populated from ticket
     if basket.get("plan_files"):
         basket["situate_source"] = "ticket_required_files"
-        _flog(f"SITUATE: using ticket required_files: {basket['plan_files']}")
+        log.info(f"SITUATE: using ticket required_files: {basket['plan_files']}")
         return basket
 
     # Memory path: check prior observe deposits for this ticket before tier.2
@@ -548,7 +538,7 @@ def pe_situate(basket: dict) -> dict:
         if prior_files:
             basket["plan_files"] = prior_files
             basket["situate_source"] = "prior_observe_memory"
-            _flog(
+            log.info(
                 f"SITUATE: recalled {len(prior_files)} files from prior observe deposit"
             )
             return basket
@@ -556,20 +546,20 @@ def pe_situate(basket: dict) -> dict:
     # Slow path: call tier.2 to figure out which files
     description = basket["ticket_description"]
     prompt = _SITUATE_PROMPT.format(description=description[:600])
-    _flog(f"SITUATE: calling tier.2 (no required_files or prior memory for ticket)")
+    log.info(f"SITUATE: calling tier.2 (no required_files or prior memory for ticket)")
 
     raw = _call_tier2(prompt)
     if not raw:
         # Tier.2 unavailable — leave plan_files empty, chain can continue with grep
         basket["plan_files"] = []
         basket["situate_source"] = "empty"
-        _flog("SITUATE: tier.2 unavailable — plan_files empty")
+        log.info("SITUATE: tier.2 unavailable — plan_files empty")
         return basket
 
     files = _parse_file_list(raw)
     basket["plan_files"] = files
     basket["situate_source"] = "tier2_ollama"
-    _flog(f"SITUATE: tier.2 returned {len(files)} files: {files}")
+    log.info(f"SITUATE: tier.2 returned {len(files)} files: {files}")
     return basket
 
 
@@ -757,11 +747,11 @@ def pe_observe(basket: dict) -> dict:
         basket["line_ranges"] = {}
         basket["actual"] = ""
         basket["observe_hits"] = 0
-        _flog("OBSERVE: no plan_files — skipping")
+        log.info("OBSERVE: no plan_files — skipping")
         return basket
 
     patterns = _extract_grep_patterns(ticket_description)
-    _flog(f"OBSERVE: patterns={patterns} files={plan_files}")
+    log.info(f"OBSERVE: patterns={patterns} files={plan_files}")
 
     line_ranges: dict[str, int] = {}
 
@@ -790,7 +780,7 @@ def pe_observe(basket: dict) -> dict:
         sections.append(header + section)
 
     basket["actual"] = "\n".join(sections)
-    _flog(
+    log.info(
         f"OBSERVE: {len(plan_files)} files, {basket['observe_hits']} grep hits, "
         f"actual_len={len(basket['actual'])}"
     )
@@ -822,7 +812,7 @@ def pe_run_bash(basket: dict) -> dict:
     args = cmd if isinstance(cmd, list) else cmd.split()
     out = _run_bash(args, timeout=basket.get("bash_timeout", 30))
     basket["bash_output"] = out
-    _flog(f"RUN_BASH: cmd={str(args)[:60]} output_len={len(out)}")
+    log.info(f"RUN_BASH: cmd={str(args)[:60]} output_len={len(out)}")
     return basket
 
 
@@ -855,7 +845,7 @@ def pe_store_observe_results(basket: dict) -> dict:
 
     if not actual or hits == 0:
         basket["observe_stored_id"] = None
-        _flog("STORE_OBSERVE_RESULTS: no hits — skipping deposit")
+        log.info("STORE_OBSERVE_RESULTS: no hits — skipping deposit")
         return basket
 
     files_str = ", ".join(plan_files[:5])
@@ -871,10 +861,10 @@ def pe_store_observe_results(basket: dict) -> dict:
 
         result = _store_factual(summary)
         basket["observe_stored_id"] = result
-        _flog(f"STORE_OBSERVE_RESULTS: deposited — {result[:60]}")
+        log.info(f"STORE_OBSERVE_RESULTS: deposited — {result[:60]}")
     except Exception as e:
         basket["observe_stored_id"] = None
-        _flog(f"STORE_OBSERVE_RESULTS: store failed ({e}) — continuing")
+        log.info(f"STORE_OBSERVE_RESULTS: store failed ({e}) — continuing")
 
     return basket
 
@@ -993,7 +983,7 @@ def pe_hypothesize(basket: dict) -> dict:
         basket["hypothesis"] = None
         basket["hypothesis_raw"] = ""
         basket["hypothesis_error"] = "no actual code observed — hypothesis ungrounded"
-        _flog("HYPOTHESIZE: no actual — skipping tier.2 call")
+        log.info("HYPOTHESIZE: no actual — skipping tier.2 call")
         return basket
 
     prompt = _HYPOTHESIZE_PROMPT.format(
@@ -1002,7 +992,7 @@ def pe_hypothesize(basket: dict) -> dict:
             :4000
         ],  # cap to avoid overwhelming small model (4000 = ~120-line section)
     )
-    _flog(f"HYPOTHESIZE: calling tier.2 prompt_len={len(prompt)}")
+    log.info(f"HYPOTHESIZE: calling tier.2 prompt_len={len(prompt)}")
 
     raw = _call_tier2(prompt)
     basket["hypothesis_raw"] = raw or ""
@@ -1010,14 +1000,14 @@ def pe_hypothesize(basket: dict) -> dict:
     if not raw:
         basket["hypothesis"] = None
         basket["hypothesis_error"] = "tier.2 unavailable"
-        _flog("HYPOTHESIZE: tier.2 unavailable")
+        log.info("HYPOTHESIZE: tier.2 unavailable")
         return basket
 
     hypothesis = _parse_hypothesis(raw)
     if not hypothesis:
         basket["hypothesis"] = None
         basket["hypothesis_error"] = f"parse failed: {raw[:120]}"
-        _flog(f"HYPOTHESIZE: parse failed: {raw[:80]}")
+        log.info(f"HYPOTHESIZE: parse failed: {raw[:80]}")
         return basket
 
     # Validate old_string exists in file
@@ -1025,12 +1015,12 @@ def pe_hypothesize(basket: dict) -> dict:
     if err:
         basket["hypothesis"] = hypothesis  # keep for debugging
         basket["hypothesis_error"] = f"validation failed: {err}"
-        _flog(f"HYPOTHESIZE: validation failed: {err}")
+        log.info(f"HYPOTHESIZE: validation failed: {err}")
         return basket
 
     basket["hypothesis"] = hypothesis
     basket["hypothesis_error"] = None
-    _flog(
+    log.info(
         f"HYPOTHESIZE: valid edit in {hypothesis['file']} "
         f"old_len={len(hypothesis['old_string'])} "
         f"new_len={len(hypothesis['new_string'])}"
@@ -1061,7 +1051,7 @@ def pe_implement(basket: dict) -> dict:
         reason = hypothesis_error or "no hypothesis"
         basket["implement_result"] = f"skipped: {reason}"
         basket["implement_skipped"] = True
-        _flog(f"IMPLEMENT: skipped — {reason}")
+        log.info(f"IMPLEMENT: skipped — {reason}")
         return basket
 
     filepath = _REPO_ROOT / hypothesis["file"]
@@ -1075,21 +1065,21 @@ def pe_implement(basket: dict) -> dict:
                 f"error: old_string not in {hypothesis['file']}"
             )
             basket["implement_skipped"] = True
-            _flog(f"IMPLEMENT: old_string not found in {hypothesis['file']}")
+            log.info(f"IMPLEMENT: old_string not found in {hypothesis['file']}")
             return basket
 
         new_content = content.replace(old_string, new_string, 1)
         filepath.write_text(new_content)
         basket["implement_result"] = "ok"
         basket["implement_skipped"] = False
-        _flog(
+        log.info(
             f"IMPLEMENT: applied edit in {hypothesis['file']} "
             f"old_len={len(old_string)} new_len={len(new_string)}"
         )
     except Exception as e:
         basket["implement_result"] = f"error: {e}"
         basket["implement_skipped"] = True
-        _flog(f"IMPLEMENT: exception: {e}")
+        log.info(f"IMPLEMENT: exception: {e}")
 
     return basket
 
@@ -1118,7 +1108,7 @@ def pe_test(basket: dict) -> dict:
         raw = _run_tests()
         passed = "passed" in raw and "failed" not in raw and "error" not in raw.lower()
         basket["test_result"] = "pass" if passed else f"fail: {raw[:300]}"
-        _flog(f"TEST (ops.run_tests): {basket['test_result'][:80]}")
+        log.info(f"TEST (ops.run_tests): {basket['test_result'][:80]}")
         return basket
     except Exception:
         pass
@@ -1132,7 +1122,7 @@ def pe_test(basket: dict) -> dict:
         "passed" in result and "failed" not in result and "error" not in result.lower()
     )
     basket["test_result"] = "pass" if passed else f"fail: {result[:300]}"
-    _flog(f"TEST (pytest): {basket['test_result'][:80]}")
+    log.info(f"TEST (pytest): {basket['test_result'][:80]}")
     return basket
 
 
@@ -1226,7 +1216,7 @@ def pe_probe(basket: dict) -> dict:
     probe_criterion = ticket.get("probe_criterion", "")
     if not probe_criterion:
         basket["probe_result"] = "SKIP: no probe_criterion"
-        _flog(f"PROBE: skip — no probe_criterion for {basket.get('ticket_id')}")
+        log.info(f"PROBE: skip — no probe_criterion for {basket.get('ticket_id')}")
         return basket
 
     try:
@@ -1244,7 +1234,7 @@ def pe_probe(basket: dict) -> dict:
         )
         with urllib.request.urlopen(req, timeout=5):
             pass
-        _flog(f"PROBE: sent stimulus: {stimulus[:60]}")
+        log.info(f"PROBE: sent stimulus: {stimulus[:60]}")
         time.sleep(3)
 
         # Read recent channel for Igor's response
@@ -1265,21 +1255,21 @@ def pe_probe(basket: dict) -> dict:
             found = any(expected in m.lower() for m in igor_msgs)
             if found:
                 basket["probe_result"] = "PASS"
-                _flog("PROBE: PASS — expected pattern found")
+                log.info("PROBE: PASS — expected pattern found")
             else:
                 basket["probe_result"] = (
                     f"FAIL: expected '{expected}' not in Igor response"
                 )
                 basket["escalate_reason"] = f"probe_fail: {basket['probe_result']}"
-                _flog(f"PROBE: {basket['probe_result']}")
+                log.info(f"PROBE: {basket['probe_result']}")
         else:
             basket["probe_result"] = "PASS: stimulus sent, no expected pattern"
-            _flog("PROBE: PASS (no expected pattern)")
+            log.info("PROBE: PASS (no expected pattern)")
 
     except Exception as e:
         log.warning("[pe_chain] pe_probe failed: %s", e)
         basket["probe_result"] = f"SKIP: probe error ({e})"
-        _flog(f"PROBE: skip due to error: {e}")
+        log.info(f"PROBE: skip due to error: {e}")
 
     return basket
 
@@ -1324,7 +1314,7 @@ def pe_close_loop(basket: dict) -> dict:
 
     # Increment and replan
     basket["attempt_count"] = attempt_count + 1
-    _flog(
+    log.info(
         f"CLOSE_LOOP: test failed, attempt {basket['attempt_count']}/{_MAX_ATTEMPTS} — replanning"
     )
 
@@ -1354,7 +1344,7 @@ def _pe_replan(basket: dict) -> dict:
         test_result=basket.get("test_result", "")[:300],
         actual=basket.get("actual", "")[:1500],
     )
-    _flog(f"REPLAN: calling tier.2 attempt={basket.get('attempt_count')}")
+    log.info(f"REPLAN: calling tier.2 attempt={basket.get('attempt_count')}")
     raw = _call_tier2(prompt)
     basket["hypothesis_raw"] = raw or ""
 
@@ -1377,7 +1367,7 @@ def _pe_replan(basket: dict) -> dict:
 
     basket["hypothesis"] = hypothesis
     basket["hypothesis_error"] = None
-    _flog(f"REPLAN: new hypothesis in {hypothesis['file']}")
+    log.info(f"REPLAN: new hypothesis in {hypothesis['file']}")
     return basket
 
 
@@ -1397,7 +1387,7 @@ def _pe_commit(basket: dict) -> dict:
     )
     if "error" in result.lower() or "fatal" in result.lower():
         basket["commit_result"] = f"git add failed: {result[:100]}"
-        _flog(f"COMMIT: git add failed: {result[:80]}")
+        log.info(f"COMMIT: git add failed: {result[:80]}")
         return basket
 
     msg = f"fix: {ticket_id} — pe_chain autonomous edit\n\nCo-Authored-By: Igor <igor@theigors>"
@@ -1406,7 +1396,7 @@ def _pe_commit(basket: dict) -> dict:
         timeout=15,
     )
     basket["commit_result"] = result[:120]
-    _flog(f"COMMIT: {result[:80]}")
+    log.info(f"COMMIT: {result[:80]}")
     return basket
 
 
@@ -1428,7 +1418,7 @@ def _pe_close(basket: dict) -> dict:
             timeout=15,
         )
         basket["close_result"] = result[:120]
-        _flog(f"CLOSE: ticket {ticket_id} → {result[:60]}")
+        log.info(f"CLOSE: ticket {ticket_id} → {result[:60]}")
 
     # Close goal
     try:
@@ -1436,7 +1426,7 @@ def _pe_close(basket: dict) -> dict:
 
         goal_result = _close_goal(ticket_id)
         basket["goal_close_result"] = goal_result
-        _flog(f"CLOSE: goal → {goal_result[:60]}")
+        log.info(f"CLOSE: goal → {goal_result[:60]}")
     except Exception as e:
         basket["goal_close_result"] = f"[error: {e}]"
 
@@ -1449,7 +1439,7 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
     """ESCALATE: post blocked status to channel, mark ticket blocked, close goal."""
     ticket_id = basket.get("ticket_id", "unknown")
     basket["escalate_reason"] = reason
-    _flog(f"ESCALATE: {ticket_id} — {reason}")
+    log.info(f"ESCALATE: {ticket_id} — {reason}")
 
     _post_to_channel(
         f"[pe_chain] ✗ {ticket_id}: blocked after {basket.get('attempt_count', 0)} attempts. "
@@ -1469,10 +1459,10 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
 
         goal_result = _close_goal(ticket_id)
         basket["goal_close_result"] = goal_result
-        _flog(f"ESCALATE: goal closed → {goal_result[:60]}")
+        log.info(f"ESCALATE: goal closed → {goal_result[:60]}")
     except Exception as e:
         basket["goal_close_result"] = f"[error: {e}]"
-        _flog(f"ESCALATE: goal close error: {e}")
+        log.info(f"ESCALATE: goal close error: {e}")
 
     return basket
 
@@ -1500,7 +1490,7 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
             worker = _ticket["worker"]
             msg = f"pe_chain: ticket {ticket_id} has worker={worker} — skipping (Igor only works worker=igor tickets)"
             basket["error"] = msg
-            _flog(f"ENTRY: {msg}")
+            log.info(f"ENTRY: {msg}")
             return basket
     basket = pe_claim(basket)
     if basket.get("error"):
@@ -1556,7 +1546,7 @@ def run_pe_chain(**_) -> str:
     basket = run_pe_entry_chain()
 
     if basket.get("error"):
-        _flog(f"CHAIN ERROR: {basket['error']}")
+        log.info(f"CHAIN ERROR: {basket['error']}")
         return f"[pe_chain] error: {basket['error']}"
 
     if basket.get("escalate_reason"):
@@ -1571,7 +1561,7 @@ def run_pe_chain(**_) -> str:
             f"ticket={basket.get('ticket_id')} "
             f"commit={basket.get('commit_result', '?')[:60]}"
         )
-    _flog(f"CHAIN: {summary}")
+    log.info(f"CHAIN: {summary}")
     return summary
 
 

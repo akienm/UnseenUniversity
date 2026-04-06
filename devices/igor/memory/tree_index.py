@@ -39,7 +39,6 @@ _DB_URL = os.getenv(
 _MACHINE_ID = os.getenv("IGOR_SWARM_NAME", "akiendelllinux")
 
 _LOG_DIR = Path.home() / ".TheIgors" / "logs"
-_LOG_FILE = _LOG_DIR / "tree_index.log"
 
 # Default traversal rules applied when not explicitly overridden
 _DEFAULT_RULES = {
@@ -51,18 +50,8 @@ _DEFAULT_RULES = {
 }
 
 
-# ── Logging ───────────────────────────────────────────────────────────────────
 
 
-def _flog(msg: str) -> None:
-    ts = datetime.now(timezone.utc).isoformat()
-    line = f"{ts}  {msg}"
-    try:
-        _LOG_DIR.mkdir(parents=True, exist_ok=True)
-        with open(_LOG_FILE, "a") as f:
-            f.write(line + "\n")
-    except Exception:
-        pass
 
 
 # ── DB connection ─────────────────────────────────────────────────────────────
@@ -135,7 +124,7 @@ class TreeIndex:
         # Register tree_id in node_registry so it's reachable by ID
         register_node(tree_id, "trees", tree_id, db_url=self._db_url)
 
-        _flog(f"CREATE  tree_id={tree_id}  name={name!r}  facia={facia_id}")
+        _log.info(f"CREATE  tree_id={tree_id}  name={name!r}  facia={facia_id}")
         _log.debug("tree_index: created %r (id=%s facia=%s)", name, tree_id, facia_id)
         return tree_id
 
@@ -227,7 +216,7 @@ class TreeIndex:
             )
 
         n = len(result)
-        _flog(
+        _log.info(
             f"TRAVERSE  name={tree['name']!r}  facia={facia_id}  depth={max_depth}  nodes={n}"
         )
         _log.debug("tree_index: traverse %r → %d nodes", tree["name"], n)
