@@ -312,7 +312,9 @@ def _call_tier2(prompt: str, timeout: int = 0) -> str | None:
     timeout=0 means no timeout — pe_chain is always background work, no human waiting.
     Human-facing turns have their own timeout in ollama_reasoner.py.
 
-    If IGOR_CLOUD_PROGRAMMING=true, routes to OR DeepSeek instead of local Ollama.
+    If IGOR_CLOUD_PROGRAMMING=true, routes directly to OR DeepSeek.
+    Otherwise tries Ollama batch first; if unavailable and OR key present, falls back
+    to OR DeepSeek automatically (PE chain is background, no latency constraint).
     """
     if os.getenv("IGOR_CLOUD_PROGRAMMING", "").lower() in ("1", "true", "yes"):
         return _call_cloud_programming(prompt)
@@ -348,7 +350,9 @@ def _call_tier2(prompt: str, timeout: int = 0) -> str | None:
         text = data.get("message", {}).get("content", "").strip()
         return text or None
     except Exception as e:
-        log.warning("[pe_chain] _call_tier2 failed: %s", e)
+        log.warning("[pe_chain] _call_tier2 Ollama failed: %s — trying OR fallback", e)
+        if os.getenv("OPENROUTER_API_KEY"):
+            return _call_cloud_programming(prompt)
         return None
 
 
