@@ -2947,6 +2947,54 @@ class Igor(IgorBase):
                     kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
                 )
 
+        # T-cc-tool-bypass: Direct tool dispatch gate for CC commands.
+        # Pattern: "CC: <tool_name>" or "CC: hot_reload <file_path>"
+        # Prevents wasted inference on semantic parsing + LLM reasoning turns.
+        # Routes directly to tool registry, bypassing memory search + thalamus + reasoning.
+        if author == "claude-code" and user_input.startswith("CC:"):
+            _cc_cmd = user_input[3:].strip()
+            try:
+                from .tools.registry import registry as _cc_registry
+                import logging as _cc_log
+
+                _cc_logger = _cc_log.getLogger("igor.main")
+
+                if _cc_cmd.startswith("hot_reload "):
+                    # "CC: hot_reload wild_igor/igor/tools/goal_continuation.py"
+                    _file_path = _cc_cmd[len("hot_reload ") :].strip()
+                    # Convert file path to module name
+                    _module_name = (
+                        _file_path.replace(".py", "")
+                        .replace("/", ".")
+                        .replace("\\", ".")
+                    )
+                    _tool = _cc_registry.get("reload_module")
+                    if _tool:
+                        _result = _tool.execute(module_name=_module_name)
+                        _cc_logger.info(
+                            f"CC gate matched: hot_reload {_module_name} → {_result[:100]}"
+                        )
+                        return _result
+                    else:
+                        _result = "reload_module tool not found in registry"
+                        _cc_logger.info(f"CC gate: reload_module tool missing")
+                        return _result
+                else:
+                    # "CC: run_goal_continuation"
+                    _tool = _cc_registry.get(_cc_cmd)
+                    if _tool:
+                        _result = _tool.execute()
+                        _cc_logger.info(f"CC gate matched: {_cc_cmd}")
+                        return _result
+                    else:
+                        _result = f"CC: tool '{_cc_cmd}' not found in registry"
+                        _cc_logger.info(f"CC gate: {_cc_cmd} not found")
+                        return _result
+            except Exception as _cc_e:
+                _result = f"CC: error executing {_cc_cmd}: {_cc_e}"
+                _cc_logger.info(f"CC gate exception: {_cc_e}")
+                return _result
+
         # #179: The Wait — per-turn incubation before inference begins.
         # Lets TWM observations, milieu updates, and ring_memory settle.
         # Gate: IGOR_WAIT_MS (default 0 = disabled). Libet half-second analog.
