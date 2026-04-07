@@ -1412,6 +1412,19 @@ def pe_close_loop(basket: dict) -> dict:
         f"CLOSE_LOOP: test failed, attempt {basket['attempt_count']}/{_MAX_ATTEMPTS} — replanning"
     )
 
+    # D316/D317: post ESCALATION_NEEDED at attempt 2 so CC can prepare a fix
+    # while Igor makes its final attempt. Richer than the final ✗ blocked message.
+    if basket["attempt_count"] >= 2 and not basket.get("_escalation_sent"):
+        ticket_id = basket.get("ticket_id", "unknown")
+        _post_to_channel(
+            f"[pe_chain] ESCALATION_NEEDED {ticket_id} attempt={basket['attempt_count']}/{_MAX_ATTEMPTS} "
+            f"file={basket.get('hypothesis', {}).get('file', '?')} "
+            f"error={basket.get('hypothesis_error', basket.get('test_result', '?'))[:100]} "
+            f"plan={basket.get('plan_summary', '?')[:80]}"
+        )
+        basket["_escalation_sent"] = True
+        log.info(f"CLOSE_LOOP: ESCALATION_NEEDED posted for {ticket_id}")
+
     basket = _pe_replan(basket)
     if basket.get("error"):
         return basket
