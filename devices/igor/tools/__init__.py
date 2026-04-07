@@ -66,6 +66,7 @@ from . import (
     skill_filter,
     skill_importer,
     receive_cc_direction,
+    cloud_escape_metric,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
