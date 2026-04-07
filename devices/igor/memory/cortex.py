@@ -61,6 +61,15 @@ def _safe_memory_type(value: str) -> MemoryType:
 # D200: column list owned by db_proxy; alias kept for the many call sites in this file.
 _MEM_COLS_NO_EMBED = MEM_COLS
 
+
+# T-search-trace-console: emit search trace to console when IGOR_SEARCH_TRACE=true
+def _emit_search_trace(query: str, results: list) -> None:
+    if os.environ.get("IGOR_SEARCH_TRACE", "").lower() not in ("1", "true", "yes"):
+        return
+    snippets = " / ".join(f"{m.id}: {(m.narrative or '')[:60]}" for m in results[:5])
+    print(f"[SEARCH] query={query!r:.60} → {snippets or '(no results)'}", flush=True)
+
+
 # #258b: in-process memory fetch cache
 # Genesis types (ROOT / CORE_PATTERN / IDENTITY) are structurally immutable → permanent.
 # All others expire after _MEM_CACHE_TTL seconds. 300s chosen to outlast the ~60s NE
@@ -1944,6 +1953,7 @@ class Cortex(IgorBase):
                 # #309: reconsolidation flag — high-importance memories go plastic under arousal
                 _rc_arousal = getattr(req.emotional_context, "arousal", None)
                 self._flag_for_reconsolidation(result, milieu_arousal=_rc_arousal)
+                _emit_search_trace(query, result)
                 return result
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
@@ -1989,6 +1999,7 @@ class Cortex(IgorBase):
         # #309: reconsolidation flag — high-importance memories go plastic under arousal
         _rc_arousal = getattr(req.emotional_context, "arousal", None)
         self._flag_for_reconsolidation(result, milieu_arousal=_rc_arousal)
+        _emit_search_trace(query, result)
         return result
 
     def _touch_last_accessed(self, memories: list) -> None:
