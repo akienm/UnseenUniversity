@@ -147,6 +147,64 @@ registry.register(
 )
 
 
+# ── Tool: run_swarm_model_sync ───────────────────────────────────────────────────
+
+
+def _run_swarm_model_sync(ollama_model: str, ollama_model_batch: str = "", **_) -> str:
+    """
+    Pull specified Ollama model(s) on all SSH-capable machines in the cluster.
+
+    ollama_model:       model to pull on every online machine
+    ollama_model_batch: optional second model to also pull
+
+    Returns a summary string with per-machine results.
+    """
+    import logging
+
+    log = logging.getLogger(__name__)
+    machines = [m for m in _load_machines() if m.get("ssh")]
+    if not machines:
+        return "[run_swarm_model_sync] no SSH-capable machines configured"
+
+    lines = []
+    for m in machines:
+        hostname = m["hostname"]
+        for model in filter(None, [ollama_model, ollama_model_batch or ""]):
+            result = _ssh_exec(hostname, f"ollama pull {model}")
+            line = f"{hostname}/{model}: {result[:120]}"
+            lines.append(line)
+            log.info("[run_swarm_model_sync] %s", line)
+
+    return "\n".join(lines) if lines else "[run_swarm_model_sync] no machines reached"
+
+
+registry.register(
+    Tool(
+        name="run_swarm_model_sync",
+        description=(
+            "Pull Ollama model(s) on every SSH-capable machine in the cluster. "
+            "Calls 'ollama pull <model>' via ssh_exec on each online machine. "
+            "Use when a new model needs to be distributed to all nodes."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "ollama_model": {
+                    "type": "string",
+                    "description": "Primary Ollama model to pull on all machines",
+                },
+                "ollama_model_batch": {
+                    "type": "string",
+                    "description": "Optional second model to also pull",
+                },
+            },
+            "required": ["ollama_model"],
+        },
+        fn=_run_swarm_model_sync,
+    )
+)
+
+
 # ── Tool: cluster_status ──────────────────────────────────────────────────────
 
 
