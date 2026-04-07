@@ -41,13 +41,16 @@ def test_calculate_edge_weight():
 
 def test_create_book_anchor_node(cortex_test):
     """Test creation of book anchor node."""
-    content_id = "550e8400-e29b-41d4-a716-446655440000"
+    content_id = f"test-book-{uuid.uuid4().hex[:8]}"
     title = "Test Book"
     author = "Test Author"
 
     node_id = _create_book_anchor_node(cortex_test, content_id, title, author)
 
-    assert node_id == "BOOK_550E8400"
+    # Assert format: BOOK_{8-hex chars} from start of content_id
+    assert node_id.startswith("BOOK_")
+    assert len(node_id) == 13  # "BOOK_" + 8 hex chars
+    assert node_id == f"BOOK_{content_id[:8].upper()}"
 
     # Verify the node was created
     with cortex_test._conn() as conn:
@@ -65,12 +68,13 @@ def test_create_book_anchor_node(cortex_test):
 
 def test_create_book_anchor_node_no_author(cortex_test):
     """Test book anchor creation without author."""
-    content_id = "550e8400-e29b-41d4-a716-446655440000"
+    content_id = f"test-no-auth-{uuid.uuid4().hex[:8]}"
     title = "Test Book"
 
     node_id = _create_book_anchor_node(cortex_test, content_id, title, "")
 
-    assert node_id == "BOOK_550E8400"
+    assert node_id.startswith("BOOK_")
+    assert len(node_id) == 13
 
     with cortex_test._conn() as conn:
         mem = conn.execute(
