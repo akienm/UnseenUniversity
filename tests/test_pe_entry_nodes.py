@@ -958,7 +958,7 @@ class TestPeCloseLoop:
         # Replan returns pass on second attempt
         call_count = {"n": 0}
 
-        def fake_tier2(prompt, timeout=30):
+        def fake_tier2(prompt, timeout=30, **_):
             call_count["n"] += 1
             return '{"file": "wild_igor/igor/tools/pe_chain.py", "old_string": "pe_chain", "new_string": "pe_chain"}'
 
