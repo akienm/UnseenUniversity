@@ -5,7 +5,7 @@ Replaces every hardcoded Path.home() / ".TheIgors" in the codebase.
 
 Env vars:
     IGOR_RUNTIME_ROOT  — override the default ~/.TheIgors root
-    IGOR_INSTANCE_ID   — override the default instance folder (igor_wild_0001)
+    IGOR_INSTANCE_ID   — override the default instance folder (Igor-wild-0001)
 
 Usage:
     from igor.paths import paths
@@ -43,7 +43,7 @@ class PathManager:
         else:
             self._runtime = Path.home() / ".TheIgors"
 
-        self._instance_id = os.getenv("IGOR_INSTANCE_ID", "igor_wild_0001")
+        self._instance_id = os.getenv("IGOR_INSTANCE_ID", "Igor-wild-0001")
 
     # ── Base ──────────────────────────────────────────────────────────────────
 
@@ -54,7 +54,7 @@ class PathManager:
 
     @property
     def instance_id(self) -> str:
-        """Instance folder name, e.g. 'igor_wild_0001'."""
+        """Instance folder name, e.g. 'Igor-wild-0001'."""
         return self._instance_id
 
     # ── Shared runtime dirs ───────────────────────────────────────────────────
@@ -131,7 +131,7 @@ class PathManager:
 
     @property
     def instance(self) -> Path:
-        """Instance dir, e.g. ~/.TheIgors/igor_wild_0001."""
+        """Instance dir, e.g. ~/.TheIgors/Igor-wild-0001."""
         return self._runtime / self._instance_id
 
     @property

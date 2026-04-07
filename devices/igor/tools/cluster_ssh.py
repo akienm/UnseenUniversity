@@ -1,7 +1,7 @@
 """
 Cluster SSH tools — run commands on remote cluster machines via SSH.
 
-Uses the igor_wild_0001 user and the keypair at ~/.TheIgors/igor_id_rsa.
+Uses the Igor-wild-0001 user and the keypair at ~/.TheIgors/igor_id_rsa.
 Machine inventory is read from ~/.TheIgors/local/machines.json (ssh:true entries only).
 
 Two tools registered:
@@ -28,7 +28,7 @@ from ..paths import paths
 
 _MACHINES_JSON = paths().machines_json
 _KEY_PATH = paths().ssh_key
-_DEFAULT_USER = "igor_wild_0001"
+_DEFAULT_USER = "Igor-wild-0001"
 _SSH_TIMEOUT = 20  # seconds per command
 
 
@@ -327,7 +327,7 @@ def _bootstrap_ssh(machine: str = "") -> str:
     except ImportError:
         return "paramiko not installed — run: pip install paramiko"
 
-    igor_user = os.getenv("WINDOWS_USER_IGOR_USER", "igor_wild_0001")
+    igor_user = os.getenv("WINDOWS_USER_IGOR_USER", "Igor-wild-0001")
     igor_pw = os.getenv("WINDOWS_USER_IGOR_PW", "")
     pubkey = _KEY_PATH.with_suffix(".pub").read_text().strip()
 
@@ -849,7 +849,7 @@ registry.register(
 def _set_powershell_default(machine: str = "") -> str:
     """
     Set PowerShell as the default SSH shell on Windows machines via registry.
-    Requires the SSH user to be an administrator (igor_wild_0001 is admin).
+    Requires the SSH user to be an administrator (Igor-wild-0001 is admin).
     Prefers PowerShell 7 (pwsh.exe) if installed, falls back to PS 5.1.
 
     This is a one-time setup per machine. After this, SSH sessions open
@@ -901,7 +901,7 @@ registry.register(
         name="set_powershell_default",
         description=(
             "Set PowerShell as the default SSH shell on Windows cluster machines via registry. "
-            "Requires admin rights (igor_wild_0001 is admin). "
+            "Requires admin rights (Igor-wild-0001 is admin). "
             "Prefers PowerShell 7 (pwsh.exe), falls back to PS 5.1. "
             "One-time setup per machine — makes all future SSH sessions cleaner. "
             "Leave machine empty to configure all online Windows SSH machines."
@@ -1209,5 +1209,55 @@ registry.register(
             "required": [],
         },
         fn=stop_swarm,
+    )
+)
+
+
+# ── Tool: ssh_check ──────────────────────────────────────────────────────────
+
+
+def _ssh_check(**_) -> str:
+    """
+    Verify SSH connectivity to all SSH-capable machines in machines.json.
+    Runs 'echo OK' (or 'Write-Host OK' on Windows) on each and reports results.
+    """
+    import time
+
+    machines = [m for m in _load_machines() if m.get("ssh") and m.get("ip")]
+    if not machines:
+        return "[ssh_check] no SSH-capable machines with IPs configured"
+
+    lines = [f"SSH check at {time.strftime('%Y-%m-%d %H:%M:%S')}"]
+    ok_count = 0
+    for m in machines:
+        hostname = m["hostname"]
+        os_type = m.get("os", "linux").lower()
+        cmd = "Write-Host OK" if os_type == "windows" else "echo OK"
+        result = _ssh_run_machine(m, cmd, timeout=10)
+        status = "OK" if result.strip() == "OK" else f"FAIL ({result[:80]})"
+        if status == "OK":
+            ok_count += 1
+        user = m.get("ssh_user", _DEFAULT_USER)
+        lines.append(f"  {hostname:20s} {m['ip']:15s} user={user:20s} {status}")
+
+    lines.append(f"\n{ok_count}/{len(machines)} machines reachable")
+    return "\n".join(lines)
+
+
+registry.register(
+    Tool(
+        name="ssh_check",
+        description=(
+            "Verify SSH connectivity to all cluster machines. "
+            "Reads machine list from machines.json (ssh:true entries), "
+            "runs a simple echo command on each, reports pass/fail. "
+            "Use for health checks, after network changes, or to verify cluster state."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        fn=_ssh_check,
     )
 )

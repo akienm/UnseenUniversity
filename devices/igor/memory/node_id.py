@@ -26,7 +26,7 @@ from pathlib import Path
 
 # ── Suffix resolution ─────────────────────────────────────────────────────────
 
-_DEFAULT_INSTANCE = "igor_wild_0001"
+_DEFAULT_INSTANCE = "Igor-wild-0001"
 
 
 def _swarm_name() -> str | None:
@@ -178,7 +178,7 @@ def register_node(
 def _get_db_url() -> str:
     return os.getenv(
         "IGOR_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/igor_wild_0001",
+        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
     )
 
 

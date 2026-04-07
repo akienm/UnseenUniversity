@@ -1077,7 +1077,7 @@ class Igor(IgorBase):
         console.print(
             "\n[bold yellow]Igor cannot start with integrity violations.[/]\n"
             "[dim]Restore the database from a backup, or contact akien.[/]\n"
-            "[dim]Check ~/.TheIgors/igor_wild_0001/ for backup files.[/]"
+            "[dim]Check ~/.TheIgors/Igor-wild-0001/ for backup files.[/]"
         )
         sys.exit(1)
 

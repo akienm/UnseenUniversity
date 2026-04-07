@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 DB_URL = os.environ.get(
     "IGOR_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/igor_wild_0001",
+    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 
 # ── Seed spec ─────────────────────────────────────────────────────────────────
