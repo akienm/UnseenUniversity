@@ -116,6 +116,22 @@ def run_scope_guard(basket: dict) -> dict:
             )
         except Exception as exc:
             log.info(f"SCOPE_GUARD: channel post failed — {exc}")
+    elif tier == "MEDIUM" and op_delta >= 1:
+        # D317: MEDIUM inertia — warn CC, log rationale if present, but do not block.
+        # pe_chain may populate basket['inertia_rationale'] in future to suppress warning.
+        rationale = basket.get("inertia_rationale") or basket.get("plan_summary", "")
+        log.info(
+            f"MEDIUM: file={target_file} op={op_type} rationale={rationale[:60] if rationale else 'none'}"
+        )
+        try:
+            from .channel_post import post_to_channel as _post
+
+            _post(
+                f"[SCOPE_GUARD] MEDIUM inertia: {target_file} — {op_type}. "
+                f"Rationale: {rationale[:80] if rationale else 'none provided'}."
+            )
+        except Exception as exc:
+            log.info(f"SCOPE_GUARD: medium channel post failed — {exc}")
     else:
         log.info(f"PASS: file={target_file} tier={tier} op={op_type}")
 
