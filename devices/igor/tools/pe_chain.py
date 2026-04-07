@@ -40,6 +40,13 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 _CC_QUEUE = Path.home() / "TheIgors" / "claudecode" / "cc_queue.py"
+
+TEMPERATURE_BY_PHASE = {
+    "HYPOTHESIZE": 0.2,
+    "REPLAN": 0.2,
+    "PLAN": 0.7,
+    "SITUATE": 0.7,
+}
 _QUEUE_FILE = Path.home() / ".TheIgors" / "cc_channel" / "queue.json"
 _DB_URL = os.getenv(
     "IGOR_HOME_DB_URL",
@@ -256,11 +263,14 @@ _CLOUD_PROGRAMMING_MODEL = os.getenv(
 )
 
 
-def _call_cloud_programming(prompt: str) -> str | None:
+def _call_cloud_programming(prompt: str, temperature: float = 0.1) -> str | None:
     """
     Call OR DeepSeek for pe_chain steps when IGOR_CLOUD_PROGRAMMING=true.
     Uses IGOR_CLOUD_PROGRAMMING_MODEL (default: deepseek/deepseek-r1).
     No timeout — background work, no human waiting.
+
+    temperature: 0.2 for code-edit steps (HYPOTHESIZE/REPLAN), 0.7 for reasoning steps
+    (PLAN/SITUATE).
     """
     import json as _json
     import urllib.request
@@ -273,7 +283,7 @@ def _call_cloud_programming(prompt: str) -> str | None:
         return None
 
     model = _CLOUD_PROGRAMMING_MODEL
-    log.info("[pe_chain] cloud_programming: calling %s", model)
+    log.info("[pe_chain] cloud_programming: calling %s temp=%.1f", model, temperature)
 
     try:
         payload = _json.dumps(
@@ -281,7 +291,7 @@ def _call_cloud_programming(prompt: str) -> str | None:
                 "model": model,
                 "messages": [{"role": "user", "content": prompt}],
                 "stream": False,
-                "temperature": 0.1,
+                "temperature": temperature,
             }
         ).encode()
         req = urllib.request.Request(
@@ -305,19 +315,22 @@ def _call_cloud_programming(prompt: str) -> str | None:
         return None
 
 
-def _call_tier2(prompt: str, timeout: int = 0) -> str | None:
+def _call_tier2(prompt: str, timeout: int = 0, temperature: float = 0.1) -> str | None:
     """
     Call Ollama tier.2 directly. Returns raw response text or None on failure.
     Uses cluster_router for host/model selection; falls back to localhost defaults.
     timeout=0 means no timeout — pe_chain is always background work, no human waiting.
     Human-facing turns have their own timeout in ollama_reasoner.py.
 
+    temperature: 0.2 for code-edit steps (HYPOTHESIZE/REPLAN), 0.7 for reasoning
+    steps (PLAN/SITUATE). Default 0.1 for backwards compat / unspecified callers.
+
     If IGOR_CLOUD_PROGRAMMING=true, routes directly to OR DeepSeek.
     Otherwise tries Ollama batch first; if unavailable and OR key present, falls back
     to OR DeepSeek automatically (PE chain is background, no latency constraint).
     """
     if os.getenv("IGOR_CLOUD_PROGRAMMING", "").lower() in ("1", "true", "yes"):
-        return _call_cloud_programming(prompt)
+        return _call_cloud_programming(prompt, temperature=temperature)
 
     try:
         from ..cognition.cluster_router import route as _route
@@ -336,7 +349,7 @@ def _call_tier2(prompt: str, timeout: int = 0) -> str | None:
                 "model": model,
                 "messages": [{"role": "user", "content": prompt}],
                 "stream": False,
-                "options": {"temperature": 0.1},
+                "options": {"temperature": temperature},
             }
         ).encode()
         req = urllib.request.Request(
@@ -352,7 +365,7 @@ def _call_tier2(prompt: str, timeout: int = 0) -> str | None:
     except Exception as e:
         log.warning("[pe_chain] _call_tier2 Ollama failed: %s — trying OR fallback", e)
         if os.getenv("OPENROUTER_API_KEY"):
-            return _call_cloud_programming(prompt)
+            return _call_cloud_programming(prompt, temperature=temperature)
         return None
 
 
@@ -427,7 +440,7 @@ def pe_plan(basket: dict) -> dict:
     if description:
         prompt = _PLAN_PROMPT.format(ticket_id=ticket_id, description=description[:600])
         log.info(f"PLAN: calling tier.2 for {ticket_id}")
-        raw = _call_tier2(prompt)
+        raw = _call_tier2(prompt, temperature=0.7)
         if raw:
             plan_summary = ""
             test_criterion = ""
@@ -607,7 +620,7 @@ def pe_situate(basket: dict) -> dict:
     prompt = _SITUATE_PROMPT.format(description=description[:600])
     log.info(f"SITUATE: calling tier.2 (no required_files or prior memory for ticket)")
 
-    raw = _call_tier2(prompt)
+    raw = _call_tier2(prompt, temperature=0.7)
     if not raw:
         # Tier.2 unavailable — leave plan_files empty, chain can continue with grep
         basket["plan_files"] = []
@@ -931,7 +944,7 @@ def pe_store_observe_results(basket: dict) -> dict:
 # ── HYPOTHESIZE ───────────────────────────────────────────────────────────────
 
 _HYPOTHESIZE_PROMPT = """\
-You are making a focused code change. Output ONLY a JSON object — no explanation.
+You are making a focused code change. Produce exactly one JSON object with "file", "old_string", and "new_string" keys. Do not include anything else outside the JSON. Do not produce <tool_response> blocks, do not narrate, do not simulate tool output.
 
 Ticket: {description}
 
@@ -945,10 +958,18 @@ Output a JSON object with exactly these fields:
   "new_string": "<replacement string>"
 }}
 
+Example of a correct edit:
+{{
+  "file": "sample.py",
+  "old_string": "def old_func():",
+  "new_string": "def new_func():"
+}}
+
 Rules:
 - old_string must appear verbatim in the code above
 - Make the smallest change that satisfies the ticket
 - Do not change anything outside the old_string → new_string replacement
+- Do not add any extra text, narration, or tool responses
 
 JSON:"""
 
@@ -958,9 +979,23 @@ def _parse_hypothesis(raw: str) -> dict | None:
     Parse a structured edit JSON from LLM output.
     Returns dict with {file, old_string, new_string} or None on failure.
     Tries full JSON parse first, then regex extraction as fallback.
+
+    Pre-processing:
+    - Strips <think>...</think> blocks (DeepSeek R1 reasoning — JSON follows)
+    - Strips <function_calls>...</function_calls> blocks (Haiku hallucination)
+    - Strips markdown code fences
     """
-    # Strip markdown code fences if present
     text = raw.strip()
+
+    # Strip <think>...</think> reasoning blocks (DeepSeek R1)
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+
+    # Strip <function_calls>...</function_calls> hallucination (Haiku)
+    text = re.sub(
+        r"<function_calls>.*?</function_calls>", "", text, flags=re.DOTALL
+    ).strip()
+
+    # Strip markdown code fences
     if text.startswith("```"):
         lines = text.splitlines()
         text = "\n".join(l for l in lines if not l.strip().startswith("```")).strip()
@@ -1053,7 +1088,7 @@ def pe_hypothesize(basket: dict) -> dict:
     )
     log.info(f"HYPOTHESIZE: calling tier.2 prompt_len={len(prompt)}")
 
-    raw = _call_tier2(prompt)
+    raw = _call_tier2(prompt, temperature=0.2)
     basket["hypothesis_raw"] = raw or ""
 
     if not raw:
@@ -1404,7 +1439,7 @@ def _pe_replan(basket: dict) -> dict:
         actual=basket.get("actual", "")[:1500],
     )
     log.info(f"REPLAN: calling tier.2 attempt={basket.get('attempt_count')}")
-    raw = _call_tier2(prompt)
+    raw = _call_tier2(prompt, temperature=0.2)
     basket["hypothesis_raw"] = raw or ""
 
     if not raw:
