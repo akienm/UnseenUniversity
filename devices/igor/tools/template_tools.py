@@ -132,7 +132,9 @@ def _check_invariants(
                                 f"invariant: code_ref '{code_ref}' not found in tool registry"
                             )
                     except Exception as e:
-                        log_error(kind="TOOL_FAIL", detail=f"registry check failed: {e}")  # non-fatal
+                        log_error(
+                            kind="TOOL_FAIL", detail=f"registry check failed: {e}"
+                        )  # non-fatal
     return violations
 
 
@@ -229,7 +231,14 @@ def instantiate_template(template_id: str, params_json: str) -> str:
             "metadata", item_copy if "metadata" not in item else {}
         )
         habit_meta["template_origin"] = template_id
+        habit_meta["template_source"] = (
+            template_id  # T-facia-template-provenance: canonical field for HYPOTHESIZE lookup
+        )
         habit_meta["template_pattern"] = pattern_name
+        # Carry standards_ref from template schema so HYPOTHESIZE can inject coding standards
+        _standards_ref = schema.get("standards_ref")
+        if _standards_ref:
+            habit_meta.setdefault("standards_ref", _standards_ref)
 
         mem = Memory(
             id=node_id,
