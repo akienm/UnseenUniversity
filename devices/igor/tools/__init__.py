@@ -65,6 +65,7 @@ from . import (
     deferred_self_task,
     skill_filter,
     skill_importer,
+    receive_cc_direction,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
