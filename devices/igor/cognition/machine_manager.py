@@ -33,7 +33,7 @@ _log = logging.getLogger(__name__)
 
 _DB_URL = os.getenv(
     "IGOR_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/igor_wild_0001",
+    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 
 # Cache TTL — reload from DB this often
@@ -125,7 +125,7 @@ def _ensure_schema() -> None:
                 roles           JSONB DEFAULT '[]',
                 aliases         JSONB DEFAULT '[]',
                 ssh_enabled     BOOLEAN DEFAULT false,
-                ssh_user        TEXT DEFAULT 'igor_wild_0001',
+                ssh_user        TEXT DEFAULT 'Igor-wild-0001',
                 notes           TEXT,
                 updated_at      TEXT DEFAULT to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS')
             )

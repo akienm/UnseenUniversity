@@ -446,7 +446,7 @@ def run_output_training_pass() -> str:
 
     db_url = os.getenv(
         "IGOR_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/igor_wild_0001",
+        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
     )
     log_dir = _igor_paths().logs
     trainer = OutputTrainer(db_url=db_url, log_dir=log_dir)

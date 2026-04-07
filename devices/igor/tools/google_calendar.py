@@ -8,7 +8,7 @@ employer-provided credentials. Providing credentials = consent to access.
 OAuth2 setup (one-time per account):
   1. In Google Cloud Console: enable Calendar API + Tasks API
   2. Create OAuth2 credentials (Desktop app), download as credentials.json
-  3. Place at GOOGLE_CREDENTIALS_PATH (default: ~/.TheIgors/igor_wild_0001/google_credentials.json)
+  3. Place at GOOGLE_CREDENTIALS_PATH (default: ~/.TheIgors/Igor-wild-0001/google_credentials.json)
   4. Run once: python -c "from igor.tools.google_calendar import _get_service; _get_service('calendar','v3')"
      → browser opens for consent → token saved to GOOGLE_TOKEN_PATH
   5. Set IGOR_CALENDAR_ENABLED=true in .env
