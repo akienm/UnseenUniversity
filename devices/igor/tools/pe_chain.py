@@ -1021,11 +1021,14 @@ def _get_coding_standards(max_rules: int = 6) -> str:
         return ""
 
 
-def _parse_hypothesis(raw: str) -> dict | None:
+def _parse_hypothesis(raw: str) -> list[dict] | None:
     """
-    Parse a structured edit JSON from LLM output.
-    Returns dict with {file, old_string, new_string} or None on failure.
-    Tries full JSON parse first, then regex extraction as fallback.
+    Parse structured edit JSON from LLM output.
+    Returns a list of {file, old_string, new_string} dicts, or None on failure.
+
+    Accepts two formats:
+      1. {"edits": [{file, old_string, new_string}, ...]}  — multi-edit (preferred)
+      2. {file, old_string, new_string}                     — single-edit (legacy)
 
     Pre-processing:
     - Strips <think>...</think> blocks (DeepSeek R1 reasoning — JSON follows)
@@ -1050,22 +1053,38 @@ def _parse_hypothesis(raw: str) -> dict | None:
     # Try full JSON parse
     try:
         obj = json.loads(text)
+        # Multi-edit format: {"edits": [...]}
+        if "edits" in obj and isinstance(obj["edits"], list):
+            edits = [
+                e
+                for e in obj["edits"]
+                if all(k in e for k in ("file", "old_string", "new_string"))
+            ]
+            if edits:
+                return edits
+        # Single-edit format: {file, old_string, new_string}
         if all(k in obj for k in ("file", "old_string", "new_string")):
-            return obj
+            return [obj]
     except Exception:
         pass
 
-    # Fallback: extract fields with regex
+    # Fallback: extract fields with regex (single edit only)
     try:
         file_m = re.search(r'"file"\s*:\s*"([^"]+)"', text)
         old_m = re.search(r'"old_string"\s*:\s*"((?:[^"\\]|\\.)*)"', text, re.DOTALL)
         new_m = re.search(r'"new_string"\s*:\s*"((?:[^"\\]|\\.)*)"', text, re.DOTALL)
         if file_m and old_m and new_m:
-            return {
-                "file": file_m.group(1),
-                "old_string": old_m.group(1).replace('\\"', '"').replace("\\n", "\n"),
-                "new_string": new_m.group(1).replace('\\"', '"').replace("\\n", "\n"),
-            }
+            return [
+                {
+                    "file": file_m.group(1),
+                    "old_string": old_m.group(1)
+                    .replace('\\"', '"')
+                    .replace("\\n", "\n"),
+                    "new_string": new_m.group(1)
+                    .replace('\\"', '"')
+                    .replace("\\n", "\n"),
+                }
+            ]
     except Exception:
         pass
 
@@ -1089,25 +1108,38 @@ def _validate_hypothesis(hypothesis: dict, repo_root: Path) -> str | None:
         return f"read error: {e}"
 
 
+def _validate_hypotheses(edits: list[dict], repo_root: Path) -> list[str]:
+    """
+    Validate each edit in a list. Returns a list of error strings (empty = all valid).
+    """
+    errors = []
+    for i, edit in enumerate(edits):
+        err = _validate_hypothesis(edit, repo_root)
+        if err:
+            errors.append(f"edit[{i}] ({edit.get('file', '?')}): {err}")
+    return errors
+
+
 def pe_hypothesize(basket: dict) -> dict:
     """
-    HYPOTHESIZE step: tier.2 call → structured edit JSON.
+    HYPOTHESIZE step: tier.2 call → structured edit JSON (multi-edit).
 
     Given basket[ticket_description] and basket[actual] (observed code section),
-    calls Ollama with a tight prompt asking for a minimal, exact edit.
+    calls Ollama with a tight prompt asking for minimal, exact edits.
 
-    Output format: {"file": str, "old_string": str, "new_string": str}
+    Output format: {"edits": [{file, old_string, new_string}, ...]}
 
-    Validates that old_string exists verbatim in the target file before accepting.
+    Validates that each old_string exists verbatim in the target file.
     On validation failure: stores error in basket[hypothesis_error] but does NOT
-    set basket[error] — IMPLEMENT can still run with a degraded/empty hypothesis,
+    set basket[error] — IMPLEMENT can still run with valid edits,
     or REPLAN can retry.
 
     Reads from basket: ticket_description, actual, plan_files
     Writes to basket:
-      hypothesis        dict | None  — {file, old_string, new_string} or None
+      hypotheses        list[dict]   — [{file, old_string, new_string}, ...] or []
+      hypothesis        dict | None  — first edit (backwards compat for REPLAN/logging)
       hypothesis_raw    str          — raw LLM output (for debugging)
-      hypothesis_error  str | None   — validation error if hypothesis invalid
+      hypothesis_error  str | None   — validation error if any edit invalid
     """
     if basket.get("error"):
         return basket
@@ -1121,6 +1153,7 @@ def pe_hypothesize(basket: dict) -> dict:
 
     if not actual:
         # No observed code — hypothesis can't be grounded; set null and continue
+        basket["hypotheses"] = []
         basket["hypothesis"] = None
         basket["hypothesis_raw"] = ""
         basket["hypothesis_error"] = "no actual code observed — hypothesis ungrounded"
@@ -1153,33 +1186,34 @@ def pe_hypothesize(basket: dict) -> dict:
     basket["hypothesis_raw"] = raw or ""
 
     if not raw:
+        basket["hypotheses"] = []
         basket["hypothesis"] = None
         basket["hypothesis_error"] = "tier.2 unavailable"
         log.info("HYPOTHESIZE: tier.2 unavailable")
         return basket
 
-    hypothesis = _parse_hypothesis(raw)
-    if not hypothesis:
+    edits = _parse_hypothesis(raw)
+    if not edits:
+        basket["hypotheses"] = []
         basket["hypothesis"] = None
         basket["hypothesis_error"] = f"parse failed: {raw[:120]}"
         log.info(f"HYPOTHESIZE: parse failed: {raw[:80]}")
         return basket
 
-    # Validate old_string exists in file
-    err = _validate_hypothesis(hypothesis, _REPO_ROOT)
-    if err:
-        basket["hypothesis"] = hypothesis  # keep for debugging
-        basket["hypothesis_error"] = f"validation failed: {err}"
-        log.info(f"HYPOTHESIZE: validation failed: {err}")
+    # Validate each edit
+    errors = _validate_hypotheses(edits, _REPO_ROOT)
+    if errors:
+        basket["hypotheses"] = edits  # keep for debugging
+        basket["hypothesis"] = edits[0]
+        basket["hypothesis_error"] = f"validation failed: {'; '.join(errors)}"
+        log.info(f"HYPOTHESIZE: validation failed: {'; '.join(errors)}")
         return basket
 
-    basket["hypothesis"] = hypothesis
+    basket["hypotheses"] = edits
+    basket["hypothesis"] = edits[0]  # backwards compat
     basket["hypothesis_error"] = None
-    log.info(
-        f"HYPOTHESIZE: valid edit in {hypothesis['file']} "
-        f"old_len={len(hypothesis['old_string'])} "
-        f"new_len={len(hypothesis['new_string'])}"
-    )
+    files_touched = sorted(set(e["file"] for e in edits))
+    log.info(f"HYPOTHESIZE: {len(edits)} valid edit(s) in {', '.join(files_touched)}")
     return basket
 
 
@@ -1188,54 +1222,78 @@ def pe_hypothesize(basket: dict) -> dict:
 
 def pe_implement(basket: dict) -> dict:
     """
-    IMPLEMENT step: apply basket[hypothesis] edit to the target file.
+    IMPLEMENT step: apply basket[hypotheses] edits to target files.
 
-    Reads basket[hypothesis]: {file, old_string, new_string}
-    Skips (sets implement_skipped=True) if hypothesis is None or has errors.
+    Reads basket[hypotheses]: [{file, old_string, new_string}, ...]
+    Falls back to basket[hypothesis] (single dict) for backwards compat.
+    Applies edits in sequence. Stops on first error.
     Writes to basket:
-      implement_result   str   — "ok" | "skipped: <reason>" | "error: <msg>"
-      implement_skipped  bool  — True if no valid hypothesis to apply
+      implement_result   str        — "ok: N/N edits" | "skipped: <reason>" | "error: <msg>"
+      implement_skipped  bool       — True if no valid edits to apply
+      implement_results  list[str]  — per-edit result strings
+      implement_files    list[str]  — files successfully modified
     """
     if basket.get("error"):
         return basket
 
-    hypothesis = basket.get("hypothesis")
     hypothesis_error = basket.get("hypothesis_error")
+    edits = basket.get("hypotheses") or []
+    # Backwards compat: single hypothesis dict
+    if not edits and basket.get("hypothesis"):
+        edits = [basket["hypothesis"]]
 
-    if not hypothesis or hypothesis_error:
+    if not edits or hypothesis_error:
         reason = hypothesis_error or "no hypothesis"
         basket["implement_result"] = f"skipped: {reason}"
         basket["implement_skipped"] = True
+        basket["implement_results"] = []
+        basket["implement_files"] = []
         log.info(f"IMPLEMENT: skipped — {reason}")
         return basket
 
-    filepath = _REPO_ROOT / hypothesis["file"]
-    old_string = hypothesis["old_string"]
-    new_string = hypothesis["new_string"]
+    results = []
+    files_modified = []
+    for i, edit in enumerate(edits):
+        filepath = _REPO_ROOT / edit["file"]
+        old_string = edit["old_string"]
+        new_string = edit["new_string"]
 
-    try:
-        content = filepath.read_text(errors="replace")
-        if old_string not in content:
-            basket["implement_result"] = (
-                f"error: old_string not in {hypothesis['file']}"
+        try:
+            content = filepath.read_text(errors="replace")
+            if old_string not in content:
+                msg = f"edit[{i}] error: old_string not in {edit['file']}"
+                results.append(msg)
+                log.info(f"IMPLEMENT: {msg}")
+                basket["implement_result"] = msg
+                basket["implement_skipped"] = True
+                basket["implement_results"] = results
+                basket["implement_files"] = files_modified
+                return basket
+
+            new_content = content.replace(old_string, new_string, 1)
+            filepath.write_text(new_content)
+            msg = f"edit[{i}] ok: {edit['file']}"
+            results.append(msg)
+            files_modified.append(edit["file"])
+            log.info(
+                f"IMPLEMENT: applied edit[{i}] in {edit['file']} "
+                f"old_len={len(old_string)} new_len={len(new_string)}"
             )
+        except Exception as e:
+            msg = f"edit[{i}] error: {e}"
+            results.append(msg)
+            log.info(f"IMPLEMENT: {msg}")
+            basket["implement_result"] = msg
             basket["implement_skipped"] = True
-            log.info(f"IMPLEMENT: old_string not found in {hypothesis['file']}")
+            basket["implement_results"] = results
+            basket["implement_files"] = files_modified
             return basket
 
-        new_content = content.replace(old_string, new_string, 1)
-        filepath.write_text(new_content)
-        basket["implement_result"] = "ok"
-        basket["implement_skipped"] = False
-        log.info(
-            f"IMPLEMENT: applied edit in {hypothesis['file']} "
-            f"old_len={len(old_string)} new_len={len(new_string)}"
-        )
-    except Exception as e:
-        basket["implement_result"] = f"error: {e}"
-        basket["implement_skipped"] = True
-        log.info(f"IMPLEMENT: exception: {e}")
-
+    basket["implement_result"] = f"ok: {len(results)}/{len(edits)} edits applied"
+    basket["implement_skipped"] = False
+    basket["implement_results"] = results
+    basket["implement_files"] = files_modified
+    log.info(f"IMPLEMENT: {len(results)} edits applied in {', '.join(files_modified)}")
     return basket
 
 
@@ -1286,15 +1344,13 @@ def pe_test(basket: dict) -> dict:
 _MAX_ATTEMPTS = 3
 
 _REPLAN_PROMPT = """\
-A code edit was attempted but tests failed. Produce a revised edit.
+A code edit was attempted but tests failed. Produce revised edits.
 Output ONLY a JSON object — no explanation.
 
 Ticket: {description}
 
 Previous edit attempt:
-  file: {file}
-  old_string: {old_string}
-  new_string: {new_string}
+{previous_edits}
 
 Test failure:
 {test_result}
@@ -1302,11 +1358,15 @@ Test failure:
 Relevant code (re-read):
 {actual}
 
-Output a JSON object:
+Output a JSON object with an "edits" key:
 {{
-  "file": "<relative file path>",
-  "old_string": "<exact string to replace>",
-  "new_string": "<replacement string>"
+  "edits": [
+    {{
+      "file": "<relative file path>",
+      "old_string": "<exact string to replace>",
+      "new_string": "<replacement string>"
+    }}
+  ]
 }}
 
 JSON:"""
@@ -1479,7 +1539,7 @@ def pe_close_loop(basket: dict) -> dict:
         ticket_id = basket.get("ticket_id", "unknown")
         _post_to_channel(
             f"[pe_chain] ESCALATION_NEEDED {ticket_id} attempt={basket['attempt_count']}/{_MAX_ATTEMPTS} "
-            f"file={basket.get('hypothesis', {}).get('file', '?')} "
+            f"files={','.join(e.get('file','?') for e in basket.get('hypotheses', [basket.get('hypothesis') or {}]))} "
             f"error={basket.get('hypothesis_error', basket.get('test_result', '?'))[:100]} "
             f"plan={basket.get('plan_summary', '?')[:80]}"
         )
@@ -1501,14 +1561,25 @@ def pe_close_loop(basket: dict) -> dict:
 def _pe_replan(basket: dict) -> dict:
     """
     REPLAN: tier.2 call to revise hypothesis after test failure.
-    Overwrites basket[hypothesis] with the revised edit.
+    Overwrites basket[hypotheses] with revised edits.
     """
-    hyp = basket.get("hypothesis") or {}
+    edits = basket.get("hypotheses") or []
+    if not edits and basket.get("hypothesis"):
+        edits = [basket["hypothesis"]]
+
+    # Format previous edits for the prompt
+    prev_lines = []
+    for i, e in enumerate(edits):
+        prev_lines.append(
+            f"  edit[{i}]: file={e.get('file', '?')} "
+            f"old_string={e.get('old_string', '')[:150]} "
+            f"new_string={e.get('new_string', '')[:150]}"
+        )
+    previous_edits = "\n".join(prev_lines) if prev_lines else "  (none)"
+
     prompt = _REPLAN_PROMPT.format(
         description=basket.get("ticket_description", "")[:300],
-        file=hyp.get("file", "unknown"),
-        old_string=hyp.get("old_string", "")[:200],
-        new_string=hyp.get("new_string", "")[:200],
+        previous_edits=previous_edits,
         test_result=basket.get("test_result", "")[:300],
         actual=basket.get("actual", "")[:1500],
     )
@@ -1517,54 +1588,67 @@ def _pe_replan(basket: dict) -> dict:
     basket["hypothesis_raw"] = raw or ""
 
     if not raw:
+        basket["hypotheses"] = []
         basket["hypothesis"] = None
         basket["hypothesis_error"] = "replan: tier.2 unavailable"
         return basket
 
-    hypothesis = _parse_hypothesis(raw)
-    if not hypothesis:
+    new_edits = _parse_hypothesis(raw)
+    if not new_edits:
+        basket["hypotheses"] = []
         basket["hypothesis"] = None
         basket["hypothesis_error"] = f"replan: parse failed: {raw[:80]}"
         return basket
 
-    err = _validate_hypothesis(hypothesis, _REPO_ROOT)
-    if err:
-        basket["hypothesis"] = hypothesis
-        basket["hypothesis_error"] = f"replan validation: {err}"
+    errors = _validate_hypotheses(new_edits, _REPO_ROOT)
+    if errors:
+        basket["hypotheses"] = new_edits
+        basket["hypothesis"] = new_edits[0]
+        basket["hypothesis_error"] = f"replan validation: {'; '.join(errors)}"
         return basket
 
-    basket["hypothesis"] = hypothesis
+    basket["hypotheses"] = new_edits
+    basket["hypothesis"] = new_edits[0]
     basket["hypothesis_error"] = None
-    log.info(f"REPLAN: new hypothesis in {hypothesis['file']}")
+    files_touched = sorted(set(e["file"] for e in new_edits))
+    log.info(f"REPLAN: {len(new_edits)} revised edit(s) in {', '.join(files_touched)}")
     return basket
 
 
 def _pe_commit(basket: dict) -> dict:
-    """COMMIT: git add + commit the changed file."""
-    hyp = basket.get("hypothesis")
-    if not hyp or basket.get("implement_skipped"):
+    """COMMIT: git add + commit all changed files."""
+    files = basket.get("implement_files") or []
+    # Backwards compat: fall back to single hypothesis file
+    if not files:
+        hyp = basket.get("hypothesis")
+        if hyp and not basket.get("implement_skipped"):
+            files = [hyp.get("file", "")]
+
+    if not files or basket.get("implement_skipped"):
         basket["commit_result"] = "skipped: no edit applied"
         return basket
 
-    filepath = hyp.get("file", "")
     ticket_id = basket.get("ticket_id", "unknown")
 
-    result = _run_bash(
-        ["git", "-C", str(_REPO_ROOT), "add", filepath],
-        timeout=15,
-    )
-    if "error" in result.lower() or "fatal" in result.lower():
-        basket["commit_result"] = f"git add failed: {result[:100]}"
-        log.info(f"COMMIT: git add failed: {result[:80]}")
-        return basket
+    # git add each file
+    for filepath in files:
+        result = _run_bash(
+            ["git", "-C", str(_REPO_ROOT), "add", filepath],
+            timeout=15,
+        )
+        if "error" in result.lower() or "fatal" in result.lower():
+            basket["commit_result"] = f"git add failed ({filepath}): {result[:100]}"
+            log.info(f"COMMIT: git add failed: {result[:80]}")
+            return basket
 
-    msg = f"fix: {ticket_id} — pe_chain autonomous edit\n\nCo-Authored-By: Igor <igor@theigors>"
+    file_list = ", ".join(files)
+    msg = f"fix: {ticket_id} — pe_chain autonomous edit ({len(files)} file(s))\n\nCo-Authored-By: Igor <igor@theigors>"
     result = _run_bash(
         ["git", "-C", str(_REPO_ROOT), "commit", "-m", msg],
         timeout=15,
     )
     basket["commit_result"] = result[:120]
-    log.info(f"COMMIT: {result[:80]}")
+    log.info(f"COMMIT: {len(files)} file(s) [{file_list}]: {result[:80]}")
     return basket
 
 
