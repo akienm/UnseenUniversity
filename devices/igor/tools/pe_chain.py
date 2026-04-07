@@ -1300,9 +1300,12 @@ def pe_implement(basket: dict) -> dict:
 # ── TEST ──────────────────────────────────────────────────────────────────────
 
 
-def pe_test(basket: dict) -> dict:
+def pe_test(basket: dict, preflight: bool = False) -> dict:
     """
     TEST step: run the test suite, store result in basket.
+
+    If preflight=True, this is a pre-edit sanity check. If it fails,
+    caller should escalate immediately (not attempt fixes).
 
     Calls run_tests() from ops.py if available, else falls back to
     subprocess pytest invocation.
@@ -1321,7 +1324,8 @@ def pe_test(basket: dict) -> dict:
         raw = _run_tests()
         passed = "passed" in raw and "failed" not in raw and "error" not in raw.lower()
         basket["test_result"] = "pass" if passed else f"fail: {raw[:300]}"
-        log.info(f"TEST (ops.run_tests): {basket['test_result'][:80]}")
+        level = "preflight" if preflight else "post-edit"
+        log.info(f"TEST ({level}, ops.run_tests): {basket['test_result'][:80]}")
         return basket
     except Exception:
         pass
@@ -1335,7 +1339,8 @@ def pe_test(basket: dict) -> dict:
         "passed" in result and "failed" not in result and "error" not in result.lower()
     )
     basket["test_result"] = "pass" if passed else f"fail: {result[:300]}"
-    log.info(f"TEST (pytest): {basket['test_result'][:80]}")
+    level = "preflight" if preflight else "post-edit"
+    log.info(f"TEST ({level}, pytest): {basket['test_result'][:80]}")
     return basket
 
 
@@ -1765,6 +1770,18 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
     basket = pe_store_observe_results(basket)
     if basket.get("error"):
         return basket
+
+    # PRE-FLIGHT: Run tests BEFORE hypothesize to catch broken test suite early.
+    # If tests already fail, escalate immediately instead of burning 3 attempts.
+    basket = pe_test(basket, preflight=True)
+    if basket.get("test_result", "").startswith("fail"):
+        basket["escalate_reason"] = (
+            f"pre-flight: test suite already broken — "
+            f"{basket['test_result'][:100]}. Skipping attempts."
+        )
+        log.info(f"PRE-FLIGHT TEST FAILED: {basket['escalate_reason']}")
+        return basket
+
     basket = pe_hypothesize(basket)
     if basket.get("error"):
         return basket

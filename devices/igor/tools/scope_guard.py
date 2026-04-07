@@ -101,21 +101,18 @@ def run_scope_guard(basket: dict) -> dict:
         log.info(f"SCOPE_GUARD: ring write failed — {exc}")
 
     if tier == "HIGH" and op_delta >= 1:
-        reason = (
-            f"SCOPE_GUARD: {target_file} is HIGH inertia — "
-            f"{op_type} requires human approval"
-        )
-        basket["pe_status"] = "escalated"
-        basket["escalate_reason"] = reason
+        reason = f"HIGH inertia {op_type} requires human approval: {target_file}"
         log.info(f"ESCALATED: file={target_file} tier=HIGH op={op_type}")
+        # Call _pe_escalate to properly close goal + mark ticket blocked
         try:
-            from .channel_post import post_to_channel as _post
+            from .pe_chain import _pe_escalate as _pe_esc
 
-            _post(
-                f"[SCOPE_GUARD] Escalated: {target_file} — HIGH inertia {op_type} blocked."
-            )
+            return _pe_esc(basket, reason=reason)
         except Exception as exc:
-            log.info(f"SCOPE_GUARD: channel post failed — {exc}")
+            log.error(f"SCOPE_GUARD: _pe_escalate call failed — {exc}")
+            # Fallback: set escalate_reason manually for later handling
+            basket["pe_status"] = "escalated"
+            basket["escalate_reason"] = reason
     elif tier == "MEDIUM" and op_delta >= 1:
         # D317: MEDIUM inertia — warn CC, log rationale if present, but do not block.
         # pe_chain may populate basket['inertia_rationale'] in future to suppress warning.
