@@ -184,6 +184,11 @@ def render(
             f"[bold]Latency p50/p95:[/]  {p50:,}ms / {p95:,}ms"
             f"  [dim](n={len(stats_samples)})[/]{excl_note}"
         )
+    active_ticket = _get_active_cc_ticket()
+    if active_ticket:
+        lines.append(
+            f"  [bold green]active:[/] {active_ticket['id']} — {active_ticket['title'][:44]}"
+        )
     if job_list:
         for j in job_list:
             pct_str = f" {j.progress_pct():.0f}%" if j.total_units > 0 else ""
@@ -354,6 +359,23 @@ def _get_interpretive_edge_count(cortex: Cortex) -> int:
             return row[0] if row else 0
     except Exception:
         return 0
+
+
+def _get_active_cc_ticket() -> dict | None:
+    """Return the first in_progress ticket from cc_queue.json, or None."""
+    try:
+        import json as _json
+        import os as _os
+
+        queue_path = _os.path.expanduser("~/.TheIgors/cc_channel/queue.json")
+        with open(queue_path) as _f:
+            tasks = _json.load(_f)
+        for t in tasks:
+            if t.get("status") == "in_progress":
+                return {"id": t.get("id", "?"), "title": t.get("title", "")}
+    except Exception:
+        pass
+    return None
 
 
 def _get_recent_habits(cortex: Cortex, n: int = 3) -> list[dict]:
