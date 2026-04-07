@@ -27,6 +27,78 @@ from pathlib import Path
 _LOG_MAX_BYTES = 50 * 1024 * 1024  # 50 MB per file
 _LOG_BACKUP_COUNT = 3  # keep .1 .2 .3
 
+
+# ── TimerHandle ───────────────────────────────────────────────────────────────
+
+
+class TimerHandle:
+    """
+    Lightweight structured timer for forensic logs.
+
+    Usage:
+        timer = log.get_timer("pe_chain.hypothesize", ticket="T-foo")
+        # ... do work ...
+        timer.stop(result="ok", tokens=412)
+        # Emits one log line: name=pe_chain.hypothesize started=20260406... elapsed=3.142 ticket=T-foo result=ok tokens=412
+
+    Created via logging_setup.get_timer(log, name, level=logging.DEBUG, **context).
+    Do not instantiate directly.
+    """
+
+    __slots__ = ("_log", "_name", "_level", "_started", "_ctx", "_ts_str")
+
+    def __init__(
+        self,
+        logger: logging.Logger,
+        name: str,
+        level: int,
+        **context_kwargs,
+    ) -> None:
+        import datetime
+
+        self._log = logger
+        self._name = name
+        self._level = level
+        self._ctx = context_kwargs
+        self._started = time.perf_counter()
+        self._ts_str = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
+
+    def stop(self, **result_kwargs) -> float:
+        """Emit a structured log line and return elapsed seconds."""
+        elapsed = time.perf_counter() - self._started
+        parts = [
+            f"name={self._name}",
+            f"started={self._ts_str}",
+            f"elapsed={elapsed:.6f}",
+        ]
+        for k, v in {**self._ctx, **result_kwargs}.items():
+            parts.append(f"{k}={v}")
+        self._log.log(self._level, " ".join(parts))
+        return elapsed
+
+
+def get_timer(
+    logger: logging.Logger,
+    name: str,
+    level: int = logging.DEBUG,
+    **context_kwargs,
+) -> TimerHandle:
+    """
+    Return a TimerHandle that starts immediately.
+
+    logger:          the logging.Logger to emit to
+    name:            timer name (e.g. "pe_chain.hypothesize")
+    level:           log level for the stop() call (default DEBUG)
+    context_kwargs:  key=value pairs included in every stop() line
+
+    Example:
+        timer = get_timer(log, "read_ticket", ticket=ticket_id)
+        # ... work ...
+        timer.stop(desc_len=len(desc))
+    """
+    return TimerHandle(logger, name, level, **context_kwargs)
+
+
 # ── Console handler ───────────────────────────────────────────────────────────
 
 
