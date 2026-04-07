@@ -508,3 +508,93 @@ def build_report(
 
     lines.append("═" * 54)
     return "\n".join(lines)
+
+
+# ── Cloud escape by category (T-cloud-escape-rate-metric) ────────────────────
+
+# Intent → category mapping for cloud escape reporting
+_INTENT_CATEGORY: dict[str, str] = {
+    "greeting": "greeting",
+    "status_check": "status",
+    "factual_question": "factual",
+    "knowledge_request": "factual",
+    "code_request": "code",
+    "code_edit": "code",
+    "programming": "code",
+    "code_question": "code",
+    "task": "code",
+    "planning": "design",
+    "architecture": "design",
+    "design": "design",
+}
+_CLOUD_TIERS = {"tier.3", "tier.3.5", "tier.4", "tier.5"}
+
+
+def _cloud_escape_by_category(days: int = 7) -> dict[str, dict]:
+    """
+    Scan turn_trace.YYYYMMDD.log files for the last `days` days.
+    Returns {category: {total, cloud, local, cloud_pct}} for each category.
+    Also returns an "_all" key for aggregate.
+    """
+    import json as _json
+    from datetime import datetime, timedelta, timezone
+
+    logs_dir = _LOGS_DIR
+    now = datetime.now(timezone.utc)
+    dates = [(now - timedelta(days=i)).strftime("%Y%m%d") for i in range(days)]
+
+    counts: dict[str, dict] = defaultdict(lambda: {"total": 0, "cloud": 0, "local": 0})
+
+    for date_str in dates:
+        log_path = logs_dir / f"turn_trace.{date_str}.log"
+        if not log_path.exists():
+            continue
+        try:
+            content = log_path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+
+        # Each block: === turn ... === followed by JSON
+        blocks = re.split(r"=== turn [^\n]+ ===[^\n]*\n", content)
+        for block in blocks:
+            # Extract up to closing === END ===
+            end_idx = block.find("=== END ===")
+            if end_idx >= 0:
+                block = block[:end_idx]
+            block = block.strip()
+            if not block:
+                continue
+            try:
+                data = _json.loads(block)
+            except _json.JSONDecodeError:
+                continue
+
+            intent = data.get("thalamus", {}).get("intent", "other") or "other"
+            tier = data.get("routing", {}).get("tier", "")
+            if not tier:
+                continue  # no routing = habit-only turn, skip
+
+            category = _INTENT_CATEGORY.get(intent, "other")
+            is_cloud = tier in _CLOUD_TIERS
+
+            counts[category]["total"] += 1
+            counts["_all"]["total"] += 1
+            if is_cloud:
+                counts[category]["cloud"] += 1
+                counts["_all"]["cloud"] += 1
+            else:
+                counts[category]["local"] += 1
+                counts["_all"]["local"] += 1
+
+    # Compute cloud_pct for each
+    result = {}
+    for cat, d in counts.items():
+        total = d["total"]
+        cloud = d["cloud"]
+        result[cat] = {
+            "total": total,
+            "cloud": cloud,
+            "local": d["local"],
+            "cloud_pct": round(cloud / total * 100, 1) if total > 0 else 0.0,
+        }
+    return result
