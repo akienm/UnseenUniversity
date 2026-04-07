@@ -256,17 +256,7 @@ def _extract_keywords(text: str) -> list:
 
 
 def _graph_weight_intent_hint(text: str, keywords: list) -> str | None:
-    """Stub hook for future graph-weight-based intent correction.
-
-    Future interface: accept an injected WordGraph instance, call
-    predict_next(text), map top-N predicted tokens to intent categories via
-    seeded edges (e.g. wg_edges("peers", "_intent_conversation") with high
-    weight). Return the winning category string, or None to fall through to
-    the lexical cascade below.
-
-    Currently returns None (no-op) — wire the word graph here once Thalamus
-    gains a constructor-injected WordGraph (follow-up L ticket).
-    """
+    """Stub — returns None until graph-weighted intent routing is wired. Never overrides."""
     return None
 
 
@@ -314,6 +304,21 @@ def _classify_intent(text: str, keywords: list) -> str:
     )
     if any(p in t for p in _peer_signals) and any(v in t for v in _vision_signals):
         return "conversation"
+    # Task class detection for routing
+    elif "recall" in t or any(word in t for word in ["memory", "recall", "what was"]):
+        return "recall"
+    elif "procedural" in t or any(
+        word in t for word in ["how to", "steps", "procedure", "process", "method"]
+    ):
+        return "procedural"
+    elif "reasoning" in t or any(
+        word in t for word in ["why", "reason", "logic", "explain"]
+    ):
+        return "reasoning"
+    elif "code" in t or any(
+        word in t for word in ["program", "function", "script", "debug", "coding"]
+    ):
+        return "code_task"
 
     if t.startswith("/"):
         return "command"

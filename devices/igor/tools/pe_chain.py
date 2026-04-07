@@ -944,7 +944,7 @@ def pe_store_observe_results(basket: dict) -> dict:
 # ── HYPOTHESIZE ───────────────────────────────────────────────────────────────
 
 _HYPOTHESIZE_PROMPT = """\
-You are making a focused code change. Produce exactly one JSON object with "file", "old_string", and "new_string" keys. Do not include anything else outside the JSON. Do not produce <tool_response> blocks, do not narrate, do not simulate tool output.
+You are making a focused code change. Produce exactly one JSON object with an "edits" key that is a list of edit objects, each with "file", "old_string", and "new_string" keys. Do not include anything else outside the JSON. Do not produce <tool_response> blocks, do not narrate, do not simulate tool output.
 
 Ticket: {description}
 
@@ -953,25 +953,72 @@ Relevant code:
 
 Output a JSON object with exactly these fields:
 {{
-  "file": "<relative file path>",
-  "old_string": "<exact string to replace — must exist verbatim in the file>",
-  "new_string": "<replacement string>"
+  "edits": [
+    {{
+      "file": "<relative file path>",
+      "old_string": "<exact string to replace — must exist verbatim in the file>",
+      "new_string": "<replacement string>"
+    }}
+  ]
 }}
 
-Example of a correct edit:
+Example of a correct edit list:
 {{
-  "file": "sample.py",
-  "old_string": "def old_func():",
-  "new_string": "def new_func():"
+  "edits": [
+    {{
+      "file": "sample.py",
+      "old_string": "def old_func():",
+      "new_string": "def new_func():"
+    }},
+    {{
+      "file": "another.py",
+      "old_string": "print('old')",
+      "new_string": "print('new')"
+    }}
+  ]
 }}
 
 Rules:
-- old_string must appear verbatim in the code above
-- Make the smallest change that satisfies the ticket
-- Do not change anything outside the old_string → new_string replacement
+- Each old_string must appear verbatim in the code above
+- Make the smallest changes that satisfy the ticket
+- Do not change anything outside the old_string → new_string replacements
 - Do not add any extra text, narration, or tool responses
 
 JSON:"""
+
+
+def _get_coding_standards(max_rules: int = 6) -> str:
+    """
+    T-hypothesize-standards-injection: fetch coding rule narratives from CODING_STANDARDS_ROOT
+    children and return a compact block for injection into HYPOTHESIZE prompt.
+
+    Returns empty string on any failure (non-fatal — prompt still works without it).
+    Capped at max_rules to avoid overwhelming small models.
+    """
+    try:
+        from ..memory.cortex import Cortex as _Cortex
+
+        cortex = _Cortex(None)
+        with cortex._conn() as conn:
+            rows = conn.execute(
+                "SELECT m.narrative FROM memories m "
+                "JOIN interpretive_edges e ON e.to_id = m.id "
+                "WHERE e.from_id = 'CODING_STANDARDS_ROOT' "
+                "  AND e.direction = 'child' "
+                "ORDER BY m.id LIMIT %s",
+                [max_rules],
+            ).fetchall()
+        if not rows:
+            return ""
+        rules = [r["narrative"] for r in rows if r["narrative"]]
+        if not rules:
+            return ""
+        return "Coding standards to follow:\n" + "\n".join(
+            f"- {r[:200]}" for r in rules
+        )
+    except Exception as exc:
+        log.debug("_get_coding_standards: skipped — %s", exc)
+        return ""
 
 
 def _parse_hypothesis(raw: str) -> dict | None:
@@ -1080,12 +1127,26 @@ def pe_hypothesize(basket: dict) -> dict:
         log.info("HYPOTHESIZE: no actual — skipping tier.2 call")
         return basket
 
+    # T-hypothesize-standards-injection: prepend coding standards for file-write tasks
+    standards_block = _get_coding_standards()
+    standards_prefix = f"\n{standards_block}\n" if standards_block else ""
+
     prompt = _HYPOTHESIZE_PROMPT.format(
         description=description[:400],
         actual=actual[
             :4000
         ],  # cap to avoid overwhelming small model (4000 = ~120-line section)
     )
+    if standards_prefix:
+        # Insert standards after the first line (the role statement) so rules are visible
+        lines = prompt.split("\n", 1)
+        prompt = (
+            lines[0] + "\n" + standards_prefix + lines[1]
+            if len(lines) > 1
+            else prompt + standards_prefix
+        )
+        log.info(f"HYPOTHESIZE: standards injected ({len(standards_block)} chars)")
+
     log.info(f"HYPOTHESIZE: calling tier.2 prompt_len={len(prompt)}")
 
     raw = _call_tier2(prompt, temperature=0.2)
