@@ -94,6 +94,24 @@ class _EmergencySafeLogger:
                 file=sys.stderr,
             )
 
+    def get_timer(
+        self,
+        name: str,
+        level: int = logging.DEBUG,
+        **context_kwargs,
+    ):
+        """
+        Return a TimerHandle that starts immediately.
+
+        timer = self.log.get_timer("pe_chain.hypothesize", ticket="T-foo")
+        # ... work ...
+        timer.stop(result="ok", tokens=412)
+        # → logs: name=pe_chain.hypothesize started=... elapsed=X.XXXXXX ticket=T-foo result=ok tokens=412
+        """
+        from .logging_setup import get_timer as _get_timer
+
+        return _get_timer(self._logger, name, level, **context_kwargs)
+
 
 def get_logger(name: str) -> _EmergencySafeLogger:
     """

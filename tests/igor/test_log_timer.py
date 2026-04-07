@@ -59,6 +59,27 @@ def test_level_respected(caplog):
     assert any("name=info_op" in r.message for r in caplog.records)
 
 
+def test_igor_base_self_log_get_timer(caplog):
+    """self.log.get_timer() works from any IgorBase subclass."""
+    from wild_igor.igor.igor_base import IgorBase
+
+    class MyComponent(IgorBase):
+        def do_work(self):
+            timer = self.log.get_timer("mycomp.step", level=logging.INFO, job="x")
+            timer.stop(rows=7)
+
+    comp = MyComponent()
+    with caplog.at_level(logging.INFO):
+        comp.do_work()
+
+    assert any(
+        "name=mycomp.step" in r.message
+        and "job=x" in r.message
+        and "rows=7" in r.message
+        for r in caplog.records
+    )
+
+
 def test_elapsed_increases_with_sleep():
     from wild_igor.igor.logging_setup import get_timer
 
