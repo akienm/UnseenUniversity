@@ -87,6 +87,22 @@ def _ssh_run(ip: str, user: str, command: str, timeout: int = _SSH_TIMEOUT) -> s
         return f"[ssh error: {exc}]"
 
 
+# Windows Ollama is installed per-user (not in SSH PATH). Use full path via call operator.
+_WIN_OLLAMA_PATH = r"C:\Users\akien\AppData\Local\Programs\Ollama\ollama.exe"
+
+
+def _ollama_cmd(machine: dict, subcommand: str) -> str:
+    """
+    Return the shell command to run 'ollama <subcommand>' on the given machine.
+    Windows machines need the full path via PowerShell call operator (&).
+    Linux machines use 'ollama' from PATH.
+    """
+    os_type = machine.get("os", "linux").lower()
+    if os_type == "windows":
+        return f'& "{_WIN_OLLAMA_PATH}" {subcommand}'
+    return f"ollama {subcommand}"
+
+
 # ── Tool: ssh_exec ────────────────────────────────────────────────────────────
 
 
@@ -170,7 +186,8 @@ def _run_swarm_model_sync(ollama_model: str, ollama_model_batch: str = "", **_) 
     for m in machines:
         hostname = m["hostname"]
         for model in filter(None, [ollama_model, ollama_model_batch or ""]):
-            result = _ssh_exec(hostname, f"ollama pull {model}")
+            cmd = _ollama_cmd(m, f"pull {model}")
+            result = _ssh_exec(hostname, cmd)
             line = f"{hostname}/{model}: {result[:120]}"
             lines.append(line)
             log.info("[run_swarm_model_sync] %s", line)

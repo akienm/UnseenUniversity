@@ -113,6 +113,10 @@ class PathManager:
 
     @property
     def ssh_key(self) -> Path:
+        # Prefer ~/.ssh/igor_ed25519 (the real key); fall back to legacy path
+        ed25519 = Path.home() / ".ssh" / "igor_ed25519"
+        if ed25519.exists():
+            return ed25519
         return self._runtime / "local" / "igor_id_rsa"
 
     @property
