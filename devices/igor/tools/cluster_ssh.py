@@ -87,19 +87,45 @@ def _ssh_run(ip: str, user: str, command: str, timeout: int = _SSH_TIMEOUT) -> s
         return f"[ssh error: {exc}]"
 
 
-# Windows Ollama is installed per-user (not in SSH PATH). Use full path via call operator.
+# Windows Ollama is installed per-user (not in SSH PATH). Use full path via PS call operator.
 _WIN_OLLAMA_PATH = r"C:\Users\akien\AppData\Local\Programs\Ollama\ollama.exe"
+
+
+def _win_ps_encode(ps_script: str) -> str:
+    """
+    Encode a PowerShell script as a base64 EncodedCommand for safe SSH transmission.
+    Avoids all shell quoting issues — the encoded payload is opaque to cmd.exe.
+    Windows OpenSSH default shell is cmd.exe; this ensures PowerShell is always invoked.
+    """
+    import base64
+
+    encoded = base64.b64encode(ps_script.encode("utf-16-le")).decode("ascii")
+    return f"powershell -NoProfile -NonInteractive -EncodedCommand {encoded}"
+
+
+def _ssh_run_machine(m: dict, command: str, timeout: int = _SSH_TIMEOUT) -> str:
+    """
+    OS-aware SSH runner. Wraps Windows commands via PowerShell EncodedCommand so
+    callers never need to think about cmd.exe vs PowerShell quoting.
+    Linux commands are passed directly (SSH → bash).
+    """
+    ip = m.get("ip", "")
+    user = m.get("ssh_user", _DEFAULT_USER)
+    os_type = m.get("os", "linux").lower()
+    if os_type == "windows":
+        command = _win_ps_encode(command)
+    return _ssh_run(ip, user, command, timeout=timeout)
 
 
 def _ollama_cmd(machine: dict, subcommand: str) -> str:
     """
     Return the shell command to run 'ollama <subcommand>' on the given machine.
-    Windows machines need the full path via PowerShell call operator (&).
-    Linux machines use 'ollama' from PATH.
+    Returns PowerShell syntax for Windows (full path, single-quoted), bash for Linux.
+    The command is passed through _ssh_run_machine which handles OS-level encoding.
     """
     os_type = machine.get("os", "linux").lower()
     if os_type == "windows":
-        return f'& "{_WIN_OLLAMA_PATH}" {subcommand}'
+        return f"& '{_WIN_OLLAMA_PATH}' {subcommand}"
     return f"ollama {subcommand}"
 
 
@@ -127,11 +153,9 @@ def _ssh_exec(machine: str, command: str) -> str:
             f"Machine '{machine}' does not have SSH enabled yet. "
             f"Check machines.json — ssh:true is required."
         )
-    ip = m.get("ip")
-    user = m.get("ssh_user", _DEFAULT_USER)
-    if not ip:
+    if not m.get("ip"):
         return f"Machine '{machine}' has no IP address in machines.json."
-    return _ssh_run(ip, user, command)
+    return _ssh_run_machine(m, command)
 
 
 registry.register(
@@ -491,7 +515,7 @@ def get_cluster_loads(force_refresh: bool = False) -> dict[str, dict]:
 
         os_type = m.get("os", "linux").lower()
         load_cmd = _WINDOWS_LOAD_CMD if os_type == "windows" else _LOAD_CMD
-        raw = _ssh_run(ip, user, load_cmd, timeout=20)
+        raw = _ssh_run_machine(m, load_cmd, timeout=20)
 
         try:
             metrics = json.loads(raw.strip())
@@ -653,9 +677,12 @@ def _restart_ollama(machine: str = "") -> str:
         return f"Unknown machine '{machine}'."
     if not m.get("ssh"):
         return f"Machine '{machine}' has no SSH access — cannot restart remotely."
-    ip = m["ip"]
-    user = m.get("ssh_user", _DEFAULT_USER)
-    out = _ssh_run(ip, user, "sudo systemctl restart ollama.service", timeout=30)
+    os_type = m.get("os", "linux").lower()
+    if os_type == "windows":
+        restart_cmd = "Stop-Process -Name ollama -Force -ErrorAction SilentlyContinue; Start-Sleep 2; Start-Process -WindowStyle Hidden -FilePath 'C:\\Users\\akien\\AppData\\Local\\Programs\\Ollama\\ollama.exe'"
+    else:
+        restart_cmd = "sudo systemctl restart ollama.service"
+    out = _ssh_run_machine(m, restart_cmd, timeout=30)
     if any(tag in out for tag in ("[exit", "[timeout", "[ssh error")):
         return f"Remote restart of {machine} failed: {out}"
     _time.sleep(5)
@@ -688,6 +715,208 @@ registry.register(
             "required": [],
         },
         fn=_restart_ollama,
+    )
+)
+
+
+# ── Tool: ollama_list ────────────────────────────────────────────────────────
+
+
+def _ollama_list(machine: str = "") -> str:
+    """
+    List Ollama models on one machine or all cluster machines.
+    Uses the Ollama HTTP API — no SSH or PATH issues.
+
+    machine: hostname to query, or "" for all online machines.
+    """
+    targets = [
+        m for m in _load_machines() if m.get("ip") and m.get("status") == "online"
+    ]
+    if machine:
+        targets = [
+            m for m in targets if m["hostname"] == machine or m.get("ip") == machine
+        ]
+        if not targets:
+            return f"Unknown machine '{machine}'."
+
+    lines = []
+    for m in targets:
+        host = m["hostname"]
+        ip = m["ip"]
+        port = m.get("ollama_port", 11434)
+        models = _ollama_models(ip, port)
+        if models is None:
+            lines.append(f"  {host}: Ollama unreachable (is it running?)")
+        elif not models:
+            lines.append(f"  {host}: no models installed")
+        else:
+            lines.append(f"  {host}: {', '.join(models)}")
+    return "Ollama models:\n" + "\n".join(lines) if lines else "No machines found."
+
+
+registry.register(
+    Tool(
+        name="ollama_list",
+        description=(
+            "List Ollama models installed on one or all cluster machines. "
+            "Uses HTTP API — works on Linux and Windows without SSH PATH issues. "
+            "Leave machine empty to list all online machines."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "machine": {
+                    "type": "string",
+                    "description": "Hostname to query (leave empty for all machines)",
+                },
+            },
+            "required": [],
+        },
+        fn=lambda machine="", **_: _ollama_list(machine),
+    )
+)
+
+
+# ── Tool: ollama_pull ────────────────────────────────────────────────────────
+
+
+def _ollama_pull(model: str, machine: str = "") -> str:
+    """
+    Pull an Ollama model on one machine or all SSH-capable machines.
+
+    model:   Ollama model name (e.g. 'qwen2.5:7b', 'deepseek-r1:7b')
+    machine: hostname to target, or "" for all SSH-capable online machines.
+    """
+    if machine:
+        m = _machine_by_name(machine)
+        if m is None:
+            return f"Unknown machine '{machine}'."
+        if not m.get("ssh"):
+            return f"Machine '{machine}' has no SSH access."
+        if not m.get("ip"):
+            return f"Machine '{machine}' has no IP in machines.json."
+        cmd = _ollama_cmd(m, f"pull {model}")
+        result = _ssh_run_machine(m, cmd, timeout=600)
+        return f"{machine}: {result[:200]}"
+
+    # All SSH-capable online machines
+    machines = [
+        m
+        for m in _load_machines()
+        if m.get("ssh") and m.get("ip") and m.get("status") == "online"
+    ]
+    if not machines:
+        return "No SSH-capable online machines configured."
+    lines = []
+    for m in machines:
+        host = m["hostname"]
+        cmd = _ollama_cmd(m, f"pull {model}")
+        result = _ssh_run_machine(m, cmd, timeout=600)
+        lines.append(f"  {host}: {result[:200]}")
+    return f"ollama pull {model}:\n" + "\n".join(lines)
+
+
+registry.register(
+    Tool(
+        name="ollama_pull",
+        description=(
+            "Pull an Ollama model on one cluster machine or all SSH-capable machines. "
+            "Handles Windows and Linux path differences automatically. "
+            "Leave machine empty to pull on all online SSH-capable machines."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "model": {
+                    "type": "string",
+                    "description": "Ollama model name to pull (e.g. 'qwen2.5:7b')",
+                },
+                "machine": {
+                    "type": "string",
+                    "description": "Target hostname (leave empty for all machines)",
+                },
+            },
+            "required": ["model"],
+        },
+        fn=lambda model, machine="", **_: _ollama_pull(model, machine),
+    )
+)
+
+
+# ── Tool: set_powershell_default ─────────────────────────────────────────────
+
+
+def _set_powershell_default(machine: str = "") -> str:
+    """
+    Set PowerShell as the default SSH shell on Windows machines via registry.
+    Requires the SSH user to be an administrator (igor_wild_0001 is admin).
+    Prefers PowerShell 7 (pwsh.exe) if installed, falls back to PS 5.1.
+
+    This is a one-time setup per machine. After this, SSH sessions open
+    directly in PowerShell and the _win_ps_encode wrapper is still used
+    (belt-and-suspenders — it never hurts to encode).
+
+    machine: hostname to configure, or "" for all Windows online SSH machines.
+    """
+    _PS7_PATH = r"C:\Program Files\PowerShell\7\pwsh.exe"
+    _PS5_PATH = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+    _REG_CMD = (
+        f"$ps7 = '{_PS7_PATH}';"
+        f" $ps5 = '{_PS5_PATH}';"
+        " $shell = if (Test-Path $ps7) { $ps7 } else { $ps5 };"
+        " New-Item -Path 'HKLM:\\SOFTWARE\\OpenSSH' -Force | Out-Null;"
+        " New-ItemProperty -Path 'HKLM:\\SOFTWARE\\OpenSSH' -Name 'DefaultShell'"
+        " -Value $shell -PropertyType String -Force | Out-Null;"
+        ' Write-Output "DefaultShell set to: $shell"'
+    )
+
+    targets = [
+        m
+        for m in _load_machines()
+        if m.get("os", "linux").lower() == "windows"
+        and m.get("ssh")
+        and m.get("ip")
+        and m.get("status") == "online"
+    ]
+    if machine:
+        targets = [
+            m for m in targets if m["hostname"] == machine or m.get("ip") == machine
+        ]
+        if not targets:
+            return f"Machine '{machine}' not found or not a Windows SSH machine."
+
+    if not targets:
+        return "No online Windows SSH machines to configure."
+
+    lines = []
+    for m in targets:
+        host = m["hostname"]
+        result = _ssh_run_machine(m, _REG_CMD, timeout=20)
+        lines.append(f"  {host}: {result[:200]}")
+    return "set_powershell_default results:\n" + "\n".join(lines)
+
+
+registry.register(
+    Tool(
+        name="set_powershell_default",
+        description=(
+            "Set PowerShell as the default SSH shell on Windows cluster machines via registry. "
+            "Requires admin rights (igor_wild_0001 is admin). "
+            "Prefers PowerShell 7 (pwsh.exe), falls back to PS 5.1. "
+            "One-time setup per machine — makes all future SSH sessions cleaner. "
+            "Leave machine empty to configure all online Windows SSH machines."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "machine": {
+                    "type": "string",
+                    "description": "Hostname to configure (leave empty for all Windows machines)",
+                },
+            },
+            "required": [],
+        },
+        fn=lambda machine="", **_: _set_powershell_default(machine),
     )
 )
 
@@ -754,7 +983,7 @@ def ssh_exec_all(
         user = m.get("ssh_user", _DEFAULT_USER)
         os_type = m.get("os", "linux").lower()
         cmd = windows_cmd if os_type == "windows" else linux_cmd
-        return host, _ssh_run(ip, user, cmd, timeout=timeout)
+        return host, _ssh_run_machine(m, cmd, timeout=timeout)
 
     results: dict[str, str] = {}
     with ThreadPoolExecutor(max_workers=3) as pool:
