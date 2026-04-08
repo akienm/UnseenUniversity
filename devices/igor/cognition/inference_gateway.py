@@ -1156,3 +1156,182 @@ def is_local_inference_available() -> bool:
         return _try_restart_local_ollama()
     except Exception:
         return False
+
+
+# ── D330: TWM-view tiered context builder ─────────────────────────────────────
+
+
+def build_twm_context(
+    cortex,
+    tier: str = "tier.2",
+    thread_id: str | None = None,
+    relevant_memories: list | None = None,
+) -> str:
+    """
+    D330: Build LLM context as a TWM simulation.
+
+    The LLM sees what Igor sees — not a dump of everything, but a tiered
+    view that mirrors Igor's current attention state.
+
+    Tiers:
+      tier.1       — not called (habit dispatch, no LLM)
+      tier.2       — TWM snapshot only (minimal, fast)
+      tier.3/3.5   — TWM snapshot + relevant memories
+      tier.4       — TWM + memories + ring context + thread arc (full view)
+
+    All output is prose (D330 finding: prose saves 7% tokens + better quality).
+    Returns a context string to prepend/append to user input.
+    """
+    sections = []
+
+    # ── Layer 1: TWM snapshot (always included) ──────────────────────────
+    twm_block = _render_twm_snapshot(cortex, thread_id)
+    if twm_block:
+        sections.append(twm_block)
+
+    # ── Layer 2: Relevant memories (tier.3+) ─────────────────────────────
+    if tier not in ("tier.1", "tier.2") and relevant_memories:
+        mem_block = _render_memories_prose(relevant_memories)
+        if mem_block:
+            sections.append(mem_block)
+
+    # ── Layer 3: Ring context + thread arc (tier.4 only) ─────────────────
+    if tier in ("tier.4", "tier.5"):
+        ring_block = _render_ring_context(cortex, thread_id)
+        if ring_block:
+            sections.append(ring_block)
+
+    return "\n\n".join(sections)
+
+
+def _render_twm_snapshot(cortex, thread_id: str | None = None) -> str:
+    """Render current TWM observations as prose."""
+    try:
+        twm_obs = cortex.twm_read(
+            limit=10, include_integrated=False, thread_id=thread_id
+        )
+        if not twm_obs:
+            return ""
+
+        lines = ["Current attention (what I'm focused on right now):"]
+
+        # Task sets first (active goals)
+        tasks = [o for o in twm_obs if o.get("category") == "task_set"]
+        for t in tasks:
+            goal = t["content_csb"].replace("TASK_SET|", "").strip()
+            lines.append(f"- ACTIVE TASK: {goal[:200]}")
+
+        # Urgent observations
+        urgent = [
+            o
+            for o in twm_obs
+            if o.get("urgency", 0) >= 0.7
+            and o.get("category") != "task_set"
+            and o.get("source") not in ("narrative_engine", "ne_loop_guard")
+        ]
+        for o in sorted(urgent, key=lambda x: x.get("urgency", 0), reverse=True)[:3]:
+            content = o["content_csb"].replace("|", " — ")
+            lines.append(
+                f"- URGENT (urgency {o.get('urgency', 0):.1f}): {content[:150]}"
+            )
+
+        # Regular observations by salience
+        regular = [
+            o
+            for o in twm_obs
+            if o.get("category") != "task_set" and o.get("urgency", 0) < 0.7
+        ]
+        for o in sorted(
+            regular,
+            key=lambda x: float(x.get("salience", 0))
+            * (1 + float(x.get("attractor_weight", 0))),
+            reverse=True,
+        )[:5]:
+            sal = float(o.get("salience", 0))
+            content = o["content_csb"].replace("|", " — ")
+            lines.append(f"- {content[:150]} (salience: {sal:.1f})")
+
+        return "\n".join(lines)
+    except Exception:
+        return ""
+
+
+def _render_memories_prose(memories: list) -> str:
+    """Render relevant memories as prose (D330: prose > CSB for LLMs)."""
+    if not memories:
+        return ""
+    lines = ["Relevant memories:"]
+    for m in memories[:8]:
+        narrative = m.narrative if hasattr(m, "narrative") else str(m)
+        mem_type = m.memory_type.value if hasattr(m, "memory_type") else "unknown"
+        mem_id = m.id if hasattr(m, "id") else ""
+        lines.append(f"- [{mem_type}] {mem_id}: {narrative[:200]}")
+    return "\n".join(lines)
+
+
+def _render_ring_context(cortex, thread_id: str | None = None) -> str:
+    """Render recent ring memory as prose for tier.4 full context."""
+    try:
+        from .reasoners.base import (
+            _RING_EXCLUDE,
+            _RING_CONTEXT_LIMIT,
+            _RING_CONTEXT_MAX_AGE_HOURS,
+        )
+        from datetime import datetime, date
+
+        all_entries = cortex.read_ring_memory(limit=50, thread_id=thread_id)
+
+        # Age filter
+        cutoff = datetime.now().timestamp() - _RING_CONTEXT_MAX_AGE_HOURS * 3600
+        entries = [
+            e
+            for e in all_entries
+            if e["category"] not in _RING_EXCLUDE
+            and datetime.fromisoformat(e["timestamp"]).timestamp() >= cutoff
+        ][-_RING_CONTEXT_LIMIT:]
+
+        if not entries:
+            return ""
+
+        today = date.today().isoformat()
+
+        def _ts(raw: str) -> str:
+            if len(raw) < 10:
+                return raw
+            return raw[11:16] if raw[:10] == today else raw[:16]
+
+        # Check for NE narrative anchor (last 10 min)
+        narratives = cortex.read_ring_memory(
+            limit=5, category="narrative", thread_id=thread_id
+        )
+        anchor = None
+        if narratives:
+            latest = narratives[-1]
+            age = (
+                datetime.now() - datetime.fromisoformat(latest["timestamp"])
+            ).total_seconds()
+            if age <= 600:
+                arc = latest["content"]
+                if arc.startswith("[NE#"):
+                    arc = arc[arc.find("] ") + 2 :] if "] " in arc else arc
+                anchor = arc[:240]
+
+        lines = []
+        if anchor:
+            lines.append(f"Thread arc: {anchor}")
+            # Only show entries after the anchor
+            delta = [
+                e for e in entries if e["timestamp"] > narratives[-1]["timestamp"]
+            ][-5:]
+            if delta:
+                lines.append("Recent context (since last arc):")
+                for e in delta:
+                    lines.append(f"  [{_ts(e['timestamp'])}] {e['content']}")
+        else:
+            lines.append("Recent session context (newest last):")
+            for e in entries:
+                lines.append(f"  [{_ts(e['timestamp'])}] {e['content']}")
+
+        return "\n".join(lines)
+    except Exception:
+        return ""
