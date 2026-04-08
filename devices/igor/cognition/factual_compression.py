@@ -244,7 +244,7 @@ def _synthesize(cluster: list[Memory]) -> Optional[dict]:
 
     try:
         import ollama as _ollama
-        from .cluster_router import route as _route
+        from .inference_ollama import route as _route
 
         _host, _model = _route("extraction")
         if not _host:

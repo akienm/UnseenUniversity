@@ -766,16 +766,19 @@ def validate_against_core(response: str, cortex: Cortex) -> tuple[bool, str]:
     """
     Semantic ethics gate: does this response violate CP1-CP6? (change.27)
 
-    Uses claude-haiku — reliable enough for ethical reasoning, cheap enough
-    to run on every response. Fails open: API errors return (True, "skipped")
+    D329: Routes through OpenRouter (haiku) — no Anthropic direct.
+    Fails open: API errors return (True, "skipped")
     so the reasoning loop is never blocked by validation failures.
 
     Returns (passes, explanation). Caller logs violations to ring(ethics_gate).
     """
-    try:
-        import anthropic as _anthropic
-    except ImportError:
-        return True, "anthropic not available"
+    import os as _os
+    import json as _json
+    import urllib.request as _urllib_request
+
+    _or_key = _os.getenv("OPENROUTER_API_KEY")
+    if not _or_key:
+        return True, "no OR key — validation skipped"
 
     core = get_core_patterns(cortex)
     if not core:
@@ -798,13 +801,24 @@ PASS: <one sentence>
 FAIL: <which pattern ID> | <one sentence explanation>"""
 
     try:
-        client = _anthropic.Anthropic()
-        msg = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=200,
-            messages=[{"role": "user", "content": prompt}],
+        body = _json.dumps(
+            {
+                "model": "anthropic/claude-haiku-4-5-20251001",
+                "max_tokens": 200,
+                "messages": [{"role": "user", "content": prompt}],
+            }
+        ).encode()
+        req = _urllib_request.Request(
+            "https://openrouter.ai/api/v1/chat/completions",
+            data=body,
+            headers={
+                "Authorization": f"Bearer {_or_key}",
+                "Content-Type": "application/json",
+            },
         )
-        text = msg.content[0].text.strip()
+        with _urllib_request.urlopen(req, timeout=15) as resp:
+            data = _json.loads(resp.read())
+        text = data["choices"][0]["message"]["content"].strip()
         if text.upper().startswith("FAIL"):
             explanation = text[4:].lstrip(":").strip()
             return False, explanation

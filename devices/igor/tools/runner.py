@@ -34,7 +34,7 @@ DEFAULT_TIMEOUT = 30  # seconds
 
 import time
 from datetime import datetime
-from ..cognition.reasoners.ollama_reasoner import (
+from ..cognition.inference_ollama import (
     OllamaReasoner,
     OLLAMA_LOCAL_MODEL,
     OLLAMA_HOST,
@@ -529,7 +529,7 @@ registry.register(
 def cluster_status(**_kwargs) -> str:
     """Return current cluster router state — which machines are up, their load scores."""
     try:
-        from ..cognition.cluster_router import router as _router
+        from ..cognition.inference_ollama import router as _router
 
         _router.force_refresh()
         lines = _router.status_lines()
@@ -544,7 +544,7 @@ def set_inference_override(machine: str = "", **_kwargs) -> str:
     Pass machine="" or machine="auto" to clear the override and resume dynamic routing.
     """
     try:
-        from ..cognition.cluster_router import router as _router
+        from ..cognition.inference_ollama import router as _router
 
         if not machine or machine.lower() == "auto":
             _router.clear_override()
