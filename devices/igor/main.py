@@ -8742,6 +8742,16 @@ class Igor(IgorBase):
         )
         console.print(f"[dim]{_cts()}Memories persisted. See you next time.[/]")
 
+        # Flush igor modules from sys.modules so /restart (exit code 42)
+        # picks up source changes without a full process kill.
+        _stale = [
+            k
+            for k in sys.modules
+            if k.startswith("igor.") or k.startswith("wild_igor.")
+        ]
+        for k in _stale:
+            del sys.modules[k]
+
 
 _ID_CHARS = "23456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"  # base 34, no 0/1/l/O confusion
 
