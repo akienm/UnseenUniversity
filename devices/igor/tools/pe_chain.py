@@ -1695,7 +1695,7 @@ def _pe_close(basket: dict) -> dict:
 
 
 def _pe_escalate(basket: dict, reason: str) -> dict:
-    """ESCALATE: post blocked status to channel, mark ticket blocked, close goal."""
+    """D331: ESCALATE — compose design proposal for HIGH inertia, or block for other reasons."""
     ticket_id = basket.get("ticket_id", "unknown")
 
     # Recover ticket_id from active GOAL if basket lost it
@@ -1712,17 +1712,36 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
     basket["escalate_reason"] = reason
     log.info(f"ESCALATE: {ticket_id} — {reason}")
 
-    _post_to_channel(
-        f"[pe_chain] ✗ {ticket_id}: blocked after {basket.get('attempt_count', 0)} attempts. "
-        f"Reason: {reason}. Needs human review."
-    )
-
-    # Mark ticket blocked
-    if ticket_id and ticket_id != "unknown":
+    # D331: HIGH inertia → propose for approval instead of blocking
+    is_high_inertia = "HIGH inertia" in reason
+    if is_high_inertia and ticket_id and ticket_id != "unknown":
+        # Compose a design proposal from the basket
+        plan = basket.get("plan_summary", "")
+        hypothesis = basket.get("hypothesis", {})
+        target_file = hypothesis.get("file", "") if isinstance(hypothesis, dict) else ""
+        proposal = (
+            f"Igor wants to edit {target_file} (HIGH inertia). "
+            f"Plan: {plan[:200]}. "
+            f"Reason: {reason[:100]}"
+        )
+        _post_to_channel(
+            f"[DESIGN PROPOSAL] {ticket_id}: {proposal[:250]}. "
+            f"Awaiting CC approval — run: cc_queue.py approve {ticket_id}"
+        )
         _run_bash(
-            ["python3", str(_CC_QUEUE), "block", ticket_id, reason[:120]],
+            ["python3", str(_CC_QUEUE), "propose", ticket_id, proposal[:300]],
             timeout=15,
         )
+    else:
+        _post_to_channel(
+            f"[pe_chain] ✗ {ticket_id}: blocked after {basket.get('attempt_count', 0)} attempts. "
+            f"Reason: {reason}. Needs human review."
+        )
+        if ticket_id and ticket_id != "unknown":
+            _run_bash(
+                ["python3", str(_CC_QUEUE), "block", ticket_id, reason[:120]],
+                timeout=15,
+            )
 
     # Close the active GOAL so the habit does not re-trigger the chain
     try:
