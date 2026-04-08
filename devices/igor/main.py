@@ -24,7 +24,7 @@ from rich.live import Live
 from rich.spinner import Spinner
 from rich.traceback import install as _install_rich_tb
 
-_install_rich_tb(show_locals=False, width=120)
+_install_rich_tb(show_locals=False, width=120, console=Console(stderr=True))
 
 from .igor_base import IgorBase
 from .memory.models import Memory, MemoryType
@@ -8774,11 +8774,10 @@ def main():
     env_path = Path(__file__).parent.parent / ".env"
     load_dotenv(env_path)
 
-    if not os.getenv("ANTHROPIC_API_KEY") and not os.getenv("ANTHROPIC_AUTH_TOKEN"):
+    if not os.getenv("OPENROUTER_API_KEY", "").strip():
         loginfo(
-            "[red]Error: ANTHROPIC_API_KEY or ANTHROPIC_AUTH_TOKEN not set. Create a .env file.[/]"
+            "[yellow]Warning: OPENROUTER_API_KEY not set locally — expecting DB-provided key at runtime.[/]"
         )
-        sys.exit(1)
 
     parser = argparse.ArgumentParser(description="Igor - Wild Instance")
     parser.add_argument(
