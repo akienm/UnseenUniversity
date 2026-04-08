@@ -54,7 +54,9 @@ def _make_llm():
         raise RuntimeError(
             "OPENROUTER_API_KEY not set — browser_use requires OpenRouter"
         )
-    model = os.getenv("BROWSER_USE_MODEL", "openai/gpt-4o-mini")
+    from ..cognition.inference_openrouter import OR_CHEAP_MODEL
+
+    model = os.getenv("BROWSER_USE_MODEL", OR_CHEAP_MODEL)
     return ChatOpenRouter(model=model, api_key=or_key)
 
 
@@ -555,7 +557,9 @@ async def _read_kindle_chunk_impl(
                     await reader.click()
                     await page.wait_for_timeout(500)
             except Exception as e:
-                log_error(kind="TOOL_FAIL", detail=f"reader focus click failed: {e}")  # non-fatal
+                log_error(
+                    kind="TOOL_FAIL", detail=f"reader focus click failed: {e}"
+                )  # non-fatal
 
             # ── Navigate to start_page ─────────────────────────────────────────
             if start_page <= 1:

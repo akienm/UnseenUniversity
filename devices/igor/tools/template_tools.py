@@ -345,7 +345,9 @@ def validate_template_schema(template_json: str) -> str:
 def _cheap_model() -> str:
     global _CHEAP_MODEL
     if _CHEAP_MODEL is None:
-        _CHEAP_MODEL = os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
+        from ..cognition.inference_openrouter import OR_CHEAP_MODEL
+
+        _CHEAP_MODEL = OR_CHEAP_MODEL
     return _CHEAP_MODEL
 
 

@@ -414,10 +414,9 @@ def print_habit_trigger(habit):
 def print_reasoning(used_api: bool, skip_to: str = "", reason: str = ""):
     if used_api:
         _tier_label = {
-            "tier.3": "tier.3/gpt-4o-mini",
-            "tier.3.5": "tier.3.5/haiku",
-            "tier.4": "tier.4/sonnet",
-            "tier.5": "tier.5/anthropic-direct",
+            "tier.3": "tier.3/cheap",
+            "tier.3.5": "tier.3.5/interactive",
+            "tier.4": "tier.4/reasoning",
         }.get(skip_to, skip_to or "upstream")
         _why = f" ({reason})" if reason else ""
         console.print(f"[dim][PREFRONTAL] reply → {_tier_label}{_why}...[/]")

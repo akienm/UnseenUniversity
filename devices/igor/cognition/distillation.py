@@ -245,8 +245,10 @@ def _call_local_llm(prompt: str) -> Optional[dict]:
 
         _host, _model = _route("extraction")
         if not _host:
-            _host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-            _model = os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b")
+            from .inference_ollama import OLLAMA_HOST, OLLAMA_LOCAL_MODEL
+
+            _host = OLLAMA_HOST
+            _model = OLLAMA_LOCAL_MODEL
         _client = _ollama.Client(host=_host)
         response = _client.chat(
             model=_model,
