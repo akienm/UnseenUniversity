@@ -29,7 +29,8 @@ from .registry import Tool, registry
 
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 OPENROUTER_REFERER = "https://github.com/akienm/TheIgors"
-from ..cognition.inference_openrouter import OR_CHEAP_MODEL as _DEFAULT_MODEL
+# Read env directly to avoid circular import (tools → inference_openrouter → tools)
+_DEFAULT_MODEL = os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
 
 _SUPPORTED = {"EN", "CSB", "DSB"}
 _DEFAULT_CHUNK = 3000  # chars; ~750 tokens, safe margin for gpt-4o-mini 128k
