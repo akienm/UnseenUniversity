@@ -37,8 +37,8 @@ from .brainstem.core_patterns import (
 from .cognition import thalamus
 from .cognition import prefrontal_cortex as pfc
 
-# AnthropicReasoner moved to InferenceGateway.from_env() — not imported directly here
-from .cognition.reasoners.ollama_reasoner import (
+# D327: inference imports via canonical modules
+from .cognition.inference_ollama import (
     preparse,
     parse_preparse_csb,
     _rule_based_csb,
@@ -46,7 +46,7 @@ from .cognition.reasoners.ollama_reasoner import (
 from .cognition.inference_gateway import (
     is_local_inference_available as _local_inference_ok,
 )
-from .cognition.reasoners.openrouter_reasoner import preparse_via_openrouter
+from .cognition.inference_openrouter import preparse_via_openrouter
 from .cognition.forensic_logger import log_tier_selection, cts as _cts, log_error
 from .cognition.system_prompt import build_boot_message, invalidate_cache
 
@@ -3415,7 +3415,7 @@ class Igor(IgorBase):
         # accumulated thread history. Memory search keeps full user_input for relevance.
         _preparse_input = parsed.core_input
 
-        from .cognition.reasoners.ollama_reasoner import (
+        from .cognition.inference_ollama import (
             _PREPARSE_PROMPT,
             _rule_based_csb,
         )
@@ -6373,7 +6373,7 @@ class Igor(IgorBase):
         Called at most once per session (guarded by _context_flush_done).
         Does NOT restart Igor — that remains the user's choice via /compress.
         """
-        from .cognition.reasoners.ollama_reasoner import summarize_session
+        from .cognition.inference_ollama import summarize_session
 
         ring_entries = self.cortex.read_ring_memory(limit=50)
         if not ring_entries:
@@ -8074,7 +8074,7 @@ class Igor(IgorBase):
             )
             return
         try:
-            from .cognition.reasoners.openrouter_reasoner import OpenRouterReasoner
+            from .cognition.inference_openrouter import OpenRouterReasoner
 
             r = OpenRouterReasoner(model=model, show_model_tag=self._cloud_tag_on)
             name = model.split("/")[-1]
@@ -8164,7 +8164,7 @@ class Igor(IgorBase):
             r = reasoners[short]
         elif os.getenv("OPENROUTER_API_KEY", "").strip():
             try:
-                from .cognition.reasoners.openrouter_reasoner import OpenRouterReasoner
+                from .cognition.inference_openrouter import OpenRouterReasoner
 
                 r = OpenRouterReasoner(model=model, show_model_tag=False)
             except Exception as e:
@@ -8266,7 +8266,7 @@ class Igor(IgorBase):
             )
 
     def _cmd_model(self, raw):
-        from .cognition.reasoners.anthropic import MODEL_ALIASES
+        from .cognition.inference_openrouter import MODEL_ALIASES
 
         parts = raw.strip().split(None, 1)
         if len(parts) < 2:
@@ -8289,7 +8289,7 @@ class Igor(IgorBase):
 
     def _cmd_compress(self, _):
         """Summarize session ring memory to LTM via Ollama, then restart fresh."""
-        from .cognition.reasoners.ollama_reasoner import summarize_session
+        from .cognition.inference_ollama import summarize_session
         from .memory.models import Memory, MemoryType
 
         loginfo("[cyan]Compressing session context via Ollama...[/]")

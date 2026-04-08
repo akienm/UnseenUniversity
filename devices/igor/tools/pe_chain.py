@@ -333,7 +333,7 @@ def _call_tier2(prompt: str, timeout: int = 0, temperature: float = 0.1) -> str 
         return _call_cloud_programming(prompt, temperature=temperature)
 
     try:
-        from ..cognition.cluster_router import route as _route
+        from ..cognition.inference_ollama import route as _route
 
         host, model = _route("batch")
     except Exception:
@@ -1695,6 +1695,18 @@ def _pe_close(basket: dict) -> dict:
 def _pe_escalate(basket: dict, reason: str) -> dict:
     """ESCALATE: post blocked status to channel, mark ticket blocked, close goal."""
     ticket_id = basket.get("ticket_id", "unknown")
+
+    # Recover ticket_id from active GOAL if basket lost it
+    if ticket_id == "unknown":
+        goal = _get_active_goal()
+        if goal:
+            task = goal.metadata.get("source_message", goal.narrative[:120])
+            recovered = _extract_ticket_id(task)
+            if recovered:
+                ticket_id = recovered
+                basket["ticket_id"] = ticket_id
+                log.info(f"ESCALATE: recovered ticket_id={ticket_id} from active GOAL")
+
     basket["escalate_reason"] = reason
     log.info(f"ESCALATE: {ticket_id} — {reason}")
 

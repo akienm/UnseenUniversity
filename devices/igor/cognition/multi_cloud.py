@@ -25,7 +25,12 @@ def query_multiple(
     results = []
     for name, reasoner in reasoners.items():
         try:
-            kwargs = {"cortex": cortex} if hasattr(reasoner.reason, "__code__") and "cortex" in reasoner.reason.__code__.co_varnames else {}
+            kwargs = (
+                {"cortex": cortex}
+                if hasattr(reasoner.reason, "__code__")
+                and "cortex" in reasoner.reason.__code__.co_varnames
+                else {}
+            )
             text, cost = reasoner.reason(
                 user_input, relevant_memories, core_patterns, instance_id, **kwargs
             )
@@ -54,7 +59,8 @@ def compare_responses(responses: list[tuple[str, str, float]]) -> str:
     # Try Ollama synthesis (local inference)
     try:
         import ollama as _ollama
-        from .reasoners.ollama_reasoner import OLLAMA_LOCAL_MODEL
+        from .inference_ollama import OLLAMA_LOCAL_MODEL
+
         prompt_parts = [
             "Compare these AI responses to the same question. "
             "Identify: (1) what they agree on, (2) key differences, (3) which is most useful. "
@@ -68,7 +74,11 @@ def compare_responses(responses: list[tuple[str, str, float]]) -> str:
             messages=[{"role": "user", "content": prompt}],
             options={"temperature": 0.2, "num_predict": 200},
         )
-        synthesis = (resp["message"]["content"] if isinstance(resp, dict) else resp.message.content).strip()
+        synthesis = (
+            resp["message"]["content"]
+            if isinstance(resp, dict)
+            else resp.message.content
+        ).strip()
         return plain + f"\n\n── Synthesis (local inference) ──\n{synthesis}"
     except Exception:
         return plain

@@ -34,7 +34,10 @@ def reason(
     If no reasoner is provided, uses Anthropic by default.
     """
     if reasoner is None:
-        from .reasoners.anthropic import AnthropicReasoner
-        reasoner = AnthropicReasoner()
+        from .inference_openrouter import OpenRouterReasoner
 
-    return reasoner.reason(user_input, relevant_memories, core_patterns, instance_id, cortex=cortex)
+        reasoner = OpenRouterReasoner()
+
+    return reasoner.reason(
+        user_input, relevant_memories, core_patterns, instance_id, cortex=cortex
+    )

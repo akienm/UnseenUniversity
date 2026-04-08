@@ -62,12 +62,10 @@ Format as bullet points. Be specific. Max 200 words total. If nothing significan
 """
 
 
-
-
 def _call_ollama(prompt: str) -> Optional[str]:
     """Call Ollama tier.2 for learning extraction. Returns None on failure."""
     try:
-        from ..cognition.cluster_router import route as _route
+        from ..cognition.inference_ollama import route as _route
 
         host, model = _route("tier2")
     except Exception:
@@ -262,14 +260,18 @@ def run_after_action_review(
             learning = _call_ollama(prompt)
 
             if learning and learning.strip().upper() == "SKIP":
-                logger.info(f"SKIP: turn={turn['turn_id'][:8]} (Ollama: nothing significant)")
+                logger.info(
+                    f"SKIP: turn={turn['turn_id'][:8]} (Ollama: nothing significant)"
+                )
                 skipped += 1
                 continue
 
             if not learning:
                 # Ollama unavailable — fall back to raw Q&A deposit
                 learning = f"Q: {turn['user_input'][:400]}\nA: {turn['response'][:400]}"
-                logger.info(f"FALLBACK: turn={turn['turn_id'][:8]} (Ollama unavailable)")
+                logger.info(
+                    f"FALLBACK: turn={turn['turn_id'][:8]} (Ollama unavailable)"
+                )
 
             mem_id = _deposit_learning(conn, turn["turn_id"], turn["author"], learning)
             deposited += 1

@@ -255,7 +255,7 @@ class InferenceGateway(IgorBase):
 
         # Tier 2: local Ollama (interactive fallback + background impulse)
         try:
-            from .reasoners.ollama_reasoner import OllamaReasoner as _OR
+            from .inference_ollama import OllamaReasoner as _OR
 
             gw._t2 = _OR(
                 model=os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b"),
@@ -272,7 +272,7 @@ class InferenceGateway(IgorBase):
         # Tiers 3 / 3.5 / 4: OpenRouter
         if os.getenv("OPENROUTER_API_KEY", "").strip():
             try:
-                from .reasoners.openrouter_reasoner import OpenRouterReasoner
+                from .inference_openrouter import OpenRouterReasoner
 
                 gw._t3 = OpenRouterReasoner(
                     model=os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
@@ -298,13 +298,8 @@ class InferenceGateway(IgorBase):
                     f"[gateway] OpenRouter init failed: {_e}"
                 )
 
-        # Tier 5: Anthropic direct (inhibited by IGOR_TIER5_ENABLED)
-        try:
-            from .reasoners.anthropic import AnthropicReasoner
-
-            gw._t5 = AnthropicReasoner()
-        except Exception as _e:
-            _log.getLogger(__name__).warning(f"[gateway] Anthropic init failed: {_e}")
+        # Tier 5: Anthropic direct — REMOVED (D329: OR handles all cloud routing)
+        gw._t5 = None
 
         return gw
 
@@ -637,7 +632,7 @@ def _h_ollama(prompt: str, c: PurposeConstraints, **kw) -> str:
     call_type = c.extra.get("cluster_call_type", "")
     if call_type:
         try:
-            from .cluster_router import router as _router
+            from .inference_ollama import router as _router
 
             r_host, r_model = _router.route(call_type)
         except Exception:
@@ -732,7 +727,7 @@ def _local_preferred(ctx: InferenceContext) -> bool:
     """
     if ctx.db_colocated:
         return False
-    from .cluster_router import router as _router
+    from .inference_ollama import router as _router
 
     if not _router.has_local_capacity():
         return False
@@ -761,7 +756,7 @@ def _cloud_ok(ctx: InferenceContext) -> bool:
 
 def _ne_local_ok(ctx: InferenceContext) -> bool:
     """NE local model env var set, cluster has local capacity, cloud_mode not active. (D120)"""
-    from .cluster_router import router as _router
+    from .inference_ollama import router as _router
 
     return (
         bool(os.getenv("IGOR_NE_LOCAL_MODEL", ""))
@@ -1036,7 +1031,7 @@ def make_context(
 
     local_available = False
     try:
-        from .reasoners.ollama_reasoner import is_healthy as _ollama_healthy
+        from .inference_ollama import is_healthy as _ollama_healthy
 
         local_available = _ollama_healthy()
     except Exception as _bare_e:
@@ -1131,7 +1126,7 @@ def _try_restart_local_ollama() -> bool:
                 )
             return False
         time.sleep(5)
-        from .reasoners.ollama_reasoner import is_healthy as _h
+        from .inference_ollama import is_healthy as _h
 
         healthy = _h()
         if _log_anomaly:
@@ -1154,7 +1149,7 @@ def is_local_inference_available() -> bool:
     ollama_reasoner.is_healthy() directly.
     """
     try:
-        from .reasoners.ollama_reasoner import is_healthy as _h
+        from .inference_ollama import is_healthy as _h
 
         if _h():
             return True

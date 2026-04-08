@@ -50,6 +50,17 @@ DEFAULT_MODEL = "anthropic/claude-sonnet-4-6"
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 OPENROUTER_REFERER = "https://github.com/akienm/TheIgors"
 
+# D327/D329: Model aliases — previously in anthropic.py, now here (only cloud path).
+# TODO(D327-phase4): move to cfg file.
+MODEL_ALIASES: dict[str, str] = {
+    "sonnet": "anthropic/claude-sonnet-4-6",
+    "opus": "anthropic/claude-opus-4-6",
+    "haiku": "anthropic/claude-haiku-4-5-20251001",
+    "sonnet4": "anthropic/claude-sonnet-4-6",
+    "opus4": "anthropic/claude-opus-4-6",
+    "haiku4": "anthropic/claude-haiku-4-5-20251001",
+}
+
 # _build_session_context and _build_memory_context live in BaseReasoner (WO8)
 
 
@@ -366,7 +377,7 @@ class OpenRouterReasoner(BaseReasoner):
         return f"OpenRouter/{self.model}"
 
     def set_model(self, model: str) -> str:
-        self.model = model
+        self.model = MODEL_ALIASES.get(model, model)
         return self.model
 
     def reason(

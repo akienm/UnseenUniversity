@@ -152,7 +152,7 @@ def _call_local_llm(prompt: str, cortex: Cortex) -> Optional[dict]:
         import ollama as _ollama
         import os as _os
 
-        from .cluster_router import route as _route
+        from .inference_ollama import route as _route
 
         _host, _model = _route("extraction")
         if not _host:
