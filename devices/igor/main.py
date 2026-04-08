@@ -4820,35 +4820,68 @@ class Igor(IgorBase):
                     response_text = str(response_text).replace(
                         "{user_input}", user_input
                     )
-            self.cortex.record_activation(habit.id, 0.05)
-            _log_pt(
-                turn_id=_turn_id,
-                step="habit_exec",
-                elapsed_ms=round((_time.monotonic() - _tc) * 1000),
-                habit_id=habit.id,
-            )
-            _tc = _time.monotonic()
-            # Log habit execution to ring + forensic log for auditability
-            _habit_score = (
-                _thalamus_confidence
-                if _habit_source == "thalamus"
-                else pre["confidence"]
-            )
-            self.cortex.write_ring(
-                f"HABIT_EXEC|id={habit.id}|score={_habit_score:.2f}|"
-                f"trigger={_habit_trigger!r}|source={_habit_source}|"
-                f"input={user_input[:80]!r}|action={str(response_text)[:80]!r}",
-                category="habit_trace",
-            )
-            from .cognition.forensic_logger import log_tool_call as _log_tc
 
-            _log_tc(
-                tool_name=f"habit:{habit.id}",
-                args_summary=f"trigger={_habit_trigger!r} source={_habit_source}",
-                result_summary=str(response_text)[:120],
-                success=True,
-                elapsed_ms=0,
-            )
+                # D332: Response coherence gate — catch template collapse before sending.
+                # A response habit that produces a greeting after turn 1, or whose content
+                # has no keyword overlap with the user's input, is likely a misfire.
+                _coherence_ok = True
+                _resp_check = (response_text or "").lower()
+                _greeting_phrases = [
+                    "hello",
+                    "hi!",
+                    "good morning",
+                    "good evening",
+                    "ready to engage",
+                    "good to hear from you",
+                ]
+                _is_greeting_response = any(
+                    g in _resp_check[:60] for g in _greeting_phrases
+                )
+
+                if _is_greeting_response and self.interaction_count > 1:
+                    # Greeting after first turn — template collapse
+                    _coherence_ok = False
+                    log_error(
+                        kind="COHERENCE_GATE_BLOCKED",
+                        detail=f"Greeting response from habit {habit.id} at turn {self.interaction_count} — suppressed. Falling through to LLM.",
+                    )
+
+                if not _coherence_ok:
+                    # Suppress the habit response, fall through to LLM reasoning
+                    response_text = None
+                    habit = None
+                    used_habit = False
+
+            if habit:
+                self.cortex.record_activation(habit.id, 0.05)
+                _log_pt(
+                    turn_id=_turn_id,
+                    step="habit_exec",
+                    elapsed_ms=round((_time.monotonic() - _tc) * 1000),
+                    habit_id=habit.id,
+                )
+                _tc = _time.monotonic()
+                # Log habit execution to ring + forensic log for auditability
+                _habit_score = (
+                    _thalamus_confidence
+                    if _habit_source == "thalamus"
+                    else pre["confidence"]
+                )
+                self.cortex.write_ring(
+                    f"HABIT_EXEC|id={habit.id}|score={_habit_score:.2f}|"
+                    f"trigger={_habit_trigger!r}|source={_habit_source}|"
+                    f"input={user_input[:80]!r}|action={str(response_text)[:80]!r}",
+                    category="habit_trace",
+                )
+                from .cognition.forensic_logger import log_tool_call as _log_tc
+
+                _log_tc(
+                    tool_name=f"habit:{habit.id}",
+                    args_summary=f"trigger={_habit_trigger!r} source={_habit_source}",
+                    result_summary=str(response_text)[:120],
+                    success=True,
+                    elapsed_ms=0,
+                )
             # T-behavior-milieu-loop: close the behavior→milieu feedback loop.
             # Action outcome feeds back into emotional state so future habit selection
             # is modulated by past success/failure (biological closed-loop behavior).
