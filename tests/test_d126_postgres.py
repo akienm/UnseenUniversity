@@ -235,6 +235,14 @@ class TestMigrateWgScript(unittest.TestCase):
         """--dry-run should print counts and exit cleanly without touching Postgres."""
         import subprocess, sys
 
+        # The migration script needs the SQLite word_graph.db to exist.
+        # Skip on machines that don't have the live instance data.
+        from wild_igor.igor.paths import paths as _paths
+
+        wg_path = _paths().word_graph("word_graph")
+        if not wg_path.exists():
+            self.skipTest(f"word_graph.db not found at {wg_path}")
+
         env = os.environ.copy()
         env.setdefault(
             "IGOR_HOME_DB_URL",

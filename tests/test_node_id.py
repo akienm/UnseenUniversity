@@ -170,6 +170,28 @@ class TestParseNodeId:
 # ── Registry (Postgres + Redis) ───────────────────────────────────────────────
 
 
+def _pg_available() -> bool:
+    """Return True if Postgres is reachable AND node_registry table exists."""
+    try:
+        import psycopg2
+
+        url = os.getenv(
+            "IGOR_HOME_DB_URL",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        )
+        conn = psycopg2.connect(url, connect_timeout=2)
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='node_registry'"
+        )
+        has_table = cur.fetchone() is not None
+        conn.close()
+        return has_table
+    except Exception:
+        return False
+
+
+@pytest.mark.skipif(not _pg_available(), reason="Postgres not reachable")
 class TestRegistry:
     def test_register_and_locate_postgres(self):
         """register_node writes to Postgres; node_locate reads it back."""

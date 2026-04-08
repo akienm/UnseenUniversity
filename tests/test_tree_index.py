@@ -15,9 +15,30 @@ DB_URL = os.getenv(
 CP1_ID = _CP_NODES["CP1"]
 
 
+def _trees_table_exists() -> bool:
+    try:
+        import psycopg2
+
+        conn = psycopg2.connect(DB_URL, connect_timeout=2)
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='trees'"
+        )
+        ok = cur.fetchone() is not None
+        conn.close()
+        return ok
+    except Exception:
+        return False
+
+
+_skip_no_trees = pytest.mark.skipif(
+    not _trees_table_exists(), reason="trees table not found in Postgres"
+)
+
 # ── create / get ──────────────────────────────────────────────────────────────
 
 
+@_skip_no_trees
 class TestCreateGet:
     def test_create_returns_timestamp_id(self):
         idx = TreeIndex(db_url=DB_URL)
@@ -86,6 +107,7 @@ class TestCreateGet:
 # ── list_all ──────────────────────────────────────────────────────────────────
 
 
+@_skip_no_trees
 class TestListAll:
     def test_list_all_contains_seeded(self):
         """After seeding, list_all returns at least the 8 well-known trees."""
@@ -108,6 +130,7 @@ class TestListAll:
 # ── trees_at_node ─────────────────────────────────────────────────────────────
 
 
+@_skip_no_trees
 class TestTreesAtNode:
     def test_trees_at_facia_node(self):
         """After seeding, cp1_subtree appears in trees_at_node for CP1's ID."""
@@ -126,6 +149,7 @@ class TestTreesAtNode:
 # ── traverse ──────────────────────────────────────────────────────────────────
 
 
+@_skip_no_trees
 class TestTraverse:
     def test_traverse_interpretive_delegates_to_cortex(self):
         """traverse() calls cortex.traverse_interpretive with correct args."""
@@ -192,6 +216,7 @@ class TestTraverse:
 # ── Seed ──────────────────────────────────────────────────────────────────────
 
 
+@_skip_no_trees
 class TestSeed:
     def test_seed_returns_8_trees(self):
         result = seed_well_known_trees(db_url=DB_URL)
