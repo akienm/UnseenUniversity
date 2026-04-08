@@ -57,11 +57,17 @@ class TestRefreshOrModels:
 
     def test_no_change_when_all_valid(self):
         current = "anthropic/claude-haiku-4.5-20251001"
+        all_vars = {
+            "OPENROUTER_CHEAP_MODEL": current,
+            "OPENROUTER_DEFAULT_MODEL": current,
+            "OPENROUTER_INTERACTIVE_MODEL": current,
+            "OPENROUTER_WINNOW_MODEL": current,
+        }
         with patch(
             "wild_igor.igor.tools.or_model_refresh._fetch_or_models",
             return_value=[current],
         ):
-            with patch.dict(os.environ, {"OPENROUTER_DEFAULT_MODEL": current}):
+            with patch.dict(os.environ, all_vars):
                 result = refresh_or_models()
 
         assert "still valid" in result
