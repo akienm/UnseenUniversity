@@ -113,7 +113,9 @@ def _extract_facts_from_chunk(
     try:
         import urllib.request as _urlreq
 
-        cheap_model = os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
+        from .inference_openrouter import OR_CHEAP_MODEL
+
+        cheap_model = OR_CHEAP_MODEL
         candidates_str = "\n".join(
             f"  {nid}: {desc}" for nid, desc in _INTERP_CANDIDATES
         )

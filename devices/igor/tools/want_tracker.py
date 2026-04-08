@@ -1,4 +1,5 @@
 import logging
+
 """
 want_tracker.py — post-response want/request expression detector.
 
@@ -54,15 +55,19 @@ def _want_extract_worker(response_text: str, user_input: str, cortex) -> None:
         if not api_key:
             return
 
-        cheap_model = os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
+        from ..cognition.inference_openrouter import OR_CHEAP_MODEL
+
+        cheap_model = OR_CHEAP_MODEL
         prompt = _EXTRACT_PROMPT.format(response_text=response_text[:800])
 
-        payload = json.dumps({
-            "model": cheap_model,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.1,
-            "max_tokens": 120,
-        }).encode()
+        payload = json.dumps(
+            {
+                "model": cheap_model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.1,
+                "max_tokens": 120,
+            }
+        ).encode()
 
         req = urllib.request.Request(
             "https://openrouter.ai/api/v1/chat/completions",
@@ -119,12 +124,17 @@ def _want_extract_worker(response_text: str, user_input: str, cortex) -> None:
 
         try:
             from rich.console import Console as _C
+
             _C().print(f"[dim cyan][WANT] Recorded: {mem_id} — {want[:60]}[/]")
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/want_tracker.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/tools/want_tracker.py: %s", _bare_e
+            )
 
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/want_tracker.py: %s", _bare_e)
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/tools/want_tracker.py: %s", _bare_e
+        )
 
 
 def check_response_for_wants(response_text: str, cortex, user_input: str = "") -> None:

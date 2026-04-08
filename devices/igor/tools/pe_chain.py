@@ -337,8 +337,10 @@ def _call_tier2(prompt: str, timeout: int = 0, temperature: float = 0.1) -> str 
 
         host, model = _route("batch")
     except Exception:
-        host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-        model = os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b")
+        from ..cognition.inference_ollama import OLLAMA_HOST, OLLAMA_LOCAL_MODEL
+
+        host = OLLAMA_HOST
+        model = OLLAMA_LOCAL_MODEL
 
     try:
         import json as _json

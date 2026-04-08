@@ -1,4 +1,5 @@
 import logging
+
 """
 converter.py — D097: Format-conversion tool.
 
@@ -28,7 +29,7 @@ from .registry import Tool, registry
 
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 OPENROUTER_REFERER = "https://github.com/akienm/TheIgors"
-_DEFAULT_MODEL = os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
+from ..cognition.inference_openrouter import OR_CHEAP_MODEL as _DEFAULT_MODEL
 
 _SUPPORTED = {"EN", "CSB", "DSB"}
 _DEFAULT_CHUNK = 3000  # chars; ~750 tokens, safe margin for gpt-4o-mini 128k
@@ -162,7 +163,9 @@ def convert_text_fn(
             if _running_instance is not None:
                 cortex = _running_instance.cortex
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/tools/converter.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/tools/converter.py: %s", _bare_e
+            )
 
     if cortex is None:
         return "ERROR: cortex not available — cannot look up conversion template"

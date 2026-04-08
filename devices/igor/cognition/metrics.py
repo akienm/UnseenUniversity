@@ -340,9 +340,8 @@ def build_report(
             "tier.1": "habit (local)",
             "tier.2": "Ollama (local)",
             "tier.3": "cheap OR (cloud)",
-            "tier.3.5": "haiku (cloud)",
-            "tier.4": "sonnet (cloud)",
-            "tier.5": "Anthropic direct",
+            "tier.3.5": "interactive (cloud)",
+            "tier.4": "reasoning (cloud)",
         }.get(tier, tier)
         bar = "█" * (pct // 5) + "░" * (20 - pct // 5)
         lines.append(f"  {tier}  {bar}  {count:3d} ({pct:2d}%)  {label}")
@@ -360,9 +359,8 @@ def build_report(
             label = {
                 "tier.2": "local Ollama",
                 "tier.3": "cloud cheap",
-                "tier.3.5": "cloud haiku",
-                "tier.4": "cloud sonnet",
-                "tier.5": "cloud direct",
+                "tier.3.5": "cloud interactive",
+                "tier.4": "cloud reasoning",
             }.get(tier, tier)
             ctx_k = (
                 f"{d['avg_ctx_chars'] // 1000}K"

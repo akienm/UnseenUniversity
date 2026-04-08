@@ -955,7 +955,9 @@ def _reading_extract_worker(
         if not api_key:
             return
 
-        cheap_model = os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
+        from ..cognition.inference_openrouter import OR_CHEAP_MODEL
+
+        cheap_model = OR_CHEAP_MODEL
         candidates_str = "\n".join(
             f"  {nid}: {desc}" for nid, desc in _INTERP_CANDIDATES
         )

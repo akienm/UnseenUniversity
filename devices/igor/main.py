@@ -420,6 +420,11 @@ class Igor(IgorBase):
 
         _boot_env_sync(self.cortex, instance_id, _paths().instance / ".env")
 
+        # D327: model constants from inference layer — no model names in main.py
+        from .cognition.inference_openrouter import OR_CHEAP_MODEL
+
+        self._or_cheap_model = OR_CHEAP_MODEL
+
         milieu_mod.init(self.instance_id)
         observer.init(self.cortex)
         self.root_id = initialize_genesis(self.cortex, instance_id)
@@ -1788,7 +1793,7 @@ class Igor(IgorBase):
         )
         payload = _json.dumps(
             {
-                "model": "openai/gpt-4o-mini",
+                "model": self._or_cheap_model,
                 "messages": [
                     {
                         "role": "system",
@@ -1868,7 +1873,7 @@ class Igor(IgorBase):
         )
         payload = _json.dumps(
             {
-                "model": "openai/gpt-4o-mini",
+                "model": self._or_cheap_model,
                 "messages": [
                     {
                         "role": "system",
