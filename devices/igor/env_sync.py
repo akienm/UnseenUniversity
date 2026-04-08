@@ -1,4 +1,5 @@
 import logging
+
 """
 env_sync.py — D119: DB-first boot configuration.
 
@@ -161,7 +162,9 @@ def _parse_env_file(env_path: Path) -> dict:
             if key:
                 vars_dict[key] = value
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/env_sync.py: %s", _bare_e)
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/env_sync.py: %s", _bare_e
+        )
     return vars_dict
 
 
@@ -208,40 +211,93 @@ def hydrate_from_graph(cortex) -> int:
 # ── Main entry point ───────────────────────────────────────────────────────────
 
 
+def _cfg_files(instance_dir: Path) -> list[Path]:
+    """
+    Return the ordered list of cfg files to load for a given instance dir (D319).
+
+    Load order (last wins): swarm.cfg → igor.cfg → igor.models.cfg →
+    igor.switches.cfg → igor.credentials.cfg → igor.context.*.cfg (sorted)
+    → igor.context.*.confidential.cfg (sorted)
+
+    Returns only files that actually exist.
+    """
+    runtime_root = instance_dir.parent
+    swarm_dir = runtime_root / "swarm"
+    fixed_order = [
+        swarm_dir / "swarm.cfg",
+        instance_dir / "igor.cfg",
+        instance_dir / "igor.models.cfg",
+        instance_dir / "igor.switches.cfg",
+        instance_dir / "igor.credentials.cfg",
+    ]
+    files = [p for p in fixed_order if p.exists()]
+    files += sorted(instance_dir.glob("igor.context.*.cfg"))
+    files += sorted(instance_dir.glob("igor.context.*.confidential.cfg"))
+    return files
+
+
 def boot_env_sync(cortex, instance_id: str, env_path: Path) -> None:
     """
-    D119 boot sequence:
+    D119/D319 boot sequence:
       1. Hydrate os.environ from system config graph (fills missing vars)
-      2. If .env mtime changed: re-read, push to graph, re-hydrate
+      2. If cfg files exist: use their collective mtime to detect changes;
+         re-read and push when any file is newer than last sync.
+         Falls back to .env if no cfg files found (legacy / pre-migration).
+
+    The env_path argument is kept for backward compatibility — it is used
+    only as the fallback when no split cfg files exist.
     """
-    # Step 1: hydrate from graph — works even on first boot (no-op if graph empty)
+    import logging as _logging
+
+    log = _logging.getLogger(__name__)
+
+    # Step 1: hydrate from graph — no-op if graph is empty
     hydrate_from_graph(cortex)
 
-    # Step 2: check .env mtime
-    try:
-        env_mtime = env_path.stat().st_mtime if env_path.exists() else 0.0
-    except Exception:
-        return
+    # Step 2: determine source files (cfg split preferred, .env fallback)
+    instance_dir = env_path.parent
+    cfg_files = _cfg_files(instance_dir)
+
+    if cfg_files:
+        # Collective mtime: max mtime across all cfg files
+        try:
+            cfg_mtime = max(p.stat().st_mtime for p in cfg_files)
+        except Exception:
+            return
+        source_label = f"{len(cfg_files)} cfg files"
+    elif env_path.exists():
+        log.warning(
+            "[env_sync] no split cfg files found — falling back to .env (pre-D319)"
+        )
+        cfg_files = [env_path]
+        try:
+            cfg_mtime = env_path.stat().st_mtime
+        except Exception:
+            return
+        source_label = ".env (legacy)"
+    else:
+        return  # nothing to load
 
     instance_node = _ensure_instance_node(cortex, instance_id)
     last_mtime = float(instance_node.metadata.get("last_env_read_mtime", 0.0))
 
-    if env_mtime <= last_mtime:
+    if cfg_mtime <= last_mtime:
         return  # No change — graph is already up to date
 
-    # Step 3: .env changed (or never read) — push to graph
-    vars_dict = _parse_env_file(env_path)
+    # Step 3: re-read all source files and push to graph (last wins, same as load_cfg)
+    vars_dict: dict = {}
+    for p in cfg_files:
+        vars_dict.update(_parse_env_file(p))
     pushed = push_vars_to_graph(cortex, vars_dict)
 
     # Update instance node mtime
-    instance_node.metadata["last_env_read_mtime"] = env_mtime
+    instance_node.metadata["last_env_read_mtime"] = cfg_mtime
     cortex.store(instance_node)
 
     # Re-hydrate with newly pushed values
     hydrate_from_graph(cortex)
 
-    import logging
-
-    logging.getLogger(__name__).info(
-        f"[env_sync] synced {pushed} vars from .env → graph (instance={instance_id})"
+    log.info(
+        f"[env_sync] synced {pushed} vars from {source_label} → graph "
+        f"(instance={instance_id})"
     )
