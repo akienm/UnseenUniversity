@@ -1916,15 +1916,21 @@ def feed_reading_list(**_kwargs) -> str:
 
     Called hourly by PROC_READING_FEEDER.
     """
-    # ── Fetch top items from reading_list ─────────────────────────────────────
+    # ── Atomically claim top items from reading_list ────────────────────────
+    # D333: two instances share the same DB. Use UPDATE ... RETURNING to
+    # atomically claim books so no two instances can grab the same one.
     try:
         with _igor_db_proxy()() as conn:
             rows = conn.execute(
-                """SELECT source, title, author, encoding_arousal
-                   FROM reading_list
-                   WHERE status = 'pending' AND source IS NOT NULL AND source != ''
-                   ORDER BY encoding_arousal DESC, priority ASC
-                   LIMIT ?""",
+                """UPDATE reading_list
+                   SET status = 'queued'
+                   WHERE source IN (
+                       SELECT source FROM reading_list
+                       WHERE status = 'pending' AND source IS NOT NULL AND source != ''
+                       ORDER BY encoding_arousal DESC, priority ASC
+                       LIMIT ?
+                   )
+                   RETURNING source, title, author, encoding_arousal""",
                 (_FEEDER_BATCH,),
             ).fetchall()
     except Exception as e:
