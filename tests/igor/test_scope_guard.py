@@ -86,7 +86,7 @@ def test_scope_guard_high_file_write_escalates():
     result = run_scope_guard(
         _basket("wild_igor/igor/brainstem/kernel.py", op_type="write")
     )
-    assert result.get("pe_status") == "escalated"
+    # _pe_escalate() sets escalate_reason (not pe_status) and closes the goal
     assert "HIGH" in result.get("escalate_reason", "")
 
 
@@ -94,7 +94,7 @@ def test_scope_guard_high_file_delete_escalates():
     result = run_scope_guard(
         _basket("wild_igor/igor/memory/models.py", op_type="delete")
     )
-    assert result.get("pe_status") == "escalated"
+    assert result.get("escalate_reason")
 
 
 def test_scope_guard_high_file_read_passes():

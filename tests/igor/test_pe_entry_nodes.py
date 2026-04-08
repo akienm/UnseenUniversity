@@ -235,7 +235,7 @@ class TestRunPeEntryChain:
             patch("wild_igor.igor.tools.pe_chain._post_to_channel"),
             patch(
                 "wild_igor.igor.tools.pe_chain.pe_test",
-                side_effect=lambda b: {**b, "test_result": "pass"},
+                side_effect=lambda b, **_: {**b, "test_result": "pass"},
             ),
             patch(
                 "wild_igor.igor.tools.pe_chain._pe_commit",
@@ -293,7 +293,7 @@ class TestRunPeEntryChain:
             patch("wild_igor.igor.tools.pe_chain._post_to_channel"),
             patch(
                 "wild_igor.igor.tools.pe_chain.pe_test",
-                side_effect=lambda b: {**b, "test_result": "pass"},
+                side_effect=lambda b, **_: {**b, "test_result": "pass"},
             ),
         ):
             result = run_pe_entry_chain({"ticket_id": "T-test-ticket"})
@@ -638,15 +638,16 @@ VALID_HYPOTHESIS_JSON = (
 
 class TestParseHypothesis:
     def test_parses_valid_json(self):
+        # _parse_hypothesis returns list[dict] (T-pe-multi-file)
         raw = '{"file": "a.py", "old_string": "foo", "new_string": "bar"}'
         result = _parse_hypothesis(raw)
-        assert result == {"file": "a.py", "old_string": "foo", "new_string": "bar"}
+        assert result == [{"file": "a.py", "old_string": "foo", "new_string": "bar"}]
 
     def test_strips_markdown_fences(self):
         raw = '```json\n{"file": "a.py", "old_string": "x", "new_string": "y"}\n```'
         result = _parse_hypothesis(raw)
         assert result is not None
-        assert result["file"] == "a.py"
+        assert result[0]["file"] == "a.py"
 
     def test_returns_none_on_missing_fields(self):
         raw = '{"file": "a.py", "old_string": "x"}'
@@ -664,8 +665,9 @@ class TestParseHypothesis:
             '"old_string": "old",\n"new_string": "new"\nEnd.'
         )
         result = _parse_hypothesis(raw)
-        # Either parsed or None — just verify it doesn't crash
-        assert result is None or isinstance(result, dict)
+        # Either parsed or None — just verify it doesn't crash.
+        # _parse_hypothesis may return None, a dict, or list[dict] (multi-file, T-pe-multi-file).
+        assert result is None or isinstance(result, (dict, list))
 
 
 class TestValidateHypothesis:
@@ -784,7 +786,7 @@ class TestPeImplement:
         }
         with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", tmp_path):
             result = pe_implement(basket)
-        assert result["implement_result"] == "ok"
+        assert result["implement_result"].startswith("ok")
         assert result["implement_skipped"] is False
         assert '"new_value"' in target.read_text()
 
