@@ -71,19 +71,43 @@ def run_scope_guard(basket: dict) -> dict:
     """
     SCOPE_GUARD step for the PE chain.
 
-    Reads basket['hypothesis']['file'] and basket.get('op_type', 'write').
-    Classifies the target file's inertia tier.
-    Posts a scope_decision entry to ring for audit.
-    Escalates (basket['pe_status']='escalated') if tier==HIGH and op_delta>=1.
+    Checks ALL hypothesis edits (not just the first) against the inertia tier table.
+    Escalates if ANY target file is HIGH inertia with a write/delete op.
 
     Non-fatal: if hypothesis is missing or already has an error, returns basket as-is.
     """
     hypothesis = basket.get("hypothesis")
-    if not hypothesis or basket.get("hypothesis_error"):
+    hypotheses = basket.get("hypotheses") or ([hypothesis] if hypothesis else [])
+    if not hypotheses or basket.get("hypothesis_error"):
         log.info("SCOPE_GUARD: skipped — no valid hypothesis")
         return basket
 
-    target_file = hypothesis.get("file", "")
+    # Check ALL edits, not just the first
+    for hyp in hypotheses:
+        if not isinstance(hyp, dict):
+            continue
+        target_file = hyp.get("file", "")
+        if not target_file:
+            continue
+        op_type = basket.get("op_type", _DEFAULT_OP)
+        tier = _classify_tier(target_file)
+        op_delta = _OP_DELTA.get(op_type, 1)
+
+        if tier == "HIGH" and op_delta >= 1:
+            reason = f"HIGH inertia {op_type} requires human approval: {target_file}"
+            log.info(f"ESCALATED: file={target_file} tier=HIGH op={op_type}")
+            try:
+                from .pe_chain import _pe_escalate as _pe_esc
+
+                return _pe_esc(basket, reason=reason)
+            except Exception as exc:
+                log.error(f"SCOPE_GUARD: _pe_escalate call failed — {exc}")
+                basket["pe_status"] = "escalated"
+                basket["escalate_reason"] = reason
+                return basket
+
+    # No HIGH inertia files — log the primary target and proceed
+    target_file = hypothesis.get("file", "") if hypothesis else ""
     op_type = basket.get("op_type", _DEFAULT_OP)
     tier = _classify_tier(target_file)
     op_delta = _OP_DELTA.get(op_type, 1)
