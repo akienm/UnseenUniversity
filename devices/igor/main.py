@@ -5411,48 +5411,72 @@ class Igor(IgorBase):
             _routing_proc_id = (
                 "PROC_ROUTING_LOCAL" if not used_api else "PROC_ROUTING_ESCALATE"
             )
-            # G14 / #52: tag episodic memories with ambient emotional state at time of creation
-            _ep_milieu = milieu_mod.get().get_state() if milieu_mod.get() else None
-            # #66: amygdala analog — flag high-charge moments so inertia formula
-            # applies charged_boost (+0.05). Threshold: strong valence or high arousal.
-            _ep_arousal = _ep_milieu.arousal if _ep_milieu else 0.0
-            _ep_dominance = _ep_milieu.dominance if _ep_milieu else 0.0
-            _emotionally_charged = abs(valence) > 0.5 or abs(_ep_arousal) > 0.5
-            ep = Memory(
-                narrative=f"User: {user_input[:250]} | Response: {response_text[:300]} | intent={parsed.intent}",
-                memory_type=MemoryType.EPISODIC,
-                parent_id="CP3",  # "There's always a why"
-                valence=valence,
-                arousal=_ep_arousal,
-                dominance=_ep_dominance,
-                source="interaction",  # G46: provenance
-                context_of_encoding=(  # G46: amygdala analog — what was happening at encoding
-                    f"intent={parsed.intent} valence={valence:.2f} "
-                    f"arousal={_ep_arousal:.2f} complexity={complexity['score']}"
-                ),
-                metadata={
-                    "user_input": user_input,
-                    "response": response_text[:500],
-                    "intent": parsed.intent,
-                    "friction": friction,
-                    "used_api": used_api,
-                    "tier_hint": _tier_hint,
-                    "complexity_score": complexity["score"],
-                    "routing_proc_id": _routing_proc_id,
-                    "emotionally_charged": _emotionally_charged,
-                },
-            )
-            # #128: auto-link to contextually active memories at store time
-            _tc_store = _time.monotonic()
-            self.cortex.store(ep, link_to=relevant, milieu_arousal=_ep_arousal)
-            self.cortex.add_child("CP3", ep.id)
-            new_memories += 1
-            _log_pt(
-                turn_id=_turn_id,
-                step="mem_store",
-                elapsed_ms=round((_time.monotonic() - _tc_store) * 1000),
-                new_memories=new_memories,
-            )
+            # D332: Memory echo filter — prevent self-parrot feedback loops.
+            # Check if this response is a near-duplicate of a recently stored response.
+            # If so, skip episodic storage to prevent the feedback loop where
+            # Igor stores his own canned response → retrieves it → parrots it.
+            _echo_detected = False
+            try:
+                _recent_ring = self.cortex.read_ring_memory(
+                    limit=10, thread_id=thread_id
+                )
+                _resp_lower = response_text[:200].lower().strip()
+                for _rr in _recent_ring:
+                    _rr_content = (_rr.get("content") or "").lower()
+                    # Check if response appears in a recent ring entry (Igor said this before)
+                    if len(_resp_lower) > 30 and _resp_lower[:80] in _rr_content:
+                        _echo_detected = True
+                        log_error(
+                            kind="MEMORY_ECHO_BLOCKED",
+                            detail=f"Response echoes recent ring entry — skipping episodic store: {_resp_lower[:80]}",
+                        )
+                        break
+            except Exception:
+                pass  # Non-fatal — store anyway if check fails
+
+            if not _echo_detected:
+                # G14 / #52: tag episodic memories with ambient emotional state at time of creation
+                _ep_milieu = milieu_mod.get().get_state() if milieu_mod.get() else None
+                # #66: amygdala analog — flag high-charge moments so inertia formula
+                # applies charged_boost (+0.05). Threshold: strong valence or high arousal.
+                _ep_arousal = _ep_milieu.arousal if _ep_milieu else 0.0
+                _ep_dominance = _ep_milieu.dominance if _ep_milieu else 0.0
+                _emotionally_charged = abs(valence) > 0.5 or abs(_ep_arousal) > 0.5
+                ep = Memory(
+                    narrative=f"User: {user_input[:250]} | Response: {response_text[:300]} | intent={parsed.intent}",
+                    memory_type=MemoryType.EPISODIC,
+                    parent_id="CP3",  # "There's always a why"
+                    valence=valence,
+                    arousal=_ep_arousal,
+                    dominance=_ep_dominance,
+                    source="interaction",  # G46: provenance
+                    context_of_encoding=(  # G46: amygdala analog — what was happening at encoding
+                        f"intent={parsed.intent} valence={valence:.2f} "
+                        f"arousal={_ep_arousal:.2f} complexity={complexity['score']}"
+                    ),
+                    metadata={
+                        "user_input": user_input,
+                        "response": response_text[:500],
+                        "intent": parsed.intent,
+                        "friction": friction,
+                        "used_api": used_api,
+                        "tier_hint": _tier_hint,
+                        "complexity_score": complexity["score"],
+                        "routing_proc_id": _routing_proc_id,
+                        "emotionally_charged": _emotionally_charged,
+                    },
+                )
+                # #128: auto-link to contextually active memories at store time
+                _tc_store = _time.monotonic()
+                self.cortex.store(ep, link_to=relevant, milieu_arousal=_ep_arousal)
+                self.cortex.add_child("CP3", ep.id)
+                new_memories += 1
+                _log_pt(
+                    turn_id=_turn_id,
+                    step="mem_store",
+                    elapsed_ms=round((_time.monotonic() - _tc_store) * 1000),
+                    new_memories=new_memories,
+                )
 
         # [RING] Write interaction summary to short-term memory
         # Skip impulse turns — their keywords would pollute push_sources memory surfacing
