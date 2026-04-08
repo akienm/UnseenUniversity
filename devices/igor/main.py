@@ -4126,6 +4126,20 @@ class Igor(IgorBase):
             complexity_score=complexity["score"],
             complexity_signals=",".join(complexity["signals_fired"]),
         )
+        # D330: capture cloud escalations for learning regression testing
+        if not is_impulse and _skip_to not in ("tier.1", "tier.2"):
+            try:
+                from .cognition.forensic_logger import record_cloud_escalation
+
+                record_cloud_escalation(
+                    user_input=user_input[:500],
+                    tier_used=_skip_to,
+                    reason=_reason[:200],
+                    intent=pre.get("intent", ""),
+                    complexity=complexity["score"],
+                )
+            except Exception:
+                pass  # Non-fatal
         if not is_impulse:
             _log_pt(
                 turn_id=_turn_id,

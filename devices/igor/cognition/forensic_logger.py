@@ -581,6 +581,44 @@ def log_tier_selection(
     _prepend("reasoning_calls.log", entry)
 
 
+def record_cloud_escalation(
+    user_input: str,
+    tier_used: str,
+    reason: str = "",
+    intent: str = "",
+    complexity: float = 0.0,
+) -> None:
+    """D330: Record a cloud escalation (tier.3+) for learning regression testing."""
+    if not tier_used.startswith("tier.3") and not tier_used.startswith("tier.4"):
+        return
+    try:
+        import psycopg2
+
+        _db_url = os.getenv("IGOR_HOME_DB_URL", "")
+        if not _db_url:
+            return
+        conn = psycopg2.connect(_db_url)
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "CREATE TABLE IF NOT EXISTS cloud_escalations ("
+                    "id SERIAL PRIMARY KEY, recorded_at TIMESTAMPTZ DEFAULT NOW(), "
+                    "user_input TEXT NOT NULL, tier_used TEXT NOT NULL, "
+                    "reason TEXT, intent TEXT, complexity REAL DEFAULT 0.0, "
+                    "replayed_at TIMESTAMPTZ, replay_tier TEXT, "
+                    "regression BOOLEAN DEFAULT FALSE)"
+                )
+                cur.execute(
+                    "INSERT INTO cloud_escalations "
+                    "(user_input, tier_used, reason, intent, complexity) "
+                    "VALUES (%s, %s, %s, %s, %s)",
+                    (user_input[:500], tier_used, reason[:200], intent, complexity),
+                )
+        conn.close()
+    except Exception:
+        pass  # Non-fatal — never break Igor's main loop
+
+
 def log_reading_progress(
     *,
     passage: str = "",
