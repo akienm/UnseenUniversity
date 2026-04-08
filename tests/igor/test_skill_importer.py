@@ -284,6 +284,12 @@ class TestImportSkill(unittest.TestCase):
         )
 
     def test_import_filter_skill(self):
+        from pathlib import Path
+
+        skill_path = Path.home() / ".claude" / "skills" / "filter" / "SKILL.md"
+        if not skill_path.exists():
+            self.skipTest(f"Skill file not found: {skill_path}")
+
         from wild_igor.igor.tools.skill_importer import import_skill
 
         result = import_skill(skill_name="filter")
@@ -303,6 +309,12 @@ class TestImportSkill(unittest.TestCase):
         self.assertIn("skill_name required", result)
 
     def test_import_sprint_skill(self):
+        from pathlib import Path
+
+        skill_path = Path.home() / ".claude" / "skills" / "sprint" / "SKILL.md"
+        if not skill_path.exists():
+            self.skipTest(f"Skill file not found: {skill_path}")
+
         from wild_igor.igor.tools.skill_importer import import_skill
 
         result = import_skill(skill_name="sprint")
@@ -400,6 +412,12 @@ class TestImportSkill(unittest.TestCase):
 
 class TestImportAllSkills(unittest.TestCase):
     def test_imports_all_returns_summary(self):
+        from pathlib import Path
+
+        skills_dir = Path.home() / ".claude" / "skills"
+        if not skills_dir.exists():
+            self.skipTest(f"Skills directory not found: {skills_dir}")
+
         from wild_igor.igor.tools.skill_importer import import_all_skills
 
         result = import_all_skills()

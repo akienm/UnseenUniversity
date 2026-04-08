@@ -10,6 +10,7 @@ Verifies:
 """
 
 import json
+import os
 import pytest
 from unittest.mock import MagicMock, patch, call
 
@@ -50,7 +51,7 @@ _VALID_ANSWER = json.dumps(
 def test_single_shot_makes_one_call():
     from wild_igor.igor.tools.inner_cc import call_inner_cc
 
-    with patch(
+    with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}), patch(
         "urllib.request.urlopen", return_value=_or_response(_VALID_ANSWER)
     ) as mock_open:
         result = call_inner_cc(
@@ -78,7 +79,7 @@ def test_long_running_uses_multi_turn_path():
         ]
     )
 
-    with patch(
+    with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}), patch(
         "urllib.request.urlopen", side_effect=lambda *a, **kw: next(responses)
     ) as mock_open:
         result = call_inner_cc(
@@ -110,7 +111,9 @@ def test_anthropic_model_adds_cache_headers():
         {"role": "user", "content": "hello"},
     ]
 
-    with patch("urllib.request.urlopen", side_effect=_fake_urlopen):
+    with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}), patch(
+        "urllib.request.urlopen", side_effect=_fake_urlopen
+    ):
         _make_or_request(messages, model="anthropic/claude-haiku-4-5-20251001")
 
     # Caching header present
@@ -143,7 +146,9 @@ def test_non_anthropic_model_no_cache_headers():
         {"role": "user", "content": "hello"},
     ]
 
-    with patch("urllib.request.urlopen", side_effect=_fake_urlopen):
+    with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}), patch(
+        "urllib.request.urlopen", side_effect=_fake_urlopen
+    ):
         _make_or_request(messages, model="openai/gpt-4o-mini")
 
     assert "Anthropic-beta" not in captured_request["headers"]
