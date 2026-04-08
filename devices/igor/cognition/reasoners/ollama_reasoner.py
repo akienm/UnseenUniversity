@@ -516,11 +516,25 @@ class OllamaReasoner(LocalReasoner):
         else:
             system = "Answer briefly and directly. Use the context provided. Say 'I don't know' when uncertain."
 
+        # D330: TWM-only context for tier.2 (minimal, fast)
         memory_context = ""
-        if relevant_memories:
-            memory_context = "\n\nRelevant memories:\n" + "\n".join(
-                f"- {m.narrative}" for m in relevant_memories[:5]
+        try:
+            from ..inference_gateway import build_twm_context
+
+            twm_ctx = build_twm_context(
+                cortex,
+                tier="tier.2",
+                thread_id=thread_id,
+                relevant_memories=relevant_memories,
             )
+            if twm_ctx:
+                memory_context = "\n\n" + twm_ctx
+        except Exception:
+            # Fallback to legacy memory list
+            if relevant_memories:
+                memory_context = "\n\nRelevant memories:\n" + "\n".join(
+                    f"- {m.narrative}" for m in relevant_memories[:5]
+                )
 
         _query_chars = len(user_input)  # raw query before context append
         _context_chars = len(system) + len(user_input) + len(memory_context)  # G55

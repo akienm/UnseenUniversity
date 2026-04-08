@@ -429,21 +429,38 @@ class OpenRouterReasoner(BaseReasoner):
         content = user_input
         if preparse_csb:
             content = preparse_csb + "\n\n" + content
-        session_ctx = self._build_session_context(cortex, thread_id=thread_id)
-        mem_ctx = self._build_memory_context(relevant_memories)
-        if session_ctx:
-            content += session_ctx
-        if mem_ctx:
-            content += mem_ctx
-        content = scrub(content)
-        _context_chars = len(system) + len(content)  # G55: layer boundary metric
-        # Infer tier from model name for logging
+
+        # Infer tier from model name for context building + logging
         _m = self.model.lower()
         _tier = (
             "tier.3.5"
             if "haiku" in _m
             else "tier.4" if "sonnet" in _m or "opus" in _m else "tier.3"
         )
+
+        # D330: TWM-view tiered context replaces blob
+        try:
+            from ..inference_gateway import build_twm_context
+
+            twm_ctx = build_twm_context(
+                cortex,
+                tier=_tier,
+                thread_id=thread_id,
+                relevant_memories=relevant_memories,
+            )
+            if twm_ctx:
+                content += "\n\n" + twm_ctx
+        except Exception:
+            # Fallback to legacy blob if TWM builder fails
+            session_ctx = self._build_session_context(cortex, thread_id=thread_id)
+            mem_ctx = self._build_memory_context(relevant_memories)
+            if session_ctx:
+                content += session_ctx
+            if mem_ctx:
+                content += mem_ctx
+
+        content = scrub(content)
+        _context_chars = len(system) + len(content)  # G55: layer boundary metric
 
         messages = [{"role": "user", "content": content}]
         # #301: background/impulse calls never use tools — passing all 150+ tools causes
