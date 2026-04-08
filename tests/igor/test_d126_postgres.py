@@ -235,11 +235,17 @@ class TestMigrateWgScript(unittest.TestCase):
         """--dry-run should print counts and exit cleanly without touching Postgres."""
         import subprocess, sys
 
+        env = os.environ.copy()
+        env.setdefault(
+            "IGOR_HOME_DB_URL",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        )
         result = subprocess.run(
             [sys.executable, "claudecode/migrate_wg_to_postgres.py", "--dry-run"],
             capture_output=True,
             text=True,
             cwd=str(Path(__file__).parent.parent),
+            env=env,
         )
         self.assertEqual(result.returncode, 0, f"dry-run failed:\n{result.stderr}")
         self.assertIn("DRY RUN", result.stdout)
