@@ -294,9 +294,13 @@ class InferenceGateway(IgorBase):
                     f"[gateway] OpenRouter ready — t3={gw._t3.model} t35={gw._t35.model} t4={gw._t4.model}"
                 )
             except Exception as _e:
-                _log.getLogger(__name__).warning(
-                    f"[gateway] OpenRouter init failed: {_e}"
+                _log.getLogger(__name__).error(
+                    f"[gateway] OpenRouter init FAILED — cloud will be unavailable: {type(_e).__name__}: {_e}"
                 )
+        else:
+            _log.getLogger(__name__).debug(
+                "[gateway] OpenRouter API key not configured — cloud inference disabled"
+            )
 
         # Tier 5: Anthropic direct — REMOVED (D329: OR handles all cloud routing)
         gw._t5 = None
@@ -411,6 +415,14 @@ class InferenceGateway(IgorBase):
         # is_cloud_training_active() is a research-mode flag — NOT the availability gate.
         # If we have a live t4 reasoner, cloud is available. (D198 fix)
         _cloud_ok = bool(self._t4)
+        _cloud_attempted = False  # Track if we even tried cloud
+        _cloud_error = ""  # Track why cloud failed, if at all
+        if not _cloud_ok:
+            import logging as _logging
+            _logging.getLogger(__name__).debug(
+                "[inference_gateway] cloud unavailable: _t4=%s (check OPENROUTER_API_KEY init at boot)",
+                "initialized" if self._t4 else "None"
+            )
 
         # ── background_batch: always local, quality priority ──────────────────
         if level == "background_batch":
@@ -533,6 +545,7 @@ class InferenceGateway(IgorBase):
             and _cloud_ok
             and self._t4
         ):
+            _cloud_attempted = True
             try:
                 self.last_tier = "cloud/interactive"
                 if on_tier:
@@ -550,6 +563,7 @@ class InferenceGateway(IgorBase):
                 return text, cost, True
             except Exception as _e:
                 last_error = str(_e)
+                _cloud_error = last_error  # Capture cloud-specific error
                 if _log_err:
                     _log_err(
                         kind="TIER_FAIL", source="cloud/interactive", detail=str(_e)
@@ -586,6 +600,19 @@ class InferenceGateway(IgorBase):
         # T-inference-monitor: proactive detection now lives in ResourceMonitorSource.
         # tier.6 only logs forensically — no inline arbiter submit needed.
         self.last_tier = "tier.6"
+
+        # Build diagnostic breadcrumb: what was attempted, what failed?
+        _diagnostic = []
+        if _cloud_attempted:
+            _diagnostic.append(f"cloud_attempted={_cloud_ok and self._t4} error={_cloud_error[:80]}")
+        else:
+            _diagnostic.append(
+                f"cloud_skipped=(is_user_turn={is_user_turn} OR quality_path={_quality_path} OR force_mode={_force_cloud_mode}) AND cloud_ok={_cloud_ok} AND t4={bool(self._t4)}"
+            )
+        if last_error:
+            _diagnostic.append(f"local_error={last_error[:80]}")
+        _diagnostic_str = " | ".join(_diagnostic)
+
         try:
             from .forensic_logger import log_anomaly as _log_anomaly
 
@@ -602,7 +629,7 @@ class InferenceGateway(IgorBase):
                 _resource_detail = "resource_stats=unavailable"
             _log_anomaly(
                 kind="TIER6",
-                detail=f"last_error={last_error[:120]} | {_resource_detail}",
+                detail=f"both_inference_unavailable: {_diagnostic_str} | {_resource_detail}",
             )
         except Exception as _bare_e:
             log_error(

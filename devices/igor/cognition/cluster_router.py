@@ -102,19 +102,30 @@ def route(call_type: str) -> tuple[Optional[str], Optional[str]]:
     override = os.getenv("IGOR_INFERENCE_OVERRIDE", "")
     machines = get_ranked_machines()
 
+    # Diagnostic: why are we here?
+    if not machines:
+        _log.warning(
+            "[cluster_router] ROUTE_FAIL: no machines in DB (empty result from machine_manager)"
+        )
+        return None, None
+
     # If override set, reorder so that machine is first
     if override:
         machines = sorted(machines, key=lambda m: 0 if m.hostname == override else 1)
 
+    skip_reasons = {}  # hostname → reason
     for m in machines:
         if m.status != "online":
+            skip_reasons[m.hostname] = f"status={m.status}"
             continue
         if is_in_use(m.hostname):
+            skip_reasons[m.hostname] = "in_use_override|hours_window"
             _log.debug("[cluster_router] skipping %s — in use", m.hostname)
             continue
         host = m.ollama_host
         if not _is_ollama_healthy(host):
-            _log.debug("[cluster_router] skipping %s — Ollama unreachable", m.hostname)
+            skip_reasons[m.hostname] = f"ollama_unhealthy@{host}"
+            _log.debug("[cluster_router] skipping %s — Ollama unreachable @ %s", m.hostname, host)
             continue
         model = m.model_for(call_type)
         _log.debug(
@@ -122,18 +133,25 @@ def route(call_type: str) -> tuple[Optional[str], Optional[str]]:
         )
         return host, model
 
+    # All machines filtered out — log diagnostic detail
     now = time.monotonic()
     with _no_machine_warn_lock:
         last = _no_machine_warn.get(call_type, 0.0)
         if now - last >= _NO_MACHINE_WARN_INTERVAL:
+            skip_summary = " | ".join(
+                f"{hostname}:{reason}" for hostname, reason in skip_reasons.items()
+            )
             _log.warning(
-                "[cluster_router] no local machine available for %s", call_type
+                "[cluster_router] ROUTE_FAIL: no local machine available for %s — all skipped: %s",
+                call_type,
+                skip_summary,
             )
             _no_machine_warn[call_type] = now
         else:
             _log.debug(
-                "[cluster_router] no local machine available for %s (suppressed)",
+                "[cluster_router] no local machine available for %s (suppressed — next warn in %.0fs)",
                 call_type,
+                _NO_MACHINE_WARN_INTERVAL - (now - last),
             )
     return None, None
 
