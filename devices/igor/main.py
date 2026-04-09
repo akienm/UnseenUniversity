@@ -62,6 +62,7 @@ from .dashboard import terminal as dashboard
 from .network import discord_bot
 from .network import listener as net_listener
 from .web import server as web_server
+from .web.utility_closet_client import uc_client
 from . import boot_check
 from .cognition.job_manager import JobManager
 from .paths import paths as _paths
@@ -639,6 +640,11 @@ class Igor(IgorBase):
             cortex_fn=lambda: self.cortex,
             igor_fn=lambda: self,
         )
+
+        # D335: register with utility closet platform (best-effort, non-blocking)
+        if uc_client.register("igor", capabilities=["chat", "tools", "habits"]):
+            uc_client.start_stats_pusher(self.get_stats, interval=5.0)
+
         boot_check.start(cortex=self.cortex)
 
         is_new = (
@@ -8704,6 +8710,11 @@ class Igor(IgorBase):
         loginfo(f"[yellow]Unknown command: {raw}[/]  (try /help)")
 
     def _shutdown(self, reason: str = "shutdown"):
+        # D335: deregister from utility closet (best-effort)
+        try:
+            uc_client.deregister()
+        except Exception:
+            pass  # shutdown — never block on platform comms
         # Persist learned word graph weights before exit
         if self._word_graph is not None:
             try:

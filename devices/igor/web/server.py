@@ -147,6 +147,14 @@ def send(text: str, session_id: str = "shared"):
     _add_to_history(session_id, msg)
     _broadcast_to_session(session_id, json.dumps(msg))
     _channel_append("igor", text)
+    # D335: also forward through utility closet for external consumers
+    try:
+        from .utility_closet_client import uc_client
+
+        if uc_client.is_registered:
+            uc_client.send_message(text, session_id)
+    except Exception:
+        pass  # never block Igor's response on platform comms
 
 
 def broadcast_activity(state: dict):
