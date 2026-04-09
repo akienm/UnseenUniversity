@@ -642,7 +642,8 @@ class Igor(IgorBase):
         )
 
         # D335: register with utility closet platform (best-effort, non-blocking)
-        if uc_client.register("igor", capabilities=["chat", "tools", "habits"]):
+        _uc_agent_id = _paths().instance_id  # e.g. "Igor-wild-0001"
+        if uc_client.register(_uc_agent_id, capabilities=["chat", "tools", "habits"]):
             uc_client.start_stats_pusher(self.get_stats, interval=5.0)
 
         boot_check.start(cortex=self.cortex)
