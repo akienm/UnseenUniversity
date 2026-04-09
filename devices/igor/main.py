@@ -24,7 +24,9 @@ from rich.live import Live
 from rich.spinner import Spinner
 from rich.traceback import install as _install_rich_tb
 
-_install_rich_tb(show_locals=False, width=120, console=Console(stderr=True))
+_install_rich_tb(
+    show_locals=False, width=120, console=Console(stderr=True, force_terminal=True)
+)
 
 from .igor_base import IgorBase
 from .memory.models import Memory, MemoryType
@@ -67,7 +69,7 @@ from . import boot_check
 from .cognition.job_manager import JobManager
 from .paths import paths as _paths
 
-console = Console()
+console = Console(force_terminal=True)
 
 # Wire the igor.* logging hierarchy — console + per-area file handlers (#343)
 from .logging_setup import setup_logging as _setup_logging
