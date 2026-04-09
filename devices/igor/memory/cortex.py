@@ -414,6 +414,51 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "CREATE INDEX IF NOT EXISTS idx_memories_narrative_tsvector"
         " ON memories USING GIN (to_tsvector('english', narrative))",
     ),
+    # ── Reading runs (unified reading tool) ──────────────────────────────────
+    (
+        "m038_reading_runs",
+        "CREATE TABLE IF NOT EXISTS reading_runs ("
+        " run_id TEXT PRIMARY KEY,"
+        " label TEXT,"
+        " created_at TEXT NOT NULL,"
+        " created_by TEXT,"
+        " started_at TEXT,"
+        " closed_at TEXT,"
+        " closed_reason TEXT,"
+        " status TEXT DEFAULT 'draft',"
+        " pass_number INTEGER DEFAULT 1,"
+        " notes TEXT"
+        ")",
+    ),
+    (
+        "m039_reading_run_items",
+        "CREATE TABLE IF NOT EXISTS reading_run_items ("
+        " id SERIAL PRIMARY KEY,"
+        " run_id TEXT NOT NULL REFERENCES reading_runs(run_id),"
+        " source TEXT NOT NULL,"
+        " title TEXT,"
+        " author TEXT,"
+        " blob_path TEXT,"
+        " status TEXT DEFAULT 'pending',"
+        " claimed_by TEXT,"
+        " claimed_at TEXT,"
+        " completed_at TEXT,"
+        " node_count INTEGER DEFAULT 0,"
+        " edge_count INTEGER DEFAULT 0,"
+        " embedding_count INTEGER DEFAULT 0,"
+        " error_message TEXT,"
+        " model_used TEXT,"
+        " processing_seconds INTEGER"
+        ")",
+    ),
+    (
+        "m040_reading_list_run_id",
+        "ALTER TABLE reading_list ADD COLUMN run_id TEXT DEFAULT NULL",
+    ),
+    (
+        "m041_reading_list_claimed_by",
+        "ALTER TABLE reading_list ADD COLUMN claimed_by TEXT DEFAULT NULL",
+    ),
 ]
 
 

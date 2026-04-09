@@ -158,6 +158,18 @@ class PathManager:
     def identity(self) -> Path:
         return self.instance / "IDENTITY.md"
 
+    # ── Reading tool ────────────────────────────────────────────────────────────
+
+    @property
+    def reading_blobs(self) -> Path:
+        """Local blob storage for fetched book content."""
+        return self._runtime / "local" / "reading_blobs"
+
+    @property
+    def reading_run_logs(self) -> Path:
+        """Per-run log files for the reading tool."""
+        return self.logs / "reading_runs"
+
     # ── Named files (word graph) ──────────────────────────────────────────────
 
     def word_graph(self, name: str = "word_graph") -> Path:
