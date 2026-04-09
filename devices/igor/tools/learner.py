@@ -1422,25 +1422,17 @@ def review_turn_traces(**_kwargs) -> str:
     except Exception as e:
         return f"[review_turn_traces] DB error fetching existing: {e}"
 
+    # D334: cloud escape traces are NOT books — don't pollute reading_list.
+    # The TWM NARRATIVE_GAP deposit below is sufficient for surfacing these.
+    # Previously, each escape was added to reading_list as book_type=cloud-escape-gap,
+    # which created hundreds of junk entries that the book_learner then crashed on.
     queued = []
     for esc in escapes:
         source = f"trace://{esc['turn_id']}"
         if source in existing_sources:
             continue
-        inp_clean = esc["input"].replace("\n", " ")[:120]
-        title = f"Cloud escape [{esc['intent']}]: {inp_clean}"
-        result = add_to_reading_list(
-            title=title,
-            source=source,
-            book_type="cloud-escape-gap",
-            encoding_arousal=0.6,
-            priority=10,
-            added_by="trace_review",
-            notes=f"tier={esc['routing_tier']} bg={esc['bg_winner'][:30]} ts={esc['ts']}",
-        )
-        if not result.startswith("Error"):
-            queued.append(esc["turn_id"])
-            existing_sources.add(source)
+        queued.append(esc["turn_id"])
+        existing_sources.add(source)
 
     # Deposit a summary NARRATIVE_GAP into TWM so flag_top_gap can surface it
     if queued:
@@ -1926,7 +1918,7 @@ def feed_reading_list(**_kwargs) -> str:
                    SET status = 'queued'
                    WHERE source IN (
                        SELECT source FROM reading_list
-                       WHERE status = 'pending' AND source IS NOT NULL AND source != ''
+                       WHERE status = 'pending' AND run_id IS NULL AND source IS NOT NULL AND source != ''
                        ORDER BY encoding_arousal DESC, priority ASC
                        LIMIT ?
                    )
