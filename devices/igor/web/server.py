@@ -918,17 +918,23 @@ def start(stats_fn=None, cortex_fn=None, igor_fn=None):
     ssl_key = os.getenv("IGOR_SSL_KEY", "")
 
     def _run():
-        app = _make_app()
-        config = uvicorn.Config(
-            app,
-            host="0.0.0.0",
-            port=port,
-            log_level="warning",
-            ssl_certfile=ssl_cert if ssl_cert else None,
-            ssl_keyfile=ssl_key if ssl_key else None,
-        )
-        server = uvicorn.Server(config)
-        asyncio.run(server.serve())
+        try:
+            app = _make_app()
+            config = uvicorn.Config(
+                app,
+                host="0.0.0.0",
+                port=port,
+                log_level="warning",
+                ssl_certfile=ssl_cert if ssl_cert else None,
+                ssl_keyfile=ssl_key if ssl_key else None,
+            )
+            server = uvicorn.Server(config)
+            logging.getLogger(__name__).info("Web server starting on port %d", port)
+            asyncio.run(server.serve())
+        except Exception as e:
+            logging.getLogger(__name__).error(
+                "Web server thread crashed: %s", e, exc_info=True
+            )
 
     _server_thread = threading.Thread(target=_run, daemon=True, name="web-server")
     _server_thread.start()
