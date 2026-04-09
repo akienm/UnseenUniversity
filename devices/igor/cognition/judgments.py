@@ -1,4 +1,5 @@
 import logging
+
 """
 Judgment functions — assess_valence, measure_friction, calculate_roi.
 
@@ -43,6 +44,7 @@ def _embed_anchors():
     """Return (pos_vecs, neg_vecs) — cached via embedder file cache."""
     try:
         from .embedder import embed
+
         pos = [v for t in _POSITIVE_ANCHORS if (v := embed(t)) is not None]
         neg = [v for t in _NEGATIVE_ANCHORS if (v := embed(t)) is not None]
         return pos, neg
@@ -59,11 +61,12 @@ def assess_valence(interaction_text: str, response_text: str, cortex=None) -> fl
     sentences. Falls back to keyword matching if embeddings are unavailable.
     Logs its reasoning if a cortex is provided.
     """
-    combined = (interaction_text + " " + response_text).lower()
+    combined = ((interaction_text or "") + " " + (response_text or "")).lower()
 
     # ── Semantic path (preferred) ─────────────────────────────────────────────
     try:
         from .embedder import embed, cosine_similarity
+
         text_vec = embed(combined[:500])  # cap to avoid huge embed calls
         if text_vec is not None:
             pos_vecs, neg_vecs = _embed_anchors()
@@ -73,16 +76,33 @@ def assess_valence(interaction_text: str, response_text: str, cortex=None) -> fl
                 # Scale: similarity difference → [-1, 1]; shift +0.1 (Igor is usually helpful)
                 result = max(-1.0, min(1.0, (pos_sim - neg_sim) * 2.0 + 0.1))
                 reasoning = f"embedding|pos_sim={pos_sim:.3f}|neg_sim={neg_sim:.3f}|result={result:.2f}"
-                _log_judgment(cortex, "valence", {
-                    "method": "embedding",
-                    "input_len": len(interaction_text),
-                }, result, reasoning)
+                _log_judgment(
+                    cortex,
+                    "valence",
+                    {
+                        "method": "embedding",
+                        "input_len": len(interaction_text),
+                    },
+                    result,
+                    reasoning,
+                )
                 return result
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/judgments.py: %s", _bare_e)
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/cognition/judgments.py: %s", _bare_e
+        )
 
     # ── Keyword fallback ──────────────────────────────────────────────────────
-    positive = ["thank", "great", "excellent", "perfect", "yes", "good", "love", "appreciate"]
+    positive = [
+        "thank",
+        "great",
+        "excellent",
+        "perfect",
+        "yes",
+        "good",
+        "love",
+        "appreciate",
+    ]
     negative = ["wrong", "error", "fail", "bad", "incorrect", "frustrat", "annoyed"]
 
     pos_hits = [s for s in positive if s in combined]
@@ -95,13 +115,21 @@ def assess_valence(interaction_text: str, response_text: str, cortex=None) -> fl
         reasoning = "keyword_fallback|no signal words → neutral (0.3)"
     else:
         result = max(-1.0, min(1.0, (pos - neg) / (pos + neg)))
-        reasoning = f"keyword_fallback|pos={pos_hits}|neg={neg_hits}|result={result:.2f}"
+        reasoning = (
+            f"keyword_fallback|pos={pos_hits}|neg={neg_hits}|result={result:.2f}"
+        )
 
-    _log_judgment(cortex, "valence", {
-        "method": "keyword",
-        "input_len": len(interaction_text),
-        "response_len": len(response_text),
-    }, result, reasoning)
+    _log_judgment(
+        cortex,
+        "valence",
+        {
+            "method": "keyword",
+            "input_len": len(interaction_text),
+            "response_len": len(response_text),
+        },
+        result,
+        reasoning,
+    )
 
     return result
 
@@ -135,11 +163,17 @@ def measure_friction(
     if result < friction:
         reasoning += " [capped at 1.0]"
 
-    _log_judgment(cortex, "friction", {
-        "used_api": used_api,
-        "retry_count": retry_count,
-        "tool_failures": tool_failures,
-    }, result, reasoning)
+    _log_judgment(
+        cortex,
+        "friction",
+        {
+            "used_api": used_api,
+            "retry_count": retry_count,
+            "tool_failures": tool_failures,
+        },
+        result,
+        reasoning,
+    )
 
     return result
 
@@ -167,7 +201,9 @@ def calculate_roi(
         value_parts.append("new_learning(+0.3)")
 
     effort = 0.2 if used_api else 0.05
-    effort_parts.append(f"{'api' if used_api else 'no_api'}({'0.20' if used_api else '0.05'})")
+    effort_parts.append(
+        f"{'api' if used_api else 'no_api'}({'0.20' if used_api else '0.05'})"
+    )
 
     result = max(-1.0, min(1.0, value - effort))
     reasoning = (
@@ -176,10 +212,16 @@ def calculate_roi(
         f"→ {value:.2f} - {effort:.2f} = {result:.2f}"
     )
 
-    _log_judgment(cortex, "roi", {
-        "goal_achieved": goal_achieved,
-        "new_learning": new_learning,
-        "used_api": used_api,
-    }, result, reasoning)
+    _log_judgment(
+        cortex,
+        "roi",
+        {
+            "goal_achieved": goal_achieved,
+            "new_learning": new_learning,
+            "used_api": used_api,
+        },
+        result,
+        reasoning,
+    )
 
     return result
