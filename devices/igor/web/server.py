@@ -965,7 +965,7 @@ def start(stats_fn=None, cortex_fn=None, igor_fn=None):
     # When SSL is active, also serve plain HTTP on port+1 for LAN access.
     # e.g. http://10.0.0.229:8081/ works without cert warnings.
     if ssl_cert and ssl_key:
-        http_port = int(os.getenv("IGOR_HTTP_PORT", str(port + 1)))
+        http_port = int(os.getenv("IGOR_HTTP_PORT", "8083"))
 
         def _run_http():
             app = _make_app()
