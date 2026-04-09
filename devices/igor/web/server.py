@@ -886,6 +886,11 @@ _server_thread: Optional[threading.Thread] = None
 def start(stats_fn=None, cortex_fn=None, igor_fn=None):
     """Start the web server in a background daemon thread. Non-blocking.
 
+    D335: If the utility closet is already running on our port, skip binding.
+    Igor will communicate via the utility_closet_client REST API instead.
+    The callbacks (stats_fn, cortex_fn, igor_fn) are still stored so
+    Igor-specific endpoints work if we do bind our own server.
+
     stats_fn:  callable () → dict    — Igor.get_stats(); called by /api/dashboard.
     cortex_fn: callable () → Cortex  — Igor.get_cortex(); used by /api/cc_notebook (#239).
     igor_fn:   callable () → Igor    — Igor instance; used by /api/execute_habit (D094).
@@ -901,6 +906,19 @@ def start(stats_fn=None, cortex_fn=None, igor_fn=None):
         return
 
     port = int(os.getenv("IGOR_WEB_PORT", "8080"))
+
+    # D335: check if utility closet already owns this port
+    try:
+        from .utility_closet_client import uc_client
+
+        if uc_client.is_available():
+            logging.getLogger(__name__).info(
+                "Utility closet running on port %d — Igor will not bind its own web server",
+                port,
+            )
+            return
+    except Exception:
+        pass  # utility closet not available — bind normally
     ssl_cert = os.getenv("IGOR_SSL_CERT", "")
     ssl_key = os.getenv("IGOR_SSL_KEY", "")
 
