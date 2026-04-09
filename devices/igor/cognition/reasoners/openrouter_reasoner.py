@@ -44,7 +44,7 @@ from ..forensic_logger import (
 )
 from ...memory.scrub import scrub
 
-console = Console()
+console = Console(force_terminal=True)
 
 DEFAULT_MODEL = "anthropic/claude-sonnet-4-6"
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"

@@ -199,7 +199,7 @@ class BaseReasoner(ABC, IgorBase):
         """
         from rich.console import Console as _Console
 
-        _c = _Console()
+        _c = _Console(force_terminal=True)
         _c.print(f"[dim][{tag} turn={turn}] ⚙ {name}({args_summary})[/]")
         _c.print(f"[dim][{tag} turn={turn}]   → {result_preview}[/]")
 
