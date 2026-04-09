@@ -125,7 +125,7 @@ class ConsoleHandler(logging.Handler):
         super().__init__(level)
         from rich.console import Console as _Console
 
-        self._console = _Console()
+        self._console = _Console(force_terminal=True)
 
     def emit(self, record: logging.LogRecord) -> None:
         try:

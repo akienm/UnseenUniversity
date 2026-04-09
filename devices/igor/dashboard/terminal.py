@@ -18,7 +18,7 @@ from rich import box
 from ..memory.cortex import Cortex
 from ..memory.models import MemoryType
 
-console = Console()
+console = Console(force_terminal=True)
 
 _W = 64  # panel inner width (fits ═ border at 66 cols)
 
