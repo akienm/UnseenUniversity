@@ -238,6 +238,19 @@ def pe_read_ticket(basket: dict) -> dict:
     basket["ticket_description"] = ticket.get("description") or ticket.get("title", "")
     basket["ticket_title"] = ticket.get("title", "")
     basket["plan_files"] = ticket.get("required_files") or []
+
+    # D333: load CC-approved plan if present (D331 escalation → approval flow)
+    approved_plan = ticket.get("approved_plan")
+    approval_notes = ticket.get("approval_notes")
+    if approved_plan:
+        basket["approved_plan"] = approved_plan
+        log.info(
+            f"READ_TICKET: {ticket_id} has approved_plan ({len(approved_plan)} chars)"
+        )
+    if approval_notes:
+        basket["approval_notes"] = approval_notes
+        log.info(f"READ_TICKET: {ticket_id} has approval_notes")
+
     log.info(
         f"READ_TICKET: {ticket_id} desc_len={len(basket['ticket_description'])} "
         f"plan_files={basket['plan_files']}"
@@ -1144,6 +1157,41 @@ def pe_hypothesize(basket: dict) -> dict:
       hypothesis_error  str | None   — validation error if any edit invalid
     """
     if basket.get("error"):
+        return basket
+
+    # D333: if CC approved a plan, use it directly instead of calling LLM
+    approved_plan = basket.get("approved_plan")
+    if approved_plan:
+        log.info("HYPOTHESIZE: using CC-approved plan (skipping tier.2 call)")
+        try:
+            parsed = json.loads(approved_plan)
+            edits = parsed.get("edits", [])
+            if not edits and isinstance(parsed, list):
+                edits = parsed  # allow bare list format
+        except (json.JSONDecodeError, TypeError):
+            # approved_plan is prose, not JSON — treat as description enhancement
+            # and fall through to normal hypothesize with enriched context
+            notes = basket.get("approval_notes", "")
+            basket["ticket_description"] = (
+                f"{basket.get('ticket_description', '')}\n\n"
+                f"CC-APPROVED PLAN:\n{approved_plan}\n"
+                f"{f'CC NOTES: {notes}' if notes else ''}"
+            )
+            log.info("HYPOTHESIZE: approved_plan is prose — enriching description")
+            approved_plan = None  # fall through to normal path
+
+    if approved_plan:
+        # Validate approved edits the same way we validate LLM edits
+        validation_errors = _validate_hypotheses(edits, _REPO_ROOT)
+        if validation_errors:
+            log.warning(
+                f"HYPOTHESIZE: approved_plan has validation errors: {validation_errors}"
+            )
+            basket["hypothesis_error"] = "; ".join(validation_errors)
+        basket["hypotheses"] = edits
+        basket["hypothesis"] = edits[0] if edits else None
+        basket["hypothesis_raw"] = approved_plan
+        basket["hypothesis_error"] = basket.get("hypothesis_error")
         return basket
 
     description = basket.get("ticket_description", "")
