@@ -911,56 +911,9 @@ def start(stats_fn=None, cortex_fn=None, igor_fn=None):
     if _server_thread and _server_thread.is_alive():
         return
 
-    # D335: ensure utility closet is running, then use a different port
-    port = int(os.getenv("IGOR_WEB_PORT", "8080"))
-    try:
-        from .utility_closet_client import uc_client
-
-        if not uc_client.is_available():
-            # Start it — same pattern as superclaude/igor launchers
-            import subprocess
-
-            _uc_script = (
-                Path(__file__).parent.parent.parent.parent
-                / "claudecode"
-                / "utility_closet_server.py"
-            )
-            _uc_python = (
-                Path(__file__).parent.parent.parent.parent / "venv" / "bin" / "python"
-            )
-            if _uc_script.exists() and _uc_python.exists():
-                _uc_log = (
-                    Path(os.environ.get("IGOR_RUNTIME_ROOT", Path.home() / ".TheIgors"))
-                    / "logs"
-                    / "utility_closet.log"
-                )
-                _uc_log.parent.mkdir(parents=True, exist_ok=True)
-                with open(_uc_log, "a") as _lf:
-                    subprocess.Popen(
-                        [str(_uc_python), str(_uc_script)],
-                        stdout=_lf,
-                        stderr=_lf,
-                        start_new_session=True,
-                    )
-                logging.getLogger(__name__).info(
-                    "Started utility closet (was not running)"
-                )
-                # Give it a moment
-                import time as _time
-
-                for _ in range(5):
-                    _time.sleep(1)
-                    if uc_client.is_available():
-                        break
-
-        if uc_client.is_available():
-            port = int(os.getenv("IGOR_AGENT_PORT", str(port + 1)))
-            logging.getLogger(__name__).info(
-                "Utility closet on default port — Igor web server binding port %d instead",
-                port,
-            )
-    except Exception as _e:
-        logging.getLogger(__name__).debug("utility closet check/start failed: %s", _e)
+    # D335: Igor always binds IGOR_AGENT_PORT (default 8081).
+    # Utility closet owns port 8080 — launchers start it separately.
+    port = int(os.getenv("IGOR_AGENT_PORT", "8081"))
     ssl_cert = os.getenv("IGOR_SSL_CERT", "")
     ssl_key = os.getenv("IGOR_SSL_KEY", "")
 

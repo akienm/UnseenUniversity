@@ -23,7 +23,7 @@ from typing import Optional
 
 log = logging.getLogger(__name__)
 
-_UC_PORT = int(os.environ.get("IGOR_WEB_PORT", "8080"))
+_UC_PORT = int(os.environ.get("IGOR_UC_PORT", "8080"))
 _UC_BASE = f"http://localhost:{_UC_PORT}"
 
 
