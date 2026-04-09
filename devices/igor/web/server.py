@@ -198,7 +198,10 @@ def _broadcast_to_session(session_id: str, payload: str):
     with _client_lock:
         queues = list(_session_clients.get(session_id, []))
     for q in queues:
-        _loop.call_soon_threadsafe(q.put_nowait, payload)
+        try:
+            _loop.call_soon_threadsafe(q.put_nowait, payload)
+        except RuntimeError:
+            pass  # event loop closed
 
 
 def _broadcast(payload: str):
@@ -208,7 +211,10 @@ def _broadcast(payload: str):
     with _client_lock:
         all_queues = [q for qs in _session_clients.values() for q in qs]
     for q in all_queues:
-        _loop.call_soon_threadsafe(q.put_nowait, payload)
+        try:
+            _loop.call_soon_threadsafe(q.put_nowait, payload)
+        except RuntimeError:
+            pass  # event loop closed — server shutting down
 
 
 # ── Route handlers ────────────────────────────────────────────────────────────
@@ -905,20 +911,56 @@ def start(stats_fn=None, cortex_fn=None, igor_fn=None):
     if _server_thread and _server_thread.is_alive():
         return
 
+    # D335: ensure utility closet is running, then use a different port
     port = int(os.getenv("IGOR_WEB_PORT", "8080"))
-
-    # D335: check if utility closet already owns this port
     try:
         from .utility_closet_client import uc_client
 
+        if not uc_client.is_available():
+            # Start it — same pattern as superclaude/igor launchers
+            import subprocess
+
+            _uc_script = (
+                Path(__file__).parent.parent.parent.parent
+                / "claudecode"
+                / "utility_closet_server.py"
+            )
+            _uc_python = (
+                Path(__file__).parent.parent.parent.parent / "venv" / "bin" / "python"
+            )
+            if _uc_script.exists() and _uc_python.exists():
+                _uc_log = (
+                    Path(os.environ.get("IGOR_RUNTIME_ROOT", Path.home() / ".TheIgors"))
+                    / "logs"
+                    / "utility_closet.log"
+                )
+                _uc_log.parent.mkdir(parents=True, exist_ok=True)
+                with open(_uc_log, "a") as _lf:
+                    subprocess.Popen(
+                        [str(_uc_python), str(_uc_script)],
+                        stdout=_lf,
+                        stderr=_lf,
+                        start_new_session=True,
+                    )
+                logging.getLogger(__name__).info(
+                    "Started utility closet (was not running)"
+                )
+                # Give it a moment
+                import time as _time
+
+                for _ in range(5):
+                    _time.sleep(1)
+                    if uc_client.is_available():
+                        break
+
         if uc_client.is_available():
+            port = int(os.getenv("IGOR_AGENT_PORT", str(port + 1)))
             logging.getLogger(__name__).info(
-                "Utility closet running on port %d — Igor will not bind its own web server",
+                "Utility closet on default port — Igor web server binding port %d instead",
                 port,
             )
-            return
-    except Exception:
-        pass  # utility closet not available — bind normally
+    except Exception as _e:
+        logging.getLogger(__name__).debug("utility closet check/start failed: %s", _e)
     ssl_cert = os.getenv("IGOR_SSL_CERT", "")
     ssl_key = os.getenv("IGOR_SSL_KEY", "")
 
