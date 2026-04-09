@@ -160,8 +160,20 @@ def _fetch_machines() -> list[MachineRecord]:
         rows = cur.fetchall()
         conn.close()
     except Exception as exc:
-        _log.error("[machine_manager] DB fetch failed: %s", exc)
+        _log.error(
+            "[machine_manager] DB_FETCH_FAIL: %s (db_url=%s)",
+            exc,
+            _DB_URL.split("@")[-1] if "@" in _DB_URL else _DB_URL,  # host/db only, no creds
+        )
         return []
+
+    if not rows:
+        _log.warning(
+            "[machine_manager] MACHINES_EMPTY: query returned 0 rows — "
+            "check machines table has rows with status!='offline' AND inference_rank IS NOT NULL "
+            "(db=%s)",
+            _DB_URL.split("/")[-1] if "/" in _DB_URL else _DB_URL,
+        )
 
     machines = []
     for row in rows:
