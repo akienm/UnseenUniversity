@@ -918,6 +918,8 @@ def start(stats_fn=None, cortex_fn=None, igor_fn=None):
     ssl_key = os.getenv("IGOR_SSL_KEY", "")
 
     def _run():
+        import traceback as _tb
+
         try:
             app = _make_app()
             config = uvicorn.Config(
@@ -931,10 +933,23 @@ def start(stats_fn=None, cortex_fn=None, igor_fn=None):
             server = uvicorn.Server(config)
             logging.getLogger(__name__).info("Web server starting on port %d", port)
             asyncio.run(server.serve())
-        except Exception as e:
-            logging.getLogger(__name__).error(
-                "Web server thread crashed: %s", e, exc_info=True
+            logging.getLogger(__name__).warning(
+                "Web server exited cleanly on port %d", port
             )
+        except Exception as e:
+            _msg = f"Web server thread crashed on port {port}: {e}\n{_tb.format_exc()}"
+            logging.getLogger(__name__).error(_msg)
+            # Also write to a dedicated crash log — daemon thread output can vanish
+            try:
+                _crash_log = (
+                    Path(os.environ.get("IGOR_RUNTIME_ROOT", Path.home() / ".TheIgors"))
+                    / "logs"
+                    / "web_server_crash.log"
+                )
+                with open(_crash_log, "a") as _f:
+                    _f.write(f"\n{'='*60}\n{_msg}\n")
+            except Exception:
+                pass
 
     _server_thread = threading.Thread(target=_run, daemon=True, name="web-server")
     _server_thread.start()
