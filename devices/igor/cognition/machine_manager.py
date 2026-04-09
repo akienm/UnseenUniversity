@@ -31,10 +31,12 @@ from typing import Optional
 
 _log = logging.getLogger(__name__)
 
-_DB_URL = os.getenv(
-    "IGOR_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
+_DB_URL = os.getenv("IGOR_HOME_DB_URL", "")
+if not _DB_URL:
+    raise RuntimeError(
+        "IGOR_HOME_DB_URL not set — machine_manager requires a Postgres connection. "
+        "Set this env var at system level (not user level on Windows)."
+    )
 
 # Cache TTL — reload from DB this often
 _CACHE_TTL = 60.0  # seconds
