@@ -941,23 +941,23 @@ def _reading_extract_worker(
     chapter_title: str,
     position: int,
     calibre_id: int | None,
+    model_override: str | None = None,
 ) -> None:
     """
-    G54: Fire-and-forget reading memory extraction.
+    G54/D359: Fire-and-forget reading memory extraction.
     Runs in a daemon thread — never blocks read_chunk().
-    Uses gpt-4o-mini to identify key ideas and link them to the interpretive tree.
+    Routes through inference gateway (reading_extract purpose).
     Gate: IGOR_READING_EXTRACT=true (default off while tuning).
+
+    model_override: if set, forces a specific model (benchmark use only).
     """
     try:
-        import urllib.request as _urlreq
+        from ..cognition.inference_gateway import (
+            InferenceGateway,
+            make_context,
+            RoutingError,
+        )
 
-        api_key = os.getenv("OPENROUTER_API_KEY", "")
-        if not api_key:
-            return
-
-        from ..cognition.inference_openrouter import OR_CHEAP_MODEL
-
-        cheap_model = OR_CHEAP_MODEL
         candidates_str = "\n".join(
             f"  {nid}: {desc}" for nid, desc in _INTERP_CANDIDATES
         )
@@ -969,28 +969,15 @@ def _reading_extract_worker(
             candidates=candidates_str,
         )
 
-        payload = json.dumps(
-            {
-                "model": cheap_model,
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.1,
-                "max_tokens": 220,
-            }
-        ).encode()
-        req = _urlreq.Request(
-            "https://openrouter.ai/api/v1/chat/completions",
-            data=payload,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://github.com/akienm/TheIgors",
-            },
-            method="POST",
-        )
-
-        with _urlreq.urlopen(req, timeout=20) as resp:
-            data = json.loads(resp.read())
-        result = data["choices"][0]["message"]["content"].strip()
+        gw = InferenceGateway.from_env()
+        ctx = make_context(is_background=True, research_mode=True)
+        kwargs = {}
+        if model_override:
+            kwargs["model"] = model_override
+        try:
+            result = gw.call("reading_extract", prompt, ctx, **kwargs)
+        except RoutingError:
+            return
 
         if result.upper().startswith("SKIP") or not result.startswith("{"):
             return
