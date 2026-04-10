@@ -12,7 +12,7 @@ Endpoints:
   GET  /api/outbox          → JSON list of outbox files with size/mtime
   GET  /api/outbox/{file}   → download file from outbox
   GET  /api/dashboard       → JSON stats snapshot
-  POST /api/bridge_chat     → proxy to claude_bridge on 8082
+  POST /api/bridge_chat     → proxy to claude_bridge on 8085
   GET  /api/system_health   → JSON cluster resource state (machine health, load, models)
 
 WebSocket message protocol (JSON):
@@ -801,14 +801,14 @@ async def _api_execute_habit_get(request: Request):
 
 # ── D105: Claude bridge proxy ─────────────────────────────────────────────────
 
-_BRIDGE_PORT = int(os.getenv("CLAUDE_BRIDGE_PORT", "8082"))
+_BRIDGE_PORT = int(os.getenv("CLAUDE_BRIDGE_PORT", "8085"))
 
 
 async def _api_bridge_chat(request: Request) -> JSONResponse:
     """POST /api/bridge_chat — proxy to claude_bridge on _BRIDGE_PORT.
 
     Body: {"message": "...", "channel": "shared|back"}
-    Forwards to http://localhost:8082/chat and returns the response.
+    Forwards to http://localhost:{_BRIDGE_PORT}/chat and returns the response.
     Allows the web UI to call Claude without CORS issues.
     """
     try:
@@ -836,7 +836,7 @@ async def _api_bridge_chat(request: Request) -> JSONResponse:
     except _ue.URLError:
         return JSONResponse(
             {
-                "error": "Claude bridge unavailable — is claude_bridge.py running on port 8082?"
+                "error": f"Claude bridge unavailable — is claude_bridge.py running on port {_BRIDGE_PORT}?"
             },
             status_code=503,
         )
