@@ -22,7 +22,7 @@ def _add_repo_to_path():
     repo = Path(__file__).parent.parent
     if str(repo) not in sys.path:
         sys.path.insert(0, str(repo))
-    cc = repo / "claudecode"
+    cc = repo / "lab" / "claudecode"
     if str(cc) not in sys.path:
         sys.path.insert(0, str(cc))
 
@@ -31,7 +31,6 @@ _add_repo_to_path()
 
 import decision_manager as dm
 import session_manager as sm
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # session_manager — pure function tests
@@ -188,6 +187,7 @@ class TestUpdateDsb(unittest.TestCase):
 
     def test_updates_header_date(self):
         from datetime import datetime
+
         dsb = _write_dsb(_MINIMAL_DSB)
         dm.DSB_FILE = dsb
         dm._update_dsb("D999", "new", "implemented", "desc")
@@ -230,16 +230,14 @@ class TestDecisionManagerCmdAdd(unittest.TestCase):
     def test_cmd_add_calls_update_dsb(self):
         dsb = _write_dsb(_MINIMAL_DSB)
         dm.DSB_FILE = dsb
-        with patch.object(dm, "_upsert_docs_entry"), \
-             patch.object(dm, "_flush_to_igor"):
+        with patch.object(dm, "_upsert_docs_entry"), patch.object(dm, "_flush_to_igor"):
             dm.cmd_add(["D042", "x", "implemented", "desc"])
         self.assertIn("D042", _decision_lines(dsb.read_text())[1])
 
     def test_cmd_add_uppercases_decision_id(self):
         dsb = _write_dsb(_MINIMAL_DSB)
         dm.DSB_FILE = dsb
-        with patch.object(dm, "_upsert_docs_entry"), \
-             patch.object(dm, "_flush_to_igor"):
+        with patch.object(dm, "_upsert_docs_entry"), patch.object(dm, "_flush_to_igor"):
             dm.cmd_add(["d042", "x", "implemented", "desc"])
         ids = [l.split("|")[0] for l in _decision_lines(dsb.read_text())]
         self.assertIn("D042", ids)
@@ -260,9 +258,9 @@ class TestSessionManagerCmdStart(unittest.TestCase):
         fake_conn.cursor.return_value.__enter__ = MagicMock(return_value=fake_cur)
         fake_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
 
-        with patch.object(sm, "_conn", return_value=fake_conn), \
-             patch.object(sm, "_ensure_table"), \
-             patch.object(sm, "_write_current_session") as mock_write:
+        with patch.object(sm, "_conn", return_value=fake_conn), patch.object(
+            sm, "_ensure_table"
+        ), patch.object(sm, "_write_current_session") as mock_write:
             sm.cmd_start(["2026-03-20x", "Test theme"])
 
         mock_write.assert_called_once_with("2026-03-20x")

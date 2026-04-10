@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch, call
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "lab"))
 sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
 

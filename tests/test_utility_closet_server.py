@@ -20,7 +20,7 @@ from unittest.mock import patch
 import pytest
 
 # Add claudecode to path so we can import the server module
-sys.path.insert(0, str(Path(__file__).parent.parent / "claudecode"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "lab" / "claudecode"))
 
 # We need to patch paths BEFORE importing the module
 _test_runtime = None

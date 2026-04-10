@@ -361,7 +361,7 @@ def live_replay():
             subprocess.run(
                 [
                     "python3",
-                    str(Path(__file__).parent.parent / "claudecode" / "channel.py"),
+                    str(Path(__file__).parent.parent / "lab" / "claudecode" / "channel.py"),
                     "post",
                     alert[:300],
                     "--as",

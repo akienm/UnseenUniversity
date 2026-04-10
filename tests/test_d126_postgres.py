@@ -249,7 +249,7 @@ class TestMigrateWgScript(unittest.TestCase):
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
         result = subprocess.run(
-            [sys.executable, "claudecode/migrate_wg_to_postgres.py", "--dry-run"],
+            [sys.executable, "lab/claudecode/migrate_wg_to_postgres.py", "--dry-run"],
             capture_output=True,
             text=True,
             cwd=str(Path(__file__).parent.parent),

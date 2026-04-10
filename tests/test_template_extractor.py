@@ -292,7 +292,7 @@ class TestPatternExtractorHabitMetadata(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "seed_pe",
             Path(__file__).parent.parent
-            / "claudecode"
+            / "lab" / "claudecode"
             / "seed_pattern_extractor_habits.py",
         )
         mod = importlib.util.module_from_spec(spec)
