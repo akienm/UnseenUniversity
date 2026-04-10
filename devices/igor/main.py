@@ -485,6 +485,17 @@ class Igor(IgorBase):
         except Exception as _wg_e:
             console.print(f"[yellow]Word graph init failed: {_wg_e}[/]")
 
+        # T-skill-engram-sprint: seed CC skills as engram nodes on every boot.
+        # Non-fatal — skill execution is a luxury, not a boot requirement.
+        try:
+            from .tools.skill_importer import import_all_skills as _import_skills
+
+            _skill_result = _import_skills()
+            _skill_count = _skill_result.split("\n")[0] if _skill_result else "0"
+            console.print(f"[dim]{_skill_count}[/]")
+        except Exception as _skill_e:
+            console.print(f"[yellow]Skill import failed: {_skill_e}[/]")
+
         # G37: asymmetric dual word graphs — recognition (parsing) vs generation (voice).
         # Phase 2 enabled: default true. Override with IGOR_DUAL_WORD_GRAPHS=false to disable.
         self._dual_graphs = os.getenv("IGOR_DUAL_WORD_GRAPHS", "true").lower() in (
