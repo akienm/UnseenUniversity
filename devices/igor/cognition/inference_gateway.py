@@ -145,6 +145,11 @@ class InferenceGateway(IgorBase):
         """
         Traverse from purpose_id to a handler node, return response text.
         kwargs are forwarded to every handler attempt.
+
+        Special kwargs (consumed here, not forwarded to handlers):
+          handler_override: str — jump directly to a named handler node,
+            skipping DAG edge traversal. Logging and fallback still fire.
+            Used by benchmarking to force ollama vs OR endpoint.
         Raises RoutingError if no handler succeeds.
         """
         try:
@@ -153,10 +158,13 @@ class InferenceGateway(IgorBase):
             _lpt = None
             _gtid = lambda: "?"
 
+        # Pop handler_override so it doesn't forward to handlers
+        handler_override = kwargs.pop("handler_override", None)
+
         constraints = self._purposes.get(
             purpose_id, PurposeConstraints(step_name=purpose_id)
         )
-        current_id = purpose_id
+        current_id = handler_override if handler_override else purpose_id
         failed: set[str] = set()
 
         while True:
@@ -419,9 +427,10 @@ class InferenceGateway(IgorBase):
         _cloud_error = ""  # Track why cloud failed, if at all
         if not _cloud_ok:
             import logging as _logging
+
             _logging.getLogger(__name__).debug(
                 "[inference_gateway] cloud unavailable: _t4=%s (check OPENROUTER_API_KEY init at boot)",
-                "initialized" if self._t4 else "None"
+                "initialized" if self._t4 else "None",
             )
 
         # ── background_batch: always local, quality priority ──────────────────
@@ -604,7 +613,9 @@ class InferenceGateway(IgorBase):
         # Build diagnostic breadcrumb: what was attempted, what failed?
         _diagnostic = []
         if _cloud_attempted:
-            _diagnostic.append(f"cloud_attempted={_cloud_ok and self._t4} error={_cloud_error[:80]}")
+            _diagnostic.append(
+                f"cloud_attempted={_cloud_ok and self._t4} error={_cloud_error[:80]}"
+            )
         else:
             _diagnostic.append(
                 f"cloud_skipped=(is_user_turn={is_user_turn} OR quality_path={_quality_path} OR force_mode={_force_cloud_mode}) AND cloud_ok={_cloud_ok} AND t4={bool(self._t4)}"
@@ -814,6 +825,10 @@ def build_default_gateway() -> InferenceGateway:
               ne_local_ok     ──▶ ollama_ne        ──[fallback]──▶ or_ne
 
     think     always          ──▶ ollama_think     (no cloud fallback)
+
+    reading_extract
+              local_preferred ──▶ ollama_reading   ──[fallback]──▶ or_reading
+              cloud_preferred ──▶ or_reading
     """
     gw = InferenceGateway()
 
@@ -893,15 +908,38 @@ def build_default_gateway() -> InferenceGateway:
                 },
             ),
         ),
+        (
+            "reading_extract",
+            PurposeConstraints(
+                step_name="reading_extract",
+                max_tokens=220,
+                timeout_s=300.0,  # background work — no short timeout; model swaps need time
+                temperature=0.1,
+                extra={
+                    "cluster_call_type": "extraction",
+                    "model": os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b"),
+                    "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
+                    "or_model": os.getenv(
+                        "OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini"
+                    ),
+                },
+            ),
+        ),
     ]
     for node_id, constraints in purposes:
         gw.add_node(Node(id=node_id))
         gw.register_purpose(node_id, constraints)
 
     # ── Handler nodes (one Ollama + one OR per purpose, except think) ─────────
-    for node_id in ("ollama_preparse", "ollama_winnow", "ollama_ne", "ollama_think"):
+    for node_id in (
+        "ollama_preparse",
+        "ollama_winnow",
+        "ollama_ne",
+        "ollama_think",
+        "ollama_reading",
+    ):
         gw.add_node(Node(id=node_id, handler=_h_ollama))
-    for node_id in ("or_preparse", "or_winnow", "or_ne"):
+    for node_id in ("or_preparse", "or_winnow", "or_ne", "or_reading"):
         gw.add_node(Node(id=node_id, handler=_h_or))
 
     # ── Edges: preparse ──────────────────────────────────────────────────────
@@ -1015,6 +1053,36 @@ def build_default_gateway() -> InferenceGateway:
         )
     )
     # No fallback — _think_call() treats empty return as "no synthesis available"
+
+    # ── Edges: reading_extract (D359) ────────────────────────────────────────
+    gw.add_edge(
+        Edge(
+            "reading_extract",
+            "ollama_reading",
+            _local_preferred,
+            priority=1,
+            label="local available, cloud_mode off",
+        )
+    )
+    gw.add_edge(
+        Edge(
+            "reading_extract",
+            "or_reading",
+            _cloud_preferred,
+            priority=2,
+            label="cloud_mode active or local unavailable",
+        )
+    )
+    gw.add_edge(
+        Edge(
+            "ollama_reading",
+            "or_reading",
+            _cloud_ok,
+            priority=1,
+            is_fallback=True,
+            label="ollama_reading failed",
+        )
+    )
 
     return gw
 

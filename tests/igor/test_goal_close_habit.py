@@ -258,14 +258,14 @@ class TestProcGoalCloseHabitSchema(unittest.TestCase):
     def test_seed_file_exists(self):
         """Seed file must exist at the expected path."""
         seed_path = (
-            Path(__file__).parent.parent / "claudecode" / "seed_goal_close_habit.py"
+            Path(__file__).parent.parent / "lab" / "claudecode" / "seed_goal_close_habit.py"
         )
         self.assertTrue(seed_path.exists(), f"Seed file missing: {seed_path}")
 
     def test_seed_file_references_proc_goal_close(self):
         """Seed file source contains the PROC_GOAL_CLOSE ID."""
         seed_path = (
-            Path(__file__).parent.parent / "claudecode" / "seed_goal_close_habit.py"
+            Path(__file__).parent.parent / "lab" / "claudecode" / "seed_goal_close_habit.py"
         )
         source = seed_path.read_text()
         self.assertIn("PROC_GOAL_CLOSE", source)
@@ -273,7 +273,7 @@ class TestProcGoalCloseHabitSchema(unittest.TestCase):
     def test_seed_file_references_close_goal_by_ticket(self):
         """Seed file source references the close_goal_by_ticket tool."""
         seed_path = (
-            Path(__file__).parent.parent / "claudecode" / "seed_goal_close_habit.py"
+            Path(__file__).parent.parent / "lab" / "claudecode" / "seed_goal_close_habit.py"
         )
         source = seed_path.read_text()
         self.assertIn("close_goal_by_ticket", source)

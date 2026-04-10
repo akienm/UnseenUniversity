@@ -245,13 +245,13 @@ class TestEngramPayloadStructure(unittest.TestCase):
             "seed_skill_filter_engram",
             str(
                 Path(__file__).parent.parent
-                / "claudecode"
+                / "lab" / "claudecode"
                 / "seed_skill_filter_engram.py"
             ),
         )
         # Just read the file and extract ENGRAM_PAYLOAD manually
         src = (
-            Path(__file__).parent.parent / "claudecode" / "seed_skill_filter_engram.py"
+            Path(__file__).parent.parent / "lab" / "claudecode" / "seed_skill_filter_engram.py"
         ).read_text()
         # Extract ENGRAM_PAYLOAD dict via exec in a sandbox
         ns = {}
