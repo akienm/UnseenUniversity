@@ -448,9 +448,31 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
     Deposit an INTERPRETIVE node after a successful winnow: captures
     "when context involves [keywords], search for [queries]."
     Trains the graph to route context without a model call over time. (#188)
+
+    T-winnow-trigger-fix: strip think_context prefix so keywords come from
+    actual user input, not internal format. Without this, triggers contain
+    [think_context] and never match real messages (267/267 = 100% dead weight).
     """
     try:
         import hashlib
+
+        # T-winnow-trigger-fix: extract actual user message from think_context wrapper
+        clean_input = user_input
+        if "[think_context]" in clean_input.lower() or "[THINK_CONTEXT]" in clean_input:
+            # Take only content after the last newline with actual user text
+            lines = clean_input.split("\n")
+            # Find lines that look like user messages (not think_context metadata)
+            user_lines = [
+                ln
+                for ln in lines
+                if ln.strip()
+                and not ln.strip().startswith("[")
+                and not ln.strip().startswith("intent=")
+                and "think_context" not in ln.lower()
+                and "complexity=" not in ln
+                and "affect:" not in ln
+            ]
+            clean_input = " ".join(user_lines[-3:]) if user_lines else user_input
 
         _STOP = {
             "the",
@@ -469,7 +491,7 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
             "its",
             "but",
         }
-        words = [w.lower().strip(".,?!") for w in user_input.split() if len(w) > 3]
+        words = [w.lower().strip(".,?!") for w in clean_input.split() if len(w) > 3]
         keywords = [w for w in words if w not in _STOP][:4]
         if not keywords or not queries:
             return
