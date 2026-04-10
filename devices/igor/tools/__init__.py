@@ -69,6 +69,7 @@ from . import (
     cloud_escape_metric,
     reading_measure,
     reading_tool,
+    habit_health_audit,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
