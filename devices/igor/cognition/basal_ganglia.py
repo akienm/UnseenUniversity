@@ -284,9 +284,12 @@ def _apply_intent_gate(
     Gates (in order):
       1. Threshold habits skip (evaluated separately by ResourceMonitorSource)
       2. Author filter: skip if habit restricts to a different author
-      3. Action-class skip on question intents: prevent tools from misfiring
+      3. Action-class + tool/cognitive skip on question intents: prevent misfiring
       4. Response habits skip on factual intent (suppress_on_factual_intent flag)
-      5. Response habits skip on knowledge intents (all responses fall through on factual/knowledge)
+      5. Response habits skip on knowledge intents
+      6. T-twm-attentional-gating: operational habits (response/tool/cognitive) skip
+         on conversational intents — let the LLM generate engaged responses instead
+         of canned operational acknowledgments. Opt-in via conversation_eligible flag.
     """
     metadata = habit.metadata or {}
     h_type = metadata.get("habit_type", "")
@@ -316,10 +319,22 @@ def _apply_intent_gate(
     _KNOWLEDGE_INTENTS = frozenset(
         {"factual_question", "knowledge_request", "memory_verify"}
     )
+    # T-twm-attentional-gating: conversational intents where canned habits
+    # should yield to LLM-generated engaged responses
+    _CONVERSATIONAL_INTENTS = frozenset({"conversation", "general"})
 
-    # G-OVN-1b: action-class habits skip on question intents
+    # G-OVN-1b: action-class + tool/cognitive habits skip on question intents
     if (
-        h_type in ("action", "proactive", "workflow", "delegation", "reactive")
+        h_type
+        in (
+            "action",
+            "proactive",
+            "workflow",
+            "delegation",
+            "reactive",
+            "tool",
+            "cognitive",
+        )
         and parsed_intent in _QUESTION_INTENTS
     ):
         return False
@@ -334,6 +349,17 @@ def _apply_intent_gate(
 
     # G-OVN-1d: ALL response habits skip on factual/knowledge intents
     if h_type == "response" and parsed_intent in _KNOWLEDGE_INTENTS:
+        return False
+
+    # G-OVN-1e (T-twm-attentional-gating): operational habits skip on
+    # conversational intents. Conversation is the primary job — let the LLM
+    # generate engaged responses instead of canned acknowledgments.
+    # Habits can opt in with conversation_eligible=true to compete.
+    if (
+        h_type in ("response", "tool", "cognitive")
+        and parsed_intent in _CONVERSATIONAL_INTENTS
+        and not metadata.get("conversation_eligible")
+    ):
         return False
 
     return True

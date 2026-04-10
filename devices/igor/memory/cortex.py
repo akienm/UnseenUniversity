@@ -86,6 +86,13 @@ TWM_MAX_SLOTS = int(
 # G47: suppress repeated observations at the door rather than admitting at floor salience.
 TWM_SUPPRESS_AFTER_REPEATS = int(os.getenv("IGOR_TWM_SUPPRESS_REPEATS", "4"))
 TWM_SUPPRESS_SALIENCE_FLOOR = float(os.getenv("IGOR_TWM_SUPPRESS_FLOOR", "0.04"))
+# T-twm-attentional-gating: conversation mode constants (Baars GWT gating)
+# During active conversation, background sources are capped at sub-attentional salience.
+# Only genuine alerts (urgency >= ALERT_THRESHOLD) break through the gate.
+TWM_CONVERSATION_ACTIVE_SEC = 300  # 5 min full gating after last user input
+TWM_CONVERSATION_DECAY_SEC = 600  # linear opening over next 10 min (5-15 min total)
+TWM_CONVERSATION_BG_CAP = 0.15  # background salience cap during active conversation
+TWM_CONVERSATION_ALERT_THRESHOLD = 0.85  # urgency above this always breaks through
 
 # Change 4: urgency — distinct from salience (time-sensitivity vs importance)
 # Change 3: TTL extension on confirmed relevance (not mere access)
@@ -478,6 +485,8 @@ class Cortex(IgorBase):
         self._mem_cache: dict = {}
         # #260: in-process habit list cache; invalidated on store() when new habit added
         self._habit_cache: Optional[list] = None
+        # T-twm-attentional-gating: last user input timestamp (set by UserInputSource)
+        self._conversation_active_ts: Optional[datetime] = None
 
     def _conn(self):
         """Deprecated shim — use self._db() directly."""
@@ -3476,6 +3485,11 @@ class Cortex(IgorBase):
 
     # ── TWM — Temporal Working Memory ──────────────────────────────────────────
 
+    def mark_conversation_active(self):
+        """T-twm-attentional-gating: called by UserInputSource on each user message.
+        Sets the conversation timestamp so twm_push() can gate background sources."""
+        self._conversation_active_ts = datetime.now()
+
     def twm_push(
         self,
         source: str,
@@ -3494,8 +3508,8 @@ class Cortex(IgorBase):
         Automatically evicts if over TWM_MAX (lowest salience + integrated + oldest first).
 
         urgency: 0.0-1.0 — time-sensitivity of this observation (distinct from salience/importance).
-          0.9 = ethics violation / inbox file; 0.8 = new inbox item;
-          0.7 = user input; 0.5 = machines change; 0.3 = heartbeat; 0.1 = surfaced memory.
+          0.95 = user input (T-twm-attentional-gating); 0.9 = ethics / budget critical;
+          0.5 = machines change; 0.3 = heartbeat; 0.1 = surfaced memory.
         """
         content_csb = scrub(content_csb)
         urgency = max(0.0, min(1.0, urgency))
@@ -3503,6 +3517,29 @@ class Cortex(IgorBase):
         expires_at = None
         if ttl_seconds:
             expires_at = (now + timedelta(seconds=ttl_seconds)).isoformat()
+
+        # T-twm-attentional-gating: suppress background sources during active conversation.
+        # User input (source starts with "user_input:") is never gated.
+        # Alerts (urgency >= threshold) always break through.
+        # All other sources get salience capped at sub-attentional level, with
+        # linear decay opening the gate after CONVERSATION_ACTIVE_SEC.
+        if (
+            self._conversation_active_ts is not None
+            and not source.startswith("user_input:")
+            and urgency < TWM_CONVERSATION_ALERT_THRESHOLD
+        ):
+            elapsed = (now - self._conversation_active_ts).total_seconds()
+            if elapsed <= TWM_CONVERSATION_ACTIVE_SEC:
+                salience = min(salience, TWM_CONVERSATION_BG_CAP)
+            elif elapsed <= TWM_CONVERSATION_ACTIVE_SEC + TWM_CONVERSATION_DECAY_SEC:
+                progress = (
+                    elapsed - TWM_CONVERSATION_ACTIVE_SEC
+                ) / TWM_CONVERSATION_DECAY_SEC
+                cap = (
+                    TWM_CONVERSATION_BG_CAP + (1.0 - TWM_CONVERSATION_BG_CAP) * progress
+                )
+                salience = min(salience, cap)
+            # else: gate fully open — no cap
 
         # G6 / #44: Habituation — repeated identical observations get reduced salience.
         # Match on first 120 chars of content (enough to identify the signal type + key).

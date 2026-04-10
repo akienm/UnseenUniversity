@@ -26,13 +26,22 @@ import os
 import re
 import time
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
 from ..igor_base import IgorBase
 from ..paths import paths
 from .forensic_logger import log_error
+
+# ── T-twm-attentional-gating: conversation mode constants ──────────────────────
+# See cortex.twm_push() for the gate implementation. UserInputSource sets
+# cortex._conversation_active_ts on each message; twm_push gates background
+# sources during active conversation (Baars GWT: workspace is gated).
+CONVERSATION_ACTIVE_SEC = 300  # 5 min full gating
+CONVERSATION_DECAY_SEC = 600  # 10 min linear opening (5-15 min total)
+CONVERSATION_BG_CAP = 0.15  # sub-attentional cap during active conversation
+CONVERSATION_ALERT_THRESHOLD = 0.85  # urgency above this always breaks through
 
 MACHINES_JSON = paths().machines_json
 INBOX_DIR = paths().inbox
@@ -675,15 +684,20 @@ class UserInputSource(BasePushSource):
     ) -> int:
         """Push a user/network message into TWM. Returns obs ID.
         G50: sets the message as the current TWM attractor — user input defines current focus.
+        T-twm-attentional-gating: user input is highest priority (0.95/0.95).
+        Chatbot's primary job IS conversation — this must dominate the workspace.
         """
+        # T-twm-attentional-gating: mark conversation active on cortex
+        cortex.mark_conversation_active()
+
         csb = f"MSG|ch={channel}|from={author}|{content[:300]}"
         obs_id = cortex.twm_push(
             source=f"{self.name}:{channel}",
             content_csb=csb,
-            salience=0.7,
+            salience=0.95,
             metadata={"channel": channel, "author": author},
             ttl_seconds=1800,  # messages stay relevant for 30 min
-            urgency=0.7,  # Change 4: user input is time-sensitive
+            urgency=0.95,  # T-twm-attentional-gating: conversation is highest priority
         )
         # G50: every user message becomes the primary attractor — it defines current focus
         if obs_id and obs_id > 0:
@@ -2354,6 +2368,7 @@ interoception_source = InteroceptionSource()
 scheduler_source = SchedulerSource()
 thread_coherence_source = ThreadCoherenceSource()
 consolidation_replay = None  # Lazy loaded to avoid circular import
+sleep_consolidation = None  # T-sleep-consolidation: lazy loaded
 
 # ── T-oscillatory-timing-tiers: hierarchical dispatch ─────────────────────────
 # Mirrors biological theta/beta/gamma cortex-BG loops.
@@ -2383,11 +2398,15 @@ def run_background_sources(cortex) -> int:
     """
     import time as _time
 
-    global consolidation_replay
+    global consolidation_replay, sleep_consolidation
     if consolidation_replay is None:
         from .replay import ConsolidationReplay
 
         consolidation_replay = ConsolidationReplay()
+    if sleep_consolidation is None:
+        from .sleep_consolidation import SleepConsolidation
+
+        sleep_consolidation = SleepConsolidation()
 
     now_ts = _time.monotonic()
     # Determine which tiers are due this call
@@ -2419,6 +2438,7 @@ def run_background_sources(cortex) -> int:
         scheduler_source,
         thread_coherence_source,
         consolidation_replay,
+        sleep_consolidation,
     ):
         tier = getattr(src, "TIMING_TIER", "medium")
         if tier not in due_tiers:
