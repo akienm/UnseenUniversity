@@ -4866,16 +4866,26 @@ class Igor(IgorBase):
 
                 if not _coherence_ok:
                     # Suppress the habit response, fall through to LLM reasoning
+                    console.print(
+                        f"[yellow][COHERENCE] Suppressed habit response — falling through to LLM[/]"
+                    )
                     response_text = None
                     habit = None
                     used_habit = False
 
             if habit:
+                _habit_ms = round((_time.monotonic() - _tc) * 1000)
+                _reply_preview = (
+                    (str(response_text)[:60] + "...") if response_text else "(no text)"
+                )
+                console.print(
+                    f"[dim]{_cts()}[←] habit {habit.id} → {_reply_preview} ({_habit_ms}ms)[/]"
+                )
                 self.cortex.record_activation(habit.id, 0.05)
                 _log_pt(
                     turn_id=_turn_id,
                     step="habit_exec",
-                    elapsed_ms=round((_time.monotonic() - _tc) * 1000),
+                    elapsed_ms=_habit_ms,
                     habit_id=habit.id,
                 )
                 _tc = _time.monotonic()
@@ -4962,6 +4972,10 @@ class Igor(IgorBase):
         if not habit or response_text is None:
             # No habit matched, OR habit was suppressed by coherence gate.
             # Fall through to LLM reasoning.
+            if used_habit is False and _turn_habit:
+                console.print(f"[dim]{_cts()}[→] no habit match — LLM fallthrough[/]")
+            elif response_text is None and not used_habit:
+                console.print(f"[dim]{_cts()}[→] habit suppressed — LLM fallthrough[/]")
 
             # ── tier.0: pure Python response — zero LLM cost (#154) ───────────
             # Gate: output_complexity=="low" AND not an impulse AND not local_only.
@@ -5151,10 +5165,15 @@ class Igor(IgorBase):
                             is_user_turn=True,
                             complexity=parsed.complexity,
                         )
+                    _reason_ms = round((_time.monotonic() - _tc_reason) * 1000)
+                    _reply_status = "replied" if response_text else "no response"
+                    console.print(
+                        f"[dim]{_cts()}[←] {_reply_status} via {self._current_tier or 'unknown'} ({_reason_ms}ms)[/]"
+                    )
                     _log_pt(
                         turn_id=_turn_id,
                         step="reasoning",
-                        elapsed_ms=round((_time.monotonic() - _tc_reason) * 1000),
+                        elapsed_ms=_reason_ms,
                         tier=self._current_tier,
                     )
                     # G5 / #42: prediction signal — did we need a higher tier than expected?
