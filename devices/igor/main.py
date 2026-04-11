@@ -2125,9 +2125,7 @@ class Igor(IgorBase):
             elif milieu_state.arousal > 0.5:
                 register = "engaged"
 
-        exchange = (
-            f"Akien: {user_input[:200].strip()} → Igor: {response_text[:250].strip()}"
-        )
+        exchange = f"Akien: {user_input[:200].strip()} → Igor: {(response_text or '')[:250].strip()}"
         updated = datetime.now().isoformat()
 
         # Update existing thread or append new
@@ -5473,7 +5471,7 @@ class Igor(IgorBase):
                 _recent_ring = self.cortex.read_ring_memory(
                     limit=10, thread_id=thread_id
                 )
-                _resp_lower = response_text[:200].lower().strip()
+                _resp_lower = (response_text or "")[:200].lower().strip()
                 for _rr in _recent_ring:
                     _rr_content = (_rr.get("content") or "").lower()
                     # Check if response appears in a recent ring entry (Igor said this before)
@@ -5496,7 +5494,7 @@ class Igor(IgorBase):
                 _ep_dominance = _ep_milieu.dominance if _ep_milieu else 0.0
                 _emotionally_charged = abs(valence) > 0.5 or abs(_ep_arousal) > 0.5
                 ep = Memory(
-                    narrative=f"User: {user_input[:250]} | Response: {response_text[:300]} | intent={parsed.intent}",
+                    narrative=f"User: {user_input[:250]} | Response: {(response_text or '')[:300]} | intent={parsed.intent}",
                     memory_type=MemoryType.EPISODIC,
                     parent_id="CP3",  # "There's always a why"
                     valence=valence,
@@ -5509,7 +5507,7 @@ class Igor(IgorBase):
                     ),
                     metadata={
                         "user_input": user_input,
-                        "response": response_text[:500],
+                        "response": (response_text or "")[:500],
                         "intent": parsed.intent,
                         "friction": friction,
                         "used_api": used_api,
@@ -5537,7 +5535,7 @@ class Igor(IgorBase):
         _t_after_reasoning = _time.monotonic()  # reasoning complete (#139)
         if not is_impulse:
             self.cortex.write_ring(
-                f"Q: {user_input[:800]} | A: {response_text[:1200]} | intent={parsed.intent} friction={friction:.2f}",
+                f"Q: {user_input[:800]} | A: {(response_text or '')[:1200]} | intent={parsed.intent} friction={friction:.2f}",
                 category=parsed.intent,
                 thread_id=thread_id,
             )
