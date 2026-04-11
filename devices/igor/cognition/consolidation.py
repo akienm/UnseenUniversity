@@ -32,9 +32,9 @@ from ..paths import paths
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 _ENABLED = lambda: os.getenv("IGOR_CONSOLIDATION_ENABLED", "true").lower() == "true"
-_INTERVAL_SECS = lambda: int(os.getenv("IGOR_CONSOLIDATION_INTERVAL_SECS", "3600"))
-_BATCH_SIZE = lambda: int(os.getenv("IGOR_CONSOLIDATION_BATCH", "20"))
-_MIN_IMPORTANCE = float(os.getenv("IGOR_CONSOLIDATION_MIN_IMPORTANCE", "0.5"))
+_INTERVAL_SECS = lambda: int(os.getenv("IGOR_CONSOLIDATION_INTERVAL_SECS", "1800"))
+_BATCH_SIZE = lambda: int(os.getenv("IGOR_CONSOLIDATION_BATCH", "200"))
+_MIN_IMPORTANCE = float(os.getenv("IGOR_CONSOLIDATION_MIN_IMPORTANCE", "0.4"))
 _CHECKPOINT_FILE = paths().consolidation_checkpoint
 
 _last_run: float = 0.0
@@ -147,19 +147,25 @@ Respond with only the JSON object, or null if nothing worth keeping.
 
 
 def _call_local_llm(prompt: str, cortex: Cortex) -> Optional[dict]:
-    """Call Ollama chat API directly to extract a consolidation candidate."""
+    """Call Ollama chat API to extract a consolidation candidate.
+
+    Uses qwen2.5:7b via cluster router — proven to produce valid JSON
+    (D360 benchmark: 16 nodes, 0.78 confidence). DeepSeek 7B distill can't
+    do structured extraction (0 nodes in benchmark).
+    """
     try:
         import ollama as _ollama
-        import os as _os
 
         from .inference_ollama import route as _route
 
         _host, _model = _route("extraction")
         if not _host:
-            from .inference_ollama import OLLAMA_HOST, OLLAMA_LOCAL_MODEL
+            from .inference_ollama import OLLAMA_HOST
 
             _host = OLLAMA_HOST
-            _model = OLLAMA_LOCAL_MODEL
+        # Override model: qwen2.5:7b is the only local model that produces
+        # valid JSON extraction (D360 benchmark). 1b and DeepSeek 7B fail.
+        _model = os.getenv("IGOR_CONSOLIDATION_MODEL", "qwen2.5:7b")
         _client = _ollama.Client(host=_host)
         response = _client.chat(
             model=_model,
@@ -182,7 +188,8 @@ def _call_local_llm(prompt: str, cortex: Cortex) -> Optional[dict]:
         if raw.lower() == "null" or not raw:
             return None
         return json.loads(raw)
-    except Exception:
+    except Exception as e:
+        logging.getLogger(__name__).warning("consolidation LLM call failed: %s", e)
         return None
 
 
