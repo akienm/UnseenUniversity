@@ -158,12 +158,19 @@ class InferenceGateway(IgorBase):
             _lpt = None
             _gtid = lambda: "?"
 
-        # Pop handler_override so it doesn't forward to handlers
+        # Pop special kwargs so they don't forward to handlers
         handler_override = kwargs.pop("handler_override", None)
+        timeout_override = kwargs.pop("timeout_override", None)
 
         constraints = self._purposes.get(
             purpose_id, PurposeConstraints(step_name=purpose_id)
         )
+        # Apply timeout override (benchmark use — no short-circuit on slow models)
+        if timeout_override is not None:
+            from dataclasses import replace
+
+            constraints = replace(constraints, timeout_s=float(timeout_override))
+
         current_id = handler_override if handler_override else purpose_id
         failed: set[str] = set()
 
