@@ -136,14 +136,20 @@ class TestProxyFactories(unittest.TestCase):
                 db_proxy.make_local_proxy()
                 MockPG.assert_called_once_with("postgresql://local/db")
 
-    def test_make_local_proxy_falls_back_to_sqlite(self):
-        clean_env = {k: v for k, v in os.environ.items() if k != "IGOR_LOCAL_DB_URL"}
+    def test_make_local_proxy_uses_home_db_when_no_local(self):
+        """Local proxy falls back to IGOR_HOME_DB_URL when IGOR_LOCAL_DB_URL is unset."""
+        clean_env = {
+            k: v
+            for k, v in os.environ.items()
+            if k not in ("IGOR_LOCAL_DB_URL", "IGOR_HOME_DB_URL", "IGOR_DB_URL")
+        }
+        clean_env["IGOR_HOME_DB_URL"] = "postgresql://test:test@localhost/test"
         with patch.dict(os.environ, clean_env, clear=True):
-            with patch("wild_igor.igor.memory.db_proxy.DatabaseProxy") as MockSQ:
+            with patch("wild_igor.igor.memory.db_proxy.PGDatabaseProxy") as MockPG:
                 from wild_igor.igor.memory import db_proxy
 
                 db_proxy.make_local_proxy(Path("/tmp/test.db"))
-                MockSQ.assert_called_once_with(Path("/tmp/test.db"))
+                MockPG.assert_called_once_with("postgresql://test:test@localhost/test")
 
 
 # ── PendingReplyStore ─────────────────────────────────────────────────────────
