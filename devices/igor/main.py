@@ -4959,7 +4959,10 @@ class Igor(IgorBase):
                     loginfo(
                         f"[dim][on-it-fork] spawned background task habit={habit.id}[/]"
                     )
-        else:
+        if not habit or response_text is None:
+            # No habit matched, OR habit was suppressed by coherence gate.
+            # Fall through to LLM reasoning.
+
             # ── tier.0: pure Python response — zero LLM cost (#154) ───────────
             # Gate: output_complexity=="low" AND not an impulse AND not local_only.
             # Falls through (returns None) for anything it can't handle confidently.
