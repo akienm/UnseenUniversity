@@ -35,8 +35,13 @@ BENCHMARK_MODELS: list[tuple[str, str, str, str]] = [
     ),
     ("pass4_qwen_7b", "qwen2.5:7b", "ollama", "local 7B Qwen"),
     ("pass5_deepseek_r1", "deepseek/deepseek-r1", "or", "OR full DeepSeek R1"),
-    ("pass6_haiku", "anthropic/claude-haiku-4.5", "or", "OR Haiku"),
-    ("pass7_sonnet", "anthropic/claude-sonnet-4.6", "or", "OR Sonnet"),
+    (
+        "pass6_haiku",
+        "anthropic/claude-3.5-haiku",
+        "or",
+        "OR Haiku — old ID that works on OR",
+    ),
+    ("pass7_sonnet", "anthropic/claude-sonnet-4-20250514", "or", "OR Sonnet — old ID"),
 ]
 
 
@@ -176,12 +181,14 @@ def _run_pass(
         )
 
         try:
+            # No timeout for benchmark — let slow models finish
             result = gw.call(
                 "reading_extract",
                 prompt,
                 ctx,
                 model=model_id,
                 handler_override=handler_node,
+                timeout_override=86400,
             )
         except (RoutingError, Exception) as e:
             pr.errors += 1
