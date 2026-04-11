@@ -1557,26 +1557,39 @@ class SelfObservationSource(BasePushSource):
 
 class CuriositySource(BasePushSource):
     """
-    Fires an idle-curiosity impulse when TWM has no active attractor and urgency
-    is low (#246 sub-task 2).
+    Fires curiosity impulses when boredom is present and no goals are active.
 
-    When Igor has nothing pressing, pick a topic from watch habits and push
-    an ACTION_IMPULSE inviting proactive exploration. The main loop's
-    _drain_action_impulses() consumes these as synthetic impulses.
+    Motivational architecture:
+      Boredom pushes (mild negative valence via milieu).
+      Goals pull (strong positive — tickets, user requests).
+      Curiosity pulls (medium positive) when boredom present + no goals.
+      Curiosity's positive valence out-competes boredom's negative — inhibition
+      as out-competing, not suppression.
 
-    Deduplication: same topic won't fire again within TOPIC_COOLDOWN_SEC.
+    Topics are intrinsic questions: self-improvement, reading, gap analysis.
+    When a curiosity topic absorbs attention, milieu shifts positive.
     """
 
     name = "curiosity"
     TIMING_TIER = "slow"
     MIN_INTERVAL_SEC = 300  # At most every 5 minutes
-    IDLE_URGENCY_MAX = 0.35  # Only fire when max TWM urgency < this
-    TOPIC_COOLDOWN_SEC = 600  # Same topic won't fire again within 10 min
+    TOPIC_COOLDOWN_SEC = 900  # Same topic won't fire again within 15 min
+
+    # Intrinsic curiosity questions — what Igor wonders about when bored.
+    # Round-robin through these. Reading queue items get mixed in dynamically.
+    _INTRINSIC_QUESTIONS = [
+        "What could I do to work better? Check my recent errors and traces.",
+        "What's in my reading queue that I haven't started?",
+        "Are there gaps in my knowledge I should fill? Check gap_analysis.",
+        "What habits fire most often — are any of them stale or misfiring?",
+        "What did I escalate to cloud recently that I could handle locally?",
+        "What has Akien been interested in lately that I could learn about?",
+    ]
 
     def __init__(self):
         self._last_run: Optional[datetime] = None
         self._topic_cooldowns: dict = {}  # topic → datetime last fired
-        self._topic_index: int = 0  # round-robin index into topic list
+        self._topic_index: int = 0  # round-robin index
 
     def push(self, cortex) -> list[int]:
         now = datetime.now()
@@ -1596,68 +1609,97 @@ class CuriositySource(BasePushSource):
         for t in expired:
             del self._topic_cooldowns[t]
 
-        # Idle check: no active attractor
+        # Gate 1: Is boredom present? Check TWM for BOREDOM_DETECTED.
+        boredom_present = False
         try:
-            attractor = cortex.twm_get_attractor()
-            if attractor is not None and attractor.get("weight", 0.0) >= 0.1:
-                return []  # Something has focus — stay quiet
+            obs_list = cortex.twm_read(limit=20)
+            for o in obs_list or []:
+                csb = o.get("content_csb", "")
+                if "BOREDOM_DETECTED" in csb:
+                    boredom_present = True
+                    break
         except Exception:
-            return []
+            pass
 
-        # Low-urgency check: nothing pressing in TWM
+        # Gate 2: No active goals? Goals = TASK_SET entries with urgency >= 0.5
+        goals_active = False
         try:
-            obs_list = cortex.twm_read(limit=10)
-            if obs_list:
-                max_urgency = max(
-                    (o.get("urgency", 0.0) for o in obs_list), default=0.0
-                )
-                if max_urgency >= self.IDLE_URGENCY_MAX:
-                    return []
+            for o in obs_list or []:
+                csb = o.get("content_csb", "")
+                if "TASK_SET" in csb and o.get("urgency", 0) >= 0.5:
+                    goals_active = True
+                    break
         except Exception:
-            return []
+            pass
 
-        # Gather topics from watch habits
+        # Fire only when: bored AND no goals pulling.
+        # Also fire (weaker) when simply idle — no boredom required, just nothing happening.
+        if goals_active:
+            return []  # Goals are pulling — curiosity stays quiet
+
+        if not boredom_present:
+            # Not bored, no goals — check if truly idle (low urgency across board)
+            max_urg = max((o.get("urgency", 0) for o in (obs_list or [])), default=0)
+            if max_urg >= 0.35:
+                return []  # Something has urgency — stay quiet
+
+        # Build topic list: intrinsic questions + reading queue items
+        topics = list(self._INTRINSIC_QUESTIONS)
+
+        # Mix in reading queue titles if available
         try:
-            habits = get_cached_procedural(cortex)
-            topics = [
-                h.metadata.get("watch_label") or h.metadata.get("trigger", "")
-                for h in habits
-                if (
-                    h.metadata.get("habit_type") == "watch"
-                    and h.metadata.get("watch_direction", "outward") == "outward"
-                    and (h.metadata.get("watch_label") or h.metadata.get("trigger"))
-                )
-            ]
-            topics = [t for t in topics if t]
-        except Exception:
-            topics = []
+            from ..memory.db_proxy import PGDatabaseProxy
 
-        if not topics:
-            topics = ["reading queue"]  # fallback
+            if isinstance(cortex._db, PGDatabaseProxy):
+                with cortex._conn() as conn:
+                    rows = conn.execute(
+                        "SELECT title FROM reading_list WHERE status != 'completed' "
+                        "ORDER BY priority DESC LIMIT 5"
+                    ).fetchall()
+                for r in rows:
+                    topics.append(
+                        f"Read: {r['title'] if isinstance(r, dict) else r[0]}"
+                    )
+        except Exception:
+            pass  # Reading list unavailable — intrinsic questions are enough
 
         # Round-robin, skipping topics in cooldown
+        topic = None
         for _ in range(len(topics)):
             idx = self._topic_index % len(topics)
             self._topic_index += 1
-            topic = topics[idx]
-            if topic not in self._topic_cooldowns:
+            candidate = topics[idx]
+            if candidate not in self._topic_cooldowns:
+                topic = candidate
                 break
-        else:
+
+        if topic is None:
             return []  # All topics in cooldown
 
         self._topic_cooldowns[topic] = now
 
-        csb = (
-            f"ACTION_IMPULSE|CURIOSITY|topic={topic}"
-            f"|action=You have idle time. Explore or read about: {topic}"
-        )
+        # Nudge milieu positive — curiosity out-competes boredom
+        try:
+            from . import milieu as milieu_mod
+
+            m = milieu_mod.get()
+            if m is not None:
+                m.nudge_vad(dv=0.12, da=0.15, dd=0.0)  # positive engagement
+        except Exception:
+            pass
+
+        csb = f"ACTION_IMPULSE|CURIOSITY|topic={topic}" f"|action={topic}"
         obs_id = cortex.twm_push(
             source=self.name,
             content_csb=csb,
-            salience=0.5,
-            urgency=0.4,
-            ttl_seconds=600,
-            metadata={"topic": topic, "curiosity_source": True},
+            salience=0.6,
+            urgency=0.45,
+            ttl_seconds=900,
+            metadata={
+                "topic": topic,
+                "curiosity_source": True,
+                "boredom_driven": boredom_present,
+            },
         )
         return [obs_id]
 
