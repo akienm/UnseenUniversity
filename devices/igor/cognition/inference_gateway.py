@@ -927,7 +927,7 @@ def build_default_gateway() -> InferenceGateway:
                     "model": os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b"),
                     "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
                     "or_model": os.getenv(
-                        "OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini"
+                        "IGOR_READING_OR_MODEL", "qwen/qwen-2.5-7b-instruct"
                     ),
                 },
             ),
