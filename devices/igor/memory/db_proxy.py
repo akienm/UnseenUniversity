@@ -833,15 +833,20 @@ def make_home_proxy(db_path: Path = None):
 
 def make_local_proxy(db_path: Path = None):
     """
-    Return PGDatabaseProxy for IGOR_LOCAL_DB_URL (box-scoped DB shared by all
-    instances on this machine), else DatabaseProxy (SQLite fallback — same file
-    as home proxy when running single-node).
+    Return PGDatabaseProxy for LOCAL tables (ring_memory, twm_observations,
+    pending_replies, per-box metrics).
 
-    LOCAL tables: ring_memory, twm_observations, pending_replies, per-box metrics.
+    Checks IGOR_LOCAL_DB_URL first, falls back to IGOR_HOME_DB_URL.
+    All data lives in Postgres — no SQLite fallback for TWM/ring.
     """
-    db_url = os.getenv("IGOR_LOCAL_DB_URL")
+    db_url = (
+        os.getenv("IGOR_LOCAL_DB_URL")
+        or os.getenv("IGOR_HOME_DB_URL")
+        or os.getenv("IGOR_DB_URL")
+    )
     if db_url:
         return PGDatabaseProxy(db_url)
+    # Last resort: SQLite — should not happen in production
     return DatabaseProxy(db_path)
 
 
