@@ -422,8 +422,8 @@ class TestImportAllSkills(unittest.TestCase):
 
         result = import_all_skills()
         self.assertIn("skills imported", result)
-        # Should have seeded at least filter and sprint
-        self.assertIn("filter", result)
+        # Should have seeded at least commit and sprint (post T-skill-rewrite-v2)
+        self.assertIn("commit", result)
         self.assertIn("sprint", result)
 
     def test_bad_dir_returns_not_found(self):
