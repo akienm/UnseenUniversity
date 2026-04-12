@@ -1141,7 +1141,7 @@ class Igor(IgorBase):
             )
             return
 
-        log_dir = _paths().home / "logs"
+        log_dir = _paths().logs
         log_dir.mkdir(parents=True, exist_ok=True)
         log_file = log_dir / "utility_closet.log"
 
