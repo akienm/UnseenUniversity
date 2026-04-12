@@ -15,6 +15,7 @@ Usage in main.py:
 import json
 import logging
 import os
+import ssl
 import threading
 import time
 import urllib.error
@@ -23,8 +24,25 @@ from typing import Optional
 
 log = logging.getLogger(__name__)
 
-_UC_PORT = int(os.environ.get("IGOR_UC_PORT", "8080"))
-_UC_BASE = f"http://localhost:{_UC_PORT}"
+# UC may serve HTTPS on the main port (8080) with a self-signed/locally-trusted
+# cert, and plain HTTP on the companion port (default 8082). We default to the
+# plain-HTTP companion to avoid TLS validation against locally-trusted CAs that
+# Python's default trust store doesn't know about. Override with IGOR_UC_BASE
+# (e.g. "https://localhost:8080") if you want to force HTTPS.
+_UC_PORT = int(os.environ.get("IGOR_UC_PORT", "8082"))
+_UC_BASE = os.environ.get("IGOR_UC_BASE", f"http://localhost:{_UC_PORT}")
+
+# For HTTPS to localhost we accept any cert — UC is on the same machine, the
+# trust boundary is the loopback interface, not the cert chain.
+_SSL_CTX = ssl.create_default_context()
+_SSL_CTX.check_hostname = False
+_SSL_CTX.verify_mode = ssl.CERT_NONE
+
+
+def _open(req: urllib.request.Request, timeout: float):
+    if req.full_url.startswith("https://"):
+        return urllib.request.urlopen(req, timeout=timeout, context=_SSL_CTX)
+    return urllib.request.urlopen(req, timeout=timeout)
 
 
 def _post(path: str, body: dict, timeout: float = 5.0) -> Optional[dict]:
@@ -37,7 +55,7 @@ def _post(path: str, body: dict, timeout: float = 5.0) -> Optional[dict]:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with _open(req, timeout) as resp:
             return json.loads(resp.read())
     except urllib.error.URLError as e:
         log.debug("utility closet POST %s failed (URLError): %s", path, e)
@@ -51,7 +69,7 @@ def _get(path: str, timeout: float = 5.0) -> Optional[dict]:
     """GET from utility closet. Returns response dict or None on failure."""
     try:
         req = urllib.request.Request(f"{_UC_BASE}{path}", method="GET")
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with _open(req, timeout) as resp:
             return json.loads(resp.read())
     except Exception as e:
         log.debug("utility closet GET %s failed: %s", path, e)
