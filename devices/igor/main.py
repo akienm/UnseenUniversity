@@ -4867,8 +4867,8 @@ class Igor(IgorBase):
 
                 if not _coherence_ok:
                     # Suppress the habit response, fall through to LLM reasoning
-                    console.print(
-                        f"[yellow][COHERENCE] Suppressed habit response — falling through to LLM[/]"
+                    loginfo(
+                        "[yellow][COHERENCE] Suppressed habit response — falling through to LLM[/]"
                     )
                     response_text = None
                     habit = None
@@ -4879,8 +4879,8 @@ class Igor(IgorBase):
                 _reply_preview = (
                     (str(response_text)[:60] + "...") if response_text else "(no text)"
                 )
-                console.print(
-                    f"[dim]{_cts()}[←] habit {habit.id} → {_reply_preview} ({_habit_ms}ms)[/]"
+                loginfo(
+                    f"[dim][←] habit {habit.id} → {_reply_preview} ({_habit_ms}ms)[/]"
                 )
                 self.cortex.record_activation(habit.id, 0.05)
                 _log_pt(
@@ -4974,9 +4974,9 @@ class Igor(IgorBase):
             # No habit matched, OR habit was suppressed by coherence gate.
             # Fall through to LLM reasoning.
             if used_habit is False and _turn_habit:
-                console.print(f"[dim]{_cts()}[→] no habit match — LLM fallthrough[/]")
+                loginfo("[dim][→] no habit match — LLM fallthrough[/]")
             elif response_text is None and not used_habit:
-                console.print(f"[dim]{_cts()}[→] habit suppressed — LLM fallthrough[/]")
+                loginfo("[dim][→] habit suppressed — LLM fallthrough[/]")
 
             # ── tier.0: pure Python response — zero LLM cost (#154) ───────────
             # Gate: output_complexity=="low" AND not an impulse AND not local_only.
@@ -5168,8 +5168,8 @@ class Igor(IgorBase):
                         )
                     _reason_ms = round((_time.monotonic() - _tc_reason) * 1000)
                     _reply_status = "replied" if response_text else "no response"
-                    console.print(
-                        f"[dim]{_cts()}[←] {_reply_status} via {self._current_tier or 'unknown'} ({_reason_ms}ms)[/]"
+                    loginfo(
+                        f"[dim][←] {_reply_status} via {self._current_tier or 'unknown'} ({_reason_ms}ms)[/]"
                     )
                     _log_pt(
                         turn_id=_turn_id,
