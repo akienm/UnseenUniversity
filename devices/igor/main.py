@@ -645,19 +645,26 @@ class Igor(IgorBase):
         self._boot_ready: bool = False
         self._boot_orientation_scored: bool = False  # #112: score first response once
 
-        # Start Discord bot, unified network listener, web UI server, and model boot-check
+        # Start Discord bot, unified network listener, web facade, boot-check.
+        # T-uc-web-server-refactor: web_server is now a thin facade — UC on 8080
+        # owns HTTP/WS. We try to launch UC if it's not running, then register.
         discord_bot.start()
         net_listener.start()
-        web_server.start(
-            stats_fn=self.get_stats,
-            cortex_fn=lambda: self.cortex,
-            igor_fn=lambda: self,
-        )
+
+        # Launch utility closet if not already running (D335).
+        self._ensure_utility_closet_running()
 
         # D335: register with utility closet platform (best-effort, non-blocking)
         _uc_agent_id = _paths().instance_id  # e.g. "Igor-wild-0001"
         if uc_client.register(_uc_agent_id, capabilities=["chat", "tools", "habits"]):
             uc_client.start_stats_pusher(self.get_stats, interval=5.0)
+
+        # Start the facade poll loop (drains uc_client.poll_messages → incoming queue).
+        web_server.start(
+            stats_fn=self.get_stats,
+            cortex_fn=lambda: self.cortex,
+            igor_fn=lambda: self,
+        )
 
         boot_check.start(cortex=self.cortex)
 
@@ -1105,6 +1112,63 @@ class Igor(IgorBase):
             "[dim]Check ~/.TheIgors/Igor-wild-0001/ for backup files.[/]"
         )
         sys.exit(1)
+
+    # ── T-uc-web-server-refactor — Utility closet bootstrap ──────────────────
+
+    def _ensure_utility_closet_running(self) -> None:
+        """Launch the utility closet server if it's not already running.
+
+        D335: UC is the shared platform layer on port 8080. Igor attaches as an
+        agent. If UC is down, Igor brings it up before attaching. Best-effort —
+        failure to launch is logged but not fatal (Igor still runs headless).
+        """
+        if uc_client.is_available():
+            console.print("[dim][boot] Utility closet already running[/]")
+            return
+
+        import subprocess as _sp
+        from pathlib import Path as _Path
+
+        uc_script = (
+            _Path(__file__).resolve().parents[2]
+            / "lab"
+            / "claudecode"
+            / "utility_closet_server.py"
+        )
+        if not uc_script.exists():
+            console.print(
+                f"[yellow][boot] Utility closet script not found at {uc_script} — skipping[/]"
+            )
+            return
+
+        log_dir = _paths().home / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / "utility_closet.log"
+
+        try:
+            with open(log_file, "ab") as _log_fp:
+                _sp.Popen(
+                    [sys.executable, str(uc_script)],
+                    stdout=_log_fp,
+                    stderr=_sp.STDOUT,
+                    start_new_session=True,
+                )
+        except Exception as _e:
+            console.print(f"[yellow][boot] Failed to launch utility closet: {_e}[/]")
+            return
+
+        # Wait up to 5 seconds for it to come up
+        import time as _t
+
+        for _ in range(10):
+            _t.sleep(0.5)
+            if uc_client.is_available():
+                console.print("[green][boot] Utility closet: started[/]")
+                return
+
+        console.print(
+            "[yellow][boot] Utility closet didn't come up within 5s — Igor continuing headless[/]"
+        )
 
     # ── change.36 — Portable Identity ──────────────────────────────────────────
 
