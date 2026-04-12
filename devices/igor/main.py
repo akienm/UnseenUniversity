@@ -1942,18 +1942,24 @@ class Igor(IgorBase):
         """
         Return a preamble injected before the current network message.
         Shows last N exchanges so the LLM has thread-scoped context.
+        If older exchanges were compacted, shows the summary first.
         Returns "" if no history or thread is new.
         """
         import time as _t
 
         buf = self._thread_buffers.get(thread_id)
-        if not buf or not buf["history"]:
+        if not buf or (not buf["history"] and not buf.get("summary")):
             return ""
         # Evict stale threads
         if _t.monotonic() - buf["last_active"] > self._THREAD_IDLE_TTL_SEC:
             del self._thread_buffers[thread_id]
             return ""
         lines = ["[Thread context — recent exchanges in this channel:]"]
+        # T-igor-context-subroutine: show compacted summary of older exchanges
+        summary = buf.get("summary", "")
+        if summary:
+            lines.append(f"  [Earlier in conversation: {summary}]")
+            lines.append("")
         for user_turn, igor_turn in buf["history"][-self._THREAD_MAX_HISTORY :]:
             lines.append(f"  User: {user_turn[:200]}")
             lines.append(f"  Igor: {igor_turn[:300]}")
@@ -1963,15 +1969,98 @@ class Igor(IgorBase):
     def _update_thread_buffer(
         self, thread_id: str, user_turn: str, igor_reply: str
     ) -> None:
-        """Record a completed exchange in the thread buffer."""
+        """Record a completed exchange in the thread buffer.
+
+        T-igor-context-subroutine: when buffer is at capacity, fire background
+        compaction (summarize oldest half via local LLM) instead of silently
+        dropping the oldest exchange.
+        """
         import time as _t
 
         if thread_id not in self._thread_buffers:
-            self._thread_buffers[thread_id] = {"history": [], "last_active": 0.0}
+            self._thread_buffers[thread_id] = {
+                "history": [],
+                "last_active": 0.0,
+                "summary": "",
+            }
         buf = self._thread_buffers[thread_id]
         buf["history"].append((user_turn[:500], igor_reply[:600]))
-        buf["history"] = buf["history"][-self._THREAD_MAX_HISTORY :]
         buf["last_active"] = _t.monotonic()
+
+        # If over capacity, compact oldest half in background instead of truncating
+        if len(buf["history"]) > self._THREAD_MAX_HISTORY:
+            self._compact_thread_buffer(thread_id)
+
+    def _compact_thread_buffer(self, thread_id: str) -> None:
+        """T-igor-context-subroutine: summarize oldest exchanges in background thread.
+
+        Takes the oldest half of the history, sends to local Ollama for
+        summarization, replaces them with a compact summary string.
+        Non-blocking — the summary arrives async; next turn gets the benefit.
+        Falls back to naive truncation if Ollama is unavailable.
+        """
+        import threading as _threading
+
+        buf = self._thread_buffers.get(thread_id)
+        if not buf:
+            return
+
+        history = buf["history"]
+        split = len(history) // 2
+        to_summarize = history[:split]
+        to_keep = history[split:]
+        old_summary = buf.get("summary", "")
+
+        # Immediately trim to prevent unbounded growth while summary runs
+        buf["history"] = to_keep
+
+        def _worker():
+            try:
+                from .cognition.reasoners.base import _call_ollama_raw
+
+                # Build the conversation text to summarize
+                parts = []
+                if old_summary:
+                    parts.append(f"Previous context: {old_summary}")
+                for user, igor in to_summarize:
+                    parts.append(f"User: {user}")
+                    parts.append(f"Igor: {igor}")
+                convo = "\n".join(parts)
+
+                prompt = (
+                    "Summarize this conversation segment in 2-3 concise sentences. "
+                    "Preserve: names mentioned, decisions made, questions asked, "
+                    "specific topics discussed, any facts or numbers shared. "
+                    "Be specific — future context depends on this summary.\n\n"
+                    f"{convo}\n\n"
+                    "Summary:"
+                )
+
+                model = os.getenv("IGOR_COMPACT_MODEL", "qwen2.5:7b")
+                result = _call_ollama_raw(prompt, model=model, timeout=30)
+
+                if result and thread_id in self._thread_buffers:
+                    self._thread_buffers[thread_id]["summary"] = result.strip()
+                    loginfo(
+                        f"[dim][thread-compact] {thread_id}: "
+                        f"summarized {len(to_summarize)} exchanges "
+                        f"({len(result)} chars)[/]"
+                    )
+                elif not result:
+                    # Ollama unavailable — keep old summary if any
+                    loginfo(
+                        f"[dim][thread-compact] {thread_id}: "
+                        f"Ollama unavailable, {len(to_summarize)} exchanges dropped[/]"
+                    )
+            except Exception as e:
+                import logging as _logging
+
+                _logging.getLogger(__name__).warning(
+                    "thread compaction failed for %s: %s", thread_id, e
+                )
+
+        t = _threading.Thread(target=_worker, daemon=True, name=f"compact-{thread_id}")
+        t.start()
 
     def _evict_stale_threads(self) -> None:
         """Remove thread buffers that have been idle > TTL. Called periodically."""
