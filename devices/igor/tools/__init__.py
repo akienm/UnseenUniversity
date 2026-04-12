@@ -67,6 +67,7 @@ from . import (
     skill_importer,
     receive_cc_direction,
     cloud_escape_metric,
+    memory_palace,
     reading_measure,
     reading_tool,
     habit_health_audit,

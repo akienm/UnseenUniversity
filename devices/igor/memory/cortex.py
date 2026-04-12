@@ -466,6 +466,30 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "m041_reading_list_claimed_by",
         "ALTER TABLE reading_list ADD COLUMN claimed_by TEXT DEFAULT NULL",
     ),
+    # T-memory-palace-schema: navigable tree of signposts — shared between Igor and CC.
+    # Nodes are addresses (pointers to where information lives), not copies of the information.
+    # Tree structure via path (e.g. 'theigors/igor/cognition') and parent_path.
+    (
+        "m042_memory_palace",
+        "CREATE TABLE IF NOT EXISTS memory_palace ("
+        " id         SERIAL PRIMARY KEY,"
+        " path       TEXT NOT NULL UNIQUE,"
+        " parent_path TEXT,"
+        " title      TEXT NOT NULL,"
+        " content    TEXT NOT NULL DEFAULT '',"
+        " pointers   JSONB NOT NULL DEFAULT '[]',"
+        " updated_at TEXT NOT NULL DEFAULT '',"
+        " updated_by TEXT NOT NULL DEFAULT ''"
+        ")",
+    ),
+    (
+        "m043_palace_path_idx",
+        "CREATE INDEX IF NOT EXISTS idx_palace_path ON memory_palace (path)",
+    ),
+    (
+        "m044_palace_parent_idx",
+        "CREATE INDEX IF NOT EXISTS idx_palace_parent ON memory_palace (parent_path)",
+    ),
 ]
 
 
