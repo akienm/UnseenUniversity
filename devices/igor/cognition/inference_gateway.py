@@ -924,7 +924,7 @@ def build_default_gateway() -> InferenceGateway:
                 temperature=0.1,
                 extra={
                     "cluster_call_type": "extraction",
-                    "model": os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b"),
+                    "model": os.getenv("IGOR_READING_LOCAL_MODEL", "qwen2.5:7b"),
                     "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
                     "or_model": os.getenv(
                         "IGOR_READING_OR_MODEL", "qwen/qwen-2.5-7b-instruct"
