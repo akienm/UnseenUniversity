@@ -4620,6 +4620,7 @@ class Igor(IgorBase):
         # If True, _extract_tool_call must be skipped — raw tool output (e.g. file content)
         # may contain <tool>name</tool> tags in docs that would misfire as tool calls.
         _response_from_tool_dispatch = False
+        used_habit = False
 
         if habit:
             dashboard.print_habit_trigger(habit)
