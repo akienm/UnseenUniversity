@@ -121,23 +121,51 @@ def queue_task(task_json: str) -> str:
 # ── goal_adopt ─────────────────────────────────────────────────────────────────
 
 
-def goal_adopt(task_description: str) -> str:
+def goal_adopt(
+    task_description: str,
+    goal_id: str | None = None,
+    origin_thread_id: str | None = None,
+    origin_turn_id: str | None = None,
+    origin_question: str | None = None,
+    awaiting_reply: bool = False,
+) -> str:
     """
     Adopt a task as an active GOAL_TACTICAL goal (D275).
     Called when Igor says 'On it' — this IS the moment of commitment.
     Stores goal as GOAL memory (instance-scoped) + pushes to TWM with high salience
     so it persists across turns. Posts to channel for visibility.
     Returns short confirmation so Igor knows to proceed with step 1.
+
+    T-reply-obligation-fork: when invoked from a commit-to-look habit, the
+    dispatch path supplies goal_id + origin context + awaiting_reply=True so
+    the goal remembers which conversational turn it owes a reply to. The
+    completion drain looks up the goal by goal_id later and re-surfaces the
+    origin question for salience competition.
     """
     try:
         from ..memory.cortex import Cortex as _Cortex
         from ..memory.models import Memory as _Mem, MemoryType as _MT
 
         ts = datetime.now(timezone.utc)
-        goal_id = f"GOAL_{ts.strftime('%Y%m%d%H%M%S%f')}"
+        if goal_id is None:
+            goal_id = f"GOAL_{ts.strftime('%Y%m%d%H%M%S%f')}"
         task_short = task_description[:120].strip()
 
         cortex = _Cortex(None)
+        _meta = {
+            "goal_active": True,
+            "goal_type": "TACTICAL",
+            "source_message": task_short,
+            "adopted_at": ts.isoformat(),
+            "failure_count": 0,
+            "why": "D275 — task→goal adoption. On it = commitment moment.",
+        }
+        if awaiting_reply:
+            _meta["awaiting_reply"] = True
+            _meta["origin_thread_id"] = origin_thread_id or ""
+            _meta["origin_turn_id"] = origin_turn_id or ""
+            _meta["origin_question"] = (origin_question or task_short)[:500]
+
         mem = _Mem(
             id=goal_id,
             narrative=(
@@ -146,27 +174,23 @@ def goal_adopt(task_description: str) -> str:
                 f"else identify files and plan first. Close with goal_close when done."
             ),
             memory_type=_MT.GOAL,
-            metadata={
-                "goal_active": True,
-                "goal_type": "TACTICAL",
-                "source_message": task_short,
-                "adopted_at": ts.isoformat(),
-                "failure_count": 0,
-                "why": "D275 — task→goal adoption. On it = commitment moment.",
-            },
+            metadata=_meta,
         )
         cortex.store(mem)
 
-        # Push to TWM with high salience + 2h TTL so goal persists across turns
-        # T-goal-adopt-category: category="active_goal" so twm_get_active_goal() finds it
+        # Push to TWM with high salience + 2h TTL so goal persists across turns.
+        # awaiting_reply goals push at 0.90 (vs 0.85) so they outweigh ordinary
+        # active goals when an obligation is hanging.
+        _salience = 0.90 if awaiting_reply else 0.85
         cortex.twm_push(
             source="goal_adopt",
             content_csb=f"ACTIVE_GOAL|id={goal_id}|task={task_short[:80]}",
-            salience=0.85,
+            salience=_salience,
             urgency=0.7,
             ttl_seconds=7200,
             category="active_goal",
             metadata={"goal_id": goal_id, "goal_type": "TACTICAL"},
+            thread_id=origin_thread_id or None,
         )
 
         # Post to shared channel so goal is visible across sessions
