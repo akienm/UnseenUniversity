@@ -165,7 +165,9 @@ def _fetch_machines() -> list[MachineRecord]:
         _log.error(
             "[machine_manager] DB_FETCH_FAIL: %s (db_url=%s)",
             exc,
-            _DB_URL.split("@")[-1] if "@" in _DB_URL else _DB_URL,  # host/db only, no creds
+            (
+                _DB_URL.split("@")[-1] if "@" in _DB_URL else _DB_URL
+            ),  # host/db only, no creds
         )
         return []
 
@@ -277,11 +279,100 @@ def get_ranked_machines() -> list[MachineRecord]:
 
 
 def get_machine(hostname: str) -> Optional[MachineRecord]:
-    """Return a single machine by hostname."""
+    """Return a single machine by hostname (online + ranked only)."""
     for m in get_ranked_machines():
         if m.hostname == hostname:
             return m
     return None
+
+
+def get_all_machines() -> list[MachineRecord]:
+    """Return EVERY registered machine, including offline and unranked.
+
+    Distinct from get_ranked_machines (which filters for inference routing).
+    Used by name-resolution surfaces that need to answer "is this machine
+    known?" — a conversational agent should be able to distinguish "this
+    name is not in the registry" from "this machine exists but is offline".
+
+    No caching here — the unfiltered set is small and called rarely.
+    """
+    _ensure_schema()
+    import psycopg2
+
+    try:
+        conn = psycopg2.connect(_DB_URL)
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT hostname, display_name, ip, os, cpu, ram_gb,
+                   network_type, status, ollama_port, ollama_model,
+                   ollama_model_batch, inference_rank,
+                   in_use_hours, in_use_until, roles, aliases,
+                   ssh_enabled, ssh_user, notes
+            FROM machines
+            ORDER BY hostname
+            """)
+        rows = cur.fetchall()
+        conn.close()
+    except Exception as exc:
+        _log.error("[machine_manager] get_all_machines DB_FETCH_FAIL: %s", exc)
+        return []
+
+    out = []
+    for row in rows:
+        (
+            hostname,
+            display_name,
+            ip,
+            os_,
+            cpu,
+            ram_gb,
+            network_type,
+            status,
+            ollama_port,
+            ollama_model,
+            ollama_model_batch,
+            inference_rank,
+            in_use_hours_raw,
+            in_use_until,
+            roles_raw,
+            aliases_raw,
+            ssh_enabled,
+            ssh_user,
+            notes,
+        ) = row
+
+        def _j(val):
+            if isinstance(val, (list, dict)):
+                return val
+            try:
+                return json.loads(val) if val else []
+            except Exception:
+                return []
+
+        out.append(
+            MachineRecord(
+                hostname=hostname,
+                display_name=display_name or hostname,
+                ip=ip,
+                os=os_ or "linux",
+                cpu=cpu or "",
+                ram_gb=ram_gb or 0,
+                network_type=network_type or "wifi",
+                status=status or "online",
+                ollama_port=ollama_port or 11434,
+                ollama_model=ollama_model or "llama3.2:1b",
+                ollama_model_batch=ollama_model_batch,
+                inference_rank=inference_rank,
+                in_use_hours=_j(in_use_hours_raw),
+                in_use_until=in_use_until,
+                roles=_j(roles_raw),
+                aliases=_j(aliases_raw),
+                ssh_enabled=bool(ssh_enabled) if ssh_enabled is not None else False,
+                ssh_user=ssh_user,
+                notes=notes,
+            )
+        )
+    return out
 
 
 def resolve_alias(name: str) -> Optional[str]:
