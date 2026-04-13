@@ -2064,14 +2064,40 @@ class Igor(IgorBase):
         """Map a turn's author/thread to a persistent-relationship facia id.
 
         T-pr-load-as-primary-attractor step 1: identify the interlocutor.
-        Current logic is single-user — any human author on a human-facing
-        channel resolves to PR_AKIEN. Later tickets will add per-thread
-        resolution as Igor talks to more people.
+
+        T-pr-interlocutor-resolution: the resolution is now driven by each
+        facia's metadata.author_handles list. _HUMAN_AUTHORS is still the
+        outer gate — non-human authors (cron, narrative_engine, etc.) never
+        load a frame regardless of facia configuration. Within human authors,
+        the lookup walks every persistent-relationship facia and picks the
+        one whose author_handles claims this incoming author. Multiple
+        authors can map to the same facia (PR_AKIEN claims both 'akien' and
+        'claude-code'). Unknown human authors return None — Igor still
+        functions, just without relationship context for that turn.
 
         Returns the facia id (e.g. 'PR_AKIEN') or None if no frame applies.
         """
-        if not author or author not in _HUMAN_AUTHORS:
+        if not author:
             return None
+        # Case-insensitive _HUMAN_AUTHORS check — authors from network
+        # sources (Discord/Gmail/web/CC) may have varied capitalization.
+        author_norm = author.lower().strip()
+        if author_norm not in _HUMAN_AUTHORS:
+            return None
+        try:
+            from .tools.persistent_relationships import resolve_facia_by_author
+
+            facia_id = resolve_facia_by_author(author_norm)
+            if facia_id:
+                return facia_id
+        except Exception as _resolve_e:
+            log_error(
+                kind="PR_FRAME",
+                detail=f"resolve_facia_by_author({author!r}): {_resolve_e}",
+            )
+        # Fallback: known human authors with no facia mapping still get
+        # PR_AKIEN, preserving pre-T-pr-interlocutor-resolution behavior
+        # for the single-user case until additional facia are seeded.
         return "PR_AKIEN"
 
     def _push_relationship_frame(
