@@ -6488,6 +6488,31 @@ class Igor(IgorBase):
                     kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
                 )
 
+        # T-igor-emit-action-confabulation: detect action-claim phrases in the
+        # outgoing reply ('I ticketed it', 'I filed that') and check for an
+        # evidence anchor in the recent past (cc_queue.json mtime, recent
+        # RESOLVED|/TOOL_RESULT| ring entries). When unverified, log a
+        # CONFAB_CAUGHT ring entry + push a high-salience TWM marker so the
+        # next turn picks it up. Detection-only first pass — does NOT modify
+        # response_text. Active suppression is a follow-up ticket.
+        if response_text and not is_impulse:
+            try:
+                from .cognition.action_claim_verifier import (
+                    check_response as _check_action_claims,
+                )
+
+                _check_action_claims(
+                    self.cortex,
+                    response_text,
+                    turn_id=_turn_id,
+                    thread_id=thread_id,
+                )
+            except Exception as _acv_e:
+                log_error(
+                    kind="ACTION_CLAIM_VERIFIER",
+                    detail=f"check_response: {_acv_e}",
+                )
+
         self._apply_resolution_reward()
 
         # T-igor-deferred-self-tasks: scan reply for DEFERRED_TASK| blocks.
