@@ -2411,6 +2411,7 @@ scheduler_source = SchedulerSource()
 thread_coherence_source = ThreadCoherenceSource()
 consolidation_replay = None  # Lazy loaded to avoid circular import
 sleep_consolidation = None  # T-sleep-consolidation: lazy loaded
+pr_consolidation_source = None  # T-pr-consolidation-sleep-wiring: lazy loaded
 
 # ── T-oscillatory-timing-tiers: hierarchical dispatch ─────────────────────────
 # Mirrors biological theta/beta/gamma cortex-BG loops.
@@ -2440,7 +2441,7 @@ def run_background_sources(cortex) -> int:
     """
     import time as _time
 
-    global consolidation_replay, sleep_consolidation
+    global consolidation_replay, sleep_consolidation, pr_consolidation_source
     if consolidation_replay is None:
         from .replay import ConsolidationReplay
 
@@ -2449,6 +2450,10 @@ def run_background_sources(cortex) -> int:
         from .sleep_consolidation import SleepConsolidation
 
         sleep_consolidation = SleepConsolidation()
+    if pr_consolidation_source is None:
+        from .pr_consolidation_source import PRConsolidationSource
+
+        pr_consolidation_source = PRConsolidationSource()
 
     now_ts = _time.monotonic()
     # Determine which tiers are due this call
@@ -2481,6 +2486,7 @@ def run_background_sources(cortex) -> int:
         thread_coherence_source,
         consolidation_replay,
         sleep_consolidation,
+        pr_consolidation_source,
     ):
         tier = getattr(src, "TIMING_TIER", "medium")
         if tier not in due_tiers:
