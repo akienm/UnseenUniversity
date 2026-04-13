@@ -2128,11 +2128,22 @@ class Igor(IgorBase):
                 detail=f"evict_category relationship_frame: {_ev_e}",
             )
 
+        # T-pr-investment-weight-propagation: frame salience modulates with
+        # the relationship's cumulative_investment_weight in a small bounded
+        # range. Higher-weight relationships are more felt; lower-weight ones
+        # are quieter. Clamped to [0.70, 0.80] so the frame never invades the
+        # foreground-task salience band (~0.85+).
+        from .tools.persistent_relationships import (
+            pr_compute_frame_salience as _pr_salience,
+        )
+
+        _frame_salience = _pr_salience(weight)
+
         try:
             self.cortex.twm_push(
                 source="relationship_frame",
                 content_csb=content_csb,
-                salience=0.75,
+                salience=_frame_salience,
                 urgency=0.4,
                 ttl_seconds=self._PR_FRAME_TTL_SEC,
                 category="relationship_frame",
@@ -2142,6 +2153,7 @@ class Igor(IgorBase):
                     "display_name": display_name,
                     "relationship_type": rel_type,
                     "cumulative_investment_weight": weight,
+                    "frame_salience": _frame_salience,
                     "status": status,
                     "turn_id": turn_id,
                 },

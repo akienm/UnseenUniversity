@@ -24,6 +24,41 @@ from typing import Optional
 
 from .registry import Tool, registry
 
+# ── T-pr-investment-weight-propagation ───────────────────────────────────────
+
+# Frame salience modulation. The frame marker is ambient backdrop; its
+# salience varies in a small range as a function of the relationship's
+# cumulative_investment_weight. Range is intentionally narrow so a
+# high-weight relationship is more "felt" without ever competing with
+# foreground tasks (which sit at ~0.85+).
+#
+#   weight 0.0 (fully dormant)  → salience 0.70
+#   weight 1.0 (baseline)       → salience 0.75
+#   weight 2.0 (saturated)      → salience 0.80
+#
+# Foreground tasks (~0.85-0.95) and user input (~0.95) always dominate.
+# The frame conditions routing without competing for attention.
+_FRAME_BASE_SALIENCE = 0.75
+_FRAME_WEIGHT_SCALE = 0.05
+_FRAME_SALIENCE_MIN = 0.70
+_FRAME_SALIENCE_MAX = 0.80
+
+
+def pr_compute_frame_salience(weight: float) -> float:
+    """Map a relationship's cumulative_investment_weight to a frame salience.
+
+    Pure formula. Weight 1.0 (baseline) → 0.75 (default frame salience).
+    Higher-weight relationships get a small boost; lower-weight ones get
+    a small penalty. Result is clamped to [0.70, 0.80] so the frame never
+    invades the foreground-task salience band (~0.85+).
+    """
+    try:
+        w = float(weight)
+    except (TypeError, ValueError):
+        w = 1.0
+    raw = _FRAME_BASE_SALIENCE + (w - 1.0) * _FRAME_WEIGHT_SCALE
+    return max(_FRAME_SALIENCE_MIN, min(_FRAME_SALIENCE_MAX, raw))
+
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
