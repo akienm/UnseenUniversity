@@ -516,6 +516,53 @@ class Cortex(IgorBase):
         """Deprecated shim — use self._db() directly."""
         return self._db()
 
+    def _apply_pr_frame_bias(self, memories: list) -> None:
+        """T-pr-retrieval-bias: if a relationship_frame is active in TWM,
+        add a small additive bonus to the relevance_score of memories whose
+        metadata.pr_facia_id matches the active frame's facia. Best-effort,
+        never raises. Modifies memories in place. Caller must re-sort after.
+
+        The bonus is small (0.05–0.20, scaled by the facia's cumulative
+        investment weight) — strong enough to surface a relationship-linked
+        memory ahead of an otherwise-equal unrelated one, but not strong
+        enough to overwhelm a substantively better text or embedding match.
+
+        Biological framing: when you talk to Krissy, things you remember
+        about her come to you faster than facts unrelated to her. Not
+        because they're loaded ahead of time but because the activation
+        context biases retrieval at the moment of need.
+        """
+        try:
+            frame_obs = self.twm_read(
+                limit=10,
+                include_integrated=True,
+                category="relationship_frame",
+            )
+            if not frame_obs:
+                return
+            # Singleton via evict-category at push time — last entry is current
+            frame = frame_obs[-1]
+            frame_meta = frame.get("metadata") or {}
+            frame_facia = frame_meta.get("pr_facia_id")
+            if not frame_facia:
+                return
+            frame_weight = float(frame_meta.get("cumulative_investment_weight", 1.0))
+
+            from ..tools.persistent_relationships import pr_compute_retrieval_bias
+
+            bias = pr_compute_retrieval_bias(frame_weight)
+            if bias <= 0:
+                return
+
+            for m in memories:
+                mem_meta = getattr(m, "metadata", None) or {}
+                if mem_meta.get("pr_facia_id") == frame_facia:
+                    current = getattr(m, "relevance_score", 0.0) or 0.0
+                    m.relevance_score = current + bias  # type: ignore[attr-defined]
+        except Exception:
+            # Bias is a nudge — never break search if anything fails
+            pass
+
     def _local_conn(self):
         """Context manager for LOCAL tables: ring_memory, twm_observations."""
         return self._local_db()
@@ -1975,6 +2022,17 @@ class Cortex(IgorBase):
                         reverse=True,
                     )
 
+                # T-pr-retrieval-bias: relationship-linked memories get a small
+                # additive bonus, then the candidate pool is re-sorted before
+                # the top-k slice. This means relationship-linked memories that
+                # would otherwise sit just below the cutoff get a chance to
+                # surface, while unrelated strong matches still win on merits.
+                self._apply_pr_frame_bias([m for _, m in scored])
+                scored.sort(
+                    key=lambda x: getattr(x[1], "relevance_score", x[0]),
+                    reverse=True,
+                )
+
                 result = [m for _, m in scored[: req.limit]]
                 # G9: spreading activation — boost graph neighbors
                 result = self._spread_activation(
@@ -2039,6 +2097,14 @@ class Cortex(IgorBase):
             )
 
         # Phase 1 fallback: candidates already scored + merged (#172); return top N
+        # T-pr-retrieval-bias: same additive bonus + re-sort as the embedding
+        # path, applied here so the fallback path also surfaces relationship-
+        # linked memories preferentially when a frame is active.
+        self._apply_pr_frame_bias(candidates)
+        candidates.sort(
+            key=lambda m: getattr(m, "relevance_score", 0.0),
+            reverse=True,
+        )
         result = candidates[: req.limit]
         # G9: spreading activation — boost graph neighbors
         result = self._spread_activation(
