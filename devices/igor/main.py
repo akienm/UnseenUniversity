@@ -384,6 +384,26 @@ def _reply_obligation_log(stage: str, **fields) -> None:
         pass
 
 
+def _verbatim_trace_log(stage: str, **fields) -> None:
+    """T-tool-call-and-verbatim-fidelity forensic log. Never raises.
+
+    stage ∈ {push, inject, miss}. Fields: turn_id, thread_id, char_len, count.
+    Single line per event so the parallel-trace flow can be reconstructed.
+    """
+    try:
+        from datetime import datetime as _dt
+
+        _line = f"{_dt.now().isoformat(timespec='milliseconds')} {stage}"
+        for k, v in fields.items():
+            _line += f" {k}={str(v)[:200].replace(chr(10), ' ')}"
+        _log_path = _paths().logs / "verbatim_trace.log"
+        _log_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(_log_path, "a") as _f:
+            _f.write(_line + "\n")
+    except Exception:
+        pass
+
+
 # ── Stdin thread ───────────────────────────────────────────────────────────────
 
 # Sentinel object — distinguishes "EOF/Ctrl-D" from "queue empty" in run() loop.
@@ -1637,8 +1657,14 @@ class Igor(IgorBase):
                         payload.get("parameters")
                         or payload.get("arguments")
                         or payload.get("args")
-                        or {}
                     )
+                    # T-tool-call-and-verbatim-fidelity: flat-key fallback.
+                    # Some models emit {"name": "read_file", "path": "..."} with
+                    # the args as top-level siblings of name instead of nested
+                    # under parameters/arguments/args. Treat every key other
+                    # than name as the kwargs in that case.
+                    if _kwargs is None:
+                        _kwargs = {k: v for k, v in payload.items() if k != "name"}
                     if _name:
                         _cleaned = re.sub(
                             r"<tool_call>.*?</tool_call>",
@@ -2029,12 +2055,22 @@ class Igor(IgorBase):
         Shows last N exchanges so the LLM has thread-scoped context.
         If older exchanges were compacted, shows the summary first.
         Returns "" if no history or thread is new.
+
+        T-tool-call-and-verbatim-fidelity: after the gist-compressed history,
+        include a labeled verbatim section carrying full untruncated recent
+        user inputs from TWM category='verbatim_source'. Fuzzy Trace Theory:
+        gist drives narrative reasoning; verbatim is available when the LLM
+        needs fidelity (paths, URLs, quoted text) for tool-call composition.
         """
         import time as _t
 
         buf = self._thread_buffers.get(thread_id)
         if not buf or (not buf["history"] and not buf.get("summary")):
-            return ""
+            # Even with no gist history, a verbatim trace may exist for this
+            # thread (e.g. first turn retries). Still emit the verbatim block
+            # if any verbatim observations match.
+            verbatim_block = self._build_verbatim_block(thread_id)
+            return verbatim_block
         # Evict stale threads
         if _t.monotonic() - buf["last_active"] > self._THREAD_IDLE_TTL_SEC:
             del self._thread_buffers[thread_id]
@@ -2049,7 +2085,48 @@ class Igor(IgorBase):
             lines.append(f"  User: {user_turn[:200]}")
             lines.append(f"  Igor: {igor_turn[:300]}")
         lines.append("")
-        return "\n".join(lines)
+        _out = "\n".join(lines)
+        _verbatim = self._build_verbatim_block(thread_id)
+        if _verbatim:
+            _out += _verbatim
+        return _out
+
+    def _build_verbatim_block(self, thread_id: str) -> str:
+        """T-tool-call-and-verbatim-fidelity: assemble a labeled verbatim
+        section from TWM category='verbatim_source' for the given thread.
+
+        Returns "" if no verbatim entries match. Returns a block ready to
+        append to the thread context prefix otherwise. Most recent first.
+        """
+        try:
+            obs = self.cortex.twm_read(
+                limit=50,
+                include_integrated=True,
+                thread_id=thread_id,
+                category="verbatim_source",
+            )
+            if not obs:
+                _verbatim_trace_log("miss", thread_id=thread_id, count=0)
+                return ""
+            # Most recent first, cap to last _THREAD_MAX_HISTORY entries
+            recent = obs[-self._THREAD_MAX_HISTORY :]
+            lines = [
+                "[Recent user input — full text, no truncation. "
+                "Use these when you need exact spelling of paths, URLs, "
+                "quoted text, code, or other fidelity-critical content:]"
+            ]
+            for o in recent:
+                _txt = o.get("content_csb", "")
+                lines.append(f"  - {_txt}")
+            lines.append("")
+            _verbatim_trace_log("inject", thread_id=thread_id, count=len(recent))
+            return "\n".join(lines)
+        except Exception as _e:
+            log_error(
+                kind="VERBATIM_TRACE",
+                detail=f"build_verbatim_block {thread_id}: {_e}",
+            )
+            return ""
 
     def _update_thread_buffer(
         self, thread_id: str, user_turn: str, igor_reply: str
@@ -3100,6 +3177,38 @@ class Igor(IgorBase):
             user_input_source.push_message(
                 self.cortex, user_input, channel="repl", author="user"
             )
+            # T-tool-call-and-verbatim-fidelity: seed a parallel verbatim trace
+            # at a distinct category. push_message above truncates the content
+            # at 300 chars for the narrative gist; this push stores the full
+            # untruncated text so later turns can pull fidelity-critical spans
+            # (paths, URLs, code, quoted text) from TWM without reconstructing
+            # from gist. Fuzzy Trace Theory: gist + verbatim as parallel tracks.
+            try:
+                self.cortex.twm_push(
+                    source="user_input_verbatim",
+                    content_csb=user_input,
+                    salience=0.85,
+                    urgency=0.9,
+                    ttl_seconds=1800,
+                    category="verbatim_source",
+                    thread_id=thread_id or None,
+                    metadata={
+                        "turn_id": _turn_id,
+                        "author": author or "user",
+                        "char_len": len(user_input),
+                    },
+                )
+                _verbatim_trace_log(
+                    "push",
+                    turn_id=_turn_id,
+                    thread_id=thread_id or "",
+                    char_len=len(user_input),
+                )
+            except Exception as _vbt_e:
+                log_error(
+                    kind="VERBATIM_TRACE",
+                    detail=f"verbatim twm_push: {_vbt_e}",
+                )
 
         # G64 — cross-turn self-repair detection.
         # If this turn contains a repair marker ("oh wait", "actually", "I can't", ...)
