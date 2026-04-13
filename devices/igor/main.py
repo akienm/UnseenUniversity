@@ -6340,6 +6340,49 @@ class Igor(IgorBase):
                     detail=f"wild_igor/igor/main.py deferred_self_task: {_bare_e}",
                 )
 
+        # T-pr-accretion: per-turn online accretion into the active relationship's
+        # facia subtree. Best-effort; never blocks or raises. Online encoding half
+        # of the hippocampal-cortical loop — T-pr-consolidation does the offline
+        # integration later. Conditions match the frame-push gate so accretion
+        # only happens for turns that set a frame.
+        if (
+            not is_impulse
+            and not user_input.startswith("/")
+            and response_text
+            and (author in _HUMAN_AUTHORS)
+        ):
+            try:
+                _accrete_facia = self._resolve_relationship_frame(author, thread_id)
+                if _accrete_facia:
+                    from .tools.pr_accretion import (
+                        pr_accrete_exchange as _pra_exchange,
+                        pr_accrete_marker as _pra_marker,
+                        detect_marker as _pra_detect,
+                    )
+
+                    _pra_exchange(
+                        facia_id=_accrete_facia,
+                        user_text=user_input,
+                        igor_reply=response_text,
+                        thread_id=thread_id,
+                        turn_id=_turn_id,
+                        author=author or "user",
+                    )
+                    _marker = _pra_detect(user_input)
+                    if _marker:
+                        _pra_marker(
+                            facia_id=_accrete_facia,
+                            marker_text=user_input,
+                            why=f"matched marker phrase: {_marker!r}",
+                            thread_id=thread_id,
+                            turn_id=_turn_id,
+                        )
+            except Exception as _pra_e:
+                log_error(
+                    kind="PR_ACCRETION",
+                    detail=f"per-turn accretion: {_pra_e}",
+                )
+
         return response_text
 
     def _run_ne_background(self):
