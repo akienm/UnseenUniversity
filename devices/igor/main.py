@@ -5393,6 +5393,13 @@ class Igor(IgorBase):
                     # adopt a GOAL carrying the originating turn's context BEFORE
                     # spawning the bg job, then thread the goal_id through so the
                     # completion drain can find it back and surface a bouquet to TWM.
+                    #
+                    # T-pr-secondary-attractor-nesting: also resolve the active
+                    # relationship frame and thread pr_facia_id into the goal so
+                    # the task lives INSIDE the relationship that spawned it. In
+                    # parallel, accrete a commitment memory into the relationship
+                    # subtree so the commitment shows up in pr_recent_accretions
+                    # and feeds future consolidation.
                     _goal_id = None
                     if habit.metadata.get("awaiting_reply"):
                         try:
@@ -5402,6 +5409,9 @@ class Igor(IgorBase):
                             _goal_id = (
                                 f"GOAL_{_dt.now(_tz.utc).strftime('%Y%m%d%H%M%S%f')}"
                             )
+                            _pr_facia = self._resolve_relationship_frame(
+                                author, thread_id
+                            )
                             _goal_adopt(
                                 user_input,
                                 goal_id=_goal_id,
@@ -5409,13 +5419,33 @@ class Igor(IgorBase):
                                 origin_turn_id=_turn_id,
                                 origin_question=user_input,
                                 awaiting_reply=True,
+                                pr_facia_id=_pr_facia,
                             )
+                            if _pr_facia:
+                                try:
+                                    from .tools.pr_accretion import (
+                                        pr_accrete_commitment as _pra_commit,
+                                    )
+
+                                    _pra_commit(
+                                        facia_id=_pr_facia,
+                                        commitment_text=user_input,
+                                        goal_id=_goal_id,
+                                        thread_id=thread_id,
+                                        turn_id=_turn_id,
+                                    )
+                                except Exception as _pra_e:
+                                    log_error(
+                                        kind="PR_ACCRETION",
+                                        detail=f"commitment accretion at fork: {_pra_e}",
+                                    )
                             _reply_obligation_log(
                                 "adopt",
                                 goal_id=_goal_id,
                                 habit=habit.id,
                                 turn_id=_turn_id,
                                 thread_id=thread_id or "",
+                                pr_facia=_pr_facia or "",
                                 question=user_input[:200],
                             )
                         except Exception as _ro_e:

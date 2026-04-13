@@ -128,6 +128,7 @@ def goal_adopt(
     origin_turn_id: str | None = None,
     origin_question: str | None = None,
     awaiting_reply: bool = False,
+    pr_facia_id: str | None = None,
 ) -> str:
     """
     Adopt a task as an active GOAL_TACTICAL goal (D275).
@@ -141,6 +142,13 @@ def goal_adopt(
     the goal remembers which conversational turn it owes a reply to. The
     completion drain looks up the goal by goal_id later and re-surfaces the
     origin question for salience competition.
+
+    T-pr-secondary-attractor-nesting: when an active relationship_frame is in
+    play, the dispatch path also supplies pr_facia_id so the goal carries a
+    pointer back to its originating relationship. Tasks live INSIDE the
+    relationship that spawned them, not as standalone attractors. The
+    dispatch path also calls pr_accrete_commitment in parallel so the
+    commitment lands as an accreted memory in the relationship subtree.
     """
     try:
         from ..memory.cortex import Cortex as _Cortex
@@ -165,6 +173,8 @@ def goal_adopt(
             _meta["origin_thread_id"] = origin_thread_id or ""
             _meta["origin_turn_id"] = origin_turn_id or ""
             _meta["origin_question"] = (origin_question or task_short)[:500]
+        if pr_facia_id:
+            _meta["pr_facia_id"] = pr_facia_id
 
         mem = _Mem(
             id=goal_id,
@@ -182,6 +192,9 @@ def goal_adopt(
         # awaiting_reply goals push at 0.90 (vs 0.85) so they outweigh ordinary
         # active goals when an obligation is hanging.
         _salience = 0.90 if awaiting_reply else 0.85
+        _twm_meta = {"goal_id": goal_id, "goal_type": "TACTICAL"}
+        if pr_facia_id:
+            _twm_meta["pr_facia_id"] = pr_facia_id
         cortex.twm_push(
             source="goal_adopt",
             content_csb=f"ACTIVE_GOAL|id={goal_id}|task={task_short[:80]}",
@@ -189,7 +202,7 @@ def goal_adopt(
             urgency=0.7,
             ttl_seconds=7200,
             category="active_goal",
-            metadata={"goal_id": goal_id, "goal_type": "TACTICAL"},
+            metadata=_twm_meta,
             thread_id=origin_thread_id or None,
         )
 
