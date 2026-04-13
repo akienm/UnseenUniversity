@@ -363,6 +363,27 @@ def _nexus_twm_ttl(thread_id: str | None) -> int:
     return 3600 if _nexus_type(thread_id) == "episodic" else 7200
 
 
+def _reply_obligation_log(stage: str, **fields) -> None:
+    """T-reply-obligation-fork forensic log. Never raises.
+
+    stage ∈ {adopt, fork_submit, completion_match, bouquet_push, miss}.
+    Fields are arbitrary kwargs (goal_id, turn_id, thread_id, habit, etc.).
+    Single line per event so the loop can be reconstructed offline.
+    """
+    try:
+        from datetime import datetime as _dt
+
+        _line = f"{_dt.now().isoformat(timespec='milliseconds')} {stage}"
+        for k, v in fields.items():
+            _line += f" {k}={str(v)[:200].replace(chr(10), ' ')}"
+        _log_path = _paths().logs / "reply_obligations.log"
+        _log_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(_log_path, "a") as _f:
+            _f.write(_line + "\n")
+    except Exception:
+        pass
+
+
 # ── Stdin thread ───────────────────────────────────────────────────────────────
 
 # Sentinel object — distinguishes "EOF/Ctrl-D" from "queue empty" in run() loop.
@@ -5105,6 +5126,42 @@ class Igor(IgorBase):
                     _fork_input = f"[BG-TASK] {user_input}"
                     _fork_rel = self.cortex.search(_fork_input, limit=10)
                     _fork_iu = author in _HUMAN_AUTHORS
+
+                    # T-reply-obligation-fork: when the habit declares awaiting_reply,
+                    # adopt a GOAL carrying the originating turn's context BEFORE
+                    # spawning the bg job, then thread the goal_id through so the
+                    # completion drain can find it back and surface a bouquet to TWM.
+                    _goal_id = None
+                    if habit.metadata.get("awaiting_reply"):
+                        try:
+                            from .tools.ops import goal_adopt as _goal_adopt
+                            from datetime import datetime as _dt, timezone as _tz
+
+                            _goal_id = (
+                                f"GOAL_{_dt.now(_tz.utc).strftime('%Y%m%d%H%M%S%f')}"
+                            )
+                            _goal_adopt(
+                                user_input,
+                                goal_id=_goal_id,
+                                origin_thread_id=thread_id or "",
+                                origin_turn_id=_turn_id,
+                                origin_question=user_input,
+                                awaiting_reply=True,
+                            )
+                            _reply_obligation_log(
+                                "adopt",
+                                goal_id=_goal_id,
+                                habit=habit.id,
+                                turn_id=_turn_id,
+                                thread_id=thread_id or "",
+                                question=user_input[:200],
+                            )
+                        except Exception as _ro_e:
+                            log_error(
+                                kind="REPLY_OBLIGATION",
+                                detail=f"goal_adopt at fork dispatch: {_ro_e}",
+                            )
+
                     self.job_manager.submit_background(
                         fn=lambda _ui=_fork_input, _rel=_fork_rel, _iu=_fork_iu: (
                             self._bg_reason(
@@ -5119,9 +5176,12 @@ class Igor(IgorBase):
                         title=f"fork:{user_input[:60]}",
                         completions_queue=self._job_completions,
                         thread_id=thread_id or "",
+                        goal_id=_goal_id,
                     )
                     loginfo(
-                        f"[dim][on-it-fork] spawned background task habit={habit.id}[/]"
+                        f"[dim][on-it-fork] spawned background task habit={habit.id}"
+                        + (f" goal={_goal_id}" if _goal_id else "")
+                        + "[/]"
                     )
         if not habit or response_text is None:
             # No habit matched, OR habit was suppressed by coherence gate.
@@ -6436,6 +6496,98 @@ class Igor(IgorBase):
                 category="system_info",
                 thread_id=tid or None,
             )
+
+            # T-reply-obligation-fork: if this job carries a reply-obligation goal,
+            # surface a *bouquet* to TWM and let salience competition pick the
+            # response. We don't compose a reply here — we just seed the right
+            # activations and trust the existing scan/dispatch loop. The result,
+            # the origin question, the goal refresh, and a pending_reply marker
+            # all share an origin (the commit-to-look) but enter independently.
+            _goal_id_link = item.get("goal_id")
+            if _goal_id_link:
+                try:
+                    _goal_mem = self.cortex.get(_goal_id_link)
+                    if _goal_mem and _goal_mem.metadata.get("awaiting_reply"):
+                        _origin_q = _goal_mem.metadata.get("origin_question", "")
+                        _origin_thread = (
+                            _goal_mem.metadata.get("origin_thread_id") or tid
+                        )
+                        _origin_turn = _goal_mem.metadata.get("origin_turn_id", "")
+                        _reply_obligation_log(
+                            "completion_match",
+                            goal_id=_goal_id_link,
+                            job_id=job_id,
+                            thread_id=_origin_thread,
+                            turn_id=_origin_turn,
+                        )
+                        # Re-anchor the origin question — the human's actual ask
+                        # is what the reply needs to address, and it has decayed
+                        # since the commit-to-look turn. Push at high salience.
+                        self.cortex.twm_push(
+                            content_csb=(
+                                f"ORIGIN_QUESTION|goal={_goal_id_link}|q={_origin_q[:200]}"
+                            ),
+                            source="reply_obligation",
+                            salience=0.92,
+                            urgency=0.8,
+                            ttl_seconds=600,
+                            category="origin_question",
+                            metadata={"goal_id": _goal_id_link},
+                            thread_id=_origin_thread or None,
+                        )
+                        # Refresh the goal itself — bumps it back to top of TWM
+                        # active-goal slot now that evidence has arrived.
+                        self.cortex.twm_push(
+                            content_csb=(
+                                f"ACTIVE_GOAL|id={_goal_id_link}|"
+                                f"task={_origin_q[:80]}|status=evidence_in"
+                            ),
+                            source="reply_obligation",
+                            salience=0.93,
+                            urgency=0.8,
+                            ttl_seconds=600,
+                            category="active_goal",
+                            metadata={"goal_id": _goal_id_link, "evidence_in": True},
+                            thread_id=_origin_thread or None,
+                        )
+                        # Pending-reply attention marker. Distinct category so
+                        # an emit-side habit can attract on it specifically.
+                        self.cortex.twm_push(
+                            content_csb=(
+                                f"PENDING_REPLY|goal={_goal_id_link}|"
+                                f"thread={_origin_thread}|q={_origin_q[:120]}"
+                            ),
+                            source="reply_obligation",
+                            salience=0.90,
+                            urgency=0.85,
+                            ttl_seconds=600,
+                            category="pending_reply",
+                            metadata={
+                                "goal_id": _goal_id_link,
+                                "origin_thread_id": _origin_thread,
+                                "origin_turn_id": _origin_turn,
+                            },
+                            thread_id=_origin_thread or None,
+                        )
+                        _reply_obligation_log(
+                            "bouquet_push",
+                            goal_id=_goal_id_link,
+                            items="origin_question,active_goal,pending_reply",
+                        )
+                    else:
+                        _reply_obligation_log(
+                            "miss",
+                            goal_id=_goal_id_link,
+                            reason=(
+                                "not_found" if not _goal_mem else "not_awaiting_reply"
+                            ),
+                        )
+                except Exception as _ro_e:
+                    log_error(
+                        kind="REPLY_OBLIGATION",
+                        detail=f"completion bouquet for {_goal_id_link}: {_ro_e}",
+                    )
+
             loginfo(f"\n[green][JOBS] Job #{job_id} '{title[:50]}' completed.[/]\n")
 
         # T-predictive-self-modeling: after draining all completions, compare

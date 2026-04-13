@@ -130,7 +130,10 @@ class JobManager(IgorBase):
                 if j.status in _STATUS_ACTIVE:
                     self._jobs[j.job_id] = j
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/job_manager.py: %s", _bare_e)
+                logging.getLogger(__name__).warning(
+                    "bare except in wild_igor/igor/cognition/job_manager.py: %s",
+                    _bare_e,
+                )
 
     def active_count(self) -> int:
         return len(self._jobs)
@@ -177,7 +180,10 @@ class JobManager(IgorBase):
                         data = json.loads(path.read_text(encoding="utf-8"))
                         jobs.append(Job(**data))
                     except Exception as _bare_e:
-                        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/job_manager.py: %s", _bare_e)
+                        logging.getLogger(__name__).warning(
+                            "bare except in wild_igor/igor/cognition/job_manager.py: %s",
+                            _bare_e,
+                        )
             return jobs
         return sorted(self._jobs.values(), key=lambda j: j.created_at, reverse=True)
 
@@ -253,6 +259,7 @@ class JobManager(IgorBase):
         completions_queue: deque,
         job_id: Optional[str] = None,
         thread_id: str = "",
+        goal_id: Optional[str] = None,
     ) -> str:
         """
         Run `fn` in a daemon thread. When it completes, push
@@ -263,6 +270,11 @@ class JobManager(IgorBase):
         new Job record is created automatically.
 
         The caller owns completions_queue — typically IgorAgent._job_completions.
+
+        T-reply-obligation-fork: optional goal_id links the job back to a GOAL
+        memory adopted at fork time. The completion drain uses it to find the
+        originating context (thread, turn, question) when surfacing the result
+        bouquet to TWM.
         """
         if job_id is None:
             job = self.create(title=title)
@@ -290,6 +302,7 @@ class JobManager(IgorBase):
                     "title": title,
                     "result": result,
                     "thread_id": thread_id,
+                    "goal_id": goal_id,
                 }
             )
 
