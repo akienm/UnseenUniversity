@@ -2220,42 +2220,110 @@ class Igor(IgorBase):
             _out += _verbatim
         return _out
 
-    def _build_verbatim_block(self, thread_id: str) -> str:
-        """T-tool-call-and-verbatim-fidelity: assemble a labeled verbatim
-        section from TWM category='verbatim_source' for the given thread.
+    # T-verbatim-prompt-injection: per-entry budget for tool result verbatims
+    # injected into the LLM prompt. 30K chars is large enough for almost any
+    # single file read but small enough to leave headroom for the rest of the
+    # context. Most recent tool result only — older entries stay queryable in
+    # TWM but don't auto-flood the prompt.
+    _TOOL_RESULT_INJECT_MAX_CHARS = 30000
 
-        Returns "" if no verbatim entries match. Returns a block ready to
-        append to the thread context prefix otherwise. Most recent first.
+    def _build_verbatim_block(self, thread_id: str) -> str:
+        """Assemble a labeled verbatim section from TWM for the given thread.
+
+        Two sub-sections:
+
+        1. user input verbatim (T-tool-call-and-verbatim-fidelity, f0ad6dab)
+           — recent user messages preserved at full fidelity for paths, URLs,
+           quoted text, code.
+
+        2. tool result verbatim (T-verbatim-prompt-injection, this ticket)
+           — the SINGLE most recent tool_result_verbatim entry, capped at
+           30K chars so long file reads can flow into reasoning without
+           ballooning the prompt. Older tool results stay queryable in TWM
+           but don't auto-inject.
+
+        Returns "" if neither sub-section has anything to show.
         """
+        sections = []
+
+        # ── Sub-section 1: user input verbatim ──────────────────────────────
         try:
-            obs = self.cortex.twm_read(
+            user_obs = self.cortex.twm_read(
                 limit=50,
                 include_integrated=True,
                 thread_id=thread_id,
                 category="verbatim_source",
             )
-            if not obs:
-                _verbatim_trace_log("miss", thread_id=thread_id, count=0)
-                return ""
-            # Most recent first, cap to last _THREAD_MAX_HISTORY entries
-            recent = obs[-self._THREAD_MAX_HISTORY :]
-            lines = [
-                "[Recent user input — full text, no truncation. "
-                "Use these when you need exact spelling of paths, URLs, "
-                "quoted text, code, or other fidelity-critical content:]"
-            ]
-            for o in recent:
-                _txt = o.get("content_csb", "")
-                lines.append(f"  - {_txt}")
-            lines.append("")
-            _verbatim_trace_log("inject", thread_id=thread_id, count=len(recent))
-            return "\n".join(lines)
+            if user_obs:
+                recent = user_obs[-self._THREAD_MAX_HISTORY :]
+                user_lines = [
+                    "[Recent user input — full text, no truncation. "
+                    "Use these when you need exact spelling of paths, URLs, "
+                    "quoted text, code, or other fidelity-critical content:]"
+                ]
+                for o in recent:
+                    user_lines.append(f"  - {o.get('content_csb', '')}")
+                user_lines.append("")
+                sections.append("\n".join(user_lines))
+                _verbatim_trace_log(
+                    "inject", thread_id=thread_id, count=len(recent), kind="user"
+                )
+            else:
+                _verbatim_trace_log("miss", thread_id=thread_id, count=0, kind="user")
         except Exception as _e:
             log_error(
                 kind="VERBATIM_TRACE",
-                detail=f"build_verbatim_block {thread_id}: {_e}",
+                detail=f"build_verbatim_block user section {thread_id}: {_e}",
             )
+
+        # ── Sub-section 2: tool result verbatim (most recent only) ──────────
+        try:
+            tool_obs = self.cortex.twm_read(
+                limit=20,
+                include_integrated=True,
+                thread_id=thread_id,
+                category="tool_result_verbatim",
+            )
+            if tool_obs:
+                latest = tool_obs[-1]
+                tool_meta = latest.get("metadata") or {}
+                tool_name = tool_meta.get("tool_name", "(unknown)")
+                tool_content = latest.get("content_csb", "")
+                # Apply per-entry budget; show truncation marker if hit
+                if len(tool_content) > self._TOOL_RESULT_INJECT_MAX_CHARS:
+                    tool_content = (
+                        tool_content[: self._TOOL_RESULT_INJECT_MAX_CHARS]
+                        + f"\n\n... [truncated at {self._TOOL_RESULT_INJECT_MAX_CHARS} "
+                        f"chars; full result in TWM tool_result_verbatim]"
+                    )
+                tool_section = (
+                    f"[Most recent tool result — full output from {tool_name!r}. "
+                    f"Use this when reasoning about what the tool actually returned, "
+                    f"not a paraphrase:]\n"
+                    f"{tool_content}\n"
+                )
+                sections.append(tool_section)
+                _verbatim_trace_log(
+                    "inject",
+                    thread_id=thread_id,
+                    count=1,
+                    kind="tool_result",
+                    tool=tool_name,
+                    chars=len(tool_content),
+                )
+            else:
+                _verbatim_trace_log(
+                    "miss", thread_id=thread_id, count=0, kind="tool_result"
+                )
+        except Exception as _e:
+            log_error(
+                kind="VERBATIM_TRACE",
+                detail=f"build_verbatim_block tool section {thread_id}: {_e}",
+            )
+
+        if not sections:
             return ""
+        return "\n".join(sections)
 
     def _update_thread_buffer(
         self, thread_id: str, user_turn: str, igor_reply: str
