@@ -60,6 +60,34 @@ def pr_compute_frame_salience(weight: float) -> float:
     return max(_FRAME_SALIENCE_MIN, min(_FRAME_SALIENCE_MAX, raw))
 
 
+# T-pr-retrieval-bias: small additive bonus applied to memories whose
+# metadata.pr_facia_id matches the active relationship frame in TWM.
+# The bonus magnitude scales with the facia's cumulative_investment_weight.
+# Range is small — relationship presence is a tiebreaker, not an override.
+# Strong text/embedding signals still win on their merits.
+_BIAS_BASE = 0.10
+_BIAS_WEIGHT_SCALE = 0.05
+_BIAS_MIN = 0.05
+_BIAS_MAX = 0.20
+
+
+def pr_compute_retrieval_bias(weight: float) -> float:
+    """Map a relationship's cumulative_investment_weight to an additive
+    retrieval bias. Weight 1.0 (baseline) → 0.10 default bonus.
+
+    Range: [0.05, 0.20]. Even a fully-dormant relationship (weight 0.0)
+    keeps a small 0.05 bonus — past relationships still slightly color
+    retrieval; they aren't erased. Saturated relationships (weight 2.0+)
+    cap at 0.20 so they nudge retrieval without overwhelming text signals.
+    """
+    try:
+        w = float(weight)
+    except (TypeError, ValueError):
+        w = 1.0
+    raw = _BIAS_BASE + (w - 1.0) * _BIAS_WEIGHT_SCALE
+    return max(_BIAS_MIN, min(_BIAS_MAX, raw))
+
+
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
