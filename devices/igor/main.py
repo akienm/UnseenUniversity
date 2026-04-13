@@ -5748,6 +5748,36 @@ class Igor(IgorBase):
                         f"TOOL_RESULT|{_tool_name}|{str(_tool_result)[:500]}",
                         category="tool_result",
                     )
+
+                    # T-tool-result-verbatim-trace: push full untruncated tool
+                    # result to TWM at category='tool_result_verbatim'. Same
+                    # gist+verbatim split as user input (f0ad6dab) — synth
+                    # prompt is bounded for cost, but the verbatim is
+                    # retrievable for any operation needing fidelity.
+                    try:
+                        _full_result_str = (
+                            str(_tool_result) if _tool_result is not None else ""
+                        )
+                        self.cortex.twm_push(
+                            source="tool_result_verbatim",
+                            content_csb=_full_result_str,
+                            salience=0.85,
+                            urgency=0.85,
+                            ttl_seconds=1800,
+                            category="tool_result_verbatim",
+                            thread_id=thread_id or None,
+                            metadata={
+                                "tool_name": _tool_name,
+                                "turn_id": _turn_id,
+                                "char_len": len(_full_result_str),
+                            },
+                        )
+                    except Exception as _vbt_e:
+                        log_error(
+                            kind="TOOL_VERBATIM_TRACE",
+                            detail=f"tool_result_verbatim push: {_vbt_e}",
+                        )
+
                     # Second-pass synthesis: feed tool result back through local reasoning
                     # so Igor actually responds to what the tool returned, not his prior guess.
                     console.print(
@@ -5756,10 +5786,15 @@ class Igor(IgorBase):
                     try:
                         from .brainstem.core_patterns import get_core_patterns as _gcp
 
+                        # T-tool-result-verbatim-trace: 2KB → 40KB. Modern
+                        # context windows handle this trivially; the prior
+                        # 2KB cap was a legacy choice from when context was
+                        # expensive. Files larger than 40KB still have full
+                        # verbatim in TWM via the push above.
                         _synth_prompt = (
                             f"[TOOL_RESULT]\n"
                             f"Tool: {_tool_name}\n"
-                            f"Result:\n{str(_tool_result)[:2000]}\n\n"
+                            f"Result:\n{str(_tool_result)[:40000]}\n\n"
                             f"[ORIGINAL_REQUEST]\n{user_input}\n\n"
                             f"Report ONLY what the tool actually returned above. "
                             f"Do NOT add, infer, or expand beyond the actual result. "
@@ -5799,12 +5834,19 @@ class Igor(IgorBase):
                             # Synthesis failed — drop _cleaned (may contain LLM speculation)
                             # and show only the actual tool result.
                             response_text = (
-                                f"[{_tool_name} result: {str(_tool_result)[:800]}]"
+                                # T-tool-result-verbatim-trace: 800→4000. Full
+                                # untruncated copy is in TWM at category=
+                                # 'tool_result_verbatim' for any path that
+                                # needs more than the user-visible fallback.
+                                f"[{_tool_name} result: {str(_tool_result)[:4000]}]"
                             )
                     except Exception as _se:
                         log_error(kind="TOOL_SYNTH", detail=f"{_tool_name}: {_se}")
                         response_text = (
-                            f"[{_tool_name} result: {str(_tool_result)[:800]}]"
+                            # T-tool-result-verbatim-trace: 800→4000 (sibling
+                            # of the inner-except fallback above). Full
+                            # untruncated copy in TWM at tool_result_verbatim.
+                            f"[{_tool_name} result: {str(_tool_result)[:4000]}]"
                         )
                 except Exception as _te:
                     console.print(f"[yellow][TOOL] {_tool_name} ✗  {_te}[/]")
