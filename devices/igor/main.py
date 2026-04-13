@@ -2049,6 +2049,123 @@ class Igor(IgorBase):
             return f"gmail:{msg.author}"
         return f"{msg.source}:default"
 
+    # ── T-pr-load-as-primary-attractor ───────────────────────────────────────
+
+    # Minimum seconds between refreshing a relationship_frame observation.
+    # Frame is ambient backdrop; no need to re-push on every turn.
+    _PR_FRAME_REFRESH_SEC = 300
+    # Frame TWM TTL — long enough that the frame survives ordinary gaps but
+    # short enough that an idle conversation lets it decay naturally.
+    _PR_FRAME_TTL_SEC = 3600
+
+    def _resolve_relationship_frame(
+        self, author: str | None, thread_id: str | None
+    ) -> str | None:
+        """Map a turn's author/thread to a persistent-relationship facia id.
+
+        T-pr-load-as-primary-attractor step 1: identify the interlocutor.
+        Current logic is single-user — any human author on a human-facing
+        channel resolves to PR_AKIEN. Later tickets will add per-thread
+        resolution as Igor talks to more people.
+
+        Returns the facia id (e.g. 'PR_AKIEN') or None if no frame applies.
+        """
+        if not author or author not in _HUMAN_AUTHORS:
+            return None
+        return "PR_AKIEN"
+
+    def _push_relationship_frame(
+        self, facia_id: str, thread_id: str | None, turn_id: str
+    ) -> bool:
+        """Push a singleton relationship_frame marker to TWM.
+
+        Frame-vs-content distinction: this is ONE observation carrying a
+        pointer to the active relationship, not a flood of subtree memories.
+        Salience 0.75 so it sits below foreground tasks (~0.85-0.95) and
+        user input (~0.95) — the frame conditions routing without competing
+        for attention. Singleton via twm_evict_category so a new frame
+        replaces any prior one.
+
+        Refresh throttled: skip if a frame with this facia_id was pushed
+        within _PR_FRAME_REFRESH_SEC — the frame is ambient, not per-turn.
+
+        Returns True if a new marker was pushed, False if throttled or
+        on error.
+        """
+        import time as _time
+
+        now_mono = _time.monotonic()
+        last = getattr(self, "_pr_frame_last_push", {})
+        last_ts = last.get(facia_id, 0.0)
+        if now_mono - last_ts < self._PR_FRAME_REFRESH_SEC:
+            return False
+
+        # Load facia metadata for display in the marker
+        try:
+            facia_mem = self.cortex.get(facia_id)
+        except Exception:
+            facia_mem = None
+        if not facia_mem:
+            return False
+
+        meta = facia_mem.metadata or {}
+        display_name = meta.get("display_name", facia_id)
+        weight = float(meta.get("cumulative_investment_weight", 1.0))
+        status = meta.get("status", "active")
+        rel_type = meta.get("relationship_type", "")
+
+        content_csb = (
+            f"FRAME|pr={facia_id}|weight={weight:.2f}"
+            f"|status={status}|type={rel_type}|display={display_name}"
+        )
+
+        # Singleton: evict prior frame observations before pushing the new one
+        try:
+            self.cortex.twm_evict_category("relationship_frame")
+        except Exception as _ev_e:
+            log_error(
+                kind="PR_FRAME",
+                detail=f"evict_category relationship_frame: {_ev_e}",
+            )
+
+        try:
+            self.cortex.twm_push(
+                source="relationship_frame",
+                content_csb=content_csb,
+                salience=0.75,
+                urgency=0.4,
+                ttl_seconds=self._PR_FRAME_TTL_SEC,
+                category="relationship_frame",
+                thread_id=thread_id or None,
+                metadata={
+                    "pr_facia_id": facia_id,
+                    "display_name": display_name,
+                    "relationship_type": rel_type,
+                    "cumulative_investment_weight": weight,
+                    "status": status,
+                    "turn_id": turn_id,
+                },
+            )
+        except Exception as _push_e:
+            log_error(
+                kind="PR_FRAME",
+                detail=f"twm_push relationship_frame: {_push_e}",
+            )
+            return False
+
+        # Touch last_activity_ts on the facia so the pr tools see the update
+        try:
+            from .tools.persistent_relationships import pr_touch as _pr_touch
+
+            _pr_touch(name=facia_id)
+        except Exception:
+            pass  # touch is best-effort
+
+        # Record the push time in the throttle map
+        last[facia_id] = now_mono
+        self._pr_frame_last_push = last
+        return True
+
     def _get_thread_context_prefix(self, thread_id: str) -> str:
         """
         Return a preamble injected before the current network message.
@@ -3172,6 +3289,30 @@ class Igor(IgorBase):
         _habits_before = len(
             self.cortex.get_habits()
         )  # G54/G53: detect new habits this turn
+        # T-pr-load-as-primary-attractor: set the relationship FRAME before the
+        # user message is pushed. A persistent-relationship is attention-routing
+        # CONDITIONED BY the person, not attention ON the person — when Leah
+        # walks in while Akien is coding, Leah becomes ambient context the code-
+        # work happens inside of, not a content flood that evicts the code.
+        # So: one singleton TWM marker at category='relationship_frame',
+        # salience 0.75 (comfortably above noise, below foreground tasks so it
+        # does not compete with them), longer TTL so it persists across turns.
+        # No subtree content pushed — retrieval bias is a follow-up ticket.
+        if (
+            not is_impulse
+            and not user_input.startswith("/")
+            and (author in _HUMAN_AUTHORS)
+        ):
+            try:
+                _frame_facia_id = self._resolve_relationship_frame(author, thread_id)
+                if _frame_facia_id:
+                    self._push_relationship_frame(_frame_facia_id, thread_id, _turn_id)
+            except Exception as _pr_frame_e:
+                log_error(
+                    kind="PR_FRAME",
+                    detail=f"relationship frame push: {_pr_frame_e}",
+                )
+
         # [TWM] Push incoming message as observation (non-command, non-impulse messages only)
         if not is_impulse and not user_input.startswith("/"):
             user_input_source.push_message(
