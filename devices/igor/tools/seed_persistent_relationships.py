@@ -122,6 +122,11 @@ def seed():
             "display_name": "Akien",
             "relationship_type": "person",
             "status": "active",
+            # T-pr-interlocutor-resolution: author identifiers that map to
+            # this facia. _resolve_relationship_frame in main.py looks up the
+            # incoming turn's author against these lists. Add new aliases
+            # here as Igor learns about additional Akien-identified channels.
+            "author_handles": ["akien", "claude-code"],
             "cumulative_investment_weight": 1.0,
             "last_activity_ts": _now_iso(),
             "description": (

@@ -137,6 +137,39 @@ def _list_facia_memories() -> list:
     return out
 
 
+def resolve_facia_by_author(author: str) -> str | None:
+    """T-pr-interlocutor-resolution: look up which persistent-relationship
+    facia is associated with an author handle.
+
+    Walks all relationship facia and checks each one's metadata.author_handles
+    list (case-insensitive) for the incoming author. Returns the facia id
+    on match, or None if no facia claims that author.
+
+    This is the lookup used by _resolve_relationship_frame in main.py to
+    map an incoming turn's author to its persistent-relationship frame.
+    Multiple authors can map to the same facia (e.g. 'akien' and
+    'claude-code' both → PR_AKIEN). Unknown authors return None and no
+    frame is loaded — Igor still functions, just without relationship
+    context for that turn.
+    """
+    if not author or not isinstance(author, str):
+        return None
+    needle = author.lower().strip()
+    if not needle:
+        return None
+    for row in _list_facia_memories():
+        if "error" in row:
+            return None
+        meta = row.get("metadata") or {}
+        handles = meta.get("author_handles") or []
+        if not isinstance(handles, list):
+            continue
+        for h in handles:
+            if isinstance(h, str) and h.lower() == needle:
+                return row["id"]
+    return None
+
+
 def _resolve_facia(name_or_id: str):
     """Find a relationship facia by id ('PR_AKIEN'), display_name ('Akien'),
     or the trimmed lowercase variant. Returns the row dict or None."""
