@@ -6513,6 +6513,38 @@ class Igor(IgorBase):
                     detail=f"check_response: {_acv_e}",
                 )
 
+        # T-response-coherence-inhibitor: detect off-topic habit emissions
+        # — habit-fired replies whose semantic overlap with the prompt is
+        # near-zero (e.g. a habit firing on the keyword 'graph' and dumping
+        # a cached preparse-config paragraph in response to a question
+        # about long-term goals). Different class from action-claim
+        # confabulation: that catches false claims of action; this catches
+        # off-topic emissions. First instance of T-inhibitory-pattern-primitive.
+        # Detection-only first pass — logs COHERENCE_FAILURE ring + pushes
+        # high-salience TWM marker so next turn self-corrects.
+        if response_text and not is_impulse:
+            try:
+                from .cognition.response_coherence_inhibitor import (
+                    check_coherence as _check_coherence,
+                )
+
+                _source_label = (
+                    f"habit:{_turn_habit.id}" if _turn_habit else "llm_or_tier0"
+                )
+                _check_coherence(
+                    self.cortex,
+                    prompt=user_input,
+                    response=response_text,
+                    turn_id=_turn_id,
+                    thread_id=thread_id,
+                    source_label=_source_label,
+                )
+            except Exception as _coh_e:
+                log_error(
+                    kind="COHERENCE_INHIBITOR",
+                    detail=f"check_coherence: {_coh_e}",
+                )
+
         self._apply_resolution_reward()
 
         # T-igor-deferred-self-tasks: scan reply for DEFERRED_TASK| blocks.
