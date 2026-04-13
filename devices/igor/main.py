@@ -6909,25 +6909,51 @@ class Igor(IgorBase):
                 _msg = f"Background job failed: **{title[:60]}**\n{result}"
             else:
                 _msg = f"Background job complete: **{title[:60]}**\n{result}"
+
+            # T-fork-echo-suppress-on-bouquet: if this job carries a reply-
+            # obligation goal_id AND the linked goal is awaiting_reply, the
+            # bouquet pushed below provides next-turn material — DO NOT emit
+            # the raw 'Background job complete' echo to the user channel.
+            # Errors still surface (we want to know about failures).
+            _suppress_user_echo = False
+            _early_goal_id = item.get("goal_id")
+            if _early_goal_id and not _is_error:
+                try:
+                    _early_goal = self.cortex.get(_early_goal_id)
+                    if _early_goal and _early_goal.metadata.get("awaiting_reply"):
+                        _suppress_user_echo = True
+                        _reply_obligation_log(
+                            "echo_suppressed",
+                            goal_id=_early_goal_id,
+                            job_id=job_id,
+                            title=title[:60],
+                        )
+                except Exception as _sup_e:
+                    log_error(
+                        kind="REPLY_OBLIGATION",
+                        detail=f"echo suppression check {_early_goal_id}: {_sup_e}",
+                    )
+
             # #159 fix: thread_id is "web:<session_id>" but web_server sessions
             # are keyed by just the session_id part. Strip the "web:" prefix so
             # "web:shared" → "shared", "web:abc123" → "abc123", etc.
             # Non-web sources (discord:*, gmail:*) can't route to web — use "shared".
-            if tid.startswith("cc:"):
-                # D263: CC-sourced bg job — post completion to cc channel.
-                # T-job-result-lost: use post_to_channel (PG + JSONL fallback)
-                # instead of inline DB write; log errors at WARNING not INFO.
-                try:
-                    from .tools.channel_post import post_to_channel as _cc_post
+            if not _suppress_user_echo:
+                if tid.startswith("cc:"):
+                    # D263: CC-sourced bg job — post completion to cc channel.
+                    # T-job-result-lost: use post_to_channel (PG + JSONL fallback)
+                    # instead of inline DB write; log errors at WARNING not INFO.
+                    try:
+                        from .tools.channel_post import post_to_channel as _cc_post
 
-                    _cc_post(_msg)
-                except Exception as _e3:
-                    log.warning("[D263] cc bg-job channel post failed: %s", _e3)
-            elif tid.startswith("web:"):
-                _session = tid[4:] or "shared"
-                web_server.send(_msg, session_id=_session)
-            else:
-                web_server.send(_msg, session_id="shared")
+                        _cc_post(_msg)
+                    except Exception as _e3:
+                        log.warning("[D263] cc bg-job channel post failed: %s", _e3)
+                elif tid.startswith("web:"):
+                    _session = tid[4:] or "shared"
+                    web_server.send(_msg, session_id=_session)
+                else:
+                    web_server.send(_msg, session_id="shared")
 
             # T-igor-deferred-self-tasks: deferred self-task results go to TWM
             # as context for the next turn — not as ACTION_IMPULSE noise.
