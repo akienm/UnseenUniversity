@@ -72,6 +72,7 @@ from . import (
     reading_tool,
     habit_health_audit,
     instance_tracker,
+    goal_graph,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
