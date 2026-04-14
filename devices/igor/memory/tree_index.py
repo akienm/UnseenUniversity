@@ -50,10 +50,6 @@ _DEFAULT_RULES = {
 }
 
 
-
-
-
-
 # ── DB connection ─────────────────────────────────────────────────────────────
 
 
@@ -263,7 +259,7 @@ _CP_DESCRIPTIONS = {
 
 _SPECIAL_TREES = {
     "reading_pipeline": {
-        "facia_id": "20260327162240000000",  # PROC_READING_FEEDER habit node
+        "facia_id": "PROC_READING_FEEDER_V2",  # D334 unified reading tool entry habit
         "description": "Reading pipeline entry point — feeds books into the matrix",
         "rules": {"method": "bfs_all", "max_depth": 2},
     },
