@@ -129,6 +129,7 @@ def goal_adopt(
     origin_question: str | None = None,
     awaiting_reply: bool = False,
     pr_facia_id: str | None = None,
+    parent_goal_facia_id: str | None = None,
 ) -> str:
     """
     Adopt a task as an active GOAL_TACTICAL goal (D275).
@@ -175,6 +176,12 @@ def goal_adopt(
             _meta["origin_question"] = (origin_question or task_short)[:500]
         if pr_facia_id:
             _meta["pr_facia_id"] = pr_facia_id
+        # T-goals-as-persistent-relationships (#422): optional pointer from a
+        # tactical GOAL back to its parent strategic-goal facia. When present,
+        # progress on this tactical goal can be rolled up to the strategic
+        # parent via the existing PR investment-weight propagation path.
+        if parent_goal_facia_id:
+            _meta["parent_goal_facia_id"] = parent_goal_facia_id
 
         mem = _Mem(
             id=goal_id,

@@ -211,6 +211,13 @@ def pr_consolidate_all(since_ts: Optional[str] = None, **_) -> str:
         for row in facia_rows:
             if row["metadata"].get("status") != "active":
                 continue
+            # T-goals-as-persistent-relationships (#422): goal-flavored facia
+            # reuse the PR substrate but their consolidation semantics are
+            # progress/state-based, not accretion-based. Skip them here until
+            # a dedicated goal consolidation path exists.
+            rtype = row["metadata"].get("relationship_type", "")
+            if isinstance(rtype, str) and rtype.startswith("goal_"):
+                continue
             facia_id = row["id"]
             summary = pr_consolidate(facia_id=facia_id, since_ts=since_ts)
             results.append(f"  {facia_id}: {summary}")
