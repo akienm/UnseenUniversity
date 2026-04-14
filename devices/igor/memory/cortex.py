@@ -490,6 +490,33 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "m044_palace_parent_idx",
         "CREATE INDEX IF NOT EXISTS idx_palace_parent ON memory_palace (parent_path)",
     ),
+    # T-instance-tracking-startup (#424): boot/shutdown history per Igor instance.
+    # Queryable on demand. NOT pushed to TWM — reference state, not working memory.
+    (
+        "m045_instance_log",
+        "CREATE TABLE IF NOT EXISTS instance_log ("
+        " id           SERIAL PRIMARY KEY,"
+        " timestamp    TEXT NOT NULL,"
+        " event        TEXT NOT NULL,"
+        " instance_id  TEXT NOT NULL,"
+        " commit_short TEXT,"
+        " commit_long  TEXT,"
+        " branch       TEXT,"
+        " host         TEXT,"
+        " pid          INTEGER,"
+        " narrative    TEXT"
+        ")",
+    ),
+    (
+        "m046_instance_log_timestamp_idx",
+        "CREATE INDEX IF NOT EXISTS idx_instance_log_timestamp "
+        "ON instance_log (timestamp DESC)",
+    ),
+    (
+        "m047_instance_log_instance_idx",
+        "CREATE INDEX IF NOT EXISTS idx_instance_log_instance "
+        "ON instance_log (instance_id, timestamp DESC)",
+    ),
 ]
 
 

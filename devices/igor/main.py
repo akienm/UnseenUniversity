@@ -458,6 +458,16 @@ class Igor(IgorBase):
         except Exception as _bare_e:
             log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
 
+        # T-instance-tracking-startup (#424): record boot event to JSONL + DB.
+        # NOT pushed to TWM — queryable reference state, not working memory.
+        # Shutdown recorded via atexit so all normal exit paths capture it.
+        from .tools.instance_tracker import record_shutdown, record_startup
+
+        record_startup(self.cortex, instance_id)
+        import atexit as _atexit
+
+        _atexit.register(lambda: record_shutdown(self.cortex, instance_id))
+
         # D119: DB-first boot — hydrate os.environ from system config graph,
         # then sync .env into graph if mtime changed (one mechanism for all instances).
         from .env_sync import boot_env_sync as _boot_env_sync
