@@ -21,12 +21,10 @@ import os
 from collections import Counter
 from datetime import datetime, timezone
 
+from ..paths import paths as _paths
 log = logging.getLogger(__name__)
 
-_DB_URL = os.getenv(
-    "IGOR_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
+_DB_URL = _paths().home_db_url
 
 _MIN_SEQ_LEN = 3  # minimum chunk length
 _MIN_COUNT = 5  # minimum occurrences to form a chunk

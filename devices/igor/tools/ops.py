@@ -19,6 +19,7 @@ from pathlib import Path
 from .registry import Tool, registry
 from ..paths import paths
 
+from ..paths import paths as _paths
 _QUEUE_PATH = paths().cc_channel / "queue.json"
 
 
@@ -1004,10 +1005,7 @@ registry.register(
 
 # ── store_plan ─────────────────────────────────────────────────────────────────
 
-_DB_URL = os.getenv(
-    "IGOR_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
+_DB_URL = _paths().home_db_url
 
 
 def store_plan(ticket_id: str, plan_text: str) -> str:

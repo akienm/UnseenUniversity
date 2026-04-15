@@ -17,10 +17,8 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-_DB_URL = os.getenv(
-    "IGOR_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
+from ..paths import paths as _paths
+_DB_URL = _paths().home_db_url
 _STALE_HOURS = int(os.getenv("IGOR_STALE_TASK_HOURS", "2"))
 
 _RESOLVED_STATUSES = {"done", "closed", "shelved", "dismissed", "completed"}

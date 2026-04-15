@@ -37,6 +37,7 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
+from ..paths import paths as _paths
 log = logging.getLogger(__name__)
 
 _CC_QUEUE = Path.home() / "TheIgors" / "claudecode" / "cc_queue.py"
@@ -48,10 +49,7 @@ TEMPERATURE_BY_PHASE = {
     "SITUATE": 0.7,
 }
 _QUEUE_FILE = Path.home() / ".TheIgors" / "cc_channel" / "queue.json"
-_DB_URL = os.getenv(
-    "IGOR_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
+_DB_URL = _paths().home_db_url
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -1445,7 +1443,6 @@ def _post_to_channel(message: str) -> None:
     except Exception:
         pass
     try:
-        from ..paths import paths as _paths
         import json as _json
         from datetime import datetime, timezone
 

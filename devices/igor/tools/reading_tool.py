@@ -43,10 +43,12 @@ def _db():
 
 
 def _cortex() -> Cortex:
+    from ..paths import paths as _paths
+
     db_path = Path(
         os.environ.get(
             "IGOR_DB_PATH",
-            Path.home() / ".TheIgors" / "Igor-wild-0001" / "wild-0001.db",
+            _paths().instance / "wild-0001.db",
         )
     )
     return Cortex(db_path)
@@ -440,13 +442,16 @@ def _start_run(run_id: str = "", mode: str = "background", **_kw) -> str:
 
 def _ensure_worker_script(worker_path: Path, repo: Path) -> None:
     """Create the background worker script."""
+    from ..paths import paths as _paths
+
+    instance_dir = str(_paths().instance)
     worker_path.write_text(f'''#!/usr/bin/env python3
 """reading_worker.py — Background worker for reading runs."""
 import sys, os
 sys.path.insert(0, "{repo}")
 sys.path.insert(0, "{repo / 'wild_igor'}")
 
-_instance_dir = os.path.expanduser("~/.TheIgors/Igor-wild-0001")
+_instance_dir = "{instance_dir}"
 try:
     sys.path.insert(0, "{repo / 'wild_igor' / 'setup_assets'}")
     from installer import load_cfg

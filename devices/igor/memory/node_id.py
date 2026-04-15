@@ -21,6 +21,7 @@ import os
 import socket
 import threading
 import time
+from ..paths import paths as _paths
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -176,10 +177,7 @@ def register_node(
 
 
 def _get_db_url() -> str:
-    return os.getenv(
-        "IGOR_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-    )
+    return _paths().home_db_url
 
 
 def _registry_pg(

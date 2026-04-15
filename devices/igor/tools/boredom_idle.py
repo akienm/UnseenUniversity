@@ -29,14 +29,12 @@ from pathlib import Path
 
 from .registry import Tool, registry
 
+from ..paths import paths as _paths
 log = logging.getLogger(__name__)
 from ..paths import paths
 from .channel_post import post_to_channel as _post_to_channel
 
-_DB_URL = os.getenv(
-    "IGOR_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
+_DB_URL = _paths().home_db_url
 
 # Thresholds
 _BOREDOM_AROUSAL_THRESHOLD = float(os.getenv("IGOR_BOREDOM_AROUSAL_THRESHOLD", "0.08"))
