@@ -117,30 +117,23 @@ def _store_metadata(memory_id: str, metadata: dict) -> bool:
 
 
 def _store_memory(memory_id: str, narrative: str, metadata: dict) -> bool:
-    """Insert a new goal facia memory row. Returns True on success.
-
-    NOTE: this bypasses cortex.store() which violates the single-chokepoint
-    principle (CLAUDE.md: all DB access through cortex). Follow-up:
-    T-goal-graph-use-cortex-store will convert this to cortex.store() with
-    a proper Memory object. In the meantime, we manually apply the
-    test-data tag here so IGOR_TEST_MODE=1 runs still get auto-cleanup.
+    """Insert a new goal facia memory row via cortex.store() — the single
+    chokepoint per DP4. Respects scrub, credential leakage filtering, and
+    the IGOR_TEST_MODE=1 test-data stamping automatically because those
+    live inside cortex.store().
     """
-    from ..memory.test_data_lifecycle import (
-        is_test_mode,
-        stamp_metadata_for_test_mode,
-    )
+    from ..memory.models import Memory, MemoryType
 
-    if is_test_mode():
-        metadata = stamp_metadata_for_test_mode(metadata)
     cortex = _get_cortex()
     try:
-        with cortex._conn() as conn:
-            conn.execute(
-                "INSERT INTO memories "
-                "(id, memory_type, narrative, metadata, timestamp, activation_count) "
-                "VALUES (?, ?, ?, ?, ?, 1)",
-                (memory_id, "REFERENCE", narrative, json.dumps(metadata), _now_iso()),
-            )
+        mem = Memory(
+            id=memory_id,
+            narrative=narrative,
+            memory_type=MemoryType.REFERENCE,
+            metadata=dict(metadata or {}),
+            activation_count=1,
+        )
+        cortex.store(mem)
         return True
     except Exception as exc:
         logger.warning("goal_graph _store_memory failed for %s: %s", memory_id, exc)
