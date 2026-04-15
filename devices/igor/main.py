@@ -1328,45 +1328,22 @@ class Igor(IgorBase):
         except Exception as e:
             console.print(f"[dim][FIRST BOOT] Discord announce failed: {e}[/]")
 
-        # ── machines.json self-registration ──────────────────────────────────
-        machines_json = _paths().machines_json
+        # ── Self-registration via machine_manager (T-machines-json-phaseout) ─
+        # machines.json is now an ECHO of the DB, not the source of truth.
+        # register_self inserts into the machines table (if absent) and
+        # refreshes the file echo. Akien 2026-04-14: "it's an echo of the
+        # database, that's all."
         try:
-            import json as _json
+            from .cognition.machine_manager import register_self
 
-            if machines_json.exists():
-                data = _json.loads(machines_json.read_text(encoding="utf-8"))
-                hostnames = [m.get("hostname", "") for m in data.get("machines", [])]
-                if hostname not in hostnames:
-                    data.setdefault("machines", []).append(
-                        {
-                            "hostname": hostname,
-                            "ip": ip,
-                            "cpu": "unknown",
-                            "ram_gb": None,
-                            "gpu": None,
-                            "storage": "unknown",
-                            "model": "unknown",
-                            "notes": "Auto-registered at first boot",
-                            "priority": "batch",
-                            "capabilities": ["embedding", "reasoning"],
-                            "network": "unknown",
-                            "status": "online",
-                        }
-                    )
-                    machines_json.write_text(
-                        _json.dumps(data, indent=2), encoding="utf-8"
-                    )
-                    console.print(
-                        f"[cyan][FIRST BOOT] Registered {hostname} in machines.json.[/]"
-                    )
-                else:
-                    console.print(
-                        f"[dim][FIRST BOOT] {hostname} already in machines.json.[/]"
-                    )
+            if register_self(hostname, ip):
+                console.print(
+                    f"[cyan][FIRST BOOT] Registered {hostname} in DB + machines.json echo refreshed.[/]"
+                )
+            else:
+                console.print(f"[dim][FIRST BOOT] {hostname} already registered.[/]")
         except Exception as e:
-            console.print(
-                f"[dim][FIRST BOOT] machines.json self-register failed: {e}[/]"
-            )
+            console.print(f"[dim][FIRST BOOT] self-registration failed: {e}[/]")
 
         # ── Ring note ────────────────────────────────────────────────────────
         self.cortex.write_ring(

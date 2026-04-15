@@ -441,6 +441,7 @@ def set_machine_override(hostname: str, ttl_hours: float = 0) -> str:
     _write_override(canonical, until)
     ttl_str = f" for {ttl_hours}h" if ttl_hours > 0 else " (until cleared)"
     _log.info("MACHINE_IN_USE|set|host=%s|ttl=%s", canonical, ttl_hours or "indefinite")
+    export_to_machines_json()  # refresh file echo
     return f"{canonical} marked in-use{ttl_str}."
 
 
@@ -455,6 +456,7 @@ def clear_machine_override(hostname: str) -> str:
     if m and m.in_use_until:
         _write_override(canonical, None)
         _log.info("MACHINE_IN_USE|clear|host=%s", canonical)
+        export_to_machines_json()  # refresh file echo
         return f"{canonical} cleared — available for inference."
     return f"{canonical} had no override (already available)."
 
@@ -480,3 +482,138 @@ def get_availability_report() -> str:
             f"{m.network_type:5s} {m.ram_gb}GB{override_note}"
         )
     return "Machine availability:\n" + "\n".join(lines)
+
+
+# ── T-machines-json-phaseout: echo DB → file ──────────────────────────────────
+# The machines.json file is an ECHO of the DB, not the source of truth. Akien
+# reads it for at-a-glance cluster state (2026-04-14). Any writer that used to
+# modify the file directly should now update the DB (machine_manager) and then
+# call export_to_machines_json() to refresh the file.
+#
+# Existing readers (push_sources MachinesWatcher, boot_check, cluster_ssh,
+# machine_lookup) can keep reading the file — they now see a fresh DB-echo
+# every time a write happens through machine_manager.
+
+
+def export_to_machines_json(path: Optional["Path"] = None) -> bool:  # noqa: F821
+    """Write an echo of the current machines table to machines.json.
+
+    Called after any write path that mutates machine records, so the file
+    stays fresh as a human-readable snapshot of the DB. Returns True on
+    success, False on any error (best-effort, never crashes the caller).
+
+    path defaults to paths().machines_json if None.
+    """
+    import json as _json
+    from pathlib import Path as _Path
+
+    from ..paths import paths as _paths
+
+    target = path or _paths().machines_json
+    try:
+        target = _Path(target)
+        target.parent.mkdir(parents=True, exist_ok=True)
+
+        machines = get_all_machines()
+        payload = {
+            "_meta": {
+                "description": (
+                    "Cluster machine registry. ECHO of the DB machines table — "
+                    "do not edit by hand. Writes go through machine_manager."
+                ),
+                "source_of_truth": "public.machines table in Postgres home DB",
+                "exported_at": datetime.now(timezone.utc).isoformat(),
+                "exported_by": "machine_manager.export_to_machines_json",
+                "schema_version": 5,
+            },
+            "machines": [
+                {
+                    "hostname": m.hostname,
+                    "display_name": m.display_name,
+                    "ip": m.ip,
+                    "os": m.os,
+                    "cpu": m.cpu,
+                    "ram_gb": m.ram_gb,
+                    "network_type": m.network_type,
+                    "status": m.status,
+                    "ollama_port": m.ollama_port,
+                    "ollama_model": m.ollama_model,
+                    "ollama_model_batch": m.ollama_model_batch,
+                    "inference_rank": m.inference_rank,
+                    "in_use_hours": m.in_use_hours,
+                    "in_use_until": m.in_use_until,
+                    "roles": m.roles,
+                    "aliases": m.aliases,
+                    "ssh": m.ssh_enabled,
+                    "ssh_user": m.ssh_user,
+                    "notes": m.notes,
+                }
+                for m in machines
+            ],
+        }
+        target.write_text(_json.dumps(payload, indent=2), encoding="utf-8")
+        _log.info(
+            "machines.json echo refreshed: %d machines → %s", len(machines), target
+        )
+        return True
+    except Exception as exc:
+        _log.warning("machines.json echo refresh failed: %s", exc)
+        return False
+
+
+def register_self(hostname: str, ip: str) -> bool:
+    """First-boot self-registration. Idempotent — no-op if already registered.
+
+    Replaces main.py's direct writes to machines.json. This adds the row via
+    the DB and then refreshes the file echo. Returns True if a new row was
+    inserted, False if the machine was already present or on error.
+    """
+    import psycopg2
+
+    try:
+        _ensure_schema()
+        conn = psycopg2.connect(_DB_URL)
+        conn.autocommit = True
+        cur = conn.cursor()
+        cur.execute("SELECT 1 FROM machines WHERE hostname = %s", (hostname,))
+        if cur.fetchone():
+            conn.close()
+            _log.info("register_self: %s already in machines table", hostname)
+            return False
+        cur.execute(
+            """
+            INSERT INTO machines
+              (hostname, display_name, ip, os, cpu, ram_gb, network_type,
+               status, ollama_port, ollama_model, inference_rank,
+               in_use_hours, roles, aliases, ssh_enabled, notes)
+            VALUES (%s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s)
+            """,
+            (
+                hostname,
+                hostname,
+                ip if ip != "unknown" else None,
+                "unknown",
+                "unknown",
+                0,
+                "unknown",
+                "online",
+                11434,
+                "unknown",
+                None,
+                json.dumps([]),
+                json.dumps([]),
+                json.dumps([]),
+                False,
+                f"Auto-registered at first boot {datetime.now(timezone.utc).isoformat()}",
+            ),
+        )
+        conn.close()
+        _invalidate_cache()
+        export_to_machines_json()
+        _log.info("register_self: inserted %s into machines table", hostname)
+        return True
+    except Exception as exc:
+        _log.warning("register_self failed for %s: %s", hostname, exc)
+        return False
