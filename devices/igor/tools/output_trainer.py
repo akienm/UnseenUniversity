@@ -35,6 +35,7 @@ from pathlib import Path
 from typing import Optional
 
 from ..paths import paths as _paths
+
 logger = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -315,48 +316,38 @@ class OutputTrainer:
         trigger: str,
     ) -> str:
         """
-        Insert a RESPONSE habit seeded from a cloud turn.
-        Returns the habit memory ID.
+        Insert a RESPONSE habit seeded from a cloud turn via cortex.store.
+        Returns the habit memory ID. conn kept for caller compat but unused.
         """
+        from ..memory.cortex import Cortex
+        from ..memory.models import Memory, MemoryType
+
         mem_id = f"PROC_RESP_AUTO_{turn_id[:6].upper()}"
         narrative = (
             f"[auto-seeded response habit] "
             f"When asked: {input_text!r}, respond directly. "
             f"Seeded from tier={tier} cloud turn."
         )
-        now = datetime.now().isoformat()
-        metadata = json.dumps(
-            {
-                "habit_type": "response",
-                "trigger": trigger,
-                "response_template": response_text,
-                "why": f"Seeded by output_trainer from {tier} cloud turn — removes cloud round-trip.",
-                "provenance": "output_training",
-                "turn_id": turn_id,
-                "inertia": 0.2,
-            }
+        metadata = {
+            "habit_type": "response",
+            "trigger": trigger,
+            "response_template": response_text,
+            "why": f"Seeded by output_trainer from {tier} cloud turn — removes cloud round-trip.",
+            "provenance": "output_training",
+            "turn_id": turn_id,
+            "inertia": 0.2,
+        }
+        cortex = Cortex(db_path=str(_paths().instance / "wild-0001.db"))
+        mem = Memory(
+            id=mem_id,
+            narrative=narrative,
+            memory_type=MemoryType.PROCEDURAL,
+            metadata=metadata,
+            source="output_training",
+            confidence=0.7,
+            context_of_encoding=f"output_training|tier={tier}",
         )
-        cur = conn.cursor()
-        cur.execute(
-            """
-            INSERT INTO memories
-                (id, narrative, memory_type, source, confidence,
-                 context_of_encoding, timestamp, updated_at,
-                 metadata, portable, scope)
-            VALUES (%s, %s, 'PROCEDURAL', 'output_training', 0.7,
-                    %s, %s, %s, %s, 1, 'class')
-            ON CONFLICT (id) DO NOTHING
-            """,
-            (
-                mem_id,
-                narrative,
-                f"output_training|tier={tier}",
-                now,
-                now,
-                metadata,
-            ),
-        )
-        conn.commit()
+        cortex.store(mem)
         return mem_id
 
     # ── Main pass ─────────────────────────────────────────────────────────────

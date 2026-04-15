@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Optional
 
 from ..paths import paths as _paths
+
 logger = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -154,40 +155,35 @@ def _already_captured(conn, turn_id: str) -> bool:
 
 
 def _deposit_learning(conn, turn_id: str, author: str, learning: str) -> str:
-    """Insert a FACTUAL memory for this learning. Returns the memory ID."""
+    """Insert a FACTUAL memory for this learning via cortex.store().
+
+    conn is kept in the signature for caller compatibility but is no
+    longer used — cortex.store routes writes through db_proxy which
+    has its own connection management. Single-chokepoint (DP4) gives
+    us scrub, credential filtering, test_data stamping automatically.
+    """
+    from ..memory.cortex import Cortex
+    from ..memory.models import Memory, MemoryType
     from ..memory.node_id import new_node_id
 
     mem_id = new_node_id()
-    now = datetime.now().isoformat()
-    metadata = json.dumps(
-        {
-            "origin": "after_action_review",
-            "learned_from": author,
-            "turn_id": turn_id,
-            "inertia": 0.3,
-        }
+    metadata = {
+        "origin": "after_action_review",
+        "learned_from": author,
+        "turn_id": turn_id,
+        "inertia": 0.3,
+    }
+    cortex = Cortex(db_path=str(_paths().instance / "wild-0001.db"))
+    mem = Memory(
+        id=mem_id,
+        narrative=learning[:2000],
+        memory_type=MemoryType.FACTUAL,
+        metadata=metadata,
+        source="after_action_review",
+        confidence=0.75,
+        context_of_encoding=f"after_action_review|learned_from={author}",
     )
-    cur = conn.cursor()
-    cur.execute(
-        """
-        INSERT INTO memories
-            (id, narrative, memory_type, source, confidence,
-             context_of_encoding, timestamp, updated_at,
-             metadata, portable, scope)
-        VALUES (%s, %s, 'FACTUAL', 'after_action_review', 0.75,
-                %s, %s, %s, %s, 1, 'class')
-        ON CONFLICT (id) DO NOTHING
-        """,
-        (
-            mem_id,
-            learning[:2000],
-            f"after_action_review|learned_from={author}",
-            now,
-            now,
-            metadata,
-        ),
-    )
-    conn.commit()
+    cortex.store(mem)
     return mem_id
 
 

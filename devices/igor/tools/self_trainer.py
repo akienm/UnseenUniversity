@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Optional
 
 from ..paths import paths as _paths
+
 logger = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -365,40 +366,29 @@ class SelfTrainer:
         Insert a FACTUAL memory from a cloud LLM response.
         Returns the memory ID. ON CONFLICT DO NOTHING is idempotent.
         """
+        from ..memory.cortex import Cortex
+        from ..memory.models import Memory, MemoryType
         from ..memory.node_id import new_node_id
 
         mem_id = new_node_id()
         narrative = f"Q: {input_text}\nA: {response_text}"
-        now = datetime.now().isoformat()
-        metadata = json.dumps(
-            {
-                "origin": "self_training",
-                "tier": tier,
-                "turn_id": turn_id,
-                "inertia": 0.2,
-            }
+        metadata = {
+            "origin": "self_training",
+            "tier": tier,
+            "turn_id": turn_id,
+            "inertia": 0.2,
+        }
+        cortex = Cortex(db_path=str(_paths().instance / "wild-0001.db"))
+        mem = Memory(
+            id=mem_id,
+            narrative=narrative,
+            memory_type=MemoryType.FACTUAL,
+            metadata=metadata,
+            source="self_training",
+            confidence=0.7,
+            context_of_encoding=f"self_training|tier={tier}",
         )
-        cur = conn.cursor()
-        cur.execute(
-            """
-            INSERT INTO memories
-                (id, narrative, memory_type, source, confidence,
-                 context_of_encoding, timestamp, updated_at,
-                 metadata, portable, scope)
-            VALUES (%s, %s, 'FACTUAL', 'self_training', 0.7,
-                    %s, %s, %s, %s, 1, 'class')
-            ON CONFLICT (id) DO NOTHING
-            """,
-            (
-                mem_id,
-                narrative,
-                f"self_training|tier={tier}",
-                now,
-                now,
-                metadata,
-            ),
-        )
-        conn.commit()
+        cortex.store(mem)
         return mem_id
 
     # ── Main pass ─────────────────────────────────────────────────────────────
