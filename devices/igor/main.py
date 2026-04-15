@@ -327,6 +327,15 @@ _CSB_TOOL_LEAK_RE = re.compile(
     r"^\s*\[[a-z_]+\]\s*(NOT_RUNNING|RUNNING|OK|FAIL|ERROR|PASS|SKIP)\|",
     re.IGNORECASE,
 )
+# T-stored-locally-only-contact-defect (#416): privacy sentinels like
+# stored_locally_only:CONTACT_abc123 are internal return values from
+# tools. They must never reach the user — they halt the conversation
+# thread with opaque noise. Suppressed at the same emit choke point
+# as other raw leaks.
+_PRIVACY_SENTINEL_RE = re.compile(
+    r"^\s*(stored_locally_only|stored_locally\|google_error):\S+",
+    re.IGNORECASE,
+)
 
 
 def _is_raw_tool_leak(text: str) -> bool:
@@ -335,9 +344,15 @@ def _is_raw_tool_leak(text: str) -> bool:
     reach the channel. Catches:
       - [run_bash result: {"id": ...}]  (synthesis-failed fallback)
       - [check_process] NOT_RUNNING|name=...  (CSB format leak)
+      - stored_locally_only:CONTACT_abc (privacy sentinel from google_contacts)
+      - stored_locally|google_error:... (privacy sentinel error variant)
     """
     t = text.strip()
-    return bool(_RAW_TOOL_RESULT_RE.match(t) or _CSB_TOOL_LEAK_RE.match(t))
+    return bool(
+        _RAW_TOOL_RESULT_RE.match(t)
+        or _CSB_TOOL_LEAK_RE.match(t)
+        or _PRIVACY_SENTINEL_RE.match(t)
+    )
 
 
 # ── #184: Attention nexus classification ───────────────────────────────────────
