@@ -2431,6 +2431,178 @@ class ProprioceptionSource(BasePushSource):
         return ids
 
 
+class CapabilityAwarenessSource(BasePushSource):
+    """
+    T-self-capability-awareness (#431): surface Igor's own moves to TWM so
+    the reasoning layer reaches for them.
+
+    The four uncertainty strategies (from Akien's personal epistemology —
+    anti-PTSD vaccination, CP6 origin) live in Igor's code but not in his
+    self-model. This source pushes them as visible moves every ~90s,
+    alongside current availability status.
+
+    Strategies:
+      1. Ignore (triage) — always runnable (passive)
+      2. Devise experiment — runnable iff experiment primitive loads;
+         strategy-2 substrate shipped 2026-04-15
+      3. Ask + test — ask half via LLM escalation, test half via experiment
+         primitive; both now live
+      4. Wait for a lever — always runnable (passive via NE/TWM decay)
+
+    Also surfaces recent-capability signals: experiment queue depth, tool
+    count. Low salience (0.45) — these are background body-sense markers,
+    not urgent pushes. Category self.capabilities for downstream filtering.
+
+    CP grounding:
+      CP1 — unavailable strategies say so; no silent assumption
+      CP3 — each marker explains what the move IS (why it's a move)
+      CP6 — cp1_provisional=True on the marker; the LLM reaching for a
+            capability is a candidate, not a commitment
+    """
+
+    name = "capability_awareness"
+    TIMING_TIER = "slow"
+    CHECK_INTERVAL_SEC = 90
+    SALIENCE = 0.45
+    TTL_SEC = 180
+
+    def __init__(self):
+        super().__init__()
+        self._last_run: "datetime | None" = None
+
+    def _strategies_snapshot(self) -> list[dict]:
+        """Build the four-strategies list with current availability."""
+        strategies = [
+            {
+                "id": "strategy_1_ignore",
+                "name": "Ignore / triage below attention",
+                "runnable": True,
+                "how": "passive — let TWM decay drop it",
+            },
+            {
+                "id": "strategy_4_wait",
+                "name": "Wait for a new lever to show itself",
+                "runnable": True,
+                "how": "passive — NE cycles + TWM decay surface new signal",
+            },
+        ]
+        # Strategy 2: experiment primitive
+        try:
+            from .experiment_scheduler import ExperimentScheduler  # noqa: F401
+            from .experiment import Experiment, ProbeKind  # noqa: F401
+
+            strategies.append(
+                {
+                    "id": "strategy_2_experiment",
+                    "name": "Devise an experiment to resolve uncertainty",
+                    "runnable": True,
+                    "how": (
+                        "construct Experiment(hypothesis, probe); enqueue via "
+                        "ExperimentScheduler; tick() runs probe and produces "
+                        "Observation; apply_outcome() updates engrams"
+                    ),
+                }
+            )
+        except Exception as exc:
+            strategies.append(
+                {
+                    "id": "strategy_2_experiment",
+                    "name": "Devise an experiment to resolve uncertainty",
+                    "runnable": False,
+                    "how": f"experiment primitive not loadable: {exc}",
+                }
+            )
+        # Strategy 3: ask + test
+        try:
+            from .experiment_scheduler import ExperimentScheduler  # noqa: F401
+
+            strategies.append(
+                {
+                    "id": "strategy_3_ask_test",
+                    "name": "Ask someone, then test their answer",
+                    "runnable": True,
+                    "how": (
+                        "escalate to LLM for the ask half; wrap the returned "
+                        "claim as a hypothesis and enqueue an experiment to "
+                        "test it before committing"
+                    ),
+                }
+            )
+        except Exception:
+            strategies.append(
+                {
+                    "id": "strategy_3_ask_test",
+                    "name": "Ask someone, then test their answer",
+                    "runnable": False,
+                    "how": "test half requires experiment primitive",
+                }
+            )
+        return strategies
+
+    def _experiment_queue_depth(self, cortex) -> dict[str, int]:
+        """Return current {status: count} for the experiment queue. Empty
+        dict if the table doesn't exist yet (pre-migration) or on error."""
+        try:
+            with cortex._db() as conn:
+                conn.execute(
+                    "SELECT status, COUNT(*) FROM experiment_queue GROUP BY status",
+                    (),
+                )
+                rows = conn.fetchall() or []
+                return {row[0]: int(row[1]) for row in rows}
+        except Exception:
+            return {}
+
+    def _tool_count(self) -> int:
+        try:
+            from ..tools.registry import registry
+
+            return len(registry._tools)
+        except Exception:
+            return 0
+
+    def push(self, cortex) -> list[int]:
+        now = datetime.now()
+        if (
+            self._last_run
+            and (now - self._last_run).total_seconds() < self.CHECK_INTERVAL_SEC
+        ):
+            return []
+        self._last_run = now
+
+        try:
+            strategies = self._strategies_snapshot()
+            queue = self._experiment_queue_depth(cortex)
+            tool_count = self._tool_count()
+
+            runnable_strategies = [s["id"] for s in strategies if s["runnable"]]
+            content = (
+                f"SELF_CAPABILITIES strategies={len(runnable_strategies)}/4 "
+                f"runnable={runnable_strategies} "
+                f"tools={tool_count} "
+                f"experiment_queue={queue}"
+            )
+
+            obs_id = cortex.twm_push(
+                source="capability_awareness",
+                content_csb=content,
+                salience=self.SALIENCE,
+                ttl_seconds=self.TTL_SEC,
+                category="self.capabilities",
+                metadata={
+                    "type": "self_capabilities",
+                    "strategies": strategies,
+                    "tool_count": tool_count,
+                    "experiment_queue": queue,
+                    "cp1_provisional": True,
+                },
+            )
+            return [obs_id] if obs_id else []
+        except Exception as exc:
+            log_error(kind="CAPABILITY_AWARENESS_FAIL", detail=str(exc))
+            return []
+
+
 class SelfTestSource(BasePushSource):
     """
     T-self-test-wire: background daemon that scans blob_index.json for ingested
@@ -2519,6 +2691,7 @@ class SelfTestSource(BasePushSource):
 
 
 proprioception_source = ProprioceptionSource()
+capability_awareness_source = CapabilityAwarenessSource()
 self_test_source = SelfTestSource()
 user_input_source = UserInputSource()
 machines_watcher = MachinesWatcher()
@@ -2616,6 +2789,7 @@ def run_background_sources(cortex) -> int:
         boredom_source,
         interoception_source,
         proprioception_source,
+        capability_awareness_source,
         self_test_source,
         scheduler_source,
         thread_coherence_source,
