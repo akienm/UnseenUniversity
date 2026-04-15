@@ -27,6 +27,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
+from ..paths import paths as _paths
 logger = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -39,10 +40,7 @@ MIN_RESPONSE_LEN = 50
 # Authors whose turns qualify for after-action review
 _REVIEW_AUTHORS = frozenset({"claude-code", "akien"})
 
-_DB_URL = os.getenv(
-    "IGOR_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
+_DB_URL = _paths().home_db_url
 
 _EXTRACT_PROMPT = """\
 You are reviewing a conversation exchange to extract key learnings.
@@ -205,7 +203,6 @@ def run_after_action_review(
     """
     try:
         from ..cognition.forensic_logger import log_cognition_metric
-        from ..paths import paths as _paths
 
         log_dir = _paths().logs
     except Exception as exc:

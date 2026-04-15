@@ -17,12 +17,10 @@ import os
 import sys
 from datetime import datetime
 
+from ..paths import paths as _paths
 sys.path.insert(0, str(__file__).rsplit("/", 3)[0])
 
-DB_URL = os.environ.get(
-    "IGOR_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
+DB_URL = _paths().home_db_url
 
 # Greeting trigger words — same as the GREETING_SPACE tree, minus "akien"
 GREETING_TRIGGER = "hello|hi|hey|welcome|greetings|good morning|good evening|howdy"

@@ -27,15 +27,13 @@ Forensic log: ~/.TheIgors/logs/tree_index.log
 import json
 import logging
 import os
+from ..paths import paths as _paths
 from datetime import datetime, timezone
 from pathlib import Path
 
 _log = logging.getLogger(__name__)
 
-_DB_URL = os.getenv(
-    "IGOR_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
+_DB_URL = _paths().home_db_url
 _MACHINE_ID = os.getenv("IGOR_SWARM_NAME", "akiendelllinux")
 
 _LOG_DIR = Path.home() / ".TheIgors" / "logs"

@@ -22,10 +22,8 @@ import os
 import sys
 from datetime import datetime
 
-DB_URL = os.environ.get(
-    "IGOR_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
+from ..paths import paths as _paths
+DB_URL = _paths().home_db_url
 
 # Narrow trigger surface — explicit commit-to-look phrases only.
 # Wider triggers risk false positives on incidental "let me know" or similar.

@@ -73,16 +73,18 @@ BARE_RESPONSE_THRESHOLD = 30
 
 def _find_trace_dir() -> Path:
     """Find the directory containing turn_trace logs."""
+    from ..paths import paths as _paths
+
     # Check local logs first (current instance)
-    local = Path(os.path.expanduser("~/.TheIgors/local/logs"))
+    local = _paths().logs
     if local.exists() and list(local.glob("turn_trace.*.log")):
         return local
     # Fall back to instance logs
-    inst = Path(os.path.expanduser("~/.TheIgors/Igor-wild-0001/logs"))
+    inst = _paths().instance / "logs"
     if inst.exists():
         return inst
     # Fall back to top-level logs
-    top = Path(os.path.expanduser("~/.TheIgors/logs"))
+    top = _paths().runtime / "logs"
     return top
 
 

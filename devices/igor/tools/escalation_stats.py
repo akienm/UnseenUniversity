@@ -24,14 +24,12 @@ from pathlib import Path
 
 from .registry import Tool, registry
 
+from ..paths import paths as _paths
 log = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-_DB_URL = os.getenv(
-    "IGOR_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
+_DB_URL = _paths().home_db_url
 
 
 # Cloud tiers — anything above local Ollama (tier.2)
@@ -369,7 +367,6 @@ def get_escalation_stats(**_) -> str:
     Returns a text summary suitable for posting to channel.
     """
     try:
-        from ..paths import paths as _paths
 
         logs_dir = _paths().logs
 

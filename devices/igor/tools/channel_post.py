@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from ..paths import paths
 
 
+from ..paths import paths as _paths
 def post_to_channel(message: str, author: str = "igor") -> None:
     """Post a message to the Igor channel.
 
@@ -21,10 +22,7 @@ def post_to_channel(message: str, author: str = "igor") -> None:
     (fallback). Both writes are best-effort — failures are silently swallowed so the
     caller is never interrupted by a channel write error.
     """
-    db_url = os.getenv(
-        "IGOR_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-    )
+    db_url = _paths().home_db_url
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     # Postgres channel

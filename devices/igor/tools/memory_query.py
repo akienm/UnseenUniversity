@@ -13,6 +13,7 @@ import re
 
 from .registry import Tool, registry
 
+from ..paths import paths as _paths
 logger = logging.getLogger(__name__)
 
 
@@ -33,10 +34,7 @@ def list_facia_memories(**_) -> str:
     try:
         import psycopg2
 
-        db_url = os.environ.get(
-            "IGOR_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-        )
+        db_url = _paths().home_db_url
         conn = psycopg2.connect(db_url)
         cur = conn.cursor()
         cur.execute("""

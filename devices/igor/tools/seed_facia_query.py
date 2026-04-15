@@ -11,6 +11,7 @@ import os
 import sys
 from datetime import datetime
 
+from ..paths import paths as _paths
 sys.path.insert(0, str(__file__).rsplit("/", 2)[0])
 
 
@@ -18,10 +19,7 @@ def seed_facia_query():
     """Deposit INTERPRETIVE memory and PROC_QUERY_FACIA habit for facia discovery."""
     import psycopg2
 
-    db_url = os.environ.get(
-        "IGOR_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-    )
+    db_url = _paths().home_db_url
 
     try:
         conn = psycopg2.connect(db_url)

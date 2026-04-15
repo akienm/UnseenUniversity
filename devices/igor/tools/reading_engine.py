@@ -39,12 +39,14 @@ def _get_db() -> DatabaseProxy:
 
 
 def _get_cortex() -> Cortex:
+    from ..paths import paths as _paths
+
     global _cortex
     if _cortex is None:
         db_path = Path(
             os.environ.get(
                 "IGOR_DB_PATH",
-                Path.home() / ".TheIgors" / "Igor-wild-0001" / "wild-0001.db",
+                _paths().instance / "wild-0001.db",
             )
         )
         _cortex = Cortex(db_path)

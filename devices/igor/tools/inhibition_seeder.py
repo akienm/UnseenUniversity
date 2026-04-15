@@ -26,12 +26,10 @@ import os
 
 from .registry import Tool, registry
 
+from ..paths import paths as _paths
 logger = logging.getLogger(__name__)
 
-DB_URL = os.environ.get(
-    "IGOR_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
+DB_URL = _paths().home_db_url
 
 # ── Seed spec ─────────────────────────────────────────────────────────────────
 # Habits with code_ref but missing twm_ttl_seconds — refractory period needed

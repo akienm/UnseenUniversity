@@ -302,16 +302,13 @@ async def _run_browser_agent(
 
 
 # ── Igor's own Chrome profile (authenticated as Igor) ────────────────────────
-_IGOR_PROFILE = os.getenv(
-    "IGOR_CHROME_PROFILE_PATH",
-    str(
-        Path.home()
-        / ".TheIgors"
-        / "Igor-wild-0001"
-        / "accounts"
-        / "chrome_igor_profile"
-    ),
-)
+def _default_igor_profile() -> str:
+    from ..paths import paths as _paths
+
+    return str(_paths().instance / "accounts" / "chrome_igor_profile")
+
+
+_IGOR_PROFILE = os.getenv("IGOR_CHROME_PROFILE_PATH") or _default_igor_profile()
 
 # ── browse_as_employer — authenticated browsing via employer's Chrome profile ──
 

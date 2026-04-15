@@ -34,6 +34,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
+from ..paths import paths as _paths
 logger = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -444,10 +445,7 @@ def run_output_training_pass() -> str:
     """Tool entry point — no args, called by SchedulerSource."""
     from ..paths import paths as _igor_paths
 
-    db_url = os.getenv(
-        "IGOR_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-    )
+    db_url = _paths().home_db_url
     log_dir = _igor_paths().logs
     trainer = OutputTrainer(db_url=db_url, log_dir=log_dir)
     try:
