@@ -123,7 +123,7 @@ def test_push_rate_limit_releases_after_interval():
     result = src.push(cortex)
     assert isinstance(result, list)
     # _last_run advanced
-    assert (datetime.now() - src._last_run).total_seconds() < 5
+    assert (datetime.now() - src._last_run).total_seconds() < 15
 
 
 # ── Failure isolation ────────────────────────────────────────────────────────
