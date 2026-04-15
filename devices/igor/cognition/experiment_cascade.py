@@ -157,6 +157,13 @@ class CascadeSituation:
     """What kind of answer we want: 'memory', 'facia', 'tool_output', 'any'.
     Lets levels decide if their probe shape is a good fit."""
 
+    stakes: float = 0.0
+    """0.0-1.0 how load-bearing resolving this situation is. Under high
+    stakes (T-engineered-failure-experiments), the walker switches policy:
+    instead of preferring high-confidence probes (exploit), it prefers
+    LOW-confidence probes with maximum information gain (explore). High
+    stakes → learn the most per attempt, not succeed this attempt."""
+
 
 # ── Level protocol ───────────────────────────────────────────────────────────
 
@@ -456,11 +463,27 @@ class ExperimentCascade:
         self._levels.append(level)
 
     def _filter_by_predictor(self, situation: CascadeSituation) -> list[CascadeLevel]:
-        """Return the subset of registered levels whose predictor says
-        they might match. If EVERY level would be skipped, the floor rule
-        kicks in and we return ALL levels instead (CP1: never silently
-        drop the whole cascade because predictors are overconfident)."""
+        """Return the active level list for this cascade walk.
+
+        Normal stakes: skip levels whose predictor confidence is below
+        SKIP_THRESHOLD. If everything would be skipped, the floor rule
+        returns all levels (CP1: no silent drops).
+
+        High stakes (T-engineered-failure-experiments): do NOT skip.
+        Return all levels, sorted by information gain descending — probes
+        whose outcome we can least predict go first, because they
+        disambiguate most between competing hypotheses. Biology:
+        dopaminergic novelty bonus is dialed up under stress, exploration
+        rate increases.
+        """
+        from .engineered_failure import is_high_stakes, sort_by_information_gain
         from .experiment_predictor import SKIP_THRESHOLD
+
+        if is_high_stakes(situation):
+            # Under high stakes: explore, don't exploit. Reorder by info
+            # gain; don't skip any level — we want maximum learning per
+            # attempt, not fastest match.
+            return sort_by_information_gain(list(self._levels), situation)
 
         keep: list[CascadeLevel] = []
         for level in self._levels:
