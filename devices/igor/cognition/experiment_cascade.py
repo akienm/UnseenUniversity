@@ -134,6 +134,10 @@ class CascadeLevel(Protocol):
     appropriate to its level of abstraction, runs a probe against the
     substrate, observes the result, and returns a CascadeResult that the
     walker uses to decide whether to stop or continue.
+
+    T-experiment-predictor-primitive adds `predict()` and `train()` —
+    per-level confidence tracking so the walker can skip levels whose
+    history says they won't match.
     """
 
     name: str
@@ -142,11 +146,42 @@ class CascadeLevel(Protocol):
         self, cortex: "Cortex", situation: CascadeSituation
     ) -> CascadeResult: ...
 
+    def predict(self, situation: CascadeSituation) -> float: ...
+
+    def train(self, situation: CascadeSituation, matched: bool) -> None: ...
+
+
+# ── Base class with embedded predictor ──────────────────────────────────────
+
+
+class BaseCascadeLevel:
+    """Base class that every concrete level inherits from. Provides an
+    embedded SignaturePredictor and default predict/train delegation.
+
+    Subclasses only need to define `name` and override `try_probe`.
+    """
+
+    name: str = "base"
+
+    def __init__(self) -> None:
+        from .experiment_predictor import SignaturePredictor
+
+        self.predictor = SignaturePredictor()
+
+    def predict(self, situation: CascadeSituation) -> float:
+        return self.predictor.predict(situation)
+
+    def train(self, situation: CascadeSituation, matched: bool) -> None:
+        self.predictor.train(situation, matched)
+
+    def try_probe(self, cortex: "Cortex", situation: CascadeSituation) -> CascadeResult:
+        raise NotImplementedError("subclasses must override try_probe")
+
 
 # ── Concrete levels ─────────────────────────────────────────────────────────
 
 
-class Level0ExactRecall:
+class Level0ExactRecall(BaseCascadeLevel):
     """Level 0: cheapest — direct retrieval from cortex.
 
     Hypothesis: the answer is directly in memory under the query as stated.
@@ -219,7 +254,7 @@ class Level0ExactRecall:
         )
 
 
-class Level1WidenOnMiss:
+class Level1WidenOnMiss(BaseCascadeLevel):
     """Level 1: widen-on-miss fallback.
 
     Hypothesis: the answer is in memory but under different phrasing.
@@ -302,11 +337,12 @@ class Level1WidenOnMiss:
         )
 
 
-class _StubLevel:
+class _StubLevel(BaseCascadeLevel):
     """Placeholder for levels whose concrete implementation is a separate
     sub-ticket. Always returns EXHAUSTED so the walker advances."""
 
     def __init__(self, name: str, reason: str) -> None:
+        super().__init__()
         self.name = name
         self._reason = reason
 
@@ -318,7 +354,7 @@ class _StubLevel:
         )
 
 
-class Level5LLMEscalationStub:
+class Level5LLMEscalationStub(BaseCascadeLevel):
     """Level 5: would escalate to LLM reasoning workflows.
 
     MVP stub — returns ESCALATE with metadata describing what the
@@ -377,6 +413,46 @@ class ExperimentCascade:
         walker order."""
         self._levels.append(level)
 
+    def _filter_by_predictor(self, situation: CascadeSituation) -> list[CascadeLevel]:
+        """Return the subset of registered levels whose predictor says
+        they might match. If EVERY level would be skipped, the floor rule
+        kicks in and we return ALL levels instead (CP1: never silently
+        drop the whole cascade because predictors are overconfident)."""
+        from .experiment_predictor import SKIP_THRESHOLD
+
+        keep: list[CascadeLevel] = []
+        for level in self._levels:
+            try:
+                confidence = level.predict(situation)
+            except Exception as exc:
+                logger.debug(
+                    "predictor for %s raised: %s — defaulting to keep",
+                    level.name,
+                    exc,
+                )
+                confidence = 1.0
+            if confidence >= SKIP_THRESHOLD:
+                keep.append(level)
+        if not keep:
+            # Floor rule: everything would be skipped — try them all
+            return list(self._levels)
+        return keep
+
+    def _train_level(
+        self,
+        level: CascadeLevel,
+        situation: CascadeSituation,
+        result: CascadeResult,
+    ) -> None:
+        """Feed an outcome back into the level's predictor.
+        matched = any non-EXHAUSTED result (MATCHED / LEVERAGED / ESCALATE).
+        """
+        matched = result.status != CascadeStatus.EXHAUSTED
+        try:
+            level.train(situation, matched)
+        except Exception as exc:
+            logger.debug("training for %s raised: %s — skipped", level.name, exc)
+
     def attempt(self, situation: CascadeSituation) -> CascadeResult:
         """Walk the cascade. Returns the first MATCHED / ESCALATE result,
         or EXHAUSTED if budget runs out before any level lands.
@@ -391,7 +467,8 @@ class ExperimentCascade:
         budget_remaining = self.level_budget
         current_situation = situation
         while budget_remaining > 0:
-            for level in self._levels:
+            active_levels = self._filter_by_predictor(current_situation)
+            for level in active_levels:
                 budget_remaining -= 1
                 if budget_remaining < 0:
                     break
@@ -409,6 +486,8 @@ class ExperimentCascade:
                         level_name=level.name,
                         reason=f"level raised {type(exc).__name__}",
                     )
+
+                self._train_level(level, current_situation, result)
 
                 if result.status == CascadeStatus.MATCHED:
                     self._push_outcome_marker(situation, result)
