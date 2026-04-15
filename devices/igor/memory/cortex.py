@@ -2192,6 +2192,22 @@ class Cortex(IgorBase):
         _rc_arousal = getattr(req.emotional_context, "arousal", None)
         self._flag_for_reconsolidation(result, milieu_arousal=_rc_arousal)
         _emit_search_trace(query, result)
+        # T-retrieval-widen-on-miss: when the normal pipeline returns nothing,
+        # try loosened strategies (token-LIKE, word-graph neighbor expansion,
+        # pg_trgm similarity) before dead-ending. Results carry
+        # widened_from_empty=True so callers can distinguish them from exact
+        # matches. Never crashes — widen degrades to [] on any failure.
+        if not result:
+            try:
+                from .search_widen import widen_search
+
+                widened, _strategy = widen_search(
+                    self, query, word_graph=req.word_graph, limit=req.limit
+                )
+                if widened:
+                    result = widened
+            except Exception as _widen_e:
+                logging.getLogger(__name__).debug("search_widen skipped: %s", _widen_e)
         return result
 
     def _touch_last_accessed(self, memories: list) -> None:
