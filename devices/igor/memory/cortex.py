@@ -517,6 +517,27 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "CREATE INDEX IF NOT EXISTS idx_instance_log_instance "
         "ON instance_log (instance_id, timestamp DESC)",
     ),
+    # T-experiment-primitive-scheduler (#456 sub-slice): persistent queue for
+    # Experiment objects. Status mirrors ExperimentStatus enum; experiment_json
+    # is the full to_dict() serialization. We use a dedicated table so live
+    # mid-flight experiments don't churn the main memories table — outcome
+    # feedback (later sub-slice) deposits a memory after the fact.
+    (
+        "m048_experiment_queue",
+        "CREATE TABLE IF NOT EXISTS experiment_queue ("
+        " experiment_id   TEXT PRIMARY KEY,"
+        " status          TEXT NOT NULL,"
+        " enqueued_at     TEXT NOT NULL,"
+        " started_at      TEXT,"
+        " completed_at    TEXT,"
+        " experiment_json TEXT NOT NULL"
+        ")",
+    ),
+    (
+        "m049_experiment_queue_status_idx",
+        "CREATE INDEX IF NOT EXISTS idx_experiment_queue_status "
+        "ON experiment_queue (status, enqueued_at)",
+    ),
 ]
 
 
