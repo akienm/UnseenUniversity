@@ -117,7 +117,21 @@ def _store_metadata(memory_id: str, metadata: dict) -> bool:
 
 
 def _store_memory(memory_id: str, narrative: str, metadata: dict) -> bool:
-    """Insert a new goal facia memory row. Returns True on success."""
+    """Insert a new goal facia memory row. Returns True on success.
+
+    NOTE: this bypasses cortex.store() which violates the single-chokepoint
+    principle (CLAUDE.md: all DB access through cortex). Follow-up:
+    T-goal-graph-use-cortex-store will convert this to cortex.store() with
+    a proper Memory object. In the meantime, we manually apply the
+    test-data tag here so IGOR_TEST_MODE=1 runs still get auto-cleanup.
+    """
+    from ..memory.test_data_lifecycle import (
+        is_test_mode,
+        stamp_metadata_for_test_mode,
+    )
+
+    if is_test_mode():
+        metadata = stamp_metadata_for_test_mode(metadata)
     cortex = _get_cortex()
     try:
         with cortex._conn() as conn:
