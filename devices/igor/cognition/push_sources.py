@@ -26,7 +26,7 @@ import os
 import re
 import time
 from collections import Counter
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -1807,7 +1807,131 @@ class BoredomSource(BasePushSource):
                 "action_pointer": "check_worker_queue,foreman_scan",
             },
         )
-        return [obs_id]
+
+        # T-boredom-goal-coupling: pull active goal facia as attention
+        # attractors. Under CP1 these are SURFACED as candidates, not
+        # committed to. Igor's substrate will compete them against the
+        # worker queue check and anything else salient. The goal-pull
+        # closes the motivational circuit Igor himself diagnosed as
+        # missing — "I respond well. I don't yet act spontaneously from
+        # internal state."
+        goal_obs_ids = self._surface_active_goals(cortex)
+        return [obs_id] + goal_obs_ids
+
+    def _surface_active_goals(self, cortex) -> list:
+        """Query active goal facia and push the top-1 as a TWM attractor.
+
+        Ranked by cumulative_investment_weight * recency_score. Values
+        filter is implicit: only facia with status='active' and
+        relationship_type in {goal_aspirational, goal_strategic,
+        goal_tactical} are considered — deliberate surfacing, not
+        flooding.
+
+        Returns list of obs_ids pushed (empty list on failure — best
+        effort, never crashes the boredom detector).
+        """
+        try:
+            from ..tools.goal_graph import _fetch_goal_facia
+        except Exception as exc:
+            log_error(
+                kind="BORED_GOAL_IMPORT_FAIL",
+                detail=f"wild_igor/igor/cognition/push_sources.py BoredomSource: {exc}",
+            )
+            return []
+
+        try:
+            goals = _fetch_goal_facia()
+        except Exception as exc:
+            log_error(
+                kind="BORED_GOAL_FETCH_FAIL",
+                detail=f"wild_igor/igor/cognition/push_sources.py BoredomSource: {exc}",
+            )
+            return []
+
+        if not goals:
+            return []
+
+        active = [g for g in goals if g["metadata"].get("status") == "active"]
+        if not active:
+            return []
+
+        # Score each goal: weight * recency_decay
+        # recency_decay: 1.0 if touched today, halves every 7 days
+        now_iso = datetime.now(timezone.utc).isoformat()
+        scored: list[tuple[float, dict]] = []
+        for g in active:
+            meta = g["metadata"]
+            try:
+                weight = float(meta.get("cumulative_investment_weight", 0.0))
+            except (TypeError, ValueError):
+                weight = 0.0
+
+            last_iso = meta.get("last_activity_ts") or ""
+            recency = 1.0
+            if last_iso:
+                try:
+                    last_dt = datetime.fromisoformat(last_iso)
+                    age_days = (
+                        datetime.now(timezone.utc) - last_dt
+                    ).total_seconds() / 86400.0
+                    recency = max(0.1, 0.5 ** (age_days / 7.0))
+                except Exception:
+                    recency = 0.5
+
+            # Tactical goals have a progress-gap boost: incomplete goals
+            # pull harder than near-complete ones (more work remaining
+            # → more attention-worthy).
+            try:
+                progress = float(meta.get("progress", 0.0))
+            except (TypeError, ValueError):
+                progress = 0.0
+            gap = 1.0 - progress  # 1.0 = fresh, 0.0 = done
+            score = weight * recency * (0.5 + 0.5 * gap)
+            scored.append((score, g))
+
+        scored.sort(key=lambda x: x[0], reverse=True)
+        top = scored[:1]  # surface ONE — not flooding; substrate can re-query
+
+        pushed: list = []
+        for score, g in top:
+            meta = g["metadata"]
+            display = meta.get("display_name", g["id"])
+            desired = meta.get("desired_future_state", "")[:200]
+            rtype = meta.get("relationship_type", "goal_unknown")
+            try:
+                obs = cortex.twm_push(
+                    source=self.name,
+                    content_csb=(
+                        f"ACTIVE_GOAL_SURFACED|facia_id={g['id']}"
+                        f"|type={rtype}|name={display}"
+                        f"|score={score:.3f}|progress={meta.get('progress', 0.0):.2f}"
+                    ),
+                    salience=0.65,
+                    urgency=0.5,
+                    ttl_seconds=1800,
+                    metadata={
+                        "type": "active_goal_surfaced",
+                        "via": "boredom",
+                        "facia_id": g["id"],
+                        "relationship_type": rtype,
+                        "display_name": display,
+                        "desired_future_state": desired,
+                        "score": score,
+                        # CP1: this is a surfaced CANDIDATE, not a commitment.
+                        # Substrate will compete it against other attractors.
+                        "cp1_provisional": True,
+                    },
+                )
+                pushed.append(obs)
+            except Exception as exc:
+                log_error(
+                    kind="BORED_GOAL_PUSH_FAIL",
+                    detail=(
+                        f"wild_igor/igor/cognition/push_sources.py "
+                        f"BoredomSource goal surface {g['id']}: {exc}"
+                    ),
+                )
+        return pushed
 
 
 # ── Module singletons + convenience runner ────────────────────────────────────
