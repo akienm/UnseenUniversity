@@ -1010,42 +1010,32 @@ def annotate_learning(**kwargs) -> str:
         narrative += f" {notes}"
 
     mem_id = str(_uuid.uuid4())[:8]
-    ts = _time.strftime("%Y-%m-%dT%H:%M:%S")
-    meta = json.dumps(
-        {
-            "worked": worked,
-            "outcome": outcome,
-            "notes": notes,
-            "source": "user_annotated",
-        }
-    )
+    metadata = {
+        "worked": worked,
+        "outcome": outcome,
+        "notes": notes,
+        "source": "user_annotated",
+    }
 
     try:
-        with _igor_db_proxy()() as conn:
-            conn.execute(
-                """INSERT INTO memories
-                   (id, narrative, memory_type, parent_id, children_ids, link_ids,
-                    valence, activation_count, friction_history, timestamp, metadata,
-                    portable, source, confidence, context_of_encoding)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (
-                    mem_id,
-                    narrative,
-                    "EXPERIENTIAL",
-                    "CP5",  # inner state — "I have an inner life"
-                    "[]",
-                    "[]",
-                    0.6 if worked else -0.3,  # positive valence if it worked
-                    1,
-                    "[]",
-                    ts,
-                    meta,
-                    1,  # portable=True
-                    "user_annotated",
-                    0.95,  # high confidence — first-person experience
-                    "akien_annotation",
-                ),
-            )
+        from ..memory.cortex import Cortex
+        from ..memory.models import Memory, MemoryType
+        from ..paths import paths as _paths
+
+        cortex = Cortex(db_path=str(_paths().instance / "wild-0001.db"))
+        mem = Memory(
+            id=mem_id,
+            narrative=narrative,
+            memory_type=MemoryType.EXPERIENTIAL,
+            parent_id="CP5",  # inner state — "I have an inner life"
+            valence=0.6 if worked else -0.3,
+            activation_count=1,
+            metadata=metadata,
+            source="user_annotated",
+            confidence=0.95,  # high confidence — first-person experience
+            context_of_encoding="akien_annotation",
+        )
+        cortex.store(mem)
         return f"Noted. Deposited as personal experience [{mem_id}]: {narrative[:120]}"
     except Exception as e:
         return f"Error depositing experience: {e}"

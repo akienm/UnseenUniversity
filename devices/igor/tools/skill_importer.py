@@ -244,33 +244,20 @@ def import_skill(
     }
 
     try:
-        import psycopg2
+        from ..memory.cortex import Cortex
+        from ..memory.models import Memory, MemoryType
+        from ..paths import paths as _paths
 
-        db_url = os.environ.get("IGOR_HOME_DB_URL", "")
-        if not db_url:
-            return "import_skill: IGOR_HOME_DB_URL not set"
-
-        conn = psycopg2.connect(db_url)
-        with conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    INSERT INTO memories (id, memory_type, narrative, metadata, payload, timestamp)
-                    VALUES (%s, 'PROCEDURAL', %s, %s::jsonb, %s::jsonb, NOW())
-                    ON CONFLICT (id) DO UPDATE
-                      SET narrative = EXCLUDED.narrative,
-                          metadata  = EXCLUDED.metadata,
-                          payload   = EXCLUDED.payload,
-                          timestamp = NOW()
-                    """,
-                    (
-                        node_id,
-                        narrative,
-                        json.dumps(metadata),
-                        json.dumps(payload),
-                    ),
-                )
-        conn.close()
+        cortex = Cortex(db_path=str(_paths().instance / "wild-0001.db"))
+        mem = Memory(
+            id=node_id,
+            narrative=narrative,
+            memory_type=MemoryType.PROCEDURAL,
+            metadata=metadata,
+            payload=payload,
+            source="skill_importer",
+        )
+        cortex.store(mem)
 
         logger.info(
             "import_skill: seeded %s — %d steps, %d bash blocks, %d skill refs",

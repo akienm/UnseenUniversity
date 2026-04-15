@@ -22,6 +22,7 @@ from collections import Counter
 from datetime import datetime, timezone
 
 from ..paths import paths as _paths
+
 log = logging.getLogger(__name__)
 
 _DB_URL = _paths().home_db_url
@@ -98,7 +99,16 @@ def _chunk_narrative(gram: tuple[str, ...], count: int) -> str:
 def _upsert_chunk(
     db_url: str, chunk_id: str, narrative: str, gram: tuple[str, ...], count: int
 ) -> None:
-    import psycopg2
+    """Deposit a PROCEDURAL chunk memory via cortex.store (single chokepoint).
+
+    The db_url argument is kept for API compatibility with older callers
+    but is no longer used — cortex.store() routes through db_proxy, which
+    already knows the DB URL. Converting to cortex.store gives this
+    function scrub, credential filtering, test_data stamping, and
+    D256 id handling for free.
+    """
+    from ..memory.cortex import Cortex
+    from ..memory.models import Memory, MemoryType
 
     now = datetime.now(timezone.utc).isoformat()
     metadata = {
@@ -112,35 +122,22 @@ def _upsert_chunk(
             f"{' → '.join(gram)}. D277 habit chunking."
         ),
     }
-    conn = psycopg2.connect(db_url)
-    cur = conn.cursor()
-    cur.execute(
-        """
-        INSERT INTO memories
-            (id, narrative, memory_type, source, confidence,
-             context_of_encoding, timestamp, updated_at, metadata, portable, scope)
-        VALUES (%s, %s, 'PROCEDURAL', 'habit_chunker', 0.7, %s, %s, %s, %s, 1, 'class')
-        ON CONFLICT (id) DO UPDATE SET
-            narrative  = EXCLUDED.narrative,
-            metadata   = jsonb_set(
-                memories.metadata,
-                '{observed_count}',
-                to_jsonb(EXCLUDED.metadata->>'observed_count')
-            ),
-            updated_at = EXCLUDED.updated_at
-        """,
-        (
-            chunk_id,
-            narrative,
-            f"habit_chunker scan {now[:10]}",
-            now,
-            now,
-            json.dumps(metadata),
-        ),
+
+    # Cortex is a singleton-ish — construct once per call. This path runs
+    # on a slow cadence (chunking inspector habit) so the construct cost
+    # is amortized.
+    cortex = Cortex(db_path=str(_paths().instance / "wild-0001.db"))
+
+    mem = Memory(
+        id=chunk_id,
+        narrative=narrative,
+        memory_type=MemoryType.PROCEDURAL,
+        metadata=metadata,
+        source="habit_chunker",
+        confidence=0.7,
+        context_of_encoding=f"habit_chunker scan {now[:10]}",
     )
-    conn.commit()
-    cur.close()
-    conn.close()
+    cortex.store(mem)
 
 
 # ── Main entry ────────────────────────────────────────────────────────────────
