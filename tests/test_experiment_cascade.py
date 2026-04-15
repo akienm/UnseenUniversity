@@ -251,9 +251,11 @@ def test_walker_budget_exhaustion():
 
 def test_walker_handles_level_exception_gracefully():
     """A level that raises shouldn't crash the walker; treated as exhausted."""
+    from wild_igor.igor.cognition.experiment_cascade import BaseCascadeLevel
+
     cortex = _make_mock_cortex()
 
-    class BrokenLevel:
+    class BrokenLevel(BaseCascadeLevel):
         name = "broken"
 
         def try_probe(self, cortex, situation):
