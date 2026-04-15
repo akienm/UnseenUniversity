@@ -395,6 +395,193 @@ class _StubLevel(BaseCascadeLevel):
         )
 
 
+MIN_OVERLAP_TOKENS: int = 2
+"""T-cascade-level-4-past-experiment: minimum query-token overlap with
+a past experiment's hypothesis before we count it as a match."""
+
+MIN_TOKEN_LEN_LEVEL4: int = 3
+"""Tokens below this length are noise — skipped when building the
+overlap signature."""
+
+
+class Level4PastExperimentLookup(BaseCascadeLevel):
+    """Level 4: reuse past experiment outcomes.
+
+    Hypothesis: 'I already ran an experiment shaped like this — reuse
+    the outcome instead of probing again.' This is the cheapest form of
+    using prior learning.
+
+    Probe: query experiment_queue for OBSERVED/UPDATED rows with >=
+    MIN_OVERLAP_TOKENS of overlap between the past Hypothesis.statement
+    tokens and the current situation.query tokens. Only match outcomes
+    count — MISMATCH/INCONCLUSIVE are negative evidence for a DIFFERENT
+    problem shape, not reusable as answers.
+
+    Match: the most-recent past experiment whose signature overlaps
+    sufficiently. Return its observation.data as the result.
+    Exhaustion: no sufficiently-overlapping past match.
+
+    CP grounding:
+      CP1 — past experiments are priors, not certainties; MATCH here
+            goes back into the cascade walker's outcome marker as
+            provisional (cp1_provisional via walker's push).
+      CP2 — no new learning if match; learning signal comes from the
+            next level if this one is skipped.
+      CP3 — the reason string includes the matched experiment_id so
+            the lookup is auditable.
+    """
+
+    name = "level_4_past_experiment_lookup"
+
+    def try_probe(self, cortex: "Cortex", situation: CascadeSituation) -> CascadeResult:
+        hypothesis = Hypothesis(
+            statement=(
+                f"a past experiment shaped like {situation.query!r} "
+                "already has an outcome worth reusing"
+            ),
+            source="cascade_level_4",
+            confidence=0.3,
+        )
+        probe = Probe(
+            kind=ProbeKind.DB_QUERY,
+            target="experiment_queue",
+            payload={"query": situation.query},
+            expected_shape="MATCH/PARTIAL outcome with overlapping hypothesis tokens",
+        )
+        experiment = Experiment(hypothesis=hypothesis, probe=probe)
+        experiment.advance(ExperimentStatus.RUNNING)
+
+        query_tokens = _level4_tokens(situation.query)
+        if not query_tokens:
+            obs = Observation(
+                outcome=Outcome.INCONCLUSIVE,
+                data={"reason": "query has no content tokens"},
+                notes="level 4 skipped — empty signature",
+            )
+            experiment.record_observation(obs)
+            return CascadeResult(
+                status=CascadeStatus.EXHAUSTED,
+                level_name=self.name,
+                reason="query has no content tokens for lookup",
+                experiment=experiment,
+            )
+
+        try:
+            candidates = _fetch_past_experiments(cortex)
+        except Exception as exc:
+            logger.debug("level_4 fetch failed: %s", exc)
+            obs = Observation(
+                outcome=Outcome.INCONCLUSIVE,
+                data={"error": type(exc).__name__},
+                notes="experiment_queue fetch raised",
+            )
+            experiment.record_observation(obs)
+            return CascadeResult(
+                status=CascadeStatus.EXHAUSTED,
+                level_name=self.name,
+                reason=f"experiment_queue fetch raised {type(exc).__name__}",
+                experiment=experiment,
+            )
+
+        best = _best_overlap(candidates, query_tokens)
+        if best is None:
+            obs = Observation(
+                outcome=Outcome.INCONCLUSIVE,
+                data={"candidates_scanned": len(candidates)},
+                notes="no past experiment with sufficient overlap",
+            )
+            experiment.record_observation(obs)
+            return CascadeResult(
+                status=CascadeStatus.EXHAUSTED,
+                level_name=self.name,
+                reason=(
+                    f"level 4 scanned {len(candidates)} past experiments; "
+                    f"none had >= {MIN_OVERLAP_TOKENS} overlapping tokens "
+                    "with a MATCH outcome"
+                ),
+                experiment=experiment,
+            )
+
+        past_exp, overlap_count = best
+        obs = Observation(
+            outcome=Outcome.MATCH,
+            data={
+                "past_experiment_id": past_exp.experiment_id,
+                "overlap_tokens": overlap_count,
+                "past_observation_data": (
+                    past_exp.observation.data if past_exp.observation else {}
+                ),
+            },
+            notes=(
+                f"reused past experiment {past_exp.experiment_id} "
+                f"(overlap={overlap_count})"
+            ),
+        )
+        experiment.record_observation(obs)
+        return CascadeResult(
+            status=CascadeStatus.MATCHED,
+            level_name=self.name,
+            data=past_exp.observation.data if past_exp.observation else {},
+            reason=(
+                f"level 4 reused past experiment {past_exp.experiment_id} "
+                f"(hypothesis overlap={overlap_count})"
+            ),
+            experiment=experiment,
+        )
+
+
+# ── Level 4 helpers ─────────────────────────────────────────────────────────
+
+
+def _level4_tokens(text: str) -> set[str]:
+    """Content-token set for level-4 overlap scoring."""
+    if not text:
+        return set()
+    return {t.lower() for t in text.split() if len(t) >= MIN_TOKEN_LEN_LEVEL4}
+
+
+def _fetch_past_experiments(cortex: "Cortex") -> list[Experiment]:
+    """Pull OBSERVED/UPDATED experiments from experiment_queue. Most-
+    recent first so overlap scan can stop as soon as it finds a match."""
+    with cortex._db() as conn:
+        conn.execute(
+            "SELECT experiment_json FROM experiment_queue "
+            "WHERE status IN (%s, %s) "
+            "ORDER BY completed_at DESC NULLS LAST, enqueued_at DESC "
+            "LIMIT 100",
+            (ExperimentStatus.OBSERVED.value, ExperimentStatus.UPDATED.value),
+        )
+        rows = conn.fetchall() or []
+    out: list[Experiment] = []
+    for row in rows:
+        try:
+            out.append(Experiment.from_json(row[0]))
+        except Exception as exc:
+            logger.debug("level_4 experiment parse failed: %s", exc)
+    return out
+
+
+def _best_overlap(
+    candidates: list[Experiment], query_tokens: set[str]
+) -> Optional[tuple[Experiment, int]]:
+    """Return (experiment, overlap_count) for the best-overlapping past
+    experiment whose outcome is MATCH or PARTIAL. Most-recent wins on
+    ties (candidates are pre-sorted newest-first)."""
+    best: Optional[tuple[Experiment, int]] = None
+    for exp in candidates:
+        if exp.observation is None:
+            continue
+        if exp.observation.outcome not in (Outcome.MATCH, Outcome.PARTIAL):
+            continue
+        hyp_tokens = _level4_tokens(exp.hypothesis.statement)
+        overlap = len(query_tokens & hyp_tokens)
+        if overlap < MIN_OVERLAP_TOKENS:
+            continue
+        if best is None or overlap > best[1]:
+            best = (exp, overlap)
+    return best
+
+
 class Level5LLMEscalationStub(BaseCascadeLevel):
     """Level 5: would escalate to LLM reasoning workflows.
 
@@ -713,10 +900,10 @@ class ExperimentCascade:
 def build_default_cascade(cortex: "Cortex") -> ExperimentCascade:
     """Construct the default cascade with levels 0-5 wired in order.
 
-    Levels 2-4 are stubs for now (separate sub-tickets will wire them
-    to interpretive_edges traversal, tool combination, and
-    experiment_queue lookup respectively). Level 5 is an escalation
-    stub — no LLM call — pending T-reasoning-workflow-primitive.
+    Levels 2-3 are stubs (interpretive_edge traversal + tool combination
+    are separate sub-tickets). Level 4 is concrete as of
+    T-cascade-level-4-past-experiment. Level 5 is an escalation stub —
+    no LLM call — pending T-reasoning-workflow-primitive.
     """
     cascade = ExperimentCascade(cortex)
     cascade.register(Level0ExactRecall())
@@ -733,11 +920,6 @@ def build_default_cascade(cortex: "Cortex") -> ExperimentCascade:
             reason="level 3 stub — cheap tool chain not yet wired",
         )
     )
-    cascade.register(
-        _StubLevel(
-            name="level_4_past_experiment_lookup",
-            reason="level 4 stub — experiment_queue hypothesis-shape lookup not yet wired",
-        )
-    )
+    cascade.register(Level4PastExperimentLookup())
     cascade.register(Level5LLMEscalationStub())
     return cascade
