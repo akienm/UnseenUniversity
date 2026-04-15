@@ -81,6 +81,36 @@ class CascadeStatus(str, Enum):
 
 
 @dataclass
+class Lever:
+    """A new option that surfaced mid-probe — a previously-invisible anchor
+    Igor should restart from. From Akien 2026-04-15: 'as soon as I spot the
+    next lever, the experiment ends and the next one starts being designed.'
+
+    Levers carry enough context for the walker to build a new
+    CascadeSituation: the anchor identity, what kind of anchor it is, a
+    short narrative, a relevance score, and an optional new query seed.
+    """
+
+    anchor_id: str
+    """Node id or name of the unexpected anchor (e.g. PR_IGORS_PROJECT,
+    INTERP_FACIA_goal_decompose, a palace path, a tool name)."""
+
+    anchor_type: str = "unknown"
+    """Kind of anchor surfaced: 'facia', 'tool', 'palace_node', 'memory',
+    'experiment', etc. Guides downstream levels in picking probe shape."""
+
+    narrative: str = ""
+    """Short human-readable explanation of why this is a lever."""
+
+    relevance: float = 0.0
+    """0.0-1.0 how load-bearing the walker should treat this lever."""
+
+    new_query_seed: Optional[str] = None
+    """Optional replacement query for the next cascade walk. If None,
+    the original query is preserved and the lever is added to context."""
+
+
+@dataclass
 class CascadeResult:
     """The output of a single cascade level, or of a full walker run."""
 
@@ -96,6 +126,10 @@ class CascadeResult:
     experiment: Optional[Experiment] = None
     """The Experiment that ran at this level. Carries hypothesis, probe,
     observation, and update for audit."""
+
+    lever: Optional[Lever] = None
+    """Set when status=LEVERAGED. Describes the unexpected anchor that
+    should seed the next cascade walk. T-lever-interrupt-pattern."""
 
     def is_terminal(self) -> bool:
         """Does this result end the walker, or should we keep going?"""
@@ -390,6 +424,12 @@ DEFAULT_LEVEL_BUDGET: int = 10
 from lever-interrupt flipping between two levels. Conservative default;
 tune as cascades get wired."""
 
+DEFAULT_LEVER_BUDGET: int = 3
+"""Max lever-interrupts per cascade run (T-lever-interrupt-pattern).
+After this many LEVERAGED restarts, the walker stops accepting new
+levers and commits to the current best path. Prevents infinite
+lever-flipping between competing anchors."""
+
 
 class ExperimentCascade:
     """The walker. Iterates registered levels in order until one matches,
@@ -403,9 +443,11 @@ class ExperimentCascade:
         self,
         cortex: "Cortex",
         level_budget: int = DEFAULT_LEVEL_BUDGET,
+        lever_budget: int = DEFAULT_LEVER_BUDGET,
     ) -> None:
         self.cortex = cortex
         self.level_budget = level_budget
+        self.lever_budget = lever_budget
         self._levels: list[CascadeLevel] = []
 
     def register(self, level: CascadeLevel) -> None:
@@ -453,9 +495,43 @@ class ExperimentCascade:
         except Exception as exc:
             logger.debug("training for %s raised: %s — skipped", level.name, exc)
 
+    def _apply_lever(
+        self, situation: CascadeSituation, lever: Lever
+    ) -> CascadeSituation:
+        """Build a new CascadeSituation from a lever. Preserves the
+        original query unless the lever supplies a new_query_seed.
+        Accumulates the lever into context so lever history is visible
+        to every subsequent level.
+        """
+        new_context = dict(situation.context)
+        lever_chain = list(new_context.get("lever_chain", []))
+        lever_chain.append(
+            {
+                "anchor_id": lever.anchor_id,
+                "anchor_type": lever.anchor_type,
+                "narrative": lever.narrative,
+                "relevance": lever.relevance,
+            }
+        )
+        new_context["lever_chain"] = lever_chain
+        new_context["latest_lever"] = lever.anchor_id
+
+        new_query = lever.new_query_seed if lever.new_query_seed else situation.query
+        return CascadeSituation(
+            query=new_query,
+            context=new_context,
+            target_shape=situation.target_shape,
+        )
+
     def attempt(self, situation: CascadeSituation) -> CascadeResult:
         """Walk the cascade. Returns the first MATCHED / ESCALATE result,
         or EXHAUSTED if budget runs out before any level lands.
+
+        Lever-interrupt (T-lever-interrupt-pattern): if a level returns
+        LEVERAGED, the walker restarts the cascade with the lever-enriched
+        situation, up to `lever_budget` interrupts per run. After that,
+        further LEVERAGED results are treated as EXHAUSTED and the walker
+        commits to the current best path.
         """
         if not self._levels:
             return CascadeResult(
@@ -465,9 +541,11 @@ class ExperimentCascade:
             )
 
         budget_remaining = self.level_budget
+        levers_remaining = self.lever_budget
         current_situation = situation
         while budget_remaining > 0:
             active_levels = self._filter_by_predictor(current_situation)
+            leveraged_this_pass = False
             for level in active_levels:
                 budget_remaining -= 1
                 if budget_remaining < 0:
@@ -496,13 +574,29 @@ class ExperimentCascade:
                     self._push_outcome_marker(situation, result)
                     return result
                 if result.status == CascadeStatus.LEVERAGED:
-                    # Restart the cascade with the leveraged situation.
-                    # T-lever-interrupt-pattern will formalize this path;
-                    # for now, MVP just re-enters the outer while with the
-                    # new situation.
-                    if isinstance(result.data, CascadeSituation):
-                        current_situation = result.data
-                    break  # exit inner for, re-enter while
+                    # T-lever-interrupt-pattern: if the lever budget is
+                    # exhausted, demote to EXHAUSTED and continue the inner
+                    # loop (commit to current best path).
+                    if levers_remaining <= 0:
+                        logger.debug(
+                            "cascade lever budget exhausted — demoting LEVERAGED at %s to EXHAUSTED",
+                            level.name,
+                        )
+                        continue
+                    lever = result.lever
+                    if lever is None:
+                        # Backwards-compat: some levels may still put a
+                        # CascadeSituation in result.data directly
+                        if isinstance(result.data, CascadeSituation):
+                            current_situation = result.data
+                        leveraged_this_pass = True
+                        levers_remaining -= 1
+                        break
+                    current_situation = self._apply_lever(current_situation, lever)
+                    levers_remaining -= 1
+                    leveraged_this_pass = True
+                    self._push_lever_marker(situation, lever, level.name)
+                    break  # exit inner for, re-enter while with new situation
                 # EXHAUSTED → continue to next level in inner for loop
             else:
                 # Inner for completed all levels with EXHAUSTED
@@ -513,6 +607,9 @@ class ExperimentCascade:
                 )
                 self._push_outcome_marker(situation, final)
                 return final
+            if not leveraged_this_pass:
+                # Inner for broke on budget exhaustion, not on a lever
+                break
         # Budget exhausted
         final = CascadeResult(
             status=CascadeStatus.EXHAUSTED,
@@ -521,6 +618,40 @@ class ExperimentCascade:
         )
         self._push_outcome_marker(situation, final)
         return final
+
+    def _push_lever_marker(
+        self,
+        original_situation: CascadeSituation,
+        lever: Lever,
+        level_name: str,
+    ) -> None:
+        """Emit a TWM marker when a lever interrupts the cascade. Gives
+        cognition visibility into the lever chain without reading walker
+        internal state."""
+        try:
+            self.cortex.twm_push(
+                source="experiment_cascade",
+                content_csb=(
+                    f"CASCADE_LEVER_INTERRUPT original_query={original_situation.query!r} "
+                    f"at_level={level_name} lever={lever.anchor_id!r} "
+                    f"type={lever.anchor_type} relevance={lever.relevance:.2f}"
+                ),
+                salience=0.55,
+                category="cascade_lever",
+                metadata={
+                    "type": "cascade_lever_interrupt",
+                    "original_query": original_situation.query,
+                    "interrupted_at_level": level_name,
+                    "anchor_id": lever.anchor_id,
+                    "anchor_type": lever.anchor_type,
+                    "narrative": lever.narrative,
+                    "relevance": lever.relevance,
+                    "new_query_seed": lever.new_query_seed,
+                    "cp1_provisional": True,
+                },
+            )
+        except Exception as exc:
+            logger.debug("cascade _push_lever_marker failed: %s", exc)
 
     def _push_outcome_marker(
         self, situation: CascadeSituation, result: CascadeResult
