@@ -1019,6 +1019,15 @@ class Cortex(IgorBase):
                 k: scrub(v) if isinstance(v, str) else v
                 for k, v in memory.metadata.items()
             }
+        # T-test-data-lifecycle: when IGOR_TEST_MODE=1, auto-stamp test_data
+        # tag + TTL into metadata. Honors memory_node_shape principle —
+        # everything lives in metadata, no columns. Opt-out: explicit
+        # metadata.test_data=False survives untouched. Prod path (env var
+        # unset) is unchanged: is_test_mode() returns False → no-op.
+        from .test_data_lifecycle import is_test_mode, stamp_metadata_for_test_mode
+
+        if is_test_mode():
+            memory.metadata = stamp_metadata_for_test_mode(memory.metadata)
         # #128: auto-link to contextually active memories at store time
         if link_to:
             for related in link_to:
