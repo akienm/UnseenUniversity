@@ -283,6 +283,7 @@ def _deposit_prediction_error(
                 _lf.write(_entry)
         except Exception as _exc:
             from .cognition.forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"main.py:284: {_exc}")
 
     except Exception as _bare_e:
@@ -293,6 +294,7 @@ def _deposit_prediction_error(
             )
         except Exception as _exc:
             from .cognition.forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"main.py:293: {_exc}")
 
 
@@ -399,6 +401,7 @@ def _reply_obligation_log(stage: str, **fields) -> None:
             _f.write(_line + "\n")
     except Exception as _exc:
         from .cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"main.py:398: {_exc}")
 
 
@@ -420,6 +423,7 @@ def _verbatim_trace_log(stage: str, **fields) -> None:
             _f.write(_line + "\n")
     except Exception as _exc:
         from .cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"main.py:418: {_exc}")
 
 
@@ -1681,6 +1685,7 @@ class Igor(IgorBase):
                         return _name, _kwargs, _cleaned.strip()
                 except Exception as _exc:
                     from .cognition.forensic_logger import log_error as _le
+
                     _le(kind="SILENT_EXCEPT", detail=f"main.py:1678: {_exc}")
             return "", {}, text
 
@@ -1891,6 +1896,7 @@ class Igor(IgorBase):
                     lines.extend(_intent_lines[-3:])
         except Exception as _exc:
             from .cognition.forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"main.py:1887: {_exc}")
 
         return "\n".join(lines)
@@ -2206,6 +2212,7 @@ class Igor(IgorBase):
             _pr_touch(name=facia_id)
         except Exception as _exc:
             from .cognition.forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"main.py:2201: {_exc}")
 
         # Record the push time in the throttle map
@@ -3189,6 +3196,7 @@ class Igor(IgorBase):
                     )
                 except Exception as _exc:
                     from .cognition.forensic_logger import log_error as _le
+
                     _le(kind="SILENT_EXCEPT", detail=f"main.py:3183: {_exc}")
 
                 # T-cc-call-into-igor: invoke Claude Code from Python so it gets
@@ -4714,6 +4722,7 @@ class Igor(IgorBase):
                 )
             except Exception as _exc:
                 from .cognition.forensic_logger import log_error as _le
+
                 _le(kind="SILENT_EXCEPT", detail=f"main.py:4707: {_exc}")
         if not is_impulse:
             _log_pt(
@@ -5496,6 +5505,7 @@ class Igor(IgorBase):
                             )
                         except Exception as _exc:
                             from .cognition.forensic_logger import log_error as _le
+
                             _le(kind="SILENT_EXCEPT", detail=f"main.py:5488: {_exc}")
                     else:
                         # Success: small dominance boost (confidence in action repertoire)
@@ -5679,7 +5689,16 @@ class Igor(IgorBase):
                         )
 
                         if not hasattr(self, "_turn_pipeline"):
-                            self._turn_pipeline = TurnPipeline(cortex=self.cortex)
+                            from .cognition.turn_pipeline import ABVoiceProducer
+
+                            _voice = ABVoiceProducer(
+                                cortex=self.cortex,
+                                gateway=self._gateway,
+                                word_graph=getattr(self, "_generation_graph", None),
+                            )
+                            self._turn_pipeline = TurnPipeline(
+                                cortex=self.cortex, voice_producer=_voice
+                            )
 
                         _tp_result = self._turn_pipeline.run_turn(
                             _situation, peer_advisor=_peer
@@ -6274,6 +6293,7 @@ class Igor(IgorBase):
                         break
             except Exception as _exc:
                 from .cognition.forensic_logger import log_error as _le
+
                 _le(kind="SILENT_EXCEPT", detail=f"main.py:6265: {_exc}")
 
             if not _echo_detected:
@@ -6852,6 +6872,7 @@ class Igor(IgorBase):
                 _sup.register("ne-worker", self._ne_thread, one_shot=True)
             except Exception as _exc:
                 from .cognition.forensic_logger import log_error as _le
+
                 _le(kind="SILENT_EXCEPT", detail=f"main.py:6842: {_exc}")
         finally:
             self._ne_spawn_lock.release()
@@ -6925,6 +6946,7 @@ class Igor(IgorBase):
             )
         except Exception as _exc:
             from .cognition.forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"main.py:6914: {_exc}")
 
     def _run_distillation_background(self):
@@ -6977,6 +6999,7 @@ class Igor(IgorBase):
             _sup.register("distillation-worker", self._distillation_thread)
         except Exception as _exc:
             from .cognition.forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"main.py:6965: {_exc}")
 
     def _run_factual_compression_background(self):
@@ -7032,6 +7055,7 @@ class Igor(IgorBase):
             )
         except Exception as _exc:
             from .cognition.forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"main.py:7019: {_exc}")
 
     def _run_ne_deep_consolidation(self):
@@ -7087,6 +7111,7 @@ class Igor(IgorBase):
             _sup.register("ne-deep-consolidation", self._ne_deep_thread)
         except Exception as _exc:
             from .cognition.forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"main.py:7073: {_exc}")
 
     # Keywords indicating a response is a failure/error (pass.3 NE backoff)
@@ -9771,6 +9796,7 @@ class Igor(IgorBase):
             uc_client.deregister()
         except Exception as _exc:
             from .cognition.forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"main.py:9756: {_exc}")
         # Persist learned word graph weights before exit
         if self._word_graph is not None:

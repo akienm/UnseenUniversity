@@ -196,6 +196,62 @@ class VoiceProducer:
         return "Still working on this one."
 
 
+class ABVoiceProducer(VoiceProducer):
+    """Voice producer backed by the A/B framework (T-output-shaping-trees-wire-in).
+
+    Runs both GraphVoiceActor (generation word graph) and LLMVoiceActor
+    in parallel, compares, picks winner, trains graph from LLM when LLM
+    wins. Falls back to the stub VoiceProducer if the framework isn't
+    available or fails.
+    """
+
+    def __init__(
+        self,
+        cortex: "Cortex",
+        gateway: Optional[Any] = None,
+        word_graph: Optional[Any] = None,
+    ) -> None:
+        self._cortex = cortex
+        self._gateway = gateway
+        self._word_graph = word_graph
+        self._framework = None
+        self._stub = VoiceProducer()
+
+    def _ensure_framework(self) -> bool:
+        if self._framework is not None:
+            return True
+        try:
+            from .voice_ab import GraphVoiceActor, LLMVoiceActor, VoiceABFramework
+
+            graph_actor = GraphVoiceActor(word_graph=self._word_graph)
+            llm_actor = LLMVoiceActor(cortex=self._cortex, gateway=self._gateway)
+            self._framework = VoiceABFramework(
+                graph_actor=graph_actor,
+                llm_actor=llm_actor,
+                word_graph=self._word_graph,
+            )
+            return True
+        except Exception as exc:
+            logger.debug("ABVoiceProducer framework init failed: %s", exc)
+            return False
+
+    def produce(self, blob: DecisionBlob, ctx: PromptContext) -> str:
+        if not self._ensure_framework():
+            return self._stub.produce(blob, ctx)
+        try:
+            result = self._framework.produce(blob, ctx)
+            if result:
+                return result
+        except Exception as exc:
+            logger.warning("ABVoiceProducer.produce failed: %s", exc)
+        return self._stub.produce(blob, ctx)
+
+    def stats(self) -> dict:
+        if self._framework:
+            return self._framework.stats()
+        return {"total": 0, "graph_wins": 0, "llm_wins": 0, "graduation_pct": 0.0}
+
+
 # ── The conductor ───────────────────────────────────────────────────────────
 
 
