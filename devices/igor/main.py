@@ -6381,6 +6381,36 @@ class Igor(IgorBase):
                     log_error(
                         kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
                     )
+                # T-verbatim-trace-for-igor-replies: full untruncated reply
+                # at a distinct category. Same gist+verbatim split as user
+                # input (f0ad6dab). IGOR_SAID above is the gist (400 chars);
+                # this is the verbatim for operations needing fidelity.
+                try:
+                    self.cortex.twm_push(
+                        source="igor_reply_verbatim",
+                        content_csb=response_text,
+                        salience=0.5,
+                        urgency=0.1,
+                        ttl_seconds=1800,
+                        category="reply_verbatim",
+                        thread_id=thread_id or None,
+                        metadata={
+                            "turn_id": _turn_id,
+                            "char_len": len(response_text),
+                            "tier": self._current_tier or "",
+                        },
+                    )
+                    _verbatim_trace_log(
+                        "push_reply",
+                        turn_id=_turn_id,
+                        thread_id=thread_id or "",
+                        char_len=len(response_text),
+                    )
+                except Exception as _vbt_e:
+                    log_error(
+                        kind="REPLY_VERBATIM_TRACE",
+                        detail=f"igor_reply_verbatim push: {_vbt_e}",
+                    )
 
         # Update metrics
         self.last_friction = friction
