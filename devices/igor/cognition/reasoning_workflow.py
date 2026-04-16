@@ -554,3 +554,418 @@ def _extract_hypothesis_from_conversation(conversation: Conversation) -> str:
     if first_igor:
         return first_igor.content[:200]
     return "(hypothesis unknown — no Igor turns in conversation)"
+
+
+# ── Output structs for B/C/D workflows ────────────────────────────────────
+
+
+@dataclass
+class ClaimEvaluation:
+    """Output of WorkflowB — did the claim hold up?"""
+
+    claim: str
+    verdict: str
+    confidence: float
+    counter_evidence: str = ""
+
+
+@dataclass
+class PatternDiagnosis:
+    """Output of WorkflowC — what's causing this recurring pattern?"""
+
+    pattern: str
+    hypothesis: str
+    proposed_test: str = ""
+
+
+@dataclass
+class ActionPlan:
+    """Output of WorkflowD — a sequenced plan with risks."""
+
+    goal: str
+    steps: list[str] = field(default_factory=list)
+    risks: list[str] = field(default_factory=list)
+    first_step: str = ""
+
+
+# ── Workflow B: Evaluate Claim ─────────────────────────────────────────────
+
+
+class WorkflowB_EvaluateClaim(Workflow):
+    """Igor opens: 'I believe X. Here's my evidence. Does this still
+    hold? What counter-evidence should I look for?'
+
+    The loop iterates until the peer provides a verdict with confidence.
+    Exit produces a ClaimEvaluation.
+    """
+
+    name = "workflow_b_evaluate_claim"
+
+    def opening_utterance(self, situation: Any) -> WorkflowUtterance:
+        claim = situation.get("claim") or "something I believe"
+        evidence = situation.get("evidence") or "(no evidence gathered)"
+        context = situation.get("context") or ""
+        content = (
+            f"I believe: {claim}\n\n"
+            f"My evidence so far: {evidence}\n\n"
+            + (f"Context: {context}\n\n" if context else "")
+            + "Does this still hold? What counter-evidence should I "
+            "look for? Give me a verdict (holds / weakened / refuted) "
+            "and your confidence level."
+        )
+        return WorkflowUtterance(
+            speaker=Speaker.IGOR,
+            content=content,
+            expected_response_shape="verdict + confidence",
+            metadata={"opening": True, "claim": claim},
+        )
+
+    def next_utterance(
+        self,
+        conversation: Conversation,
+        peer_response: WorkflowUtterance,
+    ) -> WorkflowUtterance | WorkflowComplete:
+        text = peer_response.content.lower()
+        has_verdict = any(
+            v in text for v in ("holds", "weakened", "refuted", "verdict:")
+        )
+        has_confidence = any(
+            c in text
+            for c in ("confidence:", "confident", "certainty:", "likely", "unlikely")
+        )
+
+        if has_verdict and has_confidence:
+            verdict_text = _extract_field(
+                peer_response.content, ["verdict:", "holds", "weakened", "refuted"]
+            )
+            if not verdict_text:
+                for v in ("holds", "weakened", "refuted"):
+                    if v in text:
+                        verdict_text = v
+                        break
+            confidence = _extract_confidence(text)
+            counter = _extract_field(
+                peer_response.content,
+                ["counter-evidence:", "counter:", "however:", "but:"],
+            )
+            claim = ""
+            for u in conversation.utterances:
+                if u.speaker == Speaker.IGOR and u.metadata.get("opening"):
+                    claim = u.metadata.get("claim", "")
+                    break
+            return WorkflowComplete(
+                output=ClaimEvaluation(
+                    claim=claim,
+                    verdict=verdict_text or "unknown",
+                    confidence=confidence,
+                    counter_evidence=counter or "",
+                ),
+                reason="peer provided verdict + confidence",
+            )
+
+        missing = []
+        if not has_verdict:
+            missing.append("a clear verdict (holds / weakened / refuted)")
+        if not has_confidence:
+            missing.append("your confidence level")
+        content = (
+            "I need " + " and ".join(missing) + " to update my belief. "
+            "Please be direct."
+        )
+        return WorkflowUtterance(
+            speaker=Speaker.IGOR,
+            content=content,
+            expected_response_shape=" + ".join(missing),
+        )
+
+    def output_struct(self, conversation: Conversation) -> Any:
+        last_peer = conversation.last_peer()
+        if not last_peer:
+            return None
+        text = last_peer.content.lower()
+        verdict_text = _extract_field(
+            last_peer.content, ["verdict:", "holds", "weakened", "refuted"]
+        )
+        if not verdict_text:
+            for v in ("holds", "weakened", "refuted"):
+                if v in text:
+                    verdict_text = v
+                    break
+        claim = ""
+        for u in conversation.utterances:
+            if u.speaker == Speaker.IGOR and u.metadata.get("opening"):
+                claim = u.metadata.get("claim", "")
+                break
+        return ClaimEvaluation(
+            claim=claim,
+            verdict=verdict_text or "unknown",
+            confidence=_extract_confidence(text),
+            counter_evidence=_extract_field(
+                last_peer.content,
+                ["counter-evidence:", "counter:", "however:", "but:"],
+            )
+            or "",
+        )
+
+
+# ── Workflow C: Diagnose Pattern ───────────────────────────────────────────
+
+
+class WorkflowC_DiagnosePattern(Workflow):
+    """Igor opens: 'I keep seeing X. Here are the instances. What
+    could explain this pattern? What test would discriminate between
+    explanations?'
+
+    The loop iterates until the peer provides a hypothesis and a
+    discriminating test. Exit produces a PatternDiagnosis.
+    """
+
+    name = "workflow_c_diagnose_pattern"
+
+    def opening_utterance(self, situation: Any) -> WorkflowUtterance:
+        pattern = situation.get("pattern") or "a recurring thing"
+        instances = situation.get("instances") or "(no instances listed)"
+        content = (
+            f"I keep seeing this pattern: {pattern}\n\n"
+            f"Instances: {instances}\n\n"
+            "What could explain why this keeps happening? And what test "
+            "would discriminate between possible explanations — something "
+            "where explanation A predicts one outcome and explanation B "
+            "predicts a different one?"
+        )
+        return WorkflowUtterance(
+            speaker=Speaker.IGOR,
+            content=content,
+            expected_response_shape="hypothesis + discriminating test",
+            metadata={"opening": True, "pattern": pattern},
+        )
+
+    def next_utterance(
+        self,
+        conversation: Conversation,
+        peer_response: WorkflowUtterance,
+    ) -> WorkflowUtterance | WorkflowComplete:
+        text = peer_response.content.lower()
+        has_hypothesis = any(
+            h in text
+            for h in (
+                "hypothesis:",
+                "because",
+                "cause:",
+                "explanation:",
+                "likely because",
+            )
+        )
+        has_test = any(
+            t in text
+            for t in ("test:", "try:", "check:", "discriminat", "if you", "to verify")
+        )
+
+        if has_hypothesis and has_test:
+            hypothesis_text = _extract_field(
+                peer_response.content,
+                ["hypothesis:", "cause:", "explanation:", "likely because"],
+            )
+            test_text = _extract_field(
+                peer_response.content,
+                ["test:", "try:", "check:", "to verify"],
+            )
+            pattern = ""
+            for u in conversation.utterances:
+                if u.speaker == Speaker.IGOR and u.metadata.get("opening"):
+                    pattern = u.metadata.get("pattern", "")
+                    break
+            return WorkflowComplete(
+                output=PatternDiagnosis(
+                    pattern=pattern,
+                    hypothesis=hypothesis_text or peer_response.content[:200],
+                    proposed_test=test_text or "",
+                ),
+                reason="peer provided hypothesis + discriminating test",
+            )
+
+        missing = []
+        if not has_hypothesis:
+            missing.append("a hypothesis about the cause")
+        if not has_test:
+            missing.append(
+                "a discriminating test (what would I see if your hypothesis is right "
+                "vs wrong?)"
+            )
+        content = (
+            "I need " + " and ".join(missing) + " to make progress. "
+            "What's your best guess?"
+        )
+        return WorkflowUtterance(
+            speaker=Speaker.IGOR,
+            content=content,
+            expected_response_shape=" + ".join(missing),
+        )
+
+    def output_struct(self, conversation: Conversation) -> Any:
+        last_peer = conversation.last_peer()
+        if not last_peer:
+            return None
+        pattern = ""
+        for u in conversation.utterances:
+            if u.speaker == Speaker.IGOR and u.metadata.get("opening"):
+                pattern = u.metadata.get("pattern", "")
+                break
+        return PatternDiagnosis(
+            pattern=pattern,
+            hypothesis=_extract_field(
+                last_peer.content,
+                ["hypothesis:", "cause:", "explanation:", "likely because"],
+            )
+            or last_peer.content[:200],
+            proposed_test=_extract_field(
+                last_peer.content, ["test:", "try:", "check:", "to verify"]
+            )
+            or "",
+        )
+
+
+# ── Workflow D: Plan ───────────────────────────────────────────────────────
+
+
+class WorkflowD_Plan(Workflow):
+    """Igor opens: 'I need to accomplish X. Here are the constraints.
+    Help me decompose this into steps, identify risks, and pick the
+    right first step.'
+
+    The loop iterates until the peer provides steps and a first step.
+    Exit produces an ActionPlan.
+    """
+
+    name = "workflow_d_plan"
+
+    def opening_utterance(self, situation: Any) -> WorkflowUtterance:
+        goal = situation.get("goal") or "something I need to do"
+        constraints = situation.get("constraints") or "(no constraints)"
+        resources = situation.get("resources") or ""
+        content = (
+            f"I need to accomplish: {goal}\n\n"
+            f"Constraints: {constraints}\n\n"
+            + (f"Resources available: {resources}\n\n" if resources else "")
+            + "Help me decompose this into concrete steps, identify the "
+            "main risks, and pick the right first step. What's the plan?"
+        )
+        return WorkflowUtterance(
+            speaker=Speaker.IGOR,
+            content=content,
+            expected_response_shape="steps + risks + first step",
+            metadata={"opening": True, "goal": goal},
+        )
+
+    def next_utterance(
+        self,
+        conversation: Conversation,
+        peer_response: WorkflowUtterance,
+    ) -> WorkflowUtterance | WorkflowComplete:
+        text = peer_response.content.lower()
+        has_steps = any(s in text for s in ("step", "1.", "1)", "first,", "steps:"))
+        has_first = any(
+            f in text for f in ("first step:", "start with", "begin by", "start by")
+        )
+
+        if has_steps:
+            steps = _extract_numbered_items(peer_response.content)
+            risks = _extract_list_after(peer_response.content, ["risk", "watch out"])
+            first_step = _extract_field(
+                peer_response.content,
+                ["first step:", "start with", "begin by", "start by"],
+            )
+            if not first_step and steps:
+                first_step = steps[0]
+            goal = ""
+            for u in conversation.utterances:
+                if u.speaker == Speaker.IGOR and u.metadata.get("opening"):
+                    goal = u.metadata.get("goal", "")
+                    break
+            return WorkflowComplete(
+                output=ActionPlan(
+                    goal=goal,
+                    steps=steps or [peer_response.content[:200]],
+                    risks=risks,
+                    first_step=first_step or "",
+                ),
+                reason="peer provided plan steps",
+            )
+
+        content = (
+            "I need concrete steps I can execute — numbered, specific, "
+            "in order. What risks should I watch for? And what's the "
+            "right first step?"
+        )
+        return WorkflowUtterance(
+            speaker=Speaker.IGOR,
+            content=content,
+            expected_response_shape="numbered steps + risks + first step",
+        )
+
+    def output_struct(self, conversation: Conversation) -> Any:
+        last_peer = conversation.last_peer()
+        if not last_peer:
+            return None
+        goal = ""
+        for u in conversation.utterances:
+            if u.speaker == Speaker.IGOR and u.metadata.get("opening"):
+                goal = u.metadata.get("goal", "")
+                break
+        steps = _extract_numbered_items(last_peer.content)
+        return ActionPlan(
+            goal=goal,
+            steps=steps or [last_peer.content[:200]],
+            risks=_extract_list_after(last_peer.content, ["risk", "watch out"]),
+            first_step=_extract_field(
+                last_peer.content,
+                ["first step:", "start with", "begin by", "start by"],
+            )
+            or (steps[0] if steps else ""),
+        )
+
+
+# ── Additional extraction helpers for B/C/D ────────────────────────────────
+
+
+def _extract_confidence(text: str) -> float:
+    """Pull a confidence number from text. Returns 0.5 as default."""
+    import re
+
+    m = re.search(r"confidence[:\s]*(\d+(?:\.\d+)?)\s*%?", text)
+    if m:
+        val = float(m.group(1))
+        return val / 100.0 if val > 1.0 else val
+    if "very confident" in text or "high confidence" in text:
+        return 0.9
+    if "somewhat" in text or "moderate" in text:
+        return 0.6
+    if "low confidence" in text or "not confident" in text:
+        return 0.3
+    return 0.5
+
+
+def _extract_numbered_items(text: str) -> list[str]:
+    """Extract numbered list items (1. foo, 2. bar, etc.)."""
+    import re
+
+    items = re.findall(r"(?:^|\n)\s*\d+[.)]\s*(.+?)(?=\n\s*\d+[.)]|\n\n|$)", text)
+    return [item.strip() for item in items if item.strip()]
+
+
+def _extract_list_after(text: str, markers: list[str]) -> list[str]:
+    """Extract items listed after a marker word."""
+    lower = text.lower()
+    for marker in markers:
+        idx = lower.find(marker)
+        if idx == -1:
+            continue
+        rest = text[idx:]
+        import re
+
+        items = re.findall(r"[-•]\s*(.+?)(?=\n[-•]|\n\n|$)", rest)
+        if items:
+            return [i.strip() for i in items if i.strip()]
+        lines = rest.split("\n")[1:4]
+        return [l.strip() for l in lines if l.strip() and len(l.strip()) > 5]
+    return []
