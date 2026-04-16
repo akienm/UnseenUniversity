@@ -607,9 +607,10 @@ class Cortex(IgorBase):
                 if mem_meta.get("pr_facia_id") == frame_facia:
                     current = getattr(m, "relevance_score", 0.0) or 0.0
                     m.relevance_score = current + bias  # type: ignore[attr-defined]
-        except Exception:
+        except Exception as _exc:
             # Bias is a nudge — never break search if anything fails
-            pass
+            from ..cognition.forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"cortex.py:610: {_exc}")
 
     def _local_conn(self):
         """Context manager for LOCAL tables: ring_memory, twm_observations."""
@@ -945,8 +946,9 @@ class Cortex(IgorBase):
                         "INSERT INTO _migrations(name, applied_at) VALUES (?, ?)",
                         (name, _dt_mig.datetime.now().isoformat()),
                     )
-                except Exception:
-                    pass  # duplicate key = already recorded by concurrent boot
+                except Exception as _exc:
+                    from ..cognition.forensic_logger import log_error as _le
+                    _le(kind="SILENT_EXCEPT", detail=f"cortex.py:948: {_exc}")
                 _mlog.info("[migration] applied %s", name)
             except Exception as _e:
                 _emsg = str(_e).lower()
@@ -965,8 +967,9 @@ class Cortex(IgorBase):
                             "INSERT INTO _migrations(name, applied_at) VALUES (?, ?)",
                             (name, _dt_mig.datetime.now().isoformat()),
                         )
-                    except Exception:
-                        pass
+                    except Exception as _exc:
+                        from ..cognition.forensic_logger import log_error as _le
+                        _le(kind="SILENT_EXCEPT", detail=f"cortex.py:968: {_exc}")
                     _mlog.debug(
                         "[migration] %s — column pre-exists, marked applied", name
                     )
@@ -1081,8 +1084,9 @@ class Cortex(IgorBase):
             from .node_id import register_node as _register_node
 
             _register_node(memory.id, "memories", memory.id)
-        except Exception:
-            pass
+        except Exception as _exc:
+            from ..cognition.forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"cortex.py:1084: {_exc}")
         # #260: invalidate habit cache when a habit is stored
         if memory.is_habit:
             self._habit_cache = None

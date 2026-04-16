@@ -41,8 +41,9 @@ def post_to_channel(
                     (ts, author, "message", message, channel),
                 )
         conn_pg.close()
-    except Exception:
-        pass
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"channel_post.py:44: {_exc}")
 
     # JSONL fallback
     try:
@@ -54,5 +55,6 @@ def post_to_channel(
         )
         with open(channel_file, "a", encoding="utf-8") as f:
             f.write(entry + "\n")
-    except Exception:
-        pass
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"channel_post.py:57: {_exc}")

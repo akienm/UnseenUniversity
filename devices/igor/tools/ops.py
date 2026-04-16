@@ -230,8 +230,9 @@ def goal_adopt(
             )
             with open(_ch_path, "a") as _f:
                 _f.write(entry + "\n")
-        except Exception:
-            pass  # channel post is best-effort
+        except Exception as _exc:
+            from ..cognition.forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"ops.py:233: {_exc}")
 
         return f"On it. Goal set: {task_short[:80]}. Proceeding."
     except Exception as e:
@@ -280,8 +281,9 @@ def goal_fail_active() -> str:
                 )
                 with open(_ch_path, "a") as _f:
                     _f.write(entry + "\n")
-            except Exception:
-                pass
+            except Exception as _exc:
+                from ..cognition.forensic_logger import log_error as _le
+                _le(kind="SILENT_EXCEPT", detail=f"ops.py:283: {_exc}")
             return f"Stuck on goal after {fails} attempts: {task[:80]}. Posted to channel. Waiting for guidance."
 
         # Persistence hunt: search for alternative approaches
@@ -298,8 +300,9 @@ def goal_fail_active() -> str:
                     f"Trying alternative: {alt_text[:120]}. "
                     f"Adapting approach now."
                 )
-        except Exception:
-            pass
+        except Exception as _exc:
+            from ..cognition.forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"ops.py:301: {_exc}")
 
         return (
             f"Strategy failed (attempt {fails}/3). "
@@ -372,8 +375,9 @@ def goal_close(goal_id: str) -> str:
             )
             with open(_ch_path, "a") as _f:
                 _f.write(entry + "\n")
-        except Exception:
-            pass
+        except Exception as _exc:
+            from ..cognition.forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"ops.py:375: {_exc}")
 
         return f"Goal {goal_id} closed. Well done."
     except Exception as e:

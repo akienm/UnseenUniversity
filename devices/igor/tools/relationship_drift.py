@@ -72,8 +72,9 @@ def _drift_log(stage: str, **fields) -> None:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         with open(log_path, "a") as f:
             f.write(line + "\n")
-    except Exception:
-        pass
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"relationship_drift.py:75: {_exc}")
 
 
 def _parse_iso(ts: str) -> Optional[datetime]:
@@ -99,8 +100,9 @@ def expected_rhythm_seconds(relationship_metadata: dict) -> int:
     if override is not None:
         try:
             return int(float(override) * 86400)
-        except (TypeError, ValueError):
-            pass
+        except (TypeError, ValueError) as _exc:
+            from ..cognition.forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"relationship_drift.py:102: {_exc}")
     rel_type = (relationship_metadata.get("relationship_type") or "").lower()
     days = _DEFAULT_RHYTHM_DAYS.get(rel_type, 7)
     return days * 86400

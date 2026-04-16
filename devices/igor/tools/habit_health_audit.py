@@ -124,8 +124,9 @@ def _parse_turn_traces(hours: int = 24) -> list[dict]:
                         turn_time = datetime.fromisoformat(ts)
                         if turn_time < cutoff:
                             continue
-                    except ValueError:
-                        pass
+                    except ValueError as _exc:
+                        from ..cognition.forensic_logger import log_error as _le
+                        _le(kind="SILENT_EXCEPT", detail=f"habit_health_audit.py:127: {_exc}")
 
                 turns.append(turn)
             except (ValueError, json.JSONDecodeError):
@@ -185,8 +186,9 @@ def _read_channel_messages(hours: int = 24) -> list[dict]:
                             messages.append(msg)
                     except json.JSONDecodeError:
                         continue
-            except Exception:
-                pass
+            except Exception as _exc:
+                from ..cognition.forensic_logger import log_error as _le
+                _le(kind="SILENT_EXCEPT", detail=f"habit_health_audit.py:188: {_exc}")
 
     return messages
 

@@ -214,8 +214,9 @@ class IgorBot(discord.Client):
                             preview=chunk[:60],
                         )
 
-            except queue.Empty:
-                pass  # expected — outgoing queue is empty, poll again
+            except queue.Empty as _exc:
+                from ..cognition.forensic_logger import log_error as _le
+                _le(kind="SILENT_EXCEPT", detail=f"discord_bot.py:217: {_exc}")
             await asyncio.sleep(0.5)
 
 

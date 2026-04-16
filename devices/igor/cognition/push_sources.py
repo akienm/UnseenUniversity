@@ -1618,8 +1618,9 @@ class CuriositySource(BasePushSource):
                 if "BOREDOM_DETECTED" in csb:
                     boredom_present = True
                     break
-        except Exception:
-            pass
+        except Exception as _exc:
+            from .forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"push_sources.py:1621: {_exc}")
 
         # Gate 2: No active goals? Goals = TASK_SET entries with urgency >= 0.5
         goals_active = False
@@ -1629,8 +1630,9 @@ class CuriositySource(BasePushSource):
                 if "TASK_SET" in csb and o.get("urgency", 0) >= 0.5:
                     goals_active = True
                     break
-        except Exception:
-            pass
+        except Exception as _exc:
+            from .forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"push_sources.py:1632: {_exc}")
 
         # Fire only when: bored AND no goals pulling.
         # Also fire (weaker) when simply idle — no boredom required, just nothing happening.
@@ -1660,8 +1662,9 @@ class CuriositySource(BasePushSource):
                     topics.append(
                         f"Read: {r['title'] if isinstance(r, dict) else r[0]}"
                     )
-        except Exception:
-            pass  # Reading list unavailable — intrinsic questions are enough
+        except Exception as _exc:
+            from .forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"push_sources.py:1663: {_exc}")
 
         # Round-robin, skipping topics in cooldown
         topic = None
@@ -1685,8 +1688,9 @@ class CuriositySource(BasePushSource):
             m = milieu_mod.get()
             if m is not None:
                 m.nudge_vad(dv=0.12, da=0.15, dd=0.0)  # positive engagement
-        except Exception:
-            pass
+        except Exception as _exc:
+            from .forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"push_sources.py:1688: {_exc}")
 
         csb = f"ACTION_IMPULSE|CURIOSITY|topic={topic}" f"|action={topic}"
         obs_id = cortex.twm_push(
@@ -2243,8 +2247,9 @@ class ThreadCoherenceSource(BasePushSource):
                 continue
             try:
                 traces.append(json.loads(block[brace:]))
-            except Exception:
-                pass
+            except Exception as _exc:
+                from .forensic_logger import log_error as _le
+                _le(kind="SILENT_EXCEPT", detail=f"push_sources.py:2246: {_exc}")
         return traces
 
     def _extract_nodes(self, trace: dict) -> dict:

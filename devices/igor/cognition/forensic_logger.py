@@ -616,7 +616,7 @@ def record_cloud_escalation(
                 )
         conn.close()
     except Exception:
-        pass  # Non-fatal — never break Igor's main loop
+        pass
 
 
 def log_reading_progress(

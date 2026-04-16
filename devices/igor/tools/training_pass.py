@@ -130,8 +130,9 @@ def start_training_pass(config: str = "") -> str:
     if config and config.strip():
         try:
             params = json.loads(config)
-        except (json.JSONDecodeError, ValueError):
-            pass
+        except (json.JSONDecodeError, ValueError) as _exc:
+            from ..cognition.forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"training_pass.py:133: {_exc}")
 
     n_traces = int(params.get("n_traces", 10))
     min_tier = str(params.get("min_tier", "tier.3.5"))

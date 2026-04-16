@@ -137,8 +137,9 @@ def _cluster_factuals(memories: list[Memory]) -> list[list[Memory]]:
 
         # We don't have cortex here — skip embedding path, use keyword fallback
         raise ImportError("no cortex in scope")
-    except Exception:
-        pass
+    except Exception as _exc:
+        from .forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"factual_compression.py:140: {_exc}")
 
     # Keyword Jaccard clustering
     kw_cache = {m.id: _keywords(m.narrative) for m in memories}
@@ -322,8 +323,9 @@ def _is_novel(narrative: str, cortex: Cortex) -> bool:
             for row in rows:
                 if _jaccard(kw_new, _keywords(row[0])) >= 0.6:
                     return False
-        except Exception:
-            pass
+        except Exception as _exc:
+            from .forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"factual_compression.py:325: {_exc}")
         return True
 
 

@@ -252,8 +252,9 @@ def node_locate(node_id: str, db_url: str | None = None) -> dict | None:
             val = r.get(f"node:{node_id}")
             if val:
                 return json.loads(val)
-    except Exception:
-        pass
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"node_id.py:255: {_exc}")
 
     # Postgres fallback
     try:
@@ -324,8 +325,9 @@ def _log_generation(node_id: str) -> None:
         ts = datetime.now(timezone.utc).isoformat()
         with open(_LOG_FILE, "a") as f:
             f.write(f"{ts}  GEN  {node_id}\n")
-    except Exception:
-        pass
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"node_id.py:327: {_exc}")
 
 
 def _log_error(msg: str) -> None:
@@ -334,5 +336,6 @@ def _log_error(msg: str) -> None:
         ts = datetime.now(timezone.utc).isoformat()
         with open(_LOG_FILE, "a") as f:
             f.write(f"{ts}  ERR  {msg}\n")
-    except Exception:
-        pass
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"node_id.py:337: {_exc}")

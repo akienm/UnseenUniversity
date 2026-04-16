@@ -204,8 +204,9 @@ def _coherence_log(stage: str, **fields) -> None:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         with open(log_path, "a") as f:
             f.write(line + "\n")
-    except Exception:
-        pass
+    except Exception as _exc:
+        from .forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"response_coherence_inhibitor.py:207: {_exc}")
 
 
 # ── Main check ───────────────────────────────────────────────────────────────
@@ -310,8 +311,9 @@ def check_coherence(
             category="coherence_failure",
             thread_id=thread_id or None,
         )
-    except Exception:
-        pass
+    except Exception as _exc:
+        from .forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"response_coherence_inhibitor.py:313: {_exc}")
 
     try:
         cortex.twm_push(
@@ -335,8 +337,9 @@ def check_coherence(
                 "source": source_label,
             },
         )
-    except Exception:
-        pass
+    except Exception as _exc:
+        from .forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"response_coherence_inhibitor.py:338: {_exc}")
 
     return {
         "score": score,

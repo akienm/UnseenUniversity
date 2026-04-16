@@ -195,8 +195,9 @@ def _seed_one(conn, entry: dict) -> tuple[bool, str]:
     except Exception as exc:
         try:
             conn.rollback()
-        except Exception:
-            pass
+        except Exception as _exc:
+            from ..cognition.forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"inhibition_seeder.py:198: {_exc}")
         return False, f"error: {exc}"
 
 

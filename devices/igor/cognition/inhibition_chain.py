@@ -94,8 +94,9 @@ class TWMCheckNode(InhibitionNode):
                     exp_dt = datetime.fromisoformat(expires_at_str)
                     if exp_dt < now:
                         continue  # expired — keep looking
-                except (ValueError, TypeError):
-                    pass  # unparseable — treat as not expired (conservative)
+                except (ValueError, TypeError) as _exc:
+                    from .forensic_logger import log_error as _le
+                    _le(kind="SILENT_EXCEPT", detail=f"inhibition_chain.py:97: {_exc}")
             # Fresh hit
             content = entry.get("content_csb", "")
             basket["twm.check_result"] = f"hit:{content}"
