@@ -14,6 +14,7 @@ import re
 from .registry import Tool, registry
 
 from ..paths import paths as _paths
+
 logger = logging.getLogger(__name__)
 
 
@@ -127,10 +128,38 @@ def memory_search(query: str, limit: int = 5, **_) -> str:
         return f"memory_search({query!r}): error — {e}"
 
 
+_SYNONYM_MAP: dict[str, list[str]] = {
+    "progress": ["status", "position", "reading", "list", "sessions"],
+    "how far": ["progress", "position", "reading", "status"],
+    "reading": ["book", "ebook", "chunk", "calibre", "learn", "absorbed"],
+    "books": ["book", "ebook", "calibre", "reading", "learn", "absorbed"],
+    "learn": ["reading", "book", "queue", "drain", "absorb"],
+    "budget": ["balance", "spending", "cost", "openrouter"],
+    "memory": ["search", "memories", "cortex", "recall", "find"],
+    "search": ["memory", "find", "query", "look"],
+    "file": ["read", "write", "list", "directory"],
+    "habit": ["procedural", "trigger", "activation", "habit"],
+    "goal": ["task", "adopt", "queue", "active"],
+    "task": ["goal", "queue", "ticket", "work"],
+    "metrics": ["report", "stats", "milieu", "health"],
+    "machine": ["cluster", "ssh", "ollama", "router"],
+    "photo": ["camera", "picture", "image", "senses"],
+    "audio": ["record", "microphone", "senses"],
+    "web": ["browser", "url", "webpage", "search"],
+    "email": ["gmail", "inbox", "mail"],
+    "calendar": ["schedule", "event", "google"],
+    "experiment": ["probe", "hypothesis", "cascade", "test"],
+    "decision": ["blob", "store", "decision"],
+    "voice": ["generation", "graph", "word"],
+    "word graph": ["wg", "predict", "spread", "generation"],
+}
+
+
 def find_tool(query: str, limit: int = 5, **_) -> str:
     """
     Find registered tools by keyword overlap against tool names and descriptions.
-    Useful when you know roughly what a tool does but not its exact name.
+    Uses synonym expansion so conversational queries ("how far with reading?")
+    match tool names ("get_reading_list", "list_reading_sessions").
 
     Returns the top matching tool names and their descriptions.
     Example: find_tool("search memory") → memory_search, list_unvalidated_memories, …
@@ -139,7 +168,6 @@ def find_tool(query: str, limit: int = 5, **_) -> str:
         from .registry import registry
 
         def _tok(text: str) -> frozenset:
-            # Split on underscores/hyphens first so tool_name → ["tool", "name"]
             text = re.sub(r"[_\-]", " ", text.lower())
             words = re.findall(r"[a-z][a-z0-9]*", text)
             stopwords = {
@@ -164,9 +192,23 @@ def find_tool(query: str, limit: int = 5, **_) -> str:
             }
             return frozenset(w for w in words if w not in stopwords and len(w) >= 3)
 
+        def _expand(tokens: frozenset) -> frozenset:
+            """Expand tokens with synonyms from _SYNONYM_MAP."""
+            expanded = set(tokens)
+            for tok in tokens:
+                if tok in _SYNONYM_MAP:
+                    expanded.update(_SYNONYM_MAP[tok])
+            query_lower = " ".join(sorted(tokens))
+            for phrase, syns in _SYNONYM_MAP.items():
+                if " " in phrase and phrase in query_lower:
+                    expanded.update(syns)
+            return frozenset(expanded)
+
         query_tok = _tok(query)
         if not query_tok:
             return "find_tool: query too short or all stopwords"
+
+        query_expanded = _expand(query_tok)
 
         scored = []
         for tool in registry._tools.values():
@@ -174,11 +216,14 @@ def find_tool(query: str, limit: int = 5, **_) -> str:
             tool_tok = _tok(text)
             if not tool_tok:
                 continue
-            inter = len(query_tok & tool_tok)
-            union = len(query_tok | tool_tok)
+            inter = len(query_expanded & tool_tok)
+            if inter == 0:
+                continue
+            union = len(query_expanded | tool_tok)
             score = inter / union if union else 0.0
-            if score > 0:
-                scored.append((score, tool.name, tool.description or ""))
+            bonus = inter * 0.05
+            score = score + bonus
+            scored.append((score, tool.name, tool.description or ""))
 
         scored.sort(reverse=True)
         top = scored[: int(limit)]
