@@ -378,6 +378,124 @@ class Level1WidenOnMiss(BaseCascadeLevel):
         )
 
 
+class Level2InterpretiveTraversal(BaseCascadeLevel):
+    """Level 2: interpretive-edge BFS.
+
+    Hypothesis: the answer is reachable via interpretive edges from
+    query-relevant seed memories — connections that exact recall and
+    widen-on-miss missed because the link is semantic, not lexical.
+    Probe: cortex.search(query, limit=3) for seeds, then
+    cortex.interpretive_traverse(seed_ids, max_depth=3).
+    Match: traversal returns memories not already in the seed set.
+    Exhaustion: no seeds found, or traversal adds nothing new.
+    """
+
+    name = "level_2_interpretive_traversal"
+
+    def try_probe(self, cortex: "Cortex", situation: CascadeSituation) -> CascadeResult:
+        hypothesis = Hypothesis(
+            statement=(
+                f"the answer to {situation.query!r} is reachable via "
+                "interpretive edges from related memories"
+            ),
+            source="cascade_level_2",
+            confidence=0.35,
+        )
+        probe = Probe(
+            kind=ProbeKind.MEMORY_QUERY,
+            target=situation.query,
+            payload={"traversal": True, "max_depth": 3},
+            expected_shape="interpretive memory reachable from seeds",
+        )
+        experiment = Experiment(hypothesis=hypothesis, probe=probe)
+        experiment.advance(ExperimentStatus.RUNNING)
+
+        try:
+            seeds = cortex.search(situation.query, limit=3)
+        except Exception as exc:
+            logger.debug("level_2 seed search failed: %s", exc)
+            obs = Observation(
+                outcome=Outcome.INCONCLUSIVE,
+                data={"error": type(exc).__name__},
+                notes="seed search raised",
+            )
+            experiment.record_observation(obs)
+            return CascadeResult(
+                status=CascadeStatus.EXHAUSTED,
+                level_name=self.name,
+                reason=f"seed search raised {type(exc).__name__}",
+                experiment=experiment,
+            )
+
+        if not seeds:
+            obs = Observation(
+                outcome=Outcome.INCONCLUSIVE,
+                data={"seed_count": 0},
+                notes="no seeds for traversal",
+            )
+            experiment.record_observation(obs)
+            return CascadeResult(
+                status=CascadeStatus.EXHAUSTED,
+                level_name=self.name,
+                reason="no seed memories found for interpretive traversal",
+                experiment=experiment,
+            )
+
+        seed_ids = [m.id for m in seeds]
+        try:
+            traversed = cortex.interpretive_traverse(
+                seed_ids, max_depth=3, min_weight=0.1
+            )
+        except Exception as exc:
+            logger.debug("level_2 interpretive_traverse failed: %s", exc)
+            obs = Observation(
+                outcome=Outcome.INCONCLUSIVE,
+                data={"error": type(exc).__name__},
+                notes="interpretive_traverse raised",
+            )
+            experiment.record_observation(obs)
+            return CascadeResult(
+                status=CascadeStatus.EXHAUSTED,
+                level_name=self.name,
+                reason=f"interpretive_traverse raised {type(exc).__name__}",
+                experiment=experiment,
+            )
+
+        seed_id_set = set(seed_ids)
+        new_memories = [m for m in traversed if m.id not in seed_id_set]
+        if new_memories:
+            obs = Observation(
+                outcome=Outcome.MATCH,
+                data={
+                    "seed_count": len(seeds),
+                    "traversed_count": len(traversed),
+                    "new_count": len(new_memories),
+                },
+                notes=f"level 2 BFS found {len(new_memories)} new memories",
+            )
+            experiment.record_observation(obs)
+            return CascadeResult(
+                status=CascadeStatus.MATCHED,
+                level_name=self.name,
+                data=new_memories,
+                reason=f"interpretive BFS found {len(new_memories)} new memories from {len(seeds)} seeds",
+                experiment=experiment,
+            )
+
+        obs = Observation(
+            outcome=Outcome.INCONCLUSIVE,
+            data={"seed_count": len(seeds), "traversed_count": len(traversed)},
+            notes="traversal added nothing beyond seeds",
+        )
+        experiment.record_observation(obs)
+        return CascadeResult(
+            status=CascadeStatus.EXHAUSTED,
+            level_name=self.name,
+            reason="interpretive traversal returned nothing beyond seed set",
+            experiment=experiment,
+        )
+
+
 class _StubLevel(BaseCascadeLevel):
     """Placeholder for levels whose concrete implementation is a separate
     sub-ticket. Always returns EXHAUSTED so the walker advances."""
@@ -900,20 +1018,15 @@ class ExperimentCascade:
 def build_default_cascade(cortex: "Cortex") -> ExperimentCascade:
     """Construct the default cascade with levels 0-5 wired in order.
 
-    Levels 2-3 are stubs (interpretive_edge traversal + tool combination
-    are separate sub-tickets). Level 4 is concrete as of
-    T-cascade-level-4-past-experiment. Level 5 is an escalation stub —
-    no LLM call — pending T-reasoning-workflow-primitive.
+    Level 3 is a stub (tool combination is a separate sub-ticket).
+    Level 4 is concrete as of T-cascade-level-4-past-experiment.
+    Level 5 is an escalation stub — no LLM call — pending
+    T-reasoning-workflow-primitive.
     """
     cascade = ExperimentCascade(cortex)
     cascade.register(Level0ExactRecall())
     cascade.register(Level1WidenOnMiss())
-    cascade.register(
-        _StubLevel(
-            name="level_2_interpretive_traversal",
-            reason="level 2 stub — interpretive_edge BFS traversal not yet wired",
-        )
-    )
+    cascade.register(Level2InterpretiveTraversal())
     cascade.register(
         _StubLevel(
             name="level_3_tool_combination",
