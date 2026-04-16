@@ -1620,6 +1620,7 @@ class CuriositySource(BasePushSource):
                     break
         except Exception as _exc:
             from .forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"push_sources.py:1621: {_exc}")
 
         # Gate 2: No active goals? Goals = TASK_SET entries with urgency >= 0.5
@@ -1632,6 +1633,7 @@ class CuriositySource(BasePushSource):
                     break
         except Exception as _exc:
             from .forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"push_sources.py:1632: {_exc}")
 
         # Fire only when: bored AND no goals pulling.
@@ -1664,6 +1666,7 @@ class CuriositySource(BasePushSource):
                     )
         except Exception as _exc:
             from .forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"push_sources.py:1663: {_exc}")
 
         # Round-robin, skipping topics in cooldown
@@ -1690,6 +1693,7 @@ class CuriositySource(BasePushSource):
                 m.nudge_vad(dv=0.12, da=0.15, dd=0.0)  # positive engagement
         except Exception as _exc:
             from .forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"push_sources.py:1688: {_exc}")
 
         csb = f"ACTION_IMPULSE|CURIOSITY|topic={topic}" f"|action={topic}"
@@ -2249,6 +2253,7 @@ class ThreadCoherenceSource(BasePushSource):
                 traces.append(json.loads(block[brace:]))
             except Exception as _exc:
                 from .forensic_logger import log_error as _le
+
                 _le(kind="SILENT_EXCEPT", detail=f"push_sources.py:2246: {_exc}")
         return traces
 
@@ -2717,6 +2722,7 @@ pr_consolidation_source = None  # T-pr-consolidation-sleep-wiring: lazy loaded
 intent_decay_source = None  # T-watchlist-intent-decay: lazy loaded
 relationship_drift_source = None  # T-watchlist-relationship-drift: lazy loaded
 sleep_clock_source = None  # T-sleep-triggered-by-clock: lazy loaded
+state_coherence_source = None  # T-watchlist-internal-state-coherence: lazy loaded
 
 # ── T-oscillatory-timing-tiers: hierarchical dispatch ─────────────────────────
 # Mirrors biological theta/beta/gamma cortex-BG loops.
@@ -2748,6 +2754,7 @@ def run_background_sources(cortex) -> int:
 
     global consolidation_replay, sleep_consolidation, pr_consolidation_source
     global intent_decay_source, relationship_drift_source, sleep_clock_source
+    global state_coherence_source
     if consolidation_replay is None:
         from .replay import ConsolidationReplay
 
@@ -2772,6 +2779,10 @@ def run_background_sources(cortex) -> int:
         from .sleep_clock import SleepClockSource
 
         sleep_clock_source = SleepClockSource()
+    if state_coherence_source is None:
+        from .state_coherence_check import StateCoherenceSource
+
+        state_coherence_source = StateCoherenceSource()
 
     now_ts = _time.monotonic()
     # Determine which tiers are due this call
@@ -2809,6 +2820,7 @@ def run_background_sources(cortex) -> int:
         intent_decay_source,
         relationship_drift_source,
         sleep_clock_source,
+        state_coherence_source,
     ):
         tier = getattr(src, "TIMING_TIER", "medium")
         if tier not in due_tiers:
