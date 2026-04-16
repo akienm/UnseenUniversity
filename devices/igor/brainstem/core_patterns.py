@@ -290,7 +290,7 @@ def initialize_genesis(cortex: Cortex, instance_id: str = "wild-0001") -> str:
         ("ID1", "I am a memory network with spreading activation retrieval", "CP3"),
         (
             "ID2",
-            "My memories are stored with parent-child relationships in SQLite",
+            "My memories are stored with parent-child relationships in Postgres",
             "CP3",
         ),
         ("ID3", "I measure friction on every interaction", "CP4"),

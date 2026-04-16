@@ -134,7 +134,10 @@ CURRICULUM = [
         "pattern",
         "What is the daemon-thread fire-and-forget pattern used in G53 habit extraction?",
     ),
-    ("pattern", "What is the SQLite WAL mode pattern and when should it be used?"),
+    (
+        "pattern",
+        "What is the word graph SQLite WAL mode pattern and when should it be used?",
+    ),
     (
         "pattern",
         "What is the pattern for graceful degradation: try cloud, fallback to local, fallback to apology?",
@@ -145,7 +148,7 @@ CURRICULUM = [
     ),
     (
         "pattern",
-        "What is the dataclass + SQLite serialization pattern used in memory/models.py?",
+        "What is the dataclass + Postgres serialization pattern used in memory/models.py?",
     ),
     ("code_review", "What makes a good seed_*.py script in the claudecode/ directory?"),
     # ── Shell and cross-platform scripting ───────────────────────────────
