@@ -320,7 +320,7 @@ def _is_bare_ack(text: str) -> bool:
 #   1. [tool_name result: ...] — synthesis-failed fallback from _extract_tool_call
 #   2. STATUS|key=value|... — CSB-format tool output treated as response text
 _RAW_TOOL_RESULT_RE = re.compile(
-    r"^\s*\[[a-z_]+\s+result:\s*[\{\[]",  # [run_bash result: {...]
+    r"^\s*\[[a-z_]+\s+result:",  # [run_bash result: ...] or [bash result: ...]
     re.IGNORECASE,
 )
 _CSB_TOOL_LEAK_RE = re.compile(
