@@ -5672,6 +5672,21 @@ class Igor(IgorBase):
                             },
                             stakes=complexity.get("score", 0.0),
                         )
+                        _caps = []
+                        try:
+                            _cap_obs = self.cortex.twm_read(
+                                limit=5,
+                                include_integrated=False,
+                                category="self.capabilities",
+                            )
+                            _caps = [
+                                o.get("content_csb", "")[:200]
+                                for o in (_cap_obs or [])
+                                if o.get("content_csb")
+                            ]
+                        except Exception:
+                            pass
+
                         _peer = LLMPeerAdvisor(
                             cortex=self.cortex,
                             gateway=self._gateway,
@@ -5685,6 +5700,7 @@ class Igor(IgorBase):
                                 else None
                             ),
                             escalation_trail=[],
+                            capabilities=_caps or None,
                             level="interactive",
                         )
 
