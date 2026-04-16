@@ -2711,6 +2711,7 @@ sleep_consolidation = None  # T-sleep-consolidation: lazy loaded
 pr_consolidation_source = None  # T-pr-consolidation-sleep-wiring: lazy loaded
 intent_decay_source = None  # T-watchlist-intent-decay: lazy loaded
 relationship_drift_source = None  # T-watchlist-relationship-drift: lazy loaded
+sleep_clock_source = None  # T-sleep-triggered-by-clock: lazy loaded
 
 # ── T-oscillatory-timing-tiers: hierarchical dispatch ─────────────────────────
 # Mirrors biological theta/beta/gamma cortex-BG loops.
@@ -2741,7 +2742,7 @@ def run_background_sources(cortex) -> int:
     import time as _time
 
     global consolidation_replay, sleep_consolidation, pr_consolidation_source
-    global intent_decay_source, relationship_drift_source
+    global intent_decay_source, relationship_drift_source, sleep_clock_source
     if consolidation_replay is None:
         from .replay import ConsolidationReplay
 
@@ -2762,6 +2763,10 @@ def run_background_sources(cortex) -> int:
         from .relationship_drift_source import RelationshipDriftSource
 
         relationship_drift_source = RelationshipDriftSource()
+    if sleep_clock_source is None:
+        from .sleep_clock import SleepClockSource
+
+        sleep_clock_source = SleepClockSource()
 
     now_ts = _time.monotonic()
     # Determine which tiers are due this call
@@ -2798,6 +2803,7 @@ def run_background_sources(cortex) -> int:
         pr_consolidation_source,
         intent_decay_source,
         relationship_drift_source,
+        sleep_clock_source,
     ):
         tier = getattr(src, "TIMING_TIER", "medium")
         if tier not in due_tiers:
