@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 from typing import TYPE_CHECKING
+from ..igor_base import IgorBase
 
 if TYPE_CHECKING:
     from ..memory.cortex import Cortex
@@ -139,7 +140,7 @@ class ActionGateNode(InhibitionNode):
 # ── Chain ────────────────────────────────────────────────────────────────────
 
 
-class InhibitionChain:
+class InhibitionChain(IgorBase):
     """
     Ordered list of inhibition gates. First gate to inhibit wins.
 

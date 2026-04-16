@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from ...igor_base import IgorBase
 from . import (
     Channel,
     ChannelReliability,
@@ -21,7 +22,7 @@ from . import (
 )
 
 
-class BrowserUseChannel(Channel):
+class BrowserUseChannel(Channel, IgorBase):
     """
     Use browser-use agent for structured content acquisition.
 

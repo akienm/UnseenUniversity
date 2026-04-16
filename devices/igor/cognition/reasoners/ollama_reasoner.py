@@ -28,6 +28,7 @@ from ...paths import paths
 from .base import BaseReasoner, LocalReasoner
 from ..system_prompt import build_system_prompt
 from ..forensic_logger import log_error
+from ...igor_base import IgorBase
 
 OLLAMA_LOCAL_MODEL = os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b")
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
@@ -466,7 +467,7 @@ def _log_call(
 # ── Reasoner class ──────────────────────────────────────────────────────────
 
 
-class OllamaReasoner(LocalReasoner):
+class OllamaReasoner(LocalReasoner, IgorBase):
     """Full reasoning via local or remote Ollama model. Slow but free.
     Host and model are resolved dynamically via cluster_router at each call."""
 

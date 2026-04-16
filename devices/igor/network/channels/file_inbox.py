@@ -10,6 +10,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
+from ...igor_base import IgorBase
 from . import (
     Channel,
     ChannelReliability,
@@ -21,7 +22,7 @@ from . import (
 from ...paths import paths
 
 
-class FileInboxChannel(Channel):
+class FileInboxChannel(Channel, IgorBase):
     """
     Read dropped files from inbox directory.
 

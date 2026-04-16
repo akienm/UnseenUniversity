@@ -21,6 +21,7 @@ import time
 import urllib.error
 import urllib.request
 from typing import Optional
+from ..igor_base import IgorBase
 
 log = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ def _get(path: str, timeout: float = 5.0) -> Optional[dict]:
         return None
 
 
-class UtilityClosetClient:
+class UtilityClosetClient(IgorBase):
     """Client for communicating with the utility closet platform server."""
 
     def __init__(self):

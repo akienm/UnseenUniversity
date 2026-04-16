@@ -22,6 +22,7 @@ import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
 from typing import Optional
+from ..igor_base import IgorBase
 
 # ── Per-host stats ─────────────────────────────────────────────────────────────
 
@@ -90,7 +91,7 @@ def _extract_host(url: str) -> str:
         return url
 
 
-class NetworkProxy:
+class NetworkProxy(IgorBase):
     """
     Single outbound HTTP wrapper. Tracks per-host call counts, failures, latency.
     Singleton via module-level `proxy`.

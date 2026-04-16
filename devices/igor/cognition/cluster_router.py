@@ -22,6 +22,7 @@ import time
 import urllib.request
 from typing import Optional
 
+from ..igor_base import IgorBase
 from .machine_manager import (
     MachineRecord,
     get_ranked_machines,
@@ -125,7 +126,11 @@ def route(call_type: str) -> tuple[Optional[str], Optional[str]]:
         host = m.ollama_host
         if not _is_ollama_healthy(host):
             skip_reasons[m.hostname] = f"ollama_unhealthy@{host}"
-            _log.debug("[cluster_router] skipping %s — Ollama unreachable @ %s", m.hostname, host)
+            _log.debug(
+                "[cluster_router] skipping %s — Ollama unreachable @ %s",
+                m.hostname,
+                host,
+            )
             continue
         model = m.model_for(call_type)
         _log.debug(
@@ -229,7 +234,7 @@ def status_lines() -> list[str]:
 # ── Backwards-compat shim for callers that used ClusterRouter singleton ───────
 
 
-class _RouterShim:
+class _RouterShim(IgorBase):
     """Thin shim so old `from .cluster_router import router` calls still work."""
 
     def route(self, call_type: str) -> tuple[Optional[str], Optional[str]]:

@@ -20,6 +20,7 @@ import math
 import re
 import time
 from pathlib import Path
+from ..igor_base import IgorBase
 
 _STOP_WORDS = frozenset({
     "the", "a", "an", "is", "are", "was", "were", "i", "to", "of", "and", "or",
@@ -32,7 +33,7 @@ def _tokenize(text: str) -> list[str]:
     return re.findall(r"[a-zA-Z']{2,}", text.lower())
 
 
-class ResponseHabituation:
+class ResponseHabituation(IgorBase):
     """
     Frequency + last_seen tracker for Igor's outgoing vocabulary.
 

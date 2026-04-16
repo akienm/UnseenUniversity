@@ -40,6 +40,7 @@ signal.
 """
 
 from __future__ import annotations
+from ..igor_base import IgorBase
 
 import json
 import logging
@@ -57,7 +58,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class LLMPeerAdvisor(PeerAdvisor):
+class LLMPeerAdvisor(PeerAdvisor, IgorBase):
     """Real peer advisor backed by the inference gateway. Each call to
     respond() fires one LLM turn using the reasoning_context prompt.
     """

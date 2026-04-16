@@ -21,20 +21,8 @@ import threading
 from pathlib import Path
 
 
-class PathManager:
-    """Singleton providing all Igor runtime paths."""
-
-    _instance: PathManager | None = None
-    _lock = threading.Lock()
-
-    def __new__(cls) -> PathManager:
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    obj = object.__new__(cls)
-                    obj._init()
-                    cls._instance = obj
-        return cls._instance
+class _BootstrapPathManager:
+    """All path logic, no IgorBase dependency. Available at import time."""
 
     def _init(self) -> None:
         root_env = os.getenv("IGOR_RUNTIME_ROOT")
@@ -256,6 +244,38 @@ class PathManager:
         return Path(__file__).resolve().parent.parent.parent
 
 
-def paths() -> PathManager:
-    """Return the PathManager singleton."""
-    return PathManager()
+# Bootstrap instance — available at import time, before IgorBase loads.
+_path_manager = _BootstrapPathManager()
+_path_manager._init()
+
+
+class PathManager(_BootstrapPathManager):
+    """Full PathManager with IgorBase introspection.
+
+    Created during Igor boot (main.py). On construction, replaces the
+    bootstrap _path_manager global so all subsequent paths() calls
+    return the instrumented version. Multiple inheritance with IgorBase
+    is deferred to avoid circular import — IgorBase is mixed in lazily.
+    """
+
+    _promoted = False
+
+    def __init__(self) -> None:
+        global _path_manager
+        self._init()
+        _path_manager = self
+        PathManager._promoted = True
+        try:
+            from .igor_base import IgorBase
+
+            if not isinstance(self, IgorBase):
+                self.__class__ = type(
+                    "PathManager", (_BootstrapPathManager, IgorBase), {}
+                )
+        except ImportError:
+            pass
+
+
+def paths() -> _BootstrapPathManager:
+    """Return the path manager (bootstrap or promoted)."""
+    return _path_manager

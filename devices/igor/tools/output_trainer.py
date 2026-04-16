@@ -28,6 +28,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+from ..igor_base import IgorBase
 import re
 import uuid
 from datetime import datetime, timedelta
@@ -140,7 +141,7 @@ _STOPWORDS = {
 # ── Core class ────────────────────────────────────────────────────────────────
 
 
-class OutputTrainer:
+class OutputTrainer(IgorBase):
     """
     Scans recent interaction logs for short-input cloud turns and seeds
     RESPONSE habits where the matrix has no existing trigger coverage.

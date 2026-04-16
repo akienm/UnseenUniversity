@@ -10,6 +10,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
+from ...igor_base import IgorBase
 from . import (
     Channel,
     ChannelReliability,
@@ -20,7 +21,7 @@ from . import (
 )
 
 
-class CalibreChannel(Channel):
+class CalibreChannel(Channel, IgorBase):
     """
     Search local Calibre library for ebooks.
 

@@ -8,6 +8,7 @@ import bisect
 import time
 from dataclasses import dataclass, field
 from typing import Callable
+from ..igor_base import IgorBase
 
 
 @dataclass
@@ -105,7 +106,7 @@ class ToolStats:
         }
 
 
-class ToolRegistry:
+class ToolRegistry(IgorBase):
     def __init__(self):
         self._tools: dict[str, Tool] = {}
         self._stats: dict[str, ToolStats] = {}

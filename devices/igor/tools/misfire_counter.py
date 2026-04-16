@@ -16,6 +16,7 @@ import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, NamedTuple
+from ..igor_base import IgorBase
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ class MisfireRecord(NamedTuple):
     threshold_exceeded: bool
 
 
-class MisfireCounter:
+class MisfireCounter(IgorBase):
     """
     Track repeated tool dispatch failures.
 

@@ -52,6 +52,8 @@ loop is a subsequent ticket after Akien reviews this shape.
 
 from __future__ import annotations
 
+from ..igor_base import IgorBase
+
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -196,7 +198,7 @@ class VoiceProducer:
         return "Still working on this one."
 
 
-class ABVoiceProducer(VoiceProducer):
+class ABVoiceProducer(VoiceProducer, IgorBase):
     """Voice producer backed by the A/B framework (T-output-shaping-trees-wire-in).
 
     Runs both GraphVoiceActor (generation word graph) and LLMVoiceActor
@@ -255,7 +257,7 @@ class ABVoiceProducer(VoiceProducer):
 # ── The conductor ───────────────────────────────────────────────────────────
 
 
-class TurnPipeline:
+class TurnPipeline(IgorBase):
     """Orchestrates cascade + workflow + decision_blob + voice for a
     single turn. Construct once per process; call `run_turn(situation)`
     per input.

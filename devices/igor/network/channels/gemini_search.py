@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from ...igor_base import IgorBase
 from . import (
     Channel,
     ChannelReliability,
@@ -20,7 +21,7 @@ from . import (
 )
 
 
-class GeminiSearchChannel(Channel):
+class GeminiSearchChannel(Channel, IgorBase):
     """
     Search the web using free Gemini + browser.
 

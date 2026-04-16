@@ -21,6 +21,7 @@ Key meaning per channel:
 import logging
 
 from typing import Any
+from ..igor_base import IgorBase
 
 log = logging.getLogger(__name__)
 
@@ -246,7 +247,7 @@ class MemoryChannel(EmitChannel):
 # ── Registry ──────────────────────────────────────────────────────────────────
 
 
-class EmitChannelRegistry:
+class EmitChannelRegistry(IgorBase):
     """
     Singleton registry of named emit channels.
     Channels register at boot; executor calls registry.write(channel_name, key, value, basket).
