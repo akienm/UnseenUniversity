@@ -30,6 +30,7 @@ from pathlib import Path
 from .registry import Tool, registry
 
 from ..paths import paths as _paths
+
 log = logging.getLogger(__name__)
 from ..paths import paths
 from .channel_post import post_to_channel as _post_to_channel
@@ -57,8 +58,6 @@ _TOPIC_NODE_IDS = [
     "TOPIC_PSYCHOLOGY",
     "TOPIC_CULTURE",
 ]
-
-
 
 
 def _is_bored() -> tuple[bool, str]:
@@ -154,10 +153,50 @@ def _get_topic_wonder() -> str | None:
         return None
 
 
+def _try_cascade_escalation() -> str | None:
+    """T-boredom-llm-escalation: attempt the substrate cascade before wandering.
+
+    Builds a CascadeSituation asking "what should I be doing?" and runs
+    the pipeline. If the cascade matches (finds a stale goal, pending task,
+    or relevant memory), returns an actionable reply. If it exhausts,
+    returns None so the caller falls through to the wonder path.
+    """
+    try:
+        from ..cognition.experiment_cascade import (
+            CascadeSituation,
+            build_default_cascade,
+        )
+        from ..memory.cortex import Cortex
+
+        cortex = Cortex()
+        cascade = build_default_cascade(cortex)
+        situation = CascadeSituation(
+            query="what should I be working on? stale goals, pending tasks, unfinished reading",
+            context={"trigger": "boredom_idle", "intent": "self_directed"},
+            stakes=0.3,
+        )
+        result = cascade.attempt(situation)
+
+        from ..cognition.experiment_cascade import CascadeStatus
+
+        if result.status == CascadeStatus.MATCHED and result.data:
+            if isinstance(result.data, list) and result.data:
+                top = result.data[0]
+                narrative = getattr(top, "narrative", str(top))[:200]
+                return f"[Igor refocuses] Found something to pick up: {narrative}"
+            elif isinstance(result.data, dict):
+                return f"[Igor refocuses] {str(result.data)[:200]}"
+        return None
+    except Exception as exc:
+        log.debug("boredom cascade escalation failed: %s", exc)
+        return None
+
+
 def run_boredom_check(**_) -> str:
     """
     D272: Check if milieu is too settled → run idle traversal → post wonder to channel.
     Rate-limited to IGOR_BOREDOM_COOLDOWN_SECONDS (default 15min) per post.
+    T-boredom-llm-escalation: tries cascade before falling back to wonder.
     """
     global _last_posted, _cycle_counter
 
@@ -176,18 +215,25 @@ def run_boredom_check(**_) -> str:
     if not is_bored:
         return f"[boredom_idle] not settled — {reason} — no idle traversal"
 
-    # Generate wonder
+    # T-boredom-llm-escalation: try cascade before falling back to wonder.
+    # If the cascade finds something actionable (a stale goal, pending task),
+    # act on that instead of posting a wandering thought.
+    cascade_reply = _try_cascade_escalation()
+    if cascade_reply:
+        _post_to_channel(cascade_reply)
+        _last_posted = now
+        log.info(f"CASCADE {cascade_reply[:120]}")
+        return f"[boredom_idle] cascade resolved: {cascade_reply[:80]}"
+
+    # Generate wonder (fallback when cascade exhausts)
     _cycle_counter += 1
     wonder = None
 
     if _cycle_counter % 2 == 0:
-        # Even cycles: EF question traversal
         wonder = _get_ef_wonder()
     else:
-        # Odd cycles: topic traversal
         wonder = _get_topic_wonder()
 
-    # Fallback to the other if primary fails
     if wonder is None:
         wonder = _get_ef_wonder() or _get_topic_wonder()
 
