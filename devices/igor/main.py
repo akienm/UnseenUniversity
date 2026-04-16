@@ -3479,6 +3479,22 @@ class Igor(IgorBase):
                     f"[dim]{_cts()}[REPAIR] Revision of: {_repair_prior[:60]}[/]"
                 )
 
+        # T-any-thoughts-habit-failure: detect reply prods and flag gaps.
+        if not is_impulse and not user_input.startswith("/"):
+            try:
+                from .cognition.reply_gap_detector import detect_and_flag as _detect_gap
+
+                _gap_id = _detect_gap(self.cortex, user_input)
+                if _gap_id:
+                    console.print(
+                        f"[dim]{_cts()}[REPLY_GAP] flagged gap → {_gap_id}[/]"
+                    )
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/main.py reply_gap_detector: {_bare_e}",
+                )
+
         # #180: Investment weight pre-check — somatic marker equivalent.
         # Before any traversal or thalamus: does this input mention a high-investment node?
         # If yes, inject that node into TWM as high-salience context (pre-attentive boost).
