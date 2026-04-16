@@ -610,6 +610,7 @@ class Cortex(IgorBase):
         except Exception as _exc:
             # Bias is a nudge — never break search if anything fails
             from ..cognition.forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"cortex.py:610: {_exc}")
 
     def _local_conn(self):
@@ -628,19 +629,33 @@ class Cortex(IgorBase):
             except Exception:
                 self._init_pg_schema()
                 return
-            # Already initialised — run versioned schema migrations + scope backfill.
+            # Already initialised — run versioned schema migrations.
             with self._conn() as conn:
                 self._run_schema_migrations(conn)
-                # #123: backfill scope from memory_type (idempotent data migration)
+                # #123: backfill scope — gated so it runs ONCE, not every boot.
+                # Was scanning 83k rows on every Cortex construction for 0 updates.
                 conn.execute(
-                    "UPDATE memories SET scope = 'instance' "
-                    "WHERE memory_type IN ('EPISODIC', 'EXPERIENTIAL', 'CREDENTIAL_REF') "
-                    "AND scope = 'class'"
+                    "CREATE TABLE IF NOT EXISTS _migrations "
+                    "(name TEXT PRIMARY KEY, applied_at TEXT NOT NULL)"
                 )
                 conn.execute(
-                    "UPDATE memories SET scope = 'instance' "
-                    "WHERE portable = 0 AND scope = 'class'"
+                    "SELECT 1 FROM _migrations WHERE name = 'scope_backfill_123'"
                 )
+                if not conn.fetchone():
+                    conn.execute(
+                        "UPDATE memories SET scope = 'instance' "
+                        "WHERE memory_type IN ('EPISODIC', 'EXPERIENTIAL', 'CREDENTIAL_REF') "
+                        "AND scope = 'class'"
+                    )
+                    conn.execute(
+                        "UPDATE memories SET scope = 'instance' "
+                        "WHERE portable = 0 AND scope = 'class'"
+                    )
+                    conn.execute(
+                        "INSERT INTO _migrations (name, applied_at) "
+                        "VALUES ('scope_backfill_123', %s)",
+                        (datetime.now().isoformat(),),
+                    )
             return
 
         with self._conn() as conn:
@@ -948,6 +963,7 @@ class Cortex(IgorBase):
                     )
                 except Exception as _exc:
                     from ..cognition.forensic_logger import log_error as _le
+
                     _le(kind="SILENT_EXCEPT", detail=f"cortex.py:948: {_exc}")
                 _mlog.info("[migration] applied %s", name)
             except Exception as _e:
@@ -969,6 +985,7 @@ class Cortex(IgorBase):
                         )
                     except Exception as _exc:
                         from ..cognition.forensic_logger import log_error as _le
+
                         _le(kind="SILENT_EXCEPT", detail=f"cortex.py:968: {_exc}")
                     _mlog.debug(
                         "[migration] %s — column pre-exists, marked applied", name
@@ -1086,6 +1103,7 @@ class Cortex(IgorBase):
             _register_node(memory.id, "memories", memory.id)
         except Exception as _exc:
             from ..cognition.forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"cortex.py:1084: {_exc}")
         # #260: invalidate habit cache when a habit is stored
         if memory.is_habit:
