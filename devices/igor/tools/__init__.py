@@ -74,6 +74,7 @@ from . import (
     instance_tracker,
     goal_graph,
     tiered_research,
+    hardware_detect,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
