@@ -14,9 +14,10 @@ Commands (handled in main.py):
 import subprocess
 from datetime import datetime
 from typing import Optional
+from ..igor_base import IgorBase
 
 
-class RelaySession:
+class RelaySession(IgorBase):
     """Maintains state for an active relay conversation."""
 
     def __init__(self, model_name: str, reasoner):

@@ -29,6 +29,7 @@ trains the substrate from the LLM when the LLM wins.
 """
 
 from __future__ import annotations
+from ..igor_base import IgorBase
 
 import json
 import logging
@@ -73,7 +74,7 @@ class VoiceComparison:
     )
 
 
-class GraphVoiceActor:
+class GraphVoiceActor(IgorBase):
     """Renders a DecisionBlob using the generation word graph.
 
     Strategy: extract key tokens from the blob, use predict_next to
@@ -152,7 +153,7 @@ class GraphVoiceActor:
         return " ".join(words)
 
 
-class LLMVoiceActor:
+class LLMVoiceActor(IgorBase):
     """Renders a DecisionBlob using the LLM with voice_context."""
 
     def __init__(
@@ -257,7 +258,7 @@ def compare_candidates(
     )
 
 
-class VoiceABFramework:
+class VoiceABFramework(IgorBase):
     """Orchestrates the A/B comparison and training loop.
 
     Per turn:

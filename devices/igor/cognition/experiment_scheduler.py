@@ -32,6 +32,7 @@ Observation, and pushes the OBSERVED outcome to TWM.
 """
 
 from __future__ import annotations
+from ..igor_base import IgorBase
 
 import json
 import logging
@@ -194,7 +195,7 @@ _DISPATCH: dict[ProbeKind, Callable[["Cortex", Experiment], Observation]] = {
 # ── Scheduler ────────────────────────────────────────────────────────────────
 
 
-class ExperimentScheduler:
+class ExperimentScheduler(IgorBase):
     """In-process scheduler with Postgres-backed queue.
 
     Single-tick model: `tick()` picks the oldest PROPOSED experiment and

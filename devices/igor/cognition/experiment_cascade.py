@@ -44,6 +44,7 @@ actually calling the LLM — that's T-reasoning-workflow-primitive.
 """
 
 from __future__ import annotations
+from ..igor_base import IgorBase
 
 import logging
 from dataclasses import dataclass, field
@@ -195,7 +196,7 @@ class CascadeLevel(Protocol):
 # ── Base class with embedded predictor ──────────────────────────────────────
 
 
-class BaseCascadeLevel:
+class BaseCascadeLevel(IgorBase):
     """Base class that every concrete level inherits from. Provides an
     embedded SignaturePredictor and default predict/train delegation.
 
@@ -496,7 +497,7 @@ class Level2InterpretiveTraversal(BaseCascadeLevel):
         )
 
 
-class _StubLevel(BaseCascadeLevel):
+class _StubLevel(BaseCascadeLevel, IgorBase):
     """Placeholder for levels whose concrete implementation is a separate
     sub-ticket. Always returns EXHAUSTED so the walker advances."""
 
@@ -743,7 +744,7 @@ levers and commits to the current best path. Prevents infinite
 lever-flipping between competing anchors."""
 
 
-class ExperimentCascade:
+class ExperimentCascade(IgorBase):
     """The walker. Iterates registered levels in order until one matches,
     one surfaces a lever (restart), or all exhaust (escalate).
 

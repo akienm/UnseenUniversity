@@ -41,6 +41,7 @@ signatures. All can replace _signature() without touching the walker.
 """
 
 from __future__ import annotations
+from ..igor_base import IgorBase
 
 import logging
 from collections import defaultdict
@@ -82,7 +83,7 @@ def _signature(situation: "CascadeSituation") -> tuple[str, ...]:
 # ── SignaturePredictor ───────────────────────────────────────────────────────
 
 
-class SignaturePredictor:
+class SignaturePredictor(IgorBase):
     """Tracks hit/miss per signature. Hebbian update rule.
 
     State is in-memory for MVP (per-process, resets on restart). A

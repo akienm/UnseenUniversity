@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Optional
 
 from ..paths import paths as _paths
+from ..igor_base import IgorBase
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +109,7 @@ _STOPWORDS = {
 # ── Core class ────────────────────────────────────────────────────────────────
 
 
-class SelfTrainer:
+class SelfTrainer(IgorBase):
     """
     Scans recent interaction logs, finds LLM-answered turns where the matrix
     had thin coverage, and deposits LLM responses as FACTUAL memories.

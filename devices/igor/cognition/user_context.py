@@ -18,6 +18,7 @@ import re
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
+from ..igor_base import IgorBase
 
 
 def _slugify(name: str) -> str:
@@ -66,7 +67,7 @@ class UserContext:
         )
 
 
-class UserContextManager:
+class UserContextManager(IgorBase):
     """
     Manages per-user context and chat logs.
 

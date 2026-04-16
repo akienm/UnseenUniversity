@@ -52,6 +52,7 @@ T-experiment-predictor-primitive.
 """
 
 from __future__ import annotations
+from ..igor_base import IgorBase
 
 import logging
 import uuid
@@ -148,7 +149,7 @@ class WorkflowComplete:
 # ── Workflow base class ──────────────────────────────────────────────────────
 
 
-class Workflow:
+class Workflow(IgorBase):
     """Abstract base. Subclasses implement opening, next_utterance, and
     output_struct.
     """
@@ -208,7 +209,7 @@ class TransitionRecord:
     )
 
 
-class WorkflowRecorder:
+class WorkflowRecorder(IgorBase):
     """Captures transition records during a workflow run.
 
     In-process by default; `persist(cortex)` writes the accumulated
@@ -390,7 +391,7 @@ def run_workflow(
 # ── Workflow A: Experiment Design ────────────────────────────────────────────
 
 
-class WorkflowA_ExperimentDesign(Workflow):
+class WorkflowA_ExperimentDesign(Workflow, IgorBase):
     """Igor opens: 'I'm uncertain about X. I want to design an
     experiment. Here's my current state. What probe would resolve the
     uncertainty?'
@@ -591,7 +592,7 @@ class ActionPlan:
 # ── Workflow B: Evaluate Claim ─────────────────────────────────────────────
 
 
-class WorkflowB_EvaluateClaim(Workflow):
+class WorkflowB_EvaluateClaim(Workflow, IgorBase):
     """Igor opens: 'I believe X. Here's my evidence. Does this still
     hold? What counter-evidence should I look for?'
 
@@ -711,7 +712,7 @@ class WorkflowB_EvaluateClaim(Workflow):
 # ── Workflow C: Diagnose Pattern ───────────────────────────────────────────
 
 
-class WorkflowC_DiagnosePattern(Workflow):
+class WorkflowC_DiagnosePattern(Workflow, IgorBase):
     """Igor opens: 'I keep seeing X. Here are the instances. What
     could explain this pattern? What test would discriminate between
     explanations?'
@@ -828,7 +829,7 @@ class WorkflowC_DiagnosePattern(Workflow):
 # ── Workflow D: Plan ───────────────────────────────────────────────────────
 
 
-class WorkflowD_Plan(Workflow):
+class WorkflowD_Plan(Workflow, IgorBase):
     """Igor opens: 'I need to accomplish X. Here are the constraints.
     Help me decompose this into steps, identify risks, and pick the
     right first step.'

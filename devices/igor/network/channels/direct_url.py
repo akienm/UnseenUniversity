@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
+from ...igor_base import IgorBase
 from . import (
     Channel,
     ChannelReliability,
@@ -22,7 +23,7 @@ from . import (
 )
 
 
-class DirectURLChannel(Channel):
+class DirectURLChannel(Channel, IgorBase):
     """
     Fetch content from explicit URL or file path.
 

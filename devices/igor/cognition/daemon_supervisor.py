@@ -21,6 +21,7 @@ import time
 import threading
 from dataclasses import dataclass, field
 from typing import Callable
+from ..igor_base import IgorBase
 
 log = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class _DaemonEntry:
     one_shot: bool = False  # if True, natural exit is expected — no DAEMON_DEAD alert
 
 
-class DaemonSupervisor:
+class DaemonSupervisor(IgorBase):
     """Central registry of daemon threads. Singleton via module-level `supervisor`."""
 
     def __init__(self):

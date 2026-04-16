@@ -158,7 +158,7 @@ class Channel(ABC, IgorBase):
 # ── Channel Registry ──────────────────────────────────────────────────────
 
 
-class ChannelRegistry:
+class ChannelRegistry(IgorBase):
     """
     Manages channel registration and ordered access.
 

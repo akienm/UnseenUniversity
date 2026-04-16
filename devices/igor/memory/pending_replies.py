@@ -28,6 +28,7 @@ Usage:
 """
 
 from __future__ import annotations
+from ..igor_base import IgorBase
 
 import json
 import logging
@@ -66,7 +67,7 @@ CREATE TABLE IF NOT EXISTS pending_replies (
 _WORRY_THRESHOLD = 3  # raise Worry after this many failed attempts
 
 
-class PendingReplyStore:
+class PendingReplyStore(IgorBase):
     """
     Write-ahead queue for home DB operations that failed due to connectivity.
 

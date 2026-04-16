@@ -28,6 +28,7 @@ import json
 import logging
 import os
 from ..paths import paths as _paths
+from ..igor_base import IgorBase
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -60,7 +61,7 @@ def _conn(db_url: str | None = None):
 # ── TreeIndex ─────────────────────────────────────────────────────────────────
 
 
-class TreeIndex:
+class TreeIndex(IgorBase):
     """
     Catalog of named traversal patterns over the shared node pool.
 

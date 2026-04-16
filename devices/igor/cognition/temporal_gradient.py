@@ -27,9 +27,10 @@ from __future__ import annotations
 
 import math
 from datetime import datetime
+from ..igor_base import IgorBase
 
 
-class TemporalGradient:
+class TemporalGradient(IgorBase):
     """
     Exponential decay with a configurable half-life.
 
