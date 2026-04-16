@@ -172,12 +172,12 @@ class TestFileInboxChannel:
             # Monkey-patch paths().inbox to point to our temp dir
             from wild_igor.igor import paths as paths_module
 
-            original_inbox = paths_module.PathManager.inbox.fget
+            original_inbox = paths_module._BootstrapPathManager.inbox.fget
 
             def mock_inbox(self):
                 return Path(tmpdir)
 
-            paths_module.PathManager.inbox = property(mock_inbox)
+            paths_module._BootstrapPathManager.inbox = property(mock_inbox)
 
             try:
                 # Create a test file in the inbox
@@ -196,7 +196,7 @@ class TestFileInboxChannel:
                 assert result.meta.format == "text"
             finally:
                 # Restore original
-                paths_module.PathManager.inbox = property(original_inbox)
+                paths_module._BootstrapPathManager.inbox = property(original_inbox)
 
 
 class TestDirectURLChannel:
