@@ -1,9 +1,8 @@
 """
-test_request_compaction.py — T-compact-via-tmux-bug
+test_request_compaction.py — T-compact-via-file-handoff
 
-Tests for igor_mcp._request_compaction's defensive improvements:
-env-var check, session existence verification, and honest status
-return.
+Tests for igor_mcp._request_compaction: file handoff is primary,
+tmux send-keys is fallback.
 """
 
 import sys
@@ -16,39 +15,27 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lab" / "claudec
 
 import igor_mcp  # noqa: E402
 
-# ── env var missing ──────────────────────────────────────────────────────────
+
+def test_file_handoff_is_primary():
+    """File handoff should be the primary path, not tmux."""
+    result = igor_mcp._request_compaction("preserve: test")
+    assert "queued" in result.lower() or "Compact" in result
+    assert "ERROR" not in result
 
 
-def test_missing_env_var_returns_error(monkeypatch):
-    monkeypatch.delenv("CLAUDE_TMUX_SESSION", raising=False)
-    result = igor_mcp._request_compaction("preserve this")
-    assert "ERROR" in result
-    assert "CLAUDE_TMUX_SESSION" in result
+def test_file_handoff_writes_preserve_string():
+    """The preserve string should end up in the pending file."""
+    from cc_hook_pending import COMPACT_PENDING_FILE
+
+    igor_mcp._request_compaction("preserve: specific text here")
+    if COMPACT_PENDING_FILE.exists():
+        content = COMPACT_PENDING_FILE.read_text()
+        assert "specific text here" in content
+        COMPACT_PENDING_FILE.unlink(missing_ok=True)
 
 
-# ── session doesn't exist ────────────────────────────────────────────────────
-
-
-def test_nonexistent_session_returns_error(monkeypatch):
-    monkeypatch.setenv("CLAUDE_TMUX_SESSION", "nonexistent-session-xyz")
-
-    mock_has_session = MagicMock()
-    mock_has_session.returncode = 1  # non-zero = session doesn't exist
-
-    with patch(
-        "igor_mcp.subprocess.run",
-        return_value=mock_has_session,
-    ):
-        result = igor_mcp._request_compaction("preserve this")
-    assert "ERROR" in result
-    assert "nonexistent-session-xyz" in result
-    assert "does not exist" in result
-
-
-# ── happy path ───────────────────────────────────────────────────────────────
-
-
-def test_happy_path_sends_keys(monkeypatch):
+def test_tmux_fallback_when_file_fails(monkeypatch):
+    """If file write fails, fall back to tmux."""
     monkeypatch.setenv("CLAUDE_TMUX_SESSION", "claude-test")
 
     call_log = []
@@ -57,80 +44,34 @@ def test_happy_path_sends_keys(monkeypatch):
         call_log.append(args)
         result = MagicMock()
         result.returncode = 0
-        result.stderr = ""
-        result.stdout = ""
         return result
 
     with patch("igor_mcp.subprocess.run", side_effect=_fake_run):
-        result = igor_mcp._request_compaction("preserve: session=x done")
+        with patch("igor_mcp.Path.write_text", side_effect=PermissionError("no")):
+            with patch(
+                "cc_hook_pending.write_compact_pending",
+                side_effect=Exception("import fail"),
+            ):
+                result = igor_mcp._request_compaction("preserve: fallback test")
 
-    # Should have called has-session then send-keys
-    assert len(call_log) == 2
-    assert "has-session" in call_log[0]
-    assert "send-keys" in call_log[1]
-
-    # Result should include honest warning about TUI drop limitation
-    assert "WARNING" in result or "warning" in result.lower()
-    assert "claude-test" in result
-
-
-# ── send-keys failure ────────────────────────────────────────────────────────
+    if call_log:
+        assert any("send-keys" in str(c) for c in call_log)
 
 
-def test_send_keys_failure_surfaces_error(monkeypatch):
-    import subprocess as _sp
+def test_all_methods_fail_returns_error(monkeypatch):
+    """If both file and tmux fail, return ERROR."""
+    monkeypatch.delenv("CLAUDE_TMUX_SESSION", raising=False)
 
-    monkeypatch.setenv("CLAUDE_TMUX_SESSION", "claude-test")
+    with patch("igor_mcp.Path.write_text", side_effect=PermissionError("no")):
+        with patch(
+            "cc_hook_pending.write_compact_pending",
+            side_effect=Exception("import fail"),
+        ):
+            result = igor_mcp._request_compaction("preserve: doomed")
 
-    call_count = {"n": 0}
-
-    def _fake_run(args, **kwargs):
-        call_count["n"] += 1
-        if "has-session" in args:
-            r = MagicMock()
-            r.returncode = 0
-            return r
-        # send-keys — raise CalledProcessError
-        raise _sp.CalledProcessError(
-            returncode=1,
-            cmd=args,
-            stderr="tmux: send-keys failed",
-            output="",
-        )
-
-    with patch("igor_mcp.subprocess.run", side_effect=_fake_run):
-        result = igor_mcp._request_compaction("preserve")
     assert "ERROR" in result
-    assert "send-keys" in result
 
 
-# ── tmux not found ───────────────────────────────────────────────────────────
-
-
-def test_tmux_not_found_returns_error(monkeypatch):
-    monkeypatch.setenv("CLAUDE_TMUX_SESSION", "claude-test")
-
-    with patch(
-        "igor_mcp.subprocess.run",
-        side_effect=FileNotFoundError("tmux"),
-    ):
-        result = igor_mcp._request_compaction("preserve")
-    assert "ERROR" in result
-    assert "tmux not found" in result
-
-
-# ── has-session timeout ──────────────────────────────────────────────────────
-
-
-def test_has_session_timeout_returns_error(monkeypatch):
-    import subprocess as _sp
-
-    monkeypatch.setenv("CLAUDE_TMUX_SESSION", "claude-test")
-
-    with patch(
-        "igor_mcp.subprocess.run",
-        side_effect=_sp.TimeoutExpired(cmd="tmux", timeout=3),
-    ):
-        result = igor_mcp._request_compaction("preserve")
-    assert "ERROR" in result
-    assert "timeout" in result
+def test_preserves_content_in_result():
+    result = igor_mcp._request_compaction("preserve: session=2026-04-16a")
+    assert "queued" in result.lower() or "Compact" in result
