@@ -5596,6 +5596,102 @@ class Igor(IgorBase):
                     loginfo(f"[dim][tier.0] Python response — no LLM[/]")
 
             if not _tier0_fired:
+                # [TURN PIPELINE] Substrate cascade + reasoning workflow before LLM.
+                # Gate: IGOR_TURN_PIPELINE=true (default false — observe before enabling).
+                # Impulses skip the pipeline (cheap existing path).
+                _pipeline_enabled = not is_impulse and os.getenv(
+                    "IGOR_TURN_PIPELINE", "false"
+                ).lower() in ("1", "true", "yes")
+                _pipeline_resolved = False
+                if _pipeline_enabled:
+                    try:
+                        from .cognition.turn_pipeline import (
+                            TurnPipeline,
+                            CascadeSituation,
+                        )
+                        from .cognition.llm_peer_advisor import LLMPeerAdvisor
+
+                        _tc_pipeline = _time.monotonic()
+                        _situation = CascadeSituation(
+                            query=user_input,
+                            context={
+                                "intent": parsed.intent,
+                                "complexity": parsed.complexity,
+                                "milieu": (
+                                    {
+                                        "valence": getattr(
+                                            _milieu_state, "valence", 0.0
+                                        ),
+                                        "arousal": getattr(
+                                            _milieu_state, "arousal", 0.0
+                                        ),
+                                        "dominance": getattr(
+                                            _milieu_state, "dominance", 0.0
+                                        ),
+                                    }
+                                    if _milieu_state
+                                    else {}
+                                ),
+                                "relevant_ids": [m.id for m in relevant[:5]],
+                            },
+                            stakes=complexity.get("score", 0.0),
+                        )
+                        _peer = LLMPeerAdvisor(
+                            cortex=self.cortex,
+                            gateway=self._gateway,
+                            milieu=(
+                                {
+                                    "valence": _milieu_state.valence,
+                                    "arousal": _milieu_state.arousal,
+                                    "dominance": _milieu_state.dominance,
+                                }
+                                if _milieu_state
+                                else None
+                            ),
+                            escalation_trail=[],
+                            level="interactive",
+                        )
+
+                        if not hasattr(self, "_turn_pipeline"):
+                            self._turn_pipeline = TurnPipeline(cortex=self.cortex)
+
+                        _tp_result = self._turn_pipeline.run_turn(
+                            _situation, peer_advisor=_peer
+                        )
+                        _pipeline_ms = round((_time.monotonic() - _tc_pipeline) * 1000)
+
+                        if _tp_result.reply_text:
+                            response_text = _tp_result.reply_text
+                            cost = 0.0
+                            used_api = False
+                            _pipeline_resolved = True
+                            self._current_tier = "pipeline"
+                            _trace_summary = " → ".join(_tp_result.trace_summary()[:4])
+                            loginfo(
+                                f"[dim]{_cts()}[PIPELINE] resolved ({_pipeline_ms}ms): {_trace_summary}[/]"
+                            )
+                            _log_pt(
+                                turn_id=_turn_id,
+                                step="turn_pipeline",
+                                elapsed_ms=_pipeline_ms,
+                                status="resolved",
+                                cascade_level=(
+                                    _tp_result.cascade_result.level_name
+                                    if _tp_result.cascade_result
+                                    else ""
+                                ),
+                                cascade_status=(
+                                    _tp_result.cascade_result.status.value
+                                    if _tp_result.cascade_result
+                                    else ""
+                                ),
+                            )
+                    except Exception as _pipe_exc:
+                        log_error(
+                            kind="TURN_PIPELINE",
+                            detail=f"pipeline failed, falling through to gateway: {_pipe_exc}",
+                        )
+
                 # [PREFRONTAL CORTEX] Upstream reasoning
                 # Ring context is injected by anthropic.py._build_session_context (D014)
                 # — do NOT also build ring_ctx here (would cause double injection)
@@ -5607,7 +5703,9 @@ class Igor(IgorBase):
                     web_server.broadcast_activity(self._activity_state())
                     console.print(f"[dim]{_cts()}[→] reasoning ({t})[/]")
 
-                if is_impulse:
+                if _pipeline_resolved:
+                    pass  # Pipeline handled this turn — skip gateway
+                elif is_impulse:
                     # #29: PROACTIVE_HABIT impulses stay local (batch pool, quality priority)
                     _level = (
                         "background_batch"
