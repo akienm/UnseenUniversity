@@ -62,6 +62,21 @@ def test_run_bash_result_leak_still_caught():
     assert _is_raw_tool_leak('[run_bash result: {"exit_code": 0}]') is True
 
 
+def test_bash_result_plain_text_leak_caught():
+    """Variant from Igor 2026-04-15: [bash result: filename.txt...] leaks
+    plain text (not JSON) tool output."""
+    assert (
+        _is_raw_tool_leak(
+            "[bash result: architecture_root.dsb\ncapabilities_index.dsb]"
+        )
+        is True
+    )
+
+
+def test_bash_result_no_output_caught():
+    assert _is_raw_tool_leak("[bash result: (no output)]") is True
+
+
 def test_csb_tool_leak_still_caught():
     assert _is_raw_tool_leak("[check_process] NOT_RUNNING|name=foo") is True
 
