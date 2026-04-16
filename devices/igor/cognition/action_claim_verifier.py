@@ -106,8 +106,9 @@ def _recent_tool_results(cortex, window_sec: int = _EVIDENCE_WINDOW_SEC) -> list
                         age = (datetime.now() - ts.replace(tzinfo=None)).total_seconds()
                         if age <= window_sec:
                             results.append(h)
-                    except Exception:
-                        pass
+                    except Exception as _exc:
+                        from .forensic_logger import log_error as _le
+                        _le(kind="SILENT_EXCEPT", detail=f"action_claim_verifier.py:109: {_exc}")
         return results
     except Exception:
         return []
@@ -150,8 +151,9 @@ def _confab_log(stage: str, **fields) -> None:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         with open(log_path, "a") as f:
             f.write(line + "\n")
-    except Exception:
-        pass
+    except Exception as _exc:
+        from .forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"action_claim_verifier.py:153: {_exc}")
 
 
 # ── Main check ───────────────────────────────────────────────────────────────
@@ -210,8 +212,9 @@ def check_response(
             category="confab_caught",
             thread_id=thread_id or None,
         )
-    except Exception:
-        pass
+    except Exception as _exc:
+        from .forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"action_claim_verifier.py:213: {_exc}")
 
     try:
         cortex.twm_push(
@@ -232,7 +235,8 @@ def check_response(
                 "evidence_window_sec": _EVIDENCE_WINDOW_SEC,
             },
         )
-    except Exception:
-        pass
+    except Exception as _exc:
+        from .forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"action_claim_verifier.py:235: {_exc}")
 
     return claims

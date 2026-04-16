@@ -43,8 +43,9 @@ def _accretion_log(stage: str, **fields) -> None:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         with open(log_path, "a") as f:
             f.write(line + "\n")
-    except Exception:
-        pass
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"pr_accretion.py:46: {_exc}")
 
 
 def _summarize_exchange(user_text: str, igor_reply: str, max_len: int = 240) -> str:

@@ -158,8 +158,9 @@ class DaemonSupervisor:
                                         kind="DAEMON_DEAD",
                                         detail=f"critical thread {r['name']} died after {r['uptime_s']}s",
                                     )
-                                except Exception:
-                                    pass
+                                except Exception as _exc:
+                                    from .forensic_logger import log_error as _le
+                                    _le(kind="SILENT_EXCEPT", detail=f"daemon_supervisor.py:161: {_exc}")
                                 if _restart_path:
                                     try:
                                         open(_restart_path, "w").close()

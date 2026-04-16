@@ -373,8 +373,9 @@ def _get_active_cc_ticket() -> dict | None:
         for t in tasks:
             if t.get("status") == "in_progress":
                 return {"id": t.get("id", "?"), "title": t.get("title", "")}
-    except Exception:
-        pass
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"terminal.py:376: {_exc}")
     return None
 
 

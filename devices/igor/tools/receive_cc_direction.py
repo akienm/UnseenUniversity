@@ -136,5 +136,6 @@ try:
             fn=receive_cc_direction,
         )
     )
-except Exception:
-    pass
+except Exception as _exc:
+    from ..cognition.forensic_logger import log_error as _le
+    _le(kind="SILENT_EXCEPT", detail=f"receive_cc_direction.py:139: {_exc}")

@@ -263,9 +263,10 @@ def _ensure_bootstrapped() -> None:
         # Not bootstrapped yet — import and run bootstrap
         try:
             from . import bootstrap  # noqa: F401
-        except Exception:
+        except Exception as _exc:
             # Bootstrap failed silently (e.g., import error); channels stay empty
-            pass
+            from ..cognition.forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"__init__.py:266: {_exc}")
 
 
 _ensure_bootstrapped()

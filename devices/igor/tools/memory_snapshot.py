@@ -48,8 +48,9 @@ def run_memory_snapshot() -> str:
             last_run = _STAMP_FILE.read_text().strip()
             if last_run == today:
                 return f"memory_snapshot: already ran today ({today})"
-    except Exception:
-        pass
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"memory_snapshot.py:51: {_exc}")
 
     # Run the count
     try:
@@ -77,8 +78,9 @@ def run_memory_snapshot() -> str:
     # Write stamp
     try:
         _STAMP_FILE.write_text(today)
-    except Exception:
-        pass
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"memory_snapshot.py:80: {_exc}")
 
     # Log the snapshot
     record = {

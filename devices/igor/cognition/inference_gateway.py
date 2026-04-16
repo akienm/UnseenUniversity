@@ -516,8 +516,9 @@ class InferenceGateway(IgorBase):
                                 value=1.0,
                                 detail=f"min_tier=tier.4 from TWM: {_csb[:80]}",
                             )
-                        except Exception:
-                            pass
+                        except Exception as _exc:
+                            from .forensic_logger import log_error as _le
+                            _le(kind="SILENT_EXCEPT", detail=f"inference_gateway.py:519: {_exc}")
                         break
             except Exception as _mode_e:
                 log_error(kind="MODE_READ_FAIL", detail=str(_mode_e))

@@ -48,8 +48,9 @@ def start_reading_bootstrap(config: str = "") -> str:
     if config and config.strip():
         try:
             params = json.loads(config)
-        except (json.JSONDecodeError, ValueError):
-            pass
+        except (json.JSONDecodeError, ValueError) as _exc:
+            from ..cognition.forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"bootstrap_reader.py:51: {_exc}")
 
     n_docs = int(params.get("n_docs", 5))
     ttl_seconds = int(params.get("ttl_seconds", 1800))

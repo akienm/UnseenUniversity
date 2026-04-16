@@ -280,8 +280,9 @@ def run_after_action_review(
                     value=1.0,
                     detail=f"author={turn['author']} mem={mem_id[:8]}",
                 )
-            except Exception:
-                pass
+            except Exception as _exc:
+                from ..cognition.forensic_logger import log_error as _le
+                _le(kind="SILENT_EXCEPT", detail=f"after_action_reviewer.py:283: {_exc}")
     finally:
         conn.close()
 

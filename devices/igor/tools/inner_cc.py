@@ -298,8 +298,9 @@ def _make_or_request(
         body = ""
         try:
             body = http_err.read().decode(errors="replace")[:400]
-        except Exception:
-            pass
+        except Exception as _exc:
+            from ..cognition.forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"inner_cc.py:301: {_exc}")
         raise RuntimeError(f"HTTP {http_err.code} from OR: {body}") from http_err
 
 

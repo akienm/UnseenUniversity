@@ -62,7 +62,8 @@ def eval_gate(key: str, op: str, value: Any, namespace: dict) -> bool:
             return a <= b
         if op == ">=":
             return a >= b
-    except (ValueError, TypeError):
-        pass  # type coercion failed — inputs are untrusted; fall through to False
+    except (ValueError, TypeError) as _exc:
+        from .forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"eval_gate.py:65: {_exc}")
 
     return False

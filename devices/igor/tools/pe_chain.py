@@ -73,8 +73,9 @@ def _load_ticket(ticket_id: str) -> dict | None:
         for t in tasks:
             if t.get("id") == ticket_id:
                 return t
-    except Exception:
-        pass
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"pe_chain.py:76: {_exc}")
     return None
 
 
@@ -1079,8 +1080,9 @@ def _parse_hypothesis(raw: str) -> list[dict] | None:
         # Single-edit format: {file, old_string, new_string}
         if all(k in obj for k in ("file", "old_string", "new_string")):
             return [obj]
-    except Exception:
-        pass
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"pe_chain.py:1082: {_exc}")
 
     # Fallback: extract fields with regex (single edit only)
     try:
@@ -1099,8 +1101,9 @@ def _parse_hypothesis(raw: str) -> list[dict] | None:
                     .replace("\\n", "\n"),
                 }
             ]
-    except Exception:
-        pass
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"pe_chain.py:1102: {_exc}")
 
     return None
 
@@ -1376,8 +1379,9 @@ def pe_test(basket: dict, preflight: bool = False) -> dict:
         level = "preflight" if preflight else "post-edit"
         log.info(f"TEST ({level}, ops.run_tests): {basket['test_result'][:80]}")
         return basket
-    except Exception:
-        pass
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"pe_chain.py:1379: {_exc}")
 
     # Fallback: direct pytest subprocess
     result = _run_bash(
@@ -1441,8 +1445,9 @@ def _post_to_channel(message: str) -> None:
                     (ts, "igor", "message", message, "shared"),
                 )
         conn.close()
-    except Exception:
-        pass
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"pe_chain.py:1444: {_exc}")
     try:
         import json as _json
         from datetime import datetime, timezone
@@ -1457,8 +1462,9 @@ def _post_to_channel(message: str) -> None:
                 )
                 + "\n"
             )
-    except Exception:
-        pass
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"pe_chain.py:1460: {_exc}")
 
 
 # ── PROBE ─────────────────────────────────────────────────────────────────────

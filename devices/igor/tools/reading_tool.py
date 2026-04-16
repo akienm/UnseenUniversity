@@ -82,8 +82,9 @@ def _next_run_id() -> str:
             try:
                 last_num = int(parts[-1])
                 return f"{prefix}{last_num + 1:03d}"
-            except ValueError:
-                pass
+            except ValueError as _exc:
+                from ..cognition.forensic_logger import log_error as _le
+                _le(kind="SILENT_EXCEPT", detail=f"reading_tool.py:85: {_exc}")
     return f"{prefix}001"
 
 
@@ -194,8 +195,9 @@ def _create_run(
         cx.store(item_mem)
         try:
             cx.add_child(run_node_id, item_node_id)
-        except Exception:
-            pass
+        except Exception as _exc:
+            from ..cognition.forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"reading_tool.py:197: {_exc}")
 
     # Write run log header
     from .reading_engine import write_run_log_header

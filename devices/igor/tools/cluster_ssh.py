@@ -1075,8 +1075,9 @@ def _update_swarm() -> str:
         from ..cognition.forensic_logger import log_anomaly as _la
 
         _la(kind="SWARM_UPDATE", detail=summary[:400])
-    except Exception:
-        pass  # forensic_logger unavailable — non-fatal, swarm update still returned
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"cluster_ssh.py:1078: {_exc}")
     return summary
 
 
@@ -1189,8 +1190,9 @@ def stop_swarm(**_) -> str:
         from ..cognition.forensic_logger import log_anomaly as _la
 
         _la(kind="SWARM_STOP", detail=summary[:400])
-    except Exception:
-        pass
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"cluster_ssh.py:1192: {_exc}")
     return summary
 
 

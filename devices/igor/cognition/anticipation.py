@@ -215,8 +215,9 @@ def record_completion(input_text: str, reply_text: str, cortex) -> None:
                 f"COMPLETION_ACK|ordinary|delta={_delta:.2f}|input={_snippet}",
                 category="completion_trace",
             )
-    except Exception:
-        pass  # advisory — never raises
+    except Exception as _exc:
+        from .forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"anticipation.py:218: {_exc}")
 
 
 def history_summary() -> str:

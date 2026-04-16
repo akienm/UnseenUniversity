@@ -118,8 +118,9 @@ def _load_ticket(ticket_id: str) -> dict | None:
         for t in tasks:
             if t.get("id") == ticket_id:
                 return t
-    except Exception:
-        pass
+    except Exception as _exc:
+        from ..cognition.forensic_logger import log_error as _le
+        _le(kind="SILENT_EXCEPT", detail=f"goal_continuation.py:121: {_exc}")
     return None
 
 

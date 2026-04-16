@@ -988,8 +988,9 @@ class NarrativeEngine(IgorBase):
                 _valence_str = (
                     " (positive)" if _v > 0.3 else " (negative)" if _v < -0.3 else ""
                 )
-        except Exception:
-            pass
+        except Exception as _exc:
+            from .forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"narrative_engine.py:991: {_exc}")
         focus = "; ".join(snippets)
         return f"Igor is engaged with{_valence_str}: {focus}."
 
@@ -1213,8 +1214,9 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                                 detail=f"narrative_engine._process_gaps timeout: {_bare_e}",
                             )
                         continue  # Skip tension accumulation for closed gap
-                except (ValueError, TypeError):
-                    pass  # malformed timestamp — fall through to normal accumulation
+                except (ValueError, TypeError) as _exc:
+                    from .forensic_logger import log_error as _le
+                    _le(kind="SILENT_EXCEPT", detail=f"narrative_engine.py:1216: {_exc}")
 
             current_sal = gap_obs.get("salience", 0.3)
             new_sal = min(1.0, current_sal + 0.05 * _arousal)
@@ -1729,8 +1731,9 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
             from .forensic_logger import log_anomaly as _la
 
             _la(kind="CONSOLIDATION_START", detail="idle deep pass beginning")
-        except Exception:
-            pass  # forensic_logger unavailable — non-fatal, consolidation continues
+        except Exception as _exc:
+            from .forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"narrative_engine.py:1732: {_exc}")
 
         # Step 1: TWM promotion at 0.5 threshold
         if not self._consolidation_interrupted:
@@ -1870,8 +1873,9 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
             )
             with open(_log_path, "a") as _f:
                 _f.write(_line)
-        except Exception:
-            pass  # consolidation log write unavailable — non-fatal
+        except Exception as _exc:
+            from .forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"narrative_engine.py:1873: {_exc}")
 
         try:
             from .forensic_logger import log_anomaly as _la
@@ -1884,8 +1888,9 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                     f"elapsed_ms={elapsed_ms}"
                 ),
             )
-        except Exception:
-            pass  # forensic_logger unavailable — non-fatal, consolidation still done
+        except Exception as _exc:
+            from .forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"narrative_engine.py:1887: {_exc}")
 
         self._last_consolidation_ts = time.monotonic()  # prevent immediate re-run
         self._consolidation_running = False

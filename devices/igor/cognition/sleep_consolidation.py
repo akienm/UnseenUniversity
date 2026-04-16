@@ -257,5 +257,6 @@ class SleepConsolidation(IgorBase):
                     f"ms={duration_ms}"
                 ),
             )
-        except Exception:
-            pass
+        except Exception as _exc:
+            from .forensic_logger import log_error as _le
+            _le(kind="SILENT_EXCEPT", detail=f"sleep_consolidation.py:260: {_exc}")
