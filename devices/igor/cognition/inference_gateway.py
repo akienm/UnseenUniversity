@@ -1157,7 +1157,7 @@ def make_context(
     db_colocated = (
         "localhost" in db_url
         or "127.0.0.1" in db_url
-        or not db_url  # empty = SQLite path = always same box
+        or not db_url  # empty = no remote DB = always same box
     )
 
     return InferenceContext(

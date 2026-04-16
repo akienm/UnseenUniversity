@@ -137,7 +137,7 @@ NE_MAX_OBS_CHARS = 8000  # 2000 tokens × 4 chars/token
 class NarrativeEngine(IgorBase):
     """
     Coherence-checker. Runs in the main loop. Stateless between runs —
-    all state lives in TWM (SQLite).
+    all state lives in TWM (Postgres).
     """
 
     def __init__(self, cortex: Cortex, instance_id: str = "wild-0001"):

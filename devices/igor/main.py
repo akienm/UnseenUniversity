@@ -523,7 +523,7 @@ class Igor(IgorBase):
                 # D121: Redis-backed word graph (shadow or primary)
                 self._word_graph = make_word_graph()
             else:
-                # Word graph: load from DB (Postgres or SQLite), rebuild from habits only if empty.
+                # Word graph: load from local SQLite file, rebuild from habits only if empty.
                 # _wg_path.exists() was wrong for Postgres-backed graphs: the file never exists
                 # but the DB already has data. Always load() first; _word_to_ids checks live DB.
                 _wg_path = default_cache_path()
@@ -579,8 +579,8 @@ class Igor(IgorBase):
                 if _redis_host:
                     self._generation_graph = _make_gg(name="generation_graph")
                 else:
-                    # Same fix as recognition graph: load() always works for Postgres-backed
-                    # graphs regardless of whether the SQLite file path exists.
+                    # Same fix as recognition graph: load() always works regardless of
+                    # whether the local SQLite cache file exists.
                     _gg_path = default_cache_path("generation_graph")
                     self._generation_graph = WordGraph.load(_gg_path)
                     self._generation_graph.name = "generation_graph"
@@ -2760,7 +2760,7 @@ class Igor(IgorBase):
         TTL: WARM_CONTEXT_TTL_HOURS (default 4h).  If expired, archive + start cold.
         De-duplication: ring_tail and TWM only injected when the DB is fresh
         (ring empty / TWM empty) to avoid duplicating data that already persists
-        in SQLite.  session_summary and ne_state are always surfaced.
+        in Postgres.  session_summary and ne_state are always surfaced.
         """
         import json
 
@@ -6740,7 +6740,7 @@ class Igor(IgorBase):
         """
         Fire the Narrative Engine in a background daemon thread.
         If NE is already running (Ollama is slow), skip — don't stack calls.
-        The NE is stateless between runs (all state in SQLite), so this is safe.
+        The NE is stateless between runs (all state in Postgres), so this is safe.
 
         Idle gate: skip if TWM hasn't changed since last run AND < 2min cooldown.
         Lock: prevents double-fire race when two callers hit simultaneously.
