@@ -20,6 +20,7 @@ from .registry import Tool, registry
 from ..paths import paths
 
 from ..paths import paths as _paths
+
 _QUEUE_PATH = paths().cc_channel / "queue.json"
 
 
@@ -82,6 +83,54 @@ def store_session_note(session_id: str, summary: str) -> str:
         return f"session {session_id} stored to ring memory"
     except Exception as e:
         return f"[ERROR] store_session_note: {e}"
+
+
+NOTE_CATEGORIES = frozenset(
+    {
+        "about_igor",
+        "from_igor",
+        "between_igor_and_collaborator",
+        "from_collaborator_to_igor",
+        "session_summary",
+        "design_note",
+        "observation",
+    }
+)
+
+
+def store_note(
+    content: str,
+    note_category: str = "observation",
+    author: str = "",
+    subject: str = "",
+) -> str:
+    """Store a categorized note as an EPISODIC memory with note metadata.
+
+    note_category: about_igor | from_igor | between_igor_and_collaborator |
+                   from_collaborator_to_igor | session_summary | design_note | observation
+    """
+    if note_category not in NOTE_CATEGORIES:
+        note_category = "observation"
+    try:
+        from ..memory.cortex import Cortex as _Cortex
+        from ..memory.models import Memory, MemoryType
+
+        cortex = _Cortex(None)
+        mem = Memory(
+            narrative=content[:2000],
+            memory_type=MemoryType.EPISODIC,
+            metadata={
+                "note_category": note_category,
+                "author": author or "unknown",
+                "subject": subject or "",
+                "stored_at": _now_iso(),
+            },
+        )
+        stored = cortex.store(mem)
+        mem_id = stored.id if hasattr(stored, "id") else str(stored)
+        return f"Note stored ({note_category}): {mem_id}"
+    except Exception as e:
+        return f"[ERROR] store_note: {e}"
 
 
 # ── queue_task ─────────────────────────────────────────────────────────────────
@@ -232,6 +281,7 @@ def goal_adopt(
                 _f.write(entry + "\n")
         except Exception as _exc:
             from ..cognition.forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"ops.py:233: {_exc}")
 
         return f"On it. Goal set: {task_short[:80]}. Proceeding."
@@ -283,6 +333,7 @@ def goal_fail_active() -> str:
                     _f.write(entry + "\n")
             except Exception as _exc:
                 from ..cognition.forensic_logger import log_error as _le
+
                 _le(kind="SILENT_EXCEPT", detail=f"ops.py:283: {_exc}")
             return f"Stuck on goal after {fails} attempts: {task[:80]}. Posted to channel. Waiting for guidance."
 
@@ -302,6 +353,7 @@ def goal_fail_active() -> str:
                 )
         except Exception as _exc:
             from ..cognition.forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"ops.py:301: {_exc}")
 
         return (
@@ -377,6 +429,7 @@ def goal_close(goal_id: str) -> str:
                 _f.write(entry + "\n")
         except Exception as _exc:
             from ..cognition.forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"ops.py:375: {_exc}")
 
         return f"Goal {goal_id} closed. Well done."
@@ -718,6 +771,37 @@ registry.register(
             "required": ["session_id", "summary"],
         },
         fn=store_session_note,
+    )
+)
+
+registry.register(
+    Tool(
+        name="store_note",
+        description=(
+            "Store a categorized note as an EPISODIC memory. Categories: "
+            "about_igor, from_igor, between_igor_and_collaborator, "
+            "from_collaborator_to_igor, session_summary, design_note, observation."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "description": "Note text (max 2000 chars)",
+                },
+                "note_category": {
+                    "type": "string",
+                    "description": "Category: about_igor | from_igor | between_igor_and_collaborator | from_collaborator_to_igor | session_summary | design_note | observation",
+                },
+                "author": {"type": "string", "description": "Who wrote the note"},
+                "subject": {
+                    "type": "string",
+                    "description": "Who/what the note is about",
+                },
+            },
+            "required": ["content"],
+        },
+        fn=store_note,
     )
 )
 
