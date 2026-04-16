@@ -135,19 +135,27 @@ def test_voice_producer_renders_selected_action():
     assert "here is the answer" in text
 
 
-def test_voice_producer_flags_low_confidence():
+def test_voice_producer_commits_without_apology_on_selected_action():
+    """Confident-in-process: even at lower confidence, the voice
+    commits to the action without adding an apologetic hedge."""
     vp = VoiceProducer()
     blob = DecisionBlob(
         intent=Intent.ANSWER,
-        selected_action="maybe this",
+        selected_action="do the thing",
         confidence=0.4,
         provenance=DBProvenance(maker="substrate", inputs=["x"]),
     )
     text = vp.produce(blob, _tiny_ctx())
-    assert "0.40" in text or "provisional" in text.lower()
+    assert "do the thing" in text
+    # No apologetic hedges — the stance is certain-of-current-best-guess
+    assert "provisional" not in text.lower()
+    assert "uncertain" not in text.lower()
 
 
-def test_voice_producer_hedges_on_proposed_experiment():
+def test_voice_producer_current_best_guess_on_proposed_experiment():
+    """With a ProposedExperiment on the blob, voice renders as
+    'current best guess + how we're testing it' — confident in
+    process, not hedged."""
     vp = VoiceProducer()
     proposed = ProposedExperiment(
         hypothesis="X causes Y",
@@ -162,12 +170,28 @@ def test_voice_producer_hedges_on_proposed_experiment():
         provenance=DBProvenance(maker="reasoning_llm", inputs=["workflow"]),
     )
     text = vp.produce(blob, _tiny_ctx())
-    assert "test it before committing" in text.lower()
+    assert "current best guess" in text.lower()
     assert "tool_foo" in text
     assert "OK" in text
+    # No apology
+    assert "uncertain" not in text.lower()
+    assert "not confident" not in text.lower()
 
 
-def test_voice_producer_honest_fallthrough():
+def test_voice_producer_best_guess_fallthrough():
+    vp = VoiceProducer()
+    blob = DecisionBlob(
+        intent=Intent.DEFER,
+        hypothesis="X might be Y",
+        confidence=0.3,
+        provenance=DBProvenance(maker="substrate", inputs=["x"]),
+    )
+    text = vp.produce(blob, _tiny_ctx())
+    assert "current best guess" in text.lower()
+    assert "X might be Y" in text
+
+
+def test_voice_producer_no_hypothesis_fallthrough():
     vp = VoiceProducer()
     blob = DecisionBlob(
         intent=Intent.DEFER,
@@ -175,7 +199,7 @@ def test_voice_producer_honest_fallthrough():
         provenance=DBProvenance(maker="substrate", inputs=["x"]),
     )
     text = vp.produce(blob, _tiny_ctx())
-    assert "don't have a confident answer" in text
+    assert "still working" in text.lower()
 
 
 # ── TurnPipeline: cascade match path ────────────────────────────────────────
@@ -238,11 +262,9 @@ def test_pipeline_cascade_escalate_runs_workflow_with_peer():
     assert result.decision_blob is not None
     assert result.decision_blob.proposed_experiment is not None
     assert "cortex.search" in result.decision_blob.proposed_experiment.probe
-    # Reply should be a hedged response mentioning the proposed experiment
-    assert (
-        "test it" in result.reply_text.lower()
-        or "experiment" in result.reply_text.lower()
-    )
+    # Reply should be confident-in-process: 'current best guess + how I test it'
+    assert "current best guess" in result.reply_text.lower()
+    assert "testing it" in result.reply_text.lower()
 
 
 def test_pipeline_cascade_escalate_without_peer_returns_honest_gap():

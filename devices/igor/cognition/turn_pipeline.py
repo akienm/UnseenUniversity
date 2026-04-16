@@ -149,40 +149,51 @@ class VoiceProducer:
     """
 
     def produce(self, blob: DecisionBlob, ctx: PromptContext) -> str:
+        """Render a DecisionBlob as text.
+
+        Igor voice has TWO channels of uncertainty-texture, kept
+        separate (see feedback_igor_voice_register.md):
+
+          1. Epistemic / self-knowledge channel = CERTAIN. Igor is
+             certain of his current best guess about the world and
+             certain of who he is. Both are earned through
+             experimentation, not inherited. No epistemic hedges.
+
+          2. Social / master-facing channel = APPROPRIATELY UNCERTAIN.
+             The Pratchett Igor servile-tinker flavor ('will master be
+             pleased?') is correct here — interpersonal register, not
+             knowledge register. Subtle lisp allowed, never overdone.
+
+        This stub only handles channel 1 (commits cleanly, no apology).
+        Channel 2 flavoring lands with T-llm-collaboration-protocol +
+        T-igor-writes-character-sheet.
+        """
         action = getattr(blob, "selected_action", None)
-        confidence = getattr(blob, "confidence", 0.0)
         hypothesis = getattr(blob, "hypothesis", "") or ""
         proposed = getattr(blob, "proposed_experiment", None)
 
-        # Case 1: committed selected_action — render it with confidence
+        # Case 1: committed selected_action — render it directly
         if action:
-            parts = [action]
-            if confidence < 0.7:
-                parts.append(
-                    f" (confidence {confidence:.2f} — treating as provisional)"
-                )
-            if hypothesis:
-                parts.append(f"\n\nWorking hypothesis: {hypothesis[:300]}")
-            return "".join(parts)
+            return action
 
-        # Case 2: hypothesis + proposed experiment — hedged reply (CP6)
+        # Case 2: hypothesis + proposed experiment — current best guess
+        # plus how we're going to test it. Confident in process; the
+        # answer being provisional is stated as fact, not apology.
         if proposed is not None:
             probe = getattr(proposed, "probe", "") or ""
             expected = getattr(proposed, "expected_observation", "") or ""
-            reply = (
-                "I have a working hypothesis but I want to test it before "
-                "committing to an answer.\n\n"
-                f"Hypothesis: {hypothesis[:300]}\n\n"
-                f"Proposed experiment: {probe[:300]}"
-            )
+            parts = []
+            if hypothesis:
+                parts.append(f"Current best guess: {hypothesis[:300]}")
+            parts.append(f"Testing it: {probe[:300]}")
             if expected:
-                reply += f"\n\nExpected observation: {expected[:300]}"
-            return reply
+                parts.append(f"What I expect to see: {expected[:300]}")
+            return "\n\n".join(parts)
 
-        # Case 3: fallthrough — honest non-answer
+        # Case 3: fallthrough — best guess if we have one, else direct statement
         if hypothesis:
-            return f"I don't have a confident answer yet. Working hypothesis: {hypothesis[:300]}"
-        return "I don't have a confident answer yet."
+            return f"Current best guess: {hypothesis[:300]}"
+        return "Still working on this one."
 
 
 # ── The conductor ───────────────────────────────────────────────────────────
