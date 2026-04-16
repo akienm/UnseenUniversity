@@ -70,6 +70,7 @@ class LLMPeerAdvisor(PeerAdvisor):
         milieu: Optional[dict[str, Any]] = None,
         identity: Optional[dict[str, Any]] = None,
         escalation_trail: Optional[list[dict[str, Any]]] = None,
+        capabilities: Optional[list[str]] = None,
         log_dir: Optional[Path] = None,
         level: str = "interactive",
     ) -> None:
@@ -78,6 +79,7 @@ class LLMPeerAdvisor(PeerAdvisor):
         self._milieu = milieu
         self._identity = identity
         self._escalation_trail = escalation_trail
+        self._capabilities = capabilities
         self._level = level
         self._log_dir = log_dir
         self._log_file: Optional[Path] = None
@@ -116,6 +118,7 @@ class LLMPeerAdvisor(PeerAdvisor):
             milieu=self._milieu,
             identity=self._identity,
             escalation_trail=self._escalation_trail,
+            capabilities=self._capabilities,
         )
 
         # Build the user prompt from conversation history
