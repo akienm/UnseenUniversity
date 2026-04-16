@@ -15,7 +15,11 @@ from ..paths import paths
 
 
 from ..paths import paths as _paths
-def post_to_channel(message: str, author: str = "igor") -> None:
+
+
+def post_to_channel(
+    message: str, author: str = "igor", channel: str = "shared"
+) -> None:
     """Post a message to the Igor channel.
 
     Writes to Postgres channel_messages (primary) and ~/.TheIgors/cc_channel/messages.jsonl
@@ -33,8 +37,8 @@ def post_to_channel(message: str, author: str = "igor") -> None:
         with conn_pg:
             with conn_pg.cursor() as c:
                 c.execute(
-                    "INSERT INTO channel_messages (ts, author, type, content) VALUES (%s, %s, %s, %s)",
-                    (ts, author, "message", message),
+                    "INSERT INTO channel_messages (ts, author, type, content, channel) VALUES (%s, %s, %s, %s, %s)",
+                    (ts, author, "message", message, channel),
                 )
         conn_pg.close()
     except Exception:

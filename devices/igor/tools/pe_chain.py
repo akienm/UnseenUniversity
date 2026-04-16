@@ -38,6 +38,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ..paths import paths as _paths
+
 log = logging.getLogger(__name__)
 
 _CC_QUEUE = Path.home() / "TheIgors" / "claudecode" / "cc_queue.py"
@@ -1436,8 +1437,8 @@ def _post_to_channel(message: str) -> None:
         with conn:
             with conn.cursor() as c:
                 c.execute(
-                    "INSERT INTO channel_messages (ts, author, type, content) VALUES (%s, %s, %s, %s)",
-                    (ts, "igor", "message", message),
+                    "INSERT INTO channel_messages (ts, author, type, content, channel) VALUES (%s, %s, %s, %s, %s)",
+                    (ts, "igor", "message", message, "shared"),
                 )
         conn.close()
     except Exception:
