@@ -654,6 +654,23 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
     # _migrations stays in public (bootstrap table — must be findable before search_path is set)
     # _cc_index_registry stays in public (db_proxy internal bookkeeping)
     # _migration_*_backup tables stay in public (one-time migration artifacts)
+    # ── T-experiment-findings-log: queryable record of what we tried and learned
+    (
+        "m051_experiment_findings",
+        "CREATE TABLE IF NOT EXISTS infra.experiment_findings ("
+        " id           SERIAL PRIMARY KEY,"
+        " title        TEXT NOT NULL,"
+        " hypothesis   TEXT,"
+        " method       TEXT,"
+        " result       TEXT NOT NULL,"
+        " conclusion   TEXT,"
+        " participants TEXT DEFAULT '',"
+        " evidence     JSONB DEFAULT '[]',"
+        " tags         JSONB DEFAULT '[]',"
+        " created_at   TEXT NOT NULL,"
+        " created_by   TEXT NOT NULL"
+        ")",
+    ),
 ]
 
 
