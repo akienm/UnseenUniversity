@@ -107,14 +107,20 @@ class TestCalveSubtree:
         cortex, conn = _mock_cortex()
         conn.execute.return_value.fetchone.return_value = ("parent-abc",)
         cortex.tree_size = MagicMock(return_value=15)
+        cortex._find_tree_root = MagicMock(return_value="root-xyz")
 
         from wild_igor.igor.memory.cortex import Cortex
 
-        result = Cortex.calve_subtree(cortex, "child-node")
+        with patch("wild_igor.igor.memory.blob_facia.ensure_blob_facia") as mock_facia:
+            result = Cortex.calve_subtree(cortex, "child-node")
         assert result["new_root_id"] == "child-node"
         assert result["subtree_count"] == 15
         assert result["old_parent_id"] == "parent-abc"
         cortex.write_ring.assert_called_once()
+        assert mock_facia.call_count == 2
+        facia_root_ids = [c.args[1] for c in mock_facia.call_args_list]
+        assert "child-node" in facia_root_ids
+        assert "root-xyz" in facia_root_ids
 
     def test_calve_node_not_found(self):
         cortex, conn = _mock_cortex()

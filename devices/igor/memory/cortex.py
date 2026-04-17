@@ -5208,6 +5208,16 @@ class Cortex(IgorBase):
             old_parent,
         )
 
+        # T-calving-post-cleanup: update facia + tree index for both trees
+        old_root = self._find_tree_root(old_parent)
+        for root_id in (node_id, old_root):
+            try:
+                from .blob_facia import ensure_blob_facia
+
+                ensure_blob_facia(self, root_id, tags=["calved"])
+            except Exception as _facia_e:
+                _log.debug("post-calve facia for %s: %s", root_id, _facia_e)
+
         return {
             "new_root_id": node_id,
             "subtree_count": subtree_count,
