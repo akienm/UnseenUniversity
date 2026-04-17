@@ -426,3 +426,70 @@ def test_pipeline_default_construction_does_not_crash():
     assert pipeline.cascade is not None
     assert pipeline.workflow is not None
     assert pipeline.voice_producer is not None
+    assert pipeline.scheduler is not None
+
+
+# ── Experiment enqueue from workflow ──────────────────────────────────────
+
+
+def test_pipeline_escalation_enqueues_experiment():
+    """When workflow produces a ProposedExperiment, the pipeline should
+    convert it to a full Experiment and enqueue via the scheduler."""
+    cortex = _mock_cortex()
+    cascade = _make_cascade(cortex, _EscalatingLevel())
+    pipeline = TurnPipeline(cortex, cascade=cascade)
+
+    peer = _ScriptedPeer(
+        ["Probe: run cortex.search('igor dev'). Expected: at least one facia result."]
+    )
+    result = pipeline.run_turn(_situation("find igor dev"), peer_advisor=peer)
+
+    assert result.enqueued_experiment_ids
+    assert len(result.enqueued_experiment_ids) == 1
+    enqueue_traces = [
+        e for e in result.path_trace if e.step == PathStep.EXPERIMENT_ENQUEUE
+    ]
+    assert enqueue_traces
+    assert enqueue_traces[0].status == "enqueued"
+    assert enqueue_traces[0].metadata.get("experiment_id")
+    assert enqueue_traces[0].metadata.get("blob_id")
+
+
+def test_pipeline_cascade_match_no_experiment_enqueued():
+    """Cascade match path has no proposed_experiment — nothing to enqueue."""
+    cortex = _mock_cortex()
+    cascade = _make_cascade(cortex, _MatchingLevel())
+    pipeline = TurnPipeline(cortex, cascade=cascade)
+
+    result = pipeline.run_turn(_situation("find the goal tree"))
+
+    assert result.enqueued_experiment_ids == []
+    enqueue_traces = [
+        e for e in result.path_trace if e.step == PathStep.EXPERIMENT_ENQUEUE
+    ]
+    assert not enqueue_traces
+
+
+def test_pipeline_experiment_enqueue_failure_captured_in_trace():
+    """If scheduler.enqueue fails, the trace records the failure and
+    the pipeline still produces a reply."""
+    from unittest.mock import patch
+
+    cortex = _mock_cortex()
+    cascade = _make_cascade(cortex, _EscalatingLevel())
+    pipeline = TurnPipeline(cortex, cascade=cascade)
+
+    peer = _ScriptedPeer(["Probe: run cortex.search('test'). Expected: results."])
+
+    with patch.object(
+        pipeline.scheduler, "enqueue", side_effect=RuntimeError("db down")
+    ):
+        result = pipeline.run_turn(_situation("test query"), peer_advisor=peer)
+
+    assert result.enqueued_experiment_ids == []
+    enqueue_traces = [
+        e for e in result.path_trace if e.step == PathStep.EXPERIMENT_ENQUEUE
+    ]
+    assert enqueue_traces
+    assert enqueue_traces[0].status == "failed"
+    assert result.reply_text
