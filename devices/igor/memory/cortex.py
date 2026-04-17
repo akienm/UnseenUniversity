@@ -3424,11 +3424,23 @@ class Cortex(IgorBase):
         valid_id = {f"ID{i}" for i in range(1, 15)}
         valid_proc_parents = valid_cp | valid_id
 
+        # Calved blob-tree roots have parent_id=NULL by design — exempt them.
+        # Trees named 'blob_CP3' document calved root 'CP3'; strip prefix to get node ID.
+        blob_roots: set[str] = set()
+        try:
+            with self._conn() as conn:
+                rows = conn.execute(
+                    "SELECT name FROM trees WHERE name LIKE 'blob_%'"
+                ).fetchall()
+            blob_roots = {r[0][len("blob_") :] for r in rows if r[0]}
+        except Exception:
+            pass  # trees table absent on first boot; safe to skip
+
         for cp_id in sorted(valid_cp):
             mem = self.get(cp_id)
             if mem is None:
                 violations.append(f"MISSING_CP: {cp_id}")
-            elif mem.parent_id != "ROOT":
+            elif mem.parent_id != "ROOT" and cp_id not in blob_roots:
                 violations.append(
                     f"ORPHAN_CP: {cp_id} parent={mem.parent_id!r} (expected ROOT)"
                 )
@@ -3436,7 +3448,11 @@ class Cortex(IgorBase):
         for id_id in sorted(valid_id):
             mem = self.get(id_id)
             # Missing ID: informational — may be a pre-backfill instance; not a corruption signal
-            if mem is not None and mem.parent_id not in valid_cp:
+            if (
+                mem is not None
+                and mem.parent_id not in valid_cp
+                and id_id not in blob_roots
+            ):
                 violations.append(
                     f"INVALID_PARENT_ID: {id_id} parent={mem.parent_id!r} (expected CP1-CP6)"
                 )
@@ -3445,7 +3461,11 @@ class Cortex(IgorBase):
             proc_id = f"PROC{i}"
             mem = self.get(proc_id)
             # Missing PROC: informational — may be a pre-backfill instance; not a corruption signal
-            if mem is not None and mem.parent_id not in valid_proc_parents:
+            if (
+                mem is not None
+                and mem.parent_id not in valid_proc_parents
+                and proc_id not in blob_roots
+            ):
                 violations.append(
                     f"INVALID_PARENT_PROC: {proc_id} parent={mem.parent_id!r}"
                 )
@@ -5043,21 +5063,37 @@ class Cortex(IgorBase):
 
         return adopted
 
+    # Core pattern nodes that must NEVER be calved from their parent.
+    _CALVING_PROTECTED: frozenset = frozenset(
+        {"ROOT"}
+        | {f"CP{i}" for i in range(1, 7)}
+        | {f"ID{i}" for i in range(1, 15)}
+        | {f"PROC{i}" for i in range(1, 50)}
+    )
+
     def _maybe_calve(self, memory) -> None:
         """Check if the tree this memory belongs to exceeds threshold; calve if so."""
         import os as _os
 
         if _os.getenv("IGOR_CALVING_ENABLED", "false").lower() != "true":
             return
+        # Never calve core pattern nodes
+        if memory.id in self._CALVING_PROTECTED:
+            return
         threshold = int(_os.getenv("IGOR_CALVING_THRESHOLD", "1000"))
         root_id = self._find_tree_root(memory.id)
+        # Never calve from the ROOT tree — CP structure is sacred
+        if root_id == "ROOT":
+            return
         size = self.tree_size(root_id)
         if size <= threshold:
             return
         deepest = self._deepest_child(root_id)
         if deepest and deepest != memory.id:
-            # Walk up from deepest to find a good split point (first node with children)
             split_id = deepest
+            # Never split at a protected node
+            if split_id in self._CALVING_PROTECTED:
+                return
             try:
                 with self._conn() as conn:
                     row = conn.execute(
@@ -5065,10 +5101,13 @@ class Cortex(IgorBase):
                         (deepest,),
                     ).fetchone()
                 if row and row[0]:
-                    split_id = row[0]
+                    candidate = row[0]
+                    if candidate not in self._CALVING_PROTECTED:
+                        split_id = candidate
             except Exception:
                 pass
-            self.calve_subtree(split_id)
+            if split_id not in self._CALVING_PROTECTED:
+                self.calve_subtree(split_id)
 
     def find_calving_candidates(self, depth_threshold: int = 5) -> list[str]:
         """
@@ -5176,6 +5215,12 @@ class Cortex(IgorBase):
         import logging as _logging
 
         _log = _logging.getLogger(__name__)
+
+        # Hard guard: never calve core pattern nodes
+        if node_id in self._CALVING_PROTECTED:
+            return {
+                "error": f"node {node_id} is a protected core pattern node — refusing to calve"
+            }
 
         with self._conn() as conn:
             row = conn.execute(
