@@ -334,18 +334,34 @@ def test_pipeline_trace_summary_formats():
 
 def test_blob_from_cascade_match_fields():
     situation = _situation("find things")
+    mem = MagicMock()
+    mem.narrative = "Igor knows about goal trees and memory architecture"
     cascade_result = CascadeResult(
         status=CascadeStatus.MATCHED,
         level_name="level_0_exact_recall",
-        data=["result"],
+        data=[mem],
         reason="hit",
     )
     blob = _blob_from_cascade_match(situation, cascade_result)
     assert blob.intent == Intent.ANSWER
     assert blob.selected_action
-    assert "level_0_exact_recall" in blob.selected_action
+    assert "goal trees" in blob.selected_action
+    assert "level_0_exact_recall" not in blob.selected_action
     assert blob.confidence == 0.8
     assert blob.provenance.maker == "substrate"
+
+
+def test_blob_from_cascade_match_no_data_falls_back():
+    situation = _situation("find things")
+    cascade_result = CascadeResult(
+        status=CascadeStatus.MATCHED,
+        level_name="level_0_exact_recall",
+        data=[],
+        reason="hit",
+    )
+    blob = _blob_from_cascade_match(situation, cascade_result)
+    assert blob.selected_action
+    assert "substrate matched" in blob.selected_action
 
 
 def test_blob_from_workflow_output_carries_proposed_experiment():
