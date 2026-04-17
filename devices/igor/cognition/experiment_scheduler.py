@@ -57,7 +57,14 @@ logger = logging.getLogger(__name__)
 # Probe kinds the MVP scheduler will actually run. Anything else aborts
 # with reason="probe_kind_not_implemented" (CP1: representable, not silent).
 SAFE_PROBE_KINDS: frozenset[ProbeKind] = frozenset(
-    {ProbeKind.MEMORY_QUERY, ProbeKind.DB_QUERY, ProbeKind.TOOL_CALL}
+    {
+        ProbeKind.MEMORY_QUERY,
+        ProbeKind.DB_QUERY,
+        ProbeKind.TOOL_CALL,
+        ProbeKind.HABIT_DRYRUN,
+        ProbeKind.CHANNEL_SEND,
+        ProbeKind.SIM_TURN,
+    }
 )
 
 DEFAULT_TIMEOUT_SEC: float = 30.0
@@ -214,10 +221,121 @@ def _dispatch_tool_call(cortex: "Cortex", experiment: Experiment) -> Observation
     )
 
 
+def _dispatch_habit_dryrun(cortex: "Cortex", experiment: Experiment) -> Observation:
+    probe = experiment.probe
+    habit_id = probe.target
+    t0 = time.perf_counter()
+    try:
+        with cortex._db() as conn:
+            conn.execute(
+                "SELECT id, content, metadata FROM memories "
+                "WHERE memory_type = 'PROCEDURAL' AND id = %s",
+                (habit_id,),
+            )
+            row = conn.fetchone()
+        elapsed_ms = int((time.perf_counter() - t0) * 1000)
+        if not row:
+            return Observation(
+                outcome=Outcome.MISMATCH,
+                data={"error": "habit_not_found", "habit_id": habit_id},
+                cost={"latency_ms": elapsed_ms},
+                notes=f"habit {habit_id!r} not in DB",
+            )
+        return Observation(
+            outcome=Outcome.MATCH,
+            data={"habit_id": habit_id, "content_preview": str(row[1])[:200]},
+            cost={"latency_ms": elapsed_ms},
+            notes=f"habit_dryrun found {habit_id}; expected: {probe.expected_shape!r}",
+        )
+    except Exception as e:
+        elapsed_ms = int((time.perf_counter() - t0) * 1000)
+        return Observation(
+            outcome=Outcome.INCONCLUSIVE,
+            data={"error": str(e)[:200]},
+            cost={"latency_ms": elapsed_ms},
+            notes=f"habit_dryrun raised: {e}",
+        )
+
+
+def _dispatch_channel_send(cortex: "Cortex", experiment: Experiment) -> Observation:
+    probe = experiment.probe
+    channel = probe.payload.get("channel", "shared")
+    message = probe.target
+    t0 = time.perf_counter()
+    try:
+        from ..tools.channel_post import post_to_channel
+
+        post_to_channel(message, channel=channel)
+        elapsed_ms = int((time.perf_counter() - t0) * 1000)
+        return Observation(
+            outcome=Outcome.MATCH,
+            data={"channel": channel, "message_preview": message[:200]},
+            cost={"latency_ms": elapsed_ms},
+            notes=f"channel_send to {channel}; expected: {probe.expected_shape!r}",
+        )
+    except Exception as e:
+        elapsed_ms = int((time.perf_counter() - t0) * 1000)
+        return Observation(
+            outcome=Outcome.INCONCLUSIVE,
+            data={"error": str(e)[:200]},
+            cost={"latency_ms": elapsed_ms},
+            notes=f"channel_send raised: {e}",
+        )
+
+
+def _dispatch_sim_turn(cortex: "Cortex", experiment: Experiment) -> Observation:
+    """Simulate a turn through the cascade without committing.
+
+    Uses the same CascadeSituation→ExperimentCascade path but only
+    observes whether the cascade matches, escalates, or exhausts.
+    """
+    probe = experiment.probe
+    query = probe.payload.get("query") or probe.target
+    t0 = time.perf_counter()
+    try:
+        from .experiment_cascade import (
+            CascadeSituation,
+            CascadeStatus,
+            build_default_cascade,
+        )
+
+        situation = CascadeSituation(query=query, stakes=0.1)
+        cascade = build_default_cascade(cortex)
+        result = cascade.attempt(situation)
+        elapsed_ms = int((time.perf_counter() - t0) * 1000)
+        if result.status == CascadeStatus.MATCHED:
+            outcome = Outcome.MATCH
+        elif result.status == CascadeStatus.ESCALATE:
+            outcome = Outcome.PARTIAL
+        else:
+            outcome = Outcome.INCONCLUSIVE
+        return Observation(
+            outcome=outcome,
+            data={
+                "cascade_status": result.status.value,
+                "level_name": result.level_name,
+                "reason": result.reason[:200],
+            },
+            cost={"latency_ms": elapsed_ms},
+            notes=f"sim_turn cascade={result.status.value}; expected: {probe.expected_shape!r}",
+        )
+    except Exception as e:
+        elapsed_ms = int((time.perf_counter() - t0) * 1000)
+        return Observation(
+            outcome=Outcome.INCONCLUSIVE,
+            data={"error": str(e)[:200]},
+            cost={"latency_ms": elapsed_ms},
+            notes=f"sim_turn raised: {e}",
+        )
+
+
 _DISPATCH: dict[ProbeKind, Callable[["Cortex", Experiment], Observation]] = {
     ProbeKind.MEMORY_QUERY: _dispatch_memory_query,
     ProbeKind.DB_QUERY: _dispatch_db_query,
     ProbeKind.TOOL_CALL: _dispatch_tool_call,
+    ProbeKind.HABIT_DRYRUN: _dispatch_habit_dryrun,
+    ProbeKind.CHANNEL_SEND: _dispatch_channel_send,
+    ProbeKind.SIM_TURN: _dispatch_sim_turn,
 }
 
 
