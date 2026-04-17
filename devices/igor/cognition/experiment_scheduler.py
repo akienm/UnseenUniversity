@@ -120,6 +120,35 @@ def _next_proposed(cortex: "Cortex") -> Optional[Experiment]:
     return Experiment.from_json(row[0])
 
 
+def recent_completed(cortex: "Cortex", limit: int = 5) -> list[dict]:
+    """Return recent OBSERVED/UPDATED experiments as dicts for reasoning context."""
+    with cortex._db() as conn:
+        conn.execute(
+            "SELECT experiment_json FROM experiment_queue "
+            "WHERE status IN (%s, %s) "
+            "ORDER BY completed_at DESC NULLS LAST LIMIT %s",
+            (ExperimentStatus.OBSERVED.value, ExperimentStatus.UPDATED.value, limit),
+        )
+        rows = conn.fetchall()
+    results = []
+    for row in rows:
+        try:
+            exp = Experiment.from_json(row[0])
+            d = {
+                "hypothesis": exp.hypothesis.statement,
+                "status": exp.status.value,
+                "outcome": (
+                    exp.observation.outcome.value if exp.observation else "pending"
+                ),
+            }
+            if exp.update and exp.update.reason:
+                d["update_reason"] = exp.update.reason
+            results.append(d)
+        except Exception:
+            continue
+    return results
+
+
 # ── Probe dispatch ───────────────────────────────────────────────────────────
 
 
