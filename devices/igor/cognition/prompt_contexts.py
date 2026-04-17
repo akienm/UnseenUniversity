@@ -164,6 +164,23 @@ def _escalation_trail_section(trail: Optional[list[dict[str, Any]]]) -> str:
     return "\n".join(lines)
 
 
+def _recent_experiments_section(
+    recent_experiments: Optional[list[dict[str, Any]]],
+) -> str:
+    if not recent_experiments:
+        return ""
+    lines = ["RECENT EXPERIMENTS — what was tried and what we learned:"]
+    for exp in recent_experiments[:5]:
+        hyp = exp.get("hypothesis", "?")[:120]
+        outcome = exp.get("outcome", "?")
+        status = exp.get("status", "?")
+        reason = exp.get("update_reason", "")[:120]
+        lines.append(f"  - [{status}/{outcome}] {hyp}")
+        if reason:
+            lines.append(f"    learned: {reason}")
+    return "\n".join(lines)
+
+
 def _capabilities_section(capabilities: Optional[list[str]]) -> str:
     if not capabilities:
         return ""
@@ -254,12 +271,17 @@ def reasoning_context(
     identity: Optional[dict[str, Any]] = None,
     escalation_trail: Optional[list[dict[str, Any]]] = None,
     capabilities: Optional[list[str]] = None,
+    recent_experiments: Optional[list[dict[str, Any]]] = None,
 ) -> PromptContext:
     """Build the small cockpit prompt for reasoning LLM consultation.
 
     capabilities: list of available-move strings from TWM capability markers
       (T-self-capability-awareness). Surfaces what Igor CAN do so the
       reasoning peer can suggest moves that actually exist.
+
+    recent_experiments: list of dicts with keys hypothesis, outcome, status,
+      update_reason. Surfaces what was already tried so the reasoning peer
+      doesn't re-propose the same experiment.
 
     CP6: the output is tagged with a hypothesis-disclaimer banner so
     downstream layers treat the reasoning output as a hypothesis to
@@ -279,6 +301,7 @@ def reasoning_context(
         "milieu": _milieu_section(milieu),
         "escalation_trail": _escalation_trail_section(escalation_trail),
         "capabilities": _capabilities_section(capabilities),
+        "recent_experiments": _recent_experiments_section(recent_experiments),
         "situation": _situation_section(situation),
         "disclaimer": HYPOTHESIS_DISCLAIMER,
     }
@@ -289,6 +312,7 @@ def reasoning_context(
         sections["milieu"],
         sections["escalation_trail"],
         sections["capabilities"],
+        sections["recent_experiments"],
         sections["situation"],
         sections["disclaimer"],
     ]

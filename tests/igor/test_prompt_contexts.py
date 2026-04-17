@@ -385,3 +385,50 @@ def test_prompt_context_to_sections_returns_copy():
     # Should be a copy — mutating d shouldn't affect ctx.sections
     d["injected"] = "bad"
     assert "injected" not in ctx.sections
+
+
+# ── Recent experiments in reasoning context ──────────────────────────────
+
+
+def test_reasoning_context_includes_recent_experiments():
+    experiments = [
+        {
+            "hypothesis": "tool X is called Y",
+            "outcome": "match",
+            "status": "updated",
+            "update_reason": "confirmed alias exists",
+        },
+        {
+            "hypothesis": "config key Z controls feature W",
+            "outcome": "mismatch",
+            "status": "observed",
+        },
+    ]
+    ctx = reasoning_context(
+        situation={"query": "find tool X"},
+        provenance=_prov(),
+        recent_experiments=experiments,
+    )
+    assert "recent_experiments" in ctx.sections
+    assert "RECENT EXPERIMENTS" in ctx.sections["recent_experiments"]
+    assert "tool X is called Y" in ctx.system_text
+    assert "confirmed alias exists" in ctx.system_text
+    assert "mismatch" in ctx.system_text
+
+
+def test_reasoning_context_empty_experiments_omitted():
+    ctx = reasoning_context(
+        situation={"query": "test"},
+        provenance=_prov(),
+        recent_experiments=[],
+    )
+    assert ctx.sections.get("recent_experiments", "") == ""
+
+
+def test_reasoning_context_none_experiments_omitted():
+    ctx = reasoning_context(
+        situation={"query": "test"},
+        provenance=_prov(),
+        recent_experiments=None,
+    )
+    assert ctx.sections.get("recent_experiments", "") == ""

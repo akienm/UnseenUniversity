@@ -113,6 +113,13 @@ class LLMPeerAdvisor(PeerAdvisor, IgorBase):
             caller="llm_peer_advisor",
             situation_source=f"workflow:{conversation.workflow_name}",
         )
+        try:
+            from .experiment_scheduler import recent_completed
+
+            _recent_exps = recent_completed(self.cortex, limit=5)
+        except Exception:
+            _recent_exps = None
+
         ctx = reasoning_context(
             situation=situation,
             provenance=prov,
@@ -120,6 +127,7 @@ class LLMPeerAdvisor(PeerAdvisor, IgorBase):
             identity=self._identity,
             escalation_trail=self._escalation_trail,
             capabilities=self._capabilities,
+            recent_experiments=_recent_exps,
         )
 
         # Build the user prompt from conversation history
