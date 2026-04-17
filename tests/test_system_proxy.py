@@ -131,6 +131,22 @@ class TestHardwareProperty:
         assert hw == {}
 
 
+class TestNetworkProperty:
+    def test_network_returns_proxy_or_none(self):
+        proxy = SystemProxy()
+        net = proxy.network
+        if net is not None:
+            assert hasattr(net, "get")
+            assert hasattr(net, "post")
+            assert hasattr(net, "report_str")
+
+    def test_network_cached_on_second_access(self):
+        proxy = SystemProxy()
+        net1 = proxy.network
+        net2 = proxy.network
+        assert net1 is net2
+
+
 class TestModuleSingleton:
     def test_singleton_exists(self):
         assert system_proxy is not None
