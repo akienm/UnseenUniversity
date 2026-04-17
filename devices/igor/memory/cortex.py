@@ -5064,3 +5064,119 @@ class Cortex(IgorBase):
             return [r["id"] for r in rows]
         except Exception:
             return []
+
+    def tree_size(self, root_id: str) -> int:
+        """Count all nodes in the tree rooted at root_id (including root)."""
+        try:
+            with self._conn() as conn:
+                row = conn.execute(
+                    """
+                    WITH RECURSIVE subtree AS (
+                        SELECT id FROM memories WHERE id = ?
+                        UNION ALL
+                        SELECT m.id FROM memories m
+                        JOIN subtree s ON m.parent_id = s.id
+                    )
+                    SELECT COUNT(*) FROM subtree
+                    """,
+                    (root_id,),
+                ).fetchone()
+            return row[0] if row else 0
+        except Exception:
+            return 0
+
+    def _find_tree_root(self, node_id: str) -> str:
+        """Walk parent_id chain up to the root. Returns root ID."""
+        try:
+            with self._conn() as conn:
+                row = conn.execute(
+                    """
+                    WITH RECURSIVE chain AS (
+                        SELECT id, parent_id FROM memories WHERE id = ?
+                        UNION ALL
+                        SELECT m.id, m.parent_id FROM memories m
+                        JOIN chain c ON m.id = c.parent_id
+                        WHERE c.parent_id IS NOT NULL AND c.parent_id != ''
+                    )
+                    SELECT id FROM chain WHERE parent_id IS NULL OR parent_id = ''
+                    """,
+                    (node_id,),
+                ).fetchone()
+            return row[0] if row else node_id
+        except Exception:
+            return node_id
+
+    def _deepest_child(self, root_id: str) -> str | None:
+        """Find the deepest node in the subtree — calving candidate."""
+        try:
+            with self._conn() as conn:
+                row = conn.execute(
+                    """
+                    WITH RECURSIVE subtree AS (
+                        SELECT id, parent_id, 0 AS depth FROM memories WHERE id = ?
+                        UNION ALL
+                        SELECT m.id, m.parent_id, s.depth + 1
+                        FROM memories m
+                        JOIN subtree s ON m.parent_id = s.id
+                        WHERE s.depth < 30
+                    )
+                    SELECT id FROM subtree ORDER BY depth DESC LIMIT 1
+                    """,
+                    (root_id,),
+                ).fetchone()
+            if row and row[0] != root_id:
+                return row[0]
+            return None
+        except Exception:
+            return None
+
+    def calve_subtree(self, node_id: str) -> dict:
+        """Detach node_id and its descendants into a new tree.
+
+        Sets parent_id = NULL on node_id, making it a new root.
+        All descendants keep their parent_id unchanged (they already
+        point to nodes within the subtree). Node IDs don't change,
+        so all references by ID still resolve.
+
+        Returns dict with new_root_id, subtree_count, old_parent_id.
+        """
+        import logging as _logging
+
+        _log = _logging.getLogger(__name__)
+
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT parent_id FROM memories WHERE id = ?",
+                (node_id,),
+            ).fetchone()
+        if not row:
+            return {"error": f"node {node_id} not found"}
+
+        old_parent = row[0] or ""
+        if not old_parent:
+            return {"error": f"node {node_id} is already a root"}
+
+        subtree_count = self.tree_size(node_id)
+
+        with self._conn() as conn:
+            conn.execute(
+                "UPDATE memories SET parent_id = NULL WHERE id = ?",
+                (node_id,),
+            )
+
+        self.write_ring(
+            f"calved subtree: {node_id} ({subtree_count} nodes) from parent {old_parent}",
+            category="system_info",
+        )
+        _log.info(
+            "calve_subtree: %s (%d nodes) from parent %s",
+            node_id,
+            subtree_count,
+            old_parent,
+        )
+
+        return {
+            "new_root_id": node_id,
+            "subtree_count": subtree_count,
+            "old_parent_id": old_parent,
+        }
