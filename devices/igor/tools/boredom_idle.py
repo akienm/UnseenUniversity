@@ -225,6 +225,21 @@ def run_boredom_check(**_) -> str:
         log.info(f"CASCADE {cascade_reply[:120]}")
         return f"[boredom_idle] cascade resolved: {cascade_reply[:80]}"
 
+    # T-experiment-tick-cadence: idle time = experiment time.
+    try:
+        from ..cognition.experiment_scheduler import ExperimentScheduler
+        from ..memory.cortex import Cortex as _Cortex
+
+        _sched = ExperimentScheduler(_Cortex())
+        _exp = _sched.tick()
+        if _exp:
+            log.info(
+                "EXPERIMENT tick ran %s → %s", _exp.experiment_id, _exp.status.value
+            )
+            return f"[boredom_idle] experiment ran: {_exp.experiment_id}"
+    except Exception as _exp_e:
+        log.debug("experiment tick in boredom_idle: %s", _exp_e)
+
     # Generate wonder (fallback when cascade exhausts)
     _cycle_counter += 1
     wonder = None
