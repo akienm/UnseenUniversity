@@ -112,7 +112,9 @@ class TestProxyFactories(unittest.TestCase):
 
                 # Force re-evaluation
                 result = db_proxy.make_home_proxy()
-                MockPG.assert_called_once_with("postgresql://fake/db")
+                MockPG.assert_called_once_with(
+                    "postgresql://fake/db", search_path="clan,infra,public"
+                )
 
     def test_make_home_proxy_falls_back_to_IGOR_DB_URL(self):
         env = {"IGOR_DB_URL": "postgresql://fallback/db"}
@@ -124,7 +126,9 @@ class TestProxyFactories(unittest.TestCase):
                 from wild_igor.igor.memory import db_proxy
 
                 db_proxy.make_home_proxy()
-                MockPG.assert_called_once_with("postgresql://fallback/db")
+                MockPG.assert_called_once_with(
+                    "postgresql://fallback/db", search_path="clan,infra,public"
+                )
 
     def test_make_local_proxy_uses_IGOR_LOCAL_DB_URL(self):
         with patch.dict(
@@ -134,7 +138,9 @@ class TestProxyFactories(unittest.TestCase):
                 from wild_igor.igor.memory import db_proxy
 
                 db_proxy.make_local_proxy()
-                MockPG.assert_called_once_with("postgresql://local/db")
+                MockPG.assert_called_once_with(
+                    "postgresql://local/db", search_path="instance,clan,infra,public"
+                )
 
     def test_make_local_proxy_uses_home_db_when_no_local(self):
         """Local proxy falls back to IGOR_HOME_DB_URL when IGOR_LOCAL_DB_URL is unset."""
@@ -149,7 +155,10 @@ class TestProxyFactories(unittest.TestCase):
                 from wild_igor.igor.memory import db_proxy
 
                 db_proxy.make_local_proxy(Path("/tmp/test.db"))
-                MockPG.assert_called_once_with("postgresql://test:test@localhost/test")
+                MockPG.assert_called_once_with(
+                    "postgresql://test:test@localhost/test",
+                    search_path="instance,clan,infra,public",
+                )
 
 
 # ── PendingReplyStore ─────────────────────────────────────────────────────────
