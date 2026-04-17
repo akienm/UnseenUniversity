@@ -71,7 +71,7 @@ class IgorBase(AgentBase):
         Logger name is the module path (igor.cognition.narrative_engine) so
         Python's logging hierarchy routes records to the correct area handler.
         """
-        if not self.__class__._logger:
+        if not isinstance(self.__class__.__dict__.get("_logger"), _IgorSafeLogger):
             _module = type(self).__module__ or ""
             # Strip wild_igor. prefix so names sit under igor.* hierarchy
             _name = (
