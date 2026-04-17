@@ -218,6 +218,18 @@ class SystemProxy(IgorBase):
         return False
 
     @property
+    def network(self) -> Any:
+        """NetworkProxy singleton — per-host HTTP stats, latency, error rates."""
+        if not hasattr(self, "_network_cache"):
+            try:
+                from .proxy import proxy as _net_proxy
+
+                self._network_cache = _net_proxy
+            except Exception:
+                self._network_cache = None
+        return self._network_cache
+
+    @property
     def hardware(self) -> dict[str, Any]:
         """Static hardware inventory — probed once at first access."""
         if not hasattr(self, "_hardware_cache"):

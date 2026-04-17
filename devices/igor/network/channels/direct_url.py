@@ -144,10 +144,9 @@ class DirectURLChannel(Channel, IgorBase):
     def _fetch_url(self, url: str) -> AcquireResult | ChannelFailure:
         """Fetch content from a URL."""
         try:
-            from ...network.proxy import proxy
+            from ...network.system_proxy import system_proxy
 
-            # Use NetworkProxy to fetch the URL
-            response = proxy.get(url, timeout=30)
+            response = system_proxy.network.get(url, timeout=30)
             if response is None:
                 return ChannelFailure(
                     channel_name=self.name,
