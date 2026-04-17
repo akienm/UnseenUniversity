@@ -621,6 +621,9 @@ class Igor(IgorBase):
         from .cognition.inference_gateway import InferenceGateway as _InferenceGateway
 
         self._gateway = _InferenceGateway.from_env()
+        from .cognition.experiment_scheduler import ExperimentScheduler as _ExpSched
+
+        self._experiment_scheduler = _ExpSched(self.cortex)
         self.thalamus = thalamus.Thalamus()
         self.interaction_count = 0
         self.cloud_calls = 0
@@ -6876,6 +6879,18 @@ class Igor(IgorBase):
                 except Exception as _bare_e:
                     log_error(
                         kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
+                    )
+                try:
+                    _exp = self._experiment_scheduler.tick()
+                    if _exp:
+                        logger.info(
+                            "experiment_tick: ran %s → %s",
+                            _exp.experiment_id,
+                            _exp.status.value,
+                        )
+                except Exception as _exp_e:
+                    log_error(
+                        kind="EXPERIMENT_TICK", detail=f"main.py ne_worker: {_exp_e}"
                     )
 
             self._ne_thread = threading.Thread(
