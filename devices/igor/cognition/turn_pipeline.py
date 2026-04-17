@@ -78,6 +78,8 @@ from .prompt_contexts import (
     Provenance as PCProvenance,
     voice_context,
 )
+from .experiment import Experiment, from_proposed
+from .experiment_scheduler import ExperimentScheduler
 from .reasoning_workflow import (
     PeerAdvisor,
     Workflow,
@@ -103,6 +105,7 @@ class PathStep(str, Enum):
     WORKFLOW = "workflow"
     DECISION_BLOB = "decision_blob"
     CAN_COMMIT = "can_commit"
+    EXPERIMENT_ENQUEUE = "experiment_enqueue"
     VOICE_CONTEXT = "voice_context"
     VOICE_PRODUCTION = "voice_production"
 
@@ -133,6 +136,7 @@ class TurnResult:
     workflow_run: Optional[WorkflowRun] = None
     decision_blob: Optional[DecisionBlob] = None
     voice_context: Optional[PromptContext] = None
+    enqueued_experiment_ids: list[str] = field(default_factory=list)
     path_trace: list[TraceEntry] = field(default_factory=list)
 
     def trace_summary(self) -> list[str]:
@@ -275,12 +279,14 @@ class TurnPipeline(IgorBase):
         workflow: Optional[Workflow] = None,
         voice_producer: Optional[VoiceProducer] = None,
         recorder: Optional[WorkflowRecorder] = None,
+        scheduler: Optional[ExperimentScheduler] = None,
     ) -> None:
         self.cortex = cortex
         self.cascade = cascade or build_default_cascade(cortex)
         self.workflow = workflow or WorkflowA_ExperimentDesign()
         self.voice_producer = voice_producer or VoiceProducer()
         self.recorder = recorder or WorkflowRecorder()
+        self.scheduler = scheduler or ExperimentScheduler(cortex)
 
     def run_turn(
         self,
@@ -454,6 +460,42 @@ class TurnPipeline(IgorBase):
             path_trace=trace,
         )
 
+    def _enqueue_experiments(
+        self,
+        blob: DecisionBlob,
+        trace: list[TraceEntry],
+    ) -> list[str]:
+        """Convert blob's proposed_experiment to a full Experiment and enqueue."""
+        if blob.proposed_experiment is None:
+            return []
+        try:
+            experiment = from_proposed(
+                blob.proposed_experiment,
+                source=blob.provenance.maker if blob.provenance else "unknown",
+                confidence=blob.confidence,
+                parent_blob_id=blob.blob_id,
+            )
+            exp_id = self.scheduler.enqueue(experiment)
+            trace.append(
+                TraceEntry(
+                    step=PathStep.EXPERIMENT_ENQUEUE,
+                    status="enqueued",
+                    summary=f"{exp_id} — {experiment.hypothesis.statement[:80]}",
+                    metadata={"experiment_id": exp_id, "blob_id": blob.blob_id},
+                )
+            )
+            return [exp_id]
+        except Exception as exc:
+            logger.warning("experiment enqueue failed: %s", exc)
+            trace.append(
+                TraceEntry(
+                    step=PathStep.EXPERIMENT_ENQUEUE,
+                    status="failed",
+                    summary=f"{type(exc).__name__}: {exc}",
+                )
+            )
+            return []
+
     def _produce_voice(
         self,
         situation: CascadeSituation,
@@ -463,6 +505,8 @@ class TurnPipeline(IgorBase):
         trace: list[TraceEntry],
     ) -> TurnResult:
         """Build voice context + run voice producer."""
+        enqueued = self._enqueue_experiments(blob, trace)
+
         pc_prov = PCProvenance(
             caller="turn_pipeline",
             situation_source=f"cascade:{cascade_result.level_name}",
@@ -506,6 +550,7 @@ class TurnPipeline(IgorBase):
             workflow_run=workflow_run,
             decision_blob=blob,
             voice_context=ctx,
+            enqueued_experiment_ids=enqueued,
             path_trace=trace,
         )
 
