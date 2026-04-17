@@ -641,6 +641,14 @@ class _PGContext:
         self._t0 = time.monotonic()
         try:
             conn = self._proxy._pool.getconn()
+            # T-uc-schema-three-namespaces: set search_path so queries resolve
+            # tables in the correct schema without explicit schema prefixes.
+            # Uses string formatting (not parameterized) because SET search_path
+            # needs bare identifiers, not a quoted string. Value is internal-only.
+            cur = conn.cursor()
+            cur.execute(f"SET search_path TO {self._proxy._search_path}")
+            cur.close()
+            conn.commit()
             self._wrapper = _PGConnWrapper(conn)
             return self._wrapper
         except Exception as exc:
@@ -682,9 +690,17 @@ class PGDatabaseProxy(IgorBase):
             conn.execute(...)
     """
 
-    def __init__(self, db_url: str) -> None:
+    # T-uc-schema-three-namespaces: search_path determines which schemas are
+    # visible. Connections from make_home_proxy see clan+infra+public (shared).
+    # Connections from make_local_proxy see instance+clan+infra+public (full).
+    # Connections from make_infra_proxy see infra+public only (UC services).
+    # _migrations stays in public so it's always findable before search_path is set.
+    DEFAULT_SEARCH_PATH = "instance,clan,infra,public"
+
+    def __init__(self, db_url: str, search_path: str = None) -> None:
         super().__init__()
         self.db_url = db_url
+        self._search_path = search_path or self.DEFAULT_SEARCH_PATH
         self._latencies: deque[float] = deque(maxlen=_RING_SIZE)
         self._errors: int = 0
         self._slow: int = 0
@@ -815,14 +831,15 @@ def make_home_proxy(db_path: Path = None):
     Return PGDatabaseProxy for IGOR_HOME_DB_URL (global truth DB shared across
     all Igor instances), else DatabaseProxy (SQLite fallback).
 
-    HOME tables: memories, interpretive_edges, wg_cooccur, notebooks,
-                 ResourceManager ledger/policy, reading_list.
+    HOME tables: clan.memories, clan.interpretive_edges, clan.wg_cooccur,
+                 clan.reading_list, plus infra.* for cross-agent tables.
+    search_path: clan,infra,public — no instance schema access.
     """
     db_url = os.getenv("IGOR_HOME_DB_URL") or os.getenv(
         "IGOR_DB_URL"
     )  # backward compat
     if db_url:
-        return PGDatabaseProxy(db_url)
+        return PGDatabaseProxy(db_url, search_path="clan,infra,public")
     # SQLite fallback: use explicit path, then IGOR_DB_PATH env var
     if db_path is None:
         env_path = os.getenv("IGOR_DB_PATH")
@@ -833,11 +850,12 @@ def make_home_proxy(db_path: Path = None):
 
 def make_local_proxy(db_path: Path = None):
     """
-    Return PGDatabaseProxy for LOCAL tables (ring_memory, twm_observations,
-    pending_replies, per-box metrics).
+    Return PGDatabaseProxy for LOCAL tables (instance.ring_memory,
+    instance.twm_observations, instance.pending_replies, per-box metrics).
 
     Checks IGOR_LOCAL_DB_URL first, falls back to IGOR_HOME_DB_URL.
     All data lives in Postgres — no SQLite fallback for TWM/ring.
+    search_path: instance,clan,infra,public — full access for Igor.
     """
     db_url = (
         os.getenv("IGOR_LOCAL_DB_URL")
@@ -845,9 +863,21 @@ def make_local_proxy(db_path: Path = None):
         or os.getenv("IGOR_DB_URL")
     )
     if db_url:
-        return PGDatabaseProxy(db_url)
+        return PGDatabaseProxy(db_url, search_path="instance,clan,infra,public")
     # Last resort: SQLite — should not happen in production
     return DatabaseProxy(db_path)
+
+
+def make_infra_proxy():
+    """
+    Return PGDatabaseProxy for infrastructure tables only (infra schema).
+    Used by utility closet services that don't need clan or instance access.
+    search_path: infra,public.
+    """
+    db_url = os.getenv("IGOR_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
+    if db_url:
+        return PGDatabaseProxy(db_url, search_path="infra,public")
+    return None
 
 
 def make_db_proxy(db_path: Path = None):

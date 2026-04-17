@@ -107,6 +107,10 @@ TWM_TTL_EXTENSION_SECONDS = int(
 _PG_SCHEMA = """
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
+CREATE SCHEMA IF NOT EXISTS instance;
+CREATE SCHEMA IF NOT EXISTS clan;
+CREATE SCHEMA IF NOT EXISTS infra;
+
 CREATE TABLE IF NOT EXISTS _migrations (
     name        TEXT PRIMARY KEY,
     applied_at  TEXT NOT NULL
@@ -538,6 +542,118 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "CREATE INDEX IF NOT EXISTS idx_experiment_queue_status "
         "ON experiment_queue (status, enqueued_at)",
     ),
+    # ── T-uc-schema-three-namespaces: create instance/clan/infra schemas ──────
+    # Step 1: create schemas
+    ("m050_schema_instance", "CREATE SCHEMA IF NOT EXISTS instance"),
+    ("m050_schema_clan", "CREATE SCHEMA IF NOT EXISTS clan"),
+    ("m050_schema_infra", "CREATE SCHEMA IF NOT EXISTS infra"),
+    # Step 2: move clan tables (shared knowledge — memories first for FK order)
+    ("m050_clan_memories", "ALTER TABLE IF EXISTS public.memories SET SCHEMA clan"),
+    (
+        "m050_clan_memory_embeddings",
+        "ALTER TABLE IF EXISTS public.memory_embeddings SET SCHEMA clan",
+    ),
+    (
+        "m050_clan_memory_blobs",
+        "ALTER TABLE IF EXISTS public.memory_blobs SET SCHEMA clan",
+    ),
+    (
+        "m050_clan_interpretive_edges",
+        "ALTER TABLE IF EXISTS public.interpretive_edges SET SCHEMA clan",
+    ),
+    (
+        "m050_clan_reading_list",
+        "ALTER TABLE IF EXISTS public.reading_list SET SCHEMA clan",
+    ),
+    (
+        "m050_clan_reading_runs",
+        "ALTER TABLE IF EXISTS public.reading_runs SET SCHEMA clan",
+    ),
+    (
+        "m050_clan_reading_run_items",
+        "ALTER TABLE IF EXISTS public.reading_run_items SET SCHEMA clan",
+    ),
+    ("m050_clan_lists", "ALTER TABLE IF EXISTS public.lists SET SCHEMA clan"),
+    ("m050_clan_wg_meta", "ALTER TABLE IF EXISTS public.wg_meta SET SCHEMA clan"),
+    (
+        "m050_clan_wg_word_lang",
+        "ALTER TABLE IF EXISTS public.wg_word_lang SET SCHEMA clan",
+    ),
+    ("m050_clan_wg_idf", "ALTER TABLE IF EXISTS public.wg_idf SET SCHEMA clan"),
+    (
+        "m050_clan_wg_word_docs",
+        "ALTER TABLE IF EXISTS public.wg_word_docs SET SCHEMA clan",
+    ),
+    ("m050_clan_wg_cooccur", "ALTER TABLE IF EXISTS public.wg_cooccur SET SCHEMA clan"),
+    ("m050_clan_wg_edges", "ALTER TABLE IF EXISTS public.wg_edges SET SCHEMA clan"),
+    (
+        "m050_clan_wg_lemma_map",
+        "ALTER TABLE IF EXISTS public.wg_lemma_map SET SCHEMA clan",
+    ),
+    ("m050_clan_traces", "ALTER TABLE IF EXISTS public.traces SET SCHEMA clan"),
+    (
+        "m050_clan_experiment_queue",
+        "ALTER TABLE IF EXISTS public.experiment_queue SET SCHEMA clan",
+    ),
+    ("m050_clan_trees", "ALTER TABLE IF EXISTS public.trees SET SCHEMA clan"),
+    (
+        "m050_clan_node_registry",
+        "ALTER TABLE IF EXISTS public.node_registry SET SCHEMA clan",
+    ),
+    # Step 3: move instance tables (per-Igor brain state)
+    (
+        "m050_instance_ring_memory",
+        "ALTER TABLE IF EXISTS public.ring_memory SET SCHEMA instance",
+    ),
+    (
+        "m050_instance_twm_observations",
+        "ALTER TABLE IF EXISTS public.twm_observations SET SCHEMA instance",
+    ),
+    ("m050_instance_tails", "ALTER TABLE IF EXISTS public.tails SET SCHEMA instance"),
+    (
+        "m050_instance_traversal_contexts",
+        "ALTER TABLE IF EXISTS public.traversal_contexts SET SCHEMA instance",
+    ),
+    (
+        "m050_instance_pending_replies",
+        "ALTER TABLE IF EXISTS public.pending_replies SET SCHEMA instance",
+    ),
+    (
+        "m050_instance_wg_access_log",
+        "ALTER TABLE IF EXISTS public.wg_access_log SET SCHEMA instance",
+    ),
+    (
+        "m050_instance_cloud_escalations",
+        "ALTER TABLE IF EXISTS public.cloud_escalations SET SCHEMA instance",
+    ),
+    # Step 4: move infra tables (utility closet / cross-agent)
+    ("m050_infra_machines", "ALTER TABLE IF EXISTS public.machines SET SCHEMA infra"),
+    (
+        "m050_infra_channel_messages",
+        "ALTER TABLE IF EXISTS public.channel_messages SET SCHEMA infra",
+    ),
+    ("m050_infra_sessions", "ALTER TABLE IF EXISTS public.sessions SET SCHEMA infra"),
+    ("m050_infra_slates", "ALTER TABLE IF EXISTS public.slates SET SCHEMA infra"),
+    (
+        "m050_infra_memory_palace",
+        "ALTER TABLE IF EXISTS public.memory_palace SET SCHEMA infra",
+    ),
+    (
+        "m050_infra_instance_log",
+        "ALTER TABLE IF EXISTS public.instance_log SET SCHEMA infra",
+    ),
+    ("m050_infra_decisions", "ALTER TABLE IF EXISTS public.decisions SET SCHEMA infra"),
+    (
+        "m050_infra_docs_entries",
+        "ALTER TABLE IF EXISTS public.docs_entries SET SCHEMA infra",
+    ),
+    (
+        "m050_infra_github_tickets",
+        "ALTER TABLE IF EXISTS public.github_tickets SET SCHEMA infra",
+    ),
+    # _migrations stays in public (bootstrap table — must be findable before search_path is set)
+    # _cc_index_registry stays in public (db_proxy internal bookkeeping)
+    # _migration_*_backup tables stay in public (one-time migration artifacts)
 ]
 
 
@@ -1001,6 +1117,9 @@ class Cortex(IgorBase):
         try:
             raw_conn.autocommit = True
             cur = raw_conn.cursor()
+            # T-uc-schema-three-namespaces: set search_path so CREATE TABLE IF NOT EXISTS
+            # finds tables that have already been moved to non-public schemas.
+            cur.execute(f"SET search_path TO {self._db._search_path}")
             for stmt in _PG_SCHEMA.strip().split(";"):
                 stmt = stmt.strip()
                 if stmt:
