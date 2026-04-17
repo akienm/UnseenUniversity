@@ -144,3 +144,87 @@ class TestCalveSubtree:
         result = Cortex.calve_subtree(cortex, "empty-parent")
         assert "error" in result
         assert "already a root" in result["error"]
+
+
+# ── _maybe_calve trigger ─────────────────────────────────────────────────────
+
+
+class TestMaybeCalve:
+    def test_skips_when_disabled(self):
+        import os
+
+        cortex, conn = _mock_cortex()
+        os.environ.pop("IGOR_CALVING_ENABLED", None)
+
+        from wild_igor.igor.memory.cortex import Cortex
+
+        memory = MagicMock()
+        memory.id = "node-1"
+        memory.parent_id = "parent-1"
+        Cortex._maybe_calve(cortex, memory)
+        # tree_size should never be called
+        cortex.tree_size.assert_not_called()
+
+    def test_skips_when_under_threshold(self):
+        import os
+        from unittest.mock import patch as _patch
+
+        cortex, conn = _mock_cortex()
+        cortex._find_tree_root = MagicMock(return_value="root-1")
+        cortex.tree_size = MagicMock(return_value=500)
+
+        from wild_igor.igor.memory.cortex import Cortex
+
+        memory = MagicMock()
+        memory.id = "node-1"
+        memory.parent_id = "parent-1"
+        with _patch.dict(os.environ, {"IGOR_CALVING_ENABLED": "true"}):
+            Cortex._maybe_calve(cortex, memory)
+        cortex.calve_subtree.assert_not_called()
+
+    def test_calves_when_over_threshold(self):
+        import os
+        from unittest.mock import patch as _patch
+
+        cortex, conn = _mock_cortex()
+        cortex._find_tree_root = MagicMock(return_value="root-1")
+        cortex.tree_size = MagicMock(return_value=1500)
+        cortex._deepest_child = MagicMock(return_value="deep-leaf")
+        conn.execute.return_value.fetchone.return_value = ("mid-node",)
+        cortex.calve_subtree = MagicMock(
+            return_value={"new_root_id": "mid-node", "subtree_count": 200}
+        )
+
+        from wild_igor.igor.memory.cortex import Cortex
+
+        memory = MagicMock()
+        memory.id = "node-1"
+        memory.parent_id = "parent-1"
+        with _patch.dict(os.environ, {"IGOR_CALVING_ENABLED": "true"}):
+            Cortex._maybe_calve(cortex, memory)
+        cortex.calve_subtree.assert_called_once_with("mid-node")
+
+    def test_custom_threshold_via_env(self):
+        import os
+        from unittest.mock import patch as _patch
+
+        cortex, conn = _mock_cortex()
+        cortex._find_tree_root = MagicMock(return_value="root-1")
+        cortex.tree_size = MagicMock(return_value=600)
+        cortex._deepest_child = MagicMock(return_value="deep-leaf")
+        conn.execute.return_value.fetchone.return_value = ("mid-node",)
+        cortex.calve_subtree = MagicMock(
+            return_value={"new_root_id": "mid-node", "subtree_count": 50}
+        )
+
+        from wild_igor.igor.memory.cortex import Cortex
+
+        memory = MagicMock()
+        memory.id = "node-1"
+        memory.parent_id = "parent-1"
+        with _patch.dict(
+            os.environ,
+            {"IGOR_CALVING_ENABLED": "true", "IGOR_CALVING_THRESHOLD": "500"},
+        ):
+            Cortex._maybe_calve(cortex, memory)
+        cortex.calve_subtree.assert_called_once()
