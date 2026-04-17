@@ -200,7 +200,7 @@ def _deposit_fact(
         "source_author": author[:50] if author else "",
         "extraction_confidence": confidence,
         "matched_node": node_id if node_id != "none" else "",
-        "model_used": _os.getenv("OR_CHEAP_MODEL", "unknown"),
+        "model_used": os.getenv("OR_CHEAP_MODEL", "unknown"),
         "inference_tier": "cloud",
     }
 
