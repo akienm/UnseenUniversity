@@ -168,24 +168,30 @@ def test_run_one_probe_raises_records_inconclusive():
 
 
 def test_run_one_unsupported_probe_kind_aborts():
+    """If a probe kind were removed from SAFE_PROBE_KINDS, it would abort."""
     cortex, _ = _make_mock_cortex()
     scheduler = ExperimentScheduler(cortex)
     exp = _proposed_experiment(
-        kind=ProbeKind.SIM_TURN,
-        target="some_simulation",
+        kind=ProbeKind.MEMORY_QUERY,
+        target="test",
     )
+    # Temporarily shrink whitelist to force an abort
+    import wild_igor.igor.cognition.experiment_scheduler as _mod
 
-    result = scheduler.run_one(exp)
-    assert result.status == ExperimentStatus.ABORTED
-    # TWM still gets pushed for the abort, so cognition can see what happened
-    assert cortex.twm_push.called
+    orig = _mod.SAFE_PROBE_KINDS
+    _mod.SAFE_PROBE_KINDS = frozenset()
+    try:
+        result = scheduler.run_one(exp)
+        assert result.status == ExperimentStatus.ABORTED
+        assert cortex.twm_push.called
+    finally:
+        _mod.SAFE_PROBE_KINDS = orig
 
 
-def test_safe_probe_kinds_are_locked():
-    """Whitelist must contain exactly the cheap kinds. New kinds default to ABORT."""
-    assert SAFE_PROBE_KINDS == frozenset(
-        {ProbeKind.MEMORY_QUERY, ProbeKind.DB_QUERY, ProbeKind.TOOL_CALL}
-    )
+def test_safe_probe_kinds_covers_all():
+    """All defined ProbeKinds should be in SAFE_PROBE_KINDS."""
+    for kind in ProbeKind:
+        assert kind in SAFE_PROBE_KINDS
 
 
 # ── Tool call dispatch ───────────────────────────────────────────────────────
@@ -346,3 +352,116 @@ def test_tick_picks_next_proposed_and_runs_it():
 def test_default_timeout_is_reasonable():
     """30s default lets memory queries / db queries / tool calls finish."""
     assert DEFAULT_TIMEOUT_SEC == 30.0
+
+
+# ── Expanded dispatch: HABIT_DRYRUN ──────────────────────────────────────────
+
+
+def test_habit_dryrun_found():
+    cortex, conn = _make_mock_cortex()
+    conn.fetchone.return_value = ("habit-123", "do the thing", "{}")
+    scheduler = ExperimentScheduler(cortex)
+    exp = Experiment(
+        hypothesis=Hypothesis(statement="habit X exists", source="test"),
+        probe=Probe(kind=ProbeKind.HABIT_DRYRUN, target="habit-123"),
+    )
+    exp.advance(ExperimentStatus.RUNNING)
+    from wild_igor.igor.cognition.experiment_scheduler import _dispatch_habit_dryrun
+
+    obs = _dispatch_habit_dryrun(cortex, exp)
+    assert obs.outcome == Outcome.MATCH
+    assert obs.data["habit_id"] == "habit-123"
+
+
+def test_habit_dryrun_not_found():
+    cortex, conn = _make_mock_cortex()
+    conn.fetchone.return_value = None
+    exp = Experiment(
+        hypothesis=Hypothesis(statement="habit X exists", source="test"),
+        probe=Probe(kind=ProbeKind.HABIT_DRYRUN, target="nonexistent"),
+    )
+    exp.advance(ExperimentStatus.RUNNING)
+    from wild_igor.igor.cognition.experiment_scheduler import _dispatch_habit_dryrun
+
+    obs = _dispatch_habit_dryrun(cortex, exp)
+    assert obs.outcome == Outcome.MISMATCH
+
+
+# ── Expanded dispatch: CHANNEL_SEND ──────────────────────────────────────────
+
+
+def test_channel_send_success():
+    cortex, _ = _make_mock_cortex()
+    exp = Experiment(
+        hypothesis=Hypothesis(statement="channel works", source="test"),
+        probe=Probe(kind=ProbeKind.CHANNEL_SEND, target="test message"),
+    )
+    exp.advance(ExperimentStatus.RUNNING)
+    from wild_igor.igor.cognition.experiment_scheduler import _dispatch_channel_send
+
+    with patch("wild_igor.igor.tools.channel_post.post_to_channel") as mock_post:
+        obs = _dispatch_channel_send(cortex, exp)
+    assert obs.outcome == Outcome.MATCH
+    mock_post.assert_called_once()
+
+
+def test_channel_send_failure():
+    cortex, _ = _make_mock_cortex()
+    exp = Experiment(
+        hypothesis=Hypothesis(statement="channel works", source="test"),
+        probe=Probe(kind=ProbeKind.CHANNEL_SEND, target="test message"),
+    )
+    exp.advance(ExperimentStatus.RUNNING)
+    from wild_igor.igor.cognition.experiment_scheduler import _dispatch_channel_send
+
+    with patch(
+        "wild_igor.igor.tools.channel_post.post_to_channel",
+        side_effect=ConnectionError("down"),
+    ):
+        obs = _dispatch_channel_send(cortex, exp)
+    assert obs.outcome == Outcome.INCONCLUSIVE
+
+
+# ── Expanded dispatch: SIM_TURN ──────────────────────────────────────────────
+
+
+def test_sim_turn_cascade_match():
+    cortex, _ = _make_mock_cortex(search_results=[{"id": "x"}])
+    exp = Experiment(
+        hypothesis=Hypothesis(statement="cascade can handle this", source="test"),
+        probe=Probe(
+            kind=ProbeKind.SIM_TURN,
+            target="test query",
+            payload={"query": "test query"},
+        ),
+    )
+    exp.advance(ExperimentStatus.RUNNING)
+    from wild_igor.igor.cognition.experiment_scheduler import _dispatch_sim_turn
+
+    from wild_igor.igor.cognition.experiment_cascade import (
+        CascadeResult,
+        CascadeStatus,
+    )
+
+    mock_cascade = MagicMock()
+    mock_cascade.attempt.return_value = CascadeResult(
+        status=CascadeStatus.MATCHED,
+        level_name="test_level",
+        data=["result"],
+        reason="matched",
+    )
+    with patch(
+        "wild_igor.igor.cognition.experiment_cascade.build_default_cascade",
+        return_value=mock_cascade,
+    ):
+        obs = _dispatch_sim_turn(cortex, exp)
+    assert obs.outcome == Outcome.MATCH
+    assert obs.data["cascade_status"] == "matched"
+
+
+# ── All probe kinds now safe ─────────────────────────────────────────────────
+
+
+def test_all_probe_kinds_are_safe():
+    for kind in ProbeKind:
+        assert kind in SAFE_PROBE_KINDS, f"{kind} not in SAFE_PROBE_KINDS"
