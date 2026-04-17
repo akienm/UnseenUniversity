@@ -151,6 +151,51 @@ class TestCalveSubtree:
         assert "error" in result
         assert "already a root" in result["error"]
 
+    def test_calve_refuses_core_pattern_nodes(self):
+        """CP nodes, ID nodes, ROOT, PROC nodes must never be calved."""
+        cortex, conn = _mock_cortex()
+        from wild_igor.igor.memory.cortex import Cortex
+
+        cortex._CALVING_PROTECTED = Cortex._CALVING_PROTECTED
+        for node_id in ("CP1", "CP3", "CP6", "ID1", "ID14", "ROOT", "PROC1"):
+            result = Cortex.calve_subtree(cortex, node_id)
+            assert "error" in result, f"{node_id} should be protected"
+            assert "protected" in result["error"], f"{node_id}: {result}"
+
+
+class TestMaybeCalveProtection:
+    def test_skips_core_pattern_memory(self):
+        import os
+        from unittest.mock import patch as _patch
+
+        cortex, conn = _mock_cortex()
+        from wild_igor.igor.memory.cortex import Cortex
+
+        cortex._CALVING_PROTECTED = Cortex._CALVING_PROTECTED
+        memory = MagicMock()
+        memory.id = "CP3"
+        memory.parent_id = "ROOT"
+        with _patch.dict(os.environ, {"IGOR_CALVING_ENABLED": "true"}):
+            Cortex._maybe_calve(cortex, memory)
+        cortex.tree_size.assert_not_called()
+
+    def test_skips_root_tree(self):
+        import os
+        from unittest.mock import patch as _patch
+
+        from wild_igor.igor.memory.cortex import Cortex
+
+        cortex, conn = _mock_cortex()
+        cortex._find_tree_root = MagicMock(return_value="ROOT")
+        cortex._CALVING_PROTECTED = Cortex._CALVING_PROTECTED
+
+        memory = MagicMock()
+        memory.id = "some-node"
+        memory.parent_id = "CP4"
+        with _patch.dict(os.environ, {"IGOR_CALVING_ENABLED": "true"}):
+            Cortex._maybe_calve(cortex, memory)
+        cortex.tree_size.assert_not_called()
+
 
 # ── _maybe_calve trigger ─────────────────────────────────────────────────────
 
