@@ -580,6 +580,12 @@ def register_self(hostname: str, ip: str) -> bool:
             conn.close()
             _log.info("register_self: %s already in machines table", hostname)
             return False
+        try:
+            from ..network.system_proxy import system_proxy as _sp
+
+            _hw = _sp.hardware
+        except Exception:
+            _hw = {}
         cur.execute(
             """
             INSERT INTO machines
@@ -593,14 +599,14 @@ def register_self(hostname: str, ip: str) -> bool:
             (
                 hostname,
                 hostname,
-                ip if ip != "unknown" else None,
-                "unknown",
-                "unknown",
-                0,
-                "unknown",
+                ip if ip != "unknown" else _hw.get("ip"),
+                _hw.get("os", "unknown"),
+                _hw.get("cpu", "unknown"),
+                _hw.get("ram_gb", 0),
+                _hw.get("network_type", "unknown"),
                 "online",
                 11434,
-                "unknown",
+                _hw.get("ollama_model", "unknown"),
                 None,
                 json.dumps([]),
                 json.dumps([]),

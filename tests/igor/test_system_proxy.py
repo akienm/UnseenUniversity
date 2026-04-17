@@ -106,6 +106,31 @@ class TestSystemProxy:
         assert "CPU:" in report
 
 
+class TestHardwareProperty:
+    def test_hardware_returns_dict(self):
+        proxy = SystemProxy()
+        hw = proxy.hardware
+        assert isinstance(hw, dict)
+        assert "hostname" in hw or hw == {}
+
+    def test_hardware_cached_on_second_access(self):
+        proxy = SystemProxy()
+        hw1 = proxy.hardware
+        hw2 = proxy.hardware
+        assert hw1 is hw2
+
+    def test_hardware_empty_on_import_failure(self):
+        proxy = SystemProxy()
+        with patch(
+            "wild_igor.igor.tools.hardware_detect.detect_hardware",
+            side_effect=ImportError("nope"),
+        ):
+            if hasattr(proxy, "_hardware_cache"):
+                del proxy._hardware_cache
+            hw = proxy.hardware
+        assert hw == {}
+
+
 class TestModuleSingleton:
     def test_singleton_exists(self):
         assert system_proxy is not None

@@ -217,6 +217,18 @@ class SystemProxy(IgorBase):
             return True
         return False
 
+    @property
+    def hardware(self) -> dict[str, Any]:
+        """Static hardware inventory — probed once at first access."""
+        if not hasattr(self, "_hardware_cache"):
+            try:
+                from ..tools.hardware_detect import detect_hardware
+
+                self._hardware_cache: dict[str, Any] = detect_hardware()
+            except Exception:
+                self._hardware_cache = {}
+        return self._hardware_cache
+
     def report_str(self) -> str:
         """Human-readable one-liner for dashboards and audits."""
         snap = self.snapshot()
