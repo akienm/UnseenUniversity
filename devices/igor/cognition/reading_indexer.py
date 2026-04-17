@@ -189,15 +189,19 @@ def _deposit_fact(
     # Generate stable ID
     mem_id = _fact_cloud_id(content_id, chapter_idx, chunk_idx, narrative)
 
-    # Build metadata
+    # Build metadata with provenance
     metadata = {
         "content_id": content_id,
         "chapter_idx": chapter_idx,
         "chunk_idx": chunk_idx,
         "title": title[:100],
+        "source_title": title[:100],
         "author": author[:50] if author else "",
+        "source_author": author[:50] if author else "",
         "extraction_confidence": confidence,
         "matched_node": node_id if node_id != "none" else "",
+        "model_used": _os.getenv("OR_CHEAP_MODEL", "unknown"),
+        "inference_tier": "cloud",
     }
 
     # Create memory
