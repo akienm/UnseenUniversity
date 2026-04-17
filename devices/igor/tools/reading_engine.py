@@ -283,6 +283,7 @@ def process_blob(
     from claudecode.book_learner import _deposit_completion_record
 
     status = "complete" if pos >= len(sentences) else "partial"
+    _model = "local-ollama" if use_local else model
     _deposit_completion_record(
         cortex,
         book_title,
@@ -293,6 +294,7 @@ def process_blob(
         chunks_processed,
         total_nodes,
         status,
+        model_used=_model,
     )
 
     return {
