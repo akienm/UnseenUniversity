@@ -558,22 +558,40 @@ class TurnPipeline(IgorBase):
 # ── Blob constructors ──────────────────────────────────────────────────────
 
 
+def _extract_cascade_content(cascade_result: CascadeResult) -> str:
+    """Pull the best narrative text from cascade match data."""
+    data = cascade_result.data
+    if not data:
+        return ""
+    if isinstance(data, list):
+        for item in data:
+            narrative = getattr(item, "narrative", None)
+            if narrative:
+                return str(narrative)[:500]
+        return str(data[0])[:500] if data else ""
+    if isinstance(data, dict):
+        return str(data.get("narrative", data.get("content", "")))[:500]
+    return str(data)[:500]
+
+
 def _blob_from_cascade_match(
     situation: CascadeSituation,
     cascade_result: CascadeResult,
 ) -> DecisionBlob:
     """Build a DecisionBlob for a cascade that matched at a substrate
-    level. The selected_action names the cascade match; confidence is
-    relatively high because substrate resolved it without needing to
-    escalate to reasoning.
+    level. The selected_action carries the matched memory content;
+    confidence is relatively high because substrate resolved it without
+    needing to escalate to reasoning.
     """
+    content = _extract_cascade_content(cascade_result)
     prov = DBProvenance(
         maker="substrate",
         inputs=[cascade_result.level_name, situation.query[:80]],
     )
     blob = DecisionBlob(
         intent=Intent.ANSWER,
-        selected_action=f"reuse {cascade_result.level_name} result",
+        selected_action=content
+        or f"(substrate matched at {cascade_result.level_name} but no content extracted)",
         confidence=0.8,
         provenance=prov,
     )
