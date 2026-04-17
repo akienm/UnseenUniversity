@@ -1117,6 +1117,12 @@ class Cortex(IgorBase):
                 logging.getLogger(__name__).warning(
                     "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
                 )
+        # T-calving-trigger-on-write: check if tree is over threshold
+        if memory.parent_id:
+            try:
+                self._maybe_calve(memory)
+            except Exception as _calve_e:
+                logging.getLogger(__name__).debug("calving check: %s", _calve_e)
         return memory
 
     # CP keyword affinity table for auto-wiring (#170)
@@ -5036,6 +5042,33 @@ class Cortex(IgorBase):
                 continue
 
         return adopted
+
+    def _maybe_calve(self, memory) -> None:
+        """Check if the tree this memory belongs to exceeds threshold; calve if so."""
+        import os as _os
+
+        if _os.getenv("IGOR_CALVING_ENABLED", "false").lower() != "true":
+            return
+        threshold = int(_os.getenv("IGOR_CALVING_THRESHOLD", "1000"))
+        root_id = self._find_tree_root(memory.id)
+        size = self.tree_size(root_id)
+        if size <= threshold:
+            return
+        deepest = self._deepest_child(root_id)
+        if deepest and deepest != memory.id:
+            # Walk up from deepest to find a good split point (first node with children)
+            split_id = deepest
+            try:
+                with self._conn() as conn:
+                    row = conn.execute(
+                        "SELECT parent_id FROM memories WHERE id = ?",
+                        (deepest,),
+                    ).fetchone()
+                if row and row[0]:
+                    split_id = row[0]
+            except Exception:
+                pass
+            self.calve_subtree(split_id)
 
     def find_calving_candidates(self, depth_threshold: int = 5) -> list[str]:
         """
