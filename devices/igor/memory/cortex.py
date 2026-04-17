@@ -1162,6 +1162,15 @@ class Cortex(IgorBase):
                 k: scrub(v) if isinstance(v, str) else v
                 for k, v in memory.metadata.items()
             }
+        # T-provenance-coverage-enforcement: stamp provenance metadata at store boundary.
+        # Pass narrative hint for gap logging (stripped after stamping).
+        if not memory.metadata:
+            memory.metadata = {}
+        memory.metadata["_narrative_hint"] = (memory.narrative or "")[:60]
+        from .provenance import ensure_provenance
+
+        memory.metadata = ensure_provenance(memory.metadata, memory.source)
+        memory.metadata.pop("_narrative_hint", None)
         # T-test-data-lifecycle: when IGOR_TEST_MODE=1, auto-stamp test_data
         # tag + TTL into metadata. Honors memory_node_shape principle —
         # everything lives in metadata, no columns. Opt-out: explicit
