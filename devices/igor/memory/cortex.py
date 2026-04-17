@@ -1117,9 +1117,13 @@ class Cortex(IgorBase):
         try:
             raw_conn.autocommit = True
             cur = raw_conn.cursor()
-            # T-uc-schema-three-namespaces: set search_path so CREATE TABLE IF NOT EXISTS
-            # finds tables that have already been moved to non-public schemas.
-            cur.execute(f"SET search_path TO {self._db._search_path}")
+            # T-uc-schema-three-namespaces: use FULL search_path (all schemas) so
+            # CREATE TABLE IF NOT EXISTS finds tables in ANY schema — not just
+            # the home proxy's restricted path. Without this, tables in the
+            # instance schema are invisible and get re-created in clan.
+            from .db_proxy import PGDatabaseProxy
+
+            cur.execute(f"SET search_path TO {PGDatabaseProxy.DEFAULT_SEARCH_PATH}")
             for stmt in _PG_SCHEMA.strip().split(";"):
                 stmt = stmt.strip()
                 if stmt:
