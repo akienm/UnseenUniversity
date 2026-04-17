@@ -2097,14 +2097,12 @@ class InteroceptionSource(BasePushSource):
         self._last_run = now
 
         try:
-            import psutil
+            from ..network.system_proxy import system_proxy
 
-            cpu = psutil.cpu_percent(interval=None)
-            mem = psutil.virtual_memory().percent
-            try:
-                disk = psutil.disk_usage("/").percent
-            except Exception:
-                disk = 0.0
+            snap = system_proxy.snapshot()
+            cpu = snap.cpu_percent
+            mem = snap.memory.percent if snap.memory else 0.0
+            disk = snap.disk.percent if snap.disk else 0.0
         except Exception:
             return []
 

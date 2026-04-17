@@ -518,7 +518,11 @@ class InferenceGateway(IgorBase):
                             )
                         except Exception as _exc:
                             from .forensic_logger import log_error as _le
-                            _le(kind="SILENT_EXCEPT", detail=f"inference_gateway.py:519: {_exc}")
+
+                            _le(
+                                kind="SILENT_EXCEPT",
+                                detail=f"inference_gateway.py:519: {_exc}",
+                            )
                         break
             except Exception as _mode_e:
                 log_error(kind="MODE_READ_FAIL", detail=str(_mode_e))
@@ -636,13 +640,17 @@ class InferenceGateway(IgorBase):
             from .forensic_logger import log_anomaly as _log_anomaly
 
             try:
-                import psutil as _psutil
+                from ..network.system_proxy import system_proxy as _sp
 
-                _cpu = _psutil.cpu_percent(interval=0.1)
-                _mem = _psutil.virtual_memory()
+                _snap = _sp.snapshot()
+                _mem_info = _snap.memory
                 _resource_detail = (
-                    f"cpu={_cpu:.0f}% mem_used={_mem.percent:.0f}% "
-                    f"mem_avail_mb={_mem.available // 1024 // 1024}"
+                    (
+                        f"cpu={_snap.cpu_percent:.0f}% mem_used={_mem_info.percent:.0f}% "
+                        f"mem_avail_mb={int(_mem_info.available_gb * 1024)}"
+                    )
+                    if _mem_info
+                    else f"cpu={_snap.cpu_percent:.0f}%"
                 )
             except Exception:
                 _resource_detail = "resource_stats=unavailable"

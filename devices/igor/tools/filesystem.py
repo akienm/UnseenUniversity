@@ -265,7 +265,9 @@ def check_resource_load() -> str:
       - This process: RSS memory (Igor's own footprint)
       - Verdict: ok / warn / critical with a plain-language note
     """
-    import psutil
+    from ..network.system_proxy import system_proxy
+
+    snap = system_proxy.snapshot()
 
     # CPU load averages (POSIX: /proc/loadavg)
     load1, load5, load15 = os.getloadavg()
@@ -273,25 +275,21 @@ def check_resource_load() -> str:
     load_pct = load1 / ncpus * 100  # normalised to core count
 
     # RAM
-    vm = psutil.virtual_memory()
-    ram_total_gb = vm.total / (1024**3)
-    ram_used_gb = vm.used / (1024**3)
-    ram_avail_gb = vm.available / (1024**3)
-    ram_pct = vm.percent
+    _mem = snap.memory
+    ram_total_gb = _mem.total_gb if _mem else 0.0
+    ram_used_gb = (ram_total_gb - _mem.available_gb) if _mem else 0.0
+    ram_avail_gb = _mem.available_gb if _mem else 0.0
+    ram_pct = _mem.percent if _mem else 0.0
 
     # Swap
-    sw = psutil.swap_memory()
-    swap_total_gb = sw.total / (1024**3)
-    swap_used_gb = sw.used / (1024**3)
-    swap_free_gb = sw.free / (1024**3)
-    swap_pct = sw.percent
+    swap_total_gb = _mem.swap_total_gb if _mem else 0.0
+    swap_used_gb = _mem.swap_used_gb if _mem else 0.0
+    swap_free_gb = swap_total_gb - swap_used_gb
+    swap_pct = _mem.swap_percent if _mem else 0.0
 
     # This process's own footprint
-    try:
-        proc = psutil.Process(os.getpid())
-        self_rss_mb = proc.memory_info().rss / (1024**2)
-    except Exception:
-        self_rss_mb = 0.0
+    _proc = snap.process
+    self_rss_mb = _proc.rss_mb if _proc else 0.0
 
     # Thresholds (overridable via env)
     _cpu_warn = float(os.getenv("IGOR_LOAD_CPU_WARN", "80"))  # % of all cores
@@ -362,17 +360,19 @@ def _resource_load_dict() -> dict:
     Returns empty dict if psutil unavailable.
     """
     try:
-        import psutil as _ps
+        from ..network.system_proxy import system_proxy as _sp
+
+        _snap = _sp.snapshot()
+        _mem = _snap.memory
 
         load1, _, _ = os.getloadavg()
         ncpus = os.cpu_count() or 1
         cpu_load_pct = load1 / ncpus * 100
-        vm = _ps.virtual_memory()
-        sw = _ps.swap_memory()
-        try:
-            self_rss_mb = _ps.Process(os.getpid()).memory_info().rss / (1024**2)
-        except Exception:
-            self_rss_mb = 0.0
+        ram_pct = _mem.percent if _mem else 0.0
+        ram_avail_gb = _mem.available_gb if _mem else 0.0
+        swap_pct = _mem.swap_percent if _mem else 0.0
+        swap_free_gb = (_mem.swap_total_gb - _mem.swap_used_gb) if _mem else 0.0
+        igor_rss_mb = _snap.process.rss_mb if _snap.process else 0.0
 
         _cpu_warn = float(os.getenv("IGOR_LOAD_CPU_WARN", "80"))
         _cpu_crit = float(os.getenv("IGOR_LOAD_CPU_CRIT", "95"))
@@ -382,16 +382,10 @@ def _resource_load_dict() -> dict:
         _swap_crit = float(os.getenv("IGOR_LOAD_SWAP_CRIT", "75"))
 
         verdict = "ok"
-        if (
-            cpu_load_pct >= _cpu_crit
-            or vm.percent >= _ram_crit
-            or sw.percent >= _swap_crit
-        ):
+        if cpu_load_pct >= _cpu_crit or ram_pct >= _ram_crit or swap_pct >= _swap_crit:
             verdict = "critical"
         elif (
-            cpu_load_pct >= _cpu_warn
-            or vm.percent >= _ram_warn
-            or sw.percent >= _swap_warn
+            cpu_load_pct >= _cpu_warn or ram_pct >= _ram_warn or swap_pct >= _swap_warn
         ):
             verdict = "warn"
 
@@ -402,11 +396,11 @@ def _resource_load_dict() -> dict:
 
         return {
             "cpu_load_pct": round(cpu_load_pct, 1),
-            "ram_pct": round(vm.percent, 1),
-            "ram_avail_gb": round(vm.available / (1024**3), 2),
-            "swap_pct": round(sw.percent, 1),
-            "swap_free_gb": round(sw.free / (1024**3), 2),
-            "igor_rss_mb": round(self_rss_mb, 1),
+            "ram_pct": round(ram_pct, 1),
+            "ram_avail_gb": round(ram_avail_gb, 2),
+            "swap_pct": round(swap_pct, 1),
+            "swap_free_gb": round(swap_free_gb, 2),
+            "igor_rss_mb": round(igor_rss_mb, 1),
             "verdict": verdict,
             "night_mode": _night_mode,
         }
