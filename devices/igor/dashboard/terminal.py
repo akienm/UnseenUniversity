@@ -162,7 +162,6 @@ def render(
     local_pct = _get_local_pct()
     cloud_mode_str = f"[green]ON[/]" if cloud_mode_active else "[dim]OFF[/]"
     lines.append(
-        f"[bold]Graph:[/] {graph_pct}%  "
         f"[bold]Local:[/] {local_pct}%  "
         f"[bold]cloud_mode:[/] {cloud_mode_str}  "
         f"[bold]cloud calls:[/] {upstream_pct}%"
@@ -375,6 +374,7 @@ def _get_active_cc_ticket() -> dict | None:
                 return {"id": t.get("id", "?"), "title": t.get("title", "")}
     except Exception as _exc:
         from ..cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"terminal.py:376: {_exc}")
     return None
 
