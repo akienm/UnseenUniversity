@@ -66,6 +66,12 @@ def version_before_update(cortex, memory) -> Optional[str]:
         # Remove the versioned flag from the snapshot — it's not itself versioned
         version_meta.pop("versioned", None)
 
+        # T-versioned-engrams: for engram nodes, compute delta
+        if existing.metadata.get("habit_type") == "engram" and existing.payload:
+            delta = _compute_engram_delta(existing, memory)
+            if delta:
+                version_meta["engram_delta"] = delta
+
         version_node = Memory(
             id=version_id,
             narrative=existing.narrative,
@@ -90,6 +96,47 @@ def version_before_update(cortex, memory) -> Optional[str]:
     except Exception as exc:
         log.warning("versioning failed for %s: %s", memory.id, exc)
         return None
+
+
+def _compute_engram_delta(old_memory, new_memory) -> dict:
+    """Compute what changed between two versions of an engram node.
+
+    T-versioned-engrams: delta-based versioning for engram nodes.
+    Returns a dict describing what changed: narrative, payload cells,
+    metadata fields. Returns empty dict if nothing meaningful changed.
+    """
+    delta = {}
+
+    if old_memory.narrative != new_memory.narrative:
+        delta["narrative_changed"] = True
+        delta["old_narrative_len"] = len(old_memory.narrative or "")
+        delta["new_narrative_len"] = len(new_memory.narrative or "")
+
+    old_payload = old_memory.payload if isinstance(old_memory.payload, dict) else {}
+    new_payload = new_memory.payload if isinstance(new_memory.payload, dict) else {}
+    old_cells = old_payload.get("cells", [])
+    new_cells = new_payload.get("cells", [])
+
+    if old_cells != new_cells:
+        delta["cells_changed"] = True
+        delta["old_cell_count"] = len(old_cells)
+        delta["new_cell_count"] = len(new_cells)
+        # Track which opcodes changed
+        old_ops = [c[0] for c in old_cells if isinstance(c, list) and c]
+        new_ops = [c[0] for c in new_cells if isinstance(c, list) and c]
+        if old_ops != new_ops:
+            delta["old_opcodes"] = old_ops
+            delta["new_opcodes"] = new_ops
+
+    # Track code_ref changes
+    old_ref = (old_memory.metadata or {}).get("code_ref", "")
+    new_ref = (new_memory.metadata or {}).get("code_ref", "")
+    if old_ref != new_ref:
+        delta["code_ref_changed"] = True
+        delta["old_code_ref"] = old_ref
+        delta["new_code_ref"] = new_ref
+
+    return delta
 
 
 def _get_next_seq(cortex, memory_id: str) -> int:
