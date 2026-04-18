@@ -8,15 +8,12 @@ anchors in the recent past. When a claim is unverified, it logs a
 CONFAB_CAUGHT ring entry and pushes a high-salience TWM marker so the
 NEXT turn picks up the warning and Igor can self-correct.
 
-This sprint is detection-only:
-  - DETECT action-claim phrases in the outgoing reply text
-  - LOOK for matching evidence (recent file writes, goal_close events,
-    accretion entries, queue mutations) in a configurable time window
-  - If no evidence: log + TWM marker, but do NOT modify the reply text
-
-Active suppression / replacement of false claims is a follow-up ticket.
-The detection-only first pass lets us observe the pattern without risking
-worse outcomes from bad suppression.
+Two-phase approach:
+  Phase 1 (detection): DETECT action-claim phrases, LOOK for evidence
+    anchors, LOG + TWM marker if unverified.
+  Phase 2 (T-active-suppression-action-claims): SUPPRESS unverified
+    claims by stripping them from response text before user sees it.
+    TWM marker still fires so Igor self-corrects on next turn.
 
 Biomimetic framing: this is the equivalent of reality-monitoring in
 metacognition. Healthy minds catch the difference between 'I remember
@@ -108,7 +105,11 @@ def _recent_tool_results(cortex, window_sec: int = _EVIDENCE_WINDOW_SEC) -> list
                             results.append(h)
                     except Exception as _exc:
                         from .forensic_logger import log_error as _le
-                        _le(kind="SILENT_EXCEPT", detail=f"action_claim_verifier.py:109: {_exc}")
+
+                        _le(
+                            kind="SILENT_EXCEPT",
+                            detail=f"action_claim_verifier.py:109: {_exc}",
+                        )
         return results
     except Exception:
         return []
@@ -153,6 +154,7 @@ def _confab_log(stage: str, **fields) -> None:
             f.write(line + "\n")
     except Exception as _exc:
         from .forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"action_claim_verifier.py:153: {_exc}")
 
 
@@ -174,7 +176,7 @@ def check_response(
          next turn's reasoning has it as dominant context
       3. Forensic log entry
 
-    NEVER modifies response_text. NEVER raises. Detection-only first pass.
+    NEVER raises. Returns unverified claims for caller to act on.
     """
     if not response_text:
         return []
@@ -214,6 +216,7 @@ def check_response(
         )
     except Exception as _exc:
         from .forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"action_claim_verifier.py:213: {_exc}")
 
     try:
@@ -237,6 +240,45 @@ def check_response(
         )
     except Exception as _exc:
         from .forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"action_claim_verifier.py:235: {_exc}")
 
     return claims
+
+
+def suppress_false_claims(response_text: str, claims: list[str]) -> str:
+    """Strip unverified action claims from response text.
+
+    T-active-suppression-action-claims: graduates from detection-only to
+    active inline suppression. Removes the false claim phrases and cleans
+    up any resulting awkward whitespace. Does NOT add a self-correction
+    note — the TWM marker already ensures Igor self-corrects next turn.
+
+    Returns the cleaned text. If all content would be removed, returns
+    the original (suppression should never produce an empty reply).
+    """
+    if not claims or not response_text:
+        return response_text
+
+    cleaned = response_text
+    for claim in claims:
+        # Remove the claim phrase — case-insensitive
+        cleaned = re.sub(re.escape(claim), "", cleaned, flags=re.IGNORECASE)
+
+    # Clean up artifacts: double spaces, leading/trailing whitespace, orphaned punctuation
+    cleaned = re.sub(r"  +", " ", cleaned)
+    cleaned = re.sub(r"^\s*[.,;:!]\s*", "", cleaned)  # leading orphaned punctuation
+    cleaned = re.sub(r"\s+([.,;:!])", r"\1", cleaned)  # space before punctuation
+    cleaned = cleaned.strip()
+
+    # Safety: never return empty — better to leave the false claim than say nothing
+    if not cleaned:
+        return response_text
+
+    _confab_log(
+        "suppressed",
+        claims_removed=len(claims),
+        original_len=len(response_text),
+        cleaned_len=len(cleaned),
+    )
+    return cleaned
