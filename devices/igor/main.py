@@ -6695,14 +6695,18 @@ class Igor(IgorBase):
             try:
                 from .cognition.action_claim_verifier import (
                     check_response as _check_action_claims,
+                    suppress_false_claims as _suppress_claims,
                 )
 
-                _check_action_claims(
+                _unverified = _check_action_claims(
                     self.cortex,
                     response_text,
                     turn_id=_turn_id,
                     thread_id=thread_id,
                 )
+                # T-active-suppression-action-claims: strip false claims
+                if _unverified:
+                    response_text = _suppress_claims(response_text, _unverified)
             except Exception as _acv_e:
                 log_error(
                     kind="ACTION_CLAIM_VERIFIER",
