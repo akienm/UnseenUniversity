@@ -316,3 +316,49 @@ def test_check_coherence_does_not_modify_text():
     # is the contract assertion: no in-place modification path)
     assert original_prompt == "long term goals planning learning"
     assert original_response == "preparse stages and configuration values"
+
+
+# ── Phase 2: Active suppression (T-active-suppression-coherence) ────────────
+
+
+class TestSuppressIncoherent:
+    """suppress_incoherent replaces flagged responses with empty string."""
+
+    def test_suppresses_flagged(self):
+        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+            suppress_incoherent,
+        )
+
+        result = {"flagged": True, "score": 0.02}
+        text = suppress_incoherent(result, "completely off-topic habit dump")
+        assert text == ""
+
+    def test_preserves_coherent(self):
+        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+            suppress_incoherent,
+        )
+
+        result = {"flagged": False, "score": 0.45}
+        original = "a perfectly relevant response"
+        text = suppress_incoherent(result, original)
+        assert text == original
+
+    def test_preserves_gated(self):
+        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+            suppress_incoherent,
+        )
+
+        result = {"flagged": False, "gated": True, "score": None}
+        original = "short response"
+        text = suppress_incoherent(result, original)
+        assert text == original
+
+    def test_preserves_when_no_flagged_key(self):
+        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+            suppress_incoherent,
+        )
+
+        result = {"score": 0.5}
+        original = "normal text"
+        text = suppress_incoherent(result, original)
+        assert text == original
