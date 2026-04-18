@@ -1225,6 +1225,14 @@ class Cortex(IgorBase):
                     memory.links[related.id] = max(
                         memory.links.get(related.id, 0.0), weight
                     )
+        # T-versioned-memories: snapshot current state before overwrite
+        if memory.metadata and memory.metadata.get("versioned"):
+            try:
+                from .versioning import version_before_update
+
+                version_before_update(self, memory)
+            except Exception as _ver_e:
+                log.debug("versioning: %s", _ver_e)
         _now_iso = datetime.now().isoformat()
         with self._conn() as conn:
             conn.execute(
