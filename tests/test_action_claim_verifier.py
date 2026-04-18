@@ -284,3 +284,72 @@ def test_check_response_does_not_modify_text():
     # And the input string is untouched (Python strings are immutable
     # but this is the contract assertion: no in-place modification path)
     assert original == "I ticketed it. The defect is recorded in the database."
+
+
+# ── Phase 2: Active suppression (T-active-suppression-action-claims) ────────
+
+
+class TestSuppressFalseClaims:
+    """suppress_false_claims strips unverified claims from response text."""
+
+    def test_strips_single_claim(self):
+        from wild_igor.igor.cognition.action_claim_verifier import (
+            suppress_false_claims,
+        )
+
+        text = "Sure! I've just ticketed it. Let me know if you need anything else."
+        claims = ["I've just ticketed it"]
+        result = suppress_false_claims(text, claims)
+        assert "ticketed" not in result
+        assert "Let me know" in result
+
+    def test_strips_multiple_claims(self):
+        from wild_igor.igor.cognition.action_claim_verifier import (
+            suppress_false_claims,
+        )
+
+        text = "I've filed it. I also committed it. Both are done."
+        claims = ["I've filed it", "committed it"]
+        result = suppress_false_claims(text, claims)
+        assert "filed" not in result
+        assert "committed" not in result
+        assert "done" in result
+
+    def test_preserves_text_when_no_claims(self):
+        from wild_igor.igor.cognition.action_claim_verifier import (
+            suppress_false_claims,
+        )
+
+        text = "Here is a perfectly normal response."
+        result = suppress_false_claims(text, [])
+        assert result == text
+
+    def test_never_returns_empty(self):
+        from wild_igor.igor.cognition.action_claim_verifier import (
+            suppress_false_claims,
+        )
+
+        text = "I've just ticketed it."
+        claims = ["I've just ticketed it"]
+        result = suppress_false_claims(text, claims)
+        # Should return original rather than empty
+        assert len(result) > 0
+
+    def test_cleans_double_spaces(self):
+        from wild_igor.igor.cognition.action_claim_verifier import (
+            suppress_false_claims,
+        )
+
+        text = "Yes, I've filed it in the database. Moving on."
+        claims = ["I've filed it in the database"]
+        result = suppress_false_claims(text, claims)
+        assert "  " not in result
+
+    def test_handles_none_inputs(self):
+        from wild_igor.igor.cognition.action_claim_verifier import (
+            suppress_false_claims,
+        )
+
+        assert suppress_false_claims("", ["claim"]) == ""
+        assert suppress_false_claims("text", []) == "text"
+        assert suppress_false_claims("text", None) == "text"
