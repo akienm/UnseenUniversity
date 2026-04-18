@@ -5095,6 +5095,29 @@ class Igor(IgorBase):
 
                 _core = getattr(parsed, "core_input", user_input)
                 response_text = _run_schema(habit, self.cortex, _core)
+            elif _habit_type == "gate" or habit.metadata.get("gate"):
+                # T-inhibitory-pattern-primitive: gate engram — competing signal in TWM.
+                # Instead of executing a tool or generating text, evaluate the gate
+                # condition and push a counter-signal to TWM. Salience competition
+                # resolves whether the impulse or the gate wins.
+                from .cognition.gate_primitive import dispatch_gate as _dispatch_gate
+
+                _gate_ctx = {
+                    "user_input": user_input,
+                    "response_text": response_text or "",
+                    "habit_id": habit.id,
+                    "turn_id": _turn_id,
+                    "thread_id": thread_id,
+                }
+                _gate_result = _dispatch_gate(habit, self.cortex, _gate_ctx)
+                if _gate_result["gated"]:
+                    # Gate fired — no response text from this habit.
+                    # The counter-signal is now in TWM competing with the impulse.
+                    response_text = ""
+                else:
+                    # Gate evaluated but didn't fire — no counter-signal needed.
+                    response_text = ""
+                used_habit = True
             elif code_ref:
                 # D247/D248/D250: build basket (concern-tree keys) + run inhibition chain.
                 # basket travels with this execution thread; keys are concern.slot (not
