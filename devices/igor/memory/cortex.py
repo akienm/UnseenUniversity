@@ -2555,14 +2555,14 @@ class Cortex(IgorBase):
             for i, m in enumerate(memories)
         ]
         try:
-            with self._conn() as conn:
+            with self._local_db() as conn:
                 conn.executemany(
                     "INSERT INTO tails (node_id, weight, recorded_at, trail_id, sequence_pos) VALUES (?, ?, ?, ?, ?)",
                     rows,
                 )
             # Prune old entries (>7 days) to keep table bounded
             cutoff = (datetime.now() - timedelta(days=7)).isoformat()
-            with self._conn() as conn:
+            with self._local_db() as conn:
                 conn.execute("DELETE FROM tails WHERE recorded_at < ?", (cutoff,))
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
@@ -2578,7 +2578,7 @@ class Cortex(IgorBase):
         from ..cognition.temporal_gradient import TAIL_GRADIENT
 
         try:
-            with self._conn() as conn:
+            with self._local_db() as conn:
                 rows = conn.execute(
                     "SELECT weight, recorded_at FROM tails WHERE node_id = ? "
                     "ORDER BY recorded_at DESC LIMIT 50",
@@ -2801,7 +2801,7 @@ class Cortex(IgorBase):
         Ordered newest first.
         """
         try:
-            with self._conn() as conn:
+            with self._local_db() as conn:
                 trail_ids = [
                     r[0]
                     for r in conn.execute(
@@ -2815,7 +2815,7 @@ class Cortex(IgorBase):
                 return []
             results = []
             for tid in trail_ids:
-                with self._conn() as conn:
+                with self._local_db() as conn:
                     rows = conn.execute(
                         "SELECT node_id, sequence_pos, weight, recorded_at "
                         "FROM tails WHERE trail_id = ? ORDER BY sequence_pos",
@@ -2856,7 +2856,7 @@ class Cortex(IgorBase):
             mid = now - half
             start = now - full
 
-            with self._conn() as conn:
+            with self._local_db() as conn:
                 rows = conn.execute(
                     "SELECT weight, recorded_at FROM tails "
                     "WHERE node_id = ? AND recorded_at > ? "
@@ -2902,7 +2902,7 @@ class Cortex(IgorBase):
         """
         try:
             cutoff = (datetime.now() - timedelta(hours=since_hours)).isoformat()
-            with self._conn() as conn:
+            with self._local_db() as conn:
                 # Self-join on trail_id to find co-occurring node pairs.
                 # Aliases required: _PGRowProxy collapses duplicate column names.
                 rows = conn.execute(
