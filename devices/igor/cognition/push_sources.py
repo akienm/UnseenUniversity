@@ -1736,7 +1736,7 @@ class BoredomSource(BasePushSource):
     TIMING_TIER = "slow"
     MIN_INTERVAL_SEC = 60  # sample every minute
     WINDOW_MINS = int(os.getenv("IGOR_BOREDOM_WINDOW_MINS", "20"))
-    AROUSAL_THRESH = float(os.getenv("IGOR_BOREDOM_AROUSAL_THRESH", "0.05"))
+    AROUSAL_THRESH = float(os.getenv("IGOR_BOREDOM_AROUSAL_THRESHOLD", "0.08"))
     COOLDOWN_SEC = 1200  # 20-min cooldown after each fire
 
     def __init__(self):
