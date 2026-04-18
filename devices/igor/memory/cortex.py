@@ -671,6 +671,23 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         " created_by   TEXT NOT NULL"
         ")",
     ),
+    # ── T-metrics-store: time-series metrics accumulation
+    (
+        "m052_metrics_store",
+        "CREATE TABLE IF NOT EXISTS infra.metrics ("
+        " id           SERIAL PRIMARY KEY,"
+        " metric_name  TEXT NOT NULL,"
+        " metric_value DOUBLE PRECISION NOT NULL,"
+        " tags         JSONB DEFAULT '{}',"
+        " recorded_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),"
+        " instance_id  TEXT DEFAULT ''"
+        ")",
+    ),
+    (
+        "m052_metrics_store_idx",
+        "CREATE INDEX IF NOT EXISTS idx_metrics_name_time "
+        "ON infra.metrics (metric_name, recorded_at DESC)",
+    ),
 ]
 
 
