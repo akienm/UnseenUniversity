@@ -3416,6 +3416,23 @@ class Igor(IgorBase):
         _habits_before = len(
             self.cortex.get_habits()
         )  # G54/G53: detect new habits this turn
+        # T-ring-to-binding: episode binder — group turn events into bound episodes.
+        # Snapshot ring position before the turn starts, then flush after response.
+        _episode_binder = None
+        if not is_impulse:
+            try:
+                from .memory.episode_binder import EpisodeBinder as _EpisodeBinder
+
+                _episode_binder = _EpisodeBinder()
+                _episode_binder.snapshot_ring_position(self.cortex)
+                _episode_binder.observe_input(user_input, thread_id)
+            except Exception as _eb_e:
+                log_error(
+                    kind="EPISODE_BINDER",
+                    detail=f"init: {_eb_e}",
+                )
+                _episode_binder = None
+
         # T-pr-load-as-primary-attractor: set the relationship FRAME before the
         # user message is pushed. A persistent-relationship is attention-routing
         # CONDITIONED BY the person, not attention ON the person — when Leah
@@ -6729,6 +6746,32 @@ class Igor(IgorBase):
                 log_error(
                     kind="PR_ACCRETION",
                     detail=f"per-turn accretion: {_pra_e}",
+                )
+
+        # T-ring-to-binding: flush episode binder — bind turn events into episode.
+        if _episode_binder is not None:
+            try:
+                _episode_binder.observe_response(response_text or "")
+                if _turn_habit:
+                    _episode_binder.observe_habit(
+                        _turn_habit.id,
+                        _turn_habit.metadata.get("trigger", _turn_habit.id),
+                    )
+                # Snapshot milieu for emotional context
+                try:
+                    _mil = self.cortex.read_milieu()
+                    _episode_binder.observe_milieu(
+                        _mil.get("valence", 0.0),
+                        _mil.get("arousal", 0.0),
+                        _mil.get("dominance", 0.5),
+                    )
+                except Exception:
+                    pass
+                _episode_binder.flush(self.cortex)
+            except Exception as _eb_e:
+                log_error(
+                    kind="EPISODE_BINDER",
+                    detail=f"flush: {_eb_e}",
                 )
 
         return response_text
