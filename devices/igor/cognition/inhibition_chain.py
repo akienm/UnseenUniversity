@@ -97,6 +97,7 @@ class TWMCheckNode(InhibitionNode):
                         continue  # expired — keep looking
                 except (ValueError, TypeError) as _exc:
                     from .forensic_logger import log_error as _le
+
                     _le(kind="SILENT_EXCEPT", detail=f"inhibition_chain.py:97: {_exc}")
             # Fresh hit
             content = entry.get("content_csb", "")
@@ -104,6 +105,58 @@ class TWMCheckNode(InhibitionNode):
             return True, f"twm_cache_hit:{habit_id}"
 
         basket["twm.check_result"] = "miss"
+        return False, None
+
+
+# ── Gate engram check ────────────────────────────────────────────────────────
+
+
+class GateEngramNode(InhibitionNode):
+    """
+    T-inhibitory-pattern-primitive: check graph for gate engrams.
+
+    Scans TWM for active GATE_SIGNAL observations matching the habit about
+    to execute. If a gate signal is present and still live (not integrated),
+    the action is inhibited — the gate won the competition.
+
+    This is the pre-execution side: gate engrams push counter-signals to TWM
+    via gate_primitive.fire_gate(); this node checks whether any such signal
+    is already present before allowing the action through.
+    """
+
+    node_id = "gate_engram_check"
+
+    def check(self, basket: dict, cortex: "Cortex") -> tuple[bool, str | None]:
+        try:
+            entries = cortex.twm_read(limit=30, category="gate_signal")
+        except Exception as exc:
+            logger.warning("GateEngramNode: twm_read failed (%s) — not inhibiting", exc)
+            return False, None
+
+        habit_id = basket.get("node_id", "")
+        now = datetime.now()
+        for entry in entries:
+            if entry.get("integrated"):
+                continue
+            # Check if this gate signal targets the habit about to fire
+            meta = entry.get("metadata") or {}
+            content = entry.get("content_csb", "")
+            # Gate signals don't target specific habits — they target domains.
+            # A gate signal is active if it's recent and not expired.
+            expires_at_str = entry.get("expires_at")
+            if expires_at_str is not None:
+                try:
+                    exp_dt = datetime.fromisoformat(expires_at_str)
+                    if exp_dt < now:
+                        continue
+                except (ValueError, TypeError):
+                    pass
+            # Active gate signal found — inhibit
+            gate_id = meta.get("gate_id", "unknown")
+            reason = meta.get("reason", content[:120])
+            basket["inhibition.gate_id"] = gate_id
+            return True, f"gate_signal:{gate_id}:{reason[:80]}"
+
         return False, None
 
 
@@ -186,6 +239,7 @@ class InhibitionChain(IgorBase):
 _DEFAULT_CHAIN = InhibitionChain(
     [
         TWMCheckNode(),
+        GateEngramNode(),
         InferenceCheckNode(),
         EstimateCheckNode(),
         ActionGateNode(),
