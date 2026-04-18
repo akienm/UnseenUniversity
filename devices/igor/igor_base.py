@@ -19,6 +19,11 @@ from typing import Optional
 
 from .paths import paths
 
+# Ensure repo root is on sys.path for lab.utility_closet imports
+_repo_root = str(paths().source_root)
+if _repo_root not in sys.path:
+    sys.path.insert(0, _repo_root)
+
 # Re-export AgentBase's logger and get_logger for backward compatibility.
 # Many tool files do: from ..igor_base import get_logger
 from lab.utility_closet.agent_base import (  # noqa: F401
