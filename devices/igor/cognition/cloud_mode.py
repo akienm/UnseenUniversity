@@ -35,7 +35,9 @@ def _or_balance() -> float:
     Returns the balance, 999.0 for prepaid/unlimited, or _BALANCE_UNKNOWN on error.
     Never returns 0.0 for a network/parse failure — that would silently disable cloud.
     """
-    api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+    from ..config import get as _cfg_get
+
+    api_key = _cfg_get("OPENROUTER_API_KEY", "").strip()
     if not api_key:
         return _BALANCE_UNKNOWN
     try:
@@ -58,7 +60,14 @@ def _or_balance() -> float:
             # Prepaid / unlimited — treat as always funded
             return 999.0
         return max(0.0, float(limit) - float(usage))
-    except Exception:
+    except Exception as e:
+        import logging as _logging
+
+        _logging.getLogger(__name__).warning(
+            "[cloud_mode] OR balance API call failed: %s: %s",
+            type(e).__name__,
+            e,
+        )
         return _BALANCE_UNKNOWN
 
 
