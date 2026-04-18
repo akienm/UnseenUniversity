@@ -6726,12 +6726,13 @@ class Igor(IgorBase):
             try:
                 from .cognition.response_coherence_inhibitor import (
                     check_coherence as _check_coherence,
+                    suppress_incoherent as _suppress_incoherent,
                 )
 
                 _source_label = (
                     f"habit:{_turn_habit.id}" if _turn_habit else "llm_or_tier0"
                 )
-                _check_coherence(
+                _coh_result = _check_coherence(
                     self.cortex,
                     prompt=user_input,
                     response=response_text,
@@ -6739,6 +6740,8 @@ class Igor(IgorBase):
                     thread_id=thread_id,
                     source_label=_source_label,
                 )
+                # T-active-suppression-coherence: drop incoherent habit emissions
+                response_text = _suppress_incoherent(_coh_result, response_text)
             except Exception as _coh_e:
                 log_error(
                     kind="COHERENCE_INHIBITOR",

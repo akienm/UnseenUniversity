@@ -28,10 +28,10 @@ epic). When the pattern primitive ships, this single-instance hotfix
 becomes the first migration target — same logic, parameterized through
 the engram pattern instead of a standalone module.
 
-Detection-only first pass. Same philosophy as the action-claim verifier:
-log + push a high-salience TWM marker for the next turn to self-correct
-on, but never modify response_text in this sprint. Active inline
-suppression / fall-through-to-LLM is a follow-up.
+Two-phase approach (mirrors action_claim_verifier):
+  Phase 1 (detection): score coherence, LOG + TWM marker if below threshold.
+  Phase 2 (T-active-suppression-coherence): suppress incoherent responses
+    by replacing with empty string. TWM marker still fires for self-correction.
 
 Biomimetic framing: this is the equivalent of the prefrontal evaluator
 firing BEFORE a habitual response is emitted, suppressing it when the
@@ -206,6 +206,7 @@ def _coherence_log(stage: str, **fields) -> None:
             f.write(line + "\n")
     except Exception as _exc:
         from .forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"response_coherence_inhibitor.py:207: {_exc}")
 
 
@@ -313,6 +314,7 @@ def check_coherence(
         )
     except Exception as _exc:
         from .forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"response_coherence_inhibitor.py:313: {_exc}")
 
     try:
@@ -339,6 +341,7 @@ def check_coherence(
         )
     except Exception as _exc:
         from .forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"response_coherence_inhibitor.py:338: {_exc}")
 
     return {
@@ -347,3 +350,23 @@ def check_coherence(
         "flagged": True,
         "reason": "below_threshold",
     }
+
+
+def suppress_incoherent(result: dict, response: str) -> str:
+    """T-active-suppression-coherence: replace incoherent habit emissions.
+
+    When check_coherence flags a response as incoherent (habit misfire),
+    replace it with an empty string so the response path emits nothing
+    rather than off-topic garbage. The TWM marker already ensures the
+    next turn self-corrects.
+
+    Returns original response if not flagged, empty string if flagged.
+    """
+    if not result.get("flagged"):
+        return response
+    _coherence_log(
+        "suppressed",
+        score=result.get("score", 0),
+        original_len=len(response),
+    )
+    return ""
