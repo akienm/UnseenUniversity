@@ -100,6 +100,14 @@ class IgorBot(discord.Client):
         )
         self.loop.create_task(self._pump_outgoing())
 
+    async def on_disconnect(self):
+        _log("bot_disconnected", note="discord.py will attempt auto-reconnect")
+
+    async def on_error(self, event, *args, **kwargs):
+        import traceback
+
+        _log("bot_error", event=event, traceback=traceback.format_exc()[:500])
+
     async def on_message(self, message: discord.Message):
         # Ignore own messages
         if message.author == self.user:
@@ -214,9 +222,8 @@ class IgorBot(discord.Client):
                             preview=chunk[:60],
                         )
 
-            except queue.Empty as _exc:
-                from ..cognition.forensic_logger import log_error as _le
-                _le(kind="SILENT_EXCEPT", detail=f"discord_bot.py:217: {_exc}")
+            except queue.Empty:
+                pass  # Normal — nothing to send
             await asyncio.sleep(0.5)
 
 
@@ -236,11 +243,26 @@ def start():
     _client = IgorBot(allowed_channel_id=allowed_channel)
 
     def run():
+        import time as _time
+
         _log("bot_thread_start")
-        try:
-            asyncio.run(_client.start(token))
-        except Exception as exc:
-            _log("bot_thread_crash", error=str(exc))
+        _retry_delay = 5
+        _max_delay = 300
+        while True:
+            try:
+                asyncio.run(_client.start(token))
+                _log("bot_thread_clean_exit")
+                break  # Clean exit — don't retry
+            except Exception as exc:
+                _log(
+                    "bot_thread_crash",
+                    error=str(exc),
+                    retry_in=_retry_delay,
+                )
+                _time.sleep(_retry_delay)
+                _retry_delay = min(_retry_delay * 2, _max_delay)
+                # Recreate the client for a fresh connection
+                _client.__init__(allowed_channel_id=allowed_channel)
 
     _bot_thread = threading.Thread(target=run, daemon=True, name="discord-bot")
     _bot_thread.start()
