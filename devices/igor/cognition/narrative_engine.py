@@ -966,16 +966,47 @@ class NarrativeEngine(IgorBase):
         """
         if not obs_list:
             return ""
-        # Extract content snippets from top 3 observations
-        snippets = []
-        for obs in obs_list[:3]:
+        # Extract content snippets from top observations.
+        # T-input-echo-ne-arc: TWM observations can overlap — the same user
+        # text gets pushed under multiple category prefixes (USER_INPUT,
+        # RELATIONSHIP, thread.recent_user, etc.) and each ends up producing
+        # a snippet that shares common substrings with its siblings. Without
+        # dedup, the arc line reads like Igor stuttering.
+        # Pull top 6 (not 3) to survive dedup, then keep 3 distinct.
+        raw_snippets: list[str] = []
+        for obs in obs_list[:6]:
             raw = obs.get("content_csb", "")
-            # Strip category prefix (e.g. "USER_INPUT|" → keep rest)
             if "|" in raw:
                 raw = raw.split("|", 1)[-1]
             snippet = raw[:80].strip()
             if snippet:
-                snippets.append(snippet)
+                raw_snippets.append(snippet)
+
+        # Dedup: drop any snippet that is a substring of a later (longer) one,
+        # and drop any that is a substring of what we've already kept.
+        # Tolerant to whitespace/newline noise by comparing on a normalized
+        # single-space form; the original (pre-normalize) text goes into
+        # the rendered arc so the human-visible form is preserved.
+        def _norm(s: str) -> str:
+            return " ".join(s.split())
+
+        snippets: list[str] = []
+        for cand in raw_snippets:
+            cand_norm = _norm(cand)
+            if not cand_norm:
+                continue
+            subsumed = False
+            # Drop already-kept snippets if this new one subsumes them.
+            snippets = [s for s in snippets if _norm(s) not in cand_norm]
+            # Skip this candidate if any kept snippet subsumes it.
+            for kept in snippets:
+                if cand_norm in _norm(kept):
+                    subsumed = True
+                    break
+            if not subsumed:
+                snippets.append(cand)
+            if len(snippets) >= 3:
+                break
         if not snippets:
             return ""
         # Optionally enrich with milieu valence
@@ -990,6 +1021,7 @@ class NarrativeEngine(IgorBase):
                 )
         except Exception as _exc:
             from .forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"narrative_engine.py:991: {_exc}")
         focus = "; ".join(snippets)
         return f"Igor is engaged with{_valence_str}: {focus}."
@@ -1216,7 +1248,10 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                         continue  # Skip tension accumulation for closed gap
                 except (ValueError, TypeError) as _exc:
                     from .forensic_logger import log_error as _le
-                    _le(kind="SILENT_EXCEPT", detail=f"narrative_engine.py:1216: {_exc}")
+
+                    _le(
+                        kind="SILENT_EXCEPT", detail=f"narrative_engine.py:1216: {_exc}"
+                    )
 
             current_sal = gap_obs.get("salience", 0.3)
             new_sal = min(1.0, current_sal + 0.05 * _arousal)
@@ -1733,6 +1768,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
             _la(kind="CONSOLIDATION_START", detail="idle deep pass beginning")
         except Exception as _exc:
             from .forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"narrative_engine.py:1732: {_exc}")
 
         # Step 1: TWM promotion at 0.5 threshold
@@ -1875,6 +1911,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                 _f.write(_line)
         except Exception as _exc:
             from .forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"narrative_engine.py:1873: {_exc}")
 
         try:
@@ -1890,6 +1927,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
             )
         except Exception as _exc:
             from .forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"narrative_engine.py:1887: {_exc}")
 
         self._last_consolidation_ts = time.monotonic()  # prevent immediate re-run
