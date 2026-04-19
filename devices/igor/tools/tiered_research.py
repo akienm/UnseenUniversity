@@ -210,6 +210,19 @@ def research_and_deposit(query: str) -> str:
     subject = _extract_research_query(query)
     answer = tiered_research(subject)
 
+    # Skip deposit when tiered_research returned a failure sentinel. Those
+    # strings ("[tiered_research] no tier resolved: …", "[tiered_research]
+    # empty query", any "[<tier>] " with empty content) would pollute the
+    # graph with placeholder memories that future cosine/text search would
+    # treat as real answers. Only deposit genuine content.
+    _is_failure = (
+        not answer
+        or answer.startswith("[tiered_research] ")
+        or answer.strip() in ("", "[memory] ", "[web] ", "[local_llm] ", "[cloud_llm] ")
+    )
+    if _is_failure:
+        return answer
+
     # Best-effort deposit — never fail the primary return on deposit errors.
     try:
         from .graph_write import store_memory
