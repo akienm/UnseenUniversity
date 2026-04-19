@@ -5584,10 +5584,17 @@ class Igor(IgorBase):
 
             if not _tier0_fired:
                 # [TURN PIPELINE] Substrate cascade + reasoning workflow before LLM.
-                # Gate: IGOR_TURN_PIPELINE=true (default false — observe before enabling).
-                # Impulses skip the pipeline (cheap existing path).
+                # Gate: IGOR_TURN_PIPELINE controls whether the new biomimetic path
+                # runs ahead of the legacy gateway.reason call.
+                # Default flipped to "true" 2026-04-19 per T-retire-legacy-direct-
+                # reasoner-path: the new path is feature-complete enough (75/75 tests
+                # in turn_pipeline + reasoning_workflow + voice_ab), and the
+                # outer try/except at line 5701 falls back to the legacy gateway on
+                # any pipeline exception — zero user-visible regression risk.
+                # Set IGOR_TURN_PIPELINE=false to force legacy path during debugging.
+                # Impulses always skip the pipeline (cheap existing path).
                 _pipeline_enabled = not is_impulse and os.getenv(
-                    "IGOR_TURN_PIPELINE", "false"
+                    "IGOR_TURN_PIPELINE", "true"
                 ).lower() in ("1", "true", "yes")
                 _pipeline_resolved = False
                 if _pipeline_enabled:
