@@ -158,3 +158,95 @@ registry.register(
         fn=tiered_research,
     )
 )
+
+
+# ── research_and_deposit — habit-dispatchable wrapper (T-tiered-research-habit) ─
+#
+# Habit auto-dispatch needs a one-required-arg tool (main.py:5218 passes
+# core_input as the single required arg). `tiered_research` already qualifies,
+# but the habit layer ALSO wants the answer deposited into cortex as a FACTUAL
+# memory so future graph searches can find it without re-invoking the tool.
+#
+# Separating concerns: tiered_research stays read-only (its natural shape for
+# direct tool calls). research_and_deposit wraps it + deposits. Habit binding
+# goes to this wrapper.
+
+
+_RESEARCH_QUERY_PREFIXES = (
+    "research ",
+    "look up ",
+    "find out about ",
+    "tell me about ",
+    "what do you know about ",
+    "what can you tell me about ",
+)
+
+
+def _extract_research_query(text: str) -> str:
+    """Strip the triggering prefix from message text to leave the bare subject.
+
+    'research X'        → 'X'
+    'look up X'         → 'X'
+    'tell me about X'   → 'X'
+    anything else       → returned as-is (habit may still dispatch on full text)
+    """
+    low = text.strip().lower()
+    for prefix in _RESEARCH_QUERY_PREFIXES:
+        if low.startswith(prefix):
+            return text.strip()[len(prefix) :].strip() or text.strip()
+    return text.strip()
+
+
+def research_and_deposit(query: str) -> str:
+    """Run tiered_research and deposit the answer as a FACTUAL memory.
+
+    Returns the answer text (same shape as tiered_research) so callers see
+    the result immediately. The deposit is best-effort — if it fails, the
+    research result still returns cleanly.
+    """
+    if not query or not query.strip():
+        return "[research_and_deposit] empty query"
+
+    subject = _extract_research_query(query)
+    answer = tiered_research(subject)
+
+    # Best-effort deposit — never fail the primary return on deposit errors.
+    try:
+        from .graph_write import store_memory
+
+        deposit_narrative = f"Q: {subject}\nA: {answer}"
+        store_memory(
+            narrative=deposit_narrative,
+            memory_type="FACTUAL",
+            tags="research,tiered_research",
+            source="research_and_deposit",
+            context=f"research habit triggered by: {query[:100]}",
+        )
+    except Exception as exc:
+        logger.debug("research_and_deposit store failed: %s", exc)
+
+    return answer
+
+
+registry.register(
+    Tool(
+        name="research_and_deposit",
+        description=(
+            "Research a question with tiered_research (memory→web→local→cloud) AND "
+            "deposit the Q/A pair as a FACTUAL memory so future graph searches can "
+            "find it. Use when Akien asks to 'research X', 'look up X', 'tell me "
+            "about X' — the habit layer auto-dispatches to this on those phrases."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "The research question or topic (may include the triggering prefix — it will be stripped).",
+                },
+            },
+            "required": ["query"],
+        },
+        fn=research_and_deposit,
+    )
+)
