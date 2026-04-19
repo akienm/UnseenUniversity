@@ -1740,6 +1740,44 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
                 basket["ticket_id"] = ticket_id
                 log.info(f"ESCALATE: recovered ticket_id={ticket_id} from active GOAL")
 
+    # T-scope-guard-reattempt-loop short-term mitigation (2026-04-19):
+    # If ticket_id still "unknown" after recovery attempt, this basket is
+    # malformed — it reached _pe_escalate via a code path that didn't run
+    # pe_entry_init (likely engram-driven direct invocation). Log the basket
+    # shape to forensic logger for a future session to trace the origin,
+    # and DO NOT post the '✗ unknown' channel spam. The echo Akien's been
+    # seeing for two weeks stops here. Real pe_chain blocks with real
+    # ticket_ids continue to post normally.
+    if ticket_id == "unknown":
+        try:
+            from ..cognition.forensic_logger import log_error as _le
+
+            # Keep the log line bounded — the basket can be huge.
+            keys_present = sorted(list(basket.keys()))[:20]
+            hyp = basket.get("hypothesis") or {}
+            hyp_summary = ""
+            if isinstance(hyp, dict):
+                hyp_summary = (
+                    f"file={hyp.get('file','')[:60]} "
+                    f"old_len={len(str(hyp.get('old_string','')))} "
+                    f"new_len={len(str(hyp.get('new_string','')))}"
+                )
+            _le(
+                kind="MALFORMED_BASKET",
+                detail=(
+                    f"pe_escalate called on basket without ticket_id. "
+                    f"reason={reason[:120]}. basket_keys={keys_present}. "
+                    f"hypothesis={hyp_summary[:200]}"
+                ),
+            )
+        except Exception:
+            pass
+        log.info(
+            f"ESCALATE: malformed basket (no ticket_id) — suppressed channel post. Reason was: {reason[:120]}"
+        )
+        basket["escalate_reason"] = f"malformed: {reason}"
+        return basket
+
     basket["escalate_reason"] = reason
     log.info(f"ESCALATE: {ticket_id} — {reason}")
 
