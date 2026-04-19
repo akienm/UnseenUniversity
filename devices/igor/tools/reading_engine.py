@@ -163,6 +163,146 @@ def fetch_to_blob(source: str, title: str = "", author: str = "") -> dict:
 # ── Phase 2: Process ─────────────────────────────────────────────────────────
 
 
+def count_chunks(blob_file: str | Path, chunk_size: int = 15) -> int:
+    """Return the number of chunks a blob will decompose into.
+
+    Used by the reading-campaign worker to lazy-expand item → chunks at
+    claim time without having to run the full extraction pipeline.
+    """
+    bp = Path(blob_file)
+    data = json.loads(bp.read_text())
+    total = len(data.get("sentences", []))
+    if total <= 0:
+        return 0
+    return (total + chunk_size - 1) // chunk_size
+
+
+def process_one_chunk(
+    blob_file: str | Path,
+    chunk_pos: int,
+    pass_number: int = 1,
+    use_local: bool = True,
+    chunk_size: int = 15,
+    model: str = "",
+) -> dict:
+    """Process a SINGLE chunk at a specific position within a blob.
+
+    Reading-worker-pool entry point: a worker that has claimed a block
+    (campaign_id, reading_list_id, chunk_pos) calls this to do exactly
+    one chunk of extraction, deposit the resulting nodes, and return a
+    small result dict to ack the block.
+
+    Returns dict with keys: node_count, model_used, inference_tier,
+    summary, chunk_pos, at_end (True if chunk_pos is past blob end).
+
+    Contrasts with process_blob which walks chunks sequentially; this is
+    the per-block grain the worker pool needs.
+    """
+    import sys
+
+    repo = Path(__file__).parent.parent.parent.parent
+    sys.path.insert(0, str(repo))
+    sys.path.insert(0, str(repo / "lab"))
+
+    from claudecode.book_learner import (
+        _deposit_nodes,
+        _ensure_book_node,
+        _ensure_chapter_node,
+        _extract_nodes,
+    )
+
+    bp = Path(blob_file)
+    blob = json.loads(bp.read_text())
+    sentences = blob.get("sentences", [])
+    chapter_breaks = blob.get("chapter_breaks", [])
+    chapter_titles = blob.get("chapter_titles", [])
+    book_title = blob.get("title", "")
+    book_author = blob.get("author", "")
+    source = blob.get("source", "")
+
+    if chunk_pos >= len(sentences):
+        return {
+            "node_count": 0,
+            "model_used": "",
+            "inference_tier": "",
+            "summary": "chunk position past blob end",
+            "chunk_pos": chunk_pos,
+            "at_end": True,
+        }
+
+    chunk_sentences = sentences[chunk_pos : chunk_pos + chunk_size]
+    if not chunk_sentences:
+        return {
+            "node_count": 0,
+            "model_used": "",
+            "inference_tier": "",
+            "summary": "empty chunk",
+            "chunk_pos": chunk_pos,
+            "at_end": True,
+        }
+
+    # Determine current chapter from break positions
+    chapter_num = 0
+    chapter_title = ""
+    for i, cb in enumerate(chapter_breaks):
+        if chunk_pos >= cb:
+            chapter_num = i + 1
+            chapter_title = chapter_titles[i] if i < len(chapter_titles) else ""
+
+    cortex = _get_cortex()
+    book_node_id = _ensure_book_node(cortex, book_title, book_author)
+    chapter_node_id = _ensure_chapter_node(
+        cortex, book_node_id, book_title, chapter_num, chapter_title
+    )
+
+    # Pass-2 system prompt support
+    system_prompt = None
+    if pass_number == 2:
+        from claudecode.book_learner import _EXTRACT_PROMPT_PASS2, _build_watch_context
+
+        watch_ctx = _build_watch_context()
+        system_prompt = _EXTRACT_PROMPT_PASS2.format(watch_context=watch_ctx)
+
+    if not model:
+        model = os.getenv("BOOK_LEARNER_MODEL", "openai/gpt-4o-mini")
+
+    chunk_text = " ".join(chunk_sentences)
+    result = _extract_nodes(
+        chunk_text,
+        model=model,
+        chapter_title=chapter_title,
+        local=use_local,
+        system_prompt=system_prompt,
+    )
+
+    nodes = result.get("nodes", [])
+    model_used = result.get("model_used") or ("local-ollama" if use_local else model)
+    inference_tier = result.get("inference_tier") or ("local" if use_local else "cloud")
+
+    deposited = 0
+    if nodes:
+        deposited = _deposit_nodes(
+            nodes,
+            cortex,
+            book_title,
+            chunk_pos=chunk_pos,
+            chapter_node_id=chapter_node_id,
+            pass2=(pass_number == 2),
+            model_used=model_used,
+            author=book_author,
+            campaign_id=source,
+        )
+
+    return {
+        "node_count": deposited,
+        "model_used": model_used,
+        "inference_tier": inference_tier,
+        "summary": (result.get("summary") or "")[:120],
+        "chunk_pos": chunk_pos,
+        "at_end": False,
+    }
+
+
 def process_blob(
     blob_file: str | Path,
     pass_number: int = 1,
