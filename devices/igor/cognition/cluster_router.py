@@ -37,8 +37,11 @@ _PROBE_TIMEOUT = float(os.getenv("CLUSTER_PROBE_TIMEOUT", "3"))
 # Health cache TTL — don't hammer Ollama endpoints
 _HEALTH_TTL = float(os.getenv("CLUSTER_REFRESH_TTL", "30"))
 
-# call_types that prefer a batch/heavy model
-_BATCH_TYPES = frozenset(["extraction", "batch"])
+# 2026-04-18: two-column (light/batch) local-model scheme collapsed to a
+# single model per machine. _BATCH_TYPES was the route-to-batch-model
+# switch; it's no longer consulted. model_for() always returns ollama_model.
+# Kept as an empty set for any stragglers still importing the name.
+_BATCH_TYPES: frozenset = frozenset()
 
 # ── Health cache ──────────────────────────────────────────────────────────────
 
