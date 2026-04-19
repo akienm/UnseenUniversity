@@ -1,8 +1,9 @@
-import logging
-
 """
-Cortex - long-term memory storage.
-SQLite-backed graph of Memory objects.
+Cortex — long-term memory storage.
+
+Postgres-backed graph of Memory objects. This module's DatabaseProxy wraps
+Postgres so all CRUD goes through one gateway (db_proxy.py). SQLite is no
+longer used anywhere in Igor.
 
 Also contains:
   - ring_memory table: short-term FIFO buffer (survives restarts). Sticky notepad.
@@ -10,14 +11,15 @@ Also contains:
     the Narrative Engine. Multiple processes deposit observations here.
     NE reads, integrates, promotes high-importance fragments to LTM.
 
-change.37: memories table now has an `embedding` column (TEXT, nullable JSON).
-  search() uses a hybrid approach:
-    1. Text search → candidate set (fast, always works)
-    2. Embedding re-rank → sort candidates by cosine similarity (if Ollama up)
-  Embeddings are computed lazily for candidates that lack them and stored back.
-  Cache at ~/.TheIgors/cache/embeddings/ avoids repeat Ollama calls.
+Search strategy: memories table has an `embedding` column (nullable JSON).
+search() uses a hybrid approach:
+  1. Text search → candidate set (fast, always works)
+  2. Embedding re-rank → sort candidates by cosine similarity (if Ollama up)
+Embeddings are computed lazily for candidates that lack them and stored back.
+Cache at ~/.TheIgors/cache/embeddings/ avoids repeat Ollama calls.
 """
 
+import logging
 import json
 import os
 import time
