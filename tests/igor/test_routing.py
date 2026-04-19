@@ -84,10 +84,14 @@ class TestIsInUse(unittest.TestCase):
     """Tests for machine_manager.is_in_use — mocks get_machine."""
 
     def _run(self, m: MachineRecord) -> bool:
-        from igor.cognition.machine_manager import is_in_use
+        # is_in_use lives in lab.utility_closet.machine_manager (the shim in
+        # igor.cognition.machine_manager only re-exports). Internal calls to
+        # get_machine / _write_override resolve in the canonical module's
+        # namespace — patch THERE, not on the shim.
+        from lab.utility_closet.machine_manager import is_in_use
 
-        with patch("igor.cognition.machine_manager.get_machine", return_value=m):
-            with patch("igor.cognition.machine_manager._write_override"):
+        with patch("lab.utility_closet.machine_manager.get_machine", return_value=m):
+            with patch("lab.utility_closet.machine_manager._write_override"):
                 return is_in_use(m.hostname)
 
     def test_no_hours_no_override_available(self):
@@ -189,10 +193,14 @@ class TestRoute(unittest.TestCase):
             m = next((x for x in machines if x.hostname == hostname), None)
             if m is None:
                 return False
-            from igor.cognition.machine_manager import is_in_use as _real
+            # Canonical impl lives in lab.utility_closet.machine_manager; patch
+            # there so internal get_machine / _write_override lookups resolve.
+            from lab.utility_closet.machine_manager import is_in_use as _real
 
-            with patch("igor.cognition.machine_manager.get_machine", return_value=m):
-                with patch("igor.cognition.machine_manager._write_override"):
+            with patch(
+                "lab.utility_closet.machine_manager.get_machine", return_value=m
+            ):
+                with patch("lab.utility_closet.machine_manager._write_override"):
                     return _real(hostname)
 
         with patch(
