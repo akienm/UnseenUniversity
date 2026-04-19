@@ -255,6 +255,13 @@ def process_blob(
         )
 
         nodes = result.get("nodes", [])
+        # T-reading-audit-qwen-complete: take model_used from the extractor's
+        # result, not from env. The cluster_router decided which model to use
+        # inside _extract_nodes_local; that decision now rides back with the
+        # nodes so every deposit records the exact (model, tier) pair.
+        _model_used = result.get("model_used") or (
+            "local-ollama" if use_local else model
+        )
         if nodes:
             deposited = _deposit_nodes(
                 nodes,
@@ -263,6 +270,9 @@ def process_blob(
                 chunk_pos=pos,
                 chapter_node_id=chapter_node_id,
                 pass2=(pass_number == 2),
+                model_used=_model_used,
+                author=book_author,
+                campaign_id=blob_data.get("source", ""),
             )
             total_nodes += deposited
             # Rough edge estimate: CP wiring + chapter wiring per node
