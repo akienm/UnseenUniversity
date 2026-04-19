@@ -18,11 +18,38 @@ Design note (per Akien 2026-04-04):
 """
 
 import logging
+import re
 
 from ..memory.models import Memory, MemoryType
 from .registry import Tool, registry
 
 logger = logging.getLogger(__name__)
+
+
+# T-igor-input-echo-thread-history: strip the synthetic thread-context
+# prefix that main.py prepends before passing user_input through the turn
+# pipeline. Without this, each anchor's snippet contains a copy of the
+# prefix (itself containing prior anchors' prefixes), so reading N recent
+# anchors injects N nested copies of thread history into Igor's prompt —
+# the "input echo" Igor self-reported 2026-04-18.
+_THREAD_MARKER = "[Thread context — recent exchanges in this channel:]"
+_MSG_TAG_RE = re.compile(r"\[(?:Web message|Discord message|Email) from [^\]]+\]:|CC:")
+
+
+def _strip_thread_prefix(text: str) -> str:
+    """Return `text` with the thread-context block removed.
+
+    Mirrors the logic thalamus.process uses on its input side: if the
+    thread marker is present, slice from the last message-tag onward so
+    only the actual current message is kept. Fail-open: if no marker
+    or no message-tag, return text unchanged.
+    """
+    if _THREAD_MARKER not in text:
+        return text
+    matches = list(_MSG_TAG_RE.finditer(text))
+    if not matches:
+        return text
+    return text[matches[-1].start() :]
 
 
 # ── Write ─────────────────────────────────────────────────────────────────────
@@ -42,7 +69,11 @@ def write_thread_anchor(
     Called by main.py; not exposed to users directly.
     """
     try:
-        u_snippet = user_input[:160].replace("\n", " ").strip()
+        # Strip synthetic thread-context prefix BEFORE snippeting so anchors
+        # record only the actual user content — prevents recursive context
+        # nesting when future turns read these anchors back into the prompt.
+        clean_input = _strip_thread_prefix(user_input)
+        u_snippet = clean_input[:160].replace("\n", " ").strip()
         r_snippet = response_text[:160].replace("\n", " ").strip()
         narrative = (
             f"[Thread turn {turn_n}] "
