@@ -5269,6 +5269,7 @@ class Igor(IgorBase):
                                             if parsed
                                             else "medium"
                                         ),
+                                        prompt_role="analysis",  # T-tool-synthesis-lean-prompt
                                     )
                                 )
                                 if _cr_synth_text and not any(
@@ -6029,6 +6030,7 @@ class Igor(IgorBase):
                                 if parsed
                                 else "medium"
                             ),
+                            prompt_role="analysis",  # T-tool-synthesis-lean-prompt
                         )
                         _synth_ok = _synth_text and not any(
                             _synth_text.startswith(p)
