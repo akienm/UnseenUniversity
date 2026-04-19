@@ -56,6 +56,19 @@ def _get_cortex():
 # ── store_memory ──────────────────────────────────────────────────────────────
 
 
+def reset_write_count() -> None:
+    """Reset the per-turn store_memory write counter.
+
+    T-swadl-concepts-in-graph unblock (2026-04-19): prior behavior counted
+    writes across process lifetime, so an Igor process that survived a day
+    could only ever deposit 5 memories via this tool. Called at turn
+    boundaries from main.py; also safe to call directly (test seams).
+    """
+    global _write_count
+    with _write_lock:
+        _write_count = 0
+
+
 def store_memory(
     narrative: str,
     memory_type: str,
@@ -63,20 +76,37 @@ def store_memory(
     context: str = "",
     valence: str = "0.0",
     arousal: str = "0.0",
+    memory_id: str = "",
+    tags: str = "",
+    identity_weight: str = "",
+    source: str = "",
 ) -> str:
     """
     Create and persist a new memory node in Igor's graph during a live turn.
 
-    narrative:    the content of the memory (required)
-    memory_type:  one of INTERPRETIVE | FACTUAL | EXPERIENTIAL | EPISODIC |
-                  PROCEDURAL | CORE_PATTERN | IDENTITY | ROLE_MODEL |
-                  REFERENCE | ROOT
-    parent_id:    optional — if set, attaches this node as a child of parent
-    context:      brief description of why this memory is being deposited now
-    valence:      emotional valence [-1.0, 1.0] (default 0.0)
-    arousal:      emotional arousal [-1.0, 1.0] (default 0.0)
+    narrative:       the content of the memory (required)
+    memory_type:     one of INTERPRETIVE | FACTUAL | EXPERIENTIAL | EPISODIC |
+                     PROCEDURAL | CORE_PATTERN | IDENTITY | ROLE_MODEL |
+                     REFERENCE | ROOT
+    parent_id:       optional — if set, attaches this node as a child of parent
+    context:         brief description of why this memory is being deposited now
+    valence:         emotional valence [-1.0, 1.0] (default 0.0)
+    arousal:         emotional arousal [-1.0, 1.0] (default 0.0)
+    memory_id:       optional — use this as the memory's ID instead of auto-
+                     generating one. Required for concept-anchor deposits
+                     (PAGE_OBJECT, CP3, etc.) where the ID is load-bearing.
+    tags:            optional — comma-separated tags, stored in metadata.tags
+    identity_weight: optional — concept-anchor weight [0.0, 1.0], stored in
+                     metadata.identity_weight. High = hard-to-change anchor.
+    source:          optional — overrides the default 'self_edit' source stamp.
 
-    Returns the new memory ID (8-char) so it can be passed to embed_node.
+    Returns 'stored <id>: <narrative snippet>' on success.
+
+    T-swadl-concepts-in-graph unblock (2026-04-19): added memory_id / tags /
+    identity_weight / source so Igor can deposit the SWADL concept anchors
+    (PAGE_OBJECT, FLOW_OBJECT, etc.) with the IDs + metadata that downstream
+    code expects to reference. Prior signature auto-generated IDs only —
+    incompatible with the pedagogical protocol.
     """
     global _write_count
     with _write_lock:
@@ -100,20 +130,42 @@ def store_memory(
     except (TypeError, ValueError):
         return f"[store_memory ERROR] valence and arousal must be numbers, got '{valence}', '{arousal}'"
 
+    # Optional metadata bits
+    meta: dict = {"turn_deposited": True}
+    if tags:
+        tag_list = [t.strip() for t in tags.split(",") if t.strip()]
+        if tag_list:
+            meta["tags"] = tag_list
+    if identity_weight:
+        try:
+            iw = float(identity_weight)
+            if 0.0 <= iw <= 1.0:
+                meta["identity_weight"] = iw
+            else:
+                return (
+                    f"[store_memory ERROR] identity_weight must be in [0.0, 1.0], "
+                    f"got {identity_weight}"
+                )
+        except (TypeError, ValueError):
+            return f"[store_memory ERROR] identity_weight must be a number, got '{identity_weight}'"
+
     try:
         from ..memory.models import Memory as _Mem, MemoryType as _MT
 
-        mem = _Mem(
+        mem_kwargs: dict = dict(
             narrative=narrative,
             memory_type=_MT[mt_upper],
             parent_id=parent_id or None,
             valence=v,
             arousal=a,
-            source="self_edit",
+            source=source.strip() or "self_edit",
             context_of_encoding=context
             or f"deposited during turn {datetime.now().strftime('%Y-%m-%dT%H:%M')}",
-            metadata={"turn_deposited": True},
+            metadata=meta,
         )
+        if memory_id:
+            mem_kwargs["id"] = memory_id.strip()
+        mem = _Mem(**mem_kwargs)
         cortex = _get_cortex()
         cortex.store(mem)
         if parent_id:
@@ -234,6 +286,22 @@ registry.register(
                 "arousal": {
                     "type": "string",
                     "description": "Emotional arousal [-1.0, 1.0]. Default 0.0.",
+                },
+                "memory_id": {
+                    "type": "string",
+                    "description": "Optional — use as the node's ID instead of auto-generating. Required for concept-anchor deposits (e.g. PAGE_OBJECT, SEPARATION_OF_CONCERNS) where the ID is load-bearing.",
+                },
+                "tags": {
+                    "type": "string",
+                    "description": "Optional — comma-separated tags stored in metadata.tags.",
+                },
+                "identity_weight": {
+                    "type": "string",
+                    "description": "Optional — concept-anchor weight [0.0, 1.0] stored in metadata.identity_weight. High = hard-to-change anchor.",
+                },
+                "source": {
+                    "type": "string",
+                    "description": "Optional — overrides the default 'self_edit' source stamp.",
                 },
             },
             "required": ["narrative", "memory_type"],
