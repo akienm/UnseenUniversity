@@ -560,6 +560,18 @@ class NarrativeEngine(IgorBase):
         if _reconsolidated > 0:
             print(f"{_cts()}[NE] reconsolidated: {_reconsolidated} memory/ies updated")
 
+        # T-sleep-memory-auditor: chain prior-version reading memories to newer
+        # deposits that cover the same point. Gated on IGOR_MEMORY_AUDITOR_ENABLED
+        # so a restart with the env var off keeps existing behavior identical.
+        if os.getenv("IGOR_MEMORY_AUDITOR_ENABLED", "false").lower() in (
+            "1",
+            "true",
+            "yes",
+        ):
+            _chained = self._memory_auditor_pass()
+            if _chained > 0:
+                print(f"{_cts()}[NE] auditor: chained {_chained} prior-version edge(s)")
+
         log_ne_run(
             obs_count=len(obs_list),
             integrated=len(obs_list),
@@ -1700,6 +1712,253 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                 kind="BARE_EXCEPT",
                 detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
             )
+
+    # ── T-sleep-memory-auditor: prior-version chaining for reading memories ───
+
+    # Auditor config. Conservative defaults per Akien's 'start conservative'
+    # guidance; tunable via env vars.
+    _AUDITOR_COSINE_THRESHOLD = 0.85
+    _AUDITOR_BATCH_WINDOW = 100  # recent reading memories to scan per pass
+    _AUDITOR_MAX_CHAINS_PER_PASS = 10  # cap work so a pass never runs long
+
+    @staticmethod
+    def _provenance_completeness(meta: dict) -> float:
+        """Fraction of full-provenance fields present on a memory.
+
+        Five signals: book_title, source_author, chunk_position, model_used,
+        inference_tier. Each contributes 0.2 when present+non-empty. An orphan
+        reading memory (the 9,436-node population) scores ~0.0-0.2. A current-
+        pipeline deposit scores 1.0. The auditor uses this as part of head
+        selection — newer memories win, UNLESS their provenance is worse than
+        an older one's.
+        """
+        if not meta:
+            return 0.0
+        score = 0.0
+        for key in (
+            "book_title",
+            "source_author",
+            "chunk_position",
+            "model_used",
+            "inference_tier",
+        ):
+            v = meta.get(key)
+            if v is not None and str(v).strip() not in ("", "0"):
+                score += 0.2
+        return score
+
+    @staticmethod
+    def _audit_rank(confidence: float, provenance: float, age_seconds: float) -> float:
+        """Rank memories for head selection: higher = better.
+
+        confidence     — node's extraction_confidence (or 0.5 default)
+        provenance     — 0..1 from _provenance_completeness
+        age_seconds    — how old the memory is; newer is better but with a
+                         sub-linear decay so a pristine old memory can still
+                         beat a half-provenanced new one.
+        """
+        # Recency weight: exponential decay with 30-day half-life-ish.
+        # ~1.0 at age 0, 0.37 at 30 days, 0.14 at 60 days, 0.05 at 90 days.
+        # Prevents an ancient fully-provenanced memory from beating a
+        # fresh-but-half-provenanced one on recency alone.
+        import math as _math
+
+        recency = _math.exp(-max(age_seconds, 0) / (86400 * 30))
+        return confidence * (0.5 + 0.5 * provenance) * recency
+
+    def _memory_auditor_pass(self) -> int:
+        """Chain prior-version reading memories under newer-better ones.
+
+        Steps per pass:
+          1. Fetch recent reading-origin memories (FACTUAL/INTERPRETIVE only)
+          2. For each, find the nearest sibling by cosine ≥ threshold that
+             shares ≥1 graph neighbor
+          3. Rank the pair; loser gets a `prior_version_of` edge to winner
+          4. Emit a VERSION_CHAIN_<uuid> audit memory
+
+        Returns number of chains created this pass.
+
+        Biomimetic framing: sleep replay + selective revision. The new memory
+        is reconsolidated against the old; the old isn't deleted but becomes
+        a prior version whose head is superseded. Matches the evolution-of-
+        understanding pattern over time.
+        """
+        import uuid as _uuid
+        from datetime import datetime as _dt
+
+        try:
+            from ..cognition.embedder import (
+                cosine_similarity as _cos,
+                embed as _embed,
+            )
+        except Exception:
+            return 0  # embedder unavailable — silent skip
+
+        # Pull recent reading-origin FACTUAL/INTERPRETIVE memories.
+        # Reading deposits carry source='book_learner' (newer pipeline) or
+        # 'reading_indexer' (legacy). Scan the newer ones as candidates to
+        # become chain heads; older ones become chain tails.
+        try:
+            recent_factual = (
+                self.cortex.get_by_type_and_source(
+                    MemoryType.FACTUAL,
+                    "book_learner",
+                    limit=self._AUDITOR_BATCH_WINDOW,
+                )
+                or []
+            )
+            recent_interp = (
+                self.cortex.get_by_type_and_source(
+                    MemoryType.INTERPRETIVE,
+                    "book_learner",
+                    limit=self._AUDITOR_BATCH_WINDOW,
+                )
+                or []
+            )
+        except Exception:
+            return 0
+        candidates = list(recent_factual) + list(recent_interp)
+        if len(candidates) < 2:
+            return 0
+
+        # Batch-fetch embeddings; compute any missing.
+        cand_ids = [m.id for m in candidates]
+        emb_map = self.cortex._get_embeddings_batch(cand_ids)
+        vecs: dict = {}
+        for m in candidates:
+            v = emb_map.get(m.id)
+            if v is None:
+                try:
+                    v = _embed(m.narrative or "")
+                except Exception:
+                    v = None
+            if v is not None:
+                vecs[m.id] = v
+
+        # Pairwise scan. To keep cost bounded, only the newest ~50 acts as
+        # potential HEADS; each is compared against the older rest as
+        # potential tails. This is quadratic in 50×batch but batch≤100 so
+        # ~5000 cosine comparisons — fine.
+        now = _dt.now()
+
+        def _age(m) -> float:
+            try:
+                ts = _dt.fromisoformat((m.timestamp or "").replace("Z", "+00:00"))
+                return max(0.0, (now - ts.replace(tzinfo=None)).total_seconds())
+            except Exception:
+                return 1e6
+
+        sorted_cands = sorted(candidates, key=_age)  # newest first
+        heads = sorted_cands[:50]
+        tails = sorted_cands[50:]
+
+        chains_made = 0
+        already_chained: set = set()
+
+        for head in heads:
+            if chains_made >= self._AUDITOR_MAX_CHAINS_PER_PASS:
+                break
+            if head.id in already_chained:
+                continue
+            if head.id not in vecs:
+                continue
+            best_match = None
+            best_score = self._AUDITOR_COSINE_THRESHOLD
+            for tail in tails:
+                if tail.id in already_chained:
+                    continue
+                if tail.id not in vecs:
+                    continue
+                sim = _cos(vecs[head.id], vecs[tail.id])
+                if sim < best_score:
+                    continue
+                # Shared neighbor check: at least one parent OR child in common
+                try:
+                    head_parents = {head.parent_id} if head.parent_id else set()
+                    tail_parents = {tail.parent_id} if tail.parent_id else set()
+                    head_children = set(head.children_ids or [])
+                    tail_children = set(tail.children_ids or [])
+                    if not (
+                        (head_parents & tail_parents) or (head_children & tail_children)
+                    ):
+                        continue
+                except Exception:
+                    continue
+                best_score = sim
+                best_match = tail
+
+            if best_match is None:
+                continue
+
+            # Rank — does head actually win, or does tail deserve to stay head?
+            h_meta = head.metadata or {}
+            t_meta = best_match.metadata or {}
+            h_conf = float(h_meta.get("extraction_confidence", 0.5) or 0.5)
+            t_conf = float(t_meta.get("extraction_confidence", 0.5) or 0.5)
+            h_rank = self._audit_rank(
+                h_conf, self._provenance_completeness(h_meta), _age(head)
+            )
+            t_rank = self._audit_rank(
+                t_conf, self._provenance_completeness(t_meta), _age(best_match)
+            )
+            if h_rank >= t_rank:
+                winner, loser = head, best_match
+            else:
+                winner, loser = best_match, head
+
+            # Create prior_version_of edge from loser → winner
+            try:
+                self.cortex.add_interpretive_edge(
+                    from_id=loser.id,
+                    to_id=winner.id,
+                    direction="prior_version_of",
+                    weight=float(best_score),
+                    layer="version_chain",
+                    meaning_payload=(
+                        f"Cosine={best_score:.3f}; loser_rank={min(h_rank, t_rank):.3f}; "
+                        f"winner_rank={max(h_rank, t_rank):.3f}"
+                    )[:400],
+                )
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"auditor add_interpretive_edge: {_bare_e}",
+                )
+                continue
+
+            # Emit audit-trail memory
+            try:
+                audit_narr = (
+                    f"Version chain: {winner.id} (head) ← {loser.id} (prior). "
+                    f"cosine={best_score:.3f}"
+                )
+                audit_mem = Memory(
+                    id=f"VERSION_CHAIN_{_uuid.uuid4().hex[:12]}",
+                    narrative=audit_narr,
+                    memory_type=MemoryType.FACTUAL,
+                    parent_id="CP1",  # learning / growth
+                    valence=0.1,
+                    source="runtime:memory_auditor",
+                    metadata={
+                        "deposited_by": "runtime:memory_auditor",
+                        "winner_id": winner.id,
+                        "loser_id": loser.id,
+                        "cosine": round(float(best_score), 4),
+                        "winner_rank": round(max(h_rank, t_rank), 4),
+                        "loser_rank": round(min(h_rank, t_rank), 4),
+                    },
+                )
+                self.cortex.store(audit_mem)
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"auditor audit-mem: {_bare_e}",
+                )
+
+            already_chained.add(loser.id)
+            chains_made += 1
+
+        return chains_made
 
     # ── #310: Night consolidation (idle deep pass) ────────────────────────────
 
