@@ -89,7 +89,12 @@ def _call_ollama(prompt: str) -> Optional[str]:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=45) as resp:
+        # T-remove-extract-timeout (2026-04-19): no urlopen timeout. Per
+        # Akien's 'slow on slow is ok' principle; 45s was clipping on cold
+        # qwen starts and producing spurious 'failed' warnings even when
+        # the fallback path worked. Background review is not latency-
+        # sensitive; let the Ollama call take as long as it needs.
+        with urllib.request.urlopen(req) as resp:
             data = json.loads(resp.read())
         text = data.get("message", {}).get("content", "").strip()
         return text or None
@@ -282,7 +287,10 @@ def run_after_action_review(
                 )
             except Exception as _exc:
                 from ..cognition.forensic_logger import log_error as _le
-                _le(kind="SILENT_EXCEPT", detail=f"after_action_reviewer.py:283: {_exc}")
+
+                _le(
+                    kind="SILENT_EXCEPT", detail=f"after_action_reviewer.py:283: {_exc}"
+                )
     finally:
         conn.close()
 
