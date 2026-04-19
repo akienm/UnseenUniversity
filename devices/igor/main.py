@@ -972,13 +972,22 @@ class Igor(IgorBase):
 
         for env_key, (mem_id, narrative) in _CRED_MAP.items():
             if os.getenv(env_key):
+                # T-seed-memories-deposited-by: stamp source so the provenance
+                # gate in cortex.store doesn't log this as a PROVENANCE_GAP at
+                # boot. 'seed:credentials' distinguishes credential seeds from
+                # habit seeds (see PROC_* loop below).
                 self.cortex.store(
                     Memory(
                         id=f"CRED_{mem_id.upper()}",
                         narrative=narrative,
                         memory_type=MemoryType.CREDENTIAL_REF,
                         portable=False,
-                        metadata={"env_key": env_key, "present": True},
+                        source="seed:credentials",
+                        metadata={
+                            "env_key": env_key,
+                            "present": True,
+                            "deposited_by": "seed:credentials",
+                        },
                     )
                 )
 
@@ -1139,6 +1148,11 @@ class Igor(IgorBase):
             ),
         ]
         for mem in builtin:
+            # T-seed-memories-deposited-by: stamp provenance so boot-time seed
+            # deposits don't trip the PROVENANCE_GAP warning. 'seed:habits'
+            # distinguishes these from credential seeds.
+            mem.source = mem.source or "seed:habits"
+            mem.metadata = (mem.metadata or {}) | {"deposited_by": "seed:habits"}
             self.cortex.store(mem)
             try:
                 self.cortex.add_child(mem.parent_id, mem.id)
