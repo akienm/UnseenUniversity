@@ -340,6 +340,9 @@ class InferenceGateway(IgorBase):
         on_tier: Optional[Callable[[str], None]] = None,
         is_user_turn: bool = False,  # D211: human web turn
         complexity: str = "low",  # D211: low|medium|high from thalamus
+        prompt_role: Optional[
+            str
+        ] = None,  # T-tool-synthesis-lean-prompt: override system-prompt role on cloud path
     ) -> "tuple[str, float, bool]":
         """
         Route a reasoning request. Three call profiles, binary cloud/local decision. (D198)
@@ -580,6 +583,7 @@ class InferenceGateway(IgorBase):
                     preparse_csb=preparse_csb,
                     thread_id=thread_id,
                     no_tools=True,  # 161 tools → provider 400; interactive turns are conversational
+                    prompt_role=prompt_role,
                 )
                 return text, cost, True
             except Exception as _e:

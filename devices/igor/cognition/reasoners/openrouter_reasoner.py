@@ -390,12 +390,22 @@ class OpenRouterReasoner(BaseReasoner):
         preparse_csb: str = "",
         thread_id: str | None = None,
         no_tools: bool = False,
+        prompt_role: str | None = None,
     ) -> tuple[str, float]:
-        """Run full agentic tool loop via OpenRouter."""
+        """Run full agentic tool loop via OpenRouter.
+
+        prompt_role: override the system-prompt role. Defaults to 'interactive'
+          (full persona). Pass 'analysis' (or another role) for constrained
+          rendering turns like tool-result synthesis that don't need the full
+          persona preamble — saves prompt tokens and dodges the _MAX_CHARS
+          truncation on the interactive-role build. T-tool-synthesis-lean-prompt.
+        """
         t0 = time.perf_counter()
 
-        # WO1: dynamic system prompt from cortex memories (full persona — human turn)
-        system = build_system_prompt(cortex, instance_id, role="interactive")
+        # WO1: dynamic system prompt from cortex memories. Default is full
+        # persona for human turns; callers can override via prompt_role.
+        _role = prompt_role or "interactive"
+        system = build_system_prompt(cortex, instance_id, role=_role)
 
         # ── Context winnow: targeted retrieval before main call ───────────────
         # Cheap pre-call identifies which specific memories are needed.
