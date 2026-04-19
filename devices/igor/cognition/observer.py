@@ -1,4 +1,5 @@
 import logging
+
 """
 observer.py — lightweight self-instrumentation primitive (Part D).
 
@@ -74,7 +75,9 @@ def observe(label: str, value, context: dict = None) -> None:
                 existing = path.read_text(encoding="utf-8")
         path.write_text(entry + "\n" + existing, encoding="utf-8")
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/observer.py: %s", _bare_e)
+        logging.getLogger(__name__).warning(
+            "bare except in wild_igor/igor/cognition/observer.py: %s", _bare_e
+        )
 
     # Layer 2: EXPERIENTIAL memory
     if _cortex is not None:
@@ -84,17 +87,27 @@ def observe(label: str, value, context: dict = None) -> None:
             narrative = f"METRIC|{label}|{value}"
             if ctx_str:
                 narrative += f"|{ctx_str[:200]}"
+            # T-provenance-gap-metric-memories: observer.observe is the
+            # canonical 'record a METRIC|*' deposit site. Stamp
+            # 'runtime:observer' so the provenance gate sees where these
+            # came from and doesn't log PROVENANCE_GAP. label goes into
+            # metadata.observer_label for audit queries.
             m = Memory(
                 narrative=narrative,
                 memory_type=MemoryType.EXPERIENTIAL,
                 valence=0.0,
+                source="runtime:observer",
                 metadata={
                     "label": label,
                     "value": str(value),
                     "caller": caller,
+                    "observer_label": label,
+                    "deposited_by": "runtime:observer",
                     **(context or {}),
                 },
             )
             _cortex.store(m)
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/observer.py: %s", _bare_e)
+            logging.getLogger(__name__).warning(
+                "bare except in wild_igor/igor/cognition/observer.py: %s", _bare_e
+            )

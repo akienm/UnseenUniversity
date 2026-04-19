@@ -6429,6 +6429,11 @@ class Igor(IgorBase):
                     parent_id="CP3",
                     valence=valence,
                     arousal=_ep_arousal,
+                    # T-provenance-gap-metric-memories: 'runtime:metric'
+                    # distinguishes these periodic-outcome metric memories
+                    # from other runtime deposits (episodic, interaction,
+                    # pr_accretion). Keeps the PROVENANCE_GAP warning off.
+                    source="runtime:metric",
                     metadata={
                         "metric_type": "interaction_outcome",
                         "friction": friction,
@@ -6436,6 +6441,7 @@ class Igor(IgorBase):
                         "used_api": used_api,
                         "intent": parsed.intent,
                         "interaction_count": self.interaction_count,
+                        "deposited_by": "runtime:metric",
                     },
                 )
                 self.cortex.store(_metric_mem)
