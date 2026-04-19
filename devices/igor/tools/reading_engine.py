@@ -262,6 +262,28 @@ def process_blob(
         _model_used = result.get("model_used") or (
             "local-ollama" if use_local else model
         )
+        # T-extract-prompt-zero-tolerance diagnostic: log raw extractor output
+        # so post-mortem analysis can see why a chunk produced 0 kept nodes.
+        # Records: extracted count, confidence distribution, any parse-fail
+        # summary, and the chunk's first 40 chars for pinpointing.
+        try:
+            import logging as _ldiag
+
+            _confs = [
+                float(n.get("confidence", 0))
+                for n in nodes
+                if isinstance(n, dict) and n.get("confidence") is not None
+            ]
+            _ldiag.getLogger("igor.tools.reading_engine").info(
+                "[extract-diag] chunk_pos=%d raw_nodes=%d confs=%s summary=%r chunk_head=%r",
+                pos,
+                len(nodes),
+                [round(c, 2) for c in _confs],
+                (result.get("summary") or "")[:80],
+                chunk_text[:40],
+            )
+        except Exception:
+            pass
         if nodes:
             deposited = _deposit_nodes(
                 nodes,
@@ -293,7 +315,11 @@ def process_blob(
     from claudecode.book_learner import _deposit_completion_record
 
     status = "complete" if pos >= len(sentences) else "partial"
-    _model = "local-ollama" if use_local else model
+    # Prefer the actual model the extractor used (threaded from the last chunk's
+    # result); fall back to the generic label only if we never got one back.
+    _model = (result.get("model_used") if "result" in dir() else None) or (
+        "local-ollama" if use_local else model
+    )
     _deposit_completion_record(
         cortex,
         book_title,
@@ -313,7 +339,7 @@ def process_blob(
         "embedding_count": 0,  # counted during deposit
         "chunks_processed": chunks_processed,
         "processing_seconds": elapsed,
-        "model_used": "local-ollama" if use_local else model,
+        "model_used": _model,
         "status": status,
     }
 
