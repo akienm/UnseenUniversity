@@ -46,8 +46,18 @@ def _open(req: urllib.request.Request, timeout: float):
     return urllib.request.urlopen(req, timeout=timeout)
 
 
-def _post(path: str, body: dict, timeout: float = 5.0) -> Optional[dict]:
-    """POST JSON to utility closet. Returns response dict or None on failure."""
+def _post(path: str, body: dict, timeout: float = 30.0) -> Optional[dict]:
+    """POST JSON to utility closet. Returns response dict or None on failure.
+
+    T-web-chat-reply-not-surfacing (2026-04-19): timeout raised from 5.0 to 30.0
+    and failure logs promoted from DEBUG to WARNING. At 5s + DEBUG, an
+    intermittently slow UC server silently dropped ~60% of Igor's longer
+    replies — the only visible symptom was 'reply in console, missing in
+    web.' 30s is generous enough for a UC under contention (stats pushes,
+    WS broadcasts, channel writes concurrent with an agent send); WARNING
+    makes future occurrences audit-able from tools.log rather than
+    invisible.
+    """
     try:
         data = json.dumps(body).encode("utf-8")
         req = urllib.request.Request(
@@ -59,10 +69,10 @@ def _post(path: str, body: dict, timeout: float = 5.0) -> Optional[dict]:
         with _open(req, timeout) as resp:
             return json.loads(resp.read())
     except urllib.error.URLError as e:
-        log.debug("utility closet POST %s failed (URLError): %s", path, e)
+        log.warning("utility closet POST %s failed (URLError): %s", path, e)
         return None
     except Exception as e:
-        log.debug("utility closet POST %s failed: %s", path, e)
+        log.warning("utility closet POST %s failed: %s", path, e)
         return None
 
 

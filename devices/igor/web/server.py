@@ -105,12 +105,33 @@ def stop() -> None:
     _poll_stop.set()
 
 
-def send(text: str, session_id: str = "shared") -> None:
-    """Forward an outbound reply through UC to web clients on the given session."""
+def send(text: str, session_id: str = "shared") -> bool:
+    """Forward an outbound reply through UC to web clients on the given session.
+
+    Returns True on successful delivery, False on any failure. Prior to
+    2026-04-19 this was fire-and-forget with DEBUG-level error logs,
+    which silently dropped ~60% of Igor's longer replies (T-web-chat-reply-
+    not-surfacing). Now logs at WARNING on any failure so 'reply present
+    in console, missing in web' is observable from tools.log.
+    """
     try:
-        uc_client.send_message(text, session_id=session_id)
+        ok = uc_client.send_message(text, session_id=session_id)
+        if not ok:
+            log.warning(
+                "uc send returned False (session=%s len=%d head=%r) — reply dropped",
+                session_id,
+                len(text or ""),
+                (text or "")[:80],
+            )
+        return bool(ok)
     except Exception as e:
-        log.debug("uc send error (non-fatal): %s", e)
+        log.warning(
+            "uc send raised (session=%s len=%d): %s",
+            session_id,
+            len(text or ""),
+            e,
+        )
+        return False
 
 
 def broadcast_activity(state: dict) -> None:
