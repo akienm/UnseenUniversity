@@ -7946,7 +7946,32 @@ class Igor(IgorBase):
                     "raw-tool-leak suppressed: %r", response[:120]
                 )
             else:
+                # T-web-chat-reply-not-surfacing diagnostic: log every web
+                # delivery attempt so the 'reply visible in console but missing
+                # from web UI' case can be traced on the wire. On confirmed
+                # bug, check this log line, check channel_messages for an
+                # INSERT at the same timestamp, check WS broadcast logs.
+                import logging as _logging
+
+                _logging.getLogger(__name__).info(
+                    "web_server.send attempt session=%s len=%d head=%r",
+                    _session_id,
+                    len(response),
+                    response[:80],
+                )
                 web_server.send(response, session_id=_session_id)
+        elif response and msg.source == "web":
+            # Should not be reachable given the outer condition, but guard anyway
+            pass
+        elif msg.source == "web" and not response:
+            # T-web-chat-reply-not-surfacing diagnostic: empty-response path.
+            # If Igor generates something to console but response is empty at
+            # this point, the response came from a different call site.
+            import logging as _logging
+
+            _logging.getLogger(__name__).warning(
+                "web-source turn produced empty response; reply (if any) would need separate delivery path"
+            )
 
         if (
             response
