@@ -1,6 +1,24 @@
 """
 Basal Ganglia — parallel habit scoring with lateral inhibition.
 
+Stages 3 and 4 of Igor's input-side cognitive pipeline:
+  - "means to me" — habit selection personalized via meaning_to_me layer
+    (#244): habits tagged metadata.meaning_to_me=True get a +0.05 boost
+    when the current turn's retrieval traversal surfaced meaning_to_me
+    edges. This is where a word's generic meaning becomes a meaning
+    SPECIFIC to Igor.
+  - "what do I wanna do" — the winning habit IS Igor's intent; its
+    code_ref / engram target IS the action he wants to take.
+
+Pipeline context: thalamus (words) → cortex.search (meanings) → this
+file (means to me + what to do) → decision_blob (commitment) →
+turn_pipeline (escalation or voice). When tree-side reasoning is
+sufficient, the winning habit dispatches directly. When it isn't,
+reasoning_workflow.py opens a peer conversation with upstream.
+See T-retire-legacy-direct-reasoner-path for the architecture map.
+
+## Scoring model
+
 Replaces _find_habit() (first-match-wins) with a proper scoring model:
 
   score = trigger_score          # 1.0 if trigger in input, else 0.0 (required)
@@ -9,6 +27,7 @@ Replaces _find_habit() (first-match-wins) with a proper scoring model:
         + inertia_bonus          # 0.0–0.10 (stable habits preferred over new)
         + valence_bonus          # 0.0–0.10 (positive-valence habits slightly preferred)
         + conditions_bonus       # +0.08 per matched conditions field (D201)
+        + meaning_to_me_bonus    # +0.05 when meaning_to_me_context=True (#244)
 
 All habits scored in parallel; winner is max(scores). Tiebreak by activation_count.
 Threshold is modulated by milieu state: high arousal → lower threshold (more reactive).
