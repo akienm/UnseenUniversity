@@ -3342,6 +3342,13 @@ class Igor(IgorBase):
 
         self.interaction_count += 1
 
+        try:
+            from .tools.graph_write import reset_write_count as _reset_gw
+
+            _reset_gw()
+        except Exception:
+            pass
+
         # #310: reset consolidation idle timer on each interactive turn
         try:
             self.ne.notify_interactive()
