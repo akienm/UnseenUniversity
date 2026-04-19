@@ -66,15 +66,15 @@ class TestMachineRecord(unittest.TestCase):
         m = _machine(ip=None)
         self.assertIn("localhost", m.ollama_host)
 
-    def test_model_for_extraction_prefers_batch(self):
-        m = _machine(ollama_model="llama3.2:1b", ollama_model_batch="qwen2.5:14b")
-        self.assertEqual(m.model_for("extraction"), "qwen2.5:14b")
-        self.assertEqual(m.model_for("batch"), "qwen2.5:14b")
-
-    def test_model_for_other_uses_default(self):
-        m = _machine(ollama_model="llama3.2:1b", ollama_model_batch="qwen2.5:14b")
-        self.assertEqual(m.model_for("tier2"), "llama3.2:1b")
-        self.assertEqual(m.model_for("preparse"), "llama3.2:1b")
+    def test_model_for_always_returns_single_local_model(self):
+        # 2026-04-18: the two-column scheme (ollama_model / ollama_model_batch)
+        # collapsed to a single local model per machine. model_for() now
+        # ignores call_type and always returns ollama_model.
+        m = _machine(ollama_model="qwen2.5:7b", ollama_model_batch="qwen2.5:14b")
+        self.assertEqual(m.model_for("extraction"), "qwen2.5:7b")
+        self.assertEqual(m.model_for("batch"), "qwen2.5:7b")
+        self.assertEqual(m.model_for("tier2"), "qwen2.5:7b")
+        self.assertEqual(m.model_for("preparse"), "qwen2.5:7b")
 
 
 # ── is_in_use ─────────────────────────────────────────────────────────────────
@@ -271,7 +271,10 @@ class TestRoute(unittest.TestCase):
         host, model = self._route(machines)
         self.assertEqual(host, "http://10.0.0.2:11434")
 
-    def test_batch_model_used_for_extraction(self):
+    def test_extraction_uses_single_local_model(self):
+        # 2026-04-18: post-collapse, extraction resolves to ollama_model
+        # (the single local model on the machine), regardless of whether
+        # an ollama_model_batch happens to be set on older rows.
         from igor.cognition import cluster_router
 
         machines = [
@@ -279,8 +282,8 @@ class TestRoute(unittest.TestCase):
                 hostname="a",
                 ip="10.0.0.1",
                 inference_rank=1,
-                ollama_model="llama3.2:1b",
-                ollama_model_batch="qwen2.5:14b",
+                ollama_model="qwen2.5:7b",
+                ollama_model_batch="qwen2.5:14b",  # legacy field, ignored
             ),
         ]
         with patch(
@@ -293,7 +296,7 @@ class TestRoute(unittest.TestCase):
                     "igor.cognition.cluster_router.is_in_use", return_value=False
                 ):
                     host, model = cluster_router.route("extraction")
-        self.assertEqual(model, "qwen2.5:14b")
+        self.assertEqual(model, "qwen2.5:7b")
 
 
 # ── route_batch ───────────────────────────────────────────────────────────────
