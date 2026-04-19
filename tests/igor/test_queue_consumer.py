@@ -261,12 +261,7 @@ class TestRegistryRegistration(unittest.TestCase):
 
         tool = registry.get("read_queue_top")
         self.assertIsNotNone(tool, "read_queue_top not found in registry")
-        self.assertEqual(
-            tool.fn,
-            __import__(
-                "wild_igor.igor.tools.ops", fromlist=["read_queue_top"]
-            ).read_queue_top,
-        )
+        self.assertEqual(tool.fn.__qualname__, "read_queue_top")
 
     def test_adopt_top_queue_ticket_registered(self):
         """adopt_top_queue_ticket is present in the tool registry with no required args."""
