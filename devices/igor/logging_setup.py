@@ -168,6 +168,19 @@ def setup_logging(log_dir: Path) -> None:
     # Master log — WARNING+ from everything
     _add_file(igor_root, log_dir / "master.log", logging.WARNING, fmt)
 
+    # Utility-closet logs — since D335 moved infrastructure modules out of
+    # wild_igor/igor/ into lab/utility_closet/, those loggers no longer route
+    # through igor_root. Wire the same ConsoleHandler + file handler so
+    # WARNINGs (e.g. db_proxy slow-query lines) still show in yellow on
+    # the console. Without this, the slow-query highlighting silently
+    # regressed after the db-proxy-shelf move (075a212d).
+    uc_root = logging.getLogger("lab.utility_closet")
+    if not uc_root.handlers:
+        uc_root.setLevel(logging.DEBUG)
+        uc_root.propagate = False  # handled directly; don't double-emit
+        uc_root.addHandler(ch)  # same ConsoleHandler as igor — yellow WARNINGs
+        _add_file(uc_root, log_dir / "utility_closet.log", logging.INFO, fmt)
+
     # Per-area handlers — INFO+ each subsystem; propagate=True so they also
     # flow up to igor root (console + master.log)
     for area, filename in [
