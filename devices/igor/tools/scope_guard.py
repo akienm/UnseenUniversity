@@ -149,7 +149,8 @@ def run_scope_guard(basket: dict) -> dict:
 
             _post(
                 f"[SCOPE_GUARD] MEDIUM inertia: {target_file} — {op_type}. "
-                f"Rationale: {rationale[:80] if rationale else 'none provided'}."
+                f"Rationale: {rationale[:80] if rationale else 'none provided'}.",
+                dedup_key=f"scope_guard:medium:{target_file}:{op_type}",
             )
         except Exception as exc:
             log.info(f"SCOPE_GUARD: medium channel post failed — {exc}")

@@ -75,6 +75,7 @@ def _load_ticket(ticket_id: str) -> dict | None:
                 return t
     except Exception as _exc:
         from ..cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"pe_chain.py:76: {_exc}")
     return None
 
@@ -1082,6 +1083,7 @@ def _parse_hypothesis(raw: str) -> list[dict] | None:
             return [obj]
     except Exception as _exc:
         from ..cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"pe_chain.py:1082: {_exc}")
 
     # Fallback: extract fields with regex (single edit only)
@@ -1103,6 +1105,7 @@ def _parse_hypothesis(raw: str) -> list[dict] | None:
             ]
     except Exception as _exc:
         from ..cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"pe_chain.py:1102: {_exc}")
 
     return None
@@ -1381,6 +1384,7 @@ def pe_test(basket: dict, preflight: bool = False) -> dict:
         return basket
     except Exception as _exc:
         from ..cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"pe_chain.py:1379: {_exc}")
 
     # Fallback: direct pytest subprocess
@@ -1430,41 +1434,16 @@ Output a JSON object with an "edits" key:
 JSON:"""
 
 
-def _post_to_channel(message: str) -> None:
-    """Post a message to the shared channel (best-effort)."""
-    try:
-        import psycopg2 as _pg
-        from datetime import datetime, timezone
+def _post_to_channel(message: str, dedup_key: str | None = None) -> None:
+    """Post a message to the shared channel via the shared utility.
 
-        ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        conn = _pg.connect(_DB_URL)
-        with conn:
-            with conn.cursor() as c:
-                c.execute(
-                    "INSERT INTO channel_messages (ts, author, type, content, channel) VALUES (%s, %s, %s, %s, %s)",
-                    (ts, "igor", "message", message, "shared"),
-                )
-        conn.close()
-    except Exception as _exc:
-        from ..cognition.forensic_logger import log_error as _le
-        _le(kind="SILENT_EXCEPT", detail=f"pe_chain.py:1444: {_exc}")
-    try:
-        import json as _json
-        from datetime import datetime, timezone
+    T-scope-guard-echo-dedup: if dedup_key is passed, repeat posts of the
+    same key within 30 min are suppressed. Callers posting predictable
+    block/reject messages should pass a stable key (e.g. ticket_id+file).
+    """
+    from .channel_post import post_to_channel as _shared_post
 
-        ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        ch = _paths().cc_channel / "messages.jsonl"
-        ch.parent.mkdir(parents=True, exist_ok=True)
-        with open(ch, "a") as f:
-            f.write(
-                _json.dumps(
-                    {"ts": ts, "author": "igor", "type": "message", "content": message}
-                )
-                + "\n"
-            )
-    except Exception as _exc:
-        from ..cognition.forensic_logger import log_error as _le
-        _le(kind="SILENT_EXCEPT", detail=f"pe_chain.py:1460: {_exc}")
+    _shared_post(message, author="igor", channel="shared", dedup_key=dedup_key)
 
 
 # ── PROBE ─────────────────────────────────────────────────────────────────────
@@ -1785,9 +1764,14 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
             timeout=15,
         )
     else:
+        # Dedup on (ticket_id, reason-prefix): if the same ticket blocks for
+        # the same reason twice within 30 min, only the first hits the channel.
+        # The root cause — a habit/goal re-firing the same blocked op — is
+        # tracked under T-scope-guard-reattempt-loop (follow-up).
         _post_to_channel(
             f"[pe_chain] ✗ {ticket_id}: blocked after {basket.get('attempt_count', 0)} attempts. "
-            f"Reason: {reason}. Needs human review."
+            f"Reason: {reason}. Needs human review.",
+            dedup_key=f"pe_chain:blocked:{ticket_id}:{reason[:80]}",
         )
         if ticket_id and ticket_id != "unknown":
             _run_bash(
