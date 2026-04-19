@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lab" / "claudec
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from cc_hook_pending import (  # noqa: E402
+    COMPACT_MAX_AGE_SECS,
     COMPACT_PENDING_FILE,
     _check_compact_pending,
     write_compact_pending,
@@ -62,6 +63,22 @@ class TestCheckCompactPending:
         second = _check_compact_pending()
         assert first == "once only"
         assert second == ""
+
+    def test_drops_stale_file(self):
+        """T-cc-stale-compact-request-leak: file older than COMPACT_MAX_AGE_SECS
+        is dropped without firing (prevents cross-session leaks)."""
+        import os
+        import time
+
+        COMPACT_PENDING_FILE.parent.mkdir(parents=True, exist_ok=True)
+        COMPACT_PENDING_FILE.write_text("preserve: session=2026-04-16a")
+        # Backdate the file by (max_age + 60)s
+        stale_ts = time.time() - (COMPACT_MAX_AGE_SECS + 60)
+        os.utime(COMPACT_PENDING_FILE, (stale_ts, stale_ts))
+
+        result = _check_compact_pending()
+        assert result == ""  # no preserve string returned
+        assert not COMPACT_PENDING_FILE.exists()  # file removed
 
 
 class TestHookIntegration:
