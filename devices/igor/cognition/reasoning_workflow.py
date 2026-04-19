@@ -7,6 +7,18 @@ CONVERSATION that Igor opens in the first person. 'This is what I
 am. Here's my trails. Here's what I'm stuck on. What else do you
 want to know?'
 
+## Where escalation is triggered
+
+Entry point: turn_pipeline.py's cascade.attempt() returns SkipReason
+when the ExperimentCascade exhausts at level 5 without a match. The
+TurnPipeline then calls run_workflow(workflow, situation, peer) here.
+This is the "tree reasoning fails → chat with upstream" hand-off in
+Akien's model. Multiple workflow iterations = multiple upstream
+conversation turns, each small and focused (not a fat one-shot).
+
+See T-retire-legacy-direct-reasoner-path for how this path is
+replacing the legacy direct-reasoner call pattern.
+
 A Workflow is the state machine Igor runs during that conversation.
 Each workflow has its own opening move, iteration rhythm, and exit
 condition. Four workflow families map onto the four uncertainty

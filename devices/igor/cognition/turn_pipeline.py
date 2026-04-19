@@ -5,9 +5,21 @@ The conductor that strings cascade + workflow + prompt contexts + voice
 into one orchestrator. Single entry point `TurnPipeline.run_turn(situation)`
 produces a `TurnResult` carrying the reply text plus full path trace.
 
-This module does NOT touch main.py. It's standalone and testable in
-isolation via mocked cortex + scripted peer. Wiring into the real turn
-loop is a subsequent ticket after Akien reviews this shape.
+## Architectural role (Akien 2026-04-19)
+
+This module is the NEW inference path that implements the biomimetic
+model: trees reason, escalate to upstream via conversational back-and-
+forth when reasoning fails, return to trees for output. Trees are one
+voice actor; LLM is a separate voice actor. When LLM is involved, it's
+invoked at least twice per turn (once for reasoning, once for voice)
+with small focused payloads — not one fat system-prompt one-shot.
+
+The LEGACY path (direct reasoner.reason() calls in main.py with
+build_system_prompt() as a big preamble) is being retired — see
+T-retire-legacy-direct-reasoner-path. All interactive turns are being
+migrated through this pipeline.
+
+## Pipeline (per T-reasoning-voice-split #436 design session 2026-04-15)
 
 ## Pipeline (per T-reasoning-voice-split #436 design session 2026-04-15)
 

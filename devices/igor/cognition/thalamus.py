@@ -1,6 +1,20 @@
 """
-Thalamus - input processing and routing.
-Parses intent, emotional tone, and determines what memories to activate.
+Thalamus — input processing and routing.
+
+Stage 1 of Igor's input-side cognitive pipeline (the "words" stage).
+Parses raw input into tokens + intent + emotional tone + complexity, and
+strips thread-context preambles before semantic work begins.
+
+Pipeline context (T-retire-legacy-direct-reasoner-path):
+  words (this file) → meanings (cortex.search) → means to me (basal_ganglia
+  with meaning_to_me layer #244) → what do I wanna do (basal_ganglia +
+  decision_blob + goal_formation). When tree reasoning fails, escalation
+  is conversational (reasoning_workflow.py), not a fat one-shot prompt.
+  Output side picks up from DecisionBlob: voice_context → voice_ab
+  (GraphVoiceActor vs LLMVoiceActor).
+
+Thalamus does no retrieval and no reasoning — it only shapes raw input
+into the ParsedInput the rest of the pipeline consumes.
 """
 
 import re

@@ -5,6 +5,23 @@ Substrate graduation for voice production. Two actors render the same
 DecisionBlob into text; the framework compares, picks a winner, and
 trains the substrate from the LLM when the LLM wins.
 
+## Architectural role (Akien 2026-04-19)
+
+Final stage of Igor's output-side pipeline. By the time a blob lands
+here, the input-side trees have already decided WHAT Igor wants to say
+(DecisionBlob.selected_action). This module decides HOW he says it —
+in whose voice. Two voice actors compete:
+
+  - Trees (GraphVoiceActor) — Igor's own voice, grown from his
+    generation word graph.
+  - LLM (LLMVoiceActor) — a separate voice actor; sounds like the
+    model, not necessarily like Igor.
+
+The A/B comparison lets Igor's own voice win when it's good enough,
+which is the graduation mechanism: the LLM voice actor retires when
+the graph voice consistently scores higher. That's the design-intent
+answer to "Igor should select his own output when it's better."
+
 ## Actors
 
   GraphVoiceActor — uses Igor's generation word graph (G37) to render
