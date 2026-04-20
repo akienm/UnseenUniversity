@@ -8,7 +8,7 @@ Design (T-network-proxy):
   - http_get(url, headers, timeout) → bytes | None
   - http_post(url, data, headers, timeout) → bytes | None
   - Per-host HostStats: call_count, error_count, latency samples (p50/p95)
-  - report_str() → formatted string for /audit and get_network_proxy_report tool
+  - report_str() → formatted string for /day-close-audit and get_network_proxy_report tool
 
 Callers opt-in — existing urlopen sites migrate over time.
 No retry logic in v1 (each caller decides its own retry policy).
@@ -188,7 +188,7 @@ class NetworkProxy(IgorBase):
             )
 
     def report_str(self) -> str:
-        """Formatted report for /audit and get_network_proxy_report tool."""
+        """Formatted report for /day-close-audit and get_network_proxy_report tool."""
         stats = self.host_stats()
         if not stats:
             return "NETWORK PROXY — no outbound calls recorded."

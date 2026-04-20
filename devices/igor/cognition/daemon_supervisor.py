@@ -3,12 +3,12 @@ DaemonSupervisor — central registry for Igor's daemon threads.
 
 Problem: threads were started and forgotten. When the ollama threadlock
 surfaced (2026-03-22), there was no way to inspect what threads were running,
-whether they were healthy, or surface that in /audit.
+whether they were healthy, or surface that in /day-close-audit.
 
 Design (T-daemon-supervisor):
   - register(name, thread, health_fn=None) — called once per thread after .start()
   - status() → list of dicts: name, alive, uptime_s, healthy (None if no health_fn)
-  - report_str() → formatted string for /audit and get_daemon_report tool
+  - report_str() → formatted string for /day-close-audit and get_daemon_report tool
   - start_polling(restart_flag_path, poll_interval, critical_names) — active watchdog
 
 T-daemon-supervisor-polling: polling thread (5s) detects dead critical threads and
@@ -93,7 +93,7 @@ class DaemonSupervisor(IgorBase):
         return rows
 
     def report_str(self) -> str:
-        """Formatted report for /audit and get_daemon_report tool."""
+        """Formatted report for /day-close-audit and get_daemon_report tool."""
         rows = self.status()
         if not rows:
             return "DAEMON SUPERVISOR — no threads registered."
@@ -161,7 +161,11 @@ class DaemonSupervisor(IgorBase):
                                     )
                                 except Exception as _exc:
                                     from .forensic_logger import log_error as _le
-                                    _le(kind="SILENT_EXCEPT", detail=f"daemon_supervisor.py:161: {_exc}")
+
+                                    _le(
+                                        kind="SILENT_EXCEPT",
+                                        detail=f"daemon_supervisor.py:161: {_exc}",
+                                    )
                                 if _restart_path:
                                     try:
                                         open(_restart_path, "w").close()
