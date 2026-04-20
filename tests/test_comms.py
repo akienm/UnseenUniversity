@@ -84,6 +84,11 @@ class TestChannel:
         assert ch.delivery == Delivery.PULL
         assert ch.notify is False
         assert ch.retention == "1y"
+        assert ch.show_timestamp is True
+
+    def test_show_timestamp_opt_out(self):
+        ch = Channel(address="comms://infra", show_timestamp=False)
+        assert ch.show_timestamp is False
 
     def test_log_file_path(self):
         ch = Channel(address="comms://discord/dm-akien")
