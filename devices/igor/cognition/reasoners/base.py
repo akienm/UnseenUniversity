@@ -1,26 +1,190 @@
+"""base.py — Reasoner hierarchy, context assembly, and shared token economy.
+
+WHAT IT IS
+──────────
+Reasoners are inference adapters: they translate Igor's internal state into
+API-native protocol, execute conversation loops, handle tool calls, and
+return plain text. Igor doesn't care which reasoner is active — it calls
+reason() and gets text back.
+
+This file defines:
+  1. Two-level hierarchy (D026): transport base classes (stable structural
+     distinctions) + model family failover.
+  2. Shared token economy: context capping, tool result truncation,
+     message trimming, cost tracking.
+  3. Context assembly: _build_session_context() and _build_memory_context()
+     wire ring memory, task sets, and thread anchors into the LLM window.
+  4. Utilities for winnowing, context filtering, and local Ollama calls.
+
+WHY IT EXISTS
+─────────────
+The inference gateway (inference_gateway.py) delegates to reasoners
+instead of wiring directly to APIs. Separation buys:
+  - Model names and API details hidden behind reason().
+  - Cost discipline (token caps, budget checks, research-mode gates) in
+    one place.
+  - Safe failover (ModelFamily tries channels in order).
+  - Context assembly anchored in one place (base.py); habits handle
+    response dispatch. Splitting would make the boundary leaky.
+  - Local-first (D211) — all reasoning flows through the gateway DAG,
+    which selects tier by complexity + budget + cloud availability.
+
+HOW IT WORKS (architecture)
+───────────────────────────
+
+HIERARCHY (D026 — two-level structure):
+
+  Level 1 — Transport base classes (how inference talks to the outside):
+    BaseReasoner(ABC, IgorBase)
+    ├── LocalReasoner       — no cost, latency variance, no tools
+    ├── APIReasoner         — budget tracking, rate limits, tool support
+    └── BrowserReasoner     — declared placeholder (NOT IMPLEMENTED)
+
+  Level 2 — Model family failover:
+    ModelFamily(BaseReasoner)  — manages multiple channels; tries each
+                                  in order, catches exceptions, escalates.
+    └── ClaudeFamily(ModelFamily)
+
+  Concrete instances:
+    OllamaReasoner(LocalReasoner)   — tier.2 local inference
+    OpenRouterReasoner(APIReasoner) — tier.3/3.5/4 cloud models via OR
+    AnthropicReasoner               — historically here; removed per D188
+                                      (igor-browser-or-only). Igor never
+                                      calls Anthropic direct. Do not
+                                      resurrect.
+
+CONTRACT for reason() implementations:
+  Input:
+    user_input: str                   — the turn's text
+    relevant_memories: list[Memory]   — cortex.search() results
+    core_patterns: list[Memory]       — graph attractors / habits
+    instance_id: str                  — Igor's instance name
+    preparse_csb: str = ""            — [PARSED_INPUT] block (cloud only)
+  Output:
+    tuple[str, float]                 — (response_text, cost_in_usd)
+  Failure mode:
+    - Raises Exception on failure. Caller (gateway) catches and tries the
+      next tier.
+    - Idempotent: safe to retry same inputs.
+    - Timeouts enforced by caller via threading.Event (exit_requested).
+
+TOKEN ECONOMY (shared across all reasoners)
+───────────────────────────────────────────
+  TOOL_RESULT_MAX_CHARS = 8_000
+    Every tool result capped before entering message history. Prevents
+    one large read from blowing the window. Truncation notice visible.
+  CONTEXT_WARN_CHARS = 80_000  (~20K tokens)
+    Log warning; prompt human to step-break.
+  CONTEXT_HARD_CAP_CHARS = 120_000
+    Hard trim: drop oldest tool results; keep initial context + last 4
+    turns. Inserts visible placeholder so model knows.
+  MAX_TURNS = int(IGOR_MAX_TURNS env, default 8)
+    Agentic loop safety limit. 0 = unlimited (reading sessions only).
+  RESEARCH_MODE + BIG_READ_TOOLS / BASH_READ_PATTERNS
+    When IGOR_RESEARCH_MODE=false, external API reads (confluence,
+    web_search) are capped. Local file reads remain free and uncapped.
+  Per-call cost cap removed (D206): budget floor + MAX_TURNS are
+    sufficient.
+
+CONTEXT ASSEMBLY (_build_session_context)
+─────────────────────────────────────────
+Injected string block; ordering matters:
+  1. Thread anchors (T-thread-to-fallthrough) — most recent first; survive
+     context trim; preserve conversation continuity.
+  2. Task sets (category=task_set, limit=3) — active goals anchor all
+     reasoning before urgency signals.
+  3. High-urgency TWM (urgency ≥ 0.7, limit=5) — flagged distinctly so
+     model notices (D028, Change 4).
+  4. Ring memory anchor — NE summary from last ≤ 10 min; shows thread arc.
+     Delta: recent ring entries since anchor (limit=5).
+  5. Recent ring memory (fallback if no NE anchor) — last ≤ 10 entries,
+     excluding {tool_trace, judgment, action_impulse, ne_diagnostic}.
+Ring entries capped at RING_CONTEXT_LIMIT=10 total; entries older than
+RING_CONTEXT_MAX_AGE_HOURS=8 are excluded from live context (still in DB
+for cortex.search).
+
+CONTEXT ASSEMBLY (_build_memory_context)
+────────────────────────────────────────
+High-relevance memories (relevance_score ≥ 0.5) formatted with temporal
+anchors (stored today/yesterday/Nd ago/date), memory type, and narrative
+snippet. Prevents old memories being treated as current reality.
+
+WINNOWING (pre-filter for expensive calls)
+──────────────────────────────────────────
+_winnow_context_method() pre-filters before cloud calls:
+  1. Reads ring breadcrumbs (last 5 entries, oldest first)
+  2. Activates word_graph concepts from user input
+  3. Prompts cheap model: "List 2-3 specific memory searches"
+  4. Fetches Memory objects for each query (limit=2 per query)
+  5. Deposits INTERPRETIVE node: "When context involves [keywords],
+     search for [queries]" — trains the graph to route context without
+     model calls over time.
+  6. Returns augmented relevant_memories list.
+Skipped if: input < 20 chars, starts with /, IGOR_CONTEXT_WINNOW=false,
+no cortex. Note: _winnow_context_method is bound at module bottom as a
+BaseReasoner method (indentation pattern; tidy on future touch).
+
+prompt_role threading (optional per-call override)
+──────────────────────────────────────────────────
+  - prompt_role (None by default) gates persona in cloud reasoners.
+  - None → default role per tier (interactive vs analysis).
+  - Not in BaseReasoner.reason() signature; reasoners accept it as
+    **kwargs.
+  - OpenRouterReasoner + system_prompt.py handle the override.
+  - OllamaReasoner ignores prompt_role; no persona switching locally.
+
+RESPONSE SHAPE
+──────────────
+Plain str (all reasoners). Cost in USD: OllamaReasoner returns 0.0;
+OpenRouter returns per-token cost. No structured JSON wrapping at this
+layer. NE uses response_format:json_object (D053) and parses the JSON —
+that's NE's concern, not base.reason()'s.
+
+RELATIONSHIP TO inference_gateway.py
+────────────────────────────────────
+Reasoners are the LEAVES of the gateway DAG. Gateway:
+  1. Builds reasoner (from_env() at boot, cached)
+  2. Assembles InferenceContext (cloud_active, local_available, …)
+  3. Selects tier by complexity + budget + cloud availability
+  4. Calls tier.reason() with assembled messages
+  5. Catches exceptions and tries next tier (ModelFamily failover)
+Reasoners DON'T know about tiers, cloud budget, availability gates, or
+DAG routing. That separation makes inference_gateway.py the policy layer;
+reasoners are execution units.
+
+KEY DECISIONS SHAPING THIS SUBSYSTEM
+────────────────────────────────────
+  D015  gateway-pattern          — DAG routing in gateway; policy in one
+                                    file
+  D026  reasoner-hierarchy       — two-level: transport + model family
+  D028  urgency signals          — high-urgency TWM flagged distinctly
+  D035  interactive-persona-tier — Haiku (tier.3.5) between cheap + Sonnet
+  D053  NE JSON response         — response_format:json_object
+  D071  cloud-ok runtime switch  — file-backed TTL for night/local-only
+  D188  igor-browser-or-only     — AnthropicReasoner removed; never call
+                                    Anthropic direct
+  D206  remove per-call cost cap — budget floor + MAX_TURNS sufficient
+  D211  local-first inference    — tier.2 primary; cloud only for high/med
+  D234  tier-ladder redesign     — Ollama primary, OR luxury
+  D259  human-author routing     — is_user_turn gates background escalation
+  D327  inference encapsulation  — ollama_reasoner + openrouter_reasoner
+                                    consolidate earlier reasoner files
+
+Eventually: less cloud inference, more habit execution — pure habits
+replace some reasoning. That's the North Star; this file is the
+current-state interface.
+
+If you want to change:
+  - Token caps / context limits — edit TOOL_RESULT_MAX_CHARS, MAX_TURNS,
+                                   CONTEXT_HARD_CAP_CHARS at top.
+  - Context assembly order      — edit _build_session_context() logic.
+  - Winnowing behavior          — edit _winnow_context_method() +
+                                   _deposit_winnow_node().
+  - Reasoner contract           — edit BaseReasoner.reason() signature
+                                   (HIGH inertia — discuss first).
+"""
+
 import logging
-
-"""
-Base reasoner interface — two-level hierarchy (Change 2 / D026).
-
-Level 1 — transport base classes:
-  BaseReasoner (abstract)
-  ├── LocalReasoner(BaseReasoner)   — no cost, latency variance, no tools
-  ├── APIReasoner(BaseReasoner)     — budget tracking, rate limits, reliable tools
-  └── BrowserReasoner(BaseReasoner) — zero cost, session-fragile, no tools (DECLARED ONLY)
-
-Level 2 — model family classes:
-  ModelFamily(BaseReasoner)           — groups by model identity; handles failover
-  └── ClaudeFamily(ModelFamily)
-
-Concrete implementations:
-  AnthropicReasoner(APIReasoner)    — Anthropic API
-  OpenRouterReasoner(APIReasoner)   — OpenRouter API
-  OllamaReasoner(LocalReasoner)     — local Ollama
-  OllamaReasoner(LocalReasoner)     — local or remote Ollama (preparse + background reasoning)
-
-Eventually: no cloud inference at all. Pure habit execution replaces reasoning entirely.
-"""
 
 import json
 import os
