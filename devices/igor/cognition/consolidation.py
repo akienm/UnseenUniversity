@@ -1,19 +1,165 @@
-"""
-Episodic Consolidation Daemon — #169.
+"""consolidation.py — Episodic consolidation daemon (hippocampal replay analog).
 
-Hippocampal replay analog: clusters similar EPISODIC memories, extracts
-FACTUAL / INTERPRETIVE / PROCEDURAL patterns, stores them to LTM.
+WHAT IT IS
+──────────
+Consolidation clusters similar EPISODIC memories, extracts their shared
+patterns (FACTUAL, INTERPRETIVE, PROCEDURAL), and stores durable insights
+to LTM. It runs as a background daemon during session idle periods. No
+episodic memories are ever deleted — consolidation produces derivatives
+(Discworld principle: repair, don't discard).
 
-Design principles:
-  - Never deletes source episodics (Discworld: repair, don't discard)
-  - Uses local LLM only (Ollama tier.2 — no cloud cost)
-  - Runs in background on schedule; checkpoint prevents re-processing
-  - Target ratio: 10:1 → 2:1 episodic:interpretive over time
+WHY IT EXISTS
+─────────────
+Without consolidation, Igor's episodic buffer grows unbounded and later
+memory queries become noise. Target ratio: 10:1 → 2:1 episodic:
+interpretive over time. Consolidation is the hippocampal-cortical loop
+transplanted into code: pick up fragmented experience during quiet
+periods, extract meaning, and thread that meaning into permanent
+knowledge structures. Graph stays lean; nothing is lost.
 
-Trigger: called from main.py background drain after session idle.
-Gate: IGOR_CONSOLIDATION_ENABLED (default true)
-Schedule: no more than once per IGOR_CONSOLIDATION_INTERVAL_SECS (default 3600)
-Batch: IGOR_CONSOLIDATION_BATCH (default 20 episodics per run)
+HOW IT WORKS (architecture)
+───────────────────────────
+Four-step pipeline:
+
+1. Clustering (keyword overlap)
+   Given a batch of recent EPISODIC memories (default 200), group by
+   keyword Jaccard similarity (threshold 0.15). Clusters must have ≥ 2
+   members (singletons have nothing to consolidate); max 8 members to
+   keep prompts tractable. Output: topical units ripe for extraction.
+
+2. Local LLM extraction (qwen2.5:7b via Ollama)
+   For each cluster, assemble a prompt with cluster members (≤ 400 chars
+   each) and ask: "Extract the durable pattern that unifies these
+   experiences." LLM returns JSON:
+     type       FACTUAL | INTERPRETIVE | PROCEDURAL
+     narrative  1-2 sentence summary of the pattern, not the events
+     importance 0.0–1.0
+     keywords   extracted list
+   Uses qwen2.5:7b exclusively (D360 benchmark: only model producing
+   valid JSON extraction; DeepSeek 7B and llama 1B fail). No cloud cost.
+
+3. Filtering by importance
+   Skip extracted patterns where importance < MIN_IMPORTANCE (default
+   0.4). Gates noise: "Weather was nice" fails; "Akien avoids Monday
+   meetings when tired" passes.
+
+4. Storage to cortex
+   For patterns that pass filtering, call cortex.store() with:
+     narrative    the extracted pattern
+     memory_type  FACTUAL, INTERPRETIVE, or PROCEDURAL
+     importance   learned score
+     metadata     provenance — source cluster IDs, consolidated_at
+                  timestamp, extracted keywords — so the pattern can be
+                  traced back to its episodics.
+
+ENGAGEMENT WITH CORTEX STATE
+────────────────────────────
+Consolidation is a background worker that MUTATES cortex state (append-
+only; never delete). Each store() call increments memory IDs and adds
+rows to the `memories` table. The worker holds a Cortex instance and
+calls cortex.store() once per extracted pattern. Source episodics are
+never deleted. A processed_ids checkpoint prevents re-extraction of the
+same batch across runs.
+
+FACT_CLOUD RELATIONSHIP
+───────────────────────
+Consolidation does NOT directly manipulate FACT_CLOUD nodes (those are
+Ollama-extracted facts from reading, prefixed `FACT_CLOUD_*`). However:
+  - Consolidation can extract FACTUAL patterns from episodics that
+    discuss FACT_CLOUD nodes. Example: episodic "Igor queried
+    FACT_CLOUD_ABC and FACT_CLOUD_XYZ together" → consolidated FACTUAL
+    "Concept P and Q are semantically adjacent."
+  - Separate module replay.py (D228, D353) handles the FACT_CLOUD →
+    topology pass, strengthening co-occurrence edges between FACT_CLOUD
+    nodes that appear together in reading sessions. Consolidation +
+    replay form a tandem: consolidation works on episodic experience,
+    replay on reading deposits.
+
+HEBBIAN CO-OCCURRENCE EDGE STRENGTHENING
+────────────────────────────────────────
+NOT performed by consolidation.py. Instead, downstream:
+  D154  trail-training-hebbian — via tails table (tracing co-activated
+        node sequences)
+  D233  spreading-activation   — seeds TWM top-7, traverses word_graph +
+        memory links
+  D358  enable-trail-training  — every search trace creates/strengthens
+        co_activation edges via _emit_search_trace()
+  D353  sleep-consolidation    — replay.py strengthens edges by delta
+        for FACT_CLOUD pairs co-deposited within 120s
+
+Consolidation's role is PRE-Hebbian: it clusters memories and extracts
+their meaning. The Hebbian hardening comes downstream via trail training
+and replay.py.
+
+SCHEDULING & TRIGGERING
+───────────────────────
+Trigger     called from main.py _run_consolidation_background() after
+             session idle (background drain cycle).
+Gate        IGOR_CONSOLIDATION_ENABLED (default true)
+Schedule    no more than once per IGOR_CONSOLIDATION_INTERVAL_SECS
+             (default 1800 s)
+Batch       IGOR_CONSOLIDATION_BATCH (default 200 episodics per run)
+Checkpoint  persists last_run_ts + processed_ids (last 1000) to
+             ~/.TheIgors/Igor-wild-0001/consolidation_checkpoint.json,
+             preventing re-extraction across restarts.
+
+SLEEP PHASES
+────────────
+Consolidation itself has no explicit sleep-phase branching (no slow-wave
+vs REM). However, it runs DURING quiet periods (idle gate in main.py). A
+separate deep-consolidation pass runs in narrative_engine.py
+(_deep_consolidation_pass, D353) during longer idle windows — Hebbian
+wandering over search traces.
+
+INVESTMENT DECAY (co-located)
+─────────────────────────────
+At the end of each consolidation pass, cortex.decay_investment_weights()
+is called. Some memories end their NRE contracts and are downweighted.
+The consolidation checkpoint records which NREs ended for logging.
+
+ENGRAM PORTION (graph-resident)
+───────────────────────────────
+  PROC_CONSOLIDATION       — habit that runs consolidation on schedule
+                              (planned)
+  PROC_CONSOLIDATION_STATS — tracks success rate, clusters created,
+                              extractions made
+  Extracted pattern narratives — themselves become INTERPRETIVE /
+                                 FACTUAL engrams, auto-indexed by
+                                 word_graph traversal in search
+
+KEY DECISIONS SHAPING THIS SUBSYSTEM
+────────────────────────────────────
+  D091  memory-store-epic        — unified memory access; consolidation
+                                    is part of the architecture
+  D154  trail-training-hebbian   — downstream Hebbian edge learning
+  D228  consolidation-replay     — FACT_CLOUD topology (see replay.py)
+  D233  spreading-activation     — consumes consolidation outputs
+  D239  dynamic-ollama-routing   — route() called at call time
+  D277  biological-patterns-gap  — lists missing patterns (predictive
+                                    coding, lateral inhibition, dopamine
+                                    weighting, chunking, refractory,
+                                    homeostatic setpoints)
+  D353  sleep-consolidation      — idle-triggered quiet-period pass
+  D358  enable-trail-training    — Hebbian edge learning co-runs with
+                                    consolidation
+  D360  reading-model-benchmark  — qwen2.5:7b chosen for JSON extraction
+
+Entry points
+────────────
+  run_consolidation(cortex)  — execute one pass; returns summary dict
+  should_run()               — schedule check
+  _load_checkpoint() / _save_checkpoint()
+  _cluster_episodics()       — keyword-overlap clustering
+  _call_local_llm()          — invoke qwen via Ollama
+  _keyword_overlap()         — Jaccard similarity metric
+
+Configuration (env vars)
+────────────────────────
+  IGOR_CONSOLIDATION_ENABLED        default true
+  IGOR_CONSOLIDATION_INTERVAL_SECS  default 1800
+  IGOR_CONSOLIDATION_BATCH          default 200
+  IGOR_CONSOLIDATION_MIN_IMPORTANCE default 0.4
+  IGOR_CONSOLIDATION_MODEL          default qwen2.5:7b
 """
 
 from __future__ import annotations
