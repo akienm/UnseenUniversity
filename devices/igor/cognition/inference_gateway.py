@@ -1,27 +1,121 @@
-"""
-inference_gateway.py — Unified inference routing as a directed acyclic graph (DAG).
+"""inference_gateway.py — Unified inference routing as a DAG + tier ladder.
 
-All low-cost single-shot inference calls (preparse, winnow, NE, think) go through here.
-Routing policy lives entirely in this file as a small DAG:
+WHAT IT IS
+──────────
+All low-cost single-shot inference (preparse, winnow, NE, think) routes
+through the gateway's DAG. Interactive reasoning (human turns, background
+impulses, batch jobs) routes through gateway.reason() via the tier ladder.
+The gateway is the ONLY entry point for all inference (D015 gateway-pattern).
+No tier strings leak to callers. Routing policy lives in one file —
+build_default_gateway() and _reason_with_failover(). Visibility:
+gateway.describe() or /routing --dag.
 
-  - Purpose nodes  — entry points; carry call constraints (max_tokens, timeout, model)
-  - Handler nodes  — leaves; wrap a specific model/endpoint; raise on failure
-  - Edges          — directed, condition-gated, priority-ordered;
-                     fallback edges only fire after a handler raises
+WHY IT EXISTS
+─────────────
+OR spend is the burn-rate bottleneck. The gateway minimizes cloud escalation
+by applying local-first (D211) with surgical cloud-only on high/medium-
+complexity user turns. Budget gating (D071) and colocation avoidance (D205)
+prevent silent cost explosion. Every tier attempt is logged via
+forensic_logger; last_tier is inspectable post-hoc for auditing.
 
-Traversal: purpose → (evaluate edge conditions in priority order) → handler.
-On handler failure: follow fallback edges. Raise RoutingError if no path succeeds.
+HOW IT WORKS (architecture)
+───────────────────────────
 
-Changing routing policy means editing build_default_gateway() — not hunting
-through 5 files. Visibility: gateway.describe() or /routing --dag.
+DAG routing (gateway.call() for pipeline calls):
+  Purpose nodes (entry)   — carry call constraints (max_tokens, timeout, model)
+  Handler nodes (leaves)  — wrap a specific reasoner + model; raise on failure
+  Edges (directed, condition-gated, priority-ordered)
+    ├─ non-fallback: primary route (condition checked first, priority wins)
+    └─ fallback:     only fire if handler raises; allow degradation
 
-Pass 1 (session 2026-03-12o):
-  preparse  — Ollama reasoning model → OR cheap fallback
-  winnow    — Ollama local → OR cheap fallback
-  ne        — Ollama NE model ↔ OR cheap (cloud_mode inverts preference)
-  think     — Ollama local only (no cloud fallback)
+  Traversal: purpose → (evaluate edges in priority order) → handler.
+  On handler failure: follow fallback edges. Raise RoutingError if no path.
 
-Pass 2 (future): interactive _reason_with_failover() — complex, tool-using turns.
+  DAG purposes:
+    preparse  — local Ollama → (fallback) → OR cheap
+    winnow    — local Ollama → (fallback) → OR cheap
+    ne        — (cloud_mode) OR cheap ↔ local Ollama
+    think     — always local Ollama (no cloud fallback)
+
+Tier ladder (gateway.reason() for interactive/background/batch):
+  Local-first (D211):
+    tier.2    Ollama qwen2.5:7b           — background, NE, batch; interactive fallback
+    tier.3    OR gpt-4o-mini              — mechanical, no persona needed
+    tier.3.5  OR Claude Haiku             — conversational, persona floor (D035)
+    tier.4    OR Claude Sonnet            — high complexity, tools, milieu dominance
+
+  Escalation gate (from thalamus.parsed_input):
+    complexity=low  + is_user_turn=False → tier.3 (if cloud ok)
+    complexity=med  + is_user_turn=True  → tier.3.5 OR tier.4
+    complexity=high + is_user_turn=*     → tier.4
+    research_mode=True + cloud_ok_override → escalate (D359)
+
+Cloud availability gate (all three must pass, else fallback to local):
+  - IGOR_CLOUD_TRAINING_ENABLED=true
+  - OR balance ≥ IGOR_CLOUD_BUDGET_FLOOR_USD (default $10)
+  - local hour 06:00-22:59, with D071 file-backed TTL override
+
+  If balance is unknown (-1.0 sentinel), assume funded; never silently
+  disable.
+
+Three call profiles:
+  level="interactive"      — human turn: cascade; cloud=Sonnet
+  level="background"       — NE impulse: cloud=gpt-4o-mini if funded, else local
+  level="background_batch" — proactive habits: always local, quality priority
+
+InferenceContext (live routing state, passed to every edge condition):
+  cloud_active       — is_cloud_training_active() time-of-day + intent check
+  local_available    — Ollama health check passed
+  balance_ok         — OR API key present + balance > floor
+  is_background      — no latency requirement
+  cloud_ok_override  — D071 file-backed TTL (night/local-only mode)
+  is_user_turn       — D259: call is part of reply to human; gates complexity
+  research_mode      — reading/extract path; allows escalation (D359)
+  complexity         — low | medium | high (from thalamus.parsed_input)
+  db_colocated       — D205: Postgres on same box as Ollama (deprioritizes local)
+
+prompt_role (optional override, cloud-path only):
+  Lets interactive turns request a leaner persona (analysis vs interactive).
+  None → default role per tier.
+
+Budget metering:
+  tools/budget.py is_cloud_blocked() gates every cloud attempt. Reasons:
+  OR balance, max-daily-spend, human-approval queue. Blocked → fall back to
+  local tier.2. Every attempt logged to forensic_logger with turn_id tie-back.
+
+Cache semantics:
+  Anthropic prompt cache (OR Sonnet)  — per-reasoner, transparent
+  Reasoning cache (D018)              — 12-min TTL + TWM watermark invalidation
+  Ollama KV cache                     — per-machine, not controlled here
+
+KEY DECISIONS SHAPING THIS SUBSYSTEM
+────────────────────────────────────
+  D015  gateway pattern — policy in one file, not scattered
+  D018  reasoning cache — 12-min TTL + TWM watermark invalidation
+  D035  interactive persona tier — tier.3.5 (Haiku) between cheap + Sonnet
+  D053  NE response format — response_format:json_object
+  D071  cloud-ok runtime switch — file-backed TTL, not env var
+  D198  primary reasoning interface — binary cloud/local + cascade
+  D205  swarm hierarchy — db_colocated deprioritizes local
+  D211  inference routing redesign — local-first, cloud only for high/med
+  D234  tier-ladder update — Ollama primary, OR luxury (supersedes D073)
+  D259  human-author routing — is_user_turn=True gates background escalation
+  D327  inference encapsulation — ollama_reasoner + openrouter_reasoner
+        consolidate 6 files
+  D359  reading-extract via gateway — new reading_extract purpose
+
+ENGRAM PORTION
+──────────────
+  PROC_SET_CLOUD_NOW    — human trigger; writes cloud_ok_override TTL
+  PROC_NIGHT_READ       — threshold habit; clears override + drains local
+  escalation_stats tool — tracks cloud escalations per topic
+
+If you want to change:
+  - Tier ladder         — edit build_default_gateway() + reason() signature
+  - Cloud preference    — edit _cloud_preferred() + InferenceContext init in
+                          main.py make_context()
+  - Benchmark a model   — gateway.call(purpose_id, ..., handler_override=...)
+                          (benchmarking only, never production)
 """
 
 from __future__ import annotations
