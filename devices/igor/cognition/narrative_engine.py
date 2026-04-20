@@ -1,23 +1,162 @@
-"""
-Narrative Engine (NE) — coherence-checker / meaning-maker.
+"""narrative_engine.py — Arc builder & coherence checker. Transforms TWM into context.
 
-Runs over TWM (Temporal Working Memory) on trigger:
-  - 5+ unintegrated observations pending
-  - 5 minutes since last run (max cadence)
-  - 30 seconds min interval (don't hammer)
+WHAT IT IS
+──────────
+The Narrative Engine (NE) is Igor's coherence subsystem. It runs in the
+main loop, monitoring Temporal Working Memory (TWM) for unintegrated
+observations. When ≥ 5 obs are pending or 5 minutes have elapsed, NE
+fires to answer three questions:
 
-Core question asked each run:
-  "What is happening? What does this mean? What should I do?"
+  1. What is Igor experiencing right now?
+  2. What does this mean for Igor's goals/state?
+  3. What should Igor do?
 
-Produces:
-  - summary_csb: compressed narrative fragment (stored to LTM if important enough)
-  - connections: links between observations
-  - salience_updates: list of {obs_id, new_salience}
-  - memory_candidates: list of {content_csb, importance, memory_type}
-  - action_impulses: list of {action, urgency, why}
-  - internal_state: affect/valence snapshot
+Output: a compressed narrative arc (always deterministic) + optional LTM
+promotions and action impulses (gated by IGOR_NE_LLM_ENABLED). NE is the
+bridge between sensation and long-term consolidation — it fuses TWM +
+ring memory + active goals + affective state into a reasoner-ready
+context.
 
-memory_candidates with importance > 0.7 are promoted to LTM automatically.
+WHY IT EXISTS
+─────────────
+Without NE, raw observations would pile up in TWM with no integrated
+meaning. NE is the synthesis layer: it detects what matters now, decides
+what's important enough to remember, and generates action impulses. It
+also houses sleep consolidation — during idle periods NE runs a Hebbian
+wandering pass over recent search traces, discovering and strengthening
+co-activation patterns (D353). NE closes the loop: sensation → synthesis
+→ consolidation.
+
+HOW IT WORKS (architecture)
+───────────────────────────
+Entry: run() — main NE cycle.
+  1. Read + filter TWM (loop guard: drop NE's own output via dual-axis
+     filter — source != "narrative_engine" AND content_csb does not start
+     with "ACTION_IMPULSE|").
+  2. Focus pass: compute co-activation across active slots (D099, D100).
+  3. Build deterministic arc from top observations (zero inference).
+  4. Optionally call inference_gateway.call("ne", prompt, ctx) for LLM
+     synthesis (IGOR_NE_LLM_ENABLED).
+  5. Promote high-importance candidates to LTM via cortex.store().
+  6. Queue action impulses to TWM (source="narrative_engine",
+     category="impulse").
+  7. Update traversal cursor (track which thread NE is following).
+  8. Run sleep consolidation pass (_deep_consolidation_pass) during idle
+     windows.
+
+Key subsystem relationships:
+  Reads     — cortex.twm_read(), twm_get_slots(), get_portable()
+  Writes    — cortex.store() for LTM; cortex.write_ring() for session notes
+  Inference — inference_gateway.call("ne", …) routes per D211 / D234
+  Milieu    — cortex.get_milieu() fetches affect for promotion weighting
+              (D305)
+  Slots     — co-activation logic fuses multiple action pointers
+              (D099, D100)
+  Threading — traversal cursor detects oscillation vs convergence
+
+TWM → Arc fusion (the core transform)
+─────────────────────────────────────
+NE consumes TWM observations with:
+  source, content_csb (≤ 200 chars), salience [0,1], urgency [0,1]
+  (orthogonal to salience — D352 gating rule), metadata (action_pointer).
+
+Focus pass (D099 + D100): sorts by (urgency × salience) + co-activation
+bonus. Co-activation = how many TWM slots point to the same goal node.
+Shared goals amplify relative salience. Solo observations decay at 0.7.
+
+Deterministic arc (always built): top 6 observations deduplicated into a
+1-2 sentence summary written to ring_memory category="narrative". Runs
+even with the LLM gate off — arc is always current.
+
+Inference path (optional, IGOR_NE_LLM_ENABLED=true)
+───────────────────────────────────────────────────
+Builds a prompt from obs_text + last_narrative + cursor_context. Calls
+inference_gateway.call("ne", prompt, ctx) with ctx.is_background=True.
+Reasoning cache (D018): 12-min TTL + TWM watermark invalidation.
+
+LLM response JSON (parsed):
+  summary_csb, thread_topic, connections,
+  salience_updates    [{obs_id, new_salience}],
+  memory_candidates   [{content_csb, importance, memory_type, valence}],
+  action_impulses     [{action, urgency, why}],
+  internal_state      {valence, arousal, notes},
+  narrative_gaps      [{question, salience, threat_level}]
+
+Promotion: candidates with importance ≥ PROMOTE_THRESHOLD (0.7) are
+wrapped in Memory objects with memory_type, parent_id (routed via
+CP1-CP6), and emotional profile (amygdala analog, D305). Each promoted
+memory carries provenance: ne_run count, encoding context, arousal-
+weighted importance. If an obs is promoted, its TTL is extended
+(persists longer in TWM).
+
+Action impulses are queued to TWM with source="narrative_engine",
+category="impulse". thalamus.process_input() later sees them and fires
+habits or impulse_executor.
+
+Traversal cursor — tracks which thread NE is following across cycles:
+  topic_history — last N thread labels (from thread_topic output)
+  depth         — cycles on current topic
+  status        — active | converging | oscillating
+  Oscillation (same topic + no new promotions for N cycles) → NE prompted
+  to "seek a different thread."
+  Convergence (high promotion rate) → "continue deepening."
+
+Sleep consolidation (_deep_consolidation_pass, D353)
+────────────────────────────────────────────────────
+Runs during idle windows (10+ min no user input). Reads recent search
+traces, finds co-activated node pairs (nodes that fired together in the
+same search), creates or strengthens missing edges via Hebbian binding.
+NE quietly solidifies patterns discovered during waking hours.
+
+Output shape (with LLM enabled):
+  { summary_csb, thread_topic, connections, salience_updates,
+    memory_candidates, action_impulses, internal_state, narrative_gaps }
+
+Output shape (LLM disabled):
+  { arc, promoted: 0, impulses: [] }
+
+KEY DECISIONS SHAPING THIS SUBSYSTEM
+────────────────────────────────────
+  D018  reasoning cache — 12-min TTL + TWM watermark; NE output cached
+  D099  TWM global workspace — Baars GWT; 7-slot ring with parent_obs_id
+  D100  live-salience co-activation — salience computed live from slot
+        node-count, not stored
+  D186  affective NE arousal amplification — arousal weights gap salience
+        + urgency
+  D211  local-first inference — tier.2 Ollama primary; cloud fallback
+  D234  tier-ladder redesign — graph > Ollama > OR; LLM calls train
+        their replacement
+  D243  deterministic arc — NE builds arc always; LLM output optional
+  D252  calibre 8-tier arousal — encoding_arousal shapes reading priority
+  D299  urgency gates — alerts (urgency ≥ 0.85) break through conversation
+        gating
+  D305  amygdala analog — NE uses milieu arousal to weight promotion
+  D352  TWM attentional gating — conversation mode caps background
+        salience; NE sees gated view
+  D353  sleep consolidation — idle-time Hebbian wandering over traces
+
+ENGRAM PORTION (graph-side machinery)
+─────────────────────────────────────
+  PROC_NE_TRIGGER — habit that monitors TWM and fires run()
+  PROC_SLEEP_CONSOLIDATION — habit that detects idle and spawns
+                              consolidation
+  Promoted memory nodes — carry metadata.provenance_source="ne_synthesis"
+                           + validation_status="unvalidated"
+  Co-activation structures — edges between goal nodes strengthened by
+                              D100 logic
+  Hot attractors — NE-seeded, densified by Hebbian consolidation (D353)
+
+If you want to change:
+  - When NE fires           — NE_TRIGGER_OBS, NE_MIN_INTERVAL_SEC,
+                               NE_MAX_INTERVAL_SEC
+  - Observation filtering   — _filter_obs(), _format_obs_csb()
+                               (loop guards live here)
+  - Promotion threshold     — PROMOTE_THRESHOLD (0.7)
+  - Inference routing       — inference_gateway.py (this just calls it)
+  - Affective weighting     — milieu.py + amygdala logic in promotion
+  - Thread tracking         — TraversalCursor + _update_cursor()
+  - Consolidation policy    — _deep_consolidation_pass() + idle detection
+  - Arc generation          — _build_deterministic_arc() + ring write
 """
 
 import json

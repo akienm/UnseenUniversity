@@ -1,22 +1,176 @@
-"""
-Milieu — ambient emotional state.
+"""milieu.py — Ambient emotional state manager (3D affect vector).
 
-A slow-drifting 3-dimensional vector (valence, arousal, dominance) that
-persists across sessions and shapes habit sensitivity, threshold X, and
-the NE's self-narrative. It is NOT per-interaction — it is the background
-emotional weather that individual interactions push against.
+WHAT IT IS
+──────────
+Milieu is Igor's slow-drifting 3-dimensional affect vector (valence,
+arousal, dominance) that persists across sessions and shapes habit
+sensitivity, NE output framing, and background motivation. It is NOT
+per-interaction state — it is the ambient emotional weather that
+individual interactions push against.
 
-Key properties:
-  - Asymmetric EMA: fast rise (α=0.25), slow fall (α=0.05)
-  - Natural decay: all dims drift toward neutral each timer tick (×0.98)
-  - Persisted to JSON so mood survives restarts
-  - Always in TWM as low-salience ambient context (pushed by MilieuSource)
-  - MilieuInterruptor fires on extremes (arousal spike, sustained negative valence)
+State dimensions (each [-1, 1]):
+  valence    pleasant/satisfied ↔ unpleasant/frustrated
+  arousal    activated/energized ↔ deactivated/calm/tired
+  dominance  in-control ↔ overwhelmed (baseline +0.3 = default competent)
 
-Consumers:
-  - NarrativeEngine reads MOOD_STATE TWM obs and can generate impulses
-  - Future: basal_ganglia habit scoring weighted by arousal/dominance
-  - Future: threshold X for escalation shaped by dominance (low dominance → escalate sooner)
+WHY IT EXISTS
+─────────────
+Igor's cognition is affectively grounded. Milieu sets the background
+tempo: high arousal suppresses unurgent background salience (focus on
+critical path); low arousal boosts exploratory surfacing (idle time =
+learning time). Dominance erodes on escalation surprises (had to call a
+tier higher than predicted) and restores on successful local resolution —
+closing the prediction loop. Boredom fires when arousal stays flat and
+low; curiosity fires on positive valence + low arousal. This substrate
+is alive — mood affects what Igor notices, not via explicit if-statements
+but via salience modulation and threshold nudging.
+
+HOW IT WORKS (architecture)
+───────────────────────────
+
+1. State model
+   MilieuState dataclass (valence, arousal, dominance, tick, last_update).
+   Persisted to JSON so mood survives restarts. Ring-buffered history
+   (50 timestamped VAD rows) tracks trajectory. Gradient detection:
+   arousal slope over N rows → climbing alert (loop detection).
+
+2. Update mechanisms (four signal sources)
+   a) update(valence, friction, roi) — direct interaction outcome
+      • valence: from PFC assessment
+      • friction [0,1]: stress/resource pressure; high → high arousal +
+        low dominance
+      • roi [-1,1]: return-on-investment; positive → dominance restoration
+   b) ingest_ne_state(ne_state) — NE self-narrative (softer signal)
+      • Updates valence + arousal only.
+   c) ingest_resolution_reward(valence) — per-turn reward signal
+      • Updates valence only.
+   d) ingest_surprise(predicted_tier, actual_tier) — escalation gap
+      • Escalation surprise (actual > predicted) → dominance erodes +
+        arousal spikes.
+      • Local success (actual ≤ predicted) → mild dominance restoration.
+      • Closes the prediction loop: repeated escalations erode confidence.
+
+3. Diffusion & decay
+   Asymmetric EMA (fast rise α=0.25, slow fall α=0.05) gives mood
+   stickiness: positive experiences are memorable; negative ones fade
+   gradually. Per-dim decay toward setpoint:
+     valence   0.96 × tick + 0.1 setpoint  (volatile, resets quickly)
+     arousal   0.97 × tick + 0.05 setpoint (activation persists longer)
+     dominance 0.99 × tick + 0.3 setpoint  (control is most stable)
+   tick() called by MilieuSource timer (60s) normalizes mood even during
+   idle periods. Every GLOBAL_SYNC_TICKS (10), gently blend toward global
+   baseline so long sessions don't drift from cluster baseline.
+
+4. Propagation to other subsystems
+   • TWM: MilieuSource pushes MOOD_STATE CSB entry (low salience) every 60s.
+   • NE: reads MOOD_STATE; frames response tone by arousal/valence.
+   • BG (basal ganglia): habit scoring weighted by arousal. Low arousal →
+     lower threshold (exploratory); high arousal → raised threshold
+     (focus). Per D037: threshold modulated [0.30, 0.70] by arousal.
+   • Salience modulation: high arousal suppresses low-urgency background
+     salience; low arousal boosts exploratory impulses (D308).
+   • Emit channels: emotional_milieu channel allows engrams to nudge
+     V/A/D directly (D351).
+     e.g., EMITIF arousal>0.5 THEN emotional_milieu.arousal="-0.1".
+
+5. Boredom threshold integration
+   BoredomSource watches arousal: if arousal < AROUSAL_THRESH for
+   WINDOW_MINS, fires BOREDOM_DETECTED → ACTION_IMPULSE → foreman_scan.
+   Also nudges milieu with slight negative valence so stillness becomes
+   slightly uncomfortable, priming motion. Cooldown prevents cascade
+   anxiety (D272).
+
+6. History & trajectory
+   Ring buffer tracks timestamped (valence, arousal, dominance) + slope
+   detection. gradient(dim, n) computes (last - first) / n over history
+   window. is_arousal_climbing() fires when gradient exceeds
+   AROUSAL_SLOPE_ALERT (0.03). Sustained escalation triggers parent habit
+   to decay both loop ends + inject regulate observation.
+
+7. Global synchronization (D093 — remote-instance architecture basis)
+   Cross-instance milieu: each Igor instance blends toward global
+   baseline every GLOBAL_SYNC_TICKS ticks (gentle 2% per tick). On spikes
+   (Δ ≥ 0.15 on any dim), contribute immediately with
+   GLOBAL_ALPHA_SPIKE; on routine ticks, GLOBAL_ALPHA_ROUTINE (slower).
+   If IGOR_GLOBAL_MILIEU_URL is set, also push contributions + read
+   global from remote HTTP endpoint. Coordination is advisory — never
+   blocks, never raises.
+
+8. Gap reset (post-sleep)
+   After > 4h idle (The Gap), emotional state from before sleep is
+   stale. gap_reset() aggressively decays:
+     arousal  × 0.3 (activation transient)
+     valence  × 0.5 (moderately)
+     dominance × 0.7 + 0.3 × 0.3 toward competent baseline.
+
+9. Session histogram
+   session_histogram() computes per-dim distribution (min/max/mean/std/
+   bins) + session character (bouncy | stressed | focused | calm). Bins
+   are 5 equal buckets [-1, 1]. Character reflects problem-solving
+   pattern (bouncy), resource pressure (stressed), flow state (focused),
+   or rest (calm).
+
+ENGRAM PORTION (graph-resident machinery)
+─────────────────────────────────────────
+  PROC_BOREDOM_TRIGGER      — habit fires BOREDOM_DETECTED when arousal
+                               flats
+  InteroceptionSource       — 30s continuous VAD gradient from CPU/mem/
+                               disk → nudge_vad()
+  EmotionalMilieuChannel    — EMITIF instruction channel for engram-
+                               driven nudges
+  BoredomSource             — pushes BOREDOM_DETECTED to TWM as
+                               low-salience background
+  MilieuInterruptor         — fires alert when arousal > 0.7 or
+                               valence < -0.5 sustained
+
+KEY DECISIONS SHAPING THIS SUBSYSTEM
+────────────────────────────────────
+  D036  milieu                       — 3D affect + asymmetric EMA
+  D037  basal-ganglia modulation     — habit threshold [0.30, 0.70]
+                                        shaped by arousal
+  D082  curiosity idle state         — low arousal + positive valence
+  D093  remote-instance architecture — basis for cross-instance milieu
+                                        sync
+  D101  milieu ring buffer + gradient detection
+  D133  session-in-db                — milieu state persisted to Postgres
+  D184  affective NE frame selection — arousal weights promotion
+                                        importance
+  D185  affective NE gap closure     — tension drives reward valence
+  D186  affective NE arousal amplification — gap salience × arousal
+  D243  NE deterministic arc         — boredom impulse no LLM gate
+  D246  emit+react cognitive milieu  — substrate frame
+  D252  Calibre 8-tier arousal       — reading encoding_arousal
+  D272  boredom idle loop            — arousal flat + low →
+                                        BOREDOM_DETECTED
+  D308  milieu-aware salience        — high arousal suppresses
+                                        background
+  D351  channel-emit model           — emotional_milieu channel for
+                                        engrams
+
+Consumers & integration points
+──────────────────────────────
+  NarrativeEngine          — reads MOOD_STATE; frames tone
+  BasePushSource.milieu_scale() — salience/urgency modulated by arousal
+  Basal ganglia            — habit threshold shaped by arousal
+  BoredomSource            — watches arousal; fires BOREDOM_DETECTED
+  MilieuInterruptor        — fires on extreme arousal or sustained
+                              negative valence
+  InteroceptionSource      — 30s VAD gradient from system resources
+  EmotionalMilieuChannel   — engrams nudge V/A/D via EMITIF
+  Reading list             — encoding_arousal tier affects priority
+
+Public API (module singleton via init() / get())
+────────────────────────────────────────────────
+  init(instance_id), get()
+  update(valence, friction, roi)
+  ingest_ne_state(ne_state), ingest_resolution_reward(valence),
+    ingest_surprise(predicted_tier, actual_tier)
+  nudge_vad(dv, da, dd)  — direct signed deltas (interoception)
+  tick()  — natural decay
+  get_state(), snapshot(), delta(prev)
+  gap_reset()  — post-sleep decay
+  gradient(dim, n), is_arousal_climbing(threshold, n)
+  session_histogram(), state_csb()
 """
 
 from __future__ import annotations
