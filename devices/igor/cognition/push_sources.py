@@ -2698,9 +2698,79 @@ class SelfTestSource(BasePushSource):
             return []
 
 
+class StaleChatLogBackfiller(BasePushSource):
+    """
+    Background job to keep chat_chat_logs/ current from older transcripts.
+
+    Runs stale_ticket_sweeper.py --json periodically (slow tier = ~5min).
+    Exports --all transcripts to claude_chat_logs/YYYY-MM-DD.md.
+    Reports findings to TWM if stale gates found.
+    """
+
+    name = "stale_chat_log_backfiller"
+    TIMING_TIER = "slow"
+
+    def __init__(self):
+        self._last_run: Optional[datetime] = None
+
+    def push(self, cortex) -> list[int]:
+        now = datetime.now(timezone.utc)
+        # Run once per hour
+        if self._last_run is not None and (now - self._last_run).total_seconds() < 3600:
+            return []
+        self._last_run = now
+
+        ids: list[int] = []
+        try:
+            import subprocess
+
+            # Run export_chat.py --all to backfill older transcripts
+            result = subprocess.run(
+                [
+                    "python3",
+                    str(Path.home() / "TheIgors/lab/claudecode/export_chat.py"),
+                    "--all",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+
+            if result.returncode == 0:
+                # Count how many files were written (rough estimate from stderr/stdout)
+                output = result.stdout + result.stderr
+                if "wrote" in output.lower() or "appended" in output.lower():
+                    obs_id = cortex.twm_push(
+                        source=self.name,
+                        content_csb=(
+                            f"CHAT_LOG_EXPORT|status=success|timestamp={now.isoformat()}"
+                        ),
+                        salience=0.3,
+                        category="maintenance",
+                        ttl_seconds=3600,
+                    )
+                    if obs_id:
+                        ids.append(obs_id)
+                    cortex.write_ring(
+                        f"CHAT_LOG_EXPORT|status=success|ts={now.strftime('%Y-%m-%dT%H:%M')}",
+                        category="maintenance",
+                    )
+            else:
+                log_error(
+                    kind="CHAT_LOG_EXPORT_FAIL",
+                    detail=f"export_chat.py failed: {result.stderr[:200]}",
+                )
+
+        except Exception as _e:
+            log_error(kind="CHAT_LOG_BACKFILLER_FAIL", detail=str(_e))
+
+        return ids
+
+
 proprioception_source = ProprioceptionSource()
 capability_awareness_source = CapabilityAwarenessSource()
 self_test_source = SelfTestSource()
+stale_chat_log_backfiller = StaleChatLogBackfiller()
 user_input_source = UserInputSource()
 machines_watcher = MachinesWatcher()
 inbox_watcher = InboxWatcher()
@@ -2810,6 +2880,7 @@ def run_background_sources(cortex) -> int:
         proprioception_source,
         capability_awareness_source,
         self_test_source,
+        stale_chat_log_backfiller,
         scheduler_source,
         thread_coherence_source,
         consolidation_replay,
