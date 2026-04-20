@@ -202,6 +202,67 @@ def foreman_scan() -> str:
         return f"[ERROR] foreman_scan: {e}"
 
 
+# ── Engram-chain helpers (T-retire-worker-foreman Phase A) ───────────────────
+#
+# The biomimetic replacement for launch_next_worker: Igor picks up a ticket
+# himself, adopts it as a goal, and runs pe_chain in-process — no separate
+# konsole spawn. These two tools are used by the ENGRAM_TICKET_PICKUP_* chain
+# (seeded separately, not active until Akien flips habits to point here).
+# Keeping them in this file so the eventual deletion removes one file, not
+# two.
+
+
+def queue_pending_count() -> str:
+    """Return pending-ticket count as a small formatted string.
+
+    Engram-chain friendly: the downstream BRANCHIF reads basket['count'] and
+    branches if non-zero. Returns 'pending=N' so the basket captures N.
+    """
+    try:
+        tasks = _load_queue()
+        pending = sum(1 for t in tasks if t.get("status") == "pending")
+        return f"pending={pending}"
+    except Exception as e:
+        return f"[ERROR] queue_pending_count: {e}"
+
+
+def adopt_next_ticket() -> str:
+    """Adopt the next-best pending ticket as Igor's active goal.
+
+    Replaces the konsole-spawn pattern of launch_next_worker: Igor works the
+    ticket in-process via pe_chain, not via a new CC session. Picks the same
+    weighted_ticket_score ordering as launch_next_worker for consistency.
+
+    Returns a descriptive status string. The caller (engram chain) can then
+    BRANCHIF into ENGRAM_CODE_INIT to start the coding chain on this goal.
+    """
+    try:
+        tasks = _load_queue()
+        if not tasks:
+            return "queue empty — nothing to adopt"
+        pending = [t for t in tasks if t.get("status") == "pending"]
+        if not pending:
+            return "no pending tickets"
+        pending_sorted = sorted(
+            pending,
+            key=lambda t: weighted_ticket_score(
+                t.get("priority", 99), t.get("tags", [])
+            ),
+        )
+        pick = pending_sorted[0]
+        ticket_id = pick["id"]
+
+        from .ops import goal_adopt as _goal_adopt
+
+        result = _goal_adopt(
+            f"work ticket {ticket_id}: {pick.get('title','')}",
+            source_message=f"[engram pickup] {ticket_id}",
+        )
+        return f"adopted {ticket_id}: {result[:120] if isinstance(result, str) else result}"
+    except Exception as e:
+        return f"[ERROR] adopt_next_ticket: {e}"
+
+
 # ── Register tools ──────────────────────────────────────────────────────────
 
 registry.register(
@@ -287,5 +348,34 @@ registry.register(
             "required": [],
         },
         fn=lambda: foreman_scan(),
+    )
+)
+
+# T-retire-worker-foreman Phase A: register engram-chain-friendly helpers.
+registry.register(
+    Tool(
+        name="queue_pending_count",
+        description=(
+            "Return pending-ticket count as 'pending=N'. Used by the "
+            "ENGRAM_TICKET_PICKUP_SCAN engram to decide whether to BRANCHIF "
+            "into the adopt step. No arguments."
+        ),
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=lambda: queue_pending_count(),
+    )
+)
+
+registry.register(
+    Tool(
+        name="adopt_next_ticket",
+        description=(
+            "Adopt the next-best pending ticket as Igor's active goal — the "
+            "biomimetic replacement for launch_next_worker's konsole spawn. "
+            "Igor then works the ticket in-process via pe_chain. Called by "
+            "the ENGRAM_TICKET_PICKUP_ADOPT engram after queue_pending_count "
+            "returns a non-zero count. No arguments."
+        ),
+        parameters={"type": "object", "properties": {}, "required": []},
+        fn=lambda: adopt_next_ticket(),
     )
 )
