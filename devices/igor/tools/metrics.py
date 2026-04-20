@@ -286,7 +286,7 @@ registry.register(
             "Return per-tool call statistics for this session: call count, error rate, "
             "p50/p95 latency. Sorted by call count. "
             "Use to understand which tools are called most, which fail, and which are slow. "
-            "Feeds /audit thread-hygiene check."
+            "Feeds /day-close-audit thread-hygiene check."
         ),
         parameters={
             "type": "object",
@@ -319,7 +319,7 @@ registry.register(
         description=(
             "Return the live status of all Igor daemon threads: name, alive/dead, "
             "uptime in seconds, and health check result (if defined). "
-            "Use to check for dead threads, thread leaks, or as part of /audit. "
+            "Use to check for dead threads, thread leaks, or as part of /day-close-audit. "
             "Covers: network-listener, discord-bot, web-server, boot-check, "
             "ne-worker, consolidation-worker, distillation-worker, ne-deep-consolidation."
         ),
@@ -349,7 +349,7 @@ registry.register(
         description=(
             "Return per-host outbound HTTP call statistics tracked by NetworkProxy: "
             "call count, error rate, p50/p95 latency. "
-            "Use to check external endpoint health or as part of /audit. "
+            "Use to check external endpoint health or as part of /day-close-audit. "
             "Shows hosts called via proxy.get() / proxy.post() / proxy.post_json()."
         ),
         parameters={
