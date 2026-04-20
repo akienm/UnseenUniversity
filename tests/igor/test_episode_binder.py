@@ -5,10 +5,16 @@ Tests for hippocampal episode binding.
 """
 
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+# Recent timestamps so 48-hour replay filter doesn't exclude the fixtures.
+_NOW = datetime.now(timezone.utc)
+_RECENT_TS = (_NOW - timedelta(hours=1)).isoformat()
+_RECENT_TS_PLUS_1S = (_NOW - timedelta(hours=1) + timedelta(seconds=1)).isoformat()
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -74,14 +80,14 @@ class TestEpisodeBinder:
                     "id": 10,
                     "category": "user_turn",
                     "content": "hello",
-                    "timestamp": "2026-04-18T12:00:00",
+                    "timestamp": _RECENT_TS,
                     "thread_id": None,
                 },
                 {
                     "id": 11,
                     "category": "habit_trace",
                     "content": "HABIT_FIRED|id=greeting",
-                    "timestamp": "2026-04-18T12:00:01",
+                    "timestamp": _RECENT_TS_PLUS_1S,
                     "thread_id": None,
                 },
             ]
@@ -213,7 +219,7 @@ class TestReplayEpisodes:
         mock_mem_ours.narrative = "User: hello | Igor: hi"
         mock_mem_ours.metadata = {
             "deposited_by": "episode_binder",
-            "timestamp_start": "2026-04-18T12:00:00",
+            "timestamp_start": _RECENT_TS,
         }
         mock_mem_ours.valence = 0.5
         mock_mem_ours.arousal = 0.3
