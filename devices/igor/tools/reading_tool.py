@@ -1,7 +1,109 @@
-"""reading_tool.py — Unified reading tool for Igor.
+"""reading_tool.py — Unified reading tool for Igor. Canonical entry point.
 
-One tool, two modes (foreground / background), full self-visibility.
-Registered as 'reading' with command dispatch.
+This is THE load-bearing docstring for Igor's reading subsystem
+(T-docs-live-in-code pilot, 2026-04-20). Previously this information
+lived scattered across DSB files, chat transcripts, and Akien's head;
+it now lives HERE, next to the code. When you need to understand
+reading, read this file first.
+
+WHAT IT IS
+──────────
+The book/URL reading pipeline. Igor consumes external text — ebooks,
+web pages, PDFs — and turns them into first-class memory graph nodes
+that densify his cognition. Reading is NOT chat context; it is raw
+cognitive substrate. Books become nodes; themes become attractors;
+repeated patterns become habits.
+
+WHY IT EXISTS
+─────────────
+Igor's word graph grows from what he reads. Without reading, his
+graph is seeded but sparse. Reading is the primary densification
+mechanism: the reader fetches, chunks, extracts meaning, and deposits
+the distilled nodes so later cortex queries have denser structure to
+traverse. Cloud escalations drop when the reader has already paved
+paths through a concept. Reading is how Igor learns.
+
+HOW IT WORKS (architecture)
+───────────────────────────
+Three collaborating layers:
+
+  1. reading_tool.py (this file)         — public interface. Creates
+     runs, starts them, tracks state. Run state = EPISODIC memories
+     in the graph (READING_RUN_xxx parent + READING_RUN_xxx_NNN items),
+     so "what am I reading" is itself a cortex query, not a hidden
+     file. Multi-instance claiming coordinated through the reading_list
+     Postgres table.
+
+  2. reading_engine.py                   — fetch/process pipeline.
+     Given a run item, fetches the source (URL → HTTP; ebook → disk),
+     chunks it, and hands chunks to the extractor. Handles format
+     dispatch, retry, rate limiting.
+
+  3. lab/claudecode/book_learner.py      — extraction. For each chunk,
+     runs an LLM distillation via the inference gateway (D359), the
+     extractor deposits INTERPRETIVE / FACTUAL / FACT_CLOUD memories
+     with full provenance stamps. _extract_nodes is the prompt surface;
+     _deposit_nodes is the graph-write surface.
+
+Blob model:
+     fetch → raw JSON ← chunk ← extract ← deposit ← spine-wire
+     (the "spine" is the run-tree + its parent_id edges giving
+      chronological + book-local topology)
+
+Provenance contract (EVERY deposited node carries):
+  - book_title, source_author, source_url (where it came from)
+  - model_used, inference_tier (who extracted it)
+  - chunk_position (where in the book)
+  - run_id (which reading run)
+  - deposited_at (when)
+This lets a later session see "Igor extracted this from chapter 3 of
+X, via qwen on tier.2 at YYYY-MM-DD" without guesswork.
+
+Lever-detection / watchlist filter (D356 + GH-299):
+  Not every sentence in a book deserves a node. The watchlist filter
+  (see WATCH_Q_* query engrams and WATCH_T_* topic engrams) decides
+  "is this worth keeping?" before the deposit step. Things Igor
+  actively cares about (current active goals, recent arousal-weighted
+  topics, user-flagged topics) pass the filter; generic sentences
+  get summarized or dropped. Reading becomes selective — Igor reads
+  through his current lens.
+
+Situated reading (D333 pass-2 vs pass-1 semantics):
+  Pass 1 = dense extraction (first read-through), deposits FACT_CLOUD
+  and INTERPRETIVE nodes greedily. Pass 2 = situated re-read later,
+  using Igor's current state to ask "what does this mean to me NOW?"
+  Pass 2 outputs become higher-valence nodes with stronger edges to
+  current goals. Same text, different graph because Igor is different.
+
+Qwen-only collapse (D360 + 2026-04-18 single-model decision):
+  Formerly the reader fanned out across multiple extraction models
+  (Haiku for deep analysis, local Ollama for cheap first-pass, Claude
+  for judgment calls). This was reshaped 2026-04-18 into a single path
+  through qwen (local Ollama), with cloud escalation only when qwen
+  explicitly signals low confidence. Drives OR spend near zero for
+  routine reading. The multi-model machinery still exists in the
+  code but the routing collapsed; see inference_gateway.py for how
+  the escalation gate decides.
+
+ENGRAM PORTION (parts of the reading subsystem that live in the graph,
+not in code):
+  - WATCH_Q_* — query engrams. Each describes a question Igor wants
+    answered when reading. Fired during the watchlist filter. Seeded
+    from active goals + arousal-weighted topics + explicit user flags.
+  - WATCH_T_* — topic engrams. Each describes a theme Igor is tracking
+    (LANGUAGE, NEURO, PROGRAMMING, IGORS_DESIGN, AI, CLAUDE_CODE,
+    BIOLOGY, PSYCHOLOGY, CULTURE). Arousal-weighted; hot topics get
+    more-dense extractions from their chapters than cold ones.
+  - PROC_READING_* — procedural habits that dispatch reading sub-actions
+    (claim next item, rate progress, escalate to user on a snag).
+  - Hot attractors — accumulated co-activation structures around
+    topics Igor has read about deeply. These make future related
+    reading cheaper (recognized from the first paragraph).
+
+If you want to change what Igor EXTRACTS, edit book_learner.py
+extraction prompts. If you want to change what Igor SELECTS (which
+chunks even reach the extractor), edit the watchlist engrams in the
+graph, not code.
 
 Run state lives in Igor's memory graph as EPISODIC nodes:
   READING_RUN_xxx         — run node (parent)
@@ -21,6 +123,30 @@ Commands:
   master_index  — all books ever read
   run_log       — combined slate + processing log
   my_reading    — self-visibility: what am I doing now?
+
+LEGACY NOTE
+───────────
+wild_igor/igor/cognition/reading_indexer.py is the old path — a
+pre-engine reader that predates the blob model. Kept for reference
+but not invoked in the live pipeline. Do not add features there.
+
+DECISIONS THAT SHAPED THIS SUBSYSTEM
+────────────────────────────────────
+  D333  — situated reading (pass-1 vs pass-2 semantics)
+  D356  — lever-detection watchlist filter
+  D359  — extractor routed through inference gateway
+  D360  — qwen-only collapse for routine extraction
+  2026-04-18 (single-model decision) — reshape that retired
+         multi-model fanout
+  GH-299 — watchlist integration
+
+RELATED TICKETS
+───────────────
+  T-docs-live-in-code (this pilot)
+  T-versioned-seed-config — same principle for config (context
+         lives with the thing)
+  T-hypothesize-standards-injection — demonstrates engrams-as-docs
+         pattern that complements this one
 """
 
 from __future__ import annotations
@@ -84,6 +210,7 @@ def _next_run_id() -> str:
                 return f"{prefix}{last_num + 1:03d}"
             except ValueError as _exc:
                 from ..cognition.forensic_logger import log_error as _le
+
                 _le(kind="SILENT_EXCEPT", detail=f"reading_tool.py:85: {_exc}")
     return f"{prefix}001"
 
@@ -197,6 +324,7 @@ def _create_run(
             cx.add_child(run_node_id, item_node_id)
         except Exception as _exc:
             from ..cognition.forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"reading_tool.py:197: {_exc}")
 
     # Write run log header
