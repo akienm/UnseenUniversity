@@ -1,22 +1,152 @@
-"""
-Cortex — long-term memory storage.
+"""cortex.py — Igor's long-term memory store. Postgres-backed graph of Memory nodes.
 
-Postgres-backed graph of Memory objects. This module's DatabaseProxy wraps
-Postgres so all CRUD goes through one gateway (db_proxy.py). SQLite is no
-longer used anywhere in Igor.
+WHAT IT IS
+──────────
+Cortex is the single gateway for all of Igor's long-term memory. Every fact,
+habit, goal, experience, and interpretive edge lives in a Postgres graph
+rooted at the `memories` table. Cortex owns the schema, migrations, search
+pipeline, and all CRUD operations. This module also shelters two transient
+subsystems: ring_memory (short-term session FIFO, survives restarts) and
+twm_observations (Temporal Working Memory — push-based sandbox where multiple
+processes deposit observations that the Narrative Engine reads and integrates).
 
-Also contains:
-  - ring_memory table: short-term FIFO buffer (survives restarts). Sticky notepad.
-  - twm_observations table: Temporal Working Memory — push-based sandbox for
-    the Narrative Engine. Multiple processes deposit observations here.
-    NE reads, integrates, promotes high-importance fragments to LTM.
+WHY IT EXISTS
+─────────────
+Igor's cognition IS graph traversal. Without Cortex, memory access would be
+scattered across raw SQL calls, bypassing logging, metrics, and integrity
+checks. Cortex centralizes memory discipline: single write gate (all stores
+go through store()), single search surface (hybrid text + cosine rerank),
+single activation counter (tracks neurobiological salience). Everything flows
+through DatabaseProxy so tools reason in graph terms while Proxy speaks SQL
+(D200). Postgres is the only backend — SQLite is retired everywhere.
 
-Search strategy: memories table has an `embedding` column (nullable JSON).
-search() uses a hybrid approach:
-  1. Text search → candidate set (fast, always works)
-  2. Embedding re-rank → sort candidates by cosine similarity (if Ollama up)
-Embeddings are computed lazily for candidates that lack them and stored back.
-Cache at ~/.TheIgors/cache/embeddings/ avoids repeat Ollama calls.
+HOW IT WORKS (architecture)
+───────────────────────────
+Three collaborating layers:
+
+1. memories table (core)
+   Root data structure: id (PK), narrative, memory_type, parent_id,
+   children_ids, links_weighted (directed edges {id: weight}), activation_count,
+   valence/arousal/dominance (emotional profile), embedding (nullable JSON),
+   scope (class | instance | session), metadata (JSONB for arbitrary KV),
+   timestamp, last_accessed, source, confidence, context_of_encoding, payload.
+
+   Memory types (see models.py for canonical list + BASE_INERTIA):
+     ROOT, CORE_PATTERN (CP1-CP6), IDENTITY (ID1-ID14), ROLE_MODEL,
+     PROCEDURAL, EPISODIC, INTERPRETIVE, EXPERIENTIAL, FACTUAL, REFERENCE,
+     CREDENTIAL_REF, GOAL.
+
+2. ring_memory (local box, short-term)
+   FIFO buffer (RING_MAX=50). Sticky notepad for session context. Survives
+   restarts. Indexed by instance_id so each Igor box gets its own ring.
+   Columns: id, content, timestamp, instance_id, thread_id.
+
+3. twm_observations (local box, transient)
+   Multiple processes push here. NE polls, integrates, and promotes
+   high-salience fragments to LTM via store(). TTL-gated with automatic
+   cleanup. Urgency (0-1, time-sensitivity, orthogonal to salience) ≥ 0.85
+   can break through conversation-active gating (D299).
+
+Search pipeline (SearchRequest dataclass):
+   Phase 1 (text):   to_tsvector('english', narrative) @@ plainto_tsquery(...)
+                     candidates filtered by activation_count DESC LIMIT 300.
+                     GIN index m037 on narrative tsvector.
+   Phase 2 (rerank): if Ollama available, cosine similarity between query
+                     embedding and candidate embeddings. Embedding cache at
+                     ~/.TheIgors/cache/embeddings/.
+
+Spreading activation (D233):
+   Two-layer: word_graph (hop_decay=0.6, depth=2) + memory/interpretive
+   (hop_decay=0.8, depth=2). Seeds from TWM top-7. Trails recorded in
+   `tails` table (node_id, weight, trail_id, sequence_pos) for Hebbian
+   strengthening of co-activated paths.
+
+SCOPE DISCIPLINE (D322)
+───────────────────────
+scope controls portability:
+  - class:    shared across all Igor instances (ROOT, CORE_PATTERN,
+              IDENTITY, FACTUAL)
+  - instance: local to this Igor box (EPISODIC, EXPERIENTIAL,
+              CREDENTIAL_REF, GOAL)
+  - session:  ephemeral, cleared at session end (reserved)
+
+Default scope computed from memory_type via default_scope() in models.py.
+Queries can gate by scope to prevent leaking episodic state across instances.
+
+ACTIVATION_COUNT DISCIPLINE
+───────────────────────────
+activation_count = integer counter incremented on every search()/recall() hit.
+Not a timestamp — a relevance signal. Drives inertia (see models.py for the
+formula; base(type) contributes most, activation adds log-scale bumps). NE
+scans via ORDER BY activation_count DESC to find hot attractors.
+
+TSVECTOR SEARCH SURFACE
+───────────────────────
+Two GIN indexes enable full-text speed:
+  - m034: to_tsvector('english', COALESCE(payload, ''))  — engram payloads
+  - m037: to_tsvector('english', narrative)              — memory narrative
+Queries use @@ plainto_tsquery(...).
+
+PARENT_ID CONVENTIONS
+─────────────────────
+parent_id links child memories to one parent. children_ids stores forward
+refs for traversal. Navigation starts from hot roots (CP1-CP6, ID1-ID14)
+and traverses down — no full-table scans by type (D199, D221).
+
+RING MEMORY & TWM (working-memory layer)
+────────────────────────────────────────
+Both live in the LOCAL database (make_local_proxy), not home DB. Ring
+survives session — injects last-50-writes context into every API call.
+TWM is ephemeral — observations expire after TTL or get promoted to
+memories and marked integrated=true. Together they form the working-memory
+layer between immediate sensation and long-term consolidation.
+
+Entry points (public methods):
+  store(memory)                  — write + activate
+  search(query, limit, depth)    — text → rerank → ranked list
+  recall(id)                     — fetch by ID + activate
+  twm_push(narrative, salience, urgency, ...) — deposit to TWM
+  ring_push(content)             — append to ring
+  get_portable()                 — export: drop EPISODIC, CREDENTIAL_REF
+  interpretive_traverse(seed_id) — BFS via interpretive edges
+  expand_blob_memories(memories) — append blob content for relevance ≥ 0.5
+
+KEY DECISIONS SHAPING THIS SUBSYSTEM
+────────────────────────────────────
+  D119  env_sync — boot hydrates SYSCFG nodes from Postgres
+  D126  dual-proxy — make_home_proxy + make_local_proxy
+  D163  memory-sync — full Postgres replica per box
+  D169  hub-spoke sync via GREATEST(activation_count)
+  D171  Windows Postgres bootstrap; ROOT-based genesis guard
+  D174  tails migration: ALTER TABLE precedes INDEX creation
+  D195  no-embed queries — use _MEM_COLS_NO_EMBED, never SELECT *
+  D199  no-type-scans — all traversal graph-based
+  D200  db-proxy owns all SQL — Cortex reasons, Proxy speaks SQL
+  D221  no-row-scans — queries start from hot node, traverse edges
+  D233  spreading activation — two-layer (word graph + memory/interpretive)
+  D275  goal-as-thread — GOAL type instance-scoped, hot via TWM
+  D299  conversation-attentional-gating — background TWM capped during talk
+  D322  scope discipline — class/instance/session gates portability
+  D332  memory-echo filter — prevent self-parrot feedback loops
+
+ENGRAM PORTION
+──────────────
+Parts of the memory subsystem that live in the graph, not in code:
+  - Hot attractors — co-activation structures around topics Igor engaged
+    with; built from tail heat (_get_recently_activated, 48h window).
+  - PROC_MEMORY_SYNC — habit; runs every 6h; resolves conflicts via
+    GREATEST(activation_count).
+  - Genesis memories (ROOT, CP1-CP6) — verified at boot against
+    GENESIS_CP_NARRATIVES.
+
+If you want to change:
+  - What gets indexed   — edit _PG_SCHEMA + migrations list
+  - Search ranking      — edit search() Phase 2 + _emit_search_trace()
+  - TWM gating/expiry   — edit twm_push() + NE's integration loop
+  - Scope rules         — edit default_scope() + backfill migration
+  - Activation bumps    — edit store()/recall() activation logic
+  - Ring size           — edit RING_MAX (currently 50)
+  - TWM size/TTL        — edit TWM_MAX, TWM_TTL_EXTENSION_SECONDS
 """
 
 import logging

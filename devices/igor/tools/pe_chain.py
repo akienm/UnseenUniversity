@@ -1,32 +1,159 @@
-"""
-pe_chain.py — PROC_CODE_A_TICKET execution chain (T-programming-engrams).
+"""pe_chain.py — PROC_CODE_A_TICKET execution chain (T-programming-engrams).
 
-Replaces the OR agentic loop with an Igor-native step chain.
-Each step is a Python function that reads from and writes into a basket dict.
-The basket is a plain Python dict (shared working memory for one engram run).
+WHAT IT IS
+──────────
+The coding sprint pipeline. pe_chain replaces the OpenRouter agentic loop
+with an Igor-native step chain. Each step is a Python function that reads
+from and writes into a basket dict — shared working memory for one
+ticket-resolution run. The chain executes sequentially (with escalation
+branches) to take a ticket from "pending" to "committed" or
+"escalated to human."
 
-Chain structure (full chain):
-  pe_entry_init(basket)    — extract ticket_id from active GOAL, seed constants
-  pe_claim(basket)         — claim the ticket in cc_queue
-  pe_read_ticket(basket)   — load ticket description + files into basket
-  pe_situate(basket)       — resolve plan_files: use ticket's required_files if
-                             present, else call tier.2 Ollama to identify files
-  pe_observe(basket)       — two-pass: grep for relevant section, read that section
-  pe_store_observe_results(basket) — deposit grep findings as FACTUAL memory (non-fatal)
-  pe_hypothesize(basket)   — tier.2: (description + actual) → structured edit JSON
-  pe_implement(basket)     — apply hypothesis edit to file (pure tool)
-  pe_test(basket)          — run tests → basket[test_result] (pure tool)
-  pe_close_loop(basket)    — BRANCHIF pass→commit+close, fail→replan or escalate
+WHY IT EXISTS
+─────────────
+Igor's self-programming requires decomposable, observable, resumable task
+execution. A linear code-ref (function returning a string) can't express
+the 12+ step PROC_CODE_A_TICKET workflow. pe_chain lives in code (not in
+an engram) because it bootstraps the engram infrastructure itself — the
+coding sprint must work before Igor can use engrams to orchestrate it.
+Once engrams are stable, pe_chain may be reimplemented as
+PROC_CODE_A_TICKET_ENGRAM (a procedural memory node) driven by
+cursor_runtime.
 
-Entry point:
-  run_pe_chain(**_) → str   — called as code_ref by PROC_PE_CHAIN habit
-                               creates basket, runs full chain, returns summary
+HOW IT WORKS (architecture)
+───────────────────────────
 
-Basket contract reference: tpl-layer4-code-a-ticket-basket in DB.
+The full chain (run_pe_chain / run_pe_entry_chain):
 
-Design note (T-basket-fork-sharing): the basket is a shared Python dict.
-Forks share the parent basket (concurrent read + emit-back). No copy-on-fork.
-Serialization only at async fork boundaries.
+   1. pe_entry_init(basket)        — extract ticket_id from active GOAL;
+                                     seed constants (expected, attempt_count).
+   2. pe_claim(basket)             — mark ticket in_progress in cc_queue.
+   3. pe_read_ticket(basket)       — load description + required_files.
+   4. pe_plan(basket)              — tier.2 Ollama: plan_summary +
+                                     test_criterion (D333 flavor;
+                                     approved_plan if present via D331).
+   5. pe_filter(basket)            — reject trivial tickets; in-bounds
+                                     check (not in SCOPE_GUARD HIGH paths).
+   6. pe_situate(basket)           — resolve plan_files: use ticket's
+                                     required_files if present, else tier.2
+                                     to identify files (D333 context).
+   7. pe_observe(basket)           — two-pass: grep for section via tier.2,
+                                     then read that file section.
+   8. pe_store_observe_results()   — deposit grep findings as FACTUAL
+                                     memory (non-fatal on DB error).
+   9. pe_test(basket, preflight)   — run tests BEFORE hypothesize to catch
+                                     broken suite early; skip attempt if
+                                     already failing.
+  10. pe_hypothesize(basket)       — tier.2: (description + context) →
+                                     structured edit JSON.
+  11. run_scope_guard(basket)      — D331 gate: if change touches HIGH-
+                                     inertia code, compose design proposal
+                                     and escalate.
+  12. pe_implement(basket)         — apply hypothesis edit (ast-based).
+  13. pe_test(basket)              — run tests; pass → continue; fail →
+                                     loop via pe_replan (up to 3 attempts).
+  14. pe_probe(basket)             — commit + push dry-run (verify git).
+  15. pe_close_loop(basket)        — BRANCHIF: pass → commit + close
+                                     ticket; else → replan or escalate.
+
+Basket contract (D216, D247)
+────────────────────────────
+Plain Python dict; shared working memory for one run. Reserved keys:
+
+  Input   (seeded at entry):  ticket_id, attempt_count, expected, goal_id,
+                              approved_plan (D331 flow)
+  Written (per step):         plan_summary, test_criterion, plan_files,
+                              observed_content, hypothesis, test_result,
+                              commit_result, goal_close_result,
+                              escalate_reason
+  Control (interpreter):      error, escalate_reason, replan_count
+
+Fork sharing (T-basket-fork-sharing): forks share the parent basket —
+concurrent read + emit-back. No copy-on-fork; serialization only at
+async fork boundaries (D311).
+
+Temperature routing (D333 influence):
+  tier.2 calls use TEMPERATURE_BY_PHASE: HYPOTHESIZE/REPLAN at 0.2
+  (precise), PLAN/SITUATE at 0.7 (reasoning).
+
+Non-fatal degradation
+─────────────────────
+Cloud-touching steps (pe_plan, pe_situate, pe_observe, pe_hypothesize)
+log warnings but do not abort on failure — fall back to defaults or skip
+when tier.2 unavailable. IGOR_CLOUD_PROGRAMMING env flag selects routing
+(Ollama batch first, OR DeepSeek fallback if available).
+
+Tier.2 integration
+──────────────────
+pe_chain calls tier.2 Ollama via _call_tier2(prompt, temperature=...).
+Background work (no human waiting) — timeout=0 (unbounded). Respects
+cluster_router for host/model selection on multi-instance setups
+(akiendelllinux, yoga9i, yogai7 via inference_ollama.py).
+
+ENGRAM PORTION
+──────────────
+pe_chain itself lives in code (bootstrap), but the coding sprint is
+addressable as engrams:
+
+  - PROC_CODING_SPRINT (live) — fires PROC_PE_CHAIN on GOAL_READY + coding
+                                 intent in TWM. Calls run_pe_chain as
+                                 code_ref.
+  - PROC_ADOPT_GOAL           — fires before PROC_CODING_SPRINT; seals
+                                 active GOAL so pe_entry_init can extract
+                                 ticket_id.
+  - Future PROC_CODE_A_TICKET_ENGRAM — procedural node using
+                                 cursor_runtime + node_executor (D260-D296
+                                 envelope) will subsume this chain once
+                                 payload-as-program is stable.
+
+Related files
+─────────────
+  cursor_runtime.py   walks engram BRANCHIF chains; spawns FORKIF/SPAWNIF
+                       as background jobs; detects loops via basket snapshot.
+  node_executor.py    executes one payload cell (LABEL, STOPIF, EMITIF,
+                       BRANCHIF, FORKIF, SPAWNIF, MCPCALL, ENDIF). 200-
+                       instruction-per-cell max. Payload read-only.
+  scope_guard.py      pe_scope_guard (D331) — HIGH-inertia check;
+                       escalates to human if change touches brainstem/.
+  ops.py              close_goal_by_ticket, goal coordination.
+
+KEY DECISIONS SHAPING THIS SUBSYSTEM
+────────────────────────────────────
+  D216  basket schema (ephemeral, write-back contract)
+  D247  basket execution context (shared dict pointer, not deep copy)
+  D260  channel-emit execution model (EMIT = value-to-channel)
+  D261  engram instruction set (EMITIF/BRANCHIF/FORKIF/ENDIF)
+  D290  LABEL instruction (no-op marker, @name targets)
+  D291  STOPIF instruction (conditional terminator)
+  D293  FORKIF async (spawns background jobs, not inline)
+  D294  loop detection via basket snapshot matching
+  D295  memory channel (EMIT 'memory' deposits new node)
+  D296  BRANCHIF trigger target ('node_id#trigger_name' invokes cell)
+  D299  FORKIF null target safe (skips None/falsy targets)
+  D300  TWM as inter-subsystem channel (reactive fire, not call chain)
+  D311  FORKIF basket semantics (shared); SPAWNIF (empty basket)
+  D331  scope guard for HIGH inertia → approval flow (approved_plan
+        in ticket)
+  D333  situated reading (pass-1/pass-2 influences tier.2 context)
+
+Entry points
+────────────
+  run_pe_chain(**_) → str           — full chain; status string for channel
+                                       (called by code_ref).
+  run_pe_entry_chain(basket) → dict — programmatic entry; returns final
+                                       basket (tests, replans).
+  run_pe_plan(**_)   → str          — 0-arg wrapper: load context, PLAN only.
+  run_pe_filter(**_) → str          — 0-arg wrapper: load context, FILTER only.
+  run_pe_probe(**_)  → str          — 0-arg wrapper: load context, PROBE only.
+
+The 0-arg wrappers exist because PROC_PLAN / PROC_FILTER / PROC_PROBE
+habits dispatch them (not pe_plan/pe_filter/pe_probe directly, which
+require basket).
+
+If you want to change HOW A STEP WORKS, edit its function in this file.
+If you want to change THE ORDER OF STEPS or add branching logic, that's
+a codebase-wide decision (D331 escalation, D300 TWM coordination) —
+discuss with Akien first.
 """
 
 import json
