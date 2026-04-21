@@ -291,8 +291,7 @@ def adopt_next_ticket() -> str:
         from .ops import goal_adopt as _goal_adopt
 
         adopt_result = _goal_adopt(
-            f"work ticket {ticket_id}: {pick.get('title','')}",
-            source_message=f"[engram pickup] {ticket_id}",
+            f"work ticket {ticket_id}: {pick.get('title','')} [engram pickup]",
         )
 
         # Drive the coding chain in-process. Prefer the tool registry so other
