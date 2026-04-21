@@ -412,8 +412,13 @@ def _call_cloud_programming(prompt: str, temperature: float = 0.1) -> str | None
 
     temperature: 0.2 for code-edit steps (HYPOTHESIZE/REPLAN), 0.7 for reasoning steps
     (PLAN/SITUATE).
+
+    NB: we DO NOT route to Claude/Anthropic here — coding sprints are worker=igor
+    by design (T-verify-pe-chain-qwen-tier). Akien's constraint: if quality falls
+    short, go LARGER Qwen, never fallback to Claude.
     """
     import json as _json
+    import time as _time
     import urllib.request
 
     or_key = os.getenv("OPENROUTER_API_KEY", "")
@@ -426,6 +431,7 @@ def _call_cloud_programming(prompt: str, temperature: float = 0.1) -> str | None
     model = _CLOUD_PROGRAMMING_MODEL
     log.info("[pe_chain] cloud_programming: calling %s temp=%.1f", model, temperature)
 
+    t0 = _time.monotonic()
     try:
         payload = _json.dumps(
             {
@@ -449,11 +455,55 @@ def _call_cloud_programming(prompt: str, temperature: float = 0.1) -> str | None
         text = (
             data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
         )
+        elapsed_ms = int((_time.monotonic() - t0) * 1000)
         log.info("[pe_chain] cloud_programming: got %d chars", len(text))
+        _log_pe_inference(
+            provider="openrouter",
+            model=model,
+            prompt_chars=len(prompt),
+            response_chars=len(text or ""),
+            elapsed_ms=elapsed_ms,
+            via="cloud_programming",
+        )
         return text or None
     except Exception as e:
         log.warning("[pe_chain] _call_cloud_programming failed: %s", e)
         return None
+
+
+def _log_pe_inference(
+    *,
+    provider: str,
+    model: str,
+    prompt_chars: int,
+    response_chars: int,
+    elapsed_ms: int,
+    via: str,
+) -> None:
+    """
+    Record which model actually answered a pe_chain inference call.
+
+    T-verify-pe-chain-qwen-tier: coding sprints must run on Qwen (tier.2),
+    never Claude. This log is the auditability hook — a test reads the most
+    recent entry and asserts the model id contains 'qwen' (case-insensitive).
+    Writes to reasoning_calls.log via forensic_logger; fire-and-forget.
+    """
+    try:
+        from ..cognition.forensic_logger import log_reasoning_call as _lrc
+
+        _lrc(
+            provider=provider,
+            model=model,
+            tier="tier.2",
+            context_chars=prompt_chars,
+            response_chars=response_chars,
+            elapsed_ms=elapsed_ms,
+            escalation_reason=f"pe_chain/{via}",
+            response_summary="pe_chain step",
+        )
+    except Exception:
+        # Fire-and-forget — logging must never break the chain
+        pass
 
 
 def _call_tier2(prompt: str, timeout: int = 0, temperature: float = 0.1) -> str | None:
@@ -466,10 +516,21 @@ def _call_tier2(prompt: str, timeout: int = 0, temperature: float = 0.1) -> str 
     temperature: 0.2 for code-edit steps (HYPOTHESIZE/REPLAN), 0.7 for reasoning
     steps (PLAN/SITUATE). Default 0.1 for backwards compat / unspecified callers.
 
-    If IGOR_CLOUD_PROGRAMMING=true, routes directly to OR DeepSeek.
-    Otherwise tries Ollama batch first; if unavailable and OR key present, falls back
-    to OR DeepSeek automatically (PE chain is background, no latency constraint).
+    Tier routing (T-verify-pe-chain-qwen-tier):
+      - route("batch") resolves to the highest-ranked healthy machine and returns
+        its `ollama_model` (seeded to qwen2.5:7b on all active machines — see
+        `machines` DB table). So this call ALWAYS hits Qwen locally, never Claude.
+      - If IGOR_CLOUD_PROGRAMMING=true, routes to OR DeepSeek (still not Claude).
+      - If Ollama unreachable and OR key present, falls back to OR DeepSeek.
+      - Per Akien's 2026-04-20 constraint: if Qwen quality is insufficient,
+        the next step is a LARGER Qwen, NOT fallback to Claude. Do not add
+        Claude routing here.
+
+    Every successful call is logged to reasoning_calls.log via
+    log_reasoning_call() so the model that actually answered is auditable.
     """
+    import time as _time
+
     if os.getenv("IGOR_CLOUD_PROGRAMMING", "").lower() in ("1", "true", "yes"):
         return _call_cloud_programming(prompt, temperature=temperature)
 
@@ -483,6 +544,7 @@ def _call_tier2(prompt: str, timeout: int = 0, temperature: float = 0.1) -> str 
         host = OLLAMA_HOST
         model = OLLAMA_LOCAL_MODEL
 
+    t0 = _time.monotonic()
     try:
         import json as _json
         import urllib.request
@@ -504,6 +566,16 @@ def _call_tier2(prompt: str, timeout: int = 0, temperature: float = 0.1) -> str 
         with urllib.request.urlopen(req, timeout=timeout or None) as resp:
             data = _json.loads(resp.read())
         text = data.get("message", {}).get("content", "").strip()
+        elapsed_ms = int((_time.monotonic() - t0) * 1000)
+        if text:
+            _log_pe_inference(
+                provider="ollama",
+                model=model or "unknown",
+                prompt_chars=len(prompt),
+                response_chars=len(text),
+                elapsed_ms=elapsed_ms,
+                via=f"ollama@{host}",
+            )
         return text or None
     except Exception as e:
         log.warning("[pe_chain] _call_tier2 Ollama failed: %s — trying OR fallback", e)
@@ -583,6 +655,7 @@ def pe_plan(basket: dict) -> dict:
     if description:
         prompt = _PLAN_PROMPT.format(ticket_id=ticket_id, description=description[:600])
         log.info(f"PLAN: calling tier.2 for {ticket_id}")
+        # Routes to cheap background tier (Qwen) — verified T-verify-pe-chain-qwen-tier
         raw = _call_tier2(prompt, temperature=0.7)
         if raw:
             plan_summary = ""
@@ -763,6 +836,7 @@ def pe_situate(basket: dict) -> dict:
     prompt = _SITUATE_PROMPT.format(description=description[:600])
     log.info(f"SITUATE: calling tier.2 (no required_files or prior memory for ticket)")
 
+    # Routes to cheap background tier (Qwen) — verified T-verify-pe-chain-qwen-tier
     raw = _call_tier2(prompt, temperature=0.7)
     if not raw:
         # Tier.2 unavailable — leave plan_files empty, chain can continue with grep
@@ -1364,6 +1438,7 @@ def pe_hypothesize(basket: dict) -> dict:
 
     log.info(f"HYPOTHESIZE: calling tier.2 prompt_len={len(prompt)}")
 
+    # Routes to cheap background tier (Qwen) — verified T-verify-pe-chain-qwen-tier
     raw = _call_tier2(prompt, temperature=0.2)
     basket["hypothesis_raw"] = raw or ""
 
@@ -1749,6 +1824,7 @@ def _pe_replan(basket: dict) -> dict:
         actual=basket.get("actual", "")[:1500],
     )
     log.info(f"REPLAN: calling tier.2 attempt={basket.get('attempt_count')}")
+    # Routes to cheap background tier (Qwen) — verified T-verify-pe-chain-qwen-tier
     raw = _call_tier2(prompt, temperature=0.2)
     basket["hypothesis_raw"] = raw or ""
 
@@ -2217,6 +2293,105 @@ try:
                 description=_desc,
                 fn=_fn,
                 parameters={"type": "object", "properties": {}, "required": []},
+            )
+        )
+
+    # ── Per-step pe_* functions as MCPCALL tools ──────────────────────────────
+    # ENGRAM_CODE_* payloads call these via MCPCALL (T-engram-mcpcall-register-
+    # -pe-steps). The basket is shared across cursor hops; MCPCALL passes an
+    # empty args dict today, so each fn lambda defaults basket to {} when
+    # absent — the underlying step functions then read/write the basket in
+    # place. Direct callers can still pass basket=<dict> explicitly.
+
+    _BASKET_PARAMS = {
+        "type": "object",
+        "properties": {
+            "basket": {
+                "type": "object",
+                "description": "Shared chain basket dict (step reads/writes keys in place).",
+            }
+        },
+        "required": [],
+    }
+
+    for _fn, _name, _desc in [
+        (
+            pe_entry_init,
+            "pe_entry_init",
+            "ENTRY step: extract ticket_id from active GOAL, seed basket constants.",
+        ),
+        (
+            pe_claim,
+            "pe_claim",
+            "CLAIM step: mark ticket in_progress in cc_queue.",
+        ),
+        (
+            pe_read_ticket,
+            "pe_read_ticket",
+            "READ_TICKET step: load ticket details into basket.",
+        ),
+        (
+            pe_plan,
+            "pe_plan",
+            "PLAN step: generate implementation plan before touching any files.",
+        ),
+        (
+            pe_filter,
+            "pe_filter",
+            "FILTER step: pre-implementation safety checklist (plan/test/inertia).",
+        ),
+        (
+            pe_situate,
+            "pe_situate",
+            "SITUATE step: resolve plan_files — which files need to change?",
+        ),
+        (
+            pe_observe,
+            "pe_observe",
+            "OBSERVE step: two-pass grep+read to load relevant file sections.",
+        ),
+        (
+            pe_hypothesize,
+            "pe_hypothesize",
+            "HYPOTHESIZE step: tier.2 call → structured edit JSON (multi-edit).",
+        ),
+        (
+            pe_implement,
+            "pe_implement",
+            "IMPLEMENT step: apply basket[hypotheses] edits to target files.",
+        ),
+        (
+            pe_test,
+            "pe_test",
+            "TEST step: run the test suite, store result in basket.",
+        ),
+        (
+            pe_probe,
+            "pe_probe",
+            "PROBE step: optional post-implementation behavioral test via cc_send.",
+        ),
+        (
+            pe_close_loop,
+            "pe_close_loop",
+            "CLOSE_LOOP step: dispatch based on test_result (commit/close or replan/escalate).",
+        ),
+    ]:
+        # Lambda defaults basket to {} for zero-arg MCPCALL dispatch, and
+        # forwards any other kwargs (e.g. pe_test's preflight=True) to the fn.
+        def _make_wrapper(_real_fn):
+            def _wrapper(basket=None, **extra):
+                return _real_fn(basket if basket is not None else {}, **extra)
+
+            _wrapper.__name__ = _real_fn.__name__
+            _wrapper.__doc__ = _real_fn.__doc__
+            return _wrapper
+
+        registry.register(
+            Tool(
+                name=_name,
+                description=_desc,
+                fn=_make_wrapper(_fn),
+                parameters=_BASKET_PARAMS,
             )
         )
 
