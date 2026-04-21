@@ -1000,3 +1000,120 @@ class TestSpawnifInstruction:
         result = execute_node(memory, "trigger", {})
         assert result.spawned == ["shared_child"]
         assert result.spawned_fresh == ["fresh_child"]
+
+
+class TestEngramTriggerCellsKeyRealDB:
+    """T-engram-trigger-cell-name-mismatch — Bug 1 regression.
+
+    Verifies that an engram with triggers={"__entry__": "cells"} executes
+    correctly via execute_node.  Seeds a minimal test row in the live Postgres
+    DB (Igor-wild-0001), loads it back as a plain namespace object, and asserts
+    that execute_node runs at least one instruction instead of the old WARN-and-
+    noop path that returned instructions_run=0 when trigger mapped to
+    "coding sprint entry" (absent in payload) instead of "cells".
+    """
+
+    _TEST_ID = "ENGRAM_CODE_TEST_TRIGGER_REGRESSION"
+
+    @classmethod
+    def setup_class(cls):
+        import os
+        import psycopg2
+
+        cls._db_url = os.environ.get(
+            "IGOR_HOME_DB_URL",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        )
+        cls._conn = psycopg2.connect(cls._db_url)
+        cls._conn.autocommit = True
+        cur = cls._conn.cursor()
+        import json
+
+        payload = {"cells": [["EMITIF", True, "ran", "yes", "basket"], "ENDIF"]}
+        metadata = {
+            "triggers": {"__entry__": "cells"},
+            "habit_type": "engram",
+            "test_data": True,
+        }
+        cur.execute(
+            """
+            INSERT INTO memories (id, narrative, memory_type, parent_id, source,
+                                  confidence, metadata, payload, scope)
+            VALUES (%s, %s, 'PROCEDURAL', 'CP1', 'test', 1.0, %s, %s, 'class')
+            ON CONFLICT (id) DO UPDATE SET
+                narrative = EXCLUDED.narrative,
+                metadata  = EXCLUDED.metadata,
+                payload   = EXCLUDED.payload
+            """,
+            (
+                cls._TEST_ID,
+                "Regression test engram for T-engram-trigger-cell-name-mismatch",
+                json.dumps(metadata),
+                json.dumps(payload),
+            ),
+        )
+
+    @classmethod
+    def teardown_class(cls):
+        try:
+            cur = cls._conn.cursor()
+            cur.execute("DELETE FROM memories WHERE id = %s", (cls._TEST_ID,))
+        finally:
+            cls._conn.close()
+
+    def _load_from_db(self):
+        """Load the seeded row back from Postgres and return a minimal object."""
+        import json
+        import types
+
+        cur = self._conn.cursor()
+        cur.execute(
+            "SELECT id, metadata, payload FROM memories WHERE id = %s",
+            (self._TEST_ID,),
+        )
+        row = cur.fetchone()
+        assert row is not None, f"{self._TEST_ID} not found in DB"
+        row_id, meta_raw, payload_raw = row
+        # meta and payload may come back as dict (psycopg2 json) or str
+        meta = meta_raw if isinstance(meta_raw, dict) else json.loads(meta_raw)
+        payload = (
+            payload_raw if isinstance(payload_raw, dict) else json.loads(payload_raw)
+        )
+        node = types.SimpleNamespace(id=row_id, metadata=meta, payload=payload)
+        return node
+
+    def test_trigger_cells_key_runs_instructions(self):
+        """execute_node with triggers.__entry__=cells must run ≥1 instruction.
+
+        Before the fix, trigger value was "coding sprint entry" — not present in
+        payload — so execute_node returned instructions_run=0.  After the fix,
+        trigger value is "cells", the cell is found, and EMITIF+ENDIF run.
+        """
+        node = self._load_from_db()
+        # Confirm the DB row has the correct trigger value
+        assert node.metadata["triggers"]["__entry__"] == "cells", (
+            f"Expected trigger 'cells' but got {node.metadata['triggers']!r} — "
+            "seed_coding_engrams.py may not have been re-run"
+        )
+        basket = {}
+        result = execute_node(node, "__entry__", basket)
+        assert result.instructions_run > 0, (
+            f"execute_node returned instructions_run=0 — "
+            f"cell lookup for trigger '__entry__' failed (stopped_by={result.stopped_by!r})"
+        )
+        assert basket.get("ran") == "yes"
+
+    def test_old_trigger_value_returns_noop(self):
+        """Sanity check: a trigger with no matching cell still returns 0 instructions."""
+        node = self._load_from_db()
+        # Override metadata locally (don't touch DB)
+        import copy
+
+        bad_node = copy.copy(node)
+        bad_node.metadata = {
+            **node.metadata,
+            "triggers": {"__entry__": "coding sprint entry"},
+        }
+        basket = {}
+        result = execute_node(bad_node, "__entry__", basket)
+        assert result.instructions_run == 0
