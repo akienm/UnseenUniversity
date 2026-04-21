@@ -17,7 +17,10 @@ from .registry import Tool, registry
 logger = logging.getLogger("igor.tools.reading_integration")
 
 _INTEGRATOR = (
-    Path(__file__).parent.parent.parent.parent / "claudecode" / "reading_integrator.py"
+    Path(__file__).parent.parent.parent.parent
+    / "lab"
+    / "claudecode"
+    / "reading_integrator.py"
 )
 
 

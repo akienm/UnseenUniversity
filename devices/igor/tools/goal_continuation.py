@@ -33,12 +33,13 @@ from pathlib import Path
 from .registry import Tool, registry
 
 from ..paths import paths as _paths
+
 log = logging.getLogger(__name__)
 from ..paths import paths
 from .channel_post import post_to_channel as _post_to_channel
 
 _DB_URL = _paths().home_db_url
-_CC_QUEUE = Path.home() / "TheIgors" / "claudecode" / "cc_queue.py"
+_CC_QUEUE = Path.home() / "TheIgors" / "lab" / "claudecode" / "cc_queue.py"
 
 
 def _run_bash(cmd: list) -> str:
@@ -120,6 +121,7 @@ def _load_ticket(ticket_id: str) -> dict | None:
                 return t
     except Exception as _exc:
         from ..cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"goal_continuation.py:121: {_exc}")
     return None
 

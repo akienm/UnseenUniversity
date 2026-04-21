@@ -26,7 +26,7 @@ from ..cognition.anticipation import (
 
 _QUEUE_PATH = paths().cc_channel / "queue.json"
 _WORKER_PIDS_PATH = paths().cc_channel / "worker_pids.json"
-_CC_QUEUE_SCRIPT = Path.home() / "TheIgors" / "claudecode" / "cc_queue.py"
+_CC_QUEUE_SCRIPT = Path.home() / "TheIgors" / "lab" / "claudecode" / "cc_queue.py"
 
 
 def _load_queue() -> list:

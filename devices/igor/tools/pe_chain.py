@@ -168,7 +168,7 @@ from ..paths import paths as _paths
 
 log = logging.getLogger(__name__)
 
-_CC_QUEUE = Path.home() / "TheIgors" / "claudecode" / "cc_queue.py"
+_CC_QUEUE = Path.home() / "TheIgors" / "lab" / "claudecode" / "cc_queue.py"
 
 TEMPERATURE_BY_PHASE = {
     "HYPOTHESIZE": 0.2,
