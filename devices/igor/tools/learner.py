@@ -42,8 +42,8 @@ def _igor_db_proxy() -> DatabaseProxy:
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 _REPO = Path(__file__).parent.parent.parent.parent
-_BOOK_LEARNER = _REPO / "claudecode" / "book_learner.py"
-_DRAIN_SCRIPT = _REPO / "claudecode" / "drain_learn_queue.py"
+_BOOK_LEARNER = _REPO / "lab" / "claudecode" / "book_learner.py"
+_DRAIN_SCRIPT = _REPO / "lab" / "claudecode" / "drain_learn_queue.py"
 _VENV_PYTHON = _REPO / "venv" / "bin" / "python"
 _QUEUE_FILE = paths().learn_queue
 _DRAIN_PID = paths().drain_pid
@@ -730,6 +730,7 @@ def list_absorbed_books(**_kwargs) -> str:
                 )
     except Exception as _e:
         from ..cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"learner.py:731: {_e}")
 
     lines = []
@@ -1091,6 +1092,7 @@ def learn_top_gap(**_kwargs) -> str:
         _la(kind="CURIOSITY_QUEUED", detail=f"queued: {question[:120]} → {result}")
     except Exception as _exc:
         from ..cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"learner.py:1091: {_exc}")
 
     return result
@@ -1197,6 +1199,7 @@ def ingest_arch_docs(**_kwargs) -> str:
         )
     except Exception as _exc:
         from ..cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"learner.py:1196: {_exc}")
 
     return summary
@@ -1292,6 +1295,7 @@ def flag_top_gap(**_kwargs) -> str:
             conn_pg.close()
     except Exception as _exc:
         from ..cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"learner.py:1290: {_exc}")
 
     # Write to JSONL channel file
@@ -1306,6 +1310,7 @@ def flag_top_gap(**_kwargs) -> str:
             f.write(entry + "\n")
     except Exception as _exc:
         from ..cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"learner.py:1303: {_exc}")
 
     try:
@@ -1314,6 +1319,7 @@ def flag_top_gap(**_kwargs) -> str:
         _la(kind="GAP_FLAGGED", detail=f"salience={salience:.2f} q={question[:120]}")
     except Exception as _exc:
         from ..cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"learner.py:1310: {_exc}")
 
     return f"[flag_top_gap] flagged: {question[:80]}"
@@ -1455,6 +1461,7 @@ def review_turn_traces(**_kwargs) -> str:
                 )
         except Exception as _exc:
             from ..cognition.forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"learner.py:1450: {_exc}")
 
     summary = (
@@ -1466,6 +1473,7 @@ def review_turn_traces(**_kwargs) -> str:
         _la(kind="TRACE_REVIEW_DONE", detail=summary)
     except Exception as _exc:
         from ..cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"learner.py:1460: {_exc}")
 
     return summary
@@ -1753,6 +1761,7 @@ def ingest_calibre_igor_books(**_kwargs) -> str:
                 updated[tier] = updated.get(tier, 0) + 1
             except Exception as _exc:
                 from ..cognition.forensic_logger import log_error as _le
+
                 _le(kind="SILENT_EXCEPT", detail=f"learner.py:1746: {_exc}")
         else:
             skipped += 1
@@ -1769,6 +1778,7 @@ def ingest_calibre_igor_books(**_kwargs) -> str:
         _la(kind="CALIBRE_INGEST_DONE", detail=summary)
     except Exception as _exc:
         from ..cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"learner.py:1761: {_exc}")
 
     return summary
@@ -1872,6 +1882,7 @@ def ingest_readings_design_sessions(**_kwargs) -> str:
         _la(kind="READINGS_INGEST_DONE", detail=summary)
     except Exception as _exc:
         from ..cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"learner.py:1863: {_exc}")
 
     return summary
@@ -1952,6 +1963,7 @@ def feed_reading_list(**_kwargs) -> str:
                     )
         except Exception as _e:
             from ..cognition.forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"learner.py:1942: {_e}")
         existing_q = [e for e in existing_q if not e.get("done")]
         _save_queue(existing_q)
@@ -1998,6 +2010,7 @@ def feed_reading_list(**_kwargs) -> str:
         _la(kind="READING_FEEDER_RUN", detail=summary)
     except Exception as _exc:
         from ..cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"learner.py:1987: {_exc}")
 
     return summary
