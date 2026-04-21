@@ -2039,6 +2039,59 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
     return basket
 
 
+def run_engram_cursor(engram_entry: str = "", **_) -> str:
+    """
+    Generic engram cursor entry point — code_ref wrapper for cursor_runtime.
+
+    Loads the entry engram node by id and runs cursor_runtime.run_cursor.
+    Called by PROC_INVOKE_SPRINT / PROC_INVOKE_COMMIT habits (and similar)
+    via code_ref="pe_chain:run_engram_cursor".  The habit metadata must carry
+    engram_entry; when dispatched via MCPCALL, pass it as a basket key so the
+    dispatcher can forward it as a kwarg.
+
+    Args:
+        engram_entry: ID of the entry engram node to start the cursor at.
+                      Required — returns an error string when absent.
+
+    Returns a short status string for the channel.
+    """
+    if not engram_entry:
+        log.warning("[pe_chain] run_engram_cursor: no engram_entry supplied — no-op")
+        return "[run_engram_cursor] error: engram_entry not supplied"
+
+    try:
+        from ..memory.cortex import Cortex as _Cortex
+        from ..cognition.cursor_runtime import run_cursor as _run_cursor
+
+        cortex = _Cortex(None)
+        entry_node = cortex.get(engram_entry)
+        if entry_node is None:
+            log.warning(
+                "[pe_chain] run_engram_cursor: entry node %r not found", engram_entry
+            )
+            return f"[run_engram_cursor] error: node {engram_entry!r} not found"
+
+        basket: dict = {}
+        cursor_result = _run_cursor(
+            cortex=cortex,
+            entry_node=entry_node,
+            trigger="__entry__",
+            basket=basket,
+        )
+        summary = (
+            f"[run_engram_cursor] entry={engram_entry} "
+            f"nodes={cursor_result.nodes_visited} "
+            f"stopped_by={cursor_result.stopped_by}"
+        )
+        if cursor_result.error:
+            summary += f" error={cursor_result.error[:120]}"
+        log.info(summary)
+        return summary
+    except Exception as exc:
+        log.warning("[pe_chain] run_engram_cursor: %s", exc)
+        return f"[run_engram_cursor] error: {exc}"
+
+
 def run_pe_chain(**_) -> str:
     """
     Full PROC_CODE_A_TICKET chain — code_ref entry point.
@@ -2084,6 +2137,29 @@ try:
             ),
             fn=run_pe_chain,
             parameters={"type": "object", "properties": {}, "required": []},
+        )
+    )
+
+    registry.register(
+        Tool(
+            name="run_engram_cursor",
+            description=(
+                "Run an engram cursor chain starting at engram_entry node id. "
+                "Used by PROC_INVOKE_SPRINT, PROC_INVOKE_COMMIT, and any habit "
+                "whose code_ref is pe_chain:run_engram_cursor. Pass engram_entry "
+                "as a kwarg (MCPCALL basket key) or rely on the caller to supply it."
+            ),
+            fn=run_engram_cursor,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "engram_entry": {
+                        "type": "string",
+                        "description": "ID of the entry engram node to start at.",
+                    }
+                },
+                "required": [],
+            },
         )
     )
 
