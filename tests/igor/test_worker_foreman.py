@@ -1,0 +1,334 @@
+"""
+tests/test_worker_foreman.py — T-worker-dispatch-routing.
+
+Covers D-worker-mode-routing-2026-04-21: worker dispatch by ticket metadata.
+
+Tests:
+  - cc_queue._infer_worker auto-defaults on add:
+      1. Plain ticket (no tags, size=S)        → worker='igor'
+      2. HIGH-inertia tagged ticket            → worker='claude'
+      3. Explicit worker='claude' respected    (set-worker path, not inferred)
+      4. size=XL                               → worker='claude'
+      5. description touches brainstem/        → worker='claude'
+  - worker_foreman.launch_next_worker dispatch switch:
+      6. Top pending worker='igor'  → adopt_next_ticket branch
+      7. Top pending worker='claude'→ konsole-spawn branch (not adopt)
+      8. Top pending worker missing → konsole-spawn branch (safe default)
+
+End-to-end verification is T-worker-dispatch-validation; this ticket is
+plumbing only.
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+import unittest
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+# ── repo path ─────────────────────────────────────────────────────────────────
+
+
+def _add_repo_to_path() -> None:
+    repo = Path(__file__).parent.parent
+    if str(repo) not in sys.path:
+        sys.path.insert(0, str(repo))
+    cc = repo / "lab" / "claudecode"
+    if str(cc) not in sys.path:
+        sys.path.insert(0, str(cc))
+
+
+_add_repo_to_path()
+
+import cc_queue  # noqa: E402
+
+# ─────────────────────────────────────────────────────────────────────────────
+# _infer_worker — auto-default routing rule
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestInferWorker(unittest.TestCase):
+    """cc_queue._infer_worker: routing rule by tags/size/paths."""
+
+    def test_plain_ticket_defaults_to_igor(self):
+        """A plain small ticket with no HIGH signals → igor (cheap tier)."""
+        t = {"id": "T-plain", "title": "small fix", "size": "S", "tags": []}
+        self.assertEqual(cc_queue._infer_worker(t), "igor")
+
+    def test_medium_ticket_defaults_to_igor(self):
+        """M is still below the HIGH-inertia bar → igor."""
+        t = {
+            "id": "T-medium",
+            "title": "add a dashboard column",
+            "size": "M",
+            "tags": ["Operations"],
+        }
+        self.assertEqual(cc_queue._infer_worker(t), "igor")
+
+    def test_high_inertia_tag_routes_to_claude(self):
+        """Any of HIGH / high-inertia / HIGH-inertia / high_inertia → claude."""
+        for tag in ["HIGH", "high-inertia", "HIGH-inertia", "high_inertia"]:
+            with self.subTest(tag=tag):
+                t = {
+                    "id": "T-hi",
+                    "title": "touch brainstem",
+                    "size": "M",
+                    "tags": [tag],
+                }
+                self.assertEqual(cc_queue._infer_worker(t), "claude")
+
+    def test_xl_size_routes_to_claude(self):
+        """XL-sized work stays with CC regardless of tags."""
+        t = {"id": "T-xl", "title": "big refactor", "size": "XL", "tags": []}
+        self.assertEqual(cc_queue._infer_worker(t), "claude")
+
+    def test_brainstem_path_in_description_routes_to_claude(self):
+        """Description referencing brainstem/ → HIGH-inertia path → claude."""
+        t = {
+            "id": "T-bs",
+            "title": "rewire reflexes",
+            "description": "Refactor brainstem/reflexes.py to handle foo",
+            "size": "M",
+            "tags": [],
+        }
+        self.assertEqual(cc_queue._infer_worker(t), "claude")
+
+    def test_memory_models_path_routes_to_claude(self):
+        """memory/models.py in description → claude."""
+        t = {
+            "id": "T-mm",
+            "title": "add memory type",
+            "description": "new column on memory/models.py",
+            "size": "S",
+            "tags": [],
+        }
+        self.assertEqual(cc_queue._infer_worker(t), "claude")
+
+    def test_reasoners_base_path_routes_to_claude(self):
+        """cognition/reasoners/base.py in description → claude."""
+        t = {
+            "id": "T-rb",
+            "title": "tweak base reasoner",
+            "body": "Adjust cognition/reasoners/base.py timing.",
+            "tags": [],
+        }
+        self.assertEqual(cc_queue._infer_worker(t), "claude")
+
+    def test_required_files_brainstem_routes_to_claude(self):
+        """required_files entries count as path signal too."""
+        t = {
+            "id": "T-rf",
+            "title": "touch reflex",
+            "required_files": ["brainstem/reflex_graph.py"],
+            "tags": [],
+        }
+        self.assertEqual(cc_queue._infer_worker(t), "claude")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# cmd_add — explicit worker is preserved; missing worker is inferred
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestCmdAddWorkerDefault(unittest.TestCase):
+    """cmd_add auto-defaults worker when not set; respects explicit worker."""
+
+    def _run_add(self, new_ticket: dict) -> dict:
+        """Invoke cmd_add with _load/_save stubbed and return the persisted ticket."""
+        saved: dict = {}
+
+        def fake_load():
+            return []
+
+        def fake_save(tasks):
+            # cmd_add appends to the list then calls _save
+            saved["tasks"] = tasks
+
+        with (
+            patch.object(cc_queue, "_load", fake_load),
+            patch.object(cc_queue, "_save", fake_save),
+            patch.object(cc_queue, "_log", lambda _entry: None),
+            patch.object(
+                cc_queue,
+                "os",
+                MagicMock(path=MagicMock(exists=lambda _p: False)),
+            ),
+            patch("cc_queue.json.loads", return_value=[new_ticket]),
+        ):
+            # cmd_add takes a json-file-or-inline-json string; we bypass file
+            # existence check (mocked os.path.exists → False) so it goes
+            # through json.loads (also mocked) to return our ticket.
+            cc_queue.cmd_add(["dummy-inline-json"])
+
+        self.assertIn("tasks", saved, "cmd_add did not call _save")
+        self.assertEqual(len(saved["tasks"]), 1, "expected one added ticket")
+        return saved["tasks"][0]
+
+    def test_plain_ticket_gets_worker_igor(self):
+        """New plain ticket with no worker field → inferred 'igor'."""
+        nt = {"id": "T-add-plain", "title": "small chore", "size": "S", "tags": []}
+        persisted = self._run_add(nt)
+        self.assertEqual(persisted.get("worker"), "igor")
+
+    def test_high_inertia_tag_gets_worker_claude(self):
+        """New HIGH-tagged ticket with no worker field → inferred 'claude'."""
+        nt = {
+            "id": "T-add-hi",
+            "title": "risky edit",
+            "size": "M",
+            "tags": ["HIGH"],
+        }
+        persisted = self._run_add(nt)
+        self.assertEqual(persisted.get("worker"), "claude")
+
+    def test_explicit_worker_claude_preserved(self):
+        """Explicit worker='claude' on a small plain ticket is respected."""
+        nt = {
+            "id": "T-add-explicit-claude",
+            "title": "small chore",
+            "size": "S",
+            "tags": [],
+            "worker": "claude",
+        }
+        persisted = self._run_add(nt)
+        self.assertEqual(persisted.get("worker"), "claude")
+
+    def test_explicit_worker_igor_preserved_even_with_high_tag(self):
+        """Explicit worker='igor' wins even if heuristics would say claude."""
+        nt = {
+            "id": "T-add-explicit-igor",
+            "title": "HIGH but Akien says igor anyway",
+            "size": "M",
+            "tags": ["HIGH"],
+            "worker": "igor",
+        }
+        persisted = self._run_add(nt)
+        self.assertEqual(persisted.get("worker"), "igor")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# launch_next_worker dispatch switch
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestLaunchNextWorkerDispatch(unittest.TestCase):
+    """launch_next_worker routes by top pending ticket's worker field."""
+
+    def _run_launch(self, tasks: list) -> tuple[str, MagicMock, MagicMock]:
+        """Invoke launch_next_worker with dependencies mocked.
+
+        Returns (result, mock_adopt, mock_popen) for inspection.
+        """
+        from wild_igor.igor.tools import worker_foreman as wf
+
+        mock_adopt = MagicMock(return_value="adopted T-xyz: mocked")
+        mock_popen = MagicMock()
+        # Popen instance: wait() returns None; returncode 0; stdout readable
+        popen_instance = MagicMock()
+        popen_instance.wait.return_value = None
+        popen_instance.returncode = 0
+        popen_instance.stdout.read.return_value = b"launched ok"
+        popen_instance.stderr.read.return_value = b""
+        popen_instance.pid = 12345
+        mock_popen.return_value = popen_instance
+
+        # Replace _QUEUE_PATH with a MagicMock so write_text is a no-op;
+        # PosixPath.write_text is read-only so patch.object can't target it.
+        fake_queue_path = MagicMock()
+        fake_queue_path.exists.return_value = False
+
+        with (
+            patch.object(wf, "_load_queue", return_value=tasks),
+            patch.object(wf, "adopt_next_ticket", mock_adopt),
+            patch.object(wf.subprocess, "Popen", mock_popen),
+            patch.object(wf, "_QUEUE_PATH", fake_queue_path),
+        ):
+            result = wf.launch_next_worker()
+
+        return result, mock_adopt, mock_popen
+
+    def test_worker_igor_routes_to_adopt(self):
+        """Top pending worker='igor' → adopt_next_ticket is called, no konsole."""
+        tasks = [
+            {
+                "id": "T-igor-1",
+                "title": "small chore",
+                "status": "pending",
+                "priority": 5,
+                "worker": "igor",
+                "tags": [],
+            }
+        ]
+        result, mock_adopt, mock_popen = self._run_launch(tasks)
+
+        mock_adopt.assert_called_once_with()
+        mock_popen.assert_not_called()
+        self.assertIn("adopted", result)
+
+    def test_worker_claude_routes_to_konsole(self):
+        """Top pending worker='claude' → konsole-spawn path, not adopt."""
+        tasks = [
+            {
+                "id": "T-claude-1",
+                "title": "HIGH work",
+                "status": "pending",
+                "priority": 5,
+                "worker": "claude",
+                "tags": ["HIGH"],
+            }
+        ]
+        result, mock_adopt, mock_popen = self._run_launch(tasks)
+
+        mock_adopt.assert_not_called()
+        mock_popen.assert_called_once()
+        # First positional arg of Popen is the command list
+        cmd = mock_popen.call_args[0][0]
+        self.assertIn("worker-launch", cmd)
+        self.assertIn("T-claude-1", cmd)
+
+    def test_missing_worker_defaults_to_konsole(self):
+        """Top pending with no worker field → safe default = claude → konsole."""
+        tasks = [
+            {
+                "id": "T-nw-1",
+                "title": "legacy ticket",
+                "status": "pending",
+                "priority": 5,
+                "tags": [],
+                # no 'worker' field at all
+            }
+        ]
+        result, mock_adopt, mock_popen = self._run_launch(tasks)
+
+        mock_adopt.assert_not_called()
+        mock_popen.assert_called_once()
+
+    def test_igor_chosen_over_later_claude(self):
+        """Worker field of the *top-priority* pending ticket drives dispatch."""
+        tasks = [
+            {
+                "id": "T-lower-claude",
+                "title": "low priority claude work",
+                "status": "pending",
+                "priority": 99,
+                "worker": "claude",
+                "tags": [],
+            },
+            {
+                "id": "T-top-igor",
+                "title": "high priority igor work",
+                "status": "pending",
+                "priority": 1,
+                "worker": "igor",
+                "tags": [],
+            },
+        ]
+        result, mock_adopt, mock_popen = self._run_launch(tasks)
+
+        mock_adopt.assert_called_once()
+        mock_popen.assert_not_called()
+
+
+if __name__ == "__main__":
+    unittest.main()

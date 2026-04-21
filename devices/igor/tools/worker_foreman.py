@@ -48,9 +48,33 @@ def _pid_alive(pid: int) -> bool:
         return False
 
 
+def _peek_next_pending_worker(tasks: list) -> str | None:
+    """Return the worker field of the next-best pending ticket, or None.
+
+    Used by dispatch to decide in-process (Igor) vs konsole-spawn (Claude) before
+    any status mutation. Missing worker is treated as 'claude' (pre-D-worker-
+    mode-routing-2026-04-21 default — safer to surface to CC than silently
+    adopt via Igor).
+    """
+    pending = [t for t in tasks if t.get("status") == "pending"]
+    if not pending:
+        return None
+    pending_sorted = sorted(
+        pending,
+        key=lambda t: weighted_ticket_score(t.get("priority", 99), t.get("tags", [])),
+    )
+    return pending_sorted[0].get("worker") or "claude"
+
+
 def launch_next_worker() -> str:
     """
     Read the task queue and launch a worker session for the next pending ticket.
+
+    D-worker-mode-routing-2026-04-21: routes by ticket `worker` field —
+      worker='igor'   → in-process via adopt_next_ticket (engram chain, Qwen).
+      worker='claude' → konsole-spawned CC session (reviewable).
+      missing/unknown → 'claude' (safe default pre-validation of the igor path).
+
     If a ticket is already in_progress, reports back without launching another.
     If queue is empty or all done/blocked, reports that the queue is clear.
     """
@@ -58,6 +82,13 @@ def launch_next_worker() -> str:
         tasks = _load_queue()
         if not tasks:
             return "queue is empty — nothing to launch"
+
+        # Dispatch switch: peek the next pending ticket's worker before any
+        # status mutation so the Igor path doesn't mark it in_progress
+        # twice (adopt_next_ticket / goal_adopt does its own bookkeeping).
+        worker = _peek_next_pending_worker(tasks)
+        if worker == "igor":
+            return adopt_next_ticket()
 
         # If anything is in_progress, check if the daemon is alive.
         # One daemon runs one ticket at a time — daemon alive means work is in progress.
@@ -227,14 +258,19 @@ def queue_pending_count() -> str:
 
 
 def adopt_next_ticket() -> str:
-    """Adopt the next-best pending ticket as Igor's active goal.
+    """Adopt the next-best pending ticket as Igor's active goal and run pe_chain.
 
     Replaces the konsole-spawn pattern of launch_next_worker: Igor works the
     ticket in-process via pe_chain, not via a new CC session. Picks the same
     weighted_ticket_score ordering as launch_next_worker for consistency.
 
-    Returns a descriptive status string. The caller (engram chain) can then
-    BRANCHIF into ENGRAM_CODE_INIT to start the coding chain on this goal.
+    D-worker-mode-routing-2026-04-21: invoked by launch_next_worker when the
+    top pending ticket has worker='igor'. Adopts the goal, then drives the
+    PROC_CODE_A_TICKET chain via pe_chain.run_pe_chain (the registered tool).
+    If pe_chain is unavailable, returns after goal_adopt so the engram-chain
+    BRANCHIF caller can still pick up.
+
+    Returns a descriptive status string.
     """
     try:
         tasks = _load_queue()
@@ -254,11 +290,35 @@ def adopt_next_ticket() -> str:
 
         from .ops import goal_adopt as _goal_adopt
 
-        result = _goal_adopt(
+        adopt_result = _goal_adopt(
             f"work ticket {ticket_id}: {pick.get('title','')}",
             source_message=f"[engram pickup] {ticket_id}",
         )
-        return f"adopted {ticket_id}: {result[:120] if isinstance(result, str) else result}"
+
+        # Drive the coding chain in-process. Prefer the tool registry so other
+        # agents can substitute (run_engram_cursor for custom entry points).
+        # Graceful fallback: if pe_chain isn't importable yet (early boot,
+        # partial registration), return after goal adoption — the engram
+        # chain's BRANCHIF caller can still pick up from the active goal.
+        chain_result = None
+        try:
+            pe_tool = registry.get("run_pe_chain")
+            if pe_tool is not None:
+                chain_result = pe_tool.fn()
+            else:
+                from .pe_chain import run_pe_chain as _run_pe_chain
+
+                chain_result = _run_pe_chain()
+        except Exception as chain_exc:
+            chain_result = f"[pe_chain skipped: {chain_exc}]"
+
+        adopt_str = (
+            adopt_result[:120] if isinstance(adopt_result, str) else str(adopt_result)
+        )
+        chain_str = (
+            chain_result[:160] if isinstance(chain_result, str) else str(chain_result)
+        )
+        return f"adopted {ticket_id}: {adopt_str} | chain: {chain_str}"
     except Exception as e:
         return f"[ERROR] adopt_next_ticket: {e}"
 
