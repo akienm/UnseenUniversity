@@ -190,6 +190,22 @@ def _safe_memory_type(value: str) -> MemoryType:
         return MemoryType.FACTUAL
 
 
+def _decode_payload(raw):
+    """Return a payload as dict if parseable, else the raw string.
+
+    Payload columns historically held engram programs (JSON dicts), but SKILL-*
+    memories store raw SKILL.md markdown. Either shape is valid — the caller is
+    expected to handle both. This decoder returns whichever shape the row
+    actually holds, with the JSON parse attempted first.
+    """
+    if isinstance(raw, dict):
+        return raw
+    try:
+        return json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        return raw
+
+
 # D200: column list owned by db_proxy; alias kept for the many call sites in this file.
 _MEM_COLS_NO_EMBED = MEM_COLS
 
@@ -3840,13 +3856,11 @@ class Cortex(IgorBase):
                 if "context_of_encoding" in keys and row["context_of_encoding"]
                 else ""
             ),
-            # D260: engram program payload
+            # D260: engram program payload.
+            # Payload can be dict (engram programs), JSON-stringified dict, or raw
+            # text (skill bodies, loose content). Tolerate all three.
             payload=(
-                (
-                    row["payload"]
-                    if isinstance(row["payload"], dict)
-                    else json.loads(row["payload"])
-                )
+                _decode_payload(row["payload"])
                 if "payload" in keys and row["payload"]
                 else None
             ),
