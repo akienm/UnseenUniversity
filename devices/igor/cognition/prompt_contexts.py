@@ -77,6 +77,36 @@ HYPOTHESIS_DISCLAIMER: str = (
     "observations, fallbacks) rather than confident.\n"
 )
 
+# T-tutor-not-oracle-prompt (D-preparse-architecture-2026-04-22).
+# When Igor consults an upstream LLM for reasoning help, the prompt asks
+# for a THINKING FRAME — questions, options, considerations — not an
+# answer. The goal is forcing Igor to reason rather than copy-paste, and
+# generating richer learning signal (reasoning-shapes transfer across
+# domains in ways output-patterns don't). Default mode for
+# reasoning_context() is "tutor". Translation/summarization calls that
+# actually want direct output can pass mode="answer" to skip this block.
+TUTOR_DIRECTIVE: str = (
+    "\n[TUTOR MODE — help Igor think, do not think for him]\n"
+    "You are Igor's reasoning tutor, not his oracle. Your job is to help "
+    "Igor work through this problem — NOT to solve it for him. Igor has "
+    "to apply your framing himself; copy-paste-worthy answers defeat the "
+    "learning loop.\n\n"
+    "In your response:\n"
+    "  1. Ask 2-4 clarifying questions Igor should ask himself before "
+    "committing to an approach.\n"
+    "  2. Surface 2-3 options or framings Igor may not have considered.\n"
+    "  3. Name which considerations are most load-bearing (not which "
+    "answer is 'right'). If one option is clearly wrong, say why — that "
+    "is framing, not answering.\n"
+    "  4. Avoid direct answers of the shape 'the solution is X' or "
+    "'you should do X'. Prefer 'consider whether X applies here, and if "
+    "it does, what would change.'\n\n"
+    "If the request is genuinely a translation/summarization task (not "
+    "reasoning assistance), say so in one sentence and produce the "
+    "direct output — tutor mode is for problems Igor is trying to "
+    "reason through, not for lookups.\n"
+)
+
 VOICE_DISCLAIMER: str = (
     "\n[VOICE CONTEXT — committed output]\n"
     "The decision has already been reasoned and validated. Your job is "
@@ -272,6 +302,7 @@ def reasoning_context(
     escalation_trail: Optional[list[dict[str, Any]]] = None,
     capabilities: Optional[list[str]] = None,
     recent_experiments: Optional[list[dict[str, Any]]] = None,
+    mode: str = "tutor",
 ) -> PromptContext:
     """Build the small cockpit prompt for reasoning LLM consultation.
 
@@ -283,9 +314,19 @@ def reasoning_context(
       update_reason. Surfaces what was already tried so the reasoning peer
       doesn't re-propose the same experiment.
 
+    mode: "tutor" (default) or "answer".
+      T-tutor-not-oracle-prompt: tutor mode injects TUTOR_DIRECTIVE which
+      instructs the upstream LLM to emit a thinking-frame (questions,
+      options, considerations) instead of a direct answer. Answer mode
+      is the pre-tutor behavior — for translation/summarization calls
+      that actually want the LLM to produce output Igor commits to.
+      Unknown modes fall back to tutor to keep the default strict.
+
     CP6: the output is tagged with a hypothesis-disclaimer banner so
     downstream layers treat the reasoning output as a hypothesis to
-    test, not a committed decision.
+    test, not a committed decision. The tutor directive (when active)
+    strengthens CP6 — it forbids direct answers, not just cautions
+    about them.
     """
     if provenance is None:
         raise ValueError("provenance is required (CP3)")
@@ -295,6 +336,16 @@ def reasoning_context(
             "to emit a prompt for an empty situation (CP1)"
         )
 
+    # T-tutor-not-oracle-prompt: tutor mode is the default; anything other
+    # than the explicit answer opt-in stays in tutor mode.
+    _tutor_mode = mode != "answer"
+    logger.debug(
+        "reasoning_context mode=%s tutor_active=%s caller=%s",
+        mode,
+        _tutor_mode,
+        provenance.caller,
+    )
+
     sections = {
         "six_rules": SIX_RULES_BLOCK,
         "identity": _identity_section(identity),
@@ -303,6 +354,7 @@ def reasoning_context(
         "capabilities": _capabilities_section(capabilities),
         "recent_experiments": _recent_experiments_section(recent_experiments),
         "situation": _situation_section(situation),
+        "tutor_directive": TUTOR_DIRECTIVE if _tutor_mode else "",
         "disclaimer": HYPOTHESIS_DISCLAIMER,
     }
 
@@ -314,6 +366,7 @@ def reasoning_context(
         sections["capabilities"],
         sections["recent_experiments"],
         sections["situation"],
+        sections["tutor_directive"],
         sections["disclaimer"],
     ]
     parts = [p for p in parts if p]
