@@ -7980,7 +7980,16 @@ class Igor(IgorBase):
         ):
             synthetic = _thread_prefix + synthetic
 
-        _reply_state: dict = {"delivered": False}
+        # T-non-terminal-emission (D-preparse-architecture-2026-04-22):
+        # Preserve full input_text + the portion the reply addresses so the
+        # post-reply residue-scan hook can evaluate "anything else interesting?"
+        # without re-walking the pipeline.
+        _reply_state: dict = {
+            "delivered": False,
+            "input_text": msg.content,
+            "reply_text": None,
+            "addressed_span": None,  # T-salience-residue-scan will populate
+        }
         _active_pursuits = pursuits_mod.registry().active()
         _reply_parent = (
             max(_active_pursuits, key=lambda p: p.commitment_ts)
@@ -7996,6 +8005,7 @@ class Igor(IgorBase):
             },
             goal_facia=lambda s: s.get("delivered") is True,
             parent_pursuit=(_reply_parent.id if _reply_parent else None),
+            metadata={"input_text": msg.content},
         )
 
         try:
@@ -8056,9 +8066,29 @@ class Igor(IgorBase):
                 self._update_thread_buffer(_thread_id, msg.content, response)
 
             _reply_state["delivered"] = bool(response)
+            _reply_state["reply_text"] = response
         finally:
             _reply_pursuit.evaluate_completion(_reply_state)
             pursuits_mod.resume_parent(_reply_pursuit)
+            # T-non-terminal-emission: reply-sent is not turn-done. Parent
+            # pursuit has resumed; now give the residue-scan hook a chance
+            # to notice unaddressed salient content and spawn a
+            # continuation-reply pursuit. Today this is a no-op stub;
+            # T-salience-residue-scan replaces it with real logic.
+            try:
+                from .cognition.residue_scan import scan_after_reply
+
+                scan_after_reply(
+                    assistant=self,
+                    reply_pursuit=_reply_pursuit,
+                    reply_state=_reply_state,
+                    thread_id=_thread_id,
+                )
+            except Exception as _residue_e:
+                log_error(
+                    kind="RESIDUE_SCAN",
+                    detail=f"wild_igor/igor/main.py residue_scan: {_residue_e}",
+                )
 
     def _handle_command(self, command: str, raw: str):
         commands = {
