@@ -431,6 +431,29 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_tctx_ctx_key ON traversal_contexts (contex
 """
 
 # ── Versioned schema migrations (T-migration-runner) ─────────────────────────
+# T-migrations-lookup-cache: per-process cache of the _migrations table.
+# Keyed by stringified db_path. Populated on first access per process per DB;
+# never invalidated — migrations are append-only, so a name once applied stays
+# applied. Callers that INSERT a new _migrations row should also .add() the
+# name to the returned set to keep the cache live. Without this cache every
+# Cortex() instantiation re-hits the DB for the same gate checks (9k+ hits/week
+# pre-cache, all for 'scope_backfill_123').
+_MIGRATION_CACHE: dict[str, set[str]] = {}
+
+
+def _applied_migrations(conn, db_key: str) -> set[str]:
+    """Return (and cache) the set of applied migration names for the given DB."""
+    if db_key in _MIGRATION_CACHE:
+        return _MIGRATION_CACHE[db_key]
+    try:
+        rows = conn.execute("SELECT name FROM _migrations").fetchall()
+        applied = {(r["name"] if hasattr(r, "__getitem__") else r[0]) for r in rows}
+    except Exception:
+        applied = set()
+    _MIGRATION_CACHE[db_key] = applied
+    return applied
+
+
 # Ordered list of (name, sql) tuples. _run_schema_migrations() checks the
 # _migrations table and only runs each entry once per box. Adding a new column
 # = append one tuple. Works for both Postgres and SQLite.
@@ -936,10 +959,8 @@ class Cortex(IgorBase):
                     "CREATE TABLE IF NOT EXISTS _migrations "
                     "(name TEXT PRIMARY KEY, applied_at TEXT NOT NULL)"
                 )
-                conn.execute(
-                    "SELECT 1 FROM _migrations WHERE name = 'scope_backfill_123'"
-                )
-                if not conn.fetchone():
+                _applied = _applied_migrations(conn, str(self.db_path))
+                if "scope_backfill_123" not in _applied:
                     conn.execute(
                         "UPDATE memories SET scope = 'instance' "
                         "WHERE memory_type IN ('EPISODIC', 'EXPERIENTIAL', 'CREDENTIAL_REF') "
@@ -954,6 +975,7 @@ class Cortex(IgorBase):
                         "VALUES ('scope_backfill_123', %s)",
                         (datetime.now().isoformat(),),
                     )
+                    _applied.add("scope_backfill_123")
             return
 
         with self._conn() as conn:
@@ -1181,10 +1203,8 @@ class Cortex(IgorBase):
             self._run_schema_migrations(conn)
             # #261: one-time data migration — tag meaning_to_me layer on interpretive edges
             # Must run after _run_schema_migrations adds the layer column.
-            _m261 = conn.execute(
-                "SELECT 1 FROM _migrations WHERE name = 'meaning_to_me_layer_tag'"
-            ).fetchone()
-            if not _m261:
+            _applied_sqlite = _applied_migrations(conn, str(self.db_path))
+            if "meaning_to_me_layer_tag" not in _applied_sqlite:
                 conn.execute("""
                     UPDATE interpretive_edges
                     SET layer = 'meaning_to_me'
@@ -1197,6 +1217,7 @@ class Cortex(IgorBase):
                     "INSERT OR IGNORE INTO _migrations(name, applied_at) VALUES (?, ?)",
                     ("meaning_to_me_layer_tag", _dt261.now().isoformat()),
                 )
+                _applied_sqlite.add("meaning_to_me_layer_tag")
             # #128: one-time data migration — promote non-empty link_ids into links_weighted
             # Must run after _run_schema_migrations adds the links_weighted column.
             _migrate_rows = conn.execute(
@@ -1240,12 +1261,7 @@ class Cortex(IgorBase):
         """
         import datetime as _dt_mig
 
-        applied: set[str] = set()
-        try:
-            rows = conn.execute("SELECT name FROM _migrations").fetchall()
-            applied = {(r["name"] if hasattr(r, "__getitem__") else r[0]) for r in rows}
-        except Exception as _e:
-            log.debug("[migration] could not read _migrations: %s", _e)
+        applied = _applied_migrations(conn, str(self.db_path))
 
         _mlog = logging.getLogger(__name__)
         for name, sql in _SCHEMA_MIGRATIONS:
@@ -1259,6 +1275,7 @@ class Cortex(IgorBase):
                         "INSERT INTO _migrations(name, applied_at) VALUES (?, ?)",
                         (name, _dt_mig.datetime.now().isoformat()),
                     )
+                    applied.add(name)
                 except Exception as _exc:
                     from ..cognition.forensic_logger import log_error as _le
 
@@ -1281,6 +1298,7 @@ class Cortex(IgorBase):
                             "INSERT INTO _migrations(name, applied_at) VALUES (?, ?)",
                             (name, _dt_mig.datetime.now().isoformat()),
                         )
+                        applied.add(name)
                     except Exception as _exc:
                         from ..cognition.forensic_logger import log_error as _le
 
