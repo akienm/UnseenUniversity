@@ -4062,7 +4062,24 @@ class Igor(IgorBase):
         if _skip_llm_preparse:
             # No I/O needed — build CSB from thalamus result instantly
             pre_csb = _rule_based_csb(_preparse_input, habits)
-            if parsed.intent != "command":  # commands don't need memory search
+            # T-gist-before-retrieve (D-preparse-architecture-2026-04-22):
+            # confidence-gated short-circuit — skip cortex.search for reflex
+            # intents (greeting, command) when the thalamus/BG gist-pass was
+            # confident. Monkey-brain pattern: recognize "friend greeting"
+            # reflexively, don't pull full memory before saying "hi back."
+            from .cognition.gist_gate import should_skip_memory_search
+
+            _skip_memory_search = should_skip_memory_search(
+                parsed.intent, _thalamus_habit, _thalamus_confidence
+            )
+            if _skip_memory_search:
+                if parsed.intent != "command":  # command already quiet
+                    loginfo(
+                        f"[dim][GIST] short-circuit: intent={parsed.intent} "
+                        f"habit={_thalamus_habit.id[:20] if _thalamus_habit else None} "
+                        f"conf={_thalamus_confidence:.2f}[/]"
+                    )
+            else:
                 _search_query = " ".join(parsed.keywords)
                 # #50: merge NE predicted search keys — topics the NE predicted before input arrived
                 if _ne_search_keys:
