@@ -197,69 +197,89 @@ def run_boredom_check(**_) -> str:
     D272: Check if milieu is too settled → run idle traversal → post wonder to channel.
     Rate-limited to IGOR_BOREDOM_COOLDOWN_SECONDS (default 15min) per post.
     T-boredom-llm-escalation: tries cascade before falling back to wonder.
+    T-single-pursuit-test-case: entry wrapped in Pursuit (gated on IGOR_PURSUITS_ENABLED).
     """
     global _last_posted, _cycle_counter
 
     now = time.time()
 
-    # Rate limit check
+    # Rate limit check (pre-commitment: not bored enough to commit yet)
     if now - _last_posted < _COOLDOWN_SECONDS:
         elapsed = int(now - _last_posted)
         remaining = _COOLDOWN_SECONDS - elapsed
         return f"[boredom_idle] cooldown: {remaining}s remaining"
 
-    # Milieu check
+    # Milieu check (pre-commitment: boredom condition not met)
     is_bored, reason = _is_bored()
     log.info(f"CHECK bored={is_bored} {reason}")
 
     if not is_bored:
         return f"[boredom_idle] not settled — {reason} — no idle traversal"
 
-    # T-boredom-llm-escalation: try cascade before falling back to wonder.
-    # If the cascade finds something actionable (a stale goal, pending task),
-    # act on that instead of posting a wandering thought.
-    cascade_reply = _try_cascade_escalation()
-    if cascade_reply:
-        _post_to_channel(cascade_reply)
-        _last_posted = now
-        log.info(f"CASCADE {cascade_reply[:120]}")
-        return f"[boredom_idle] cascade resolved: {cascade_reply[:80]}"
+    # ── Pursuit wrap (T-single-pursuit-test-case) ──────────────────────────
+    # Commit: we are bored, and we intend to do something productive about it.
+    # Goal: something was posted to channel (cascade, experiment, or wonder).
+    # Disabled-gate fallback returns a no-op Pursuit — existing code runs unchanged.
+    from ..cognition import pursuits as _pursuits
 
-    # T-experiment-tick-cadence: idle time = experiment time.
+    _state: dict = {"posted": False, "outcome": None}
+    _pursuit = _pursuits.spawn(
+        name="address_boredom",
+        entry_stimulus={"kind": "boredom_trigger", "reason": reason, "ts": now},
+        goal_facia=lambda s: s.get("posted") is True,
+    )
     try:
-        from ..cognition.experiment_scheduler import ExperimentScheduler
-        from ..memory.cortex import Cortex as _Cortex
+        # T-boredom-llm-escalation: try cascade before falling back to wonder.
+        cascade_reply = _try_cascade_escalation()
+        if cascade_reply:
+            _post_to_channel(cascade_reply)
+            _last_posted = now
+            _state["posted"] = True
+            _state["outcome"] = f"cascade: {cascade_reply[:80]}"
+            log.info(f"CASCADE {cascade_reply[:120]}")
+            return f"[boredom_idle] cascade resolved: {cascade_reply[:80]}"
 
-        _sched = ExperimentScheduler(_Cortex())
-        _exp = _sched.tick()
-        if _exp:
-            log.info(
-                "EXPERIMENT tick ran %s → %s", _exp.experiment_id, _exp.status.value
-            )
-            return f"[boredom_idle] experiment ran: {_exp.experiment_id}"
-    except Exception as _exp_e:
-        log.debug("experiment tick in boredom_idle: %s", _exp_e)
+        # T-experiment-tick-cadence: idle time = experiment time.
+        try:
+            from ..cognition.experiment_scheduler import ExperimentScheduler
+            from ..memory.cortex import Cortex as _Cortex
 
-    # Generate wonder (fallback when cascade exhausts)
-    _cycle_counter += 1
-    wonder = None
+            _sched = ExperimentScheduler(_Cortex())
+            _exp = _sched.tick()
+            if _exp:
+                log.info(
+                    "EXPERIMENT tick ran %s → %s", _exp.experiment_id, _exp.status.value
+                )
+                _state["posted"] = True
+                _state["outcome"] = f"experiment: {_exp.experiment_id}"
+                return f"[boredom_idle] experiment ran: {_exp.experiment_id}"
+        except Exception as _exp_e:
+            log.debug("experiment tick in boredom_idle: %s", _exp_e)
 
-    if _cycle_counter % 2 == 0:
-        wonder = _get_ef_wonder()
-    else:
-        wonder = _get_topic_wonder()
+        # Generate wonder (fallback when cascade exhausts)
+        _cycle_counter += 1
+        wonder = None
 
-    if wonder is None:
-        wonder = _get_ef_wonder() or _get_topic_wonder()
+        if _cycle_counter % 2 == 0:
+            wonder = _get_ef_wonder()
+        else:
+            wonder = _get_topic_wonder()
 
-    if wonder is None:
-        wonder = "[Igor notices] settled... nothing pulling at me right now."
+        if wonder is None:
+            wonder = _get_ef_wonder() or _get_topic_wonder()
 
-    _post_to_channel(wonder)
-    _last_posted = now
-    log.info(f"POST {wonder[:120]}")
+        if wonder is None:
+            wonder = "[Igor notices] settled... nothing pulling at me right now."
 
-    return f"[boredom_idle] posted: {wonder[:80]}"
+        _post_to_channel(wonder)
+        _last_posted = now
+        _state["posted"] = True
+        _state["outcome"] = f"wonder: {wonder[:80]}"
+        log.info(f"POST {wonder[:120]}")
+
+        return f"[boredom_idle] posted: {wonder[:80]}"
+    finally:
+        _pursuit.evaluate_completion(_state)
 
 
 # ── Register ──────────────────────────────────────────────────────────────────
