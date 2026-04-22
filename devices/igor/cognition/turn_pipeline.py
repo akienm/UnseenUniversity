@@ -310,7 +310,41 @@ class TurnPipeline(IgorBase):
         required when reasoning escalation actually runs a workflow;
         if omitted and cascade ESCALATES, the turn returns a hedged
         reply explaining the missing peer.
+
+        T-shadow-stream-reasoning hook: after the turn resolves, the
+        reply + input are handed to the module-level shadow reasoner
+        (log-only; env-gated; default off). Detached daemon thread;
+        never blocks or affects the returned TurnResult.
         """
+        result = self._run_turn_inner(situation, peer_advisor=peer_advisor)
+        self._maybe_shadow_record(situation, result)
+        return result
+
+    def _maybe_shadow_record(
+        self, situation: CascadeSituation, result: TurnResult
+    ) -> None:
+        """Fire-and-forget shadow recording. Swallows all exceptions —
+        shadow is telemetry, never on Igor's critical path."""
+        try:
+            from .shadow_reasoner import ReasonResult, record_turn_divergence
+
+            query = getattr(situation, "query", "") or ""
+            igor_r = ReasonResult(
+                output=result.reply_text or "",
+                confidence=0.7,
+                latency_ms=0,
+                source="igor",
+            )
+            record_turn_divergence(situation_query=query, igor_result=igor_r)
+        except Exception as exc:
+            logger.debug("shadow record hook failed: %s", exc)
+
+    def _run_turn_inner(
+        self,
+        situation: CascadeSituation,
+        *,
+        peer_advisor: Optional[PeerAdvisor] = None,
+    ) -> TurnResult:
         trace: list[TraceEntry] = []
 
         # [1] CASCADE WALK
