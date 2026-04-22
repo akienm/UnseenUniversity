@@ -83,6 +83,48 @@ def analyze_slow_queries(top_n: str = "10") -> str:
     return "\n".join(lines)
 
 
+def boot_surface_slow_queries(cortex, top_n: int = 5) -> None:
+    """T-slow-query-boot-surface: push a compact slow-query report to ring_memory at boot.
+
+    Keeps the full analysis on-disk in db_queries.log; surfaces the top-N worst
+    offenders to ring as a single SLOW_QUERY_REPORT entry. Before this, the
+    analyzer existed (analyze_slow_queries tool) but findings were never
+    proactively visible — only on-demand.
+
+    Silent on any failure — boot must not block on diagnostics.
+    """
+    try:
+        if not _LOG_PATH.exists():
+            return
+        freq: Counter = Counter()
+        worst_ms: defaultdict = defaultdict(int)
+        count: defaultdict = defaultdict(int)
+        total_ms: defaultdict = defaultdict(int)
+        for line in _LOG_PATH.read_text(errors="replace").splitlines():
+            m = re.match(r".* elapsed=(\d+)ms sql=(.+)", line)
+            if not m:
+                continue
+            ms, sql = int(m.group(1)), m.group(2)
+            key = _normalize(sql)
+            freq[key] += 1
+            count[key] += 1
+            total_ms[key] += ms
+            if ms > worst_ms[key]:
+                worst_ms[key] = ms
+        if not freq:
+            return
+        top = sorted(worst_ms.items(), key=lambda x: -x[1])[:top_n]
+        lines = [f"SLOW_QUERY_REPORT|total={sum(freq.values())}|top{top_n}_by_worst:"]
+        for key, ms in top:
+            avg = total_ms[key] // max(count[key], 1)
+            lines.append(
+                f"  {ms:5d}ms worst  {freq[key]}x hits  avg={avg}ms  {key[:70]}"
+            )
+        cortex.write_ring("\n".join(lines), category="db_diagnostic")
+    except Exception:
+        pass
+
+
 registry.register(
     Tool(
         name="analyze_slow_queries",

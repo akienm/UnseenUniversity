@@ -930,6 +930,16 @@ class Igor(IgorBase):
                 f"BOOT_INVENTORY|open_episodics={len(open_items)}",
                 category="session_control",
             )
+            # T-slow-query-boot-surface: push top slow-query offenders to ring so
+            # DB perf drift is visible without on-demand tool calls.
+            try:
+                from .tools.slow_query import boot_surface_slow_queries
+
+                boot_surface_slow_queries(self.cortex, top_n=5)
+            except Exception as _bare_e2:
+                log_error(
+                    kind="BARE_EXCEPT", detail=f"slow_query boot surface: {_bare_e2}"
+                )
         except Exception as _bare_e:
             log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}")
 
