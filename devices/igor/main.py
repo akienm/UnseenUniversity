@@ -56,6 +56,7 @@ from .cognition.system_prompt import build_boot_message, invalidate_cache
 from .cognition import observer
 from .cognition import milieu as milieu_mod
 from .cognition import basal_ganglia
+from .cognition import pursuits as pursuits_mod
 from .cognition.narrative_engine import NarrativeEngine
 from .cognition.push_sources import run_background_sources, user_input_source
 from .cognition.multi_cloud import query_multiple, compare_responses
@@ -7791,7 +7792,19 @@ class Igor(IgorBase):
         return text
 
     def _process_network_msg(self, msg, _thread_id: str):
-        """Build synthetic input from a network message and process it."""
+        """Build synthetic input from a network message, process it, deliver reply.
+
+        Reply-forms-Pursuit (T-reply-forms-pursuit, 2026-04-22): the reply
+        dispatch is wrapped in a Pursuit so in-flight work (e.g. an active
+        address_boredom pursuit scanning the foreman queue) is preserved
+        across the interruption. If any Pursuit is active when a reply
+        arrives, the reply-Pursuit spawns as its child — parent auto-
+        suspends, reply fires, completion dopamine signals parent, then
+        resume_parent lifts the parent back to active. Without this wrap,
+        the reply action consumed the attention slot and upstream work
+        was orphaned. Gated by IGOR_PURSUITS_ENABLED (disabled → no-op
+        Pursuit, existing behavior unchanged).
+        """
         import re as _re
 
         # #119: extract session_id for targeted web delivery
@@ -7940,61 +7953,85 @@ class Igor(IgorBase):
         ):
             synthetic = _thread_prefix + synthetic
 
-        response = self._process(synthetic, thread_id=_thread_id, author=msg.author)
+        _reply_state: dict = {"delivered": False}
+        _active_pursuits = pursuits_mod.registry().active()
+        _reply_parent = (
+            max(_active_pursuits, key=lambda p: p.commitment_ts)
+            if _active_pursuits
+            else None
+        )
+        _reply_pursuit = pursuits_mod.spawn(
+            name=f"reply_to_{_author}",
+            entry_stimulus={
+                "source": msg.source,
+                "author": _author,
+                "thread_id": _thread_id,
+            },
+            goal_facia=lambda s: s.get("delivered") is True,
+            parent_pursuit=(_reply_parent.id if _reply_parent else None),
+        )
 
-        # Log outgoing + deliver
-        if _ctx and not _skip_ctx and response:
-            self._user_ctx_mgr.log(_ctx, "out", response, _thread_id)
-        if msg.source == "web" and response:
-            # D263: web_server.send → _channel_append("igor", ...) writes to channel_messages
-            # CC-sourced turns are source="web" so this already handles channel visibility
-            # epic-polish: suppress bare acks and raw tool leaks before channel post
-            if _is_bare_ack(response):
+        try:
+            response = self._process(synthetic, thread_id=_thread_id, author=msg.author)
+
+            # Log outgoing + deliver
+            if _ctx and not _skip_ctx and response:
+                self._user_ctx_mgr.log(_ctx, "out", response, _thread_id)
+            if msg.source == "web" and response:
+                # D263: web_server.send → _channel_append("igor", ...) writes to channel_messages
+                # CC-sourced turns are source="web" so this already handles channel visibility
+                # epic-polish: suppress bare acks and raw tool leaks before channel post
+                if _is_bare_ack(response):
+                    import logging as _logging
+
+                    _logging.getLogger(__name__).info(
+                        "bare-ack suppressed: %r", response[:80]
+                    )
+                elif _is_raw_tool_leak(response):
+                    import logging as _logging
+
+                    _logging.getLogger(__name__).info(
+                        "raw-tool-leak suppressed: %r", response[:120]
+                    )
+                else:
+                    # T-web-chat-reply-not-surfacing diagnostic: log every web
+                    # delivery attempt so the 'reply visible in console but missing
+                    # from web UI' case can be traced on the wire. On confirmed
+                    # bug, check this log line, check channel_messages for an
+                    # INSERT at the same timestamp, check WS broadcast logs.
+                    import logging as _logging
+
+                    _logging.getLogger(__name__).info(
+                        "web_server.send attempt session=%s len=%d head=%r",
+                        _session_id,
+                        len(response),
+                        response[:80],
+                    )
+                    web_server.send(response, session_id=_session_id)
+            elif response and msg.source == "web":
+                # Should not be reachable given the outer condition, but guard anyway
+                pass
+            elif msg.source == "web" and not response:
+                # T-web-chat-reply-not-surfacing diagnostic: empty-response path.
+                # If Igor generates something to console but response is empty at
+                # this point, the response came from a different call site.
                 import logging as _logging
 
-                _logging.getLogger(__name__).info(
-                    "bare-ack suppressed: %r", response[:80]
+                _logging.getLogger(__name__).warning(
+                    "web-source turn produced empty response; reply (if any) would need separate delivery path"
                 )
-            elif _is_raw_tool_leak(response):
-                import logging as _logging
 
-                _logging.getLogger(__name__).info(
-                    "raw-tool-leak suppressed: %r", response[:120]
-                )
-            else:
-                # T-web-chat-reply-not-surfacing diagnostic: log every web
-                # delivery attempt so the 'reply visible in console but missing
-                # from web UI' case can be traced on the wire. On confirmed
-                # bug, check this log line, check channel_messages for an
-                # INSERT at the same timestamp, check WS broadcast logs.
-                import logging as _logging
+            if (
+                response
+                and msg.author != "claude-code"
+                and not msg.content.strip().startswith("/")
+            ):
+                self._update_thread_buffer(_thread_id, msg.content, response)
 
-                _logging.getLogger(__name__).info(
-                    "web_server.send attempt session=%s len=%d head=%r",
-                    _session_id,
-                    len(response),
-                    response[:80],
-                )
-                web_server.send(response, session_id=_session_id)
-        elif response and msg.source == "web":
-            # Should not be reachable given the outer condition, but guard anyway
-            pass
-        elif msg.source == "web" and not response:
-            # T-web-chat-reply-not-surfacing diagnostic: empty-response path.
-            # If Igor generates something to console but response is empty at
-            # this point, the response came from a different call site.
-            import logging as _logging
-
-            _logging.getLogger(__name__).warning(
-                "web-source turn produced empty response; reply (if any) would need separate delivery path"
-            )
-
-        if (
-            response
-            and msg.author != "claude-code"
-            and not msg.content.strip().startswith("/")
-        ):
-            self._update_thread_buffer(_thread_id, msg.content, response)
+            _reply_state["delivered"] = bool(response)
+        finally:
+            _reply_pursuit.evaluate_completion(_reply_state)
+            pursuits_mod.resume_parent(_reply_pursuit)
 
     def _handle_command(self, command: str, raw: str):
         commands = {
