@@ -388,6 +388,12 @@ class WordGraph(IgorBase):
         # G-WG3: doc_count write batching — flush every N docs instead of every index()
         self._pending_doc_count: int = 0
         self._DOC_FLUSH_EVERY: int = 10
+        # T-wg-meta-upsert-latency: word_count write batching — same pattern as
+        # doc_count above. Every index() call was upserting the hot 'word_count'
+        # row, hitting up to 5.8s worst-case on row-lock contention. Buffer in
+        # memory, flush every N new words or on shutdown/build_idf.
+        self._pending_word_count: int = 0
+        self._WORD_FLUSH_EVERY: int = 50
 
     # ── Backward-compat properties ─────────────────────────────────────────────
 
@@ -430,6 +436,32 @@ class WordGraph(IgorBase):
                 )
             self._pending_doc_count = 0
 
+    def _inc_word_count(self, conn, delta: int) -> None:
+        """T-wg-meta-upsert-latency: batch word_count writes. Matches G-WG3 doc_count shape."""
+        if delta <= 0:
+            return
+        self._pending_word_count += delta
+        if self._pending_word_count >= self._WORD_FLUSH_EVERY:
+            conn.execute(
+                "INSERT INTO wg_meta (key, value) VALUES ('word_count', ?)"
+                " ON CONFLICT(key) DO UPDATE"
+                " SET value = CAST(CAST(wg_meta.value AS INTEGER) + ? AS TEXT)",
+                (str(self._pending_word_count), self._pending_word_count),
+            )
+            self._pending_word_count = 0
+
+    def flush_word_count(self) -> None:
+        """Flush any pending word_count increment to DB. Call on shutdown or build_idf."""
+        if self._pending_word_count > 0:
+            with self._db() as conn:
+                conn.execute(
+                    "INSERT INTO wg_meta (key, value) VALUES ('word_count', ?)"
+                    " ON CONFLICT(key) DO UPDATE"
+                    " SET value = CAST(CAST(wg_meta.value AS INTEGER) + ? AS TEXT)",
+                    (str(self._pending_word_count), self._pending_word_count),
+                )
+            self._pending_word_count = 0
+
     # ── Indexing ───────────────────────────────────────────────────────────────
 
     def index(
@@ -466,21 +498,18 @@ class WordGraph(IgorBase):
                     [(w, lang) for w in unique],
                 )
                 # Increment word_count by number of genuinely new words (INSERT OR IGNORE
-                # only counts actual inserts in changes(), not ignored conflicts)
+                # only counts actual inserts in changes(), not ignored conflicts).
+                # T-wg-meta-upsert-latency: batched via _inc_word_count instead of
+                # direct upsert (hot row, 5.8s worst-case contention pre-batch).
                 _new_words = conn.execute("SELECT changes()").fetchone()[0]
-                if _new_words > 0:
-                    conn.execute(
-                        "INSERT INTO wg_meta (key, value) VALUES ('word_count', ?)"
-                        " ON CONFLICT(key) DO UPDATE"
-                        " SET value = CAST(CAST(wg_meta.value AS INTEGER) + ? AS TEXT)",
-                        (str(_new_words), _new_words),
-                    )
+                self._inc_word_count(conn, _new_words)
 
                 self._inc_doc_count(conn)
 
     def build_idf(self) -> None:
         """Compute and persist IDF weights. Call once after all index() calls."""
         self.flush_doc_count()  # G-WG3: ensure pending count is flushed before IDF uses it
+        self.flush_word_count()  # T-wg-meta-upsert-latency: same pattern for word_count
         n = max(self._doc_count, 1)
         with self._lock:
             with self._db() as conn:
