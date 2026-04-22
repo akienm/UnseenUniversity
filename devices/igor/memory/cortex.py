@@ -440,6 +440,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_tctx_ctx_key ON traversal_contexts (contex
 # pre-cache, all for 'scope_backfill_123').
 _MIGRATION_CACHE: dict[str, set[str]] = {}
 
+# T-get-attractors-tree-walk: TTL cache for get_attractors(). Key =
+# (db_path, limit) → (monotonic_ts, result_list). Attractor rankings shift
+# slowly, so a short TTL eliminates the 891x / avg-181ms hot loop without
+# risking stale data at decision-relevant timescales. For a proper materialized
+# hot_attractors subsystem, see follow-on ticket (not in this ticket's scope).
+_ATTRACTOR_CACHE: dict[tuple, tuple[float, list]] = {}
+_ATTRACTOR_CACHE_TTL_SEC: float = 60.0
+
 
 def _applied_migrations(conn, db_key: str) -> set[str]:
     """Return (and cache) the set of applied migration names for the given DB."""
@@ -5269,7 +5277,24 @@ class Cortex(IgorBase):
         T-graph-calving: Return top attractor nodes scored by activation_count × (1 + inbound_edges).
         Attractors are emergent — not labeled, just the most activated + most-linked nodes.
         Excludes PROCEDURAL habits (they're habits, not knowledge attractors).
+
+        T-get-attractors-tree-walk: result cached in-process for
+        _ATTRACTOR_CACHE_TTL_SEC. The underlying query is a full-table scan
+        (LEFT JOIN + GROUP BY + ORDER BY computed product) — 891x hits / avg
+        181ms in db_queries.log pre-cache. Attractor rankings change slowly
+        (activation_count per memory access, edge counts on interpretive edge
+        creation), so a short TTL is safe. Follow-on: a proper hot_attractors
+        materialized subsystem would be strictly better — this is the small
+        fix.
         """
+        import time
+
+        cache_key = (str(self.db_path), limit)
+        now = time.monotonic()
+        cached = _ATTRACTOR_CACHE.get(cache_key)
+        if cached is not None and (now - cached[0]) < _ATTRACTOR_CACHE_TTL_SEC:
+            return cached[1]
+
         with self._conn() as conn:
             id_rows = conn.execute(
                 """
@@ -5284,7 +5309,9 @@ class Cortex(IgorBase):
                 (limit,),
             ).fetchall()
         ids = [r["id"] for r in id_rows]
-        return [m for m in (self.get(i) for i in ids) if m]
+        result = [m for m in (self.get(i) for i in ids) if m]
+        _ATTRACTOR_CACHE[cache_key] = (now, result)
+        return result
 
     def node_depth(self, node_id: str, max_depth: int = 6) -> int:
         """
