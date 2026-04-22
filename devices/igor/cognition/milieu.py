@@ -656,6 +656,36 @@ class Milieu(IgorBase):
         if self.delta(_prev) >= SPIKE_THRESHOLD:
             _contribute_to_global(s, GLOBAL_ALPHA_SPIKE)
 
+    def ingest_bliss_lift(
+        self,
+        bliss_level: float,
+        floor_lift: float = 0.2,
+        dominance_bump: float = 0.15,
+    ) -> None:
+        """
+        Apply the μ-opioid 'liking' counterpart to pursuit completions.
+
+        Bliss is a slow integrator (see bliss_integrator.py). When bliss is
+        high, the system's baseline feeling state should lift: valence is
+        floored above neutral, dominance nudged up. Does not override the
+        current state — only raises floors.
+        """
+        try:
+            level = max(0.0, min(1.0, float(bliss_level)))
+        except (TypeError, ValueError):
+            return
+        if level <= 0.0:
+            return
+        s = self._state
+        v_floor = level * floor_lift
+        d_floor = 0.3 + level * dominance_bump  # 0.3 is dominance baseline (see tick)
+        if s.valence < v_floor:
+            s.valence = v_floor
+        if s.dominance < d_floor:
+            s.dominance = d_floor
+        s.last_update = time.time()
+        self._save()
+
     def tick(self) -> MilieuState:
         """
         Natural decay toward neutral. Called by MilieuSource timer even when
