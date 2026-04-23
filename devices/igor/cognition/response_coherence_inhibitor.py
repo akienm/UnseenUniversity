@@ -352,21 +352,37 @@ def check_coherence(
     }
 
 
-def suppress_incoherent(result: dict, response: str) -> str:
-    """T-active-suppression-coherence: replace incoherent habit emissions.
+def suppress_incoherent(result: dict, response: str, source_label: str = "") -> str:
+    """T-active-suppression-coherence: replace incoherent HABIT emissions only.
 
-    When check_coherence flags a response as incoherent (habit misfire),
-    replace it with an empty string so the response path emits nothing
-    rather than off-topic garbage. The TWM marker already ensures the
-    next turn self-corrects.
+    When check_coherence flags a response as incoherent AND the source is a
+    habit, replace it with an empty string so the response path emits nothing
+    rather than off-topic garbage. The TWM marker already ensures the next
+    turn self-corrects.
 
-    Returns original response if not flagged, empty string if flagged.
+    LLM-tier responses (source_label='llm_or_tier0' or empty) are NEVER
+    suppressed — Jaccard word-overlap is the wrong metric for conversational
+    replies, which introduce new concepts rather than echoing prompt tokens.
+    Suppressing LLM replies silently dropped every non-habit web reply
+    (D-web-reply-coherence-inhibitor-fix-2026-04-23).
+
+    Returns original response if not flagged or not habit-sourced; empty string
+    only when flagged AND source is a habit.
     """
     if not result.get("flagged"):
+        return response
+    if not source_label.startswith("habit:"):
+        _coherence_log(
+            "flagged_not_suppressed",
+            score=result.get("score", 0),
+            source=source_label,
+            original_len=len(response),
+        )
         return response
     _coherence_log(
         "suppressed",
         score=result.get("score", 0),
+        source=source_label,
         original_len=len(response),
     )
     return ""
