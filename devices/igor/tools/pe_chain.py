@@ -2074,8 +2074,25 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
     basket["escalate_reason"] = reason
     log.info(f"ESCALATE: {ticket_id} — {reason}")
 
-    # D331: HIGH inertia → propose for approval instead of blocking
+    # D331: HIGH inertia → propose for approval instead of blocking.
+    # T-escalate-validates-file-exists: if the target_file doesn't exist
+    # under the repo root, tier2 hallucinated a path. Asking CC to approve
+    # editing a nonexistent file is noise — rewrite the reason and fall
+    # through to the block branch so the real bug is visible.
     is_high_inertia = "HIGH inertia" in reason
+    target_file = ""
+    _hyp = basket.get("hypothesis")
+    if isinstance(_hyp, dict):
+        target_file = _hyp.get("file", "") or ""
+    if is_high_inertia and target_file and not (_REPO_ROOT / target_file).exists():
+        reason = (
+            f"hallucinated file: {target_file} "
+            f"(tier2 proposed a path that does not exist)"
+        )
+        basket["escalate_reason"] = reason
+        log.info(f"ESCALATE: hallucinated-file rewrite — {reason}")
+        is_high_inertia = False
+
     if is_high_inertia and ticket_id and ticket_id != "unknown":
         # Compose a design proposal from the basket
         plan = basket.get("plan_summary", "")

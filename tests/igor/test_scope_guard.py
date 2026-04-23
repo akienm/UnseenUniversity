@@ -83,8 +83,11 @@ def test_scope_guard_medium_file_passes():
 
 
 def test_scope_guard_high_file_write_escalates():
+    # Use a real HIGH-inertia file — kernel.py doesn't exist, and the
+    # T-escalate-validates-file-exists guard rewrites reasons for nonexistent
+    # target_files to "hallucinated file: ..." (block, not propose).
     result = run_scope_guard(
-        _basket("wild_igor/igor/brainstem/kernel.py", op_type="write")
+        _basket("wild_igor/igor/brainstem/core_patterns.py", op_type="write")
     )
     # _pe_escalate() sets escalate_reason (not pe_status) and closes the goal
     assert "HIGH" in result.get("escalate_reason", "")
@@ -100,7 +103,7 @@ def test_scope_guard_high_file_delete_escalates():
 def test_scope_guard_high_file_read_passes():
     """Read ops on HIGH files are safe — only writes/deletes escalate."""
     result = run_scope_guard(
-        _basket("wild_igor/igor/brainstem/kernel.py", op_type="read")
+        _basket("wild_igor/igor/brainstem/core_patterns.py", op_type="read")
     )
     assert result.get("pe_status") != "escalated"
     assert "escalate_reason" not in result
