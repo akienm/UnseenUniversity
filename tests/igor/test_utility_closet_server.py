@@ -157,7 +157,9 @@ class TestAgentRegistry:
         srv.agent_send("test message", "igor", "shared")
 
         with srv._client_lock:
-            hist = srv._session_history.get("shared", [])
+            # agent_send canonicalizes "shared" → "comms://shared" to match
+            # the browser's join form.
+            hist = srv._session_history.get("comms://shared", [])
         assert len(hist) == 1
         assert hist[0]["author"] == "igor"
         assert hist[0]["content"] == "test message"
