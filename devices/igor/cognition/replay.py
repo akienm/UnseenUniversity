@@ -150,7 +150,7 @@ class ConsolidationReplay(IgorBase):
             return idle_time >= self.NO_ACTIVITY_THRESHOLD_SEC
 
         except Exception as e:
-            log_error(f"[ConsolidationReplay] Error checking quiet period: {e}")
+            log_error(kind="REPLAY_ERROR", detail=f"Error checking quiet period: {e}")
             return False
 
     def _find_unprocessed_nodes(self, cortex) -> List[dict]:
@@ -204,7 +204,9 @@ class ConsolidationReplay(IgorBase):
             ]
 
         except Exception as e:
-            log_error(f"[ConsolidationReplay] Error finding unprocessed nodes: {e}")
+            log_error(
+                kind="REPLAY_ERROR", detail=f"Error finding unprocessed nodes: {e}"
+            )
             return []
 
     def _run_replay(self, cortex, nodes: List[dict]) -> ReplayStats:
@@ -318,7 +320,7 @@ class ConsolidationReplay(IgorBase):
         try:
             src_mem = cortex.get(src_id)
             if not src_mem:
-                log_error(f"[ConsolidationReplay] Source node {src_id} not found")
+                log_error(kind="REPLAY_ERROR", detail=f"Source node {src_id} not found")
                 return False
 
             # Check if edge already exists
@@ -340,7 +342,8 @@ class ConsolidationReplay(IgorBase):
 
         except Exception as e:
             log_error(
-                f"[ConsolidationReplay] Error upserting edge {src_id}→{dst_id}: {e}"
+                kind="REPLAY_ERROR",
+                detail=f"Error upserting edge {src_id}→{dst_id}: {e}",
             )
             return False
 
@@ -370,7 +373,7 @@ class ConsolidationReplay(IgorBase):
             cortex.store(cursor)
 
         except Exception as e:
-            log_error(f"[ConsolidationReplay] Error updating cursor: {e}")
+            log_error(kind="REPLAY_ERROR", detail=f"Error updating cursor: {e}")
 
     def _log_pass(self, stats: ReplayStats) -> None:
         """Log replay pass statistics forensically."""
