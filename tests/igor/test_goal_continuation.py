@@ -213,7 +213,7 @@ class TestGoalContinuationSteps(unittest.TestCase):
         self.assertTrue(any("0-1" in m for m in posted))
 
     def test_step4_lm_territory(self):
-        """Step 4+ returns LLM territory message without posting or advancing."""
+        """Step 4+ with live GOAL_READY TWM entry: no-op LLM-territory path."""
         goal = _make_goal(step=4)
         from wild_igor.igor.tools import goal_continuation as gc
 
@@ -221,6 +221,10 @@ class TestGoalContinuationSteps(unittest.TestCase):
 
         mock_cortex = MagicMock()
         mock_cortex.get_by_type.return_value = [goal]
+        # TWM already has a live goal_ready for this ticket — no re-emit
+        mock_cortex.twm_read.return_value = [
+            {"id": 1, "content_csb": "GOAL_READY|T-test-001"}
+        ]
         mock_mt = MagicMock()
         mock_mt.GOAL = "GOAL"
 
@@ -236,6 +240,80 @@ class TestGoalContinuationSteps(unittest.TestCase):
         self.assertIn("LLM territory", result)
         self.assertEqual(goal.metadata["current_step"], 4)  # unchanged
         self.assertEqual(len(posted), 0)
+        # Live entry means twm_push must NOT be called
+        mock_cortex.twm_push.assert_not_called()
+
+    def test_step4_re_emits_goal_ready_when_twm_empty(self):
+        """Step 4 re-emits GOAL_READY when TWM has no live entry (restart recovery)."""
+        goal = _make_goal(step=4)
+        from wild_igor.igor.tools import goal_continuation as gc
+
+        mock_cortex = MagicMock()
+        mock_cortex.get_by_type.return_value = [goal]
+        mock_cortex.twm_read.return_value = []  # TWM empty — post-restart shape
+        mock_mt = MagicMock()
+        mock_mt.GOAL = "GOAL"
+
+        with patch(_CORTEX_PATH, return_value=mock_cortex), patch(
+            _MT_PATH, mock_mt
+        ), patch.object(gc, "_run_bash"), patch.object(gc, "_post_to_channel"), patch(
+            _HUMAN_GATE_PATH, return_value=True
+        ):
+            result = gc.run_goal_continuation()
+
+        self.assertIn("re-emitted", result)
+        self.assertIn("T-test-001", result)
+        self.assertEqual(goal.metadata["current_step"], 4)  # stays at 4
+        mock_cortex.twm_push.assert_called_once()
+        # Verify category + content shape are what the listener expects
+        kwargs = mock_cortex.twm_push.call_args.kwargs
+        self.assertEqual(kwargs.get("category"), "goal_ready")
+        self.assertIn("GOAL_READY|T-test-001", kwargs.get("content_csb", ""))
+
+    def test_step4_re_emits_when_twm_has_entry_for_other_ticket(self):
+        """Re-emit fires if TWM has a goal_ready for a DIFFERENT ticket."""
+        goal = _make_goal(step=4)
+        from wild_igor.igor.tools import goal_continuation as gc
+
+        mock_cortex = MagicMock()
+        mock_cortex.get_by_type.return_value = [goal]
+        # Entry exists but for a different ticket
+        mock_cortex.twm_read.return_value = [
+            {"id": 5, "content_csb": "GOAL_READY|T-some-other"}
+        ]
+        mock_mt = MagicMock()
+        mock_mt.GOAL = "GOAL"
+
+        with patch(_CORTEX_PATH, return_value=mock_cortex), patch(
+            _MT_PATH, mock_mt
+        ), patch.object(gc, "_run_bash"), patch.object(gc, "_post_to_channel"), patch(
+            _HUMAN_GATE_PATH, return_value=True
+        ):
+            result = gc.run_goal_continuation()
+
+        self.assertIn("re-emitted", result)
+        mock_cortex.twm_push.assert_called_once()
+
+    def test_step4_no_ticket_id_no_re_emit(self):
+        """Step 4 with no ticket_id in goal: safe no-op, no TWM calls."""
+        goal = _make_goal(step=4, task="no ticket here just a question")
+        from wild_igor.igor.tools import goal_continuation as gc
+
+        mock_cortex = MagicMock()
+        mock_cortex.get_by_type.return_value = [goal]
+        mock_mt = MagicMock()
+        mock_mt.GOAL = "GOAL"
+
+        with patch(_CORTEX_PATH, return_value=mock_cortex), patch(
+            _MT_PATH, mock_mt
+        ), patch.object(gc, "_run_bash"), patch.object(gc, "_post_to_channel"), patch(
+            _HUMAN_GATE_PATH, return_value=True
+        ):
+            result = gc.run_goal_continuation()
+
+        self.assertIn("LLM territory", result)
+        mock_cortex.twm_read.assert_not_called()
+        mock_cortex.twm_push.assert_not_called()
 
 
 if __name__ == "__main__":
