@@ -2111,6 +2111,21 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
             ["python3", str(_CC_QUEUE), "propose", ticket_id, proposal[:300]],
             timeout=15,
         )
+        # T-cc-inbox-producer: also push to CC inbox so /readinbox surfaces the
+        # pending approval on next CC turn (Akien doesn't have to flag it).
+        try:
+            from ..cognition.cc_inbox_bridge import post_to_cc_inbox as _cc_post
+
+            _cc_post(
+                kind="pe_chain_design_proposal",
+                summary=f"Igor proposes edit to {target_file} (HIGH inertia)",
+                body=proposal,
+                ticket_id=ticket_id,
+                urgency="high",
+                response_expected=True,
+            )
+        except Exception:
+            pass
     else:
         # Dedup on (ticket_id, reason-prefix): if the same ticket blocks for
         # the same reason twice within 30 min, only the first hits the channel.
@@ -2126,6 +2141,21 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
                 ["python3", str(_CC_QUEUE), "block", ticket_id, reason[:120]],
                 timeout=15,
             )
+        # T-cc-inbox-producer: push to CC inbox so /readinbox shows the block.
+        # These are the drops we want CC to see without relying on Akien.
+        try:
+            from ..cognition.cc_inbox_bridge import post_to_cc_inbox as _cc_post
+
+            _cc_post(
+                kind="pe_chain_block",
+                summary=f"{ticket_id} blocked: {reason[:120]}",
+                body=f"attempts={basket.get('attempt_count', 0)}. full reason: {reason}",
+                ticket_id=ticket_id if ticket_id and ticket_id != "unknown" else None,
+                urgency="normal",
+                response_expected=True,
+            )
+        except Exception:
+            pass
 
     # Close the active GOAL so the habit does not re-trigger the chain
     try:
