@@ -1669,6 +1669,7 @@ def pe_test(basket: dict, preflight: bool = False) -> dict:
         raw = _run_tests()
         passed = "passed" in raw and "failed" not in raw and "error" not in raw.lower()
         basket["test_result"] = "pass" if passed else f"fail: {raw[:300]}"
+        basket["test_output"] = raw
         level = "preflight" if preflight else "post-edit"
         log.info(f"TEST ({level}, ops.run_tests): {basket['test_result'][:80]}")
         return basket
@@ -1686,6 +1687,7 @@ def pe_test(basket: dict, preflight: bool = False) -> dict:
         "passed" in result and "failed" not in result and "error" not in result.lower()
     )
     basket["test_result"] = "pass" if passed else f"fail: {result[:300]}"
+    basket["test_output"] = result
     level = "preflight" if preflight else "post-edit"
     log.info(f"TEST ({level}, pytest): {basket['test_result'][:80]}")
     return basket
@@ -2170,15 +2172,38 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
         return basket
 
     # PRE-FLIGHT: Run tests BEFORE hypothesize to catch broken test suite early.
-    # If tests already fail, escalate immediately instead of burning 3 attempts.
+    # On failure, try preflight_heal to classify + auto-repair known rot patterns
+    # (e.g. live-network test with no mock). If heal succeeds, re-run pre-flight
+    # once and proceed. Otherwise escalate as before.
     basket = pe_test(basket, preflight=True)
     if basket.get("test_result", "").startswith("fail"):
-        basket["escalate_reason"] = (
-            f"pre-flight: test suite already broken — "
-            f"{basket['test_result'][:100]}. Skipping attempts."
+        from .preflight_heal import heal_and_commit as _heal
+
+        failure_text = (
+            basket.get("test_output") or basket["test_result"][len("fail: ") :]
         )
-        log.info(f"PRE-FLIGHT TEST FAILED: {basket['escalate_reason']}")
-        return basket
+        heal = _heal(failure_text, _REPO_ROOT)
+        if heal.healed:
+            log.info(
+                f"PRE-FLIGHT HEAL: {heal.recognizer} applied {len(heal.edits)} edit(s) "
+                f"(commit {heal.commit_sha}) — re-running pre-flight"
+            )
+            basket = pe_test(basket, preflight=True)
+            if basket.get("test_result", "").startswith("fail"):
+                basket["escalate_reason"] = (
+                    f"pre-flight: still broken after heal ({heal.recognizer}) — "
+                    f"{basket['test_result'][:100]}. Skipping attempts."
+                )
+                log.info(f"PRE-FLIGHT FAILED (post-heal): {basket['escalate_reason']}")
+                return basket
+            log.info(f"PRE-FLIGHT HEALED via {heal.recognizer} — proceeding")
+        else:
+            basket["escalate_reason"] = (
+                f"pre-flight: test suite already broken — "
+                f"{basket['test_result'][:100]}. Skipping attempts."
+            )
+            log.info(f"PRE-FLIGHT TEST FAILED: {basket['escalate_reason']}")
+            return basket
 
     basket = pe_hypothesize(basket)
     if basket.get("error"):
