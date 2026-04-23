@@ -517,7 +517,7 @@ class OpenRouterReasoner(BaseReasoner):
 
                     _la(
                         kind="CONTEXT_OVERFLOW",
-                        detail=f"model={self._model()}|turn={turn}|trimmed_to={ctx_chars}",
+                        detail=f"model={self.model}|turn={turn}|trimmed_to={ctx_chars}",
                     )
                 except Exception as _bare_e:
                     log_error(

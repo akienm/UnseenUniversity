@@ -2484,7 +2484,7 @@ class Igor(IgorBase):
             except Exception as e:
                 import logging as _logging
 
-                _logging.getLogger(__name__).warning(
+                _logging.getLogger("igor.main").warning(
                     "thread compaction failed for %s: %s", thread_id, e
                 )
 
@@ -8023,13 +8023,13 @@ class Igor(IgorBase):
                 if _is_bare_ack(response):
                     import logging as _logging
 
-                    _logging.getLogger(__name__).info(
+                    _logging.getLogger("igor.main").info(
                         "bare-ack suppressed: %r", response[:80]
                     )
                 elif _is_raw_tool_leak(response):
                     import logging as _logging
 
-                    _logging.getLogger(__name__).info(
+                    _logging.getLogger("igor.main").info(
                         "raw-tool-leak suppressed: %r", response[:120]
                     )
                 else:
@@ -8040,7 +8040,7 @@ class Igor(IgorBase):
                     # INSERT at the same timestamp, check WS broadcast logs.
                     import logging as _logging
 
-                    _logging.getLogger(__name__).info(
+                    _logging.getLogger("igor.main").info(
                         "web_server.send attempt session=%s len=%d head=%r",
                         _session_id,
                         len(response),
@@ -8056,7 +8056,7 @@ class Igor(IgorBase):
                 # this point, the response came from a different call site.
                 import logging as _logging
 
-                _logging.getLogger(__name__).warning(
+                _logging.getLogger("igor.main").warning(
                     "web-source turn produced empty response; reply (if any) would need separate delivery path"
                 )
 
