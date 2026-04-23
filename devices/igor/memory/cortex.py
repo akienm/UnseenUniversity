@@ -926,6 +926,9 @@ class Cortex(IgorBase):
         self._habit_cache: Optional[list] = None
         # T-twm-attentional-gating: last user input timestamp (set by UserInputSource)
         self._conversation_active_ts: Optional[datetime] = None
+        # T-twm-leap-on-lever: wired in by main.py after WordGraph construction.
+        # When set, twm_push runs an associative leap sweep on each new observation.
+        self.word_graph: Optional[object] = None
 
     def _conn(self):
         """Deprecated shim — use self._db() directly."""
@@ -4259,6 +4262,19 @@ class Cortex(IgorBase):
                         TWM_MAX,
                         min(_twm_effective_salience(r, now) for r in victim_rows),
                         sorted({bool(r["integrated"]) for r in victim_rows}),
+                    )
+
+            # T-twm-leap-on-lever: associative sweep — a new observation may
+            # lever latent low-salience rows into the foreground via graph
+            # overlap. Only runs when the new row actually survived eviction.
+            if obs_id and obs_id > 0 and self.word_graph is not None:
+                try:
+                    from .twm_leap import leap_sweep
+
+                    leap_sweep(conn, obs_id, content_csb, self.word_graph)
+                except Exception as _leap_exc:
+                    logging.getLogger(__name__).warning(
+                        "twm_leap sweep failed (non-fatal): %s", _leap_exc
                     )
 
         return obs_id

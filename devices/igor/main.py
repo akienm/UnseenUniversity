@@ -543,6 +543,9 @@ class Igor(IgorBase):
                     self._word_graph.save(_wg_path)
             basal_ganglia.set_word_graph(self._word_graph)
             basal_ganglia.set_cortex(self.cortex)
+            # T-twm-leap-on-lever: wire word graph into cortex so twm_push can
+            # run the associative leap sweep on each new observation.
+            self.cortex.word_graph = self._word_graph
             # T-learning-retrieval-signal: register word graph for retrieval reinforcement
             try:
                 from .cognition.hebbian_bridge import set_word_graph as _hb_set_wg
