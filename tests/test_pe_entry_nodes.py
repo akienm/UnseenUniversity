@@ -25,6 +25,7 @@ from wild_igor.igor.tools.pe_chain import (
     _filter_high_inertia_not_in_description,
     _parse_file_list,
     _parse_hypothesis,
+    _pe_escalate,
     _situate_from_memory,
     _validate_hypothesis,
     pe_claim,
@@ -498,6 +499,88 @@ class TestPeSituate:
             ["wild_igor/igor/brainstem/kernel.py"], desc
         )
         assert kept == ["wild_igor/igor/brainstem/kernel.py"]
+
+
+# ── _pe_escalate — T-escalate-validates-file-exists ───────────────────────────
+
+
+class TestPeEscalateHallucinatedFile:
+    def test_nonexistent_high_inertia_file_rewrites_to_hallucinated_reason(self):
+        """HIGH-inertia reason + nonexistent target_file → block path, not propose."""
+        basket = {
+            "ticket_id": "T-fake-test",
+            "hypothesis": {
+                "file": "wild_igor/igor/brainstem/kernel.py",
+                "old_string": "x",
+                "new_string": "y",
+            },
+        }
+        posts = []
+        bash_calls = []
+
+        def capture_post(msg, **kwargs):
+            posts.append(msg)
+
+        def capture_bash(cmd, **kwargs):
+            bash_calls.append(cmd)
+            return "ok"
+
+        with (
+            patch(
+                "wild_igor.igor.tools.pe_chain._post_to_channel",
+                side_effect=capture_post,
+            ),
+            patch("wild_igor.igor.tools.pe_chain._run_bash", side_effect=capture_bash),
+        ):
+            result = _pe_escalate(basket, reason="HIGH inertia write required")
+
+        # Reason is rewritten to name the hallucination
+        assert "hallucinated file" in result["escalate_reason"]
+        assert "wild_igor/igor/brainstem/kernel.py" in result["escalate_reason"]
+        # DESIGN PROPOSAL should NOT be posted — block-branch message instead
+        assert not any("DESIGN PROPOSAL" in p for p in posts)
+        assert any("blocked" in p or "block" in p for p in posts)
+        # cc_queue.py should be invoked with 'block', not 'propose'
+        assert any("block" in c for c in bash_calls)
+        assert not any("propose" in c for c in bash_calls)
+
+    def test_real_high_inertia_file_still_proposes_normally(self):
+        """HIGH-inertia reason + existing target_file → normal DESIGN PROPOSAL path."""
+        basket = {
+            "ticket_id": "T-real-test",
+            "hypothesis": {
+                "file": "wild_igor/igor/brainstem/core_patterns.py",
+                "old_string": "x",
+                "new_string": "y",
+            },
+            "plan_summary": "refactor core_patterns",
+        }
+        posts = []
+        bash_calls = []
+
+        def capture_post(msg, **kwargs):
+            posts.append(msg)
+
+        def capture_bash(cmd, **kwargs):
+            bash_calls.append(cmd)
+            return "ok"
+
+        with (
+            patch(
+                "wild_igor.igor.tools.pe_chain._post_to_channel",
+                side_effect=capture_post,
+            ),
+            patch("wild_igor.igor.tools.pe_chain._run_bash", side_effect=capture_bash),
+        ):
+            result = _pe_escalate(basket, reason="HIGH inertia write required")
+
+        # Reason stays as HIGH inertia (not rewritten)
+        assert "hallucinated file" not in result["escalate_reason"]
+        assert "HIGH inertia" in result["escalate_reason"]
+        # DESIGN PROPOSAL is posted
+        assert any("DESIGN PROPOSAL" in p for p in posts)
+        # cc_queue.py is called with 'propose'
+        assert any("propose" in c for c in bash_calls)
 
 
 # ── pe_observe ────────────────────────────────────────────────────────────────
