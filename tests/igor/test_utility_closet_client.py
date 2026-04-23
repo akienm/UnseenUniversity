@@ -228,3 +228,163 @@ class TestStatsPusher:
         client = _make_client()
         client.start_stats_pusher(lambda: {})
         assert client._stats_thread is None
+
+
+class TestClassifyOutcome:
+    """_classify_outcome maps exceptions to telemetry categories."""
+
+    def test_none_is_delivered(self):
+        from wild_igor.igor.web.utility_closet_client import _classify_outcome
+
+        assert _classify_outcome(None) == "delivered"
+
+    def test_http_error_is_http_error(self):
+        import urllib.error
+
+        from wild_igor.igor.web.utility_closet_client import _classify_outcome
+
+        err = urllib.error.HTTPError("u", 500, "boom", {}, None)
+        assert _classify_outcome(err) == "http_error"
+
+    def test_urlerror_timed_out_is_timeout(self):
+        import urllib.error
+
+        from wild_igor.igor.web.utility_closet_client import _classify_outcome
+
+        err = urllib.error.URLError("timed out")
+        assert _classify_outcome(err) == "timeout"
+
+    def test_urlerror_connection_refused_is_connection_error(self):
+        import urllib.error
+
+        from wild_igor.igor.web.utility_closet_client import _classify_outcome
+
+        err = urllib.error.URLError("Connection refused")
+        assert _classify_outcome(err) == "connection_error"
+
+    def test_builtin_timeout_is_timeout(self):
+        from wild_igor.igor.web.utility_closet_client import _classify_outcome
+
+        assert _classify_outcome(TimeoutError("slow")) == "timeout"
+
+    def test_unknown_is_other_error(self):
+        from wild_igor.igor.web.utility_closet_client import _classify_outcome
+
+        assert _classify_outcome(ValueError("wat")) == "other_error"
+
+
+class TestPostWithTelemetry:
+    """_post_with_telemetry returns (result, outcome, elapsed_ms) and posts
+    a channel diagnostic on any non-delivered outcome."""
+
+    @patch("wild_igor.igor.web.utility_closet_client.urllib.request.urlopen")
+    def test_success_returns_delivered(self, mock_urlopen):
+        from wild_igor.igor.web.utility_closet_client import _post_with_telemetry
+
+        mock_urlopen.return_value = _mock_urlopen({"status": "ok"})
+        result, outcome, elapsed = _post_with_telemetry(
+            "/api/agents/igor/send",
+            {"content": "hi", "session_id": "shared"},
+            preview="hi",
+            session_id="shared",
+        )
+        assert result == {"status": "ok"}
+        assert outcome == "delivered"
+        assert elapsed >= 0
+
+    @patch("wild_igor.igor.web.utility_closet_client.urllib.request.urlopen")
+    def test_timeout_posts_channel_diagnostic(self, mock_urlopen):
+        import urllib.error
+
+        from wild_igor.igor.web import utility_closet_client as ucc
+
+        mock_urlopen.side_effect = urllib.error.URLError("timed out")
+
+        with patch.object(ucc, "_post_with_telemetry", wraps=ucc._post_with_telemetry):
+            # patch the lazy-imported post_to_channel via sys.modules so the
+            # import inside the except branch finds a mock
+            mock_post = MagicMock()
+            fake_mod = MagicMock()
+            fake_mod.post_to_channel = mock_post
+            with patch.dict(
+                sys.modules, {"wild_igor.igor.tools.channel_post": fake_mod}
+            ):
+                result, outcome, elapsed = ucc._post_with_telemetry(
+                    "/api/agents/igor/send",
+                    {"content": "hello", "session_id": "shared"},
+                    preview="hello",
+                    session_id="shared",
+                )
+
+        assert result is None
+        assert outcome == "timeout"
+        assert mock_post.called
+        diagnostic = mock_post.call_args[0][0]
+        assert "[web_reply]" in diagnostic
+        assert "drop=timeout" in diagnostic
+        assert "session=shared" in diagnostic
+
+    @patch("wild_igor.igor.web.utility_closet_client.urllib.request.urlopen")
+    def test_connection_refused_classified_and_diagnosed(self, mock_urlopen):
+        import urllib.error
+
+        from wild_igor.igor.web import utility_closet_client as ucc
+
+        mock_urlopen.side_effect = urllib.error.URLError("Connection refused")
+
+        mock_post = MagicMock()
+        fake_mod = MagicMock()
+        fake_mod.post_to_channel = mock_post
+        with patch.dict(sys.modules, {"wild_igor.igor.tools.channel_post": fake_mod}):
+            result, outcome, _ = ucc._post_with_telemetry(
+                "/api/agents/igor/send",
+                {"content": "x", "session_id": "s"},
+                preview="x",
+                session_id="s",
+            )
+
+        assert result is None
+        assert outcome == "connection_error"
+        assert mock_post.called
+
+    @patch("wild_igor.igor.web.utility_closet_client.urllib.request.urlopen")
+    def test_success_does_not_post_channel_diagnostic(self, mock_urlopen):
+        from wild_igor.igor.web import utility_closet_client as ucc
+
+        mock_urlopen.return_value = _mock_urlopen({"status": "ok"})
+
+        mock_post = MagicMock()
+        fake_mod = MagicMock()
+        fake_mod.post_to_channel = mock_post
+        with patch.dict(sys.modules, {"wild_igor.igor.tools.channel_post": fake_mod}):
+            ucc._post_with_telemetry(
+                "/api/agents/igor/send",
+                {"content": "ok", "session_id": "shared"},
+                preview="ok",
+                session_id="shared",
+            )
+
+        assert not mock_post.called
+
+
+class TestSendMessageUsesTelemetry:
+    """send_message routes through _post_with_telemetry, not _post."""
+
+    @patch("wild_igor.igor.web.utility_closet_client._post_with_telemetry")
+    @patch("wild_igor.igor.web.utility_closet_client.urllib.request.urlopen")
+    def test_send_message_calls_telemetry_wrapper(self, mock_urlopen, mock_tele):
+        mock_urlopen.side_effect = [
+            _mock_urlopen({"status": "ok"}),  # health
+            _mock_urlopen({"status": "ok", "agent_id": "igor"}),  # register
+        ]
+        mock_tele.return_value = ({"status": "ok"}, "delivered", 12.0)
+
+        client = _make_client()
+        client.register("igor")
+        assert client.send_message("hello world", session_id="shared")
+
+        # Verify telemetry wrapper was called with preview + session_id
+        mock_tele.assert_called_once()
+        args, kwargs = mock_tele.call_args
+        assert kwargs.get("preview") == "hello world"
+        assert kwargs.get("session_id") == "shared"
