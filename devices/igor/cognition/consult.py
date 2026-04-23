@@ -131,6 +131,12 @@ class ConsultResult:
     turn_idx: int  # 0-based, within session
     cost_usd: float  # per-turn cost (0.0 if not known)
     elapsed_ms: int
+    # T-consult-confab-scan: list of confab tell matches in raw_text.
+    # Populated by ask() running confab_scanner before returning the result.
+    # Empty list = clean. Callers can log / downweight based on len > 0.
+    # v1: detection only — salience halving deferred to T-consult-observe-and-tune
+    # once we have data on false-positive rates.
+    confab_flags: list = field(default_factory=list)
 
 
 @dataclass
@@ -382,6 +388,27 @@ class ConsultSession:
         # Append assistant turn so next ask() accumulates context
         self._messages.append({"role": "assistant", "content": raw_text})
 
+        # T-consult-confab-scan: run confab_scanner on raw_text before caller
+        # integrates. Detection-only — flagged results still go into the
+        # result (and transcript), callers can log/downweight. v1 keeps the
+        # behavior neutral; T-consult-observe-and-tune reviews whether to
+        # halve salience or drop based on observed false-positive rate.
+        confab_flags: list = []
+        try:
+            # Scanner lives in lab.claudecode.engram_tools (CC-side toolkit)
+            from lab.claudecode.engram_tools.confab_scanner import scan_turns
+
+            confab_flags = scan_turns(
+                [
+                    {
+                        "turn_id": f"{self.session_id}-t{len(self.transcript)}",
+                        "out": raw_text,
+                    }
+                ]
+            )
+        except Exception as scan_exc:
+            log.debug("consult confab scan failed (non-fatal): %s", scan_exc)
+
         result = ConsultResult(
             hypotheses=hypotheses,
             next_question=next_q,
@@ -390,8 +417,34 @@ class ConsultSession:
             turn_idx=len(self.transcript),
             cost_usd=0.0,  # TODO: populate from OR response when we surface it
             elapsed_ms=elapsed_ms,
+            confab_flags=confab_flags,
         )
         self.transcript.append(result)
+
+        if confab_flags:
+            log.info(
+                "consult confab flagged session=%s turn=%d n=%d subtypes=%s",
+                self.session_id,
+                result.turn_idx,
+                len(confab_flags),
+                sorted({m.subtype for m in confab_flags}),
+            )
+            _log_forensic(
+                self.session_id,
+                {
+                    "event": "confab_flag",
+                    "ts": _now_iso(),
+                    "turn_idx": result.turn_idx,
+                    "flags": [
+                        {
+                            "subtype": m.subtype,
+                            "confidence": m.confidence,
+                            "tell_phrase": m.tell_phrase,
+                        }
+                        for m in confab_flags
+                    ],
+                },
+            )
 
         log.info(
             "consult turn session=%s turn=%d conf=%.2f elapsed=%dms hyps=%d q=%r",
