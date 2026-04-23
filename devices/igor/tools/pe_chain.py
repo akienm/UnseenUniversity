@@ -81,7 +81,7 @@ Non-fatal degradation
 Cloud-touching steps (pe_plan, pe_situate, pe_observe, pe_hypothesize)
 log warnings but do not abort on failure — fall back to defaults or skip
 when tier.2 unavailable. IGOR_CLOUD_PROGRAMMING env flag selects routing
-(Ollama batch first, OR DeepSeek fallback if available).
+(Ollama batch first, OR cloud Qwen fallback if available).
 
 Tier.2 integration
 ──────────────────
@@ -400,18 +400,23 @@ _REPO_ROOT = Path.home() / "TheIgors"
 
 
 _CLOUD_PROGRAMMING_MODEL = os.getenv(
-    "IGOR_CLOUD_PROGRAMMING_MODEL", "deepseek/deepseek-r1"
+    "IGOR_CLOUD_PROGRAMMING_MODEL", "qwen/qwen-2.5-coder-32b-instruct"
 )
 
 
 def _call_cloud_programming(prompt: str, temperature: float = 0.1) -> str | None:
     """
-    Call OR DeepSeek for pe_chain steps when IGOR_CLOUD_PROGRAMMING=true.
-    Uses IGOR_CLOUD_PROGRAMMING_MODEL (default: deepseek/deepseek-r1).
+    Call cloud Qwen (via OpenRouter) for pe_chain steps when the local Ollama
+    tier.2 path is unavailable or IGOR_CLOUD_PROGRAMMING=true is set explicitly.
+    Uses IGOR_CLOUD_PROGRAMMING_MODEL (default: qwen/qwen-2.5-coder-32b-instruct).
     No timeout — background work, no human waiting.
 
-    temperature: 0.2 for code-edit steps (HYPOTHESIZE/REPLAN), 0.7 for reasoning steps
-    (PLAN/SITUATE).
+    Qwen-family on both sides: local is qwen2.5:7b via Ollama, cloud is
+    qwen-2.5-coder-32b-instruct via OR. Keeping the model family uniform means
+    output shape and parse assumptions stay consistent across routing.
+
+    temperature: 0.2 for code-edit steps (HYPOTHESIZE/REPLAN), 0.7 for reasoning
+    steps (PLAN/SITUATE).
 
     NB: we DO NOT route to Claude/Anthropic here — coding sprints are worker=igor
     by design (T-verify-pe-chain-qwen-tier). Akien's constraint: if quality falls
@@ -520,8 +525,8 @@ def _call_tier2(prompt: str, timeout: int = 0, temperature: float = 0.1) -> str 
       - route("batch") resolves to the highest-ranked healthy machine and returns
         its `ollama_model` (seeded to qwen2.5:7b on all active machines — see
         `machines` DB table). So this call ALWAYS hits Qwen locally, never Claude.
-      - If IGOR_CLOUD_PROGRAMMING=true, routes to OR DeepSeek (still not Claude).
-      - If Ollama unreachable and OR key present, falls back to OR DeepSeek.
+      - If IGOR_CLOUD_PROGRAMMING=true, routes to OR cloud Qwen (still not Claude).
+      - If Ollama unreachable and OR key present, falls back to OR cloud Qwen.
       - Per Akien's 2026-04-20 constraint: if Qwen quality is insufficient,
         the next step is a LARGER Qwen, NOT fallback to Claude. Do not add
         Claude routing here.
@@ -1248,13 +1253,14 @@ def _parse_hypothesis(raw: str) -> list[dict] | None:
       2. {file, old_string, new_string}                     — single-edit (legacy)
 
     Pre-processing:
-    - Strips <think>...</think> blocks (DeepSeek R1 reasoning — JSON follows)
+    - Strips <think>...</think> blocks (reasoning-model CoT wrappers — DeepSeek R1,
+      Qwen QwQ, and similar emit these; JSON follows the close tag)
     - Strips <function_calls>...</function_calls> blocks (Haiku hallucination)
     - Strips markdown code fences
     """
     text = raw.strip()
 
-    # Strip <think>...</think> reasoning blocks (DeepSeek R1)
+    # Strip <think>...</think> reasoning blocks (reasoning-model CoT)
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
     # Strip <function_calls>...</function_calls> hallucination (Haiku)
