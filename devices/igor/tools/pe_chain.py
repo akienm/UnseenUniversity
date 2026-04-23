@@ -389,12 +389,21 @@ def pe_read_ticket(basket: dict) -> dict:
 # ── SITUATE ───────────────────────────────────────────────────────────────────
 
 _SITUATE_PROMPT = """\
-List the Python source files that need to change to implement this ticket.
-One file path per line. File paths only — no explanation, no line numbers.
+List the Python source files that need to change for this ticket.
 
-Ticket: {description}
+Rules:
+- Return ONLY paths that appear verbatim in the ticket text below, OR
+  the obvious implementation target named in the problem statement.
+- Do NOT invent paths. If the ticket does not name files, return nothing.
+- Do NOT list brainstem/, cognition/, or memory/models.py unless the
+  ticket explicitly names them — these files are load-bearing.
+- One path per line, repo-relative (e.g. wild_igor/igor/tools/foo.py).
+- Maximum 3 files.
 
-Files:"""
+Ticket:
+{description}
+
+Files (return empty if unclear):"""
 
 _REPO_ROOT = Path.home() / "TheIgors"
 
@@ -615,6 +624,60 @@ def _parse_file_list(raw: str) -> list[str]:
     return paths_found
 
 
+_AFFECTED_FILES_RE = re.compile(
+    r"^\s*\*{0,2}Affected files\*{0,2}\s*:\s*(.*?)$",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+
+def _affected_files_from_description(description: str) -> list[str]:
+    """
+    Parse the 'Affected files:' line from the /ticket structured template.
+
+    Returns list of valid repo-relative paths (same validation as
+    _parse_file_list). Returns [] if the field is absent, empty, or TBD-shaped.
+    """
+    if not description:
+        return []
+    m = _AFFECTED_FILES_RE.search(description)
+    if not m:
+        return []
+    raw = m.group(1).strip().strip("*").strip()
+    if not raw or raw.upper().startswith("TBD"):
+        return []
+    return _parse_file_list(raw.replace(",", "\n"))
+
+
+def _filter_high_inertia_not_in_description(
+    files: list[str], description: str
+) -> list[str]:
+    """
+    Drop HIGH-inertia files whose path/basename isn't named in the description.
+
+    Tier2 Qwen empirically hallucinates brainstem/kernel.py as a canonical
+    HIGH-inertia target when the ticket is sparse; this filter is the backstop.
+    A path is kept if either its full repo-relative path or its basename
+    appears verbatim in the ticket description.
+    """
+    from .scope_guard import _classify_tier
+
+    kept: list[str] = []
+    for path in files:
+        if _classify_tier(path) != "HIGH":
+            kept.append(path)
+            continue
+        basename = Path(path).name
+        if path in description or basename in description:
+            kept.append(path)
+            continue
+        log.info(
+            "SITUATE: rejected tier2 suggestion %s "
+            "(HIGH inertia, not named in ticket description)",
+            path,
+        )
+    return kept
+
+
 # ── PLAN ──────────────────────────────────────────────────────────────────────
 
 _PLAN_PROMPT = """You are planning a code change for a software ticket.
@@ -799,17 +862,23 @@ def pe_situate(basket: dict) -> dict:
     """
     SITUATE step: resolve plan_files — which files need to change?
 
-    If basket["plan_files"] is already non-empty (from ticket's required_files),
-    use those directly — no LLM call needed.
+    Sources checked in order; first non-empty wins:
+      1. ticket required_files (already in basket['plan_files'])
+      2. 'Affected files:' structured field parsed from ticket description
+         (matches the /ticket template). Skips tier.2 when human-authored.
+      3. prior OBSERVE memory deposit for this ticket_id
+      4. tier.2 Qwen call with the guardrailed _SITUATE_PROMPT (temp 0.1)
 
-    If plan_files is empty, call tier.2 Ollama with a tight prompt:
-    "given this ticket description, list the files to change."
-    Parse the response to extract valid file paths.
+    Tier.2 output is post-filtered to drop HIGH-inertia files not named
+    verbatim in the description. Rationale: Qwen empirically hallucinates
+    brainstem/kernel.py as a default target for sparse tickets — the filter
+    is the backstop behind the prompt's explicit rules.
 
     Reads from basket: ticket_description, plan_files (may be [])
     Writes to basket:
       plan_files      list[str]  — resolved file paths (updated if was empty)
-      situate_source  str        — "ticket_required_files" | "prior_observe_memory" | "tier2_ollama" | "empty"
+      situate_source  str        — "ticket_required_files" | "affected_files_field"
+                                    | "prior_observe_memory" | "tier2_ollama" | "empty"
     """
     if basket.get("error"):
         return basket
@@ -818,10 +887,20 @@ def pe_situate(basket: dict) -> dict:
         basket["error"] = "pe_situate: no ticket_description in basket"
         return basket
 
-    # Fast path: required_files already populated from ticket
+    # Fast path 1: required_files already populated from ticket
     if basket.get("plan_files"):
         basket["situate_source"] = "ticket_required_files"
         log.info(f"SITUATE: using ticket required_files: {basket['plan_files']}")
+        return basket
+
+    description = basket["ticket_description"]
+
+    # Fast path 2: 'Affected files:' structured field from /ticket template
+    affected = _affected_files_from_description(description)
+    if affected:
+        basket["plan_files"] = affected
+        basket["situate_source"] = "affected_files_field"
+        log.info(f"SITUATE: using 'Affected files:' field: {affected}")
         return basket
 
     # Memory path: check prior observe deposits for this ticket before tier.2
@@ -837,23 +916,26 @@ def pe_situate(basket: dict) -> dict:
             return basket
 
     # Slow path: call tier.2 to figure out which files
-    description = basket["ticket_description"]
     prompt = _SITUATE_PROMPT.format(description=description[:600])
-    log.info(f"SITUATE: calling tier.2 (no required_files or prior memory for ticket)")
+    log.info(
+        "SITUATE: calling tier.2 (no required_files, Affected files field, or prior memory)"
+    )
 
-    # Routes to cheap background tier (Qwen) — verified T-verify-pe-chain-qwen-tier
-    raw = _call_tier2(prompt, temperature=0.7)
+    # Temp 0.1: extraction task, not generation — reduces hallucination pressure.
+    raw = _call_tier2(prompt, temperature=0.1)
     if not raw:
-        # Tier.2 unavailable — leave plan_files empty, chain can continue with grep
         basket["plan_files"] = []
         basket["situate_source"] = "empty"
         log.info("SITUATE: tier.2 unavailable — plan_files empty")
         return basket
 
     files = _parse_file_list(raw)
-    basket["plan_files"] = files
+    filtered = _filter_high_inertia_not_in_description(files, description)
+    basket["plan_files"] = filtered
     basket["situate_source"] = "tier2_ollama"
-    log.info(f"SITUATE: tier.2 returned {len(files)} files: {files}")
+    log.info(
+        f"SITUATE: tier.2 returned {len(files)} files, kept {len(filtered)}: {filtered}"
+    )
     return basket
 
 

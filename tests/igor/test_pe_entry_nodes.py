@@ -19,8 +19,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from wild_igor.igor.tools.pe_chain import (
     _MAX_ATTEMPTS,
     _CODE_EXPANSION,
+    _affected_files_from_description,
     _expand_patterns_with_synonyms,
     _extract_grep_patterns,
+    _filter_high_inertia_not_in_description,
     _parse_file_list,
     _parse_hypothesis,
     _situate_from_memory,
@@ -392,6 +394,110 @@ class TestPeSituate:
         raw = "I don't know which files to change."
         result = _parse_file_list(raw)
         assert result == []
+
+    # ── T-situate-kernel-hallucination-fix: three-layer defense ─────────────
+
+    def test_situate_uses_affected_files_field(self):
+        """Structured 'Affected files:' field skips tier.2 entirely."""
+        desc = (
+            "Some problem description.\n\n"
+            "**Affected files:** wild_igor/igor/tools/ops.py, wild_igor/igor/main.py\n"
+            "**Test plan:** add tests."
+        )
+        basket = {"ticket_description": desc, "plan_files": []}
+        with patch("wild_igor.igor.tools.pe_chain._call_tier2") as mock_t2:
+            with patch(
+                "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+                Path(__file__).resolve().parent.parent,
+            ):
+                result = pe_situate(basket)
+        assert result["situate_source"] == "affected_files_field"
+        assert "wild_igor/igor/tools/ops.py" in result["plan_files"]
+        assert "wild_igor/igor/main.py" in result["plan_files"]
+        mock_t2.assert_not_called()
+
+    def test_situate_rejects_unmentioned_high_inertia(self):
+        """Tier2 suggesting a HIGH-inertia brainstem file on a sparse ticket gets filtered."""
+        desc = "Auto-file audit pass-2 severity-high findings as tickets."
+        basket = {"ticket_description": desc, "plan_files": []}
+        with patch(
+            "wild_igor.igor.tools.pe_chain._call_tier2",
+            return_value="wild_igor/igor/brainstem/core_patterns.py",
+        ):
+            with patch(
+                "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+                Path(__file__).resolve().parent.parent,
+            ):
+                result = pe_situate(basket)
+        assert result["situate_source"] == "tier2_ollama"
+        assert result["plan_files"] == []
+
+    def test_situate_allows_high_inertia_when_named(self):
+        """If ticket names a HIGH-inertia file verbatim, tier2 suggestion passes the filter."""
+        desc = "Refactor wild_igor/igor/brainstem/core_patterns.py to split dispatch."
+        basket = {"ticket_description": desc, "plan_files": []}
+        with patch(
+            "wild_igor.igor.tools.pe_chain._call_tier2",
+            return_value="wild_igor/igor/brainstem/core_patterns.py",
+        ):
+            with patch(
+                "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+                Path(__file__).resolve().parent.parent,
+            ):
+                result = pe_situate(basket)
+        assert "wild_igor/igor/brainstem/core_patterns.py" in result["plan_files"]
+
+    def test_situate_empty_affected_files_falls_through(self):
+        """'Affected files: TBD' does not short-circuit; tier2 is called."""
+        desc = "Some ticket.\n**Affected files:** TBD — discovery step in sprint\n"
+        basket = {"ticket_description": desc, "plan_files": []}
+        with patch(
+            "wild_igor.igor.tools.pe_chain._call_tier2",
+            return_value="wild_igor/igor/tools/ops.py",
+        ) as mock_t2:
+            with patch(
+                "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+                Path(__file__).resolve().parent.parent,
+            ):
+                result = pe_situate(basket)
+        mock_t2.assert_called_once()
+        assert result["situate_source"] == "tier2_ollama"
+
+    def test_affected_files_helper_parses_comma_list(self):
+        desc = "**Affected files:** wild_igor/igor/tools/ops.py, wild_igor/igor/main.py"
+        with patch(
+            "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+            Path(__file__).resolve().parent.parent,
+        ):
+            files = _affected_files_from_description(desc)
+        assert "wild_igor/igor/tools/ops.py" in files
+        assert "wild_igor/igor/main.py" in files
+
+    def test_affected_files_helper_handles_tbd(self):
+        assert _affected_files_from_description("**Affected files:** TBD") == []
+        assert _affected_files_from_description("Affected files:") == []
+        assert _affected_files_from_description("No such field here.") == []
+
+    def test_filter_keeps_low_inertia(self):
+        desc = "Whatever."
+        kept = _filter_high_inertia_not_in_description(
+            ["wild_igor/igor/tools/ops.py"], desc
+        )
+        assert kept == ["wild_igor/igor/tools/ops.py"]
+
+    def test_filter_rejects_high_inertia_not_named(self):
+        desc = "Fix goal continuation."
+        kept = _filter_high_inertia_not_in_description(
+            ["wild_igor/igor/brainstem/kernel.py"], desc
+        )
+        assert kept == []
+
+    def test_filter_accepts_high_inertia_named_by_basename(self):
+        desc = "Patch kernel.py for the turn loop."
+        kept = _filter_high_inertia_not_in_description(
+            ["wild_igor/igor/brainstem/kernel.py"], desc
+        )
+        assert kept == ["wild_igor/igor/brainstem/kernel.py"]
 
 
 # ── pe_observe ────────────────────────────────────────────────────────────────
