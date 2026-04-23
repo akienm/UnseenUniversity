@@ -6731,8 +6731,10 @@ class Igor(IgorBase):
                     thread_id=thread_id,
                     source_label=_source_label,
                 )
-                # T-active-suppression-coherence: drop incoherent habit emissions
-                response_text = _suppress_incoherent(_coh_result, response_text)
+                # T-active-suppression-coherence: drop incoherent HABIT emissions only
+                response_text = _suppress_incoherent(
+                    _coh_result, response_text, _source_label
+                )
             except Exception as _coh_e:
                 log_error(
                     kind="COHERENCE_INHIBITOR",
