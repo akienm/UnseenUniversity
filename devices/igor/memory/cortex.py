@@ -228,6 +228,44 @@ _MEM_CACHE_TTL = 300.0  # seconds
 
 RING_MAX = 50  # Max entries in the ring buffer
 TWM_MAX = 50  # Max observations in TWM
+
+
+def _twm_decay_factor(age_seconds: float) -> float:
+    """T-twm-salience-time-decay: salience fades with time so big topics
+    don't keep blocking new pushes. Effective salience used at eviction-
+    ranking = stored * 0.5^(age/halflife). Reads halflife from
+    IGOR_TWM_SALIENCE_HALFLIFE_SEC at call time so tests can tune it.
+    Halflife <= 0 disables decay (returns 1.0)."""
+    halflife = float(os.getenv("IGOR_TWM_SALIENCE_HALFLIFE_SEC", "7200"))
+    if halflife <= 0 or age_seconds <= 0:
+        return 1.0
+    return 0.5 ** (age_seconds / halflife)
+
+
+def _twm_effective_salience(row, now):
+    """Stored salience * time-decay. Falls back to age=0 if timestamp unparseable."""
+    try:
+        ts = datetime.fromisoformat(row["timestamp"])
+        age = (now - ts).total_seconds()
+    except (TypeError, ValueError):
+        age = 0.0
+    return (row["salience"] or 0.0) * _twm_decay_factor(age)
+
+
+def _twm_pick_eviction_victims(rows, overflow, now):
+    """Pure eviction ranking (extracted for testability):
+    integrated DESC, effective_salience ASC, id ASC. Returns the first
+    `overflow` rows in eviction order."""
+    return sorted(
+        rows,
+        key=lambda r: (
+            0 if r["integrated"] else 1,
+            _twm_effective_salience(r, now),
+            r["id"],
+        ),
+    )[:overflow]
+
+
 TWM_MAX_SLOTS = int(
     os.getenv("IGOR_TWM_MAX_SLOTS", "7")
 )  # D099: max attractor slots (Baars GWT)
@@ -4186,39 +4224,40 @@ class Cortex(IgorBase):
                 (now.isoformat(),),
             )
 
-            # Evict if over cap: integrated + low salience + oldest first
+            # Evict if over cap: integrated + low EFFECTIVE salience + oldest first.
+            # T-twm-salience-time-decay: rank by effective_salience (stored * decay_fn(age))
+            # so old high-salience rows fade enough for fresh pushes to win. TWM_MAX is
+            # small (50) so loading all rows into Python for ranking is cheap.
             count = conn.execute("SELECT COUNT(*) FROM twm_observations").fetchone()[0]
             if count > TWM_MAX:
                 overflow = count - TWM_MAX
-                # Preview which rows will die so we can log if the just-inserted
-                # row is one of them — silent self-eviction had been invisible
-                # until it was caught via test failures 2026-04-23.
-                victim_rows = conn.execute(f"""
-                    SELECT id, source, category, salience, integrated
-                    FROM twm_observations
-                    ORDER BY integrated DESC, salience ASC, id ASC
-                    LIMIT {overflow}
-                """).fetchall()
+                all_rows = conn.execute(
+                    "SELECT id, source, category, salience, integrated, timestamp "
+                    "FROM twm_observations"
+                ).fetchall()
+                victim_rows = _twm_pick_eviction_victims(all_rows, overflow, now)
                 victim_ids = [r["id"] for r in victim_rows]
                 conn.execute(
                     f"DELETE FROM twm_observations WHERE id IN ({','.join('?'*len(victim_ids))})",
                     victim_ids,
                 )
                 if obs_id in victim_ids:
+                    self_row = next(r for r in victim_rows if r["id"] == obs_id)
                     logging.getLogger(__name__).warning(
                         "twm_push SELF_EVICTED obs=%d source=%s category=%s salience=%.2f "
-                        "urgency=%.2f — TWM full (%d rows, MAX=%d), newly-inserted row "
-                        "had lower priority than all existing rows. Caller will see a valid "
-                        "return value but the observation is already gone. "
-                        "Existing range: salience_min=%.2f integrated=%s",
+                        "(eff=%.2f) urgency=%.2f — TWM full (%d rows, MAX=%d), newly-inserted "
+                        "row had lower effective priority than all existing rows. Caller will "
+                        "see a valid return value but the observation is already gone. "
+                        "Existing range: eff_salience_min=%.2f integrated=%s",
                         obs_id,
                         source,
                         category,
                         salience,
+                        _twm_effective_salience(self_row, now),
                         urgency,
                         count,
                         TWM_MAX,
-                        min(r["salience"] or 0 for r in victim_rows),
+                        min(_twm_effective_salience(r, now) for r in victim_rows),
                         sorted({bool(r["integrated"]) for r in victim_rows}),
                     )
 
