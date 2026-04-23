@@ -8060,6 +8060,72 @@ class Igor(IgorBase):
                     "web-source turn produced empty response; reply (if any) would need separate delivery path"
                 )
 
+                # T-consult-reasoning-wire: empty-response on a web turn is
+                # a "reasoning stuck" signal. Consult a peer-LLM to understand
+                # what Igor is missing about the user's turn. Hypotheses are
+                # pushed to TWM as markers for the NEXT turn to reason over.
+                # Non-fatal — if consult fails, empty-response behavior is
+                # unchanged.
+                try:
+                    from .cognition.consult import ConsultSession, ConsultState
+
+                    _thread_excerpt = (
+                        self._thread_buffers.get(_thread_id, [])[-5:]
+                        if hasattr(self, "_thread_buffers")
+                        else []
+                    )
+                    _state = ConsultState(
+                        problem_kind="reasoning",
+                        summary=f"web turn produced empty response (thread={_thread_id})",
+                        what_i_tried="_process ran to completion",
+                        what_failed="response was empty/falsy — nothing to send",
+                        ticket_id=None,
+                        pursuit_id=(_reply_pursuit.id if _reply_pursuit else None),
+                        extra={
+                            "user_turn": msg.content[:2000],
+                            "thread_excerpt": str(_thread_excerpt)[:2000],
+                            "author": _author,
+                            "intent": "unknown",
+                        },
+                    )
+                    _session = ConsultSession(_state)
+                    _result = _session.ask(
+                        "What am I missing about this user's turn that left me with no reply?"
+                    )
+                    _session.conclude()
+                    # Push to TWM so next turn reasons over the hypotheses
+                    try:
+                        self.cortex.twm_push(
+                            source="consult_reasoning_wire",
+                            content_csb=(
+                                f"CONSULT_HYPOTHESIS|session={_session.session_id}|"
+                                f"conf={_result.confidence:.2f}|"
+                                f"question={_result.next_question[:120]}|"
+                                f"top_hypothesis={(_result.hypotheses[0] if _result.hypotheses else '')[:200]}"
+                            ),
+                            salience=0.8,
+                            urgency=0.6,
+                            ttl_seconds=1800,
+                            category="consult_hypothesis",
+                            thread_id=_thread_id or None,
+                            metadata={
+                                "pursuit_id": (
+                                    _reply_pursuit.id if _reply_pursuit else None
+                                ),
+                                "consult_session_id": _session.session_id,
+                                "confidence": _result.confidence,
+                                "hypotheses": _result.hypotheses,
+                            },
+                        )
+                    except Exception as _twm_e:
+                        _logging.getLogger("igor.main").debug(
+                            "consult TWM push failed (non-fatal): %s", _twm_e
+                        )
+                except Exception as _consult_e:
+                    _logging.getLogger("igor.main").debug(
+                        "reasoning consult failed (non-fatal): %s", _consult_e
+                    )
+
             if (
                 response
                 and msg.author != "claude-code"
