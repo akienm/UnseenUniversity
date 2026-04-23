@@ -4190,13 +4190,37 @@ class Cortex(IgorBase):
             count = conn.execute("SELECT COUNT(*) FROM twm_observations").fetchone()[0]
             if count > TWM_MAX:
                 overflow = count - TWM_MAX
-                conn.execute(f"""
-                    DELETE FROM twm_observations WHERE id IN (
-                        SELECT id FROM twm_observations
-                        ORDER BY integrated DESC, salience ASC, id ASC
-                        LIMIT {overflow}
+                # Preview which rows will die so we can log if the just-inserted
+                # row is one of them — silent self-eviction had been invisible
+                # until it was caught via test failures 2026-04-23.
+                victim_rows = conn.execute(f"""
+                    SELECT id, source, category, salience, integrated
+                    FROM twm_observations
+                    ORDER BY integrated DESC, salience ASC, id ASC
+                    LIMIT {overflow}
+                """).fetchall()
+                victim_ids = [r["id"] for r in victim_rows]
+                conn.execute(
+                    f"DELETE FROM twm_observations WHERE id IN ({','.join('?'*len(victim_ids))})",
+                    victim_ids,
+                )
+                if obs_id in victim_ids:
+                    logging.getLogger(__name__).warning(
+                        "twm_push SELF_EVICTED obs=%d source=%s category=%s salience=%.2f "
+                        "urgency=%.2f — TWM full (%d rows, MAX=%d), newly-inserted row "
+                        "had lower priority than all existing rows. Caller will see a valid "
+                        "return value but the observation is already gone. "
+                        "Existing range: salience_min=%.2f integrated=%s",
+                        obs_id,
+                        source,
+                        category,
+                        salience,
+                        urgency,
+                        count,
+                        TWM_MAX,
+                        min(r["salience"] or 0 for r in victim_rows),
+                        sorted({bool(r["integrated"]) for r in victim_rows}),
                     )
-                """)
 
         return obs_id
 
