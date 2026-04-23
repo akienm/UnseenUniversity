@@ -15,11 +15,15 @@ def _import_run_tests():
     import importlib
     import types
 
-    # Save originals for all modules we may stub, so we can restore after load
+    # Save originals for all modules we may stub, so we can restore after
+    # load. Missing wild_igor.igor.tools.registry from this list bled a fake
+    # _Registry into downstream tests that looked up tools at call-time
+    # (test_tiered_research, test_tool_discovery_semantic).
     _stub_pkgs = [
         "wild_igor",
         "wild_igor.igor",
         "wild_igor.igor.tools",
+        "wild_igor.igor.tools.registry",
         "wild_igor.igor.memory",
         "wild_igor.igor.paths",
     ]

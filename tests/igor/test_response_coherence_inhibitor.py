@@ -324,14 +324,33 @@ def test_check_coherence_does_not_modify_text():
 class TestSuppressIncoherent:
     """suppress_incoherent replaces flagged responses with empty string."""
 
-    def test_suppresses_flagged(self):
+    def test_suppresses_flagged_habit_source(self):
+        # Post-D-web-reply-coherence-inhibitor-fix-2026-04-23: suppression
+        # narrowed to habit-sourced emissions only. An LLM reply flagged by
+        # Jaccard would have been silently dropped; habit emissions still get
+        # nuked when off-topic.
         from wild_igor.igor.cognition.response_coherence_inhibitor import (
             suppress_incoherent,
         )
 
         result = {"flagged": True, "score": 0.02}
-        text = suppress_incoherent(result, "completely off-topic habit dump")
+        text = suppress_incoherent(
+            result, "completely off-topic habit dump", source_label="habit:WINNOW_X"
+        )
         assert text == ""
+
+    def test_preserves_flagged_non_habit(self):
+        # Non-habit flagged responses (LLM, tier0, etc.) are preserved —
+        # Jaccard word-overlap is the wrong metric for conversational replies.
+        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+            suppress_incoherent,
+        )
+
+        result = {"flagged": True, "score": 0.02}
+        text = suppress_incoherent(
+            result, "new-concept LLM reply", source_label="llm_or_tier0"
+        )
+        assert text == "new-concept LLM reply"
 
     def test_preserves_coherent(self):
         from wild_igor.igor.cognition.response_coherence_inhibitor import (
