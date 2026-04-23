@@ -213,6 +213,94 @@ def _extract_ticket_id(text: str) -> str | None:
     return match.group(1) if match else None
 
 
+def _maybe_consult_stuck(
+    basket: dict,
+    stuck_reason: str,
+    summary: str,
+    what_i_tried: str = "",
+    what_failed: str = "",
+) -> None:
+    """T-consult-pe-chain-wire: fire a peer-LLM consult at a pe_chain stuck point.
+
+    Rate-limited per basket per stuck_reason — at most one consult of each
+    kind per chain run. Subsequent stuck events of the same shape escalate
+    through normal channels (human review). Prevents consult spam when a
+    ticket thrashes the same pattern repeatedly.
+
+    Non-fatal: any consult or import failure is swallowed; the pe_chain
+    step continues with its original empty/escalate path. The consult is
+    purely additive — detection-only v1, integration tuning deferred to
+    T-consult-observe-and-tune after 50 log entries accumulate.
+
+    Results stored in basket['consult_results'] (list of dicts):
+        {stuck_reason, hypotheses, next_question, confidence, session_id}
+    """
+    # Per-basket per-reason rate limit
+    consulted = basket.setdefault("_consulted_reasons", set())
+    if stuck_reason in consulted:
+        return
+    consulted.add(stuck_reason)
+
+    try:
+        from ..cognition.consult import ConsultSession, ConsultState
+    except Exception as imp_exc:
+        log.debug("consult import failed (non-fatal): %s", imp_exc)
+        return
+
+    ticket_id = basket.get("ticket_id")
+    pursuit_id = basket.get("pursuit_id") or basket.get("goal_id")
+
+    # Build per-kind extras from the basket
+    extra: dict = {}
+    if isinstance(basket.get("hypothesis"), dict):
+        extra["last_hypothesis"] = str(basket["hypothesis"])[:800]
+    if basket.get("plan_summary"):
+        extra["plan_summary"] = str(basket["plan_summary"])[:800]
+    if basket.get("last_error"):
+        extra["last_error"] = str(basket["last_error"])[:800]
+    if basket.get("test_output"):
+        extra["test_output_tail"] = str(basket["test_output"])[-800:]
+
+    state = ConsultState(
+        problem_kind="coding",
+        summary=summary,
+        what_i_tried=what_i_tried,
+        what_failed=what_failed,
+        ticket_id=ticket_id,
+        pursuit_id=pursuit_id,
+        extra=extra,
+    )
+
+    try:
+        session = ConsultSession(state)
+        initial_question = {
+            "situate_empty": "What am I missing that would let me resolve files for this ticket?",
+            "preflight_unrelated": "Is this pre-flight failure related to my ticket, or should I proceed regardless?",
+            "implement_fails_twice": "Why is my edit attempt not working — is my plan wrong, or the test wrong?",
+        }.get(stuck_reason, "What am I missing about why I'm stuck?")
+        result = session.ask(initial_question)
+        session.conclude()
+    except Exception as consult_exc:
+        log.debug("consult call failed (non-fatal): %s", consult_exc)
+        return
+
+    basket.setdefault("consult_results", []).append(
+        {
+            "stuck_reason": stuck_reason,
+            "hypotheses": list(result.hypotheses),
+            "next_question": result.next_question,
+            "confidence": result.confidence,
+            "session_id": session.session_id,
+        }
+    )
+    log.info(
+        "PE_CHAIN consult fired: reason=%s conf=%.2f hyps=%d",
+        stuck_reason,
+        result.confidence,
+        len(result.hypotheses),
+    )
+
+
 def _evict_goal_ready_twm(ticket_id: str) -> None:
     """
     Expire any GOAL_READY TWM observations for this ticket.
@@ -936,6 +1024,19 @@ def pe_situate(basket: dict) -> dict:
     log.info(
         f"SITUATE: tier.2 returned {len(files)} files, kept {len(filtered)}: {filtered}"
     )
+
+    # T-consult-pe-chain-wire: if SITUATE returned empty after filtering,
+    # consult a peer-LLM: what's blocking file resolution? The hypotheses
+    # land in basket for pe_hypothesize and human review; current behavior
+    # (return empty) is preserved — consult is additive, detection-only v1.
+    if not filtered:
+        _maybe_consult_stuck(
+            basket,
+            stuck_reason="situate_empty",
+            summary=f"SITUATE returned 0 files for ticket {basket.get('ticket_id', '?')}",
+            what_i_tried=f"tier.2 qwen raw={raw[:200]!r}",
+            what_failed=f"post-filter dropped all {len(files)} tier.2 proposals",
+        )
     return basket
 
 
@@ -1876,6 +1977,19 @@ def pe_close_loop(basket: dict) -> dict:
         basket["_escalation_sent"] = True
         log.info(f"CLOSE_LOOP: ESCALATION_NEEDED posted for {ticket_id}")
 
+        # T-consult-pe-chain-wire: fire a consult on second attempt.
+        # Peer-LLM gets the hypothesis + test failure; hypotheses stored
+        # in basket for human review + future use. Rate-limited per basket.
+        _maybe_consult_stuck(
+            basket,
+            stuck_reason="implement_fails_twice",
+            summary=f"implement failed twice for {ticket_id}",
+            what_i_tried=f"hypothesis={str(basket.get('hypothesis') or {})[:200]}",
+            what_failed=str(
+                basket.get("hypothesis_error") or basket.get("test_result") or "?"
+            )[:300],
+        )
+
     basket = _pe_replan(basket)
     if basket.get("error"):
         return basket
@@ -2242,6 +2356,14 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
                     f"{basket['test_result'][:100]}. Skipping attempts."
                 )
                 log.info(f"PRE-FLIGHT FAILED (post-heal): {basket['escalate_reason']}")
+                # T-consult-pe-chain-wire: consult on post-heal failure
+                _maybe_consult_stuck(
+                    basket,
+                    stuck_reason="preflight_unrelated",
+                    summary=f"pre-flight still red after heal for {basket.get('ticket_id', '?')}",
+                    what_i_tried=f"applied heal recognizer={heal.recognizer}",
+                    what_failed=basket["test_result"][:300],
+                )
                 return basket
             log.info(f"PRE-FLIGHT HEALED via {heal.recognizer} — proceeding")
         else:
@@ -2250,6 +2372,14 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
                 f"{basket['test_result'][:100]}. Skipping attempts."
             )
             log.info(f"PRE-FLIGHT TEST FAILED: {basket['escalate_reason']}")
+            # T-consult-pe-chain-wire: consult on unrecognized pre-flight failure
+            _maybe_consult_stuck(
+                basket,
+                stuck_reason="preflight_unrelated",
+                summary=f"pre-flight blocked (no recognizer) for {basket.get('ticket_id', '?')}",
+                what_i_tried="ran pre-flight test suite; no recognizer matched the failure",
+                what_failed=basket["test_result"][:300],
+            )
             return basket
 
     basket = pe_hypothesize(basket)
