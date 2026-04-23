@@ -21,6 +21,7 @@ import sys
 import time
 import unittest
 from pathlib import Path
+import pytest
 
 # ── Repo path ────────────────────────────────────────────────────────────────
 
@@ -270,6 +271,10 @@ class TestContextFormat(unittest.TestCase):
             "prose_quality": prose_quality["total"],
         }
 
+    @pytest.mark.skipif(
+        not os.getenv("IGOR_LIVE_TESTS"),
+        reason="requires live network — gated on IGOR_LIVE_TESTS",
+    )
     def test_ollama_local(self):
         """Compare CSB vs prose on local Ollama model."""
         from wild_igor.igor.cognition.inference_ollama import OLLAMA_LOCAL_MODEL
