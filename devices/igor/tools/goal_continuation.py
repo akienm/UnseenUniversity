@@ -14,7 +14,10 @@ run_goal_continuation():
       step 2: if grep_for present — run grep for each pattern, post results
               if grep_for absent  — skip (no-op, advance to step 3)
       step 3: post "[GOAL READY]" signal so LLM can take over
-      step 4+: LLM territory, no further auto-advance
+      step 4+: LLM territory — no mechanical advance, but re-emit GOAL_READY
+               to TWM if the reactive listener has no live entry (crash/restart
+               recovery; the listener in push_sources._check_twm_trigger_habits
+               fires PROC_CODING_SPRINT on a live entry)
   - Advances current_step in goal metadata
   - Posts result to channel as igor
 
@@ -296,7 +299,37 @@ def run_goal_continuation(**_) -> str:
             return f"[goal_continuation] posted ready signal for {ticket_id}"
 
         else:
-            # Step 4+: goal is in LLM territory — don't auto-advance
+            # Step 4+: goal is in LLM territory — don't auto-advance.
+            # Re-emit GOAL_READY if TWM lost the signal (crash/restart/TTL expiry).
+            # The reactive listener (push_sources._check_twm_trigger_habits) needs a
+            # live TWM entry to fire PROC_CODING_SPRINT. Without this, a goal that
+            # was at step=4 pre-restart polls forever with nothing to trigger on.
+            if ticket_id:
+                try:
+                    live = cortex.twm_read(
+                        limit=5, include_integrated=False, category="goal_ready"
+                    )
+                    live_for_ticket = [
+                        e for e in live if ticket_id in e.get("content_csb", "")
+                    ]
+                    if not live_for_ticket:
+                        cortex.twm_push(
+                            source="goal_continuation",
+                            content_csb=f"GOAL_READY|{ticket_id}",
+                            salience=0.85,
+                            category="goal_ready",
+                            ttl_seconds=600,
+                            urgency=0.8,
+                        )
+                        log.info(
+                            f"STEP4 re-emit GOAL_READY for {ticket_id} (TWM was empty)"
+                        )
+                        return (
+                            f"[goal_continuation] step={step} — re-emitted"
+                            f" GOAL_READY for {ticket_id}"
+                        )
+                except Exception as e:
+                    log.info(f"STEP4 re-emit check failed: {e}")
             return f"[goal_continuation] step={step} — LLM territory, skipping"
 
     except Exception as e:
