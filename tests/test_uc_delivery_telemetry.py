@@ -136,7 +136,9 @@ class TestAgentSend:
 
         entry_logs = [r for r in caplog.records if "agent_send agent=igor" in r.message]
         assert len(entry_logs) == 1
-        assert "session=shared" in entry_logs[0].message
+        # Bare "shared" gets canonicalized to the comms:// URI form matching
+        # the browser's join — see _canonical_session_id.
+        assert "session=comms://shared" in entry_logs[0].message
         assert "len=11" in entry_logs[0].message
 
     def test_agent_send_to_unknown_session_produces_drop(
@@ -148,7 +150,9 @@ class TestAgentSend:
             with caplog.at_level(logging.WARNING, logger="utility_closet"):
                 ucs.agent_send("payload", "igor", session_id="ghost_session")
 
-        assert any("DROP session=ghost_session" in r.message for r in caplog.records)
+        assert any(
+            "DROP session=comms://ghost_session" in r.message for r in caplog.records
+        )
         # channel diag fires (agent_send also calls _channel_append for the
         # normal channel mirror; we check at least one call has the uc_deliver
         # diagnostic shape).
