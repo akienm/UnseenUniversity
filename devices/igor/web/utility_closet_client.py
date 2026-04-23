@@ -57,6 +57,10 @@ def _post(path: str, body: dict, timeout: float = 30.0) -> Optional[dict]:
     WS broadcasts, channel writes concurrent with an agent send); WARNING
     makes future occurrences audit-able from tools.log rather than
     invisible.
+
+    For the reply-send path specifically (send_message), use
+    _post_with_telemetry which captures timing + outcome category + posts
+    a channel diagnostic on drop (T-web-reply-telemetry).
     """
     try:
         data = json.dumps(body).encode("utf-8")
@@ -74,6 +78,107 @@ def _post(path: str, body: dict, timeout: float = 30.0) -> Optional[dict]:
     except Exception as e:
         log.warning("utility closet POST %s failed: %s", path, e)
         return None
+
+
+def _classify_outcome(exc: Optional[BaseException]) -> str:
+    """Classify a POST result into one of: delivered | timeout | connection_error | http_error | other_error."""
+    if exc is None:
+        return "delivered"
+    if isinstance(exc, urllib.error.HTTPError):
+        return "http_error"
+    if isinstance(exc, urllib.error.URLError):
+        reason = getattr(exc, "reason", None)
+        reason_text = str(reason).lower() if reason else str(exc).lower()
+        if "timed out" in reason_text or "timeout" in reason_text:
+            return "timeout"
+        if "refused" in reason_text or "unreachable" in reason_text:
+            return "connection_error"
+        return "other_error"
+    if isinstance(exc, TimeoutError):
+        return "timeout"
+    return "other_error"
+
+
+def _post_with_telemetry(
+    path: str,
+    body: dict,
+    preview: str,
+    session_id: str,
+    timeout: float = 30.0,
+) -> tuple[Optional[dict], str, float]:
+    """POST with per-call timing, outcome classification, and drop diagnostic.
+
+    Returns (response_dict_or_none, outcome, elapsed_ms).
+    Outcomes: delivered | timeout | connection_error | http_error | other_error.
+
+    On any non-delivered outcome, posts a channel diagnostic
+    '[web_reply] ✗ session=<id> drop=<outcome> elapsed=<Nms>: <preview>' so
+    drops are visible in the channel in real time rather than buried in the
+    logs. Import of post_to_channel is lazy to avoid a circular dependency
+    between web/ and tools/.
+    """
+    start = time.monotonic()
+    result: Optional[dict] = None
+    outcome = "delivered"
+    exc_for_log: Optional[BaseException] = None
+    try:
+        data = json.dumps(body).encode("utf-8")
+        req = urllib.request.Request(
+            f"{_UC_BASE}{path}",
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with _open(req, timeout) as resp:
+            result = json.loads(resp.read())
+    except BaseException as e:
+        exc_for_log = e
+        outcome = _classify_outcome(e)
+        result = None
+
+    elapsed_ms = (time.monotonic() - start) * 1000.0
+    preview_80 = (preview or "")[:80].replace("\n", " ")
+
+    if outcome == "delivered":
+        log.info(
+            "web_reply: delivered session=%s elapsed=%.0fms size=%dB: %s",
+            session_id,
+            elapsed_ms,
+            len(body.get("content", "")) if isinstance(body, dict) else 0,
+            preview_80,
+        )
+    elif outcome in ("timeout", "connection_error"):
+        log.warning(
+            "web_reply: DROP session=%s outcome=%s elapsed=%.0fms: %s (%s)",
+            session_id,
+            outcome,
+            elapsed_ms,
+            preview_80,
+            exc_for_log,
+        )
+    else:
+        log.error(
+            "web_reply: DROP session=%s outcome=%s elapsed=%.0fms: %s (%s)",
+            session_id,
+            outcome,
+            elapsed_ms,
+            preview_80,
+            exc_for_log,
+        )
+
+    if outcome != "delivered":
+        try:
+            from ..tools.channel_post import post_to_channel
+
+            post_to_channel(
+                f"[web_reply] ✗ session={session_id} drop={outcome} "
+                f"elapsed={elapsed_ms:.0f}ms: {preview_80}",
+                dedup_key=f"web_reply_drop:{session_id}:{outcome}",
+            )
+        except Exception as chexc:  # keep the send path non-blocking
+            log.debug("web_reply: channel diagnostic failed: %s", chexc)
+
+    return result, outcome, elapsed_ms
 
 
 def _get(path: str, timeout: float = 5.0) -> Optional[dict]:
@@ -174,15 +279,21 @@ class UtilityClosetClient(IgorBase):
         return result is not None and result.get("status") == "ok"
 
     def send_message(self, content: str, session_id: str = "shared") -> bool:
-        """Send a message through the utility closet to web clients."""
+        """Send a message through the utility closet to web clients.
+
+        Uses _post_with_telemetry so drops are visible in the channel in real
+        time rather than buried in logs (T-web-reply-telemetry).
+        """
         if not self._registered or not self._agent_id:
             return False
-        result = _post(
+        result, _outcome, _elapsed = _post_with_telemetry(
             f"/api/agents/{self._agent_id}/send",
             {
                 "content": content,
                 "session_id": session_id,
             },
+            preview=content,
+            session_id=session_id,
         )
         return result is not None and result.get("status") == "ok"
 
