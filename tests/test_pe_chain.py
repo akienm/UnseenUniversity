@@ -79,7 +79,7 @@ class TestPeStepRegistration:
         assert "properties" in tool.parameters
 
     @pytest.mark.parametrize("name", PE_STEP_NAMES)
-    def test_dry_mcpcall_not_unknown(self, name):
+    def test_dry_mcpcall_not_unknown(self, name, monkeypatch):
         """
         registry.execute(name, {}) must NOT return the 'Unknown tool' error.
 
@@ -90,7 +90,18 @@ class TestPeStepRegistration:
         call is routed to the real fn; any step-level failure (missing
         active goal, no ticket, etc.) is fine — it just must not be
         'Unknown tool'.
+
+        pe_test / pe_close_loop shell out to `pytest tests/` via
+        ops.run_tests (and, via close_loop's fail-path chain, make a
+        tier.2 LLM call). On empty-basket dispatch that would run the
+        full suite and hang on a real Qwen call. Stub both so the
+        unknown-tool check doesn't trigger real fan-out.
         """
+        from wild_igor.igor.tools import ops as _ops
+        from wild_igor.igor.tools import pe_chain as _pc
+
+        monkeypatch.setattr(_ops, "run_tests", lambda: "stubbed: no run")
+        monkeypatch.setattr(_pc, "_call_tier2", lambda *a, **kw: "")
         result = registry.execute(name, {})
         result_str = str(result)
         assert (

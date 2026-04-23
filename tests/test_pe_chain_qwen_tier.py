@@ -58,6 +58,9 @@ def _read_latest_reasoning_call() -> str | None:
 class TestPeChainRoutesToQwen:
     """pe_chain must call Qwen on tier.2, never Claude."""
 
+    # Real Qwen 7b round-trip runs ~15-60s depending on box; the global
+    # pytest.ini timeout=30 is too tight for an integration-shaped test.
+    @pytest.mark.timeout(180)
     def test_pe_plan_logs_qwen_model(self):
         """
         Run pe_plan on a trivial synthetic ticket. Verify the top line of
