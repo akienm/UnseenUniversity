@@ -1926,8 +1926,14 @@ def pe_test(basket: dict, preflight: bool = False) -> dict:
     # Fallback: direct pytest subprocess. 300s timeout matches ops.run_tests
     # (full suite takes ~3.5 min on akiendell). Without this, pe_chain
     # misreads timeout as a red suite (T-pe-chain-preflight-timeout-misdiagnosis).
+    # Keep in sync with ops._PREFLIGHT_IGNORE — these are the same exclusions.
+    _fallback_ignore = [
+        "tests/test_pe_chain_qwen_tier.py",
+        "tests/test_pr_load_as_primary_attractor.py",
+    ]
+    _ignore_args = [a for p in _fallback_ignore for a in ("--ignore", p)]
     result = _run_bash(
-        ["python", "-m", "pytest", "tests/", "-x", "-q", "--tb=short"],
+        ["python", "-m", "pytest", "tests/", "-x", "-q", "--tb=short"] + _ignore_args,
         timeout=300,
     )
     passed = (

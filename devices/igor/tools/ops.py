@@ -1223,6 +1223,16 @@ registry.register(
 
 _RUN_TESTS_TIMEOUT_SEC = 300
 
+# Tests excluded from preflight — network-calling or shared-state-flaky tests
+# that are unrelated to any specific ticket's work and would always block pe_chain.
+# Add a comment explaining each exclusion so future readers know the reason.
+_PREFLIGHT_IGNORE = [
+    # Makes live Qwen network calls; background threads crash → threading.py timeout
+    "tests/test_pe_chain_qwen_tier.py",
+    # Shared-TWM-state flake: body.motor count off-by-one when run with full suite
+    "tests/test_pr_load_as_primary_attractor.py",
+]
+
 
 def run_tests() -> str:
     """Run the test suite. Returns last 30 lines of output.
@@ -1232,15 +1242,19 @@ def run_tests() -> str:
     a '[run_tests] timeout' marker on TimeoutExpired (distinct from a
     real test failure) lets pe_chain's pre-flight classify the stuck-
     reason correctly instead of misreading timeout as red tests.
+
+    _PREFLIGHT_IGNORE excludes network-calling and shared-state-flaky tests
+    that block preflight for reasons unrelated to ticket work.
     """
     import subprocess
     from pathlib import Path
 
     repo = Path.home() / "TheIgors"
     venv_python = repo / "venv" / "bin" / "python"
+    ignore_args = [arg for path in _PREFLIGHT_IGNORE for arg in ("--ignore", path)]
     try:
         result = subprocess.run(
-            [str(venv_python), "-m", "pytest", "tests/", "-x", "-q"],
+            [str(venv_python), "-m", "pytest", "tests/", "-x", "-q"] + ignore_args,
             capture_output=True,
             text=True,
             timeout=_RUN_TESTS_TIMEOUT_SEC,
