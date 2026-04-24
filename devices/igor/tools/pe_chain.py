@@ -2193,6 +2193,14 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
     # under the repo root, tier2 hallucinated a path. Asking CC to approve
     # editing a nonexistent file is noise — rewrite the reason and fall
     # through to the block branch so the real bug is visible.
+    # T-pe-chain-inertia-gate-hallucinated-target (2026-04-23): extends the
+    # same logic to paths that EXIST but aren't named in the ticket's
+    # 'Affected files:' section. Tier2 empirically defaults HIGH-inertia
+    # hallucinations to real files (brainstem/core_patterns.py), which the
+    # exists-check lets through. Cross-check against the ticket scope using
+    # the same filter SITUATE uses (_filter_high_inertia_not_in_description);
+    # if hypothesis is HIGH-inertia AND not named in description, treat as
+    # hallucinated so the proposal doesn't post with the wrong target.
     is_high_inertia = "HIGH inertia" in reason
     target_file = ""
     _hyp = basket.get("hypothesis")
@@ -2206,6 +2214,23 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
         basket["escalate_reason"] = reason
         log.info(f"ESCALATE: hallucinated-file rewrite — {reason}")
         is_high_inertia = False
+    elif is_high_inertia and target_file:
+        description = basket.get("ticket_description", "") or ""
+        # Only apply scope cross-check when the basket actually carries a
+        # description. An empty description means READ_TICKET never ran
+        # (malformed basket) — fall through to the original propose-for-
+        # approval path and let the human decide, rather than silently
+        # rewriting on missing context.
+        if description:
+            kept = _filter_high_inertia_not_in_description([target_file], description)
+            if not kept:
+                reason = (
+                    f"hallucinated HIGH-inertia target: {target_file} "
+                    f"(not named in ticket 'Affected files:' or description body)"
+                )
+                basket["escalate_reason"] = reason
+                log.info(f"ESCALATE: hallucinated-scope rewrite — {reason}")
+                is_high_inertia = False
 
     if is_high_inertia and ticket_id and ticket_id != "unknown":
         # Compose a design proposal from the basket
