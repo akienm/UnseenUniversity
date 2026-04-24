@@ -500,6 +500,15 @@ _CLOUD_PROGRAMMING_MODEL = os.getenv(
     "IGOR_CLOUD_PROGRAMMING_MODEL", "qwen/qwen-2.5-coder-32b-instruct"
 )
 
+# T-pe-chain-description-cap-too-tight: ticket descriptions carry structured
+# fields (Affected files, Design rules, Scope boundary, Test plan) that land
+# past the 500-char mark. Old caps (600 for reasoning, 200 for fallback) cut
+# those fields off before the tier.2 model saw them, so the plan qwen returned
+# was severed mid-sentence. 4000/2000 gives 2x headroom over typical template
+# sizes without ballooning prompt cost.
+_DESC_CAP_REASONING = 4000
+_DESC_CAP_FALLBACK = 2000
+
 
 def _call_cloud_programming(prompt: str, temperature: float = 0.1) -> str | None:
     """
@@ -854,7 +863,9 @@ def pe_plan(basket: dict) -> dict:
         return basket
 
     if description:
-        prompt = _PLAN_PROMPT.format(ticket_id=ticket_id, description=description[:600])
+        prompt = _PLAN_PROMPT.format(
+            ticket_id=ticket_id, description=description[:_DESC_CAP_REASONING]
+        )
         log.info(f"PLAN: calling tier.2 for {ticket_id}")
         # Routes to cheap background tier (Qwen) — verified T-verify-pe-chain-qwen-tier
         raw = _call_tier2(prompt, temperature=0.7)
@@ -872,7 +883,7 @@ def pe_plan(basket: dict) -> dict:
             basket["plan_source"] = "tier2_ollama"
             log.info(f"PLAN: tier.2 plan={basket['plan_summary'][:80]}")
         else:
-            basket["plan_summary"] = description[:200]
+            basket["plan_summary"] = description[:_DESC_CAP_FALLBACK]
             basket["test_criterion"] = ""
             basket["plan_source"] = "ticket_description"
             log.info("PLAN: tier.2 unavailable — using ticket description as plan")
@@ -1060,7 +1071,7 @@ def pe_situate(basket: dict) -> dict:
             return basket
 
     # Slow path: call tier.2 to figure out which files
-    prompt = _SITUATE_PROMPT.format(description=description[:600])
+    prompt = _SITUATE_PROMPT.format(description=description[:_DESC_CAP_REASONING])
     log.info(
         "SITUATE: calling tier.2 (no required_files, Affected files field, or prior memory)"
     )
@@ -1666,7 +1677,7 @@ def pe_hypothesize(basket: dict) -> dict:
     standards_prefix = f"\n{standards_block}\n" if standards_block else ""
 
     prompt = _HYPOTHESIZE_PROMPT.format(
-        description=description[:400],
+        description=description[:_DESC_CAP_REASONING],
         actual=actual[
             :4000
         ],  # cap to avoid overwhelming small model (4000 = ~120-line section)
