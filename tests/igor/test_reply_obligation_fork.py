@@ -35,6 +35,7 @@ def test_goal_adopt_records_origin_when_awaiting_reply():
 
     captured_mems = []
     captured_pushes = []
+    captured_evicts = []
 
     class _FakeCortex:
         def __init__(self, _):
@@ -46,6 +47,10 @@ def test_goal_adopt_records_origin_when_awaiting_reply():
         def twm_push(self, **kw):
             captured_pushes.append(kw)
             return 1
+
+        def twm_evict_category(self, cat):
+            captured_evicts.append(cat)
+            return 0
 
     with patch.object(_ops, "datetime") as _dt:
         _dt.now.return_value.strftime.side_effect = lambda fmt: (
@@ -100,6 +105,9 @@ def test_goal_adopt_no_origin_when_not_awaiting_reply():
             captured_pushes.append(kw)
             return 1
 
+        def twm_evict_category(self, cat):
+            return 0
+
     with patch("wild_igor.igor.memory.cortex.Cortex", _FakeCortex):
         result = _ops.goal_adopt("write the failing test")
 
@@ -110,6 +118,52 @@ def test_goal_adopt_no_origin_when_not_awaiting_reply():
     assert "origin_turn_id" not in mem.metadata
     assert "origin_question" not in mem.metadata
     assert captured_pushes[0]["salience"] == 0.85
+
+
+# ── T-goal-adopt-evict-on-close: active_goal is a singleton ──────────────────
+
+
+def test_goal_adopt_evicts_prior_active_goal_before_push():
+    """Each goal_adopt call must evict prior active_goal rows before pushing.
+    Without this, 22+ stacked ACTIVE_GOAL rows were observed 2026-04-24,
+    saturating TWM and starving lower-salience observations."""
+    from wild_igor.igor.tools import ops as _ops
+
+    call_log = []  # ordered trace of ("evict", cat) and ("push", kw)
+
+    class _FakeCortex:
+        def __init__(self, _):
+            pass
+
+        def store(self, _mem):
+            pass
+
+        def twm_evict_category(self, cat):
+            call_log.append(("evict", cat))
+            return 0
+
+        def twm_push(self, **kw):
+            call_log.append(("push", kw))
+            return 1
+
+    with patch("wild_igor.igor.memory.cortex.Cortex", _FakeCortex):
+        _ops.goal_adopt("first goal", goal_id="GOAL_A")
+        _ops.goal_adopt("second goal", goal_id="GOAL_B")
+
+    # Every goal_adopt produces exactly one evict then one push, in that order.
+    evicts = [c for c in call_log if c[0] == "evict"]
+    pushes = [c for c in call_log if c[0] == "push"]
+    assert len(evicts) == 2
+    assert len(pushes) == 2
+    assert all(c[1] == "active_goal" for c in evicts)
+
+    # Ordering: evict precedes push in each pair (otherwise the new row gets
+    # evicted immediately — the whole point of the fix).
+    for i, (kind, _) in enumerate(call_log):
+        if kind == "push":
+            assert (
+                call_log[i - 1][0] == "evict"
+            ), f"push at index {i} not preceded by evict: {call_log}"
 
 
 # ── 3. submit_background propagates goal_id ──────────────────────────────────

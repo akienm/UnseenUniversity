@@ -252,6 +252,12 @@ def goal_adopt(
         _twm_meta = {"goal_id": goal_id, "goal_type": "TACTICAL"}
         if pr_facia_id:
             _twm_meta["pr_facia_id"] = pr_facia_id
+        # T-goal-adopt-evict-on-close: active_goal is a singleton category —
+        # evict any prior ACTIVE_GOAL rows before pushing the new one.
+        # Without this, each adoption stacks (22+ rows observed 2026-04-24),
+        # saturating TWM and starving lower-salience observations of slots.
+        # Mirrors the pattern in emit_channels.py:107.
+        cortex.twm_evict_category("active_goal")
         cortex.twm_push(
             source="goal_adopt",
             content_csb=f"ACTIVE_GOAL|id={goal_id}|task={task_short[:80]}",
