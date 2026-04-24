@@ -75,6 +75,7 @@ from . import (
     goal_graph,
     tiered_research,
     hardware_detect,
+    self_inspect,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
