@@ -48,6 +48,27 @@ _BOOTSTRAP_VARS = {"IGOR_INSTANCE_ID", "IGOR_DB_URL", "IGOR_RUNTIME_ROOT"}
 
 _CREDENTIAL_WORDS = {"KEY", "TOKEN", "PASSWORD", "SECRET", "AUTH", "PAT", "CERT"}
 
+# T-safety-gates-above-env-sync (Pass-2 Area 4 P1-8.1):
+# These flags form Igor's primary safety perimeter. They MUST come from
+# the file system, read once at boot, and never round-trip through the
+# config graph. Otherwise any engram with cortex.store() access to a
+# SYSCFG_* node can flip them (IGOR_TIER5_ENABLED gates direct Anthropic;
+# IGOR_ARBITER_ENABLED gates the human-approval queue;
+# IGOR_SELF_EDIT_ENABLED gates all source writes). Graph-poisoning
+# scenario was CONFIRMED_WORSE in Pass 2 — the fix is cheap:
+# exclude these names from push AND hydrate.
+SAFETY_GATE_NAMES = frozenset(
+    {
+        "IGOR_TIER5_ENABLED",
+        "IGOR_ARBITER_ENABLED",
+        "IGOR_SELF_EDIT_ENABLED",
+    }
+)
+
+
+def _is_safety_gate(key: str) -> bool:
+    return key in SAFETY_GATE_NAMES
+
 
 def _is_credential(key: str) -> bool:
     upper = key.upper()
@@ -172,11 +193,15 @@ def _parse_env_file(env_path: Path) -> dict:
 
 
 def push_vars_to_graph(cortex, vars_dict: dict) -> int:
-    """Upsert env vars into the system config graph. Returns count of vars pushed."""
+    """Upsert env vars into the system config graph. Returns count of vars pushed.
+
+    T-safety-gates-above-env-sync: SAFETY_GATE_NAMES are excluded from the
+    graph round-trip — file system is their only source of truth.
+    """
     _ensure_root_nodes(cortex)
     pushed = 0
     for key, value in vars_dict.items():
-        if key in _BOOTSTRAP_VARS or _is_credential(key):
+        if key in _BOOTSTRAP_VARS or _is_credential(key) or _is_safety_gate(key):
             continue
         node_id = _var_node_id(key)
         cat_id = _category_id(key)
@@ -196,13 +221,31 @@ def push_vars_to_graph(cortex, vars_dict: dict) -> int:
 
 
 def hydrate_from_graph(cortex) -> int:
-    """Load system config from graph into os.environ. Only fills unset keys. Returns count."""
+    """Load system config from graph into os.environ. Only fills unset keys. Returns count.
+
+    T-safety-gates-above-env-sync: never rehydrate SAFETY_GATE_NAMES — they
+    must come from the file system only. A graph node with these names is
+    ignored (and logged) rather than allowed to round-trip into os.environ.
+    """
     filled = 0
     for cat_id in (SYSCFG_MODELS_ID, SYSCFG_FEATURES_ID):
         for mem in cortex.get_children(cat_id):
             key = mem.metadata.get("env_key")
             value = mem.metadata.get("env_value")
-            if key and value is not None and key not in os.environ:
+            if not key or value is None:
+                continue
+            if _is_safety_gate(key):
+                # Defense-in-depth: even if someone pushes a safety gate
+                # into the graph somehow, refuse to rehydrate it.
+                import logging
+
+                logging.getLogger(__name__).warning(
+                    "env_sync: refused to rehydrate safety gate '%s' from graph; "
+                    "file-system is the only source of truth for these flags",
+                    key,
+                )
+                continue
+            if key not in os.environ:
                 os.environ[key] = str(value)
                 filled += 1
     return filled
