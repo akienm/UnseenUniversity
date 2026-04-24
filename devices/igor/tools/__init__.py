@@ -76,6 +76,7 @@ from . import (
     tiered_research,
     hardware_detect,
     self_inspect,
+    pe_chain_debugger,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
