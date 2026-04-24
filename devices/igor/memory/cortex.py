@@ -1826,6 +1826,97 @@ class Cortex(IgorBase):
             memory.last_accessed = datetime.now()  # #128
             self.store(memory)
 
+    # ── T-memory-tag-metadata: tag:<name> as lightweight relationship layer ───
+
+    def apply_tag(self, memory_id: str, tag: str, value=True) -> bool:
+        """Set metadata['tag:<tag>'] on a memory. Returns True on success.
+
+        No new schema. Tag is stripped of leading 'tag:' if caller included it,
+        then stored under the canonical 'tag:<name>' key in metadata JSONB.
+        """
+        from .tag_tree import TAG_PREFIX
+
+        if tag.startswith(TAG_PREFIX):
+            tag = tag[len(TAG_PREFIX) :]
+        if not tag:
+            return False
+        memory = self.get(memory_id)
+        if memory is None:
+            return False
+        if not isinstance(memory.metadata, dict):
+            memory.metadata = {}
+        memory.metadata[f"{TAG_PREFIX}{tag}"] = value
+        self.store(memory)
+        return True
+
+    def get_tags_for(self, memory_id: str) -> list[str]:
+        """Return tag names (prefix stripped) attached to a memory."""
+        from .tag_tree import extract_tag_names
+
+        memory = self.get(memory_id)
+        if memory is None:
+            return []
+        return extract_tag_names(memory.metadata)
+
+    def memories_with_tag(self, tag: str, limit: int | None = None) -> list[str]:
+        """Return memory ids whose metadata carries the given tag."""
+        from .db_proxy import PGDatabaseProxy
+        from .tag_tree import TAG_PREFIX
+
+        if tag.startswith(TAG_PREFIX):
+            tag = tag[len(TAG_PREFIX) :]
+        if not tag:
+            return []
+        key = f"{TAG_PREFIX}{tag}"
+        is_pg = isinstance(self._db, PGDatabaseProxy)
+        if is_pg:
+            sql = "SELECT id FROM memories WHERE jsonb_exists(metadata, %s)"
+            params: list = [key]
+        else:
+            sql = "SELECT id FROM memories WHERE json_extract(metadata, ?) IS NOT NULL"
+            params = [f"$.{key}"]
+        if limit:
+            sql += f" LIMIT {int(limit)}"
+        with self._conn() as conn:
+            rows = conn.execute(sql, tuple(params)).fetchall()
+        return [r["id"] if hasattr(r, "keys") else r[0] for r in rows]
+
+    def tag_tree(self, memory_type: str | None = None) -> dict:
+        """Assemble a nested tag tree by scanning memory metadata.
+
+        Scans memories whose metadata contains any 'tag:%' key, collects the
+        tag lists, and returns the nested dict built by tag_tree.build_tag_tree.
+        Restrict to a memory_type to scope the tree (e.g. FACTUAL-only).
+        """
+        from .db_proxy import PGDatabaseProxy
+        from .tag_tree import build_tag_tree, extract_tag_names
+
+        is_pg = isinstance(self._db, PGDatabaseProxy)
+        if is_pg:
+            sql = "SELECT metadata FROM memories " "WHERE metadata::text LIKE %s"
+            params: list = ['%"tag:%']
+            if memory_type:
+                sql += " AND memory_type = %s"
+                params.append(memory_type)
+        else:
+            sql = "SELECT metadata FROM memories WHERE metadata LIKE ?"
+            params = ['%"tag:%']
+            if memory_type:
+                sql += " AND memory_type = ?"
+                params.append(memory_type)
+        with self._conn() as conn:
+            rows = conn.execute(sql, tuple(params)).fetchall()
+        tag_lists = []
+        for r in rows:
+            meta = r["metadata"] if hasattr(r, "keys") else r[0]
+            if isinstance(meta, str):
+                try:
+                    meta = json.loads(meta)
+                except (json.JSONDecodeError, TypeError):
+                    continue
+            tag_lists.append(extract_tag_names(meta))
+        return build_tag_tree(tag_lists)
+
     # ── #65: Tagged blob storage ───────────────────────────────────────────────
 
     def store_blob(
