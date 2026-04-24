@@ -2287,6 +2287,25 @@ def _pe_close(basket: dict) -> dict:
     return basket
 
 
+def _close_goal_on_escalate(basket: dict) -> None:
+    """Deactivate the active GOAL when pe_chain escalates early (preflight/filter/scope).
+
+    T-pe-chain-goal-close-on-escalate: without this, goal_continuation re-emits
+    GOAL_READY on the next cycle and fires PROC_CODING_SPRINT again, letting LLM
+    territory hallucinate out-of-scope file edits.
+    """
+    ticket_id = basket.get("ticket_id", "unknown")
+    try:
+        from .ops import close_goal_by_ticket as _close_goal
+
+        goal_result = _close_goal(ticket_id)
+        basket["goal_close_result"] = goal_result
+        log.info(f"ESCALATE: goal closed → {goal_result[:60]}")
+    except Exception as e:
+        basket["goal_close_result"] = f"[error: {e}]"
+        log.info(f"ESCALATE: goal close error: {e}")
+
+
 def _pe_escalate(basket: dict, reason: str) -> dict:
     """D331: ESCALATE — compose design proposal for HIGH inertia, or block for other reasons."""
     ticket_id = basket.get("ticket_id", "unknown")
@@ -2454,16 +2473,7 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
         except Exception:
             pass
 
-    # Close the active GOAL so the habit does not re-trigger the chain
-    try:
-        from .ops import close_goal_by_ticket as _close_goal
-
-        goal_result = _close_goal(ticket_id)
-        basket["goal_close_result"] = goal_result
-        log.info(f"ESCALATE: goal closed → {goal_result[:60]}")
-    except Exception as e:
-        basket["goal_close_result"] = f"[error: {e}]"
-        log.info(f"ESCALATE: goal close error: {e}")
+    _close_goal_on_escalate(basket)
 
     return basket
 
@@ -2504,6 +2514,7 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
         return basket
     basket = pe_filter(basket)
     if basket.get("escalate_reason"):
+        _close_goal_on_escalate(basket)
         return basket
     basket = pe_situate(basket)
     if basket.get("error"):
@@ -2547,6 +2558,7 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
                     what_i_tried=f"applied heal recognizer={heal.recognizer}",
                     what_failed=basket["test_result"][:300],
                 )
+                _close_goal_on_escalate(basket)
                 return basket
             log.info(f"PRE-FLIGHT HEALED via {heal.recognizer} — proceeding")
         else:
@@ -2583,6 +2595,7 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
                     what_i_tried="ran pre-flight test suite; no recognizer matched the failure",
                     what_failed=basket["test_result"][:300],
                 )
+            _close_goal_on_escalate(basket)
             return basket
 
     basket = pe_hypothesize(basket)
@@ -2594,6 +2607,7 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
     if basket.get("escalate_reason"):
         # Evict GOAL_READY so sprint doesn't immediately re-fire the blocked chain
         _evict_goal_ready_twm(basket.get("ticket_id", ""))
+        _close_goal_on_escalate(basket)
         return basket
     basket = pe_implement(basket)
     if basket.get("error"):
