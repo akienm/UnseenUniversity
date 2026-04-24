@@ -686,13 +686,12 @@ def _call_tier2(prompt: str, timeout: int = 0, temperature: float = 0.1) -> str 
         return None
 
 
-def _parse_file_list(raw: str) -> list[str]:
+def _iter_candidate_paths(raw: str):
+    """Yield cleaned candidate path lines from raw text.
+
+    Shared shape-filter used by both _parse_file_list (strict existence) and
+    _parse_declared_file_list (accepts declared-new paths).
     """
-    Extract file paths from a raw LLM response.
-    Accepts one path per line; filters to lines that look like Python paths.
-    Validates paths exist under repo root. Returns list (may be empty).
-    """
-    paths_found = []
     for line in raw.splitlines():
         line = line.strip().strip("`").strip("'\"").strip()
         if not line or line.startswith("#"):
@@ -703,13 +702,49 @@ def _parse_file_list(raw: str) -> list[str]:
         # Strip leading ./ if present
         if line.startswith("./"):
             line = line[2:]
-        # Validate it exists under repo root
+        yield line
+
+
+def _parse_file_list(raw: str) -> list[str]:
+    """
+    Extract file paths from a raw LLM response.
+    Accepts one path per line; filters to lines that look like Python paths.
+    Validates paths exist under repo root. Returns list (may be empty).
+
+    Strict variant: used for tier.2 output where we want to reject
+    hallucinated paths. For ticket-author-declared paths that may be new
+    files, use _parse_declared_file_list.
+    """
+    paths_found = []
+    for line in _iter_candidate_paths(raw):
         candidate = _REPO_ROOT / line
         if candidate.exists():
             paths_found.append(line)
         else:
             log.debug("[pe_chain] situate: path not found: %s", line)
     return paths_found
+
+
+def _parse_declared_file_list(raw: str) -> tuple[list[str], list[str]]:
+    """
+    Accept ticket-author-declared paths — existing or new.
+
+    T-situate-accepts-declared-new-files: new-file tickets (e.g. ones that
+    propose creating lab/claudecode/check_no_sqlite.py) previously had SITUATE
+    return 0 via _affected_files_from_description because _parse_file_list
+    filtered non-existent paths. Trust the ticket author; IMPLEMENT will
+    handle the create-vs-edit distinction based on the new_files marker.
+
+    Returns (all_paths, new_paths) — all_paths is the full declared list,
+    new_paths is the subset that doesn't exist on disk yet.
+    """
+    all_paths: list[str] = []
+    new_paths: list[str] = []
+    for line in _iter_candidate_paths(raw):
+        all_paths.append(line)
+        if not (_REPO_ROOT / line).exists():
+            new_paths.append(line)
+    return all_paths, new_paths
 
 
 _AFFECTED_FILES_RE = re.compile(
@@ -722,18 +757,28 @@ def _affected_files_from_description(description: str) -> list[str]:
     """
     Parse the 'Affected files:' line from the /ticket structured template.
 
-    Returns list of valid repo-relative paths (same validation as
-    _parse_file_list). Returns [] if the field is absent, empty, or TBD-shaped.
+    Accepts declared paths whether they exist yet or not — the ticket author
+    is trusted. Returns [] only if the field is absent, empty, or TBD-shaped.
+    To also see which declared paths are new, use
+    _affected_files_from_description_detailed.
     """
+    paths, _ = _affected_files_from_description_detailed(description)
+    return paths
+
+
+def _affected_files_from_description_detailed(
+    description: str,
+) -> tuple[list[str], list[str]]:
+    """Like _affected_files_from_description but also returns new-path subset."""
     if not description:
-        return []
+        return [], []
     m = _AFFECTED_FILES_RE.search(description)
     if not m:
-        return []
+        return [], []
     raw = m.group(1).strip().strip("*").strip()
     if not raw or raw.upper().startswith("TBD"):
-        return []
-    return _parse_file_list(raw.replace(",", "\n"))
+        return [], []
+    return _parse_declared_file_list(raw.replace(",", "\n"))
 
 
 def _filter_high_inertia_not_in_description(
@@ -983,12 +1028,23 @@ def pe_situate(basket: dict) -> dict:
 
     description = basket["ticket_description"]
 
-    # Fast path 2: 'Affected files:' structured field from /ticket template
-    affected = _affected_files_from_description(description)
+    # Fast path 2: 'Affected files:' structured field from /ticket template.
+    # T-situate-accepts-declared-new-files: accept declared paths whether
+    # they exist yet or not — new-file tickets were dying at this step
+    # because _parse_file_list silently filtered non-existent paths.
+    affected, new_paths = _affected_files_from_description_detailed(description)
     if affected:
         basket["plan_files"] = affected
         basket["situate_source"] = "affected_files_field"
-        log.info(f"SITUATE: using 'Affected files:' field: {affected}")
+        if new_paths:
+            basket["new_files"] = new_paths
+            log.info(
+                "SITUATE: using 'Affected files:' field: %s (new: %s)",
+                affected,
+                new_paths,
+            )
+        else:
+            log.info(f"SITUATE: using 'Affected files:' field: {affected}")
         return basket
 
     # Memory path: check prior observe deposits for this ticket before tier.2
