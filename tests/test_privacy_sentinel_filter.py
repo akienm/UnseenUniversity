@@ -85,3 +85,42 @@ def test_regular_bracketed_text_not_leak():
     """A reply that legitimately starts with a bracketed word shouldn't be
     caught by the tool-leak patterns."""
     assert _is_raw_tool_leak("[note] I learned something interesting.") is False
+
+
+# ── T-interceptor-habit-hijacks-reply-path: bare NOT_RUNNING|... ─────────────
+
+
+def test_bare_not_running_template_caught():
+    """Observed 2026-04-24: check_process returned 'NOT_RUNNING|name=<user_msg>'
+    with no [tool_name] prefix, and that leaked as the reply. Bare CSB templates
+    must be caught too."""
+    leak = (
+        "NOT_RUNNING|name=[Web message from akien]: we are sprinting "
+        "toward igor can process a ticket on his own."
+    )
+    assert _is_raw_tool_leak(leak) is True
+
+
+def test_bare_running_template_caught():
+    assert (
+        _is_raw_tool_leak("RUNNING|name=igor|count=1|pids=12345|processes=python")
+        is True
+    )
+
+
+def test_bare_ok_and_fail_templates_caught():
+    assert _is_raw_tool_leak("OK|step=install|result=applied") is True
+    assert _is_raw_tool_leak("FAIL|step=restart|reason=timeout") is True
+
+
+def test_prose_with_pipe_is_not_leak():
+    """Legitimate prose that happens to contain a pipe should not be caught.
+    The bare-form regex requires STATUS|key= (key-value structure) so free-form
+    prose with a pipe stays safe."""
+    assert _is_raw_tool_leak("Options: keep it | discard it | ask Akien.") is False
+
+
+def test_bare_template_without_kv_not_caught():
+    """Bare 'NOT_RUNNING|' without a key=value pair is not a tool template —
+    could be someone quoting a status name. Only the key= form is a real leak."""
+    assert _is_raw_tool_leak("NOT_RUNNING|something informal here") is False
