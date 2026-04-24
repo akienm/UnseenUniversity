@@ -39,6 +39,7 @@ context doesn't match, and letting the more deliberate path produce
 the response instead. Igor is missing that layer at the right gate.
 """
 
+import os
 import re
 from datetime import datetime, timezone
 from typing import Optional
@@ -213,6 +214,45 @@ def _coherence_log(stage: str, **fields) -> None:
 # ── Main check ───────────────────────────────────────────────────────────────
 
 
+# T-inhibitor-escalate-guard (Pass-2 Area 2 P1.9): per-thread fire counter
+# with a hard escalate-to-human at N per window. Prevents the runaway
+# oscillation where an incoherent correction triggers a fresh coherence
+# failure which triggers another correction ad infinitum. Module-level
+# state is fine — same-lifetime scope is exactly what we want (restart
+# clears the counter, intentionally; a runaway within one lifetime won't
+# fit in a single tier.2 budget window).
+import threading as _threading
+import time as _time
+
+_INHIBITOR_ESCALATE_N = int(os.getenv("IGOR_INHIBITOR_ESCALATE_N", "3"))
+_INHIBITOR_WINDOW_SECS = int(os.getenv("IGOR_INHIBITOR_WINDOW_SECS", "600"))
+_inhibitor_fires: dict[str, list[float]] = {}
+_inhibitor_fires_lock = _threading.Lock()
+
+
+def _record_fire_and_should_escalate(thread_id: str) -> tuple[bool, int]:
+    """Record a coherence fire for thread_id; return (should_escalate, count)."""
+    if not thread_id:
+        thread_id = "_no_thread_"
+    now = _time.monotonic()
+    cutoff = now - _INHIBITOR_WINDOW_SECS
+    with _inhibitor_fires_lock:
+        hist = [t for t in _inhibitor_fires.get(thread_id, []) if t >= cutoff]
+        hist.append(now)
+        _inhibitor_fires[thread_id] = hist
+        count = len(hist)
+    return count >= _INHIBITOR_ESCALATE_N, count
+
+
+def _reset_inhibitor_fires(thread_id: str | None = None) -> None:
+    """Reset fires for a thread, or all threads if None. Test helper."""
+    with _inhibitor_fires_lock:
+        if thread_id is None:
+            _inhibitor_fires.clear()
+        else:
+            _inhibitor_fires.pop(thread_id, None)
+
+
 def check_coherence(
     cortex,
     prompt: str,
@@ -303,6 +343,44 @@ def check_coherence(
         prompt_excerpt=prompt[:120],
         response_excerpt=response[:120],
     )
+
+    # T-inhibitor-escalate-guard: record the fire against this thread. If
+    # we've fired N+ times in the window, we're probably in an auto-
+    # correction runaway loop — emit STUCK marker, skip the ring/TWM
+    # auto-correction pushes, and return stuck so callers can route to
+    # human review instead of attempting another correction.
+    should_escalate, fire_count = _record_fire_and_should_escalate(thread_id or "")
+    if should_escalate:
+        _coherence_log(
+            "stuck",
+            turn_id=turn_id,
+            thread_id=thread_id or "",
+            fires=fire_count,
+            window_s=_INHIBITOR_WINDOW_SECS,
+        )
+        try:
+            from ..tools.channel_post import post_to_channel as _chan
+
+            _chan(
+                f"COHERENCE_INHIBITOR_STUCK|thread={thread_id or '?'}|fires={fire_count} — "
+                f"auto-correction suppressed; human review recommended",
+                author="igor-inhibitor",
+                dedup_key=f"coherence_stuck:{thread_id or 'no_thread'}",
+            )
+        except Exception as _exc:
+            from .forensic_logger import log_error as _le
+
+            _le(
+                kind="SILENT_EXCEPT",
+                detail=f"response_coherence_inhibitor.py stuck channel post: {_exc}",
+            )
+        return {
+            "score": score,
+            "gated": False,
+            "flagged": True,
+            "reason": "stuck_escalated",
+            "fire_count": fire_count,
+        }
 
     try:
         cortex.write_ring(
