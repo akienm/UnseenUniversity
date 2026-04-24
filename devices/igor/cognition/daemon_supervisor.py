@@ -14,6 +14,15 @@ Design (T-daemon-supervisor):
 T-daemon-supervisor-polling: polling thread (5s) detects dead critical threads and
 writes restart.flag so Igor can recover automatically instead of running silently
 broken. Non-critical thread deaths are logged but don't trigger restart.
+
+T-daemon-supervisor-spawn-liveness: is_alive() is the wrong signal for one-shot-
+per-tick workers like ne-worker and consolidation-worker — natural exit is the
+design, not a failure. The real failure mode is "main loop stopped calling the
+spawn hook." Detect it via heartbeat(name): callers bump a last_heartbeat_ts at
+the top of the spawn hook regardless of whether the idle-gate decided to spawn.
+status() reports stale=True when (now - last_heartbeat_ts) > staleness_threshold_secs.
+Report-only — no restart.flag (yesterday's crash loop proved restart-on-false-
+positive is worse than no detection).
 """
 
 import logging
@@ -36,6 +45,8 @@ class _DaemonEntry:
     started_at: float = field(default_factory=time.monotonic)
     health_fn: Callable[[], bool] | None = None
     one_shot: bool = False  # if True, natural exit is expected — no DAEMON_DEAD alert
+    last_heartbeat_ts: float = field(default_factory=time.monotonic)
+    staleness_threshold_secs: float | None = None
 
 
 class DaemonSupervisor(IgorBase):
@@ -52,20 +63,44 @@ class DaemonSupervisor(IgorBase):
         thread: threading.Thread,
         health_fn: Callable[[], bool] | None = None,
         one_shot: bool = False,
+        staleness_threshold_secs: float | None = None,
     ) -> None:
         """Register a daemon thread. Call after thread.start().
 
         one_shot=True: thread is expected to exit after completing its task.
         Natural termination is not alarmed — no DAEMON_DEAD warning logged.
         Use for startup tasks (boot-check, warmup, etc.), not persistent workers.
+
+        staleness_threshold_secs: for one-shot-per-tick workers, the max age of
+        the last heartbeat before the entry is flagged stale. None = no check.
+        Call heartbeat(name) from the spawn hook regardless of gate decisions.
         """
         with self._lock:
+            # Preserve last_heartbeat_ts across re-registration — otherwise the
+            # per-tick register call here would reset the heartbeat independently
+            # of the upstream heartbeat() call, making staleness meaningless.
+            prior = self._entries.get(name)
+            hb = prior.last_heartbeat_ts if prior is not None else time.monotonic()
             self._entries[name] = _DaemonEntry(
                 name=name,
                 thread=thread,
                 health_fn=health_fn,
                 one_shot=one_shot,
+                last_heartbeat_ts=hb,
+                staleness_threshold_secs=staleness_threshold_secs,
             )
+
+    def heartbeat(self, name: str) -> None:
+        """Bump last_heartbeat_ts for an entry. No-op if not registered yet.
+
+        Call from the spawn hook's entry point — before the is_alive() re-entry
+        guard and before the idle-gate — so the heartbeat signals "main loop
+        is still calling this hook," not "hook decided to spawn."
+        """
+        with self._lock:
+            e = self._entries.get(name)
+            if e is not None:
+                e.last_heartbeat_ts = time.monotonic()
 
     def status(self) -> list[dict]:
         """Return current status of all registered threads."""
@@ -81,6 +116,10 @@ class DaemonSupervisor(IgorBase):
                     healthy = bool(e.health_fn())
                 except Exception:
                     healthy = False
+            since_heartbeat = now - e.last_heartbeat_ts
+            stale = False
+            if e.one_shot and e.staleness_threshold_secs is not None:
+                stale = since_heartbeat > e.staleness_threshold_secs
             rows.append(
                 {
                     "name": e.name,
@@ -88,6 +127,8 @@ class DaemonSupervisor(IgorBase):
                     "uptime_s": round(now - e.started_at, 1),
                     "healthy": healthy,
                     "one_shot": e.one_shot,
+                    "since_heartbeat_s": round(since_heartbeat, 1),
+                    "stale": stale,
                 }
             )
         return rows
@@ -105,13 +146,23 @@ class DaemonSupervisor(IgorBase):
                 health_mark = "  health=ok"
             elif r["healthy"] is False:
                 health_mark = "  health=FAIL"
+            stale_mark = "  STALE" if r.get("stale") else ""
             lines.append(
-                f"  {r['name']:<32}  {alive_mark:<8}  up={r['uptime_s']}s{health_mark}"
+                f"  {r['name']:<32}  {alive_mark:<8}  up={r['uptime_s']}s{health_mark}{stale_mark}"
             )
-        dead = [r for r in rows if not r["alive"]]
+        # For one-shot workers, "dead" means "not currently running," which is
+        # the expected state between ticks — don't alarm on it. Only report
+        # long-running workers that died and genuinely-stale one-shot workers.
+        dead = [r for r in rows if not r["alive"] and not r.get("one_shot")]
         if dead:
             lines.append(
                 f"\n⚠ {len(dead)} dead thread(s): {', '.join(r['name'] for r in dead)}"
+            )
+        stale = [r for r in rows if r.get("stale")]
+        if stale:
+            lines.append(
+                f"\n⚠ {len(stale)} stale worker(s) — spawn hook stopped being called: "
+                f"{', '.join(r['name'] for r in stale)}"
             )
         return "\n".join(lines)
 
