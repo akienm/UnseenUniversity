@@ -6768,9 +6768,24 @@ class Igor(IgorBase):
                     suppress_incoherent as _suppress_incoherent,
                 )
 
-                _source_label = (
-                    f"habit:{_turn_habit.id}" if _turn_habit else "llm_or_tier0"
-                )
+                # T-coherence-inhibitor-winnow-exemption: only PROCEDURAL
+                # memories are true templated-response habits. INTERPRETIVE
+                # winners (WINNOW_xxx winnowing hints) drive LLM dispatch,
+                # not a cached template — labeling them as habit: routes the
+                # LLM-produced reply through Jaccard suppression, which
+                # false-positives on any genuine conversational answer whose
+                # vocabulary doesn't echo the prompt. Observed 2026-04-24:
+                # 'What's the thing you've been carrying around in your head
+                # lately...' got score=0.000 and was silenced.
+                if _turn_habit is None:
+                    _source_label = "llm_or_tier0"
+                else:
+                    _mt = getattr(_turn_habit, "memory_type", None)
+                    _mt_str = getattr(_mt, "value", str(_mt)) if _mt else ""
+                    if _mt_str == "PROCEDURAL":
+                        _source_label = f"habit:{_turn_habit.id}"
+                    else:
+                        _source_label = f"llm_via_{_turn_habit.id}"
                 _coh_result = _check_coherence(
                     self.cortex,
                     prompt=user_input,
