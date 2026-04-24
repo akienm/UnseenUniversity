@@ -38,8 +38,11 @@ Three collaborating layers:
 
 2. ring_memory (local box, short-term)
    FIFO buffer (RING_MAX=50). Sticky notepad for session context. Survives
-   restarts. Indexed by instance_id so each Igor box gets its own ring.
-   Columns: id, content, timestamp, instance_id, thread_id.
+   restarts. Per-instance isolation is via the local-DB proxy (each box
+   owns its own DB file / schema), not via an instance_id column.
+   Columns: id, category, content, timestamp, thread_id (T-ring-memory-docstring-fix,
+   Pass-2 Area 1 Gap G1: prior docstring claimed an instance_id column that
+   never existed in the CREATE TABLE).
 
 3. twm_observations (local box, transient)
    Multiple processes push here. NE polls, integrates, and promotes
