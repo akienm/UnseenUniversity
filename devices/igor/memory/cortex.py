@@ -3882,8 +3882,20 @@ class Cortex(IgorBase):
         #152: Delete a memory by ID. Returns True if deleted.
         Caller is responsible for ensuring the ID is not genesis-protected.
         Used by /hygiene --apply.
+
+        T-delete-memory-fk-cascade: memory_embeddings.memory_id and
+        memory_blobs.memory_id carry FK constraints referencing memories.id.
+        Deleting memories.id first fails the constraint; NE's merge loop
+        (narrative_engine._merge_cluster) was hitting this every merge
+        attempt, flooding 4+ error logs at >200MB/sec. Delete FK children
+        first, then parent, in the same connection context so the cleanup
+        either all lands or all rolls back.
         """
         with self._conn() as conn:
+            conn.execute(
+                "DELETE FROM memory_embeddings WHERE memory_id=?", (memory_id,)
+            )
+            conn.execute("DELETE FROM memory_blobs WHERE memory_id=?", (memory_id,))
             result = conn.execute("DELETE FROM memories WHERE id=?", (memory_id,))
         return result.rowcount > 0
 
