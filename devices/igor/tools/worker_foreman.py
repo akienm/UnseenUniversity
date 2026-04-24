@@ -26,6 +26,7 @@ from ..cognition.anticipation import (
 
 _QUEUE_PATH = paths().cc_channel / "queue.json"
 _WORKER_PIDS_PATH = paths().cc_channel / "worker_pids.json"
+_WORKER_PAUSED_FLAG = paths().instance / "worker_paused.flag"
 _CC_QUEUE_SCRIPT = Path.home() / "TheIgors" / "lab" / "claudecode" / "cc_queue.py"
 
 
@@ -211,6 +212,8 @@ def foreman_scan() -> str:
     Called by PROC_WORKER_FOREMAN habit when BOREDOM_DETECTED fires.
     Bridges idle-time awareness → concrete work handoff.
     """
+    if _WORKER_PAUSED_FLAG.exists():
+        return "worker paused — delete ~/.TheIgors/Igor-wild-0001/worker_paused.flag to resume"
     try:
         tasks = _load_queue()
         if not tasks:
