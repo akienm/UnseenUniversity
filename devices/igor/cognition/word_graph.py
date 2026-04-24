@@ -1,5 +1,5 @@
 """
-WordGraph — SQLite-backed word co-occurrence index.
+WordGraph — Postgres-backed word co-occurrence index (via db_proxy).
 
 Two traversal directions on the same underlying weights:
 
@@ -16,12 +16,15 @@ Language tags (#141):
   score() and predict_next() accept an optional lang filter for targeted traversal.
   words_by_lang() and bridge_words() enable cross-language navigation.
 
-Storage: SQLite (~/.TheIgors/{name}.db). No in-memory JSON load — the 191MB
-JSON representation was expanding to 4-8GB Python RAM after 158 books trained.
-The public API is identical to the original in-memory version; callers unchanged.
+Storage: PGDatabaseProxy against the Igor-wild-0001 Postgres DSN (same
+database as the rest of the graph). No in-memory JSON load — the 191MB
+JSON representation was expanding to 4-8GB Python RAM after 158 books
+trained. The public API is identical to the original in-memory version;
+callers unchanged. T-word-graph-docstring-sqlite (Pass-2 Area 3): the
+historical "SQLite-backed" framing is retired — db_proxy is Postgres-only.
 
 G37: name param allows two instances — recognition (listening) and generation
-(speaking) — with separate DB files and independent weight development.
+(speaking) — with separate graph rows and independent weight development.
 """
 
 from __future__ import annotations
@@ -336,7 +339,9 @@ CREATE INDEX IF NOT EXISTS idx_wge_a ON wg_edges(word_a);
 
 class WordGraph(IgorBase):
     """
-    SQLite-backed word graph with language tags on nodes (#141).
+    Word graph with language tags on nodes (#141). Backed by Postgres via
+    db_proxy (the "SQLite-backed" framing is retired; db_proxy is
+    Postgres-only after D328+).
 
     Storage tables:
       wg_word_docs  : word, doc_id, weight  — parsing direction
