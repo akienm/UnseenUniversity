@@ -16,6 +16,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lab" / "claudec
 import igor_mcp  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def _clean_pending_file():
+    """Auto-clean the real cc_compact_pending.txt before and after each test.
+    Without this, every test-suite run leaks a real preserve string into the
+    hook, which then injects a stale 'COMPACT REQUESTED' into the next CC
+    turn. Caught 2026-04-24 after a full-suite run left session=2026-04-16a
+    lingering and firing every prompt for days.
+    """
+    from cc_hook_pending import COMPACT_PENDING_FILE
+
+    COMPACT_PENDING_FILE.unlink(missing_ok=True)
+    yield
+    COMPACT_PENDING_FILE.unlink(missing_ok=True)
+
+
 def test_file_handoff_is_primary():
     """File handoff should be the primary path, not tmux."""
     result = igor_mcp._request_compaction("preserve: test")
