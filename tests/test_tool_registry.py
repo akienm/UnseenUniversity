@@ -84,6 +84,26 @@ class TestToolStats(unittest.TestCase):
         self.assertLessEqual(len(s._samples), ToolStats._MAX_SAMPLES)
         self.assertEqual(s.call_count, 1500)  # count still tracks all
 
+    def test_newest_n_semantics_not_sorted_top_n(self):
+        """T-toolstats-sample-semantics-fix regression.
+
+        Pre-fix: bisect.insort + pop(0) kept the SLOWEST N, not the NEWEST N
+        — so p50/p95 biased high as the buffer filled. Record 500 slow
+        samples, then overflow with 1500 fast samples. Newest-N semantics
+        should result in p50/p95 tracking the fast tail, not the slow one.
+        """
+        s = ToolStats()
+        # Phase 1: 500 slow samples (elapsed_ms = 1000..1499)
+        for ms in range(1000, 1500):
+            s.record(ms, True)
+        # Phase 2: 1500 fast samples (elapsed_ms = 10). Buffer should
+        # evict the slow phase entirely (deque maxlen=1000).
+        for _ in range(1500):
+            s.record(10, True)
+        self.assertEqual(s.p50, 10)
+        self.assertEqual(s.p95, 10)
+        self.assertEqual(s.call_count, 2000)
+
     def test_to_dict_keys(self):
         s = ToolStats()
         s.record(50, True)
