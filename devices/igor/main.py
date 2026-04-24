@@ -332,6 +332,16 @@ _CSB_TOOL_LEAK_RE = re.compile(
     r"^\s*\[[a-z_]+\]\s*(NOT_RUNNING|RUNNING|OK|FAIL|ERROR|PASS|SKIP)\|",
     re.IGNORECASE,
 )
+# T-interceptor-habit-hijacks-reply-path (2026-04-24): the prefix form above
+# assumes the dispatcher wraps tool results as `[tool_name] STATUS|...`. When
+# a habit's code_ref tool returns the status string directly (e.g. check_process
+# returning "NOT_RUNNING|name=..."), no prefix is added and the raw template
+# leaks as the reply. Catch the bare form too. Anchored to start-of-line to
+# avoid matching status strings that appear mid-sentence in legitimate prose.
+_CSB_TOOL_LEAK_BARE_RE = re.compile(
+    r"^\s*(NOT_RUNNING|RUNNING|OK|FAIL|ERROR|PASS|SKIP)\|\w+=",
+    re.IGNORECASE,
+)
 # T-stored-locally-only-contact-defect (#416): privacy sentinels like
 # stored_locally_only:CONTACT_abc123 are internal return values from
 # tools. They must never reach the user — they halt the conversation
@@ -348,7 +358,8 @@ def _is_raw_tool_leak(text: str) -> bool:
     Return True if response_text is a raw internal tool result that should not
     reach the channel. Catches:
       - [run_bash result: {"id": ...}]  (synthesis-failed fallback)
-      - [check_process] NOT_RUNNING|name=...  (CSB format leak)
+      - [check_process] NOT_RUNNING|name=...  (CSB format leak, prefixed form)
+      - NOT_RUNNING|name=...  (CSB format leak, bare form — T-interceptor-habit-hijacks-reply-path)
       - stored_locally_only:CONTACT_abc (privacy sentinel from google_contacts)
       - stored_locally|google_error:... (privacy sentinel error variant)
     """
@@ -356,6 +367,7 @@ def _is_raw_tool_leak(text: str) -> bool:
     return bool(
         _RAW_TOOL_RESULT_RE.match(t)
         or _CSB_TOOL_LEAK_RE.match(t)
+        or _CSB_TOOL_LEAK_BARE_RE.match(t)
         or _PRIVACY_SENTINEL_RE.match(t)
     )
 
