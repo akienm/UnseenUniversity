@@ -6956,13 +6956,15 @@ class Igor(IgorBase):
             try:
                 from .cognition.daemon_supervisor import supervisor as _sup
 
-                # T-daemon-supervisor-backoff-and-one-shot-audit: ne-worker is a
-                # long-running while-loop worker, not a launch-once thread. The
-                # prior one_shot=True made the daemon_supervisor skip critical-
-                # thread alerts for it (line 145 of daemon_supervisor.py), so
-                # the restart.flag mechanism was silently disabled for the one
-                # thread it was meant to guard. Register as long-running.
-                _sup.register("ne-worker", self._ne_thread)
+                # ne-worker is one-shot-per-tick: this function spawns a fresh
+                # thread that runs ne.run() + experiment_scheduler.tick() once
+                # and exits. The `is_alive()` check at the top of this method
+                # guards re-entry. Natural thread exit is the normal path, so
+                # one_shot=True tells the supervisor not to alarm on it.
+                # (Detecting a genuinely stuck pipeline needs a last-spawn
+                # timestamp check, not thread.is_alive — see T-daemon-supervisor-
+                # spawn-liveness.)
+                _sup.register("ne-worker", self._ne_thread, one_shot=True)
             except Exception as _exc:
                 from .cognition.forensic_logger import log_error as _le
 
@@ -7034,9 +7036,12 @@ class Igor(IgorBase):
         try:
             from .cognition.daemon_supervisor import supervisor as _sup
 
-            # T-daemon-supervisor-backoff-and-one-shot-audit: consolidation-worker
-            # is also a long-running while-loop, same reasoning as ne-worker above.
-            _sup.register("consolidation-worker", self._consolidation_thread)
+            # consolidation-worker is one-shot-per-tick, same shape as ne-worker:
+            # run_consolidation() runs once and the thread exits. Re-entry is
+            # guarded by the is_alive check at the top of this method.
+            _sup.register(
+                "consolidation-worker", self._consolidation_thread, one_shot=True
+            )
         except Exception as _exc:
             from .cognition.forensic_logger import log_error as _le
 
