@@ -64,8 +64,10 @@ class TestMaybeConsultStuck:
         assert mock_cls.call_count == 1
         assert len(basket["consult_results"]) == 1
 
-    def test_different_reasons_both_fire(self):
-        """Different stuck reasons on same basket → both consults fire."""
+    def test_different_reasons_reuse_session(self):
+        """T-consult-multi-turn-follow-through: different stuck reasons on the
+        same basket re-use ONE ConsultSession (multi-turn), not two separate
+        sessions. Two ask() calls, one ConsultSession ctor."""
         basket = {"ticket_id": "T-demo"}
         mock_session = MagicMock()
         mock_session.session_id = "consult-abc"
@@ -81,8 +83,13 @@ class TestMaybeConsultStuck:
             pe_chain._maybe_consult_stuck(
                 basket, stuck_reason="preflight_unrelated", summary="s"
             )
-        assert mock_cls.call_count == 2
+        assert mock_cls.call_count == 1, "session should be re-used across reasons"
+        assert mock_session.ask.call_count == 2, "both reasons should ask()"
         assert len(basket["consult_results"]) == 2
+        # Both result entries reference the same session_id
+        assert {r["session_id"] for r in basket["consult_results"]} == {"consult-abc"}
+        # Session stays live on basket until _conclude_consult_session runs
+        assert basket.get("_consult_session") is mock_session
 
     def test_import_failure_non_fatal(self):
         """If consult module can't import, helper silently skips."""

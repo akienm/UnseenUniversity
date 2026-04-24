@@ -213,6 +213,18 @@ def _extract_ticket_id(text: str) -> str | None:
     return match.group(1) if match else None
 
 
+_CONSULT_INITIAL_QUESTIONS = {
+    "situate_empty": "What am I missing that would let me resolve files for this ticket?",
+    "preflight_unrelated": "Is this pre-flight failure related to my ticket, or should I proceed regardless?",
+    "implement_fails_twice": "Why is my edit attempt not working — is my plan wrong, or the test wrong?",
+}
+_CONSULT_FOLLOWUP_QUESTIONS = {
+    "situate_empty": "Now SITUATE returned 0 files again — given what we discussed, what am I still missing?",
+    "preflight_unrelated": "Pre-flight is still blocked — is this still unrelated given the new evidence?",
+    "implement_fails_twice": "Implement failed twice — with the context we've built, why isn't the edit working?",
+}
+
+
 def _maybe_consult_stuck(
     basket: dict,
     stuck_reason: str,
@@ -220,22 +232,27 @@ def _maybe_consult_stuck(
     what_i_tried: str = "",
     what_failed: str = "",
 ) -> None:
-    """T-consult-pe-chain-wire: fire a peer-LLM consult at a pe_chain stuck point.
+    """T-consult-pe-chain-wire + T-consult-multi-turn-follow-through:
+    fire a peer-LLM consult at a pe_chain stuck point.
 
-    Rate-limited per basket per stuck_reason — at most one consult of each
-    kind per chain run. Subsequent stuck events of the same shape escalate
-    through normal channels (human review). Prevents consult spam when a
-    ticket thrashes the same pattern repeatedly.
+    The ConsultSession is basket-persistent — first stuck event on a basket
+    opens a session; subsequent events with a *different* stuck_reason on
+    the same basket re-use that session (multi-turn follow-through). The
+    per-reason rate-limit prevents spam on the same stuck shape.
+
+    Session close is driven by _conclude_consult_session(), called at goal
+    termination (_pe_close on success, _pe_escalate on abort) — not here.
+    That is what makes the session conversation-shaped across the life of
+    the goal, per D-consult-primitive-2026-04-23.
 
     Non-fatal: any consult or import failure is swallowed; the pe_chain
-    step continues with its original empty/escalate path. The consult is
-    purely additive — detection-only v1, integration tuning deferred to
-    T-consult-observe-and-tune after 50 log entries accumulate.
+    step continues with its original empty/escalate path.
 
     Results stored in basket['consult_results'] (list of dicts):
-        {stuck_reason, hypotheses, next_question, confidence, session_id}
+        {stuck_reason, hypotheses, next_question, confidence, session_id, turn_idx}
+    Live session stored in basket['_consult_session'] (popped on conclude).
     """
-    # Per-basket per-reason rate limit
+    # Per-basket per-reason rate limit — same reason doesn't re-ask
     consulted = basket.setdefault("_consulted_reasons", set())
     if stuck_reason in consulted:
         return
@@ -261,27 +278,55 @@ def _maybe_consult_stuck(
     if basket.get("test_output"):
         extra["test_output_tail"] = str(basket["test_output"])[-800:]
 
-    state = ConsultState(
-        problem_kind="coding",
-        summary=summary,
-        what_i_tried=what_i_tried,
-        what_failed=what_failed,
-        ticket_id=ticket_id,
-        pursuit_id=pursuit_id,
-        extra=extra,
-    )
+    # Basket-persistent session: re-use if this basket already opened one,
+    # otherwise open fresh on the first stuck event of the goal.
+    session = basket.get("_consult_session")
+    is_first_turn = session is None
+
+    if is_first_turn:
+        state = ConsultState(
+            problem_kind="coding",
+            summary=summary,
+            what_i_tried=what_i_tried,
+            what_failed=what_failed,
+            ticket_id=ticket_id,
+            pursuit_id=pursuit_id,
+            extra=extra,
+        )
+        try:
+            session = ConsultSession(state)
+            basket["_consult_session"] = session
+        except Exception as open_exc:
+            log.debug("consult session open failed (non-fatal): %s", open_exc)
+            return
+
+    # First turn: the canonical per-reason initial question. Subsequent turns:
+    # feed the new stuck_reason + fresh evidence so the LLM reasons across
+    # the accumulated conversation state rather than starting over.
+    if is_first_turn:
+        question = _CONSULT_INITIAL_QUESTIONS.get(
+            stuck_reason, "What am I missing about why I'm stuck?"
+        )
+    else:
+        base = _CONSULT_FOLLOWUP_QUESTIONS.get(
+            stuck_reason,
+            f"New stuck reason: {stuck_reason}. What am I still missing?",
+        )
+        evidence_lines: list[str] = []
+        if what_failed:
+            evidence_lines.append(f"what_failed_now: {what_failed[:500]}")
+        if extra.get("last_error"):
+            evidence_lines.append(f"last_error_now: {extra['last_error'][:500]}")
+        if extra.get("test_output_tail"):
+            evidence_lines.append(
+                f"test_output_tail_now: {extra['test_output_tail'][-500:]}"
+            )
+        question = base + ("\n\n" + "\n".join(evidence_lines) if evidence_lines else "")
 
     try:
-        session = ConsultSession(state)
-        initial_question = {
-            "situate_empty": "What am I missing that would let me resolve files for this ticket?",
-            "preflight_unrelated": "Is this pre-flight failure related to my ticket, or should I proceed regardless?",
-            "implement_fails_twice": "Why is my edit attempt not working — is my plan wrong, or the test wrong?",
-        }.get(stuck_reason, "What am I missing about why I'm stuck?")
-        result = session.ask(initial_question)
-        session.conclude()
-    except Exception as consult_exc:
-        log.debug("consult call failed (non-fatal): %s", consult_exc)
+        result = session.ask(question)
+    except Exception as ask_exc:
+        log.debug("consult ask failed (non-fatal): %s", ask_exc)
         return
 
     basket.setdefault("consult_results", []).append(
@@ -291,14 +336,46 @@ def _maybe_consult_stuck(
             "next_question": result.next_question,
             "confidence": result.confidence,
             "session_id": session.session_id,
+            "turn_idx": result.turn_idx,
         }
     )
     log.info(
-        "PE_CHAIN consult fired: reason=%s conf=%.2f hyps=%d",
+        "PE_CHAIN consult fired: reason=%s turn=%d conf=%.2f hyps=%d",
         stuck_reason,
+        result.turn_idx,
         result.confidence,
         len(result.hypotheses),
     )
+
+
+def _conclude_consult_session(basket: dict) -> None:
+    """Close any live consult session attached to this basket.
+
+    Always call at goal termination (success path via _pe_close, abort via
+    _pe_escalate). The session lives for the duration of the goal; concluding
+    it here is what makes multi-turn consult conversation-shaped across the
+    goal, per D-consult-primitive-2026-04-23. Non-fatal — any conclude
+    failure is logged and swallowed.
+    """
+    session = basket.pop("_consult_session", None)
+    if session is None:
+        return
+    try:
+        conclusion = session.conclude()
+        basket["consult_conclusion"] = {
+            "final_hypothesis": conclusion.final_hypothesis,
+            "confidence": conclusion.confidence,
+            "turn_count": conclusion.turn_count,
+            "session_id": session.session_id,
+        }
+        log.info(
+            "PE_CHAIN consult concluded: session=%s turns=%d conf=%.2f",
+            session.session_id,
+            conclusion.turn_count,
+            conclusion.confidence,
+        )
+    except Exception as close_exc:
+        log.debug("consult conclude failed (non-fatal): %s", close_exc)
 
 
 def _evict_goal_ready_twm(ticket_id: str) -> None:
@@ -2171,6 +2248,9 @@ def _pe_close(basket: dict) -> dict:
     ticket_id = basket.get("ticket_id", "")
     test_result = basket.get("test_result", "pass")
 
+    # Conclude any live consult session before tearing down the goal
+    _conclude_consult_session(basket)
+
     # Close ticket
     if ticket_id:
         result = _run_bash(
@@ -2204,6 +2284,9 @@ def _pe_close(basket: dict) -> dict:
 def _pe_escalate(basket: dict, reason: str) -> dict:
     """D331: ESCALATE — compose design proposal for HIGH inertia, or block for other reasons."""
     ticket_id = basket.get("ticket_id", "unknown")
+
+    # Conclude any live consult session — escalation ends the goal regardless of reason
+    _conclude_consult_session(basket)
 
     # Recover ticket_id from active GOAL if basket lost it
     if ticket_id == "unknown":
