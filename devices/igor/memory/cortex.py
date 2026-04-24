@@ -4471,6 +4471,41 @@ class Cortex(IgorBase):
         )
         return deleted
 
+    def twm_evict_source(self, source: str) -> int:
+        """
+        Delete all TWM observations with the given source for this instance.
+        Returns count of rows deleted.
+
+        T-twm-boot-singletons-replace-not-append: used by boot-singleton sources
+        (machines_watcher, boot_state_inventory, boot_sequence) that emit a
+        "current state" observation. Each new push should REPLACE, not append.
+        Without this, boot rows stack across restarts — each at salience 0.6-1.0
+        — flooring TWM with content that can never be displaced.
+
+        Source-scoped eviction (vs category) is needed because these three
+        sources write category='observation' (the default), so a category-
+        scoped evict would wipe unrelated rows.
+        """
+        _iid = self._instance_id
+        with self._local_conn() as conn:
+            if _iid:
+                cur = conn.execute(
+                    "DELETE FROM twm_observations WHERE source = ? AND instance_id = ?",
+                    (source, _iid),
+                )
+            else:
+                cur = conn.execute(
+                    "DELETE FROM twm_observations WHERE source = ?",
+                    (source,),
+                )
+            deleted = cur.rowcount
+        import logging as _logging
+
+        _logging.getLogger(__name__).debug(
+            "[cortex] twm_evict_source %r: deleted %d rows", source, deleted
+        )
+        return deleted
+
     def twm_get_active_goal(self) -> str | None:
         """
         Return the text of the current ACTIVE_GOAL from TWM, or None if unset.

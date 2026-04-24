@@ -761,6 +761,10 @@ class MachinesWatcher(BasePushSource):
 
         reason = "initial_load" if first_run else "file_changed"
         csb = f"MACHINES_JSON|{reason}|{now.strftime('%Y-%m-%dT%H:%M')}|{raw[:600]}"
+        # T-twm-boot-singletons-replace-not-append: only one "current machines
+        # state" exists — evict prior rows before pushing fresh. Without this,
+        # each boot + each file-change event appends at salience=0.8, stacking.
+        cortex.twm_evict_source(self.name)
         obs_id = cortex.twm_push(
             source=self.name,
             content_csb=csb,

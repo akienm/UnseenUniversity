@@ -797,6 +797,9 @@ class Igor(IgorBase):
                 gap_hours=self._gap_hours,
             )
             self.cortex.write_ring(boot_msg[:800], category="session_control")
+            # T-twm-boot-singletons-replace-not-append: singleton per boot —
+            # replace prior boot_sequence rows rather than stack.
+            self.cortex.twm_evict_source("boot_sequence")
             self.cortex.twm_push(
                 source="boot_sequence",
                 content_csb=boot_msg[:500],
@@ -918,6 +921,9 @@ class Igor(IgorBase):
                 summary_lines.append(f"  ... and {len(open_items) - 5} more")
 
             inventory_csb = "\n".join(summary_lines)
+            # T-twm-boot-singletons-replace-not-append: singleton per boot —
+            # replace prior boot_state_inventory rows rather than stack.
+            self.cortex.twm_evict_source("boot_state_inventory")
             self.cortex.twm_push(
                 source="boot_state_inventory",
                 content_csb=inventory_csb,
