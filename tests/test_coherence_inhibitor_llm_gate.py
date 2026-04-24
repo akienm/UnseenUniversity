@@ -105,6 +105,59 @@ class TestSourceLabelPrefixMatching:
         assert result == RESPONSE
 
 
+# ── T-coherence-inhibitor-winnow-exemption: llm_via_ labels ──────────────────
+
+
+class TestLlmViaLabel:
+    """T-coherence-inhibitor-winnow-exemption (2026-04-24):
+    main.py now labels non-PROCEDURAL BG winners (WINNOW_xxx INTERPRETIVE
+    hints) as 'llm_via_<id>' instead of 'habit:<id>', because those winners
+    drive LLM dispatch rather than emitting a templated response. The
+    suppression rule must exempt that prefix so real conversational LLM
+    replies aren't silenced by low Jaccard overlap.
+    """
+
+    def test_llm_via_winnow_not_suppressed(self):
+        """Today's failing case: WINNOW_B627137784 dispatched a tier.4
+        LLM reply ('What's the thing you've been carrying around in your
+        head lately...') that scored 0.000 Jaccard vs the short prompt —
+        coherent conversational answer, correctly not suppressed once
+        main.py labels the source as llm_via_ instead of habit:."""
+        result = suppress_incoherent(
+            _flagged(0.000),
+            "What's the thing you've been carrying around in your head lately?",
+            "llm_via_WINNOW_B627137784",
+        )
+        assert (
+            result
+            == "What's the thing you've been carrying around in your head lately?"
+        )
+
+    def test_llm_via_any_id_not_suppressed(self):
+        result = suppress_incoherent(_flagged(0.05), RESPONSE, "llm_via_SOMETHING")
+        assert result == RESPONSE
+
+    def test_main_py_labels_non_procedural_as_llm_via(self):
+        """Regression guard on main.py source: the coherence-inhibitor
+        source_label construction must only call something 'habit:' when
+        the winning BG entry is PROCEDURAL. INTERPRETIVE winners (e.g.
+        WINNOW_xxx hints) must use the 'llm_via_' prefix.
+        """
+        from pathlib import Path
+
+        src = (
+            Path(__file__).resolve().parent.parent / "wild_igor/igor/main.py"
+        ).read_text()
+        assert 'f"llm_via_{_turn_habit.id}"' in src, (
+            "main.py coherence source_label must emit 'llm_via_<id>' for "
+            "non-PROCEDURAL BG winners — T-coherence-inhibitor-winnow-exemption"
+        )
+        assert '_mt_str == "PROCEDURAL"' in src, (
+            "source_label branch must gate the habit: label on the memory_type "
+            "being PROCEDURAL — not on _turn_habit being truthy alone"
+        )
+
+
 # ── Empty / edge cases ───────────────────────────────────────────────────────
 
 
