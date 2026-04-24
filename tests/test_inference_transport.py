@@ -166,5 +166,77 @@ class TestInferenceTransport(unittest.TestCase):
         self.assertEqual(out[0].payload, "not inference")
 
 
+class TestRunInferenceSignature(unittest.TestCase):
+    """T-inference-transport-make-context-signature (Pass-2 Area 5 Gap 1).
+
+    Before the fix, _run_inference called make_context with purpose/metadata
+    kwargs it doesn't accept — every call TypeError'd and silently returned
+    '[inference-error] ...'. These tests pin the signature fix."""
+
+    def _transport_with_mock_gw(self, reply="hello"):
+        t = InferenceTransport()
+        mock_gw = MagicMock()
+        mock_gw.call.return_value = reply
+        t._gateway = mock_gw
+        return t, mock_gw
+
+    def test_round_trip_returns_gateway_text(self):
+        t, gw = self._transport_with_mock_gw("hello from gateway")
+        out = t._run_inference("prompt", "default", {})
+        self.assertEqual(out, "hello from gateway")
+        kwargs = gw.call.call_args.kwargs
+        self.assertEqual(kwargs["purpose_id"], "default")
+        self.assertEqual(kwargs["prompt"], "prompt")
+
+    def test_no_type_error_on_make_context_kwargs(self):
+        t, _ = self._transport_with_mock_gw("ok")
+        out = t._run_inference("p", "default", {})
+        self.assertFalse(out.startswith("[inference-error]"))
+
+    def test_metadata_complexity_threaded_to_ctx(self):
+        import wild_igor.igor.cognition.inference_gateway as ig
+
+        t, _ = self._transport_with_mock_gw("ok")
+        captured = {}
+        real_make_context = ig.make_context
+
+        def fake_make_context(**kwargs):
+            captured.update(kwargs)
+            return real_make_context(**kwargs)
+
+        with patch.object(ig, "make_context", side_effect=fake_make_context):
+            t._run_inference("p", "default", {"complexity": "high"})
+        self.assertEqual(captured.get("complexity"), "high")
+
+    def test_metadata_research_mode_threaded(self):
+        import wild_igor.igor.cognition.inference_gateway as ig
+
+        t, _ = self._transport_with_mock_gw("ok")
+        captured = {}
+        real_make_context = ig.make_context
+
+        def fake_make_context(**kwargs):
+            captured.update(kwargs)
+            return real_make_context(**kwargs)
+
+        with patch.object(ig, "make_context", side_effect=fake_make_context):
+            t._run_inference("p", "default", {"research_mode": True})
+        self.assertIs(captured.get("research_mode"), True)
+
+    def test_gateway_exception_returns_error_string_not_raise(self):
+        t = InferenceTransport()
+        mock_gw = MagicMock()
+        mock_gw.call.side_effect = RuntimeError("gateway down")
+        t._gateway = mock_gw
+        out = t._run_inference("p", "default", {})
+        self.assertTrue(out.startswith("[inference-error]"))
+        self.assertIn("RuntimeError", out)
+
+    def test_none_metadata_is_safe(self):
+        t, _ = self._transport_with_mock_gw("ok")
+        out = t._run_inference("p", "default", None)
+        self.assertEqual(out, "ok")
+
+
 if __name__ == "__main__":
     unittest.main()
