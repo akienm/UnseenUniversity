@@ -1221,8 +1221,18 @@ registry.register(
 )
 
 
+_RUN_TESTS_TIMEOUT_SEC = 300
+
+
 def run_tests() -> str:
-    """Run the test suite. Returns last 30 lines of output."""
+    """Run the test suite. Returns last 30 lines of output.
+
+    Timeout is 300s — the full suite has ~3988 tests and takes ~3.5 min
+    on akiendell (T-pe-chain-preflight-timeout-misdiagnosis). Returning
+    a '[run_tests] timeout' marker on TimeoutExpired (distinct from a
+    real test failure) lets pe_chain's pre-flight classify the stuck-
+    reason correctly instead of misreading timeout as red tests.
+    """
     import subprocess
     from pathlib import Path
 
@@ -1233,12 +1243,14 @@ def run_tests() -> str:
             [str(venv_python), "-m", "pytest", "tests/", "-x", "-q"],
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=_RUN_TESTS_TIMEOUT_SEC,
             cwd=str(repo),
         )
         out = (result.stdout + result.stderr).strip()
         lines = out.splitlines()
         return "\n".join(lines[-30:]) if len(lines) > 30 else out
+    except subprocess.TimeoutExpired:
+        return f"[run_tests] timeout after {_RUN_TESTS_TIMEOUT_SEC}s"
     except Exception as e:
         return f"[run_tests] error: {e}"
 
