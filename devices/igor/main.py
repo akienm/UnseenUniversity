@@ -6881,6 +6881,15 @@ class Igor(IgorBase):
         Idle gate: skip if TWM hasn't changed since last run AND < 2min cooldown.
         Lock: prevents double-fire race when two callers hit simultaneously.
         """
+        # Heartbeat BEFORE is_alive guard and idle gate — we want to signal
+        # "main loop is still calling this hook," not "hook decided to spawn."
+        # (T-daemon-supervisor-spawn-liveness)
+        try:
+            from .cognition.daemon_supervisor import supervisor as _sup
+
+            _sup.heartbeat("ne-worker")
+        except Exception:
+            pass  # heartbeat is observability, never fatal
         if self._ne_thread is not None and self._ne_thread.is_alive():
             return  # Already running — Ollama is still thinking
 
@@ -6961,10 +6970,16 @@ class Igor(IgorBase):
                 # and exits. The `is_alive()` check at the top of this method
                 # guards re-entry. Natural thread exit is the normal path, so
                 # one_shot=True tells the supervisor not to alarm on it.
-                # (Detecting a genuinely stuck pipeline needs a last-spawn
-                # timestamp check, not thread.is_alive — see T-daemon-supervisor-
-                # spawn-liveness.)
-                _sup.register("ne-worker", self._ne_thread, one_shot=True)
+                # Staleness threshold of 600s catches the main loop halting
+                # (heartbeat() is called unconditionally at hook entry, so
+                # the only way to go stale is for _run_ne_background to stop
+                # being invoked entirely).
+                _sup.register(
+                    "ne-worker",
+                    self._ne_thread,
+                    one_shot=True,
+                    staleness_threshold_secs=600.0,
+                )
             except Exception as _exc:
                 from .cognition.forensic_logger import log_error as _le
 
@@ -6995,6 +7010,13 @@ class Igor(IgorBase):
         Runs at most once per IGOR_CONSOLIDATION_INTERVAL_SECS (default 1h).
         Uses local LLM only; never blocks the interaction loop.
         """
+        # T-daemon-supervisor-spawn-liveness: heartbeat at hook entry.
+        try:
+            from .cognition.daemon_supervisor import supervisor as _sup
+
+            _sup.heartbeat("consolidation-worker")
+        except Exception:
+            pass
         if getattr(self, "_consolidation_thread", None) is not None:
             if self._consolidation_thread.is_alive():
                 return  # already running
@@ -7039,8 +7061,14 @@ class Igor(IgorBase):
             # consolidation-worker is one-shot-per-tick, same shape as ne-worker:
             # run_consolidation() runs once and the thread exits. Re-entry is
             # guarded by the is_alive check at the top of this method.
+            # Staleness threshold is 2h because consolidation runs on a 1h
+            # interval — 2× window gives slack for slow ticks without
+            # false-positives.
             _sup.register(
-                "consolidation-worker", self._consolidation_thread, one_shot=True
+                "consolidation-worker",
+                self._consolidation_thread,
+                one_shot=True,
+                staleness_threshold_secs=7200.0,
             )
         except Exception as _exc:
             from .cognition.forensic_logger import log_error as _le
