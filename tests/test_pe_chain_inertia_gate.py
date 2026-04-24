@@ -41,12 +41,14 @@ class TestAffectedFilesParsing:
         desc = "**Affected files:** TBD — discovery step in sprint"
         assert _affected_files_from_description(desc) == []
 
-    def test_new_file_path_is_filtered_by_existence_check(self):
-        # Document known limitation: new-file tickets don't populate this list.
-        # The gate compensates via description-text match in
-        # _filter_high_inertia_not_in_description.
+    def test_new_file_path_is_accepted(self):
+        # T-situate-accepts-declared-new-files (2026-04-24): ticket author
+        # is trusted; declared-new paths are accepted. tier.2 output is
+        # still existence-checked via _parse_file_list (strict variant).
         desc = "**Affected files:** lab/claudecode/brand_new_never_existed.py"
-        assert _affected_files_from_description(desc) == []
+        assert _affected_files_from_description(desc) == [
+            "lab/claudecode/brand_new_never_existed.py"
+        ]
 
 
 class TestHighInertiaScopeFilter:
