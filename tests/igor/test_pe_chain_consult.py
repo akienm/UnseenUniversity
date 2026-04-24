@@ -180,6 +180,30 @@ class TestPreflightHook:
             )
         mock_consult.assert_called_once()
 
+    def test_preflight_timeout_branch_is_present(self):
+        """T-pe-chain-preflight-timeout-misdiagnosis: the pre-flight escalation
+        site must distinguish a subprocess timeout from an actually-red suite.
+        Both look like 'fail:' to pe_test but the root cause is different and
+        so is the consult message — timeout means 'tests didn't finish', not
+        'tests broke'. Regression guard on the source so anyone removing the
+        branch gets caught.
+        """
+        from pathlib import Path
+
+        src = (
+            Path(__file__).resolve().parent.parent / "wild_igor/igor/tools/pe_chain.py"
+        ).read_text()
+        assert 'stuck_reason="preflight_timeout"' in src, (
+            "pe_chain.py must emit stuck_reason='preflight_timeout' when the "
+            "pre-flight signal is '[run_tests] timeout', distinct from the "
+            "preflight_unrelated branch — T-pe-chain-preflight-timeout-misdiagnosis"
+        )
+        assert '"[run_tests] timeout"' in src, (
+            "pe_chain.py must check for the '[run_tests] timeout' marker "
+            "(emitted by ops.run_tests on subprocess.TimeoutExpired) before "
+            "the preflight_unrelated branch"
+        )
+
 
 # ── close-loop implement-fails-twice → consult hook ─────────────────────────
 

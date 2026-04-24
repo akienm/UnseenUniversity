@@ -1835,10 +1835,12 @@ def pe_test(basket: dict, preflight: bool = False) -> dict:
 
         _le(kind="SILENT_EXCEPT", detail=f"pe_chain.py:1379: {_exc}")
 
-    # Fallback: direct pytest subprocess
+    # Fallback: direct pytest subprocess. 300s timeout matches ops.run_tests
+    # (full suite takes ~3.5 min on akiendell). Without this, pe_chain
+    # misreads timeout as a red suite (T-pe-chain-preflight-timeout-misdiagnosis).
     result = _run_bash(
         ["python", "-m", "pytest", "tests/", "-x", "-q", "--tb=short"],
-        timeout=120,
+        timeout=300,
     )
     passed = (
         "passed" in result and "failed" not in result and "error" not in result.lower()
@@ -2448,19 +2450,39 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
                 return basket
             log.info(f"PRE-FLIGHT HEALED via {heal.recognizer} — proceeding")
         else:
-            basket["escalate_reason"] = (
-                f"pre-flight: test suite already broken — "
-                f"{basket['test_result'][:100]}. Skipping attempts."
-            )
-            log.info(f"PRE-FLIGHT TEST FAILED: {basket['escalate_reason']}")
-            # T-consult-pe-chain-wire: consult on unrecognized pre-flight failure
-            _maybe_consult_stuck(
-                basket,
-                stuck_reason="preflight_unrelated",
-                summary=f"pre-flight blocked (no recognizer) for {basket.get('ticket_id', '?')}",
-                what_i_tried="ran pre-flight test suite; no recognizer matched the failure",
-                what_failed=basket["test_result"][:300],
-            )
+            # T-pe-chain-preflight-timeout-misdiagnosis: distinguish timeout
+            # (tests didn't finish in time) from red-suite (tests actually
+            # failed). The consult + escalate_reason should say what happened,
+            # not blur both into "test suite broken".
+            _is_timeout = "[run_tests] timeout" in basket.get(
+                "test_output", ""
+            ) or "[run_tests] timeout" in basket.get("test_result", "")
+            if _is_timeout:
+                basket["escalate_reason"] = (
+                    f"pre-flight: test suite timed out — "
+                    f"{basket['test_result'][:100]}. Skipping attempts."
+                )
+                log.info(f"PRE-FLIGHT TIMEOUT: {basket['escalate_reason']}")
+                _maybe_consult_stuck(
+                    basket,
+                    stuck_reason="preflight_timeout",
+                    summary=f"pre-flight timed out for {basket.get('ticket_id', '?')}",
+                    what_i_tried="ran pre-flight test suite; it didn't finish in the subprocess budget",
+                    what_failed=basket["test_result"][:300],
+                )
+            else:
+                basket["escalate_reason"] = (
+                    f"pre-flight: test suite already broken — "
+                    f"{basket['test_result'][:100]}. Skipping attempts."
+                )
+                log.info(f"PRE-FLIGHT TEST FAILED: {basket['escalate_reason']}")
+                _maybe_consult_stuck(
+                    basket,
+                    stuck_reason="preflight_unrelated",
+                    summary=f"pre-flight blocked (no recognizer) for {basket.get('ticket_id', '?')}",
+                    what_i_tried="ran pre-flight test suite; no recognizer matched the failure",
+                    what_failed=basket["test_result"][:300],
+                )
             return basket
 
     basket = pe_hypothesize(basket)
