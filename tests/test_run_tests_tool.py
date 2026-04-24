@@ -136,3 +136,24 @@ def test_run_tests_handles_exception():
     assert isinstance(result, str)
     assert "[run_tests] error:" in result
     assert "pytest not found" in result
+
+
+def test_run_tests_timeout_returns_distinct_marker():
+    """TimeoutExpired must return '[run_tests] timeout' — distinct from
+    '[run_tests] error' so pe_chain can classify preflight-timeout vs
+    red-suite (T-pe-chain-preflight-timeout-misdiagnosis).
+    """
+    import subprocess
+
+    run_tests = _get_run_tests()
+
+    with patch(
+        "subprocess.run",
+        side_effect=subprocess.TimeoutExpired(cmd="pytest", timeout=300),
+    ):
+        result = run_tests()
+
+    assert isinstance(result, str)
+    assert "[run_tests] timeout" in result
+    # Must NOT masquerade as a generic error — pe_chain branches on this
+    assert "[run_tests] error" not in result
