@@ -3192,6 +3192,33 @@ class Igor(IgorBase):
                     log_error(
                         kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
                     )
+                # T-daemon-supervisor-backoff-and-one-shot-audit: rate-limit
+                # restart.flag to catch runaway boot-fail-restart loops. Logic
+                # lives in restart_guard for testability.
+                try:
+                    from .restart_guard import record_and_check, write_halt
+
+                    _max_restarts = int(os.getenv("IGOR_MAX_RESTARTS", "5"))
+                    _window_s = int(os.getenv("IGOR_RESTART_HALT_WINDOW_SECS", "600"))
+                    should_halt, count = record_and_check(
+                        _instance_dir,
+                        max_restarts=_max_restarts,
+                        window_secs=_window_s,
+                    )
+                    if should_halt:
+                        write_halt(_instance_dir, count, _window_s)
+                        loginfo(
+                            f"[red][HALT] {count} restarts in {_window_s}s — "
+                            f"writing restart_halt.flag and exiting cleanly. "
+                            f"Fix root cause + delete the flag to resume.[/]"
+                        )
+                        self._shutdown(reason="restart halt (runaway guard)")
+                        sys.exit(0)
+                except Exception as _rh_e:
+                    log_error(
+                        kind="RESTART_HALT_CHECK",
+                        detail=f"wild_igor/igor/main.py: {_rh_e}",
+                    )
                 loginfo("[cyan][EXTERNAL] Restart flag detected — restarting...[/]")
                 self._shutdown(reason="restart flag (external)")
                 sys.exit(42)
@@ -6929,7 +6956,13 @@ class Igor(IgorBase):
             try:
                 from .cognition.daemon_supervisor import supervisor as _sup
 
-                _sup.register("ne-worker", self._ne_thread, one_shot=True)
+                # T-daemon-supervisor-backoff-and-one-shot-audit: ne-worker is a
+                # long-running while-loop worker, not a launch-once thread. The
+                # prior one_shot=True made the daemon_supervisor skip critical-
+                # thread alerts for it (line 145 of daemon_supervisor.py), so
+                # the restart.flag mechanism was silently disabled for the one
+                # thread it was meant to guard. Register as long-running.
+                _sup.register("ne-worker", self._ne_thread)
             except Exception as _exc:
                 from .cognition.forensic_logger import log_error as _le
 
@@ -7001,9 +7034,9 @@ class Igor(IgorBase):
         try:
             from .cognition.daemon_supervisor import supervisor as _sup
 
-            _sup.register(
-                "consolidation-worker", self._consolidation_thread, one_shot=True
-            )
+            # T-daemon-supervisor-backoff-and-one-shot-audit: consolidation-worker
+            # is also a long-running while-loop, same reasoning as ne-worker above.
+            _sup.register("consolidation-worker", self._consolidation_thread)
         except Exception as _exc:
             from .cognition.forensic_logger import log_error as _le
 
