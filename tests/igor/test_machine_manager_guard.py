@@ -8,23 +8,23 @@ import unittest
 
 class TestDbUrlGuard(unittest.TestCase):
     def test_missing_db_url_raises(self):
-        """machine_manager must raise RuntimeError if IGOR_HOME_DB_URL is unset."""
-        # Remove from env if present, reload the module
+        """machine_manager raises RuntimeError when DB is touched without env.
+
+        T-machine-manager-lazy-db-url-check (2026-04-23): the guard now
+        fires at first connect, not at import time. Test updated to
+        match — import must succeed; calling _pg_connect must raise.
+        """
         saved = os.environ.pop("IGOR_HOME_DB_URL", None)
-        mod_name = "wild_igor.igor.cognition.machine_manager"
         uc_mod_name = "lab.utility_closet.machine_manager"
-        saved_mod = sys.modules.pop(mod_name, None)
         saved_uc_mod = sys.modules.pop(uc_mod_name, None)
         try:
+            mod = importlib.import_module(uc_mod_name)
             with self.assertRaises(RuntimeError) as ctx:
-                importlib.import_module(mod_name)
+                mod._pg_connect()
             self.assertIn("IGOR_HOME_DB_URL not set", str(ctx.exception))
         finally:
-            # Restore
             if saved is not None:
                 os.environ["IGOR_HOME_DB_URL"] = saved
-            if saved_mod is not None:
-                sys.modules[mod_name] = saved_mod
             if saved_uc_mod is not None:
                 sys.modules[uc_mod_name] = saved_uc_mod
 
