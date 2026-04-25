@@ -792,6 +792,13 @@ def _iter_candidate_paths(raw: str):
         # Strip leading ./ if present
         if line.startswith("./"):
             line = line[2:]
+        # Strip trailing annotations like "(core structure)" or "(new)" —
+        # ticket authors add these but they make the path non-resolvable.
+        paren_idx = line.find("(")
+        if paren_idx > 0:
+            line = line[:paren_idx].rstrip()
+        if not line:
+            continue
         yield line
 
 
@@ -868,6 +875,11 @@ def _affected_files_from_description_detailed(
     raw = m.group(1).strip().strip("*").strip()
     if not raw or raw.upper().startswith("TBD"):
         return [], []
+    # Truncate at next labeled field marker (e.g. "**Design rules:**") — tickets
+    # sometimes put all fields on one line, bleeding description sections into the path list.
+    stop_m = re.search(r"\*{2}\w[\w\s]*?\*{2}\s*:", raw)
+    if stop_m:
+        raw = raw[: stop_m.start()].strip().rstrip(".")
     return _parse_declared_file_list(raw.replace(",", "\n"))
 
 
