@@ -694,11 +694,15 @@ def _log_pe_inference(
         pass
 
 
+_TIER2_TIMEOUT = 90  # seconds — prevents hanging on slow/stalled remote machines
+
+
 def _call_tier2(prompt: str, timeout: int = 0, temperature: float = 0.1) -> str | None:
     """
     Call Ollama tier.2 directly. Returns raw response text or None on failure.
     Uses cluster_router for host/model selection; falls back to localhost defaults.
-    timeout=0 means no timeout — pe_chain is always background work, no human waiting.
+    timeout=0 means use _TIER2_TIMEOUT (90s default) — enough for local Qwen but
+    not long enough to stall pe_chain on a slow remote machine.
     Human-facing turns have their own timeout in ollama_reasoner.py.
 
     temperature: 0.2 for code-edit steps (HYPOTHESIZE/REPLAN), 0.7 for reasoning
@@ -751,7 +755,7 @@ def _call_tier2(prompt: str, timeout: int = 0, temperature: float = 0.1) -> str 
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=timeout or None) as resp:
+        with urllib.request.urlopen(req, timeout=timeout or _TIER2_TIMEOUT) as resp:
             data = _json.loads(resp.read())
         text = data.get("message", {}).get("content", "").strip()
         elapsed_ms = int((_time.monotonic() - t0) * 1000)
