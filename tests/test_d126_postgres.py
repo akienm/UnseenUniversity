@@ -12,6 +12,7 @@ Tests:
 from __future__ import annotations
 
 import os
+import pytest
 import sqlite3
 import tempfile
 import unittest
@@ -246,6 +247,7 @@ class TestWordGraphPostgresCompat(unittest.TestCase):
 class TestMigrateWgScript(unittest.TestCase):
     """Smoke-test the migration script's helper functions."""
 
+    @pytest.mark.timeout(90)
     def test_dry_run_does_not_write(self):
         """--dry-run should print counts and exit cleanly without touching Postgres."""
         import subprocess, sys
@@ -267,6 +269,7 @@ class TestMigrateWgScript(unittest.TestCase):
             [sys.executable, "lab/claudecode/migrate_wg_to_postgres.py", "--dry-run"],
             capture_output=True,
             text=True,
+            timeout=85,
             cwd=str(Path(__file__).parent.parent),
             env=env,
         )
