@@ -47,10 +47,6 @@ def _load_cfg_files() -> None:
     runtime_root = Path(os.getenv("IGOR_RUNTIME_ROOT", str(Path.home() / ".TheIgors")))
     instance_dir = runtime_root / instance_id
 
-    env_file = instance_dir / ".env"
-    if env_file.exists():
-        _parse_cfg_file(env_file)
-
     try:
         from .env_sync import _cfg_files
 
