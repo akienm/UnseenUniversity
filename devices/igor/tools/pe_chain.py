@@ -879,7 +879,8 @@ def _affected_files_from_description_detailed(
     # sometimes put all fields on one line, bleeding description sections into the path list.
     stop_m = re.search(r"\*{2}\w[\w\s]*?\*{2}\s*:", raw)
     if stop_m:
-        raw = raw[: stop_m.start()].strip().rstrip(".")
+        raw = raw[: stop_m.start()].strip()
+    raw = raw.rstrip(".")
     return _parse_declared_file_list(raw.replace(",", "\n"))
 
 
