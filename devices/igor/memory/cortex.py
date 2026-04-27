@@ -366,6 +366,7 @@ CREATE INDEX IF NOT EXISTS idx_twm_integrated          ON twm_observations (inte
 CREATE INDEX IF NOT EXISTS idx_twm_expires_at          ON twm_observations (expires_at);
 CREATE INDEX IF NOT EXISTS idx_twm_instance_id         ON twm_observations (instance_id);
 CREATE INDEX IF NOT EXISTS idx_twm_instance_integrated ON twm_observations (instance_id, integrated, id ASC);
+CREATE INDEX IF NOT EXISTS idx_twm_integrated_salience ON twm_observations (integrated, salience);
 
 CREATE TABLE IF NOT EXISTS memory_blobs (
     id          SERIAL PRIMARY KEY,
@@ -1007,10 +1008,7 @@ class Cortex(IgorBase):
                 self._run_schema_migrations(conn)
                 # #123: backfill scope — gated so it runs ONCE, not every boot.
                 # Was scanning 83k rows on every Cortex construction for 0 updates.
-                conn.execute(
-                    "CREATE TABLE IF NOT EXISTS _migrations "
-                    "(name TEXT PRIMARY KEY, applied_at TEXT NOT NULL)"
-                )
+                # _migrations table is guaranteed present after _run_schema_migrations.
                 _applied = _applied_migrations(conn, str(self.db_path))
                 if "scope_backfill_123" not in _applied:
                     conn.execute(
@@ -1115,6 +1113,10 @@ class Cortex(IgorBase):
             )
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_twm_salience ON twm_observations(salience)"
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_twm_integrated_salience "
+                "ON twm_observations(integrated, salience)"
             )
 
             # G52: interpretive_edges — directed edges for interpretive tree traversal
@@ -4337,6 +4339,7 @@ class Cortex(IgorBase):
             # T-twm-salience-time-decay: rank by effective_salience (stored * decay_fn(age))
             # so old high-salience rows fade enough for fresh pushes to win. TWM_MAX is
             # small (50) so loading all rows into Python for ranking is cheap.
+            self_evicted = False
             count = conn.execute("SELECT COUNT(*) FROM twm_observations").fetchone()[0]
             if count > TWM_MAX:
                 overflow = count - TWM_MAX
@@ -4351,6 +4354,7 @@ class Cortex(IgorBase):
                     victim_ids,
                 )
                 if obs_id in victim_ids:
+                    self_evicted = True
                     self_row = next(r for r in victim_rows if r["id"] == obs_id)
                     logging.getLogger(__name__).warning(
                         "twm_push SELF_EVICTED obs=%d source=%s category=%s salience=%.2f "
@@ -4373,7 +4377,12 @@ class Cortex(IgorBase):
             # T-twm-leap-on-lever: associative sweep — a new observation may
             # lever latent low-salience rows into the foreground via graph
             # overlap. Only runs when the new row actually survived eviction.
-            if obs_id and obs_id > 0 and self.word_graph is not None:
+            if (
+                not self_evicted
+                and obs_id
+                and obs_id > 0
+                and self.word_graph is not None
+            ):
                 try:
                     from .twm_leap import leap_sweep
 
