@@ -533,13 +533,29 @@ def pe_read_ticket(basket: dict) -> dict:
     basket["plan_files"] = ticket.get("required_files") or []
 
     # D333: load CC-approved plan if present (D331 escalation → approval flow)
+    # Only load approved_plan if it is valid JSON with edit structure. Prose
+    # approved_plan is an escalation artifact written by cmd_approve copying
+    # Igor's escalation text verbatim — if loaded, HYPOTHESIZE injects it as
+    # "CC-APPROVED PLAN:" into the description and the LLM re-proposes the same
+    # hallucinated file. Prose is silently discarded so the chain runs clean.
     approved_plan = ticket.get("approved_plan")
     approval_notes = ticket.get("approval_notes")
     if approved_plan:
-        basket["approved_plan"] = approved_plan
-        log.info(
-            f"READ_TICKET: {ticket_id} has approved_plan ({len(approved_plan)} chars)"
-        )
+        try:
+            parsed = json.loads(approved_plan)
+            if isinstance(parsed, (list, dict)):
+                basket["approved_plan"] = approved_plan
+                log.info(
+                    f"READ_TICKET: {ticket_id} has approved_plan ({len(approved_plan)} chars)"
+                )
+            else:
+                log.info(
+                    f"READ_TICKET: {ticket_id} approved_plan is not edit structure — skipping"
+                )
+        except (json.JSONDecodeError, TypeError):
+            log.info(
+                f"READ_TICKET: {ticket_id} approved_plan is prose (escalation artifact) — skipping"
+            )
     if approval_notes:
         basket["approval_notes"] = approval_notes
         log.info(f"READ_TICKET: {ticket_id} has approval_notes")
@@ -627,6 +643,7 @@ def _call_cloud_programming(prompt: str, temperature: float = 0.1) -> str | None
                 "messages": [{"role": "user", "content": prompt}],
                 "stream": False,
                 "temperature": temperature,
+                "max_tokens": 4096,
             }
         ).encode()
         req = urllib.request.Request(
@@ -755,7 +772,11 @@ def _call_tier2(prompt: str, timeout: int = 0, temperature: float = 0.1) -> str 
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=timeout or _TIER2_TIMEOUT) as resp:
+        # timeout=None = no limit — local Ollama on CPU laptops is slow but reliable.
+        # _TIER2_TIMEOUT (90s) was causing premature fallback to OR/Cloudflare which
+        # truncates JSON at ~30 tokens. Explicit timeout arg overrides when needed.
+        effective_timeout = timeout if timeout else None
+        with urllib.request.urlopen(req, timeout=effective_timeout) as resp:
             data = _json.loads(resp.read())
         text = data.get("message", {}).get("content", "").strip()
         elapsed_ms = int((_time.monotonic() - t0) * 1000)
@@ -1617,6 +1638,23 @@ def _parse_hypothesis(raw: str) -> list[dict] | None:
         lines = text.splitlines()
         text = "\n".join(l for l in lines if not l.strip().startswith("```")).strip()
 
+    # Qwen sometimes emits single-quoted string values (Python/YAML syntax) which
+    # json.loads rejects. Convert "key": 'value' → "key": "value" with internal
+    # double-quotes escaped, so the JSON can be parsed normally.
+    if "': '" in text or "': \"" in text or "\": '" in text:
+
+        def _fix_sq(m: "re.Match") -> str:
+            key = m.group(1)
+            val = m.group(2).replace("\\", "\\\\").replace('"', '\\"')
+            return f'"{key}": "{val}"'
+
+        text = re.sub(
+            r'"(\w+)"\s*:\s*\'((?:[^\'\\]|\\.)*?)\'',
+            _fix_sq,
+            text,
+            flags=re.DOTALL,
+        )
+
     # Try full JSON parse
     try:
         obj = json.loads(text)
@@ -1758,39 +1796,57 @@ def pe_hypothesize(basket: dict) -> dict:
         return basket
 
     if not actual:
-        # No observed code — hypothesis can't be grounded; set null and continue
-        basket["hypotheses"] = []
-        basket["hypothesis"] = None
-        basket["hypothesis_raw"] = ""
-        basket["hypothesis_error"] = "no actual code observed — hypothesis ungrounded"
-        log.info("HYPOTHESIZE: no actual — skipping tier.2 call")
-        return basket
-
-    # T-hypothesize-standards-injection: prepend coding standards for file-write tasks
-    standards_block = _get_coding_standards()
-    standards_prefix = f"\n{standards_block}\n" if standards_block else ""
-
-    prompt = _HYPOTHESIZE_PROMPT.format(
-        description=description[:_DESC_CAP_REASONING],
-        actual=actual[
-            :4000
-        ],  # cap to avoid overwhelming small model (4000 = ~120-line section)
-    )
-    if standards_prefix:
-        # Insert standards after the first line (the role statement) so rules are visible
-        lines = prompt.split("\n", 1)
-        prompt = (
-            lines[0] + "\n" + standards_prefix + lines[1]
-            if len(lines) > 1
-            else prompt + standards_prefix
+        new_files = basket.get("new_files") or []
+        if not new_files:
+            # No observed code and no declared new files — ungrounded
+            basket["hypotheses"] = []
+            basket["hypothesis"] = None
+            basket["hypothesis_raw"] = ""
+            basket["hypothesis_error"] = (
+                "no actual code observed — hypothesis ungrounded"
+            )
+            log.info("HYPOTHESIZE: no actual — skipping tier.2 call")
+            return basket
+        # New-file creation: no existing code to observe — ask LLM to generate content
+        target = new_files[0]
+        create_prompt = (
+            "You are creating a new source file. "
+            'Produce exactly one JSON object with an "edits" key containing one edit. '
+            'Use old_string="" (empty string) and new_string equal to the complete file content. '
+            "Do not include anything outside the JSON.\n\n"
+            f"File to create: {target}\n\n"
+            f"Ticket: {description[:_DESC_CAP_REASONING]}\n\n"
+            "Output JSON:\n"
+            '{"edits": [{"file": "<path>", "old_string": "", "new_string": "<full file content>"}]}'
         )
-        log.info(f"HYPOTHESIZE: standards injected ({len(standards_block)} chars)")
+        log.info(
+            f"HYPOTHESIZE: new-file path — target={target} prompt_len={len(create_prompt)}"
+        )
+        raw = _call_tier2(create_prompt, temperature=0.2)
+        basket["hypothesis_raw"] = raw or ""
+    else:
+        # T-hypothesize-standards-injection: prepend coding standards for file-write tasks
+        standards_block = _get_coding_standards()
+        standards_prefix = f"\n{standards_block}\n" if standards_block else ""
 
-    log.info(f"HYPOTHESIZE: calling tier.2 prompt_len={len(prompt)}")
+        prompt = _HYPOTHESIZE_PROMPT.format(
+            description=description[:_DESC_CAP_REASONING],
+            actual=actual[:4000],  # cap to avoid overwhelming small model
+        )
+        if standards_prefix:
+            lines = prompt.split("\n", 1)
+            prompt = (
+                lines[0] + "\n" + standards_prefix + lines[1]
+                if len(lines) > 1
+                else prompt + standards_prefix
+            )
+            log.info(f"HYPOTHESIZE: standards injected ({len(standards_block)} chars)")
 
-    # Routes to cheap background tier (Qwen) — verified T-verify-pe-chain-qwen-tier
-    raw = _call_tier2(prompt, temperature=0.2)
-    basket["hypothesis_raw"] = raw or ""
+        log.info(f"HYPOTHESIZE: calling tier.2 prompt_len={len(prompt)}")
+
+        # Routes to cheap background tier (Qwen) — verified T-verify-pe-chain-qwen-tier
+        raw = _call_tier2(prompt, temperature=0.2)
+        basket["hypothesis_raw"] = raw or ""
 
     if not raw:
         basket["hypotheses"] = []
@@ -1866,6 +1922,18 @@ def pe_implement(basket: dict) -> dict:
         new_string = edit["new_string"]
 
         try:
+            if not filepath.exists() and old_string == "":
+                # New-file creation: write new_string as the complete file content
+                filepath.parent.mkdir(parents=True, exist_ok=True)
+                filepath.write_text(new_string)
+                msg = f"edit[{i}] created: {edit['file']}"
+                results.append(msg)
+                files_modified.append(edit["file"])
+                log.info(
+                    f"IMPLEMENT: created new file {edit['file']} ({len(new_string)} chars)"
+                )
+                continue
+
             content = filepath.read_text(errors="replace")
             if old_string not in content:
                 msg = f"edit[{i}] error: old_string not in {edit['file']}"

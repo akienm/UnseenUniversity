@@ -60,13 +60,14 @@ class TestStart:
         assert r["ok"] is True
         snap = r["snapshot"]
         steps_run = snap["basket"]["steps_run"]
-        # Runs ENTRY through HYPOTHESIZE inclusive
+        # Runs ENTRY through HYPOTHESIZE inclusive (OBSERVE precedes HYPOTHESIZE)
         assert steps_run == [
             "ENTRY",
             "CLAIM",
             "READ_TICKET",
             "PLAN",
             "SITUATE",
+            "OBSERVE",
             "HYPOTHESIZE",
         ]
         assert snap["last_step"] == "HYPOTHESIZE"

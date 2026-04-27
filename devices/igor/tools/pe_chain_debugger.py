@@ -63,15 +63,17 @@ log = logging.getLogger(__name__)
 
 
 # Canonical sequence for coding work. Step name → pe_chain function.
+# Order matches pe_chain.py header steps 1-12 (OBSERVE before HYPOTHESIZE so
+# basket["actual"] is populated before the LLM call).
 STEPS: list[tuple[str, Callable]] = [
     ("ENTRY", pe_chain.pe_entry_init),
     ("CLAIM", pe_chain.pe_claim),
     ("READ_TICKET", pe_chain.pe_read_ticket),
     ("PLAN", pe_chain.pe_plan),
     ("SITUATE", pe_chain.pe_situate),
+    ("OBSERVE", pe_chain.pe_observe),
     ("HYPOTHESIZE", pe_chain.pe_hypothesize),
     ("IMPLEMENT", pe_chain.pe_implement),
-    ("OBSERVE", pe_chain.pe_observe),
 ]
 
 
