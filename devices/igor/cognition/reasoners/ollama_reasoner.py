@@ -538,6 +538,35 @@ class OllamaReasoner(LocalReasoner, IgorBase):
                 )
 
         _query_chars = len(user_input)  # raw query before context append
+
+        # Cap inputs to prevent OOM cascades on CPU-only inference (T-ollama-input-cap).
+        # qwen2.5:7b at Q4 loads ~4.7 GB; large prompts saturate RAM and leave an
+        # orphaned runner spinning at 300%+ CPU until manually killed.
+        _MAX_USER_CHARS = int(os.getenv("IGOR_OLLAMA_MAX_USER_CHARS", "15000"))
+        _MAX_CTX_CHARS = int(os.getenv("IGOR_OLLAMA_MAX_CTX_CHARS", "4000"))
+        _MAX_SYS_CHARS = int(os.getenv("IGOR_OLLAMA_MAX_SYS_CHARS", "3000"))
+        if len(user_input) > _MAX_USER_CHARS:
+            log.warning(
+                "OllamaReasoner: truncating user_input %d→%d chars (T-ollama-input-cap)",
+                len(user_input),
+                _MAX_USER_CHARS,
+            )
+            user_input = user_input[:_MAX_USER_CHARS]
+        if len(memory_context) > _MAX_CTX_CHARS:
+            log.warning(
+                "OllamaReasoner: truncating memory_context %d→%d chars (T-ollama-input-cap)",
+                len(memory_context),
+                _MAX_CTX_CHARS,
+            )
+            memory_context = memory_context[:_MAX_CTX_CHARS]
+        if len(system) > _MAX_SYS_CHARS:
+            log.warning(
+                "OllamaReasoner: truncating system %d→%d chars (T-ollama-input-cap)",
+                len(system),
+                _MAX_SYS_CHARS,
+            )
+            system = system[:_MAX_SYS_CHARS]
+
         _context_chars = len(system) + len(user_input) + len(memory_context)  # G55
 
         # Resolve host + model dynamically via cluster_router

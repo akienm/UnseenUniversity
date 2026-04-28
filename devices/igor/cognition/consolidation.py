@@ -313,6 +313,15 @@ def _call_local_llm(prompt: str, cortex: Cortex) -> Optional[dict]:
         # valid JSON extraction (D360 benchmark). 1b and DeepSeek 7B fail.
         _model = os.getenv("IGOR_CONSOLIDATION_MODEL", "qwen2.5:7b")
         _client = _ollama.Client(host=_host)
+        # Cap prompt to prevent OOM cascades on CPU-only inference (T-ollama-input-cap).
+        _max_chars = int(os.getenv("IGOR_OLLAMA_MAX_USER_CHARS", "15000"))
+        if len(prompt) > _max_chars:
+            logging.getLogger(__name__).warning(
+                "consolidation: truncating prompt %d→%d chars (T-ollama-input-cap)",
+                len(prompt),
+                _max_chars,
+            )
+            prompt = prompt[:_max_chars]
         response = _client.chat(
             model=_model,
             messages=[{"role": "user", "content": prompt}],
