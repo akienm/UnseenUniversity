@@ -314,7 +314,7 @@ def _call_local_llm(prompt: str, cortex: Cortex) -> Optional[dict]:
         _model = os.getenv("IGOR_CONSOLIDATION_MODEL", "qwen2.5:7b")
         _client = _ollama.Client(host=_host)
         # Cap prompt to prevent OOM cascades on CPU-only inference (T-ollama-input-cap).
-        _max_chars = int(os.getenv("IGOR_OLLAMA_MAX_USER_CHARS", "15000"))
+        _max_chars = int(os.getenv("IGOR_OLLAMA_MAX_USER_CHARS", "8000"))
         if len(prompt) > _max_chars:
             logging.getLogger(__name__).warning(
                 "consolidation: truncating prompt %d→%d chars (T-ollama-input-cap)",
@@ -322,11 +322,29 @@ def _call_local_llm(prompt: str, cortex: Cortex) -> Optional[dict]:
                 _max_chars,
             )
             prompt = prompt[:_max_chars]
-        response = _client.chat(
-            model=_model,
-            messages=[{"role": "user", "content": prompt}],
-            options={"temperature": 0.1, "num_predict": 300},
-        )
+        # Timeout to prevent the inference from blocking indefinitely on CPU-only machines.
+        import threading as _threading
+        import queue as _queue
+        _timeout_secs = int(os.getenv("IGOR_CONSOLIDATION_TIMEOUT_SECS", "90"))
+        _q: _queue.Queue = _queue.Queue()
+        def _do_chat():
+            try:
+                _q.put((_client.chat(
+                    model=_model,
+                    messages=[{"role": "user", "content": prompt}],
+                    options={"temperature": 0.1, "num_predict": 300},
+                ), None))
+            except Exception as _e:
+                _q.put((None, _e))
+        _thread = _threading.Thread(target=_do_chat, daemon=True)
+        _thread.start()
+        try:
+            _resp, _err = _q.get(timeout=_timeout_secs)
+        except _queue.Empty:
+            raise RuntimeError(f"consolidation LLM timed out after {_timeout_secs}s")
+        if _err:
+            raise _err
+        response = _resp
         raw = (
             response["message"]["content"]
             if isinstance(response, dict)
