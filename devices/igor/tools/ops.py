@@ -1260,9 +1260,14 @@ def run_tests() -> str:
             timeout=_RUN_TESTS_TIMEOUT_SEC,
             cwd=str(repo),
         )
+        exit_code = result.returncode
         out = (result.stdout + result.stderr).strip()
         lines = out.splitlines()
-        return "\n".join(lines[-30:]) if len(lines) > 30 else out
+        tail = "\n".join(lines[-30:]) if len(lines) > 30 else out
+        # Prefix with exit code so callers can use it as primary pass/fail
+        # signal rather than string-parsing output that may contain threading
+        # exception noise (T-pe-chain-preflight-false-fail).
+        return f"[exit:{exit_code}]\n{tail}"
     except subprocess.TimeoutExpired:
         return f"[run_tests] timeout after {_RUN_TESTS_TIMEOUT_SEC}s"
     except Exception as e:

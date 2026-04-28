@@ -2056,7 +2056,16 @@ def pe_test(basket: dict, preflight: bool = False) -> dict:
         from .ops import run_tests as _run_tests
 
         raw = _run_tests()
-        passed = "passed" in raw and "failed" not in raw and "error" not in raw.lower()
+        # Use exit code embedded by run_tests() as primary signal — immune to
+        # threading exception noise in stderr that contains the word "error"
+        # (T-pe-chain-preflight-false-fail).
+        if raw.startswith("[exit:0]"):
+            passed = True
+        elif raw.startswith("[exit:"):
+            passed = False
+        else:
+            # Fallback for callers that don't embed exit code
+            passed = "passed" in raw and "failed" not in raw and "error" not in raw.lower()
         basket["test_result"] = "pass" if passed else f"fail: {raw[:300]}"
         basket["test_output"] = raw
         level = "preflight" if preflight else "post-edit"
@@ -2080,8 +2089,11 @@ def pe_test(basket: dict, preflight: bool = False) -> dict:
         ["python", "-m", "pytest", "tests/", "-x", "-q", "--tb=short"] + _ignore_args,
         timeout=600,
     )
+    # Check only the last 5 lines for "error" — pytest's summary lands there;
+    # threading exception noise appears earlier (T-pe-chain-preflight-false-fail).
+    _summary = "\n".join(result.splitlines()[-5:])
     passed = (
-        "passed" in result and "failed" not in result and "error" not in result.lower()
+        "passed" in result and "failed" not in result and "error" not in _summary.lower()
     )
     basket["test_result"] = "pass" if passed else f"fail: {result[:300]}"
     basket["test_output"] = result
@@ -3027,10 +3039,17 @@ try:
             "CLOSE_LOOP step: dispatch based on test_result (commit/close or replan/escalate).",
         ),
     ]:
-        # Lambda defaults basket to {} for zero-arg MCPCALL dispatch, and
-        # forwards any other kwargs (e.g. pe_test's preflight=True) to the fn.
+        # Wraps each pe_* step for MCPCALL dispatch.
+        # MCPCALL calls tool.fn(**stored_dict), so when args_basket_key holds the
+        # accumulated pe basket, the dict is unpacked as **extra (basket=None).
+        # Reconstruct it so each step sees its predecessor's output rather than
+        # starting from a fresh {} (T-engram-basket-isolation-fix).
         def _make_wrapper(_real_fn):
             def _wrapper(basket=None, **extra):
+                if basket is None and extra:
+                    # MCPCALL path: stored basket dict was unpacked as **kwargs.
+                    basket = extra
+                    return _real_fn(basket)
                 return _real_fn(basket if basket is not None else {}, **extra)
 
             _wrapper.__name__ = _real_fn.__name__
