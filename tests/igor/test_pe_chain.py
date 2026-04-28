@@ -46,15 +46,22 @@ PE_STEP_NAMES = [
     "pe_close_loop",
 ]
 
-# pe_test / pe_close_loop on empty-basket dispatch actually run the full
-# pytest suite + make a tier.2 LLM call (close_loop's fail-path chains
-# replan→implement→test→recurse). The "not unknown tool" intent is
-# already covered for all 12 names by test_tool_resolvable +
-# test_tool_fn_is_callable — registry.get returning non-None is
-# necessary and sufficient for registry.execute to NOT hit the
-# unknown-tool branch. Exclude the two heavy-dispatch names from the
-# execute-level check.
-DRY_MCPCALL_NAMES = [n for n in PE_STEP_NAMES if n not in {"pe_test", "pe_close_loop"}]
+# Three names are excluded from the execute-level check:
+#
+#   pe_test / pe_close_loop — heavy-dispatch: pe_test runs the full pytest
+#     suite; pe_close_loop makes a tier-2 LLM call and recurses.
+#
+#   pe_entry_init — queries the live Postgres DB for an active goal.  When
+#     Igor has an in-flight ticket, pe_entry_init({}) returns with the real
+#     ticket_id logged to pe_chain.log (shared with Igor's running process),
+#     making the log look like a ghost pe_chain invocation.  The registration
+#     guarantee is already covered by test_tool_resolvable +
+#     test_tool_fn_is_callable — registry.get returning non-None is necessary
+#     and sufficient for registry.execute to NOT hit the unknown-tool branch.
+DRY_MCPCALL_NAMES = [
+    n for n in PE_STEP_NAMES
+    if n not in {"pe_test", "pe_close_loop", "pe_entry_init"}
+]
 
 
 class TestPeStepRegistration:
