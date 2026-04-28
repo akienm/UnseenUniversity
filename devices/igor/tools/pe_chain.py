@@ -2078,7 +2078,7 @@ def pe_test(basket: dict, preflight: bool = False) -> dict:
     _ignore_args = [a for p in _fallback_ignore for a in ("--ignore", p)]
     result = _run_bash(
         ["python", "-m", "pytest", "tests/", "-x", "-q", "--tb=short"] + _ignore_args,
-        timeout=300,
+        timeout=600,
     )
     passed = (
         "passed" in result and "failed" not in result and "error" not in result.lower()
