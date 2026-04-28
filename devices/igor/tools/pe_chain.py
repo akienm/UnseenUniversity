@@ -809,12 +809,23 @@ def _iter_candidate_paths(raw: str):
         line = line.strip().strip("`").strip("'\"").strip()
         if not line or line.startswith("#"):
             continue
+        # Strip leading bullet/list markers (- , * , + , "1. ", etc.) that
+        # ticket authors use in the Affected-files field.
+        line = re.sub(r"^[-*+]\s+", "", line)
+        line = re.sub(r"^\d+\.\s+", "", line)
+        if not line:
+            continue
         # Must look like a path (contains / or ends with .py)
         if "/" not in line and not line.endswith(".py"):
             continue
         # Strip leading ./ if present
         if line.startswith("./"):
             line = line[2:]
+        # Strip leading repo-name prefix — ticket authors sometimes write
+        # "TheIgors/igor" meaning the repo-root-relative path "igor".
+        _repo_prefix = _REPO_ROOT.name + "/"
+        if line.startswith(_repo_prefix):
+            line = line[len(_repo_prefix):]
         # Strip trailing annotations like "(core structure)" or "(new)" —
         # ticket authors add these but they make the path non-resolvable.
         paren_idx = line.find("(")
