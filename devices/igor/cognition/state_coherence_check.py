@@ -68,7 +68,7 @@ class StateCoherenceSource(IgorBase):
             return []
         state = milieu.get_state()
 
-        entries = cortex.read_ring(limit=20)
+        entries = cortex.read_ring_memory(limit=20)
         if not entries or len(entries) < MIN_RING_ENTRIES:
             return []
 

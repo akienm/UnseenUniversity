@@ -79,7 +79,7 @@ def find_reply_gap(
     entry between it and the next user_turn (meaning Igor was silent).
     """
     try:
-        entries = cortex.read_ring(limit=window * 2)
+        entries = cortex.read_ring_memory(limit=window * 2)
     except Exception as exc:
         log_error(kind="REPLY_GAP", detail=f"read_ring failed: {exc}")
         return None
