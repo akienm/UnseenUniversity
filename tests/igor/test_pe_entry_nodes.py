@@ -418,19 +418,22 @@ class TestPeSituate:
         mock_t2.assert_not_called()
 
     def test_situate_rejects_unmentioned_high_inertia(self):
-        """Tier2 suggesting a HIGH-inertia brainstem file on a sparse ticket gets filtered."""
+        """Tier2 suggesting a HIGH-inertia brainstem file on a sparse ticket gets filtered.
+        After filter drops all proposals the chain falls through to consult (which also
+        returns nothing here) → situate_source='empty'."""
         desc = "Auto-file audit pass-2 severity-high findings as tickets."
         basket = {"ticket_description": desc, "plan_files": []}
         with patch(
             "wild_igor.igor.tools.pe_chain._call_tier2",
             return_value="wild_igor/igor/brainstem/core_patterns.py",
+        ), patch(
+            "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+            Path(__file__).resolve().parent.parent,
+        ), patch(
+            "wild_igor.igor.tools.pe_chain._maybe_consult_stuck"
         ):
-            with patch(
-                "wild_igor.igor.tools.pe_chain._REPO_ROOT",
-                Path(__file__).resolve().parent.parent,
-            ):
-                result = pe_situate(basket)
-        assert result["situate_source"] == "tier2_ollama"
+            result = pe_situate(basket)
+        assert result["situate_source"] == "empty"
         assert result["plan_files"] == []
 
     def test_situate_allows_high_inertia_when_named(self):

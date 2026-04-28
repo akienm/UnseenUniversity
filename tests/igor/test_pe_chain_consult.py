@@ -160,6 +160,103 @@ class TestSituateHook:
             pe_chain.pe_situate(basket)
         mock_consult.assert_not_called()
 
+    def test_situate_uses_consult_hints_when_tier2_empty(self):
+        """T-consult-situate-feedback-loop: when tier.2 returns empty and consult
+        produces a hypothesis containing a real .py path, SITUATE should resolve
+        to that path and set situate_source='consult_hints'."""
+        real_path = "wild_igor/igor/tools/pe_chain.py"
+        basket = {
+            "ticket_id": "T-demo",
+            "plan_summary": "make change",
+            "plan_files": [],
+            "ticket_description": "Fix something in pe_chain.",
+        }
+
+        def fake_consult(b, stuck_reason, **_kw):
+            b.setdefault("consult_results", []).append(
+                {
+                    "stuck_reason": stuck_reason,
+                    "hypotheses": [f"you probably need to change {real_path}"],
+                    "next_question": "did you check pe_situate?",
+                    "confidence": 0.72,
+                    "session_id": "fake-session",
+                    "turn_idx": 0,
+                }
+            )
+
+        with patch.object(
+            pe_chain, "_call_tier2", return_value=""
+        ), patch.object(pe_chain, "_maybe_consult_stuck", side_effect=fake_consult):
+            pe_chain.pe_situate(basket)
+
+        assert basket["plan_files"] == [real_path]
+        assert basket["situate_source"] == "consult_hints"
+
+    def test_situate_consult_hints_ignored_when_path_not_on_disk(self):
+        """Hypotheses naming non-existent paths should not populate plan_files."""
+        basket = {
+            "ticket_id": "T-demo",
+            "plan_summary": "make change",
+            "plan_files": [],
+            "ticket_description": "Fix something.",
+        }
+
+        def fake_consult(b, stuck_reason, **_kw):
+            b.setdefault("consult_results", []).append(
+                {
+                    "stuck_reason": stuck_reason,
+                    "hypotheses": ["try wild_igor/igor/tools/nonexistent_ghost.py"],
+                    "next_question": "",
+                    "confidence": 0.60,
+                    "session_id": "fake-session",
+                    "turn_idx": 0,
+                }
+            )
+
+        with patch.object(
+            pe_chain, "_call_tier2", return_value=""
+        ), patch.object(pe_chain, "_maybe_consult_stuck", side_effect=fake_consult):
+            pe_chain.pe_situate(basket)
+
+        assert basket["plan_files"] == []
+        assert basket["situate_source"] == "empty"
+
+    def test_situate_includes_ticket_description_in_consult_extra(self):
+        """ticket_description must appear in the extra dict passed to ConsultState
+        so the peer LLM has context to name specific files."""
+        from wild_igor.igor.cognition.consult import ConsultState
+
+        captured_state: list[ConsultState] = []
+
+        real_ConsultSession = None
+        try:
+            from wild_igor.igor.cognition.consult import ConsultSession as _CS
+            real_ConsultSession = _CS
+        except Exception:
+            pass
+
+        class FakeSession:
+            session_id = "fake"
+            def __init__(self, state: ConsultState):
+                captured_state.append(state)
+            def ask(self, q):
+                from wild_igor.igor.cognition.consult import ConsultResult
+                return ConsultResult(hypotheses=[], next_question="", confidence=0.5, turn_idx=0, raw_text="")
+
+        basket = {
+            "ticket_id": "T-demo",
+            "plan_summary": "fix something",
+            "plan_files": [],
+            "ticket_description": "We need to change wild_igor/igor/tools/pe_chain.py.",
+        }
+
+        with patch.object(pe_chain, "_call_tier2", return_value=""), \
+             patch("wild_igor.igor.cognition.consult.ConsultSession", FakeSession):
+            pe_chain.pe_situate(basket)
+
+        assert len(captured_state) == 1
+        assert "ticket_description" in captured_state[0].extra
+
 
 # ── preflight → consult hook ────────────────────────────────────────────────
 

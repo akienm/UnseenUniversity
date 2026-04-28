@@ -269,6 +269,8 @@ def _maybe_consult_stuck(
 
     # Build per-kind extras from the basket
     extra: dict = {}
+    if basket.get("ticket_description"):
+        extra["ticket_description"] = str(basket["ticket_description"])[:1000]
     if isinstance(basket.get("hypothesis"), dict):
         extra["last_hypothesis"] = str(basket["hypothesis"])[:800]
     if basket.get("plan_summary"):
@@ -905,6 +907,38 @@ def _affected_files_from_description_detailed(
     return _parse_declared_file_list(raw.replace(",", "\n"))
 
 
+def _files_from_consult_hints(basket: dict, description: str) -> list[str]:
+    """Extract repo-relative .py paths from consult hypotheses, validate existence,
+    apply HIGH-inertia filter. Returns empty list when nothing actionable found.
+    T-consult-situate-feedback-loop: closes the feedback loop between consult and SITUATE.
+    """
+    import re
+
+    results = basket.get("consult_results", [])
+    if not results:
+        return []
+
+    path_pattern = re.compile(r"[\w/.-]+\.py")
+    candidates: list[str] = []
+    for r in results:
+        for hyp in r.get("hypotheses", []):
+            candidates.extend(path_pattern.findall(hyp))
+
+    seen: set[str] = set()
+    valid: list[str] = []
+    for p in candidates:
+        p = p.lstrip("/")
+        if p in seen:
+            continue
+        seen.add(p)
+        if (_REPO_ROOT / p).is_file():
+            valid.append(p)
+
+    if not valid:
+        return []
+    return _filter_high_inertia_not_in_description(valid, description)
+
+
 def _filter_high_inertia_not_in_description(
     files: list[str], description: str
 ) -> list[str]:
@@ -1127,17 +1161,21 @@ def pe_situate(basket: dict) -> dict:
          (matches the /ticket template). Skips tier.2 when human-authored.
       3. prior OBSERVE memory deposit for this ticket_id
       4. tier.2 Qwen call with the guardrailed _SITUATE_PROMPT (temp 0.1)
+      5. consult peer-LLM when tier.2 returns empty; extract .py paths from
+         hypotheses (T-consult-situate-feedback-loop). ticket_description is
+         included in the consult context so the peer can name specific files.
 
-    Tier.2 output is post-filtered to drop HIGH-inertia files not named
-    verbatim in the description. Rationale: Qwen empirically hallucinates
-    brainstem/kernel.py as a default target for sparse tickets — the filter
-    is the backstop behind the prompt's explicit rules.
+    Tier.2 output (path 4) is post-filtered to drop HIGH-inertia files not
+    named verbatim in the description. Path 5 (consult hints) applies the
+    same filter. Rationale: Qwen empirically hallucinates brainstem/kernel.py
+    as a canonical HIGH-inertia target for sparse tickets.
 
     Reads from basket: ticket_description, plan_files (may be [])
     Writes to basket:
       plan_files      list[str]  — resolved file paths (updated if was empty)
       situate_source  str        — "ticket_required_files" | "affected_files_field"
-                                    | "prior_observe_memory" | "tier2_ollama" | "empty"
+                                    | "prior_observe_memory" | "tier2_ollama"
+                                    | "consult_hints" | "empty"
     """
     if basket.get("error"):
         return basket
@@ -1193,32 +1231,53 @@ def pe_situate(basket: dict) -> dict:
 
     # Temp 0.1: extraction task, not generation — reduces hallucination pressure.
     raw = _call_tier2(prompt, temperature=0.1)
-    if not raw:
-        basket["plan_files"] = []
-        basket["situate_source"] = "empty"
-        log.info("SITUATE: tier.2 unavailable — plan_files empty")
+    if raw:
+        files = _parse_file_list(raw)
+        filtered = _filter_high_inertia_not_in_description(files, description)
+        log.info(
+            "SITUATE: tier.2 returned %d files, kept %d: %s",
+            len(files),
+            len(filtered),
+            filtered,
+        )
+    else:
+        files = []
+        filtered = []
+        log.info("SITUATE: tier.2 unavailable — trying consult")
+
+    if filtered:
+        basket["plan_files"] = filtered
+        basket["situate_source"] = "tier2_ollama"
         return basket
 
-    files = _parse_file_list(raw)
-    filtered = _filter_high_inertia_not_in_description(files, description)
-    basket["plan_files"] = filtered
-    basket["situate_source"] = "tier2_ollama"
-    log.info(
-        f"SITUATE: tier.2 returned {len(files)} files, kept {len(filtered)}: {filtered}"
+    # T-consult-pe-chain-wire + T-consult-situate-feedback-loop:
+    # tier.2 returned nothing usable (unavailable or post-filter empty).
+    # Consult a peer-LLM for file-path hypotheses; extract any .py paths
+    # from the returned hypotheses and use them as a 5th resolution path.
+    # ticket_description is included in the consult extra so the peer has
+    # enough context to name specific files rather than generic advice.
+    _maybe_consult_stuck(
+        basket,
+        stuck_reason="situate_empty",
+        summary=f"SITUATE returned 0 files for ticket {basket.get('ticket_id', '?')}",
+        what_i_tried=f"tier.2 qwen raw={raw[:200]!r}" if raw else "tier.2 unavailable",
+        what_failed=f"post-filter dropped all {len(files)} tier.2 proposals"
+        if files
+        else "tier.2 returned no output",
     )
-
-    # T-consult-pe-chain-wire: if SITUATE returned empty after filtering,
-    # consult a peer-LLM: what's blocking file resolution? The hypotheses
-    # land in basket for pe_hypothesize and human review; current behavior
-    # (return empty) is preserved — consult is additive, detection-only v1.
-    if not filtered:
-        _maybe_consult_stuck(
-            basket,
-            stuck_reason="situate_empty",
-            summary=f"SITUATE returned 0 files for ticket {basket.get('ticket_id', '?')}",
-            what_i_tried=f"tier.2 qwen raw={raw[:200]!r}",
-            what_failed=f"post-filter dropped all {len(files)} tier.2 proposals",
+    hint_files = _files_from_consult_hints(basket, description)
+    if hint_files:
+        basket["plan_files"] = hint_files
+        basket["situate_source"] = "consult_hints"
+        log.info(
+            "SITUATE: consult hints resolved %d file(s): %s",
+            len(hint_files),
+            hint_files,
         )
+        return basket
+
+    basket["plan_files"] = []
+    basket["situate_source"] = "empty"
     return basket
 
 
