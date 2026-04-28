@@ -1221,7 +1221,7 @@ registry.register(
 )
 
 
-_RUN_TESTS_TIMEOUT_SEC = 300
+_RUN_TESTS_TIMEOUT_SEC = 600  # suite takes ~280s on akiendelllinux CPU-only; 300 was too tight
 
 # Tests excluded from preflight — network-calling or shared-state-flaky tests
 # that are unrelated to any specific ticket's work and would always block pe_chain.
