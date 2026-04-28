@@ -92,6 +92,21 @@ class TestWordGraphSpreadFromWords(unittest.TestCase):
         # Sum: 1.0*0.9*0.6 + 1.0*0.5*0.6 = 0.54 + 0.30 = 0.84
         self.assertAlmostEqual(result["recall"], 0.84, places=5)
 
+    def test_max_frontier_caps_in_clause(self):
+        # Build a frontier of 5 words and cap at 3 to verify only top-3 by score
+        # are queried in the next hop. Prevents OOM from dense-graph explosions.
+        wg, conn = self._make_wg(edge_rows=[])
+        # 5 frontier seeds with distinct scores
+        seeds = {"alpha": 1.0, "beta": 0.9, "gamma": 0.8, "delta": 0.4, "epsilon": 0.3}
+        wg.spread_from_words(seeds, hop_decay=0.6, depth=1, max_frontier=3)
+        # The IN clause should have been built with only the top-3 words
+        call_args = conn.execute.call_args
+        sql, params = call_args[0]
+        assert "IN" in sql
+        assert len(params) == 3
+        # Top-3 by score: alpha, beta, gamma
+        assert set(params) == {"alpha", "beta", "gamma"}
+
 
 class TestWordGraphWordsToDocIds(unittest.TestCase):
     """Unit tests for WordGraph.words_to_doc_ids()"""
