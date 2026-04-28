@@ -120,10 +120,14 @@ def test_run_tests_truncates_long_output():
         result = run_tests()
 
     returned_lines = result.splitlines()
-    assert len(returned_lines) == 30
+    # First line is the [exit:N] prefix added by run_tests() for pe_chain's
+    # pass/fail classification; remaining lines are the last 30 of output.
+    assert returned_lines[0].startswith("[exit:")
+    tail_lines = returned_lines[1:]
+    assert len(tail_lines) == 30
     # Must be the LAST 30 lines
-    assert returned_lines[0] == "line 20"
-    assert returned_lines[-1] == "line 49"
+    assert tail_lines[0] == "line 20"
+    assert tail_lines[-1] == "line 49"
 
 
 def test_run_tests_handles_exception():
