@@ -709,12 +709,17 @@ class WordGraph(IgorBase):
         seed_words: dict,
         hop_decay: float = 0.6,
         depth: int = 2,
+        max_frontier: int = 300,
     ) -> dict:
         """D233: Spread activation from seed words through wg_edges.
 
         Returns dict[word, activation_score] with multi-source summed activations.
         hop_decay: multiplier applied per hop (default 0.6).
         depth: number of hops to propagate.
+        max_frontier: cap on the number of words carried into each hop. Keeps
+            the wg_edges IN-clause from exploding on large/dense graphs. Top-N
+            by activation score are kept; the rest are still merged into scores
+            but dropped from the next hop's query.
 
         Used by cortex.spreading_activation() as the word-graph layer.
         """
@@ -723,6 +728,12 @@ class WordGraph(IgorBase):
         for _ in range(depth):
             if not current_frontier:
                 break
+            if len(current_frontier) > max_frontier:
+                current_frontier = dict(
+                    sorted(current_frontier.items(), key=lambda kv: kv[1], reverse=True)[
+                        :max_frontier
+                    ]
+                )
             words_list = list(current_frontier.keys())
             ph = ",".join("?" * len(words_list))
             try:
