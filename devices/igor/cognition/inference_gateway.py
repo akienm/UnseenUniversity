@@ -213,6 +213,7 @@ class InferenceGateway(IgorBase):
         self._t4 = None  # tier.4       OR sonnet
         self._t5 = None  # tier.5       Anthropic direct (inhibited)
         self.last_tier: str = ""  # set after every reason() call
+        self.last_elapsed_s: float = 0.0  # set after every reason() call
 
     # ── Registration ──────────────────────────────────────────────────────────
 
@@ -419,6 +420,22 @@ class InferenceGateway(IgorBase):
     # ── Primary reasoning interface ────────────────────────────────────────────
 
     def reason(
+        self,
+        *args,
+        **kwargs,
+    ) -> "tuple[str, float, bool]":
+        """Timing wrapper around _reason_impl. Updates last_elapsed_s."""
+        import time as _time
+
+        _t0 = _time.monotonic()
+        try:
+            return self._reason_impl(*args, **kwargs)
+        finally:
+            self.last_elapsed_s = _time.monotonic() - _t0
+            global _last_latency_s
+            _last_latency_s = self.last_elapsed_s
+
+    def _reason_impl(
         self,
         user_input: str,
         relevant: list,
@@ -1283,6 +1300,7 @@ def make_context(
 # ── Module-level singleton ────────────────────────────────────────────────────────
 
 _gateway: Optional[InferenceGateway] = None
+_last_latency_s: float = 0.0
 
 
 def get_gateway() -> InferenceGateway:
@@ -1291,6 +1309,11 @@ def get_gateway() -> InferenceGateway:
     if _gateway is None:
         _gateway = build_default_gateway()
     return _gateway
+
+
+def get_last_latency_s() -> float:
+    """Return elapsed seconds of the most recent gateway.reason() call."""
+    return _last_latency_s
 
 
 _OLLAMA_RESTART_LAST: float = 0.0  # epoch seconds of last restart attempt

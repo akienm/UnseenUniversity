@@ -62,7 +62,7 @@ class TestIsReplyProd:
 class TestFindReplyGap:
     def test_finds_gap_when_user_turn_unanswered(self):
         cortex = MagicMock()
-        cortex.read_ring.return_value = [
+        cortex.read_ring_memory.return_value = [
             {
                 "category": "user_turn",
                 "content": "USER_INPUT: tell me about X",
@@ -80,7 +80,7 @@ class TestFindReplyGap:
 
     def test_no_gap_when_reply_exists(self):
         cortex = MagicMock()
-        cortex.read_ring.return_value = [
+        cortex.read_ring_memory.return_value = [
             {
                 "category": "user_turn",
                 "content": "USER_INPUT: tell me about X",
@@ -102,7 +102,7 @@ class TestFindReplyGap:
 
     def test_no_gap_when_think_trace_exists(self):
         cortex = MagicMock()
-        cortex.read_ring.return_value = [
+        cortex.read_ring_memory.return_value = [
             {
                 "category": "user_turn",
                 "content": "USER_INPUT: question",
@@ -124,19 +124,19 @@ class TestFindReplyGap:
 
     def test_no_gap_on_empty_ring(self):
         cortex = MagicMock()
-        cortex.read_ring.return_value = []
+        cortex.read_ring_memory.return_value = []
         gap = find_reply_gap(cortex)
         assert gap is None
 
     def test_handles_read_ring_exception(self):
         cortex = MagicMock()
-        cortex.read_ring.side_effect = RuntimeError("db")
+        cortex.read_ring_memory.side_effect = RuntimeError("db")
         gap = find_reply_gap(cortex)
         assert gap is None
 
     def test_strips_user_input_prefix(self):
         cortex = MagicMock()
-        cortex.read_ring.return_value = [
+        cortex.read_ring_memory.return_value = [
             {
                 "category": "user_turn",
                 "content": "USER_INPUT: what is this?",
@@ -190,7 +190,7 @@ class TestFlagReplyGap:
 class TestDetectAndFlag:
     def test_full_pipeline(self):
         cortex = MagicMock()
-        cortex.read_ring.return_value = [
+        cortex.read_ring_memory.return_value = [
             {
                 "category": "user_turn",
                 "content": "USER_INPUT: explain this",
@@ -215,11 +215,11 @@ class TestDetectAndFlag:
         cortex = MagicMock()
         result = detect_and_flag(cortex, "tell me about the weather")
         assert result is None
-        cortex.read_ring.assert_not_called()
+        cortex.read_ring_memory.assert_not_called()
 
     def test_returns_none_when_no_gap(self):
         cortex = MagicMock()
-        cortex.read_ring.return_value = [
+        cortex.read_ring_memory.return_value = [
             {"category": "user_turn", "content": "USER_INPUT: hi", "created_at": "t1"},
             {"category": "habit_trace", "content": "replied", "created_at": "t2"},
         ]
