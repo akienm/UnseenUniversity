@@ -9,6 +9,7 @@ Mocks _call_openrouter so no live API hits. Covers:
 - parse failure returns empty-shell ConsultResult
 - ConsultConclusion picks best-of turn by confidence
 - consult() one-shot helper closes session
+- test-mode writes to .test suffix
 - forensic log gets session_open, ask_ok, session_close events
 - tier routing picks correct model from env defaults
 """
