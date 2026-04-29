@@ -1,8 +1,8 @@
 """tests/test_pe_chain_consult.py — consult integration at pe_chain stuck points.
 
-Covers the three stuck-point hooks added by T-consult-pe-chain-wire:
+Covers the stuck-point hooks added by T-consult-pe-chain-wire:
 1. SITUATE returns empty → consult(stuck_reason='situate_empty')
-2. Pre-flight blocks → consult(stuck_reason='preflight_unrelated')
+2. Pre-flight blocks (no recognizer) → consult removed (T-consult-preflight-trigger-narrow)
 3. Close-loop implement-fails-twice → consult(stuck_reason='implement_fails_twice')
 
 Plus the _maybe_consult_stuck helper itself:
@@ -262,27 +262,23 @@ class TestSituateHook:
 
 
 class TestPreflightHook:
-    def test_preflight_fails_no_recognizer_fires_consult(self, tmp_path, monkeypatch):
-        """pre-flight fails, no recognizer matches → consult fires."""
-        from wild_igor.igor.tools import pe_chain as pc
+    def test_preflight_fails_no_recognizer_does_not_fire_consult(self):
+        """T-consult-preflight-trigger-narrow: pre-flight fails, no recognizer
+        matches → consult is NOT fired. The hypothesis was always the same
+        unactionable 'infra is broken' message, causing a repeat-fire loop.
+        Regression guard: the 'no recognizer matched' branch must NOT contain
+        a preflight_unrelated consult call. (The post-heal failure path still
+        uses preflight_unrelated and is intentionally kept.)"""
+        from pathlib import Path
 
-        # We can't easily trigger the pre-flight block without running the full
-        # entry chain. Instead, import the escalation path's consult call
-        # directly and verify the _maybe_consult_stuck kwargs shape is right.
-        basket = {
-            "ticket_id": "T-demo",
-            "test_result": "fail: something unrelated timed out",
-        }
-        with patch.object(pc, "_maybe_consult_stuck") as mock_consult:
-            # Call the internal consult helper directly as pre-flight does
-            pc._maybe_consult_stuck(
-                basket,
-                stuck_reason="preflight_unrelated",
-                summary="pre-flight blocked",
-                what_i_tried="no recognizer",
-                what_failed=basket["test_result"],
-            )
-        mock_consult.assert_called_once()
+        src = (
+            Path(__file__).resolve().parent.parent / "wild_igor/igor/tools/pe_chain.py"
+        ).read_text()
+        # The removed call was adjacent to "no recognizer matched the failure"
+        assert "no recognizer matched the failure" not in src, (
+            "pe_chain.py must NOT have 'no recognizer matched the failure' — "
+            "T-consult-preflight-trigger-narrow removed this unactionable trigger"
+        )
 
     def test_preflight_timeout_branch_is_present(self):
         """T-pe-chain-preflight-timeout-misdiagnosis: the pre-flight escalation
