@@ -118,12 +118,18 @@ def test_push_rate_limit_releases_after_interval():
     src = _fresh_source()
     cortex = _make_quiet_cortex()
 
-    # Pretend the last run was MIN_INTERVAL_SEC + 60s ago
-    src._last_run = datetime.now() - timedelta(seconds=MIN_INTERVAL_SEC + 60)
-    result = src.push(cortex)
+    # Pretend the last run was MIN_INTERVAL_SEC + 60s ago.
+    # Mock pr_consolidate_all so this test isn't timing-sensitive in the full suite
+    # (the real call can take >15s after many DB ops in prior tests).
+    with patch(
+        "wild_igor.igor.tools.pr_consolidation.pr_consolidate_all",
+        return_value="mocked summary",
+    ):
+        src._last_run = datetime.now() - timedelta(seconds=MIN_INTERVAL_SEC + 60)
+        result = src.push(cortex)
     assert isinstance(result, list)
-    # _last_run advanced
-    assert (datetime.now() - src._last_run).total_seconds() < 15
+    # _last_run advanced (within 5s is generous for a mocked call)
+    assert (datetime.now() - src._last_run).total_seconds() < 5
 
 
 # ── Failure isolation ────────────────────────────────────────────────────────
