@@ -100,11 +100,12 @@ from .reasoning_workflow import (
     WorkflowRun,
     run_workflow,
 )
+from ..igor_base import get_logger
 
 if TYPE_CHECKING:
     from ..memory.cortex import Cortex
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # ── Path trace ──────────────────────────────────────────────────────────────

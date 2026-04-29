@@ -31,8 +31,9 @@ from typing import Optional
 from ..memory.cortex import Cortex
 from ..memory.models import Memory, MemoryType
 from .blob_store import get_blob_metadata, get_chunks
+from ..igor_base import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # ── Extraction prompt (similar to ebook_reader G54) ────────────────────────────
 

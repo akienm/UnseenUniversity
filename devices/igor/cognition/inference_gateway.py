@@ -127,6 +127,7 @@ import urllib.request
 from dataclasses import dataclass, field
 from typing import Callable, Optional
 
+from ..igor_base import get_logger
 from ..igor_base import IgorBase
 from .forensic_logger import log_error
 
@@ -549,7 +550,7 @@ class InferenceGateway(IgorBase):
         if not _cloud_ok:
             import logging as _logging
 
-            _logging.getLogger(__name__).debug(
+            _get_logger(__name__).debug(
                 "[inference_gateway] cloud unavailable: _t4=%s (check OPENROUTER_API_KEY init at boot)",
                 "initialized" if self._t4 else "None",
             )

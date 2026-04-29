@@ -32,8 +32,9 @@ from typing import Optional
 
 from ..memory.cortex import Cortex
 from ..memory.models import Memory, MemoryType
+from ..igor_base import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def _get_cortex() -> Optional[Cortex]:

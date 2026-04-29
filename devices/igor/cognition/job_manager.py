@@ -27,6 +27,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, Optional
 
+from ..igor_base import get_logger
 from ..igor_base import IgorBase
 from ..paths import paths
 
@@ -130,7 +131,7 @@ class JobManager(IgorBase):
                 if j.status in _STATUS_ACTIVE:
                     self._jobs[j.job_id] = j
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
+                get_logger(__name__).warning(
                     "bare except in wild_igor/igor/cognition/job_manager.py: %s",
                     _bare_e,
                 )
@@ -180,7 +181,7 @@ class JobManager(IgorBase):
                         data = json.loads(path.read_text(encoding="utf-8"))
                         jobs.append(Job(**data))
                     except Exception as _bare_e:
-                        logging.getLogger(__name__).warning(
+                        get_logger(__name__).warning(
                             "bare except in wild_igor/igor/cognition/job_manager.py: %s",
                             _bare_e,
                         )

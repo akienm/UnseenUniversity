@@ -27,11 +27,12 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from .push_sources import BasePushSource
+from ..igor_base import get_logger
 
 if TYPE_CHECKING:
     from ..memory.cortex import Cortex
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 SENSOR_TREE_ROOT = "SENSOR_TREE_ROOT"
 DEFAULT_CHECK_INTERVAL = 300  # 5 minutes

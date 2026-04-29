@@ -28,11 +28,12 @@ from typing import TYPE_CHECKING, Optional
 
 from ..igor_base import IgorBase
 from .forensic_logger import log_error
+from ..igor_base import get_logger
 
 if TYPE_CHECKING:
     from ..memory.cortex import Cortex
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 SLEEP_WINDOW_START = 22
 SLEEP_WINDOW_END = 7

@@ -17,6 +17,7 @@ import re
 from collections import Counter, defaultdict
 from pathlib import Path
 
+from ..igor_base import get_logger
 from ..paths import paths
 
 _LOGS_DIR = paths().logs
@@ -59,7 +60,7 @@ def _escalation_rate() -> tuple[float, int, int]:
                 total = int(re.search(r"total=(\d+)", line).group(1))
                 return rate, cloud, total
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
+                get_logger(__name__).warning(
                     "bare except in wild_igor/igor/cognition/metrics.py: %s", _bare_e
                 )
     return 0.0, 0, 0
@@ -208,7 +209,7 @@ def _consolidation_stats(cortex) -> dict | None:
                     "skipped": int(m_sk.group(1)) if m_sk else 0,
                 }
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning(
+        get_logger(__name__).warning(
             "bare except in wild_igor/igor/cognition/metrics.py: %s", _bare_e
         )
     return None
@@ -396,7 +397,7 @@ def build_report(
                 lines.append(f"  Top 5 used:        {_top_str}")
             lines.append("")
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning(
+        get_logger(__name__).warning(
             "bare except in wild_igor/igor/cognition/metrics.py: %s", _bare_e
         )
 

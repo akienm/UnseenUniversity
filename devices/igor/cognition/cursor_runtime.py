@@ -19,8 +19,9 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
 from .node_executor import ExecutionResult, execute_node
+from ..igor_base import get_logger
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 @dataclass

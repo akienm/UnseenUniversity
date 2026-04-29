@@ -184,6 +184,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Optional
 
+from ..igor_base import get_logger
 from ..igor_base import IgorBase
 from ..paths import paths
 
@@ -198,7 +199,7 @@ if sys.platform == "win32":
         try:
             msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e
             )
 
@@ -322,7 +323,7 @@ def _contribute_to_global(state: MilieuState, alpha: float) -> None:
             finally:
                 _flock_un(lf)
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning(
+        get_logger(__name__).warning(
             "bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e
         )
 
@@ -371,7 +372,7 @@ class Milieu(IgorBase):
                     }
                 )
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e
             )
         return MilieuState()
@@ -402,7 +403,7 @@ class Milieu(IgorBase):
                     }
                 )
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
+                get_logger(__name__).warning(
                     "bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e
                 )
         return self._load_global_baseline()
@@ -429,7 +430,7 @@ class Milieu(IgorBase):
             )
             _req.urlopen(_req_obj, timeout=3)
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e
             )
 
@@ -446,7 +447,7 @@ class Milieu(IgorBase):
                     }
                 )
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e
             )
         return MilieuState()
@@ -459,7 +460,7 @@ class Milieu(IgorBase):
                 encoding="utf-8",
             )
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e
             )
         self._append_history()
@@ -474,7 +475,7 @@ class Milieu(IgorBase):
                 if isinstance(data, list):
                     return data[-HISTORY_MAX:]
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e
             )
         return []
@@ -486,7 +487,7 @@ class Milieu(IgorBase):
                 encoding="utf-8",
             )
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "bare except in wild_igor/igor/cognition/milieu.py: %s", _bare_e
             )
 

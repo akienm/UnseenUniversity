@@ -20,6 +20,7 @@ Adding a new interruptor:
 from abc import ABC, abstractmethod
 from datetime import datetime
 
+from ..igor_base import get_logger
 from ..igor_base import IgorBase
 from ..paths import paths
 
@@ -243,7 +244,7 @@ class MilieuInterruptor(BaseInterruptor):
                 return msg
 
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/interruptors.py: %s", _bare_e)
+            get_logger(__name__).warning("bare except in wild_igor/igor/cognition/interruptors.py: %s", _bare_e)
 
         return None
 
@@ -335,5 +336,5 @@ def run_all(cortex=None) -> list[str]:
             if result:
                 alerts.append(result)
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/interruptors.py: %s", _bare_e)
+            get_logger(__name__).warning("bare except in wild_igor/igor/cognition/interruptors.py: %s", _bare_e)
     return alerts

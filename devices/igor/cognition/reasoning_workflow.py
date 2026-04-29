@@ -74,11 +74,12 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 
 from .decision_blob import ProposedExperiment
+from ..igor_base import get_logger
 
 if TYPE_CHECKING:
     from ..memory.cortex import Cortex
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # ── Dataclasses ──────────────────────────────────────────────────────────────

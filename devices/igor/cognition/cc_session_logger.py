@@ -14,6 +14,7 @@ Fire-and-forget: exceptions are swallowed so logging never crashes a caller.
 from datetime import datetime
 from pathlib import Path
 
+from ..igor_base import get_logger
 from ..paths import paths
 
 _LOG_DIR = paths().logs
@@ -42,7 +43,7 @@ def _prepend(log_name: str, entry: str) -> None:
             existing = ""
         path.write_text(entry + "\n" + existing, encoding="utf-8")
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/cc_session_logger.py: %s", _bare_e)
+        get_logger(__name__).warning("bare except in wild_igor/igor/cognition/cc_session_logger.py: %s", _bare_e)
 
 
 def log_habit_call(
@@ -77,4 +78,4 @@ def log_habit_call(
         )
         _prepend(log_name, entry)
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/cc_session_logger.py: %s", _bare_e)
+        get_logger(__name__).warning("bare except in wild_igor/igor/cognition/cc_session_logger.py: %s", _bare_e)

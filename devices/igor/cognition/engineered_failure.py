@@ -47,10 +47,12 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from ..igor_base import get_logger
+
 if TYPE_CHECKING:
     from .experiment_cascade import CascadeLevel, CascadeSituation
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 STAKES_THRESHOLD: float = 0.7
