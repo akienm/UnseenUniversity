@@ -33,8 +33,13 @@ from lab.claudecode.audit_logging import (  # noqa: E402
 
 
 def _walk(source: str, in_test: bool = False) -> list:
+    from lab.claudecode.audit_logging import _scan_logger_assignments
+
     tree = ast.parse(source)
-    walker = _CallsiteWalker(source.splitlines(), "<test>", in_test)
+    assignments = _scan_logger_assignments(tree)
+    walker = _CallsiteWalker(
+        source.splitlines(), "<test>", in_test, logger_assignments=assignments
+    )
     walker.visit(tree)
     return walker.callsites
 
@@ -99,6 +104,53 @@ class TestClassifyCall:
         tree = ast.parse("d.get('x')")
         call = tree.body[0].value
         assert _classify_call(call) is None
+
+
+class TestScanLoggerAssignments:
+    def test_get_logger_assignment_recognized(self):
+        from lab.claudecode.audit_logging import _scan_logger_assignments
+
+        tree = ast.parse("_log = get_logger(__name__)\n")
+        out = _scan_logger_assignments(tree)
+        assert out == {"_log": "get_logger"}
+
+    def test_logging_getlogger_assignment_recognized(self):
+        from lab.claudecode.audit_logging import _scan_logger_assignments
+
+        tree = ast.parse("logger = logging.getLogger(__name__)\n")
+        out = _scan_logger_assignments(tree)
+        assert out == {"logger": "logging.getLogger"}
+
+    def test_log_var_with_get_logger_classified_as_good(self):
+        source = textwrap.dedent("""
+            _log = get_logger(__name__)
+            _log.warning('x')
+        """)
+        sites = _walk(source)
+        # Find the _log.warning callsite (skip the get_logger() call itself)
+        warn_sites = [
+            s for s in sites if s.pattern in (PATTERN_GET_LOGGER, PATTERN_LEGACY_LOG)
+        ]
+        # _log.warning(...) — assignment from get_logger → GET_LOGGER good
+        warning_call = next(s for s in warn_sites if "warning" in s.snippet)
+        assert warning_call.pattern == PATTERN_GET_LOGGER
+        assert warning_call.severity == SEV_GOOD
+
+    def test_log_var_with_logging_getlogger_classified_as_legacy(self):
+        source = textwrap.dedent("""
+            _log = logging.getLogger(__name__)
+            _log.warning('x')
+        """)
+        sites = _walk(source)
+        warn_sites = [s for s in sites if "warning" in s.snippet]
+        assert warn_sites[0].pattern == PATTERN_LEGACY_LOG
+        assert warn_sites[0].severity == SEV_LEGACY
+
+    def test_log_var_no_assignment_falls_back_to_legacy(self):
+        # Imported _log from elsewhere — no module-level assignment
+        source = "_log.warning('x')\n"
+        sites = _walk(source)
+        assert sites[0].pattern == PATTERN_LEGACY_LOG
 
 
 class TestCallsiteWalker:
