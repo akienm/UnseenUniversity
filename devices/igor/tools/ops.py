@@ -687,6 +687,7 @@ def adopt_top_queue_ticket() -> str:
             if t.get("status") == "pending"
             and t.get("worker") == "igor"
             and not t.get("blocked_at")  # Don't re-adopt previously blocked tickets
+            and not t.get("gate")  # Skip gated tickets — gate must close first
         ]
         if not pending:
             return "[queue_drain] no pending tickets — queue empty"

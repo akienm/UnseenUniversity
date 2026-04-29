@@ -81,6 +81,11 @@ class TestPeChainDesignProposalPostsToInbox:
             },
             "plan_summary": "refactor X",
             "op_type": "write",
+            # Description must mention the file so the cross-check passes.
+            "ticket_description": (
+                f"Refactor the genesis pattern loader.\n"
+                f"Affected files: {real_high_inertia}"
+            ),
         }
 
         with patch(
