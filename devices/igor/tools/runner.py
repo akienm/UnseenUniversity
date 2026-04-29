@@ -132,6 +132,34 @@ registry.register(
     )
 )
 
+# Alias: 'bash' routes to run_bash
+registry.register(
+    Tool(
+        name="bash",
+        description=(
+            "Alias for run_bash. Run a bash command in Igor's workspace directory. "
+            "Captures and returns stdout + stderr. "
+            "Has a configurable timeout (default 30s). "
+            "NOT sandboxed — runs as the current OS user. Use responsibly."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "description": "Bash command string to execute (e.g. 'ls -la' or 'pip show numpy')",
+                },
+                "timeout": {
+                    "type": "integer",
+                    "description": "Max seconds to wait before killing the process (default 30, max suggested 120)",
+                },
+            },
+            "required": ["command"],
+        },
+        fn=run_bash,
+    )
+)
+
 
 # bash → run_bash alias: LLMs naturally call "bash" — route to run_bash transparently
 registry.register(
