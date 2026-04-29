@@ -379,6 +379,8 @@ class TestImportSkill(unittest.TestCase):
 
             # Verify DB reflects update
             conn = psycopg2.connect(db_url)
+            sp = os.environ.get("IGOR_HOME_SEARCH_PATH") or "clan,infra,public"
+            conn.cursor().execute(f"SET search_path TO {sp}")
             cur = conn.cursor()
             cur.execute(
                 "SELECT metadata, payload FROM memories WHERE id = 'SKILL_TESTSKILL_ENTRY'"
@@ -403,6 +405,7 @@ class TestImportSkill(unittest.TestCase):
 
             # Cleanup test node
             conn2 = psycopg2.connect(db_url)
+            conn2.cursor().execute(f"SET search_path TO {sp}")
             with conn2:
                 conn2.cursor().execute(
                     "DELETE FROM memories WHERE id = 'SKILL_TESTSKILL_ENTRY'"

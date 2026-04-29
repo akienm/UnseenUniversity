@@ -17,10 +17,9 @@ from wild_igor.igor.cognition.graph_integrator import (
 
 
 @pytest.fixture
-def cortex_test(tmp_path):
-    """Create a test cortex instance."""
-    db_path = tmp_path / "test.db"
-    cortex = Cortex(db_path)
+def cortex_test():
+    """Create a test cortex instance (Postgres via IGOR_HOME_DB_URL)."""
+    cortex = Cortex(None)
     yield cortex
 
 
@@ -133,12 +132,11 @@ def test_fetch_fact_clouds(cortex_test):
     assert facts[0]["confidence"] == 0.8
 
 
-def test_integrate_graph_complete(cortex_test, monkeypatch, tmp_path):
+def test_integrate_graph_complete(cortex_test, monkeypatch):
     """Test complete graph integration."""
     content_id = "550e8400-e29b-41d4-a716-446655440000"
 
-    # Set up environment
-    monkeypatch.setenv("IGOR_DB_PATH", str(tmp_path / "test.db"))
+    # No DB_PATH needed — Postgres is used via IGOR_HOME_DB_URL
 
     # Mock get_blob_metadata at the blob_store module level
     def mock_get_blob_metadata(cid):

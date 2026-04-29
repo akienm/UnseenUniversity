@@ -39,6 +39,8 @@ def _delete_test_goals():
     conn = psycopg2.connect(db_url)
     conn.autocommit = True
     cur = conn.cursor()
+    sp = os.environ.get("IGOR_HOME_SEARCH_PATH") or "clan,infra,public"
+    cur.execute(f"SET search_path TO {sp}")
     cur.execute("DELETE FROM memories WHERE id LIKE 'GOAL_TEST_DECAY_%'")
     conn.close()
 
@@ -78,6 +80,8 @@ def _seed_goal(
     conn = psycopg2.connect(db_url)
     conn.autocommit = True
     cur = conn.cursor()
+    sp = os.environ.get("IGOR_HOME_SEARCH_PATH") or "clan,infra,public"
+    cur.execute(f"SET search_path TO {sp}")
     cur.execute(
         """
         INSERT INTO memories (id, memory_type, narrative, metadata, timestamp, activation_count)
