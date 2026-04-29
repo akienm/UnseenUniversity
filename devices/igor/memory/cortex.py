@@ -150,6 +150,8 @@ If you want to change:
   - Activation bumps    — edit store()/recall() activation logic
   - Ring size           — edit RING_MAX (currently 50)
   - TWM size/TTL        — edit TWM_MAX, TWM_TTL_EXTENSION_SECONDS
+
+Updated 2026-04-29T17:08:53Z
 """
 
 import logging

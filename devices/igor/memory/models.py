@@ -1,6 +1,8 @@
 """
 Memory model - the fundamental unit of everything Igor knows.
 Everything is a memory: facts, habits, core patterns, identity, role models.
+
+Updated 2026-04-29T17:08:53Z
 """
 
 import uuid
