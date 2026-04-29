@@ -557,6 +557,10 @@ class TestPeEscalateHallucinatedFile:
                 "new_string": "y",
             },
             "plan_summary": "refactor core_patterns",
+            "ticket_description": (
+                "Refactor the genesis pattern loader.\n"
+                "Affected files: wild_igor/igor/brainstem/core_patterns.py"
+            ),
         }
         posts = []
         bash_calls = []
