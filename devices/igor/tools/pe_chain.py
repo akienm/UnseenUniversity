@@ -2551,13 +2551,18 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
     if isinstance(_hyp, dict):
         target_file = _hyp.get("file", "") or ""
     if is_high_inertia and target_file and not (_REPO_ROOT / target_file).exists():
-        reason = (
-            f"hallucinated file: {target_file} "
-            f"(tier2 proposed a path that does not exist)"
+        log.info(
+            f"ESCALATE: hallucinated-file suppressed — {target_file} "
+            f"does not exist; dropping hypothesis and continuing"
         )
-        basket["escalate_reason"] = reason
-        log.info(f"ESCALATE: hallucinated-file rewrite — {reason}")
-        is_high_inertia = False
+        basket["hypotheses"] = [
+            h for h in basket.get("hypotheses", [])
+            if not (isinstance(h, dict) and h.get("file") == target_file)
+        ]
+        if isinstance(basket.get("hypothesis"), dict) and basket.get("hypothesis", {}).get("file") == target_file:
+            basket["hypothesis"] = basket["hypotheses"][0] if basket["hypotheses"] else {}
+        basket.pop("escalate_reason", None)
+        return basket
     elif is_high_inertia and target_file:
         description = basket.get("ticket_description", "") or ""
         # If description not in basket (READ_TICKET skipped or ENGRAM path),
@@ -2581,13 +2586,18 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
         else:
             kept = _filter_high_inertia_not_in_description([target_file], description)
             if not kept:
-                reason = (
-                    f"hallucinated HIGH-inertia target: {target_file} "
-                    f"(not named in ticket 'Affected files:' or description body)"
+                log.info(
+                    f"ESCALATE: hallucinated-scope suppressed — {target_file} "
+                    f"not in ticket scope; dropping hypothesis and continuing"
                 )
-                basket["escalate_reason"] = reason
-                log.info(f"ESCALATE: hallucinated-scope rewrite — {reason}")
-                is_high_inertia = False
+                basket["hypotheses"] = [
+                    h for h in basket.get("hypotheses", [])
+                    if not (isinstance(h, dict) and h.get("file") == target_file)
+                ]
+                if isinstance(basket.get("hypothesis"), dict) and basket.get("hypothesis", {}).get("file") == target_file:
+                    basket["hypothesis"] = basket["hypotheses"][0] if basket["hypotheses"] else {}
+                basket.pop("escalate_reason", None)
+                return basket
 
     if is_high_inertia and ticket_id and ticket_id != "unknown":
         # Compose a design proposal from the basket
