@@ -65,8 +65,14 @@ def test_classify_tier_absolute_path_brainstem():
 
 
 def _basket(file: str, op_type: str = "write") -> dict:
+    # ticket_id must be a non-"unknown" sentinel that doesn't exist in the queue
+    # so _pe_escalate skips GOAL recovery (which would otherwise grab the active
+    # GOAL and cross-check the test file against the active ticket's description,
+    # causing flakes when run in the full suite alongside Igor's live DB).
     return {
+        "ticket_id": "T-test-scope-guard-sentinel",
         "hypothesis": {"file": file, "old_string": "x", "new_string": "y"},
+        "hypotheses": [{"file": file, "old_string": "x", "new_string": "y"}],
         "op_type": op_type,
     }
 
