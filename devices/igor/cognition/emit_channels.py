@@ -29,9 +29,12 @@ log = logging.getLogger(__name__)
 # ── Base ──────────────────────────────────────────────────────────────────────
 
 
-class EmitChannel:
+class EmitChannel(IgorBase):
     name: str = ""
     bidirectional: bool = False
+
+    def __init__(self) -> None:
+        super().__init__()
 
     def write(self, key: str, value: Any, basket: dict) -> None:
         raise NotImplementedError(f"{self.__class__.__name__}.write")
@@ -254,6 +257,7 @@ class EmitChannelRegistry(IgorBase):
     """
 
     def __init__(self):
+        super().__init__()
         self._channels: dict[str, EmitChannel] = {}
 
     def register(self, channel: EmitChannel) -> None:

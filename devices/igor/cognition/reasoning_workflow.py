@@ -290,7 +290,7 @@ class WorkflowRecorder(IgorBase):
 # ── Runner ───────────────────────────────────────────────────────────────────
 
 
-class PeerAdvisor:
+class PeerAdvisor(IgorBase):
     """Abstract peer — the LLM or a test double. Takes the conversation
     so far and returns the peer's next utterance as plain text."""
 

@@ -50,6 +50,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal, Optional
 
+from ..igor_base import IgorBase
+
 log = logging.getLogger("igor.consult")
 
 # Tier → model. Defaults kept qwen-family for coding consults, claude-haiku for
@@ -250,7 +252,7 @@ def _call_openrouter(
     return text, elapsed_ms
 
 
-class ConsultSession:
+class ConsultSession(IgorBase):
     """Multi-turn consult session. State accumulates across turns.
 
     tier_override: "tier.3" | "tier.3.5" | "tier.4" — defaults to DEFAULT_TIER.
@@ -261,6 +263,7 @@ class ConsultSession:
         state: ConsultState,
         tier_override: Optional[str] = None,
     ) -> None:
+        super().__init__()
         self.state = state
         self.tier = tier_override or DEFAULT_TIER
         if self.tier not in _TIER_MODELS:
