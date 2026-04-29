@@ -1232,6 +1232,9 @@ _PREFLIGHT_IGNORE = [
     "tests/test_pe_chain_qwen_tier.py",
     # Shared-TWM-state flake: body.motor count off-by-one when run with full suite
     "tests/test_pr_load_as_primary_attractor.py",
+    # Makes live OpenRouter API calls (test_or_cheap); fails under load when Igor
+    # is also calling OR concurrently during pe_chain PLAN step
+    "tests/test_context_format.py",
 ]
 
 
@@ -1268,6 +1271,14 @@ def run_tests() -> str:
         # Prefix with exit code so callers can use it as primary pass/fail
         # signal rather than string-parsing output that may contain threading
         # exception noise (T-pe-chain-preflight-false-fail).
+        # When tests fail, also extract FAILED/ERROR lines so the pre-flight
+        # escalation reason names the specific failing test rather than only
+        # showing the thread-crash tail (T-preflight-failed-test-visibility).
+        if exit_code != 0:
+            failed_lines = [l for l in lines if l.startswith("FAILED ") or l.startswith("ERROR ")]
+            if failed_lines:
+                failures_block = "failures: " + "; ".join(failed_lines[:5])
+                return f"[exit:{exit_code}]\n{failures_block}\n{tail}"
         return f"[exit:{exit_code}]\n{tail}"
     except subprocess.TimeoutExpired:
         return f"[run_tests] timeout after {_RUN_TESTS_TIMEOUT_SEC}s"
