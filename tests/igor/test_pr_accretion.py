@@ -28,7 +28,7 @@ def ensure_seeded():
     assert rc == 0
 
 
-def _delete_test_accretions():
+def _delete_test_accretions(**_):
     """Wipe accretions created in this test session — those whose metadata
     marks them as test entries."""
     import psycopg2
