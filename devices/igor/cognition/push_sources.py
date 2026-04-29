@@ -2795,6 +2795,7 @@ intent_decay_source = None  # T-watchlist-intent-decay: lazy loaded
 relationship_drift_source = None  # T-watchlist-relationship-drift: lazy loaded
 sleep_clock_source = None  # T-sleep-triggered-by-clock: lazy loaded
 state_coherence_source = None  # T-watchlist-internal-state-coherence: lazy loaded
+approach_frame_audit_source = None  # T-igor-self-audit-approach-frame: lazy loaded
 
 # ── T-oscillatory-timing-tiers: hierarchical dispatch ─────────────────────────
 # Mirrors biological theta/beta/gamma cortex-BG loops.
@@ -2826,7 +2827,7 @@ def run_background_sources(cortex) -> int:
 
     global consolidation_replay, sleep_consolidation, pr_consolidation_source
     global intent_decay_source, relationship_drift_source, sleep_clock_source
-    global state_coherence_source
+    global state_coherence_source, approach_frame_audit_source
     if consolidation_replay is None:
         from .replay import ConsolidationReplay
 
@@ -2855,6 +2856,10 @@ def run_background_sources(cortex) -> int:
         from .state_coherence_check import StateCoherenceSource
 
         state_coherence_source = StateCoherenceSource()
+    if approach_frame_audit_source is None:
+        from .approach_frame_audit import ApproachFrameAuditSource
+
+        approach_frame_audit_source = ApproachFrameAuditSource()
 
     now_ts = _time.monotonic()
     # Determine which tiers are due this call
@@ -2894,6 +2899,7 @@ def run_background_sources(cortex) -> int:
         relationship_drift_source,
         sleep_clock_source,
         state_coherence_source,
+        approach_frame_audit_source,
     ):
         tier = getattr(src, "TIMING_TIER", "medium")
         if tier not in due_tiers:
