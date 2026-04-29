@@ -28,7 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from wild_igor.igor.tools import pe_chain  # noqa: E402
 
 
-def _ollama_reachable() -> tuple[bool, str]:
+def _ollama_reachable(**_) -> tuple[bool, str]:
     """Probe local Ollama /api/tags. Return (healthy, model_if_any)."""
     host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
     try:
