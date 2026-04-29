@@ -306,6 +306,22 @@ def run_goal_continuation(**_) -> str:
             # was at step=4 pre-restart polls forever with nothing to trigger on.
             if ticket_id:
                 try:
+                    # T-scope-guard-reattempt-loop: don't re-emit if the ticket
+                    # is waiting for CC approval or is blocked — that would loop
+                    # back into the same SCOPE_GUARD escalation.
+                    ticket_data = _load_ticket(ticket_id)
+                    if ticket_data and ticket_data.get("status") in (
+                        "awaiting_approval",
+                        "blocked",
+                    ):
+                        log.info(
+                            f"STEP4 skip re-emit for {ticket_id}"
+                            f" — status={ticket_data['status']}"
+                        )
+                        return (
+                            f"[goal_continuation] step={step} — skip re-emit"
+                            f" ({ticket_data['status']})"
+                        )
                     live = cortex.twm_read(
                         limit=5, include_integrated=False, category="goal_ready"
                     )
