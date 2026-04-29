@@ -1131,17 +1131,22 @@ class TestPeCloseLoop:
         assert "commit_result" in result
         assert "escalate_reason" not in result
 
-    def test_pass_path_skips_commit_when_no_edit(self):
+    def test_pass_path_escalates_when_implement_skipped(self):
+        # When implement_skipped=True (HYPOTHESIZE produced invalid old_string),
+        # the chain must escalate rather than falsely closing the ticket as done.
         basket = _passing_basket()
         basket["implement_skipped"] = True
+        basket["hypothesis_error"] = "validation failed: old_string not found verbatim"
         with (
             patch("wild_igor.igor.tools.pe_chain._run_bash") as mock_bash,
             patch("wild_igor.igor.tools.pe_chain._post_to_channel"),
         ):
             with patch.dict("sys.modules", {"wild_igor.igor.tools.ops": None}):
                 result = pe_close_loop(basket)
-        assert result["commit_result"] == "skipped: no edit applied"
-        # git commit should NOT be called; cc_queue done IS called (also via _run_bash)
+        # Must escalate, not silently succeed
+        assert "escalate_reason" in result
+        assert "implement_skipped" in result["escalate_reason"]
+        # git commit must NOT be called
         git_calls = [c for c in mock_bash.call_args_list if "git" in str(c)]
         assert git_calls == [], f"Expected no git calls, got: {git_calls}"
 

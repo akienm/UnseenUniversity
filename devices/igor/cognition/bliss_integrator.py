@@ -38,6 +38,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from . import pursuits as _pursuits
+from ..igor_base import IgorBase
 
 log = logging.getLogger(__name__)
 
@@ -72,7 +73,7 @@ class BlissState:
     event_count: int = 0  # lifetime, for observability
 
 
-class BlissIntegrator:
+class BlissIntegrator(IgorBase):
     """In-process EMA over pursuit completion events.
 
     Single process-wide instance; `get()` returns the module-level
@@ -84,6 +85,7 @@ class BlissIntegrator:
         window_secs: float = DEFAULT_WINDOW_SECS,
         max_bliss: float = DEFAULT_MAX_BLISS,
     ) -> None:
+        super().__init__()
         self.window_secs = window_secs
         self.max_bliss = max_bliss
         self.state = BlissState()
