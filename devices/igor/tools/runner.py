@@ -34,7 +34,7 @@ DEFAULT_TIMEOUT = 30  # seconds
 
 import time
 from datetime import datetime
-from ..cognition.inference_ollama import (
+from ..cognition.reasoners.ollama_reasoner import (
     OllamaReasoner,
     OLLAMA_LOCAL_MODEL,
     OLLAMA_HOST,
@@ -160,26 +160,6 @@ registry.register(
     )
 )
 
-
-# bash → run_bash alias: LLMs naturally call "bash" — route to run_bash transparently
-registry.register(
-    Tool(
-        name="bash",
-        description=(
-            "Alias for run_bash. Run a bash command and return stdout+stderr. "
-            "Timeout default 30s."
-        ),
-        parameters={
-            "type": "object",
-            "properties": {
-                "command": {"type": "string"},
-                "timeout": {"type": "integer"},
-            },
-            "required": ["command"],
-        },
-        fn=run_bash,
-    )
-)
 
 registry.register(
     Tool(
@@ -557,7 +537,7 @@ registry.register(
 def cluster_status(**_kwargs) -> str:
     """Return current cluster router state — which machines are up, their load scores."""
     try:
-        from ..cognition.inference_ollama import router as _router
+        from ..cognition.cluster_router import router as _router
 
         _router.force_refresh()
         lines = _router.status_lines()
@@ -572,7 +552,7 @@ def set_inference_override(machine: str = "", **_kwargs) -> str:
     Pass machine="" or machine="auto" to clear the override and resume dynamic routing.
     """
     try:
-        from ..cognition.inference_ollama import router as _router
+        from ..cognition.cluster_router import router as _router
 
         if not machine or machine.lower() == "auto":
             _router.clear_override()
