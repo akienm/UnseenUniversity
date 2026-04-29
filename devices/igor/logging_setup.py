@@ -24,7 +24,7 @@ import logging.handlers
 import time
 from pathlib import Path
 
-_LOG_MAX_BYTES = 50 * 1024 * 1024  # 50 MB per file
+_LOG_MAX_BYTES = 10 * 1024 * 1024  # 10 MB per file
 _LOG_BACKUP_COUNT = 3  # keep .1 .2 .3
 
 
