@@ -2790,13 +2790,9 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
                     f"{basket['test_result'][:100]}. Skipping attempts."
                 )
                 log.info(f"PRE-FLIGHT TEST FAILED: {basket['escalate_reason']}")
-                _maybe_consult_stuck(
-                    basket,
-                    stuck_reason="preflight_unrelated",
-                    summary=f"pre-flight blocked (no recognizer) for {basket.get('ticket_id', '?')}",
-                    what_i_tried="ran pre-flight test suite; no recognizer matched the failure",
-                    what_failed=basket["test_result"][:300],
-                )
+                # T-consult-preflight-trigger-narrow: removed unactionable consult.
+                # "no recognizer matched" means infra is broken — Igor cannot act
+                # on that hypothesis, so the consult just fires on repeat.
             _close_goal_on_escalate(basket)
             return basket
 
