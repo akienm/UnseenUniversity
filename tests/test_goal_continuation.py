@@ -294,6 +294,55 @@ class TestGoalContinuationSteps(unittest.TestCase):
         self.assertIn("re-emitted", result)
         mock_cortex.twm_push.assert_called_once()
 
+    def test_step4_skips_re_emit_when_ticket_awaiting_approval(self):
+        """Step 4 must NOT re-emit GOAL_READY when ticket is awaiting_approval.
+        T-scope-guard-reattempt-loop: re-emitting into an awaiting_approval
+        ticket causes the SCOPE_GUARD escalation loop to repeat every 2 min.
+        """
+        goal = _make_goal(step=4)
+        from wild_igor.igor.tools import goal_continuation as gc
+
+        mock_cortex = MagicMock()
+        mock_cortex.get_by_type.return_value = [goal]
+        mock_cortex.twm_read.return_value = []
+        mock_mt = MagicMock()
+        mock_mt.GOAL = "GOAL"
+
+        fake_ticket = {"id": "T-test-001", "status": "awaiting_approval"}
+
+        with patch(_CORTEX_PATH, return_value=mock_cortex), patch(
+            _MT_PATH, mock_mt
+        ), patch.object(gc, "_run_bash"), patch.object(gc, "_post_to_channel"), patch(
+            _HUMAN_GATE_PATH, return_value=True
+        ), patch.object(gc, "_load_ticket", return_value=fake_ticket):
+            result = gc.run_goal_continuation()
+
+        self.assertIn("awaiting_approval", result)
+        mock_cortex.twm_push.assert_not_called()
+
+    def test_step4_skips_re_emit_when_ticket_blocked(self):
+        """Step 4 must NOT re-emit GOAL_READY when ticket is blocked."""
+        goal = _make_goal(step=4)
+        from wild_igor.igor.tools import goal_continuation as gc
+
+        mock_cortex = MagicMock()
+        mock_cortex.get_by_type.return_value = [goal]
+        mock_cortex.twm_read.return_value = []
+        mock_mt = MagicMock()
+        mock_mt.GOAL = "GOAL"
+
+        fake_ticket = {"id": "T-test-001", "status": "blocked"}
+
+        with patch(_CORTEX_PATH, return_value=mock_cortex), patch(
+            _MT_PATH, mock_mt
+        ), patch.object(gc, "_run_bash"), patch.object(gc, "_post_to_channel"), patch(
+            _HUMAN_GATE_PATH, return_value=True
+        ), patch.object(gc, "_load_ticket", return_value=fake_ticket):
+            result = gc.run_goal_continuation()
+
+        self.assertIn("blocked", result)
+        mock_cortex.twm_push.assert_not_called()
+
     def test_step4_no_ticket_id_no_re_emit(self):
         """Step 4 with no ticket_id in goal: safe no-op, no TWM calls."""
         goal = _make_goal(step=4, task="no ticket here just a question")
