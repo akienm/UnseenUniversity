@@ -25,6 +25,8 @@ Usage:
     store = PendingReplyStore(local_proxy, home_proxy, on_worry=cortex.worry_push)
     store.enqueue("wg_cooccur", "upsert", {"pairs": [...]})
     store.drain()   # call periodically or on next access
+
+Updated 2026-04-29T17:08:53Z
 """
 
 from __future__ import annotations

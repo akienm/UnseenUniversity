@@ -5,6 +5,8 @@ Main REPL loop.
 Usage:
     python -m igor.main
     python -m igor.main --id wild-0001
+
+Updated 2026-04-29T17:08:53Z
 """
 
 import argparse

@@ -25,6 +25,8 @@ historical "SQLite-backed" framing is retired — db_proxy is Postgres-only.
 
 G37: name param allows two instances — recognition (listening) and generation
 (speaking) — with separate graph rows and independent weight development.
+
+Updated 2026-04-29T17:08:53Z
 """
 
 from __future__ import annotations
