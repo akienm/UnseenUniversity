@@ -296,10 +296,14 @@ def test_pr_accrete_commitment_links_to_goal():
 def test_pr_recent_accretions_orders_newest_first():
     from wild_igor.igor.tools import pr_accretion as _pra
 
+    # Use a sentinel facia_id so Igor's concurrent PR_AKIEN writes don't
+    # push our 3 test rows out of the limit=10 window.
+    _SENTINEL_FACIA = "PR_TEST_ORDERING_SENTINEL"
+
     ids = []
     for n in range(3):
         mid = _pra.pr_accrete(
-            facia_id="PR_AKIEN",
+            facia_id=_SENTINEL_FACIA,
             content_type="exchange",
             narrative=f"ordered test {n}",
             metadata={"test_marker": True, "ord": n},
@@ -307,7 +311,7 @@ def test_pr_recent_accretions_orders_newest_first():
         ids.append(mid)
         time.sleep(0.001)
 
-    rows = _pra.pr_recent_accretions("PR_AKIEN", limit=10)
+    rows = _pra.pr_recent_accretions(_SENTINEL_FACIA, limit=10)
     # The first 3 rows should be our test accretions in newest-first order.
     test_rows = [r for r in rows if r["id"] in ids]
     assert len(test_rows) == 3
