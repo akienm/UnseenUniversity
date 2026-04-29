@@ -91,7 +91,8 @@ class TestHighInertiaScopeFilter:
 
 
 class TestEscalateGateIntegration:
-    """End-to-end: the _pe_escalate path must block the hallucinated proposal."""
+    """End-to-end: _pe_escalate must drop hallucinated HIGH-inertia hypotheses
+    without blocking the ticket, and must still propose for legitimate ones."""
 
     def _escalate_with(self, basket, reason):
         """Call _pe_escalate with the test basket. Returns the mutated basket."""
@@ -100,10 +101,11 @@ class TestEscalateGateIntegration:
         # The function is module-private (underscore-prefixed) but importable.
         return pe_chain._pe_escalate(basket, reason)
 
-    def test_hallucinated_high_inertia_outside_scope_is_rewritten(self, monkeypatch):
-        """Key regression: T-no-sqlite-enforcement-shaped ticket with a
-        brainstem hallucination must NOT get proposed. Gate should rewrite
-        reason and drop is_high_inertia so the proposal path is skipped."""
+    def test_hallucinated_high_inertia_outside_scope_is_dropped(self, monkeypatch):
+        """Key regression: a brainstem hallucination must NOT get proposed and
+        must NOT permanently block the ticket. The offending hypothesis is
+        silently dropped and basket is returned without escalate_reason so
+        IMPLEMENT can proceed with remaining valid edits."""
         from wild_igor.igor.tools import pe_chain
 
         posted = []
@@ -114,26 +116,32 @@ class TestEscalateGateIntegration:
         )
         monkeypatch.setattr(pe_chain, "_run_bash", lambda *a, **kw: None)
 
+        hallucinated_hyp = {
+            "file": "wild_igor/igor/brainstem/core_patterns.py",
+            "old_string": "x",
+            "new_string": "y",
+        }
         basket = {
             "ticket_id": "T-test-hallucinated-target",
             "ticket_description": (
                 "Add a CI grep-check for no-sqlite patterns.\n"
                 "**Affected files:** lab/claudecode/check_no_sqlite.py\n"
             ),
-            "hypothesis": {
-                "file": "wild_igor/igor/brainstem/core_patterns.py",
-                "old_string": "x",
-                "new_string": "y",
-            },
+            "hypothesis": hallucinated_hyp,
+            "hypotheses": [hallucinated_hyp],
             "plan_summary": "refactor core patterns",
         }
 
         result = self._escalate_with(basket, "HIGH inertia target")
 
-        # The escalate_reason should have been rewritten to flag the hallucinated scope
-        assert "hallucinated HIGH-inertia target" in result["escalate_reason"]
-        # No design proposal should have been posted to the channel
+        # Hallucinated hypothesis dropped — no escalate_reason means ticket is NOT blocked
+        assert "escalate_reason" not in result
+        # Hypothesis removed from basket
+        assert result.get("hypotheses") == []
+        assert result.get("hypothesis") == {}
+        # No design proposal and no "blocked" channel message
         assert not any("DESIGN PROPOSAL" in m for m in posted)
+        assert not any("✗" in m for m in posted)
 
     def test_legitimate_high_inertia_in_scope_still_proposes(self, monkeypatch):
         """When the ticket explicitly names brainstem/core_patterns.py, the

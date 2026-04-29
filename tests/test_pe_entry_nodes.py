@@ -508,15 +508,20 @@ class TestPeSituate:
 
 
 class TestPeEscalateHallucinatedFile:
-    def test_nonexistent_high_inertia_file_rewrites_to_hallucinated_reason(self):
-        """HIGH-inertia reason + nonexistent target_file → block path, not propose."""
+    def test_nonexistent_high_inertia_file_is_dropped_not_blocked(self):
+        """HIGH-inertia reason + nonexistent target_file → drop hypothesis and
+        continue, do NOT permanently block the ticket. The offending edit is
+        silently removed from basket so IMPLEMENT can proceed with any
+        remaining valid hypotheses."""
+        hallucinated_hyp = {
+            "file": "wild_igor/igor/brainstem/kernel.py",
+            "old_string": "x",
+            "new_string": "y",
+        }
         basket = {
             "ticket_id": "T-fake-test",
-            "hypothesis": {
-                "file": "wild_igor/igor/brainstem/kernel.py",
-                "old_string": "x",
-                "new_string": "y",
-            },
+            "hypothesis": hallucinated_hyp,
+            "hypotheses": [hallucinated_hyp],
         }
         posts = []
         bash_calls = []
@@ -537,15 +542,15 @@ class TestPeEscalateHallucinatedFile:
         ):
             result = _pe_escalate(basket, reason="HIGH inertia write required")
 
-        # Reason is rewritten to name the hallucination
-        assert "hallucinated file" in result["escalate_reason"]
-        assert "wild_igor/igor/brainstem/kernel.py" in result["escalate_reason"]
-        # DESIGN PROPOSAL should NOT be posted — block-branch message instead
+        # Hypothesis silently dropped — no escalate_reason means ticket NOT blocked
+        assert "escalate_reason" not in result
+        assert result.get("hypotheses") == []
+        assert result.get("hypothesis") == {}
+        # No channel posts at all — silent drop
         assert not any("DESIGN PROPOSAL" in p for p in posts)
-        assert any("blocked" in p or "block" in p for p in posts)
-        # cc_queue.py should be invoked with 'block', not 'propose'
-        assert any("block" in c for c in bash_calls)
-        assert not any("propose" in c for c in bash_calls)
+        assert not any("blocked" in p or "✗" in p for p in posts)
+        # cc_queue.py not called
+        assert not bash_calls
 
     def test_real_high_inertia_file_still_proposes_normally(self):
         """HIGH-inertia reason + existing target_file → normal DESIGN PROPOSAL path."""
