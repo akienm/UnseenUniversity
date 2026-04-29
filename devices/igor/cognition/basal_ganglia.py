@@ -46,6 +46,7 @@ import re
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
+from ..igor_base import get_logger
 from .eval_gate import eval_gate as _eval_gate
 
 if TYPE_CHECKING:
@@ -581,7 +582,7 @@ def _inhibit_neighbors(winner_id: str, near_miss_ids: list[str]) -> None:
             category="ne_diagnostic",
         )
     except Exception as _e:
-        logging.getLogger(__name__).debug("_inhibit_neighbors: %s", _e)
+        get_logger(__name__).debug("_inhibit_neighbors: %s", _e)
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -708,7 +709,7 @@ def select_habit(
             try:
                 _wg_scores = _word_graph.score(_score_text, [h.id for h in habits])
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
+                get_logger(__name__).warning(
                     "bare except in wild_igor/igor/cognition/basal_ganglia.py: %s",
                     _bare_e,
                 )
@@ -721,7 +722,7 @@ def select_habit(
             try:
                 _inhibited_ids = _cortex.get_inhibited_habit_ids([h.id for h in habits])
             except Exception as _bare_e:
-                logging.getLogger(__name__).debug("bg_inhibition preload: %s", _bare_e)
+                get_logger(__name__).debug("bg_inhibition preload: %s", _bare_e)
 
         scored = []
         near_misses: list[tuple[float, "Memory"]] = []
@@ -812,7 +813,7 @@ def select_habit(
                 # we can measure frequency and tune IGOR_SURPRISE_MULTIPLIER.
                 # surprise_scale() returns 1.0 (no-op) when gate is off.
                 if _surprise > 1.0:
-                    logging.getLogger(__name__).info(
+                    get_logger(__name__).info(
                         "SURPRISE_REWARD habit=%s flatness=%.3f scale=%.3f boost=%.4f",
                         winner.id,
                         _flatness,
@@ -820,7 +821,7 @@ def select_habit(
                         _boost,
                     )
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning(
+                get_logger(__name__).warning(
                     "bare except in wild_igor/igor/cognition/basal_ganglia.py: %s",
                     _bare_e,
                 )

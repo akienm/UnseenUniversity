@@ -57,13 +57,14 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from .decision_blob import DecisionBlob
 from .prompt_contexts import PromptContext
+from ..igor_base import get_logger
 
 if TYPE_CHECKING:
     from ..memory.cortex import Cortex
     from .inference_gateway import InferenceGateway
     from .word_graph import WordGraph
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

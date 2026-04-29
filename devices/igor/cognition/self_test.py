@@ -27,6 +27,7 @@ from typing import Optional
 from ..memory.cortex import Cortex
 from ..memory.models import Memory, MemoryType
 from .word_graph import WordGraph
+from ..igor_base import get_logger
 
 try:
     from .blob_store import get_blob_metadata, get_chunks
@@ -39,7 +40,7 @@ except ImportError:
         return []
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Minimum Jaccard similarity to count as "correct" retrieval
 _CORRECT_THRESHOLD = 0.35

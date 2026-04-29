@@ -31,8 +31,9 @@ import threading
 from dataclasses import dataclass, field
 from typing import Callable
 from ..igor_base import IgorBase
+from ..igor_base import get_logger
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 # Critical threads whose death warrants a restart
 _DEFAULT_CRITICAL = frozenset({"ne-worker", "consolidation-worker"})

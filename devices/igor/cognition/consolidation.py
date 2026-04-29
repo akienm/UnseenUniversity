@@ -172,6 +172,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from ..igor_base import get_logger
 from ..memory.cortex import Cortex, _MEM_COLS_NO_EMBED
 from ..memory.models import Memory, MemoryType
 from ..paths import paths
@@ -194,7 +195,7 @@ def _load_checkpoint() -> dict:
         if _CHECKPOINT_FILE.exists():
             return json.loads(_CHECKPOINT_FILE.read_text())
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning(
+        get_logger(__name__).warning(
             "bare except in wild_igor/igor/cognition/consolidation.py: %s", _bare_e
         )
     return {"last_run_ts": 0.0, "processed_ids": []}
@@ -209,7 +210,7 @@ def _save_checkpoint(ts: float, processed_ids: list[str]) -> None:
         _CHECKPOINT_FILE.parent.mkdir(parents=True, exist_ok=True)
         _CHECKPOINT_FILE.write_text(json.dumps(data, indent=2))
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning(
+        get_logger(__name__).warning(
             "bare except in wild_igor/igor/cognition/consolidation.py: %s", _bare_e
         )
 
@@ -316,7 +317,7 @@ def _call_local_llm(prompt: str, cortex: Cortex) -> Optional[dict]:
         # Cap prompt to prevent OOM cascades on CPU-only inference (T-ollama-input-cap).
         _max_chars = int(os.getenv("IGOR_OLLAMA_MAX_USER_CHARS", "8000"))
         if len(prompt) > _max_chars:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "consolidation: truncating prompt %d→%d chars (T-ollama-input-cap)",
                 len(prompt),
                 _max_chars,
@@ -362,7 +363,7 @@ def _call_local_llm(prompt: str, cortex: Cortex) -> Optional[dict]:
             return None
         return json.loads(raw)
     except Exception as e:
-        logging.getLogger(__name__).warning("consolidation LLM call failed: %s", e)
+        get_logger(__name__).warning("consolidation LLM call failed: %s", e)
         return None
 
 
@@ -475,7 +476,7 @@ def run_consolidation(cortex: Cortex) -> dict:
                 category="investment_decay",
             )
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning(
+        get_logger(__name__).warning(
             "bare except in wild_igor/igor/cognition/consolidation.py: %s", _bare_e
         )
 

@@ -20,6 +20,7 @@ import math
 import re
 import time
 from pathlib import Path
+from ..igor_base import get_logger
 from ..igor_base import IgorBase
 
 _STOP_WORDS = frozenset({
@@ -66,7 +67,7 @@ class ResponseHabituation(IgorBase):
             with self._path.open("w") as f:
                 json.dump(self._store, f)
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/response_habituation.py: %s", _bare_e)
+            get_logger(__name__).warning("bare except in wild_igor/igor/cognition/response_habituation.py: %s", _bare_e)
 
     # ── core operations ────────────────────────────────────────────────────────
 

@@ -21,6 +21,7 @@ import inspect
 from datetime import datetime
 from pathlib import Path
 
+from ..igor_base import get_logger
 from ..paths import paths
 
 _cortex = None  # wired in at boot via observer.init()
@@ -75,7 +76,7 @@ def observe(label: str, value, context: dict = None) -> None:
                 existing = path.read_text(encoding="utf-8")
         path.write_text(entry + "\n" + existing, encoding="utf-8")
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning(
+        get_logger(__name__).warning(
             "bare except in wild_igor/igor/cognition/observer.py: %s", _bare_e
         )
 
@@ -108,6 +109,6 @@ def observe(label: str, value, context: dict = None) -> None:
             )
             _cortex.store(m)
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "bare except in wild_igor/igor/cognition/observer.py: %s", _bare_e
             )

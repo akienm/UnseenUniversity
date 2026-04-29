@@ -50,12 +50,13 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from .prompt_contexts import Provenance as PCProvenance, reasoning_context
 from .reasoning_workflow import Conversation, PeerAdvisor, Speaker
+from ..igor_base import get_logger
 
 if TYPE_CHECKING:
     from ..memory.cortex import Cortex
     from .inference_gateway import InferenceGateway
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class LLMPeerAdvisor(PeerAdvisor, IgorBase):

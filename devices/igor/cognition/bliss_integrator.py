@@ -39,8 +39,9 @@ from typing import Optional
 
 from . import pursuits as _pursuits
 from ..igor_base import IgorBase
+from ..igor_base import get_logger
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 def enabled() -> bool:

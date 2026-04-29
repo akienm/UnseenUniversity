@@ -42,8 +42,9 @@ from typing import Optional
 from ..memory.cortex import Cortex, _MEM_COLS_NO_EMBED
 from ..memory.models import Memory, MemoryType
 from ..paths import paths
+from ..igor_base import get_logger
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 forensic = logging.getLogger("forensic")
 
 # ── Config ─────────────────────────────────────────────────────────────────────

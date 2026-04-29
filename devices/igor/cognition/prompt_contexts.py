@@ -49,10 +49,12 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Optional
 
+from ..igor_base import get_logger
+
 if TYPE_CHECKING:
     from .decision_blob import DecisionBlob
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # ── Shared constants ────────────────────────────────────────────────────────

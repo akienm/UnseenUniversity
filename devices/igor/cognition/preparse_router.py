@@ -49,8 +49,9 @@ from .cluster_router import (
     is_overloaded,
     record_dispatch,
 )
+from ..igor_base import get_logger
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 @dataclass

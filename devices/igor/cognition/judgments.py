@@ -1,4 +1,5 @@
 import logging
+from ..igor_base import get_logger
 
 """
 Judgment functions — assess_valence, measure_friction, calculate_roi.
@@ -88,7 +89,7 @@ def assess_valence(interaction_text: str, response_text: str, cortex=None) -> fl
                 )
                 return result
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning(
+        get_logger(__name__).warning(
             "bare except in wild_igor/igor/cognition/judgments.py: %s", _bare_e
         )
 

@@ -52,7 +52,9 @@ import os
 import re
 from typing import Any
 
-log = logging.getLogger(__name__)
+from ..igor_base import get_logger
+
+log = get_logger(__name__)
 
 
 # Words that are extremely common and carry little content signal —

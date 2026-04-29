@@ -193,6 +193,7 @@ import os
 import threading
 import urllib.request
 from abc import ABC, abstractmethod
+from ...igor_base import get_logger
 from ...memory.models import Memory, MemoryType
 from ...igor_base import IgorBase
 
@@ -397,7 +398,7 @@ class BaseReasoner(ABC, IgorBase):
                 if _dt2.fromisoformat(e["timestamp"]).timestamp() >= _cutoff
             ]
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
             )
         filtered = [e for e in all_entries if e["category"] not in _RING_EXCLUDE]
@@ -418,7 +419,7 @@ class BaseReasoner(ABC, IgorBase):
             if _anchor_block:
                 lines.append(_anchor_block)
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "thread anchor read failed: %s", _bare_e
             )
 
@@ -436,7 +437,7 @@ class BaseReasoner(ABC, IgorBase):
                     goal = t["content_csb"].replace("TASK_SET|", "").strip()
                     lines.append(f"  → {goal[:200]}")
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
             )
 
@@ -462,7 +463,7 @@ class BaseReasoner(ABC, IgorBase):
                     urg = o.get("urgency", 0.2)
                     lines.append(f"  [urgency={urg:.1f}] {o['content_csb'][:150]}")
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
             )
 
@@ -490,7 +491,7 @@ class BaseReasoner(ABC, IgorBase):
                     anchor_content = _latest_ne["content"]
                     anchor_ts = _ne_ts_str
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
             )
 
@@ -682,7 +683,7 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
         )
         cortex.store(mem)
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning(
+        get_logger(__name__).warning(
             "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
         )
 
@@ -732,7 +733,7 @@ def _winnow_context_method(
             if predicted:
                 wg_hints = "Activated concepts: " + ", ".join(w for w, _ in predicted)
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "bare except in wild_igor/igor/cognition/reasoners/base.py: %s",
                 _bare_e,
             )
@@ -756,7 +757,7 @@ def _winnow_context_method(
                 q.strip() for q in _text.replace("\n", ",").split(",") if q.strip()
             ][:3]
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning(
+        get_logger(__name__).warning(
             "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
         )
 
@@ -774,7 +775,7 @@ def _winnow_context_method(
                     seen_ids.add(m.id)
                     results.append(m)
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "bare except in wild_igor/igor/cognition/reasoners/base.py: %s",
                 _bare_e,
             )
@@ -798,7 +799,7 @@ def _winnow_context_method(
             retrieved=len(results),
         )
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning(
+        get_logger(__name__).warning(
             "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
         )
 

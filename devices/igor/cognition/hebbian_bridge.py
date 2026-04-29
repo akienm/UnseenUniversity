@@ -17,9 +17,10 @@ Three functions, all gated behind IGOR_HEBBIAN_BRIDGE env var (default off):
 """
 
 import logging
+from ..igor_base import get_logger
 import os
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 forensic = logging.getLogger("forensic")
 
 _ENABLED = os.getenv("IGOR_HEBBIAN_BRIDGE", "false").lower() in ("1", "true", "yes")

@@ -33,10 +33,11 @@ import threading
 from pathlib import Path
 from typing import Optional
 
+from ..igor_base import get_logger
 from ..igor_base import IgorBase
 from .word_graph import WordGraph, tokenize_with_bigrams
 
-_log = logging.getLogger(__name__)
+_log = get_logger(__name__)
 
 _REDIS_HOST = os.getenv("IGOR_REDIS_WORD_GRAPH_HOST", "")
 _REDIS_PORT = int(os.getenv("IGOR_REDIS_WORD_GRAPH_PORT", "6379"))
@@ -145,7 +146,7 @@ class RedisWordGraph(IgorBase):
                 v = r.hget(_META_KEY, "doc_count")
                 return int(v) if v else 0
             except Exception as _bare_e:
-                logging.getLogger(__name__).warning("bare except in wild_igor/igor/cognition/redis_word_graph.py: %s", _bare_e)
+                get_logger(__name__).warning("bare except in wild_igor/igor/cognition/redis_word_graph.py: %s", _bare_e)
         return self._sqlite._doc_count
 
     # ── Indexing ──────────────────────────────────────────────────────────────

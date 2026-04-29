@@ -42,6 +42,7 @@ signatures. All can replace _signature() without touching the walker.
 
 from __future__ import annotations
 from ..igor_base import IgorBase
+from ..igor_base import get_logger
 
 import logging
 from collections import defaultdict
@@ -50,7 +51,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .experiment_cascade import CascadeSituation
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # ── Tuning knobs ─────────────────────────────────────────────────────────────

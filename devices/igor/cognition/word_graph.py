@@ -38,6 +38,7 @@ import re
 import threading
 from pathlib import Path
 
+from ..igor_base import get_logger
 from ..memory.db_proxy import DatabaseProxy, make_home_proxy, make_local_proxy
 from ..memory.graph_cache import GraphCache
 from ..memory.pending_replies import PendingReplyStore
@@ -746,7 +747,7 @@ class WordGraph(IgorBase):
                         words_list,
                     ).fetchall()
             except Exception as _e:
-                logging.getLogger(__name__).warning(
+                get_logger(__name__).warning(
                     "bare except in wild_igor/igor/cognition/word_graph.py spread_from_words: %s",
                     _e,
                 )
@@ -785,7 +786,7 @@ class WordGraph(IgorBase):
                     top_words,
                 ).fetchall()
         except Exception as _e:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "bare except in wild_igor/igor/cognition/word_graph.py words_to_doc_ids: %s",
                 _e,
             )
@@ -973,7 +974,7 @@ class WordGraph(IgorBase):
             with self._db() as conn:
                 conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "bare except in wild_igor/igor/cognition/word_graph.py: %s", _bare_e
             )
 

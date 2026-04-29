@@ -30,10 +30,12 @@ import logging
 import re
 from typing import TYPE_CHECKING
 
+from ..igor_base import get_logger
+
 if TYPE_CHECKING:
     from ..memory.cortex import Cortex
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Minimum overlap between response content words and retrieved context.
 # Below this, the response is flagged as potentially confabulated.

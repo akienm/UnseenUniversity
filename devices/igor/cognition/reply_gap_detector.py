@@ -29,11 +29,12 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Optional
 
 from .forensic_logger import log_error
+from ..igor_base import get_logger
 
 if TYPE_CHECKING:
     from ..memory.cortex import Cortex
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 REPLY_PROD_PATTERNS = [
     r"\bany\s+thoughts\b",

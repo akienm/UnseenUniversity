@@ -30,7 +30,9 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Callable, Optional
 
-log = logging.getLogger(__name__)
+from ..igor_base import get_logger
+
+log = get_logger(__name__)
 
 
 def enabled() -> bool:

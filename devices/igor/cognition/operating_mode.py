@@ -27,7 +27,9 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-log = logging.getLogger(__name__)
+from ..igor_base import get_logger
+
+log = get_logger(__name__)
 
 
 class Mode(Enum):

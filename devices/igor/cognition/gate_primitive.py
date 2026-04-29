@@ -43,11 +43,13 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Optional
 
+from ..igor_base import get_logger
+
 if TYPE_CHECKING:
     from ..memory.cortex import Cortex
     from ..memory.models import Memory
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Defaults for gate TWM push
 DEFAULT_GATE_SALIENCE = 0.92

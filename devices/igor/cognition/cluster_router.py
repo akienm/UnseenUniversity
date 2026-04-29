@@ -31,8 +31,9 @@ from .machine_manager import (
     get_ranked_machines,
     is_in_use,
 )
+from ..igor_base import get_logger
 
-_log = logging.getLogger(__name__)
+_log = get_logger(__name__)
 
 # Ollama probe timeout
 _PROBE_TIMEOUT = float(os.getenv("CLUSTER_PROBE_TIMEOUT", "3"))

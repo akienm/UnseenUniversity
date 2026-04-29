@@ -39,6 +39,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .word_graph import WordGraph
 
+from ..igor_base import get_logger
 from ..paths import paths
 
 CORPUS_DIR = paths().training_corpus
@@ -79,7 +80,7 @@ def _load_index() -> dict:
         try:
             return json.loads(INDEX_FILE.read_text(encoding="utf-8"))
         except Exception as _bare_e:
-            logging.getLogger(__name__).warning(
+            get_logger(__name__).warning(
                 "bare except in wild_igor/igor/cognition/training_corpus.py: %s",
                 _bare_e,
             )
@@ -134,7 +135,7 @@ def fetch(url: str, title: str, source: str = "gutenberg") -> tuple[str, str]:
                 f"Try again when the machine is less busy."
             )
     except Exception as _bare_e:
-        logging.getLogger(__name__).warning(
+        get_logger(__name__).warning(
             "bare except in wild_igor/igor/cognition/training_corpus.py: %s", _bare_e
         )
 

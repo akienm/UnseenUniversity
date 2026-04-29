@@ -19,6 +19,7 @@ import datetime
 from pathlib import Path
 from typing import Optional
 
+from ..igor_base import get_logger
 from ..paths import paths
 
 _lock = threading.Lock()
@@ -63,7 +64,7 @@ def _or_balance() -> float:
     except Exception as e:
         import logging as _logging
 
-        _logging.getLogger(__name__).warning(
+        _get_logger(__name__).warning(
             "[cloud_mode] OR balance API call failed: %s: %s",
             type(e).__name__,
             e,
@@ -118,7 +119,7 @@ def _compute() -> bool:
         # API unreachable — assume funded rather than silently disabling cloud
         import logging as _logging
 
-        _logging.getLogger(__name__).warning(
+        _get_logger(__name__).warning(
             "[cloud_mode] OR balance check failed — assuming funded"
         )
         return True

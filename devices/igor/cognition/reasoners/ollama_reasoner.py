@@ -23,6 +23,7 @@ import time
 import urllib.request
 from urllib.error import URLError
 import ollama as _ollama
+from ...igor_base import get_logger
 from ...memory.models import Memory
 from ...paths import paths
 from .base import BaseReasoner, LocalReasoner
@@ -45,7 +46,7 @@ def _get_client_and_model(call_type: str) -> tuple[object, str]:
             client = _ollama.Client(host=host) if host != OLLAMA_HOST else _ollama
             return client, model
     except Exception as _e:
-        logging.getLogger(__name__).warning(
+        get_logger(__name__).warning(
             "[ollama_reasoner] cluster_router failed (%s) — using localhost", _e
         )
     return _ollama, OLLAMA_LOCAL_MODEL

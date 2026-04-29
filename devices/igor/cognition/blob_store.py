@@ -20,9 +20,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+from ..igor_base import get_logger
+
 from wild_igor.igor.memory.db_proxy import make_home_proxy
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def _get_instance_dir() -> Path:

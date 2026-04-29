@@ -58,8 +58,9 @@ from typing import Any, Callable, Optional
 
 from .prompt_contexts import Provenance as PCProvenance, reasoning_context
 from ..igor_base import IgorBase
+from ..igor_base import get_logger
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 # ── Env gate ─────────────────────────────────────────────────────────────────

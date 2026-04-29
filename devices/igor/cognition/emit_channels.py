@@ -22,8 +22,9 @@ import logging
 
 from typing import Any
 from ..igor_base import IgorBase
+from ..igor_base import get_logger
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 # ── Base ──────────────────────────────────────────────────────────────────────

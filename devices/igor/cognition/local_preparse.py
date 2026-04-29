@@ -44,8 +44,9 @@ import time
 from typing import Optional
 
 from ..igor_base import IgorBase
+from ..igor_base import get_logger
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 # Default model — qwen2.5:0.5b is fastest; llama3.2:1b is the conservative
 # pick if qwen isn't pulled. Configurable via env var.
