@@ -2560,12 +2560,25 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
         is_high_inertia = False
     elif is_high_inertia and target_file:
         description = basket.get("ticket_description", "") or ""
-        # Only apply scope cross-check when the basket actually carries a
-        # description. An empty description means READ_TICKET never ran
-        # (malformed basket) — fall through to the original propose-for-
-        # approval path and let the human decide, rather than silently
-        # rewriting on missing context.
-        if description:
+        # If description not in basket (READ_TICKET skipped or ENGRAM path),
+        # load from disk so the cross-check has real scope to compare against.
+        if not description:
+            _t = _load_ticket(ticket_id) if ticket_id and ticket_id != "unknown" else None
+            description = (_t.get("description", "") or "") if _t else ""
+            if description:
+                log.info(
+                    f"ESCALATE: loaded ticket description from disk for cross-check ({len(description)} chars)"
+                )
+        if not description:
+            # No description anywhere — cannot verify scope. Suppress to avoid false proposal.
+            reason = (
+                f"hallucinated HIGH-inertia target: {target_file} "
+                f"(no ticket description available to verify scope)"
+            )
+            basket["escalate_reason"] = reason
+            log.info(f"ESCALATE: suppressed HIGH inertia proposal — no description for cross-check")
+            is_high_inertia = False
+        else:
             kept = _filter_high_inertia_not_in_description([target_file], description)
             if not kept:
                 reason = (
