@@ -62,9 +62,10 @@ _TIER_MODELS = {
 DEFAULT_TIER = "tier.3"
 
 CONSULT_LOG_PATH = Path(
-    os.getenv(
+os.getenv('IGOR_TEST_MODE', '') and 
+    os.getenv('IGOR_TEST_MODE', '') and os.getenv(
         "IGOR_CONSULT_LOG",
-        str(Path.home() / ".TheIgors" / "local" / "logs" / "consults.log"),
+        os.getenv('IGOR_TEST_MODE', '') and str(Path.home() / ".TheIgors" / "local" / "logs" / "consults.log.test") or str(Path.home() / ".TheIgors" / "local" / "logs" / "consults.log"),
     )
 )
 
