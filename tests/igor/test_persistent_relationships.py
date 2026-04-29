@@ -225,6 +225,13 @@ def test_pr_set_status_persists_and_rejects_invalid():
 def test_pr_update_weight_clamps_to_range():
     from wild_igor.igor.tools import persistent_relationships as _pr
 
+    # Guard: reset to 1.0 baseline in case cross-test state pollution left a different value
+    row = _pr._resolve_facia("PR_AKIEN")
+    if row:
+        current = float(row["metadata"].get("cumulative_investment_weight", 1.0))
+        if abs(current - 1.0) > 1e-9:
+            _pr.pr_update_weight(name="PR_AKIEN", delta=1.0 - current)
+
     # Start from 1.0, push above ceiling
     _pr.pr_update_weight(name="PR_AKIEN", delta=10.0)
     row = _pr._resolve_facia("PR_AKIEN")
