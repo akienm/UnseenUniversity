@@ -232,6 +232,90 @@ class TestConclude:
         assert len(c.transcript) == 2
 
 
+# ── confidence gate (T-consult-confidence-gate) ──────────────────────────────
+
+
+class TestConcludeConfidenceGate:
+    def test_aborted_when_best_below_threshold(self, state, tmp_log):
+        replies = [
+            ('{"hypotheses": ["low-h"], "next_question": "q?", "confidence": 0.4}', 10),
+            (
+                '{"hypotheses": ["lower-h"], "next_question": "q?", "confidence": 0.3}',
+                10,
+            ),
+        ]
+        with patch.object(cm, "_call_openrouter", side_effect=replies):
+            session = cm.ConsultSession(state)
+            session.ask("q1")
+            session.ask("q2")
+            c = session.conclude(min_confidence=0.55)
+        assert c.aborted is True
+        assert c.final_hypothesis == ""  # cleared when aborted
+        assert c.confidence == 0.4  # best is still recorded
+        assert c.usable is False
+
+    def test_not_aborted_when_best_above_threshold(self, state, tmp_log):
+        replies = [
+            (
+                '{"hypotheses": ["good-h"], "next_question": "q?", "confidence": 0.7}',
+                10,
+            ),
+        ]
+        with patch.object(cm, "_call_openrouter", side_effect=replies):
+            session = cm.ConsultSession(state)
+            session.ask("q")
+            c = session.conclude(min_confidence=0.55)
+        assert c.aborted is False
+        assert c.final_hypothesis == "good-h"
+        assert c.usable is True
+
+    def test_empty_session_is_aborted(self, state, tmp_log):
+        session = cm.ConsultSession(state)
+        c = session.conclude()
+        assert c.aborted is True
+        assert c.usable is False
+
+    def test_at_threshold_is_not_aborted(self, state, tmp_log):
+        replies = [
+            (
+                '{"hypotheses": ["edge-h"], "next_question": "q?", "confidence": 0.55}',
+                10,
+            ),
+        ]
+        with patch.object(cm, "_call_openrouter", side_effect=replies):
+            session = cm.ConsultSession(state)
+            session.ask("q")
+            c = session.conclude(min_confidence=0.55)
+        # >=, not >: at threshold passes
+        assert c.aborted is False
+        assert c.final_hypothesis == "edge-h"
+
+    def test_default_threshold_is_0_55(self):
+        assert cm.DEFAULT_MIN_CONFIDENCE == 0.55
+
+    def test_threshold_overridable_per_call(self, state, tmp_log):
+        replies = [
+            ('{"hypotheses": ["mid-h"], "next_question": "q?", "confidence": 0.6}', 10),
+        ]
+        with patch.object(cm, "_call_openrouter", side_effect=replies):
+            session = cm.ConsultSession(state)
+            session.ask("q")
+            # Higher floor → aborted
+            high = session.conclude(min_confidence=0.8)
+        assert high.aborted is True
+
+    def test_aborted_logged_to_forensic(self, state, tmp_log):
+        replies = [
+            ('{"hypotheses": ["low-h"], "next_question": "q?", "confidence": 0.2}', 10),
+        ]
+        with patch.object(cm, "_call_openrouter", side_effect=replies):
+            session = cm.ConsultSession(state)
+            session.ask("q")
+            session.conclude(min_confidence=0.55)
+        log_content = tmp_log.read_text()
+        assert '"aborted": true' in log_content
+
+
 # ── consult() one-shot helper ────────────────────────────────────────────────
 
 
