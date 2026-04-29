@@ -2269,6 +2269,18 @@ def pe_close_loop(basket: dict) -> dict:
 
     # ── Pass path ──────────────────────────────────────────────────────────────
     if test_result == "pass" or (test_result and not test_result.startswith("fail")):
+        # Guard: if implement was skipped (HYPOTHESIZE validation failed, no
+        # edit applied), closing the ticket would falsely mark it done. Escalate
+        # instead so a human can review and re-queue.
+        if basket.get("implement_skipped"):
+            return _pe_escalate(
+                basket,
+                reason=(
+                    "implement_skipped: HYPOTHESIZE produced an invalid old_string "
+                    "and no edit was applied — ticket needs re-queue with a corrected "
+                    f"hypothesis. Error: {basket.get('hypothesis_error', 'unknown')[:120]}"
+                ),
+            )
         basket = _pe_commit(basket)
         basket = _pe_close(basket)
         return basket
