@@ -213,7 +213,7 @@ def foreman_scan() -> str:
     Bridges idle-time awareness → concrete work handoff.
     """
     if _WORKER_PAUSED_FLAG.exists():
-        return "worker paused — delete ~/.TheIgors/Igor-wild-0001/worker_paused.flag to resume"
+        return f"worker paused — delete {_WORKER_PAUSED_FLAG} to resume"
     try:
         tasks = _load_queue()
         if not tasks:
