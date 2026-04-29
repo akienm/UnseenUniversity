@@ -2704,23 +2704,26 @@ class SelfTestSource(BasePushSource):
 
 class StaleChatLogBackfiller(BasePushSource):
     """
-    Background job to keep chat_chat_logs/ current from older transcripts.
+    Keep today's CC chat mirror fresh under ~/.agent_datacenter/logs/CC.0/.
 
-    Runs stale_ticket_sweeper.py --json periodically (slow tier = ~5min).
-    Exports --all transcripts to claude_chat_logs/YYYY-MM-DD.md.
-    Reports findings to TWM if stale gates found.
+    Runs export_chat.py with no --all flag every 5min — default mode refreshes
+    only day-files touched by the newest session (i.e. today). Historical
+    files are not rebuilt here; that's a /day-close concern.
     """
 
     name = "stale_chat_log_backfiller"
     TIMING_TIER = "slow"
+    REFRESH_INTERVAL_SEC = 300  # T-cc-mirror-5min-today
 
     def __init__(self):
         self._last_run: Optional[datetime] = None
 
     def push(self, cortex) -> list[int]:
         now = datetime.now(timezone.utc)
-        # Run once per hour
-        if self._last_run is not None and (now - self._last_run).total_seconds() < 3600:
+        if (
+            self._last_run is not None
+            and (now - self._last_run).total_seconds() < self.REFRESH_INTERVAL_SEC
+        ):
             return []
         self._last_run = now
 
@@ -2728,12 +2731,11 @@ class StaleChatLogBackfiller(BasePushSource):
         try:
             import subprocess
 
-            # Run export_chat.py --all to backfill older transcripts
+            # Default mode: refresh day-files touched by newest session (today).
             result = subprocess.run(
                 [
                     "python3",
                     str(Path.home() / "TheIgors/lab/claudecode/export_chat.py"),
-                    "--all",
                 ],
                 capture_output=True,
                 text=True,
