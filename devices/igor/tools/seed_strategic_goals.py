@@ -91,11 +91,14 @@ def _goal_facia_metadata(
 
 
 def seed():
+    import os
     import psycopg2
 
     conn = psycopg2.connect(DB_URL)
     conn.autocommit = True
     cur = conn.cursor()
+    sp = os.environ.get("IGOR_HOME_SEARCH_PATH") or "clan,infra,public"
+    cur.execute(f"SET search_path TO {sp}")
 
     # ── PR_GOAL_ASPIRATIONAL_SUCK_LESS ───────────────────────────────────────
     # Igor's stated long-term purpose (Akien 2026-04-13): 'help the world
