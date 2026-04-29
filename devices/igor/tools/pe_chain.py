@@ -371,13 +371,22 @@ def _conclude_consult_session(basket: dict) -> None:
             "confidence": conclusion.confidence,
             "turn_count": conclusion.turn_count,
             "session_id": session.session_id,
+            "aborted": conclusion.aborted,
         }
-        log.info(
-            "PE_CHAIN consult concluded: session=%s turns=%d conf=%.2f",
-            session.session_id,
-            conclusion.turn_count,
-            conclusion.confidence,
-        )
+        if conclusion.aborted:
+            log.info(
+                "PE_CHAIN consult aborted (low confidence): session=%s turns=%d conf=%.2f — escalation signal",
+                session.session_id,
+                conclusion.turn_count,
+                conclusion.confidence,
+            )
+        else:
+            log.info(
+                "PE_CHAIN consult concluded: session=%s turns=%d conf=%.2f",
+                session.session_id,
+                conclusion.turn_count,
+                conclusion.confidence,
+            )
     except Exception as close_exc:
         log.debug("consult conclude failed (non-fatal): %s", close_exc)
 
@@ -827,7 +836,7 @@ def _iter_candidate_paths(raw: str):
         # "TheIgors/igor" meaning the repo-root-relative path "igor".
         _repo_prefix = _REPO_ROOT.name + "/"
         if line.startswith(_repo_prefix):
-            line = line[len(_repo_prefix):]
+            line = line[len(_repo_prefix) :]
         # Strip trailing annotations like "(core structure)" or "(new)" —
         # ticket authors add these but they make the path non-resolvable.
         paren_idx = line.find("(")
@@ -1274,9 +1283,11 @@ def pe_situate(basket: dict) -> dict:
         stuck_reason="situate_empty",
         summary=f"SITUATE returned 0 files for ticket {basket.get('ticket_id', '?')}",
         what_i_tried=f"tier.2 qwen raw={raw[:200]!r}" if raw else "tier.2 unavailable",
-        what_failed=f"post-filter dropped all {len(files)} tier.2 proposals"
-        if files
-        else "tier.2 returned no output",
+        what_failed=(
+            f"post-filter dropped all {len(files)} tier.2 proposals"
+            if files
+            else "tier.2 returned no output"
+        ),
     )
     hint_files = _files_from_consult_hints(basket, description)
     if hint_files:
@@ -2078,7 +2089,9 @@ def pe_test(basket: dict, preflight: bool = False) -> dict:
             passed = False
         else:
             # Fallback for callers that don't embed exit code
-            passed = "passed" in raw and "failed" not in raw and "error" not in raw.lower()
+            passed = (
+                "passed" in raw and "failed" not in raw and "error" not in raw.lower()
+            )
         basket["test_result"] = "pass" if passed else f"fail: {raw[:300]}"
         basket["test_output"] = raw
         level = "preflight" if preflight else "post-edit"
@@ -2106,7 +2119,9 @@ def pe_test(basket: dict, preflight: bool = False) -> dict:
     # threading exception noise appears earlier (T-pe-chain-preflight-false-fail).
     _summary = "\n".join(result.splitlines()[-5:])
     passed = (
-        "passed" in result and "failed" not in result and "error" not in _summary.lower()
+        "passed" in result
+        and "failed" not in result
+        and "error" not in _summary.lower()
     )
     basket["test_result"] = "pass" if passed else f"fail: {result[:300]}"
     basket["test_output"] = result
@@ -2570,11 +2585,17 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
             f"does not exist; dropping hypothesis and continuing"
         )
         basket["hypotheses"] = [
-            h for h in basket.get("hypotheses", [])
+            h
+            for h in basket.get("hypotheses", [])
             if not (isinstance(h, dict) and h.get("file") == target_file)
         ]
-        if isinstance(basket.get("hypothesis"), dict) and basket.get("hypothesis", {}).get("file") == target_file:
-            basket["hypothesis"] = basket["hypotheses"][0] if basket["hypotheses"] else {}
+        if (
+            isinstance(basket.get("hypothesis"), dict)
+            and basket.get("hypothesis", {}).get("file") == target_file
+        ):
+            basket["hypothesis"] = (
+                basket["hypotheses"][0] if basket["hypotheses"] else {}
+            )
         basket.pop("escalate_reason", None)
         return basket
     elif is_high_inertia and target_file:
@@ -2582,7 +2603,11 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
         # If description not in basket (READ_TICKET skipped or ENGRAM path),
         # load from disk so the cross-check has real scope to compare against.
         if not description:
-            _t = _load_ticket(ticket_id) if ticket_id and ticket_id != "unknown" else None
+            _t = (
+                _load_ticket(ticket_id)
+                if ticket_id and ticket_id != "unknown"
+                else None
+            )
             description = (_t.get("description", "") or "") if _t else ""
             if description:
                 log.info(
@@ -2595,7 +2620,9 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
                 f"(no ticket description available to verify scope)"
             )
             basket["escalate_reason"] = reason
-            log.info(f"ESCALATE: suppressed HIGH inertia proposal — no description for cross-check")
+            log.info(
+                f"ESCALATE: suppressed HIGH inertia proposal — no description for cross-check"
+            )
             is_high_inertia = False
         else:
             kept = _filter_high_inertia_not_in_description([target_file], description)
@@ -2605,11 +2632,17 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
                     f"not in ticket scope; dropping hypothesis and continuing"
                 )
                 basket["hypotheses"] = [
-                    h for h in basket.get("hypotheses", [])
+                    h
+                    for h in basket.get("hypotheses", [])
                     if not (isinstance(h, dict) and h.get("file") == target_file)
                 ]
-                if isinstance(basket.get("hypothesis"), dict) and basket.get("hypothesis", {}).get("file") == target_file:
-                    basket["hypothesis"] = basket["hypotheses"][0] if basket["hypotheses"] else {}
+                if (
+                    isinstance(basket.get("hypothesis"), dict)
+                    and basket.get("hypothesis", {}).get("file") == target_file
+                ):
+                    basket["hypothesis"] = (
+                        basket["hypotheses"][0] if basket["hypotheses"] else {}
+                    )
                 basket.pop("escalate_reason", None)
                 return basket
 
