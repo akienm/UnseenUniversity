@@ -29,6 +29,8 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
+from ..igor_base import IgorBase
+
 if TYPE_CHECKING:
     from .cortex import Cortex
 
@@ -101,7 +103,7 @@ class Episode:
         }
 
 
-class EpisodeBinder:
+class EpisodeBinder(IgorBase):
     """
     Accumulates raw ring entries and flushes bound episodes.
 
@@ -121,6 +123,7 @@ class EpisodeBinder:
     """
 
     def __init__(self):
+        super().__init__()
         self._started_at: Optional[str] = None
         self._thread_id: Optional[str] = None
         self._user_input: str = ""

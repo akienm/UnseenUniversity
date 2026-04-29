@@ -43,6 +43,8 @@ import os
 import time
 from typing import Optional
 
+from ..igor_base import IgorBase
+
 log = logging.getLogger(__name__)
 
 # Default model — qwen2.5:0.5b is fastest; llama3.2:1b is the conservative
@@ -74,7 +76,7 @@ def _enabled() -> bool:
     return os.getenv("IGOR_LOCAL_PREPARSE_ENABLED", "true").lower() == "true"
 
 
-class LocalPreparser:
+class LocalPreparser(IgorBase):
     """Local-only Ollama preparse client.
 
     Intentionally minimal — no model fallback chain, no routing logic,
@@ -88,6 +90,7 @@ class LocalPreparser:
         timeout_sec: float | None = None,
         host: str | None = None,
     ) -> None:
+        super().__init__()
         self.model = model or _DEFAULT_MODEL
         self.timeout_sec = (
             timeout_sec if timeout_sec is not None else _DEFAULT_TIMEOUT_SEC

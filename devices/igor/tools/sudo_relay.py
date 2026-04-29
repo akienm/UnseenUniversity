@@ -21,6 +21,7 @@ import time
 from pathlib import Path
 
 from .registry import Tool, registry
+from ..igor_base import IgorBase
 
 _log = logging.getLogger(__name__)
 
@@ -135,7 +136,7 @@ def _tail(path: Path, lines: int = 20) -> str:
 # ── Tool registration ──────────────────────────────────────────────────────────
 
 
-class SudoRelayTool(Tool):
+class SudoRelayTool(Tool, IgorBase):
     name = "sudo_relay_run"
     description = (
         "Submit a shell script to the sudoer_daemon for execution as root. "

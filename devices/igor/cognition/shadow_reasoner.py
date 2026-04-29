@@ -57,6 +57,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
 from .prompt_contexts import Provenance as PCProvenance, reasoning_context
+from ..igor_base import IgorBase
 
 log = logging.getLogger(__name__)
 
@@ -128,7 +129,7 @@ _INDEX_SQL = [
 # ── ShadowReasoner ───────────────────────────────────────────────────────────
 
 
-class ShadowReasoner:
+class ShadowReasoner(IgorBase):
     """Dual-path reasoning dispatcher with divergence recording.
 
     Instantiate once at boot with a cortex + inference_gateway reference.
@@ -144,6 +145,7 @@ class ShadowReasoner:
         identity: Any = None,
         tutor_timeout_sec: float = 10.0,
     ) -> None:
+        super().__init__()
         self.cortex = cortex
         self.gateway = gateway
         self._milieu = milieu

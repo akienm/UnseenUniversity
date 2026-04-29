@@ -27,6 +27,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from ..igor_base import IgorBase
+
 log = logging.getLogger(__name__)
 
 
@@ -48,7 +50,7 @@ class HealResult:
     unfixable: list[str] = field(default_factory=list)
 
 
-class Recognizer(ABC):
+class Recognizer(ABC, IgorBase):
     """
     Pairs a pytest-failure pattern with a narrow remedy.
 

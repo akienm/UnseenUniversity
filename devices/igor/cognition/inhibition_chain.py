@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 # ── Base ─────────────────────────────────────────────────────────────────────
 
 
-class InhibitionNode:
+class InhibitionNode(IgorBase):
     """Base inhibition gate. Override check() to implement a gate."""
 
     node_id: str = "base"

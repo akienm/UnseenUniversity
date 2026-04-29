@@ -158,7 +158,7 @@ class TurnResult:
 # ── Voice production (stub) ─────────────────────────────────────────────────
 
 
-class VoiceProducer:
+class VoiceProducer(IgorBase):
     """Stub voice producer — renders a decision blob as plain text.
 
     The real wiring (T-llm-collaboration-protocol) replaces this with
