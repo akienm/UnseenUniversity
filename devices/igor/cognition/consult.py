@@ -136,7 +136,7 @@ class ConsultResult:
     # Empty list = clean. Callers can log / downweight based on len > 0.
     # v1: detection only — salience halving deferred to T-consult-observe-and-tune
     # once we have data on false-positive rates.
-    confab_flags: list = field(default_factory=list)
+    confab_flags: list[str] = field(default_factory=list)
 
 
 @dataclass
