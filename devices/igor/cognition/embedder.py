@@ -23,7 +23,7 @@ EMBED_MODEL = "nomic-embed-text"
 CACHE_DIR = paths().embeddings_cache
 
 
-def embed(text: str, model: str = EMBED_MODEL) -> Optional[list[float]]:
+def embed(text: str, model: str = EMBED_MODEL, **_) -> Optional[list[float]]:
     """
     Return embedding vector for text. None if Ollama is unavailable.
     Cache is checked before hitting Ollama; result is written to cache.
