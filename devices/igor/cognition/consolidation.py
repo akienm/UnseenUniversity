@@ -100,7 +100,7 @@ Schedule    no more than once per IGOR_CONSOLIDATION_INTERVAL_SECS
              (default 1800 s)
 Batch       IGOR_CONSOLIDATION_BATCH (default 200 episodics per run)
 Checkpoint  persists last_run_ts + processed_ids (last 1000) to
-             ~/.TheIgors/Igor-wild-0001/consolidation_checkpoint.json,
+             {IGOR_INSTANCE_DIR}/consolidation_checkpoint.json,
              preventing re-extraction across restarts.
 
 SLEEP PHASES

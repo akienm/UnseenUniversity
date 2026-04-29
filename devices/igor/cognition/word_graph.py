@@ -16,7 +16,7 @@ Language tags (#141):
   score() and predict_next() accept an optional lang filter for targeted traversal.
   words_by_lang() and bridge_words() enable cross-language navigation.
 
-Storage: PGDatabaseProxy against the Igor-wild-0001 Postgres DSN (same
+Storage: PGDatabaseProxy against the instance Postgres DSN (same
 database as the rest of the graph). No in-memory JSON load — the 191MB
 JSON representation was expanding to 4-8GB Python RAM after 158 books
 trained. The public API is identical to the original in-memory version;
