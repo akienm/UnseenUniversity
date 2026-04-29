@@ -25,6 +25,22 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
+def _home_conn():
+    """Return a psycopg2 connection with correct search_path for the test session."""
+    import psycopg2
+
+    db_url = os.environ.get(
+        "IGOR_HOME_DB_URL",
+        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+    )
+    conn = psycopg2.connect(db_url)
+    cur = conn.cursor()
+    sp = os.environ.get("IGOR_HOME_SEARCH_PATH") or "clan,infra,public"
+    cur.execute(f"SET search_path TO {sp}")
+    cur.close()
+    return conn
+
+
 @pytest.fixture(scope="module", autouse=True)
 def ensure_seeded():
     """Run the seed script once before all tests. Idempotent — safe to re-run."""
@@ -52,13 +68,7 @@ def ensure_seeded():
 
 
 def test_seed_creates_pr_root_facia():
-    import psycopg2
-
-    db_url = os.environ.get(
-        "IGOR_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-    )
-    conn = psycopg2.connect(db_url)
+    conn = _home_conn()
     cur = conn.cursor()
     cur.execute("SELECT memory_type, metadata::text FROM memories WHERE id = 'PR_ROOT'")
     row = cur.fetchone()
@@ -69,14 +79,9 @@ def test_seed_creates_pr_root_facia():
 
 
 def test_seed_creates_pr_akien_and_igors_project_facia():
-    import psycopg2
     import json
 
-    db_url = os.environ.get(
-        "IGOR_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-    )
-    conn = psycopg2.connect(db_url)
+    conn = _home_conn()
     cur = conn.cursor()
     cur.execute(
         "SELECT id, metadata FROM memories WHERE id IN ('PR_AKIEN','PR_IGORS_PROJECT') ORDER BY id"
@@ -101,13 +106,7 @@ def test_seed_creates_pr_akien_and_igors_project_facia():
 
 
 def test_seed_creates_three_trees_rows():
-    import psycopg2
-
-    db_url = os.environ.get(
-        "IGOR_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-    )
-    conn = psycopg2.connect(db_url)
+    conn = _home_conn()
     cur = conn.cursor()
     cur.execute(
         "SELECT name, facia_id FROM trees "
@@ -128,16 +127,11 @@ def test_seed_creates_three_trees_rows():
 def test_seed_is_idempotent():
     """Running the seed twice doesn't create duplicates."""
     from wild_igor.igor.tools import seed_persistent_relationships as _seed
-    import psycopg2
 
     rc = _seed.seed()
     assert rc == 0
 
-    db_url = os.environ.get(
-        "IGOR_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-    )
-    conn = psycopg2.connect(db_url)
+    conn = _home_conn()
     cur = conn.cursor()
     cur.execute("SELECT COUNT(*) FROM memories WHERE id = 'PR_AKIEN'")
     count = cur.fetchone()[0]

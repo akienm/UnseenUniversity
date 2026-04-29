@@ -103,24 +103,28 @@ class TestPGConnWrapperShims(unittest.TestCase):
 
 
 class TestProxyFactories(unittest.TestCase):
+    # Clear test-schema overrides from the pg_test_schema session fixture
+    # so these tests exercise production defaults, not session-scoped paths.
+    _SEARCH_OVERRIDES = frozenset({"IGOR_HOME_SEARCH_PATH", "IGOR_LOCAL_SEARCH_PATH"})
 
     def test_make_home_proxy_uses_IGOR_HOME_DB_URL(self):
-        with patch.dict(
-            os.environ, {"IGOR_HOME_DB_URL": "postgresql://fake/db"}, clear=False
-        ):
+        env = {k: v for k, v in os.environ.items() if k not in self._SEARCH_OVERRIDES}
+        env["IGOR_HOME_DB_URL"] = "postgresql://fake/db"
+        with patch.dict(os.environ, env, clear=True):
             with patch("lab.utility_closet.db_proxy.PGDatabaseProxy") as MockPG:
                 from wild_igor.igor.memory import db_proxy
 
-                # Force re-evaluation
-                result = db_proxy.make_home_proxy()
+                db_proxy.make_home_proxy()
                 MockPG.assert_called_once_with(
                     "postgresql://fake/db", search_path="clan,infra,public"
                 )
 
     def test_make_home_proxy_falls_back_to_IGOR_DB_URL(self):
         env = {"IGOR_DB_URL": "postgresql://fallback/db"}
-        # Remove IGOR_HOME_DB_URL if present
-        clean_env = {k: v for k, v in os.environ.items() if k != "IGOR_HOME_DB_URL"}
+        # Remove IGOR_HOME_DB_URL + test-schema overrides so the test
+        # exercises the production defaults, not the session-fixture paths.
+        _EXCLUDE = {"IGOR_HOME_DB_URL", "IGOR_HOME_SEARCH_PATH", "IGOR_LOCAL_SEARCH_PATH"}
+        clean_env = {k: v for k, v in os.environ.items() if k not in _EXCLUDE}
         clean_env.update(env)
         with patch.dict(os.environ, clean_env, clear=True):
             with patch("lab.utility_closet.db_proxy.PGDatabaseProxy") as MockPG:
@@ -132,9 +136,9 @@ class TestProxyFactories(unittest.TestCase):
                 )
 
     def test_make_local_proxy_uses_IGOR_LOCAL_DB_URL(self):
-        with patch.dict(
-            os.environ, {"IGOR_LOCAL_DB_URL": "postgresql://local/db"}, clear=False
-        ):
+        env = {k: v for k, v in os.environ.items() if k not in self._SEARCH_OVERRIDES}
+        env["IGOR_LOCAL_DB_URL"] = "postgresql://local/db"
+        with patch.dict(os.environ, env, clear=True):
             with patch("lab.utility_closet.db_proxy.PGDatabaseProxy") as MockPG:
                 from wild_igor.igor.memory import db_proxy
 
@@ -149,6 +153,7 @@ class TestProxyFactories(unittest.TestCase):
             k: v
             for k, v in os.environ.items()
             if k not in ("IGOR_LOCAL_DB_URL", "IGOR_HOME_DB_URL", "IGOR_DB_URL")
+            and k not in self._SEARCH_OVERRIDES
         }
         clean_env["IGOR_HOME_DB_URL"] = "postgresql://test:test@localhost/test"
         with patch.dict(os.environ, clean_env, clear=True):

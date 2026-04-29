@@ -59,11 +59,14 @@ def _upsert_tree(cur, tree_id: str, name: str, facia_id: str, description: str) 
 
 
 def seed():
+    import os
     import psycopg2
 
     conn = psycopg2.connect(DB_URL)
     conn.autocommit = True
     cur = conn.cursor()
+    sp = os.environ.get("IGOR_HOME_SEARCH_PATH") or "clan,infra,public"
+    cur.execute(f"SET search_path TO {sp}")
 
     # ── PR_ROOT facia ────────────────────────────────────────────────────────
     _upsert_memory(

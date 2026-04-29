@@ -81,7 +81,6 @@ def _push_tool_result_verbatim(thread_id: str, content: str, tool: str = "read_f
 
 def _clear(thread_id: str):
     """Wipe both verbatim categories for a thread between tests."""
-    from wild_igor.igor.memory.cortex import Cortex
     import psycopg2
     import os
 
@@ -92,6 +91,8 @@ def _clear(thread_id: str):
     conn = psycopg2.connect(db_url)
     conn.autocommit = True
     cur = conn.cursor()
+    sp = os.environ.get("IGOR_LOCAL_SEARCH_PATH") or "instance,clan,infra,public"
+    cur.execute(f"SET search_path TO {sp}")
     cur.execute(
         "DELETE FROM twm_observations WHERE thread_id = %s "
         "AND category IN ('verbatim_source', 'tool_result_verbatim')",
