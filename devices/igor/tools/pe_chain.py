@@ -1347,6 +1347,9 @@ _OBSERVE_CONTEXT_LINES = 150  # lines before+after grep hit to capture
 _OBSERVE_MAX_SECTION = 300  # max lines to read per file section
 _OBSERVE_FULL_FILE_THRESHOLD = 300  # files <= this many lines: read whole file
 _HYPOTHESIZE_MAX_RETRIES = 2  # validate-then-retry on bad old_string
+_HYPOTHESIZE_ACTUAL_CHAR_CAP = 16000  # max actual-code chars sent to LLM (was 4000;
+# at 4000 cmd_claim-style targets in mid-large files were truncated out, forcing the
+# LLM to hallucinate the target rather than copy verbatim)
 
 # Static code synonym table for TheIgors codebase.
 # Maps a keyword → [related code identifiers to also grep for].
@@ -1995,7 +1998,7 @@ def pe_hypothesize(basket: dict) -> dict:
 
         prompt = _HYPOTHESIZE_PROMPT.format(
             description=description[:_DESC_CAP_REASONING],
-            actual=actual[:4000],  # cap to avoid overwhelming small model
+            actual=actual[:_HYPOTHESIZE_ACTUAL_CHAR_CAP],
         )
         if standards_prefix:
             lines = prompt.split("\n", 1)
@@ -2040,7 +2043,9 @@ def pe_hypothesize(basket: dict) -> dict:
             f"HYPOTHESIZE: validation failed ({'; '.join(errors)}), "
             f"retry {retry_attempts}/{_HYPOTHESIZE_MAX_RETRIES}"
         )
-        retry_prompt = _build_retry_prompt(prompt, edits, errors, actual[:4000])
+        retry_prompt = _build_retry_prompt(
+            prompt, edits, errors, actual[:_HYPOTHESIZE_ACTUAL_CHAR_CAP]
+        )
         raw = _call_tier2(retry_prompt, temperature=0.2)
         if not raw:
             break
