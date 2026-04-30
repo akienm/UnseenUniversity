@@ -393,3 +393,53 @@ class TestDefaultPrompts:
         assert state.summary in msg
         assert state.ticket_id in msg
         assert state.pursuit_id in msg
+
+
+# ── CONSULT_LOG_PATH (T-consult-log-test-mode-gate repair) ──────────────────
+
+
+class TestConsultLogPath:
+    """Regression tests for CONSULT_LOG_PATH module-level resolution.
+
+    Igor's autonomous edit (commit 13251e0c) shipped a broken short-circuit
+    that resolved to Path('') when IGOR_TEST_MODE was unset. Repaired
+    2026-04-29; these tests pin the correct behavior.
+    """
+
+    def _resolve(self, env: dict) -> str:
+        import subprocess
+        import sys
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "from wild_igor.igor.cognition import consult; print(consult.CONSULT_LOG_PATH)",
+            ],
+            env={**__import__("os").environ, **env},
+            capture_output=True,
+            text=True,
+            cwd="/home/akien/TheIgors",
+        )
+        return result.stdout.strip()
+
+    def test_default_is_consults_log(self):
+        path = self._resolve({"IGOR_TEST_MODE": "", "IGOR_CONSULT_LOG": ""})
+        assert path.endswith("/consults.log")
+        assert path  # not empty (Igor's bug was Path(''))
+
+    def test_test_mode_uses_test_suffix(self):
+        path = self._resolve({"IGOR_TEST_MODE": "1", "IGOR_CONSULT_LOG": ""})
+        assert path.endswith("/consults.log.test")
+
+    def test_explicit_override_wins(self):
+        path = self._resolve(
+            {"IGOR_TEST_MODE": "", "IGOR_CONSULT_LOG": "/tmp/explicit.log"}
+        )
+        assert path == "/tmp/explicit.log"
+
+    def test_empty_test_mode_is_unset(self):
+        path = self._resolve({"IGOR_TEST_MODE": "   ", "IGOR_CONSULT_LOG": ""})
+        # Whitespace-only is treated as unset
+        assert path.endswith("/consults.log")
+        assert "consults.log.test" not in path
