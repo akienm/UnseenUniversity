@@ -197,10 +197,26 @@ def execute_node(memory, fired_trigger: str, basket: dict) -> ExecutionResult:
             "FORKIF",
             "SPAWNIF",
             "MCPCALL",
+            "NOOP_COMMENT",
         ):
             log.warning(
                 "[node_executor] unknown instruction op %r in %s", op, memory.id
             )
+            i += 1
+            continue
+
+        # ── NOOP_COMMENT [text] ────────────────────────────────────────────────
+        # T-payload-comment-opcode: in-payload human-readable annotation.
+        # Runtime treats as no-op; preserved for printers, audits, and
+        # human readers. Pairs with Memory.metadata.comment for memory-level
+        # annotations (see theigors/rules/memory-comment-convention).
+        if op == "NOOP_COMMENT":
+            if len(instruction) >= 2:
+                log.debug(
+                    "[node_executor] NOOP_COMMENT in %s: %s",
+                    memory.id,
+                    str(instruction[1])[:200],
+                )
             i += 1
             continue
 
