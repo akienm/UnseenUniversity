@@ -93,6 +93,116 @@ class TestLabelInstruction:
         assert basket.get("key1") == "value1"
 
 
+class TestNoopCommentInstruction:
+    """T-payload-comment-opcode: NOOP_COMMENT is runtime no-op, preserved for humans."""
+
+    def test_noop_comment_does_not_affect_basket(self):
+        memory = MockMemory(
+            "test_mem",
+            payload={
+                "exec_cell": [
+                    ["NOOP_COMMENT", "this is why we do the next thing"],
+                    ["EMITIF", True, "key1", "value1", "basket"],
+                    "ENDIF",
+                ]
+            },
+            metadata={"triggers": {"my_trigger": "exec_cell"}},
+        )
+        basket = {}
+        result = execute_node(memory, "my_trigger", basket)
+        assert result.stopped_by == "ENDIF"
+        assert basket.get("key1") == "value1"
+
+    def test_noop_comment_counts_as_run(self):
+        memory = MockMemory(
+            "test_mem",
+            payload={
+                "exec_cell": [
+                    ["NOOP_COMMENT", "first"],
+                    ["NOOP_COMMENT", "second"],
+                    ["EMITIF", True, "key1", "value1", "basket"],
+                    "ENDIF",
+                ]
+            },
+            metadata={"triggers": {"my_trigger": "exec_cell"}},
+        )
+        basket = {}
+        result = execute_node(memory, "my_trigger", basket)
+        # 2 NOOP_COMMENTs + 1 EMITIF + 1 ENDIF = 4 instructions
+        assert result.instructions_run == 4
+
+    def test_noop_comment_with_no_text(self):
+        """NOOP_COMMENT with just the opcode (no text arg) shouldn't crash."""
+        memory = MockMemory(
+            "test_mem",
+            payload={
+                "exec_cell": [
+                    ["NOOP_COMMENT"],
+                    ["EMITIF", True, "key1", "value1", "basket"],
+                    "ENDIF",
+                ]
+            },
+            metadata={"triggers": {"my_trigger": "exec_cell"}},
+        )
+        basket = {}
+        result = execute_node(memory, "my_trigger", basket)
+        assert result.stopped_by == "ENDIF"
+        assert basket.get("key1") == "value1"
+
+    def test_noop_comment_preserves_other_state(self):
+        """Comment between two operations doesn't disturb either."""
+        memory = MockMemory(
+            "test_mem",
+            payload={
+                "exec_cell": [
+                    ["EMITIF", True, "before", "first", "basket"],
+                    ["NOOP_COMMENT", "explanation goes here"],
+                    ["EMITIF", True, "after", "second", "basket"],
+                    "ENDIF",
+                ]
+            },
+            metadata={"triggers": {"my_trigger": "exec_cell"}},
+        )
+        basket = {}
+        execute_node(memory, "my_trigger", basket)
+        assert basket.get("before") == "first"
+        assert basket.get("after") == "second"
+
+    def test_noop_comment_does_not_trigger_unknown_op_warning(self):
+        """The opcode is in the known set — should not log 'unknown instruction'."""
+        memory = MockMemory(
+            "test_mem",
+            payload={
+                "exec_cell": [
+                    ["NOOP_COMMENT", "x"],
+                    "ENDIF",
+                ]
+            },
+            metadata={"triggers": {"my_trigger": "exec_cell"}},
+        )
+        basket = {}
+        # Capture log output
+        import logging
+        from wild_igor.igor.cognition import node_executor as ne_mod
+
+        records = []
+
+        class _Capture(logging.Handler):
+            def emit(self, record):
+                records.append(record)
+
+        handler = _Capture(level=logging.WARNING)
+        ne_mod.log._logger.addHandler(handler)
+        try:
+            execute_node(memory, "my_trigger", basket)
+        finally:
+            ne_mod.log._logger.removeHandler(handler)
+        unknown_warnings = [
+            r for r in records if "unknown instruction" in r.getMessage()
+        ]
+        assert not unknown_warnings, "NOOP_COMMENT should be a known op"
+
+
 class TestStopifInstruction:
     """Tests for STOPIF instruction."""
 
