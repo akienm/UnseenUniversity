@@ -1343,8 +1343,9 @@ def pe_situate(basket: dict) -> dict:
 
 # ── OBSERVE ───────────────────────────────────────────────────────────────────
 
-_OBSERVE_CONTEXT_LINES = 40  # lines before+after grep hit to capture
-_OBSERVE_MAX_SECTION = 120  # max lines to read per file section
+_OBSERVE_CONTEXT_LINES = 150  # lines before+after grep hit to capture
+_OBSERVE_MAX_SECTION = 300  # max lines to read per file section
+_OBSERVE_FULL_FILE_THRESHOLD = 300  # files <= this many lines: read whole file
 
 # Static code synonym table for TheIgors codebase.
 # Maps a keyword → [related code identifiers to also grep for].
@@ -1479,13 +1480,25 @@ def _read_file_section(
     try:
         path = _REPO_ROOT / filepath
         lines = path.read_text(errors="replace").splitlines()
-        start = max(0, center_line - context - 1)
-        end = min(len(lines), center_line + context)
-        # Cap total
-        if end - start > _OBSERVE_MAX_SECTION:
-            half = _OBSERVE_MAX_SECTION // 2
-            start = max(0, center_line - half - 1)
-            end = min(len(lines), center_line + half)
+        # Small file: read whole. Avoids the failure mode where grep hits
+        # near a file boundary leave the relevant code outside the window.
+        if len(lines) <= _OBSERVE_FULL_FILE_THRESHOLD:
+            section_lines = [f"{i + 1}: {lines[i]}" for i in range(len(lines))]
+            return "\n".join(section_lines)
+        # Large file: take a window centered on center_line, but if either
+        # edge clips against a file boundary, shift the other edge to keep
+        # the section size at the budget.
+        budget = min(_OBSERVE_MAX_SECTION, 2 * context)
+        half = budget // 2
+        start = center_line - half - 1
+        end = center_line + half
+        if start < 0:
+            end -= start  # add the underflow to the upper edge
+            start = 0
+        if end > len(lines):
+            start -= end - len(lines)
+            end = len(lines)
+            start = max(0, start)
         section_lines = [
             f"{start + i + 1}: {lines[start + i]}" for i in range(end - start)
         ]
