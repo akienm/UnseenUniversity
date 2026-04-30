@@ -1346,6 +1346,7 @@ def pe_situate(basket: dict) -> dict:
 _OBSERVE_CONTEXT_LINES = 150  # lines before+after grep hit to capture
 _OBSERVE_MAX_SECTION = 300  # max lines to read per file section
 _OBSERVE_FULL_FILE_THRESHOLD = 300  # files <= this many lines: read whole file
+_HYPOTHESIZE_MAX_RETRIES = 2  # validate-then-retry on bad old_string
 
 # Static code synonym table for TheIgors codebase.
 # Maps a keyword → [related code identifiers to also grep for].
@@ -1861,6 +1862,37 @@ def _validate_hypotheses(edits: list[dict], repo_root: Path) -> list[str]:
     return errors
 
 
+def _build_retry_prompt(
+    original_prompt: str,
+    failed_edits: list[dict],
+    errors: list[str],
+    actual: str,
+) -> str:
+    """T-pe-chain-hypothesize-retry: build a prompt for retrying after old_string
+    validation failed. Feeds back the LLM's failed attempt plus the actual code
+    so the next attempt can re-anchor on real characters."""
+    failed_summaries = []
+    for i, e in enumerate(failed_edits):
+        failed_summaries.append(
+            f"  edit[{i}] file={e.get('file')!r}\n"
+            f"    old_string={e.get('old_string')!r}\n"
+            f"    new_string={e.get('new_string')!r}"
+        )
+    failed_block = "\n".join(failed_summaries)
+    return (
+        f"{original_prompt}\n\n"
+        f"---\n"
+        f"YOUR PREVIOUS ATTEMPT FAILED VALIDATION:\n"
+        f"{'; '.join(errors)}\n\n"
+        f"You proposed:\n{failed_block}\n\n"
+        f"The validation failure means your old_string does NOT appear verbatim in the code shown above. "
+        f"You paraphrased instead of copying the exact characters. "
+        f"Re-read the code carefully and copy old_string EXACTLY as it appears — "
+        f"same quote style, same whitespace, same operators, same punctuation. "
+        f"If unsure, pick a shorter unique substring that you can verify is present.\n"
+    )
+
+
 def pe_hypothesize(basket: dict) -> dict:
     """
     HYPOTHESIZE step: tier.2 call → structured edit JSON (multi-edit).
@@ -1997,11 +2029,39 @@ def pe_hypothesize(basket: dict) -> dict:
 
     # Validate each edit
     errors = _validate_hypotheses(edits, _REPO_ROOT)
+
+    # T-pe-chain-hypothesize-retry: when old_string fails verbatim match, the
+    # LLM has paraphrased the actual code. Retry with the failure + actual
+    # content fed back so the next attempt can re-anchor on real characters.
+    retry_attempts = 0
+    while errors and edits and retry_attempts < _HYPOTHESIZE_MAX_RETRIES:
+        retry_attempts += 1
+        log.info(
+            f"HYPOTHESIZE: validation failed ({'; '.join(errors)}), "
+            f"retry {retry_attempts}/{_HYPOTHESIZE_MAX_RETRIES}"
+        )
+        retry_prompt = _build_retry_prompt(prompt, edits, errors, actual[:4000])
+        raw = _call_tier2(retry_prompt, temperature=0.2)
+        if not raw:
+            break
+        retry_edits = _parse_hypothesis(raw)
+        if not retry_edits:
+            log.info(f"HYPOTHESIZE: retry parse failed: {raw[:80]}")
+            break
+        edits = retry_edits
+        basket["hypothesis_raw"] = raw
+        errors = _validate_hypotheses(edits, _REPO_ROOT)
+
     if errors:
         basket["hypotheses"] = edits  # keep for debugging
         basket["hypothesis"] = edits[0]
-        basket["hypothesis_error"] = f"validation failed: {'; '.join(errors)}"
-        log.info(f"HYPOTHESIZE: validation failed: {'; '.join(errors)}")
+        basket["hypothesis_error"] = (
+            f"validation failed after {retry_attempts} retries: {'; '.join(errors)}"
+        )
+        log.info(
+            f"HYPOTHESIZE: validation failed after {retry_attempts} retries: "
+            f"{'; '.join(errors)}"
+        )
         return basket
 
     basket["hypotheses"] = edits
