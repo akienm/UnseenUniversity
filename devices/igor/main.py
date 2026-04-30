@@ -289,11 +289,11 @@ def _deposit_prediction_error(
 
             _le(kind="SILENT_EXCEPT", detail=f"main.py:284: {_exc}")
 
-    except Exception as e:
+    except Exception as _exc_outer:
         try:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"_deposit_prediction_error: {_bare_e}",
+                detail=f"_deposit_prediction_error: {_exc_outer}",
             )
         except Exception as _exc:
             from .cognition.forensic_logger import log_error as _le
@@ -493,8 +493,8 @@ class Igor(IgorBase):
         try:
             with self.cortex._db() as conn:
                 conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-        except Exception as ee_e:
-            log_error(kind="EXCEPTION", detail=f"wild_igor/igor/main.py: {e}")
+        except Exception as _exc:
+            log_error(kind="EXCEPTION", detail=f"wild_igor/igor/main.py: {_exc}")
 
         # T-instance-tracking-startup (#424): record boot event to JSONL + DB.
         # NOT pushed to TWM — queryable reference state, not working memory.
