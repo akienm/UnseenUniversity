@@ -423,14 +423,16 @@ class TestPeSituate:
         returns nothing here) → situate_source='empty'."""
         desc = "Auto-file audit pass-2 severity-high findings as tickets."
         basket = {"ticket_description": desc, "plan_files": []}
-        with patch(
-            "wild_igor.igor.tools.pe_chain._call_tier2",
-            return_value="wild_igor/igor/brainstem/core_patterns.py",
-        ), patch(
-            "wild_igor.igor.tools.pe_chain._REPO_ROOT",
-            Path(__file__).resolve().parent.parent,
-        ), patch(
-            "wild_igor.igor.tools.pe_chain._maybe_consult_stuck"
+        with (
+            patch(
+                "wild_igor.igor.tools.pe_chain._call_tier2",
+                return_value="wild_igor/igor/brainstem/core_patterns.py",
+            ),
+            patch(
+                "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+                Path(__file__).resolve().parent.parent,
+            ),
+            patch("wild_igor.igor.tools.pe_chain._maybe_consult_stuck"),
         ):
             result = pe_situate(basket)
         assert result["situate_source"] == "empty"
@@ -1092,7 +1094,12 @@ class TestPeTest:
 
 
 def _passing_basket(ticket_id="T-test", file="wild_igor/igor/tools/pe_chain.py"):
-    """Basket in the state just before pe_close_loop: test passed, edit applied."""
+    """Basket in the state just before pe_close_loop: test passed, edit applied.
+
+    Mirrors what pe_implement actually writes on success: implement_files
+    populated with the modified file, implement_skipped=False. Required by
+    the _pe_close defensive guard (T-pe-chain-empty-close-detection).
+    """
     return {
         "ticket_id": ticket_id,
         "goal_id": "GOAL_123",
@@ -1105,6 +1112,7 @@ def _passing_basket(ticket_id="T-test", file="wild_igor/igor/tools/pe_chain.py")
         },
         "implement_result": "ok",
         "implement_skipped": False,
+        "implement_files": [file],
         "ticket_description": "Fix something",
         "actual": "some code",
     }

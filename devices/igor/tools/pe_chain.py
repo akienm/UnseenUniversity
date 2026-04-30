@@ -2299,6 +2299,20 @@ def pe_close_loop(basket: dict) -> dict:
                 ),
             )
         basket = _pe_commit(basket)
+        # Belt-and-suspenders: even if implement_skipped wasn't set on this
+        # basket (e.g. the basket arrived from a fragmented dispatch where
+        # implement_skipped was lost), _pe_commit will have written
+        # commit_result="skipped: no edit applied" when files=[]. Catch that
+        # here so the close path can't fire on a skipped commit.
+        if (basket.get("commit_result") or "").startswith("skipped"):
+            return _pe_escalate(
+                basket,
+                reason=(
+                    "commit skipped without edits applied — basket likely lost "
+                    "implement_skipped flag across dispatch. "
+                    f"commit_result={basket.get('commit_result')!r}"
+                ),
+            )
         basket = _pe_close(basket)
         return basket
 
@@ -2446,9 +2460,38 @@ def _pe_commit(basket: dict) -> dict:
 
 
 def _pe_close(basket: dict) -> dict:
-    """CLOSE: mark ticket done + close the active GOAL memory."""
+    """CLOSE: mark ticket done + close the active GOAL memory.
+
+    Defensive last-line guard: refuse to close when no edits were applied.
+    This catches any caller path that bypassed the pe_close_loop guards
+    (e.g. fragmented basket dispatch). T-pe-chain-empty-close-detection.
+    """
     ticket_id = basket.get("ticket_id", "")
     test_result = basket.get("test_result", "pass")
+
+    # Refuse-to-close if no real work shipped. Fail loud so the next leak
+    # is debuggable instead of silently marking another ticket done-empty.
+    implement_skipped = bool(basket.get("implement_skipped"))
+    commit_skipped = (basket.get("commit_result") or "").startswith("skipped")
+    no_edits = not (basket.get("implement_files") or [])
+    if implement_skipped or commit_skipped or no_edits:
+        log.warning(
+            "CLOSE refused: ticket=%s implement_skipped=%s commit_skipped=%s "
+            "no_edits=%s commit_result=%r — escalating instead",
+            ticket_id,
+            implement_skipped,
+            commit_skipped,
+            no_edits,
+            basket.get("commit_result"),
+        )
+        return _pe_escalate(
+            basket,
+            reason=(
+                "_pe_close defensive guard: refusing to close empty work. "
+                f"implement_skipped={implement_skipped} commit_skipped={commit_skipped} "
+                f"no_edits={no_edits}"
+            ),
+        )
 
     # Conclude any live consult session before tearing down the goal
     _conclude_consult_session(basket)
