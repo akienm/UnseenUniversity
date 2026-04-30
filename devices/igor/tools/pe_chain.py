@@ -1695,14 +1695,15 @@ Example of a correct edit list:
     }},
     {{
       "file": "another.py",
-      "old_string": "print('old')",
-      "new_string": "print('new')"
+      "old_string": "if d[\"key\"] == \"value\":",
+      "new_string": "if d[\"key\"] == \"new_value\":"
     }}
   ]
 }}
 
 Rules:
 - Each old_string must appear verbatim in the code above
+- Preserve exact quote style. If the source uses double quotes, your old_string must contain double quotes (escaped as \\" inside the JSON string). Do not flip "..." to '...'.
 - Make the smallest changes that satisfy the ticket
 - Do not change anything outside the old_string → new_string replacements
 - Do not add any extra text, narration, or tool responses
