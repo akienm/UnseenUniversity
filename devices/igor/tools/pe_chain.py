@@ -465,7 +465,7 @@ def pe_entry_init(basket: dict | None = None) -> dict:
         basket.setdefault("attempt_count", 0)
         basket.setdefault("expected", "tests pass, requirements met")
         log.info(f"ENTRY: ticket_id already set: {basket['ticket_id']}")
-        return basket
+        return _enforce_single_ticket_mode(basket)
 
     goal = _get_active_goal()
     if not goal:
@@ -485,6 +485,42 @@ def pe_entry_init(basket: dict | None = None) -> dict:
     basket["attempt_count"] = 0
     basket["expected"] = "tests pass, requirements met"
     log.info(f"ENTRY: ticket_id={ticket_id} goal={goal.id}")
+    return _enforce_single_ticket_mode(basket)
+
+
+# T-igor-single-ticket-mode: cert-protocol kill-switch.
+# When IGOR_SINGLE_TICKET=<ticket_id> is set, pe_chain only allows that one
+# ticket through ENTRY. All other tickets are skipped with a log line so
+# the cert protocol (single-step Igor through one ticket at a time, validate
+# end product, mark complete) can run without Igor greedily auto-claiming
+# adjacent tickets in the queue.
+# TODO: remove after T-cc-walk-10 cert complete (Igor certified for autonomy).
+def _enforce_single_ticket_mode(basket: dict) -> dict:
+    """If IGOR_SINGLE_TICKET is set, gate ENTRY to that one ticket id only."""
+    allowed = os.environ.get("IGOR_SINGLE_TICKET", "").strip()
+    if not allowed:
+        return basket
+    current = basket.get("ticket_id")
+    if current == allowed:
+        log.info(
+            "[pe_chain] single-ticket mode: %s claimable (matches IGOR_SINGLE_TICKET)",
+            current,
+        )
+        return basket
+    if current:
+        log.info(
+            "[pe_chain] single-ticket mode: only %s may be claimed; skipping %s",
+            allowed,
+            current,
+        )
+    else:
+        log.info(
+            "[pe_chain] single-ticket mode: only %s may be claimed; no ticket in basket",
+            allowed,
+        )
+    basket["error"] = (
+        f"single_ticket_mode: IGOR_SINGLE_TICKET={allowed} blocks {current!r}"
+    )
     return basket
 
 
