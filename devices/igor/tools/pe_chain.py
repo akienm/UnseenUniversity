@@ -1473,6 +1473,26 @@ def _grep_file(pattern: str, filepath: str) -> list[int]:
         return []
 
 
+_LINE_PREFIX_RE = re.compile(r"^\d+:\s", re.MULTILINE)
+
+
+def _strip_line_prefix(line_numbered: str) -> str:
+    """Remove '<n>: ' prefix from each line of line-numbered text.
+
+    pe_observe writes basket['actual'] with line-number prefixes for log
+    readability. HYPOTHESIZE sends the prompt to an LLM that must produce
+    verbatim copies, so the prefix must come off before the LLM sees it —
+    otherwise the LLM has to mentally strip a non-trivial prefix and may
+    fail under that cognitive load (cert walk-02 caught this: LLM dropped
+    leading indents and flipped quote styles when forced to parse the
+    '<n>:     <content>' format).
+
+    The basket field stays line-numbered (used by logs / dumps); only the
+    LLM-bound serialization gets stripped.
+    """
+    return _LINE_PREFIX_RE.sub("", line_numbered)
+
+
 def _read_file_section(
     filepath: str, center_line: int, context: int = _OBSERVE_CONTEXT_LINES
 ) -> str:
@@ -1999,7 +2019,7 @@ def pe_hypothesize(basket: dict) -> dict:
 
         prompt = _HYPOTHESIZE_PROMPT.format(
             description=description[:_DESC_CAP_REASONING],
-            actual=actual[:_HYPOTHESIZE_ACTUAL_CHAR_CAP],
+            actual=_strip_line_prefix(actual[:_HYPOTHESIZE_ACTUAL_CHAR_CAP]),
         )
         if standards_prefix:
             lines = prompt.split("\n", 1)
@@ -2045,7 +2065,10 @@ def pe_hypothesize(basket: dict) -> dict:
             f"retry {retry_attempts}/{_HYPOTHESIZE_MAX_RETRIES}"
         )
         retry_prompt = _build_retry_prompt(
-            prompt, edits, errors, actual[:_HYPOTHESIZE_ACTUAL_CHAR_CAP]
+            prompt,
+            edits,
+            errors,
+            _strip_line_prefix(actual[:_HYPOTHESIZE_ACTUAL_CHAR_CAP]),
         )
         raw = _call_tier2(retry_prompt, temperature=0.2)
         if not raw:
