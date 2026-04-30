@@ -168,3 +168,24 @@ class Memory:
         return (
             f"Memory({self.id}, {self.memory_type.value}, inertia={self.inertia:.2f})"
         )
+
+    # T-memory-metadata-comment-convention: human-readable annotations live in
+    # metadata.comment. The helper preserves prior comments (joined with " | ")
+    # so multiple authors can annotate without overwriting each other.
+    def add_comment(self, text: str) -> None:
+        """Append a human-readable comment to metadata.comment.
+
+        Use for: why this memory exists, gotchas, sources, who decided what.
+        Multiple add_comment calls accumulate (joined by ' | ').
+        Empty/None text is a no-op.
+        """
+        text = (text or "").strip()
+        if not text:
+            return
+        existing = (self.metadata.get("comment") or "").strip()
+        self.metadata["comment"] = f"{existing} | {text}" if existing else text
+
+    @property
+    def comment(self) -> str:
+        """Convenience accessor for metadata.comment (empty string if unset)."""
+        return self.metadata.get("comment", "") or ""
