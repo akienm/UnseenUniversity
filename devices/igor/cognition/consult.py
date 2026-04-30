@@ -69,15 +69,22 @@ DEFAULT_TIER = "tier.3"
 # catches the truly-confabulating cases without false positives.
 DEFAULT_MIN_CONFIDENCE = float(os.getenv("IGOR_CONSULT_MIN_CONFIDENCE", "0.55"))
 
+# Repair: Igor's autonomous edit for T-consult-log-test-mode-gate (commit
+# 13251e0c) shipped a broken short-circuit that resolved to Path('') when
+# IGOR_TEST_MODE was unset (the default), silently breaking consult forensic
+# log writes. Rewrite cleanly: test mode → .test suffix; otherwise
+# canonical path. IGOR_CONSULT_LOG override (when non-empty) wins.
+_CONSULT_LOG_NAME = (
+    "consults.log.test" if os.getenv("IGOR_TEST_MODE", "").strip() else "consults.log"
+)
+_CONSULT_LOG_DEFAULT = str(
+    Path.home() / ".TheIgors" / "local" / "logs" / _CONSULT_LOG_NAME
+)
+# os.getenv with an explicit empty-string env value returns "", not the
+# default — guard against that so an unset/empty override falls back to
+# the canonical path.
 CONSULT_LOG_PATH = Path(
-    os.getenv("IGOR_TEST_MODE", "")
-    and os.getenv("IGOR_TEST_MODE", "")
-    and os.getenv(
-        "IGOR_CONSULT_LOG",
-        os.getenv("IGOR_TEST_MODE", "")
-        and str(Path.home() / ".TheIgors" / "local" / "logs" / "consults.log.test")
-        or str(Path.home() / ".TheIgors" / "local" / "logs" / "consults.log"),
-    )
+    os.getenv("IGOR_CONSULT_LOG", "").strip() or _CONSULT_LOG_DEFAULT
 )
 
 _LOG_LOCK = threading.Lock()
