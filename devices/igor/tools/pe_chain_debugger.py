@@ -190,19 +190,30 @@ def start(
     ticket_id: str,
     breakpoint: str = "HYPOTHESIZE",
     initial_basket: dict | None = None,
+    repo_root: str | None = None,
 ) -> dict:
     """Begin a debug session for ticket_id; run until breakpoint; return snapshot.
 
     initial_basket can seed extra context (e.g. pre-populated ticket fields
     for unit testing). Otherwise the basket starts empty and pe_entry_init
     derives context from the active GOAL.
+
+    repo_root, when supplied, sets the IGOR_PE_CHAIN_REPO_ROOT env var for
+    this process so pe_chain reads from a worktree (or other path) instead
+    of the default ~/TheIgors checkout. Required for replay-old cert walks
+    where the harness runs against an older commit's tree.
     """
+    import os
+
     valid = {s[0] for s in STEPS}
     if breakpoint.upper() not in valid and breakpoint.upper() != "END":
         return {
             "ok": False,
             "error": f"unknown breakpoint '{breakpoint}' — valid: {sorted(valid)} or END",
         }
+    if repo_root is not None:
+        os.environ["IGOR_PE_CHAIN_REPO_ROOT"] = str(repo_root)
+        log.info("pe_chain_debugger.start: repo_root override set to %s", repo_root)
     sid = f"dbg-{uuid.uuid4().hex[:12]}"
     basket = dict(initial_basket or {})
     basket.setdefault("ticket_id", ticket_id)
