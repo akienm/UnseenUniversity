@@ -41,6 +41,7 @@ def build_system_prompt(
     cortex,
     instance_id: str = "wild-0001",
     role: str = "interactive",
+    datacenter_client=None,
 ) -> str:
     """
     Build (or return cached) system prompt from current memory state.
@@ -49,6 +50,12 @@ def build_system_prompt(
       "interactive" — full persona for human interface turns (default)
       "analysis"    — CP1-CP6 + brief task framing, no Discworld/procedures
       "extraction"  — CP1-CP6 + task spec only; daemon/G53/G54 calls
+
+    datacenter_client (optional): a connected DatacenterClient with a cached
+    manifest. When provided, a CAPABILITIES section listing tool + state_ref
+    names is prepended to interactive prompts and the manifest's profile_etag
+    is folded into the cache key (prompt rebuilds when profile changes).
+    Existing callers that pass no client see identical behavior to before.
 
     Falls back to _fallback_prompt() if cortex is None or DB is empty.
     """
@@ -70,9 +77,14 @@ def build_system_prompt(
     if not core_patterns:
         return _fallback_prompt(instance_id, role=role)
 
+    profile_etag = ""
+    if datacenter_client is not None and datacenter_client.manifest is not None:
+        profile_etag = datacenter_client.manifest.get("profile_etag", "")
+
     key_text = (
         role
         + instance_id
+        + profile_etag
         + "|".join(m.narrative for m in core_patterns + identities + procedures)
     )
     cache_key = hashlib.sha256(key_text.encode()).hexdigest()[:16]
@@ -95,6 +107,18 @@ def build_system_prompt(
 
     anchors = [m for m in core_patterns + identities if m.inertia >= 0.95]
     lines: list[str] = []
+
+    # ── LAYER -1: DATACENTER CAPABILITIES (when a manifest is cached) ───────
+    # Read-only surfacing — the prompt tells Igor which tools and state refs
+    # are available so the LLM can reference them by name. Tool dispatch
+    # itself still goes through Igor's existing routing (slice 4b will route
+    # via manifest). Capped at ~200 chars to stay within budget.
+    if datacenter_client is not None and datacenter_client.manifest is not None:
+        cap_lines = _format_capability_layer(datacenter_client)
+        if cap_lines:
+            lines.extend(cap_lines)
+            lines.append("")
+
     if anchors:
         lines.append(
             "IDENTITY ANCHOR (structural — wins before any retrieval context):"
@@ -385,6 +409,38 @@ def build_boot_message(
 def invalidate_cache() -> None:
     """Clear the prompt cache. Call after memory writes that affect CP/ID/PROC."""
     _cache.clear()
+
+
+_CAPABILITY_LAYER_MAX_CHARS = 200
+
+
+def _format_capability_layer(datacenter_client) -> list[str]:
+    """
+    Render the manifest as 1-2 short lines listing tool + state_ref names.
+    Truncates names if the joined output would exceed _CAPABILITY_LAYER_MAX_CHARS.
+    Returns [] if the manifest carries nothing to show.
+    """
+    try:
+        tool_names = [t.name for t in datacenter_client.get_tools()]
+        state_ref_names = [sr.name for sr in datacenter_client.get_state_refs()]
+    except Exception:
+        return []
+
+    if not tool_names and not state_ref_names:
+        return []
+
+    lines = ["DATACENTER CAPABILITIES (read-only — dispatch unchanged in this slice):"]
+    if tool_names:
+        joined = ", ".join(tool_names)
+        if len(joined) > _CAPABILITY_LAYER_MAX_CHARS:
+            joined = joined[: _CAPABILITY_LAYER_MAX_CHARS - 1] + "…"
+        lines.append(f"  tools: {joined}")
+    if state_ref_names:
+        joined = ", ".join(state_ref_names)
+        if len(joined) > _CAPABILITY_LAYER_MAX_CHARS:
+            joined = joined[: _CAPABILITY_LAYER_MAX_CHARS - 1] + "…"
+        lines.append(f"  state: {joined}")
+    return lines
 
 
 def _extraction_prompt(core_patterns: list) -> str:
