@@ -635,7 +635,24 @@ Ticket:
 
 Files (return empty if unclear):"""
 
-_REPO_ROOT = Path.home() / "TheIgors"
+_REPO_ROOT_DEFAULT = Path.home() / "TheIgors"
+
+
+def _get_repo_root() -> Path:
+    """Return the repo root pe_chain should read/write against.
+
+    Defaults to `~/TheIgors` (the canonical Igor checkout). Overridden via
+    the `IGOR_PE_CHAIN_REPO_ROOT` env var — the cert harness sets this when
+    running pe_chain against a worktree rather than main.
+
+    Reading per-call (not module load) so debugger.start(repo_root=...) and
+    test fixtures can change roots between invocations within a single
+    Igor process. Cheap: env-var read + Path() construction.
+    """
+    override = os.environ.get("IGOR_PE_CHAIN_REPO_ROOT")
+    if override:
+        return Path(override)
+    return _REPO_ROOT_DEFAULT
 
 
 _CLOUD_PROGRAMMING_MODEL = os.getenv(
@@ -870,7 +887,7 @@ def _iter_candidate_paths(raw: str):
             line = line[2:]
         # Strip leading repo-name prefix — ticket authors sometimes write
         # "TheIgors/igor" meaning the repo-root-relative path "igor".
-        _repo_prefix = _REPO_ROOT.name + "/"
+        _repo_prefix = _get_repo_root().name + "/"
         if line.startswith(_repo_prefix):
             line = line[len(_repo_prefix) :]
         # Strip trailing annotations like "(core structure)" or "(new)" —
@@ -895,7 +912,7 @@ def _parse_file_list(raw: str) -> list[str]:
     """
     paths_found = []
     for line in _iter_candidate_paths(raw):
-        candidate = _REPO_ROOT / line
+        candidate = _get_repo_root() / line
         if candidate.exists():
             paths_found.append(line)
         else:
@@ -920,7 +937,7 @@ def _parse_declared_file_list(raw: str) -> tuple[list[str], list[str]]:
     new_paths: list[str] = []
     for line in _iter_candidate_paths(raw):
         all_paths.append(line)
-        if not (_REPO_ROOT / line).exists():
+        if not (_get_repo_root() / line).exists():
             new_paths.append(line)
     return all_paths, new_paths
 
@@ -989,7 +1006,7 @@ def _files_from_consult_hints(basket: dict, description: str) -> list[str]:
         if p in seen:
             continue
         seen.add(p)
-        if (_REPO_ROOT / p).is_file():
+        if (_get_repo_root() / p).is_file():
             valid.append(p)
 
     if not valid:
@@ -1502,7 +1519,7 @@ def _read_file_section(
     Caps at _OBSERVE_MAX_SECTION lines total.
     """
     try:
-        path = _REPO_ROOT / filepath
+        path = _get_repo_root() / filepath
         lines = path.read_text(errors="replace").splitlines()
         # Small file: read whole. Avoids the failure mode where grep hits
         # near a file boundary leave the relevant code outside the window.
@@ -1557,6 +1574,16 @@ def pe_observe(basket: dict) -> dict:
     plan_files = basket.get("plan_files", [])
     ticket_description = basket.get("ticket_description", "")
 
+    # Log the repo root in use — caught the cert-walk-W-1 silent-wrong-root bug
+    # (worktree intended, main read instead) only by inspecting the dump after
+    # the fact. This log line surfaces the routing decision at the moment OBSERVE
+    # reads files, so future divergences are visible immediately.
+    log.info(
+        "pe_observe reading from repo_root=%s (files=%s)",
+        _get_repo_root(),
+        plan_files,
+    )
+
     if not plan_files:
         # No files to observe — leave actual empty, HYPOTHESIZE will adapt
         basket["line_ranges"] = {}
@@ -1574,7 +1601,7 @@ def pe_observe(basket: dict) -> dict:
     for filepath in plan_files:
         best_line = None
         for pattern in patterns:
-            hits = _grep_file(pattern, str(_REPO_ROOT / filepath))
+            hits = _grep_file(pattern, str(_get_repo_root() / filepath))
             if hits:
                 best_line = hits[0]
                 break  # first pattern match wins for this file
@@ -1964,7 +1991,7 @@ def pe_hypothesize(basket: dict) -> dict:
 
     if approved_plan:
         # Validate approved edits the same way we validate LLM edits
-        validation_errors = _validate_hypotheses(edits, _REPO_ROOT)
+        validation_errors = _validate_hypotheses(edits, _get_repo_root())
         if validation_errors:
             log.warning(
                 f"HYPOTHESIZE: approved_plan has validation errors: {validation_errors}"
@@ -2052,7 +2079,7 @@ def pe_hypothesize(basket: dict) -> dict:
         return basket
 
     # Validate each edit
-    errors = _validate_hypotheses(edits, _REPO_ROOT)
+    errors = _validate_hypotheses(edits, _get_repo_root())
 
     # T-pe-chain-hypothesize-retry: when old_string fails verbatim match, the
     # LLM has paraphrased the actual code. Retry with the failure + actual
@@ -2079,7 +2106,7 @@ def pe_hypothesize(basket: dict) -> dict:
             break
         edits = retry_edits
         basket["hypothesis_raw"] = raw
-        errors = _validate_hypotheses(edits, _REPO_ROOT)
+        errors = _validate_hypotheses(edits, _get_repo_root())
 
     if errors:
         basket["hypotheses"] = edits  # keep for debugging
@@ -2138,7 +2165,7 @@ def pe_implement(basket: dict) -> dict:
     results = []
     files_modified = []
     for i, edit in enumerate(edits):
-        filepath = _REPO_ROOT / edit["file"]
+        filepath = _get_repo_root() / edit["file"]
         old_string = edit["old_string"]
         new_string = edit["new_string"]
 
@@ -2545,7 +2572,7 @@ def _pe_replan(basket: dict) -> dict:
         basket["hypothesis_error"] = f"replan: parse failed: {raw[:80]}"
         return basket
 
-    errors = _validate_hypotheses(new_edits, _REPO_ROOT)
+    errors = _validate_hypotheses(new_edits, _get_repo_root())
     if errors:
         basket["hypotheses"] = new_edits
         basket["hypothesis"] = new_edits[0]
@@ -2578,7 +2605,7 @@ def _pe_commit(basket: dict) -> dict:
     # git add each file
     for filepath in files:
         result = _run_bash(
-            ["git", "-C", str(_REPO_ROOT), "add", filepath],
+            ["git", "-C", str(_get_repo_root()), "add", filepath],
             timeout=15,
         )
         if "error" in result.lower() or "fatal" in result.lower():
@@ -2589,7 +2616,7 @@ def _pe_commit(basket: dict) -> dict:
     file_list = ", ".join(files)
     msg = f"fix: {ticket_id} — pe_chain autonomous edit ({len(files)} file(s))\n\nCo-Authored-By: Igor <igor@theigors>"
     result = _run_bash(
-        ["git", "-C", str(_REPO_ROOT), "commit", "-m", msg],
+        ["git", "-C", str(_get_repo_root()), "commit", "-m", msg],
         timeout=15,
     )
     basket["commit_result"] = result[:120]
@@ -2760,7 +2787,11 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
     _hyp = basket.get("hypothesis")
     if isinstance(_hyp, dict):
         target_file = _hyp.get("file", "") or ""
-    if is_high_inertia and target_file and not (_REPO_ROOT / target_file).exists():
+    if (
+        is_high_inertia
+        and target_file
+        and not (_get_repo_root() / target_file).exists()
+    ):
         log.info(
             f"ESCALATE: hallucinated-file suppressed — {target_file} "
             f"does not exist; dropping hypothesis and continuing"
@@ -2955,7 +2986,7 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
         failure_text = (
             basket.get("test_output") or basket["test_result"][len("fail: ") :]
         )
-        heal = _heal(failure_text, _REPO_ROOT)
+        heal = _heal(failure_text, _get_repo_root())
         if heal.healed:
             log.info(
                 f"PRE-FLIGHT HEAL: {heal.recognizer} applied {len(heal.edits)} edit(s) "
