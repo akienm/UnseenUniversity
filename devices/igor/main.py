@@ -479,9 +479,14 @@ def _stdin_reader(stdin_queue: queue.Queue):
 
 
 class Igor(IgorBase):
-    def __init__(self, instance_id: str):
+    def __init__(self, instance_id: str, datacenter_client=None):
         super().__init__()
         self.instance_id = instance_id
+        # Datacenter wiring — set in _wire_datacenter() at end of __init__.
+        # Tests can pre-construct a DatacenterClient and pass it in to skip the
+        # connection attempt. Production passes None and we try to connect.
+        self.datacenter_client = datacenter_client
+        self.datacenter_manifest: dict | None = None
         if _IGOR_DB_ENV:
             self.db_path = Path(_IGOR_DB_ENV).expanduser()
         else:
@@ -870,6 +875,67 @@ class Igor(IgorBase):
 
         # [G44 Part 1] On-boot state inventory — scan open episodics + push to TWM
         self._push_state_inventory()
+
+        # ── Datacenter announce (slice 4 minimal) ────────────────────────────
+        # Igor reads its own manifest from the agent_datacenter at boot.
+        # Build-to-intent: always try to connect; absence is the failure mode,
+        # not a configuration switch. On any failure (no daemon, missing
+        # profile, timeout) we log a warning and continue without the manifest.
+        self._wire_datacenter()
+
+    def _wire_datacenter(self) -> None:
+        """Connect to agent_datacenter and cache the manifest. No-op if a
+        client was passed in (test seam) or if anything fails (no daemon)."""
+        if self.datacenter_client is not None:
+            try:
+                self.datacenter_manifest = self.datacenter_client.announce(timeout=2.0)
+                console.print(
+                    f"[dim]Datacenter manifest received "
+                    f"({len(self.datacenter_manifest.get('tools', []))} tools, "
+                    f"{len(self.datacenter_manifest.get('state_refs', []))} state_refs)[/]"
+                )
+            except Exception as _dc_e:
+                console.print(
+                    f"[yellow]Datacenter announce failed (test client): {_dc_e}[/]"
+                )
+                self.datacenter_manifest = None
+            return
+
+        try:
+            import socket as _socket
+
+            from agent_datacenter.announce import (
+                DatacenterClient,
+                IdentityEnvelope,
+            )
+            from bus.imap_server import IMAPServer
+
+            server = IMAPServer()
+            server.start()
+            identity = IdentityEnvelope(
+                agent_id="igor",
+                instance=self.instance_id,
+                box=_socket.gethostname(),
+                box_n=0,
+                pid=os.getpid(),
+                interface_version="1.0",
+                surfaces=["console", "inference"],
+            )
+            client = DatacenterClient(identity=identity, imap_server=server)
+            self.datacenter_manifest = client.announce(timeout=2.0)
+            self.datacenter_client = client
+            console.print(
+                f"[green]Datacenter manifest received "
+                f"({len(self.datacenter_manifest.get('tools', []))} tools, "
+                f"{len(self.datacenter_manifest.get('state_refs', []))} state_refs)[/]"
+            )
+        except Exception as _dc_e:
+            console.print(
+                f"[dim]Datacenter unavailable — Igor continuing without manifest: "
+                f"{_dc_e}[/]"
+            )
+            self.datacenter_client = None
+            self.datacenter_manifest = None
 
     def _push_state_inventory(self) -> None:
         """
