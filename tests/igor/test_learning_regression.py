@@ -138,9 +138,9 @@ def replay_input(user_input: str) -> dict:
 
     # Check if any habit would fire (tier.1 intercept)
     try:
-        from wild_igor.igor.cognition.word_graph import WordGraph, default_cache_path
+        from wild_igor.igor.cognition.word_graph import WordGraph
 
-        wg = WordGraph.load(default_cache_path())
+        wg = WordGraph()
         predictions = wg.predict_next(user_input)
         if predictions:
             top = predictions[0]
@@ -361,7 +361,12 @@ def live_replay():
             subprocess.run(
                 [
                     "python3",
-                    str(Path(__file__).parent.parent / "lab" / "claudecode" / "channel.py"),
+                    str(
+                        Path(__file__).parent.parent
+                        / "lab"
+                        / "claudecode"
+                        / "channel.py"
+                    ),
                     "post",
                     alert[:300],
                     "--as",

@@ -84,7 +84,6 @@ class RedisWordGraph(IgorBase):
     def __init__(
         self,
         name: str = "word_graph",
-        db_path: Path | None = None,
         redis_host: str = _REDIS_HOST,
         redis_port: int = _REDIS_PORT,
     ) -> None:
@@ -98,8 +97,9 @@ class RedisWordGraph(IgorBase):
         self._redis_port = redis_port
         self._redis: Optional[object] = None  # redis.Redis instance
 
-        # Fallback SQLite graph (always initialised)
-        self._sqlite = WordGraph(name=name, db_path=db_path)
+        # Fallback Postgres graph (always initialised; renamed from _sqlite
+        # in T-sqlite-out-word-graph-db but field name kept for stability).
+        self._sqlite = WordGraph(name=name)
 
         # Prediction cache (LRU-style, same pattern as WordGraph)
         self._predict_cache: dict[tuple, list] = {}
@@ -146,7 +146,10 @@ class RedisWordGraph(IgorBase):
                 v = r.hget(_META_KEY, "doc_count")
                 return int(v) if v else 0
             except Exception as _bare_e:
-                get_logger(__name__).warning("bare except in wild_igor/igor/cognition/redis_word_graph.py: %s", _bare_e)
+                get_logger(__name__).warning(
+                    "bare except in wild_igor/igor/cognition/redis_word_graph.py: %s",
+                    _bare_e,
+                )
         return self._sqlite._doc_count
 
     # ── Indexing ──────────────────────────────────────────────────────────────
@@ -373,17 +376,17 @@ class RedisWordGraph(IgorBase):
 # ── Factory ───────────────────────────────────────────────────────────────────
 
 
-def make_word_graph(name: str = "word_graph", db_path: Path | None = None) -> WordGraph:
+def make_word_graph(name: str = "word_graph") -> WordGraph:
     """
     Return a WordGraph or RedisWordGraph depending on IGOR_REDIS_WORD_GRAPH_HOST.
 
     If the env var is set, returns a RedisWordGraph (shadow mode by default).
-    Otherwise returns the standard SQLite WordGraph.
+    Otherwise returns the standard Postgres-backed WordGraph.
     """
     host = os.getenv("IGOR_REDIS_WORD_GRAPH_HOST", "")
     if host:
         _log.info(
             "[wg_factory] using RedisWordGraph (host=%s shadow=%s)", host, _SHADOW_MODE
         )
-        return RedisWordGraph(name=name, db_path=db_path, redis_host=host)
-    return WordGraph(name=name, db_path=db_path)
+        return RedisWordGraph(name=name, redis_host=host)
+    return WordGraph(name=name)

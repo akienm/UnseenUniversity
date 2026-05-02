@@ -14,6 +14,7 @@ from .registry import Tool, registry
 def _get_wg():
     """Get the live word graph from basal_ganglia (injected at boot)."""
     from ..cognition import basal_ganglia
+
     wg = basal_ganglia._word_graph
     if wg is None:
         raise RuntimeError("Word graph not initialised — Igor must be fully booted.")
@@ -33,12 +34,11 @@ def index_text(
     """
     try:
         wg = _get_wg()
-        from pathlib import Path
         before = len(wg._word_to_ids)
         wg.index(doc_id, text, weight=float(weight))
         wg.build_idf()
-        from ..cognition.word_graph import default_cache_path
-        wg.save(default_cache_path())
+        # Postgres-backed since D-sqlite-removal — no save needed; writes
+        # are synchronous via the home_db proxy inside index() / build_idf().
         after = len(wg._word_to_ids)
         new_words = after - before
         return (
@@ -68,7 +68,9 @@ def query_stats(
             predictions = wg.predict_next(context.strip(), n=int(top_n))
             if predictions:
                 pred_str = "  ".join(f"{w}({s:.1f})" for w, s in predictions)
-                result += f"\nTop {len(predictions)} words after '{context}': {pred_str}"
+                result += (
+                    f"\nTop {len(predictions)} words after '{context}': {pred_str}"
+                )
             else:
                 result += f"\nNo predictions for '{context}' (words not in graph yet)."
         return result
@@ -102,13 +104,17 @@ def analyze_graph(
             if not results:
                 return f"No bridge words found between '{word_a}' and '{word_b}' — may not be in graph yet."
             lines = [f"{w} (weight={s:.1f})" for w, s in results]
-            return f"Bridge words between '{word_a}' and '{word_b}':\n" + "\n".join(lines)
+            return f"Bridge words between '{word_a}' and '{word_b}':\n" + "\n".join(
+                lines
+            )
         elif query == "exclusive":
             if not doc_prefix:
                 return "exclusive query requires doc_prefix."
             results = wg.domain_exclusive(doc_prefix, n=int(top_n))
             if not results:
-                return f"No exclusive words found for docs starting with '{doc_prefix}'."
+                return (
+                    f"No exclusive words found for docs starting with '{doc_prefix}'."
+                )
             return f"Words exclusive to '{doc_prefix}*' docs:\n" + "\n".join(results)
         else:
             return "query must be 'hubs', 'bridge', or 'exclusive'."
@@ -116,83 +122,101 @@ def analyze_graph(
         return f"Error analyzing word graph: {e}"
 
 
-registry.register(Tool(
-    name="analyze_word_graph",
-    description=(
-        "Analyze the word graph structure. Three modes: "
-        "'hubs' — top N most-connected words (connective tissue of the corpus); "
-        "'bridge' — words that connect two concepts (word_a + word_b required); "
-        "'exclusive' — words found only in a specific document domain (doc_prefix required). "
-        "Use this for the Gemini stress test: hub check, bridge words, domain outliers."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "query": {
-                "type": "string",
-                "enum": ["hubs", "bridge", "exclusive"],
-                "description": "Analysis type: hubs | bridge | exclusive",
+registry.register(
+    Tool(
+        name="analyze_word_graph",
+        description=(
+            "Analyze the word graph structure. Three modes: "
+            "'hubs' — top N most-connected words (connective tissue of the corpus); "
+            "'bridge' — words that connect two concepts (word_a + word_b required); "
+            "'exclusive' — words found only in a specific document domain (doc_prefix required). "
+            "Use this for the Gemini stress test: hub check, bridge words, domain outliers."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "enum": ["hubs", "bridge", "exclusive"],
+                    "description": "Analysis type: hubs | bridge | exclusive",
+                },
+                "word_a": {
+                    "type": "string",
+                    "description": "First concept for bridge query.",
+                },
+                "word_b": {
+                    "type": "string",
+                    "description": "Second concept for bridge query.",
+                },
+                "doc_prefix": {
+                    "type": "string",
+                    "description": "Doc id prefix for exclusive query.",
+                },
+                "top_n": {
+                    "type": "integer",
+                    "description": "How many results to return (default 10).",
+                },
             },
-            "word_a": {"type": "string", "description": "First concept for bridge query."},
-            "word_b": {"type": "string", "description": "Second concept for bridge query."},
-            "doc_prefix": {"type": "string", "description": "Doc id prefix for exclusive query."},
-            "top_n": {"type": "integer", "description": "How many results to return (default 10)."},
+            "required": ["query"],
         },
-        "required": ["query"],
-    },
-    fn=analyze_graph,
-))
+        fn=analyze_graph,
+    )
+)
 
 
-registry.register(Tool(
-    name="index_text_into_word_graph",
-    description=(
-        "Index a block of text into the word graph under a named doc_id. "
-        "Builds word co-occurrence data that enriches both pattern recognition "
-        "and next-word prediction. Use this to feed source text (books, code, "
-        "conversations) into Igor's fast semantic substrate. "
-        "weight=1.0 is normal; weight=2.0 for high-signal material."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "doc_id": {
-                "type": "string",
-                "description": "Unique name for this document (e.g. 'hamlet_act1', 'theigors_source').",
+registry.register(
+    Tool(
+        name="index_text_into_word_graph",
+        description=(
+            "Index a block of text into the word graph under a named doc_id. "
+            "Builds word co-occurrence data that enriches both pattern recognition "
+            "and next-word prediction. Use this to feed source text (books, code, "
+            "conversations) into Igor's fast semantic substrate. "
+            "weight=1.0 is normal; weight=2.0 for high-signal material."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "doc_id": {
+                    "type": "string",
+                    "description": "Unique name for this document (e.g. 'hamlet_act1', 'theigors_source').",
+                },
+                "text": {
+                    "type": "string",
+                    "description": "The text to index. Can be any length.",
+                },
+                "weight": {
+                    "type": "number",
+                    "description": "Word weight: 1.0 = normal, 2.0 = high-signal. Default 1.0.",
+                },
             },
-            "text": {
-                "type": "string",
-                "description": "The text to index. Can be any length.",
-            },
-            "weight": {
-                "type": "number",
-                "description": "Word weight: 1.0 = normal, 2.0 = high-signal. Default 1.0.",
-            },
+            "required": ["doc_id", "text"],
         },
-        "required": ["doc_id", "text"],
-    },
-    fn=index_text,
-))
+        fn=index_text,
+    )
+)
 
-registry.register(Tool(
-    name="query_word_graph_stats",
-    description=(
-        "Show the current word graph vocabulary size and doc count. "
-        "Optionally provide a context phrase to see predicted next words."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "context": {
-                "type": "string",
-                "description": "Optional phrase to get next-word predictions for.",
+registry.register(
+    Tool(
+        name="query_word_graph_stats",
+        description=(
+            "Show the current word graph vocabulary size and doc count. "
+            "Optionally provide a context phrase to see predicted next words."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "context": {
+                    "type": "string",
+                    "description": "Optional phrase to get next-word predictions for.",
+                },
+                "top_n": {
+                    "type": "integer",
+                    "description": "How many predicted words to return (default 10).",
+                },
             },
-            "top_n": {
-                "type": "integer",
-                "description": "How many predicted words to return (default 10).",
-            },
+            "required": [],
         },
-        "required": [],
-    },
-    fn=query_stats,
-))
+        fn=query_stats,
+    )
+)

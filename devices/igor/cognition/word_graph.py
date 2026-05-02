@@ -296,48 +296,9 @@ class _WordDocProxy:
 
 
 # ── WordGraph ─────────────────────────────────────────────────────────────────
-
-_SCHEMA = """
-CREATE TABLE IF NOT EXISTS wg_word_docs (
-    word   TEXT NOT NULL,
-    doc_id TEXT NOT NULL,
-    weight REAL NOT NULL DEFAULT 1.0,
-    PRIMARY KEY (word, doc_id)
-);
-CREATE INDEX IF NOT EXISTS idx_wgd_doc  ON wg_word_docs(doc_id);
-
-CREATE TABLE IF NOT EXISTS wg_cooccur (
-    word_a TEXT NOT NULL,
-    word_b TEXT NOT NULL,
-    score  REAL NOT NULL DEFAULT 0.0,
-    PRIMARY KEY (word_a, word_b)
-);
-CREATE INDEX IF NOT EXISTS idx_wgc_a        ON wg_cooccur(word_a);
-CREATE INDEX IF NOT EXISTS idx_wgc_covering ON wg_cooccur(word_a, word_b, score);
-
-CREATE TABLE IF NOT EXISTS wg_word_lang (
-    word TEXT PRIMARY KEY,
-    lang TEXT NOT NULL DEFAULT 'en'
-);
-
-CREATE TABLE IF NOT EXISTS wg_idf (
-    word  TEXT PRIMARY KEY,
-    score REAL NOT NULL DEFAULT 0.0
-);
-
-CREATE TABLE IF NOT EXISTS wg_meta (
-    key   TEXT PRIMARY KEY,
-    value TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS wg_edges (
-    word_a     TEXT NOT NULL,
-    word_b     TEXT NOT NULL,
-    similarity REAL NOT NULL,
-    PRIMARY KEY (word_a, word_b)
-);
-CREATE INDEX IF NOT EXISTS idx_wge_a ON wg_edges(word_a);
-"""
+# Tables (clan.wg_word_docs, clan.wg_cooccur, clan.wg_word_lang, clan.wg_idf,
+# clan.wg_meta, clan.wg_edges, clan.wg_lemma_map) are owned by cortex m050
+# migrations. WordGraph reads/writes them via make_home_proxy.
 
 
 class WordGraph(IgorBase):
@@ -361,20 +322,18 @@ class WordGraph(IgorBase):
     # Cleared on every index() call. Max 512 entries; evict half when full.
     _PREDICT_CACHE_MAX = 512
 
-    def __init__(self, name: str = "word_graph", db_path: Path | None = None) -> None:
+    def __init__(self, name: str = "word_graph") -> None:
         super().__init__()
         self.name = name
-        self._db_path = db_path or default_cache_path(name)
         self._lock = threading.RLock()
-        self._db_path.parent.mkdir(parents=True, exist_ok=True)
-        self._db = make_home_proxy(self._db_path)
-        self._local_db = make_local_proxy(self._db_path)
-        with self._db() as conn:
-            conn.execute("PRAGMA journal_mode=WAL")
-            conn.executescript(_SCHEMA)
-        # Postgres-only: partial index for bigram filter (strpos = 0 → not a bigram).
-        # Speeds up hot_nodes(words_only=True) and bridge_words() on 29M-row table.
-        # Not added to _SCHEMA — strpos() is not SQLite syntax.
+        # Postgres-only since D-sqlite-removal (T-sqlite-out-word-graph-db).
+        # Tables clan.wg_* are owned by cortex m050 migrations — we don't
+        # double-declare them here.
+        self._db = make_home_proxy()
+        self._local_db = make_local_proxy()
+        # Partial index for bigram filter (strpos = 0 → not a bigram). Speeds
+        # up hot_nodes(words_only=True) and bridge_words() on 29M-row table.
+        # Could move into a cortex migration; left here as the only caller.
         from ..memory.db_proxy import PGDatabaseProxy
 
         if isinstance(self._db, PGDatabaseProxy):
@@ -733,9 +692,9 @@ class WordGraph(IgorBase):
                 break
             if len(current_frontier) > max_frontier:
                 current_frontier = dict(
-                    sorted(current_frontier.items(), key=lambda kv: kv[1], reverse=True)[
-                        :max_frontier
-                    ]
+                    sorted(
+                        current_frontier.items(), key=lambda kv: kv[1], reverse=True
+                    )[:max_frontier]
                 )
             words_list = list(current_frontier.keys())
             ph = ",".join("?" * len(words_list))
@@ -963,28 +922,9 @@ class WordGraph(IgorBase):
                 )
 
     # ── Persistence ────────────────────────────────────────────────────────────
-
-    def save(self, path: Path) -> None:
-        """
-        Flush WAL to main DB file. Data is already persisted in SQLite so this
-        is a lightweight checkpoint rather than a full serialise. The path arg
-        is ignored (kept for API compatibility with callers that pass cache_path).
-        """
-        try:
-            with self._db() as conn:
-                conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
-        except Exception as _bare_e:
-            get_logger(__name__).warning(
-                "bare except in wild_igor/igor/cognition/word_graph.py: %s", _bare_e
-            )
-
-    @classmethod
-    def load(cls, path: Path) -> "WordGraph":
-        """
-        Open (or create) the SQLite word graph at the given path.
-        Returns an empty graph if the DB is new; callers check _word_to_ids bool.
-        """
-        return cls(name=path.stem, db_path=path)
+    # Postgres writes inside index() / build_idf() are synchronous via the
+    # home_db proxy. No save() / load() needed — the data is durable as soon
+    # as a transaction commits.
 
     @classmethod
     def build_from_habits(cls, habits: list) -> "WordGraph":
@@ -1003,16 +943,3 @@ class WordGraph(IgorBase):
                 g.index(h.id, h.narrative, weight=1.0, lang=lang)
         g.build_idf()
         return g
-
-
-# ── Cache path ─────────────────────────────────────────────────────────────────
-
-
-def default_cache_path(name: str = "word_graph") -> Path:
-    """
-    G37: parameterised so recognition and generation graphs use separate files.
-    Returns ~/.TheIgors/{name}.db (SQLite). Old .json files can be deleted.
-    """
-    from ..paths import paths
-
-    return paths().word_graph(name)

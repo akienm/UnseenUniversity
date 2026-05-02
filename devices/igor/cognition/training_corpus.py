@@ -257,11 +257,12 @@ def scan_local() -> str:
 # ── Train ──────────────────────────────────────────────────────────────────────
 
 
-def train(book_id: str, word_graph: "WordGraph", wg_save_path: Path) -> str:
+def train(book_id: str, word_graph: "WordGraph", wg_save_path: Path = None) -> str:
     """
     Train word_graph on the book identified by book_id.
     Splits into paragraphs; respects para_cursor for resumability.
-    Saves word_graph after completion.
+    wg_save_path is accepted for backwards compat but ignored — Postgres
+    writes are synchronous (T-sqlite-out-word-graph-db).
     Returns a status message.
     """
     index = _load_index()
@@ -307,7 +308,7 @@ def train(book_id: str, word_graph: "WordGraph", wg_save_path: Path) -> str:
         trained += 1
 
     word_graph.build_idf()
-    word_graph.save(wg_save_path)
+    # No save() needed — Postgres writes inside index()/build_idf() are synchronous.
 
     new_cursor = cursor + trained
     if new_cursor >= len(paras) or trained >= budget:
@@ -402,7 +403,7 @@ def train_due_passes(dry_run: bool = False) -> str:
     If dry_run=True, just report what would run without training.
     Returns a summary.
     """
-    from ..cognition.word_graph import WordGraph, default_cache_path
+    from ..cognition.word_graph import WordGraph
 
     index = _load_index()
     now_str = _now()
@@ -426,8 +427,7 @@ def train_due_passes(dry_run: bool = False) -> str:
             )
         return "\n".join(lines)
 
-    wg = WordGraph.load(default_cache_path())
-    save_path = default_cache_path()
+    wg = WordGraph()
     results = []
 
     for book_id, meta in due:
@@ -447,7 +447,7 @@ def train_due_passes(dry_run: bool = False) -> str:
         meta["para_cursor"] = 0
         _save_index(index)
 
-        msg = train(book_id, wg, save_path)
+        msg = train(book_id, wg)
 
         # Advance spacing schedule
         meta["pass_count"] = pass_num

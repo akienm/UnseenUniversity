@@ -187,10 +187,7 @@ class TestTrainDuePasses(unittest.TestCase):
         ), patch("igor.cognition.training_corpus._save_index"), patch(
             "igor.cognition.training_corpus._disk_free_gb", return_value=5.0
         ), patch(
-            "igor.cognition.word_graph.WordGraph.load", return_value=MagicMock()
-        ), patch(
-            "igor.cognition.word_graph.default_cache_path",
-            return_value=Path("/tmp/test_wg.db"),
+            "igor.cognition.word_graph.WordGraph", return_value=MagicMock()
         ), patch(
             "pathlib.Path.exists", return_value=False
         ):
@@ -201,7 +198,7 @@ class TestTrainDuePasses(unittest.TestCase):
         index = self._make_due_index()
         mock_wg = MagicMock()
 
-        def fake_train(book_id, wg, save_path):
+        def fake_train(book_id, wg, save_path=None):
             # Simulate train() completing — set status=complete
             index[book_id]["status"] = "complete"
             index[book_id]["train_ts"] = "2026-03-24T00:00:00"
@@ -214,10 +211,7 @@ class TestTrainDuePasses(unittest.TestCase):
         ), patch(
             "igor.cognition.training_corpus.train", side_effect=fake_train
         ), patch(
-            "igor.cognition.word_graph.WordGraph.load", return_value=mock_wg
-        ), patch(
-            "igor.cognition.word_graph.default_cache_path",
-            return_value=Path("/tmp/test_wg.db"),
+            "igor.cognition.word_graph.WordGraph", return_value=mock_wg
         ), patch.object(
             Path, "exists", return_value=True
         ):

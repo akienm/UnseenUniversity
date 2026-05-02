@@ -17,16 +17,10 @@ from pathlib import Path
 from .registry import Tool, registry
 
 
-def _wg_save_path() -> Path:
-    from ..cognition.word_graph import default_cache_path
-
-    return default_cache_path()
-
-
 def _load_wg() -> "WordGraph":  # type: ignore[name-defined]  # noqa: F821
-    from ..cognition.word_graph import WordGraph, default_cache_path
+    from ..cognition.word_graph import WordGraph
 
-    return WordGraph.load(default_cache_path())
+    return WordGraph()
 
 
 # ── Tools ──────────────────────────────────────────────────────────────────────
@@ -140,8 +134,7 @@ def _train_word_graph(book_id: str = "", **_) -> str:
             return "No pending or in-progress books in corpus. Fetch some first."
 
     wg = _load_wg()
-    save_path = _wg_save_path()
-    return train(book_id, wg, save_path)
+    return train(book_id, wg)
 
 
 def _train_all_pending(**_) -> str:
@@ -161,14 +154,13 @@ def _train_all_pending(**_) -> str:
         return "No pending books to train."
 
     wg = _load_wg()
-    save_path = _wg_save_path()
     results = []
 
     for book_id, meta in pending:
         if _disk_free_gb() < 0.2:
             results.append("Disk critically low — stopping.")
             break
-        msg = train(book_id, wg, save_path)
+        msg = train(book_id, wg)
         results.append(msg)
 
     return "\n".join(results)
