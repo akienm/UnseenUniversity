@@ -21,8 +21,14 @@ from lab.claudecode import cc_inbox
 
 
 @pytest.fixture
-def inbox(tmp_path):
-    """Return a path for an isolated test inbox file."""
+def inbox(tmp_path, monkeypatch):
+    """Return a path for an isolated test inbox file.
+
+    Clears CC_INBOX_TAG (set session-wide by the cc_inbox_test_tag fixture
+    in conftest, T-test-inbox-tagging) so these tests can assert exact
+    summaries — the tagging mechanism has its own dedicated test file.
+    """
+    monkeypatch.delenv("CC_INBOX_TAG", raising=False)
     return tmp_path / "cc_inbox.jsonl"
 
 
