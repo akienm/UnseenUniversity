@@ -232,7 +232,7 @@ class TestRunPeEntryChain:
             ),
             patch("wild_igor.igor.tools.pe_chain._call_tier2", return_value=None),
             patch(
-                "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+                "wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT",
                 Path(__file__).resolve().parent.parent,
             ),
             patch("wild_igor.igor.tools.pe_chain._post_to_channel"),
@@ -290,7 +290,7 @@ class TestRunPeEntryChain:
             patch("wild_igor.igor.tools.pe_chain._run_bash", return_value="ok"),
             patch("wild_igor.igor.tools.pe_chain._call_tier2", return_value=None),
             patch(
-                "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+                "wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT",
                 Path(__file__).resolve().parent.parent,
             ),
             patch("wild_igor.igor.tools.pe_chain._post_to_channel"),
@@ -333,7 +333,7 @@ class TestPeSituate:
             return_value="wild_igor/igor/tools/ops.py\nwild_igor/igor/main.py",
         ):
             with patch(
-                "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+                "wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT",
                 Path(__file__).resolve().parent.parent,
             ):
                 result = pe_situate(basket)
@@ -364,7 +364,7 @@ class TestPeSituate:
     def test_parse_file_list_one_per_line(self):
         raw = "wild_igor/igor/tools/ops.py\nwild_igor/igor/main.py"
         with patch(
-            "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+            "wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT",
             Path(__file__).resolve().parent.parent,
         ):
             result = _parse_file_list(raw)
@@ -374,7 +374,7 @@ class TestPeSituate:
     def test_parse_file_list_strips_backticks(self):
         raw = "`wild_igor/igor/tools/ops.py`"
         with patch(
-            "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+            "wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT",
             Path(__file__).resolve().parent.parent,
         ):
             result = _parse_file_list(raw)
@@ -384,7 +384,7 @@ class TestPeSituate:
     def test_parse_file_list_ignores_non_paths(self):
         raw = "Here are the files:\nwild_igor/igor/tools/ops.py\nSome explanation."
         with patch(
-            "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+            "wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT",
             Path(__file__).resolve().parent.parent,
         ):
             result = _parse_file_list(raw)
@@ -408,7 +408,7 @@ class TestPeSituate:
         basket = {"ticket_description": desc, "plan_files": []}
         with patch("wild_igor.igor.tools.pe_chain._call_tier2") as mock_t2:
             with patch(
-                "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+                "wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT",
                 Path(__file__).resolve().parent.parent,
             ):
                 result = pe_situate(basket)
@@ -429,7 +429,7 @@ class TestPeSituate:
                 return_value="wild_igor/igor/brainstem/core_patterns.py",
             ),
             patch(
-                "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+                "wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT",
                 Path(__file__).resolve().parent.parent,
             ),
             patch("wild_igor.igor.tools.pe_chain._maybe_consult_stuck"),
@@ -447,7 +447,7 @@ class TestPeSituate:
             return_value="wild_igor/igor/brainstem/core_patterns.py",
         ):
             with patch(
-                "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+                "wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT",
                 Path(__file__).resolve().parent.parent,
             ):
                 result = pe_situate(basket)
@@ -462,7 +462,7 @@ class TestPeSituate:
             return_value="wild_igor/igor/tools/ops.py",
         ) as mock_t2:
             with patch(
-                "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+                "wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT",
                 Path(__file__).resolve().parent.parent,
             ):
                 result = pe_situate(basket)
@@ -472,7 +472,7 @@ class TestPeSituate:
     def test_affected_files_helper_parses_comma_list(self):
         desc = "**Affected files:** wild_igor/igor/tools/ops.py, wild_igor/igor/main.py"
         with patch(
-            "wild_igor.igor.tools.pe_chain._REPO_ROOT",
+            "wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT",
             Path(__file__).resolve().parent.parent,
         ):
             files = _affected_files_from_description(desc)
@@ -701,7 +701,7 @@ class TestPeObserve:
             "ticket_description": "Fix goal_adopt category mismatch",
             "plan_files": ["wild_igor/igor/tools/ops.py"],
         }
-        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", REPO_ROOT):
+        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT", REPO_ROOT):
             result = pe_observe(basket)
         assert "error" not in result
         assert result["actual"] != ""
@@ -716,7 +716,7 @@ class TestPeObserve:
             "plan_files": ["wild_igor/igor/tools/ops.py"],
         }
         full_file = (REPO_ROOT / "wild_igor/igor/tools/ops.py").read_text()
-        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", REPO_ROOT):
+        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT", REPO_ROOT):
             result = pe_observe(basket)
         assert len(result["actual"]) < len(full_file)
 
@@ -725,7 +725,7 @@ class TestPeObserve:
             "ticket_description": "Fix 'goal_adopt' category mismatch",
             "plan_files": ["wild_igor/igor/tools/ops.py"],
         }
-        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", REPO_ROOT):
+        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT", REPO_ROOT):
             result = pe_observe(basket)
         # goal_adopt exists in ops.py — should get a grep hit
         assert result["observe_hits"] >= 1
@@ -735,7 +735,7 @@ class TestPeObserve:
             "ticket_description": "Fix 'goal_adopt' category",
             "plan_files": ["wild_igor/igor/tools/ops.py"],
         }
-        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", REPO_ROOT):
+        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT", REPO_ROOT):
             result = pe_observe(basket)
         assert "wild_igor/igor/tools/ops.py" in result["line_ranges"]
 
@@ -747,7 +747,7 @@ class TestPeObserve:
                 "wild_igor/igor/main.py",
             ],
         }
-        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", REPO_ROOT):
+        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT", REPO_ROOT):
             result = pe_observe(basket)
         assert "ops.py" in result["actual"]
         assert "main.py" in result["actual"]
@@ -928,7 +928,7 @@ class TestPeHypothesisize:
             "actual": "some relevant code",
         }
         with patch("wild_igor.igor.tools.pe_chain._call_tier2", return_value=good_json):
-            with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", REPO_ROOT):
+            with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT", REPO_ROOT):
                 result = pe_hypothesize(basket)
         assert result["hypothesis"] is not None
         assert result["hypothesis_error"] is None
@@ -956,7 +956,7 @@ class TestPeHypothesisize:
         bad_json = '{"file": "wild_igor/igor/tools/pe_chain.py", "old_string": "NONEXISTENT_ZXQW", "new_string": "y"}'
         basket = {"ticket_description": "fix it", "actual": "some code"}
         with patch("wild_igor.igor.tools.pe_chain._call_tier2", return_value=bad_json):
-            with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", REPO_ROOT):
+            with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT", REPO_ROOT):
                 result = pe_hypothesize(basket)
         # hypothesis_error set, but basket["error"] NOT set — chain continues
         assert result.get("hypothesis_error") is not None
@@ -987,7 +987,7 @@ class TestPeImplement:
             },
             "hypothesis_error": None,
         }
-        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", tmp_path):
+        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT", tmp_path):
             result = pe_implement(basket)
         assert result["implement_result"].startswith("ok")
         assert result["implement_skipped"] is False
@@ -1024,7 +1024,7 @@ class TestPeImplement:
             },
             "hypothesis_error": None,
         }
-        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", tmp_path):
+        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT", tmp_path):
             result = pe_implement(basket)
         assert result["implement_skipped"] is True
         assert "error" in result["implement_result"]
@@ -1036,7 +1036,7 @@ class TestPeImplement:
             "hypothesis": {"file": "f.py", "old_string": '"x"', "new_string": '"y"'},
             "hypothesis_error": None,
         }
-        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", tmp_path):
+        with patch("wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT", tmp_path):
             pe_implement(basket)
         content = target.read_text()
         assert content.count('"y"') == 1
@@ -1180,7 +1180,7 @@ class TestPeCloseLoop:
 
         with (
             patch("wild_igor.igor.tools.pe_chain._call_tier2", side_effect=fake_tier2),
-            patch("wild_igor.igor.tools.pe_chain._REPO_ROOT", REPO_ROOT),
+            patch("wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT", REPO_ROOT),
             patch(
                 "wild_igor.igor.tools.pe_chain._run_bash",
                 side_effect=lambda cmd, **_: (

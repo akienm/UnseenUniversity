@@ -1044,6 +1044,90 @@ def _filter_high_inertia_not_in_description(
     return kept
 
 
+def _drop_out_of_scope_high_inertia_hypotheses(basket: dict) -> dict:
+    """Pre-implement filter — drop HIGH-inertia hypotheses whose target file
+    isn't named in the ticket description, BEFORE scope_guard / pe_implement
+    runs. (T-igor-cognition-bypassing-advisor)
+
+    Closes the gap where pe_hypothesize emits a brainstem hallucination,
+    scope_guard catches it, _pe_escalate drops it and clears escalate_reason,
+    then pe_implement runs on a now-empty hypothesis list and triggers an
+    empty-close guard with a confusing 'implement_skipped / no edits' reason
+    instead of naming what actually went wrong.
+
+    Behavior:
+      - Loads ticket description from disk when absent from basket so the
+        scope check has something to compare against.
+      - For each hypothesis: when target_file is HIGH-inertia AND not named
+        in the description, drops it from basket['hypotheses'] and records
+        the drop in basket['_dropped_high_inertia'].
+      - basket['hypothesis'] is updated to the new first remaining edit
+        (or {} when the list empties).
+      - When the filter empties the list AND at least one drop occurred,
+        sets basket['escalate_reason'] to a clean message naming the
+        dropped files so the caller blocks with an informative reason.
+      - When no description is available anywhere, the filter is a no-op
+        (the existing _pe_escalate backstop handles that case).
+    """
+    if basket.get("error") or basket.get("escalate_reason"):
+        return basket
+
+    hypotheses = basket.get("hypotheses") or []
+    if not hypotheses:
+        return basket
+
+    description = basket.get("ticket_description", "") or ""
+    ticket_id = basket.get("ticket_id", "")
+    if not description and ticket_id and ticket_id != "unknown":
+        _t = _load_ticket(ticket_id)
+        description = (_t.get("description", "") or "") if _t else ""
+
+    if not description:
+        return basket
+
+    from .scope_guard import _classify_tier
+
+    kept: list[dict] = []
+    dropped: list[str] = []
+    for hyp in hypotheses:
+        if not isinstance(hyp, dict):
+            kept.append(hyp)
+            continue
+        target_file = hyp.get("file", "") or ""
+        if not target_file:
+            kept.append(hyp)
+            continue
+        if _classify_tier(target_file) != "HIGH":
+            kept.append(hyp)
+            continue
+        basename = Path(target_file).name
+        if target_file in description or basename in description:
+            kept.append(hyp)
+            continue
+        dropped.append(target_file)
+        log.info(
+            "PRE-IMPLEMENT FILTER: dropped HIGH-inertia hypothesis %s "
+            "(not named in ticket description for %s)",
+            target_file,
+            ticket_id or "?",
+        )
+
+    if not dropped:
+        return basket
+
+    basket["hypotheses"] = kept
+    basket["hypothesis"] = kept[0] if kept else {}
+    basket.setdefault("_dropped_high_inertia", []).extend(dropped)
+
+    if not kept:
+        basket["escalate_reason"] = (
+            "all proposed edits were out-of-scope HIGH-inertia hallucinations "
+            f"(dropped: {', '.join(dropped)})"
+        )
+
+    return basket
+
+
 # ── PLAN ──────────────────────────────────────────────────────────────────────
 
 _PLAN_PROMPT = """You are planning a code change for a software ticket.
@@ -3046,6 +3130,18 @@ def run_pe_entry_chain(basket: dict | None = None) -> dict:
     basket = pe_hypothesize(basket)
     if basket.get("error"):
         return basket
+
+    # Pre-implement scope filter: drop HIGH-inertia hypotheses whose target
+    # isn't named in the ticket description so pe_implement never runs on
+    # hallucinated brainstem proposals. When the drop empties the list,
+    # escalate with a clear "all proposals out of scope" reason instead of
+    # falling through to the empty-implement / empty-close cascade.
+    basket = _drop_out_of_scope_high_inertia_hypotheses(basket)
+    if basket.get("escalate_reason"):
+        _evict_goal_ready_twm(basket.get("ticket_id", ""))
+        _close_goal_on_escalate(basket)
+        return basket
+
     from .scope_guard import run_scope_guard as _scope_guard
 
     basket = _scope_guard(basket)
