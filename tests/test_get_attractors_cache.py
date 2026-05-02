@@ -2,8 +2,10 @@
 
 Before this fix, cortex.get_attractors() ran a full-table scan on every
 call — 891 hits, avg 181ms, worst 807ms in db_queries.log. After: result
-cached per (db_path, limit) for _ATTRACTOR_CACHE_TTL_SEC seconds; repeat
-calls within TTL skip the DB.
+cached per (cache_key_id, limit) for _ATTRACTOR_CACHE_TTL_SEC seconds;
+repeat calls within TTL skip the DB. cache_key_id was originally
+str(self.db_path); since T-sqlite-out-wild-0001-db it's the instance_id
+(or "home" by default) — same purpose, no SQLite path required.
 """
 
 from __future__ import annotations
@@ -26,17 +28,17 @@ def _clean_cache():
     cortex_mod._ATTRACTOR_CACHE.clear()
 
 
-def _make_cortex_spy(db_path: str, id_rows: list[dict]):
+def _make_cortex_spy(cache_key_id: str, id_rows: list[dict]):
     """Minimal stand-in: real Cortex is too heavy to instantiate in unit test.
 
     We construct an object that satisfies the method's references:
-      - self.db_path, self._conn(), self.get(id)
+      - self._cache_key_id, self._conn(), self.get(id)
     Calls to conn.execute().fetchall() return id_rows.
     """
     from wild_igor.igor.memory.cortex import Cortex
 
     c = Cortex.__new__(Cortex)
-    c.db_path = db_path
+    c._cache_key_id = cache_key_id
 
     select_result = MagicMock()
     select_result.fetchall.return_value = id_rows

@@ -118,7 +118,7 @@ def test_introspection_is_read_only():
     from wild_igor.igor.memory.cortex import Cortex
     from wild_igor.igor.paths import paths
 
-    cortex = Cortex(paths().instance / "wild-0001.db")
+    cortex = Cortex()
     with cortex._local_conn() as conn:
         before = conn.execute("SELECT COUNT(*) FROM twm_observations").fetchone()[0]
 

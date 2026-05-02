@@ -78,7 +78,7 @@ def _cortex():
 
     from wild_igor.igor.memory.cortex import Cortex
 
-    return Cortex(db_path=Path("/tmp/_tag_test_local.db"), instance_id="tag-test")
+    return Cortex(instance_id="tag-test")
 
 
 def _store_factual(cortex, narrative: str, metadata: dict | None = None):
