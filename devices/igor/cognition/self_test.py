@@ -62,10 +62,7 @@ def _get_cortex() -> Optional[Cortex]:
 def _get_word_graph() -> Optional[WordGraph]:
     """Get word graph for current instance."""
     try:
-        from ..paths import paths as _paths
-
-        wg_path = _paths().word_graph("word_graph")
-        return WordGraph(str(wg_path))
+        return WordGraph()
     except Exception as e:
         logger.error("Failed to get word graph: %s", e)
         return None

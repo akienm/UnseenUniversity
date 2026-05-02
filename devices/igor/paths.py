@@ -178,12 +178,6 @@ class _BootstrapPathManager:
         """Per-run log files for the reading tool."""
         return self.logs / "reading_runs"
 
-    # ── Named files (word graph) ──────────────────────────────────────────────
-
-    def word_graph(self, name: str = "word_graph") -> Path:
-        """Path to a named word graph SQLite DB, e.g. ~/.TheIgors/Igor-wild-0001/word_graph.db."""
-        return self.instance / f"{name}.db"
-
     # ── Ebook library ─────────────────────────────────────────────────────────
 
     @property

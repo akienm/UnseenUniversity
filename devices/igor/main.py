@@ -544,22 +544,19 @@ class Igor(IgorBase):
         self._word_graph = None
         try:
             from .cognition.redis_word_graph import make_word_graph
-            from .cognition.word_graph import WordGraph, default_cache_path
+            from .cognition.word_graph import WordGraph
 
             _redis_host = os.getenv("IGOR_REDIS_WORD_GRAPH_HOST", "")
             if _redis_host:
                 # D121: Redis-backed word graph (shadow or primary)
                 self._word_graph = make_word_graph()
             else:
-                # Word graph: load from local SQLite file, rebuild from habits only if empty.
-                # _wg_path.exists() was wrong for Postgres-backed graphs: the file never exists
-                # but the DB already has data. Always load() first; _word_to_ids checks live DB.
-                _wg_path = default_cache_path()
-                _boot_habits = self.cortex.get_habits()
-                self._word_graph = WordGraph.load(_wg_path)
+                # Postgres-backed graph (T-sqlite-out-word-graph-db).
+                # Init reads from live DB; rebuild from habits only if empty.
+                self._word_graph = WordGraph()
                 if not self._word_graph._word_to_ids:
+                    _boot_habits = self.cortex.get_habits()
                     self._word_graph = WordGraph.build_from_habits(_boot_habits)
-                    self._word_graph.save(_wg_path)
             basal_ganglia.set_word_graph(self._word_graph)
             basal_ganglia.set_cortex(self.cortex)
             # T-twm-leap-on-lever: wire word graph into cortex so twm_push can
@@ -604,20 +601,14 @@ class Igor(IgorBase):
         if self._dual_graphs:
             try:
                 from .cognition.redis_word_graph import make_word_graph as _make_gg
-                from .cognition.word_graph import WordGraph, default_cache_path
+                from .cognition.word_graph import WordGraph
 
                 _redis_host = os.getenv("IGOR_REDIS_WORD_GRAPH_HOST", "")
                 if _redis_host:
                     self._generation_graph = _make_gg(name="generation_graph")
                 else:
-                    # Same fix as recognition graph: load() always works regardless of
-                    # whether the local SQLite cache file exists.
-                    _gg_path = default_cache_path("generation_graph")
-                    self._generation_graph = WordGraph.load(_gg_path)
-                    self._generation_graph.name = "generation_graph"
-                    if not self._generation_graph._word_to_ids:
-                        # Fresh generation graph — will be seeded by reinforce_text() on reply
-                        self._generation_graph = WordGraph(name="generation_graph")
+                    # Postgres-backed (T-sqlite-out-word-graph-db).
+                    self._generation_graph = WordGraph(name="generation_graph")
                 console.print(
                     f"[dim]Generation graph ready "
                     f"({len(self._generation_graph._word_to_ids)} words) [G37][/]"
@@ -10182,26 +10173,8 @@ class Igor(IgorBase):
             from .cognition.forensic_logger import log_error as _le
 
             _le(kind="SILENT_EXCEPT", detail=f"main.py:9756: {_exc}")
-        # Persist learned word graph weights before exit
-        if self._word_graph is not None:
-            try:
-                from .cognition.word_graph import default_cache_path
-
-                self._word_graph.save(default_cache_path())
-            except Exception as _bare_e:
-                log_error(
-                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
-                )
-        # G37: persist generation graph separately
-        if self._dual_graphs and self._generation_graph is not None:
-            try:
-                from .cognition.word_graph import default_cache_path
-
-                self._generation_graph.save(default_cache_path("generation_graph"))
-            except Exception as _bare_e:
-                log_error(
-                    kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
-                )
+        # Postgres-backed since T-sqlite-out-word-graph-db: writes are
+        # synchronous, no shutdown checkpoint needed for either graph.
         # WO#140 Phase 2: persist response habituation store
         if self._response_habituation is not None:
             try:
