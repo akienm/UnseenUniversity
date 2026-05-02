@@ -205,6 +205,24 @@ def start(
     """
     import os
 
+    # T-cert-debugger-env-mirror: load Igor's switches.cfg into os.environ on
+    # debugger entry so standalone harnesses route through the same model
+    # (cloud Qwen 32B vs local Ollama 7B) as Igor's autonomous pe_chain. The
+    # silent-route-to-different-model failure mode burned 7+ cert attempts.
+    try:
+        from ..env_sync import load_igor_env_into_environ
+
+        applied = load_igor_env_into_environ()
+        if applied:
+            log.info(
+                "pe_chain_debugger.start: loaded %d vars from instance cfg "
+                "(IGOR_CLOUD_PROGRAMMING=%s)",
+                len(applied),
+                os.environ.get("IGOR_CLOUD_PROGRAMMING", "unset"),
+            )
+    except Exception as exc:
+        log.warning("pe_chain_debugger.start: cfg load failed (non-fatal): %s", exc)
+
     valid = {s[0] for s in STEPS}
     if breakpoint.upper() not in valid and breakpoint.upper() != "END":
         return {
