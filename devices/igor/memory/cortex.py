@@ -911,6 +911,42 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "CREATE INDEX IF NOT EXISTS idx_metrics_name_time "
         "ON infra.metrics (metric_name, recorded_at DESC)",
     ),
+    # ── T-sqlite-out-claude-budget-db: budget tables to Postgres
+    # Lives in infra schema (per-Igor operational infrastructure, alongside
+    # sessions/slates/decisions/machines/metrics). make_home_proxy's default
+    # search_path includes infra so bare table names resolve naturally.
+    (
+        "m053_budget_spend",
+        "CREATE TABLE IF NOT EXISTS infra.spend ("
+        " id        BIGSERIAL PRIMARY KEY,"
+        " timestamp TIMESTAMPTZ NOT NULL,"
+        " model     TEXT NOT NULL,"
+        " usd       DOUBLE PRECISION NOT NULL,"
+        " note      TEXT DEFAULT ''"
+        ")",
+    ),
+    (
+        "m053_budget_config",
+        "CREATE TABLE IF NOT EXISTS infra.budget_config ("
+        " key   TEXT PRIMARY KEY,"
+        " value TEXT NOT NULL"
+        ")",
+    ),
+    (
+        "m053_budget_balance_history",
+        "CREATE TABLE IF NOT EXISTS infra.balance_history ("
+        " id         BIGSERIAL PRIMARY KEY,"
+        " timestamp  TIMESTAMPTZ NOT NULL,"
+        " balance    DOUBLE PRECISION NOT NULL,"
+        " purchased  DOUBLE PRECISION NOT NULL,"
+        " used       DOUBLE PRECISION NOT NULL"
+        ")",
+    ),
+    (
+        "m053_budget_balance_history_idx",
+        "CREATE INDEX IF NOT EXISTS idx_balance_history_ts "
+        "ON infra.balance_history (timestamp DESC)",
+    ),
 ]
 
 

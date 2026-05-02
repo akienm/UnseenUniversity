@@ -13,13 +13,11 @@ from lab.utility_closet.budget import *  # noqa: F401, F403
 from lab.utility_closet.budget import (  # noqa: F401
     CRITICAL_USD,
     DEFAULT_SPENDING_CAP_USD,
-    DatabaseProxy,
     Tool,
     WARN_FRACTION,
     _BALANCE_CACHE_TTL_SEC,
     _OR_CREDITS_URL,
     _balance_cache,
-    _db_path,
     _db_proxy,
     budget_status,
     check_before_call,
