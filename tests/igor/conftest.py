@@ -159,9 +159,8 @@ def _test_data_lifecycle():
     try:
         from wild_igor.igor.memory.cortex import Cortex
         from wild_igor.igor.memory.test_data_lifecycle import cleanup_test_data
-        from wild_igor.igor.paths import paths as _paths
 
-        cortex = Cortex(db_path=str(_paths().instance / "wild-0001.db"))
+        cortex = Cortex()
         removed = cleanup_test_data(cortex)
         if removed:
             print(f"\n[test_data_lifecycle] cleaned up {removed} test memories")

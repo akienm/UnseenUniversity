@@ -126,7 +126,7 @@ def _upsert_chunk(
     # Cortex is a singleton-ish — construct once per call. This path runs
     # on a slow cadence (chunking inspector habit) so the construct cost
     # is amortized.
-    cortex = Cortex(db_path=str(_paths().instance / "wild-0001.db"))
+    cortex = Cortex()
 
     mem = Memory(
         id=chunk_id,

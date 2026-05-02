@@ -953,12 +953,14 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
 class Cortex(IgorBase):
     """SQLite-backed memory graph."""
 
-    def __init__(self, db_path: Path, instance_id: str = None):
+    def __init__(self, instance_id: str = None):
         super().__init__()
-        self.db_path = db_path
         self._instance_id = instance_id  # #51: scopes TWM to this instance when set
-        self._db = make_home_proxy(db_path)  # HOME: memories, edges (global truth)
-        self._local_db = make_local_proxy(db_path)  # LOCAL: ring, TWM (box-scoped)
+        # T-sqlite-out-wild-0001-db: SQLite path retired. Cache key for the
+        # migration-applied set stays a str so _MIGRATION_CACHE keeps working.
+        self._cache_key_id = instance_id or "home"
+        self._db = make_home_proxy()  # HOME: memories, edges (global truth)
+        self._local_db = make_local_proxy()  # LOCAL: ring, TWM (box-scoped)
         self._init_db()
         # #244: set to True after interpretive_traverse() when a meaning_to_me edge was followed
         self._last_traverse_meaning_to_me: bool = False
@@ -1047,7 +1049,7 @@ class Cortex(IgorBase):
                 # #123: backfill scope — gated so it runs ONCE, not every boot.
                 # Was scanning 83k rows on every Cortex construction for 0 updates.
                 # _migrations table is guaranteed present after _run_schema_migrations.
-                _applied = _applied_migrations(conn, str(self.db_path))
+                _applied = _applied_migrations(conn, self._cache_key_id)
                 if "scope_backfill_123" not in _applied:
                     conn.execute(
                         "UPDATE memories SET scope = 'instance' "
@@ -1295,7 +1297,7 @@ class Cortex(IgorBase):
             self._run_schema_migrations(conn)
             # #261: one-time data migration — tag meaning_to_me layer on interpretive edges
             # Must run after _run_schema_migrations adds the layer column.
-            _applied_sqlite = _applied_migrations(conn, str(self.db_path))
+            _applied_sqlite = _applied_migrations(conn, self._cache_key_id)
             if "meaning_to_me_layer_tag" not in _applied_sqlite:
                 conn.execute("""
                     UPDATE interpretive_edges
@@ -1353,7 +1355,7 @@ class Cortex(IgorBase):
         """
         import datetime as _dt_mig
 
-        applied = _applied_migrations(conn, str(self.db_path))
+        applied = _applied_migrations(conn, self._cache_key_id)
 
         _mlog = logging.getLogger(__name__)
         for name, sql in _SCHEMA_MIGRATIONS:
@@ -5556,7 +5558,7 @@ class Cortex(IgorBase):
         """
         import time
 
-        cache_key = (str(self.db_path), limit)
+        cache_key = (self._cache_key_id, limit)
         now = time.monotonic()
         cached = _ATTRACTOR_CACHE.get(cache_key)
         if cached is not None and (now - cached[0]) < _ATTRACTOR_CACHE_TTL_SEC:

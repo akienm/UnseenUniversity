@@ -245,13 +245,17 @@ class TestEngramPayloadStructure(unittest.TestCase):
             "seed_skill_filter_engram",
             str(
                 Path(__file__).parent.parent
-                / "lab" / "claudecode"
+                / "lab"
+                / "claudecode"
                 / "seed_skill_filter_engram.py"
             ),
         )
         # Just read the file and extract ENGRAM_PAYLOAD manually
         src = (
-            Path(__file__).parent.parent / "lab" / "claudecode" / "seed_skill_filter_engram.py"
+            Path(__file__).parent.parent
+            / "lab"
+            / "claudecode"
+            / "seed_skill_filter_engram.py"
         ).read_text()
         # Extract ENGRAM_PAYLOAD dict via exec in a sandbox
         ns = {}
@@ -290,10 +294,6 @@ class TestNodeExecutorMCPCALL(unittest.TestCase):
         os.environ.setdefault(
             "IGOR_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-        )
-        os.environ.setdefault(
-            "IGOR_DB_PATH",
-            os.path.expanduser("~/.TheIgors/Igor-wild-0001/wild-0001.db"),
         )
         from wild_igor.igor.cognition.node_executor import execute_node
         from wild_igor.igor.memory.models import Memory, MemoryType

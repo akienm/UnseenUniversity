@@ -278,10 +278,6 @@ class TestImportSkill(unittest.TestCase):
             "IGOR_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
-        os.environ.setdefault(
-            "IGOR_DB_PATH",
-            os.path.expanduser("~/.TheIgors/Igor-wild-0001/wild-0001.db"),
-        )
 
     def test_import_filter_skill(self):
         from pathlib import Path

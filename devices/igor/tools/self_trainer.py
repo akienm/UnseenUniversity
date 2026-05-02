@@ -379,7 +379,7 @@ class SelfTrainer(IgorBase):
             "turn_id": turn_id,
             "inertia": 0.2,
         }
-        cortex = Cortex(db_path=str(_paths().instance / "wild-0001.db"))
+        cortex = Cortex()
         mem = Memory(
             id=mem_id,
             narrative=narrative,
