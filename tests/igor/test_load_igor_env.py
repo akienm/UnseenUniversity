@@ -27,20 +27,15 @@ class TestLoadIgorEnvIntoEnviron(unittest.TestCase):
         os.environ.clear()
         os.environ.update(self._saved)
 
-    def _make_instance_dir(self, root: Path, name: str = "Igor-test-0001") -> Path:
-        d = root / name
-        d.mkdir(parents=True)
-        return d
-
     def test_loads_switches_cfg_into_environ(self):
         with TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
-            inst = self._make_instance_dir(tmp_path)
+            inst = tmp_path / ".TheIgors" / "Igor-test-0001"
+            inst.mkdir(parents=True)
             (inst / "igor.switches.cfg").write_text(
                 "IGOR_CLOUD_PROGRAMMING=true\nIGOR_TURN_PIPELINE=false\n"
             )
-            with patch("pathlib.Path.home", return_value=tmp_path.parent):
-                tmp_path.rename(tmp_path.parent / ".TheIgors")
+            with patch("pathlib.Path.home", return_value=tmp_path):
                 applied = load_igor_env_into_environ(instance_id="Igor-test-0001")
         self.assertEqual(os.environ.get("IGOR_CLOUD_PROGRAMMING"), "true")
         self.assertEqual(os.environ.get("IGOR_TURN_PIPELINE"), "false")

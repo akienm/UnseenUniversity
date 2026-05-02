@@ -167,3 +167,43 @@ def _test_data_lifecycle():
             print(f"\n[test_data_lifecycle] cleaned up {removed} test memories")
     except Exception as exc:
         print(f"\n[test_data_lifecycle] cleanup skipped: {exc}")
+
+
+@pytest.fixture(autouse=True, scope="session")
+def cc_inbox_test_tag():
+    """T-test-inbox-tagging: tag every cc_inbox.append() during this test
+    session and sweep matching entries on teardown.
+
+    Sets CC_INBOX_TAG=test:<YYYYMMDD.HHMMSS.ffffff> so cc_inbox.append()
+    prepends "[test:<ts>]: " to summaries. On session_finish, calls
+    delete_by_prefix("[test:<ts>]") to remove every entry the test session
+    produced, leaving production inbox entries untouched.
+
+    Stragglers (tests that bypass this fixture) remain findable via
+    delete_by_prefix("[test:") for manual broad sweeps.
+    """
+    from datetime import datetime, timezone
+    from pathlib import Path
+    import sys
+
+    tag_ts = datetime.now(timezone.utc).strftime("%Y%m%d.%H%M%S.%f")
+    tag = f"test:{tag_ts}"
+    prior = os.environ.get("CC_INBOX_TAG")
+    os.environ["CC_INBOX_TAG"] = tag
+
+    yield tag
+
+    if prior is None:
+        os.environ.pop("CC_INBOX_TAG", None)
+    else:
+        os.environ["CC_INBOX_TAG"] = prior
+
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+        from lab.claudecode.cc_inbox import delete_by_prefix
+
+        removed = delete_by_prefix(f"[{tag}]")
+        if removed:
+            print(f"\n[cc_inbox_test_tag] swept {removed} tagged entry(ies)")
+    except Exception as exc:
+        print(f"\n[cc_inbox_test_tag] sweep skipped: {exc}")
