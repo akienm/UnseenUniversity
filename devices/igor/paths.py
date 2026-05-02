@@ -10,8 +10,8 @@ Env vars:
 Usage:
     from igor.paths import paths
 
-    log_path = paths().logs / "errors.log"
-    db_path  = paths().instance / "wild-0001.db"
+    log_path  = paths().logs / "errors.log"
+    inbox_dir = paths().instance / "inbox"
 """
 
 from __future__ import annotations

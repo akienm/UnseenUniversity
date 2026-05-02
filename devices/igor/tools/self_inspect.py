@@ -84,7 +84,7 @@ def _aspect_attention(limit: int = 10) -> dict:
     from ..memory.cortex import Cortex
     from ..paths import paths
 
-    cortex = Cortex(paths().instance / "wild-0001.db")
+    cortex = Cortex()
     with cortex._local_conn() as conn:
         rows = conn.execute(
             "SELECT id, content_csb, salience, urgency, category, integrated, timestamp "
@@ -112,7 +112,7 @@ def _aspect_active_episodics(limit: int = 5) -> dict:
     from ..memory.cortex import Cortex
     from ..paths import paths
 
-    cortex = Cortex(paths().instance / "wild-0001.db")
+    cortex = Cortex()
     with cortex._conn() as conn:
         rows = conn.execute(
             "SELECT id, narrative, activation_count, timestamp FROM memories "
@@ -137,7 +137,7 @@ def _aspect_habits_firing(limit: int = 5) -> dict:
     from ..memory.cortex import Cortex
     from ..paths import paths
 
-    cortex = Cortex(paths().instance / "wild-0001.db")
+    cortex = Cortex()
     with cortex._conn() as conn:
         rows = conn.execute(
             "SELECT id, narrative, activation_count, source FROM memories "
@@ -183,7 +183,7 @@ def _aspect_graph_hot(limit: int = 10) -> dict:
     from ..memory.cortex import Cortex
     from ..paths import paths
 
-    cortex = Cortex(paths().instance / "wild-0001.db")
+    cortex = Cortex()
     with cortex._conn() as conn:
         rows = conn.execute(
             "SELECT id, narrative, memory_type, activation_count FROM memories "
@@ -229,7 +229,7 @@ def _aspect_routing_decisions() -> dict:
         from ..memory.cortex import Cortex
         from ..paths import paths
 
-        cortex = Cortex(paths().instance / "wild-0001.db")
+        cortex = Cortex()
         with cortex._conn() as conn:
             rows = conn.execute(
                 "SELECT id, narrative, timestamp FROM memories "

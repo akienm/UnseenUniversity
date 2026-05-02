@@ -169,15 +169,7 @@ def _db():
 
 
 def _cortex() -> Cortex:
-    from ..paths import paths as _paths
-
-    db_path = Path(
-        os.environ.get(
-            "IGOR_DB_PATH",
-            _paths().instance / "wild-0001.db",
-        )
-    )
-    return Cortex(db_path)
+    return Cortex()
 
 
 def _now_iso() -> str:

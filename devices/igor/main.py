@@ -1117,8 +1117,9 @@ class Igor(IgorBase):
                     "trigger": "backup_requested",
                     "habit_type": "action",
                     "action": (
-                        "Run: tar czf ~/.TheIgors/backups/igor_{id}_$(date +%Y%m%d_%H%M%S).tar.gz "
-                        "~/.TheIgors/igor_{id}/wild-0001.db "
+                        "Run two commands: "
+                        "(1) pg_dump -d Igor-wild-0001 -F c -f ~/.TheIgors/backups/igor_{id}_$(date +%Y%m%d_%H%M%S).dump  "
+                        "(2) tar czf ~/.TheIgors/backups/igor_{id}_$(date +%Y%m%d_%H%M%S).tar.gz "
                         "~/.TheIgors/milieu_global.json "
                         "~/.TheIgors/igor_{id}/warm_context.0.json "
                         "~/.TheIgors/SOUL.md "

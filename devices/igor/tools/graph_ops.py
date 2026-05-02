@@ -28,7 +28,7 @@ def get_hot_attractors(limit: str = "10") -> str:
         from ..memory.db_proxy import make_home_proxy
         from ..paths import paths
 
-        cortex = Cortex(paths().instance / "wild-0001.db")
+        cortex = Cortex()
         attractors = cortex.get_attractors(limit=n)
         if not attractors:
             return "No attractors found yet — graph may be too sparse."
@@ -55,7 +55,7 @@ def run_node_adoption(batch_size: str = "50") -> str:
         from ..memory.cortex import Cortex
         from ..paths import paths
 
-        cortex = Cortex(paths().instance / "wild-0001.db")
+        cortex = Cortex()
         adopted = cortex.adopt_orphans(batch_size=n)
         if adopted == 0:
             gate = os.getenv("IGOR_NODE_ADOPTION_ENABLED", "false")
@@ -84,7 +84,7 @@ def run_calving_check(depth_threshold: str = "5") -> str:
         from ..memory.cortex import Cortex
         from ..paths import paths
 
-        cortex = Cortex(paths().instance / "wild-0001.db")
+        cortex = Cortex()
         candidates = cortex.find_calving_candidates(depth_threshold=threshold)
         if not candidates:
             return f"No calving candidates found (max tree depth < {threshold})."

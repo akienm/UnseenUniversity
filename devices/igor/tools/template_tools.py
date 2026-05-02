@@ -142,7 +142,7 @@ def _get_cortex():
     from ..paths import paths
     from ..memory.cortex import Cortex
 
-    return Cortex(paths().instance / "wild-0001.db")
+    return Cortex()
 
 
 def instantiate_template(template_id: str, params_json: str) -> str:

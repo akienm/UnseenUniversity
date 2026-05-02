@@ -178,7 +178,7 @@ def _deposit_learning(conn, turn_id: str, author: str, learning: str) -> str:
         "turn_id": turn_id,
         "inertia": 0.3,
     }
-    cortex = Cortex(db_path=str(_paths().instance / "wild-0001.db"))
+    cortex = Cortex()
     mem = Memory(
         id=mem_id,
         narrative=learning[:2000],

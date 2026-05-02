@@ -1024,7 +1024,7 @@ def annotate_learning(**kwargs) -> str:
         from ..memory.models import Memory, MemoryType
         from ..paths import paths as _paths
 
-        cortex = Cortex(db_path=str(_paths().instance / "wild-0001.db"))
+        cortex = Cortex()
         mem = Memory(
             id=mem_id,
             narrative=narrative,
