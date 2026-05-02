@@ -344,3 +344,54 @@ def boot_env_sync(cortex, instance_id: str, env_path: Path) -> None:
         f"[env_sync] synced {pushed} vars from {source_label} → graph "
         f"(instance={instance_id})"
     )
+
+
+def load_igor_env_into_environ(
+    instance_id: str | None = None,
+    *,
+    overwrite: bool = False,
+) -> dict[str, str]:
+    """Hydrate os.environ from Igor's instance cfg files WITHOUT a DB connection.
+
+    For standalone tools (pe_chain_debugger, cert harnesses, ad-hoc REPL
+    scripts) that import pe_chain or cognition modules from a fresh Python
+    process. Igor's main loop loads cfg via boot_env_sync(); standalone
+    callers need this lighter path so routing matches autonomous behavior.
+
+    Mirrors boot_env_sync's source ordering (last wins): swarm.cfg →
+    igor.cfg → igor.models.cfg → igor.switches.cfg → igor.credentials.cfg
+    → igor.context.*.cfg → igor.context.*.confidential.cfg.
+
+    Returns the dict of vars that were applied (key → value).
+
+    Args:
+      instance_id: Igor instance id (e.g. "Igor-wild-0001"). When None,
+        uses IGOR_INSTANCE_ID from os.environ, falling back to
+        "Igor-wild-0001".
+      overwrite: when False (default), pre-set os.environ values win
+        (matches boot_env_sync's hydration priority); when True, cfg
+        values overwrite existing os.environ entries.
+    """
+    if instance_id is None:
+        instance_id = os.environ.get("IGOR_INSTANCE_ID", "Igor-wild-0001")
+
+    runtime_root = Path.home() / ".TheIgors"
+    instance_dir = runtime_root / instance_id
+    if not instance_dir.is_dir():
+        return {}
+
+    cfg_files = _cfg_files(instance_dir)
+    if not cfg_files:
+        return {}
+
+    vars_dict: dict[str, str] = {}
+    for p in cfg_files:
+        vars_dict.update(_parse_env_file(p))
+
+    applied: dict[str, str] = {}
+    for k, v in vars_dict.items():
+        if not overwrite and k in os.environ:
+            continue
+        os.environ[k] = v
+        applied[k] = v
+    return applied

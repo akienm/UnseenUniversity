@@ -807,6 +807,14 @@ def _call_tier2(prompt: str, timeout: int = 0, temperature: float = 0.1) -> str 
     import time as _time
 
     if os.getenv("IGOR_CLOUD_PROGRAMMING", "").lower() in ("1", "true", "yes"):
+        # T-cert-debugger-env-mirror: log routing decision so silent
+        # 7B-vs-32B detours surface in any process running pe_chain.
+        log.info(
+            "pe_chain routing → cloud (model=%s, IGOR_CLOUD_PROGRAMMING=true)",
+            os.getenv(
+                "IGOR_CLOUD_PROGRAMMING_MODEL", "qwen/qwen-2.5-coder-32b-instruct"
+            ),
+        )
         return _call_cloud_programming(prompt, temperature=temperature)
 
     try:
@@ -818,6 +826,8 @@ def _call_tier2(prompt: str, timeout: int = 0, temperature: float = 0.1) -> str 
 
         host = OLLAMA_HOST
         model = OLLAMA_LOCAL_MODEL
+
+    log.info("pe_chain routing → local (model=%s, host=%s)", model, host)
 
     t0 = _time.monotonic()
     try:
