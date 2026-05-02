@@ -869,6 +869,30 @@ def _call_tier2(prompt: str, timeout: int = 0, temperature: float = 0.1) -> str 
     except Exception as e:
         log.warning("[pe_chain] _call_tier2 Ollama failed: %s — trying OR fallback", e)
         if os.getenv("OPENROUTER_API_KEY"):
+            # T-cloud-fallback-alert: surface budget-touching fallback to CC
+            # so silent ollama→cloud transitions are visible (was a budget
+            # surprise once because the only signal was a forensic log line).
+            try:
+                from ..cognition.cc_inbox_bridge import post_to_cc_inbox as _cc_post
+
+                _cc_post(
+                    kind="cloud_fallback_engaged",
+                    summary=(
+                        "pe_chain fell back from local Ollama to paid OR cloud "
+                        f"({type(e).__name__})"
+                    ),
+                    body=(
+                        f"Ollama call failed: {e}. OPENROUTER_API_KEY present, "
+                        "so _call_tier2 is now routing through "
+                        f"{os.getenv('IGOR_CLOUD_PROGRAMMING_MODEL', 'qwen/qwen-2.5-coder-32b-instruct')} "
+                        "at cloud cost. Investigate Ollama health if this "
+                        "repeats; this alert dedups per minute."
+                    ),
+                    urgency="high",
+                    response_expected=False,
+                )
+            except Exception as _bare_e:
+                log.debug("cloud_fallback_engaged inbox push skipped: %s", _bare_e)
             return _call_cloud_programming(prompt, temperature=temperature)
         return None
 
