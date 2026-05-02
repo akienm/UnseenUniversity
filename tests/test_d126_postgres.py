@@ -123,7 +123,11 @@ class TestProxyFactories(unittest.TestCase):
         env = {"IGOR_DB_URL": "postgresql://fallback/db"}
         # Remove IGOR_HOME_DB_URL + test-schema overrides so the test
         # exercises the production defaults, not the session-fixture paths.
-        _EXCLUDE = {"IGOR_HOME_DB_URL", "IGOR_HOME_SEARCH_PATH", "IGOR_LOCAL_SEARCH_PATH"}
+        _EXCLUDE = {
+            "IGOR_HOME_DB_URL",
+            "IGOR_HOME_SEARCH_PATH",
+            "IGOR_LOCAL_SEARCH_PATH",
+        }
         clean_env = {k: v for k, v in os.environ.items() if k not in _EXCLUDE}
         clean_env.update(env)
         with patch.dict(os.environ, clean_env, clear=True):
@@ -229,58 +233,22 @@ class TestWordGraphPostgresCompat(unittest.TestCase):
     (Full Postgres test requires a running Postgres — skipped in unit test context.)
     """
 
-    def test_word_graph_init_sqlite(self):
-        """WordGraph boots cleanly on SQLite (regression guard for PendingReplyStore wiring)."""
-        import tempfile
+    def test_word_graph_init_postgres(self):
+        """WordGraph boots cleanly on Postgres (regression guard for PendingReplyStore wiring).
+
+        Post T-sqlite-out-word-graph-db: WordGraph is Postgres-only. No db_path.
+        """
         from wild_igor.igor.cognition.word_graph import WordGraph
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            db_path = Path(tmpdir) / "test_wg.db"
-            wg = WordGraph(name="test", db_path=db_path)
-            self.assertIsNotNone(wg)
-            self.assertIsNotNone(wg._pending)
-            self.assertIsNotNone(wg._cache)
-            # Basic operations work
-            wg.index("doc1", "hello world test")
-            results = wg.predict_next("hello world")
-            self.assertIsInstance(results, list)
+        wg = WordGraph(name="test")
+        self.assertIsNotNone(wg)
+        self.assertIsNotNone(wg._pending)
+        self.assertIsNotNone(wg._cache)
 
 
-# ── Migration script ──────────────────────────────────────────────────────────
-
-
-class TestMigrateWgScript(unittest.TestCase):
-    """Smoke-test the migration script's helper functions."""
-
-    @pytest.mark.timeout(90)
-    def test_dry_run_does_not_write(self):
-        """--dry-run should print counts and exit cleanly without touching Postgres."""
-        import subprocess, sys
-
-        # The migration script needs the SQLite word_graph.db to exist.
-        # Skip on machines that don't have the live instance data.
-        from wild_igor.igor.paths import paths as _paths
-
-        wg_path = _paths().word_graph("word_graph")
-        if not wg_path.exists():
-            self.skipTest(f"word_graph.db not found at {wg_path}")
-
-        env = os.environ.copy()
-        env.setdefault(
-            "IGOR_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-        )
-        result = subprocess.run(
-            [sys.executable, "lab/claudecode/migrate_wg_to_postgres.py", "--dry-run"],
-            capture_output=True,
-            text=True,
-            timeout=85,
-            cwd=str(Path(__file__).parent.parent),
-            env=env,
-        )
-        self.assertEqual(result.returncode, 0, f"dry-run failed:\n{result.stderr}")
-        self.assertIn("DRY RUN", result.stdout)
-        self.assertIn("wg_cooccur", result.stdout)
+# Migration-script test removed in T-sqlite-out-word-graph-db: SQLite
+# word_graph.db deleted, paths().word_graph() removed. The migration script
+# (lab/claudecode/migrate_wg_to_postgres.py) is kept as historical artifact.
 
 
 if __name__ == "__main__":
