@@ -138,21 +138,22 @@ def store_note(
 
 def queue_task(task_json: str) -> str:
     """
-    Add a task to the CC channel queue (~/.TheIgors/cc_channel/queue.json).
+    Add a task to the CC channel queue (canonical Postgres clan.memories).
     task_json: JSON string with id, title, role, size, priority, status, body.
     Idempotent — skips if id already present.
+
+    T-cc-queue-write-race: routes through cc_queue.load_tasks/save_tasks
+    instead of reading/writing queue.json directly. Previous direct path
+    bypassed Postgres and was a confirmed drift source.
     """
     try:
         task = json.loads(task_json)
         if not task.get("id") or not task.get("title"):
             return "[ERROR] task_json must include id and title"
 
-        _QUEUE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        tasks = []
-        if _QUEUE_PATH.exists():
-            content = _QUEUE_PATH.read_text().strip()
-            tasks = json.loads(content) if content else []
+        from lab.claudecode import cc_queue as _cc_queue
 
+        tasks = _cc_queue.load_tasks()
         existing_ids = {t["id"] for t in tasks}
         if task["id"] in existing_ids:
             return f"skip (exists): {task['id']}"
@@ -162,7 +163,7 @@ def queue_task(task_json: str) -> str:
         task.setdefault("claimed_at", None)
         task.setdefault("completed_at", None)
         tasks.append(task)
-        _QUEUE_PATH.write_text(json.dumps(tasks, indent=2))
+        _cc_queue.save_tasks(tasks)
         return f"queued: {task['id']} — {task['title']}"
     except Exception as e:
         return f"[ERROR] queue_task: {e}"
@@ -1222,7 +1223,9 @@ registry.register(
 )
 
 
-_RUN_TESTS_TIMEOUT_SEC = 600  # suite takes ~280s on akiendelllinux CPU-only; 300 was too tight
+_RUN_TESTS_TIMEOUT_SEC = (
+    600  # suite takes ~280s on akiendelllinux CPU-only; 300 was too tight
+)
 
 # Tests excluded from preflight — network-calling or shared-state-flaky tests
 # that are unrelated to any specific ticket's work and would always block pe_chain.
@@ -1281,7 +1284,9 @@ def run_tests() -> str:
         # escalation reason names the specific failing test rather than only
         # showing the thread-crash tail (T-preflight-failed-test-visibility).
         if exit_code != 0:
-            failed_lines = [l for l in lines if l.startswith("FAILED ") or l.startswith("ERROR ")]
+            failed_lines = [
+                l for l in lines if l.startswith("FAILED ") or l.startswith("ERROR ")
+            ]
             if failed_lines:
                 failures_block = "failures: " + "; ".join(failed_lines[:5])
                 return f"[exit:{exit_code}]\n{failures_block}\n{tail}"

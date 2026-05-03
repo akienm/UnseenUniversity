@@ -115,7 +115,12 @@ def launch_next_worker() -> str:
             for t in in_progress:
                 t["status"] = "pending"
                 t.pop("claimed_at", None)
-            _QUEUE_PATH.write_text(json.dumps(tasks, indent=2))
+            # T-cc-queue-write-race: route through canonical cc_queue.save_tasks
+            # (Postgres + queue.json echo). Previous direct write_text bypassed
+            # Postgres = drift source.
+            from lab.claudecode import cc_queue as _cc_queue
+
+            _cc_queue.save_tasks(tasks)
 
         # Find next pending (skip blocked)
         pending = [t for t in tasks if t["status"] == "pending"]
@@ -137,7 +142,10 @@ def launch_next_worker() -> str:
         # before the worker gets to run /sprint and claim the ticket itself.
         next_ticket["status"] = "in_progress"
         next_ticket["claimed_at"] = _now()
-        _QUEUE_PATH.write_text(__import__("json").dumps(tasks, indent=2))
+        # T-cc-queue-write-race: canonical save (Postgres + echo).
+        from lab.claudecode import cc_queue as _cc_queue
+
+        _cc_queue.save_tasks(tasks)
 
         # Launch via cc_queue.py worker-launch — fire-and-forget, don't block on CC session startup
         proc = subprocess.Popen(
