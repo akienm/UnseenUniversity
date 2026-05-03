@@ -13,12 +13,22 @@ MVP scope (T-single-pursuit-test-case):
   - suspend()/resume() for nesting
   - subscriber hook so other engrams can react to dopamine events
 
+Anticipation wiring (T-anticipation-slice2-pursuit-emit):
+  - spawn() pushes an Anticipation onto the AnticipationBus and stashes
+    its id on the Pursuit. Producer side of the want-signal loop.
+  - evaluate_completion() settles the bus + register_outcome with the
+    actual delta (1.0 for completion, -0.5 for abandonment) so the
+    Anticipator's predictor learns from each pursuit's outcome.
+
 Gate: IGOR_PURSUITS_ENABLED (default false). When disabled, spawn() is a
 no-op that returns a Pursuit with status=disabled — callers can ignore it
-safely.
+safely. Anticipation wiring also short-circuits in disabled mode (no
+push, no settle) so test isolation stays clean.
 
 Deferred to follow-up tickets: Postgres persistence, staleness-based
 abandonment, milieu integration, cascade-side Pursuit awareness.
+
+Updated 2026-05-03.
 """
 
 from __future__ import annotations
@@ -31,6 +41,7 @@ from dataclasses import dataclass, field
 from typing import Callable, Optional
 
 from ..igor_base import get_logger
+from . import anticipator
 
 log = get_logger(__name__)
 
@@ -64,6 +75,9 @@ class Pursuit:
     status: str = "active"  # pending|active|suspended|completed|abandoned|disabled
     dopamine_trace: list[DopamineEvent] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
+    # T-anticipation-slice2: handle for the Anticipation pushed onto the
+    # AnticipationBus at spawn time. Settled at completion/abandonment.
+    anticipation_id: Optional[str] = None
 
     def record_action(self, action_ref: dict) -> None:
         """Attribute an engram activation to this Pursuit."""
@@ -98,6 +112,7 @@ class Pursuit:
                     note=self.name,
                 )
             )
+            self._settle_anticipation(actual_delta=1.0)
             self._signal_parent("subgoal")
         else:
             self.status = "abandoned"
@@ -110,7 +125,29 @@ class Pursuit:
                     note=self.name,
                 )
             )
+            self._settle_anticipation(actual_delta=-0.5)
         return self.status
+
+    def _settle_anticipation(self, actual_delta: float) -> None:
+        """T-anticipation-slice2: close the loop with the Anticipator.
+
+        Removes the anticipation from the bus and feeds the actual
+        outcome to register_outcome so the predictor's rolling-mean
+        learns from this pursuit. Silent no-op when no anticipation is
+        attached (e.g. disabled-mode pursuit, or test fixture that
+        bypassed spawn()).
+        """
+        if not self.anticipation_id:
+            return
+        ant = anticipator.get_bus().settle(self.anticipation_id)
+        if ant is None:
+            log.info(
+                "pursuit %s anticipation %s missing from bus at settle time",
+                self.id,
+                self.anticipation_id,
+            )
+            return
+        anticipator.get_anticipator().register_outcome(ant, actual_delta)
 
     def _signal_parent(self, kind: str) -> None:
         if not self.parent_pursuit:
@@ -215,6 +252,15 @@ def spawn(
         if parent is not None:
             parent.sub_pursuits.append(pid)
             parent.suspend()
+
+    # T-anticipation-slice2: push an Anticipation onto the bus so action
+    # selection (slice 3) can bias toward high-want pursuits, and so the
+    # Anticipator's predictor learns from each pursuit's actual outcome.
+    ant = anticipator.get_anticipator().predict(
+        referent_id=pid, referent_type="pursuit"
+    )
+    anticipator.get_bus().push(ant)
+    p.anticipation_id = ant.id
 
     _registry.emit(
         DopamineEvent(
