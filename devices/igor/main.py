@@ -493,7 +493,7 @@ class Igor(IgorBase):
             self.db_path = DATA_DIR / f"{instance_id}.db"
         DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-        self.cortex = Cortex(self.db_path, instance_id=instance_id)
+        self.cortex = Cortex(instance_id=instance_id)
         # G-QP2/G-QP3: checkpoint WAL once at main Igor boot only, not on every Cortex instantiation
         try:
             with self.cortex._db() as conn:
@@ -876,7 +876,12 @@ class Igor(IgorBase):
 
     def _wire_datacenter(self) -> None:
         """Connect to agent_datacenter and cache the manifest. No-op if a
-        client was passed in (test seam) or if anything fails (no daemon)."""
+        client was passed in (test seam) or if anything fails (no daemon).
+
+        Slice 4b: after wiring, attaches dc_client to cortex so the engram
+        executor can consult the manifest for tool resolution before falling
+        back to the local registry.
+        """
         if self.datacenter_client is not None:
             try:
                 self.datacenter_manifest = self.datacenter_client.announce(timeout=2.0)
@@ -890,6 +895,7 @@ class Igor(IgorBase):
                     f"[yellow]Datacenter announce failed (test client): {_dc_e}[/]"
                 )
                 self.datacenter_manifest = None
+            self.cortex.dc_client = self.datacenter_client
             return
 
         try:
@@ -927,6 +933,8 @@ class Igor(IgorBase):
             )
             self.datacenter_client = None
             self.datacenter_manifest = None
+        # Slice 4b: cortex sees whichever dc_client we settled on (real or None).
+        self.cortex.dc_client = self.datacenter_client
 
     def _push_state_inventory(self) -> None:
         """

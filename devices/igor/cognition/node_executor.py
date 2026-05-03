@@ -115,7 +115,9 @@ def _resolve_value(value: Any, basket: dict, payload: dict) -> Any:
 # ── Executor ──────────────────────────────────────────────────────────────────
 
 
-def execute_node(memory, fired_trigger: str, basket: dict) -> ExecutionResult:
+def execute_node(
+    memory, fired_trigger: str, basket: dict, dc_client=None
+) -> ExecutionResult:
     """Execute the cell in memory.payload named by fired_trigger.
 
     Args:
@@ -401,6 +403,27 @@ def execute_node(memory, fired_trigger: str, basket: dict) -> ExecutionResult:
             args = basket.get(str(args_basket_key)) or {}
             if not isinstance(args, dict):
                 args = {}
+            # Slice 4b: when a DatacenterClient is wired and its manifest names
+            # this tool, log the manifest binding so future bus-routing slices
+            # can replace the local dispatch. For now we still dispatch via the
+            # local registry — the manifest path is a resolution checkpoint,
+            # not a transport swap.
+            if dc_client is not None:
+                try:
+                    binding = dc_client.get_tool(str(resolved_tool_name))
+                except Exception as _bind_exc:
+                    log.warning(
+                        "[node_executor] dc_client.get_tool(%r) raised: %s",
+                        resolved_tool_name,
+                        _bind_exc,
+                    )
+                    binding = None
+                if binding is not None:
+                    log.info(
+                        "[node_executor] manifest-bound tool: %s → %s",
+                        resolved_tool_name,
+                        getattr(binding, "address", "?"),
+                    )
             tool = _tool_registry.get(str(resolved_tool_name))
             if tool is None:
                 log.warning(
