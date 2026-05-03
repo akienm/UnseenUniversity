@@ -793,6 +793,33 @@ def select_habit(
             ]
             near_misses = (near_misses + near_misses_extra)[:3]
 
+        # ── 2c. Anticipation bias (T-anticipation-slice3) ─────────────────────
+        # Habits tagged with metadata.pursuit_id get a score bonus when their
+        # pursuit is currently anticipated on the AnticipationBus.
+        # bonus = predicted_delta * confidence * IGOR_ANTICIPATION_BIAS_WEIGHT
+        # (default weight 0.1 — gentle; see anticipator._bias_weight()).
+        # No-op when no habits carry pursuit_id metadata, which is the current
+        # state — but the wiring closes the loop the moment habits get tagged.
+        if scored:
+            from . import anticipator as _anticipator
+
+            anticipated_count = 0
+            biased = []
+            for s, habit in scored:
+                pursuit_id = habit.metadata.get("pursuit_id")
+                if pursuit_id:
+                    bonus = _anticipator.anticipation_bias_for_referent(pursuit_id)
+                    if bonus != 0.0:
+                        anticipated_count += 1
+                        s = max(0.0, min(1.0, s + bonus))
+                biased.append((s, habit))
+            scored = biased
+            if anticipated_count:
+                get_logger(__name__).info(
+                    "[bg] anticipation bias applied to %d habit(s)",
+                    anticipated_count,
+                )
+
         # ── 3. Winner-take-all (lateral inhibition) ───────────────────────────
         # Primary sort: descending score; tiebreak: descending activation_count
         scored.sort(
