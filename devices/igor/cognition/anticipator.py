@@ -28,6 +28,7 @@ Updated 2026-05-02.
 
 from __future__ import annotations
 
+import os
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -192,3 +193,40 @@ def reset_for_test() -> None:
     global _ANTICIPATOR, _BUS
     _ANTICIPATOR = None
     _BUS = None
+
+
+# ── Slice 3 — selection-bias hookpoint for action selection ─────────────────
+
+
+def _bias_weight() -> float:
+    """IGOR_ANTICIPATION_BIAS_WEIGHT — how strongly anticipation tilts
+    selection scores. Default 0.1 (gentle — anticipation directional, not
+    overriding). Set 0 to disable the bias entirely."""
+    try:
+        return float(os.getenv("IGOR_ANTICIPATION_BIAS_WEIGHT", "0.1"))
+    except ValueError:
+        return 0.1
+
+
+def anticipation_bias_for_referent(referent_id: str) -> float:
+    """Return the score-bonus to add when selecting toward `referent_id`.
+
+    Computed as `predicted_delta * confidence * IGOR_ANTICIPATION_BIAS_WEIGHT`
+    if the referent is currently anticipated on the bus; 0.0 otherwise.
+
+    Consumers (basal_ganglia habit selection, plan_traverse waypoint
+    pick) call this with the candidate's referent — if no live
+    anticipation exists for it, the candidate is unaffected. The bonus
+    is intentionally gentle so anticipation steers but doesn't override
+    deterministic selection rules.
+    """
+    weight = _bias_weight()
+    if weight == 0.0:
+        return 0.0
+    bus = get_bus()
+    # Linear scan: active set is small (≤ a few dozen typically). If this
+    # ever becomes hot, index by referent_id.
+    for ant in bus.top_k(k=bus.active_count()):
+        if ant.referent_id == referent_id:
+            return ant.predicted_delta * ant.confidence * weight
+    return 0.0
