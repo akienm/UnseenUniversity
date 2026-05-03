@@ -57,7 +57,7 @@ class TestRunCursorBasic:
 
         call_count = [0]
 
-        def fake_exec(node, trigger, basket):
+        def fake_exec(node, trigger, basket, **kwargs):
             call_count[0] += 1
             if call_count[0] == 1:
                 return ExecutionResult(next_node="NODE_B")
@@ -110,7 +110,7 @@ class TestLoopDetection:
 
         call_count = [0]
 
-        def fake_exec(n, t, b):
+        def fake_exec(n, t, b, **kwargs):
             call_count[0] += 1
             # Always branch to a "new" node (different basket each time)
             b[f"step_{call_count[0]}"] = True

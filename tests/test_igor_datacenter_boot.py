@@ -42,6 +42,12 @@ class _IgorShape:
         self.instance_id = instance_id
         self.datacenter_client = datacenter_client
         self.datacenter_manifest = None
+        # Slice 4b: _wire_datacenter now propagates dc_client onto cortex so
+        # the engram executor can consult the manifest. Stub Cortex with a
+        # plain object that accepts the assignment.
+        from types import SimpleNamespace
+
+        self.cortex = SimpleNamespace()
 
 
 def _wire(stub):
