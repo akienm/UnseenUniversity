@@ -182,9 +182,7 @@ class TestApiAgentSend:
             ucs, "_channel_append"
         ):
             with caplog.at_level(logging.INFO, logger="utility_closet"):
-                resp = asyncio.get_event_loop().run_until_complete(
-                    ucs._api_agent_send(FakeRequest())
-                )
+                resp = asyncio.run(ucs._api_agent_send(FakeRequest()))
 
         assert mock_send.called
         assert any(
@@ -200,9 +198,7 @@ class TestApiAgentSend:
                 return {"content": "   ", "session_id": "shared"}
 
         with caplog.at_level(logging.WARNING, logger="utility_closet"):
-            resp = asyncio.get_event_loop().run_until_complete(
-                ucs._api_agent_send(FakeRequest())
-            )
+            resp = asyncio.run(ucs._api_agent_send(FakeRequest()))
 
         assert any("empty content" in r.message for r in caplog.records)
 
@@ -214,8 +210,6 @@ class TestApiAgentSend:
                 raise ValueError("bad json")
 
         with caplog.at_level(logging.WARNING, logger="utility_closet"):
-            resp = asyncio.get_event_loop().run_until_complete(
-                ucs._api_agent_send(FakeRequest())
-            )
+            resp = asyncio.run(ucs._api_agent_send(FakeRequest()))
 
         assert any("invalid JSON" in r.message for r in caplog.records)

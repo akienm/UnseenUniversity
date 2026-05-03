@@ -6,11 +6,25 @@ inspect the basket and 7 aspects at each pause.
 
 from __future__ import annotations
 
+import os
 from unittest.mock import patch
 
 import pytest
 
 from wild_igor.igor.tools import pe_chain_debugger as dbg
+
+
+@pytest.fixture(autouse=True)
+def _restore_environ_around_each_test():
+    """dbg.start() calls load_igor_env_into_environ() which reads the real
+    instance's igor.switches.cfg into os.environ. Without this fixture, vars
+    like IGOR_SINGLE_TICKET=NONE_BETWEEN_CERT_WALKS leak into later tests
+    (e.g. test_pe_entry_nodes — which then sees pe_chain refuse to run)."""
+    saved = dict(os.environ)
+    yield
+    os.environ.clear()
+    os.environ.update(saved)
+
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
