@@ -71,6 +71,10 @@ def run_cursor(
     visit_log: dict[str, str] = {}  # node_id → basket snapshot
     current_node = entry_node
     current_trigger = trigger
+    # Slice 4b: cortex carries the DatacenterClient (when datacenter announce
+    # succeeded at boot). When set, MCPCALL dispatch in node_executor consults
+    # the manifest before falling back to the local tool registry.
+    dc_client = getattr(cortex, "dc_client", None)
 
     def _log(msg: str) -> None:
         if log_fn:
@@ -79,7 +83,9 @@ def run_cursor(
 
     for step in range(max_steps):
         try:
-            exec_result = execute_node(current_node, current_trigger, basket)
+            exec_result = execute_node(
+                current_node, current_trigger, basket, dc_client=dc_client
+            )
         except Exception as exc:
             result.error = str(exc)
             result.stopped_by = "error"
@@ -162,8 +168,8 @@ def run_cursor(
             spawned_node = cortex.get(spawned_id)
             if spawned_node:
 
-                def _exec_fork(_node=spawned_node, _basket=basket):
-                    return execute_node(_node, "__entry__", _basket)
+                def _exec_fork(_node=spawned_node, _basket=basket, _dc=dc_client):
+                    return execute_node(_node, "__entry__", _basket, dc_client=_dc)
 
                 job_manager.submit_background(
                     fn=_exec_fork,
@@ -184,8 +190,8 @@ def run_cursor(
             spawned_node = cortex.get(spawned_id)
             if spawned_node:
 
-                def _exec_spawn(_node=spawned_node):
-                    return execute_node(_node, "__entry__", {})
+                def _exec_spawn(_node=spawned_node, _dc=dc_client):
+                    return execute_node(_node, "__entry__", {}, dc_client=_dc)
 
                 job_manager.submit_background(
                     fn=_exec_spawn,
