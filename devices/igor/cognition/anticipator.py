@@ -33,6 +33,8 @@ import uuid
 from dataclasses import dataclass, field
 from threading import RLock
 
+from ..igor_base import IgorBase
+
 # ── Anticipation dataclass ─────────────────────────────────────────────────
 
 
@@ -66,7 +68,7 @@ class Anticipation:
 # ── Anticipator (predictor + RPE update) ───────────────────────────────────
 
 
-class Anticipator:
+class Anticipator(IgorBase):
     """Simple per-referent_type predictor with RPE-driven learning.
 
     Slice 1 model: rolling mean of observed deltas per referent_type. Each
@@ -78,6 +80,7 @@ class Anticipator:
     """
 
     def __init__(self) -> None:
+        super().__init__()
         self._sums: dict[str, float] = {}
         self._counts: dict[str, int] = {}
         self._lock = RLock()
@@ -119,7 +122,7 @@ class Anticipator:
 # ── AnticipationBus (active-set with biased read) ──────────────────────────
 
 
-class AnticipationBus:
+class AnticipationBus(IgorBase):
     """Module-level active-set of live anticipations.
 
     Producers push (Pursuit adoption, plan-step entry); consumers read
@@ -131,6 +134,7 @@ class AnticipationBus:
     """
 
     def __init__(self) -> None:
+        super().__init__()
         self._active: dict[str, Anticipation] = {}
         self._lock = RLock()
 
