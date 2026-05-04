@@ -23,19 +23,15 @@ from __future__ import annotations
 import logging
 import re
 
+from .inertia_map import (
+    HIGH_PATHS as _HIGH_INERTIA_FILES,
+    MED_PATHS as _MED_INERTIA_FILES,
+)
 from .registry import Tool, registry
 
 logger = logging.getLogger(__name__)
 
 # ── inertia keyword sets ──────────────────────────────────────────────────────
-
-_HIGH_INERTIA_FILES = ("brainstem/", "memory/models.py", "cognition/reasoners/base.py")
-_MED_INERTIA_FILES = (
-    "cognition/",
-    "memory/cortex.py",
-    "anthropic.py",
-    "main.py",
-)
 _INERTIA_KEYWORDS = (
     "inertia",
     "HIGH",

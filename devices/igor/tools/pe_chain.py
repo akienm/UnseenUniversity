@@ -1059,11 +1059,11 @@ def _filter_high_inertia_not_in_description(
     A path is kept if either its full repo-relative path or its basename
     appears verbatim in the ticket description.
     """
-    from .scope_guard import _classify_tier
+    from .inertia_map import bucket_of as _im_bucket_of
 
     kept: list[str] = []
     for path in files:
-        if _classify_tier(path) != "HIGH":
+        if _im_bucket_of(path) != "HIGH":
             kept.append(path)
             continue
         basename = Path(path).name
@@ -1247,9 +1247,7 @@ def pe_plan(basket: dict) -> dict:
 
 # ── FILTER ────────────────────────────────────────────────────────────────────
 
-_FILTER_HIGH_INERTIA = frozenset(
-    ["brainstem/", "memory/models.py", "cognition/reasoners/base.py"]
-)
+from .inertia_map import HIGH_PATHS as _FILTER_HIGH_INERTIA
 
 
 def pe_filter(basket: dict) -> dict:
