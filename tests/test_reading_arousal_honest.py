@@ -24,9 +24,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 def cortex_mock():
     c = MagicMock()
     c.store = MagicMock()
+    c.store_batch = MagicMock()
     c._get_or_compute_embedding = MagicMock(return_value=None)
     c.add_child = MagicMock()
+    c.add_children_batch = MagicMock()
     c.add_interpretive_edge = MagicMock()
+    c.add_interpretive_edges_batch = MagicMock()
     c.get_hot_attractors = MagicMock(return_value=[])
     return c
 
@@ -72,7 +75,7 @@ class TestReadingArousalHonest:
                 campaign_id="",
             )
 
-        stored_mem = cortex_mock.store.call_args[0][0]
+        stored_mem = cortex_mock.store_batch.call_args[0][0][0]
         assert (
             stored_mem.arousal == milieu_arousal
         ), f"Expected milieu arousal {milieu_arousal}, got {stored_mem.arousal}"
@@ -111,7 +114,7 @@ class TestReadingArousalHonest:
                 campaign_id="",
             )
 
-        stored_mem = cortex_mock.store.call_args[0][0]
+        stored_mem = cortex_mock.store_batch.call_args[0][0][0]
         assert "cp_affinity" in (
             stored_mem.metadata or {}
         ), "cp_affinity should be in metadata"
@@ -145,7 +148,7 @@ class TestReadingArousalHonest:
                 campaign_id="",
             )
 
-        stored_mem = cortex_mock.store.call_args[0][0]
+        stored_mem = cortex_mock.store_batch.call_args[0][0][0]
         assert (
             stored_mem.arousal == 0.5
         ), f"Expected fallback 0.5, got {stored_mem.arousal}"
