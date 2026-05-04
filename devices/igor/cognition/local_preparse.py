@@ -52,9 +52,15 @@ log = get_logger(__name__)
 # pick if qwen isn't pulled. Configurable via env var.
 _DEFAULT_MODEL = os.getenv("IGOR_LOCAL_PREPARSE_MODEL", "qwen2.5:0.5b")
 
-# Default timeout. Local small-model inference on CPU should clear this
-# for typical preparse input (≤300 chars). Anything slower → fall-through.
-_DEFAULT_TIMEOUT_SEC = float(os.getenv("IGOR_LOCAL_PREPARSE_TIMEOUT_SEC", "1.0"))
+# rule: theigors/rules/local-inference-no-timeouts — local takes whatever
+# time it takes; brain-modeled goal makes local-fast NOT a constraint.
+# Hour-scale sanity cap (catch a truly hung Ollama process), NOT a UX
+# deadline. The previous 1.0s default treated routine local slowness as a
+# fall-through trigger — exactly the anti-pattern the rule prohibits.
+# If preparse latency becomes a UX problem, the answer is a non-blocking
+# preparse architecture (parallel on swarm, async future, optimistic
+# rule-based first then upgrade), NOT a short timeout.
+_DEFAULT_TIMEOUT_SEC = float(os.getenv("IGOR_LOCAL_PREPARSE_TIMEOUT_SEC", "3600"))
 
 
 _PREPARSE_PROMPT_TEMPLATE = """\

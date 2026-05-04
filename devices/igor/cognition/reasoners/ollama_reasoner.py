@@ -52,7 +52,12 @@ def _get_client_and_model(call_type: str) -> tuple[object, str]:
     return _ollama, OLLAMA_LOCAL_MODEL
 
 
-PREPARSE_TIMEOUT = 8  # seconds
+# rule: theigors/rules/local-inference-no-timeouts — local takes whatever
+# time it takes; brain-modeled goal makes local-fast NOT a constraint.
+# Sanity cap of 1hr to catch a truly hung process (e.g., model deadlock).
+# Preparse falls back to _rule_based_csb on hit, so the cap is the LATEST
+# the user can wait before getting a rule-based parse instead of an LLM one.
+PREPARSE_TIMEOUT = 3600  # seconds (1hr — sanity cap, not a UX deadline)
 
 # Intent taxonomy must match thalamus.py 13-intent taxonomy exactly (#30, G36)
 _PREPARSE_PROMPT = """\
@@ -86,6 +91,9 @@ if not _ollama_log.handlers:
 # ── Health check ────────────────────────────────────────────────────────────
 
 
+# NOTE: is_healthy is an HTTP availability ping (GET /api/tags), NOT
+# inference — so theigors/rules/local-inference-no-timeouts does NOT apply
+# here. 5s is appropriate: a healthy Ollama answers /api/tags in <1s.
 def is_healthy(host: str | None = None, timeout: int = 5) -> bool:
     """Return True if Ollama is running at host (probes /api/tags).
     If host is None, probes the current best routed host."""
@@ -592,15 +600,18 @@ class OllamaReasoner(LocalReasoner, IgorBase):
                     detail=f"wild_igor/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
                 )
 
-        # Ollama can hang indefinitely (observed: 1164s blocking the main loop).
-        # Wrap in a thread future so TimeoutError interrupts the blocking call.
-        # Interactive turns: 90s (IGOR_OLLAMA_TIMEOUT_SECS).
-        # Impulse/background turns (force_local=True): 15s (IGOR_OLLAMA_IMPULSE_TIMEOUT_SECS).
-        # Impulses are drop-and-move-on — no point waiting 90s for something that gets skipped anyway.
+        # rule: theigors/rules/local-inference-no-timeouts — local takes
+        # whatever time it takes; brain-modeled goal makes local-fast NOT a
+        # constraint. Defaults are HOUR-scale sanity caps (catch a truly
+        # hung Ollama process), NOT escalation triggers. The 90s default
+        # this replaces fired 2026-05-03 20:17:27 and triggered the rule.
+        # Env vars retained so operators can override per-machine if needed.
+        # Interactive turns: 2hr (IGOR_OLLAMA_TIMEOUT_SECS=7200).
+        # Impulse/background turns (force_local=True): 1hr (IGOR_OLLAMA_IMPULSE_TIMEOUT_SECS=3600).
         if force_local and not interactive_fallback:
-            _timeout = float(os.getenv("IGOR_OLLAMA_IMPULSE_TIMEOUT_SECS", "15"))
+            _timeout = float(os.getenv("IGOR_OLLAMA_IMPULSE_TIMEOUT_SECS", "3600"))
         else:
-            _timeout = float(os.getenv("IGOR_OLLAMA_TIMEOUT_SECS", "90"))
+            _timeout = float(os.getenv("IGOR_OLLAMA_TIMEOUT_SECS", "7200"))
 
         _chat_q: _queue.Queue = _queue.Queue()
 
