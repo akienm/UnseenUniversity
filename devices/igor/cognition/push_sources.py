@@ -970,6 +970,7 @@ class MilieuSource(BasePushSource):
 
     def push(self, cortex) -> list[int]:
         from . import milieu as milieu_mod
+        from . import bliss_integrator
 
         now = datetime.now()
         if (
@@ -985,6 +986,16 @@ class MilieuSource(BasePushSource):
 
         # Natural decay — mood drifts toward neutral without new signals
         m.tick()
+
+        # Wire bliss_integrator: apply pursuit completion effects to milieu
+        try:
+            bliss = bliss_integrator.get()
+            bliss.apply_to_milieu(m)
+        except Exception as _bare_e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"wild_igor/igor/cognition/push_sources.py MilieuSource bliss_integrator: {_bare_e}",
+            )
 
         state = m.get_state()
         prev = self._prev_snapshot
