@@ -919,3 +919,9 @@ def init(instance_id: str) -> Milieu:
 def get() -> Optional[Milieu]:
     """Return the singleton, or None if not yet initialized."""
     return _milieu
+
+
+def read_state() -> "Optional[MilieuState]":
+    """Return current MilieuState snapshot, or None if not initialized."""
+    m = _milieu
+    return m.snapshot() if m else None
