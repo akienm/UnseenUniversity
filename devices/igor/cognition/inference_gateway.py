@@ -473,6 +473,13 @@ class InferenceGateway(IgorBase):
         """
         self.last_tier = ""
         _log_err = log_error  # forensic hook — wired to log_error for TIER_FAIL entries
+        get_logger(__name__).debug(
+            "[gateway] reason() entry: is_user_turn=%s level=%s complexity=%s input=%r",
+            is_user_turn,
+            level,
+            complexity,
+            user_input[:60],
+        )
 
         # ── local_only: caller explicitly wants local (cloud_ok_override=False) ─
         if local_only:
