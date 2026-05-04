@@ -10234,6 +10234,12 @@ def main():
     env_path = Path(__file__).parent.parent / ".env"
     load_dotenv(env_path)
 
+    # T-sqlite-config-hunt: gated debug trace — remove after caller identified
+    if os.getenv("IGOR_TRACE_SQLITE_CALLERS") == "1":
+        from lab.claudecode.sqlite_caller_trace import install as _sqlite_trace_install
+
+        _sqlite_trace_install()
+
     if not os.getenv("OPENROUTER_API_KEY", "").strip():
         loginfo(
             "[yellow]Warning: OPENROUTER_API_KEY not set locally — expecting DB-provided key at runtime.[/]"
