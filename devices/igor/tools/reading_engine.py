@@ -465,6 +465,20 @@ def process_blob(
         model_used=_model,
     )
 
+    # Wire graph_integrator after chunk indexing is complete (T-wire-graph-preparse-pipeline)
+    content_id = blob_data.get("source", "")
+    if content_id and total_nodes > 0:
+        try:
+            from ..cognition.graph_integrator import integrate_graph
+
+            integrate_graph(content_id)
+        except Exception as e:
+            import logging as _log
+
+            _log.getLogger("igor.tools.reading_engine").error(
+                f"Failed to integrate graph for {content_id}: {e}"
+            )
+
     return {
         "node_count": total_nodes,
         "edge_count": total_edges,
