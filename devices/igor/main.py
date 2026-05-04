@@ -5338,6 +5338,9 @@ class Igor(IgorBase):
                     # no required args → call with none; one required arg → pass user_input.
                     # Multi-arg tools can't be auto-dispatched; describe and skip habit.
                     from .tools.registry import registry as _tool_registry
+                    from .tools.engram_log import (
+                        engram_execution_context as _engram_ctx,
+                    )
 
                     tool_name = code_ref.split(":")[-1]
                     tool = _tool_registry.get(tool_name)
@@ -5354,19 +5357,22 @@ class Igor(IgorBase):
                     elif tool:
                         _required = tool.parameters.get("required", [])
                         try:
-                            if not _required:
-                                response_text = tool.execute()
-                            elif len(_required) == 1:
-                                # Pass core_input (routing directive stripped) not raw user_input
-                                _core = getattr(parsed, "core_input", user_input)
-                                response_text = tool.execute(**{_required[0]: _core})
-                            else:
-                                # Can't auto-dispatch multi-arg tool — ask for what's needed
-                                _arg_list = ", ".join(_required)
-                                response_text = (
-                                    f"I want to run {tool_name} for that, "
-                                    f"but I need: {_arg_list}. Can you provide those?"
-                                )
+                            with _engram_ctx(habit_id=habit.id, habit_name=tool_name):
+                                if not _required:
+                                    response_text = tool.execute()
+                                elif len(_required) == 1:
+                                    # Pass core_input (routing directive stripped) not raw user_input
+                                    _core = getattr(parsed, "core_input", user_input)
+                                    response_text = tool.execute(
+                                        **{_required[0]: _core}
+                                    )
+                                else:
+                                    # Can't auto-dispatch multi-arg tool — ask for what's needed
+                                    _arg_list = ", ".join(_required)
+                                    response_text = (
+                                        f"I want to run {tool_name} for that, "
+                                        f"but I need: {_arg_list}. Can you provide those?"
+                                    )
                         except Exception as _ce:
                             response_text = (
                                 f"[HABIT→TOOL] Error running {tool_name}: {_ce}"
