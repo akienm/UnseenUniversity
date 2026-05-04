@@ -77,6 +77,7 @@ from . import (
     hardware_detect,
     self_inspect,
     pe_chain_debugger,
+    share_pattern,
 )
 from ..arbiter import (
     queue as _arbiter_queue,
