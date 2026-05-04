@@ -158,6 +158,7 @@ import logging
 import json
 import os
 import time
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -230,6 +231,7 @@ def _emit_search_trace(query: str, results: list) -> None:
 # missed because 60s TTL and 60s NE interval created a perfect expiry storm (G-QP7).
 _GENESIS_MEM_TYPES = frozenset({"ROOT", "CORE_PATTERN", "IDENTITY"})
 _MEM_CACHE_TTL = 300.0  # seconds
+_MEM_CACHE_MAX = int(os.getenv("IGOR_MEM_CACHE_MAX", "5000"))
 
 RING_MAX = 50  # Max entries in the ring buffer
 TWM_MAX = 50  # Max observations in TWM
@@ -965,7 +967,9 @@ class Cortex(IgorBase):
         # #244: set to True after interpretive_traverse() when a meaning_to_me edge was followed
         self._last_traverse_meaning_to_me: bool = False
         # #258b: in-process memory fetch cache; id → (Memory, monotonic_timestamp)
-        self._mem_cache: dict = {}
+        # OrderedDict provides O(1) LRU eviction; capped at _MEM_CACHE_MAX entries.
+        # Genesis types are immortal and exempt from eviction.
+        self._mem_cache: OrderedDict = OrderedDict()
         # #260: in-process habit list cache; invalidated on store() when new habit added
         self._habit_cache: Optional[list] = None
         # T-twm-attentional-gating: last user input timestamp (set by UserInputSource)
@@ -4090,15 +4094,40 @@ class Cortex(IgorBase):
             return None
         mem, ts = entry
         if mem.memory_type.value in _GENESIS_MEM_TYPES:
+            self._mem_cache.move_to_end(memory_id)
             return mem  # permanent — never expires
         if time.monotonic() - ts < _MEM_CACHE_TTL:
+            self._mem_cache.move_to_end(memory_id)
             return mem
         del self._mem_cache[memory_id]
         return None
 
     def _cache_put(self, mem: Memory) -> None:
-        """Store a Memory in the in-process cache."""
+        """Store a Memory in the in-process cache; evict oldest non-genesis when over cap."""
         self._mem_cache[mem.id] = (mem, time.monotonic())
+        self._mem_cache.move_to_end(mem.id)
+        while len(self._mem_cache) > _MEM_CACHE_MAX:
+            # Pop from the front (oldest), but skip genesis entries.
+            for evict_id, (evict_mem, _) in self._mem_cache.items():
+                if evict_mem.memory_type.value not in _GENESIS_MEM_TYPES:
+                    del self._mem_cache[evict_id]
+                    break
+            else:
+                break  # all remaining entries are genesis — stop evicting
+
+    def cache_stats(self) -> dict:
+        """Return current cache size and genesis vs evictable breakdown."""
+        genesis = sum(
+            1
+            for m, _ in self._mem_cache.values()
+            if m.memory_type.value in _GENESIS_MEM_TYPES
+        )
+        return {
+            "size": len(self._mem_cache),
+            "genesis": genesis,
+            "evictable": len(self._mem_cache) - genesis,
+            "max": _MEM_CACHE_MAX,
+        }
 
     def _cache_fetch_ids(self, ids) -> tuple:
         """Split ids into (cached_memories, uncached_id_strings)."""
