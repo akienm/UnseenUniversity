@@ -977,6 +977,10 @@ class Cortex(IgorBase):
         # T-twm-leap-on-lever: wired in by main.py after WordGraph construction.
         # When set, twm_push runs an associative leap sweep on each new observation.
         self.word_graph: Optional[object] = None
+        # T-priming-via-spreading-activation: heat_field stashed by NE after SA call.
+        # Dict[node_id, float] with 60s TTL; search applies up to +0.10 per hot node.
+        self._current_heat_field: dict = {}
+        self._heat_field_ts: float = 0.0
 
     def _conn(self):
         """Deprecated shim — use self._db() directly."""
@@ -2571,6 +2575,16 @@ class Cortex(IgorBase):
                     "hebbian wg_boost_search skipped: %s", _bare_e
                 )
 
+        # T-priming-via-spreading-activation: apply heat bump before Phase 2 rerank.
+        # Hot candidates (from NE's last spreading_activation call) get up to +0.10.
+        _heat = self._get_current_heat_field()
+        if _heat:
+            for _hm in candidates:
+                _hv = _heat.get(_hm.id, 0.0)
+                if _hv > 0.0:
+                    _cur = getattr(_hm, "relevance_score", 0.0) or 0.0
+                    _hm.relevance_score = min(1.0, _cur + min(0.10, _hv * 0.10))  # type: ignore[attr-defined]
+
         # Phase 2: embedding re-rank
         try:
             from ..cognition.embedder import embed, cosine_similarity
@@ -2587,8 +2601,12 @@ class Cortex(IgorBase):
                 for m in candidates:
                     mem_vec = emb_map.get(m.id)
                     sim = cosine_similarity(query_vec, mem_vec) if mem_vec else 0.0
-                    m.relevance_score = sim  # type: ignore[attr-defined]
-                    scored.append((sim, m))
+                    _heat_bump = (
+                        min(0.10, _heat.get(m.id, 0.0) * 0.10) if _heat else 0.0
+                    )
+                    final_sim = min(1.0, sim + _heat_bump)
+                    m.relevance_score = final_sim  # type: ignore[attr-defined]
+                    scored.append((final_sim, m))
                 scored.sort(key=lambda x: x[0], reverse=True)
 
                 # Signal C (Change 3): extend TTL for high-relevance TWM observations.
@@ -4114,6 +4132,18 @@ class Cortex(IgorBase):
             "evictable": len(self._mem_cache) - genesis,
             "max": _MEM_CACHE_MAX,
         }
+
+    def set_heat_field(self, heat: dict) -> None:
+        """Stash spreading activation heat_field for search priming (60s TTL)."""
+        self._current_heat_field = heat
+        self._heat_field_ts = time.monotonic()
+
+    def _get_current_heat_field(self) -> dict:
+        """Return heat_field if fresh (<60s), else empty dict."""
+        ts = getattr(self, "_heat_field_ts", 0.0)
+        if time.monotonic() - ts < 60.0:
+            return getattr(self, "_current_heat_field", {})
+        return {}
 
     def _cache_fetch_ids(self, ids) -> tuple:
         """Split ids into (cached_memories, uncached_id_strings)."""
