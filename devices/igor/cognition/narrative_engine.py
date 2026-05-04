@@ -603,6 +603,8 @@ class NarrativeEngine(IgorBase):
                     _pe_predicted_heat = self.cortex.spreading_activation(
                         _pe_seed_ids, depth=2
                     )
+                    if _pe_predicted_heat:
+                        self.cortex.set_heat_field(_pe_predicted_heat)
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
@@ -675,6 +677,8 @@ class NarrativeEngine(IgorBase):
             ]
             if len(_bind_seeds) >= 2:
                 _bind_heat = self.cortex.spreading_activation(_bind_seeds, depth=1)
+                if _bind_heat:
+                    self.cortex.set_heat_field(_bind_heat)
                 _coalitions = _detect_coalitions(self.cortex, _bind_heat)
                 if _coalitions:
                     _top = _coalitions[0]
