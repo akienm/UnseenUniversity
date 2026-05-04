@@ -550,7 +550,7 @@ class InferenceGateway(IgorBase):
         if not _cloud_ok:
             import logging as _logging
 
-            _get_logger(__name__).debug(
+            get_logger(__name__).debug(
                 "[inference_gateway] cloud unavailable: _t4=%s (check OPENROUTER_API_KEY init at boot)",
                 "initialized" if self._t4 else "None",
             )
@@ -604,7 +604,13 @@ class InferenceGateway(IgorBase):
         # D254: human turns (is_user_turn=True) skip Ollama entirely — go straight to cloud.
         # Ollama reserved for background/non-human interactive turns.
         # Cloud budget exhaustion is the only condition that falls back to Ollama for human turns.
-        last_error = ""
+        # T-inference-misreport-fix: keep per-attempt errors in named vars so
+        # the diagnostic and user-facing message can name WHICH path failed.
+        # Previously, last_error was overwritten by every attempt — the cloud
+        # error became the "local_error" in the post-mortem, hiding the truth.
+        last_error = ""  # legacy: retained for backwards-compat callers
+        _local_first_error = ""
+        _local_retry_error = ""
         _quality_path = is_user_turn and complexity in ("medium", "high")
 
         # D268: MODE override — check TWM for active min_tier entry before tier selection.
@@ -659,6 +665,7 @@ class InferenceGateway(IgorBase):
                 return text, cost, False
             except Exception as _e:
                 last_error = str(_e)
+                _local_first_error = last_error  # T-inference-misreport-fix
                 _kind = (
                     "STALL"
                     if (
@@ -708,13 +715,17 @@ class InferenceGateway(IgorBase):
 
         # ── last-resort local retry: cloud failed (or wasn't tried), retry Ollama ──
         # Cloud fail → try local once more before giving up entirely.
-        # Skip retry if the first local failure was a timeout — it'll just stall again.
-        # Only retry on connection errors (host was briefly unreachable, may have recovered).
+        # Skip retry if the FIRST local failure was a timeout — it'll just stall again.
+        # T-inference-misreport-fix: previously checked last_error which gets overwritten
+        # by cloud's error after a cloud attempt fires, so the timeout-detect was looking
+        # at cloud errors instead of local. Now uses _local_first_error specifically.
         # D254: human turns always allowed to retry Ollama as budget-exhaustion fallback.
         _was_timeout = (
-            "timed out" in last_error.lower() or "timeout" in last_error.lower()
+            "timed out" in _local_first_error.lower()
+            or "timeout" in _local_first_error.lower()
         )
-        if self._t2 and last_error and (is_user_turn or not _was_timeout):
+        _have_some_failure = bool(_local_first_error or _cloud_error)
+        if self._t2 and _have_some_failure and (is_user_turn or not _was_timeout):
             try:
                 self.last_tier = "local/retry"
                 if on_tier:
@@ -730,6 +741,7 @@ class InferenceGateway(IgorBase):
                 )
                 return text, cost, False
             except Exception as _e:
+                _local_retry_error = str(_e)  # T-inference-misreport-fix
                 if _log_err:
                     _log_err(kind="TIER_FAIL", source="local/retry", detail=str(_e))
 
@@ -738,18 +750,23 @@ class InferenceGateway(IgorBase):
         # tier.6 only logs forensically — no inline arbiter submit needed.
         self.last_tier = "tier.6"
 
-        # Build diagnostic breadcrumb: what was attempted, what failed?
+        # T-inference-misreport-fix: build diagnostic with per-attempt errors
+        # named separately. Old version printed `_cloud_ok and self._t4` which
+        # short-circuited to the reasoner OBJECT (not a bool), and used the
+        # shared last_error which was always cloud's error if cloud ran at all.
         _diagnostic = []
         if _cloud_attempted:
             _diagnostic.append(
-                f"cloud_attempted={_cloud_ok and self._t4} error={_cloud_error[:80]}"
+                f"cloud_attempted={bool(_cloud_ok and self._t4)} error={_cloud_error[:120]}"
             )
         else:
             _diagnostic.append(
                 f"cloud_skipped=(is_user_turn={is_user_turn} OR quality_path={_quality_path} OR force_mode={_force_cloud_mode}) AND cloud_ok={_cloud_ok} AND t4={bool(self._t4)}"
             )
-        if last_error:
-            _diagnostic.append(f"local_error={last_error[:80]}")
+        if _local_first_error:
+            _diagnostic.append(f"local_first_error={_local_first_error[:120]}")
+        if _local_retry_error:
+            _diagnostic.append(f"local_retry_error={_local_retry_error[:120]}")
         _diagnostic_str = " | ".join(_diagnostic)
 
         try:
@@ -772,19 +789,47 @@ class InferenceGateway(IgorBase):
                 _resource_detail = "resource_stats=unavailable"
             _log_anomaly(
                 kind="TIER6",
-                detail=f"both_inference_unavailable: {_diagnostic_str} | {_resource_detail}",
+                detail=f"inference_fall_through: {_diagnostic_str} | {_resource_detail}",
             )
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
                 detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
             )
-        return (
-            "⚠ Both cloud and local inference are unavailable. "
-            "I'll let you know when inference is restored.",
-            0.0,
-            False,
-        )
+
+        # T-inference-misreport-fix: distinguish failure modes in the user-facing
+        # message. Previously every fall-through said "Both cloud and local
+        # inference are unavailable" regardless of which path actually broke.
+        _local_failed = bool(_local_first_error or _local_retry_error)
+        _local_summary = _local_first_error or _local_retry_error
+        if _cloud_error and not _local_failed:
+            _msg = (
+                f"⚠ Cloud inference failed: {_cloud_error[:120]}. "
+                "Local was not tried this turn."
+            )
+        elif _local_failed and not _cloud_error:
+            _msg = (
+                f"⚠ Local inference failed: {_local_summary[:120]}. "
+                "Cloud was not tried this turn."
+            )
+        elif _cloud_error and _local_failed:
+            if _cloud_error == _local_summary:
+                _msg = (
+                    f"⚠ Cloud AND local failed with the SAME error — likely a "
+                    f"shared dependency bug, not an inference outage. "
+                    f"Error: {_cloud_error[:120]}"
+                )
+            else:
+                _msg = (
+                    f"⚠ Cloud failed ({_cloud_error[:120]}); "
+                    f"local also failed ({_local_summary[:120]})."
+                )
+        else:
+            _msg = (
+                "⚠ No inference path was attempted "
+                "(cloud skipped, no local available)."
+            )
+        return (_msg, 0.0, False)
 
 
 # ── Handler callables ────────────────────────────────────────────────────────────
