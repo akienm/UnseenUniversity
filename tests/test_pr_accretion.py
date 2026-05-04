@@ -49,6 +49,8 @@ def _delete_test_accretions(**_):
 
 @pytest.fixture(autouse=True)
 def cleanup_after_each():
+    """Clean up test markers before AND after each test to ensure isolation."""
+    _delete_test_accretions()
     yield
     _delete_test_accretions()
 

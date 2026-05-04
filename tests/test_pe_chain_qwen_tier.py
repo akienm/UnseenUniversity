@@ -55,6 +55,45 @@ def _read_latest_reasoning_call() -> str | None:
     return first.strip() or None
 
 
+@pytest.fixture(autouse=True)
+def isolate_reasoning_calls_log(monkeypatch, tmp_path):
+    """Isolate reasoning_calls.log per test to avoid cross-test pollution.
+
+    This fixture:
+    1. Saves the original log file if it exists
+    2. Redirects pe_chain writes to a temporary per-test log
+    3. Restores the original after the test
+
+    This prevents concurrent Igor processes or other tests from writing to
+    the shared log during our test, which would break our pre/post comparison.
+    """
+    from wild_igor.igor.paths import paths
+
+    log_path = paths().logs / "reasoning_calls.log"
+    backup_path = log_path.with_stem(log_path.stem + ".bak")
+
+    # Save original if it exists
+    if log_path.exists():
+        import shutil
+
+        shutil.copy2(log_path, backup_path)
+
+    # Clear the log for this test
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path.write_text("")
+
+    yield
+
+    # Restore original after test
+    if backup_path.exists():
+        import shutil
+
+        shutil.move(backup_path, log_path)
+    elif log_path.exists():
+        # No original existed; clean up our test file
+        log_path.unlink()
+
+
 class TestPeChainRoutesToQwen:
     """pe_chain must call Qwen on tier.2, never Claude."""
 
