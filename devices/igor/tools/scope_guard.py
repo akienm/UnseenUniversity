@@ -137,33 +137,11 @@ import logging
 import os
 from pathlib import Path
 
+from .inertia_map import bucket_of as _im_bucket_of
 from .registry import Tool, registry
 
 log = logging.getLogger(__name__)
 
-
-# ── Tier table ────────────────────────────────────────────────────────────────
-# Ordered: first match wins. Matches are path-prefix checks against the
-# basket hypothesis file path (relative or absolute — both handled).
-
-_TIER_TABLE: list[tuple[str, str]] = [
-    # HIGH — brainstem and core models: never touch without explicit approval
-    ("wild_igor/igor/brainstem/", "HIGH"),
-    ("igor/brainstem/", "HIGH"),
-    ("wild_igor/igor/memory/models.py", "HIGH"),
-    ("igor/memory/models.py", "HIGH"),
-    ("wild_igor/igor/cognition/reasoners/base.py", "HIGH"),
-    ("igor/cognition/reasoners/base.py", "HIGH"),
-    # MEDIUM — cognition, cortex, anthropic adapter, main
-    ("wild_igor/igor/cognition/", "MEDIUM"),
-    ("igor/cognition/", "MEDIUM"),
-    ("wild_igor/igor/memory/cortex.py", "MEDIUM"),
-    ("igor/memory/cortex.py", "MEDIUM"),
-    ("wild_igor/igor/anthropic.py", "MEDIUM"),
-    ("igor/anthropic.py", "MEDIUM"),
-    ("wild_igor/igor/main.py", "MEDIUM"),
-    ("igor/main.py", "MEDIUM"),
-]
 
 # ── Op delta ─────────────────────────────────────────────────────────────────
 _OP_DELTA: dict[str, int] = {
@@ -175,17 +153,8 @@ _DEFAULT_OP = "write"  # HYPOTHESIZE always produces an edit
 
 
 def _classify_tier(file_path: str) -> str:
-    """Return HIGH/MEDIUM/LOW for a given file path using the tier table."""
-    # Normalise: strip leading slashes and home prefix for consistent matching
-    norm = file_path.replace("\\", "/")
-    home = str(Path.home()).replace("\\", "/")
-    if norm.startswith(home):
-        norm = norm[len(home) :].lstrip("/")
-
-    for prefix, tier in _TIER_TABLE:
-        if norm.startswith(prefix) or ("/" + prefix) in ("/" + norm):
-            return tier
-    return "LOW"
+    """Return HIGH/MEDIUM/LOW for a given file path. Delegates to inertia_map."""
+    return _im_bucket_of(file_path)
 
 
 def run_scope_guard(basket: dict) -> dict:

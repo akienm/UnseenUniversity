@@ -21,6 +21,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from .inertia_map import bucket_of as _im_bucket_of, weight_of as _im_weight_of
 from .registry import Tool, registry
 from ..cognition.forensic_logger import log_self_edit
 from ..paths import paths
@@ -31,20 +32,6 @@ REPO_ROOT = SOURCE_ROOT.parent  # wild_igor/
 # Paths Igor may READ but never WRITE (change.26).
 # Core patterns can only be changed by akien via Claude Code.
 WRITE_EXCLUDED = {"brainstem/"}
-
-# Inertia map - files/dirs and their resistance to change
-INERTIA = {
-    "brainstem/": 0.95,
-    "memory/models.py": 0.95,
-    "cognition/reasoners/base.py": 0.90,
-    "memory/cortex.py": 0.75,
-    "cognition/prefrontal_cortex.py": 0.75,
-    "cognition/reasoners/anthropic.py": 0.70,
-    "cognition/thalamus.py": 0.50,
-    "main.py": 0.50,
-    "tools/": 0.30,
-    "dashboard/": 0.30,
-}
 
 
 _SELF_EDIT_DISABLED_MSG = (
@@ -107,15 +94,7 @@ def _log_blocked_edit(path: str):
 
 def _get_inertia(path: str) -> tuple[float, str]:
     """Return (inertia_value, label) for a given source path."""
-    for pattern, value in INERTIA.items():
-        if pattern in path.replace("\\", "/"):
-            if value >= 0.90:
-                return value, "HIGH"
-            elif value >= 0.60:
-                return value, "MEDIUM"
-            else:
-                return value, "LOW"
-    return 0.30, "LOW"
+    return _im_weight_of(path), _im_bucket_of(path)
 
 
 def _path_to_module_name(rel_path: str) -> str:

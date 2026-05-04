@@ -128,3 +128,25 @@ def test_scope_guard_hypothesis_error_skips():
     }
     result = run_scope_guard(basket)
     assert "escalate_reason" not in result
+
+
+# ── inertia_map parity ────────────────────────────────────────────────────────
+
+
+def test_classify_tier_matches_inertia_map():
+    """_classify_tier must agree with inertia_map.bucket_of on canonical paths."""
+    from wild_igor.igor.tools.inertia_map import bucket_of
+
+    probes = [
+        ("wild_igor/igor/brainstem/kernel.py", "HIGH"),
+        ("wild_igor/igor/memory/models.py", "HIGH"),
+        ("wild_igor/igor/cognition/reasoners/base.py", "HIGH"),
+        ("wild_igor/igor/cognition/thalamus.py", "MEDIUM"),
+        ("wild_igor/igor/memory/cortex.py", "MEDIUM"),
+        ("wild_igor/igor/main.py", "MEDIUM"),
+        ("wild_igor/igor/tools/pe_chain.py", "LOW"),
+        ("some/random/file.py", "LOW"),
+    ]
+    for path, expected in probes:
+        assert _classify_tier(path) == expected, f"_classify_tier({path!r})"
+        assert bucket_of(path) == expected, f"bucket_of({path!r})"
