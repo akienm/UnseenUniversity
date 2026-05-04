@@ -570,7 +570,7 @@ class HeartbeatSource(BasePushSource):
             code_ref = habit.metadata.get("code_ref", "")
             if not code_ref:
                 continue
-            result = self._call_twm_trigger_tool(code_ref)
+            result = self._call_twm_trigger_tool(code_ref, habit_id=habit.id)
             obs_id = cortex.twm_push(
                 source="twm_trigger",
                 content_csb=f"TWM_TRIGGER_FIRED|{habit.id}|{result[:200]}",
@@ -587,16 +587,18 @@ class HeartbeatSource(BasePushSource):
 
         return pushed
 
-    def _call_twm_trigger_tool(self, code_ref: str) -> str:
+    def _call_twm_trigger_tool(self, code_ref: str, habit_id: str = "") -> str:
         """Call a twm_trigger habit's code_ref directly (D301 fix)."""
         try:
             from ..tools.registry import registry
+            from ..tools.engram_log import engram_execution_context
 
             fn_name = code_ref.split(":")[-1]
             tool = registry.get(fn_name)
             if tool is None:
                 return f"[twm_trigger] tool not found: {fn_name}"
-            return str(tool.fn())
+            with engram_execution_context(habit_id=habit_id or code_ref):
+                return str(tool.fn())
         except Exception as e:
             log_error(
                 kind="BARE_EXCEPT",
@@ -1212,7 +1214,7 @@ class SchedulerSource(BasePushSource):
                 continue  # not yet due
 
             code_ref = habit.metadata["code_ref"]
-            result = self._call_tool(code_ref)
+            result = self._call_tool(code_ref, habit_id=habit.id)
             self._last_fired[habit.id] = now
 
             # Push result to TWM at low salience (background tick)
@@ -1229,17 +1231,19 @@ class SchedulerSource(BasePushSource):
 
         return pushed
 
-    def _call_tool(self, code_ref: str) -> str:
+    def _call_tool(self, code_ref: str, habit_id: str = "") -> str:
         """Resolve code_ref to a registered tool and call it."""
         try:
             from ..tools.registry import registry
+            from ..tools.engram_log import engram_execution_context
 
             # code_ref format: "module:fn_name" or just "fn_name"
             fn_name = code_ref.split(":")[-1]
             tool = registry.get(fn_name)
             if tool is None:
                 return f"[SCHEDULER] tool not found: {fn_name}"
-            return str(tool.fn())
+            with engram_execution_context(habit_id=habit_id or code_ref):
+                return str(tool.fn())
         except Exception as e:
             log_error(
                 kind="BARE_EXCEPT",

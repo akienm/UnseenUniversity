@@ -82,3 +82,4 @@ from . import (
 from ..arbiter import (
     queue as _arbiter_queue,
 )  # noqa: F401 — registers arbiter_submit tool
+from . import engram_log  # noqa: F401 — registers engram_log tool
