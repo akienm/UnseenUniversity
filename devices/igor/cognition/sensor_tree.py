@@ -220,6 +220,22 @@ class SensorTreeSource(BasePushSource):
                 continue
             self._suppressed.add(sensor_id)
 
+            # Wire palace_metric: record sensor alert to history
+            try:
+                from ..tools.palace_metric import append_history
+
+                history_path = f"theigors/metrics/sensors/{sensor_id}"
+                with cortex._db() as conn:
+                    append_history(
+                        conn,
+                        history_path,
+                        f"{watch_type}:1",
+                        actor="sensor_tree",
+                    )
+            except Exception:
+                # Non-fatal: palace_metric recording failure doesn't block sensor alert
+                pass
+
             # Push to TWM
             detail = result.get("detail", "triggered")
             watch_type = meta.get("watch_type", "unknown")

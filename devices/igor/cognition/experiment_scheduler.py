@@ -454,6 +454,17 @@ class ExperimentScheduler(IgorBase):
         except Exception as e:
             logger.warning("experiment_scheduler twm_push failed: %s", e)
 
+    def process_feedback(self) -> Optional[Experiment]:
+        """Wire experiment_outcome: process one OBSERVED experiment and apply its outcome.
+        Returns the updated experiment, or None if queue is empty."""
+        try:
+            from . import experiment_outcome
+
+            return experiment_outcome.feedback_tick(self.cortex)
+        except Exception as e:
+            logger.warning("experiment_scheduler feedback processing failed: %s", e)
+            return None
+
     def queue_summary(self) -> dict[str, int]:
         with self.cortex._db() as conn:
             conn.execute(
