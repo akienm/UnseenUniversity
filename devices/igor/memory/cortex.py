@@ -1567,6 +1567,153 @@ class Cortex(IgorBase):
                 logging.getLogger(__name__).debug("calving check: %s", _calve_e)
         return memory
 
+    def store_batch(self, memories: list) -> list:
+        """Batch-store a list of memories in one transaction.
+
+        Runs per-memory preprocessing (scrub, provenance, test-data stamp)
+        then issues a single executemany INSERT. Post-processing hooks (habit
+        cache, auto-wire, calving) still run per-memory but are cheap/non-DB.
+        Returns the (possibly mutated) memory list.
+        T-reading-deposit-batched.
+        """
+        from .provenance import ensure_provenance
+        from .test_data_lifecycle import is_test_mode, stamp_metadata_for_test_mode
+
+        _now_iso = datetime.now().isoformat()
+        rows = []
+        for memory in memories:
+            # Normalise ID
+            _mid = memory.id or ""
+            _is_uuid_default = len(_mid) == 8 and all(
+                c in "0123456789abcdef" for c in _mid
+            )
+            if _is_uuid_default:
+                from .node_id import new_node_id as _new_node_id
+
+                memory.id = _new_node_id()
+            memory.narrative = scrub(memory.narrative)
+            if memory.metadata:
+                memory.metadata = {
+                    k: scrub(v) if isinstance(v, str) else v
+                    for k, v in memory.metadata.items()
+                }
+            if not memory.metadata:
+                memory.metadata = {}
+            memory.metadata["_narrative_hint"] = (memory.narrative or "")[:60]
+            memory.metadata = ensure_provenance(memory.metadata, memory.source)
+            memory.metadata.pop("_narrative_hint", None)
+            if is_test_mode():
+                memory.metadata = stamp_metadata_for_test_mode(memory.metadata)
+            rows.append(
+                (
+                    memory.id,
+                    memory.narrative,
+                    memory.memory_type.value,
+                    memory.parent_id,
+                    json.dumps(memory.children_ids),
+                    json.dumps(memory.link_ids),
+                    memory.valence,
+                    memory.arousal,
+                    memory.dominance,
+                    memory.activation_count,
+                    json.dumps(memory.friction_history),
+                    memory.timestamp.isoformat(),
+                    json.dumps(memory.metadata),
+                    1 if memory.portable else 0,
+                    json.dumps(memory.links),
+                    memory.last_accessed.isoformat() if memory.last_accessed else None,
+                    memory.source,
+                    memory.confidence,
+                    memory.context_of_encoding,
+                    _now_iso,
+                    memory.scope.value if memory.scope else "class",
+                    json.dumps(memory.payload) if memory.payload is not None else None,
+                )
+            )
+
+        if rows:
+            with self._conn() as conn:
+                conn.executemany(
+                    """INSERT OR REPLACE INTO memories
+                    (id, narrative, memory_type, parent_id, children_ids, link_ids,
+                     valence, arousal, dominance, activation_count, friction_history,
+                     timestamp, metadata, portable, links_weighted, last_accessed,
+                     source, confidence, context_of_encoding, updated_at, scope, payload)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    rows,
+                )
+
+        # Post-processing (lightweight, non-batched)
+        for memory in memories:
+            try:
+                from .node_id import register_node as _register_node
+
+                _register_node(memory.id, "memories", memory.id)
+            except Exception:
+                pass
+            if memory.is_habit:
+                self._habit_cache = None
+
+        return memories
+
+    def add_children_batch(self, parent_id: str, child_ids: list) -> None:
+        """Add multiple children to parent_id in one read + one store.
+
+        Deduplicates against existing children_ids. No-op when child_ids is empty.
+        T-reading-deposit-batched.
+        """
+        if not child_ids:
+            return
+        parent = self.get(parent_id)
+        if parent is None:
+            return
+        existing = set(parent.children_ids)
+        new_children = [c for c in child_ids if c not in existing]
+        if not new_children:
+            return
+        parent.children_ids.extend(new_children)
+        self.store(parent)
+
+    def add_interpretive_edges_batch(self, edges: list) -> None:
+        """Batch-insert interpretive edges in one transaction.
+
+        Each edge is a dict with keys: from_id, to_id, direction, condition_csb,
+        meaning_payload, action_pointer, weight, layer.
+        T-reading-deposit-batched.
+        """
+        from datetime import datetime as _dt
+
+        if not edges:
+            return
+        now = _dt.now().isoformat()
+        rows = []
+        for e in edges:
+            from_id = e["from_id"]
+            layer = e.get("layer", "")
+            if not layer and (from_id.startswith("CP") or from_id.startswith("ID")):
+                layer = "meaning_to_me"
+            rows.append(
+                (
+                    from_id,
+                    e["to_id"],
+                    e.get("direction", "activation"),
+                    e.get("condition_csb", ""),
+                    e.get("meaning_payload", ""),
+                    e.get("action_pointer", ""),
+                    max(0.0, min(1.0, e.get("weight", 1.0))),
+                    now,
+                    layer,
+                )
+            )
+        with self._conn() as conn:
+            conn.executemany(
+                """INSERT INTO interpretive_edges
+                (from_id, to_id, direction, condition_csb, meaning_payload,
+                 action_pointer, weight, created_at, layer)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                rows,
+            )
+
     # CP keyword affinity table for auto-wiring (#170)
     _CP_KEYWORDS: dict = {
         "CP1": [
