@@ -2774,20 +2774,6 @@ class Cortex(IgorBase):
                     result = widened
             except Exception as _widen_e:
                 logging.getLogger(__name__).debug("search_widen skipped: %s", _widen_e)
-        # T-reconsolidation-on-recall: every memory surfaced via search
-        # goes into the pending-recall tracker. Downstream consumers then
-        # call confirm_recall() when the memory's prediction holds, or
-        # contradict_recall() when it doesn't. This is the 'does this
-        # still fit?' implicit experiment every recall runs. Never
-        # crashes — hook degrades to no-op on any failure.
-        try:
-            from .reconsolidation import hook_search_results
-
-            hook_search_results(result, query=query)
-        except Exception as _recall_e:
-            logging.getLogger(__name__).debug(
-                "reconsolidation hook skipped: %s", _recall_e
-            )
         return result
 
     def _touch_last_accessed(self, memories: list) -> None:
