@@ -51,6 +51,7 @@ _KNOWN_KEYS = frozenset(
         "state_refs",
         "acl",
         "surfaces",
+        "visibility",
     }
 )
 

@@ -125,6 +125,7 @@ class AnnounceBroker:
             profile_version=profile.get("profile_version", "1.0"),
             profile_etag=p_etag,
             registry_etag=r_etag,
+            visibility=profile.get("visibility", "secondary"),
         )
 
     def _online_devices(self) -> list[dict]:
@@ -199,7 +200,9 @@ class ManifestAssembler:
         return bindings
 
     def build_channel_subscriptions(self) -> list[ChannelSubscription]:
-        channels = self._profile.get("default_channels", [])
+        channels = list(self._profile.get("default_channels", []))
+        if "shared" not in channels:
+            channels.insert(0, "shared")
         return [
             ChannelSubscription(
                 name=ch,

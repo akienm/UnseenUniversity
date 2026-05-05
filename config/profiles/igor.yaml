@@ -52,6 +52,9 @@ acl:
       - "*"
     deny: []
 
+# Visibility tier — primary agents appear first in swarm tab ordering.
+visibility: primary
+
 # Surfaces this profile activates by default.
 surfaces:
   console: true

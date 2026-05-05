@@ -82,6 +82,7 @@ class Manifest:
     registry_etag: str  # SHA-256 of the relevant registry slice
 
     expires_at: str | None = None
+    visibility: str = "secondary"  # "primary" | "secondary" — tab ordering hint
 
     def to_dict(self) -> dict:
         return asdict(self)
