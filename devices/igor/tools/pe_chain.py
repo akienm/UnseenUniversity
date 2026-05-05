@@ -178,7 +178,6 @@ TEMPERATURE_BY_PHASE = {
     "PLAN": 0.7,
     "SITUATE": 0.7,
 }
-_QUEUE_FILE = Path.home() / ".TheIgors" / "cc_channel" / "queue.json"
 _DB_URL = _paths().home_db_url
 
 
@@ -194,11 +193,17 @@ def _run_bash(cmd: list, timeout: int = 30) -> str:
         return f"[ERROR] {e}"
 
 
+def _load_queue_tasks() -> list[dict]:
+    """Load all tickets from canonical Postgres storage."""
+    from lab.claudecode.cc_queue import load_tasks
+
+    return load_tasks()
+
+
 def _load_ticket(ticket_id: str) -> dict | None:
-    """Read ticket directly from queue.json — avoids bash truncation."""
+    """Read ticket from Postgres via cc_queue."""
     try:
-        with open(_QUEUE_FILE) as f:
-            tasks = json.load(f)
+        tasks = _load_queue_tasks()
         for t in tasks:
             if t.get("id") == ticket_id:
                 return t

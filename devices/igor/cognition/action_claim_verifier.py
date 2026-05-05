@@ -73,14 +73,30 @@ _EVIDENCE_WINDOW_SEC = 120
 
 
 def _cc_queue_recently_modified(window_sec: int = _EVIDENCE_WINDOW_SEC) -> bool:
-    """Check if cc_queue.json was modified within the window. The simplest
-    evidence signal for ticket-filing claims — if Igor said 'I ticketed it'
-    and the queue file just changed, the action probably actually happened."""
-    queue_path = Path.home() / ".TheIgors" / "cc_channel" / "queue.json"
+    """Check if any ticket was saved to Postgres within the window.
+
+    Replaces queue.json mtime check (T-cc-queue-drop-json-stage-b).
+    Queries MAX(updated_at) from clan.memories WHERE parent_id='TICKETS_ROOT'.
+    """
     try:
-        if not queue_path.exists():
+        from lab.claudecode.cc_queue import _db_conn, TICKETS_ROOT_ID
+
+        conn = _db_conn()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT MAX(updated_at) FROM clan.memories WHERE parent_id = %s",
+                (TICKETS_ROOT_ID,),
+            )
+            row = cur.fetchone()
+        finally:
+            conn.close()
+        if not row or not row[0]:
             return False
-        age = time.time() - queue_path.stat().st_mtime
+        from datetime import datetime, timezone
+
+        latest = datetime.fromisoformat(row[0]).replace(tzinfo=timezone.utc)
+        age = (datetime.now(timezone.utc) - latest).total_seconds()
         return age <= window_sec
     except Exception:
         return False
