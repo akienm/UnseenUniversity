@@ -52,20 +52,6 @@ CREATE TABLE IF NOT EXISTS pending_replies (
 )
 """
 
-# INTEGER PRIMARY KEY for SQLite compat (SERIAL for PG)
-_SCHEMA_SQLITE = """
-CREATE TABLE IF NOT EXISTS pending_replies (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    table_name    TEXT NOT NULL,
-    op            TEXT NOT NULL,
-    payload_json  TEXT NOT NULL,
-    attempt_count INTEGER DEFAULT 0,
-    last_attempt  TEXT,
-    resolved      INTEGER DEFAULT 0,
-    created_at    TEXT NOT NULL
-)
-"""
-
 _WORRY_THRESHOLD = 3  # raise Worry after this many failed attempts
 
 
@@ -94,15 +80,9 @@ class PendingReplyStore(IgorBase):
         if self._schema_ready:
             return
         try:
-            # Try SERIAL (Postgres) first; fall back to AUTOINCREMENT (SQLite)
-            try:
-                with self._local() as conn:
-                    conn.execute(_SCHEMA)
-                self._schema_ready = True
-            except Exception:
-                with self._local() as conn:
-                    conn.execute(_SCHEMA_SQLITE)
-                self._schema_ready = True
+            with self._local() as conn:
+                conn.execute(_SCHEMA)
+            self._schema_ready = True
         except Exception as e:
             log.warning(f"[pending_replies] schema init failed: {e}")
 
@@ -119,10 +99,10 @@ class PendingReplyStore(IgorBase):
             with self._local() as conn:
                 cur = conn.execute(
                     "INSERT INTO pending_replies "
-                    "(table_name, op, payload_json, created_at) VALUES (?, ?, ?, ?)",
+                    "(table_name, op, payload_json, created_at) VALUES (%s, %s, %s, %s) RETURNING id",
                     (table, op, json.dumps(payload), now),
                 )
-                row_id = cur.lastrowid
+                row_id = cur.fetchone()[0]
             log.info(f"[pending_replies] queued op={op} table={table} id={row_id}")
             return row_id
         except Exception as e:
@@ -200,7 +180,7 @@ class PendingReplyStore(IgorBase):
                 if pairs:
                     with self._home() as conn:
                         conn.executemany(
-                            "INSERT INTO wg_cooccur (word_a, word_b, score) VALUES (?, ?, ?) "
+                            "INSERT INTO wg_cooccur (word_a, word_b, score) VALUES (%s, %s, %s) "
                             "ON CONFLICT(word_a, word_b) "
                             "DO UPDATE SET score = wg_cooccur.score + excluded.score",
                             pairs,
@@ -216,7 +196,7 @@ class PendingReplyStore(IgorBase):
                     return True  # mark resolved to stop retrying unknown ops
                 vals = [payload[c] for c in cols]
                 col_str = ", ".join(cols)
-                ph = ", ".join(["?"] * len(cols))
+                ph = ", ".join(["%s"] * len(cols))
                 with self._home() as conn:
                     conn.execute(
                         f"INSERT INTO {table} ({col_str}) VALUES ({ph}) "
@@ -234,7 +214,7 @@ class PendingReplyStore(IgorBase):
         try:
             with self._local() as conn:
                 conn.execute(
-                    "UPDATE pending_replies SET resolved = 1 WHERE id = ?", (row_id,)
+                    "UPDATE pending_replies SET resolved = 1 WHERE id = %s", (row_id,)
                 )
         except Exception as e:
             log.warning(f"[pending_replies] mark_resolved failed: {e}")
@@ -243,7 +223,7 @@ class PendingReplyStore(IgorBase):
         try:
             with self._local() as conn:
                 conn.execute(
-                    "UPDATE pending_replies SET attempt_count = ?, last_attempt = ? WHERE id = ?",
+                    "UPDATE pending_replies SET attempt_count = %s, last_attempt = %s WHERE id = %s",
                     (new_count, ts, row_id),
                 )
         except Exception as e:
