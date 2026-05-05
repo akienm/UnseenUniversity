@@ -1316,7 +1316,7 @@ class Cortex(IgorBase):
                 from datetime import datetime as _dt261
 
                 conn.execute(
-                    "INSERT OR IGNORE INTO _migrations(name, applied_at) VALUES (?, ?)",
+                    "INSERT INTO _migrations(name, applied_at) VALUES (%s, %s) ON CONFLICT (name) DO NOTHING",
                     ("meaning_to_me_layer_tag", _dt261.now().isoformat()),
                 )
                 _applied_sqlite.add("meaning_to_me_layer_tag")
@@ -1331,7 +1331,7 @@ class Cortex(IgorBase):
                     _ids = json.loads(_row["link_ids"] or "[]")
                     if _ids:
                         conn.execute(
-                            "UPDATE memories SET links_weighted = ? WHERE id = ?",
+                            "UPDATE memories SET links_weighted = %s WHERE id = %s",
                             (json.dumps({mid: 0.5 for mid in _ids}), _row["id"]),
                         )
                 except Exception as _bare_e:
@@ -1374,7 +1374,7 @@ class Cortex(IgorBase):
                 conn.execute(sql)
                 try:
                     conn.execute(
-                        "INSERT INTO _migrations(name, applied_at) VALUES (?, ?)",
+                        "INSERT INTO _migrations(name, applied_at) VALUES (%s, %s)",
                         (name, _dt_mig.datetime.now().isoformat()),
                     )
                     applied.add(name)
@@ -1397,7 +1397,7 @@ class Cortex(IgorBase):
                     # Column pre-exists (SQLite: "duplicate column name", Postgres: "already exists")
                     try:
                         conn.execute(
-                            "INSERT INTO _migrations(name, applied_at) VALUES (?, ?)",
+                            "INSERT INTO _migrations(name, applied_at) VALUES (%s, %s)",
                             (name, _dt_mig.datetime.now().isoformat()),
                         )
                         applied.add(name)
@@ -1505,13 +1505,35 @@ class Cortex(IgorBase):
         with self._conn() as conn:
             conn.execute(
                 """
-                INSERT OR REPLACE INTO memories
+                INSERT INTO memories
                 (id, narrative, memory_type, parent_id, children_ids, link_ids,
                  valence, arousal, dominance,
                  activation_count, friction_history, timestamp, metadata, portable,
                  links_weighted, last_accessed,
                  source, confidence, context_of_encoding, updated_at, scope, payload)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                  narrative = EXCLUDED.narrative,
+                  memory_type = EXCLUDED.memory_type,
+                  parent_id = EXCLUDED.parent_id,
+                  children_ids = EXCLUDED.children_ids,
+                  link_ids = EXCLUDED.link_ids,
+                  valence = EXCLUDED.valence,
+                  arousal = EXCLUDED.arousal,
+                  dominance = EXCLUDED.dominance,
+                  activation_count = EXCLUDED.activation_count,
+                  friction_history = EXCLUDED.friction_history,
+                  timestamp = EXCLUDED.timestamp,
+                  metadata = EXCLUDED.metadata,
+                  portable = EXCLUDED.portable,
+                  links_weighted = EXCLUDED.links_weighted,
+                  last_accessed = EXCLUDED.last_accessed,
+                  source = EXCLUDED.source,
+                  confidence = EXCLUDED.confidence,
+                  context_of_encoding = EXCLUDED.context_of_encoding,
+                  updated_at = EXCLUDED.updated_at,
+                  scope = EXCLUDED.scope,
+                  payload = EXCLUDED.payload
             """,
                 (
                     memory.id,
@@ -1634,12 +1656,34 @@ class Cortex(IgorBase):
         if rows:
             with self._conn() as conn:
                 conn.executemany(
-                    """INSERT OR REPLACE INTO memories
+                    """INSERT INTO memories
                     (id, narrative, memory_type, parent_id, children_ids, link_ids,
                      valence, arousal, dominance, activation_count, friction_history,
                      timestamp, metadata, portable, links_weighted, last_accessed,
                      source, confidence, context_of_encoding, updated_at, scope, payload)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (id) DO UPDATE SET
+                      narrative = EXCLUDED.narrative,
+                      memory_type = EXCLUDED.memory_type,
+                      parent_id = EXCLUDED.parent_id,
+                      children_ids = EXCLUDED.children_ids,
+                      link_ids = EXCLUDED.link_ids,
+                      valence = EXCLUDED.valence,
+                      arousal = EXCLUDED.arousal,
+                      dominance = EXCLUDED.dominance,
+                      activation_count = EXCLUDED.activation_count,
+                      friction_history = EXCLUDED.friction_history,
+                      timestamp = EXCLUDED.timestamp,
+                      metadata = EXCLUDED.metadata,
+                      portable = EXCLUDED.portable,
+                      links_weighted = EXCLUDED.links_weighted,
+                      last_accessed = EXCLUDED.last_accessed,
+                      source = EXCLUDED.source,
+                      confidence = EXCLUDED.confidence,
+                      context_of_encoding = EXCLUDED.context_of_encoding,
+                      updated_at = EXCLUDED.updated_at,
+                      scope = EXCLUDED.scope,
+                      payload = EXCLUDED.payload""",
                     rows,
                 )
 
@@ -1710,7 +1754,7 @@ class Cortex(IgorBase):
                 """INSERT INTO interpretive_edges
                 (from_id, to_id, direction, condition_csb, meaning_payload,
                  action_pointer, weight, created_at, layer)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                 rows,
             )
 
@@ -1792,7 +1836,7 @@ class Cortex(IgorBase):
         # Skip if already has an incoming edge (seeded or previously auto-wired)
         with self._conn() as conn:
             existing = conn.execute(
-                "SELECT COUNT(*) FROM interpretive_edges WHERE to_id = ?",
+                "SELECT COUNT(*) FROM interpretive_edges WHERE to_id = %s",
                 (memory.id,),
             ).fetchone()[0]
         if existing:
@@ -1817,7 +1861,7 @@ class Cortex(IgorBase):
     def get(self, memory_id: str) -> Optional[Memory]:
         with self._conn() as conn:
             row = conn.execute(
-                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE id = ?", (memory_id,)
+                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE id = %s", (memory_id,)
             ).fetchone()
         return self._to_memory(row) if row else None
 
@@ -1853,7 +1897,7 @@ class Cortex(IgorBase):
             else:
                 rows = conn.execute(
                     f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
-                    "WHERE metadata LIKE ?",
+                    "WHERE metadata LIKE %s",
                     (f'%"employer_id": "{employer_id}"%',),
                 ).fetchall()
         return [self._to_memory(r) for r in rows]
@@ -1861,7 +1905,7 @@ class Cortex(IgorBase):
     def get_children(self, parent_id: str) -> list:
         with self._conn() as conn:
             rows = conn.execute(
-                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE parent_id = ?",
+                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE parent_id = %s",
                 (parent_id,),
             ).fetchall()
         return [self._to_memory(r) for r in rows]
@@ -1879,7 +1923,7 @@ class Cortex(IgorBase):
             limit: max results
             order_by: 'timestamp' (default, DESC) or 'activation_count' (DESC)
         """
-        sql = f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type = ?"
+        sql = f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type = %s"
         if order_by == "activation_count":
             sql += " ORDER BY activation_count DESC"
         elif order_by == "timestamp":
@@ -1903,17 +1947,17 @@ class Cortex(IgorBase):
         """
         skip = skip_types or set()
         if skip:
-            placeholders = ",".join("?" * len(skip))
+            placeholders = ",".join(["%s"] * len(skip))
             sql = (
                 f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
-                f"WHERE activation_count >= ? AND memory_type NOT IN ({placeholders}) "
+                f"WHERE activation_count >= %s AND memory_type NOT IN ({placeholders}) "
                 f"ORDER BY activation_count DESC LIMIT {int(limit)}"
             )
             params = (threshold, *skip)
         else:
             sql = (
                 f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
-                f"WHERE activation_count >= ? "
+                f"WHERE activation_count >= %s "
                 f"ORDER BY activation_count DESC LIMIT {int(limit)}"
             )
             params = (threshold,)
@@ -1928,7 +1972,7 @@ class Cortex(IgorBase):
 
         Replaces fetch-then-filter pattern for narrative_engine consolidation.
         """
-        sql = f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type = ? AND source = ?"
+        sql = f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type = %s AND source = %s"
         params = (memory_type.value, source)
         if limit:
             sql += f" ORDER BY timestamp DESC LIMIT {int(limit)}"
@@ -1944,40 +1988,22 @@ class Cortex(IgorBase):
         Replaces fetch-then-filter pattern for push sources (heartbeat, proactive, scheduler).
         If value is None, just checks key exists. Otherwise matches value exactly.
         """
-        from .db_proxy import PGDatabaseProxy
-
-        is_pg = isinstance(self._db, PGDatabaseProxy)
-
-        if is_pg:
-            # Postgres: use jsonb_exists() / jsonb ->> operator
-            # Never use metadata ? 'key' — db_proxy translates ? → %s (breaks jsonb operator)
-            if value is not None:
-                sql = (
-                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
-                    f"WHERE memory_type = %s AND jsonb_exists(metadata, %s) "
-                    f"AND metadata->>{repr(key)} = %s"
-                )
-                params = [MemoryType.PROCEDURAL.value, key, value]
-            else:
-                sql = (
-                    f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
-                    f"WHERE memory_type = %s AND jsonb_exists(metadata, %s)"
-                )
-                params = [MemoryType.PROCEDURAL.value, key]
-            if limit:
-                sql += f" ORDER BY timestamp DESC LIMIT {int(limit)}"
+        # Use jsonb_exists(metadata, %s) for key-exists checks; metadata->>'key' for value access.
+        if value is not None:
+            sql = (
+                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
+                f"WHERE memory_type = %s AND jsonb_exists(metadata, %s) "
+                f"AND metadata->>{repr(key)} = %s"
+            )
+            params = [MemoryType.PROCEDURAL.value, key, value]
         else:
-            # SQLite
-            sql = f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE memory_type = ?"
-            params = [MemoryType.PROCEDURAL.value]
-            if value is not None:
-                sql += " AND json_extract(metadata, ?) = ?"
-                params.extend([f"$.{key}", value])
-            else:
-                sql += " AND json_extract(metadata, ?) IS NOT NULL"
-                params.append(f"$.{key}")
-            if limit:
-                sql += f" ORDER BY timestamp DESC LIMIT {int(limit)}"
+            sql = (
+                f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
+                f"WHERE memory_type = %s AND jsonb_exists(metadata, %s)"
+            )
+            params = [MemoryType.PROCEDURAL.value, key]
+        if limit:
+            sql += f" ORDER BY timestamp DESC LIMIT {int(limit)}"
 
         with self._conn() as conn:
             rows = conn.execute(sql, tuple(params)).fetchall()
@@ -2060,7 +2086,6 @@ class Cortex(IgorBase):
 
     def memories_with_tag(self, tag: str, limit: int | None = None) -> list[str]:
         """Return memory ids whose metadata carries the given tag."""
-        from .db_proxy import PGDatabaseProxy
         from .tag_tree import TAG_PREFIX
 
         if tag.startswith(TAG_PREFIX):
@@ -2068,13 +2093,8 @@ class Cortex(IgorBase):
         if not tag:
             return []
         key = f"{TAG_PREFIX}{tag}"
-        is_pg = isinstance(self._db, PGDatabaseProxy)
-        if is_pg:
-            sql = "SELECT id FROM memories WHERE jsonb_exists(metadata, %s)"
-            params: list = [key]
-        else:
-            sql = "SELECT id FROM memories WHERE json_extract(metadata, ?) IS NOT NULL"
-            params = [f"$.{key}"]
+        sql = "SELECT id FROM memories WHERE jsonb_exists(metadata, %s)"
+        params: list = [key]
         if limit:
             sql += f" LIMIT {int(limit)}"
         with self._conn() as conn:
@@ -2088,22 +2108,13 @@ class Cortex(IgorBase):
         tag lists, and returns the nested dict built by tag_tree.build_tag_tree.
         Restrict to a memory_type to scope the tree (e.g. FACTUAL-only).
         """
-        from .db_proxy import PGDatabaseProxy
         from .tag_tree import build_tag_tree, extract_tag_names
 
-        is_pg = isinstance(self._db, PGDatabaseProxy)
-        if is_pg:
-            sql = "SELECT metadata FROM memories " "WHERE metadata::text LIKE %s"
-            params: list = ['%"tag:%']
-            if memory_type:
-                sql += " AND memory_type = %s"
-                params.append(memory_type)
-        else:
-            sql = "SELECT metadata FROM memories WHERE metadata LIKE ?"
-            params = ['%"tag:%']
-            if memory_type:
-                sql += " AND memory_type = ?"
-                params.append(memory_type)
+        sql = "SELECT metadata FROM memories WHERE metadata::text LIKE %s"
+        params: list = ['%"tag:%']
+        if memory_type:
+            sql += " AND memory_type = %s"
+            params.append(memory_type)
         with self._conn() as conn:
             rows = conn.execute(sql, tuple(params)).fetchall()
         tag_lists = []
@@ -2145,7 +2156,7 @@ class Cortex(IgorBase):
         with self._conn() as conn:
             conn.execute(
                 "INSERT INTO memory_blobs (memory_id, content, tags, created_at) "
-                "VALUES (?, ?, ?, ?)",
+                "VALUES (%s, %s, %s, %s)",
                 (mem.id, scrub(content), json.dumps(tags), datetime.now().isoformat()),
             )
         return mem
@@ -2179,7 +2190,7 @@ class Cortex(IgorBase):
         # Search for existing blob by source_id in metadata JSON
         with self._conn() as conn:
             row = conn.execute(
-                "SELECT id FROM memories WHERE metadata LIKE ?",
+                "SELECT id FROM memories WHERE metadata LIKE %s",
                 (f'%"source_id": "{source_id}"%',),
             ).fetchone()
 
@@ -2188,17 +2199,17 @@ class Cortex(IgorBase):
             # Update narrative in memories table
             with self._conn() as conn:
                 existing_meta = conn.execute(
-                    "SELECT metadata FROM memories WHERE id = ?", (mem_id,)
+                    "SELECT metadata FROM memories WHERE id = %s", (mem_id,)
                 ).fetchone()
                 old_meta = json.loads(existing_meta["metadata"] or "{}")
                 old_meta.update(extra)
                 old_meta["tags"] = tags
                 conn.execute(
-                    "UPDATE memories SET narrative = ?, metadata = ? WHERE id = ?",
+                    "UPDATE memories SET narrative = %s, metadata = %s WHERE id = %s",
                     (scrub(narrative[:1000]), json.dumps(old_meta), mem_id),
                 )
                 conn.execute(
-                    "UPDATE memory_blobs SET content = ?, tags = ? WHERE memory_id = ?",
+                    "UPDATE memory_blobs SET content = %s, tags = %s WHERE memory_id = %s",
                     (scrub(content), json.dumps(tags), mem_id),
                 )
             mem = self.get(mem_id)
@@ -2217,7 +2228,7 @@ class Cortex(IgorBase):
             with self._conn() as conn:
                 conn.execute(
                     "INSERT INTO memory_blobs (memory_id, content, tags, created_at) "
-                    "VALUES (?, ?, ?, ?)",
+                    "VALUES (%s, %s, %s, %s)",
                     (mem.id, scrub(content), json.dumps(tags), now_iso),
                 )
             return mem, True
@@ -2264,7 +2275,7 @@ class Cortex(IgorBase):
         """Fetch full blob content for a REFERENCE memory. Returns None if not found."""
         with self._conn() as conn:
             row = conn.execute(
-                "SELECT content FROM memory_blobs WHERE memory_id = ?", (memory_id,)
+                "SELECT content FROM memory_blobs WHERE memory_id = %s", (memory_id,)
             ).fetchone()
         return row["content"] if row else None
 
@@ -2498,7 +2509,7 @@ class Cortex(IgorBase):
         _traversal_ids = {m.id for m in _traversal_pool}
 
         # Supplement: activation-ranked nodes not already in traversal pool (orphans + new nodes)
-        _excl_ph = ",".join("?" * len(_ALWAYS_EXCLUDE))
+        _excl_ph = ",".join(["%s"] * len(_ALWAYS_EXCLUDE))
         # Skip supplement if traversal already found enough nodes — at graph scale
         # (11k+ memories rooted at CP1-CP6) depth=3 reaches most nodes; supplement
         # is redundant and triggers a 300-wide-row activation scan every search call.
@@ -2510,18 +2521,18 @@ class Cortex(IgorBase):
         )
         with self._conn() as conn:
             if _routed_types and _supplement_limit > 0:
-                _ph = ",".join("?" * len(_routed_types))
+                _ph = ",".join(["%s"] * len(_routed_types))
                 rows = conn.execute(
                     f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
                     f"WHERE memory_type IN ({_ph}) AND memory_type NOT IN ({_excl_ph}) "
-                    "ORDER BY activation_count DESC LIMIT ?",
+                    "ORDER BY activation_count DESC LIMIT %s",
                     _routed_types + list(_ALWAYS_EXCLUDE) + [_supplement_limit],
                 ).fetchall()
             elif _supplement_limit > 0:
                 rows = conn.execute(
                     f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
                     f"WHERE memory_type NOT IN ({_excl_ph}) "
-                    "ORDER BY activation_count DESC LIMIT ?",
+                    "ORDER BY activation_count DESC LIMIT %s",
                     list(_ALWAYS_EXCLUDE) + [_supplement_limit],
                 ).fetchall()
             else:
@@ -2959,11 +2970,11 @@ class Cortex(IgorBase):
         if not ids:
             return
         now_iso = datetime.now().isoformat()
-        placeholders = ",".join("?" * len(ids))
+        placeholders = ",".join(["%s"] * len(ids))
         try:
             with self._conn() as conn:
                 conn.execute(
-                    f"UPDATE memories SET last_accessed = ? WHERE id IN ({placeholders})",
+                    f"UPDATE memories SET last_accessed = %s WHERE id IN ({placeholders})",
                     [now_iso] + ids,
                 )
         except Exception as _bare_e:
@@ -3063,13 +3074,13 @@ class Cortex(IgorBase):
         try:
             with self._local_db() as conn:
                 conn.executemany(
-                    "INSERT INTO tails (node_id, weight, recorded_at, trail_id, sequence_pos) VALUES (?, ?, ?, ?, ?)",
+                    "INSERT INTO tails (node_id, weight, recorded_at, trail_id, sequence_pos) VALUES (%s, %s, %s, %s, %s)",
                     rows,
                 )
             # Prune old entries (>7 days) to keep table bounded
             cutoff = (datetime.now() - timedelta(days=7)).isoformat()
             with self._local_db() as conn:
-                conn.execute("DELETE FROM tails WHERE recorded_at < ?", (cutoff,))
+                conn.execute("DELETE FROM tails WHERE recorded_at < %s", (cutoff,))
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
                 "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
@@ -3086,7 +3097,7 @@ class Cortex(IgorBase):
         try:
             with self._local_db() as conn:
                 rows = conn.execute(
-                    "SELECT weight, recorded_at FROM tails WHERE node_id = ? "
+                    "SELECT weight, recorded_at FROM tails WHERE node_id = %s "
                     "ORDER BY recorded_at DESC LIMIT 50",
                     (node_id,),
                 ).fetchall()
@@ -3145,7 +3156,7 @@ class Cortex(IgorBase):
                 conn.execute(
                     "INSERT INTO traces "
                     "(id, recorded_at, query, nodes, purpose, twm_obs_id, instance_id, thread_id) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
                     (
                         trace_id,
                         now_iso,
@@ -3160,7 +3171,7 @@ class Cortex(IgorBase):
             # Prune traces older than 30 days
             cutoff = (datetime.now() - timedelta(days=30)).isoformat()
             with self._conn() as conn:
-                conn.execute("DELETE FROM traces WHERE recorded_at < ?", (cutoff,))
+                conn.execute("DELETE FROM traces WHERE recorded_at < %s", (cutoff,))
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
                 "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
@@ -3226,7 +3237,7 @@ class Cortex(IgorBase):
                         with self._conn() as conn:
                             row = conn.execute(
                                 "SELECT id, weight FROM interpretive_edges "
-                                "WHERE from_id=? AND to_id=? AND direction='co_activation'",
+                                "WHERE from_id=%s AND to_id=%s AND direction='co_activation'",
                                 (mem_a.id, mem_b.id),
                             ).fetchone()
                         if row:
@@ -3242,7 +3253,7 @@ class Cortex(IgorBase):
                         try:
                             with self._conn() as conn:
                                 conn.execute(
-                                    "UPDATE interpretive_edges SET weight=? WHERE id=?",
+                                    "UPDATE interpretive_edges SET weight=%s WHERE id=%s",
                                     (new_weight, existing["id"]),
                                 )
                         except Exception as _bare_e:
@@ -3283,7 +3294,7 @@ class Cortex(IgorBase):
             with self._conn() as conn:
                 rows = conn.execute(
                     "SELECT id, recorded_at, query, nodes FROM traces "
-                    "ORDER BY recorded_at DESC LIMIT ?",
+                    "ORDER BY recorded_at DESC LIMIT %s",
                     (limit,),
                 ).fetchall()
             return [
@@ -3312,8 +3323,8 @@ class Cortex(IgorBase):
                     r[0]
                     for r in conn.execute(
                         "SELECT DISTINCT trail_id FROM tails "
-                        "WHERE node_id = ? AND trail_id IS NOT NULL "
-                        "ORDER BY recorded_at DESC LIMIT ?",
+                        "WHERE node_id = %s AND trail_id IS NOT NULL "
+                        "ORDER BY recorded_at DESC LIMIT %s",
                         (node_id, limit),
                     ).fetchall()
                 ]
@@ -3324,7 +3335,7 @@ class Cortex(IgorBase):
                 with self._local_db() as conn:
                     rows = conn.execute(
                         "SELECT node_id, sequence_pos, weight, recorded_at "
-                        "FROM tails WHERE trail_id = ? ORDER BY sequence_pos",
+                        "FROM tails WHERE trail_id = %s ORDER BY sequence_pos",
                         (tid,),
                     ).fetchall()
                 if rows:
@@ -3365,7 +3376,7 @@ class Cortex(IgorBase):
             with self._local_db() as conn:
                 rows = conn.execute(
                     "SELECT weight, recorded_at FROM tails "
-                    "WHERE node_id = ? AND recorded_at > ? "
+                    "WHERE node_id = %s AND recorded_at > %s "
                     "ORDER BY recorded_at DESC",
                     (node_id, start.isoformat()),
                 ).fetchall()
@@ -3416,9 +3427,9 @@ class Cortex(IgorBase):
                     "COUNT(*) AS co_count, MAX(a.recorded_at) AS last_seen "
                     "FROM tails a "
                     "JOIN tails b ON a.trail_id = b.trail_id AND a.node_id < b.node_id "
-                    "WHERE a.trail_id IS NOT NULL AND a.recorded_at > ? "
+                    "WHERE a.trail_id IS NOT NULL AND a.recorded_at > %s "
                     "GROUP BY a.node_id, b.node_id "
-                    "ORDER BY co_count DESC LIMIT ?",
+                    "ORDER BY co_count DESC LIMIT %s",
                     (cutoff, limit),
                 ).fetchall()
             return [
@@ -3454,7 +3465,7 @@ class Cortex(IgorBase):
                 conn.execute(
                     "INSERT INTO traversal_contexts "
                     "(context_id, job_id, key, value, step, recorded_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    "VALUES (%s, %s, %s, %s, %s, %s)",
                     (ctx_id, job_id or "", "__init__", "1", 0, now),
                 )
         except Exception as _bare_e:
@@ -3469,7 +3480,7 @@ class Cortex(IgorBase):
             with self._conn() as conn:
                 row = conn.execute(
                     "SELECT value FROM traversal_contexts "
-                    "WHERE context_id = ? AND key = ?",
+                    "WHERE context_id = %s AND key = %s",
                     (context_id, key),
                 ).fetchone()
             return row[0] if row else None
@@ -3490,7 +3501,7 @@ class Cortex(IgorBase):
                 conn.execute(
                     "INSERT INTO traversal_contexts "
                     "(context_id, job_id, key, value, step, recorded_at) "
-                    "VALUES (?, '', ?, ?, ?, ?) "
+                    "VALUES (%s, '', %s, %s, %s, %s) "
                     "ON CONFLICT(context_id, key) DO UPDATE SET "
                     "value=excluded.value, step=excluded.step, recorded_at=excluded.recorded_at",
                     (context_id, key, value, step, now),
@@ -3507,7 +3518,7 @@ class Cortex(IgorBase):
         Falls back to last_accessed ordering if tails is empty.
         """
         _SKIP = (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value)
-        _excl_ph = ",".join("?" * len(_SKIP))
+        _excl_ph = ",".join(["%s"] * len(_SKIP))
         try:
             tail_rows = self._db.get_activation_rows(limit * 2, since_hours=48.0)
             if not tail_rows:
@@ -3524,7 +3535,7 @@ class Cortex(IgorBase):
                 rows = conn.execute(
                     f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
                     f"WHERE last_accessed IS NOT NULL AND memory_type NOT IN ({_excl_ph}) "
-                    "ORDER BY last_accessed DESC LIMIT ?",
+                    "ORDER BY last_accessed DESC LIMIT %s",
                     list(_SKIP) + [limit],
                 ).fetchall()
             return [self._to_memory(r) for r in rows]
@@ -3576,7 +3587,7 @@ class Cortex(IgorBase):
                 )
                 if _miss_ids:
                     with self._conn() as conn:
-                        _ph = ",".join("?" * len(_miss_ids))
+                        _ph = ",".join(["%s"] * len(_miss_ids))
                         _rows = conn.execute(
                             f"SELECT {_MEM_COLS_NO_EMBED} FROM memories"
                             f" WHERE id IN ({_ph})",
@@ -3751,7 +3762,7 @@ class Cortex(IgorBase):
             _cached, _miss_ids = self._cache_fetch_ids(list(neighbor_scores.keys()))
             if _miss_ids:
                 with self._conn() as conn:
-                    placeholders = ",".join("?" * len(_miss_ids))
+                    placeholders = ",".join(["%s"] * len(_miss_ids))
                     _rows = conn.execute(
                         f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE id IN ({placeholders})",
                         _miss_ids,
@@ -3823,7 +3834,7 @@ class Cortex(IgorBase):
                     with self._conn() as conn:
                         rows = conn.execute(
                             "SELECT id, narrative FROM memories "
-                            "WHERE memory_type NOT IN (?, ?) LIMIT 200",
+                            "WHERE memory_type NOT IN (%s, %s) LIMIT 200",
                             (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value),
                         ).fetchall()
                     scored = [
@@ -3929,22 +3940,13 @@ class Cortex(IgorBase):
         return results[:limit]
 
     def _upsert_embedding(self, memory_id: str, embedding_json: str) -> None:
-        """G-EMB1: Postgres-safe embedding upsert. INSERT OR REPLACE is SQLite-only."""
-        from .db_proxy import PGDatabaseProxy
-
+        """G-EMB1: Postgres-native embedding upsert."""
         with self._conn() as conn:
-            if isinstance(self._db, PGDatabaseProxy):
-                conn.execute(
-                    "INSERT INTO memory_embeddings(memory_id, embedding) VALUES (?, ?)"
-                    " ON CONFLICT (memory_id) DO UPDATE SET embedding = EXCLUDED.embedding",
-                    (memory_id, embedding_json),
-                )
-            else:
-                conn.execute(
-                    "INSERT OR REPLACE INTO memory_embeddings(memory_id, embedding)"
-                    " VALUES (?, ?)",
-                    (memory_id, embedding_json),
-                )
+            conn.execute(
+                "INSERT INTO memory_embeddings(memory_id, embedding) VALUES (%s, %s)"
+                " ON CONFLICT (memory_id) DO UPDATE SET embedding = EXCLUDED.embedding",
+                (memory_id, embedding_json),
+            )
 
     def _get_or_compute_embedding(self, memory) -> Optional[list]:
         """
@@ -3954,7 +3956,7 @@ class Cortex(IgorBase):
         """
         with self._conn() as conn:
             row = conn.execute(
-                "SELECT embedding FROM memory_embeddings WHERE memory_id = ?",
+                "SELECT embedding FROM memory_embeddings WHERE memory_id = %s",
                 (memory.id,),
             ).fetchone()
         if row and row["embedding"]:
@@ -3987,7 +3989,7 @@ class Cortex(IgorBase):
         """
         if not ids:
             return {}
-        placeholders = ",".join("?" * len(ids))
+        placeholders = ",".join(["%s"] * len(ids))
         with self._conn() as conn:
             rows = conn.execute(
                 f"SELECT memory_id, embedding FROM memory_embeddings"
@@ -4090,10 +4092,10 @@ class Cortex(IgorBase):
         """
         with self._conn() as conn:
             conn.execute(
-                "DELETE FROM memory_embeddings WHERE memory_id=?", (memory_id,)
+                "DELETE FROM memory_embeddings WHERE memory_id=%s", (memory_id,)
             )
-            conn.execute("DELETE FROM memory_blobs WHERE memory_id=?", (memory_id,))
-            result = conn.execute("DELETE FROM memories WHERE id=?", (memory_id,))
+            conn.execute("DELETE FROM memory_blobs WHERE memory_id=%s", (memory_id,))
+            result = conn.execute("DELETE FROM memories WHERE id=%s", (memory_id,))
         return result.rowcount > 0
 
     def integrity_check(self) -> tuple[bool, list[str]]:
@@ -4319,7 +4321,7 @@ class Cortex(IgorBase):
         now = datetime.now().isoformat()
         with self._local_conn() as conn:
             conn.execute(
-                "INSERT INTO ring_memory (category, content, timestamp, thread_id) VALUES (?, ?, ?, ?)",
+                "INSERT INTO ring_memory (category, content, timestamp, thread_id) VALUES (%s, %s, %s, %s)",
                 (category, content, now, thread_id),
             )
             # Trim to max size
@@ -4357,26 +4359,26 @@ class Cortex(IgorBase):
         with self._local_conn() as conn:
             if category and thread_id:
                 rows = conn.execute(
-                    "SELECT * FROM ring_memory WHERE category = ? "
-                    "AND (thread_id = ? OR thread_id IS NULL) "
-                    "ORDER BY id DESC LIMIT ?",
+                    "SELECT * FROM ring_memory WHERE category = %s "
+                    "AND (thread_id = %s OR thread_id IS NULL) "
+                    "ORDER BY id DESC LIMIT %s",
                     (category, thread_id, limit),
                 ).fetchall()
             elif thread_id:
                 rows = conn.execute(
                     "SELECT * FROM ring_memory "
-                    "WHERE (thread_id = ? OR thread_id IS NULL) "
-                    "ORDER BY id DESC LIMIT ?",
+                    "WHERE (thread_id = %s OR thread_id IS NULL) "
+                    "ORDER BY id DESC LIMIT %s",
                     (thread_id, limit),
                 ).fetchall()
             elif category:
                 rows = conn.execute(
-                    "SELECT * FROM ring_memory WHERE category = ? ORDER BY id DESC LIMIT ?",
+                    "SELECT * FROM ring_memory WHERE category = %s ORDER BY id DESC LIMIT %s",
                     (category, limit),
                 ).fetchall()
             else:
                 rows = conn.execute(
-                    "SELECT * FROM ring_memory ORDER BY id DESC LIMIT ?", (limit,)
+                    "SELECT * FROM ring_memory ORDER BY id DESC LIMIT %s", (limit,)
                 ).fetchall()
         # Return in chronological order (oldest first)
         entries = [
@@ -4402,11 +4404,11 @@ class Cortex(IgorBase):
         if not terms:
             return []
         # Build WHERE clause: content LIKE '%term%' OR ...
-        clauses = " OR ".join("lower(content) LIKE ?" for _ in terms)
+        clauses = " OR ".join("lower(content) LIKE %s" for _ in terms)
         params = [f"%{t}%" for t in terms] + [limit]
         with self._local_conn() as conn:
             rows = conn.execute(
-                f"SELECT * FROM ring_memory WHERE {clauses} ORDER BY id DESC LIMIT ?",
+                f"SELECT * FROM ring_memory WHERE {clauses} ORDER BY id DESC LIMIT %s",
                 params,
             ).fetchall()
         return [
@@ -4502,7 +4504,7 @@ class Cortex(IgorBase):
         with self._local_conn() as conn:
             _existing = conn.execute(
                 "SELECT id, metadata_json FROM twm_observations "
-                "WHERE SUBSTR(content_csb, 1, 120) = ? AND integrated = 0 "
+                "WHERE SUBSTR(content_csb, 1, 120) = %s AND integrated = 0 "
                 "LIMIT 1",
                 (_sig,),
             ).fetchone()
@@ -4532,7 +4534,8 @@ class Cortex(IgorBase):
                    (timestamp, source, content_csb, salience, metadata_json,
                     integrated, integration_count, expires_at, urgency, instance_id,
                     thread_id, category, attractor_weight, parent_obs_id)
-                   VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?, 0.0, ?)""",
+                   VALUES (%s, %s, %s, %s, %s, 0, 0, %s, %s, %s, %s, %s, 0.0, %s)
+                   RETURNING id""",
                 (
                     now.isoformat(),
                     source,
@@ -4547,23 +4550,23 @@ class Cortex(IgorBase):
                     parent_obs_id,
                 ),
             )
-            obs_id = cur.lastrowid
+            obs_id = cur.fetchone()[0]
 
             # G50: high-urgency items (inbox, ethics, user input ≥0.8) become attractor
             if urgency >= 0.8 and obs_id and obs_id > 0:
                 conn.execute(
                     "UPDATE twm_observations SET attractor_weight = 0.0 "
-                    "WHERE instance_id = ? AND id != ?",
+                    "WHERE instance_id = %s AND id != %s",
                     (self._instance_id, obs_id),
                 )
                 conn.execute(
-                    "UPDATE twm_observations SET attractor_weight = 1.0 WHERE id = ?",
+                    "UPDATE twm_observations SET attractor_weight = 1.0 WHERE id = %s",
                     (obs_id,),
                 )
 
             # Evict expired entries first
             conn.execute(
-                "DELETE FROM twm_observations WHERE expires_at IS NOT NULL AND expires_at < ?",
+                "DELETE FROM twm_observations WHERE expires_at IS NOT NULL AND expires_at < %s",
                 (now.isoformat(),),
             )
 
@@ -4582,7 +4585,7 @@ class Cortex(IgorBase):
                 victim_rows = _twm_pick_eviction_victims(all_rows, overflow, now)
                 victim_ids = [r["id"] for r in victim_rows]
                 conn.execute(
-                    f"DELETE FROM twm_observations WHERE id IN ({','.join('?'*len(victim_ids))})",
+                    f"DELETE FROM twm_observations WHERE id IN ({','.join(['%s']*len(victim_ids))})",
                     victim_ids,
                 )
                 if obs_id in victim_ids:
@@ -4647,18 +4650,18 @@ class Cortex(IgorBase):
         params: list = []
 
         if _iid:
-            clauses.append("instance_id = ?")
+            clauses.append("instance_id = %s")
             params.append(_iid)
 
         if not include_integrated:
             clauses.append("integrated = 0")
 
         if thread_id:
-            clauses.append("(thread_id = ? OR thread_id IS NULL)")
+            clauses.append("(thread_id = %s OR thread_id IS NULL)")
             params.append(thread_id)
 
         if category:
-            clauses.append("category = ?")
+            clauses.append("category = %s")
             params.append(category)
 
         where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
@@ -4666,7 +4669,7 @@ class Cortex(IgorBase):
 
         with self._local_conn() as conn:
             rows = conn.execute(
-                f"SELECT * FROM twm_observations {where} ORDER BY id ASC LIMIT ?",
+                f"SELECT * FROM twm_observations {where} ORDER BY id ASC LIMIT %s",
                 params,
             ).fetchall()
 
@@ -4708,12 +4711,12 @@ class Cortex(IgorBase):
         with self._local_conn() as conn:
             if _iid:
                 cur = conn.execute(
-                    "DELETE FROM twm_observations WHERE category = ? AND instance_id = ?",
+                    "DELETE FROM twm_observations WHERE category = %s AND instance_id = %s",
                     (category, _iid),
                 )
             else:
                 cur = conn.execute(
-                    "DELETE FROM twm_observations WHERE category = ?",
+                    "DELETE FROM twm_observations WHERE category = %s",
                     (category,),
                 )
             deleted = cur.rowcount
@@ -4743,12 +4746,12 @@ class Cortex(IgorBase):
         with self._local_conn() as conn:
             if _iid:
                 cur = conn.execute(
-                    "DELETE FROM twm_observations WHERE source = ? AND instance_id = ?",
+                    "DELETE FROM twm_observations WHERE source = %s AND instance_id = %s",
                     (source, _iid),
                 )
             else:
                 cur = conn.execute(
-                    "DELETE FROM twm_observations WHERE source = ?",
+                    "DELETE FROM twm_observations WHERE source = %s",
                     (source,),
                 )
             deleted = cur.rowcount
@@ -4773,12 +4776,12 @@ class Cortex(IgorBase):
 
         now = datetime.now().isoformat()
         with self._local_conn() as conn:
-            clauses = ["category = ?"]
+            clauses = ["category = %s"]
             params: list = ["active_goal"]
             if _iid:
-                clauses.append("instance_id = ?")
+                clauses.append("instance_id = %s")
                 params.append(_iid)
-            clauses.append("(expires_at IS NULL OR expires_at > ?)")
+            clauses.append("(expires_at IS NULL OR expires_at > %s)")
             params.append(now)
             where = "WHERE " + " AND ".join(clauses)
             row = conn.execute(
@@ -4810,7 +4813,7 @@ class Cortex(IgorBase):
             # Count existing active attractor slots (excluding the target)
             active = conn.execute(
                 "SELECT id, attractor_weight FROM twm_observations "
-                "WHERE instance_id = ? AND id != ? AND attractor_weight > 0.05 "
+                "WHERE instance_id = %s AND id != %s AND attractor_weight > 0.05 "
                 "ORDER BY attractor_weight ASC",
                 (self._instance_id, obs_id),
             ).fetchall()
@@ -4818,11 +4821,11 @@ class Cortex(IgorBase):
             if len(active) >= TWM_MAX_SLOTS:
                 evict_id = active[0]["id"]
                 conn.execute(
-                    "UPDATE twm_observations SET attractor_weight = 0.0 WHERE id = ?",
+                    "UPDATE twm_observations SET attractor_weight = 0.0 WHERE id = %s",
                     (evict_id,),
                 )
             conn.execute(
-                "UPDATE twm_observations SET attractor_weight = ? WHERE id = ?",
+                "UPDATE twm_observations SET attractor_weight = %s WHERE id = %s",
                 (min(1.0, max(0.0, weight)), obs_id),
             )
 
@@ -4834,7 +4837,7 @@ class Cortex(IgorBase):
         with self._local_conn() as conn:
             row = conn.execute(
                 "SELECT * FROM twm_observations "
-                "WHERE instance_id = ? AND attractor_weight > 0.1 "
+                "WHERE instance_id = %s AND attractor_weight > 0.1 "
                 "ORDER BY attractor_weight DESC LIMIT 1",
                 (self._instance_id,),
             ).fetchone()
@@ -4859,14 +4862,14 @@ class Cortex(IgorBase):
         with self._local_conn() as conn:
             conn.execute(
                 "UPDATE twm_observations "
-                "SET attractor_weight = attractor_weight * ? "
-                "WHERE instance_id = ? AND attractor_weight > 0.05",
+                "SET attractor_weight = attractor_weight * %s "
+                "WHERE instance_id = %s AND attractor_weight > 0.05",
                 (factor, self._instance_id),
             )
             # Zero out anything that has decayed below threshold
             conn.execute(
                 "UPDATE twm_observations SET attractor_weight = 0.0 "
-                "WHERE instance_id = ? AND attractor_weight <= 0.05",
+                "WHERE instance_id = %s AND attractor_weight <= 0.05",
                 (self._instance_id,),
             )
 
@@ -4879,7 +4882,7 @@ class Cortex(IgorBase):
             rows = conn.execute(
                 "SELECT id, content_csb, attractor_weight, salience, metadata_json "
                 "FROM twm_observations "
-                "WHERE instance_id = ? AND attractor_weight > 0.05 "
+                "WHERE instance_id = %s AND attractor_weight > 0.05 "
                 "ORDER BY attractor_weight DESC",
                 (self._instance_id,),
             ).fetchall()
@@ -4905,13 +4908,13 @@ class Cortex(IgorBase):
         with self._local_conn() as conn:
             conn.execute(
                 "UPDATE twm_observations "
-                "SET attractor_weight = MAX(0.0, attractor_weight * ?) "
-                "WHERE id = ? AND attractor_weight > 0.05",
+                "SET attractor_weight = MAX(0.0, attractor_weight * %s) "
+                "WHERE id = %s AND attractor_weight > 0.05",
                 (factor, obs_id),
             )
             conn.execute(
                 "UPDATE twm_observations SET attractor_weight = 0.0 "
-                "WHERE id = ? AND attractor_weight <= 0.05",
+                "WHERE id = %s AND attractor_weight <= 0.05",
                 (obs_id,),
             )
 
@@ -4927,8 +4930,8 @@ class Cortex(IgorBase):
         new_urgency = max(0.0, min(0.64, new_urgency))
         with self._local_conn() as conn:
             conn.execute(
-                "UPDATE twm_observations SET urgency = ? "
-                "WHERE id = ? AND urgency < 0.65",
+                "UPDATE twm_observations SET urgency = %s "
+                "WHERE id = %s AND urgency < 0.65",
                 (new_urgency, obs_id),
             )
 
@@ -4943,7 +4946,7 @@ class Cortex(IgorBase):
                 result = conn.execute(
                     "UPDATE twm_observations SET integrated = 1 "
                     "WHERE category = 'task_set' AND integrated = 0 "
-                    "AND (thread_id = ? OR thread_id IS NULL)",
+                    "AND (thread_id = %s OR thread_id IS NULL)",
                     (thread_id,),
                 )
             else:
@@ -4954,12 +4957,12 @@ class Cortex(IgorBase):
             return result.rowcount
 
     def twm_count_unintegrated(self) -> int:
-        """How many TWM observations are waiting to be integrated?"""
+        """How many TWM observations are waiting to be integrated%s"""
         _iid = self._instance_id
         with self._local_conn() as conn:
             if _iid:
                 return conn.execute(
-                    "SELECT COUNT(*) FROM twm_observations WHERE integrated = 0 AND instance_id = ?",
+                    "SELECT COUNT(*) FROM twm_observations WHERE integrated = 0 AND instance_id = %s",
                     (_iid,),
                 ).fetchone()[0]
             return conn.execute(
@@ -4972,7 +4975,7 @@ class Cortex(IgorBase):
         with self._local_conn() as conn:
             if _iid:
                 return conn.execute(
-                    "SELECT COUNT(*) FROM twm_observations WHERE instance_id = ?",
+                    "SELECT COUNT(*) FROM twm_observations WHERE instance_id = %s",
                     (_iid,),
                 ).fetchone()[0]
             return conn.execute("SELECT COUNT(*) FROM twm_observations").fetchone()[0]
@@ -4983,7 +4986,7 @@ class Cortex(IgorBase):
         with self._local_conn() as conn:
             if _iid:
                 row = conn.execute(
-                    "SELECT MAX(id) FROM twm_observations WHERE instance_id = ?",
+                    "SELECT MAX(id) FROM twm_observations WHERE instance_id = %s",
                     (_iid,),
                 ).fetchone()
             else:
@@ -4994,7 +4997,7 @@ class Cortex(IgorBase):
         """Mark observations as integrated by the NE."""
         if not obs_ids:
             return
-        placeholders = ",".join("?" * len(obs_ids))
+        placeholders = ",".join(["%s"] * len(obs_ids))
         with self._local_conn() as conn:
             conn.execute(
                 f"UPDATE twm_observations SET integrated = 1, integration_count = integration_count + 1 "
@@ -5006,7 +5009,7 @@ class Cortex(IgorBase):
         """NE can update salience of an observation after integration."""
         with self._local_conn() as conn:
             conn.execute(
-                "UPDATE twm_observations SET salience = ? WHERE id = ?",
+                "UPDATE twm_observations SET salience = %s WHERE id = %s",
                 (max(0.0, min(1.0, salience)), obs_id),
             )
 
@@ -5035,7 +5038,7 @@ class Cortex(IgorBase):
             with self._local_conn() as conn:
                 # Fetch current expiry
                 row = conn.execute(
-                    "SELECT expires_at FROM twm_observations WHERE id = ?", (obs_id,)
+                    "SELECT expires_at FROM twm_observations WHERE id = %s", (obs_id,)
                 ).fetchone()
                 if row is None:
                     return  # Observation already evicted
@@ -5046,7 +5049,7 @@ class Cortex(IgorBase):
                 else:
                     final_expiry = new_expiry
                 conn.execute(
-                    "UPDATE twm_observations SET expires_at = ? WHERE id = ?",
+                    "UPDATE twm_observations SET expires_at = %s WHERE id = %s",
                     (final_expiry, obs_id),
                 )
             self.write_ring(
@@ -5107,7 +5110,7 @@ class Cortex(IgorBase):
                 rows = conn.execute(
                     "SELECT id, content_csb, expires_at FROM twm_observations "
                     "WHERE integrated = 0 AND category != 'active_goal' "
-                    "AND (expires_at IS NULL OR expires_at > ?)",
+                    "AND (expires_at IS NULL OR expires_at > %s)",
                     (now_ts,),
                 ).fetchall()
 
@@ -5143,7 +5146,7 @@ class Cortex(IgorBase):
                     # Only shorten — never extend via this path
                     if new_expires < expires_at_str:
                         conn.execute(
-                            "UPDATE twm_observations SET expires_at = ? WHERE id = ?",
+                            "UPDATE twm_observations SET expires_at = %s WHERE id = %s",
                             (new_expires, obs_id),
                         )
                         updated += 1
@@ -5332,7 +5335,7 @@ class Cortex(IgorBase):
 
                     with self._conn() as conn:
                         conn.execute(
-                            "UPDATE memories SET metadata=? WHERE id=?",
+                            "UPDATE memories SET metadata=%s WHERE id=%s",
                             (_json.dumps(new_meta), node.id),
                         )
                     updated += 1
@@ -5361,7 +5364,7 @@ class Cortex(IgorBase):
         G52: Add a directed edge between two memories in the interpretive tree.
 
         Edge semantics (4 parts):
-          direction: "activation" | "inhibition" — does traversal promote or suppress?
+          direction: "activation" | "inhibition" — does traversal promote or suppress%s
           condition_csb: CSB string specifying when this edge fires (empty = always)
           meaning_payload: the WHY — what reaching to_id means about self or situation
           action_pointer: memory id or code_ref of the next tree to explore
@@ -5383,7 +5386,8 @@ class Cortex(IgorBase):
                 """
                 INSERT INTO interpretive_edges
                     (from_id, to_id, direction, condition_csb, meaning_payload, action_pointer, weight, created_at, layer)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
                 """,
                 (
                     from_id,
@@ -5397,7 +5401,7 @@ class Cortex(IgorBase):
                     layer,
                 ),
             )
-            return cur.lastrowid
+            return cur.fetchone()[0]
 
     def get_interpretive_edges(self, from_id: str) -> list[dict]:
         """
@@ -5412,7 +5416,7 @@ class Cortex(IgorBase):
                        meaning_payload, action_pointer, weight, created_at,
                        COALESCE(layer, '') AS layer
                 FROM interpretive_edges
-                WHERE from_id = ?
+                WHERE from_id = %s
                 ORDER BY weight DESC
                 """,
                 (from_id,),
@@ -5429,7 +5433,7 @@ class Cortex(IgorBase):
         if not candidate_ids:
             return set()
         with self._conn() as conn:
-            placeholders = ",".join(["?"] * len(candidate_ids))
+            placeholders = ",".join(["%s"] * len(candidate_ids))
             rows = conn.execute(
                 f"SELECT DISTINCT to_id FROM interpretive_edges "
                 f"WHERE direction='inhibition' AND layer='bg_inhibition' "
@@ -5456,7 +5460,7 @@ class Cortex(IgorBase):
                 WHERE ie.layer = 'meaning_to_me'
                   AND ie.direction != 'inhibition'
                 ORDER BY ie.weight DESC
-                LIMIT ?
+                LIMIT %s
                 """,
                 (limit,),
             ).fetchall()
@@ -5466,7 +5470,7 @@ class Cortex(IgorBase):
         _cached, _miss_ids = self._cache_fetch_ids(to_ids)
         if _miss_ids:
             with self._conn() as conn:
-                placeholders = ",".join("?" * len(_miss_ids))
+                placeholders = ",".join(["%s"] * len(_miss_ids))
                 _mem_rows = conn.execute(
                     f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE id IN ({placeholders})",
                     _miss_ids,
@@ -5523,7 +5527,7 @@ class Cortex(IgorBase):
             with self._conn() as conn:
                 exists = conn.execute(
                     "SELECT COUNT(*) FROM interpretive_edges "
-                    "WHERE from_id=? AND to_id=? AND direction='temporal'",
+                    "WHERE from_id=%s AND to_id=%s AND direction='temporal'",
                     (a, b),
                 ).fetchone()[0]
             if not exists:
@@ -5628,7 +5632,7 @@ class Cortex(IgorBase):
                                         with self._conn() as _c:
                                             _out_degree_cache[edge["to_id"]] = (
                                                 _c.execute(
-                                                    "SELECT COUNT(*) FROM interpretive_edges WHERE from_id=?",
+                                                    "SELECT COUNT(*) FROM interpretive_edges WHERE from_id=%s",
                                                     (edge["to_id"],),
                                                 ).fetchone()[0]
                                             )
@@ -5655,7 +5659,7 @@ class Cortex(IgorBase):
         _cached, _miss_ids = self._cache_fetch_ids(result_ids)
         if _miss_ids:
             with self._conn() as conn:
-                placeholders = ",".join("?" * len(_miss_ids))
+                placeholders = ",".join(["%s"] * len(_miss_ids))
                 _rows = conn.execute(
                     f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE id IN ({placeholders})",
                     _miss_ids,
@@ -5694,9 +5698,14 @@ class Cortex(IgorBase):
         with self._conn() as conn:
             conn.execute(
                 """
-                INSERT OR REPLACE INTO lists
+                INSERT INTO lists
                     (list_name, item_key, item_value, ref_type, ref_id, instance_id, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (list_name, item_key, instance_id) DO UPDATE SET
+                    item_value = EXCLUDED.item_value,
+                    ref_type = EXCLUDED.ref_type,
+                    ref_id = EXCLUDED.ref_id,
+                    updated_at = EXCLUDED.updated_at
                 """,
                 (list_name, item_key, item_value, ref_type, ref_id, instance_id, now),
             )
@@ -5707,7 +5716,7 @@ class Cortex(IgorBase):
         """Return one list item as a dict, or None if not found."""
         with self._conn() as conn:
             row = conn.execute(
-                "SELECT * FROM lists WHERE list_name=? AND item_key=? AND instance_id=?",
+                "SELECT * FROM lists WHERE list_name=%s AND item_key=%s AND instance_id=%s",
                 (list_name, item_key, instance_id),
             ).fetchone()
         if row is None:
@@ -5718,7 +5727,7 @@ class Cortex(IgorBase):
         """Delete one item from a named list."""
         with self._conn() as conn:
             conn.execute(
-                "DELETE FROM lists WHERE list_name=? AND item_key=? AND instance_id=?",
+                "DELETE FROM lists WHERE list_name=%s AND item_key=%s AND instance_id=%s",
                 (list_name, item_key, instance_id),
             )
 
@@ -5726,7 +5735,7 @@ class Cortex(IgorBase):
         """Return all items in a named list as a list of dicts, ordered by item_key."""
         with self._conn() as conn:
             rows = conn.execute(
-                "SELECT * FROM lists WHERE list_name=? AND instance_id=? ORDER BY item_key",
+                "SELECT * FROM lists WHERE list_name=%s AND instance_id=%s ORDER BY item_key",
                 (list_name, instance_id),
             ).fetchall()
         return [dict(r) for r in rows]
@@ -5765,7 +5774,7 @@ class Cortex(IgorBase):
                 WHERE m.memory_type NOT IN ('PROCEDURAL')
                 GROUP BY m.id, m.activation_count
                 ORDER BY m.activation_count * (1 + COUNT(ie.id)) DESC
-                LIMIT ?
+                LIMIT %s
                 """,
                 (limit,),
             ).fetchall()
@@ -5785,12 +5794,12 @@ class Cortex(IgorBase):
                     """
                     WITH RECURSIVE chain AS (
                         SELECT id, parent_id, 0 AS depth
-                        FROM memories WHERE id = ?
+                        FROM memories WHERE id = %s
                         UNION ALL
                         SELECT m.id, m.parent_id, c.depth + 1
                         FROM memories m
                         JOIN chain c ON m.id = c.parent_id
-                        WHERE c.depth < ?
+                        WHERE c.depth < %s
                           AND c.parent_id IS NOT NULL
                           AND c.parent_id != ''
                     )
@@ -5850,7 +5859,7 @@ class Cortex(IgorBase):
                       SELECT 1 FROM interpretive_edges ie
                       WHERE ie.to_id = m.id AND ie.direction = 'adoption'
                   )
-                LIMIT ?
+                LIMIT %s
                 """,
                 (batch_size,),
             ).fetchall()
@@ -5923,7 +5932,7 @@ class Cortex(IgorBase):
             try:
                 with self._conn() as conn:
                     row = conn.execute(
-                        "SELECT parent_id FROM memories WHERE id = ?",
+                        "SELECT parent_id FROM memories WHERE id = %s",
                         (deepest,),
                     ).fetchone()
                 if row and row[0]:
@@ -5955,7 +5964,7 @@ class Cortex(IgorBase):
                         JOIN chain c ON m.parent_id = c.id
                         WHERE c.depth < 30
                     )
-                    SELECT id FROM chain WHERE depth > ?
+                    SELECT id FROM chain WHERE depth > %s
                     """,
                     (depth_threshold,),
                 ).fetchall()
@@ -5970,7 +5979,7 @@ class Cortex(IgorBase):
                 row = conn.execute(
                     """
                     WITH RECURSIVE subtree AS (
-                        SELECT id FROM memories WHERE id = ?
+                        SELECT id FROM memories WHERE id = %s
                         UNION ALL
                         SELECT m.id FROM memories m
                         JOIN subtree s ON m.parent_id = s.id
@@ -5990,7 +5999,7 @@ class Cortex(IgorBase):
                 row = conn.execute(
                     """
                     WITH RECURSIVE chain AS (
-                        SELECT id, parent_id FROM memories WHERE id = ?
+                        SELECT id, parent_id FROM memories WHERE id = %s
                         UNION ALL
                         SELECT m.id, m.parent_id FROM memories m
                         JOIN chain c ON m.id = c.parent_id
@@ -6011,7 +6020,7 @@ class Cortex(IgorBase):
                 row = conn.execute(
                     """
                     WITH RECURSIVE subtree AS (
-                        SELECT id, parent_id, 0 AS depth FROM memories WHERE id = ?
+                        SELECT id, parent_id, 0 AS depth FROM memories WHERE id = %s
                         UNION ALL
                         SELECT m.id, m.parent_id, s.depth + 1
                         FROM memories m
@@ -6050,7 +6059,7 @@ class Cortex(IgorBase):
 
         with self._conn() as conn:
             row = conn.execute(
-                "SELECT parent_id FROM memories WHERE id = ?",
+                "SELECT parent_id FROM memories WHERE id = %s",
                 (node_id,),
             ).fetchone()
         if not row:
@@ -6064,7 +6073,7 @@ class Cortex(IgorBase):
 
         with self._conn() as conn:
             conn.execute(
-                "UPDATE memories SET parent_id = NULL WHERE id = ?",
+                "UPDATE memories SET parent_id = NULL WHERE id = %s",
                 (node_id,),
             )
 
