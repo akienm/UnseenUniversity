@@ -50,8 +50,10 @@ def _get_imap_server():
 
 
 def _check_mailbox_imap(conn, mailbox: str) -> list[str]:
-    """Return list of from_device values for unseen messages in mailbox."""
+    """Return list of from_device values for unseen messages with intent for mailbox."""
     import json
+
+    from agent_datacenter.announce.notify import has_intent
 
     try:
         status, _ = conn.select(mailbox, readonly=True)
@@ -68,6 +70,8 @@ def _check_mailbox_imap(conn, mailbox: str) -> list[str]:
                 raw = msg_data[0][1] if isinstance(msg_data[0], tuple) else msg_data[0]
                 try:
                     envelope = json.loads(raw)
+                    if not has_intent(envelope, mailbox):
+                        continue
                     sender = envelope.get("from_device", "unknown")
                     if sender not in senders:
                         senders.append(sender)
