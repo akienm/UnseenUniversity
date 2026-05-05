@@ -361,14 +361,11 @@ def _get_interpretive_edge_count(cortex: Cortex) -> int:
 
 
 def _get_active_cc_ticket() -> dict | None:
-    """Return the first in_progress ticket from cc_queue.json, or None."""
+    """Return the first in_progress ticket from Postgres via cc_queue."""
     try:
-        import json as _json
-        import os as _os
+        from lab.claudecode.cc_queue import load_tasks
 
-        queue_path = _os.path.expanduser("~/.TheIgors/cc_channel/queue.json")
-        with open(queue_path) as _f:
-            tasks = _json.load(_f)
+        tasks = load_tasks()
         for t in tasks:
             if t.get("status") == "in_progress":
                 return {"id": t.get("id", "?"), "title": t.get("title", "")}

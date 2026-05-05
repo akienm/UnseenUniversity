@@ -74,7 +74,6 @@ def _extract_ticket_id(source_message: str) -> str | None:
     return None
 
 
-_QUEUE_FILE = Path.home() / ".TheIgors" / "cc_channel" / "queue.json"
 _CHANNEL_FILE = Path.home() / ".TheIgors" / "cc_channel" / "messages.jsonl"
 
 # D259 human-author gate: set of authors treated as human-driven.
@@ -115,10 +114,11 @@ def _is_human_recently_active() -> bool:
 
 
 def _load_ticket(ticket_id: str) -> dict | None:
-    """Read ticket data directly from queue.json (avoids _run_bash truncation)."""
+    """Read ticket from Postgres via cc_queue."""
     try:
-        with open(_QUEUE_FILE) as f:
-            tasks = json.load(f)
+        from lab.claudecode.cc_queue import load_tasks
+
+        tasks = load_tasks()
         for t in tasks:
             if t.get("id") == ticket_id:
                 return t
