@@ -284,7 +284,8 @@ class _WordDocProxy:
             n = conn.execute("SELECT COUNT(DISTINCT word) FROM wg_word_docs").fetchone()
             count = n[0] if n else 0
             conn.execute(
-                "INSERT OR REPLACE INTO wg_meta (key, value) VALUES ('word_count', ?)",
+                "INSERT INTO wg_meta (key, value) VALUES ('word_count', %s)"
+                " ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
                 (str(count),),
             )
             return count
@@ -384,9 +385,9 @@ class WordGraph(IgorBase):
         self._pending_doc_count += 1
         if self._pending_doc_count >= self._DOC_FLUSH_EVERY:
             conn.execute(
-                "INSERT INTO wg_meta (key, value) VALUES ('doc_count', ?)"
+                "INSERT INTO wg_meta (key, value) VALUES ('doc_count', %s)"
                 " ON CONFLICT(key) DO UPDATE"
-                " SET value = CAST(CAST(wg_meta.value AS INTEGER) + ? AS TEXT)",
+                " SET value = CAST(CAST(wg_meta.value AS INTEGER) + %s AS TEXT)",
                 (str(self._pending_doc_count), self._pending_doc_count),
             )
             self._pending_doc_count = 0
@@ -396,9 +397,9 @@ class WordGraph(IgorBase):
         if self._pending_doc_count > 0:
             with self._db() as conn:
                 conn.execute(
-                    "INSERT INTO wg_meta (key, value) VALUES ('doc_count', ?)"
+                    "INSERT INTO wg_meta (key, value) VALUES ('doc_count', %s)"
                     " ON CONFLICT(key) DO UPDATE"
-                    " SET value = CAST(CAST(wg_meta.value AS INTEGER) + ? AS TEXT)",
+                    " SET value = CAST(CAST(wg_meta.value AS INTEGER) + %s AS TEXT)",
                     (str(self._pending_doc_count), self._pending_doc_count),
                 )
             self._pending_doc_count = 0
@@ -410,9 +411,9 @@ class WordGraph(IgorBase):
         self._pending_word_count += delta
         if self._pending_word_count >= self._WORD_FLUSH_EVERY:
             conn.execute(
-                "INSERT INTO wg_meta (key, value) VALUES ('word_count', ?)"
+                "INSERT INTO wg_meta (key, value) VALUES ('word_count', %s)"
                 " ON CONFLICT(key) DO UPDATE"
-                " SET value = CAST(CAST(wg_meta.value AS INTEGER) + ? AS TEXT)",
+                " SET value = CAST(CAST(wg_meta.value AS INTEGER) + %s AS TEXT)",
                 (str(self._pending_word_count), self._pending_word_count),
             )
             self._pending_word_count = 0
@@ -422,9 +423,9 @@ class WordGraph(IgorBase):
         if self._pending_word_count > 0:
             with self._db() as conn:
                 conn.execute(
-                    "INSERT INTO wg_meta (key, value) VALUES ('word_count', ?)"
+                    "INSERT INTO wg_meta (key, value) VALUES ('word_count', %s)"
                     " ON CONFLICT(key) DO UPDATE"
-                    " SET value = CAST(CAST(wg_meta.value AS INTEGER) + ? AS TEXT)",
+                    " SET value = CAST(CAST(wg_meta.value AS INTEGER) + %s AS TEXT)",
                     (str(self._pending_word_count), self._pending_word_count),
                 )
             self._pending_word_count = 0
@@ -452,7 +453,7 @@ class WordGraph(IgorBase):
                 # word → doc weights (max of existing vs new)
                 conn.executemany(
                     """
-                    INSERT INTO wg_word_docs (word, doc_id, weight) VALUES (?, ?, ?)
+                    INSERT INTO wg_word_docs (word, doc_id, weight) VALUES (%s, %s, %s)
                     ON CONFLICT(word, doc_id)
                     DO UPDATE SET weight = CASE WHEN wg_word_docs.weight > excluded.weight THEN wg_word_docs.weight ELSE excluded.weight END
                 """,
@@ -460,15 +461,19 @@ class WordGraph(IgorBase):
                 )
 
                 # language tags (first writer wins)
-                conn.executemany(
-                    "INSERT OR IGNORE INTO wg_word_lang (word, lang) VALUES (?, ?)",
-                    [(w, lang) for w in unique],
-                )
-                # Increment word_count by number of genuinely new words (INSERT OR IGNORE
-                # only counts actual inserts in changes(), not ignored conflicts).
-                # T-wg-meta-upsert-latency: batched via _inc_word_count instead of
-                # direct upsert (hot row, 5.8s worst-case contention pre-batch).
-                _new_words = conn.execute("SELECT changes()").fetchone()[0]
+                # T-wg-meta-upsert-latency: batched via _inc_word_count; count
+                # actual inserts via RETURNING (replaces SQLite SELECT changes()).
+                if unique:
+                    _ph = ", ".join(["(%s, %s)"] * len(unique))
+                    _params = [v for w in unique for v in (w, lang)]
+                    _inserted = conn.execute(
+                        f"INSERT INTO wg_word_lang (word, lang) VALUES {_ph}"
+                        " ON CONFLICT (word) DO NOTHING RETURNING word",
+                        _params,
+                    ).fetchall()
+                    _new_words = len(_inserted)
+                else:
+                    _new_words = 0
                 self._inc_word_count(conn, _new_words)
 
                 self._inc_doc_count(conn)
@@ -484,7 +489,8 @@ class WordGraph(IgorBase):
                     "SELECT word, COUNT(DISTINCT doc_id) FROM wg_word_docs GROUP BY word"
                 ).fetchall()
                 conn.executemany(
-                    "INSERT OR REPLACE INTO wg_idf (word, score) VALUES (?, ?)",
+                    "INSERT INTO wg_idf (word, score) VALUES (%s, %s)"
+                    " ON CONFLICT (word) DO UPDATE SET score = EXCLUDED.score",
                     [(w, math.log(n / max(df, 1))) for w, df in rows],
                 )
 
@@ -506,17 +512,17 @@ class WordGraph(IgorBase):
 
         with self._db() as conn:
             if lang is not None:
-                ph = ",".join("?" * len(words))
+                ph = ",".join(["%s"] * len(words))
                 lang_rows = conn.execute(
-                    f"SELECT word FROM wg_word_lang WHERE word IN ({ph}) AND lang = ?",
+                    f"SELECT word FROM wg_word_lang WHERE word IN ({ph}) AND lang = %s",
                     words + [lang],
                 ).fetchall()
                 words = [r[0] for r in lang_rows]
                 if not words:
                     return {}
 
-            w_ph = ",".join("?" * len(words))
-            doc_ph = ",".join("?" * len(doc_ids))
+            w_ph = ",".join(["%s"] * len(words))
+            doc_ph = ",".join(["%s"] * len(doc_ids))
             rows = conn.execute(
                 f"""
                 SELECT wd.doc_id, SUM(wd.weight * COALESCE(i.score, 1.0)) AS total
@@ -559,7 +565,7 @@ class WordGraph(IgorBase):
         if not words:
             return []
 
-        w_ph = ",".join("?" * len(words))
+        w_ph = ",".join(["%s"] * len(words))
         fetch = n * 3 if milieu_state else n  # fetch extra when milieu tilt applied
 
         # G-WG2: LRU-style cache — skip DB aggregation on repeated context
@@ -579,10 +585,10 @@ class WordGraph(IgorBase):
                         SELECT e.word_b, SUM(e.similarity) AS total
                         FROM wg_edges e
                         JOIN wg_word_lang l ON e.word_b = l.word
-                        WHERE e.word_a IN ({w_ph}) AND l.lang = ?
+                        WHERE e.word_a IN ({w_ph}) AND l.lang = %s
                         GROUP BY e.word_b
                         ORDER BY total DESC
-                        LIMIT ?
+                        LIMIT %s
                     """,
                         words + [lang, fetch],
                     ).fetchall()
@@ -596,7 +602,7 @@ class WordGraph(IgorBase):
                         WHERE word_a IN ({w_ph})
                         GROUP BY word_b
                         ORDER BY total DESC
-                        LIMIT ?
+                        LIMIT %s
                     """,
                         words + [fetch],
                     ).fetchall()
@@ -697,7 +703,7 @@ class WordGraph(IgorBase):
                     )[:max_frontier]
                 )
             words_list = list(current_frontier.keys())
-            ph = ",".join("?" * len(words_list))
+            ph = ",".join(["%s"] * len(words_list))
             try:
                 with self._db() as conn:
                     rows = conn.execute(
@@ -737,7 +743,7 @@ class WordGraph(IgorBase):
         top_words = sorted(word_scores, key=word_scores.__getitem__, reverse=True)[
             :limit
         ]
-        ph = ",".join("?" * len(top_words))
+        ph = ",".join(["%s"] * len(top_words))
         try:
             with self._db() as conn:
                 rows = conn.execute(
@@ -773,10 +779,10 @@ class WordGraph(IgorBase):
         join = ""
 
         if words_only:
-            conditions.append("INSTR(c.word_a, '__') = 0")
+            conditions.append("strpos(c.word_a, '__') = 0")
         if lang is not None:
             join = " JOIN wg_word_lang l ON c.word_a = l.word"
-            conditions.append("l.lang = ?")
+            conditions.append("l.lang = %s")
             params.append(lang)
 
         where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
@@ -786,7 +792,7 @@ class WordGraph(IgorBase):
             rows = conn.execute(
                 f"SELECT c.word_a, COUNT(*) AS degree"
                 f" FROM wg_cooccur c{join}{where}"
-                f" GROUP BY c.word_a ORDER BY degree DESC LIMIT ?",
+                f" GROUP BY c.word_a ORDER BY degree DESC LIMIT %s",
                 params,
             ).fetchall()
         return [(r[0], r[1]) for r in rows]
@@ -806,10 +812,10 @@ class WordGraph(IgorBase):
                 SELECT ca.word_b, ca.score + cb.score AS combined
                 FROM wg_cooccur ca
                 JOIN wg_cooccur cb ON ca.word_b = cb.word_b
-                WHERE ca.word_a = ? AND cb.word_a = ?
-                  AND INSTR(ca.word_b, '__') = 0
+                WHERE ca.word_a = %s AND cb.word_a = %s
+                  AND strpos(ca.word_b, '__') = 0
                 ORDER BY combined DESC
-                LIMIT ?
+                LIMIT %s
             """,
                 (word_a.lower(), word_b.lower(), n),
             ).fetchall()
@@ -825,11 +831,11 @@ class WordGraph(IgorBase):
                 """
                 SELECT word, SUM(weight) AS total_weight
                 FROM wg_word_docs
-                WHERE INSTR(word, '__') = 0
+                WHERE strpos(word, '__') = 0
                 GROUP BY word
-                HAVING SUM(CASE WHEN doc_id NOT LIKE ? THEN 1 ELSE 0 END) = 0
+                HAVING SUM(CASE WHEN doc_id NOT LIKE %s THEN 1 ELSE 0 END) = 0
                 ORDER BY total_weight DESC
-                LIMIT ?
+                LIMIT %s
             """,
                 (doc_prefix + "%", n),
             ).fetchall()
@@ -842,7 +848,7 @@ class WordGraph(IgorBase):
         """
         with self._db() as conn:
             rows = conn.execute(
-                "SELECT word FROM wg_word_lang WHERE lang = ? AND INSTR(word, '__') = 0",
+                "SELECT word FROM wg_word_lang WHERE lang = %s AND strpos(word, '__') = 0",
                 (lang,),
             ).fetchall()
         return [r[0] for r in rows]
@@ -858,7 +864,7 @@ class WordGraph(IgorBase):
         with self._lock:
             with self._db() as conn:
                 conn.execute(
-                    "UPDATE wg_word_docs SET weight = CASE WHEN weight + ? > 2.0 THEN 2.0 ELSE weight + ? END WHERE doc_id = ?",
+                    "UPDATE wg_word_docs SET weight = CASE WHEN weight + %s > 2.0 THEN 2.0 ELSE weight + %s END WHERE doc_id = %s",
                     (boost, boost, doc_id),
                 )
 
@@ -915,8 +921,8 @@ class WordGraph(IgorBase):
             with self._db() as conn:
                 conn.executemany(
                     """
-                    UPDATE wg_cooccur SET score = CASE WHEN score + ? > 2.0 THEN 2.0 ELSE score + ? END
-                    WHERE word_a = ? AND word_b = ?
+                    UPDATE wg_cooccur SET score = CASE WHEN score + %s > 2.0 THEN 2.0 ELSE score + %s END
+                    WHERE word_a = %s AND word_b = %s
                 """,
                     [(boost, boost, w, w2) for w in unique for w2 in unique if w != w2],
                 )
