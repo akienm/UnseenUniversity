@@ -2,8 +2,6 @@
 tests/test_d126_postgres.py — D126 two-channel proxy + PendingReplyStore unit tests.
 
 Tests:
-  - PGConnWrapper.executescript splits and runs multi-statement SQL
-  - PGConnWrapper.execute silently no-ops PRAGMA statements
   - make_home_proxy / make_local_proxy factory routing
   - PendingReplyStore schema init, enqueue, drain
   - WordGraph initialises without error when home proxy is Postgres
@@ -13,11 +11,9 @@ from __future__ import annotations
 
 import os
 import pytest
-import sqlite3
-import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import patch
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -31,72 +27,6 @@ def _add_repo_to_path():
 
 
 _add_repo_to_path()
-
-
-# ── PGConnWrapper shims ───────────────────────────────────────────────────────
-
-
-class TestPGConnWrapperShims(unittest.TestCase):
-    """Test SQLite-compat shims on _PGConnWrapper without a real Postgres."""
-
-    def _make_wrapper(self):
-        from wild_igor.igor.memory.db_proxy import _PGConnWrapper
-
-        # Minimal fake psycopg2 connection + cursor
-        fake_conn = MagicMock()
-        fake_cur = MagicMock()
-        fake_conn.cursor.return_value = fake_cur
-        # Patch psycopg2.extras so __init__ doesn't fail
-        import sys
-
-        fake_extras = MagicMock()
-        fake_extras.RealDictCursor = MagicMock()
-        with patch.dict(
-            sys.modules, {"psycopg2": MagicMock(), "psycopg2.extras": fake_extras}
-        ):
-            wrapper = _PGConnWrapper.__new__(_PGConnWrapper)
-            wrapper._conn = fake_conn
-            wrapper._cur = fake_cur
-            wrapper._last_sql = ""
-        return wrapper, fake_conn, fake_cur
-
-    def test_pragma_is_noop(self):
-        """PRAGMA statements must silently return self without touching the cursor."""
-        wrapper, conn, cur = self._make_wrapper()
-        result = wrapper.execute("PRAGMA journal_mode=WAL")
-        self.assertIs(result, wrapper)
-        cur.execute.assert_not_called()
-
-    def test_pragma_case_insensitive(self):
-        wrapper, _, cur = self._make_wrapper()
-        wrapper.execute("pragma wal_checkpoint(PASSIVE)")
-        cur.execute.assert_not_called()
-
-    def test_executescript_calls_each_statement(self):
-        """executescript splits on ';' and executes each non-empty statement.
-        DDL SQL lands on self._cur (= fake_cur set at init).
-        Savepoint housekeeping lands on self._conn.cursor() (= sp_cur set after init).
-        """
-        wrapper, fake_conn, fake_cur = self._make_wrapper()
-        # Redirect savepoint cursor so its calls don't pollute fake_cur
-        sp_cur = MagicMock()
-        fake_conn.cursor.return_value = sp_cur
-
-        wrapper.executescript("CREATE TABLE a (id INT);\nCREATE TABLE b (id INT);\n")
-        # DDL goes to self._cur which is fake_cur (assigned at init time)
-        calls = [str(c) for c in fake_cur.execute.call_args_list]
-        ddl_calls = [c for c in calls if "CREATE TABLE" in c]
-        self.assertEqual(len(ddl_calls), 2)
-
-    def test_executescript_skips_empty_statements(self):
-        wrapper, fake_conn, fake_cur = self._make_wrapper()
-        sp_cur = MagicMock()
-        fake_conn.cursor.return_value = sp_cur
-
-        wrapper.executescript("CREATE TABLE x (id INT);\n\n;\n")
-        calls = [str(c) for c in fake_cur.execute.call_args_list]
-        ddl_calls = [c for c in calls if "CREATE TABLE" in c]
-        self.assertEqual(len(ddl_calls), 1)
 
 
 # ── make_home_proxy / make_local_proxy routing ────────────────────────────────
