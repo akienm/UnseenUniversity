@@ -175,46 +175,52 @@ class TestProxyFactories(unittest.TestCase):
 
 
 class TestPendingReplyStore(unittest.TestCase):
-    """Test PendingReplyStore using real SQLite as the local proxy."""
+    """Test PendingReplyStore using Postgres (make_local_proxy / make_home_proxy)."""
 
     def _make_store(self, on_worry=None):
-        from wild_igor.igor.memory.db_proxy import DatabaseProxy
+        from wild_igor.igor.memory.db_proxy import make_home_proxy, make_local_proxy
         from wild_igor.igor.memory.pending_replies import PendingReplyStore
 
-        tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
-        tmp.close()
-        self._tmp_path = Path(tmp.name)
-
-        local_proxy = DatabaseProxy(self._tmp_path)
-        home_proxy = DatabaseProxy(self._tmp_path)  # same file for simplicity
+        local_proxy = make_local_proxy()
+        home_proxy = make_home_proxy()
         return PendingReplyStore(local_proxy, home_proxy, on_worry=on_worry)
 
-    def tearDown(self):
-        if hasattr(self, "_tmp_path") and self._tmp_path.exists():
-            self._tmp_path.unlink()
+    def setUp(self):
+        # Clear test rows so each test starts with a known baseline
+        from wild_igor.igor.memory.db_proxy import make_local_proxy
+
+        try:
+            with make_local_proxy()() as conn:
+                conn.execute(
+                    "DELETE FROM pending_replies WHERE table_name = %s",
+                    ("wg_cooccur_test",),
+                )
+        except Exception:
+            pass
 
     def test_schema_creates_table(self):
+        """pending_replies table is accessible via the local proxy."""
         store = self._make_store()
-        conn = sqlite3.connect(str(self._tmp_path))
-        tables = [
-            r[0]
-            for r in conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table'"
-            ).fetchall()
-        ]
-        conn.close()
-        self.assertIn("pending_replies", tables)
+        # If _ensure_schema succeeds and pending_count() works, table exists
+        count = store.pending_count()
+        self.assertIsInstance(count, int)
 
     def test_enqueue_stores_row(self):
         store = self._make_store()
-        row_id = store.enqueue("wg_cooccur", "upsert", {"pairs": [["a", "b", 1.0]]})
+        before = store.pending_count()
+        row_id = store.enqueue(
+            "wg_cooccur_test", "upsert", {"pairs": [["a", "b", 1.0]]}
+        )
         self.assertIsNotNone(row_id)
+        self.assertIsInstance(row_id, int)
         count = store.pending_count()
-        self.assertEqual(count, 1)
+        self.assertEqual(count, before + 1)
 
-    def test_pending_count_zero_initially(self):
+    def test_pending_count_is_integer(self):
         store = self._make_store()
-        self.assertEqual(store.pending_count(), 0)
+        count = store.pending_count()
+        self.assertIsInstance(count, int)
+        self.assertGreaterEqual(count, 0)
 
     def test_worry_fires_via_callback(self):
         """_raise_worry calls the on_worry callback with the reason string."""
