@@ -119,7 +119,9 @@ class ClaudeDevice(BaseDevice):
         return []
 
     def logs(self) -> dict:
-        return {"paths": {}}
+        from config.device_config import agent_datacenter_logs
+
+        return {"paths": {"chat": str(agent_datacenter_logs() / "CC.0")}}
 
     def update_info(self) -> dict:
         return {"current_version": "0.1.0", "update_available": False}
