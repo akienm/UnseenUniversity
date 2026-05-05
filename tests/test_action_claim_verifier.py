@@ -13,7 +13,7 @@ shared database' when no such ticket was ever written.
 Tests cover:
   - detect_action_claims finds ticket-filing phrases
   - detect skips innocuous text
-  - find_evidence picks up cc_queue.json modifications (file mtime)
+  - find_evidence picks up recent cc_queue ticket updates (Postgres)
   - find_evidence picks up recent RESOLVED|/TOOL_RESULT| ring entries
   - check_response is no-op when no claims are present
   - check_response is no-op when claims present AND evidence present
@@ -21,9 +21,7 @@ Tests cover:
   - check_response NEVER raises and NEVER modifies response_text
 """
 
-import os
 import sys
-import time
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -119,52 +117,35 @@ def test_find_evidence_returns_dict_shape():
 
 
 def test_find_evidence_picks_up_recent_queue_write():
-    """Touch cc_queue.json so its mtime is now, then verify
-    queue_modified=True."""
+    """When _cc_queue_recently_modified returns True, queue_modified=True."""
     from wild_igor.igor.cognition.action_claim_verifier import find_evidence
-
-    queue_path = Path.home() / ".TheIgors" / "cc_channel" / "queue.json"
-    if not queue_path.exists():
-        pytest.skip("cc_queue.json not present in this environment")
-    # Touch mtime to now
-    os.utime(queue_path, None)
 
     cortex = MagicMock()
     cortex.search_ring = MagicMock(return_value=[])
 
-    result = find_evidence(cortex)
+    with patch(
+        "wild_igor.igor.cognition.action_claim_verifier._cc_queue_recently_modified",
+        return_value=True,
+    ):
+        result = find_evidence(cortex)
     assert result["queue_modified"] is True
     assert result["any_evidence"] is True
 
 
 def test_find_evidence_no_evidence_when_quiet():
-    """Mock cortex with no ring results AND temporarily back-date the
-    queue file mtime past the window."""
-    from wild_igor.igor.cognition.action_claim_verifier import (
-        find_evidence,
-        _EVIDENCE_WINDOW_SEC,
-    )
+    """When _cc_queue_recently_modified returns False and no ring results, any_evidence=False."""
+    from wild_igor.igor.cognition.action_claim_verifier import find_evidence
 
-    queue_path = Path.home() / ".TheIgors" / "cc_channel" / "queue.json"
-    if not queue_path.exists():
-        pytest.skip("cc_queue.json not present in this environment")
+    cortex = MagicMock()
+    cortex.search_ring = MagicMock(return_value=[])
 
-    # Save original mtime, back-date past the window
-    orig_atime = queue_path.stat().st_atime
-    orig_mtime = queue_path.stat().st_mtime
-    long_ago = time.time() - _EVIDENCE_WINDOW_SEC - 60
-    os.utime(queue_path, (orig_atime, long_ago))
-
-    try:
-        cortex = MagicMock()
-        cortex.search_ring = MagicMock(return_value=[])
-
+    with patch(
+        "wild_igor.igor.cognition.action_claim_verifier._cc_queue_recently_modified",
+        return_value=False,
+    ):
         result = find_evidence(cortex)
-        assert result["queue_modified"] is False
-        assert result["any_evidence"] is False
-    finally:
-        # Restore original mtime
-        os.utime(queue_path, (orig_atime, orig_mtime))
+    assert result["queue_modified"] is False
+    assert result["any_evidence"] is False
 
 
 # ── check_response ───────────────────────────────────────────────────────────
@@ -185,21 +166,19 @@ def test_check_response_noop_on_clean_text():
 
 
 def test_check_response_noop_when_claim_has_evidence():
-    """Action claim present, but cc_queue.json mtime is fresh → verified,
-    no warning fired."""
+    """Action claim present, queue recently updated → verified, no warning fired."""
     from wild_igor.igor.cognition.action_claim_verifier import check_response
-
-    queue_path = Path.home() / ".TheIgors" / "cc_channel" / "queue.json"
-    if not queue_path.exists():
-        pytest.skip("cc_queue.json not present in this environment")
-    os.utime(queue_path, None)  # fresh mtime
 
     cortex = MagicMock()
     cortex.search_ring = MagicMock(return_value=[])
     cortex.write_ring = MagicMock()
     cortex.twm_push = MagicMock()
 
-    unverified = check_response(cortex, "I ticketed it. Done.", turn_id="testturn")
+    with patch(
+        "wild_igor.igor.cognition.action_claim_verifier._cc_queue_recently_modified",
+        return_value=True,
+    ):
+        unverified = check_response(cortex, "I ticketed it. Done.", turn_id="testturn")
     assert unverified == []
     cortex.write_ring.assert_not_called()
     cortex.twm_push.assert_not_called()
@@ -208,44 +187,32 @@ def test_check_response_noop_when_claim_has_evidence():
 def test_check_response_logs_and_pushes_when_unverified():
     """The exact 2026-04-13 case: claim present, no evidence anchor —
     should log CONFAB_CAUGHT and push high-salience TWM marker."""
-    from wild_igor.igor.cognition.action_claim_verifier import (
-        check_response,
-        _EVIDENCE_WINDOW_SEC,
-    )
+    from wild_igor.igor.cognition.action_claim_verifier import check_response
 
-    queue_path = Path.home() / ".TheIgors" / "cc_channel" / "queue.json"
-    if not queue_path.exists():
-        pytest.skip("cc_queue.json not present in this environment")
+    cortex = MagicMock()
+    cortex.search_ring = MagicMock(return_value=[])
+    cortex.write_ring = MagicMock()
+    cortex.twm_push = MagicMock()
 
-    # Back-date queue file past the window so no evidence is found
-    orig_atime = queue_path.stat().st_atime
-    orig_mtime = queue_path.stat().st_mtime
-    long_ago = time.time() - _EVIDENCE_WINDOW_SEC - 60
-    os.utime(queue_path, (orig_atime, long_ago))
-
-    try:
-        cortex = MagicMock()
-        cortex.search_ring = MagicMock(return_value=[])
-        cortex.write_ring = MagicMock()
-        cortex.twm_push = MagicMock()
-
+    with patch(
+        "wild_igor.igor.cognition.action_claim_verifier._cc_queue_recently_modified",
+        return_value=False,
+    ):
         unverified = check_response(
             cortex,
             "The ticket about the privacy-guard halt is already in the shared database.",
             turn_id="confabturn",
             thread_id="web:shared",
         )
-        assert len(unverified) >= 1
-        # Both side effects fired
-        cortex.write_ring.assert_called_once()
-        cortex.twm_push.assert_called_once()
-        # The TWM push is at high salience and the right category
-        push_kwargs = cortex.twm_push.call_args.kwargs
-        assert push_kwargs["category"] == "confab_caught"
-        assert push_kwargs["salience"] >= 0.85
-        assert "CONFAB_CAUGHT" in push_kwargs["content_csb"]
-    finally:
-        os.utime(queue_path, (orig_atime, orig_mtime))
+    assert len(unverified) >= 1
+    # Both side effects fired
+    cortex.write_ring.assert_called_once()
+    cortex.twm_push.assert_called_once()
+    # The TWM push is at high salience and the right category
+    push_kwargs = cortex.twm_push.call_args.kwargs
+    assert push_kwargs["category"] == "confab_caught"
+    assert push_kwargs["salience"] >= 0.85
+    assert "CONFAB_CAUGHT" in push_kwargs["content_csb"]
 
 
 def test_check_response_never_raises():

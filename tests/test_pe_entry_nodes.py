@@ -6,9 +6,7 @@ active goals, or cc_queue on disk. Each step is tested in isolation and
 in chain composition.
 """
 
-import json
 import sys
-import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -51,14 +49,6 @@ SAMPLE_TICKET = {
     "status": "pending",
     "required_files": ["wild_igor/igor/tools/ops.py"],
 }
-
-
-@pytest.fixture
-def tmp_queue(tmp_path):
-    """Write a temp queue.json with one ticket."""
-    q = tmp_path / "queue.json"
-    q.write_text(json.dumps([SAMPLE_TICKET]))
-    return q
 
 
 @pytest.fixture
@@ -172,48 +162,60 @@ class TestPeClaim:
 
 
 class TestPeReadTicket:
-    def test_populates_ticket_description(self, basket_with_ticket, tmp_queue):
-        with patch("wild_igor.igor.tools.pe_chain._QUEUE_FILE", tmp_queue):
+    def test_populates_ticket_description(self, basket_with_ticket):
+        with patch(
+            "wild_igor.igor.tools.pe_chain._load_queue_tasks",
+            return_value=[SAMPLE_TICKET],
+        ):
             result = pe_read_ticket(basket_with_ticket)
         assert result["ticket_description"] == SAMPLE_TICKET["description"]
 
-    def test_populates_ticket_title(self, basket_with_ticket, tmp_queue):
-        with patch("wild_igor.igor.tools.pe_chain._QUEUE_FILE", tmp_queue):
+    def test_populates_ticket_title(self, basket_with_ticket):
+        with patch(
+            "wild_igor.igor.tools.pe_chain._load_queue_tasks",
+            return_value=[SAMPLE_TICKET],
+        ):
             result = pe_read_ticket(basket_with_ticket)
         assert result["ticket_title"] == SAMPLE_TICKET["title"]
 
-    def test_populates_plan_files(self, basket_with_ticket, tmp_queue):
-        with patch("wild_igor.igor.tools.pe_chain._QUEUE_FILE", tmp_queue):
+    def test_populates_plan_files(self, basket_with_ticket):
+        with patch(
+            "wild_igor.igor.tools.pe_chain._load_queue_tasks",
+            return_value=[SAMPLE_TICKET],
+        ):
             result = pe_read_ticket(basket_with_ticket)
         assert result["plan_files"] == ["wild_igor/igor/tools/ops.py"]
 
-    def test_plan_files_empty_list_when_absent(self, tmp_queue):
+    def test_plan_files_empty_list_when_absent(self):
         ticket_no_files = {**SAMPLE_TICKET, "required_files": None}
-        tmp_queue.write_text(json.dumps([ticket_no_files]))
         basket = {"ticket_id": "T-test-ticket"}
-        with patch("wild_igor.igor.tools.pe_chain._QUEUE_FILE", tmp_queue):
+        with patch(
+            "wild_igor.igor.tools.pe_chain._load_queue_tasks",
+            return_value=[ticket_no_files],
+        ):
             result = pe_read_ticket(basket)
         assert result["plan_files"] == []
 
-    def test_error_when_ticket_not_found(self, basket_with_ticket, tmp_queue):
-        tmp_queue.write_text(json.dumps([]))  # empty queue
-        with patch("wild_igor.igor.tools.pe_chain._QUEUE_FILE", tmp_queue):
+    def test_error_when_ticket_not_found(self, basket_with_ticket):
+        with patch("wild_igor.igor.tools.pe_chain._load_queue_tasks", return_value=[]):
             result = pe_read_ticket(basket_with_ticket)
         assert "error" in result
         assert "T-test-ticket" in result["error"]
 
-    def test_error_passthrough(self, tmp_queue):
+    def test_error_passthrough(self):
         basket = {"error": "prior error", "ticket_id": "T-test-ticket"}
         result = pe_read_ticket(basket)
         assert result["error"] == "prior error"
         assert "ticket_description" not in result
 
-    def test_uses_title_as_fallback_when_no_description(self, tmp_queue):
+    def test_uses_title_as_fallback_when_no_description(self):
         ticket_no_desc = {**SAMPLE_TICKET}
         del ticket_no_desc["description"]
-        tmp_queue.write_text(json.dumps([ticket_no_desc]))
         basket = {"ticket_id": "T-test-ticket"}
-        with patch("wild_igor.igor.tools.pe_chain._QUEUE_FILE", tmp_queue):
+        with patch(
+            "wild_igor.igor.tools.pe_chain._load_queue_tasks",
+            return_value=[ticket_no_desc],
+        ):
             result = pe_read_ticket(basket)
         assert result["ticket_description"] == SAMPLE_TICKET["title"]
 
@@ -222,10 +224,13 @@ class TestPeReadTicket:
 
 
 class TestRunPeEntryChain:
-    def test_full_chain_populates_basket(self, tmp_queue):
+    def test_full_chain_populates_basket(self):
         """Full chain: basket seeded with ticket_id → claim → read → test pass."""
         with (
-            patch("wild_igor.igor.tools.pe_chain._QUEUE_FILE", tmp_queue),
+            patch(
+                "wild_igor.igor.tools.pe_chain._load_queue_tasks",
+                return_value=[SAMPLE_TICKET],
+            ),
             patch(
                 "wild_igor.igor.tools.pe_chain._run_bash",
                 return_value="Claimed T-test-ticket",
@@ -257,11 +262,8 @@ class TestRunPeEntryChain:
         assert result["attempt_count"] == 0
         assert result["expected"] == "tests pass, requirements met"
 
-    def test_chain_stops_on_error(self, tmp_queue):
+    def test_chain_stops_on_error(self):
         """If ENTRY fails, CLAIM and READ_TICKET must not run."""
-        empty_queue = tmp_queue
-        empty_queue.write_text(json.dumps([]))
-
         with (
             patch("wild_igor.igor.tools.pe_chain._get_active_goal", return_value=None),
             patch("wild_igor.igor.tools.pe_chain._run_bash") as mock_bash,
@@ -271,9 +273,8 @@ class TestRunPeEntryChain:
         assert "error" in result
         mock_bash.assert_not_called()  # CLAIM never ran
 
-    def test_chain_stops_when_ticket_not_found(self, tmp_queue):
-        tmp_queue.write_text(json.dumps([]))
-        with patch("wild_igor.igor.tools.pe_chain._QUEUE_FILE", tmp_queue):
+    def test_chain_stops_when_ticket_not_found(self):
+        with patch("wild_igor.igor.tools.pe_chain._load_queue_tasks", return_value=[]):
             with patch(
                 "wild_igor.igor.tools.pe_chain._run_bash",
                 return_value="ok",
@@ -282,11 +283,14 @@ class TestRunPeEntryChain:
         assert "error" in result
         assert "ticket_description" not in result
 
-    def test_full_chain_with_situate_uses_required_files(self, tmp_queue):
+    def test_full_chain_with_situate_uses_required_files(self):
         """When ticket has required_files, SITUATE uses them (no SITUATE Ollama call).
         HYPOTHESIZE may still call tier.2 — that's expected."""
         with (
-            patch("wild_igor.igor.tools.pe_chain._QUEUE_FILE", tmp_queue),
+            patch(
+                "wild_igor.igor.tools.pe_chain._load_queue_tasks",
+                return_value=[SAMPLE_TICKET],
+            ),
             patch("wild_igor.igor.tools.pe_chain._run_bash", return_value="ok"),
             patch("wild_igor.igor.tools.pe_chain._call_tier2", return_value=None),
             patch(
