@@ -20,6 +20,7 @@ from bus.envelope import Envelope
 from bus.imap_server import IMAPServer
 
 from .broker import AnnounceBroker, AnnounceError
+from .channels import ChannelRegistry
 from .envelope import ANNOUNCE_MAILBOX, IdentityEnvelope, ValidationError
 from .manifest import ANNOUNCE_EVENTS_MAILBOX
 
@@ -31,10 +32,13 @@ class AnnounceListener:
     Wraps an AnnounceBroker with IMAP I/O.
 
     Args:
-        broker:      AnnounceBroker instance (slice 1).
-        imap_server: bus.IMAPServer used for fetch + append.
-        from_device: identifier the listener uses on outbound envelopes.
-                     Defaults to 'skeleton'.
+        broker:           AnnounceBroker instance (slice 1).
+        imap_server:      bus.IMAPServer used for fetch + append.
+        from_device:      identifier the listener uses on outbound envelopes.
+                          Defaults to 'skeleton'.
+        channel_registry: optional ChannelRegistry — when set, registers the
+                          announcing agent's mailbox in each of its subscribed
+                          channels after a successful manifest resolve.
     """
 
     def __init__(
@@ -42,10 +46,12 @@ class AnnounceListener:
         broker: AnnounceBroker,
         imap_server: IMAPServer,
         from_device: str = "skeleton",
+        channel_registry: ChannelRegistry | None = None,
     ) -> None:
         self._broker = broker
         self._imap = imap_server
         self._from_device = from_device
+        self._channels = channel_registry
 
     def pump(self) -> int:
         """
@@ -101,6 +107,10 @@ class AnnounceListener:
                 original=identity.to_dict(),
             )
             return
+
+        if self._channels is not None:
+            for sub in manifest.subscriptions:
+                self._channels.register_member(sub.name, identity.primary_mailbox)
 
         reply = Envelope.now(
             from_device=self._from_device,

@@ -29,6 +29,7 @@ from agent_datacenter.announce import (
     AnnounceBroker,
     AnnounceListener,
 )
+from agent_datacenter.announce.channels import ChannelRegistry
 from agent_datacenter.announce.manifest import INVALIDATE_MAILBOX
 from agent_datacenter.device import BaseDevice, INTERFACE_VERSION
 from agent_datacenter.skeleton.exceptions import AuthError, RegistrationError
@@ -63,6 +64,7 @@ class Skeleton(BaseDevice):
         self._devices: dict[str, BaseDevice] = {}  # live device objects
         self._announce_broker: AnnounceBroker | None = None
         self._announce_listener: AnnounceListener | None = None
+        self._channel_registry: ChannelRegistry | None = None
         self._mcp = FastMCP("agent_datacenter")
         self._setup_rack_tools()
         # Register self in the flat-file registry
@@ -88,6 +90,12 @@ class Skeleton(BaseDevice):
                 self._imap_server.create_mailbox(mailbox)
             except Exception as exc:
                 log.warning("announce: could not create mailbox %r: %s", mailbox, exc)
+        try:
+            self._imap_server.create_mailbox("shared")
+        except Exception as exc:
+            log.warning("announce: could not create shared channel mailbox: %s", exc)
+
+        self._channel_registry = ChannelRegistry()
         self._announce_broker = AnnounceBroker(
             profiles_dir=profiles_dir,
             registry=self._registry,
@@ -97,6 +105,7 @@ class Skeleton(BaseDevice):
             broker=self._announce_broker,
             imap_server=self._imap_server,
             from_device=self.DEVICE_ID,
+            channel_registry=self._channel_registry,
         )
         log.info(
             "announce: broker registered as skeleton sub-device "
@@ -108,6 +117,11 @@ class Skeleton(BaseDevice):
         if self._announce_listener is None:
             return 0
         return self._announce_listener.pump()
+
+    @property
+    def channels(self) -> ChannelRegistry | None:
+        """The channel registry wired at announce time, or None if bus not attached."""
+        return self._channel_registry
 
     # ── MCP tool registration ─────────────────────────────────────────────────
 
