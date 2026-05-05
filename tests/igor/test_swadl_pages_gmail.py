@@ -124,10 +124,31 @@ class TestMessageRef:
 
 
 class TestInboxPageLoad:
+    def _set_profile(self, value):
+        import SWADL.engine.swadl_cfg as cfg_mod
+        import SWADL.engine.swadl_constants as const_mod
+
+        if value is None:
+            cfg_mod.cfgdict.pop(const_mod.SELENIUM_USER_DATA_DIR, None)
+        else:
+            cfg_mod.cfgdict[const_mod.SELENIUM_USER_DATA_DIR] = value
+
     def test_load_navigates_to_inbox_url(self):
+        self._set_profile("/fake/profile")
+        try:
+            driver = _mock_driver()
+            InboxPage(driver_override=driver).load()
+            driver.get.assert_called_once_with(
+                "https://mail.google.com/mail/u/0/#inbox"
+            )
+        finally:
+            self._set_profile(None)
+
+    def test_load_raises_when_profile_not_set(self):
+        self._set_profile(None)
         driver = _mock_driver()
-        InboxPage(driver_override=driver).load()
-        driver.get.assert_called_once_with("https://mail.google.com/mail/u/0/#inbox")
+        with pytest.raises(RuntimeError, match="SELENIUM_USER_DATA_DIR"):
+            InboxPage(driver_override=driver).load()
 
 
 class TestInboxPageFirstNMessages:
