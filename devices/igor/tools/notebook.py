@@ -135,9 +135,18 @@ def save_entry(
             eid = _entry_id(user_slug, title, i)
             embedding = _embed(chunk)
             con.execute(
-                """INSERT OR REPLACE INTO entries
+                """INSERT INTO entries
                    (id, title, source, content, embedding, tags, ingested_at, chunk_index, total_chunks)
-                   VALUES (?,?,?,?,?,?,?,?,?)""",
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                   ON CONFLICT (id) DO UPDATE SET
+                     title = EXCLUDED.title,
+                     source = EXCLUDED.source,
+                     content = EXCLUDED.content,
+                     embedding = EXCLUDED.embedding,
+                     tags = EXCLUDED.tags,
+                     ingested_at = EXCLUDED.ingested_at,
+                     chunk_index = EXCLUDED.chunk_index,
+                     total_chunks = EXCLUDED.total_chunks""",
                 (
                     eid,
                     title,
@@ -237,17 +246,17 @@ def remove_entry(user_slug: str, id_or_title: str) -> str:
         return "Your notebook is empty."
     with _proxy(user_slug)() as con:
         rows = con.execute(
-            "SELECT id, title FROM entries WHERE id LIKE ?", (id_or_title + "%",)
+            "SELECT id, title FROM entries WHERE id LIKE %s", (id_or_title + "%",)
         ).fetchall()
         if not rows:
             rows = con.execute(
-                "SELECT id, title FROM entries WHERE title = ?", (id_or_title,)
+                "SELECT id, title FROM entries WHERE title = %s", (id_or_title,)
             ).fetchall()
         if not rows:
             return f"Nothing found in your notebook matching '{id_or_title}'."
         titles = set(r["title"] for r in rows)
         for r in rows:
-            con.execute("DELETE FROM entries WHERE id = ?", (r["id"],))
+            con.execute("DELETE FROM entries WHERE id = %s", (r["id"],))
     return (
         f"Removed {len(rows)} chunk{'s' if len(rows) != 1 else ''}: {', '.join(titles)}"
     )
