@@ -802,10 +802,10 @@ def get_reading_list(**kwargs) -> str:
         sql = "SELECT * FROM reading_list WHERE 1=1"
         params = []
         if status_filter:
-            sql += " AND status = ?"
+            sql += " AND status = %s"
             params.append(status_filter)
         if type_filter:
-            sql += " AND book_type = ?"
+            sql += " AND book_type = %s"
             params.append(type_filter)
         sql += " ORDER BY priority, id"
         with _igor_db_proxy()() as conn:
@@ -857,7 +857,7 @@ def add_to_reading_list(**kwargs) -> str:
                 INSERT INTO reading_list
                 (id, title, author, source, book_type, reading_rate, priority, status,
                  emotional_significance, encoding_arousal, notes, added_by, added_at)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """,
                 (
                     new_id,
@@ -895,20 +895,20 @@ def update_reading_status(**kwargs) -> str:
         ts = _time.strftime("%Y-%m-%dT%H:%M:%S")
         with _igor_db_proxy()() as conn:
             if status == "in_progress":
-                conn.execute(
-                    "UPDATE reading_list SET status=?, started_at=? WHERE id=?",
+                cur = conn.execute(
+                    "UPDATE reading_list SET status=%s, started_at=%s WHERE id=%s",
                     (status, ts, rl_id),
                 )
             elif status == "completed":
-                conn.execute(
-                    "UPDATE reading_list SET status=?, completed_at=? WHERE id=?",
+                cur = conn.execute(
+                    "UPDATE reading_list SET status=%s, completed_at=%s WHERE id=%s",
                     (status, ts, rl_id),
                 )
             else:
-                conn.execute(
-                    "UPDATE reading_list SET status=? WHERE id=?", (status, rl_id)
+                cur = conn.execute(
+                    "UPDATE reading_list SET status=%s WHERE id=%s", (status, rl_id)
                 )
-            changed = conn.execute("SELECT changes()").fetchone()[0]
+            changed = cur.rowcount
         return (
             f"Updated {rl_id} → {status}"
             if changed
@@ -1695,7 +1695,7 @@ def ingest_calibre_igor_books(**_kwargs) -> str:
     try:
         with _igor_db_proxy()() as conn:
             rows = conn.execute(
-                "SELECT source, encoding_arousal FROM reading_list WHERE source LIKE ?",
+                "SELECT source, encoding_arousal FROM reading_list WHERE source LIKE %s",
                 ("calibre://%",),
             ).fetchall()
         existing: dict = {r[0]: float(r[1]) for r in rows if r[0]}
@@ -1718,7 +1718,7 @@ def ingest_calibre_igor_books(**_kwargs) -> str:
         with _igor_db_proxy()() as conn:
             for tier, (lo, hi) in _tier_ranges.items():
                 r = conn.execute(
-                    "SELECT MAX(priority) FROM reading_list WHERE priority BETWEEN ? AND ?",
+                    "SELECT MAX(priority) FROM reading_list WHERE priority BETWEEN %s AND %s",
                     (lo, hi),
                 ).fetchone()
                 pri_counters[tier] = (r[0] or lo - 1) + 1
@@ -1755,7 +1755,7 @@ def ingest_calibre_igor_books(**_kwargs) -> str:
             try:
                 with _igor_db_proxy()() as conn:
                     conn.execute(
-                        "UPDATE reading_list SET encoding_arousal=?, notes=? WHERE source=?",
+                        "UPDATE reading_list SET encoding_arousal=%s, notes=%s WHERE source=%s",
                         (arousal, notes, source),
                     )
                 updated[tier] = updated.get(tier, 0) + 1
@@ -1932,7 +1932,7 @@ def feed_reading_list(**_kwargs) -> str:
                        SELECT source FROM reading_list
                        WHERE status = 'pending' AND run_id IS NULL AND source IS NOT NULL AND source != ''
                        ORDER BY encoding_arousal DESC, priority ASC
-                       LIMIT ?
+                       LIMIT %s
                    )
                    RETURNING source, title, author, encoding_arousal""",
                 (_FEEDER_BATCH,),
@@ -1957,8 +1957,8 @@ def feed_reading_list(**_kwargs) -> str:
             with _igor_db_proxy()() as conn:
                 for url in done_urls:
                     conn.execute(
-                        "UPDATE reading_list SET status='completed', completed_at=?"
-                        " WHERE source=? AND status NOT IN ('completed', 'paused')",
+                        "UPDATE reading_list SET status='completed', completed_at=%s"
+                        " WHERE source=%s AND status NOT IN ('completed', 'paused')",
                         (datetime.now().isoformat(), url),
                     )
         except Exception as _e:
