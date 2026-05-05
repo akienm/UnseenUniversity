@@ -492,12 +492,6 @@ class Igor(IgorBase):
         DATA_DIR.mkdir(parents=True, exist_ok=True)
 
         self.cortex = Cortex(instance_id=instance_id)
-        # G-QP2/G-QP3: checkpoint WAL once at main Igor boot only, not on every Cortex instantiation
-        try:
-            with self.cortex._db() as conn:
-                conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-        except Exception as _exc:
-            log_error(kind="EXCEPTION", detail=f"wild_igor/igor/main.py: {_exc}")
 
         # T-instance-tracking-startup (#424): record boot event to JSONL + DB.
         # NOT pushed to TWM — queryable reference state, not working memory.
