@@ -22,8 +22,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from rich.console import Console
-from rich.live import Live
-from rich.spinner import Spinner
 from rich.traceback import install as _install_rich_tb
 
 _install_rich_tb(
@@ -5734,19 +5732,11 @@ class Igor(IgorBase):
                     loginfo(f"[dim][tier.0] Python response — no LLM[/]")
 
             if not _tier0_fired:
-                # [TURN PIPELINE] Substrate cascade + reasoning workflow before LLM.
-                # Gate: IGOR_TURN_PIPELINE controls whether the new biomimetic path
-                # runs ahead of the legacy gateway.reason call.
-                # Default flipped to "true" 2026-04-19 per T-retire-legacy-direct-
-                # reasoner-path: the new path is feature-complete enough (75/75 tests
-                # in turn_pipeline + reasoning_workflow + voice_ab), and the
-                # outer try/except at line 5701 falls back to the legacy gateway on
-                # any pipeline exception — zero user-visible regression risk.
-                # Set IGOR_TURN_PIPELINE=false to force legacy path during debugging.
-                # Impulses always skip the pipeline (cheap existing path).
-                _pipeline_enabled = not is_impulse and os.getenv(
-                    "IGOR_TURN_PIPELINE", "true"
-                ).lower() in ("1", "true", "yes")
+                # [TURN PIPELINE] Substrate cascade + reasoning workflow.
+                # T-retire-legacy-direct-reasoner-path: all non-impulse human turns
+                # go through the pipeline exclusively. Impulses use the gateway
+                # directly (cheap existing path).
+                _pipeline_enabled = not is_impulse
                 _pipeline_resolved = False
                 if _pipeline_enabled:
                     try:
@@ -5856,11 +5846,55 @@ class Igor(IgorBase):
                                     else ""
                                 ),
                             )
+                            # G37: escalation forensics (pipeline path)
+                            try:
+                                from .cognition.forensic_logger import (
+                                    log_escalation as _log_esc,
+                                )
+
+                                _log_esc(
+                                    tier=(
+                                        _tp_result.cascade_result.level_name
+                                        if _tp_result.cascade_result
+                                        else "pipeline"
+                                    ),
+                                    reason="pipeline_resolved",
+                                    intent=parsed.intent,
+                                    complexity=parsed.complexity,
+                                    preparse_tier=complexity.get("tier_minimum", ""),
+                                    complexity_score=complexity.get("score", 0.0),
+                                    complexity_signals="|".join(
+                                        complexity.get("signals_fired", [])
+                                    ),
+                                    input_snippet=user_input[:120],
+                                    habit_fired=bool(habit),
+                                )
+                            except Exception as _bare_e:
+                                log_error(
+                                    kind="BARE_EXCEPT",
+                                    detail=f"G37 pipeline escalation log: {_bare_e}",
+                                )
+                            # G5 / #42: prediction signal
+                            _m = milieu_mod.get()
+                            if _m is not None:
+                                _m.ingest_surprise(
+                                    (
+                                        _tp_result.cascade_result.level_name
+                                        if _tp_result.cascade_result
+                                        else "pipeline"
+                                    ),
+                                    self._current_tier,
+                                )
+                        else:
+                            response_text = "I couldn't reach a clear answer for that. Please try again."
+                            _pipeline_resolved = True
                     except Exception as _pipe_exc:
                         log_error(
                             kind="TURN_PIPELINE",
-                            detail=f"pipeline failed, falling through to gateway: {_pipe_exc}",
+                            detail=f"pipeline failed: {_pipe_exc}",
                         )
+                        response_text = "I encountered an issue working through that. Please try again."
+                        _pipeline_resolved = True
 
                 # [PREFRONTAL CORTEX] Upstream reasoning
                 # Ring context is injected by anthropic.py._build_session_context (D014)
@@ -5898,175 +5932,6 @@ class Igor(IgorBase):
                         )
                     elif response_text:
                         loginfo(f"[dim][IMPULSE/{self._gateway.last_tier}] local ok[/]")
-                else:
-                    # Interactive human turn — tier.3+ directly (D032).
-                    # Local 1B is too slow/weak for conversational UX on no-GPU hardware.
-                    # Cloud cheap (gpt-4o-mini ~$0.001/turn) is the correct default.
-
-                    # #109: cloud escalation habit evaluation — append nudge to preparse_csb
-                    # so cloud model can identify recurring patterns and trigger habit compilation.
-                    # Also surface any high-activation memory candidates from TWM (#106/#108).
-                    _habit_nudge = (
-                        "\n\n[ESCALATION NOTE] This request reached cloud reasoning. "
-                        "After responding, consider: does this request represent a recurring pattern "
-                        "you will see again? If yes, end your response with a habit compilation trigger: "
-                        "'build a habit for: [short description] — whenever [trigger phrase], [action]'. "
-                        "Only do this if a clear, general pattern exists — skip if this is one-off."
-                    )
-                    try:
-                        _twm_candidates = self.cortex.twm_read(
-                            limit=20, include_integrated=False
-                        )
-                        _cands = [
-                            o
-                            for o in _twm_candidates
-                            if o.get("source") == "habit_candidate"
-                        ][:3]
-                        if _cands:
-                            _habit_nudge += "\n\nHigh-activation memory candidates for possible habituation:"
-                            for _c in _cands:
-                                _habit_nudge += f"\n  • {_c['content_csb'][:150]}"
-                    except Exception as _bare_e:
-                        log_error(
-                            kind="BARE_EXCEPT",
-                            detail=f"wild_igor/igor/main.py: {_bare_e}",
-                        )
-                    _pre_csb_with_nudge = pre_csb + _habit_nudge
-
-                    dashboard.print_reasoning(
-                        used_api=True, skip_to=_skip_to, reason=_routing_reason
-                    )
-                    # G37: log escalation decision for weaning analysis
-                    try:
-                        from .cognition.forensic_logger import (
-                            log_escalation as _log_esc,
-                        )
-
-                        _log_esc(
-                            tier=_skip_to,
-                            reason=_routing_reason,
-                            intent=parsed.intent,
-                            complexity=parsed.complexity,
-                            preparse_tier=complexity.get("tier_minimum", ""),
-                            complexity_score=complexity.get("score", 0.0),
-                            complexity_signals="|".join(
-                                complexity.get("signals_fired", [])
-                            ),
-                            input_snippet=user_input[:120],
-                            habit_fired=bool(habit),
-                        )
-                    except Exception as _bare_e:
-                        log_error(
-                            kind="BARE_EXCEPT",
-                            detail=f"wild_igor/igor/main.py: {_bare_e}",
-                        )
-                    self._current_action = "reasoning"
-                    web_server.broadcast_activity(self._activity_state())
-
-                    # [#145 Step 3] Python-built think context — zero cost, always on.
-                    # Assembles [THINK_CONTEXT] from already-computed components:
-                    # parsed intent, word graph activation, NE prediction, near-misses,
-                    # top relevant memories, milieu. No LLM call.
-                    _tc_tbuild = _time.monotonic()
-                    _py_think = self._build_think_context(
-                        user_input,
-                        parsed,
-                        relevant,
-                        _milieu_state,
-                        _ne_pred,
-                        _thalamus_near_misses,
-                    )
-                    _log_pt(
-                        turn_id=_turn_id,
-                        step="think_build",
-                        elapsed_ms=round((_time.monotonic() - _tc_tbuild) * 1000),
-                    )
-                    _reply_input = f"{_py_think}\n\n[USER_INPUT]\n{user_input}"
-
-                    # [#145 Step 4] Optional local Ollama synthesis on top of Python context.
-                    # Gate: IGOR_TWO_PHASE_CALLS=true — adds local synthesis (zero cloud cost).
-                    # Think phase is now fully local. Only the reply call hits cloud.
-                    if (
-                        not is_impulse
-                        and not _cloud_mode_active
-                        and os.getenv("IGOR_TWO_PHASE_CALLS", "false").lower()
-                        in ("1", "true", "yes")
-                    ):
-                        _tc_tllm = _time.monotonic()
-                        _scratchpad = self._think_call(_py_think, user_input)
-                        _log_pt(
-                            turn_id=_turn_id,
-                            step="think_llm",
-                            elapsed_ms=round((_time.monotonic() - _tc_tllm) * 1000),
-                        )
-                        if _scratchpad:
-                            self.cortex.write_ring(
-                                f"THINK|local|intent={parsed.intent}|{_scratchpad[:600]}",
-                                category="think_trace",
-                                thread_id=thread_id,
-                            )
-                            _reply_input = (
-                                f"{_py_think}\n\n[THINK_SYNTHESIS]\n{_scratchpad}"
-                                f"\n\n[USER_INPUT]\n{user_input}"
-                            )
-                            console.print(
-                                f"[dim]{_cts()}[THINK] Local synthesis ready → reply call[/]"
-                            )
-
-                    _tc_reason = _time.monotonic()
-                    with Live(
-                        Spinner("dots", text=" Thinking..."),
-                        console=console,
-                        transient=True,
-                        refresh_per_second=8,
-                    ):
-                        response_text, cost, used_api = self._gateway.reason(
-                            _reply_input,
-                            relevant,
-                            core,
-                            level="interactive",
-                            skip_to=_skip_to,
-                            preparse_csb=_pre_csb_with_nudge,
-                            thread_id=thread_id,
-                            cortex=self.cortex,
-                            instance_id=self.instance_id,
-                            local_only=_local_only,
-                            on_tier=_on_tier,
-                            is_user_turn=True,
-                            complexity=parsed.complexity,
-                        )
-                    _reason_ms = round((_time.monotonic() - _tc_reason) * 1000)
-                    _reply_status = "replied" if response_text else "no response"
-                    loginfo(
-                        f"[dim][←] {_reply_status} via {self._current_tier or 'unknown'} ({_reason_ms}ms)[/]"
-                    )
-                    _log_pt(
-                        turn_id=_turn_id,
-                        step="reasoning",
-                        elapsed_ms=_reason_ms,
-                        tier=self._current_tier,
-                    )
-                    # G5 / #42: prediction signal — did we need a higher tier than expected?
-                    _m = milieu_mod.get()
-                    if _m is not None:
-                        _m.ingest_surprise(_skip_to, self._current_tier)
-
-                    # D279: predictive coding — deposit NARRATIVE_GAP when cloud fires
-                    # for a non-human-author turn (human authors always hit cloud by design).
-                    if used_api:
-                        try:
-                            _deposit_prediction_error(
-                                query=user_input,
-                                reply=response_text or "",
-                                tier=self._current_tier,
-                                author=author,
-                                cortex=self.cortex,
-                            )
-                        except Exception as _bare_e:
-                            log_error(
-                                kind="BARE_EXCEPT",
-                                detail=f"D279 gap deposit: {_bare_e}",
-                            )
 
         # [TWO-PHASE] Split think + reply blocks (#145)
         # Applied to non-habit LLM responses only. Think block logged to ring (think_trace),

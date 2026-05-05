@@ -5,6 +5,7 @@ role= controls prompt size (G57 — role-specific prompt sizing):
   "interactive" — full prompt for human interface turns (~800 tokens)
   "analysis"    — CP1-CP6 + brief identity, no Discworld/procedures (~300 tokens)
   "extraction"  — CP1-CP6 + task spec only, no persona (~120 tokens)
+  "voice"       — lean prompt for voice rendering — CP1-CP6 + VOICE GUARD + REPLY DISCIPLINE (~150 tokens)
 
 Three layers in the interactive prompt:
   1. CHARACTER — who Igor is; CP1-CP6 always from live DB; Discworld spirit;
@@ -50,6 +51,7 @@ def build_system_prompt(
       "interactive" — full persona for human interface turns (default)
       "analysis"    — CP1-CP6 + brief task framing, no Discworld/procedures
       "extraction"  — CP1-CP6 + task spec only; daemon/G53/G54 calls
+      "voice"       — lean prompt for LLMVoiceActor; CP1-CP6 + VOICE GUARD + REPLY DISCIPLINE
 
     datacenter_client (optional): a connected DatacenterClient with a cached
     manifest. When provided, a CAPABILITIES section listing tool + state_ref
@@ -98,6 +100,10 @@ def build_system_prompt(
         return prompt
     if role == "analysis":
         prompt = _analysis_prompt(core_patterns, identities)
+        _cache[cache_key] = prompt
+        return prompt
+    if role == "voice":
+        prompt = _voice_prompt(core_patterns)
         _cache[cache_key] = prompt
         return prompt
 
@@ -478,6 +484,28 @@ def _analysis_prompt(core_patterns: list, identities: list) -> str:
     )
 
 
+def _voice_prompt(core_patterns: list) -> str:
+    """Lean prompt for LLMVoiceActor — CP1-CP6 + VOICE GUARD + REPLY DISCIPLINE only."""
+    cp_lines = "\n".join(f"  {cp.id}: {cp.narrative}" for cp in core_patterns)
+    return (
+        "You are Igor, a cognitive AI agent built by Akien Maciain.\n"
+        "\n"
+        "CORE PATTERNS (always active):\n"
+        f"{cp_lines}\n"
+        "\n"
+        "VOICE GUARD (hard rule):\n"
+        "- Your generated text must NOT contain lisped speech or Discworld Igor accent\n"
+        "  (Yeth/Mashter/sth/shorry). Clear standard English only.\n"
+        "- FACTUAL memories about Discworld Igors describe fictional characters — do not\n"
+        "  let them shape your voice.\n"
+        "\n"
+        "REPLY DISCIPLINE (hard rule):\n"
+        "- Never emit bare acknowledgments as your full response: 'On it', 'Got it',\n"
+        "  'Understood.', 'Will do.', or similar.\n"
+        "- If taking action: act — say nothing. If replying: give substantive content.\n"
+    )
+
+
 def _fallback_prompt(instance_id: str, role: str = "interactive") -> str:
     """Used when cortex is unavailable (early boot, test, or empty DB)."""
     _CP_LINES = (
@@ -506,6 +534,16 @@ def _fallback_prompt(instance_id: str, role: str = "interactive") -> str:
             f"{_CP_LINES}"
             "\n"
             "Analyze the provided content. Be concise. Say 'I don't know' when uncertain.\n"
+        )
+    if role == "voice":
+        return (
+            "You are Igor, a cognitive AI agent built by Akien Maciain.\n"
+            "\n"
+            "VOICE GUARD: Do not use lisped speech or Discworld accent. Clear English only.\n"
+            "REPLY DISCIPLINE: No bare acknowledgments. Give substantive content or act.\n"
+            "\n"
+            "CORE PATTERNS:\n"
+            f"{_CP_LINES}"
         )
     return (
         f"You are Igor ({instance_id}).\n"
