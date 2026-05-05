@@ -43,9 +43,10 @@ adjacent fixes outside the claimed ticket's scope), always file a
 retroactive incidental ticket and immediately close it — every change has
 a ticket that explains it.
 
-### 3. /savestateauto at batch end
+### 3. /savestate + /autocompact at batch end
 
-Handled by /sprint-batch.
+Handled by /sprint-batch — /savestate fires per-ticket inside /sprint-ticket;
+/autocompact fires once at batch teardown.
 
 ## Report
 

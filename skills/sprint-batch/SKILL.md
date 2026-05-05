@@ -6,8 +6,8 @@ model: sonnet
 
 # /sprint-batch — Multi-ticket sprint
 
-Shared setup once, per-ticket loop, shared teardown. Use when /decided just
-filed a batch, or when you're clearing a slate.
+Shared setup once, per-ticket loop via /sprint-ticket, shared teardown.
+Use when /decided just filed a batch, or when you're clearing a slate.
 
 ## Selectors (positional arg)
 
@@ -23,10 +23,10 @@ filed a batch, or when you're clearing a slate.
 ### 1. Resolve target set
 
 Always parse the selector first and resolve it against the canonical
-sources — `~/.TheIgors/cc_channel/queue.json` (for ticket selectors) or the
-slate file (for slate selectors). Filter to `status=pending` and
-`gate=null`. When nothing matches, bail with a clear message — an empty
-batch is a signal, not a sprint.
+sources — `cc_queue.py list` (for ticket selectors) or the slate file
+(for slate selectors). Filter to `status=pending` and `gate=null`. When
+nothing matches, bail with a clear message — an empty batch is a signal,
+not a sprint.
 
 ### 2. Topo-sort by dependencies
 
@@ -63,34 +63,20 @@ abort?" before the first ticket.
 
 ### 4. Per-ticket loop
 
-For each ticket in topo-order, run the /sprint body:
+For each ticket in topo-order, call:
 
-0.5. **Capability check (pre-claim)**: scan the ticket's tags and Affected files against the capability surface (available `mcp__*` tools, `mcp__datacenter__datacenter_manifest`). When a minion or device matches (e.g. tag `Database` → `mcp__igor__db_query`, tag `Cognition`/`Debug` → Igor cognition-debug capability, Igor self-coding via `mcp__igor__cc_send` for `wild_igor/igor/` work), surface the delegate option as a one-line command BEFORE claiming. Prompt is mandatory; delegate action is not — Akien decides per-ticket. Silent when no match. Closes the lapsed "all external minions for work other than design chat" practice. Exempt from theigors/rules/capability-protocol/two-sided-build (pure consumer of already-shipped capability surface).
-1. **Claim**: `cc_queue.py claim <id>`
-2. **Review plan**: when the ticket description carries an /audit-ticket approval stamp, skip asking. Otherwise always invoke /audit-precode on the plan before coding.
-3. **Build**: implement the ticket
-4. **Test**: `python -m pytest tests/ -x -q 2>&1 | tail -20`
-5. **Cleanup** (REQUIRED): always review the diff and remove debris — debug prints, commented code, unused imports, replaced functions, single-use helpers, temp files. Every file in the diff exists on purpose.
-6. **Doc-refresh** (when a load-bearing file is touched, per T-docs-live-in-code): always update the top-of-file docstring alongside the code change.
-6.5. **Teach Igor — palace deposit (default skip)**: ask "what from this ticket would I deposit into Igor's palace?" Default answer: **skip** — most sprint work is mechanical and shouldn't pollute the palace. Deposit only when novel reasoning emerged: a non-obvious WHY the ticket didn't anticipate, a hidden invariant the refactor surfaced, a workaround whose mechanism the next reader needs, or a bug fix whose ROOT differed from the symptom. When non-skip: propose 0–N palace nodes (path + title + content), surface to Akien inline for review, then INSERT via psql to memory_palace. Workflow consumer of theigors/rules/capability-protocol — closes the "teach Igor as you implement tickets" lapse.
-7. **Commit + push** (full cycle, with stash when Igor auto-edits interfere):
-   ```bash
-   git stash -u && git pull --rebase origin main && git stash pop
-   git add <specific files>
-   git commit -m "..."
-   git push origin main
-   ```
-8. **Close**: `cc_queue.py done <id> "<summary of what was built>"` then retitle to add `CLOSED:` prefix:
-   ```bash
-   # Strip old prefix (DESIGNED:/NEW:/NEEDS DESIGN:) and prepend CLOSED:
-   python3 ~/TheIgors/lab/claudecode/cc_queue.py retitle <id> "CLOSED: <bare-title>"
-   ```
-9. **Retroactive incidental ticket** (T-sync-on-close-not-dayend pattern): when the commit includes changes unrelated to the claimed ticket (the "oh, and I also fixed this" case), always draft a new ticket and immediately close it for the incidental fix — every change has a ticket.
-10. **Slate**: `echo "- done: T-... — ..." >> ~/.TheIgors/claudecode/$(date +%Y%m%d).slate.txt`
+```
+/sprint-ticket <id>
+```
+
+That's it. /sprint-ticket handles everything: capability check, claim,
+plan review, build, test, cleanup, doc-refresh, teach Igor, commit, close,
+and /savestate. Each ticket's state is recorded on close.
 
 ### 5. Handle failure mid-batch
 
-When a ticket fails (test failure, unresolvable conflict, scope mismatch), always prompt:
+When /sprint-ticket fails (test failure, unresolvable conflict, scope
+mismatch), always prompt:
 - **abort** — stop the batch, leave remaining tickets pending
 - **skip** — mark this ticket blocked with reason, continue
 - **rewind** — reset this ticket to pending, stop the batch, let Akien investigate
@@ -98,13 +84,17 @@ When a ticket fails (test failure, unresolvable conflict, scope mismatch), alway
 ### 6. Shared teardown
 
 Once all tickets complete (or the batch aborts):
-1. Always run /savestateauto once for the whole batch (not per-ticket — that's just noise).
-2. Print recap: N done, M skipped, P failed, ticket ids + commit hashes.
+1. Print recap: N done, M skipped, P failed, ticket ids + commit hashes.
+2. Run /autocompact — releases debug flag, fires compact.
+
+Note: /savestate was already called per-ticket inside /sprint-ticket.
+The teardown does NOT call /savestate again — /autocompact is all that's
+needed here.
 
 ## Invariants
 
 - Each ticket in the batch gets its own commit (no combined commits across tickets).
-- Gated tickets are skipped, not unblocked by the batch — when the batch happens to ship a ticket that was gating another, the gate clears on the done action (via T-sync-on-close-not-dayend) and the formerly-gated one becomes eligible for the NEXT batch, not this one.
+- Gated tickets are skipped, not unblocked by the batch — when the batch happens to ship a ticket that was gating another, the gate clears on the done action and the formerly-gated one becomes eligible for the NEXT batch, not this one.
 - Dependencies are always respected — no sprint starts before its prerequisites close.
 
 ## Flow integration
@@ -127,13 +117,13 @@ At start of day:
 ## Hard rules
 
 - Shared setup (venv activation + env var export) always runs once per batch — cheap, prevents per-ticket drift.
-- Always run tests per-ticket with `pytest -x -q`; failure stops that ticket and prompts skip/abort.
-- Always commit per ticket — load-bearing for decision-rollup, which needs per-ticket close events.
+- All per-ticket execution is in /sprint-ticket — never inline sprint steps in the batch loop.
 - Topo cycles always surface as a dependency-graph bug — bail with the cycle printed and get Akien's call.
 
 ## Related
 
+- **/sprint-ticket** — the per-ticket execution unit; handles claim → build → close → savestate.
 - **/decided** — files tickets that this skill consumes.
-- **/fixit** — (after T-fixit-rewrite) = /decided + /sprint-batch on the just-filed set.
+- **/fixit** — /decided + /sprint-batch on the just-filed set.
 - **T-sync-on-close-not-dayend** (gated) — handles the palace/GitHub/file echo on each close action.
 - **T-decision-rollup-on-last-ticket-close** (gated) — when /sprint-batch closes the last ticket of a decision, the decision auto-rolls-up with outcome.

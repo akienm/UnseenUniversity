@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "_comment": "Master skill manifest. Listed skills are managed by the installer; unlisted skills in the deploy target are left alone. category is informational. machines: ['*'] = all hosts. deploy: false keeps the entry for record-keeping while skipping this run. Triage from T-skills-master-home-in-datacenter (2026-05-02): 26 machine-agnostic skills migrate to master here; map-igor and readigor stay TheIgors-internal because they read Igor-specific runtime state. Actual content migration happens in the companion ticket.",
+  "_comment": "Master skill manifest. Listed skills are managed by the installer; unlisted skills in the deploy target are left alone. category is informational. machines: ['*'] = all hosts. deploy: false keeps the entry for record-keeping while skipping this run. Igor-specific skills (cognition-debug, debug-pe-chain, map-igor, readigor) stay TheIgors-internal because they read Igor-specific runtime state.",
   "skills": {
     "audit-audits":      {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "audit-day":         {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
@@ -10,6 +10,7 @@
     "audit-precode":     {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "audit-smell":       {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "audit-ticket":      {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
+    "autocompact":       {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "commit":            {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "context-load":      {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "day-close":         {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
@@ -22,9 +23,10 @@
     "note":              {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "readinbox":         {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "savestate":         {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "savestateauto":     {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
+    "savestateauto":     {"category": "machine-agnostic", "machines": ["*"], "deploy": false},
     "sprint":            {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "sprint-batch":      {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
+    "sprint-ticket":     {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "test-fix":          {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "ticket":            {"category": "machine-agnostic", "machines": ["*"], "deploy": true}
   }

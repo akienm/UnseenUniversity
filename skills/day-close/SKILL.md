@@ -1,6 +1,6 @@
 ---
 name: day-close
-description: End-of-day ritual — savestateauto, close slate, audit, update docs, commit.
+description: End-of-day ritual — savestate, close slate, audit, update docs, commit.
 model: haiku
 model_exception: /day-close-audit step escalates to Sonnet for simplification review
 ---
@@ -36,7 +36,7 @@ EOF
 fi
 ```
 
-### 2. /savestateauto
+### 2. /savestate
 
 Always flush all in-flight state first — a clean baseline makes the rest
 of day-close idempotent.
@@ -118,9 +118,15 @@ Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
 git pull --rebase origin main && git push origin main
 ```
 
-### 13. /savestateauto (final)
+### 13. /savestate (session-close — include Step 1 summary)
 
-### 14. /savestate
+This is the deliberate end-of-session close. Include the session-close
+summary (Step 1 of /savestate) — Done and Next lines — so the durable
+record has full context when post-compact CC reads it.
+
+### 14. /autocompact
+
+Release debug flag and fire /compact. This is the block-end signal.
 
 ## Hard rules
 - Every day has a slate — Step 1 always runs, even when day-close fires before context-load on the new day.
