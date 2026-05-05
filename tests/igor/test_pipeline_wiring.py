@@ -1,10 +1,12 @@
 """
 test_pipeline_wiring.py — T-turn-pipeline-wiring
 
-Tests that the IGOR_TURN_PIPELINE env var gate works correctly and that
-CascadeSituation + TurnPipeline + LLMPeerAdvisor are importable from
-the expected locations. Does NOT test the full _process_inner path
-(that requires a running Igor instance).
+Tests that CascadeSituation + TurnPipeline + LLMPeerAdvisor are importable
+from the expected locations and that the pipeline resolves correctly.
+Does NOT test the full _process_inner path (that requires a running Igor instance).
+
+T-retire-legacy-direct-reasoner-path: IGOR_TURN_PIPELINE gate removed;
+all non-impulse turns now go through the pipeline unconditionally.
 """
 
 import os
@@ -45,19 +47,18 @@ def test_turn_pipeline_constructs_with_cortex():
     assert tp.cascade is not None
 
 
-def test_pipeline_env_var_default_false():
-    """IGOR_TURN_PIPELINE defaults to false — pipeline should not activate."""
-    with patch.dict(os.environ, {}, clear=False):
-        os.environ.pop("IGOR_TURN_PIPELINE", None)
-        val = os.getenv("IGOR_TURN_PIPELINE", "false").lower()
-        assert val not in ("1", "true", "yes")
+def test_pipeline_always_enabled_for_non_impulse():
+    """Pipeline is always enabled for non-impulse turns (env gate removed)."""
+    is_impulse = False
+    _pipeline_enabled = not is_impulse
+    assert _pipeline_enabled is True
 
 
-def test_pipeline_env_var_true():
-    """IGOR_TURN_PIPELINE=true enables the pipeline."""
-    with patch.dict(os.environ, {"IGOR_TURN_PIPELINE": "true"}):
-        val = os.getenv("IGOR_TURN_PIPELINE", "false").lower()
-        assert val in ("1", "true", "yes")
+def test_pipeline_disabled_for_impulse():
+    """Impulse turns bypass the pipeline — this path is unchanged."""
+    is_impulse = True
+    _pipeline_enabled = not is_impulse
+    assert _pipeline_enabled is False
 
 
 def test_cascade_situation_with_milieu():

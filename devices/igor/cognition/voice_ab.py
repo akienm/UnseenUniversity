@@ -199,6 +199,7 @@ class LLMVoiceActor(IgorBase):
                 core=[],
                 level="interactive",
                 cortex=self.cortex,
+                prompt_role="voice",
             )
         except Exception as exc:
             logger.warning("LLMVoiceActor gateway.reason failed: %s", exc)
