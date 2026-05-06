@@ -63,6 +63,7 @@ from .experiment import (
     Update,
 )
 from ..igor_base import get_logger
+from .forensic_logger import log_cascade_event
 
 if TYPE_CHECKING:
     from ..memory.cortex import Cortex
@@ -285,6 +286,12 @@ class Level0ExactRecall(BaseCascadeLevel):
                     notes=f"level 0 returned {len(usable)} usable matches ({n - len(usable)} bus-format filtered)",
                 )
                 experiment.record_observation(obs)
+                log_cascade_event(
+                    level=self.name,
+                    action="searched",
+                    content=f"query={situation.query!r:.120} → {len(usable)} hits ({n - len(usable)} bus-filtered)",
+                    outcome="MATCHED",
+                )
                 return CascadeResult(
                     status=CascadeStatus.MATCHED,
                     level_name=self.name,
@@ -299,6 +306,12 @@ class Level0ExactRecall(BaseCascadeLevel):
             notes="level 0 empty or all results were bus-format — no lever surfaced",
         )
         experiment.record_observation(obs)
+        log_cascade_event(
+            level=self.name,
+            action="searched",
+            content=f"query={situation.query!r:.120} → 0 usable results",
+            outcome="EXHAUSTED",
+        )
         return CascadeResult(
             status=CascadeStatus.EXHAUSTED,
             level_name=self.name,
