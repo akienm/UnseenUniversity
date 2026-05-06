@@ -139,6 +139,8 @@ class LLMPeerAdvisor(PeerAdvisor, IgorBase):
         user_prompt = "\n\n".join(history_lines)
 
         # Call the gateway
+        # is_user_turn: interactive-level peers consult cloud (peer reasoning
+        # is high-stakes; Ollama stalls make it unresponsive for humans).
         try:
             response_text, cost, used_api = self.gateway.reason(
                 user_input=user_prompt,
@@ -146,6 +148,7 @@ class LLMPeerAdvisor(PeerAdvisor, IgorBase):
                 core=[],
                 level=self._level,
                 cortex=self.cortex,
+                is_user_turn=(self._level == "interactive"),
             )
         except Exception as exc:
             logger.warning("LLMPeerAdvisor gateway.reason raised: %s", exc)

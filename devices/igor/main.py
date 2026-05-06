@@ -351,6 +351,14 @@ _PRIVACY_SENTINEL_RE = re.compile(
     r"^\s*(stored_locally_only|stored_locally\|google_error):\S+",
     re.IGNORECASE,
 )
+# CSB observation echo: MSG|ch=...|from=...|... is the TWM push format from
+# user_input_source.push_message(). When the pipeline returns this as a reply
+# (e.g. cascade level-0 matched the observation in TWM), it must not reach
+# the web channel — it is internal plumbing, not Igor's response.
+_CSB_OBSERVATION_ECHO_RE = re.compile(
+    r"^\s*MSG\|ch=",
+    re.IGNORECASE,
+)
 
 
 def _is_raw_tool_leak(text: str) -> bool:
@@ -362,6 +370,7 @@ def _is_raw_tool_leak(text: str) -> bool:
       - NOT_RUNNING|name=...  (CSB format leak, bare form — T-interceptor-habit-hijacks-reply-path)
       - stored_locally_only:CONTACT_abc (privacy sentinel from google_contacts)
       - stored_locally|google_error:... (privacy sentinel error variant)
+      - MSG|ch=...|from=...|... (CSB observation echo — TWM push format leaking as reply)
     """
     t = text.strip()
     return bool(
@@ -369,6 +378,7 @@ def _is_raw_tool_leak(text: str) -> bool:
         or _CSB_TOOL_LEAK_RE.match(t)
         or _CSB_TOOL_LEAK_BARE_RE.match(t)
         or _PRIVACY_SENTINEL_RE.match(t)
+        or _CSB_OBSERVATION_ECHO_RE.match(t)
     )
 
 

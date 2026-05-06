@@ -192,6 +192,8 @@ class LLMVoiceActor(IgorBase):
 
     def render(self, blob: DecisionBlob, ctx: PromptContext) -> VoiceCandidate:
         prompt = self._build_prompt(blob, ctx)
+        # is_user_turn=True: voice actors only run for interactive human turns
+        # (pipeline is gated by _pipeline_enabled = not is_impulse in main.py).
         try:
             text, cost, used_api = self.gateway.reason(
                 prompt,
@@ -200,6 +202,7 @@ class LLMVoiceActor(IgorBase):
                 level="interactive",
                 cortex=self.cortex,
                 prompt_role="voice",
+                is_user_turn=True,
             )
         except Exception as exc:
             logger.warning("LLMVoiceActor gateway.reason failed: %s", exc)
