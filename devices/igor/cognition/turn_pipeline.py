@@ -625,20 +625,34 @@ class TurnPipeline(IgorBase):
 # ── Blob constructors ──────────────────────────────────────────────────────
 
 
+def _is_bus_format(text: str) -> bool:
+    """True for raw IMAP/ring bus messages that should never surface as responses.
+    MSG|ch=... and MSG_ch=... are internal transport formats, not user-facing content.
+    """
+    return bool(text) and (text.startswith("MSG|") or text.startswith("MSG_ch="))
+
+
 def _extract_cascade_content(cascade_result: CascadeResult) -> str:
-    """Pull the best narrative text from cascade match data."""
+    """Pull the best narrative text from cascade match data.
+
+    Skips bus-format memories (MSG|ch=...) — these are internal ring/IMAP
+    records that land in cortex search results but must never be returned
+    as responses. Returns "" when no non-bus narrative is found.
+    """
     data = cascade_result.data
     if not data:
         return ""
     if isinstance(data, list):
         for item in data:
             narrative = getattr(item, "narrative", None)
-            if narrative:
+            if narrative and not _is_bus_format(str(narrative)):
                 return str(narrative)[:500]
-        return str(data[0])[:500] if data else ""
+        return ""
     if isinstance(data, dict):
-        return str(data.get("narrative", data.get("content", "")))[:500]
-    return str(data)[:500]
+        text = str(data.get("narrative", data.get("content", "")))
+        return "" if _is_bus_format(text) else text[:500]
+    text = str(data)
+    return "" if _is_bus_format(text) else text[:500]
 
 
 def _blob_from_cascade_match(

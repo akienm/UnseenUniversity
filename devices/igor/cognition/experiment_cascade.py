@@ -269,24 +269,34 @@ class Level0ExactRecall(BaseCascadeLevel):
 
         n = len(results) if results else 0
         if n > 0:
-            obs = Observation(
-                outcome=Outcome.MATCH,
-                data={"result_count": n},
-                notes=f"level 0 returned {n} direct matches",
-            )
-            experiment.record_observation(obs)
-            return CascadeResult(
-                status=CascadeStatus.MATCHED,
-                level_name=self.name,
-                data=results,
-                reason=f"level 0 exact recall hit ({n} results)",
-                experiment=experiment,
-            )
+            # Filter bus-format memories (MSG|ch=... ring/IMAP records) — these are
+            # internal transport entries that must never be returned as responses.
+            usable = [
+                m
+                for m in results
+                if not (getattr(m, "narrative", "") or "").startswith(
+                    ("MSG|", "MSG_ch=")
+                )
+            ]
+            if usable:
+                obs = Observation(
+                    outcome=Outcome.MATCH,
+                    data={"result_count": len(usable)},
+                    notes=f"level 0 returned {len(usable)} usable matches ({n - len(usable)} bus-format filtered)",
+                )
+                experiment.record_observation(obs)
+                return CascadeResult(
+                    status=CascadeStatus.MATCHED,
+                    level_name=self.name,
+                    data=usable,
+                    reason=f"level 0 exact recall hit ({len(usable)} results)",
+                    experiment=experiment,
+                )
 
         obs = Observation(
             outcome=Outcome.INCONCLUSIVE,
             data={"result_count": 0},
-            notes="level 0 empty, no lever surfaced",
+            notes="level 0 empty or all results were bus-format — no lever surfaced",
         )
         experiment.record_observation(obs)
         return CascadeResult(
