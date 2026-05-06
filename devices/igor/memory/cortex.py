@@ -168,7 +168,7 @@ from .models import Memory, MemoryType, MemoryScope, default_scope
 from .scrub import scrub
 from .db_proxy import DatabaseProxy, MEM_COLS, make_home_proxy, make_local_proxy
 from ..igor_base import IgorBase
-from ..cognition.forensic_logger import log_error
+from ..cognition.forensic_logger import log_error, log_memory_retrieval
 
 
 @dataclass
@@ -2880,6 +2880,16 @@ class Cortex(IgorBase):
                 _rc_arousal = getattr(req.emotional_context, "arousal", None)
                 self._flag_for_reconsolidation(result, milieu_arousal=_rc_arousal)
                 _emit_search_trace(query, result)
+                for _m in result:
+                    log_memory_retrieval(
+                        mem_id=str(getattr(_m, "id", "?")),
+                        memory_type=getattr(
+                            getattr(_m, "memory_type", None), "value", ""
+                        ),
+                        narrative=getattr(_m, "narrative", "") or "",
+                        salience=float(getattr(_m, "relevance_score", 0.0) or 0.0),
+                        kept=True,
+                    )
                 return result
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
@@ -2950,6 +2960,14 @@ class Cortex(IgorBase):
                     result = widened
             except Exception as _widen_e:
                 logging.getLogger(__name__).debug("search_widen skipped: %s", _widen_e)
+        for _m in result:
+            log_memory_retrieval(
+                mem_id=str(getattr(_m, "id", "?")),
+                memory_type=getattr(getattr(_m, "memory_type", None), "value", ""),
+                narrative=getattr(_m, "narrative", "") or "",
+                salience=float(getattr(_m, "relevance_score", 0.0) or 0.0),
+                kept=True,
+            )
         return result
 
     def _touch_last_accessed(self, memories: list) -> None:

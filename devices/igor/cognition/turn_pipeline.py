@@ -101,6 +101,7 @@ from .reasoning_workflow import (
     run_workflow,
 )
 from ..igor_base import get_logger
+from .forensic_logger import log_cascade_event, turn_ctx_update
 
 if TYPE_CHECKING:
     from ..memory.cortex import Cortex
@@ -358,6 +359,12 @@ class TurnPipeline(IgorBase):
 
         # [1] CASCADE WALK
         cascade_result = self.cascade.attempt(situation)
+        log_cascade_event(
+            level=cascade_result.level_name,
+            action="attempt",
+            content=cascade_result.reason[:180],
+            outcome=cascade_result.status.value.upper(),
+        )
         trace.append(
             TraceEntry(
                 step=PathStep.CASCADE,
@@ -579,6 +586,14 @@ class TurnPipeline(IgorBase):
             situation_source=f"cascade:{cascade_result.level_name}",
         )
         ctx = voice_context(blob, provenance=pc_prov)
+        turn_ctx_update(
+            "voice_context_snapshot",
+            {
+                "sections": len(ctx.sections),
+                "phase": str(ctx.phase),
+                "preview": str(next(iter(ctx.sections.values()), ""))[:300],
+            },
+        )
         trace.append(
             TraceEntry(
                 step=PathStep.VOICE_CONTEXT,

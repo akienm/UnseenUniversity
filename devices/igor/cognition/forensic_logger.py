@@ -72,6 +72,174 @@ def turn_ctx_update(stage: str, data: dict) -> None:
     }
 
 
+def log_cascade_event(
+    *,
+    level: str,
+    action: str,
+    content: str = "",
+    outcome: str = "",
+) -> None:
+    """Append one cascade reasoning event to the current TurnContext.
+
+    Called from experiment_cascade.py and turn_pipeline.py at each level's
+    decision point. Fire-and-forget — never raises.
+
+    level:   cascade level name (e.g. "level_0_exact_recall", "workflow")
+    action:  what the level did ("searched", "asked", "filtered", "decided")
+    content: the substance — query text, result count, reason (truncated to 200)
+    outcome: result of the action ("MATCHED", "EXHAUSTED", "ESCALATED", "FILTERED")
+    """
+    try:
+        ctx = getattr(_current_turn, "ctx", None)
+        if ctx is None:
+            return
+        ctx.setdefault("cascade_trace", []).append(
+            {
+                "level": level,
+                "action": action,
+                "content": str(content)[:200],
+                "outcome": outcome,
+            }
+        )
+    except Exception:
+        pass
+
+
+def log_memory_retrieval(
+    *,
+    mem_id: str,
+    memory_type: str = "",
+    narrative: str = "",
+    salience: float = 0.0,
+    kept: bool,
+    filter_reason: str = "",
+) -> None:
+    """Append one memory retrieval event to the current TurnContext.
+
+    Called from cortex.search() for each candidate in the final result.
+    kept=True means it was returned to the caller; kept=False means it was
+    filtered (with reason). Fire-and-forget — never raises.
+    """
+    try:
+        ctx = getattr(_current_turn, "ctx", None)
+        if ctx is None:
+            return
+        ctx.setdefault("memory_retrieval", []).append(
+            {
+                "id": str(mem_id)[:40],
+                "type": memory_type[:20],
+                "narrative": str(narrative)[:150],
+                "salience": round(float(salience), 3),
+                "kept": kept,
+                "filter_reason": str(filter_reason)[:80] if filter_reason else "",
+            }
+        )
+    except Exception:
+        pass
+
+
+def synthesize_turn_trace(ctx: dict) -> None:
+    """Write a human-readable narrative trace for one turn to narrative_turn.YYYYMMDD.log.
+
+    Reads the enriched TurnContext (memory_retrieval, cascade_trace,
+    voice_context_snapshot, response) and produces a chat-like sequence showing
+    how Igor worked out the turn. Called from finalize_turn_ctx before ctx is cleared.
+    The narrative snapshot at the bottom is the 2-sentence summary of the turn.
+    Gate: IGOR_TURN_TRACE (inherits from caller).
+    """
+    try:
+        lines = []
+        turn_id = ctx.get("turn_id", "?")
+        thread_id = ctx.get("thread_id", "?")
+        ts = ctx.get("ts", "?")
+        total_ms = ctx.get("response", {}).get("total_ms", 0)
+        tier = ctx.get("response", {}).get("tier", "?")
+        response_preview = ctx.get("response", {}).get("preview", "")
+
+        lines.append(
+            f"\n=== NARRATIVE {turn_id} | {thread_id} | {ts} | {total_ms}ms | {tier} ==="
+        )
+        lines.append(f'INPUT: {ctx.get("input", "?")[:200]}')
+        lines.append("")
+
+        # Memory retrieval block
+        retrieval = ctx.get("memory_retrieval", [])
+        if retrieval:
+            kept = [r for r in retrieval if r.get("kept")]
+            filtered = [r for r in retrieval if not r.get("kept")]
+            lines.append(f"RETRIEVED ({len(kept)} kept, {len(filtered)} filtered):")
+            for r in kept[:8]:
+                lines.append(
+                    f'  ✓ [{r["type"]}/{r["id"][:8]}] "{r["narrative"][:120]}"'
+                    + (f' (sal={r["salience"]})' if r.get("salience") else "")
+                )
+            for r in filtered[:4]:
+                lines.append(
+                    f'  ✗ [{r["type"]}/{r["id"][:8]}] "{r["narrative"][:60]}..."'
+                    + (f' — {r["filter_reason"]}' if r.get("filter_reason") else "")
+                )
+        else:
+            lines.append("RETRIEVED: (no retrieval events logged)")
+        lines.append("")
+
+        # Cascade trace block
+        cascade = ctx.get("cascade_trace", [])
+        if cascade:
+            lines.append("CASCADE:")
+            for ev in cascade:
+                arrow = "←" if ev.get("outcome") else "→"
+                outcome_str = f" → {ev['outcome']}" if ev.get("outcome") else ""
+                lines.append(
+                    f'  [{ev["level"]}] {arrow} {ev["action"]}: {ev["content"][:120]}{outcome_str}'
+                )
+        else:
+            lines.append("CASCADE: (no cascade events logged)")
+        lines.append("")
+
+        # Voice context snapshot
+        vc = ctx.get("voice_context_snapshot", {})
+        if vc:
+            lines.append(f'VOICE CONTEXT: {vc.get("sections", "?")} sections')
+            if vc.get("preview"):
+                lines.append(f'  {vc["preview"][:300]}')
+        lines.append("")
+
+        # Narrative snapshot — structured summary (no LLM)
+        kept_count = len([r for r in retrieval if r.get("kept")])
+        cascade_path = (
+            " → ".join(ev.get("level", "?") for ev in cascade if ev.get("outcome"))
+            or "direct"
+        )
+        lines.append("NARRATIVE SNAPSHOT:")
+        lines.append(
+            f"  Igor retrieved {kept_count} memor{'ies' if kept_count != 1 else 'y'} "
+            f"and resolved via {cascade_path}."
+        )
+        lines.append(f'  Response ({tier}): "{response_preview[:120]}"')
+        lines.append("=== END NARRATIVE ===")
+
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        today = datetime.now().strftime("%Y%m%d")
+        path = LOG_DIR / f"narrative_turn.{today}.log"
+        with path.open("a", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+
+        # Purge files older than 7 days
+        try:
+            from datetime import timedelta
+
+            cutoff = (datetime.now() - timedelta(days=7)).strftime("%Y%m%d")
+            for p in LOG_DIR.glob("narrative_turn.*.log"):
+                date_part = p.stem.split(".")[-1]
+                if date_part.isdigit() and date_part < cutoff:
+                    p.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+    except Exception as _bare_e:
+        sys.stderr.write(f"[forensic_logger] synthesize_turn_trace error: {_bare_e}\n")
+
+
 def finalize_turn_ctx(
     *,
     response_preview: str = "",
@@ -117,6 +285,7 @@ def finalize_turn_ctx(
         with path.open("a", encoding="utf-8") as f:
             f.write(entry)
 
+        synthesize_turn_trace(ctx)
         _purge_old_turn_traces(today)
     except Exception as _bare_e:
         sys.stderr.write(
