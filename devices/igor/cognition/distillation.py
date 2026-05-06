@@ -189,7 +189,7 @@ def _is_novel(
         with cortex._conn() as conn:
             rows = conn.execute(
                 f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
-                "WHERE memory_type = ? "
+                "WHERE memory_type = %s "
                 "ORDER BY activation_count DESC LIMIT 50",
                 (against_type.value,),
             ).fetchall()
@@ -289,7 +289,7 @@ def _run_graduation_pass(cortex: Cortex) -> int:
         with cortex._conn() as conn:
             rows = conn.execute(
                 f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
-                "WHERE memory_type = ? AND activation_count >= ? "
+                "WHERE memory_type = %s AND activation_count >= %s "
                 "ORDER BY activation_count DESC LIMIT 20",
                 (MemoryType.EXPERIENTIAL.value, _GRADUATION_THRESHOLD),
             ).fetchall()
@@ -367,14 +367,14 @@ def run_distillation(cortex: Cortex) -> dict:
         with cortex._conn() as conn:
             rows = conn.execute(
                 f"SELECT {_MEM_COLS_NO_EMBED} FROM memories "
-                "WHERE memory_type = ? "
+                "WHERE memory_type = %s "
                 + (
-                    f"AND id NOT IN ({','.join('?' * len(already_processed))}) "
+                    f"AND id NOT IN ({','.join(['%s'] * len(already_processed))}) "
                     if already_processed
                     else ""
                 )
-                + "ORDER BY timestamp DESC LIMIT ?",
-                (
+                + "ORDER BY timestamp DESC LIMIT %s",
+                tuple(
                     [MemoryType.EPISODIC.value]
                     + list(already_processed)
                     + [_BATCH_SIZE()]
