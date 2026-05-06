@@ -5747,6 +5747,17 @@ class Igor(IgorBase):
                 # T-retire-legacy-direct-reasoner-path: all non-impulse human turns
                 # go through the pipeline exclusively. Impulses use the gateway
                 # directly (cheap existing path).
+
+                # _on_tier must be defined before the pipeline block uses it.
+                # (Defined here rather than at line ~5916 to avoid UnboundLocalError:
+                # Python makes it local to the enclosing function because of the def,
+                # so it must be assigned before the first reference.)
+                def _on_tier(t: str) -> None:
+                    self._current_action = "reasoning"
+                    self._current_tier = t
+                    web_server.broadcast_activity(self._activity_state())
+                    console.print(f"[dim]{_cts()}[→] reasoning ({t})[/]")
+
                 _pipeline_enabled = not is_impulse
                 _pipeline_resolved = False
                 if _pipeline_enabled:
@@ -5912,12 +5923,6 @@ class Igor(IgorBase):
                 # Ring context is injected by anthropic.py._build_session_context (D014)
                 # — do NOT also build ring_ctx here (would cause double injection)
                 core = get_core_patterns(self.cortex)
-
-                def _on_tier(t: str) -> None:
-                    self._current_action = "reasoning"
-                    self._current_tier = t
-                    web_server.broadcast_activity(self._activity_state())
-                    console.print(f"[dim]{_cts()}[→] reasoning ({t})[/]")
 
                 if _pipeline_resolved:
                     pass  # Pipeline handled this turn — skip gateway
