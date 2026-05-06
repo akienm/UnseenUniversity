@@ -63,7 +63,7 @@ def _fetch_fact_clouds(cortex: Cortex, content_id: str) -> list[dict]:
             SELECT id, narrative, metadata
             FROM memories
             WHERE memory_type = 'FACTUAL'
-            AND id LIKE ?
+            AND id LIKE %s
             ORDER BY id
             """,
             ("FACT_CLOUD_%",),
@@ -134,7 +134,7 @@ def _create_book_anchor_node(
     with cortex._conn() as conn:
         existing = conn.execute(
             "SELECT id FROM memories "
-            "WHERE metadata->>'content_id' = ? "
+            "WHERE metadata->>'content_id' = %s "
             "AND metadata->>'is_book_anchor' = 'true' LIMIT 1",
             (content_id,),
         ).fetchone()

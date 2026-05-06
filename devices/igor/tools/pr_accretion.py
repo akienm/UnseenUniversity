@@ -242,9 +242,9 @@ def pr_recent_accretions(facia_id: str, limit: int = 20) -> list:
         with cortex._conn() as conn:
             rows = conn.execute(
                 "SELECT id, narrative, metadata FROM memories "
-                "WHERE memory_type = ? "
+                "WHERE memory_type = %s "
                 "AND metadata @> jsonb_build_object('pr_facia_id', ?::text) "
-                "ORDER BY id DESC LIMIT ?",
+                "ORDER BY id DESC LIMIT %s",
                 ("EPISODIC", facia_id, limit),
             ).fetchall()
     except Exception as e:

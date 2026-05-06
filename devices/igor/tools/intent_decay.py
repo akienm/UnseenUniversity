@@ -97,7 +97,7 @@ def find_aged_goals(
         with cortex._conn() as conn:
             rows = conn.execute(
                 "SELECT id, narrative, metadata FROM memories "
-                "WHERE memory_type = ? "
+                "WHERE memory_type = %s "
                 "AND metadata @> jsonb_build_object('goal_active', true) "
                 "ORDER BY id",
                 ("GOAL",),

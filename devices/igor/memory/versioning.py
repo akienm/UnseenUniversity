@@ -145,7 +145,7 @@ def _get_next_seq(cortex, memory_id: str) -> int:
         with cortex._conn() as conn:
             row = conn.execute(
                 "SELECT MAX((metadata->>'version_seq')::int) FROM memories "
-                "WHERE metadata->>'version_of' = ?",
+                "WHERE metadata->>'version_of' = %s",
                 (memory_id,),
             ).fetchone()
             current_max = row[0] if row and row[0] is not None else 0
@@ -160,7 +160,7 @@ def get_version_history(cortex, memory_id: str) -> list[dict]:
         with cortex._conn() as conn:
             rows = conn.execute(
                 "SELECT id, narrative, metadata, timestamp FROM memories "
-                "WHERE metadata->>'version_of' = ? "
+                "WHERE metadata->>'version_of' = %s "
                 "ORDER BY (metadata->>'version_seq')::int DESC",
                 (memory_id,),
             ).fetchall()
