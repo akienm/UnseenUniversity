@@ -59,7 +59,7 @@ def _fetch_goal_facia() -> list[dict]:
         with cortex._conn() as conn:
             rows = conn.execute(
                 "SELECT id, narrative, metadata FROM memories "
-                "WHERE memory_type = ? "
+                "WHERE memory_type = %s "
                 "AND metadata @> jsonb_build_object('facia_role', ?::text) "
                 "ORDER BY id",
                 ("REFERENCE", "persistent_relationship"),
@@ -107,7 +107,7 @@ def _store_metadata(memory_id: str, metadata: dict) -> bool:
     try:
         with cortex._conn() as conn:
             conn.execute(
-                "UPDATE memories SET metadata = ? WHERE id = ?",
+                "UPDATE memories SET metadata = %s WHERE id = %s",
                 (json.dumps(metadata), memory_id),
             )
         return True

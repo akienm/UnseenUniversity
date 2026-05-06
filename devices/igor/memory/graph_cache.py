@@ -199,7 +199,7 @@ class GraphCache(IgorBase):
                 rows = conn.execute(
                     f"SELECT word_b, SUM(score) AS total FROM wg_cooccur "
                     f"WHERE word_a IN ({w_ph}) GROUP BY word_b "
-                    f"ORDER BY total DESC LIMIT ?",
+                    f"ORDER BY total DESC LIMIT %s",
                     words + [limit],
                 ).fetchall()
             return [(r[0], float(r[1])) for r in rows]
@@ -243,7 +243,7 @@ class GraphCache(IgorBase):
         try:
             with self._home() as conn:
                 conn.executemany(
-                    "INSERT INTO wg_cooccur (word_a, word_b, score) VALUES (?, ?, ?) "
+                    "INSERT INTO wg_cooccur (word_a, word_b, score) VALUES (?, %s, %s) "
                     "ON CONFLICT(word_a, word_b) DO UPDATE SET score = wg_cooccur.score + excluded.score",
                     pairs,
                 )
@@ -276,7 +276,7 @@ class GraphCache(IgorBase):
         try:
             with self._local() as conn:
                 conn.executemany(
-                    "INSERT INTO wg_access_log (word, access_count, last_access) VALUES (?, ?, ?) "
+                    "INSERT INTO wg_access_log (word, access_count, last_access) VALUES (?, %s, %s) "
                     "ON CONFLICT(word) DO UPDATE SET "
                     "access_count = access_count + excluded.access_count, "
                     "last_access = excluded.last_access",
@@ -292,7 +292,7 @@ class GraphCache(IgorBase):
         try:
             with self._local() as conn:
                 rows = conn.execute(
-                    "SELECT word FROM wg_access_log ORDER BY access_count DESC LIMIT ?",
+                    "SELECT word FROM wg_access_log ORDER BY access_count DESC LIMIT %s",
                     (n,),
                 ).fetchall()
             return [r[0] for r in rows]
@@ -325,7 +325,7 @@ class GraphCache(IgorBase):
                 with self._home() as conn:
                     rows = conn.execute(
                         "SELECT word_a, COUNT(*) as c FROM wg_cooccur "
-                        "GROUP BY word_a ORDER BY c DESC LIMIT ?",
+                        "GROUP BY word_a ORDER BY c DESC LIMIT %s",
                         (top_n,),
                     ).fetchall()
                 top_words = [r[0] for r in rows]
@@ -340,7 +340,7 @@ class GraphCache(IgorBase):
                 with self._home() as conn:
                     rows = conn.execute(
                         "SELECT word_b, score FROM wg_cooccur "
-                        "WHERE word_a = ? ORDER BY score DESC LIMIT ?",
+                        "WHERE word_a = %s ORDER BY score DESC LIMIT %s",
                         (word, self.max_cooccur),
                     ).fetchall()
                 if rows:

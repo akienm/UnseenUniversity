@@ -1572,7 +1572,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                 "ORDER BY activation_count DESC LIMIT %s"
                 if _is_pg
                 else "SELECT id FROM memories WHERE metadata LIKE '%\"reconsolidate_pending\"%' "
-                "ORDER BY activation_count DESC LIMIT ?"
+                "ORDER BY activation_count DESC LIMIT %s"
             )
             with self.cortex._conn() as conn:
                 rows = conn.execute(_pending_sql, (max_per_cycle,)).fetchall()
@@ -2235,7 +2235,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                     rows = _conn.execute(
                         "SELECT id, links_weighted FROM memories "
                         "WHERE links_weighted IS NOT NULL AND links_weighted != '{}' "
-                        "AND (last_accessed IS NULL OR last_accessed < ?)",
+                        "AND (last_accessed IS NULL OR last_accessed < %s)",
                         (cutoff,),
                     ).fetchall()
                 for row in rows:
@@ -2247,7 +2247,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                         if len(pruned_links) < len(links):
                             with self.cortex._conn() as _conn:
                                 _conn.execute(
-                                    "UPDATE memories SET links_weighted = ? WHERE id = ?",
+                                    "UPDATE memories SET links_weighted = %s WHERE id = %s",
                                     (json.dumps(pruned_links), row["id"]),
                                 )
                             counts["pruned"] += len(links) - len(pruned_links)

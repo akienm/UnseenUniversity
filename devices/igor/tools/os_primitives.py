@@ -301,11 +301,11 @@ def prim_list_push() -> str:
         with cortex._conn() as conn:
             conn.execute(
                 "INSERT INTO lists (list_name, item_key, item_value, instance_id, updated_at) "
-                "VALUES (?, ?, ?, ?, ?)",
+                "VALUES (?, %s, %s, %s, %s)",
                 (list_name, item_key, value, "", now_iso),
             )
             count = conn.execute(
-                "SELECT COUNT(*) FROM lists WHERE list_name = ? AND instance_id = ''",
+                "SELECT COUNT(*) FROM lists WHERE list_name = %s AND instance_id = ''",
                 (list_name,),
             ).fetchone()[0]
         _ctx_set(cortex, ctx_id, "list_count", str(count), step=0)
@@ -333,7 +333,7 @@ def prim_list_pop() -> str:
         with cortex._conn() as conn:
             row = conn.execute(
                 "SELECT item_key, item_value FROM lists "
-                "WHERE list_name = ? AND instance_id = '' "
+                "WHERE list_name = %s AND instance_id = '' "
                 "ORDER BY updated_at ASC LIMIT 1",
                 (list_name,),
             ).fetchone()
@@ -344,11 +344,11 @@ def prim_list_pop() -> str:
                 return f"PRIM_LIST_POP: {list_name} is empty"
             item_key, item_value = row[0], row[1] or ""
             conn.execute(
-                "DELETE FROM lists WHERE list_name = ? AND item_key = ? AND instance_id = ''",
+                "DELETE FROM lists WHERE list_name = %s AND item_key = %s AND instance_id = ''",
                 (list_name, item_key),
             )
             count = conn.execute(
-                "SELECT COUNT(*) FROM lists WHERE list_name = ? AND instance_id = ''",
+                "SELECT COUNT(*) FROM lists WHERE list_name = %s AND instance_id = ''",
                 (list_name,),
             ).fetchone()[0]
         _ctx_set(cortex, ctx_id, "list_value", item_value, step=0)
@@ -375,7 +375,7 @@ def prim_list_count() -> str:
     try:
         with cortex._conn() as conn:
             count = conn.execute(
-                "SELECT COUNT(*) FROM lists WHERE list_name = ? AND instance_id = ''",
+                "SELECT COUNT(*) FROM lists WHERE list_name = %s AND instance_id = ''",
                 (list_name,),
             ).fetchone()[0]
         _ctx_set(cortex, ctx_id, "list_count", str(count), step=0)
@@ -640,7 +640,7 @@ def prim_str_format() -> str:
         # Load all context keys for substitution
         with cortex._local_conn() as conn:
             rows = conn.execute(
-                "SELECT key, value FROM traversal_contexts WHERE context_id = ?",
+                "SELECT key, value FROM traversal_contexts WHERE context_id = %s",
                 (ctx_id,),
             ).fetchall()
         ctx_dict = {r["key"]: (r["value"] or "") for r in rows}

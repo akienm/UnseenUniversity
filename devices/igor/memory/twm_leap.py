@@ -86,7 +86,7 @@ def leap_sweep(
     latent_floor = _env_float("IGOR_TWM_LATENT_FLOOR", 0.4)
     rows = conn.execute(
         "SELECT id, content_csb, salience FROM twm_observations "
-        "WHERE integrated = 0 AND salience < ? AND id != ?",
+        "WHERE integrated = 0 AND salience < %s AND id != %s",
         (latent_floor, new_obs_id),
     ).fetchall()
     if not rows:
@@ -106,7 +106,7 @@ def leap_sweep(
             new_sal = min(1.0, old_sal + boost)
             if new_sal > old_sal:
                 conn.execute(
-                    "UPDATE twm_observations SET salience = ? WHERE id = ?",
+                    "UPDATE twm_observations SET salience = %s WHERE id = %s",
                     (new_sal, row["id"]),
                 )
                 leaps.append((row["id"], old_sal, new_sal))

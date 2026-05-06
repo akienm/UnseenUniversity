@@ -60,7 +60,7 @@ def palace_read(path: str = "", **_) -> str:
         with db() as conn:
             conn.execute(
                 "SELECT path, title, content, pointers, updated_at, updated_by "
-                "FROM memory_palace WHERE path = ?",
+                "FROM memory_palace WHERE path = %s",
                 [path],
             )
             node = conn.fetchone()
@@ -69,7 +69,7 @@ def palace_read(path: str = "", **_) -> str:
         with db() as conn:
             conn.execute(
                 "SELECT path, title FROM memory_palace "
-                "WHERE parent_path = ? ORDER BY path",
+                "WHERE parent_path = %s ORDER BY path",
                 [path],
             )
             children = conn.fetchall()
@@ -141,7 +141,7 @@ def palace_write(
         with db() as conn:
             conn.execute(
                 "INSERT INTO memory_palace (path, parent_path, title, content, pointers, updated_at, updated_by) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?) "
+                "VALUES (?, %s, %s, %s, %s, %s, %s) "
                 "ON CONFLICT (path) DO UPDATE SET "
                 "title = EXCLUDED.title, content = EXCLUDED.content, "
                 "pointers = EXCLUDED.pointers, updated_at = EXCLUDED.updated_at, "
@@ -166,7 +166,7 @@ def palace_tree(root: str = "", **_) -> str:
             if root:
                 conn.execute(
                     "SELECT path, title FROM memory_palace "
-                    "WHERE path = ? OR path LIKE ? "
+                    "WHERE path = %s OR path LIKE %s "
                     "ORDER BY path",
                     [root, f"{root}/%"],
                 )

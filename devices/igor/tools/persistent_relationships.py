@@ -111,7 +111,7 @@ def _list_facia_memories() -> list:
         with cortex._conn() as conn:
             rows = conn.execute(
                 "SELECT id, narrative, metadata FROM memories "
-                "WHERE memory_type = ? "
+                "WHERE memory_type = %s "
                 "AND metadata @> jsonb_build_object('facia_role', ?::text) "
                 "ORDER BY id",
                 ("REFERENCE", "persistent_relationship"),
@@ -199,7 +199,7 @@ def _store_facia_metadata(memory_id: str, new_metadata: dict) -> bool:
     try:
         with cortex._conn() as conn:
             conn.execute(
-                "UPDATE memories SET metadata = ? WHERE id = ?",
+                "UPDATE memories SET metadata = %s WHERE id = %s",
                 (_json.dumps(new_metadata), memory_id),
             )
         return True
