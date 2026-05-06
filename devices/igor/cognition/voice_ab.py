@@ -55,6 +55,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
+from rich.console import Console as _Console
+
+_console = _Console(force_terminal=True)
+
 from .decision_blob import DecisionBlob
 from .prompt_contexts import PromptContext
 from ..igor_base import get_logger
@@ -190,8 +194,11 @@ class LLMVoiceActor(IgorBase):
             self._gateway = get_gateway()
         return self._gateway
 
-    def render(self, blob: DecisionBlob, ctx: PromptContext) -> VoiceCandidate:
+    def render(
+        self, blob: DecisionBlob, ctx: PromptContext, *, on_tier=None
+    ) -> VoiceCandidate:
         prompt = self._build_prompt(blob, ctx)
+        _console.print(f"[dim][↑ voice] {prompt[:120]!r}[/]")
         # is_user_turn=True: voice actors only run for interactive human turns
         # (pipeline is gated by _pipeline_enabled = not is_impulse in main.py).
         try:
@@ -203,6 +210,7 @@ class LLMVoiceActor(IgorBase):
                 cortex=self.cortex,
                 prompt_role="voice",
                 is_user_turn=True,
+                on_tier=on_tier,
             )
         except Exception as exc:
             logger.warning("LLMVoiceActor gateway.reason failed: %s", exc)
@@ -213,6 +221,7 @@ class LLMVoiceActor(IgorBase):
                 metadata={"error": str(exc)},
             )
 
+        _console.print(f"[dim][↓ voice] {(text or '')[:120]!r}[/]")
         return VoiceCandidate(
             source="llm",
             text=text or "",
@@ -304,10 +313,10 @@ class VoiceABFramework(IgorBase):
         self._log_dir = log_dir
         self._comparisons: list[VoiceComparison] = []
 
-    def produce(self, blob: DecisionBlob, ctx: PromptContext) -> str:
+    def produce(self, blob: DecisionBlob, ctx: PromptContext, *, on_tier=None) -> str:
         """Run both actors, compare, train, return winner's text."""
         graph_candidate = self.graph_actor.render(blob, ctx)
-        llm_candidate = self.llm_actor.render(blob, ctx)
+        llm_candidate = self.llm_actor.render(blob, ctx, on_tier=on_tier)
 
         comparison = compare_candidates(graph_candidate, llm_candidate)
         self._comparisons.append(comparison)

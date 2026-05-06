@@ -46,11 +46,15 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
+
+from rich.console import Console as _Console
 
 from .prompt_contexts import Provenance as PCProvenance, reasoning_context
 from .reasoning_workflow import Conversation, PeerAdvisor, Speaker
 from ..igor_base import get_logger
+
+_console = _Console(force_terminal=True)
 
 if TYPE_CHECKING:
     from ..memory.cortex import Cortex
@@ -75,6 +79,7 @@ class LLMPeerAdvisor(PeerAdvisor, IgorBase):
         capabilities: Optional[list[str]] = None,
         log_dir: Optional[Path] = None,
         level: str = "interactive",
+        on_tier: Optional[Callable[[str], None]] = None,
     ) -> None:
         self.cortex = cortex
         self._gateway = gateway
@@ -85,6 +90,7 @@ class LLMPeerAdvisor(PeerAdvisor, IgorBase):
         self._level = level
         self._log_dir = log_dir
         self._log_file: Optional[Path] = None
+        self._on_tier = on_tier
 
     @property
     def gateway(self) -> "InferenceGateway":
@@ -138,6 +144,9 @@ class LLMPeerAdvisor(PeerAdvisor, IgorBase):
             history_lines.append(f"[{label}]: {u.content}")
         user_prompt = "\n\n".join(history_lines)
 
+        turn_n = conversation.length()
+        _console.print(f"[dim][↑ peer:{turn_n}] {user_prompt[:120]!r}[/]")
+
         # Call the gateway
         # is_user_turn: interactive-level peers consult cloud (peer reasoning
         # is high-stakes; Ollama stalls make it unresponsive for humans).
@@ -149,6 +158,7 @@ class LLMPeerAdvisor(PeerAdvisor, IgorBase):
                 level=self._level,
                 cortex=self.cortex,
                 is_user_turn=(self._level == "interactive"),
+                on_tier=self._on_tier,
             )
         except Exception as exc:
             logger.warning("LLMPeerAdvisor gateway.reason raised: %s", exc)
@@ -158,6 +168,8 @@ class LLMPeerAdvisor(PeerAdvisor, IgorBase):
             )
             cost = 0.0
             used_api = False
+
+        _console.print(f"[dim][↓ peer:{turn_n}] {response_text[:120]!r}[/]")
 
         # Log the exchange
         self._log_turn(conversation, user_prompt, response_text, cost, used_api)

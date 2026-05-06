@@ -5806,6 +5806,7 @@ class Igor(IgorBase):
                             escalation_trail=[],
                             capabilities=_caps or None,
                             level="interactive",
+                            on_tier=_on_tier,
                         )
 
                         if not hasattr(self, "_turn_pipeline"):
@@ -5821,7 +5822,7 @@ class Igor(IgorBase):
                             )
 
                         _tp_result = self._turn_pipeline.run_turn(
-                            _situation, peer_advisor=_peer
+                            _situation, peer_advisor=_peer, on_tier=_on_tier
                         )
                         _pipeline_ms = round((_time.monotonic() - _tc_pipeline) * 1000)
 

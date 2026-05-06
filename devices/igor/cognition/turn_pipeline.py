@@ -167,7 +167,7 @@ class VoiceProducer(IgorBase):
     testable and lets us ship the conductor before voice actors land.
     """
 
-    def produce(self, blob: DecisionBlob, ctx: PromptContext) -> str:
+    def produce(self, blob: DecisionBlob, ctx: PromptContext, *, on_tier=None) -> str:
         """Render a DecisionBlob as text.
 
         Igor voice has TWO channels of uncertainty-texture, kept
@@ -254,11 +254,11 @@ class ABVoiceProducer(VoiceProducer, IgorBase):
             logger.debug("ABVoiceProducer framework init failed: %s", exc)
             return False
 
-    def produce(self, blob: DecisionBlob, ctx: PromptContext) -> str:
+    def produce(self, blob: DecisionBlob, ctx: PromptContext, *, on_tier=None) -> str:
         if not self._ensure_framework():
             return self._stub.produce(blob, ctx)
         try:
-            result = self._framework.produce(blob, ctx)
+            result = self._framework.produce(blob, ctx, on_tier=on_tier)
             if result:
                 return result
         except Exception as exc:
@@ -306,18 +306,25 @@ class TurnPipeline(IgorBase):
         situation: CascadeSituation,
         *,
         peer_advisor: Optional[PeerAdvisor] = None,
+        on_tier=None,
     ) -> TurnResult:
         """Drive a single turn through the pipeline. peer_advisor is
         required when reasoning escalation actually runs a workflow;
         if omitted and cascade ESCALATES, the turn returns a hedged
         reply explaining the missing peer.
 
+        on_tier: callback fired when an LLM tier starts (same signature
+          as InferenceGateway.reason on_tier). Used for the console
+          cursor indicator and tmux visibility.
+
         T-shadow-stream-reasoning hook: after the turn resolves, the
         reply + input are handed to the module-level shadow reasoner
         (log-only; env-gated; default off). Detached daemon thread;
         never blocks or affects the returned TurnResult.
         """
-        result = self._run_turn_inner(situation, peer_advisor=peer_advisor)
+        result = self._run_turn_inner(
+            situation, peer_advisor=peer_advisor, on_tier=on_tier
+        )
         self._maybe_shadow_record(situation, result)
         return result
 
@@ -345,6 +352,7 @@ class TurnPipeline(IgorBase):
         situation: CascadeSituation,
         *,
         peer_advisor: Optional[PeerAdvisor] = None,
+        on_tier=None,
     ) -> TurnResult:
         trace: list[TraceEntry] = []
 
@@ -364,7 +372,9 @@ class TurnPipeline(IgorBase):
 
         # Cascade matched below level 5 → we already have an answer.
         if cascade_result.status == CascadeStatus.MATCHED:
-            return self._assemble_match_result(situation, cascade_result, trace)
+            return self._assemble_match_result(
+                situation, cascade_result, trace, on_tier=on_tier
+            )
 
         # Cascade exhausted without levers and without escalating → no reply
         if cascade_result.status == CascadeStatus.EXHAUSTED:
@@ -372,7 +382,7 @@ class TurnPipeline(IgorBase):
 
         # Cascade escalated (status == ESCALATE) → run reasoning workflow
         return self._escalate_to_workflow(
-            situation, cascade_result, trace, peer_advisor
+            situation, cascade_result, trace, peer_advisor, on_tier=on_tier
         )
 
     # ── Assembly paths ──────────────────────────────────────────────────────
@@ -382,6 +392,8 @@ class TurnPipeline(IgorBase):
         situation: CascadeSituation,
         cascade_result: CascadeResult,
         trace: list[TraceEntry],
+        *,
+        on_tier=None,
     ) -> TurnResult:
         """Cascade matched at a substrate level. Build a minimal
         DecisionBlob around the match and hand to voice production."""
@@ -403,7 +415,9 @@ class TurnPipeline(IgorBase):
             )
         )
 
-        return self._produce_voice(situation, blob, cascade_result, None, trace)
+        return self._produce_voice(
+            situation, blob, cascade_result, None, trace, on_tier=on_tier
+        )
 
     def _escalate_to_workflow(
         self,
@@ -411,6 +425,8 @@ class TurnPipeline(IgorBase):
         cascade_result: CascadeResult,
         trace: list[TraceEntry],
         peer_advisor: Optional[PeerAdvisor],
+        *,
+        on_tier=None,
     ) -> TurnResult:
         """Cascade escalated. Run reasoning workflow, build blob from
         the workflow output, check can_commit, then voice."""
@@ -488,7 +504,9 @@ class TurnPipeline(IgorBase):
             )
         )
 
-        return self._produce_voice(situation, blob, cascade_result, workflow_run, trace)
+        return self._produce_voice(
+            situation, blob, cascade_result, workflow_run, trace, on_tier=on_tier
+        )
 
     def _assemble_exhausted_result(
         self,
@@ -550,6 +568,8 @@ class TurnPipeline(IgorBase):
         cascade_result: CascadeResult,
         workflow_run: Optional[WorkflowRun],
         trace: list[TraceEntry],
+        *,
+        on_tier=None,
     ) -> TurnResult:
         """Build voice context + run voice producer."""
         enqueued = self._enqueue_experiments(blob, trace)
@@ -568,7 +588,7 @@ class TurnPipeline(IgorBase):
         )
 
         try:
-            reply_text = self.voice_producer.produce(blob, ctx)
+            reply_text = self.voice_producer.produce(blob, ctx, on_tier=on_tier)
         except Exception as exc:
             logger.warning("voice production failed: %s", exc)
             reply_text = (
