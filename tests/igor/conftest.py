@@ -185,6 +185,20 @@ def cc_inbox_test_tag():
     from pathlib import Path
     import sys
 
+    # Sweep residue from any prior test session that was killed before teardown.
+    # Covers the case where CC_INBOX_TAG was set but the session died mid-run.
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+        from lab.claudecode.cc_inbox import delete_by_prefix as _dbp
+
+        stale = _dbp("[test:")
+        if stale:
+            print(
+                f"\n[cc_inbox_test_tag] swept {stale} stale entry(ies) from prior session(s)"
+            )
+    except Exception:
+        pass
+
     tag_ts = datetime.now(timezone.utc).strftime("%Y%m%d.%H%M%S.%f")
     tag = f"test:{tag_ts}"
     prior = os.environ.get("CC_INBOX_TAG")
