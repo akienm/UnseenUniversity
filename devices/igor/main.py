@@ -961,8 +961,8 @@ class Igor(IgorBase):
                     """
                     SELECT id, narrative, metadata, last_accessed
                     FROM memories
-                    WHERE memory_type = ?
-                    AND (last_accessed IS NULL OR last_accessed > ?)
+                    WHERE memory_type = %s
+                    AND (last_accessed IS NULL OR last_accessed > %s)
                     ORDER BY COALESCE(last_accessed, timestamp) DESC
                     LIMIT 20
                     """,
@@ -5202,6 +5202,12 @@ class Igor(IgorBase):
                         _thalamus_confidence if "_thalamus_confidence" in dir() else 0.5
                     ),
                 }
+                # Inject discord channel_id so EMIT[discord, ...] can reply back.
+                # thread_id format for Discord is "discord:<channel_id>".
+                if thread_id and thread_id.startswith("discord:"):
+                    _dcid = thread_id.split(":", 1)[1]
+                    if _dcid != "unknown":
+                        _eng_basket["_discord_channel_id"] = _dcid
 
                 run_cursor(
                     cortex=self.cortex,
@@ -8094,6 +8100,17 @@ class Igor(IgorBase):
                         response[:80],
                     )
                     web_server.send(response, session_id=_session_id)
+            elif msg.source == "discord" and response:
+                _discord_channel_id = (msg.reply_info or {}).get("channel_id", 0)
+                if _discord_channel_id:
+                    discord_bot.send(int(_discord_channel_id), response)
+                else:
+                    import logging as _logging
+
+                    _logging.getLogger("igor.main").warning(
+                        "discord reply: no channel_id in reply_info — response dropped (len=%d)",
+                        len(response),
+                    )
             elif response and msg.source == "web":
                 # Should not be reachable given the outer condition, but guard anyway
                 pass

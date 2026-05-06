@@ -137,7 +137,7 @@ class SleepConsolidation(IgorBase):
         try:
             with cortex._conn() as conn:
                 rows = conn.execute(
-                    "SELECT nodes FROM traces WHERE recorded_at > ? "
+                    "SELECT nodes FROM traces WHERE recorded_at > %s "
                     "ORDER BY recorded_at DESC LIMIT 200",
                     (cutoff,),
                 ).fetchall()
@@ -259,4 +259,5 @@ class SleepConsolidation(IgorBase):
             )
         except Exception as _exc:
             from .forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"sleep_consolidation.py:260: {_exc}")

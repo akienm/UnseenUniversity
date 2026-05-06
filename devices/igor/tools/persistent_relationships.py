@@ -112,7 +112,7 @@ def _list_facia_memories() -> list:
             rows = conn.execute(
                 "SELECT id, narrative, metadata FROM memories "
                 "WHERE memory_type = %s "
-                "AND metadata @> jsonb_build_object('facia_role', ?::text) "
+                "AND metadata @> jsonb_build_object('facia_role', %s::text) "
                 "ORDER BY id",
                 ("REFERENCE", "persistent_relationship"),
             ).fetchall()

@@ -381,7 +381,7 @@ def _get_recent_habits(cortex: Cortex, n: int = 3) -> list[dict]:
         with cortex._conn() as conn:
             rows = conn.execute(
                 "SELECT id, narrative, source FROM memories "
-                "WHERE memory_type = 'PROCEDURAL' ORDER BY timestamp DESC LIMIT ?",
+                "WHERE memory_type = 'PROCEDURAL' ORDER BY timestamp DESC LIMIT %s",
                 (n,),
             ).fetchall()
         return [

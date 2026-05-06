@@ -45,6 +45,7 @@ def _accretion_log(stage: str, **fields) -> None:
             f.write(line + "\n")
     except Exception as _exc:
         from ..cognition.forensic_logger import log_error as _le
+
         _le(kind="SILENT_EXCEPT", detail=f"pr_accretion.py:46: {_exc}")
 
 
@@ -243,7 +244,7 @@ def pr_recent_accretions(facia_id: str, limit: int = 20) -> list:
             rows = conn.execute(
                 "SELECT id, narrative, metadata FROM memories "
                 "WHERE memory_type = %s "
-                "AND metadata @> jsonb_build_object('pr_facia_id', ?::text) "
+                "AND metadata @> jsonb_build_object('pr_facia_id', %s::text) "
                 "ORDER BY id DESC LIMIT %s",
                 ("EPISODIC", facia_id, limit),
             ).fetchall()

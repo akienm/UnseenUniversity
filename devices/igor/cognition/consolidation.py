@@ -326,17 +326,25 @@ def _call_local_llm(prompt: str, cortex: Cortex) -> Optional[dict]:
         # Timeout to prevent the inference from blocking indefinitely on CPU-only machines.
         import threading as _threading
         import queue as _queue
+
         _timeout_secs = int(os.getenv("IGOR_CONSOLIDATION_TIMEOUT_SECS", "90"))
         _q: _queue.Queue = _queue.Queue()
+
         def _do_chat():
             try:
-                _q.put((_client.chat(
-                    model=_model,
-                    messages=[{"role": "user", "content": prompt}],
-                    options={"temperature": 0.1, "num_predict": 300},
-                ), None))
+                _q.put(
+                    (
+                        _client.chat(
+                            model=_model,
+                            messages=[{"role": "user", "content": prompt}],
+                            options={"temperature": 0.1, "num_predict": 300},
+                        ),
+                        None,
+                    )
+                )
             except Exception as _e:
                 _q.put((None, _e))
+
         _thread = _threading.Thread(target=_do_chat, daemon=True)
         _thread.start()
         try:
@@ -396,9 +404,9 @@ def run_consolidation(cortex: Cortex) -> dict:
                 WHERE memory_type = 'EPISODIC'
                   AND id NOT IN ({{}})
                 ORDER BY timestamp DESC
-                LIMIT ?
+                LIMIT %s
                 """.format(
-                    ",".join("?" * len(already_processed))
+                    ",".join(["%s"] * len(already_processed))
                     if already_processed
                     else "'__none__'"
                 ),
