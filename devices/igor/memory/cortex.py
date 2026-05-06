@@ -3872,6 +3872,14 @@ class Cortex(IgorBase):
         # 3: Recent TWM items with explicit memory_id in metadata
         try:
             recent = self.twm_read(limit=10, include_integrated=False)
+            # T-igor-twm-salience-gate: background heartbeats / decayed TASK_SETs
+            # shouldn't pull their memories into the anchor set.
+            _att = self.twm_get_attractor()
+            _att_weight = (
+                float((_att or {}).get("attractor_weight", 0.0)) if _att else 0.0
+            )
+            _gate = max(0.3, _att_weight * 0.5)
+            recent = [o for o in recent if (o.get("salience") or 0.0) >= _gate]
             for obs in sorted(
                 recent, key=lambda x: x.get("salience", 0.0), reverse=True
             )[:5]:
