@@ -15,6 +15,7 @@ Instance data is $AGENT_DATACENTER_HOME/<instance-name>/.
 from __future__ import annotations
 
 import logging
+import platform
 import shutil
 import subprocess
 import sys
@@ -92,6 +93,56 @@ def _detect_imap() -> str:
     return "stub"
 
 
+def _detect_cc_workflow_tools() -> Path | None:
+    """Return the path to the lab/claudecode scripts dir, or None if unresolvable.
+
+    For a development install (editable) the layout is:
+        <repo_root>/skills/       → DEFAULT_MASTER_ROOT
+        <repo_root>/lab/claudecode/  → the tools we want
+
+    For a pip install the lab tree isn't in sys.prefix, so we skip gracefully.
+    """
+    try:
+        from devices.installer.shim import DEFAULT_MASTER_ROOT
+
+        candidate = DEFAULT_MASTER_ROOT.parent / "lab" / "claudecode"
+        if (candidate / "cc_queue.py").exists():
+            return candidate
+    except ImportError:
+        pass
+
+    # pip-installed: check sys.prefix-relative location (not expected to exist yet)
+    prefix_candidate = Path(sys.prefix) / "lib" / "claudecode"
+    if (prefix_candidate / "cc_queue.py").exists():
+        return prefix_candidate
+
+    return None
+
+
+def _shell_profile() -> Path:
+    """Return the user's shell profile path: ~/.zshrc on macOS, ~/.bashrc elsewhere."""
+    if platform.system() == "Darwin":
+        return Path.home() / ".zshrc"
+    return Path.home() / ".bashrc"
+
+
+def _write_env_var_to_profile(profile: Path, name: str, value: str) -> bool:
+    """Append 'export NAME=value' to profile if not already present.
+
+    Returns True if written, False if the line was already there (idempotent).
+    The idempotency check looks for a line starting with 'export NAME='
+    (anchored), so a comment mentioning the var won't fool it.
+    """
+    export_line = f"export {name}={value}"
+    if profile.exists():
+        for line in profile.read_text().splitlines():
+            if line.startswith(f"export {name}="):
+                return False  # already set — skip
+    with profile.open("a") as fh:
+        fh.write(f"\n{export_line}\n")
+    return True
+
+
 # ── Commands ──────────────────────────────────────────────────────────────────
 
 
@@ -161,7 +212,37 @@ def init(instance: str | None) -> None:
             "(set AGENT_DATACENTER_TEST_MODE=1)"
         )
 
-    # 5. Start skeleton (in-process for init; production uses a daemon launcher)
+    # 5. CC_WORKFLOW_TOOLS env var
+    tools_path = _detect_cc_workflow_tools()
+    profile = _shell_profile()
+    if tools_path is not None:
+        written = _write_env_var_to_profile(
+            profile, "CC_WORKFLOW_TOOLS", str(tools_path)
+        )
+        arrow = "→" if written else "(already set)"
+        click.echo(f"  CC_WORKFLOW_TOOLS: {tools_path} {arrow} {profile.name}")
+        click.echo(
+            f"  hint: run 'source ~/{profile.name}' to activate CC_WORKFLOW_TOOLS in this shell"
+        )
+    else:
+        click.echo(
+            "  CC_WORKFLOW_TOOLS: lab/claudecode not found — skipped "
+            "(set CC_WORKFLOW_TOOLS manually after install)"
+        )
+
+    # 6. Skills deploy
+    try:
+        from devices.installer import deploy_skills
+
+        skill_result = deploy_skills()
+        click.echo(
+            f"  skills:       deployed {len(skill_result.deployed)} skills "
+            f"to ~/.claude/skills/"
+        )
+    except Exception as exc:
+        click.echo(f"\n[warn] skills deploy failed: {exc}", err=True)
+
+    # 7. Start skeleton (in-process for init; production uses a daemon launcher)
     try:
         from skeleton.registry import DeviceRegistry
 
