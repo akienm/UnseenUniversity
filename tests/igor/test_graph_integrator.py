@@ -54,7 +54,7 @@ def test_create_book_anchor_node(cortex_test):
     # Verify the node was created
     with cortex_test._conn() as conn:
         mem = conn.execute(
-            "SELECT id, narrative, memory_type FROM memories WHERE id = ?",
+            "SELECT id, narrative, memory_type FROM memories WHERE id = %s",
             (node_id,),
         ).fetchone()
 
@@ -77,7 +77,7 @@ def test_create_book_anchor_node_no_author(cortex_test):
 
     with cortex_test._conn() as conn:
         mem = conn.execute(
-            "SELECT narrative FROM memories WHERE id = ?",
+            "SELECT narrative FROM memories WHERE id = %s",
             (node_id,),
         ).fetchone()
 
@@ -175,7 +175,7 @@ def test_integrate_graph_complete(cortex_test, monkeypatch):
     # Verify anchor node was created
     with cortex_test._conn() as conn:
         anchor = conn.execute(
-            "SELECT id FROM memories WHERE id LIKE ?",
+            "SELECT id FROM memories WHERE id LIKE %s",
             ("BOOK_%",),
         ).fetchone()
 
@@ -185,7 +185,7 @@ def test_integrate_graph_complete(cortex_test, monkeypatch):
         # Verify edges were created
         with cortex_test._conn() as conn:
             edges = conn.execute(
-                "SELECT from_id, to_id, weight FROM interpretive_edges WHERE from_id LIKE ?",
+                "SELECT from_id, to_id, weight FROM interpretive_edges WHERE from_id LIKE %s",
                 ("BOOK_%",),
             ).fetchall()
 

@@ -15,7 +15,7 @@ Key meaning per channel:
   cognitive_milieu — TWM push (key = source label)
   console          — log label (printed as "[Igor] key: value")
   web              — field name POSTed to /api/emit
-  discord          — stub (not yet wired)
+  discord          — key ignored; value sent as text to channel_id from basket._discord_channel_id or DISCORD_CHANNEL_ID env var
 """
 
 import logging
@@ -174,13 +174,36 @@ class WebChannel(EmitChannel):
 
 
 class DiscordChannel(EmitChannel):
-    """Stub — Discord output not yet wired."""
+    """Send a Discord message via discord_bot.send().
+
+    channel_id resolution order:
+      1. basket["_discord_channel_id"] — set by main.py for the active turn
+      2. DISCORD_CHANNEL_ID env var — fallback for habit-triggered emits with no turn context
+    """
 
     name = "discord"
     bidirectional = True
 
     def write(self, key: str, value: Any, basket: dict) -> None:
-        log.warning("[emit:discord] not yet implemented — key=%r value=%r", key, value)
+        import os
+        from ..network import discord_bot
+
+        channel_id = basket.get("_discord_channel_id") or os.getenv(
+            "DISCORD_CHANNEL_ID", ""
+        )
+        if not channel_id:
+            log.warning("[emit:discord] no channel_id available — key=%r dropped", key)
+            return
+        try:
+            discord_bot.send(int(channel_id), str(value))
+            log.debug(
+                "[emit:discord] sent key=%r len=%d channel=%s",
+                key,
+                len(str(value)),
+                channel_id,
+            )
+        except Exception as e:
+            log.warning("[emit:discord] send failed: %s", e)
 
 
 class MemoryChannel(EmitChannel):

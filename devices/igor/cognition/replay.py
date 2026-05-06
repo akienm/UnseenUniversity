@@ -129,7 +129,7 @@ class ConsolidationReplay(IgorBase):
                 row = conn.execute(
                     """
                     SELECT timestamp FROM twm_observations
-                    WHERE timestamp > ?
+                    WHERE timestamp > %s
                     AND source NOT IN (
                         'consolidation_replay', 'memory_surfacer', 'boredom',
                         'heartbeat', 'curiosity', 'milieu', 'inbox_watcher',
@@ -185,7 +185,7 @@ class ConsolidationReplay(IgorBase):
 
                 # Filter by replay cursor if it exists
                 if last_replay_ts:
-                    query += " AND timestamp > ?"
+                    query += " AND timestamp > %s"
                     params.append(last_replay_ts.isoformat())
 
                 query += " ORDER BY timestamp ASC"

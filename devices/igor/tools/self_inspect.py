@@ -88,7 +88,7 @@ def _aspect_attention(limit: int = 10) -> dict:
     with cortex._local_conn() as conn:
         rows = conn.execute(
             "SELECT id, content_csb, salience, urgency, category, integrated, timestamp "
-            "FROM twm_observations ORDER BY salience DESC, id DESC LIMIT ?",
+            "FROM twm_observations ORDER BY salience DESC, id DESC LIMIT %s",
             (int(limit),),
         ).fetchall()
     return {
