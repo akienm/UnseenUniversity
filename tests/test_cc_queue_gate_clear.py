@@ -27,14 +27,21 @@ class TestUngateDependents:
         assert n == 1
         assert tasks[1]["gate"] is None
 
-    def test_skips_non_pending_tasks(self):
+    def test_skips_terminal_statuses_only(self):
+        # hold/blocked: gate clears when dependency closes (hold status stays, gate lifted)
+        # done/closed/cancelled: never ungated
         tasks = [
-            {"id": "T-b", "status": "blocked", "gate": "T-a"},
+            {"id": "T-b", "status": "hold", "gate": "T-a"},
             {"id": "T-c", "status": "done", "gate": "T-a"},
+            {"id": "T-d", "status": "closed", "gate": "T-a"},
+            {"id": "T-e", "status": "cancelled", "gate": "T-a"},
         ]
         n = cc_queue._ungate_dependents(tasks, "T-a")
-        assert n == 0
-        assert tasks[0]["gate"] == "T-a"
+        assert n == 1  # only T-b (hold) ungated; terminal statuses skipped
+        assert tasks[0]["gate"] is None
+        assert tasks[1]["gate"] == "T-a"
+        assert tasks[2]["gate"] == "T-a"
+        assert tasks[3]["gate"] == "T-a"
 
     def test_skips_no_gate(self):
         tasks = [
