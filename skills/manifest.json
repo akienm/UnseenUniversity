@@ -24,6 +24,7 @@
     "readinbox":         {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "savestate":         {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "savestateauto":     {"category": "machine-agnostic", "machines": ["*"], "deploy": false},
+    "skills-sync":       {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "sprint":            {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "sprint-batch":      {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "sprint-ticket":     {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
