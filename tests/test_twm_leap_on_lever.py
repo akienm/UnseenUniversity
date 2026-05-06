@@ -222,7 +222,7 @@ class TestNoLeap:
         call_args = conn.execute.call_args
         assert call_args is not None
         sql, params = call_args[0]
-        assert "id != ?" in sql
+        assert "id != %s" in sql
         assert 99 in params  # new_obs_id passed as SQL parameter
 
     def test_threshold_respected(self, monkeypatch):

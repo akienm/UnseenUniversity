@@ -341,8 +341,8 @@ def test_goal_adopt_accepts_parent_goal_facia_id():
         with cortex._conn() as conn:
             rows = conn.execute(
                 "SELECT id, metadata FROM memories "
-                "WHERE memory_type = ? "
-                "AND metadata @> jsonb_build_object('parent_goal_facia_id', ?::text) "
+                "WHERE memory_type = %s "
+                "AND metadata @> jsonb_build_object('parent_goal_facia_id', %s::text) "
                 "ORDER BY id DESC LIMIT 1",
                 ("GOAL", "PR_GOAL_STRATEGIC_SELF_GOALGRAPH"),
             ).fetchall()
@@ -352,8 +352,8 @@ def test_goal_adopt_accepts_parent_goal_facia_id():
         try:
             with cortex._conn() as conn:
                 conn.execute(
-                    "DELETE FROM memories WHERE memory_type = ? "
-                    "AND metadata @> jsonb_build_object('parent_goal_facia_id', ?::text)",
+                    "DELETE FROM memories WHERE memory_type = %s "
+                    "AND metadata @> jsonb_build_object('parent_goal_facia_id', %s::text)",
                     ("GOAL", "PR_GOAL_STRATEGIC_SELF_GOALGRAPH"),
                 )
         except Exception:
