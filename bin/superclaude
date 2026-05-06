@@ -1,0 +1,184 @@
+#!/bin/bash
+# superclaude — Claude Code launcher with utility closet + fresh-install wizard
+# Canonical home: agent_datacenter/bin/superclaude
+# D232: fresh-install wizard. D335: start utility closet before Claude Code.
+# Starts utility closet if not running, then launches Claude Code with all args forwarded.
+
+set -euo pipefail
+
+IGOR_HOME="${HOME}/.TheIgors"
+
+# Derive TheIgors repo location from CC_WORKFLOW_TOOLS (two levels up) or fall back
+if [[ -n "${CC_WORKFLOW_TOOLS:-}" ]]; then
+    THEIGORS_DIR="$(dirname "$(dirname "$CC_WORKFLOW_TOOLS")")"
+else
+    THEIGORS_DIR="${THEIGORS_HOME:-${HOME}/TheIgors}"
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VENV_PYTHON="${THEIGORS_DIR}/venv/bin/python"
+
+# Try to source common functions if available
+if [[ -f "${SCRIPT_DIR}/_igor_common.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "${SCRIPT_DIR}/_igor_common.sh"
+elif [[ -f "${HOME}/bin/_igor_common.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "${HOME}/bin/_igor_common.sh"
+fi
+
+# ─ Setup wizard ──────────────────────────────────────────────────────────────
+
+run_setup_wizard() {
+    local instance_dir="${IGOR_HOME}/Igor-wild-0001"
+    local env_file="${instance_dir}/.env"
+
+    echo "╔════════════════════════════════════════════════════════════════════════════════╗"
+    echo "║ First-time setup — superclaude                                                 ║"
+    echo "╚════════════════════════════════════════════════════════════════════════════════╝"
+    echo ""
+    echo "This appears to be your first time running Claude Code with Igor."
+    echo "Let's set up your environment."
+    echo ""
+
+    # Check requirements if function is available
+    if declare -f check_requirements &>/dev/null; then
+        echo "Checking requirements..."
+        if ! check_requirements 2>/dev/null; then
+            echo ""
+            echo "ERROR: Missing required tools. Please install:"
+            echo "  - python3"
+            echo "  - git"
+            echo ""
+            return 1
+        fi
+        echo "✓ Requirements met"
+    fi
+    echo ""
+
+    # Create instance directory if needed
+    mkdir -p "$instance_dir"
+
+    # If .env doesn't exist, create a template
+    if [[ ! -f "$env_file" ]]; then
+        echo "Creating template .env at $env_file"
+        cat > "$env_file" << 'ENVEOF'
+# Igor instance configuration — edit with your API keys
+
+# REQUIRED: Anthropic API key for Claude Code
+ANTHROPIC_API_KEY=""
+
+# OPTIONAL: OpenRouter key (fallback if Anthropic balance is low)
+OPENROUTER_API_KEY=""
+
+# OPTIONAL: Local inference (KoboldCpp or Ollama)
+KOBOLDCPP_HOST="localhost"
+KOBOLDCPP_PORT="5001"
+
+# OPTIONAL: Database URL (defaults to local sqlite)
+IGOR_SWARM_DB_URL=""
+
+# OPTIONAL: Instance ID (defaults to Igor-wild-0001)
+IGOR_INSTANCE_ID="Igor-wild-0001"
+ENVEOF
+
+        echo "✓ Template created"
+    fi
+
+    echo ""
+    echo "Please edit your .env file with your API keys:"
+    echo "  $env_file"
+    echo ""
+    echo "Then re-run: superclaude"
+    echo ""
+    return 1
+}
+
+# ─ Load config ──────────────────────────────────────────────────────────────
+
+require_api_key() {
+    # Load .env if it exists (sources ANTHROPIC_API_KEY and other env vars).
+    # Always succeeds — Claude Code will validate API key at startup.
+    local env_file="${IGOR_HOME}/Igor-wild-0001/.env"
+
+    if [[ -f "$env_file" ]]; then
+        set -a
+        # shellcheck disable=SC1090
+        source "$env_file"
+        set +a
+    fi
+
+    return 0
+}
+
+# ─ Utility closet (D335) ────────────────────────────────────────────────────
+
+start_utility_closet() {
+    local uc_dir="${CC_WORKFLOW_TOOLS:-${THEIGORS_DIR}/lab/claudecode}"
+    local uc_server="${uc_dir}/utility_closet_server.py"
+
+    if [[ ! -f "$uc_server" ]]; then
+        echo "Warning: utility_closet_server.py not found, skipping"
+        return 0
+    fi
+
+    if [[ ! -f "$VENV_PYTHON" ]]; then
+        echo "Warning: venv python not found at $VENV_PYTHON, skipping utility closet"
+        return 0
+    fi
+
+    # Check if already running and healthy
+    if "$VENV_PYTHON" "$uc_server" --check >/dev/null 2>&1; then
+        echo "Utility closet: running"
+        return 0
+    fi
+
+    # Not running or stalled — start it in background
+    echo "Utility closet: starting..."
+    nohup "$VENV_PYTHON" "$uc_server" >> "${IGOR_HOME}/logs/utility_closet.log" 2>&1 &
+    disown
+
+    # Wait briefly for it to come up
+    for i in 1 2 3 4 5; do
+        sleep 1
+        if "$VENV_PYTHON" "$uc_server" --check >/dev/null 2>&1; then
+            echo "Utility closet: started (pid $(cat "${IGOR_HOME}/utility_closet.pid" 2>/dev/null || echo '?'))"
+            return 0
+        fi
+    done
+
+    echo "Warning: utility closet did not start within 5s (continuing anyway)"
+    return 0
+}
+
+# ─ Main ──────────────────────────────────────────────────────────────────────
+
+# Load .env (sets ANTHROPIC_API_KEY and other env vars if available)
+require_api_key
+
+# Ensure logs directory exists
+mkdir -p "${IGOR_HOME}/logs"
+
+# Start utility closet if not already running (D335)
+start_utility_closet
+
+# Launch inside tmux so Claude Code inherits $TMUX and $TMUX_PANE.
+# This is REQUIRED for self-compaction via tmux send-keys to work —
+# without it, Claude Code runs outside tmux and can't target its own pane.
+CLAUDE_TMUX_SESSION="${CLAUDE_TMUX_SESSION:-claude-main}"
+export CLAUDE_TMUX_SESSION
+
+if [[ -n "${TMUX:-}" ]]; then
+    # Already inside tmux — launch directly
+    exec claude --dangerously-skip-permissions "$@"
+else
+    # Outside tmux — create session (or reuse) and launch Claude inside it
+    tmux new-session -d -s "$CLAUDE_TMUX_SESSION" 2>/dev/null || true
+    # Build the command string with proper quoting
+    CLAUDE_CMD="cd $(printf '%q' "$PWD") && claude --dangerously-skip-permissions"
+    for arg in "$@"; do
+        CLAUDE_CMD+=" $(printf '%q' "$arg")"
+    done
+    tmux send-keys -t "$CLAUDE_TMUX_SESSION" "$CLAUDE_CMD" Enter
+    exec tmux attach -t "$CLAUDE_TMUX_SESSION"
+fi

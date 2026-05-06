@@ -119,6 +119,35 @@ def _detect_cc_workflow_tools() -> Path | None:
     return None
 
 
+def _link_superclaude() -> tuple[str, str]:
+    """Create ~/.local/bin/superclaude → agent_datacenter/bin/superclaude symlink.
+
+    Returns (status, path) where status is 'created', 'exists', 'skipped', or 'error'.
+    Skipped on Windows (no symlink; add bin/ to PATH instead).
+    """
+    if platform.system() == "Windows":
+        return ("skipped", "Windows — add agent_datacenter/bin/ to PATH manually")
+
+    try:
+        # Canonical launcher: two dirs up from this file, then bin/superclaude
+        launcher = Path(__file__).parent.parent.parent / "bin" / "superclaude"
+        if not launcher.exists():
+            return ("skipped", f"launcher not found at {launcher}")
+
+        link = Path.home() / ".local" / "bin" / "superclaude"
+        link.parent.mkdir(parents=True, exist_ok=True)
+
+        if link.is_symlink() and link.resolve() == launcher.resolve():
+            return ("exists", str(link))
+        if link.exists() or link.is_symlink():
+            link.unlink()  # stale symlink or old file — replace
+
+        link.symlink_to(launcher)
+        return ("created", str(link))
+    except Exception as exc:
+        return ("error", str(exc))
+
+
 def _shell_profile() -> Path:
     """Return the user's shell profile path: ~/.zshrc on macOS, ~/.bashrc elsewhere."""
     if platform.system() == "Darwin":
@@ -242,7 +271,18 @@ def init(instance: str | None) -> None:
     except Exception as exc:
         click.echo(f"\n[warn] skills deploy failed: {exc}", err=True)
 
-    # 7. Start skeleton (in-process for init; production uses a daemon launcher)
+    # 7. superclaude symlink
+    sc_status, sc_path = _link_superclaude()
+    if sc_status == "created":
+        click.echo(f"  superclaude:  {sc_path} (symlink created)")
+    elif sc_status == "exists":
+        click.echo(f"  superclaude:  {sc_path} (already linked)")
+    elif sc_status == "skipped":
+        click.echo(f"  superclaude:  {sc_path}")
+    else:
+        click.echo(f"  superclaude:  warn — {sc_path}", err=True)
+
+    # 8. Start skeleton (in-process for init; production uses a daemon launcher)
     try:
         from skeleton.registry import DeviceRegistry
 
