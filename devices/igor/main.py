@@ -546,6 +546,7 @@ class Igor(IgorBase):
                 # Postgres-backed graph (T-sqlite-out-word-graph-db).
                 # Init reads from live DB; rebuild from habits only if empty.
                 self._word_graph = WordGraph()
+                _boot_habits = []
                 if not self._word_graph._word_to_ids:
                     _boot_habits = self.cortex.get_habits()
                     self._word_graph = WordGraph.build_from_habits(_boot_habits)
