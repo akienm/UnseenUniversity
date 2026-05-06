@@ -42,9 +42,10 @@ def _pg_connect():
     try:
         import psycopg2
 
-        url = os.environ.get(
-            "AGENT_DATACENTER_POSTGRES_URL",
-            os.environ.get("IGOR_HOME_DB_URL", ""),
+        url = (
+            os.environ.get("AGENT_DATACENTER_DB_URL")
+            or os.environ.get("AGENT_DATACENTER_POSTGRES_URL")
+            or ""
         )
         if not url:
             return None
