@@ -1654,7 +1654,7 @@ def ingest_calibre_igor_books(**_kwargs) -> str:
     Idempotent by calibre://{id} source URL; re-run after adding Calibre tags.
     Called daily by PROC_CALIBRE_INGEST.
     """
-    import sqlite3
+    from wild_igor.igor._sqlite_guard import real_sqlite3 as sqlite3
 
     if not _CALIBRE_DB.exists():
         return f"[ingest_calibre_igor_books] Calibre DB not found: {_CALIBRE_DB}"

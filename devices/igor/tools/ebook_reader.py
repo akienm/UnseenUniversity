@@ -27,7 +27,7 @@ from __future__ import annotations
 import json
 import os
 import re
-import sqlite3
+from wild_igor.igor._sqlite_guard import real_sqlite3 as sqlite3
 import sys
 import tempfile
 from dataclasses import dataclass, field, asdict
