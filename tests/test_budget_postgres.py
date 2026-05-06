@@ -39,9 +39,9 @@ def cleanup_tag(tag):
     from lab.utility_closet.budget import _db_proxy
 
     with _db_proxy()() as c:
-        c.execute("DELETE FROM spend WHERE note LIKE ?", (f"%{tag}%",))
-        c.execute("DELETE FROM budget_config WHERE key LIKE ?", (f"%{tag}%",))
-        c.execute("DELETE FROM balance_history WHERE balance < ?", (-999999.0,))
+        c.execute("DELETE FROM spend WHERE note LIKE %s", (f"%{tag}%",))
+        c.execute("DELETE FROM budget_config WHERE key LIKE %s", (f"%{tag}%",))
+        c.execute("DELETE FROM balance_history WHERE balance < %s", (-999999.0,))
 
 
 def test_record_spend_inserts_and_sums(cleanup_tag):
@@ -60,11 +60,11 @@ def test_set_and_get_spending_cap(cleanup_tag):
     key = f"spending_cap_{cleanup_tag}"
     with _db_proxy()() as c:
         c.execute(
-            "INSERT OR REPLACE INTO budget_config (key, value) VALUES (?, ?)",
+            "INSERT INTO budget_config (key, value) VALUES (%s, %s) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
             (key, "42.50"),
         )
         row = c.execute(
-            "SELECT value FROM budget_config WHERE key = ?", (key,)
+            "SELECT value FROM budget_config WHERE key = %s", (key,)
         ).fetchall()
     assert row and row[0]["value"] == "42.50"
 
@@ -79,7 +79,7 @@ def test_balance_history_round_trip(cleanup_tag):
         for i in range(3):
             c.execute(
                 "INSERT INTO balance_history (timestamp, balance, purchased, used) "
-                "VALUES (?, ?, ?, ?)",
+                "VALUES (%s, %s, %s, %s)",
                 (
                     (now - timedelta(hours=i)).isoformat(),
                     sentinel,
@@ -88,7 +88,7 @@ def test_balance_history_round_trip(cleanup_tag):
                 ),
             )
         rows = c.execute(
-            "SELECT balance FROM balance_history WHERE balance = ?", (sentinel,)
+            "SELECT balance FROM balance_history WHERE balance = %s", (sentinel,)
         ).fetchall()
     assert len(rows) == 3
 
