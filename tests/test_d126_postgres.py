@@ -41,7 +41,7 @@ class TestProxyFactories(unittest.TestCase):
         env = {k: v for k, v in os.environ.items() if k not in self._SEARCH_OVERRIDES}
         env["IGOR_HOME_DB_URL"] = "postgresql://fake/db"
         with patch.dict(os.environ, env, clear=True):
-            with patch("lab.utility_closet.db_proxy.PGDatabaseProxy") as MockPG:
+            with patch("agent_datacenter.db.PGDatabaseProxy") as MockPG:
                 from wild_igor.igor.memory import db_proxy
 
                 db_proxy.make_home_proxy()
@@ -61,7 +61,7 @@ class TestProxyFactories(unittest.TestCase):
         clean_env = {k: v for k, v in os.environ.items() if k not in _EXCLUDE}
         clean_env.update(env)
         with patch.dict(os.environ, clean_env, clear=True):
-            with patch("lab.utility_closet.db_proxy.PGDatabaseProxy") as MockPG:
+            with patch("agent_datacenter.db.PGDatabaseProxy") as MockPG:
                 from wild_igor.igor.memory import db_proxy
 
                 db_proxy.make_home_proxy()
@@ -73,7 +73,7 @@ class TestProxyFactories(unittest.TestCase):
         env = {k: v for k, v in os.environ.items() if k not in self._SEARCH_OVERRIDES}
         env["IGOR_LOCAL_DB_URL"] = "postgresql://local/db"
         with patch.dict(os.environ, env, clear=True):
-            with patch("lab.utility_closet.db_proxy.PGDatabaseProxy") as MockPG:
+            with patch("agent_datacenter.db.PGDatabaseProxy") as MockPG:
                 from wild_igor.igor.memory import db_proxy
 
                 db_proxy.make_local_proxy()
@@ -91,7 +91,7 @@ class TestProxyFactories(unittest.TestCase):
         }
         clean_env["IGOR_HOME_DB_URL"] = "postgresql://test:test@localhost/test"
         with patch.dict(os.environ, clean_env, clear=True):
-            with patch("lab.utility_closet.db_proxy.PGDatabaseProxy") as MockPG:
+            with patch("agent_datacenter.db.PGDatabaseProxy") as MockPG:
                 from wild_igor.igor.memory import db_proxy
 
                 db_proxy.make_local_proxy(Path("/tmp/test.db"))
