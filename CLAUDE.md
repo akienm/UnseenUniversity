@@ -39,8 +39,8 @@ This is the portable agent runtime substrate. It is **not** TheIgors.
 
 | Phase | Primary ticket selector | Status |
 |---|---|---|
-| 0 | `decision:D-adc-phase-0-2026-04-27` | in-progress |
-| 1 | `decision:D-adc-phase-1-2026-04-27` | pending |
+| 0 | `decision:D-adc-phase-0-2026-04-27` | complete |
+| 1 | `decision:D-adc-phase-1-2026-04-27` | in-progress |
 | 2 | `decision:D-adc-phase-2-2026-04-27` | pending |
 | 3 | `decision:D-adc-phase-3-2026-04-27` | pending |
 | 4 | `decision:D-adc-phase-4-2026-04-27` | pending |
