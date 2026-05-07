@@ -22,6 +22,7 @@ from __future__ import annotations
 import logging
 import logging.handlers
 import time
+from datetime import datetime, timedelta
 from pathlib import Path
 
 _LOG_MAX_BYTES = 10 * 1024 * 1024  # 10 MB per file
@@ -139,6 +140,75 @@ class ConsoleHandler(logging.Handler):
             self.handleError(record)
 
 
+# ── DailyConsoleFileHandler ───────────────────────────────────────────────────
+
+
+class DailyConsoleFileHandler(logging.Handler):
+    """
+    Writes colored log output to a daily YYYYMMDD.console.log file.
+
+    Mirrors ConsoleHandler's Rich-based output — same style, same levels.
+    Rolls over at midnight; prunes files older than retention_days.
+    Replaces the tmux pipe-pane capture (which caught non-logging terminal
+    sequences like bracketed-paste control codes).
+
+    emit() is called under the handler's own lock (base Handler.handle()),
+    so _roll() and the Rich console.print() are already serialized.
+    """
+
+    def __init__(
+        self, log_dir: Path, level: int = logging.INFO, retention_days: int = 7
+    ) -> None:
+        super().__init__(level)
+        self._log_dir = log_dir
+        self._retention_days = retention_days
+        self._current_date: str = ""
+        self._file = None
+        self._console = None
+        log_dir.mkdir(parents=True, exist_ok=True)
+
+    def _roll(self) -> None:
+        today = datetime.now().strftime("%Y%m%d")
+        if today == self._current_date:
+            return
+        if self._file:
+            self._file.close()
+        path = self._log_dir / f"{today}.console.log"
+        self._file = path.open("a", encoding="utf-8")
+        from rich.console import Console
+
+        self._console = Console(force_terminal=True, file=self._file, highlight=False)
+        self._current_date = today
+        self._prune()
+
+    def _prune(self) -> None:
+        cutoff = datetime.now() - timedelta(days=self._retention_days)
+        for f in self._log_dir.glob("????????.console.log"):
+            try:
+                if datetime.strptime(f.stem[:8], "%Y%m%d") < cutoff:
+                    f.unlink()
+            except (ValueError, OSError):
+                pass
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            self._roll()
+            ts = time.strftime("%H%M%S")
+            msg = self.format(record)
+            leaf = record.name.rsplit(".", 1)[-1] if "." in record.name else record.name
+            style = ConsoleHandler._LEVEL_STYLE.get(record.levelno, "dim")
+            self._console.print(f"[{style}]{ts}[{leaf}] {msg}[/{style}]")
+            self._file.flush()
+        except Exception:
+            self.handleError(record)
+
+    def close(self) -> None:
+        super().close()
+        if self._file:
+            self._file.close()
+            self._file = None
+
+
 # ── Setup ─────────────────────────────────────────────────────────────────────
 
 
@@ -167,6 +237,13 @@ def setup_logging(log_dir: Path) -> None:
 
     # Master log — WARNING+ from everything
     _add_file(igor_root, log_dir / "master.log", logging.WARNING, fmt)
+
+    # Daily console file — mirrors ConsoleHandler to YYYYMMDD.console.log.
+    # Receives only Python log records; never sees terminal control sequences
+    # (bracketd-paste, cursor movement) that the old tmux pipe-pane captured.
+    dcfh = DailyConsoleFileHandler(log_dir, level=logging.INFO)
+    dcfh.setFormatter(fmt)
+    igor_root.addHandler(dcfh)
 
     # Utility-closet logs — since D335 moved infrastructure modules out of
     # wild_igor/igor/ into lab/utility_closet/, those loggers no longer route
