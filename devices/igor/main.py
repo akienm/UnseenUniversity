@@ -3866,12 +3866,14 @@ class Igor(IgorBase):
         # Anchors the current goal at the top of context, outcompeting ambient ring.
         if not is_impulse and parsed.intent == "action_request" and thread_id:
             _task_goal = self._extract_task_goal(user_input)
+            # Upsert: expire prior TASK_SET entries for this thread so only one exists.
+            self.cortex.twm_clear_task_set(thread_id=thread_id)
             self.cortex.twm_push(
                 source="thalamus",
                 content_csb=f"TASK_SET|{_task_goal}",
                 salience=0.9,
                 urgency=0.92,
-                ttl_seconds=_nexus_twm_ttl(thread_id),  # #184: nexus-appropriate TTL
+                ttl_seconds=600,  # restart-rebuild window; not session-length
                 thread_id=thread_id,
                 category="task_set",
             )
