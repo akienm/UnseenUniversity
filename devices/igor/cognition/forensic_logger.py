@@ -20,11 +20,14 @@ can never crash the main loop.
 """
 
 import json as _json
+import logging
 import threading as _threading
 from datetime import datetime
 from pathlib import Path
 
 from ..paths import paths
+
+log = logging.getLogger(__name__)
 
 LOG_DIR = paths().logs
 MAX_BYTES = 10 * 1024 * 1024  # 10 MB
@@ -101,8 +104,8 @@ def log_cascade_event(
                 "outcome": outcome,
             }
         )
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug("log_cascade_trace: setdefault/append failed: %s", e)
 
 
 def log_memory_retrieval(
@@ -134,8 +137,8 @@ def log_memory_retrieval(
                 "filter_reason": str(filter_reason)[:80] if filter_reason else "",
             }
         )
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug("log_memory_retrieval: setdefault/append failed: %s", e)
 
 
 def synthesize_turn_trace(ctx: dict) -> None:
@@ -233,8 +236,8 @@ def synthesize_turn_trace(ctx: dict) -> None:
                 date_part = p.stem.split(".")[-1]
                 if date_part.isdigit() and date_part < cutoff:
                     p.unlink(missing_ok=True)
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("synthesize_turn_trace: cleanup failed: %s", e)
 
     except Exception as _bare_e:
         sys.stderr.write(f"[forensic_logger] synthesize_turn_trace error: {_bare_e}\n")
@@ -784,8 +787,8 @@ def record_cloud_escalation(
                     (user_input[:500], tier_used, reason[:200], intent, complexity),
                 )
         conn.close()
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug("log_cloud_escalation: db insert failed: %s", e)
 
 
 def log_reading_progress(

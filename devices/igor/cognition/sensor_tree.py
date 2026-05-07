@@ -232,9 +232,9 @@ class SensorTreeSource(BasePushSource):
                         f"{watch_type}:1",
                         actor="sensor_tree",
                     )
-            except Exception:
+            except Exception as e:
                 # Non-fatal: palace_metric recording failure doesn't block sensor alert
-                pass
+                logger.debug("SensorTreeSource: palace_metric.record failed: %s", e)
 
             # Push to TWM
             detail = result.get("detail", "triggered")
@@ -281,8 +281,8 @@ class SensorTreeSource(BasePushSource):
                             "sensor_id": sensor_id,
                         },
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("SensorTreeSource: cortex.twm_write failed: %s", e)
 
         return pushed
 

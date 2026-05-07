@@ -150,8 +150,8 @@ class GateEngramNode(InhibitionNode):
                     exp_dt = datetime.fromisoformat(expires_at_str)
                     if exp_dt < now:
                         continue
-                except (ValueError, TypeError):
-                    pass
+                except (ValueError, TypeError) as e:
+                    logger.debug("GateSignalNode: fromisoformat failed: %s", e)
             # Active gate signal found — inhibit
             gate_id = meta.get("gate_id", "unknown")
             reason = meta.get("reason", content[:120])

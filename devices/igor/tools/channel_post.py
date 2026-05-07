@@ -13,6 +13,7 @@ visibility.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import threading
 import time
@@ -22,6 +23,8 @@ from ..paths import paths
 
 
 from ..paths import paths as _paths
+
+log = logging.getLogger(__name__)
 
 # ── Dedup cache (T-scope-guard-echo-dedup) ───────────────────────────────
 _DEDUP_LOCK = threading.Lock()
@@ -74,8 +77,8 @@ def post_to_channel(
                 kind="CHANNEL_POST_SUPPRESSED",
                 detail=f"dedup_key={dedup_key} window={dedup_window_minutes}min msg={message[:140]}",
             )
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("post_to_channel: forensic_logger.log_error failed: %s", e)
         return
     db_url = _paths().home_db_url
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")

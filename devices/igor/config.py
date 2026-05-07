@@ -52,8 +52,8 @@ def _load_cfg_files() -> None:
 
         for cfg_path in _cfg_files(instance_dir):
             _parse_cfg_file(cfg_path)
-    except ImportError:
-        pass
+    except ImportError as e:
+        logger.debug("_load_cfg_files: env_sync._cfg_files not available: %s", e)
 
 
 def _parse_cfg_file(path: Path) -> None:

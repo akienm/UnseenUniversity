@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import socket
 import time
@@ -24,6 +25,8 @@ from pathlib import Path
 from ..memory.cortex import Cortex
 from ..memory.db_proxy import DatabaseProxy, make_home_proxy
 from ..paths import paths
+
+log = logging.getLogger(__name__)
 
 # ── Lazy imports (heavy modules, defer until needed) ─────────────────────────
 
@@ -414,8 +417,8 @@ def process_blob(
                 (result.get("summary") or "")[:80],
                 chunk_text[:40],
             )
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("process_blob: diagnostic log failed: %s", e)
         if nodes:
             deposited = _deposit_nodes(
                 nodes,

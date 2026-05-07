@@ -10,6 +10,7 @@ Updated 2026-04-29T17:08:53Z
 """
 
 import argparse
+import logging
 import os
 import queue
 import re
@@ -73,6 +74,8 @@ console = Console(force_terminal=True)
 from .logging_setup import setup_logging as _setup_logging
 
 _setup_logging(_paths().logs)
+
+log = logging.getLogger(__name__)
 
 
 def loginfo(msg, **kw):
@@ -3394,8 +3397,8 @@ class Igor(IgorBase):
             from .tools.graph_write import reset_write_count as _reset_gw
 
             _reset_gw()
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("_reset_gw failed: %s", e)
 
         # #310: reset consolidation idle timer on each interactive turn
         try:
@@ -5725,8 +5728,8 @@ class Igor(IgorBase):
                                 for o in (_cap_obs or [])
                                 if o.get("content_csb")
                             ]
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            log.debug("cortex.twm_read (capabilities) failed: %s", e)
 
                         _peer = LLMPeerAdvisor(
                             cortex=self.cortex,
@@ -6770,8 +6773,8 @@ class Igor(IgorBase):
                         _mil.get("arousal", 0.0),
                         _mil.get("dominance", 0.5),
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    log.debug("_episode_binder.record failed: %s", e)
                 _episode_binder.flush(self.cortex)
             except Exception as _eb_e:
                 log_error(
@@ -6797,8 +6800,8 @@ class Igor(IgorBase):
             from .cognition.daemon_supervisor import supervisor as _sup
 
             _sup.heartbeat("ne-worker")
-        except Exception:
-            pass  # heartbeat is observability, never fatal
+        except Exception as e:
+            log.debug("daemon_supervisor.heartbeat(ne-worker) failed: %s", e)
         if self._ne_thread is not None and self._ne_thread.is_alive():
             return  # Already running — Ollama is still thinking
 
@@ -6924,8 +6927,8 @@ class Igor(IgorBase):
             from .cognition.daemon_supervisor import supervisor as _sup
 
             _sup.heartbeat("consolidation-worker")
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("daemon_supervisor.heartbeat(consolidation-worker) failed: %s", e)
         if getattr(self, "_consolidation_thread", None) is not None:
             if self._consolidation_thread.is_alive():
                 return  # already running

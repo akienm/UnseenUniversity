@@ -19,8 +19,11 @@ revision: 2026-04-21 — initial (T-approach-frame-sensor-node)
 
 from __future__ import annotations
 
+import logging
 import re
 from datetime import datetime, timezone
+
+log = logging.getLogger(__name__)
 
 _HISTORY_ROW_RE = re.compile(
     r"^(?P<ts>\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2})\s*\|\s*(?P<payload>.+)$"
@@ -103,8 +106,8 @@ def parse_history(content: str, key: str) -> list[int]:
             if k == key:
                 try:
                     values.append(int(v))
-                except ValueError:
-                    pass
+                except ValueError as e:
+                    log.debug("extract_history: int(v) failed: %s", e)
                 break
     return values
 

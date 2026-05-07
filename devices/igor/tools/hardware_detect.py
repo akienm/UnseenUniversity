@@ -78,8 +78,8 @@ def _detect_cpu() -> str:
             )
             if result.returncode == 0:
                 return result.stdout.strip()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("_detect_cpu: subprocess failed: %s", e)
     return "unknown"
 
 
@@ -123,8 +123,8 @@ def _detect_ram() -> int:
             )
             if result.returncode == 0:
                 return int(result.stdout.strip()) // (1024**3)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("_detect_ram: detection failed: %s", e)
     return 0
 
 
@@ -138,8 +138,8 @@ def _detect_gpu() -> str:
         )
         if result.returncode == 0 and result.stdout.strip():
             return result.stdout.strip().split("\n")[0]
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
+    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+        logger.debug("_detect_gpu: nvidia-smi probe failed: %s", e)
     try:
         if platform.system() == "Linux":
             result = subprocess.run(
@@ -152,8 +152,8 @@ def _detect_gpu() -> str:
                 for line in result.stdout.split("\n"):
                     if "VGA" in line or "3D" in line:
                         return line.split(":")[-1].strip()[:80]
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
+    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+        logger.debug("_detect_gpu: lspci probe failed: %s", e)
     return "none"
 
 
@@ -172,8 +172,8 @@ def _detect_network() -> str:
                     return "wifi"
                 elif "eth" in output or "en" in output:
                     return "wired"
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
+    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+        logger.debug("_detect_network: ifconfig probe failed: %s", e)
     return "unknown"
 
 
@@ -199,8 +199,8 @@ def _detect_ollama_model() -> str:
             models = data.get("models", [])
             if models:
                 return models[0]["name"]
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("_detect_ollama_model: ollama probe failed: %s", e)
     return "unknown"
 
 

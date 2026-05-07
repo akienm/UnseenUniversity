@@ -777,9 +777,9 @@ def _log_pe_inference(
             escalation_reason=f"pe_chain/{via}",
             response_summary="pe_chain step",
         )
-    except Exception:
+    except Exception as e:
         # Fire-and-forget — logging must never break the chain
-        pass
+        log.debug("_log_step: forensic_logger call failed: %s", e)
 
 
 _TIER2_TIMEOUT = 90  # seconds — prevents hanging on slow/stalled remote machines
@@ -2879,8 +2879,8 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
                     f"hypothesis={hyp_summary[:200]}"
                 ),
             )
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("_escalate_step: _post_to_channel (malformed) failed: %s", e)
         log.info(
             f"ESCALATE: malformed basket (no ticket_id) — suppressed channel post. Reason was: {reason[:120]}"
         )
@@ -3010,8 +3010,8 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
                 urgency="high",
                 response_expected=True,
             )
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("_escalate_step: cortex.twm_write (for_approval) failed: %s", e)
     else:
         # Dedup on (ticket_id, reason-prefix): if the same ticket blocks for
         # the same reason twice within 30 min, only the first hits the channel.
@@ -3040,8 +3040,8 @@ def _pe_escalate(basket: dict, reason: str) -> dict:
                 urgency="normal",
                 response_expected=True,
             )
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("_escalate_step: cortex.twm_write (blocked) failed: %s", e)
 
     _close_goal_on_escalate(basket)
 
