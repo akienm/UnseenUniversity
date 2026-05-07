@@ -332,8 +332,8 @@ def replay_episodes(
                     hours_ago = (cutoff - ep_time).total_seconds() / 3600
                     if hours_ago > since_hours:
                         continue
-                except (ValueError, TypeError):
-                    pass
+                except (ValueError, TypeError) as e:
+                    logger.debug("query_episodes: fromisoformat failed: %s", e)
             episodes.append(
                 {
                     "id": mem.id,

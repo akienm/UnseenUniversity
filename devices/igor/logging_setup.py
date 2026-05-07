@@ -25,6 +25,8 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
+log = logging.getLogger(__name__)
+
 _LOG_MAX_BYTES = 10 * 1024 * 1024  # 10 MB per file
 _LOG_BACKUP_COUNT = 3  # keep .1 .2 .3
 
@@ -187,8 +189,8 @@ class DailyConsoleFileHandler(logging.Handler):
             try:
                 if datetime.strptime(f.stem[:8], "%Y%m%d") < cutoff:
                     f.unlink()
-            except (ValueError, OSError):
-                pass
+            except (ValueError, OSError) as e:
+                log.debug("_prune: strptime/unlink failed: %s", e)
 
     def emit(self, record: logging.LogRecord) -> None:
         try:

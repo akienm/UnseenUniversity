@@ -96,8 +96,8 @@ def run_cursor(
                     category="habit_trace",
                     thread_id=thread_id or None,
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                log.debug("cortex.write_ring (ENGRAM_ERROR) failed: %s", e)
             break
 
         result.nodes_visited += 1
@@ -123,8 +123,8 @@ def run_cursor(
                     category="habit_trace",
                     thread_id=thread_id or None,
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                log.debug("cortex.write_ring (ENGRAM_BRANCH) failed: %s", e)
 
         # No next node — traversal ends
         if not exec_result.next_node:
@@ -163,8 +163,8 @@ def run_cursor(
                     category="habit_trace",
                     thread_id=thread_id or None,
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                log.debug("cortex.write_ring (ENGRAM_FORK) failed: %s", e)
             spawned_node = cortex.get(spawned_id)
             if spawned_node:
 
@@ -185,8 +185,8 @@ def run_cursor(
                     category="habit_trace",
                     thread_id=thread_id or None,
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                log.debug("cortex.write_ring (ENGRAM_SPAWN) failed: %s", e)
             spawned_node = cortex.get(spawned_id)
             if spawned_node:
 

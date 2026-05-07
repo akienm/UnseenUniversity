@@ -20,12 +20,15 @@ from a cache that never cleaned up its own expired entries.
 
 import hashlib
 import json
+import logging
 import os
 import time
 from pathlib import Path
 from typing import Optional
 
 from ..paths import paths
+
+log = logging.getLogger(__name__)
 
 CACHE_DIR = paths().reasoning_cache
 TTL_SECONDS = 720  # 12 minutes
@@ -61,8 +64,8 @@ def _sweep() -> tuple[int, int]:
             try:
                 entry.unlink()
                 expired += 1
-            except OSError:
-                pass
+            except OSError as e:
+                log.debug("_sweep: unlink (expired) failed: %s", e)
             continue
         files.append((mtime, entry))
     # Cap: oldest-first eviction until at-or-below limit
@@ -74,8 +77,8 @@ def _sweep() -> tuple[int, int]:
             try:
                 path.unlink()
                 cap_deleted += 1
-            except OSError:
-                pass
+            except OSError as e:
+                log.debug("_sweep: unlink (cap) failed: %s", e)
     return expired, cap_deleted
 
 
@@ -130,5 +133,5 @@ def put(model: str, prompt: str, response_text: str, max_twm_id: int) -> None:
     if _SWEEP_EVERY_N_PUTS > 0 and _put_counter % _SWEEP_EVERY_N_PUTS == 0:
         try:
             _sweep()
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("put: _sweep failed: %s", e)

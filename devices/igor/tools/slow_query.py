@@ -7,6 +7,7 @@ and surfaces the top offenders by frequency and by worst elapsed time.
 Registered tool: analyze_slow_queries()
 """
 
+import logging
 import re
 import os
 from collections import Counter, defaultdict
@@ -14,6 +15,8 @@ from pathlib import Path
 
 from .registry import Tool, registry
 from ..paths import paths
+
+log = logging.getLogger(__name__)
 
 _LOG_PATH = paths().logs / "db_queries.log"
 _DEFAULT_TOP_N = 10
@@ -121,8 +124,8 @@ def boot_surface_slow_queries(cortex, top_n: int = 5) -> None:
                 f"  {ms:5d}ms worst  {freq[key]}x hits  avg={avg}ms  {key[:70]}"
             )
         cortex.write_ring("\n".join(lines), category="db_diagnostic")
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug("analyze_slow_queries: cortex.write_ring failed: %s", e)
 
 
 registry.register(

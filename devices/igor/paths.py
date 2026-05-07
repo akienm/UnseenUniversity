@@ -16,9 +16,12 @@ Usage:
 
 from __future__ import annotations
 
+import logging
 import os
 import threading
 from pathlib import Path
+
+log = logging.getLogger(__name__)
 
 
 class _BootstrapPathManager:
@@ -266,8 +269,8 @@ class PathManager(_BootstrapPathManager):
                 self.__class__ = type(
                     "PathManager", (_BootstrapPathManager, IgorBase), {}
                 )
-        except ImportError:
-            pass
+        except ImportError as e:
+            log.debug("PathManager: IgorBase import failed (bootstrap mode): %s", e)
 
 
 def paths() -> _BootstrapPathManager:

@@ -14,8 +14,11 @@ short diagnostic text; existence is the signal).
 from __future__ import annotations
 
 import json
+import logging
 import time
 from pathlib import Path
+
+log = logging.getLogger(__name__)
 
 HISTORY_FILENAME = "restart_history.json"
 HALT_FLAG_FILENAME = "restart_halt.flag"
@@ -45,15 +48,15 @@ def record_and_check(
             loaded = json.loads(history_path.read_text())
             if isinstance(loaded, list):
                 history = [float(t) for t in loaded if isinstance(t, (int, float))]
-        except Exception:
-            history = []
+        except Exception as e:
+            log.debug("record_and_check: json.loads failed: %s", e)
     # Keep only entries within the window
     history = [t for t in history if (now - t) <= window_secs]
     history.append(now)
     try:
         history_path.write_text(json.dumps(history))
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug("record_and_check: write_text failed: %s", e)
     return len(history) > max_restarts, len(history)
 
 
@@ -64,8 +67,8 @@ def write_halt(instance_dir: Path, count: int, window_secs: int) -> None:
         halt_path.write_text(
             f"halted at {time.time()}: {count} restarts in {window_secs}s"
         )
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug("write_halt: write_text failed: %s", e)
 
 
 def halt_present(instance_dir: Path) -> bool:
@@ -78,5 +81,5 @@ def clear_history(instance_dir: Path) -> None:
     if path.exists():
         try:
             path.unlink()
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("clear_history: unlink failed: %s", e)

@@ -223,8 +223,8 @@ def check_grounding(
                 f"|overlap={len(overlap)}",
                 category="confab_gate",
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("cortex.write_ring failed: %s", e)
 
     return result
 
@@ -240,8 +240,8 @@ def _gather_context(cortex: "Cortex", thread_id: str | None = None) -> str:
             content = entry.get("content_csb", "")
             if content:
                 parts.append(content)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("cortex.twm_read failed: %s", e)
 
     # Recent ring entries
     try:
@@ -250,8 +250,8 @@ def _gather_context(cortex: "Cortex", thread_id: str | None = None) -> str:
             content = entry.get("content", "")
             if content:
                 parts.append(content)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("cortex.read_ring_memory failed: %s", e)
 
     return " ".join(parts)
 

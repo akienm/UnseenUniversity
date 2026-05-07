@@ -17,12 +17,15 @@ Until then, lab/claudecode/debug_session_cli.py wraps them for skill invocation.
 from __future__ import annotations
 
 import json
+import logging
 import time
 import uuid
 from pathlib import Path
 from typing import Optional
 
 from wild_igor.igor.paths import paths as _paths
+
+log = logging.getLogger(__name__)
 
 
 def _flag_path() -> Path:
@@ -38,8 +41,8 @@ def _read_state() -> dict:
     if p.exists():
         try:
             return json.loads(p.read_text())
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("_read_state: json.loads failed: %s", e)
     return {}
 
 

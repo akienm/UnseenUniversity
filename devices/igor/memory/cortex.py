@@ -170,6 +170,8 @@ from .db_proxy import DatabaseProxy, MEM_COLS, make_home_proxy, make_local_proxy
 from ..igor_base import IgorBase
 from ..cognition.forensic_logger import log_error, log_memory_retrieval
 
+log = logging.getLogger(__name__)
+
 
 @dataclass
 class SearchRequest:
@@ -1693,8 +1695,8 @@ class Cortex(IgorBase):
                 from .node_id import register_node as _register_node
 
                 _register_node(memory.id, "memories", memory.id)
-            except Exception:
-                pass
+            except Exception as e:
+                log.debug("search: register_node failed: %s", e)
             if memory.is_habit:
                 self._habit_cache = None
 
@@ -4163,8 +4165,8 @@ class Cortex(IgorBase):
                     "SELECT name FROM trees WHERE name LIKE 'blob_%'"
                 ).fetchall()
             blob_roots = {r[0][len("blob_") :] for r in rows if r[0]}
-        except Exception:
-            pass  # trees table absent on first boot; safe to skip
+        except Exception as e:
+            log.debug("verify_genesis_schema: trees table query failed: %s", e)
 
         for cp_id in sorted(valid_cp):
             mem = self.get(cp_id)
@@ -5975,8 +5977,8 @@ class Cortex(IgorBase):
                     candidate = row[0]
                     if candidate not in self._CALVING_PROTECTED:
                         split_id = candidate
-            except Exception:
-                pass
+            except Exception as e:
+                log.debug("auto_calve: tree traversal failed: %s", e)
             if split_id not in self._CALVING_PROTECTED:
                 self.calve_subtree(split_id)
 

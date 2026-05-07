@@ -89,8 +89,8 @@ def ensure_blob_facia(
 
         try:
             _update_metadata(cortex, memory_id, "blob_facia_id", facia.id)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("ensure_blob_facia: _update_metadata failed: %s", e)
 
         logger.info("[BLOB_FACIA] created facia %s for blob %s", facia.id, memory_id)
         return facia.id

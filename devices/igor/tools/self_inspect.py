@@ -219,8 +219,8 @@ def _aspect_routing_decisions() -> dict:
 
         snapshot = gw.recent_routing_decisions()  # may not exist
         return {"recent": snapshot}
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        log.debug("routing_decisions: recent_routing_decisions not available: %s", e)
     except Exception as e:
         return {"error": f"gateway query: {e}"}
 
