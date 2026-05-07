@@ -1,19 +1,16 @@
 """
 db_proxy.py — Re-export shim.
 
-Implementation moved to lab/utility_closet/db_proxy.py as part of the
-utility closet rack architecture (T-uc-db-proxy-shelf). This shim
-re-exports all public names so existing imports continue to work.
-
-All new code should import from lab.utility_closet.db_proxy directly.
+Canonical implementation lives in agent_datacenter.db (T-db-proxy-igor-canonical).
+This shim re-exports all public names so existing imports continue to work.
 """
 
-# Re-export everything from the canonical location
-from lab.utility_closet.db_proxy import (  # noqa: F401
-    MEM_COLS,
+from agent_datacenter.db import (  # noqa: F401
     DatabaseProxy,
+    MEM_COLS,
     PGDatabaseProxy,
     _PGConnWrapper,
+    _PGRowProxy,
     make_db_proxy,
     make_home_proxy,
     make_infra_proxy,
