@@ -186,7 +186,13 @@ class DiscordChannel(EmitChannel):
 
     def write(self, key: str, value: Any, basket: dict) -> None:
         import os
-        from ..network import discord_bot
+
+        try:
+            from ..network import discord_bot
+        except ImportError:
+            # T-igor-network-remove: discord_bot removed from process.
+            log.debug("[emit:discord] discord_bot unavailable — key=%r dropped", key)
+            return
 
         channel_id = basket.get("_discord_channel_id") or os.getenv(
             "DISCORD_CHANNEL_ID", ""

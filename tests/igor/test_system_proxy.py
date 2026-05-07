@@ -1,6 +1,9 @@
 """
 test_system_proxy.py — T-system-proxy-facade
 
+T-igor-network-remove: network/system_proxy.py removed. Skipped until
+system_proxy relocates.
+
 Tests for the SystemProxy facade. Uses real psutil where available,
 mocks for edge cases.
 """
@@ -9,6 +12,12 @@ import sys
 import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+import pytest
+
+pytest.skip(
+    "network/system_proxy.py removed (T-igor-network-remove); relocate pending",
+    allow_module_level=True,
+)
 
 import pytest
 

@@ -2,7 +2,16 @@
 test_channels.py — Channel registry and acquisition tests.
 
 Tests for D230/D231 acquisition channel framework.
+T-igor-channels-relocate: channels/ was inside network/ which was removed.
+Needs relocation to igor/cognition/channels/ before these tests can run.
 """
+
+import pytest
+
+pytest.skip(
+    "network/channels/ removed (T-igor-network-remove); relocate pending T-igor-channels-relocate",
+    allow_module_level=True,
+)
 
 import json
 import tempfile

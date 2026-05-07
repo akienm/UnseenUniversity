@@ -62,8 +62,6 @@ from .cognition.push_sources import run_background_sources, user_input_source
 from .cognition.multi_cloud import query_multiple, compare_responses
 from .cognition.relay import RelaySession, send_to_claude_code
 from .dashboard import terminal as dashboard
-from .network import discord_bot
-from .network import listener as net_listener
 from .web import server as web_server
 from . import boot_check
 from .cognition.job_manager import JobManager
@@ -738,12 +736,9 @@ class Igor(IgorBase):
         self._boot_ready: bool = False
         self._boot_orientation_scored: bool = False  # #112: score first response once
 
-        # Start unified network listener, web facade, boot-check.
-        # T-adc-discord-phase5: discord_bot.start() removed — bot now runs in
-        # agent_datacenter (devices/discord_bot/). Full IPC wiring is future work.
-        net_listener.start()
-
         # Start the facade poll loop (drains web_server messages → incoming queue).
+        # T-igor-network-remove: net_listener removed (Discord/Gmail inbound disabled
+        # until agent_datacenter listener device ships).
         web_server.start(
             stats_fn=self.get_stats,
             cortex_fn=lambda: self.cortex,
@@ -1392,17 +1387,7 @@ class Igor(IgorBase):
         except Exception:
             ip = "unknown"
 
-        # ── Discord announcement ─────────────────────────────────────────────
-        try:
-            channel_id = os.getenv("DISCORD_CHANNEL_ID", "")
-            if channel_id:
-                discord_bot.send(
-                    channel_id,
-                    f"🟢 igor_{self.instance_id} online at {hostname} ({ip}) — first boot",
-                )
-                console.print(f"[cyan][FIRST BOOT] Announced on Discord.[/]")
-        except Exception as e:
-            console.print(f"[dim][FIRST BOOT] Discord announce failed: {e}[/]")
+        # T-igor-network-remove: Discord first-boot announce disabled (bot removed from process).
 
         # ── Self-registration via machine_manager (T-machines-json-phaseout) ─
         # machines.json is now an ECHO of the DB, not the source of truth.
@@ -7684,42 +7669,8 @@ class Igor(IgorBase):
             self._shutdown(reason="restart flag (drain entry)")
             sys.exit(42)
 
-        while True:
-            try:
-                msg = net_listener.incoming.get_nowait()
-            except queue.Empty:
-                break
-
-            loginfo(
-                f"\n[bold magenta][{msg.source.upper()}] {msg.author}:[/] {msg.content[:120]}"
-            )
-
-            # [TWM] Push raw network message before wrapping it as synthetic input
-            ri = msg.reply_info or {}
-            channel_label = f"{msg.source}:{ri.get('channel_name', '?')}"
-            user_input_source.push_message(
-                self.cortex,
-                msg.content,
-                channel=channel_label,
-                author=msg.author,
-            )
-
-            _thread_id = self._get_thread_id(msg)
-
-            # CC and slash commands: process inline (fast path, ordering critical)
-            _is_cc = msg.source == "web" and msg.author == "claude-code"
-            _is_slash = msg.content.strip().startswith("/")
-            if _is_cc:
-                # D263: tag CC turns so bg job completions route to cc channel
-                _thread_id = "cc:shared"
-                self._process_network_msg(msg, _thread_id)
-                continue
-            if _is_slash:
-                self._process_network_msg(msg, _thread_id)
-                continue
-
-            # Regular message: dispatch to per-thread worker (non-blocking)
-            self._enqueue_network_msg(msg, _thread_id)
+        # T-igor-network-remove: net_listener removed. Discord/Gmail inbound disabled
+        # until agent_datacenter listener device ships and IPC is wired up.
 
     def _enqueue_network_msg(self, msg, thread_id: str) -> None:
         """
@@ -8041,16 +7992,15 @@ class Igor(IgorBase):
                     )
                     web_server.send(response, session_id=_session_id)
             elif msg.source == "discord" and response:
-                _discord_channel_id = (msg.reply_info or {}).get("channel_id", 0)
-                if _discord_channel_id:
-                    discord_bot.send(int(_discord_channel_id), response)
-                else:
-                    import logging as _logging
+                # T-igor-network-remove: discord_bot removed from process.
+                # Discord reply path disabled until agent_datacenter IPC ships.
+                import logging as _logging
 
-                    _logging.getLogger("igor.main").warning(
-                        "discord reply: no channel_id in reply_info — response dropped (len=%d)",
-                        len(response),
-                    )
+                _logging.getLogger("igor.main").warning(
+                    "discord reply dropped (bot not in-process): channel=%s len=%d",
+                    (msg.reply_info or {}).get("channel_id", "?"),
+                    len(response),
+                )
             elif response and msg.source == "web":
                 # Should not be reachable given the outer condition, but guard anyway
                 pass
