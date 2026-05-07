@@ -186,7 +186,6 @@ def setup_logging(log_dir: Path) -> None:
     for area, filename in [
         ("igor.cognition", "cognition.log"),
         ("igor.tools", "tools.log"),
-        ("igor.network", "network.log"),
         ("igor.memory", "memory.log"),
     ]:
         area_logger = logging.getLogger(area)
