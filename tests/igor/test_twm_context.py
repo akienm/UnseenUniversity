@@ -22,14 +22,28 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 import sys
 import time
 import unittest
 from pathlib import Path
 
+import pytest
+
 _REPO = Path(__file__).parent.parent
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
+
+
+def _ollama_reachable(
+    host: str = "localhost", port: int = 11434, timeout: float = 2.0
+) -> bool:
+    """Fast TCP probe — returns False immediately when Ollama is not running."""
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except OSError:
+        return False
 
 
 # ── Context layers (prose format per D330 finding) ───────────────────────────
@@ -206,10 +220,13 @@ class TestTWMContext(unittest.TestCase):
         print(f"  Token savings (twm_only vs blob): {token_savings} tokens")
         return results
 
+    @pytest.mark.timeout(120)
     def test_simple_questions_twm_sufficient(self):
         """Simple questions: TWM-only should use fewer tokens than blob.
         Quality assertions are model-dependent — 1b models may refuse even
         with sufficient context. Token savings are the structural finding."""
+        if not _ollama_reachable():
+            self.skipTest("Ollama not reachable")
         for question, difficulty in SIMPLE_QUESTIONS:
             results = self._run_tiered_comparison(question, difficulty)
             if results is None:
@@ -221,8 +238,11 @@ class TestTWMContext(unittest.TestCase):
                 "TWM-only should use fewer tokens than full blob",
             )
 
+    @pytest.mark.timeout(120)
     def test_medium_questions_need_memories(self):
         """Medium questions: adding memories should not increase tokens beyond blob."""
+        if not _ollama_reachable():
+            self.skipTest("Ollama not reachable")
         for question, difficulty in MEDIUM_QUESTIONS:
             results = self._run_tiered_comparison(question, difficulty)
             if results is None:
@@ -234,8 +254,11 @@ class TestTWMContext(unittest.TestCase):
                 "TWM+memories should use fewer tokens than full blob",
             )
 
+    @pytest.mark.timeout(120)
     def test_complex_questions_need_ring(self):
         """Complex questions: full blob uses the most tokens (expected)."""
+        if not _ollama_reachable():
+            self.skipTest("Ollama not reachable")
         for question, difficulty in COMPLEX_QUESTIONS:
             results = self._run_tiered_comparison(question, difficulty)
             if results is None:
@@ -247,8 +270,11 @@ class TestTWMContext(unittest.TestCase):
                 "Full blob should use more tokens than TWM-only",
             )
 
+    @pytest.mark.timeout(360)
     def test_token_savings_quantified(self):
         """Quantify token savings across all question types."""
+        if not _ollama_reachable():
+            self.skipTest("Ollama not reachable")
         all_questions = SIMPLE_QUESTIONS + MEDIUM_QUESTIONS + COMPLEX_QUESTIONS
         total_twm = 0
         total_blob = 0
