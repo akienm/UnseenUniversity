@@ -1,11 +1,11 @@
 """
 db_proxy.py — Re-export shim.
 
-Canonical implementation lives in agent_datacenter.db (T-db-proxy-igor-canonical).
+Canonical implementation lives in agent_datacenter.db_proxy (T-db-proxy-igor-canonical).
 This shim re-exports all public names so existing imports continue to work.
 """
 
-from agent_datacenter.db import (  # noqa: F401
+from agent_datacenter.db_proxy import (  # noqa: F401
     DatabaseProxy,
     MEM_COLS,
     PGDatabaseProxy,
