@@ -2116,7 +2116,7 @@ class InteroceptionSource(BasePushSource):
         self._last_run = now
 
         try:
-            from ..network.system_proxy import system_proxy
+            from ..tools.system_proxy import system_proxy
 
             snap = system_proxy.snapshot()
             cpu = snap.cpu_percent

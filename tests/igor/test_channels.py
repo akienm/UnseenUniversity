@@ -2,16 +2,8 @@
 test_channels.py — Channel registry and acquisition tests.
 
 Tests for D230/D231 acquisition channel framework.
-T-igor-channels-relocate: channels/ was inside network/ which was removed.
-Needs relocation to igor/cognition/channels/ before these tests can run.
+T-igor-channels-relocate: channels relocated to wild_igor/igor/acquisition/.
 """
-
-import pytest
-
-pytest.skip(
-    "network/channels/ removed (T-igor-network-remove); relocate pending T-igor-channels-relocate",
-    allow_module_level=True,
-)
 
 import json
 import tempfile
@@ -19,15 +11,15 @@ from pathlib import Path
 
 import pytest
 
-from wild_igor.igor.network.channels import (
+from wild_igor.igor.acquisition import (
     AcquireRequest,
     ChannelFailure,
     AcquireResult,
     ChannelReliability,
     get_registry,
 )
-from wild_igor.igor.network.channels.file_inbox import FileInboxChannel
-from wild_igor.igor.network.channels.direct_url import DirectURLChannel
+from wild_igor.igor.acquisition.file_inbox import FileInboxChannel
+from wild_igor.igor.acquisition.direct_url import DirectURLChannel
 
 
 class TestAcquireRequest:
@@ -75,7 +67,7 @@ class TestAcquireResult:
 
     def test_result_creation(self):
         """Create an AcquireResult."""
-        from wild_igor.igor.network.channels import BlobMeta
+        from wild_igor.igor.acquisition import BlobMeta
 
         blob = b"test content"
         meta = BlobMeta(
@@ -97,14 +89,14 @@ class TestChannelRegistry:
     def test_registry_empty_at_start(self):
         """Registry should support registration."""
         # Create a fresh registry (not the global one)
-        from wild_igor.igor.network.channels import ChannelRegistry
+        from wild_igor.igor.acquisition import ChannelRegistry
 
         registry = ChannelRegistry()
         assert len(registry.list_channels()) == 0
 
     def test_register_channel(self):
         """Register a channel."""
-        from wild_igor.igor.network.channels import ChannelRegistry, Channel
+        from wild_igor.igor.acquisition import ChannelRegistry, Channel
 
         registry = ChannelRegistry()
 
@@ -125,7 +117,7 @@ class TestChannelRegistry:
 
     def test_duplicate_registration_fails(self):
         """Registering same channel name twice should fail."""
-        from wild_igor.igor.network.channels import ChannelRegistry, Channel
+        from wild_igor.igor.acquisition import ChannelRegistry, Channel
 
         registry = ChannelRegistry()
 

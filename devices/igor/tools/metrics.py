@@ -336,9 +336,9 @@ registry.register(
 def _get_network_proxy_report(**_) -> str:
     """Return NetworkProxy per-host call stats: call count, error rate, p50/p95 latency."""
     try:
-        from ..network.system_proxy import system_proxy as _sp
+        from ..tools.network_proxy import proxy as _proxy
 
-        return _sp.network.report_str() if _sp.network else "NetworkProxy not available"
+        return _proxy.report_str()
     except Exception as e:
         return f"Error reading network proxy: {e}"
 
