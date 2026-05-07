@@ -65,7 +65,6 @@ from .dashboard import terminal as dashboard
 from .network import discord_bot
 from .network import listener as net_listener
 from .web import server as web_server
-from .web.utility_closet_client import uc_client
 from . import boot_check
 from .cognition.job_manager import JobManager
 from .paths import paths as _paths
@@ -745,14 +744,7 @@ class Igor(IgorBase):
         discord_bot.start()
         net_listener.start()
 
-        # D335: register with utility closet platform (best-effort, non-blocking)
-        # UC is now managed by agent_datacenter/devices/web_server — Igor no longer
-        # launches it. If UC isn't up, Igor registers when it comes up.
-        _uc_agent_id = _paths().instance_id  # e.g. "Igor-wild-0001"
-        if uc_client.register(_uc_agent_id, capabilities=["chat", "tools", "habits"]):
-            uc_client.start_stats_pusher(self.get_stats, interval=5.0)
-
-        # Start the facade poll loop (drains uc_client.poll_messages → incoming queue).
+        # Start the facade poll loop (drains web_server messages → incoming queue).
         web_server.start(
             stats_fn=self.get_stats,
             cortex_fn=lambda: self.cortex,
@@ -10018,13 +10010,6 @@ class Igor(IgorBase):
         loginfo(f"[yellow]Unknown command: {raw}[/]  (try /help)")
 
     def _shutdown(self, reason: str = "shutdown"):
-        # D335: deregister from utility closet (best-effort)
-        try:
-            uc_client.deregister()
-        except Exception as _exc:
-            from .cognition.forensic_logger import log_error as _le
-
-            _le(kind="SILENT_EXCEPT", detail=f"main.py:9756: {_exc}")
         # Postgres-backed since T-sqlite-out-word-graph-db: writes are
         # synchronous, no shutdown checkpoint needed for either graph.
         # WO#140 Phase 2: persist response habituation store
