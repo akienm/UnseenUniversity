@@ -36,14 +36,14 @@ pytestmark = pytest.mark.skipif(
 
 
 def test_make_dc_proxy_returns_proxy():
-    from agent_datacenter.db import make_dc_proxy, PGDatabaseProxy
+    from agent_datacenter.db_proxy import make_dc_proxy, PGDatabaseProxy
 
     proxy = make_dc_proxy()
     assert isinstance(proxy, PGDatabaseProxy)
 
 
 def test_dc_proxy_connects():
-    from agent_datacenter.db import make_dc_proxy
+    from agent_datacenter.db_proxy import make_dc_proxy
 
     with make_dc_proxy()() as conn:
         rows = conn.execute("SELECT COUNT(*) FROM memory_palace").fetchone()
@@ -51,7 +51,7 @@ def test_dc_proxy_connects():
 
 
 def test_dc_proxy_memories_table_exists():
-    from agent_datacenter.db import make_dc_proxy
+    from agent_datacenter.db_proxy import make_dc_proxy
 
     with make_dc_proxy()() as conn:
         rows = conn.execute("SELECT COUNT(*) FROM memories").fetchone()
@@ -60,7 +60,7 @@ def test_dc_proxy_memories_table_exists():
 
 def test_slow_query_writes_to_slow_queries_log(tmp_path):
     """slow_queries.log is created and written on first slow query."""
-    import agent_datacenter.db as db_mod
+    import agent_datacenter.db_proxy as db_mod
 
     # Reset handler state so the lazy-init fires fresh in this test
     original = db_mod._slow_handler_installed
@@ -103,7 +103,7 @@ def test_slow_query_writes_to_slow_queries_log(tmp_path):
 
 
 def test_make_dc_proxy_raises_without_url():
-    from agent_datacenter.db import make_dc_proxy
+    from agent_datacenter.db_proxy import make_dc_proxy
 
     original = os.environ.pop("AGENT_DATACENTER_DB_URL", None)
     original_alt = os.environ.pop("AGENT_DATACENTER_POSTGRES_URL", None)

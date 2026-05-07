@@ -36,7 +36,7 @@ def _try_init_db():
     Fails silently — memory is optional.
     """
     try:
-        from agent_datacenter.db import make_dc_proxy
+        from agent_datacenter.db_proxy import make_dc_proxy
 
         proxy = make_dc_proxy()
         # Smoke-test the connection.
