@@ -14,16 +14,13 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 import pytest
 
-pytest.skip(
-    "network/system_proxy.py removed (T-igor-network-remove); relocate pending",
-    allow_module_level=True,
-)
+pass  # T-igor-channels-relocate: system_proxy moved to wild_igor/igor/tools/system_proxy.py
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.network.system_proxy import (
+from wild_igor.igor.tools.system_proxy import (
     DiskInfo,
     MemoryInfo,
     ProcessInfo,
