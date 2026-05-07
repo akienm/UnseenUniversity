@@ -2500,12 +2500,22 @@ class Cortex(IgorBase):
         )
         _ALWAYS_EXCLUDE = (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value)
 
-        # D199: candidate pool via traversal from CP roots + activation-index supplement.
-        # CP/ID nodes are the graph roots — traversal follows edges by ID (no table scan).
-        # Orphaned nodes (no parent path to CP roots) are caught by the activation index.
-        _CP_ROOTS = ["CP1", "CP2", "CP3", "CP4", "CP5", "CP6"]
-        _ID_ROOTS = [f"ID{i}" for i in range(1, 15)]
-        _traversal_pool = self.traverse_from(_CP_ROOTS + _ID_ROOTS, depth=3, limit=200)
+        # T-igor-attractor-first-traversal: seed BFS from current TWM attractor, not all
+        # CP/ID roots. Attractor is already focused on the user's message — small tree
+        # (~10-20 nodes), fast IN query, naturally relevant. Fall back to CP/ID roots
+        # only when no attractor exists (first message of session) or attractor has no
+        # graph links (newly-created memory with no edges yet).
+        _anchors = self._get_context_anchors()
+        _traversal_pool = (
+            self.traverse_from(_anchors, depth=2, limit=20) if _anchors else []
+        )
+        if not _traversal_pool:
+            # No anchors or attractor has no graph links — fall back to identity roots
+            _CP_ROOTS = ["CP1", "CP2", "CP3", "CP4", "CP5", "CP6"]
+            _ID_ROOTS = [f"ID{i}" for i in range(1, 15)]
+            _traversal_pool = self.traverse_from(
+                _CP_ROOTS + _ID_ROOTS, depth=2, limit=50
+            )
         _traversal_ids = {m.id for m in _traversal_pool}
 
         # Supplement: activation-ranked nodes not already in traversal pool (orphans + new nodes)
