@@ -116,7 +116,7 @@ def fetch(url: str, title: str, source: str = "gutenberg") -> tuple[str, str]:
     # Check CPU/RAM load before fetching — bulk training was OOM-crashing the process.
     # Soft gate: warn but proceed on "warn"; hard gate: abort on "critical".
     try:
-        from ..network.system_proxy import system_proxy as _sp
+        from ..tools.system_proxy import system_proxy as _sp
 
         _snap = _sp.snapshot()
         _mem = _snap.memory

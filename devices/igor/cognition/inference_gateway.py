@@ -780,7 +780,7 @@ class InferenceGateway(IgorBase):
             from .forensic_logger import log_anomaly as _log_anomaly
 
             try:
-                from ..network.system_proxy import system_proxy as _sp
+                from ..tools.system_proxy import system_proxy as _sp
 
                 _snap = _sp.snapshot()
                 _mem_info = _snap.memory
