@@ -738,10 +738,9 @@ class Igor(IgorBase):
         self._boot_ready: bool = False
         self._boot_orientation_scored: bool = False  # #112: score first response once
 
-        # Start Discord bot, unified network listener, web facade, boot-check.
-        # T-uc-web-server-refactor: web_server is now a thin facade — UC on 8080
-        # owns HTTP/WS. We try to launch UC if it's not running, then register.
-        discord_bot.start()
+        # Start unified network listener, web facade, boot-check.
+        # T-adc-discord-phase5: discord_bot.start() removed — bot now runs in
+        # agent_datacenter (devices/discord_bot/). Full IPC wiring is future work.
         net_listener.start()
 
         # Start the facade poll loop (drains web_server messages → incoming queue).
