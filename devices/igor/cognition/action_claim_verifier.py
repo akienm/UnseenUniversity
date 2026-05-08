@@ -71,6 +71,10 @@ def detect_action_claims(text: str) -> list[str]:
 # Igor "just did" — so the relevant window is the past few minutes, not hours.
 _EVIDENCE_WINDOW_SEC = 120
 
+# Refractory window: if ring_memory already has a confab_caught entry for this
+# thread within the last N entries, suppress the redundant TWM push.
+_REFRACTORY_TURNS = int(os.getenv("IGOR_CONFAB_REFRACTORY_TURNS", "3"))
+
 
 def _cc_queue_recently_modified(window_sec: int = _EVIDENCE_WINDOW_SEC) -> bool:
     """Check if any ticket was saved to Postgres within the window.
@@ -222,6 +226,32 @@ def check_response(
         claims_count=len(claims),
         first_claim=claims[0][:120],
     )
+
+    # Refractory window (T-cc-walk-14): if ring_memory already shows a recent
+    # confab_caught for this thread, the claim is likely stale — skip the
+    # redundant TWM push (still logged above).
+    if cortex is not None and thread_id:
+        try:
+            recent = cortex.read_ring_memory(
+                limit=_REFRACTORY_TURNS,
+                category="confab_caught",
+                thread_id=thread_id,
+            )
+            if recent:
+                _confab_log(
+                    "refractory_suppressed",
+                    turn_id=turn_id,
+                    thread_id=thread_id,
+                    recent_entries=len(recent),
+                )
+                return claims
+        except Exception as _exc:
+            from .forensic_logger import log_error as _le
+
+            _le(
+                kind="SILENT_EXCEPT",
+                detail=f"action_claim_verifier.py refractory check: {_exc}",
+            )
 
     try:
         cortex.write_ring(
