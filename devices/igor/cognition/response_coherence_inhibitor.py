@@ -189,6 +189,11 @@ COHERENCE_THRESHOLD = 0.10
 MIN_PROMPT_CONTENT_WORDS = 5
 MIN_RESPONSE_CONTENT_WORDS = 8
 
+# Refractory window: if ring_memory already has a coherence_failure entry
+# for this thread within the last N entries, suppress the TWM push (still
+# logs). Prevents consecutive-turn re-firing on a stale trigger.
+_REFRACTORY_TURNS = int(os.getenv("IGOR_COHERENCE_REFRACTORY_TURNS", "3"))
+
 
 # ── Forensic log ─────────────────────────────────────────────────────────────
 
@@ -343,6 +348,37 @@ def check_coherence(
         prompt_excerpt=prompt[:120],
         response_excerpt=response[:120],
     )
+
+    # Refractory window (T-cc-walk-14): if ring_memory already shows a recent
+    # coherence_failure for this thread, the trigger is likely stale — log and
+    # return without a redundant TWM push.
+    if cortex is not None and thread_id:
+        try:
+            recent = cortex.read_ring_memory(
+                limit=_REFRACTORY_TURNS,
+                category="coherence_failure",
+                thread_id=thread_id,
+            )
+            if recent:
+                _coherence_log(
+                    "refractory_suppressed",
+                    turn_id=turn_id,
+                    thread_id=thread_id,
+                    recent_entries=len(recent),
+                )
+                return {
+                    "score": score,
+                    "gated": False,
+                    "flagged": True,
+                    "reason": "refractory_suppressed",
+                }
+        except Exception as _exc:
+            from .forensic_logger import log_error as _le
+
+            _le(
+                kind="SILENT_EXCEPT",
+                detail=f"response_coherence_inhibitor.py refractory check: {_exc}",
+            )
 
     # T-inhibitor-escalate-guard: record the fire against this thread. If
     # we've fired N+ times in the window, we're probably in an auto-

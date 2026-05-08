@@ -53,6 +53,7 @@ class TestCheckCoherenceStuckPath:
         c = MagicMock()
         c.write_ring = MagicMock()
         c.twm_push = MagicMock()
+        c.read_ring_memory = MagicMock(return_value=[])  # no prior failures
         return c
 
     def _fire_until_stuck(self, cortex):

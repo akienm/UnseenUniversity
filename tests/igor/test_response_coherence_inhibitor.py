@@ -167,6 +167,9 @@ def test_check_coherence_flags_2026_04_13_case():
     cortex = MagicMock()
     cortex.write_ring = MagicMock()
     cortex.twm_push = MagicMock()
+    cortex.read_ring_memory = MagicMock(
+        return_value=[]
+    )  # no prior failures — don't suppress
 
     prompt = (
         "your long term goal is help the world suck less for all "
@@ -403,6 +406,9 @@ class TestInhibitorStuckCounter:
         cortex = MagicMock()
         cortex.write_ring = MagicMock()
         cortex.twm_push = MagicMock()
+        cortex.read_ring_memory = MagicMock(
+            return_value=[]
+        )  # no prior failures — don't suppress
 
         # Incoherent pair: ≥8 unique content words each, zero overlap → Jaccard=0
         prompt = "neurons cortex hippocampus amygdala synapse biology dendrites prefrontal thalamus basal ganglia"
@@ -429,6 +435,7 @@ class TestInhibitorStuckCounter:
         )
 
         cortex = MagicMock()
+        cortex.read_ring_memory = MagicMock(return_value=[])
         prompt = "neurons cortex hippocampus amygdala synapse biology dendrites prefrontal thalamus basal ganglia"
         response = "configure threshold preparse stage token enable disable pipeline queue handler"
 

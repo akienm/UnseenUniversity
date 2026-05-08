@@ -193,6 +193,9 @@ def test_check_response_logs_and_pushes_when_unverified():
     cortex.search_ring = MagicMock(return_value=[])
     cortex.write_ring = MagicMock()
     cortex.twm_push = MagicMock()
+    cortex.read_ring_memory = MagicMock(
+        return_value=[]
+    )  # no prior confab — don't suppress
 
     with patch(
         "wild_igor.igor.cognition.action_claim_verifier._cc_queue_recently_modified",
@@ -320,3 +323,66 @@ class TestSuppressFalseClaims:
         assert suppress_false_claims("", ["claim"]) == ""
         assert suppress_false_claims("text", []) == "text"
         assert suppress_false_claims("text", None) == "text"
+
+
+# ── refractory window ─────────────────────────────────────────────────────────
+
+
+class TestRefractoryWindow:
+    """Consecutive-turn suppression for coherence and confab detectors."""
+
+    def test_coherence_second_fire_suppressed_when_ring_has_recent_failure(self):
+        from unittest.mock import MagicMock
+        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+            check_coherence,
+        )
+
+        cortex = MagicMock()
+        cortex.write_ring = MagicMock()
+        cortex.twm_push = MagicMock()
+        # Simulate ring already has a recent coherence_failure for this thread
+        cortex.read_ring_memory.return_value = [{"category": "coherence_failure"}]
+
+        prompt = "neurons cortex hippocampus amygdala synapse biology dendrites prefrontal thalamus basal ganglia"
+        response = "configure threshold preparse stage token enable disable pipeline queue handler"
+
+        result = check_coherence(cortex, prompt, response, thread_id="thread-A")
+        assert result["reason"] == "refractory_suppressed"
+        assert result["flagged"] is True
+        cortex.twm_push.assert_not_called()
+
+    def test_coherence_first_fire_not_suppressed_when_ring_empty(self):
+        from unittest.mock import MagicMock
+        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+            check_coherence,
+        )
+
+        cortex = MagicMock()
+        cortex.read_ring_memory.return_value = []  # no prior failures
+
+        prompt = "neurons cortex hippocampus amygdala synapse biology dendrites prefrontal thalamus basal ganglia"
+        response = "configure threshold preparse stage token enable disable pipeline queue handler"
+
+        result = check_coherence(cortex, prompt, response, thread_id="thread-B")
+        assert result["reason"] != "refractory_suppressed"
+        cortex.twm_push.assert_called_once()
+
+    def test_confab_second_fire_suppressed_when_ring_has_recent_confab(self):
+        from unittest.mock import MagicMock, patch
+        from wild_igor.igor.cognition.action_claim_verifier import check_response
+
+        cortex = MagicMock()
+        cortex.read_ring_memory.return_value = [{"category": "confab_caught"}]
+
+        text = "I've just ticketed it in the database."
+        with patch(
+            "wild_igor.igor.cognition.action_claim_verifier._cc_queue_recently_modified",
+            return_value=False,
+        ), patch(
+            "wild_igor.igor.cognition.action_claim_verifier._recent_tool_results",
+            return_value=[],
+        ):
+            claims = check_response(cortex, text, thread_id="thread-C")
+
+        assert len(claims) > 0  # still returns claims (logged)
+        cortex.twm_push.assert_not_called()  # TWM suppressed
