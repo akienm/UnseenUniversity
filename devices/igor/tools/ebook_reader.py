@@ -56,6 +56,11 @@ _READING_STATE_PATH = _INSTANCE_DIR / "reading_state.json"
 _DEDRM_DIR = Path(__file__).parent / "ebook_drm"
 
 
+# Sentinel returned by open_book when DRM decryption fails.
+# Callers (book_learner, reading_engine) check for this key to branch into the
+# DRM-blocked path (mark failed, skip deposit, file BOOK_DRM_BLOCKED memory).
+DRM_FAILED = "DRM_FAILED"
+
 # ── Data structures ────────────────────────────────────────────────────────────
 
 
@@ -510,7 +515,17 @@ def open_book(
         )
 
     # Parse
-    sentences, breaks, titles = _load_book_content(meta)
+    _content = _load_book_content(meta)
+    if _content[0] is DRM_FAILED:
+        return {
+            DRM_FAILED: True,
+            "title": meta.title,
+            "author": meta.author,
+            "calibre_id": meta.calibre_id,
+            "fmt": meta.fmt,
+            "path": str(meta.path),
+        }
+    sentences, breaks, titles = _content
     handle = BookHandle(
         meta=meta, sentences=sentences, chapter_breaks=breaks, chapter_titles=titles
     )
@@ -609,17 +624,8 @@ def _load_book_content(
                     detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}",
                 )
             return result
-        # DRM removal failed — caller should use browse_as_employer
-        asin = meta.asin or meta.path.stem.replace("_EBOK", "")
-        return (
-            [
-                f"[DRM-ENCRYPTED] Could not decrypt {meta.path.name}. "
-                f"Use browse_as_employer to read this book on read.amazon.com "
-                f"(search for ASIN {asin} or title '{meta.title}')."
-            ],
-            [0],
-            ["DRM notice"],
-        )
+        # DRM removal failed — return sentinel so callers can handle it
+        return DRM_FAILED, [], []  # type: ignore[return-value]
 
     if fmt == "pdf":
         return _parse_pdf(meta.path)
