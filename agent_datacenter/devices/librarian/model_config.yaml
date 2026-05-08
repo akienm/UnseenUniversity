@@ -1,0 +1,46 @@
+# Librarian model tier configuration.
+# task_type → tier mapping and tier → model mapping.
+# Edit this file to tune model selection without touching code.
+
+tiers:
+  0:
+    name: routine
+    models:
+      - name: qwen2.5:8b
+        backend: ollama
+      - name: llama3.2:3b
+        backend: ollama
+    description: "Routine chat, channel replies, DB proxy responses"
+
+  1:
+    name: heavy
+    models:
+      - name: qwen2.5:32b
+        backend: ollama
+      - name: qwen2.5:72b
+        backend: ollama
+    description: "Research, summarization, multi-step reasoning"
+
+  2:
+    name: cloud
+    models:
+      - name: claude-haiku-4-5-20251001
+        backend: anthropic
+      - name: claude-sonnet-4-6
+        backend: anthropic
+    description: "Complex reasoning, escalation fallback"
+
+# Maps task_type strings to tier numbers.
+# Anything not listed here defaults to tier 0.
+task_type_tiers:
+  chat: 0
+  reply: 0
+  db_query: 0
+  channel: 0
+  summarize: 1
+  research: 1
+  analyze: 1
+  explain: 1
+  reason: 2
+  plan: 2
+  code: 2
