@@ -108,8 +108,10 @@ SLEEP PHASES
 Consolidation itself has no explicit sleep-phase branching (no slow-wave
 vs REM). However, it runs DURING quiet periods (idle gate in main.py). A
 separate deep-consolidation pass runs in narrative_engine.py
-(_deep_consolidation_pass, D353) during longer idle windows — Hebbian
-wandering over search traces.
+(_deep_consolidation_pass) during longer idle windows — structural
+maintenance (promote, merge, prune, adopt). The Hebbian binding
+discovery (D353) runs separately in SleepConsolidation push source:
+reads traces, creates/strengthens co-activated node pairs.
 
 INVESTMENT DECAY (co-located)
 ─────────────────────────────
