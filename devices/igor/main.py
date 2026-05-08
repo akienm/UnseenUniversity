@@ -634,7 +634,9 @@ class Igor(IgorBase):
             "yes",
         )
 
-        self.ne = NarrativeEngine(self.cortex, instance_id)
+        from .cognition.coa import COA
+
+        self._coa = COA(self.cortex, instance_id, igor=self)
         from .cognition.inference_gateway import InferenceGateway as _InferenceGateway
 
         self._gateway = _InferenceGateway.from_env()
@@ -670,10 +672,6 @@ class Igor(IgorBase):
             "1",
             "yes",
         )
-        self._ne_thread: threading.Thread | None = None
-        self._ne_spawn_lock: threading.Lock = threading.Lock()  # prevent double-fire
-        self._ne_last_twm_fingerprint: tuple[int, int] = (0, 0)  # (obs_count, max_id)
-        self._ne_last_run_time: float = 0.0  # monotonic; idle gate cooldown
         self._consolidation_thread: threading.Thread | None = None  # #169
         self._distillation_thread: threading.Thread | None = (
             None  # T-distillation-daemon
@@ -696,9 +694,6 @@ class Igor(IgorBase):
         )
 
         # Part C — routing signal tracking
-        self._last_ne_valence: float = (
-            0.0  # most recent NE internal_state valence (#246)
-        )
         self._last_response_time: float = 0.0  # epoch seconds of last response
         self._consecutive_slow: int = 0  # consecutive responses over latency budget
         self._latency_samples: list = []  # rolling last-20 total_ms for p50/p95 (#139)
@@ -864,6 +859,26 @@ class Igor(IgorBase):
         # not a configuration switch. On any failure (no daemon, missing
         # profile, timeout) we log a warning and continue without the manifest.
         self._wire_datacenter()
+
+    # ------------------------------------------------------------------
+    # COA property shims — delegate to _coa so existing call sites are unchanged
+    # ------------------------------------------------------------------
+
+    @property
+    def ne(self):  # type: ignore[override]
+        return self._coa.ne
+
+    @property
+    def _ne_thread(self):
+        return self._coa._ne_thread
+
+    @property
+    def _last_ne_valence(self) -> float:
+        return self._coa._last_ne_valence
+
+    @_last_ne_valence.setter
+    def _last_ne_valence(self, value: float) -> None:
+        self._coa._last_ne_valence = value
 
     def _wire_datacenter(self) -> None:
         """Connect to agent_datacenter and cache the manifest. No-op if a
@@ -3239,7 +3254,7 @@ class Igor(IgorBase):
             try:
                 self._drain_network()
                 run_background_sources(self.cortex)
-                self._run_ne_background()
+                self._coa.tick()
                 self._run_consolidation_background()  # #169
                 self._run_distillation_background()  # T-distillation-daemon
                 self._run_factual_compression_background()  # T-factual-compression
@@ -6785,121 +6800,6 @@ class Igor(IgorBase):
                 )
 
         return response_text
-
-    def _run_ne_background(self):
-        """
-        Fire the Narrative Engine in a background daemon thread.
-        If NE is already running (Ollama is slow), skip — don't stack calls.
-        The NE is stateless between runs (all state in Postgres), so this is safe.
-
-        Idle gate: skip if TWM hasn't changed since last run AND < 2min cooldown.
-        Lock: prevents double-fire race when two callers hit simultaneously.
-        """
-        # Heartbeat BEFORE is_alive guard and idle gate — we want to signal
-        # "main loop is still calling this hook," not "hook decided to spawn."
-        # (T-daemon-supervisor-spawn-liveness)
-        try:
-            from .cognition.daemon_supervisor import supervisor as _sup
-
-            _sup.heartbeat("ne-worker")
-        except Exception as e:
-            log.debug("daemon_supervisor.heartbeat(ne-worker) failed: %s", e)
-        if self._ne_thread is not None and self._ne_thread.is_alive():
-            return  # Already running — Ollama is still thinking
-
-        # Lock prevents a second caller from spawning while we check/set state
-        if not self._ne_spawn_lock.acquire(blocking=False):
-            return
-
-        try:
-            # Idle gate: skip NE if TWM hasn't changed and cooldown not elapsed
-            import time as _t
-
-            _now = _t.monotonic()
-            _COOLDOWN = 120.0  # 2 minutes
-            try:
-                _obs = self.cortex.twm_count()  # total obs rows
-                _max_id = self.cortex.twm_max_id()  # highest obs id
-                _fingerprint = (_obs, _max_id)
-            except Exception:
-                _fingerprint = (0, 0)
-            _same_state = _fingerprint == self._ne_last_twm_fingerprint
-            _in_cooldown = (_now - self._ne_last_run_time) < _COOLDOWN
-            if _same_state and _in_cooldown:
-                return  # Nothing new in TWM — NE would produce the same output
-
-            self._ne_last_twm_fingerprint = _fingerprint
-            self._ne_last_run_time = _now
-
-            def _ne_worker():
-                # Yield to interactive turn — if main loop is actively processing,
-                # wait briefly rather than competing for Ollama
-                _waited = 0.0
-                while self._is_processing and _waited < 10.0:
-                    _t.sleep(0.5)
-                    _waited += 0.5
-                try:
-                    result = self.ne.run(verbose=False)
-                    if result:
-                        _ne_state = result.get("internal_state", {})
-                        _m = milieu_mod.get()
-                        if _ne_state and _m:
-                            _m.ingest_ne_state(_ne_state)
-                        if _ne_state:
-                            try:
-                                self._last_ne_valence = float(
-                                    _ne_state.get("valence", 0.0)
-                                )
-                            except (TypeError, ValueError) as _bare_e:
-                                log_error(
-                                    kind="BARE_EXCEPT",
-                                    detail=f"wild_igor/igor/main.py: {_bare_e}",
-                                )
-                except Exception as _bare_e:
-                    log_error(
-                        kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
-                    )
-                try:
-                    _exp = self._experiment_scheduler.tick()
-                    if _exp:
-                        logger.info(
-                            "experiment_tick: ran %s → %s",
-                            _exp.experiment_id,
-                            _exp.status.value,
-                        )
-                except Exception as _exp_e:
-                    log_error(
-                        kind="EXPERIMENT_TICK", detail=f"main.py ne_worker: {_exp_e}"
-                    )
-
-            self._ne_thread = threading.Thread(
-                target=_ne_worker, daemon=True, name="ne-worker"
-            )
-            self._ne_thread.start()
-            try:
-                from .cognition.daemon_supervisor import supervisor as _sup
-
-                # ne-worker is one-shot-per-tick: this function spawns a fresh
-                # thread that runs ne.run() + experiment_scheduler.tick() once
-                # and exits. The `is_alive()` check at the top of this method
-                # guards re-entry. Natural thread exit is the normal path, so
-                # one_shot=True tells the supervisor not to alarm on it.
-                # Staleness threshold of 600s catches the main loop halting
-                # (heartbeat() is called unconditionally at hook entry, so
-                # the only way to go stale is for _run_ne_background to stop
-                # being invoked entirely).
-                _sup.register(
-                    "ne-worker",
-                    self._ne_thread,
-                    one_shot=True,
-                    staleness_threshold_secs=600.0,
-                )
-            except Exception as _exc:
-                from .cognition.forensic_logger import log_error as _le
-
-                _le(kind="SILENT_EXCEPT", detail=f"main.py:6842: {_exc}")
-        finally:
-            self._ne_spawn_lock.release()
 
     def _apply_resolution_reward(self) -> None:
         """
