@@ -110,9 +110,57 @@ memory_list_by_type(type="RULE")               # typed listing
 The raw psql path remains available for bulk operations, but `memory_get`
 is the frictionless default for single-node reads in a working session.
 
-## Step 3 — Decisions hot window (last 10)
+## Step 2c — ADC palace snapshot (hash-gated)
+
+Reads the ADC palace (`adc.palace`) for project context, Akien profile, and
+recent-day rollups. Separate hash file from Igor's palace (different table).
+
 ```bash
-tail -10 ~/TheIgors/lab/design_docs_for_igor/decisions_log.dsb | sed 's/|/ — /g'
+ADC_HASH_FILE=~/.TheIgors/claudecode/adc_palace_hash.txt
+ADC_PG=postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001
+CURRENT_ADC_HASH=$(psql $ADC_PG -tAc \
+  "SELECT md5(string_agg(path || '|' || coalesce(updated_at::text,''), '||' ORDER BY path))
+   FROM adc.palace" 2>/dev/null)
+SAVED_ADC_HASH=$(cat "$ADC_HASH_FILE" 2>/dev/null | head -1)
+if [ "$CURRENT_ADC_HASH" = "$SAVED_ADC_HASH" ]; then
+  echo "adc palace: unchanged (hash=${CURRENT_ADC_HASH:0:8}...) — skipping"
+else
+  echo "adc palace: changed — loading snapshot"
+  # Project summary + Akien profile + last 10 day rollups
+  psql $ADC_PG -tA -c \
+    "SELECT path, title, left(content, 400) AS content_preview
+     FROM adc.palace
+     WHERE path IN (
+       'palace.projects.agent_datacenter.summary',
+       'palace.shared.akien.goals',
+       'palace.shared.akien.profile'
+     )
+     OR path LIKE 'palace.days.%'
+     ORDER BY
+       CASE WHEN path LIKE 'palace.days.%' THEN 1 ELSE 0 END,
+       path DESC
+     LIMIT 13" 2>/dev/null || echo "adc palace unreachable — skipping"
+  echo "$CURRENT_ADC_HASH" > "$ADC_HASH_FILE"
+fi
+```
+
+Graceful degradation: if `adc.palace` is unreachable (first boot, DB down),
+the block emits a single warning and continues — context-load never gates on it.
+
+## Step 3 — Decisions hot window (last 10)
+
+Reads from `adc.palace` (palace.decisions.* nodes, ordered by date desc).
+Falls back to the flat-file log if palace is unreachable.
+
+```bash
+ADC_PG=postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001
+psql $ADC_PG -tAc \
+  "SELECT path, title, metadata->>'date' AS date, metadata->>'status' AS status
+   FROM adc.palace
+   WHERE path LIKE 'palace.decisions.%'
+   ORDER BY updated_at DESC
+   LIMIT 10" 2>/dev/null \
+  || tail -10 ~/TheIgors/lab/design_docs_for_igor/decisions_log.dsb | sed 's/|/ — /g'
 ```
 
 ## Step 4 — Channel (last 5)
@@ -163,8 +211,9 @@ Always stay inside the 2000-token (~8000-char) budget. Output shape:
 CONTEXT LOAD — <timestamp>
 In-flight: <## In-flight line from slate, or NONE>
 Active: <ticket IDs from slate>
-Palace: <node count + top-level branches>
-Decisions: <one-line from tail>
+Igor palace: <node count + top-level branches>
+ADC palace: <N nodes — project summary line + last day rollup>
+Decisions: <last 10 from palace.decisions.*>
 Channel: <recent or "quiet">
 [~NNN tokens]
 Ready.
