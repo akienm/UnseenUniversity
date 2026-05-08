@@ -119,7 +119,80 @@ gh api graphql -f query='mutation {
 Always post the closed slate as a comment on the day's Discussion — that
 makes the slate searchable from GitHub.
 
-### 12. Commit docs
+### 12. Write palace.days.* node
+
+Always write a roll-up node for the closing day. Pull summary from the
+slate (Done today section) and any open sessions list:
+
+```bash
+CLOSING_DATE=<YYYY-MM-DD>   # the day being closed
+DATESTAMP=<YYYYMMDD>        # same, no dashes
+SLATE=~/.TheIgors/claudecode/${DATESTAMP}.slate.txt
+
+# Build content from Done today section of the closing slate
+DONE_SECTION=$(sed -n '/^## Done today/,/^## /p' "$SLATE" | grep "^- " | head -20)
+
+python3 - <<'EOF'
+import os, json, psycopg2, psycopg2.extras
+from datetime import datetime, timezone
+
+pg = os.environ.get("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
+closing_date = os.environ.get("CLOSING_DATE", datetime.now(timezone.utc).strftime("%Y-%m-%d"))
+datestamp = closing_date.replace("-", "")
+done_section = os.environ.get("DONE_SECTION", "(see slate)")
+
+# Gather palace.sessions.* nodes for this day (if any)
+conn = psycopg2.connect(pg)
+with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+    cur.execute(
+        "SELECT path, title FROM adc.palace WHERE path LIKE %s ORDER BY path",
+        (f"palace.sessions.{datestamp}%",),
+    )
+    sessions = [dict(r) for r in cur.fetchall()]
+
+session_lines = "\n".join(f"- {s['title']} ({s['path']})" for s in sessions) or "(none recorded)"
+content = f"## Done\n{done_section}\n\n## Sessions\n{session_lines}\n"
+title = f"Day {closing_date}"
+metadata = psycopg2.extras.Json({
+    "tags": ["day", "rollup"],
+    "date": closing_date,
+    "session_count": len(sessions),
+})
+
+with conn.cursor() as cur:
+    cur.execute(
+        """INSERT INTO adc.palace (path, title, content, node_type, updated_at, metadata)
+           VALUES (%s, %s, %s, 'rollup', now(), %s)
+           ON CONFLICT (path) DO UPDATE
+               SET title=EXCLUDED.title, content=EXCLUDED.content,
+                   updated_at=EXCLUDED.updated_at, metadata=EXCLUDED.metadata""",
+        (f"palace.days.{datestamp}", title, content, metadata),
+    )
+conn.commit()
+conn.close()
+print(f"palace.days.{datestamp} written ({len(sessions)} sessions).")
+EOF
+```
+
+Also write a flat-file echo (file is secondary — palace is canonical):
+```bash
+mkdir -p ~/.TheIgors/claudecode/palace_echo
+python3 -c "
+import os, psycopg2, psycopg2.extras
+pg = os.environ.get('IGOR_HOME_DB_URL','postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001')
+datestamp = '${DATESTAMP}'
+conn = psycopg2.connect(pg)
+with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+    cur.execute('SELECT content FROM adc.palace WHERE path = %s', (f'palace.days.{datestamp}',))
+    rows = cur.fetchall()
+if rows:
+    open(os.path.expanduser(f'~/.TheIgors/claudecode/palace_echo/day_{datestamp}.md'),'w').write(rows[0]['content'])
+    print('echo written')
+conn.close()
+"
+```
+
+### 13. Commit docs
 
 Always stage doc directories by name (never `git add -A`):
 ```bash
@@ -130,13 +203,13 @@ Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
 git pull --rebase origin main && git push origin main
 ```
 
-### 13. /savestate (session-close — include Step 1 summary)
+### 14. /savestate (session-close — include Step 1 summary)
 
 This is the deliberate end-of-session close. Include the session-close
 summary (Step 1 of /savestate) — Done and Next lines — so the durable
 record has full context when post-compact CC reads it.
 
-### 14. /autocompact
+### 15. /autocompact
 
 Release debug flag and fire /compact. This is the block-end signal.
 
@@ -145,3 +218,4 @@ Release debug flag and fire /compact. This is the block-end signal.
 - Audit (step 4) always runs — it's the hygiene gate.
 - Commits during day-close are always docs-only; source changes belong in /sprint commits.
 - Always skip steps with nothing to update (e.g. no DSBs touched today → skip step 9).
+- Step 12 (palace.days.*) always runs — even if Done today is empty, the node records the day.
