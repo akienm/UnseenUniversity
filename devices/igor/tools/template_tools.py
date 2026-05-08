@@ -125,7 +125,7 @@ def _check_invariants(
                 code_ref = item.get("metadata", {}).get("code_ref", "")
                 if code_ref:
                     try:
-                        from .registry import registry
+                        from lab.utility_closet.registry import registry
 
                         if not registry.get(code_ref):
                             violations.append(
@@ -531,7 +531,7 @@ def parameterize_template(code_or_description: str, pattern_name: str) -> str:
 
 # ── Tool registration ────────────────────────────────────────────────────────
 
-from .registry import Tool, registry  # noqa: E402
+from lab.utility_closet.registry import Tool, registry  # noqa: E402
 
 registry.register(
     Tool(

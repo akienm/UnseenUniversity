@@ -19,7 +19,7 @@ import logging
 import os
 from datetime import datetime, timezone
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 log = logging.getLogger(__name__)
 

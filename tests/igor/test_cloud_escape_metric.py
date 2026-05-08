@@ -94,7 +94,7 @@ def test_cloud_escape_rate_report_no_logs(tmp_path):
 
 def test_cloud_escape_metric_registered():
     """Tool is registered in the registry."""
-    from wild_igor.igor.tools.registry import registry
+    from lab.utility_closet.registry import registry
 
     tool = registry.get("cloud_escape_rate_report")
     assert tool is not None

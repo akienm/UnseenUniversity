@@ -301,7 +301,7 @@ def run_after_action_review(
 
 # ── Register ──────────────────────────────────────────────────────────────────
 
-from .registry import Tool, registry  # noqa: E402
+from lab.utility_closet.registry import Tool, registry  # noqa: E402
 
 registry.register(
     Tool(

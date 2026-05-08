@@ -8,7 +8,7 @@ index_text_into_word_graph: add any text as a named document.
 query_word_graph_stats: show current graph size and top co-occurring words.
 """
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 
 def _get_wg():

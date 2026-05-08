@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 def in_use_now(hostname: str) -> bool:
     """True if machine should not receive inference right now."""
     try:
-        from ..cognition.machine_manager import is_in_use
+        from lab.utility_closet.machine_manager import is_in_use
 
         return is_in_use(hostname)
     except Exception as _e:
@@ -34,7 +34,7 @@ def set_machine_in_use(machine: str, ttl_hours: float = 0) -> str:
     machine: hostname or alias (e.g. 'yoga9i', 'the dell', 'akiendell')
     ttl_hours: 0 = indefinite until cleared; >0 = expires after N hours
     """
-    from ..cognition.machine_manager import set_machine_override
+    from lab.utility_closet.machine_manager import set_machine_override
 
     return set_machine_override(machine, ttl_hours)
 
@@ -44,21 +44,21 @@ def clear_machine_in_use(machine: str) -> str:
     Mark a machine as available — return it to inference routing.
     machine: hostname or alias (e.g. 'yoga9i', 'the dell', 'akiendell')
     """
-    from ..cognition.machine_manager import clear_machine_override
+    from lab.utility_closet.machine_manager import clear_machine_override
 
     return clear_machine_override(machine)
 
 
 def get_machine_availability() -> str:
     """Show current availability status of all inference machines."""
-    from ..cognition.machine_manager import get_availability_report
+    from lab.utility_closet.machine_manager import get_availability_report
 
     return get_availability_report()
 
 
 # ── Tool registration ──────────────────────────────────────────────────────────
 
-from .registry import Tool, registry  # noqa: E402
+from lab.utility_closet.registry import Tool, registry  # noqa: E402
 
 registry.register(
     Tool(

@@ -14,7 +14,7 @@ Architecture notes (#284):
   - D124 resource-auto-config results feed in here when wired
 """
 
-from .budget import (  # noqa: F401  re-export everything callers need
+from lab.utility_closet.budget import (  # noqa: F401  re-export everything callers need
     budget_status,
     check_before_call,
     check_budget_floor,

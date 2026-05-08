@@ -112,7 +112,7 @@ def receive_cc_direction(content: str) -> str:
 # ── Tool registration ─────────────────────────────────────────────────────────
 
 try:
-    from ..tools.registry import registry, Tool
+    from lab.utility_closet.registry import registry, Tool
 
     registry.register(
         Tool(
@@ -138,4 +138,5 @@ try:
     )
 except Exception as _exc:
     from ..cognition.forensic_logger import log_error as _le
+
     _le(kind="SILENT_EXCEPT", detail=f"receive_cc_direction.py:139: {_exc}")

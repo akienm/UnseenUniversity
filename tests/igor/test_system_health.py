@@ -13,7 +13,7 @@ from unittest.mock import patch, MagicMock
 sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
 # Import MachineRecord for building test fixtures
-from igor.cognition.machine_manager import MachineRecord
+from lab.utility_closet.machine_manager import MachineRecord
 
 
 def _machine(
@@ -73,10 +73,10 @@ def _call_endpoint(machines, healthy_map=None, in_use_map=None, override=""):
     fake_lock = threading.Lock()
 
     with patch(
-        "igor.cognition.machine_manager.get_ranked_machines", return_value=machines
+        "lab.utility_closet.machine_manager.get_ranked_machines", return_value=machines
     ):
         with patch(
-            "igor.cognition.machine_manager.is_in_use",
+            "lab.utility_closet.machine_manager.is_in_use",
             side_effect=lambda h: in_use_map.get(h, False),
         ):
             with patch("igor.cognition.cluster_router._health_cache", fake_cache):

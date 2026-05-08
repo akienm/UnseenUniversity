@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import importlib
 import sys
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 
 # ── Inertia guard ─────────────────────────────────────────────────────────────

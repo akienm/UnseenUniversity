@@ -22,7 +22,7 @@ ROI tracking:
 import json
 import os
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 
 def _get_cortex():
@@ -59,7 +59,7 @@ def start_reading_bootstrap(config: str = "") -> str:
     # ── 1. Record OR balance baseline ────────────────────────────────────────
     _balance_str = "unavailable"
     try:
-        from .budget import fetch_openrouter_balance as _fetch_bal
+        from lab.utility_closet.budget import fetch_openrouter_balance as _fetch_bal
 
         _bal = _fetch_bal()
         if _bal and "balance" in _bal:

@@ -206,7 +206,7 @@ def test_run_one_tool_call_unknown_tool_mismatches():
     )
 
     with patch(
-        "wild_igor.igor.tools.registry.registry.get",
+        "lab.utility_closet.registry.registry.get",
         return_value=None,
     ):
         result = scheduler.run_one(exp)
@@ -227,10 +227,10 @@ def test_run_one_tool_call_success():
 
     fake_tool = MagicMock()
     with patch(
-        "wild_igor.igor.tools.registry.registry.get",
+        "lab.utility_closet.registry.registry.get",
         return_value=fake_tool,
     ), patch(
-        "wild_igor.igor.tools.registry.registry.execute",
+        "lab.utility_closet.registry.registry.execute",
         return_value="ok: did the thing",
     ):
         result = scheduler.run_one(exp)
@@ -249,10 +249,10 @@ def test_run_one_tool_call_error_string_is_mismatch():
 
     fake_tool = MagicMock()
     with patch(
-        "wild_igor.igor.tools.registry.registry.get",
+        "lab.utility_closet.registry.registry.get",
         return_value=fake_tool,
     ), patch(
-        "wild_igor.igor.tools.registry.registry.execute",
+        "lab.utility_closet.registry.registry.execute",
         return_value="Error: tool blew up",
     ):
         result = scheduler.run_one(exp)

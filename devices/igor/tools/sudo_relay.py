@@ -20,7 +20,7 @@ import os
 import time
 from pathlib import Path
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 from ..igor_base import IgorBase
 
 _log = logging.getLogger(__name__)

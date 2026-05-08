@@ -161,7 +161,7 @@ from ..memory.cortex import Cortex
 from ..memory.db_proxy import make_home_proxy
 from ..memory.models import Memory, MemoryType
 from ..paths import paths
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 
 def _db():

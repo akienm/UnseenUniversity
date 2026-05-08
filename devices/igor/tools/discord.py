@@ -4,7 +4,7 @@ T-igor-network-remove: discord_bot is no longer in-process. This tool
 returns a disabled message until agent_datacenter IPC ships.
 """
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 
 def send_discord_message(channel_id: int, text: str) -> str:

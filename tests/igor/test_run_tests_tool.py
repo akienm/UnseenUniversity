@@ -23,7 +23,7 @@ def _import_run_tests():
         "wild_igor",
         "wild_igor.igor",
         "wild_igor.igor.tools",
-        "wild_igor.igor.tools.registry",
+        "lab.utility_closet.registry",
         "wild_igor.igor.memory",
         "wild_igor.igor.paths",
     ]
@@ -35,7 +35,7 @@ def _import_run_tests():
             sys.modules[pkg] = types.ModuleType(pkg)
 
     # Stub registry so Tool/registry.register calls are no-ops
-    fake_registry_mod = types.ModuleType("wild_igor.igor.tools.registry")
+    fake_registry_mod = types.ModuleType("lab.utility_closet.registry")
 
     class _Tool:
         def __init__(self, **kwargs):
@@ -47,7 +47,7 @@ def _import_run_tests():
 
     fake_registry_mod.Tool = _Tool
     fake_registry_mod.registry = _Registry()
-    sys.modules["wild_igor.igor.tools.registry"] = fake_registry_mod
+    sys.modules["lab.utility_closet.registry"] = fake_registry_mod
 
     # Stub paths (unconditional — ops.py needs a callable paths at import time)
     fake_paths_mod = types.ModuleType("wild_igor.igor.paths")

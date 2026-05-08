@@ -108,7 +108,7 @@ class TestEngramLogPrimitive:
             ),
         ):
             # Patch registry inside the method's import scope
-            import wild_igor.igor.tools.registry as reg_mod
+            import lab.utility_closet.registry as reg_mod
 
             orig_get = reg_mod.registry.get
             reg_mod.registry.get = lambda name: fake_tool

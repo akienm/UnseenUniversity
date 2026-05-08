@@ -12,7 +12,7 @@ from unittest.mock import patch, MagicMock
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
-from igor.cognition.machine_manager import MachineRecord
+from lab.utility_closet.machine_manager import MachineRecord
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -133,9 +133,9 @@ class TestIsInUse(unittest.TestCase):
             self.assertFalse(self._run(m))
 
     def test_unknown_host_returns_false(self):
-        from igor.cognition.machine_manager import is_in_use
+        from lab.utility_closet.machine_manager import is_in_use
 
-        with patch("igor.cognition.machine_manager.get_machine", return_value=None):
+        with patch("lab.utility_closet.machine_manager.get_machine", return_value=None):
             self.assertFalse(is_in_use("nonexistent"))
 
 
@@ -144,30 +144,30 @@ class TestIsInUse(unittest.TestCase):
 
 class TestResolveAlias(unittest.TestCase):
     def test_hostname_match(self):
-        from igor.cognition.machine_manager import resolve_alias
+        from lab.utility_closet.machine_manager import resolve_alias
 
         m = _machine(hostname="akiendell", aliases=["the dell", "my desktop"])
         with patch(
-            "igor.cognition.machine_manager.get_ranked_machines", return_value=[m]
+            "lab.utility_closet.machine_manager.get_ranked_machines", return_value=[m]
         ):
             self.assertEqual(resolve_alias("akiendell"), "akiendell")
 
     def test_alias_match(self):
-        from igor.cognition.machine_manager import resolve_alias
+        from lab.utility_closet.machine_manager import resolve_alias
 
         m = _machine(hostname="akiendell", aliases=["the dell", "my desktop"])
         with patch(
-            "igor.cognition.machine_manager.get_ranked_machines", return_value=[m]
+            "lab.utility_closet.machine_manager.get_ranked_machines", return_value=[m]
         ):
             self.assertEqual(resolve_alias("the dell"), "akiendell")
             self.assertEqual(resolve_alias("MY DESKTOP"), "akiendell")
 
     def test_no_match_returns_none(self):
-        from igor.cognition.machine_manager import resolve_alias
+        from lab.utility_closet.machine_manager import resolve_alias
 
         m = _machine(hostname="akiendell", aliases=["the dell"])
         with patch(
-            "igor.cognition.machine_manager.get_ranked_machines", return_value=[m]
+            "lab.utility_closet.machine_manager.get_ranked_machines", return_value=[m]
         ):
             self.assertIsNone(resolve_alias("yoga"))
 

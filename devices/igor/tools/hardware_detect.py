@@ -20,7 +20,7 @@ import socket
 import subprocess
 from typing import Optional
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 logger = logging.getLogger(__name__)
 

@@ -1,4 +1,5 @@
 import logging
+
 """
 Interruptors — things that can push information into the TWM proactively.
 
@@ -66,7 +67,7 @@ class BudgetInterruptor(BaseInterruptor):
 
     def check(self, cortex=None) -> str | None:
         try:
-            from ..tools.budget import budget_status
+            from lab.utility_closet.budget import budget_status
 
             s = budget_status()
         except Exception:
@@ -244,7 +245,9 @@ class MilieuInterruptor(BaseInterruptor):
                 return msg
 
         except Exception as _bare_e:
-            get_logger(__name__).warning("bare except in wild_igor/igor/cognition/interruptors.py: %s", _bare_e)
+            get_logger(__name__).warning(
+                "bare except in wild_igor/igor/cognition/interruptors.py: %s", _bare_e
+            )
 
         return None
 
@@ -336,5 +339,7 @@ def run_all(cortex=None) -> list[str]:
             if result:
                 alerts.append(result)
         except Exception as _bare_e:
-            get_logger(__name__).warning("bare except in wild_igor/igor/cognition/interruptors.py: %s", _bare_e)
+            get_logger(__name__).warning(
+                "bare except in wild_igor/igor/cognition/interruptors.py: %s", _bare_e
+            )
     return alerts

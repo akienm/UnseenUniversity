@@ -292,7 +292,8 @@ class TestPatternExtractorHabitMetadata(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "seed_pe",
             Path(__file__).parent.parent
-            / "lab" / "claudecode"
+            / "lab"
+            / "claudecode"
             / "seed_pattern_extractor_habits.py",
         )
         mod = importlib.util.module_from_spec(spec)
@@ -357,14 +358,14 @@ class TestPatternExtractorHabitMetadata(unittest.TestCase):
 
 class TestToolRegistration(unittest.TestCase):
     def test_recognize_pattern_registered(self):
-        from igor.tools.registry import registry
+        from lab.utility_closet.registry import registry
         import igor.tools.template_tools  # noqa: F401 — ensure registration runs
 
         tool = registry.get("recognize_pattern")
         self.assertIsNotNone(tool, "recognize_pattern not in registry")
 
     def test_parameterize_template_registered(self):
-        from igor.tools.registry import registry
+        from lab.utility_closet.registry import registry
         import igor.tools.template_tools  # noqa: F401
 
         tool = registry.get("parameterize_template")

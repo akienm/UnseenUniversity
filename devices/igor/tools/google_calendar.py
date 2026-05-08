@@ -28,7 +28,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 from ..paths import paths
 
 # ── Paths + gates ─────────────────────────────────────────────────────────────

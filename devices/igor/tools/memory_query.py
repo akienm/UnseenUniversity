@@ -11,7 +11,7 @@ import os
 import json
 import re
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 from ..paths import paths as _paths
 
@@ -72,7 +72,7 @@ def get_tool_registry_report(filter_text: str = "", **_) -> str:
     Returns: tool names and descriptions, optionally filtered.
     """
     try:
-        from .registry import registry
+        from lab.utility_closet.registry import registry
         from .. import tools as _tools_pkg  # noqa — ensures all tools are registered
 
         tools = sorted(registry._tools.values(), key=lambda x: x.name)
@@ -165,7 +165,7 @@ def find_tool(query: str, limit: int = 5, **_) -> str:
     Example: find_tool("search memory") → memory_search, list_unvalidated_memories, …
     """
     try:
-        from .registry import registry
+        from lab.utility_closet.registry import registry
 
         def _tok(text: str) -> frozenset:
             text = re.sub(r"[_\-]", " ", text.lower())

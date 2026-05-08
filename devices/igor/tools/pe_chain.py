@@ -3285,7 +3285,7 @@ def run_pe_chain(**_) -> str:
 # ── Tool registration ─────────────────────────────────────────────────────────
 
 try:
-    from .registry import Tool, registry
+    from lab.utility_closet.registry import Tool, registry
 
     registry.register(
         Tool(

@@ -367,7 +367,7 @@ class HeartbeatSource(BasePushSource):
     def _check_budget(self, cortex) -> list[int]:
         """Push high-salience budget alert if warn/critical. Fire Discord once per level."""
         try:
-            from ..tools.budget import budget_status
+            from lab.utility_closet.budget import budget_status
 
             s = budget_status()
         except Exception:
@@ -428,7 +428,7 @@ class HeartbeatSource(BasePushSource):
     def _check_burn_trajectory(self, cortex) -> list[int]:
         """Push TWM alert if burn rate is high AND days_remaining is low. Once per session."""
         try:
-            from ..tools.budget import get_balance_trajectory
+            from lab.utility_closet.budget import get_balance_trajectory
 
             traj = get_balance_trajectory(window_hours=48.0)
         except Exception:
@@ -590,7 +590,7 @@ class HeartbeatSource(BasePushSource):
     def _call_twm_trigger_tool(self, code_ref: str, habit_id: str = "") -> str:
         """Call a twm_trigger habit's code_ref directly (D301 fix)."""
         try:
-            from ..tools.registry import registry
+            from lab.utility_closet.registry import registry
             from ..tools.engram_log import engram_execution_context
 
             fn_name = code_ref.split(":")[-1]
@@ -1234,7 +1234,7 @@ class SchedulerSource(BasePushSource):
     def _call_tool(self, code_ref: str, habit_id: str = "") -> str:
         """Resolve code_ref to a registered tool and call it."""
         try:
-            from ..tools.registry import registry
+            from lab.utility_closet.registry import registry
             from ..tools.engram_log import engram_execution_context
 
             # code_ref format: "module:fn_name" or just "fn_name"
@@ -1292,7 +1292,7 @@ class ResourceMonitorSource(BasePushSource):
             return []
 
         try:
-            from ..tools.filesystem import (
+            from lab.utility_closet.filesystem import (
                 evaluate_threshold_habits,
                 _resource_load_dict,
             )
@@ -1387,7 +1387,7 @@ class ResourceMonitorSource(BasePushSource):
         cloud_ok = False
         try:
             if _os.getenv("OPENROUTER_API_KEY", "").strip():
-                from ..tools.budget import budget_status
+                from lab.utility_closet.budget import budget_status
 
                 cloud_ok = budget_status().get("remaining_usd", 1.0) > 0.50
         except Exception:
@@ -2582,7 +2582,7 @@ class CapabilityAwarenessSource(BasePushSource):
 
     def _tool_count(self) -> int:
         try:
-            from ..tools.registry import registry
+            from lab.utility_closet.registry import registry
 
             return len(registry._tools)
         except Exception:

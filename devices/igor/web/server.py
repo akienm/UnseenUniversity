@@ -189,7 +189,7 @@ async def _api_system_health(request):
     from starlette.responses import JSONResponse
 
     try:
-        from ..cognition.machine_manager import get_ranked_machines, is_in_use
+        from lab.utility_closet.machine_manager import get_ranked_machines, is_in_use
         from ..cognition.cluster_router import _health_cache, _health_lock
 
         override = os.environ.get("IGOR_INFERENCE_OVERRIDE", "") or None

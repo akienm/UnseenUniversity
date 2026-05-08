@@ -13,7 +13,7 @@ import re
 import time
 import requests
 from requests.auth import HTTPBasicAuth
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 # ── Read-rate throttle (G24) ─────────────────────────────────────────────────
 # Prevents Igor from pulling pages faster than a human reader, avoiding

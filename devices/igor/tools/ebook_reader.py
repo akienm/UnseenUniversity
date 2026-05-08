@@ -34,7 +34,7 @@ from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Optional
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 from ..paths import paths
 from ..cognition.forensic_logger import log_error
 
@@ -1079,7 +1079,7 @@ def _reading_extract_worker(
                 )
 
         try:
-            from .registry import registry as _reg  # noqa — for logging only
+            from lab.utility_closet.registry import registry as _reg  # noqa — for logging only
             import sys as _sys
 
             # Use rich console if available; otherwise silent

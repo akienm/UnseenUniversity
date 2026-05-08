@@ -138,7 +138,7 @@ def test_machine_list_all_shows_aliases_per_machine():
 def test_machine_lookup_registered_in_tool_registry():
     # Ensure the module is loaded so its registrations fire
     import wild_igor.igor.tools.machine_lookup  # noqa: F401
-    from wild_igor.igor.tools.registry import registry
+    from lab.utility_closet.registry import registry
 
     assert registry.get("machine_lookup") is not None
     assert registry.get("machine_list_all") is not None
@@ -146,7 +146,7 @@ def test_machine_lookup_registered_in_tool_registry():
 
 def test_machine_lookup_tool_has_required_param():
     import wild_igor.igor.tools.machine_lookup  # noqa: F401
-    from wild_igor.igor.tools.registry import registry
+    from lab.utility_closet.registry import registry
 
     tool = registry.get("machine_lookup")
     assert tool is not None

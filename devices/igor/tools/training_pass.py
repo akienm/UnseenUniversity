@@ -26,7 +26,7 @@ import os
 import pathlib
 import re
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 _LOGS_DIR = pathlib.Path(os.path.expanduser("~/.TheIgors/logs"))
 _REASONING_LOG = _LOGS_DIR / "reasoning_calls.log"

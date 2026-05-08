@@ -21,7 +21,7 @@ import logging
 import re
 
 from ..memory.models import Memory, MemoryType
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 logger = logging.getLogger(__name__)
 

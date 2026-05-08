@@ -27,7 +27,7 @@ from .inertia_map import (
     HIGH_PATHS as _HIGH_INERTIA_FILES,
     MED_PATHS as _MED_INERTIA_FILES,
 )
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 logger = logging.getLogger(__name__)
 
