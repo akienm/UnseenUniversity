@@ -4,17 +4,16 @@ test_cc_queue_gate_clear.py — T-cc-queue-gate-clear-on-close
 Tests for the gate-clear-on-close behavior in cmd_done.
 """
 
-import importlib.util
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-spec = importlib.util.spec_from_file_location(
-    "cc_queue", REPO_ROOT / "lab" / "claudecode" / "cc_queue.py"
-)
-cc_queue = importlib.util.module_from_spec(spec)
-sys.modules["cc_queue"] = cc_queue
-spec.loader.exec_module(cc_queue)
+# Ensure TheIgors root is in sys.path so lab.claudecode resolves (with __path__
+# extension to agent_datacenter for the canonical file).
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+import lab.claudecode.cc_queue as cc_queue
 
 
 class TestUngateDependents:

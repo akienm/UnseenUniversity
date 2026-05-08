@@ -29,7 +29,18 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parent.parent
-CC_QUEUE = REPO / "lab" / "claudecode" / "cc_queue.py"
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
+
+import importlib.util as _ilu
+
+_spec = _ilu.find_spec("lab.claudecode.cc_queue")
+CC_QUEUE = (
+    Path(_spec.origin)
+    if (_spec and _spec.origin)
+    else REPO / "lab" / "claudecode" / "cc_queue.py"
+)
+del _ilu, _spec
 
 
 def _seeded_db_url() -> str | None:

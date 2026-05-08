@@ -24,9 +24,18 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parent.parent
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
+
 CC_DIR = REPO / "lab" / "claudecode"
 IGOR_ADMIN = CC_DIR / "igor_admin.py"
-CC_QUEUE = CC_DIR / "cc_queue.py"
+
+# cc_queue.py is now canonical in agent_datacenter; resolve via __path__ extension
+import importlib.util as _ilu
+
+_spec = _ilu.find_spec("lab.claudecode.cc_queue")
+CC_QUEUE = Path(_spec.origin) if (_spec and _spec.origin) else CC_DIR / "cc_queue.py"
+del _ilu, _spec
 
 DB_URL = os.environ.get(
     "IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
@@ -103,13 +112,13 @@ def test_decision_manager_path_bug_fixed():
     - The correct path string is present in the source
     - The function exists and is callable without ImportError
     """
-    # Check the corrected path string is in the source
+    # Check the corrected path string is in the source (now points to agent_datacenter)
     source = (CC_DIR / "decision_manager.py").read_text()
     assert (
-        'TheIgors" / "lab" / "claudecode" / "cc_queue.py"' in source
-    ), "decision_manager.py:75 still has the wrong path"
+        "agent_datacenter" in source and '"lab"' in source and '"claudecode"' in source
+    ), "decision_manager.py path does not reference agent_datacenter/lab/claudecode"
     assert (
-        'TheIgors" / "claudecode" / "cc_queue.py"' not in source
+        'TheIgors" / "claudecode"' not in source
     ), "Old broken path still present in decision_manager.py"
 
     # Confirm import works
