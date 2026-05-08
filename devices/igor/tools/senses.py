@@ -25,7 +25,7 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 WORKSPACE = Path(__file__).parent.parent.parent / "workspace"
 

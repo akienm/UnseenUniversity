@@ -16,7 +16,7 @@ import json
 import os
 from pathlib import Path
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 
 def _get_cortex():

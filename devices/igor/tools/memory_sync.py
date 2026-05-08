@@ -32,7 +32,7 @@ import os
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 from ..paths import paths
 
 logger = logging.getLogger("igor.tools.memory_sync")

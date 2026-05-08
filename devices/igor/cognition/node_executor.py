@@ -50,7 +50,7 @@ from typing import Any, Optional
 
 from .eval_gate import eval_gate
 from .emit_channels import get_registry
-from ..tools.registry import registry as _tool_registry
+from lab.utility_closet.registry import registry as _tool_registry
 from ..igor_base import get_logger
 
 log = get_logger(__name__)

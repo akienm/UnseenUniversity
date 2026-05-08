@@ -12,7 +12,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 logger = logging.getLogger("igor.tools.reading_integration")
 

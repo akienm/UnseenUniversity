@@ -22,7 +22,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 from ..memory.db_proxy import DatabaseProxy, make_home_proxy
 from ..paths import paths
 

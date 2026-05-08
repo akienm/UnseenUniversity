@@ -88,7 +88,7 @@ def run_stale_task_reaper(db_url: str | None = None) -> dict:
     return {"shelved": count, "ids": shelved_ids}
 
 
-from .registry import Tool, registry  # noqa: E402
+from lab.utility_closet.registry import Tool, registry  # noqa: E402
 
 registry.register(
     Tool(

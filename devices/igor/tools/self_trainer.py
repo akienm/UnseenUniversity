@@ -503,7 +503,7 @@ def run_self_training_pass() -> str:
 
 # ── Tool registration ─────────────────────────────────────────────────────────
 
-from .registry import Tool, registry  # noqa: E402
+from lab.utility_closet.registry import Tool, registry  # noqa: E402
 
 registry.register(
     Tool(

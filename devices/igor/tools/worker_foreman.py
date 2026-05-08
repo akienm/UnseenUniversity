@@ -16,7 +16,7 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 from ..paths import paths
 from ..cognition.anticipation import (
     weighted_ticket_score,

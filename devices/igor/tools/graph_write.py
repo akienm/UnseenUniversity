@@ -22,7 +22,7 @@ import threading
 from datetime import datetime
 from pathlib import Path
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 # ── Per-process write rate gate ───────────────────────────────────────────────
 

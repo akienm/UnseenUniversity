@@ -15,7 +15,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 from ..paths import paths
 from ..cognition.forensic_logger import log_error
 

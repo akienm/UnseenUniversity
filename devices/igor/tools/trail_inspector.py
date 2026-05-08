@@ -6,7 +6,7 @@ and `trail_hot_paths` to surface the most frequently co-activated node pairs.
 """
 
 import logging
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 logger = logging.getLogger("igor.tools.trail_inspector")
 

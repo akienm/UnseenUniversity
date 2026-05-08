@@ -27,7 +27,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from ..tools.registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 from ..paths import paths
 
 ARBITER_DIR = paths().arbiter_dir
@@ -135,7 +135,9 @@ def submit(
                 detail=f"pending={pending_count}|newest={description[:80]}",
             )
         except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/arbiter/queue.py: {_bare_e}")
+            log_error(
+                kind="BARE_EXCEPT", detail=f"wild_igor/igor/arbiter/queue.py: {_bare_e}"
+            )
     return new_id
 
 
@@ -194,7 +196,9 @@ def _ping_discord(item_id: int, description: str):
             f"Review with: /arbiter list",
         )
     except Exception as _bare_e:
-        log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/arbiter/queue.py: {_bare_e}")
+        log_error(
+            kind="BARE_EXCEPT", detail=f"wild_igor/igor/arbiter/queue.py: {_bare_e}"
+        )
 
 
 # ── Tool registration ─────────────────────────────────────────────────────────

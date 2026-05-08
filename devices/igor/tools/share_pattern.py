@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 log = logging.getLogger(__name__)
 

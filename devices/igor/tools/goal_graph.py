@@ -30,7 +30,7 @@ import json
 import logging
 from datetime import datetime, timezone
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 logger = logging.getLogger(__name__)
 

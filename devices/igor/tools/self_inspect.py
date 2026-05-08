@@ -47,7 +47,7 @@ import os
 import time
 from typing import Any, Callable
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 log = logging.getLogger(__name__)
 

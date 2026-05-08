@@ -275,7 +275,7 @@ def run_schema_habit(
     cortex.traversal_set(ctx_id, "__status__", "running", step=0)
 
     # ── step execution loop ─────────────────────────────────────────────────────
-    from .registry import registry as _tool_registry
+    from lab.utility_closet.registry import registry as _tool_registry
 
     current_step = min(step_map.keys())
     results: list[str] = []
@@ -464,7 +464,7 @@ def run_habit(
 
         code_ref = habit.metadata.get("code_ref")
         if code_ref:
-            from .registry import registry as _reg
+            from lab.utility_closet.registry import registry as _reg
 
             tool = _reg.get(code_ref.split(":")[-1])
             if not tool:

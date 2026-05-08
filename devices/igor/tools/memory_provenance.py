@@ -23,7 +23,7 @@ validation_status values:
 import logging
 from datetime import datetime
 
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 logger = logging.getLogger(__name__)
 

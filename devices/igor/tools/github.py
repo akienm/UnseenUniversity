@@ -12,7 +12,7 @@ import json
 import os
 import urllib.request
 import urllib.error
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 
 def _repo() -> str:

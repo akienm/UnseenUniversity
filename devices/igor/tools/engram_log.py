@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from typing import Generator
 
 from ..cognition.forensic_logger import _current_turn
-from .registry import Tool, registry
+from lab.utility_closet.registry import Tool, registry
 
 log = logging.getLogger(__name__)
 
