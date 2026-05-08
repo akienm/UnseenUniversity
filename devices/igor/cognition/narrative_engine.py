@@ -41,8 +41,10 @@ Entry: run() — main NE cycle.
   6. Queue action impulses to TWM (source="narrative_engine",
      category="impulse").
   7. Update traversal cursor (track which thread NE is following).
-  8. Run sleep consolidation pass (_deep_consolidation_pass) during idle
-     windows.
+  8. Run deep consolidation pass (_deep_consolidation_pass) during idle
+     windows — structural: TWM promote, cluster merge, link prune, orphan
+     adopt. SleepConsolidation push source handles Hebbian binding
+     discovery from search traces (D353).
 
 Key subsystem relationships:
   Reads     — cortex.twm_read(), twm_get_slots(), get_portable()
@@ -101,12 +103,20 @@ Traversal cursor — tracks which thread NE is following across cycles:
   to "seek a different thread."
   Convergence (high promotion rate) → "continue deepening."
 
-Sleep consolidation (_deep_consolidation_pass, D353)
-────────────────────────────────────────────────────
-Runs during idle windows (10+ min no user input). Reads recent search
-traces, finds co-activated node pairs (nodes that fired together in the
-same search), creates or strengthens missing edges via Hebbian binding.
-NE quietly solidifies patterns discovered during waking hours.
+Offline consolidation (_deep_consolidation_pass)
+────────────────────────────────────────────────
+Runs during deep idle windows (IGOR_CONSOLIDATION_IDLE_MIN, default 20
+min). Does structural maintenance: TWM observation promotion, episodic
+cluster merge, weak link pruning, orphan adoption, reading integration.
+Does NOT do Hebbian learning — see SleepConsolidation push source below.
+
+Hebbian consolidation (SleepConsolidation push source, D353)
+─────────────────────────────────────────────────────────────
+Runs during quiet periods (10+ min no user input, every 5 min). Reads
+recent search traces, finds co-activated node pairs (nodes that fired
+together in ≥ 2 searches), creates or strengthens missing edges via
+Hebbian binding. NE quietly solidifies patterns discovered during waking
+hours.
 
 Output shape (with LLM enabled):
   { summary_csb, thread_topic, connections, salience_updates,
@@ -133,7 +143,8 @@ KEY DECISIONS SHAPING THIS SUBSYSTEM
   D305  amygdala analog — NE uses milieu arousal to weight promotion
   D352  TWM attentional gating — conversation mode caps background
         salience; NE sees gated view
-  D353  sleep consolidation — idle-time Hebbian wandering over traces
+  D353  sleep consolidation — SleepConsolidation push source (Hebbian
+        binding from traces) + _deep_consolidation_pass (structural)
 
 ENGRAM PORTION (graph-side machinery)
 ─────────────────────────────────────
