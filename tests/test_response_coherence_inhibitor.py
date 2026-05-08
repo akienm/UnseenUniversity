@@ -381,3 +381,77 @@ class TestSuppressIncoherent:
         original = "normal text"
         text = suppress_incoherent(result, original)
         assert text == original
+
+
+# ── inhibitor stuck counter ───────────────────────────────────────────────────
+
+
+class TestInhibitorStuckCounter:
+    def setup_method(self):
+        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+            _reset_inhibitor_fires,
+        )
+
+        _reset_inhibitor_fires()
+
+    def test_three_fires_emit_stuck_and_return_stuck_reason(self):
+        from unittest.mock import MagicMock, patch
+        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+            check_coherence,
+        )
+
+        cortex = MagicMock()
+        cortex.write_ring = MagicMock()
+        cortex.twm_push = MagicMock()
+
+        # Incoherent pair: ≥8 unique content words each, zero overlap → Jaccard=0
+        prompt = "neurons cortex hippocampus amygdala synapse biology dendrites prefrontal thalamus basal ganglia"
+        response = "configure threshold preparse stage token enable disable pipeline queue handler"
+
+        with patch("wild_igor.igor.tools.channel_post.post_to_channel") as mock_post:
+            # Fire 1 and 2 — below threshold
+            r1 = check_coherence(cortex, prompt, response, thread_id="t1")
+            r2 = check_coherence(cortex, prompt, response, thread_id="t1")
+            assert r1.get("reason") != "stuck_escalated"
+            assert r2.get("reason") != "stuck_escalated"
+            # Fire 3 — hits escalation threshold
+            r3 = check_coherence(cortex, prompt, response, thread_id="t1")
+            assert r3.get("reason") == "stuck_escalated"
+            assert r3.get("fire_count") == 3
+            assert mock_post.call_count >= 1
+            call_args = str(mock_post.call_args)
+            assert "COHERENCE_INHIBITOR_STUCK" in call_args
+
+    def test_fourth_fire_still_returns_stuck(self):
+        from unittest.mock import MagicMock, patch
+        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+            check_coherence,
+        )
+
+        cortex = MagicMock()
+        prompt = "neurons cortex hippocampus amygdala synapse biology dendrites prefrontal thalamus basal ganglia"
+        response = "configure threshold preparse stage token enable disable pipeline queue handler"
+
+        with patch("wild_igor.igor.tools.channel_post.post_to_channel"):
+            for _ in range(3):
+                check_coherence(cortex, prompt, response, thread_id="t2")
+            r4 = check_coherence(cortex, prompt, response, thread_id="t2")
+        assert r4.get("reason") == "stuck_escalated"
+        # ring/TWM called for fires 1+2 (pre-escalation), suppressed for fires 3+4 (stuck)
+        assert cortex.write_ring.call_count == 2
+
+    def test_different_threads_have_independent_counters(self):
+        from unittest.mock import MagicMock, patch
+        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+            check_coherence,
+        )
+
+        cortex = MagicMock()
+        prompt = "neurons cortex hippocampus amygdala synapse biology dendrites prefrontal thalamus basal ganglia"
+        response = "configure threshold preparse stage token enable disable pipeline queue handler"
+
+        with patch("wild_igor.igor.tools.channel_post.post_to_channel"):
+            for _ in range(3):
+                check_coherence(cortex, prompt, response, thread_id="tA")
+            r_b = check_coherence(cortex, prompt, response, thread_id="tB")
+        assert r_b.get("reason") != "stuck_escalated", "tB counter is independent of tA"
