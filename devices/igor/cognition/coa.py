@@ -2,29 +2,69 @@
 COA — Center of Attention.
 
 A COA bundles a NarrativeEngine with its own spawn/idle state so that
-multiple COAs can run concurrently in one process. For the current
-single-COA case the root COA object holds exactly the state that used to
-live on Igor as loose attributes (_ne_thread, _ne_spawn_lock, etc.) and
-the _run_ne_background() method.
+multiple COAs can run concurrently in one process.
 
-tick() is the former _run_ne_background() from main.py. Behavior is
-identical to the pre-extraction single-COA implementation — this refactor
-is a structural no-op. The spawn primitive (multiple COAs per process)
-is in T-coa-spawn-primitive.
+Root COA: created by Igor.__init__; its tick() is called each main-loop
+iteration. All existing behavior is unchanged from before the extraction.
+
+Background COA: created by COA.spawn(). Gets a self-managed tick loop
+thread. Dissolves (stops ticking) when its task_queue empties. The root
+COA continues unaffected.
+
+CPU gate: spawn() checks psutil CPU% against IGOR_COA_CPU_GATE (default
+60, percent). A spawn is blocked when the box is already busy.
+
+Intra-box milieu propagation: all COAs share the process-level milieu
+singleton. Their NE runs contribute NE-state to the same Milieu instance,
+which in turn contributes to the shared global-milieu file
+(paths().milieu). Same mechanism as cross-box propagation. No separate
+Milieu instance per COA is needed for this phase.
 
 Back-reference pattern: COA holds a reference to its owning Igor instance
 (``_igor``) so tick() can read _is_processing and delegate
-experiment_scheduler.tick() without duplicating those objects.
+experiment_scheduler.tick() without duplicating those objects. Background
+COAs pass the same back-reference; _experiment_scheduler.tick() is
+intentionally shared (only one experiment tick per root-loop iteration).
 """
 
 from __future__ import annotations
 
+import os
 import threading
-from typing import TYPE_CHECKING
+import time
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ..memory.cortex import Cortex
     from ..cognition.narrative_engine import NarrativeEngine as _NE
+
+
+# ------------------------------------------------------------------
+# CPU gate helper
+# ------------------------------------------------------------------
+
+_CPU_GATE_DEFAULT = 60.0  # percent
+
+
+def _cpu_percent_now() -> float:
+    """Return current CPU% (1s measurement). Returns 0.0 if psutil unavailable."""
+    try:
+        import psutil
+
+        return psutil.cpu_percent(interval=1.0)
+    except Exception:
+        return 0.0
+
+
+def _cpu_gate_ok() -> bool:
+    """True if CPU is below the spawn gate threshold."""
+    gate = float(os.getenv("IGOR_COA_CPU_GATE", str(_CPU_GATE_DEFAULT)))
+    return _cpu_percent_now() < gate
+
+
+# ------------------------------------------------------------------
+# COA
+# ------------------------------------------------------------------
 
 
 class COA:
@@ -36,12 +76,63 @@ class COA:
         self.ne: _NE = NarrativeEngine(cortex, instance_id)
         self._cortex = cortex
         self._igor = igor  # back-ref: _is_processing, _experiment_scheduler
+        self._instance_id = instance_id
 
         self._ne_thread: threading.Thread | None = None
         self._ne_spawn_lock: threading.Lock = threading.Lock()
         self._ne_last_twm_fingerprint: tuple[int, int] = (0, 0)
         self._ne_last_run_time: float = 0.0
         self._last_ne_valence: float = 0.0
+
+        # Background-COA state (unused in root COA)
+        self._task_queue: list[Any] = []
+        self._bg_thread: threading.Thread | None = None
+        self._is_background: bool = False
+
+    # ------------------------------------------------------------------
+    # Spawn primitive
+    # ------------------------------------------------------------------
+
+    def spawn(self, task_queue: list[Any] | None = None) -> "COA | None":
+        """
+        Spawn a background COA to work through task_queue.
+
+        Returns the new COA, or None if the CPU gate blocks the spawn.
+        The child runs its own tick loop in a daemon thread and dissolves
+        when its task_queue is exhausted.
+
+        CPU gate: blocked when CPU% >= IGOR_COA_CPU_GATE (default 60).
+        """
+        if not _cpu_gate_ok():
+            return None
+
+        child_id = f"{self._instance_id}-bg-{int(time.monotonic() * 1000) % 100_000}"
+        child = COA(self._cortex, child_id, self._igor)
+        child._task_queue = list(task_queue or [])
+        child._is_background = True
+        child._start_background_loop()
+        return child
+
+    def _start_background_loop(self) -> None:
+        """Start the self-managed tick loop for background COAs."""
+
+        def _loop() -> None:
+            while self._task_queue:
+                self.tick()
+                time.sleep(0.5)
+            # task_queue drained — COA dissolves; thread exits naturally
+
+        self._bg_thread = threading.Thread(
+            target=_loop, daemon=True, name=f"coa-bg-{id(self)}"
+        )
+        self._bg_thread.start()
+
+    @property
+    def is_alive(self) -> bool:
+        """True while background loop is still running (always True for root COA)."""
+        if not self._is_background:
+            return True
+        return self._bg_thread is not None and self._bg_thread.is_alive()
 
     # ------------------------------------------------------------------
     # Main-loop tick
