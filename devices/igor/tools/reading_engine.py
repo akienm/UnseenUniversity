@@ -98,6 +98,12 @@ def fetch_to_blob(source: str, title: str = "", author: str = "") -> dict:
 
     if isinstance(handle, str):
         raise RuntimeError(f"Failed to open: {handle}")
+    from .ebook_reader import DRM_FAILED as _DRM_FAILED
+
+    if isinstance(handle, dict) and handle.get(_DRM_FAILED):
+        raise RuntimeError(
+            f"DRM_FAILED: {handle.get('title', source)} is DRM-encrypted and could not be decrypted"
+        )
 
     handle_key = handle["_handle_key"]
     book_title = handle.get("title", title or source)
