@@ -7674,8 +7674,31 @@ class Igor(IgorBase):
             self._shutdown(reason="restart flag (drain entry)")
             sys.exit(42)
 
-        # T-igor-network-remove: net_listener removed. Discord/Gmail inbound disabled
-        # until agent_datacenter listener device ships and IPC is wired up.
+        # Drain web_server.incoming — UC-polled messages from browser chat sessions.
+        # T-igor-network-remove removed the old net_listener; web is now the only
+        # inbound source until the ADC listener device ships.
+        while True:
+            try:
+                _raw = web_server.incoming.get_nowait()
+            except queue.Empty:
+                break
+            from .web.server import NetworkMessage as _NM
+
+            _msg = _NM(
+                source="web",
+                content=_raw.get("content", ""),
+                author=_raw.get("author", "web-user"),
+                reply_info={
+                    "client_id": _raw.get("client_id"),
+                    "session_id": _raw.get("session_id", "shared"),
+                },
+                received_at=time.monotonic(),
+            )
+            _tid = self._get_thread_id(_msg)
+            if _msg.content.strip().startswith("/"):
+                self._process_network_msg(_msg, _tid)
+            else:
+                self._enqueue_network_msg(_msg, _tid)
 
     def _enqueue_network_msg(self, msg, thread_id: str) -> None:
         """

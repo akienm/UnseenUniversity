@@ -22,14 +22,27 @@ import os
 import queue
 import threading
 import time
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 from .utility_closet_client import uc_client
 
 log = logging.getLogger(__name__)
 
-# ── Public API: the queue listener._poll_web drains ───────────────────────────
+
+# ── NetworkMessage: DTO consumed by main._drain_network ───────────────────────
+@dataclass
+class NetworkMessage:
+    source: str
+    content: str
+    author: str
+    reply_info: dict = field(default_factory=dict)
+    raw: Any = None
+    received_at: float = 0.0
+
+
+# ── Public API: the queue _drain_network drains ───────────────────────────────
 incoming: queue.Queue = queue.Queue()
 
 # ── Shared state refs (set by start(); used by stats pusher) ──────────────────
