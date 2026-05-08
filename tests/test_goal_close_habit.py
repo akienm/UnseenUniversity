@@ -258,14 +258,20 @@ class TestProcGoalCloseHabitSchema(unittest.TestCase):
     def test_seed_file_exists(self):
         """Seed file must exist at the expected path."""
         seed_path = (
-            Path(__file__).parent.parent / "lab" / "claudecode" / "seed_goal_close_habit.py"
+            Path(__file__).parent.parent
+            / "lab"
+            / "claudecode"
+            / "seed_goal_close_habit.py"
         )
         self.assertTrue(seed_path.exists(), f"Seed file missing: {seed_path}")
 
     def test_seed_file_references_proc_goal_close(self):
         """Seed file source contains the PROC_GOAL_CLOSE ID."""
         seed_path = (
-            Path(__file__).parent.parent / "lab" / "claudecode" / "seed_goal_close_habit.py"
+            Path(__file__).parent.parent
+            / "lab"
+            / "claudecode"
+            / "seed_goal_close_habit.py"
         )
         source = seed_path.read_text()
         self.assertIn("PROC_GOAL_CLOSE", source)
@@ -273,7 +279,10 @@ class TestProcGoalCloseHabitSchema(unittest.TestCase):
     def test_seed_file_references_close_goal_by_ticket(self):
         """Seed file source references the close_goal_by_ticket tool."""
         seed_path = (
-            Path(__file__).parent.parent / "lab" / "claudecode" / "seed_goal_close_habit.py"
+            Path(__file__).parent.parent
+            / "lab"
+            / "claudecode"
+            / "seed_goal_close_habit.py"
         )
         source = seed_path.read_text()
         self.assertIn("close_goal_by_ticket", source)
@@ -283,14 +292,14 @@ class TestCloseGoalToolRegistered(unittest.TestCase):
     """Verify close_goal is registered in the tool registry."""
 
     def test_close_goal_in_registry(self):
-        from wild_igor.igor.tools.registry import registry
+        from lab.utility_closet.registry import registry
 
         names = {t.name for t in registry.all()}
         self.assertIn("close_goal", names)
 
     def test_close_goal_no_required_args(self):
         """close_goal tool registration has no required parameters (goal_id is optional)."""
-        from wild_igor.igor.tools.registry import registry
+        from lab.utility_closet.registry import registry
 
         tool = next((t for t in registry.all() if t.name == "close_goal"), None)
         self.assertIsNotNone(tool)

@@ -256,7 +256,7 @@ class TestRobustness:
 
 
 def test_tools_registered():
-    from wild_igor.igor.tools.registry import registry
+    from lab.utility_closet.registry import registry
 
     assert registry.get("pe_chain_debug_start") is not None
     assert registry.get("pe_chain_debug_step") is not None

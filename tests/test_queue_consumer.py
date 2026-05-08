@@ -256,7 +256,7 @@ class TestRegistryRegistration(unittest.TestCase):
 
     def test_read_queue_top_registered(self):
         """read_queue_top is present in the tool registry."""
-        from wild_igor.igor.tools.registry import registry
+        from lab.utility_closet.registry import registry
         import wild_igor.igor.tools.ops  # noqa: F401 — triggers registration
 
         tool = registry.get("read_queue_top")
@@ -265,7 +265,7 @@ class TestRegistryRegistration(unittest.TestCase):
 
     def test_adopt_top_queue_ticket_registered(self):
         """adopt_top_queue_ticket is present in the tool registry with no required args."""
-        from wild_igor.igor.tools.registry import registry
+        from lab.utility_closet.registry import registry
         import wild_igor.igor.tools.ops  # noqa: F401
 
         tool = registry.get("adopt_top_queue_ticket")

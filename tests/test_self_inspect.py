@@ -136,6 +136,6 @@ def test_introspection_is_read_only():
 def test_tool_registered_in_registry():
     """T-igor-self-introspection: tool is discoverable via the registry."""
     from wild_igor.igor.tools import self_inspect as _  # noqa: F401
-    from wild_igor.igor.tools.registry import registry
+    from lab.utility_closet.registry import registry
 
     assert registry.get("self_inspect") is not None

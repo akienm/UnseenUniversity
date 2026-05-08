@@ -29,7 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # Importing pe_chain runs its module-level registry.register calls.
 import wild_igor.igor.tools.pe_chain  # noqa: F401
-from wild_igor.igor.tools.registry import registry
+from lab.utility_closet.registry import registry
 
 PE_STEP_NAMES = [
     "pe_entry_init",
@@ -59,8 +59,7 @@ PE_STEP_NAMES = [
 #     test_tool_fn_is_callable — registry.get returning non-None is necessary
 #     and sufficient for registry.execute to NOT hit the unknown-tool branch.
 DRY_MCPCALL_NAMES = [
-    n for n in PE_STEP_NAMES
-    if n not in {"pe_test", "pe_close_loop", "pe_entry_init"}
+    n for n in PE_STEP_NAMES if n not in {"pe_test", "pe_close_loop", "pe_entry_init"}
 ]
 
 

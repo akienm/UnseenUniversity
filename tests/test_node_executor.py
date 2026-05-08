@@ -780,7 +780,7 @@ class TestMcpCallInstruction:
     def test_mcpcall_calls_registered_tool(self):
         """MCPCALL dispatches to a registered tool and stores result in basket."""
         from unittest.mock import patch, MagicMock
-        from wild_igor.igor.tools.registry import Tool, ToolRegistry
+        from lab.utility_closet.registry import Tool, ToolRegistry
 
         mock_tool = Tool(
             name="test_echo",
@@ -810,7 +810,7 @@ class TestMcpCallInstruction:
     def test_mcpcall_unknown_tool_stores_error(self):
         """MCPCALL with unknown tool name writes __error__ to basket; execution continues."""
         from unittest.mock import patch
-        from wild_igor.igor.tools.registry import ToolRegistry
+        from lab.utility_closet.registry import ToolRegistry
 
         empty_registry = ToolRegistry()
         memory = self._make_memory(
@@ -833,7 +833,7 @@ class TestMcpCallInstruction:
     def test_mcpcall_tool_exception_stores_error(self):
         """MCPCALL stores __error__ in basket when tool raises; execution continues."""
         from unittest.mock import patch
-        from wild_igor.igor.tools.registry import Tool, ToolRegistry
+        from lab.utility_closet.registry import Tool, ToolRegistry
 
         def boom(**_):
             raise RuntimeError("tool exploded")
@@ -862,7 +862,7 @@ class TestMcpCallInstruction:
     def test_mcpcall_tool_name_from_basket(self):
         """MCPCALL resolves tool name from basket when given [\"basket\", key]."""
         from unittest.mock import patch
-        from wild_igor.igor.tools.registry import Tool, ToolRegistry
+        from lab.utility_closet.registry import Tool, ToolRegistry
 
         mock_tool = Tool(
             name="dynamic_tool",

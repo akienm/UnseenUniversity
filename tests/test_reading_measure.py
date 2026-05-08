@@ -108,7 +108,7 @@ def test_gather_stats_no_nodes():
 
 def test_reading_graph_baseline_registered():
     """Tool is registered in the registry."""
-    from wild_igor.igor.tools.registry import registry
+    from lab.utility_closet.registry import registry
 
     tool = registry.get("reading_graph_baseline")
     assert tool is not None

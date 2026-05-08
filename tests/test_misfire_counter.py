@@ -253,7 +253,7 @@ class TestMisfireCounterIntegration:
 
     def test_tool_error_integration(self, temp_log_path):
         """Test that tool errors are recorded."""
-        from wild_igor.igor.tools.registry import registry
+        from lab.utility_closet.registry import registry
         from wild_igor.igor.tools.misfire_counter import MisfireCounter
 
         counter = MisfireCounter(log_path=temp_log_path, threshold=3)

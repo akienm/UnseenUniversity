@@ -55,7 +55,7 @@ class TestDetectHardware:
         assert "hostname" in report
 
     def test_tool_registered(self):
-        from wild_igor.igor.tools.registry import registry
+        from lab.utility_closet.registry import registry
 
         t = registry.get("detect_hardware")
         assert t is not None

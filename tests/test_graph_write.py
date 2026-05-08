@@ -200,7 +200,7 @@ class TestToolRegistration(unittest.TestCase):
 
     def test_all_three_tools_registered(self):
         import igor.tools.graph_write  # noqa — triggers registration
-        from igor.tools.registry import registry
+        from lab.utility_closet.registry import registry
 
         names = {t.name for t in registry.all()}
         self.assertIn("store_memory", names)

@@ -31,7 +31,7 @@ class TestDbUrlGuard(unittest.TestCase):
     def test_db_url_present_no_error(self):
         """machine_manager imports cleanly when IGOR_HOME_DB_URL is set."""
         os.environ.setdefault("IGOR_HOME_DB_URL", "postgresql://test@localhost/test")
-        mod_name = "wild_igor.igor.cognition.machine_manager"
+        mod_name = "lab.utility_closet.machine_manager"
         saved_mod = sys.modules.pop(mod_name, None)
         try:
             mod = importlib.import_module(mod_name)

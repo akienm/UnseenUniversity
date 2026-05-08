@@ -26,7 +26,7 @@ class TestCCToolBypass(unittest.TestCase):
         """
         # Mock the Igor instance and components
         from wild_igor.igor.main import Igor
-        from wild_igor.igor.tools.registry import registry
+        from lab.utility_closet.registry import registry
 
         mock_igor = MagicMock(spec=Igor)
         mock_igor.thalamus = MagicMock()
@@ -53,7 +53,7 @@ class TestCCToolBypass(unittest.TestCase):
         it should call tool_registry.get('run_goal_continuation').execute()
         and return the tool's result directly.
         """
-        from wild_igor.igor.tools.registry import registry
+        from lab.utility_closet.registry import registry
 
         # Verify tool is in registry
         tool = registry.get("run_goal_continuation")
@@ -69,7 +69,7 @@ class TestCCToolBypass(unittest.TestCase):
         When Igor receives 'CC: hot_reload wild_igor/igor/tools/goal_continuation.py',
         the gate should convert the file path to module name and dispatch reload_module.
         """
-        from wild_igor.igor.tools.registry import registry
+        from lab.utility_closet.registry import registry
 
         # Verify reload_module tool exists
         tool = registry.get("reload_module")

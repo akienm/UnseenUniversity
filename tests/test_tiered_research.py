@@ -123,7 +123,7 @@ class TestTierWeb:
 
 class TestRegistration:
     def test_tool_registered(self):
-        from wild_igor.igor.tools.registry import registry
+        from lab.utility_closet.registry import registry
 
         t = registry.get("tiered_research")
         assert t is not None
