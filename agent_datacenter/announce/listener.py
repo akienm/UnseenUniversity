@@ -14,6 +14,7 @@ envelope is far better than killing the broker.
 from __future__ import annotations
 
 import logging
+import threading
 from dataclasses import asdict as _asdict
 
 from bus.envelope import Envelope
@@ -121,6 +122,35 @@ class AnnounceListener:
             },
         )
         self._imap.append(ANNOUNCE_EVENTS_MAILBOX, reply)
+
+    # ── IDLE-driven run loop (slice 3) ────────────────────────────────────────
+
+    # RFC 2177: servers MAY drop IDLE after 29 min. We re-enter after 25 min
+    # to stay inside the safe window.
+    _IDLE_KEEPALIVE_S: float = 25 * 60
+
+    def run_forever(self, stop: threading.Event | None = None) -> None:
+        """Run the listener in an IDLE loop until stop is set.
+
+        Wakeup sources:
+        - Server pushes EXISTS (message arrived) → pump(), re-enter IDLE
+        - 25-minute keepalive timeout → re-enter IDLE without pumping
+        - stop.set() → exit cleanly
+
+        stop=None runs until the process exits.
+        """
+        log.info("announce-listener: entering IDLE loop on %s", ANNOUNCE_MAILBOX)
+        while stop is None or not stop.is_set():
+            try:
+                woke = self._imap.idle_wait(
+                    ANNOUNCE_MAILBOX, timeout_s=self._IDLE_KEEPALIVE_S
+                )
+                if woke:
+                    self.pump()
+                # timeout → re-enter IDLE (keepalive cycle, no fetch needed)
+            except Exception as exc:
+                log.warning("announce-listener: IDLE loop error: %s", exc)
+        log.info("announce-listener: IDLE loop stopped")
 
     def _publish_error(
         self,

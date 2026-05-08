@@ -423,3 +423,42 @@ class IMAPServer:
                 log.info("purged %d expired message(s) from mailbox %r", purged, mbox)
 
         return total_purged
+
+    def idle_wait(self, mailbox: str, timeout_s: float = 25 * 60) -> bool:
+        """Block until a message arrives in mailbox or timeout_s elapses.
+
+        Returns True if a message arrived, False if the timeout expired.
+
+        In test mode (stub): registers a threading.Event in _STUB_IDLE_EVENTS so
+        any append() wakes this call immediately.
+
+        In production (Dovecot): falls back to polling every 2s for now.
+        True IDLE over imaplib requires raw socket gymnastics; that upgrade
+        is a follow-on task once the Librarian is running in production.
+        """
+        if _TEST_MODE:
+            ev = threading.Event()
+            _STUB_IDLE_EVENTS[mailbox].append(ev)
+            try:
+                woke = ev.wait(timeout=timeout_s)
+            finally:
+                try:
+                    _STUB_IDLE_EVENTS[mailbox].remove(ev)
+                except ValueError:
+                    pass
+            return woke
+
+        # Production fallback: poll until a message appears or timeout
+        deadline = time.monotonic() + timeout_s
+        poll_interval = 2.0
+        assert self._client
+        baseline = self._client.unseen_count(mailbox)
+        while time.monotonic() < deadline:
+            try:
+                if self._client.unseen_count(mailbox) > baseline:
+                    return True
+            except Exception as exc:
+                log.debug("idle_wait poll error (non-fatal): %s", exc)
+            remaining = deadline - time.monotonic()
+            time.sleep(min(poll_interval, max(0, remaining)))
+        return False
