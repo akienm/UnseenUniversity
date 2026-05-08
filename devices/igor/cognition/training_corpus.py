@@ -27,6 +27,7 @@ Local source directory (for Akien's own materials):
 from __future__ import annotations
 import logging
 
+import fcntl
 import hashlib
 import json
 import os
@@ -76,20 +77,32 @@ def _disk_free_gb() -> float:
 
 
 def _load_index() -> dict:
-    if INDEX_FILE.exists():
+    CORPUS_DIR.mkdir(parents=True, exist_ok=True)
+    lock_path = INDEX_FILE.with_suffix(".lock")
+    with open(lock_path, "w") as lf:
+        fcntl.flock(lf, fcntl.LOCK_SH)
         try:
-            return json.loads(INDEX_FILE.read_text(encoding="utf-8"))
-        except Exception as _bare_e:
-            get_logger(__name__).warning(
-                "bare except in wild_igor/igor/cognition/training_corpus.py: %s",
-                _bare_e,
-            )
+            if INDEX_FILE.exists():
+                try:
+                    return json.loads(INDEX_FILE.read_text(encoding="utf-8"))
+                except Exception as _bare_e:
+                    get_logger(__name__).warning(
+                        "training_corpus: index.json parse error: %s", _bare_e
+                    )
+        finally:
+            fcntl.flock(lf, fcntl.LOCK_UN)
     return {}
 
 
 def _save_index(index: dict) -> None:
     CORPUS_DIR.mkdir(parents=True, exist_ok=True)
-    INDEX_FILE.write_text(json.dumps(index, indent=2), encoding="utf-8")
+    lock_path = INDEX_FILE.with_suffix(".lock")
+    with open(lock_path, "w") as lf:
+        fcntl.flock(lf, fcntl.LOCK_EX)
+        try:
+            INDEX_FILE.write_text(json.dumps(index, indent=2), encoding="utf-8")
+        finally:
+            fcntl.flock(lf, fcntl.LOCK_UN)
 
 
 # ── Fetch ──────────────────────────────────────────────────────────────────────
