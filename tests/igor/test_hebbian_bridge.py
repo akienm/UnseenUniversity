@@ -57,7 +57,7 @@ class TestWgBoostSearch(unittest.TestCase):
         os.environ["IGOR_HEBBIAN_BRIDGE"] = "true"
         # Reload module so _ENABLED re-evaluates
         import importlib
-        import wild_igor.igor.cognition.hebbian_bridge as hb
+        import wild_igor.igor.cognition.coactivation_counter as hb
 
         importlib.reload(hb)
         self.hb = hb
@@ -96,7 +96,7 @@ class TestWgBoostSearch(unittest.TestCase):
     def test_disabled_returns_empty(self):
         """When env gate is off, always returns empty."""
         import importlib
-        import wild_igor.igor.cognition.hebbian_bridge as hb
+        import wild_igor.igor.cognition.coactivation_counter as hb
 
         os.environ["IGOR_HEBBIAN_BRIDGE"] = "false"
         importlib.reload(hb)
@@ -118,7 +118,7 @@ class TestRecordRetrievalBoost(unittest.TestCase):
     def setUp(self):
         os.environ["IGOR_HEBBIAN_BRIDGE"] = "true"
         import importlib
-        import wild_igor.igor.cognition.hebbian_bridge as hb
+        import wild_igor.igor.cognition.coactivation_counter as hb
 
         importlib.reload(hb)
         self.hb = hb
@@ -207,7 +207,7 @@ class TestWgPredictForActivation(unittest.TestCase):
     def setUp(self):
         os.environ["IGOR_HEBBIAN_BRIDGE"] = "true"
         import importlib
-        import wild_igor.igor.cognition.hebbian_bridge as hb
+        import wild_igor.igor.cognition.coactivation_counter as hb
 
         importlib.reload(hb)
         self.hb = hb
