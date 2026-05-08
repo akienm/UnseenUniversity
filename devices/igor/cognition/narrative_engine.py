@@ -186,6 +186,13 @@ NE_CURSOR_HISTORY = 5  # How many cycles to keep in topic_history
 NE_OSCILLATION_DEPTH = 3  # Cycles on same topic with no new promotions → oscillating
 NARRATIVE_GAP_MAX_AGE_MINUTES = 60  # Auto-close gaps unresolved longer than this
 
+# Invariant (D-stew-ne-salience): stew observations push at _STEW_SALIENCE_PUSH;
+# NE force-runs when it sees salience >= _NE_FORCE_RUN_THRESHOLD.
+# _STEW_SALIENCE_PUSH must stay above _NE_FORCE_RUN_THRESHOLD so stew content
+# always qualifies for a force-run.  Guarded at NarrativeEngine.__init__.
+_STEW_SALIENCE_PUSH = 0.65
+_NE_FORCE_RUN_THRESHOLD = 0.6
+
 # D228 step 2: prediction error training
 _PE_HEAT_THRESHOLD = 0.3  # min spread heat to count as a predicted node
 _PE_REINFORCE_DELTA = 0.05  # strengthen correct predictions by this amount
@@ -279,8 +286,22 @@ class NarrativeEngine(IgorBase):
     all state lives in TWM (Postgres).
     """
 
-    def __init__(self, cortex: Cortex, instance_id: str = "wild-0001"):
+    def __init__(
+        self,
+        cortex: Cortex,
+        instance_id: str = "wild-0001",
+        stew_salience: float = _STEW_SALIENCE_PUSH,
+        force_run_threshold: float = _NE_FORCE_RUN_THRESHOLD,
+    ):
         super().__init__()
+        if stew_salience <= force_run_threshold:
+            msg = (
+                f"NE invariant violated: stew_salience ({stew_salience}) must be "
+                f"> force_run_threshold ({force_run_threshold}); stew observations "
+                "would not qualify NE for a force-run."
+            )
+            self.log.error(msg)
+            raise ValueError(msg)
         self.cortex = cortex
         self.instance_id = instance_id
         self._last_run: Optional[datetime] = None
@@ -474,7 +495,7 @@ class NarrativeEngine(IgorBase):
             obs_list = self._filter_obs(raw)
             has_meaningful = any(
                 o["source"] in ("user_input", "discord", "gmail")
-                or o["salience"] >= 0.6
+                or o["salience"] >= _NE_FORCE_RUN_THRESHOLD
                 for o in obs_list
             )
             if has_meaningful:
