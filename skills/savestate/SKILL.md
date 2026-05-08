@@ -48,4 +48,20 @@ echo "" >> "$SLATE"
 echo "## In-flight: <hypothesis from step 2>" >> "$SLATE"
 ```
 
+### 4. Write palace.sessions.* node (session-close only)
+
+When this is a deliberate end-of-session close (same condition as Step 1),
+always capture the session to the palace. Pass `--summary` with the Done/Next
+lines from Step 1 so the node has human-readable context:
+
+```bash
+cd ~/dev/src/agent_datacenter
+export IGOR_HOME_DB_URL=postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001
+python3 scripts/session_capture.py \
+  --summary "<Done: ... Next: ...>" \
+  2>/dev/null | grep -E "session_path|transcript_path|turns|error" || true
+```
+
+Skip when called as a mid-session flush (same rule as Step 1).
+
 No debug flag release. No compact. Those are /autocompact.
