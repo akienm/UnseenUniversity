@@ -58,6 +58,16 @@ _ROUTING_MAP: dict[str, dict] = {
         "when": "List Igor's registered habits (procedural memories with code_ref)",
         "example": "habit_list()",
     },
+    "summarize": {
+        "tool": "summarize",
+        "when": "Summarize a block of text via Librarian tier-1 model",
+        "example": 'summarize(text="Long text...", style="brief")',
+    },
+    "research": {
+        "tool": "research",
+        "when": "Research a question or topic; returns a structured answer",
+        "example": 'research(query="what is IMAP IDLE?", depth="shallow")',
+    },
 }
 
 SCHEMAS = [
