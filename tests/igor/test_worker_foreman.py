@@ -34,14 +34,11 @@ def _add_repo_to_path() -> None:
     repo = Path(__file__).parent.parent
     if str(repo) not in sys.path:
         sys.path.insert(0, str(repo))
-    cc = repo / "lab" / "claudecode"
-    if str(cc) not in sys.path:
-        sys.path.insert(0, str(cc))
 
 
 _add_repo_to_path()
 
-import cc_queue  # noqa: E402
+from lab.claudecode import cc_queue  # noqa: E402
 
 # ─────────────────────────────────────────────────────────────────────────────
 # _infer_worker — auto-default routing rule
@@ -154,7 +151,7 @@ class TestCmdAddWorkerDefault(unittest.TestCase):
                 "os",
                 MagicMock(path=MagicMock(exists=lambda _p: False)),
             ),
-            patch("cc_queue.json.loads", return_value=[new_ticket]),
+            patch("lab.claudecode.cc_queue.json.loads", return_value=[new_ticket]),
         ):
             # cmd_add takes a json-file-or-inline-json string; we bypass file
             # existence check (mocked os.path.exists → False) so it goes
