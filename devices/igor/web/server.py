@@ -79,7 +79,8 @@ def start(stats_fn=None, cortex_fn=None, igor_fn=None) -> None:
 
     What this does now:
       1. Stores fn refs so the UC stats pusher can reach Igor state.
-      2. Starts a background thread that polls UC for incoming messages.
+      2. Registers Igor with UC so send/poll are unblocked.
+      3. Starts a background thread that polls UC for incoming messages.
 
     Returns immediately.
     """
@@ -88,6 +89,9 @@ def start(stats_fn=None, cortex_fn=None, igor_fn=None) -> None:
     _stats_fn = stats_fn
     _cortex_fn = cortex_fn
     _igor_fn = igor_fn
+
+    if not uc_client.is_registered:
+        uc_client.register("igor", capabilities=["chat", "tools", "habits"])
 
     if _poll_thread is not None and _poll_thread.is_alive():
         return  # already started
