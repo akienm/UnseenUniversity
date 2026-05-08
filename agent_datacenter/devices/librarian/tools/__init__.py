@@ -9,6 +9,7 @@ from . import (
     igor_tools,
     manifest_tools,
     memory_tools,
+    palace_tools,
     research_tools,
 )
 
@@ -16,6 +17,7 @@ SCHEMAS: list[dict] = (
     manifest_tools.SCHEMAS
     + db_tools.SCHEMAS
     + memory_tools.SCHEMAS
+    + palace_tools.SCHEMAS
     + channel_tools.SCHEMAS
     + igor_tools.SCHEMAS
     + health_tools.SCHEMAS
@@ -29,6 +31,7 @@ def dispatch(name: str, args: dict) -> str:
         manifest_tools,
         db_tools,
         memory_tools,
+        palace_tools,
         channel_tools,
         igor_tools,
         health_tools,
