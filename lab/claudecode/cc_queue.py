@@ -88,6 +88,24 @@ STATUS_ORDER = {
 
 _TERMINAL_STATUSES = {"closed", "done", "cancelled"}
 
+# Status prefix helpers — embed [status] in title for one-grep searchability
+_STATUS_PREFIX_RE = None
+
+
+def _strip_status_prefix(title: str) -> str:
+    """Remove a leading [status] token if present."""
+    import re
+
+    return re.sub(r"^\[[a-z_]+\]\s*", "", title)
+
+
+def _with_status_prefix(status: str, title: str) -> str:
+    """Return title with [status] prepended, stripping any prior prefix."""
+    bare = _strip_status_prefix(title)
+    if status in _TERMINAL_STATUSES:
+        return bare
+    return f"[{status}] {bare}"
+
 
 def _db_conn():
     """Connect to clan.memories storage."""
@@ -334,6 +352,7 @@ def cmd_claim(args):
         )
         sys.exit(1)
     t["status"] = "in_progress"
+    t["title"] = _with_status_prefix("in_progress", t["title"])
     t["claimed_at"] = _now()
     _save(tasks)
     _log({"action": "claim", "id": args[0], "title": t["title"], "as": as_worker})
@@ -545,6 +564,7 @@ def cmd_done(args):
         print(f"Task {args[0]} not found.")
         sys.exit(1)
     t["status"] = "closed"
+    t["title"] = _with_status_prefix("closed", t["title"])
     t["result"] = args[1]
     t["completed_at"] = _now()
     decision_id = t.get("decision_id")
@@ -568,6 +588,7 @@ def cmd_block(args):
         print(f"Task {args[0]} not found.")
         sys.exit(1)
     t["status"] = "hold"
+    t["title"] = _with_status_prefix("hold", t["title"])
     t["result"] = args[1]
     t["blocked_at"] = _now()
     _save(tasks)
@@ -588,6 +609,7 @@ def cmd_propose(args):
         sys.exit(1)
     proposal = " ".join(args[1:])
     t["status"] = "approval"
+    t["title"] = _with_status_prefix("approval", t["title"])
     t["proposal"] = proposal
     t["proposed_at"] = _now()
     _save(tasks)
@@ -618,6 +640,7 @@ def cmd_approve(args):
         sys.exit(1)
     notes = " ".join(args[1:]) if len(args) > 1 else ""
     t["status"] = "sprint"
+    t["title"] = _with_status_prefix("sprint", t["title"])
     t["approved_plan"] = t.get("proposal", "")
     t["approval_notes"] = notes
     t["approved_at"] = _now()
@@ -730,9 +753,12 @@ def cmd_add(args):
             print(f"  skip (exists): {nt['id']}")
             continue
         nt.setdefault("status", "triage")
+        nt.setdefault("created_at", _now())
         # D-worker-mode-routing-2026-04-21: auto-default by metadata if unset
         if "worker" not in nt or nt.get("worker") in (None, ""):
             nt["worker"] = _infer_worker(nt)
+        # Embed status prefix in title for one-grep searchability
+        nt["title"] = _with_status_prefix(nt["status"], nt["title"])
         nt.setdefault("result", None)
         nt.setdefault("claimed_at", None)
         nt.setdefault("completed_at", None)
@@ -945,6 +971,7 @@ def cmd_setstatus(args):
         sys.exit(1)
     old_status = t["status"]
     t["status"] = new_status
+    t["title"] = _with_status_prefix(new_status, t["title"])
     _save(tasks)
     _log({"action": "setstatus", "id": tid, "old": old_status, "new": new_status})
     print(f"{tid}: {old_status} → {new_status}")
@@ -1164,26 +1191,71 @@ def cmd_set_decision(args):
 COMMANDS["set-decision"] = cmd_set_decision
 
 
+_IGOR_TAGS = {
+    "cognition",
+    "memory",
+    "habits",
+    "engrams",
+    "narrativeengine",
+    "twm",
+}
+_IGOR_REPO = "akienm/TheIgors"
+_ADC_REPO = "akienm/agent_datacenter"
+
+
+def _gh_repo_for(ticket: dict) -> str:
+    """Return the GitHub repo slug for a ticket based on worker and tags.
+
+    Routing rule: worker=igor OR tags intersect IGOR_TAGS → TheIgors.
+    Everything else → agent_datacenter.
+    """
+    if ticket.get("worker") == "igor":
+        return _IGOR_REPO
+    tags_lower = {t.lower() for t in (ticket.get("tags") or [])}
+    if tags_lower & _IGOR_TAGS:
+        return _IGOR_REPO
+    return _ADC_REPO
+
+
 def cmd_set_github_issue(args):
-    """Write a GitHub issue number back to a ticket: set-github-issue <id> <number>"""
+    """Write a GitHub issue number back to a ticket: set-github-issue <id> <number> [--repo owner/repo]"""
     if len(args) < 2:
-        print("Usage: set-github-issue <ticket-id> <github-issue-number>")
+        print(
+            "Usage: set-github-issue <ticket-id> <github-issue-number> [--repo owner/repo]"
+        )
         sys.exit(1)
-    tid, issue_num = args[0], args[1]
+    tid, issue_num_str = args[0], args[1]
+    repo_override = None
+    remaining = args[2:]
+    i = 0
+    while i < len(remaining):
+        if remaining[i] == "--repo" and i + 1 < len(remaining):
+            repo_override = remaining[i + 1]
+            i += 2
+        else:
+            i += 1
     try:
-        issue_num = int(issue_num)
+        issue_num = int(issue_num_str)
     except ValueError:
-        print(f"Issue number must be an integer, got: {issue_num}")
+        print(f"Issue number must be an integer, got: {issue_num_str}")
         sys.exit(1)
     tasks = _load()
     t = _find(tasks, tid)
     if not t:
         print(f"Task {tid} not found.")
         sys.exit(1)
+    repo = repo_override or _gh_repo_for(t)
     t["github_issue"] = issue_num
     _save(tasks)
-    _log({"action": "set_github_issue", "id": tid, "github_issue": issue_num})
-    print(f"Set {tid} github_issue → {issue_num}")
+    _log(
+        {
+            "action": "set_github_issue",
+            "id": tid,
+            "github_issue": issue_num,
+            "repo": repo,
+        }
+    )
+    print(f"Set {tid} github_issue → {issue_num} (repo: {repo})")
 
 
 COMMANDS["set-github-issue"] = cmd_set_github_issue
@@ -1211,6 +1283,70 @@ def cmd_retitle(args):
 
 
 COMMANDS["retitle"] = cmd_retitle
+
+
+def cmd_backfill_prefixes(args):
+    """Add [status] prefix to all open tickets missing it. Safe to re-run."""
+    tasks = _load()
+    changed = 0
+    for t in tasks:
+        status = t.get("status", "triage")
+        old_title = t.get("title", "")
+        new_title = _with_status_prefix(status, old_title)
+        if new_title != old_title:
+            t["title"] = new_title
+            changed += 1
+            if "--verbose" in args:
+                print(f"  {t['id']}: {old_title!r} → {new_title!r}")
+    if changed:
+        _save(tasks)
+        print(f"Prefixed {changed} ticket(s).")
+    else:
+        print("All titles already have status prefixes.")
+
+
+COMMANDS["backfill-prefixes"] = cmd_backfill_prefixes
+
+
+def cmd_backfill_dates(args):
+    """Fetch GitHub issue created_at for tickets missing created_at. Requires gh CLI."""
+    import subprocess
+
+    dry_run = "--dry-run" in args
+    tasks = _load()
+    need_dates = [t for t in tasks if not t.get("created_at") and t.get("github_issue")]
+    print(f"{len(need_dates)} tickets need dates (have github_issue, no created_at)")
+    if not need_dates:
+        return
+    changed = 0
+    for t in need_dates:
+        gh_num = t["github_issue"]
+        try:
+            result = subprocess.run(
+                [
+                    "gh",
+                    "api",
+                    f"repos/akienm/TheIgors/issues/{gh_num}",
+                    "--jq",
+                    ".created_at",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            date_str = result.stdout.strip()
+            if date_str and not dry_run:
+                t["created_at"] = date_str
+                changed += 1
+            print(f"  {t['id']} GH#{gh_num}: {date_str}{' (dry)' if dry_run else ''}")
+        except Exception as e:
+            print(f"  {t['id']} GH#{gh_num}: FAILED — {e}")
+    if changed:
+        _save(tasks)
+        print(f"Backfilled dates for {changed} ticket(s).")
+
+
+COMMANDS["backfill-dates"] = cmd_backfill_dates
 
 
 if __name__ == "__main__":
