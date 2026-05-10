@@ -72,6 +72,20 @@ BASE_INERTIA = {
 }
 
 
+PURPOSE_CATEGORIES = frozenset(
+    {
+        "skill",
+        "fact",
+        "preference",
+        "constraint",
+        "decision",
+        "experience",
+        "procedure",
+        "observation",
+    }
+)
+
+
 @dataclass
 class Memory:
     narrative: str
@@ -159,6 +173,28 @@ class Memory:
         return sum(self.friction_history) / len(self.friction_history)
 
     @property
+    def purpose(self) -> str:
+        return self.metadata.get("purpose", "")
+
+    @property
+    def purpose_category(self) -> str:
+        return self.metadata.get("purpose_category", "")
+
+    @property
+    def purpose_embedding(self) -> list:
+        raw = self.metadata.get("purpose_embedding")
+        if raw is None:
+            return []
+        if isinstance(raw, list):
+            return raw
+        import json
+
+        try:
+            return json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            return []
+
+    @property
     def is_habit(self) -> bool:
         # #128: any memory with a trigger can be a habit — not gated on PROCEDURAL type
         # D302: code_ref habits are also habits — needed for MANAGEMENT_PHRASES dispatch
@@ -189,3 +225,17 @@ class Memory:
     def comment(self) -> str:
         """Convenience accessor for metadata.comment (empty string if unset)."""
         return self.metadata.get("comment", "") or ""
+
+    def set_purpose(
+        self, purpose: str, category: str = "", embedding: list | None = None
+    ) -> None:
+        """Set purpose annotation fields in metadata."""
+        self.metadata["purpose"] = purpose
+        if category:
+            if category not in PURPOSE_CATEGORIES:
+                raise ValueError(
+                    f"purpose_category {category!r} not in {PURPOSE_CATEGORIES}"
+                )
+            self.metadata["purpose_category"] = category
+        if embedding is not None:
+            self.metadata["purpose_embedding"] = embedding
