@@ -238,6 +238,21 @@ class COA(IgorBase):
                         kind="BARE_EXCEPT",
                         detail=f"wild_igor/igor/cognition/coa.py: {_bare_e}",
                     )
+                # Annotate pending engrams (batch_size=2 to stay within budget)
+                try:
+                    from ..memory.purpose_annotator import (
+                        annotate_pending as _annotate_pending,
+                    )
+
+                    _n_annotated = _annotate_pending(self._cortex, batch_size=2)
+                    if _n_annotated > 0:
+                        import logging as _logging
+
+                        _logging.getLogger(__name__).info(
+                            "purpose_annotator: annotated %d engrams", _n_annotated
+                        )
+                except Exception as _ann_e:
+                    log_error(kind="PURPOSE_ANNOTATOR", detail=f"coa.py: {_ann_e}")
                 try:
                     _exp_sched = getattr(igor, "_experiment_scheduler", None)
                     if _exp_sched is not None:
