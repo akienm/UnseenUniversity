@@ -233,6 +233,22 @@ class COA(IgorBase):
                                 log_error(
                                     kind="PSYCH_LOG", detail=f"coa.py: {_psych_e}"
                                 )
+                    else:
+                        # NE produced no result — escalate rather than go mute.
+                        # D-escalate-as-default-2026-05-10: escalate is the
+                        # default fallback when habit inventory exhausts.
+                        try:
+                            from .escalate import escalate_to_channel as _esc
+
+                            _esc(
+                                f"[NE] cycle produced no result — Igor may be stuck. "
+                                f"Last valence: {self._last_ne_valence:.2f}. "
+                                "Nothing actionable in TWM — watch-question scan runs "
+                                "next lever-watcher cycle.",
+                                dedup_key="ne-empty-result",
+                            )
+                        except Exception as _esc_e:
+                            log_error(kind="NE_ESCALATE", detail=f"coa.py: {_esc_e}")
                 except Exception as _bare_e:
                     log_error(
                         kind="BARE_EXCEPT",
