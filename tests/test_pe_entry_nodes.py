@@ -45,7 +45,7 @@ from wild_igor.igor.tools.pe_chain import (
 SAMPLE_TICKET = {
     "id": "T-test-ticket",
     "title": "Test ticket title",
-    "description": "Detailed description of what to fix and why.",
+    "description": "Detailed description of what to fix and why. Affected files: wild_igor/igor/tools/ops.py. Scope: ops only.",
     "status": "pending",
     "required_files": ["wild_igor/igor/tools/ops.py"],
 }
