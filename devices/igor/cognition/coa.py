@@ -85,6 +85,7 @@ class COA(IgorBase):
         self._ne_last_twm_fingerprint: tuple[int, int] = (0, 0)
         self._ne_last_run_time: float = 0.0
         self._last_ne_valence: float = 0.0
+        self._ne_cycle_counter: int = 0
 
         # Background-COA state (unused in root COA)
         self._task_queue: list[Any] = []
@@ -290,6 +291,19 @@ class COA(IgorBase):
                     _lever_watcher()
                 except Exception as _lw_e:
                     log_error(kind="LEVER_WATCHER", detail=f"coa.py: {_lw_e}")
+                # Dreaming: cross-session synthesis every IGOR_DREAMING_INTERVAL cycles
+                try:
+                    import os as _os
+
+                    _dreaming_interval = int(_os.getenv("IGOR_DREAMING_INTERVAL", "50"))
+                    if _dreaming_interval > 0:
+                        self._ne_cycle_counter += 1
+                        if self._ne_cycle_counter % _dreaming_interval == 0:
+                            from .dreaming import run as _dreaming_run
+
+                            _dreaming_run()
+                except Exception as _dream_e:
+                    log_error(kind="DREAMING", detail=f"coa.py: {_dream_e}")
                 try:
                     _exp_sched = getattr(igor, "_experiment_scheduler", None)
                     if _exp_sched is not None:
