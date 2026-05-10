@@ -499,7 +499,6 @@ def pe_entry_init(basket: dict | None = None) -> dict:
 # the cert protocol (single-step Igor through one ticket at a time, validate
 # end product, mark complete) can run without Igor greedily auto-claiming
 # adjacent tickets in the queue.
-# TODO: remove after T-cc-walk-10 cert complete (Igor certified for autonomy).
 def _enforce_single_ticket_mode(basket: dict) -> dict:
     """If IGOR_SINGLE_TICKET is set, gate ENTRY to that one ticket id only."""
     allowed = os.environ.get("IGOR_SINGLE_TICKET", "").strip()
