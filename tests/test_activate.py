@@ -17,22 +17,38 @@ def _raw_conn():
     return psycopg2.connect(_PG_URL)
 
 
-def _insert_node(
-    node_id: str, metadata: dict | None = None, parent_id: str | None = None
-):
+def _insert_node(node_id: str, metadata: dict | None = None):
     conn = _raw_conn()
     with conn:
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO clan.memories (id, narrative, memory_type, metadata, parent_id) "
-                "VALUES (%s, %s, 'PROCEDURAL', %s::jsonb, %s) "
-                "ON CONFLICT (id) DO UPDATE SET metadata = EXCLUDED.metadata, parent_id = EXCLUDED.parent_id",
-                (
-                    node_id,
-                    f"test node {node_id}",
-                    json.dumps(metadata or {}),
-                    parent_id,
-                ),
+                "INSERT INTO clan.memories (id, narrative, memory_type, metadata) "
+                "VALUES (%s, %s, 'PROCEDURAL', %s::jsonb) "
+                "ON CONFLICT (id) DO UPDATE SET metadata = EXCLUDED.metadata",
+                (node_id, f"test node {node_id}", json.dumps(metadata or {})),
+            )
+    conn.close()
+
+
+def _insert_edge(from_id: str, to_id: str, weight: float = 1.0):
+    conn = _raw_conn()
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO clan.interpretive_edges (from_id, to_id, weight) "
+                "VALUES (%s, %s, %s)",
+                (from_id, to_id, weight),
+            )
+    conn.close()
+
+
+def _delete_edges_for(node_id: str):
+    conn = _raw_conn()
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM clan.interpretive_edges WHERE from_id = %s OR to_id = %s",
+                (node_id, node_id),
             )
     conn.close()
 
@@ -49,6 +65,7 @@ def _get_score(node_id: str) -> float:
 
 
 def _delete_node(node_id: str):
+    _delete_edges_for(node_id)
     conn = _raw_conn()
     with conn:
         with conn.cursor() as cur:
@@ -119,49 +136,52 @@ def test_activate_decay_on_stale_node(_cleanup):
     assert abs(score - 1.7) < 0.05
 
 
-def test_propagation_reaches_parent(_cleanup):
-    """Activation propagates to parent_id."""
-    parent_id = "TEST_ACT_PARENT"
-    child_id = "TEST_ACT_CHILD"
-    _cleanup.extend([parent_id, child_id])
-    _insert_node(parent_id)
-    _insert_node(child_id, parent_id=parent_id)
+def test_propagation_reaches_neighbor(_cleanup):
+    """Activation propagates to a node connected via interpretive_edges."""
+    src_id = "TEST_ACT_SRC"
+    dst_id = "TEST_ACT_DST"
+    _cleanup.extend([src_id, dst_id])
+    _insert_node(src_id)
+    _insert_node(dst_id)
+    _insert_edge(src_id, dst_id)
 
     from wild_igor.igor.cognition.activate import activate
 
-    activate(child_id, _EMB)
-    # Parent should have been propagated to and have a nonzero score
-    assert _get_score(parent_id) > 0.0
+    activate(src_id, _EMB)
+    assert _get_score(dst_id) > 0.0
 
 
 def test_propagation_stops_at_depth_3(_cleanup):
-    """Propagation stops at max_depth=3 even in a deep chain."""
+    """CTE propagation stops at max_depth=3 even in a deep edge chain."""
     ids = [f"TEST_ACT_DEPTH_{i}" for i in range(5)]
     _cleanup.extend(ids)
-    _insert_node(ids[0])
-    for i in range(1, 5):
-        _insert_node(ids[i], parent_id=ids[i - 1])
+    for nid in ids:
+        _insert_node(nid)
+    # Chain: ids[4]→ids[3]→ids[2]→ids[1]→ids[0]
+    for i in range(4, 0, -1):
+        _insert_edge(ids[i], ids[i - 1])
 
     from wild_igor.igor.cognition.activate import activate
 
-    # Activate deepest node; propagation should reach ids[1] (depth 3 from ids[4])
-    # but NOT ids[0] (depth 4)
+    # ids[4] (depth 0) → ids[3] (1) → ids[2] (2) → ids[1] (3): within reach
+    # ids[0] (depth 4): beyond max_depth=3
     activate(ids[4], _EMB, max_depth=3)
-    assert _get_score(ids[1]) > 0.0  # within reach
-    assert _get_score(ids[0]) == 0.0  # depth 4 — beyond limit
+    assert _get_score(ids[1]) > 0.0
+    assert _get_score(ids[0]) == 0.0
 
 
-def test_visited_set_prevents_cycle(_cleanup):
-    """Association ring A→B→A does not cause infinite recursion."""
+def test_cycle_in_edges_does_not_loop(_cleanup):
+    """Cyclic edges A→B→A complete without infinite loop (path-array cycle guard)."""
     a_id = "TEST_ACT_RING_A"
     b_id = "TEST_ACT_RING_B"
     _cleanup.extend([a_id, b_id])
-    _insert_node(a_id, metadata={"associations": [{"memory_id": b_id, "weight": 1.0}]})
-    _insert_node(b_id, metadata={"associations": [{"memory_id": a_id, "weight": 1.0}]})
+    _insert_node(a_id)
+    _insert_node(b_id)
+    _insert_edge(a_id, b_id)
+    _insert_edge(b_id, a_id)
 
     from wild_igor.igor.cognition.activate import activate
 
-    # Should complete without RecursionError
     score = activate(a_id, _EMB)
     assert score > 0.0
 
