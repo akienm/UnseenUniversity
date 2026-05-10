@@ -254,6 +254,20 @@ class COA(IgorBase):
                         kind="BARE_EXCEPT",
                         detail=f"wild_igor/igor/cognition/coa.py: {_bare_e}",
                     )
+                # NE grader — fresh-context quality evaluation (T-igor-ne-grader-pass)
+                try:
+                    if result:
+                        _grade_result = _grade_ne_output(result, self._last_ne_valence)
+                        if _grade_result:
+                            import json as _json
+                            from ..paths import paths as _paths
+
+                            _psych_log = _paths().logs / "igor_psych.jsonl"
+                            _psych_log.parent.mkdir(parents=True, exist_ok=True)
+                            with open(_psych_log, "a") as _f:
+                                _f.write(_json.dumps(_grade_result) + "\n")
+                except Exception as _grade_e:
+                    log_error(kind="NE_GRADER", detail=f"coa.py: {_grade_e}")
                 # Annotate pending engrams (batch_size=2 to stay within budget)
                 try:
                     from ..memory.purpose_annotator import (
@@ -311,6 +325,88 @@ class COA(IgorBase):
                 log_error(kind="SILENT_EXCEPT", detail=f"coa.py:tick: {_exc}")
         finally:
             self._ne_spawn_lock.release()
+
+
+def _grade_ne_output(result: dict, last_valence: float) -> dict | None:
+    """Fresh-context quality evaluation of one NE cycle output.
+
+    Evaluates three sub-scores (0.0-1.0 each):
+      memory_retrieval_quality — were memory_candidates plausibly grounded in the obs?
+      context_assembly_quality — does the output show coherent context, not scattered noise?
+      output_coherence         — clear cognitive focus vs. rambling or self-referential output?
+
+    Returns a psych_log entry dict, or None on failure. Escalates if overall < 0.5
+    or any sub-score < 0.3.
+
+    T-igor-ne-grader-pass / D-dreaming-patterns-2026-05-10
+    """
+    try:
+        from ..tools.inner_cc import call_inner_cc_long
+
+        summary = (result.get("summary_csb") or "")[:300]
+        candidates = result.get("memory_candidates") or []
+        n_candidates = len(candidates)
+        impulses = result.get("action_impulses") or []
+        thread = result.get("thread_topic", "")
+
+        prompt = f"""You are a quality auditor for an AI agent's reasoning cycle. Rate this cycle output.
+
+Summary: {summary}
+Thread topic: {thread}
+Memory candidates generated: {n_candidates}
+Action impulses: {len(impulses)}
+Valence: {last_valence:.2f}
+
+Score each dimension 0.0-1.0. Respond ONLY with valid JSON:
+{{
+  "memory_retrieval_quality": <0.0-1.0 — did the agent retrieve/generate grounded, relevant memories?>,
+  "context_assembly_quality": <0.0-1.0 — was the context coherent, not scattered or noisy?>,
+  "output_coherence": <0.0-1.0 — clear cognitive focus vs rambling or self-referential?>,
+  "notes": "<one sentence>"
+}}"""
+
+        raw = call_inner_cc_long(task=prompt, model="anthropic/claude-haiku-4-5")
+        answer = (raw.get("answer") or "").strip()
+        if answer.startswith("```"):
+            answer = answer.split("```")[1]
+            if answer.startswith("json"):
+                answer = answer[4:]
+        import json as _json
+
+        scores = _json.loads(answer)
+        mrq = float(scores.get("memory_retrieval_quality", 0.5))
+        caq = float(scores.get("context_assembly_quality", 0.5))
+        oc = float(scores.get("output_coherence", 0.5))
+        overall = (mrq + caq + oc) / 3.0
+
+        import time as _time
+
+        entry = {
+            "ts": _time.time(),
+            "entry_type": "ne_grade",
+            "memory_retrieval_quality": mrq,
+            "context_assembly_quality": caq,
+            "output_coherence": oc,
+            "overall_score": overall,
+            "grade_notes": scores.get("notes", ""),
+        }
+
+        if overall < 0.5 or mrq < 0.3 or caq < 0.3 or oc < 0.3:
+            try:
+                from .escalate import escalate_to_channel as _esc
+
+                _esc(
+                    f"[NE grader] low quality score: overall={overall:.2f} "
+                    f"mem={mrq:.2f} ctx={caq:.2f} coh={oc:.2f} — {scores.get('notes','')}",
+                    dedup_key="ne-grader-low-score",
+                )
+            except Exception:
+                pass
+
+        return entry
+    except Exception as _e:
+        log_error(kind="NE_GRADER", detail=f"_grade_ne_output: {_e}")
+        return None
 
 
 def read_psych_log(days: int = 7) -> list[dict]:

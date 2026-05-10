@@ -92,7 +92,9 @@ def test_reject_proposal_stores_reason(proposals):
 
 
 def test_dedup_increments_occurrence_count(proposals):
-    content = "recurring pattern alpha"
+    import uuid
+
+    content = f"recurring pattern alpha {uuid.uuid4()}"
     pid1 = proposals.add_proposal(kind="habit", content=content, source_module="test")
     pid2 = proposals.add_proposal(kind="habit", content=content, source_module="test")
     assert pid1 == pid2  # same row returned

@@ -1220,8 +1220,51 @@ class NarrativeEngine(IgorBase):
             return entries[-1]["content"][:300]
         return "(none — first NE run)"
 
+    def _watch_context(self) -> str:
+        """Load WATCH_Q and WATCH_T nodes from clan.memories for context assembly.
+
+        WATCH_Q nodes (universal questions — what does this mean) appear first.
+        WATCH_T nodes (personal topics — what does this mean to ME) appear second.
+        This ordering implements two-stage latent variable compression:
+        broad semantic matching collapses to personal relevance (D-activate-primitive-2026-05-10).
+        """
+        try:
+            import os
+            import psycopg2
+
+            pg_url = os.environ.get(
+                "IGOR_HOME_DB_URL",
+                "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            )
+            conn = psycopg2.connect(pg_url)
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT id, narrative FROM clan.memories"
+                    " WHERE id LIKE 'WATCH_Q%' ORDER BY id"
+                )
+                watch_q = cur.fetchall()
+                cur.execute(
+                    "SELECT id, narrative FROM clan.memories"
+                    " WHERE id LIKE 'WATCH_T%' ORDER BY id"
+                )
+                watch_t = cur.fetchall()
+            conn.close()
+            if not watch_q and not watch_t:
+                return ""
+            lines = ["WATCH_Q (universal questions Igor asks about any observation):"]
+            for wid, narrative in watch_q:
+                lines.append(f"  {wid}: {narrative}")
+            lines.append("WATCH_T (topics Igor personally tracks and cares about):")
+            for wid, narrative in watch_t:
+                lines.append(f"  {wid}: {narrative}")
+            return "\n".join(lines)
+        except Exception:
+            return ""
+
     def _build_prompt(self, obs_text: str, last_narrative: str) -> str:
         cursor_ctx = self._cursor_context()
+        watch_ctx = self._watch_context()
+        watch_block = f"\n{watch_ctx}\n" if watch_ctx else ""
         return f"""You are the Narrative Engine for Igor, an AI agent. Your job: make sense of what Igor is experiencing.
 
 IDENTITY GUARD: The subject of all observations is IGOR (not "Claude", not "the AI", not "the model").
@@ -1237,7 +1280,7 @@ LAST NARRATIVE:
 
 TRAVERSAL STATE (#236):
 {cursor_ctx}
-
+{watch_block}
 CURRENT TWM OBSERVATIONS (✓=integrated, ·=new):
 {obs_text}
 
