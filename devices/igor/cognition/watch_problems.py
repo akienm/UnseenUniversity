@@ -45,6 +45,32 @@ CREATE TABLE IF NOT EXISTS {_TABLE} (
 )
 """
 
+# Migration: adds confidence accumulator columns to existing tables.
+_MIGRATE_SQL = """
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='instance' AND table_name='watch_problems'
+          AND column_name='confidence_score'
+    ) THEN
+        ALTER TABLE instance.watch_problems
+            ADD COLUMN confidence_score float NOT NULL DEFAULT 0.0;
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='instance' AND table_name='watch_problems'
+          AND column_name='last_evidenced_at'
+    ) THEN
+        ALTER TABLE instance.watch_problems
+            ADD COLUMN last_evidenced_at timestamptz;
+    END IF;
+END$$;
+"""
+
+_CONFIDENCE_THRESHOLD_DEFAULT = 0.7
+_CONFIDENCE_DECAY_DEFAULT = 0.95
+
 
 def _conn() -> "psycopg2.connection":
     db_url = os.environ.get(
@@ -56,6 +82,7 @@ def _conn() -> "psycopg2.connection":
 
 def _ensure_table(cur) -> None:
     cur.execute(_CREATE_SQL)
+    cur.execute(_MIGRATE_SQL)
 
 
 def add_watch_problem(
@@ -144,18 +171,25 @@ def lever_watcher(recent_twm_rows: list[dict] | None = None) -> int:
     """Scan active watch problems against recent TWM content for lever matches.
 
     Loads recent instance.twm_observations if recent_twm_rows is not supplied.
-    Uses WATCH_Q_07 'Where is the lever?' and keyword overlap as the match
-    heuristic. Posts to channel on match; respects a 24-hour dedup gate.
+    Uses keyword overlap as the match heuristic. Accumulates confidence_score
+    across cycles; escalates only when confidence crosses IGOR_WATCH_CONFIDENCE_THRESHOLD
+    (default 0.7). Applies exponential decay on no-match cycles.
 
-    Returns the count of problems surfaced this cycle.
+    Returns the count of problems escalated (threshold-crossing) this cycle.
     """
     from .escalate import escalate_to_channel
+
+    threshold = float(
+        os.getenv("IGOR_WATCH_CONFIDENCE_THRESHOLD", str(_CONFIDENCE_THRESHOLD_DEFAULT))
+    )
+    decay = float(
+        os.getenv("IGOR_WATCH_CONFIDENCE_DECAY", str(_CONFIDENCE_DECAY_DEFAULT))
+    )
 
     problems = read_active_problems()
     if not problems:
         return 0
 
-    # Load recent TWM if not supplied
     if recent_twm_rows is None:
         recent_twm_rows = _load_recent_twm()
 
@@ -166,7 +200,47 @@ def lever_watcher(recent_twm_rows: list[dict] | None = None) -> int:
     surfaced = 0
 
     for prob in problems:
-        # Skip if surfaced within 24h
+        prob_id = prob["id"]
+        condition = (prob.get("watch_condition") or "").lower()
+        if not condition:
+            continue
+
+        keywords = [w for w in condition.split() if len(w) > 3]
+        matches = [kw for kw in keywords if kw in twm_text]
+        had_match = len(matches) >= 2
+
+        old_confidence = float(prob.get("confidence_score") or 0.0)
+        if had_match:
+            new_confidence = min(old_confidence + 0.1, 1.0)
+        else:
+            new_confidence = old_confidence * decay
+            if new_confidence < 0.01:
+                new_confidence = 0.0
+
+        # Persist updated confidence
+        try:
+            conn = _conn()
+            with conn:
+                with conn.cursor() as cur:
+                    if had_match:
+                        cur.execute(
+                            f"UPDATE {_TABLE} SET confidence_score = %s, "
+                            "last_evidenced_at = now() WHERE id = %s",
+                            (new_confidence, prob_id),
+                        )
+                    else:
+                        cur.execute(
+                            f"UPDATE {_TABLE} SET confidence_score = %s WHERE id = %s",
+                            (new_confidence, prob_id),
+                        )
+            conn.close()
+        except Exception as _e:
+            log.warning("watch_problems.lever_watcher confidence update failed: %s", _e)
+
+        if not had_match or new_confidence < threshold:
+            continue
+
+        # Threshold crossed — check 24h dedup before escalating
         last = prob.get("last_surfaced_at")
         if last:
             if isinstance(last, str):
@@ -179,23 +253,15 @@ def lever_watcher(recent_twm_rows: list[dict] | None = None) -> int:
             if last and last > cutoff_24h:
                 continue
 
-        condition = (prob.get("watch_condition") or "").lower()
-        if not condition:
-            continue
-
-        keywords = [w for w in condition.split() if len(w) > 3]
-        matches = [kw for kw in keywords if kw in twm_text]
-        if len(matches) < 2:
-            continue
-
         problem_text = prob.get("problem", "")[:80]
         snippet = _find_snippet(twm_text, matches[0])
         escalate_to_channel(
-            f"[Watch list] possible lever found for: {problem_text} "
+            f"[Watch list — elevated confidence={new_confidence:.2f}] "
+            f"possible lever found: {problem_text} "
             f"— matched '{matches[0]}' in TWM: {snippet}",
-            dedup_key=f"watch-lever-{prob['id']}",
+            dedup_key=f"watch-lever-{prob_id}",
         )
-        mark_surfaced(prob["id"])
+        mark_surfaced(prob_id)
         surfaced += 1
 
     return surfaced
