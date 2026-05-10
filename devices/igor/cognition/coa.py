@@ -214,6 +214,25 @@ class COA(IgorBase):
                                     kind="BARE_EXCEPT",
                                     detail=f"wild_igor/igor/cognition/coa.py: {_bare_e}",
                                 )
+                            # Append psych snapshot to longitudinal log
+                            try:
+                                import json as _json
+                                from ..paths import paths as _paths
+
+                                _psych_entry = {
+                                    "ts": _t.time(),
+                                    "valence": self._last_ne_valence,
+                                    "arousal": float(_ne_state.get("arousal", 0.0)),
+                                    "notes": str(_ne_state.get("notes", "")),
+                                }
+                                _psych_log = _paths().logs / "igor_psych.jsonl"
+                                _psych_log.parent.mkdir(parents=True, exist_ok=True)
+                                with open(_psych_log, "a") as _f:
+                                    _f.write(_json.dumps(_psych_entry) + "\n")
+                            except Exception as _psych_e:
+                                log_error(
+                                    kind="PSYCH_LOG", detail=f"coa.py: {_psych_e}"
+                                )
                 except Exception as _bare_e:
                     log_error(
                         kind="BARE_EXCEPT",
@@ -254,3 +273,29 @@ class COA(IgorBase):
                 log_error(kind="SILENT_EXCEPT", detail=f"coa.py:tick: {_exc}")
         finally:
             self._ne_spawn_lock.release()
+
+
+def read_psych_log(days: int = 7) -> list[dict]:
+    """Return psych log entries from the last N days, newest last."""
+    import json as _json
+    import time as _time
+
+    from ..paths import paths as _paths
+
+    cutoff = _time.time() - days * 86400
+    path = _paths().logs / "igor_psych.jsonl"
+    if not path.exists():
+        return []
+    entries = []
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = _json.loads(line)
+                if entry.get("ts", 0) >= cutoff:
+                    entries.append(entry)
+            except _json.JSONDecodeError:
+                continue
+    return entries
