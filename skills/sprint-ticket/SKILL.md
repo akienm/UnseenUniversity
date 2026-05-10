@@ -111,10 +111,9 @@ ready to ship.
 
 Always run tests before commit:
 ```bash
-cd ~/TheIgors && source venv/bin/activate && python -m pytest tests/ -x -q 2>&1 | tail -20
+cd ~/TheIgors && source venv/bin/activate && python -m pytest tests/ -x -q 2>&1 | grep -A 5 -E "FAIL|ERROR|assert|Exception" | head -120 || true
 ```
-A green run is the signal to stage. A red run means fix the failure first —
-never commit-and-see.
+Empty output = all tests pass. Non-empty = failures (grep captures failure line + 5 lines of traceback context). A green run is the signal to stage. A red run means fix the failure first — never commit-and-see.
 
 ### 9. Teach Igor — palace deposit (default skip)
 
