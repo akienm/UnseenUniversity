@@ -115,6 +115,26 @@ cd ~/TheIgors && source venv/bin/activate && python -m pytest tests/ -x -q 2>&1 
 ```
 Empty output = all tests pass. Non-empty = failures (grep captures failure line + 5 lines of traceback context). A green run is the signal to stage. A red run means fix the failure first — never commit-and-see.
 
+### 8.5. Post-sprint grader (advisory)
+
+After tests pass, spawn a fresh subagent to grade the diff against the ticket's Test plan.
+The grader is advisory — it never blocks the close.
+
+```bash
+# Extract staged diff and ticket Test plan for grader
+DIFF=$(git diff --staged)
+TICKET_ID="<id>"
+TEST_PLAN=$(python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py show $TICKET_ID | python3 -c "import sys,json,re; d=json.load(sys.stdin); m=re.search(r'\*\*Test plan:\*\*(.+?)(\*\*|$)',d.get('description',''),re.S); print(m.group(1).strip() if m else 'no test plan')")
+```
+
+Pass DIFF + TEST_PLAN to a Haiku subagent:
+```
+Subagent prompt: "Grade this sprint. Test plan: {TEST_PLAN}\n\nDiff:\n{DIFF}\n\nAre the tests described in the Test plan present in the diff? List any gaps. One paragraph, advisory only."
+```
+
+If Test plan says "no tests because: <reason>" — skip silently.
+Surface gaps inline as a single note before step 10. Do not block commit.
+
 ### 9. Teach Igor — palace deposit (default skip)
 
 Per theigors/rules/capability-protocol: ask "what from this sprint would I
