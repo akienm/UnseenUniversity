@@ -1,5 +1,5 @@
 """
-FileInboxChannel — read files from ~/.TheIgors/Igor-wild-0001/inbox/.
+FileInboxChannel — read files from paths().inbox (default ~/.TheIgors/<instance>/inbox/).
 
 Short-circuits further search (explicit file drop = user's direct request).
 Free, high reliability.
