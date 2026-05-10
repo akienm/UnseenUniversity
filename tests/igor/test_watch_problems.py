@@ -161,16 +161,30 @@ def test_lever_watcher_dedup_24h(wp):
 
 
 def test_confidence_accumulates_toward_threshold(wp):
-    """Three keyword matches increment confidence_score toward 0.3."""
+    """Keyword match increments confidence_score by 0.1 per cycle."""
     import psycopg2, os
 
     row_id = wp.add_watch_problem(
         problem="Pattern accumulating confidence",
         watch_condition="alpha bravo charlie delta",
     )
+    # Pre-seed to 0.2 so a single match call brings it to 0.3
+    conn = psycopg2.connect(
+        os.environ.get(
+            "IGOR_HOME_DB_URL",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        )
+    )
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE instance.watch_problems SET confidence_score = 0.2 WHERE id = %s",
+                (row_id,),
+            )
+    conn.close()
+
     fake_twm = [{"content_csb": "alpha bravo charlie delta text here"}]
-    for _ in range(3):
-        wp.lever_watcher(recent_twm_rows=fake_twm)
+    wp.lever_watcher(recent_twm_rows=fake_twm)
 
     conn = psycopg2.connect(
         os.environ.get(
