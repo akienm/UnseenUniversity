@@ -172,12 +172,15 @@ Active watch problems (by confidence):
 Identify 0-3 recurring patterns that would benefit from:
 - A new procedural habit (kind=habit): a reusable response pattern
 - A new watch question (kind=watch_q): something worth watching for
+- A new playbook (kind=playbook): structured conditions + heuristics to apply in a recurring situation
 
 Respond ONLY with valid JSON array (may be empty):
 [
   {{
-    "kind": "habit" or "watch_q",
-    "content": "<narrative description of the habit or watch question>",
+    "kind": "habit" or "watch_q" or "playbook",
+    "content": "<narrative description>",
+    "conditions": "<when to apply — required for kind=playbook, empty string otherwise>",
+    "heuristics": "<what to do — required for kind=playbook, empty string otherwise>",
     "rationale": "<one sentence: why this pattern warrants a new entry>"
   }}
 ]"""
@@ -196,7 +199,7 @@ Respond ONLY with valid JSON array (may be empty):
             p
             for p in proposals
             if isinstance(p, dict)
-            and p.get("kind") in ("habit", "watch_q")
+            and p.get("kind") in ("habit", "watch_q", "playbook")
             and p.get("content")
         ]
     except Exception as e:
@@ -242,10 +245,20 @@ def run(paths_obj=None) -> int:
         with conn:
             for p in proposals:
                 try:
+                    if p["kind"] == "playbook":
+                        content = json.dumps(
+                            {
+                                "narrative": p["content"],
+                                "conditions": p.get("conditions", ""),
+                                "heuristics": p.get("heuristics", ""),
+                            }
+                        )
+                    else:
+                        content = p["content"]
                     _add_proposal(
                         conn,
                         kind=p["kind"],
-                        content=p["content"],
+                        content=content,
                         source_module="dreaming",
                     )
                     count += 1
