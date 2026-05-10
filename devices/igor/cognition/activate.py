@@ -5,11 +5,11 @@ Steps per call:
   1. Fetch node; compute cosine similarity vs stimulus_embedding.
   2. Apply temporal decay (0.7 per day) to existing activation_score.
   3. new_score = decayed_old + similarity * signal_weight.
-  4. Persist activation_score + last_activated_at.
-  5. Propagate to parent + associations (visited-set + depth cap).
-  6. At depth=0, call focus_state.update_from_activation() if available.
+  4. Persist activation_score + last_activated_at for root node.
+  5. Propagate via WITH RECURSIVE CTE on clan.interpretive_edges (T-igor-recursive-edge-traversal).
+  6. Call focus_state.update_from_activation() with highest-scored node.
 
-T-igor-activate-primitive / D-activate-primitive-2026-05-10
+T-igor-activate-primitive / T-igor-recursive-edge-traversal / D-activate-primitive-2026-05-10
 """
 
 from __future__ import annotations
@@ -89,6 +89,27 @@ def _days_since(ts) -> float:
         return 0.0
 
 
+_CTE_PROPAGATE = """
+WITH RECURSIVE prop(memory_id, depth, score, path) AS (
+    SELECT %s::text, 0, %s::float, ARRAY[%s::text]
+    UNION ALL
+    SELECT e.to_id,
+           p.depth + 1,
+           p.score * %s::float * e.weight::float,
+           p.path || e.to_id
+    FROM prop p
+    JOIN clan.interpretive_edges e ON e.from_id = p.memory_id
+    WHERE p.depth < %s
+      AND p.score * %s::float * e.weight::float >= %s::float
+      AND NOT (e.to_id = ANY(p.path))
+)
+SELECT memory_id, MAX(score) AS score
+FROM prop
+WHERE depth > 0
+GROUP BY memory_id
+"""
+
+
 def activate(
     memory_id: str,
     stimulus_embedding: list[float],
@@ -96,7 +117,7 @@ def activate(
     conn=None,
     **kwargs,
 ) -> float:
-    """Activate a memory node and propagate spreading activation to neighbors.
+    """Activate a memory node and propagate spreading activation via interpretive_edges CTE.
 
     Returns the new activation_score for memory_id, or 0.0 if skipped.
 
@@ -106,22 +127,12 @@ def activate(
         propagation_decay: float = 0.7 multiplier per hop
         max_depth: int = 3             hop limit
         min_score: float = 0.05        propagation cutoff
-        _visited: set[str]             internal recursion guard
-        _depth: int                    internal depth counter
-        _top_node: list                internal [id, score] for focus_state
     """
     threshold = float(kwargs.get("threshold", 0.65))
     signal_weight = float(kwargs.get("signal_weight", 1.0))
     propagation_decay = float(kwargs.get("propagation_decay", 0.7))
     max_depth = int(kwargs.get("max_depth", 3))
     min_score = float(kwargs.get("min_score", 0.05))
-    visited: set[str] = kwargs.get("_visited") or set()
-    depth: int = int(kwargs.get("_depth", 0))
-    top_node: list = kwargs.get("_top_node") or [None, 0.0]
-
-    if memory_id in visited or depth > max_depth:
-        return 0.0
-    visited.add(memory_id)
 
     _close_conn = conn is None
     if _close_conn:
@@ -132,9 +143,10 @@ def activate(
         import json as _json
         import psycopg2.extras
 
+        # Fetch root node
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                "SELECT id, metadata, activation_score, last_activated_at, parent_id "
+                "SELECT id, metadata, activation_score, last_activated_at "
                 "FROM clan.memories WHERE id = %s",
                 (memory_id,),
             )
@@ -173,7 +185,7 @@ def activate(
         decay_factor = 0.7**days if days > 0 else 1.0
         new_score = max(old_score * decay_factor, 0.0) + (similarity * signal_weight)
 
-        # --- Persist ---
+        # --- Persist root node ---
         with conn:
             with conn.cursor() as cur:
                 cur.execute(
@@ -183,61 +195,22 @@ def activate(
                     (new_score, memory_id),
                 )
 
-        if new_score > top_node[1]:
-            top_node[0] = memory_id
-            top_node[1] = new_score
+        # --- Propagate via CTE ---
+        propagated = _propagate_cte(
+            conn, memory_id, new_score, propagation_decay, max_depth, min_score
+        )
 
-        # --- Propagate ---
-        parent_id = node.get("parent_id")
-        if parent_id:
-            prop_score = new_score * propagation_decay
-            if prop_score >= min_score:
-                activate(
-                    parent_id,
-                    stimulus_embedding,
-                    conn=conn,
-                    threshold=threshold,
-                    signal_weight=prop_score,
-                    propagation_decay=propagation_decay,
-                    max_depth=max_depth,
-                    min_score=min_score,
-                    _visited=visited,
-                    _depth=depth + 1,
-                    _top_node=top_node,
-                )
+        # --- Update focus_state with highest-scored node ---
+        top_id, top_score = memory_id, new_score
+        for nid, nscore in propagated.items():
+            if nscore > top_score:
+                top_id, top_score = nid, nscore
+        try:
+            from . import focus_state as _fs
 
-        for assoc in metadata.get("associations") or []:
-            if not isinstance(assoc, dict):
-                continue
-            assoc_id = assoc.get("memory_id")
-            assoc_weight = float(assoc.get("weight", 1.0))
-            if not assoc_id:
-                continue
-            prop_score = new_score * propagation_decay * assoc_weight
-            if prop_score < min_score:
-                continue
-            activate(
-                assoc_id,
-                stimulus_embedding,
-                conn=conn,
-                threshold=threshold,
-                signal_weight=prop_score,
-                propagation_decay=propagation_decay,
-                max_depth=max_depth,
-                min_score=min_score,
-                _visited=visited,
-                _depth=depth + 1,
-                _top_node=top_node,
-            )
-
-        # --- Update focus_state at top level ---
-        if depth == 0 and top_node[0] is not None:
-            try:
-                from . import focus_state as _fs
-
-                _fs.update_from_activation(top_node[0], top_node[1])
-            except Exception:
-                pass  # T-igor-focus-state not yet implemented
+            _fs.update_from_activation(top_id, top_score)
+        except Exception:
+            pass
 
         return new_score
 
@@ -247,3 +220,41 @@ def activate(
                 conn.close()
             except Exception:
                 pass
+
+
+def _propagate_cte(
+    conn,
+    root_id: str,
+    initial_score: float,
+    decay: float,
+    max_depth: int,
+    min_score: float,
+) -> dict[str, float]:
+    """Traverse clan.interpretive_edges via CTE and bulk-update activation_score.
+
+    Returns {memory_id: score} for all updated neighbors (excludes root).
+    Cycle detection via path array — nodes already in the traversal path are skipped.
+    """
+    with conn.cursor() as cur:
+        cur.execute(
+            _CTE_PROPAGATE,
+            (root_id, initial_score, root_id, decay, max_depth, decay, min_score),
+        )
+        rows = cur.fetchall()
+
+    if not rows:
+        return {}
+
+    result = {mem_id: float(score) for mem_id, score in rows}
+
+    with conn:
+        with conn.cursor() as cur:
+            for mem_id, score in result.items():
+                cur.execute(
+                    "UPDATE clan.memories "
+                    "SET activation_score = %s, last_activated_at = now() "
+                    "WHERE id = %s",
+                    (score, mem_id),
+                )
+
+    return result
