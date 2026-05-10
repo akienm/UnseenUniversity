@@ -1273,10 +1273,21 @@ class NarrativeEngine(IgorBase):
         except Exception:
             return ""
 
+    def _playbook_context(self) -> str:
+        """Load active PLAYBOOK entries as a token-capped context block."""
+        try:
+            from .playbook import playbook_context_block
+
+            return playbook_context_block()
+        except Exception:
+            return ""
+
     def _build_prompt(self, obs_text: str, last_narrative: str) -> str:
         cursor_ctx = self._cursor_context()
         watch_ctx = self._watch_context()
         watch_block = f"\n{watch_ctx}\n" if watch_ctx else ""
+        playbook_ctx = self._playbook_context()
+        playbook_block = f"\n{playbook_ctx}\n" if playbook_ctx else ""
         return f"""You are the Narrative Engine for Igor, an AI agent. Your job: make sense of what Igor is experiencing.
 
 IDENTITY GUARD: The subject of all observations is IGOR (not "Claude", not "the AI", not "the model").
@@ -1292,7 +1303,7 @@ LAST NARRATIVE:
 
 TRAVERSAL STATE (#236):
 {cursor_ctx}
-{watch_block}
+{watch_block}{playbook_block}
 CURRENT TWM OBSERVATIONS (✓=integrated, ·=new):
 {obs_text}
 
