@@ -585,6 +585,19 @@ def pe_read_ticket(basket: dict) -> dict:
     basket["ticket_title"] = ticket.get("title", "")
     basket["plan_files"] = ticket.get("required_files") or []
 
+    # Abort before SITUATE when description is absent — prevents title-semantic hallucination
+    _desc = basket["ticket_description"].strip()
+    _title = basket.get("ticket_title", "").strip()
+    if len(_desc) < 50 or _desc == _title:
+        basket["error"] = (
+            f"pe_read_ticket: {ticket_id} has no description "
+            f"(len={len(_desc)}) — add Affected files + scope before Igor can plan this"
+        )
+        log.info(
+            "READ_TICKET: %s aborted — description absent or title-only", ticket_id
+        )
+        return basket
+
     # D333: load CC-approved plan if present (D331 escalation → approval flow)
     # Only load approved_plan if it is valid JSON with edit structure. Prose
     # approved_plan is an escalation artifact written by cmd_approve copying
