@@ -269,6 +269,13 @@ class COA(IgorBase):
                         )
                 except Exception as _ann_e:
                     log_error(kind="PURPOSE_ANNOTATOR", detail=f"coa.py: {_ann_e}")
+                # Scan watch_problems for incoming levers (D-escalate-as-default-2026-05-10)
+                try:
+                    from .watch_problems import lever_watcher as _lever_watcher
+
+                    _lever_watcher()
+                except Exception as _lw_e:
+                    log_error(kind="LEVER_WATCHER", detail=f"coa.py: {_lw_e}")
                 try:
                     _exp_sched = getattr(igor, "_experiment_scheduler", None)
                     if _exp_sched is not None:
