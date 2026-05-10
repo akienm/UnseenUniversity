@@ -34,6 +34,8 @@ import threading
 import time
 from typing import TYPE_CHECKING, Any
 
+from ..igor_base import IgorBase
+
 if TYPE_CHECKING:
     from ..memory.cortex import Cortex
     from ..cognition.narrative_engine import NarrativeEngine as _NE
@@ -67,7 +69,7 @@ def _cpu_gate_ok() -> bool:
 # ------------------------------------------------------------------
 
 
-class COA:
+class COA(IgorBase):
     """Center of Attention — NE + TWM attentional unit for one cognitive focus."""
 
     def __init__(self, cortex: "Cortex", instance_id: str, igor: object) -> None:
