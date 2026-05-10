@@ -95,10 +95,26 @@ def test_escalate_creates_watch_entry(pg_test_schema):
 
 
 def test_lever_watcher_finds_match(wp):
-    wp.add_watch_problem(
+    import psycopg2, os
+
+    row_id = wp.add_watch_problem(
         problem="Igor stuck on fee schedule ticket",
         watch_condition="fee schedule billing invoice",
     )
+    # Pre-seed confidence to 0.65 so one match (0.1 increment) crosses the 0.7 threshold
+    conn = psycopg2.connect(
+        os.environ.get(
+            "IGOR_HOME_DB_URL",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        )
+    )
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE instance.watch_problems SET confidence_score = 0.65 WHERE id = %s",
+                (row_id,),
+            )
+    conn.close()
     fake_twm = [{"content_csb": "user mentioned fee schedule update for billing"}]
     count = wp.lever_watcher(recent_twm_rows=fake_twm)
     assert count >= 1
@@ -142,3 +158,116 @@ def test_lever_watcher_dedup_24h(wp):
     fake_twm = [{"content_csb": "recent surface test keywords match found here"}]
     count = wp.lever_watcher(recent_twm_rows=fake_twm)
     assert count == 0
+
+
+def test_confidence_accumulates_toward_threshold(wp):
+    """Three keyword matches increment confidence_score toward 0.3."""
+    import psycopg2, os
+
+    row_id = wp.add_watch_problem(
+        problem="Pattern accumulating confidence",
+        watch_condition="alpha bravo charlie delta",
+    )
+    fake_twm = [{"content_csb": "alpha bravo charlie delta text here"}]
+    for _ in range(3):
+        wp.lever_watcher(recent_twm_rows=fake_twm)
+
+    conn = psycopg2.connect(
+        os.environ.get(
+            "IGOR_HOME_DB_URL",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        )
+    )
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT confidence_score FROM instance.watch_problems WHERE id = %s",
+            (row_id,),
+        )
+        row = cur.fetchone()
+    conn.close()
+    assert row is not None
+    assert abs(row[0] - 0.3) < 0.01
+
+
+def test_confidence_never_exceeds_one(wp):
+    """confidence_score is capped at 1.0; adding 0.1 to 0.95 yields 1.0, not 1.05."""
+    import psycopg2, os
+
+    row_id = wp.add_watch_problem(
+        problem="Confidence cap test",
+        watch_condition="echo foxtrot golf hotel",
+    )
+    # Pre-seed to 0.95 — one match should bring it to exactly 1.0, not 1.05
+    conn = psycopg2.connect(
+        os.environ.get(
+            "IGOR_HOME_DB_URL",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        )
+    )
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE instance.watch_problems SET confidence_score = 0.95 WHERE id = %s",
+                (row_id,),
+            )
+    conn.close()
+
+    fake_twm = [{"content_csb": "echo foxtrot golf hotel seen once"}]
+    wp.lever_watcher(recent_twm_rows=fake_twm)
+
+    conn = psycopg2.connect(
+        os.environ.get(
+            "IGOR_HOME_DB_URL",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        )
+    )
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT confidence_score FROM instance.watch_problems WHERE id = %s",
+            (row_id,),
+        )
+        row = cur.fetchone()
+    conn.close()
+    assert abs(row[0] - 1.0) < 0.001
+
+
+def test_no_match_cycle_applies_decay(wp):
+    """A no-match cycle decays confidence_score by IGOR_WATCH_CONFIDENCE_DECAY (0.95)."""
+    import psycopg2, os
+
+    row_id = wp.add_watch_problem(
+        problem="Decaying confidence problem",
+        watch_condition="india juliet kilo lima",
+    )
+    # Pre-seed confidence to 0.5
+    conn = psycopg2.connect(
+        os.environ.get(
+            "IGOR_HOME_DB_URL",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        )
+    )
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE instance.watch_problems SET confidence_score = 0.5 WHERE id = %s",
+                (row_id,),
+            )
+    conn.close()
+
+    # No-match cycle
+    wp.lever_watcher(recent_twm_rows=[{"content_csb": "nothing related here"}])
+
+    conn = psycopg2.connect(
+        os.environ.get(
+            "IGOR_HOME_DB_URL",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        )
+    )
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT confidence_score FROM instance.watch_problems WHERE id = %s",
+            (row_id,),
+        )
+        row = cur.fetchone()
+    conn.close()
+    assert abs(row[0] - 0.475) < 0.01  # 0.5 * 0.95
