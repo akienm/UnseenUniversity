@@ -596,6 +596,16 @@ def pe_read_ticket(basket: dict) -> dict:
         log.info(
             "READ_TICKET: %s aborted — description absent or title-only", ticket_id
         )
+        try:
+            _post_to_channel(
+                f"[pe_chain] ✗ {ticket_id}: can't plan — no description. "
+                f"Please add to the ticket: (1) what problem to solve, "
+                f"(2) Affected files, (3) scope boundary. "
+                f"Title was: '{_title[:60]}'",
+                dedup_key=f"no-desc-{ticket_id}",
+            )
+        except Exception:
+            pass
         return basket
 
     # D333: load CC-approved plan if present (D331 escalation → approval flow)
