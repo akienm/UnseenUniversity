@@ -47,8 +47,23 @@ CREATE TABLE IF NOT EXISTS instance.focus_state (
     committed_at        timestamptz,
     expires_at_cycle    int,
     ne_cycle_counter    int NOT NULL DEFAULT 0,
-    focus_history       jsonb NOT NULL DEFAULT '[]'::jsonb
+    focus_history       jsonb NOT NULL DEFAULT '[]'::jsonb,
+    task_boundary_at    timestamptz
 )
+"""
+
+# Migration: adds task_boundary_at to existing tables created before T-igor-ne-task-boundary.
+_MIGRATE_SQL = """
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='instance' AND table_name='focus_state'
+          AND column_name='task_boundary_at'
+    ) THEN
+        ALTER TABLE instance.focus_state ADD COLUMN task_boundary_at timestamptz;
+    END IF;
+END$$;
 """
 
 
@@ -64,6 +79,7 @@ def _ensure_table() -> None:
         with conn:
             with conn.cursor() as cur:
                 cur.execute(_CREATE_SQL)
+                cur.execute(_MIGRATE_SQL)
     finally:
         conn.close()
 
@@ -130,11 +146,15 @@ def update_from_activation(memory_id: str, score: float) -> None:
                 if len(history) > HISTORY_CAP:
                     history = history[-HISTORY_CAP:]
 
-                if current_id is None or score >= current_score * HYSTERESIS_FACTOR:
+                is_displacement = (
+                    current_id is None or score >= current_score * HYSTERESIS_FACTOR
+                )
+                if is_displacement:
                     cur.execute(
                         "UPDATE instance.focus_state "
                         "SET memory_id = %s, activation_score = %s, "
-                        "    status = 'candidate', focus_history = %s::jsonb "
+                        "    status = 'candidate', focus_history = %s::jsonb, "
+                        "    task_boundary_at = now() "
                         "WHERE id = 1",
                         (memory_id, score, json.dumps(history)),
                     )
@@ -195,6 +215,35 @@ def advance_cycle() -> bool:
         return expired
     finally:
         conn.close()
+
+
+def is_task_boundary(last_run_wall_ts: float) -> bool:
+    """Return True if focus was displaced (task_boundary_at) since last_run_wall_ts.
+
+    Called by NE before context assembly. When True, NE clears last_narrative to
+    start a fresh episodic window (task start vs. step continuation).
+    last_run_wall_ts is a Unix wall-clock float (time.time()).
+    """
+    row = get_focus()
+    if not row:
+        return False
+    tb = row.get("task_boundary_at")
+    if not tb:
+        return False
+    try:
+        from datetime import datetime, timezone
+
+        if not isinstance(tb, datetime):
+            ts_str = str(tb).strip()
+            if ts_str.endswith("Z"):
+                ts_str = ts_str[:-1] + "+00:00"
+            tb = datetime.fromisoformat(ts_str)
+        if tb.tzinfo is None:
+            tb = tb.replace(tzinfo=timezone.utc)
+        boundary_unix = tb.timestamp()
+    except Exception:
+        return False
+    return boundary_unix > last_run_wall_ts
 
 
 def reset_focus() -> None:

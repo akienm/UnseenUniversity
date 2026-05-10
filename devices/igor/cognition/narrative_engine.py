@@ -616,6 +616,18 @@ class NarrativeEngine(IgorBase):
         obs_text = self._format_obs_csb(obs_list)
         last_narrative = self._get_last_narrative()
 
+        # Task boundary check (T-igor-ne-task-boundary): if focus displaced since last
+        # NE run, treat as task start — clear episodic context for a fresh window.
+        try:
+            import time as _time
+            from .focus_state import is_task_boundary as _is_task_boundary
+
+            if _is_task_boundary(getattr(self, "_last_run_wall_ts", 0.0)):
+                last_narrative = ""
+        except Exception:
+            pass
+        self._last_run_wall_ts = __import__("time").time()
+
         prompt = self._build_prompt(obs_text, last_narrative)
 
         # Watermark for cache invalidation — max obs id already in hand

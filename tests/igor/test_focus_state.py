@@ -97,3 +97,69 @@ def test_reset_focus_clears_row(fs):
     assert fs.get_focus() is not None
     fs.reset_focus()
     assert fs.get_focus() is None
+
+
+def test_displacement_sets_task_boundary_at(fs):
+    """Displacing focus (score >= 1.2×) sets task_boundary_at."""
+    import time
+
+    fs.update_from_activation("MEM_P", 1.0)
+    before = time.time()
+    fs.update_from_activation("MEM_Q", 1.2)  # displaces
+    row = fs.get_focus()
+    assert row["task_boundary_at"] is not None
+    # boundary_at is after the displacement call
+    tb = row["task_boundary_at"]
+    if hasattr(tb, "timestamp"):
+        boundary_ts = tb.timestamp()
+    else:
+        from datetime import datetime, timezone
+
+        boundary_ts = datetime.fromisoformat(str(tb).replace("Z", "+00:00")).timestamp()
+    assert boundary_ts >= before
+
+
+def test_no_displacement_does_not_set_task_boundary(fs):
+    """Below-hysteresis update does NOT set task_boundary_at."""
+    fs.update_from_activation("MEM_R", 1.0)
+    # Clear any task_boundary_at from insert
+    import psycopg2, os
+
+    conn = psycopg2.connect(
+        os.environ.get(
+            "IGOR_HOME_DB_URL",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        )
+    )
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE instance.focus_state SET task_boundary_at = NULL WHERE id = 1"
+            )
+    conn.close()
+
+    fs.update_from_activation("MEM_S", 1.19)  # below 1.2× threshold
+    row = fs.get_focus()
+    assert row["task_boundary_at"] is None
+    assert row["memory_id"] == "MEM_R"  # not displaced
+
+
+def test_is_task_boundary_detects_recent_displacement(fs):
+    """is_task_boundary() returns True when task_boundary_at > last_run_ts."""
+    import time
+
+    fs.update_from_activation("MEM_T", 1.0)
+    # Record time before displacement
+    ts_before = time.time() - 1  # slightly in the past
+    fs.update_from_activation("MEM_U", 1.2)  # displaces, sets task_boundary_at = now
+    assert fs.is_task_boundary(ts_before) is True
+
+
+def test_is_task_boundary_false_for_old_boundary(fs):
+    """is_task_boundary() returns False when last_run_ts is after task_boundary_at."""
+    import time
+
+    fs.update_from_activation("MEM_V", 1.0)
+    fs.update_from_activation("MEM_W", 1.2)  # displaces
+    ts_after = time.time() + 1  # in the future relative to boundary
+    assert fs.is_task_boundary(ts_after) is False
