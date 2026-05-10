@@ -273,3 +273,95 @@ def test_dispatch_unknown_returns_none():
     from agent_datacenter.devices.librarian.tools.curation_tools import dispatch
 
     assert dispatch("not_a_curation_tool", {}) is None
+
+
+# ── Focus quality log ─────────────────────────────────────────────────────────
+
+
+def _seed_quality_log(
+    memory_id: str, was_loaded: bool, was_used: bool, contribution: float = 0.0
+):
+    conn = _pg()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO instance.focus_quality_log "
+                    "(memory_id, was_loaded, was_used, contribution_score) "
+                    "VALUES (%s, %s, %s, %s)",
+                    (memory_id, was_loaded, was_used, contribution),
+                )
+    finally:
+        conn.close()
+
+
+@pytest.fixture(autouse=True)
+def _clean_quality_log():
+    yield
+    conn = _pg()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "DELETE FROM instance.focus_quality_log WHERE memory_id LIKE 'TEST_%'"
+                )
+    except Exception:
+        pass
+    finally:
+        conn.close()
+
+
+def test_quality_log_in_schemas():
+    from agent_datacenter.devices.librarian.tools import SCHEMAS
+
+    names = {s["name"] for s in SCHEMAS}
+    assert "librarian_quality_log" in names
+
+
+def test_read_quality_log_empty():
+    """No rows for unknown memory → all zeros, not prune_candidate."""
+    from agent_datacenter.devices.librarian.tools.curation_tools import read_quality_log
+
+    result = read_quality_log("TEST_nonexistent_xyz")
+    assert result["loaded_count"] == 0
+    assert result["used_count"] == 0
+    assert result["prune_candidate"] is False
+
+
+def test_read_quality_log_loaded_and_used():
+    """5 loaded, 4 used → used_rate 80% → not prune_candidate."""
+    from agent_datacenter.devices.librarian.tools.curation_tools import read_quality_log
+
+    mem_id = _unique_id()
+    for _ in range(4):
+        _seed_quality_log(mem_id, was_loaded=True, was_used=True, contribution=0.8)
+    _seed_quality_log(mem_id, was_loaded=True, was_used=False, contribution=0.0)
+
+    result = read_quality_log(mem_id)
+    assert result["loaded_count"] == 5
+    assert result["used_count"] == 4
+    assert result["prune_candidate"] is False
+
+
+def test_read_quality_log_prune_candidate():
+    """5 loaded, 0 used → used_rate 0% → prune_candidate."""
+    from agent_datacenter.devices.librarian.tools.curation_tools import read_quality_log
+
+    mem_id = _unique_id()
+    for _ in range(5):
+        _seed_quality_log(mem_id, was_loaded=True, was_used=False, contribution=0.0)
+
+    result = read_quality_log(mem_id)
+    assert result["loaded_count"] == 5
+    assert result["used_count"] == 0
+    assert result["prune_candidate"] is True
+
+
+def test_dispatch_quality_log():
+    from agent_datacenter.devices.librarian.tools import dispatch
+
+    result_str = dispatch("librarian_quality_log", {"memory_id": "TEST_dispatch_check"})
+    assert result_str is not None
+    result = json.loads(result_str)
+    assert "prune_candidate" in result
+    assert result["memory_id"] == "TEST_dispatch_check"

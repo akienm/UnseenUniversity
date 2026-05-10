@@ -25,6 +25,18 @@ _PG_URL = os.environ.get(
 _LOG_ROOT = Path(os.environ.get("ADC_LOG_ROOT", "datacenter_logs"))
 _CURATION_LOG = _LOG_ROOT / "librarian" / "curation.jsonl"
 
+_FOCUS_QUALITY_LOG_DDL = """
+CREATE TABLE IF NOT EXISTS instance.focus_quality_log (
+    id                  serial PRIMARY KEY,
+    ne_cycle_ts         timestamptz NOT NULL DEFAULT now(),
+    memory_id           text NOT NULL,
+    was_loaded          bool NOT NULL DEFAULT false,
+    was_used            bool NOT NULL DEFAULT false,
+    contribution_score  float NOT NULL DEFAULT 0.0,
+    logged_at           timestamptz NOT NULL DEFAULT now()
+)
+"""
+
 _PROPOSALS_DDL = """
 CREATE TABLE IF NOT EXISTS instance.proposals (
     id                  serial PRIMARY KEY,
@@ -45,6 +57,28 @@ CREATE TABLE IF NOT EXISTS instance.proposals (
 """
 
 SCHEMAS = [
+    {
+        "name": "librarian_quality_log",
+        "description": (
+            "Read focus_quality_log stats for a memory. Returns was_loaded count, "
+            "was_used count, avg contribution_score, and a prune_candidate flag "
+            "(loaded frequently but rarely used)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "memory_id": {
+                    "type": "string",
+                    "description": "Memory ID to query",
+                },
+                "days": {
+                    "type": "integer",
+                    "description": "Lookback window in days (default 30)",
+                },
+            },
+            "required": ["memory_id"],
+        },
+    },
     {
         "name": "librarian_curate",
         "description": (
@@ -75,6 +109,11 @@ def _conn():
     import psycopg2
 
     return psycopg2.connect(_PG_URL)
+
+
+def _ensure_focus_quality_log(conn) -> None:
+    with conn.cursor() as cur:
+        cur.execute(_FOCUS_QUALITY_LOG_DDL)
 
 
 def _ensure_proposals(conn) -> None:
@@ -259,10 +298,53 @@ def run_curation(stale_days: int = 30, dry_run: bool = False) -> dict:
         conn.close()
 
 
+def read_quality_log(memory_id: str, days: int = 30) -> dict:
+    """Return contribution stats for memory_id from focus_quality_log.
+
+    Returns: {memory_id, loaded_count, used_count, avg_contribution_score,
+              prune_candidate (loaded ≥5 times but used <20% of the time)}
+    """
+    conn = _conn()
+    try:
+        with conn:
+            _ensure_focus_quality_log(conn)
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    COUNT(*) FILTER (WHERE was_loaded)        AS loaded_count,
+                    COUNT(*) FILTER (WHERE was_used)          AS used_count,
+                    COALESCE(AVG(contribution_score), 0.0)    AS avg_score
+                FROM instance.focus_quality_log
+                WHERE memory_id = %s
+                  AND ne_cycle_ts >= now() - (%s || ' days')::interval
+                """,
+                (memory_id, str(days)),
+            )
+            row = cur.fetchone()
+        loaded, used, avg_score = row
+        prune_candidate = (loaded >= 5) and (used / loaded < 0.2 if loaded else False)
+        return {
+            "memory_id": memory_id,
+            "days": days,
+            "loaded_count": loaded,
+            "used_count": used,
+            "avg_contribution_score": float(avg_score),
+            "prune_candidate": prune_candidate,
+        }
+    finally:
+        conn.close()
+
+
 def dispatch(name: str, args: dict) -> str | None:
-    if name != "librarian_curate":
-        return None
-    stale_days = int(args.get("stale_days", 30))
-    dry_run = bool(args.get("dry_run", False))
-    result = run_curation(stale_days=stale_days, dry_run=dry_run)
-    return json.dumps(result, indent=2)
+    if name == "librarian_quality_log":
+        memory_id = args.get("memory_id", "")
+        days = int(args.get("days", 30))
+        result = read_quality_log(memory_id, days=days)
+        return json.dumps(result, indent=2)
+    if name == "librarian_curate":
+        stale_days = int(args.get("stale_days", 30))
+        dry_run = bool(args.get("dry_run", False))
+        result = run_curation(stale_days=stale_days, dry_run=dry_run)
+        return json.dumps(result, indent=2)
+    return None
