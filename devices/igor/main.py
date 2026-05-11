@@ -4173,6 +4173,20 @@ class Igor(IgorBase):
                     log_error(
                         kind="BARE_EXCEPT", detail=f"wild_igor/igor/main.py: {_bare_e}"
                     )
+                # Gateway failed — try distributed preparse router (T-wire-graph-preparse-pipeline)
+                try:
+                    from .cognition.preparse_router import route_preparse
+                    from lab.utility_closet.machine_manager import get_ranked_machines
+
+                    _machines = [m.hostname for m in get_ranked_machines()]
+                    _rr = route_preparse(_preparse_input, machines=_machines)
+                    if _rr.merged_csb and "[PARSED_INPUT]" in _rr.merged_csb:
+                        return _rr.merged_csb.strip()
+                except Exception as _r_e:
+                    log_error(
+                        kind="BARE_EXCEPT",
+                        detail=f"wild_igor/igor/main.py preparse_router: {_r_e}",
+                    )
                 return _rule_based_csb(_preparse_input, habits)
 
             # #50: include NE predicted search keys in memory retrieval query
