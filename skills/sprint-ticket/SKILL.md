@@ -69,6 +69,12 @@ When the plan touches a HIGH-inertia file, always pause and surface it to
 Akien for inline pre-approval before coding. Stamp the approval into the
 ticket body so it survives compaction.
 
+For L/XL or HIGH-inertia tickets: before finalizing the plan, ultrathink —
+reason deeply about what could go wrong, what constraints are hidden, whether
+the scope is truly minimal, and whether the affected files list is complete.
+Do not proceed to Step 5 (infrastructure brief) until the ultrathink pass is
+complete and the plan survives scrutiny.
+
 ### 5. Infrastructure brief (D-scaffold-not-correct-2026-04-21)
 
 After the inertia check, surface a one-screen infrastructure brief for the
