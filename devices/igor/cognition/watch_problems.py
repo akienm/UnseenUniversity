@@ -29,7 +29,7 @@ import psycopg2.extras
 
 log = logging.getLogger(__name__)
 
-_TABLE = "instance.watch_problems"
+_TABLE = "watch_problems"
 _CREATE_SQL = f"""
 CREATE TABLE IF NOT EXISTS {_TABLE} (
     id               SERIAL PRIMARY KEY,
@@ -45,27 +45,9 @@ CREATE TABLE IF NOT EXISTS {_TABLE} (
 )
 """
 
-# Migration: adds confidence accumulator columns to existing tables.
 _MIGRATE_SQL = """
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_schema='instance' AND table_name='watch_problems'
-          AND column_name='confidence_score'
-    ) THEN
-        ALTER TABLE instance.watch_problems
-            ADD COLUMN confidence_score float NOT NULL DEFAULT 0.0;
-    END IF;
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_schema='instance' AND table_name='watch_problems'
-          AND column_name='last_evidenced_at'
-    ) THEN
-        ALTER TABLE instance.watch_problems
-            ADD COLUMN last_evidenced_at timestamptz;
-    END IF;
-END$$;
+ALTER TABLE watch_problems ADD COLUMN IF NOT EXISTS confidence_score float NOT NULL DEFAULT 0.0;
+ALTER TABLE watch_problems ADD COLUMN IF NOT EXISTS last_evidenced_at timestamptz;
 """
 
 _CONFIDENCE_THRESHOLD_DEFAULT = 0.7
@@ -77,7 +59,8 @@ def _conn() -> "psycopg2.connection":
         "IGOR_HOME_DB_URL",
         "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
     )
-    return psycopg2.connect(db_url)
+    search_path = os.environ.get("IGOR_LOCAL_SEARCH_PATH", "instance,infra,public")
+    return psycopg2.connect(db_url, options=f"-c search_path={search_path}")
 
 
 def _ensure_table(cur) -> None:
@@ -197,10 +180,10 @@ def lever_watcher(recent_twm_rows: list[dict] | None = None) -> int:
 
     now = datetime.now(timezone.utc)
     cutoff_24h = now - timedelta(hours=24)
-    surfaced = 0
 
+    # First pass: compute all updates (skip problems with no condition)
+    results = []  # (prob, new_confidence, had_match, matches)
     for prob in problems:
-        prob_id = prob["id"]
         condition = (prob.get("watch_condition") or "").lower()
         if not condition:
             continue
@@ -217,30 +200,35 @@ def lever_watcher(recent_twm_rows: list[dict] | None = None) -> int:
             if new_confidence < 0.01:
                 new_confidence = 0.0
 
-        # Persist updated confidence
-        try:
-            conn = _conn()
-            with conn:
-                with conn.cursor() as cur:
+        results.append((prob, new_confidence, had_match, matches))
+
+    # Second pass: batch all confidence UPDATEs in a single connection
+    try:
+        conn = _conn()
+        with conn:
+            with conn.cursor() as cur:
+                for prob, new_confidence, had_match, _ in results:
                     if had_match:
                         cur.execute(
                             f"UPDATE {_TABLE} SET confidence_score = %s, "
                             "last_evidenced_at = now() WHERE id = %s",
-                            (new_confidence, prob_id),
+                            (new_confidence, prob["id"]),
                         )
                     else:
                         cur.execute(
                             f"UPDATE {_TABLE} SET confidence_score = %s WHERE id = %s",
-                            (new_confidence, prob_id),
+                            (new_confidence, prob["id"]),
                         )
-            conn.close()
-        except Exception as _e:
-            log.warning("watch_problems.lever_watcher confidence update failed: %s", _e)
+        conn.close()
+    except Exception as _e:
+        log.warning("watch_problems.lever_watcher confidence update failed: %s", _e)
 
+    # Third pass: escalations for threshold-crossing problems
+    surfaced = 0
+    for prob, new_confidence, had_match, matches in results:
         if not had_match or new_confidence < threshold:
             continue
 
-        # Threshold crossed — check 24h dedup before escalating
         last = prob.get("last_surfaced_at")
         if last:
             if isinstance(last, str):
@@ -253,15 +241,18 @@ def lever_watcher(recent_twm_rows: list[dict] | None = None) -> int:
             if last and last > cutoff_24h:
                 continue
 
+        if not matches:
+            continue
+
         problem_text = prob.get("problem", "")[:80]
         snippet = _find_snippet(twm_text, matches[0])
         escalate_to_channel(
             f"[Watch list — elevated confidence={new_confidence:.2f}] "
             f"possible lever found: {problem_text} "
             f"— matched '{matches[0]}' in TWM: {snippet}",
-            dedup_key=f"watch-lever-{prob_id}",
+            dedup_key=f"watch-lever-{prob['id']}",
         )
-        mark_surfaced(prob_id)
+        mark_surfaced(prob["id"])
         surfaced += 1
 
     return surfaced
@@ -273,7 +264,7 @@ def _load_recent_twm(limit: int = 20) -> list[dict]:
         with conn:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                 cur.execute(
-                    "SELECT content_csb FROM instance.twm_observations "
+                    "SELECT content_csb FROM twm_observations "
                     "ORDER BY id DESC LIMIT %s",
                     (limit,),
                 )
