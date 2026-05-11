@@ -1,8 +1,8 @@
 #!/bin/bash
-# superclaude — Claude Code launcher with utility closet + fresh-install wizard
+# superclaude — Claude Code launcher with rack server + fresh-install wizard
 # Canonical home: agent_datacenter/bin/superclaude
-# D232: fresh-install wizard. D335: start utility closet before Claude Code.
-# Starts utility closet if not running, then launches Claude Code with all args forwarded.
+# D232: fresh-install wizard. D335: start rack server before Claude Code.
+# Starts rack server if not running, then launches Claude Code with all args forwarded.
 
 set -euo pipefail
 
@@ -111,9 +111,9 @@ require_api_key() {
     return 0
 }
 
-# ─ Utility closet (D335) ────────────────────────────────────────────────────
+# ─ Rack server (D335) ───────────────────────────────────────────────────────
 
-start_utility_closet() {
+start_rack_server() {
     local uc_dir="${CC_WORKFLOW_TOOLS:-${THEIGORS_DIR}/lab/claudecode}"
     local uc_server="${uc_dir}/utility_closet_server.py"
 
@@ -123,18 +123,18 @@ start_utility_closet() {
     fi
 
     if [[ ! -f "$VENV_PYTHON" ]]; then
-        echo "Warning: venv python not found at $VENV_PYTHON, skipping utility closet"
+        echo "Warning: venv python not found at $VENV_PYTHON, skipping rack server"
         return 0
     fi
 
     # Check if already running and healthy
     if "$VENV_PYTHON" "$uc_server" --check >/dev/null 2>&1; then
-        echo "Utility closet: running"
+        echo "Rack server: running"
         return 0
     fi
 
     # Not running or stalled — start it in background
-    echo "Utility closet: starting..."
+    echo "Rack server: starting..."
     nohup "$VENV_PYTHON" "$uc_server" >> "${IGOR_HOME}/logs/utility_closet.log" 2>&1 &
     disown
 
@@ -142,12 +142,12 @@ start_utility_closet() {
     for i in 1 2 3 4 5; do
         sleep 1
         if "$VENV_PYTHON" "$uc_server" --check >/dev/null 2>&1; then
-            echo "Utility closet: started (pid $(cat "${IGOR_HOME}/utility_closet.pid" 2>/dev/null || echo '?'))"
+            echo "Rack server: started (pid $(cat "${IGOR_HOME}/utility_closet.pid" 2>/dev/null || echo '?'))"
             return 0
         fi
     done
 
-    echo "Warning: utility closet did not start within 5s (continuing anyway)"
+    echo "Warning: rack server did not start within 5s (continuing anyway)"
     return 0
 }
 
@@ -159,8 +159,8 @@ require_api_key
 # Ensure logs directory exists
 mkdir -p "${IGOR_HOME}/logs"
 
-# Start utility closet if not already running (D335)
-start_utility_closet
+# Start rack server if not already running (D335)
+start_rack_server
 
 # Launch inside tmux so Claude Code inherits $TMUX and $TMUX_PANE.
 # This is REQUIRED for self-compaction via tmux send-keys to work —
