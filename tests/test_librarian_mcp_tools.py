@@ -129,6 +129,25 @@ class TestMemoryTools:
         result = memory_tools.memory_search("", pg_url="postgresql://fake/db")
         assert "No query terms" in result
 
+    def test_memory_search_uses_fts(self):
+        with patch("psycopg2.connect") as mock_connect:
+            conn = MagicMock()
+            conn.__enter__ = MagicMock(return_value=conn)
+            conn.__exit__ = MagicMock(return_value=False)
+            cursor = MagicMock()
+            cursor.__enter__ = MagicMock(return_value=cursor)
+            cursor.__exit__ = MagicMock(return_value=False)
+            cursor.fetchall.return_value = []
+            conn.cursor.return_value = cursor
+            mock_connect.return_value = conn
+            result = memory_tools.memory_search(
+                "session memory", pg_url="postgresql://fake/db"
+            )
+        assert "No memories found" in result
+        sql = cursor.execute.call_args[0][0]
+        assert "plainto_tsquery" in sql
+        assert "LIKE" not in sql
+
     def test_memory_get_not_found(self):
         with patch("psycopg2.connect") as mock_connect:
             conn = MagicMock()

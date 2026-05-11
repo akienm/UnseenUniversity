@@ -76,20 +76,21 @@ def _q(sql: str, params=(), pg_url: str = _PG_URL) -> list[dict]:
 def memory_search(
     query: str, limit: int = 10, memory_type: str | None = None, pg_url: str = _PG_URL
 ) -> str:
-    terms = query.lower().split()
-    if not terms:
+    query = query.strip()
+    if not query:
         return "No query terms provided."
-    conditions = " OR ".join(["LOWER(narrative) LIKE %s"] * len(terms))
-    params: list = [f"%{t}%" for t in terms]
+    params: list = [query]
     type_clause = ""
     if memory_type:
         type_clause = " AND memory_type = %s"
         params.append(memory_type.upper())
     params.append(limit)
     rows = _q(
-        f"SELECT id, memory_type, narrative, activation_count, metadata "
-        f"FROM memories WHERE ({conditions}){type_clause} "
-        f"ORDER BY activation_count DESC LIMIT %s",
+        "SELECT id, memory_type, narrative, activation_count, metadata "
+        "FROM memories "
+        "WHERE to_tsvector('english', narrative) @@ plainto_tsquery('english', %s)"
+        f"{type_clause} "
+        "ORDER BY activation_count DESC LIMIT %s",
         params,
         pg_url,
     )
