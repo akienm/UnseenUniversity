@@ -88,6 +88,49 @@ class TestResearchEngine:
         result = self.engine.research("query")
         assert result.tier == 1
 
+    def test_research_deep_fetches_sources(self):
+        def stub_fetch(url):
+            return f"doc content from {url}"
+
+        engine = ResearchEngine(llm_call=_stub_llm, fetch_fn=stub_fetch)
+        result = engine.research("psycopg2 execute", depth=0.8)
+        assert result.sources, "deep query should populate sources"
+        assert all(u.startswith("http") for u in result.sources)
+
+    def test_research_shallow_skips_fetch(self):
+        fetch_calls: list[str] = []
+
+        def stub_fetch(url):
+            fetch_calls.append(url)
+            return ""
+
+        engine = ResearchEngine(llm_call=_stub_llm, fetch_fn=stub_fetch)
+        engine.research("what is X?", depth=0.3)
+        assert not fetch_calls, "shallow query should not trigger fetch"
+
+    def test_research_fetch_failure_non_blocking(self):
+        def bad_fetch(url):
+            raise ConnectionError("unreachable")
+
+        engine = ResearchEngine(llm_call=_stub_llm, fetch_fn=bad_fetch)
+        result = engine.research("psycopg2 connect", depth=0.8)
+        assert result.sources == [], "failed fetch should leave sources empty"
+        assert result.answer, "LLM should still run after fetch failure"
+
+    def test_curated_source_index_has_required_entries(self):
+        from agent_datacenter.devices.librarian.sources import SOURCES, match_sources
+
+        all_text = " ".join(
+            s["description"].lower() + " " + s["url"].lower() for s in SOURCES
+        )
+        assert "anthropic" in all_text
+        assert "psycopg" in all_text
+        assert "python" in all_text
+
+        matches = match_sources("psycopg2 execute")
+        assert matches
+        assert any("psycopg" in m["url"] for m in matches)
+
 
 class TestResearchTools:
     def test_summarize_tool_returns_json(self):

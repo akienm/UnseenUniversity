@@ -22,6 +22,31 @@ from agent_datacenter.devices.librarian.inference import InferenceRouter, ModelS
 log = logging.getLogger(__name__)
 
 LLMCallable = Callable[[ModelSelection, str], str]
+FetchCallable = Callable[[str], str]
+
+
+# ── Default fetch backend ─────────────────────────────────────────────────────
+
+
+def _default_fetch(url: str) -> str:
+    """Fetch URL and return cleaned text content (max 4000 chars).
+
+    Strips HTML tags, collapses whitespace. Raises on network errors so
+    callers can log and continue with empty sources.
+    """
+    import html as _html
+    import re
+    import urllib.request
+
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "Mozilla/5.0 (compatible; LibrarianBot/1.0)"},
+    )
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        raw = resp.read().decode("utf-8", errors="replace")
+    stripped = re.sub(r"<[^>]+>", " ", raw)
+    collapsed = re.sub(r"\s+", " ", stripped).strip()
+    return _html.unescape(collapsed)[:4000]
 
 
 # ── Default LLM backend ───────────────────────────────────────────────────────
@@ -100,9 +125,11 @@ class ResearchEngine:
         self,
         router: InferenceRouter | None = None,
         llm_call: LLMCallable | None = None,
+        fetch_fn: FetchCallable | None = None,
     ) -> None:
         self._router = router or InferenceRouter()
         self._llm_call = llm_call or default_llm_call
+        self._fetch_fn = fetch_fn or _default_fetch
 
     def summarize(self, text: str, style: str = "brief") -> SummarizeResult:
         """Summarize text. style: 'brief' | 'detailed' | 'bullets'."""
@@ -181,7 +208,25 @@ class ResearchEngine:
         else:
             scope = "Survey multiple angles, perspectives, and subtopics."
 
-        prompt = f"{scope} {detail}\n\nQuestion: {query}"
+        # Fetch curated external docs for deep synthesis queries
+        sources: list[str] = []
+        doc_context = ""
+        if depth >= 0.6:
+            from .sources import match_sources
+
+            for source in match_sources(query):
+                try:
+                    text = self._fetch_fn(source["url"])
+                    doc_context += f"\n\n[{source['description']}]\n{text[:2000]}"
+                    sources.append(source["url"])
+                except Exception as exc:
+                    log.warning("fetch failed for %s: %s", source["url"], exc)
+
+        if doc_context:
+            prompt = f"{scope} {detail}\n\nReference material:{doc_context}\n\nQuestion: {query}"
+        else:
+            prompt = f"{scope} {detail}\n\nQuestion: {query}"
+
         selection = self._router.select(task_type="research")
         answer = self._llm_call(selection, prompt)
         return ResearchResult(
@@ -191,4 +236,5 @@ class ResearchEngine:
             answer=answer,
             model=selection.model,
             tier=selection.tier,
+            sources=sources,
         )
