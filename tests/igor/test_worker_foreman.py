@@ -230,16 +230,10 @@ class TestLaunchNextWorkerDispatch(unittest.TestCase):
         popen_instance.pid = 12345
         mock_popen.return_value = popen_instance
 
-        # Replace _QUEUE_PATH with a MagicMock so write_text is a no-op;
-        # PosixPath.write_text is read-only so patch.object can't target it.
-        fake_queue_path = MagicMock()
-        fake_queue_path.exists.return_value = False
-
         with (
             patch.object(wf, "_load_queue", return_value=tasks),
             patch.object(wf, "adopt_next_ticket", mock_adopt),
             patch.object(wf.subprocess, "Popen", mock_popen),
-            patch.object(wf, "_QUEUE_PATH", fake_queue_path),
         ):
             result = wf.launch_next_worker()
 

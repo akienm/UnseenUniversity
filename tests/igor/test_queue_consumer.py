@@ -14,17 +14,15 @@ Tests:
     - Returns skip message when queue is empty
     - Calls goal_adopt with correct ticket_id when no active goal + pending ticket
 
-No Postgres, no filesystem I/O — Cortex and open() are mocked.
+No Postgres, no filesystem I/O — Cortex and cc_queue.load_tasks are mocked.
 """
 
 from __future__ import annotations
 
-import json
 import sys
 import unittest
-from io import StringIO
 from pathlib import Path
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 # ── repo path ──────────────────────────────────────────────────────────────────
 
@@ -36,8 +34,8 @@ if str(_REPO) not in sys.path:
 
 _CORTEX_PATH = "wild_igor.igor.memory.cortex.Cortex"
 _MT_PATH = "wild_igor.igor.memory.models.MemoryType"
-# read_queue_top and adopt_top_queue_ticket open the queue file directly
-_OPEN_PATH = "builtins.open"
+# read_queue_top and adopt_top_queue_ticket now use cc_queue.load_tasks (Postgres)
+_LOAD_TASKS_PATH = "lab.claudecode.cc_queue.load_tasks"
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -67,10 +65,6 @@ def _make_goal(active: bool = True, source: str = "work ticket T-alpha") -> Magi
     return g
 
 
-def _queue_json(tickets: list[dict]) -> StringIO:
-    return StringIO(json.dumps(tickets))
-
-
 # ── read_queue_top tests ───────────────────────────────────────────────────────
 
 
@@ -79,11 +73,7 @@ class TestReadQueueTop(unittest.TestCase):
     def _call(self, tickets: list[dict]) -> str:
         from wild_igor.igor.tools.ops import read_queue_top
 
-        mock_file = MagicMock()
-        mock_file.__enter__ = lambda s: StringIO(json.dumps(tickets))
-        mock_file.__exit__ = MagicMock(return_value=False)
-
-        with patch(_OPEN_PATH, return_value=mock_file):
+        with patch(_LOAD_TASKS_PATH, return_value=tickets):
             return read_queue_top()
 
     def test_returns_top_pending_ticket(self):
@@ -138,11 +128,11 @@ class TestReadQueueTop(unittest.TestCase):
         result = self._call(tickets)
         self.assertIn("Do T-work", result)
 
-    def test_file_error_returns_error_string(self):
-        """Returns an error string if the queue file cannot be read."""
+    def test_load_error_returns_error_string(self):
+        """Returns an error string if cc_queue.load_tasks raises."""
         from wild_igor.igor.tools.ops import read_queue_top
 
-        with patch(_OPEN_PATH, side_effect=FileNotFoundError("no such file")):
+        with patch(_LOAD_TASKS_PATH, side_effect=Exception("db connection failed")):
             result = read_queue_top()
         self.assertIn("[read_queue_top] error", result)
 
@@ -170,16 +160,12 @@ class TestAdoptTopQueueTicket(unittest.TestCase):
         mock_mt = MagicMock()
         mock_mt.GOAL = "GOAL"
 
-        mock_file = MagicMock()
-        mock_file.__enter__ = lambda s: StringIO(json.dumps(tickets))
-        mock_file.__exit__ = MagicMock(return_value=False)
-
         mock_goal_adopt = MagicMock(return_value=mock_goal_adopt_return)
 
         with (
             patch(_CORTEX_PATH, return_value=mock_cortex),
             patch(_MT_PATH, mock_mt),
-            patch(_OPEN_PATH, return_value=mock_file),
+            patch(_LOAD_TASKS_PATH, return_value=tickets),
             patch("wild_igor.igor.tools.ops.goal_adopt", mock_goal_adopt),
         ):
             result = adopt_top_queue_ticket()

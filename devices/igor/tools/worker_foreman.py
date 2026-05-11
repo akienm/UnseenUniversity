@@ -24,16 +24,16 @@ from ..cognition.anticipation import (
     history_summary,
 )
 
-_QUEUE_PATH = paths().cc_channel / "queue.json"
 _WORKER_PIDS_PATH = paths().cc_channel / "worker_pids.json"
 _WORKER_PAUSED_FLAG = paths().instance / "worker_paused.flag"
 _CC_QUEUE_SCRIPT = Path.home() / "TheIgors" / "lab" / "claudecode" / "cc_queue.py"
 
 
 def _load_queue() -> list:
-    if not _QUEUE_PATH.exists():
-        return []
-    return json.loads(_QUEUE_PATH.read_text())
+    # T-cc-queue-drop-json-stage-b: canonical Postgres source (queue.json deleted)
+    from lab.claudecode import cc_queue as _cc_queue
+
+    return _cc_queue.load_tasks()
 
 
 def _now() -> str:
