@@ -2383,12 +2383,15 @@ class ProprioceptionSource(BasePushSource):
     """
 
     name = "proprioception"
-    CHECK_INTERVAL_SEC = 60
-    TOOL_SALIENCE = 0.35
-    TOOL_TTL_SEC = 120
+    # Slow heartbeat: tool set rarely changes; no need to refresh every minute.
+    # TTL (600s) > interval (300s) keeps nodes warm with a single set in flight.
+    CHECK_INTERVAL_SEC = 300
+    TOOL_SALIENCE = 0.08  # true background — below arousal suppression gate (0.3)
+    TOOL_TTL_SEC = 600
 
     def __init__(self):
         self._last_run: Optional[datetime] = None
+        self._last_node_ids: frozenset = frozenset()
 
     def push(self, cortex) -> list[int]:
         now = datetime.now()
@@ -2422,12 +2425,18 @@ class ProprioceptionSource(BasePushSource):
                     ).fetchall()
                 facia_nodes = [cortex._to_memory(r) for r in rows]
 
+            # Skip push when node set is unchanged — nodes still live in TWM within TTL.
+            node_ids = frozenset(n.id for n in facia_nodes)
+            if root_found and node_ids == self._last_node_ids:
+                return []
+            self._last_node_ids = node_ids
+
             # Push root node itself
             if root_found:
                 obs_id = cortex.twm_push(
                     source="proprioception",
                     content_csb=f"TOOL_REGISTRY_ROOT|{root.narrative[:120]}",
-                    salience=self.TOOL_SALIENCE + 0.05,
+                    salience=self.TOOL_SALIENCE + 0.02,
                     ttl_seconds=self.TOOL_TTL_SEC,
                     category="body.motor",
                     metadata={"node_id": root.id},
