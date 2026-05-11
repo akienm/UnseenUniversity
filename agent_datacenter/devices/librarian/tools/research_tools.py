@@ -28,7 +28,10 @@ SCHEMAS = [
         "name": "research",
         "description": (
             "Research a question or topic using the Librarian. "
-            "depth: 'shallow' (direct answer) or 'deep' (structured, thorough)."
+            "breadth 0.0-1.0: how wide to cast (0=single focused source, 1=broad survey). "
+            "depth 0.0-1.0: how deep per source (0=2-3 sentence summary, 1=full synthesis). "
+            "Canonical two-pass pattern: breadth=0.8,depth=0.2 for landscape survey; "
+            "breadth=0.1,depth=0.9 for deep synthesis on a specific target."
         ),
         "inputSchema": {
             "type": "object",
@@ -37,10 +40,13 @@ SCHEMAS = [
                     "type": "string",
                     "description": "Question or topic to research",
                 },
+                "breadth": {
+                    "type": "number",
+                    "description": "How wide to cast: 0.0 (single focused) to 1.0 (broad survey). Default 0.5.",
+                },
                 "depth": {
-                    "type": "string",
-                    "enum": ["shallow", "deep"],
-                    "description": "Research depth (default: shallow)",
+                    "type": "number",
+                    "description": "How deep per source: 0.0 (2-3 sentences) to 1.0 (full synthesis). Default 0.5.",
                 },
             },
             "required": ["query"],
@@ -85,12 +91,13 @@ def summarize(text: str, style: str = "brief") -> str:
     )
 
 
-def research(query: str, depth: str = "shallow") -> str:
-    result = _engine().research(query, depth=depth)
+def research(query: str, breadth: float = 0.5, depth: float = 0.5) -> str:
+    result = _engine().research(query, breadth=breadth, depth=depth)
     return json.dumps(
         {
             "answer": result.answer,
             "query": result.query,
+            "breadth": result.breadth,
             "depth": result.depth,
             "model": result.model,
             "tier": result.tier,
@@ -117,7 +124,7 @@ def dispatch(name: str, args: dict) -> str | None:
     if name == "summarize":
         return summarize(args["text"], args.get("style", "brief"))
     if name == "research":
-        return research(args["query"], args.get("depth", "shallow"))
+        return research(args["query"], args.get("breadth", 0.5), args.get("depth", 0.5))
     if name == "build_summary":
         return build_summary(args["topic"])
     return None

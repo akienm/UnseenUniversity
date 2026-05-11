@@ -43,17 +43,33 @@ class TestResearchEngine:
         result = self.engine.summarize(text)
         assert result.char_count_in == len(text)
 
-    def test_research_shallow_returns_result(self):
+    def test_research_default_returns_result(self):
         result = self.engine.research("what is IMAP IDLE?")
         assert isinstance(result, ResearchResult)
         assert result.answer
-        assert result.depth == "shallow"
+        assert result.depth == 0.5
+        assert result.breadth == 0.5
         assert result.query == "what is IMAP IDLE?"
 
-    def test_research_deep_returns_result(self):
-        result = self.engine.research("explain connection pooling", depth="deep")
-        assert result.depth == "deep"
+    def test_research_float_depth_and_breadth(self):
+        result = self.engine.research(
+            "explain connection pooling", breadth=0.1, depth=0.9
+        )
+        assert result.depth == 0.9
+        assert result.breadth == 0.1
         assert result.answer
+
+    def test_research_shim_shallow(self):
+        result = self.engine.research("what is X?", depth="shallow")
+        assert result.depth == 0.2
+
+    def test_research_shim_deep(self):
+        result = self.engine.research("what is X?", depth="deep")
+        assert result.depth == 0.8
+
+    def test_research_shim_unknown_raises(self):
+        with pytest.raises(ValueError, match="unknown depth string"):
+            self.engine.research("what is X?", depth="medium")
 
     def test_research_empty_raises(self):
         with pytest.raises(ValueError, match="non-empty"):
@@ -102,7 +118,7 @@ class TestResearchTools:
             "research",
             return_value=ResearchResult(
                 query="q",
-                depth="shallow",
+                depth=0.5,
                 answer="The answer.",
                 model="qwen2.5:32b",
                 tier=1,
@@ -111,6 +127,8 @@ class TestResearchTools:
             result = json.loads(research_tools.research("q"))
         assert result["answer"] == "The answer."
         assert "sources" in result
+        assert "breadth" in result
+        assert "depth" in result
 
     def test_dispatch_routes_summarize(self):
         from unittest.mock import patch

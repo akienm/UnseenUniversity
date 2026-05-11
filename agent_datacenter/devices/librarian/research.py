@@ -78,10 +78,11 @@ class SummarizeResult:
 @dataclass
 class ResearchResult:
     query: str
-    depth: str
+    depth: float
     answer: str
     model: str
     tier: int
+    breadth: float = 0.5
     sources: list[str] = field(default_factory=list)
 
 
@@ -127,14 +128,34 @@ class ResearchEngine:
             char_count_in=len(text),
         )
 
-    def research(self, query: str, depth: str = "shallow") -> ResearchResult:
-        """Research a query. depth: 'shallow' (direct answer) | 'deep' (multi-step)."""
+    def research(
+        self, query: str, breadth: float = 0.5, depth: float = 0.5
+    ) -> ResearchResult:
+        """Research a query.
+
+        breadth: 0.0 (single focused source) – 1.0 (broad multi-angle survey)
+        depth:   0.0 (2-3 sentence summary) – 1.0 (full synthesis with caveats)
+
+        Backward compat: depth='shallow' maps to 0.2, depth='deep' maps to 0.8.
+        """
         if not query or not query.strip():
             raise ValueError("research: query must be non-empty")
 
-        if depth == "deep":
-            return self._research_deep(query)
-        return self._research_shallow(query)
+        # Backward compat shim for legacy string callers
+        if isinstance(depth, str):
+            _map = {"shallow": 0.2, "deep": 0.8}
+            if depth not in _map:
+                raise ValueError(
+                    f"research: unknown depth string '{depth}'; use 0.0-1.0 float"
+                )
+            log.warning(
+                "research: depth='%s' is deprecated, use depth=%.1f", depth, _map[depth]
+            )
+            depth = _map[depth]
+
+        breadth = max(0.0, min(1.0, float(breadth)))
+        depth = max(0.0, min(1.0, float(depth)))
+        return self._research_unified(query, breadth, depth)
 
     def build_summary(self, topic: str) -> SummarizeResult:
         """Build a summary for a topic or ticket ID. Treated as a summarize call."""
@@ -143,36 +164,31 @@ class ResearchEngine:
 
     # ── Internal ──────────────────────────────────────────────────────────────
 
-    def _research_shallow(self, query: str) -> ResearchResult:
-        prompt = (
-            f"Answer the following question clearly and concisely. "
-            f"If you don't know, say so.\n\nQuestion: {query}"
-        )
-        selection = self._router.select(task_type="research")
-        answer = self._llm_call(selection, prompt)
-        return ResearchResult(
-            query=query,
-            depth="shallow",
-            answer=answer,
-            model=selection.model,
-            tier=selection.tier,
-        )
+    def _research_unified(
+        self, query: str, breadth: float, depth: float
+    ) -> ResearchResult:
+        if depth < 0.3:
+            detail = "Answer in 2-3 sentences."
+        elif depth < 0.7:
+            detail = "Provide a structured answer with context and key points."
+        else:
+            detail = "Provide a thorough answer with context, caveats, and examples."
 
-    def _research_deep(self, query: str) -> ResearchResult:
-        # Deep research: synthesize → answer. Full search+fetch requires external
-        # tools not yet wired; this provides the synthesis step.
-        prompt = (
-            f"Provide a thorough, structured answer to the following question. "
-            f"Include relevant context, caveats, and examples where helpful.\n\n"
-            f"Question: {query}"
-        )
+        if breadth < 0.3:
+            scope = "Focus on the single most direct answer."
+        elif breadth < 0.7:
+            scope = "Cover the main aspects of the topic."
+        else:
+            scope = "Survey multiple angles, perspectives, and subtopics."
+
+        prompt = f"{scope} {detail}\n\nQuestion: {query}"
         selection = self._router.select(task_type="research")
         answer = self._llm_call(selection, prompt)
         return ResearchResult(
             query=query,
-            depth="deep",
+            breadth=breadth,
+            depth=depth,
             answer=answer,
             model=selection.model,
             tier=selection.tier,
-            sources=[],  # populated when external search is wired
         )
