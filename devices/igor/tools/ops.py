@@ -626,13 +626,11 @@ def read_queue_top() -> str:
     Returns ticket id + title if found, or 'no pending tickets' if queue is empty.
     Used by PROC_QUEUE_DRAIN to pick the next ticket to work autonomously.
     """
-    import json as _json
-    from pathlib import Path as _Path
-
-    queue_file = _Path.home() / ".TheIgors" / "cc_channel" / "queue.json"
     try:
-        with open(queue_file) as f:
-            tasks = _json.load(f)
+        # T-cc-queue-drop-json-stage-b: canonical Postgres source
+        from lab.claudecode import cc_queue as _cc_queue
+
+        tasks = _cc_queue.load_tasks()
         pending = [
             t
             for t in tasks
@@ -667,8 +665,6 @@ def adopt_top_queue_ticket() -> str:
     try:
         from ..memory.cortex import Cortex as _Cortex
         from ..memory.models import MemoryType as _MT
-        import json as _json
-        from pathlib import Path as _Path
 
         # Check for active goals — don't pile on
         cortex = _Cortex(None)
@@ -678,17 +674,17 @@ def adopt_top_queue_ticket() -> str:
             task = active[0].metadata.get("source_message", active[0].narrative[:60])
             return f"[queue_drain] active goal already exists: {task[:80]} — skipping"
 
-        # Read top pending ticket
-        queue_file = _Path.home() / ".TheIgors" / "cc_channel" / "queue.json"
-        with open(queue_file) as f:
-            tasks = _json.load(f)
+        # Read top pending ticket — T-cc-queue-drop-json-stage-b: canonical Postgres
+        from lab.claudecode import cc_queue as _cc_queue
+
+        tasks = _cc_queue.load_tasks()
         pending = [
             t
             for t in tasks
             if t.get("status") == "pending"
             and t.get("worker") == "igor"
-            and not t.get("blocked_at")  # Don't re-adopt previously blocked tickets
-            and not t.get("gate")  # Skip gated tickets — gate must close first
+            and not t.get("blocked_at")
+            and not t.get("gate")
         ]
         if not pending:
             return "[queue_drain] no pending tickets — queue empty"
