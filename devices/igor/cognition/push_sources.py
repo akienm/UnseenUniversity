@@ -2755,40 +2755,40 @@ class StaleChatLogBackfiller(BasePushSource):
         try:
             import subprocess
 
-            # Default mode: refresh day-files touched by newest session (today).
+            # Use cc_log_stop_hook.py — scans all project dirs (not just TheIgors),
+            # so ADC-project CC sessions are included. export_chat.py only scanned
+            # the TheIgors project and smashed the log when ADC became primary.
             result = subprocess.run(
                 [
                     "python3",
-                    str(Path.home() / "TheIgors/lab/claudecode/export_chat.py"),
+                    str(Path.home() / "TheIgors/lab/claudecode/cc_log_stop_hook.py"),
                 ],
                 capture_output=True,
                 text=True,
                 timeout=60,
+                cwd=str(Path.home() / "dev/src/agent_datacenter"),
             )
 
             if result.returncode == 0:
-                # Count how many files were written (rough estimate from stderr/stdout)
-                output = result.stdout + result.stderr
-                if "wrote" in output.lower() or "appended" in output.lower():
-                    obs_id = cortex.twm_push(
-                        source=self.name,
-                        content_csb=(
-                            f"CHAT_LOG_EXPORT|status=success|timestamp={now.isoformat()}"
-                        ),
-                        salience=0.3,
-                        category="maintenance",
-                        ttl_seconds=3600,
-                    )
-                    if obs_id:
-                        ids.append(obs_id)
-                    cortex.write_ring(
-                        f"CHAT_LOG_EXPORT|status=success|ts={now.strftime('%Y-%m-%dT%H:%M')}",
-                        category="maintenance",
-                    )
+                obs_id = cortex.twm_push(
+                    source=self.name,
+                    content_csb=(
+                        f"CHAT_LOG_EXPORT|status=success|timestamp={now.isoformat()}"
+                    ),
+                    salience=0.3,
+                    category="maintenance",
+                    ttl_seconds=3600,
+                )
+                if obs_id:
+                    ids.append(obs_id)
+                cortex.write_ring(
+                    f"CHAT_LOG_EXPORT|status=success|ts={now.strftime('%Y-%m-%dT%H:%M')}",
+                    category="maintenance",
+                )
             else:
                 log_error(
                     kind="CHAT_LOG_EXPORT_FAIL",
-                    detail=f"export_chat.py failed: {result.stderr[:200]}",
+                    detail=f"cc_log_stop_hook.py failed: {result.stderr[:200]}",
                 )
 
         except Exception as _e:
