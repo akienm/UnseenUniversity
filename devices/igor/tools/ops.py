@@ -634,17 +634,18 @@ def read_queue_top() -> str:
         pending = [
             t
             for t in tasks
-            if t.get("status") == "pending" and t.get("worker") == "igor"
+            if t.get("status") == "sprint" and t.get("worker") == "igor"
         ]
         if not pending:
-            return "no pending tickets"
+            return "no sprint tickets"
 
         def _sort_prio(t):
             p = t.get("priority")
             try:
-                return (int(p), t.get("id", ""))
+                f = float(p)
+                return (-f if 0.0 < f <= 1.0 else f, t.get("id", ""))
             except (TypeError, ValueError):
-                return (99, t.get("id", ""))
+                return (0.5, t.get("id", ""))
 
         pending.sort(key=_sort_prio)
         top = pending[0]
@@ -692,9 +693,12 @@ def adopt_top_queue_ticket() -> str:
         def _sort_prio(t):
             p = t.get("priority")
             try:
-                return (-float(p), t.get("id", ""))
+                f = float(p)
+                # Float weights (0.0-1.0): higher = better → sort descending (-f)
+                # Integer ranks (>1): lower = better → sort ascending (f)
+                return (-f if 0.0 < f <= 1.0 else f, t.get("id", ""))
             except (TypeError, ValueError):
-                return (0.0, t.get("id", ""))
+                return (0.5, t.get("id", ""))
 
         pending.sort(key=_sort_prio)
         top = pending[0]

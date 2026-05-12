@@ -41,7 +41,7 @@ _LOAD_TASKS_PATH = "lab.claudecode.cc_queue.load_tasks"
 
 
 def _make_ticket(
-    id: str, priority: int = 5, status: str = "pending", worker: str = "igor"
+    id: str, priority: int = 5, status: str = "sprint", worker: str = "igor"
 ) -> dict:
     return {
         "id": id,
@@ -99,19 +99,19 @@ class TestReadQueueTop(unittest.TestCase):
     def test_no_pending_tickets_empty_queue(self):
         """Returns 'no pending tickets' when queue file is empty list."""
         result = self._call([])
-        self.assertEqual(result, "no pending tickets")
+        self.assertEqual(result, "no sprint tickets")
 
     def test_no_pending_tickets_all_done(self):
         """Returns 'no pending tickets' when all tickets are done."""
         tickets = [_make_ticket("T-done", status="done")]
         result = self._call(tickets)
-        self.assertEqual(result, "no pending tickets")
+        self.assertEqual(result, "no sprint tickets")
 
     def test_no_pending_tickets_wrong_worker(self):
         """Returns 'no pending tickets' when pending tickets belong to a different worker."""
         tickets = [_make_ticket("T-foreman", worker="foreman")]
         result = self._call(tickets)
-        self.assertEqual(result, "no pending tickets")
+        self.assertEqual(result, "no sprint tickets")
 
     def test_filters_non_igor_worker(self):
         """Only returns tickets with worker=='igor'."""
@@ -185,7 +185,7 @@ class TestAdoptTopQueueTicket(unittest.TestCase):
         """Returns skip message when no pending claude tickets exist."""
         result, mock_ga = self._call(tickets=[], active_goals=[])
 
-        self.assertIn("no pending tickets", result)
+        self.assertIn("no sprint tickets", result)
         mock_ga.assert_not_called()
 
     def test_skips_when_all_tickets_done(self):
@@ -193,7 +193,7 @@ class TestAdoptTopQueueTicket(unittest.TestCase):
         tickets = [_make_ticket("T-done", status="done")]
         result, mock_ga = self._call(tickets=tickets, active_goals=[])
 
-        self.assertIn("no pending tickets", result)
+        self.assertIn("no sprint tickets", result)
         mock_ga.assert_not_called()
 
     def test_adopts_top_ticket_when_no_active_goal(self):
