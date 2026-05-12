@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 import uuid
 from datetime import datetime, timezone, timedelta
 
@@ -30,6 +31,70 @@ import psycopg2.extras
 log = logging.getLogger(__name__)
 
 _TABLE = "watch_problems"
+
+# Minimum interval between lever_watcher scans — prevents flooding when NE
+# cycles fast on empty TWM (each NE cycle calls lever_watcher).
+_LEVER_WATCHER_MIN_INTERVAL_SEC = float(
+    os.environ.get("IGOR_LEVER_WATCHER_INTERVAL_SEC", "300")
+)
+_lever_watcher_last_run: float = 0.0
+
+# Stop words excluded from keyword matching — common English words that appear
+# in any TWM content and produce false lever hits.
+_LEVER_STOP: frozenset[str] = frozenset(
+    {
+        "recent",
+        "recently",
+        "surfaced",
+        "problem",
+        "found",
+        "possible",
+        "studies",
+        "observations",
+        "support",
+        "continue",
+        "information",
+        "this",
+        "that",
+        "with",
+        "from",
+        "have",
+        "been",
+        "were",
+        "they",
+        "some",
+        "more",
+        "about",
+        "into",
+        "just",
+        "also",
+        "when",
+        "then",
+        "which",
+        "their",
+        "there",
+        "could",
+        "would",
+        "should",
+        "other",
+        "each",
+        "time",
+        "will",
+        "even",
+        "over",
+        "such",
+        "here",
+        "well",
+        "using",
+        "used",
+        "being",
+        "these",
+        "those",
+        "make",
+        "made",
+    }
+)
+
 _CREATE_SQL = f"""
 CREATE TABLE IF NOT EXISTS {_TABLE} (
     id               SERIAL PRIMARY KEY,
@@ -159,7 +224,15 @@ def lever_watcher(recent_twm_rows: list[dict] | None = None) -> int:
     (default 0.7). Applies exponential decay on no-match cycles.
 
     Returns the count of problems escalated (threshold-crossing) this cycle.
+    Self-throttles to at most one full scan per _LEVER_WATCHER_MIN_INTERVAL_SEC
+    so NE empty-cycle bursts can't flood the channel.
     """
+    global _lever_watcher_last_run
+    now_mono = time.monotonic()
+    if now_mono - _lever_watcher_last_run < _LEVER_WATCHER_MIN_INTERVAL_SEC:
+        return 0
+    _lever_watcher_last_run = now_mono
+
     from .escalate import escalate_to_channel
 
     threshold = float(
@@ -188,7 +261,7 @@ def lever_watcher(recent_twm_rows: list[dict] | None = None) -> int:
         if not condition:
             continue
 
-        keywords = [w for w in condition.split() if len(w) > 3]
+        keywords = [w for w in condition.split() if len(w) > 4 and w not in _LEVER_STOP]
         matches = [kw for kw in keywords if kw in twm_text]
         had_match = len(matches) >= 2
 

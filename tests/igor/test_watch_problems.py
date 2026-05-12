@@ -23,6 +23,7 @@ def wp(pg_test_schema):
         pytest.skip("pg_test_schema not available")
     from wild_igor.igor.cognition import watch_problems
 
+    watch_problems._lever_watcher_last_run = 0.0
     return watch_problems
 
 
