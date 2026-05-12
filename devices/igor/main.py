@@ -64,6 +64,7 @@ from .cognition.multi_cloud import query_multiple, compare_responses
 from .cognition.relay import RelaySession, send_to_claude_code
 from .dashboard import terminal as dashboard
 from .web import server as web_server
+from .web.adc_shim import IgorADCShim
 from . import boot_check
 from .cognition.job_manager import JobManager
 from .paths import paths as _paths
@@ -733,6 +734,13 @@ class Igor(IgorBase):
         # Prevents fuzzy responses to messages queued during __init__.
         self._boot_ready: bool = False
         self._boot_orientation_scored: bool = False  # #112: score first response once
+
+        # Ensure ADC is up — auto-start if down (T-igor-adc-shim).
+        # ADC is a resident platform; Igor pings its /health and launches if needed.
+        adc_shim = IgorADCShim()
+        if not adc_shim.start():
+            log.error("ADC did not come up — web UI will be unavailable")
+            adc_shim.rollback()
 
         # Start the facade poll loop (drains web_server messages → incoming queue).
         # T-igor-network-remove: net_listener removed (Discord/Gmail inbound disabled
