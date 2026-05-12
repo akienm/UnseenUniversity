@@ -10,6 +10,14 @@ Usage in main.py:
     uc_client.push_stats(stats_dict)
     uc_client.send_message("hello", session_id="shared")
     uc_client.deregister()
+
+Restart detection (T-adc-registration-recovery):
+    After a successful register(), the client stores the server's started_at
+    epoch from /health. check_server_epoch() reads /health again and compares
+    started_at: if it changed, ADC restarted and registrations were wiped —
+    re-register() is called automatically. server.py _poll_loop calls this
+    every N polls so Igor and the Librarian reappear in the UI within seconds
+    of an ADC restart without any manual intervention.
 """
 
 import json
@@ -197,7 +205,9 @@ class UtilityClosetClient(IgorBase):
 
     def __init__(self):
         self._agent_id: Optional[str] = None
+        self._agent_capabilities: Optional[list] = None
         self._registered = False
+        self._server_started_at: Optional[str] = None  # epoch for restart detection
         self._stats_thread: Optional[threading.Thread] = None
         self._stats_interval: float = 5.0  # seconds between stats pushes
         self._stop_event = threading.Event()
@@ -244,11 +254,52 @@ class UtilityClosetClient(IgorBase):
 
         if result and result.get("status") == "ok":
             self._agent_id = agent_id
+            self._agent_capabilities = capabilities or []
             self._registered = True
+            # Store server epoch for restart detection (T-adc-registration-recovery)
+            health = _get("/health", timeout=3.0)
+            if health:
+                self._server_started_at = health.get("started_at") or health.get(
+                    "boot_ts"
+                )
             log.info("Registered with utility closet as '%s'", agent_id)
             return True
         else:
             log.warning("Failed to register with utility closet: %s", result)
+            return False
+
+    def check_server_epoch(self) -> bool:
+        """Check if ADC has restarted since last registration; re-register if so.
+
+        Returns True if a restart was detected (and re-registration was attempted),
+        False if epoch is unchanged or the check could not be completed.
+
+        Called periodically from server.py _poll_loop to recover silently from
+        ADC restarts that wipe all agent registrations (T-adc-registration-recovery).
+        """
+        if not self._registered or not self._agent_id:
+            return False
+        try:
+            health = _get("/health", timeout=3.0)
+            if not health:
+                return False  # ADC unreachable — can't compare
+            current_epoch = health.get("started_at") or health.get("boot_ts")
+            if not current_epoch or not self._server_started_at:
+                return False
+            if current_epoch == self._server_started_at:
+                return False  # same epoch — no restart
+            # Epoch changed: ADC restarted, our registration was lost
+            log.warning(
+                "ADC restart detected (was %s, now %s) — re-registering as '%s'",
+                self._server_started_at,
+                current_epoch,
+                self._agent_id,
+            )
+            self._registered = False  # force re-register path
+            self.register(self._agent_id, self._agent_capabilities or [])
+            return True
+        except Exception as e:
+            log.debug("check_server_epoch error (non-fatal): %s", e)
             return False
 
     def deregister(self) -> bool:

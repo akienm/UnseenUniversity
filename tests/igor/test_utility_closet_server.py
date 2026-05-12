@@ -183,6 +183,20 @@ class TestHealthEndpoint:
         assert "attached_agents" in data
         assert isinstance(data["attached_agents"], list)
 
+    def test_health_includes_started_at_epoch(self):
+        """started_at field enables restart detection in UtilityClosetClient."""
+        srv = _import_server()
+        from starlette.testclient import TestClient
+
+        app = srv._make_app()
+        client = TestClient(app)
+        response = client.get("/health")
+        data = response.json()
+        assert "started_at" in data
+        assert data["started_at"] is not None
+        # Value is a UTC ISO timestamp string
+        assert "T" in data["started_at"]
+
     def test_metrics_returns_data(self):
         srv = _import_server()
         from starlette.testclient import TestClient

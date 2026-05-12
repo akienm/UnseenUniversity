@@ -96,8 +96,11 @@ class TestDeregister:
     @patch("wild_igor.igor.web.utility_closet_client.urllib.request.urlopen")
     def test_deregister_success(self, mock_urlopen):
         mock_urlopen.side_effect = [
-            _mock_urlopen({"status": "ok"}),  # health
+            _mock_urlopen({"status": "ok"}),  # health (is_available)
             _mock_urlopen({"status": "ok", "agent_id": "igor"}),  # register
+            _mock_urlopen(
+                {"status": "ok", "started_at": "2026-01-01T00:00:00Z"}
+            ),  # epoch fetch
             _mock_urlopen({"status": "ok"}),  # deregister
         ]
         client = _make_client()
@@ -114,8 +117,11 @@ class TestDeregister:
         import urllib.error
 
         mock_urlopen.side_effect = [
-            _mock_urlopen({"status": "ok"}),  # health
+            _mock_urlopen({"status": "ok"}),  # health (is_available)
             _mock_urlopen({"status": "ok", "agent_id": "igor"}),  # register
+            _mock_urlopen(
+                {"status": "ok", "started_at": "2026-01-01T00:00:00Z"}
+            ),  # epoch fetch
             urllib.error.URLError("Connection refused"),  # deregister fails
         ]
         client = _make_client()
@@ -130,8 +136,11 @@ class TestPushStats:
     @patch("wild_igor.igor.web.utility_closet_client.urllib.request.urlopen")
     def test_push_stats_success(self, mock_urlopen):
         mock_urlopen.side_effect = [
-            _mock_urlopen({"status": "ok"}),  # health
+            _mock_urlopen({"status": "ok"}),  # health (is_available)
             _mock_urlopen({"status": "ok", "agent_id": "igor"}),  # register
+            _mock_urlopen(
+                {"status": "ok", "started_at": "2026-01-01T00:00:00Z"}
+            ),  # epoch fetch
             _mock_urlopen({"status": "ok"}),  # stats push
         ]
         client = _make_client()
@@ -149,8 +158,11 @@ class TestSendMessage:
     @patch("wild_igor.igor.web.utility_closet_client.urllib.request.urlopen")
     def test_send_message_success(self, mock_urlopen):
         mock_urlopen.side_effect = [
-            _mock_urlopen({"status": "ok"}),  # health
+            _mock_urlopen({"status": "ok"}),  # health (is_available)
             _mock_urlopen({"status": "ok", "agent_id": "igor"}),  # register
+            _mock_urlopen(
+                {"status": "ok", "started_at": "2026-01-01T00:00:00Z"}
+            ),  # epoch fetch
             _mock_urlopen({"status": "ok"}),  # send
         ]
         client = _make_client()
@@ -168,8 +180,11 @@ class TestPollMessages:
     @patch("wild_igor.igor.web.utility_closet_client.urllib.request.urlopen")
     def test_poll_returns_messages(self, mock_urlopen):
         mock_urlopen.side_effect = [
-            _mock_urlopen({"status": "ok"}),  # health
+            _mock_urlopen({"status": "ok"}),  # health (is_available)
             _mock_urlopen({"status": "ok", "agent_id": "igor"}),  # register
+            _mock_urlopen(
+                {"status": "ok", "started_at": "2026-01-01T00:00:00Z"}
+            ),  # epoch fetch
             _mock_urlopen(
                 {
                     "messages": [
@@ -388,3 +403,80 @@ class TestSendMessageUsesTelemetry:
         args, kwargs = mock_tele.call_args
         assert kwargs.get("preview") == "hello world"
         assert kwargs.get("session_id") == "shared"
+
+
+class TestCheckServerEpoch:
+    """check_server_epoch() detects ADC restarts and re-registers."""
+
+    def _registered_client(self, mock_urlopen, epoch="2026-01-01T00:00:00Z"):
+        mock_urlopen.side_effect = [
+            _mock_urlopen({"status": "ok"}),  # health (is_available)
+            _mock_urlopen({"status": "ok", "agent_id": "igor"}),  # register POST
+            _mock_urlopen({"status": "ok", "started_at": epoch}),  # epoch fetch
+        ]
+        client = _make_client()
+        client.register("igor", capabilities=["chat"])
+        return client
+
+    def test_returns_false_when_not_registered(self):
+        client = _make_client()
+        assert client.check_server_epoch() is False
+
+    @patch("wild_igor.igor.web.utility_closet_client.urllib.request.urlopen")
+    def test_returns_false_when_health_unreachable(self, mock_urlopen):
+        import urllib.error
+
+        client = self._registered_client(mock_urlopen)
+        mock_urlopen.side_effect = urllib.error.URLError("connection refused")
+        assert client.check_server_epoch() is False
+
+    @patch("wild_igor.igor.web.utility_closet_client.urllib.request.urlopen")
+    def test_returns_false_when_epoch_unchanged(self, mock_urlopen):
+        epoch = "2026-01-01T00:00:00Z"
+        client = self._registered_client(mock_urlopen, epoch=epoch)
+        mock_urlopen.side_effect = [
+            _mock_urlopen({"status": "ok", "started_at": epoch}),
+        ]
+        assert client.check_server_epoch() is False
+        assert client.is_registered  # still registered
+
+    @patch("wild_igor.igor.web.utility_closet_client.urllib.request.urlopen")
+    def test_returns_true_and_reregisters_when_epoch_changes(self, mock_urlopen):
+        client = self._registered_client(mock_urlopen, epoch="2026-01-01T00:00:00Z")
+        # Epoch poll returns new epoch → restart detected → re-register sequence
+        mock_urlopen.side_effect = [
+            _mock_urlopen(
+                {"status": "ok", "started_at": "2026-06-01T12:00:00Z"}
+            ),  # epoch changed
+            _mock_urlopen({"status": "ok"}),  # is_available in re-register
+            _mock_urlopen({"status": "ok", "agent_id": "igor"}),  # register POST
+            _mock_urlopen(
+                {"status": "ok", "started_at": "2026-06-01T12:00:00Z"}
+            ),  # new epoch fetch
+        ]
+        result = client.check_server_epoch()
+        assert result is True
+        assert client.is_registered
+        assert client._server_started_at == "2026-06-01T12:00:00Z"
+
+    @patch("wild_igor.igor.web.utility_closet_client.urllib.request.urlopen")
+    def test_returns_false_when_no_stored_epoch(self, mock_urlopen):
+        """If register() couldn't fetch epoch (health returned no started_at), skip check."""
+        mock_urlopen.side_effect = [
+            _mock_urlopen({"status": "ok"}),  # health (is_available)
+            _mock_urlopen({"status": "ok", "agent_id": "igor"}),  # register POST
+            _mock_urlopen({"status": "ok"}),  # epoch fetch returns no started_at field
+        ]
+        client = _make_client()
+        client.register("igor")
+        assert client._server_started_at is None
+        mock_urlopen.side_effect = [
+            _mock_urlopen({"status": "ok", "started_at": "2026-01-01T00:00:00Z"}),
+        ]
+        assert client.check_server_epoch() is False  # no stored epoch to compare
+
+    @patch("wild_igor.igor.web.utility_closet_client.urllib.request.urlopen")
+    def test_handles_exception_gracefully(self, mock_urlopen):
+        client = self._registered_client(mock_urlopen)
+        mock_urlopen.side_effect = RuntimeError("unexpected")
+        assert client.check_server_epoch() is False  # must not raise
