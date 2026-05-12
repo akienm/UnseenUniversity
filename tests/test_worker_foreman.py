@@ -245,7 +245,7 @@ class TestLaunchNextWorkerDispatch(unittest.TestCase):
             {
                 "id": "T-igor-1",
                 "title": "small chore",
-                "status": "pending",
+                "status": "sprint",
                 "priority": 5,
                 "worker": "igor",
                 "tags": [],
@@ -263,7 +263,7 @@ class TestLaunchNextWorkerDispatch(unittest.TestCase):
             {
                 "id": "T-claude-1",
                 "title": "HIGH work",
-                "status": "pending",
+                "status": "sprint",
                 "priority": 5,
                 "worker": "claude",
                 "tags": ["HIGH"],
@@ -284,7 +284,7 @@ class TestLaunchNextWorkerDispatch(unittest.TestCase):
             {
                 "id": "T-nw-1",
                 "title": "legacy ticket",
-                "status": "pending",
+                "status": "sprint",
                 "priority": 5,
                 "tags": [],
                 # no 'worker' field at all
@@ -301,7 +301,7 @@ class TestLaunchNextWorkerDispatch(unittest.TestCase):
             {
                 "id": "T-lower-claude",
                 "title": "low priority claude work",
-                "status": "pending",
+                "status": "sprint",
                 "priority": 99,
                 "worker": "claude",
                 "tags": [],
@@ -309,7 +309,7 @@ class TestLaunchNextWorkerDispatch(unittest.TestCase):
             {
                 "id": "T-top-igor",
                 "title": "high priority igor work",
-                "status": "pending",
+                "status": "sprint",
                 "priority": 1,
                 "worker": "igor",
                 "tags": [],
