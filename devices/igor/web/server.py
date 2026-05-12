@@ -65,8 +65,12 @@ def _ts() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+_EPOCH_CHECK_INTERVAL = 10  # polls between ADC restart checks
+
+
 def _poll_loop():
     """Background: drain UC's poll endpoint into the incoming queue."""
+    poll_count = 0
     while not _poll_stop.is_set():
         try:
             if uc_client.is_registered:
@@ -82,6 +86,9 @@ def _poll_loop():
                             "client_id": m.get("client_id"),
                         }
                     )
+            poll_count += 1
+            if poll_count % _EPOCH_CHECK_INTERVAL == 0:
+                uc_client.check_server_epoch()
         except Exception as e:
             log.debug("uc poll error (non-fatal): %s", e)
         _poll_stop.wait(_POLL_INTERVAL)
