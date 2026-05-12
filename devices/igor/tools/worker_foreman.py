@@ -57,7 +57,7 @@ def _peek_next_pending_worker(tasks: list) -> str | None:
     mode-routing-2026-04-21 default — safer to surface to CC than silently
     adopt via Igor).
     """
-    pending = [t for t in tasks if t.get("status") == "pending"]
+    pending = [t for t in tasks if t.get("status") == "sprint"]
     if not pending:
         return None
     pending_sorted = sorted(
@@ -113,7 +113,7 @@ def launch_next_worker() -> str:
                 return f"worker already running: {ids} — waiting for completion signal"
             # Daemon is dead — reset stale in_progress claims so queue unblocks
             for t in in_progress:
-                t["status"] = "pending"
+                t["status"] = "sprint"
                 t.pop("claimed_at", None)
             # T-cc-queue-write-race: route through canonical cc_queue.save_tasks
             # (Postgres + queue.json echo). Previous direct write_text bypassed
@@ -122,12 +122,12 @@ def launch_next_worker() -> str:
 
             _cc_queue.save_tasks(tasks)
 
-        # Find next pending (skip blocked)
-        pending = [t for t in tasks if t["status"] == "pending"]
+        # Find next sprint-ready ticket (skip blocked/gated)
+        pending = [t for t in tasks if t["status"] == "sprint"]
         if not pending:
-            done = sum(1 for t in tasks if t["status"] == "done")
-            blocked = sum(1 for t in tasks if t["status"] == "blocked")
-            return f"queue clear — {done} done, {blocked} blocked, nothing pending"
+            done = sum(1 for t in tasks if t["status"] == "closed")
+            blocked = sum(1 for t in tasks if t["status"] == "hold")
+            return f"queue clear — {done} closed, {blocked} on hold, nothing to sprint"
 
         pending_sorted = sorted(
             pending,
@@ -262,7 +262,7 @@ def queue_pending_count() -> str:
     """
     try:
         tasks = _load_queue()
-        pending = sum(1 for t in tasks if t.get("status") == "pending")
+        pending = sum(1 for t in tasks if t.get("status") == "sprint")
         return f"pending={pending}"
     except Exception as e:
         return f"[ERROR] queue_pending_count: {e}"
@@ -287,9 +287,9 @@ def adopt_next_ticket() -> str:
         tasks = _load_queue()
         if not tasks:
             return "queue empty — nothing to adopt"
-        pending = [t for t in tasks if t.get("status") == "pending"]
+        pending = [t for t in tasks if t.get("status") == "sprint"]
         if not pending:
-            return "no pending tickets"
+            return "no sprint tickets"
         pending_sorted = sorted(
             pending,
             key=lambda t: weighted_ticket_score(
