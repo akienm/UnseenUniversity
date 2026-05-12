@@ -4,6 +4,8 @@ igor_base.py — Base class for all long-lived Igor components.
 Thin subclass of AgentBase (lab/utility_closet/agent_base.py) that adds:
   - log_dir defaulting to ~/.TheIgors/logs/ (via paths())
   - get_timer() on the logger (Igor-specific logging_setup integration)
+  - log_llm_io(step, prompt, response, model, elapsed_ms): flight-recorder LLM I/O logging
+  - log_state_snapshot(label, state): arbitrary state snapshots for post-mortem analysis
 
 All diagnostic capabilities (get_name, log, time_it, record_perf, dump,
 _get_caller) come from AgentBase. Existing subclasses (Cortex, Thalamus,
@@ -13,9 +15,11 @@ Pattern adapted from Akien's SWADLBase (swadl_base.py).
 T-uc-base-class-extract
 """
 
+import json as _json
 import logging
 import sys
-from typing import Optional
+from datetime import datetime
+from typing import Any, Dict, Optional
 
 from .paths import paths
 
@@ -86,3 +90,76 @@ class IgorBase(AgentBase):
             )
             self.__class__._logger = _igor_get_logger(_name)
         return self.__class__._logger
+
+    def log_llm_io(
+        self,
+        step: str,
+        prompt: str,
+        response: str,
+        model: str,
+        elapsed_ms: float,
+    ) -> None:
+        """
+        Log an LLM inference call to ~/.TheIgors/logs/llm_io/YYYYMMDD.log.
+
+        Fire-and-forget: catches all exceptions, never raises. Caps prompt at
+        16KB, response at 8KB to prevent unbounded log growth.
+
+        Args:
+            step: phase name (e.g., 'pe_plan', 'pe_situate')
+            prompt: the full prompt text sent to the LLM
+            response: the full response received
+            model: model identifier (e.g., 'claude-opus-4-6')
+            elapsed_ms: inference latency in milliseconds
+        """
+        try:
+            log_dir = paths().runtime / "logs" / "llm_io"
+            log_dir.mkdir(parents=True, exist_ok=True)
+
+            today = datetime.now().strftime("%Y%m%d")
+            path = log_dir / f"{today}.log"
+
+            entry = {
+                "ts": datetime.now().isoformat(),
+                "step": step,
+                "model": model,
+                "elapsed_ms": elapsed_ms,
+                "prompt_len": len(prompt),
+                "response_len": len(response),
+                "prompt": prompt[:16384],
+                "response": response[:8192],
+            }
+
+            with path.open("a", encoding="utf-8") as f:
+                f.write(_json.dumps(entry) + "\n")
+        except Exception as _e:
+            self.log.error("log_llm_io failed: %s", _e)
+
+    def log_state_snapshot(self, label: str, state: Dict[str, Any]) -> None:
+        """
+        Log an arbitrary state snapshot to ~/.TheIgors/logs/snapshots/YYYYMMDD.log.
+
+        Fire-and-forget: catches all exceptions, never raises. Useful for
+        basket-at-escalation captures or other post-mortem forensics.
+
+        Args:
+            label: snapshot context (e.g., 'escalation', 'pe_implement_before')
+            state: dict of state variables to snapshot
+        """
+        try:
+            log_dir = paths().runtime / "logs" / "snapshots"
+            log_dir.mkdir(parents=True, exist_ok=True)
+
+            today = datetime.now().strftime("%Y%m%d")
+            path = log_dir / f"{today}.log"
+
+            entry = {
+                "ts": datetime.now().isoformat(),
+                "label": label,
+                "state": state,
+            }
+
+            with path.open("a", encoding="utf-8") as f:
+                f.write(_json.dumps(entry) + "\n")
+        except Exception as _e:
+            self.log.error("log_state_snapshot failed: %s", _e)
