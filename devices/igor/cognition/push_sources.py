@@ -2730,9 +2730,9 @@ class StaleChatLogBackfiller(BasePushSource):
     """
     Keep today's CC chat mirror fresh under ~/.agent_datacenter/logs/CC.0/.
 
-    Runs export_chat.py with no --all flag every 5min — default mode refreshes
-    only day-files touched by the newest session (i.e. today). Historical
-    files are not rebuilt here; that's a /day-close concern.
+    Runs cc_log_stop_hook.py every 5min — scans all project dirs so ADC
+    sessions are included. Historical files are not rebuilt here; that's
+    a /day-close concern.
     """
 
     name = "stale_chat_log_backfiller"
