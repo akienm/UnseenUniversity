@@ -25,30 +25,30 @@ class TestGoalContinuationStep3TwmPush:
         The step 3 handler must call cortex.twm_push() with GOAL_READY signal.
         Inspects the source code rather than running live (avoids DB dependency).
         """
-        import wild_igor.igor.tools.goal_continuation as gc_mod
+        from wild_igor.igor.tools.goal_continuation import GoalContinuation
 
-        src = inspect.getsource(gc_mod.run_goal_continuation)
+        src = inspect.getsource(GoalContinuation.run_goal_continuation)
         assert "twm_push" in src, "step 3 must call cortex.twm_push()"
 
     def test_step3_twm_push_uses_goal_ready(self):
         """The twm_push in step 3 must push a GOAL_READY content_csb."""
-        import wild_igor.igor.tools.goal_continuation as gc_mod
+        from wild_igor.igor.tools.goal_continuation import GoalContinuation
 
-        src = inspect.getsource(gc_mod.run_goal_continuation)
+        src = inspect.getsource(GoalContinuation.run_goal_continuation)
         assert "GOAL_READY" in src, "twm_push content_csb must include GOAL_READY"
 
     def test_step3_twm_push_category_goal_ready(self):
         """The twm_push in step 3 must use category='goal_ready'."""
-        import wild_igor.igor.tools.goal_continuation as gc_mod
+        from wild_igor.igor.tools.goal_continuation import GoalContinuation
 
-        src = inspect.getsource(gc_mod.run_goal_continuation)
+        src = inspect.getsource(GoalContinuation.run_goal_continuation)
         assert "goal_ready" in src, "twm_push must use category='goal_ready'"
 
     def test_step3_twm_push_has_ttl(self):
         """The twm_push in step 3 must set a TTL (sprint must fire in window)."""
-        import wild_igor.igor.tools.goal_continuation as gc_mod
+        from wild_igor.igor.tools.goal_continuation import GoalContinuation
 
-        src = inspect.getsource(gc_mod.run_goal_continuation)
+        src = inspect.getsource(GoalContinuation.run_goal_continuation)
         assert "ttl_seconds" in src, "twm_push in step 3 must set ttl_seconds"
 
 

@@ -11,7 +11,6 @@ Ref: T-phase-d-canonical / Phase D ex4
 
 from __future__ import annotations
 
-import json
 import sys
 import unittest
 from pathlib import Path
@@ -48,7 +47,6 @@ def _make_goal(
 # via `from ..memory.cortex import Cortex as _Cortex` — patch the source.
 _CORTEX_PATH = "wild_igor.igor.memory.cortex.Cortex"
 _MT_PATH = "wild_igor.igor.memory.models.MemoryType"
-_HUMAN_GATE_PATH = "wild_igor.igor.tools.goal_continuation._is_human_recently_active"
 
 
 def _run_step(goal, bash_returns=None, ticket_data=None):
@@ -59,6 +57,7 @@ def _run_step(goal, bash_returns=None, ticket_data=None):
     Returns (result_str, posted_messages).
     """
     from wild_igor.igor.tools import goal_continuation as gc
+    from wild_igor.igor.tools.goal_continuation import GoalContinuation
 
     bash_iter = iter(bash_returns or [])
     posted = []
@@ -72,13 +71,13 @@ def _run_step(goal, bash_returns=None, ticket_data=None):
     with patch(_CORTEX_PATH, return_value=mock_cortex), patch(
         _MT_PATH, mock_mt
     ), patch.object(
-        gc, "_run_bash", side_effect=lambda _: next(bash_iter, "(no output)")
+        GoalContinuation,
+        "_run_bash",
+        side_effect=lambda _: next(bash_iter, "(no output)"),
     ), patch.object(
-        gc, "_load_ticket", return_value=ticket_data
+        GoalContinuation, "_load_ticket", return_value=ticket_data
     ), patch.object(
         gc, "_post_to_channel", side_effect=posted.append
-    ), patch(
-        _HUMAN_GATE_PATH, return_value=True
     ):
         result = gc.run_goal_continuation()
 
@@ -95,9 +94,7 @@ class TestGoalContinuationSteps(unittest.TestCase):
         mock_cortex.get_by_type.return_value = []
         mock_mt = MagicMock()
         mock_mt.GOAL = "GOAL"
-        with patch(_CORTEX_PATH, return_value=mock_cortex), patch(
-            _MT_PATH, mock_mt
-        ), patch(_HUMAN_GATE_PATH, return_value=True):
+        with patch(_CORTEX_PATH, return_value=mock_cortex), patch(_MT_PATH, mock_mt):
             result = gc.run_goal_continuation()
         self.assertIn("no active goals", result)
 
@@ -169,6 +166,7 @@ class TestGoalContinuationSteps(unittest.TestCase):
         """Step 2 skips (no bash call) when grep_for absent."""
         goal = _make_goal(step=2)  # no grep_for
         from wild_igor.igor.tools import goal_continuation as gc
+        from wild_igor.igor.tools.goal_continuation import GoalContinuation
 
         bash_called = []
 
@@ -180,11 +178,11 @@ class TestGoalContinuationSteps(unittest.TestCase):
         with patch(_CORTEX_PATH, return_value=mock_cortex), patch(
             _MT_PATH, mock_mt
         ), patch.object(
-            gc, "_run_bash", side_effect=lambda c: bash_called.append(c) or "(no)"
+            GoalContinuation,
+            "_run_bash",
+            side_effect=lambda c: bash_called.append(c) or "(no)",
         ), patch.object(
             gc, "_post_to_channel"
-        ), patch(
-            _HUMAN_GATE_PATH, return_value=True
         ):
             result = gc.run_goal_continuation()
 
@@ -216,6 +214,7 @@ class TestGoalContinuationSteps(unittest.TestCase):
         """Step 4+ with live GOAL_READY TWM entry: no-op LLM-territory path."""
         goal = _make_goal(step=4)
         from wild_igor.igor.tools import goal_continuation as gc
+        from wild_igor.igor.tools.goal_continuation import GoalContinuation
 
         posted = []
 
@@ -230,10 +229,8 @@ class TestGoalContinuationSteps(unittest.TestCase):
 
         with patch(_CORTEX_PATH, return_value=mock_cortex), patch(
             _MT_PATH, mock_mt
-        ), patch.object(gc, "_run_bash"), patch.object(
+        ), patch.object(GoalContinuation, "_run_bash"), patch.object(
             gc, "_post_to_channel", side_effect=posted.append
-        ), patch(
-            _HUMAN_GATE_PATH, return_value=True
         ):
             result = gc.run_goal_continuation()
 
@@ -247,6 +244,7 @@ class TestGoalContinuationSteps(unittest.TestCase):
         """Step 4 re-emits GOAL_READY when TWM has no live entry (restart recovery)."""
         goal = _make_goal(step=4)
         from wild_igor.igor.tools import goal_continuation as gc
+        from wild_igor.igor.tools.goal_continuation import GoalContinuation
 
         mock_cortex = MagicMock()
         mock_cortex.get_by_type.return_value = [goal]
@@ -256,8 +254,8 @@ class TestGoalContinuationSteps(unittest.TestCase):
 
         with patch(_CORTEX_PATH, return_value=mock_cortex), patch(
             _MT_PATH, mock_mt
-        ), patch.object(gc, "_run_bash"), patch.object(gc, "_post_to_channel"), patch(
-            _HUMAN_GATE_PATH, return_value=True
+        ), patch.object(GoalContinuation, "_run_bash"), patch.object(
+            gc, "_post_to_channel"
         ):
             result = gc.run_goal_continuation()
 
@@ -274,6 +272,7 @@ class TestGoalContinuationSteps(unittest.TestCase):
         """Re-emit fires if TWM has a goal_ready for a DIFFERENT ticket."""
         goal = _make_goal(step=4)
         from wild_igor.igor.tools import goal_continuation as gc
+        from wild_igor.igor.tools.goal_continuation import GoalContinuation
 
         mock_cortex = MagicMock()
         mock_cortex.get_by_type.return_value = [goal]
@@ -286,8 +285,8 @@ class TestGoalContinuationSteps(unittest.TestCase):
 
         with patch(_CORTEX_PATH, return_value=mock_cortex), patch(
             _MT_PATH, mock_mt
-        ), patch.object(gc, "_run_bash"), patch.object(gc, "_post_to_channel"), patch(
-            _HUMAN_GATE_PATH, return_value=True
+        ), patch.object(GoalContinuation, "_run_bash"), patch.object(
+            gc, "_post_to_channel"
         ):
             result = gc.run_goal_continuation()
 
@@ -301,6 +300,7 @@ class TestGoalContinuationSteps(unittest.TestCase):
         """
         goal = _make_goal(step=4)
         from wild_igor.igor.tools import goal_continuation as gc
+        from wild_igor.igor.tools.goal_continuation import GoalContinuation
 
         mock_cortex = MagicMock()
         mock_cortex.get_by_type.return_value = [goal]
@@ -312,9 +312,11 @@ class TestGoalContinuationSteps(unittest.TestCase):
 
         with patch(_CORTEX_PATH, return_value=mock_cortex), patch(
             _MT_PATH, mock_mt
-        ), patch.object(gc, "_run_bash"), patch.object(gc, "_post_to_channel"), patch(
-            _HUMAN_GATE_PATH, return_value=True
-        ), patch.object(gc, "_load_ticket", return_value=fake_ticket):
+        ), patch.object(GoalContinuation, "_run_bash"), patch.object(
+            gc, "_post_to_channel"
+        ), patch.object(
+            GoalContinuation, "_load_ticket", return_value=fake_ticket
+        ):
             result = gc.run_goal_continuation()
 
         self.assertIn("awaiting_approval", result)
@@ -324,6 +326,7 @@ class TestGoalContinuationSteps(unittest.TestCase):
         """Step 4 must NOT re-emit GOAL_READY when ticket is blocked."""
         goal = _make_goal(step=4)
         from wild_igor.igor.tools import goal_continuation as gc
+        from wild_igor.igor.tools.goal_continuation import GoalContinuation
 
         mock_cortex = MagicMock()
         mock_cortex.get_by_type.return_value = [goal]
@@ -335,9 +338,11 @@ class TestGoalContinuationSteps(unittest.TestCase):
 
         with patch(_CORTEX_PATH, return_value=mock_cortex), patch(
             _MT_PATH, mock_mt
-        ), patch.object(gc, "_run_bash"), patch.object(gc, "_post_to_channel"), patch(
-            _HUMAN_GATE_PATH, return_value=True
-        ), patch.object(gc, "_load_ticket", return_value=fake_ticket):
+        ), patch.object(GoalContinuation, "_run_bash"), patch.object(
+            gc, "_post_to_channel"
+        ), patch.object(
+            GoalContinuation, "_load_ticket", return_value=fake_ticket
+        ):
             result = gc.run_goal_continuation()
 
         self.assertIn("blocked", result)
@@ -347,6 +352,7 @@ class TestGoalContinuationSteps(unittest.TestCase):
         """Step 4 with no ticket_id in goal: safe no-op, no TWM calls."""
         goal = _make_goal(step=4, task="no ticket here just a question")
         from wild_igor.igor.tools import goal_continuation as gc
+        from wild_igor.igor.tools.goal_continuation import GoalContinuation
 
         mock_cortex = MagicMock()
         mock_cortex.get_by_type.return_value = [goal]
@@ -355,14 +361,30 @@ class TestGoalContinuationSteps(unittest.TestCase):
 
         with patch(_CORTEX_PATH, return_value=mock_cortex), patch(
             _MT_PATH, mock_mt
-        ), patch.object(gc, "_run_bash"), patch.object(gc, "_post_to_channel"), patch(
-            _HUMAN_GATE_PATH, return_value=True
+        ), patch.object(GoalContinuation, "_run_bash"), patch.object(
+            gc, "_post_to_channel"
         ):
             result = gc.run_goal_continuation()
 
         self.assertIn("LLM territory", result)
         mock_cortex.twm_read.assert_not_called()
         mock_cortex.twm_push.assert_not_called()
+
+    def test_run_bash_not_truncated_at_500_chars(self):
+        """_run_bash 2KB cap: a 600-char result is returned untruncated (old cap was 500)."""
+        from wild_igor.igor.tools.goal_continuation import GoalContinuation
+
+        gc_instance = GoalContinuation()
+        long_output = "x" * 600
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                stdout=long_output, stderr="", returncode=0
+            )
+            result = gc_instance._run_bash(["some", "cmd"])
+
+        self.assertEqual(len(result), 600)
+        self.assertNotEqual(len(result), 500)
 
 
 if __name__ == "__main__":
