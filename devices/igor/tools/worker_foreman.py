@@ -89,6 +89,20 @@ def launch_next_worker() -> str:
         # twice (adopt_next_ticket / goal_adopt does its own bookkeeping).
         worker = _peek_next_pending_worker(tasks)
         if worker == "igor":
+            # Check active GOAL — for igor tickets a GOAL memory IS the "daemon".
+            # Without this guard, PROC_WORKER_FOREMAN re-adopts every 2 minutes.
+            try:
+                from ..memory.cortex import Cortex as _Cortex
+                from ..memory.models import MemoryType as _MT
+
+                _cortex = _Cortex(None)
+                _goals = _cortex.get_by_type(_MT.GOAL)
+                _active = [g for g in _goals if g.metadata.get("goal_active")]
+                if _active:
+                    _tid = _active[0].metadata.get("source_message", "")[:60]
+                    return f"[foreman] igor goal already active: {_tid} — skipping"
+            except Exception:
+                pass
             return adopt_next_ticket()
 
         # If anything is in_progress, check if the daemon is alive.
@@ -284,6 +298,16 @@ def adopt_next_ticket() -> str:
     Returns a descriptive status string.
     """
     try:
+        from ..memory.cortex import Cortex as _Cortex
+        from ..memory.models import MemoryType as _MT
+
+        _cortex = _Cortex(None)
+        _goals = _cortex.get_by_type(_MT.GOAL)
+        _active = [g for g in _goals if g.metadata.get("goal_active")]
+        if _active:
+            _tid = _active[0].metadata.get("source_message", "")[:60]
+            return f"[adopt] active goal exists: {_tid} — skipping"
+
         tasks = _load_queue()
         if not tasks:
             return "queue empty — nothing to adopt"

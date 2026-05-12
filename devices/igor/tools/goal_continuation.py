@@ -62,13 +62,15 @@ def _run_bash(cmd: list) -> str:
 
 def _extract_ticket_id(source_message: str) -> str | None:
     """
-    Extract a ticket ID (T-xxx or T_xxx format) from the goal source_message.
+    Extract a ticket ID (T-xxx or GH-NNN format) from the goal source_message.
     Returns None if no ticket ID found.
     """
     import re
 
-    # Look for T-word patterns
     match = re.search(r"\b(T-[\w-]+)\b", source_message)
+    if match:
+        return match.group(1)
+    match = re.search(r"\b(GH-\d+)\b", source_message)
     if match:
         return match.group(1)
     return None
