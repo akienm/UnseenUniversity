@@ -681,20 +681,20 @@ def adopt_top_queue_ticket() -> str:
         pending = [
             t
             for t in tasks
-            if t.get("status") == "pending"
+            if t.get("status") == "sprint"
             and t.get("worker") == "igor"
             and not t.get("blocked_at")
             and not t.get("gate")
         ]
         if not pending:
-            return "[queue_drain] no pending tickets — queue empty"
+            return "[queue_drain] no sprint tickets — queue empty"
 
         def _sort_prio(t):
             p = t.get("priority")
             try:
-                return (int(p), t.get("id", ""))
+                return (-float(p), t.get("id", ""))
             except (TypeError, ValueError):
-                return (99, t.get("id", ""))
+                return (0.0, t.get("id", ""))
 
         pending.sort(key=_sort_prio)
         top = pending[0]
