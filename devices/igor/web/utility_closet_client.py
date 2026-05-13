@@ -237,6 +237,11 @@ class UtilityClosetClient(IgorBase):
         Returns True if registration succeeded, False otherwise.
         Non-blocking — logs warning on failure but does not raise.
         """
+        # Store intended credentials before the API call so check_server_epoch()
+        # can retry even if this call fails (e.g. ADC down at startup).
+        self._agent_id = agent_id
+        self._agent_capabilities = capabilities or []
+
         if not self.is_available():
             log.info(
                 "Utility closet not available — running without platform registration"
@@ -253,8 +258,6 @@ class UtilityClosetClient(IgorBase):
         )
 
         if result and result.get("status") == "ok":
-            self._agent_id = agent_id
-            self._agent_capabilities = capabilities or []
             self._registered = True
             # Store server epoch for restart detection (T-adc-registration-recovery)
             health = _get("/health", timeout=3.0)
@@ -277,9 +280,20 @@ class UtilityClosetClient(IgorBase):
         Called periodically from server.py _poll_loop to recover silently from
         ADC restarts that wipe all agent registrations (T-adc-registration-recovery).
         """
-        if not self._registered or not self._agent_id:
-            return False
+        if not self._agent_id:
+            return False  # never even attempted registration — nothing to retry
         try:
+            if not self._registered:
+                # Initial registration failed (ADC was down at startup). Retry now.
+                health = _get("/health", timeout=3.0)
+                if health:
+                    log.info(
+                        "ADC now reachable — retrying registration as '%s'",
+                        self._agent_id,
+                    )
+                    self.register(self._agent_id, self._agent_capabilities or [])
+                return True
+            # Already registered: check if ADC restarted (epoch changed = reg lost)
             health = _get("/health", timeout=3.0)
             if not health:
                 return False  # ADC unreachable — can't compare
@@ -288,7 +302,6 @@ class UtilityClosetClient(IgorBase):
                 return False
             if current_epoch == self._server_started_at:
                 return False  # same epoch — no restart
-            # Epoch changed: ADC restarted, our registration was lost
             log.warning(
                 "ADC restart detected (was %s, now %s) — re-registering as '%s'",
                 self._server_started_at,
