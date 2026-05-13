@@ -93,8 +93,7 @@ class TestPeChainDesignProposalPostsToInbox:
         ) as mock_cc_post, patch.object(pe_chain, "_post_to_channel"), patch.object(
             pe_chain, "_run_bash", return_value={"stdout": "", "stderr": "", "rc": 0}
         ):
-            pe_chain._pe_escalate(
-                basket,
+            pe_chain.PeChain(basket=basket)._pe_escalate(
                 reason="HIGH inertia write requires human approval: "
                 + real_high_inertia,
             )
@@ -127,7 +126,9 @@ class TestPeChainBlockPostsToInbox:
         ) as mock_cc_post, patch.object(pe_chain, "_post_to_channel"), patch.object(
             pe_chain, "_run_bash", return_value={"stdout": "", "stderr": "", "rc": 0}
         ):
-            pe_chain._pe_escalate(basket, reason="test-suite broken (unrelated)")
+            pe_chain.PeChain(basket=basket)._pe_escalate(
+                reason="test-suite broken (unrelated)"
+            )
 
         assert mock_cc_post.called
         _, kwargs = mock_cc_post.call_args
@@ -154,6 +155,8 @@ class TestPeChainBlockPostsToInbox:
             pe_chain, "_run_bash", return_value={"stdout": "", "stderr": "", "rc": 0}
         ):
             # Must complete without raising despite inbox failure
-            result = pe_chain._pe_escalate(basket, reason="test-suite unrelated")
+            result = pe_chain.PeChain(basket=basket)._pe_escalate(
+                reason="test-suite unrelated"
+            )
 
         assert result.get("escalate_reason") == "test-suite unrelated"

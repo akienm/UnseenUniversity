@@ -14,6 +14,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from wild_igor.igor.tools import pe_chain
 from wild_igor.igor.tools.pe_chain import (
     _MAX_ATTEMPTS,
     _CODE_EXPANSION,
@@ -23,7 +24,6 @@ from wild_igor.igor.tools.pe_chain import (
     _filter_high_inertia_not_in_description,
     _parse_file_list,
     _parse_hypothesis,
-    _pe_escalate,
     _situate_from_memory,
     _validate_hypothesis,
     pe_claim,
@@ -38,6 +38,32 @@ from wild_igor.igor.tools.pe_chain import (
     pe_test,
     run_pe_entry_chain,
 )
+
+
+def _pe_escalate(basket, reason):
+    """Test shim — _pe_escalate is now a PeChain method."""
+    return pe_chain.PeChain(basket=basket)._pe_escalate(reason)
+
+
+# ── PeChain method-patch side-effects (autospec=True passes `self`) ──────────
+
+
+def _fake_pe_test_pass(self, **_kw):
+    """Stand-in for PeChain.pe_test that marks the test result as 'pass'."""
+    self.basket["test_result"] = "pass"
+    return self.basket
+
+
+def _fake_pe_commit_ok(self):
+    """Stand-in for PeChain._pe_commit that sets a healthy commit_result."""
+    self.basket["commit_result"] = "ok"
+    return self.basket
+
+
+def _fake_pe_close_passthrough(self):
+    """Stand-in for PeChain._pe_close that returns the basket unchanged."""
+    return self.basket
+
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -241,15 +267,26 @@ class TestRunPeEntryChain:
                 Path(__file__).resolve().parent.parent,
             ),
             patch("wild_igor.igor.tools.pe_chain._post_to_channel"),
-            patch(
-                "wild_igor.igor.tools.pe_chain.pe_test",
-                side_effect=lambda b, **_: {**b, "test_result": "pass"},
+            # Now class methods; patch on PeChain. autospec=True so `self` is
+            # passed as the first arg — side effects mutate self.basket.
+            patch.object(
+                pe_chain.PeChain,
+                "pe_test",
+                autospec=True,
+                side_effect=_fake_pe_test_pass,
             ),
-            patch(
-                "wild_igor.igor.tools.pe_chain._pe_commit",
-                side_effect=lambda b: {**b, "commit_result": "ok"},
+            patch.object(
+                pe_chain.PeChain,
+                "_pe_commit",
+                autospec=True,
+                side_effect=_fake_pe_commit_ok,
             ),
-            patch("wild_igor.igor.tools.pe_chain._pe_close", side_effect=lambda b: b),
+            patch.object(
+                pe_chain.PeChain,
+                "_pe_close",
+                autospec=True,
+                side_effect=_fake_pe_close_passthrough,
+            ),
         ):
             result = run_pe_entry_chain({"ticket_id": "T-test-ticket"})
 
@@ -298,9 +335,11 @@ class TestRunPeEntryChain:
                 Path(__file__).resolve().parent.parent,
             ),
             patch("wild_igor.igor.tools.pe_chain._post_to_channel"),
-            patch(
-                "wild_igor.igor.tools.pe_chain.pe_test",
-                side_effect=lambda b, **_: {**b, "test_result": "pass"},
+            patch.object(
+                pe_chain.PeChain,
+                "pe_test",
+                autospec=True,
+                side_effect=_fake_pe_test_pass,
             ),
         ):
             result = run_pe_entry_chain({"ticket_id": "T-test-ticket"})
@@ -436,7 +475,7 @@ class TestPeSituate:
                 "wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT",
                 Path(__file__).resolve().parent.parent,
             ),
-            patch("wild_igor.igor.tools.pe_chain._maybe_consult_stuck"),
+            patch.object(pe_chain.PeChain, "_maybe_consult_stuck"),
         ):
             result = pe_situate(basket)
         assert result["situate_source"] == "empty"
