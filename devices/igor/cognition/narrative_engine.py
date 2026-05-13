@@ -11,8 +11,8 @@ fires to answer three questions:
   2. What does this mean for Igor's goals/state?
   3. What should Igor do?
 
-Output: a compressed narrative arc (always deterministic) + optional LTM
-promotions and action impulses (gated by IGOR_NE_LLM_ENABLED). NE is the
+Output: a compressed narrative arc (always deterministic) + LTM
+promotions and action impulses (via LLM inference). NE is the
 bridge between sensation and long-term consolidation — it fuses TWM +
 ring memory + active goals + affective state into a reasoner-ready
 context.
@@ -35,8 +35,7 @@ Entry: run() — main NE cycle.
      with "ACTION_IMPULSE|").
   2. Focus pass: compute co-activation across active slots (D099, D100).
   3. Build deterministic arc from top observations (zero inference).
-  4. Optionally call inference_gateway.call("ne", prompt, ctx) for LLM
-     synthesis (IGOR_NE_LLM_ENABLED).
+  4. Call inference_gateway.call("ne", prompt, ctx) for LLM synthesis.
   5. Promote high-importance candidates to LTM via cortex.store().
   6. Queue action impulses to TWM (source="narrative_engine",
      category="impulse").
@@ -67,11 +66,10 @@ bonus. Co-activation = how many TWM slots point to the same goal node.
 Shared goals amplify relative salience. Solo observations decay at 0.7.
 
 Deterministic arc (always built): top 6 observations deduplicated into a
-1-2 sentence summary written to ring_memory category="narrative". Runs
-even with the LLM gate off — arc is always current.
+1-2 sentence summary written to ring_memory category="narrative".
 
-Inference path (optional, IGOR_NE_LLM_ENABLED=true)
-───────────────────────────────────────────────────
+Inference path
+──────────────
 Builds a prompt from obs_text + last_narrative + cursor_context. Calls
 inference_gateway.call("ne", prompt, ctx) with ctx.is_background=True.
 Reasoning cache (D018): 12-min TTL + TWM watermark invalidation.
@@ -186,7 +184,7 @@ from ..memory.models import Memory, MemoryType
 from ..igor_base import IgorBase
 
 # ── Config ─────────────────────────────────────────────────────────────────────
-NE_MODEL = "ollama"  # label only; actual inference via OllamaReasoner in _call_local()
+NE_MODEL = "ollama"  # reasoning cache key (stable; do not change)
 NE_TRIGGER_OBS = 5  # Run if >= this many unintegrated obs
 NE_MIN_INTERVAL_SEC = (
     5  # Minimum seconds between NE runs (was 30 — cursor makes fast cycles safe)
@@ -674,28 +672,24 @@ class NarrativeEngine(IgorBase):
             self.log.info("[NE] arc: %s", _det_arc)
 
         # LLM path: LTM promotion + action impulses.
-        # Gated by IGOR_NE_LLM_ENABLED (default false — det arc sufficient for now).
         promoted, impulses, _pe_promoted_ids = 0, [], []
-        result = None
+        result = self._call_inference(prompt, max_twm_id)
+        if result is None:
+            if verbose:
+                print("[NE] LLM call failed — arc written, skipping promotion.")
+            try:
+                from .forensic_logger import log_anomaly as _la
 
-        if os.getenv("IGOR_NE_LLM_ENABLED", "false").lower() == "true":
-            result = self._call_inference(prompt, max_twm_id)
-            if result is None:
-                if verbose:
-                    print("[NE] LLM call failed — arc written, skipping promotion.")
-                try:
-                    from .forensic_logger import log_anomaly as _la
-
-                    _la(kind="NE_FAIL", detail="all_local_and_cloud_failed")
-                except Exception as _bare_e:
-                    log_error(
-                        kind="BARE_EXCEPT",
-                        detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
-                    )
-            else:
-                promoted, impulses, _pe_promoted_ids = self._apply_output(
-                    result, obs_list, verbose=verbose
+                _la(kind="NE_FAIL", detail="all_local_and_cloud_failed")
+            except Exception as _bare_e:
+                log_error(
+                    kind="BARE_EXCEPT",
+                    detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
                 )
+        else:
+            promoted, impulses, _pe_promoted_ids = self._apply_output(
+                result, obs_list, verbose=verbose
+            )
 
         # D228 step 2: prediction error → per-turn graph training
         if _pe_seed_ids and _pe_predicted_heat and _pe_promoted_ids:
