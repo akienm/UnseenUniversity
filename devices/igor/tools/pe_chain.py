@@ -173,6 +173,7 @@ import logging
 import os
 import re
 import subprocess
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -721,7 +722,11 @@ class PeChain(IgorBase):
             )
             self.log.info(f"PLAN: calling tier.2 for {ticket_id}")
             # Routes to cheap background tier (Qwen) — verified T-verify-pe-chain-qwen-tier
+            _t0 = time.monotonic()
             raw = _call_tier2(prompt, temperature=0.7)
+            self.log_llm_io(
+                "pe_plan", prompt, raw or "", "tier2", (time.monotonic() - _t0) * 1000.0
+            )
             if raw:
                 plan_summary = ""
                 test_criterion = ""
@@ -894,7 +899,11 @@ class PeChain(IgorBase):
         )
 
         # Temp 0.1: extraction task, not generation — reduces hallucination pressure.
+        _t0 = time.monotonic()
         raw = _call_tier2(prompt, temperature=0.1)
+        self.log_llm_io(
+            "pe_situate", prompt, raw or "", "tier2", (time.monotonic() - _t0) * 1000.0
+        )
         if raw:
             files = _parse_file_list(raw)
             filtered = _filter_high_inertia_not_in_description(files, description)
@@ -1200,7 +1209,15 @@ class PeChain(IgorBase):
             self.log.info(
                 f"HYPOTHESIZE: new-file path — target={target} prompt_len={len(create_prompt)}"
             )
+            _t0 = time.monotonic()
             raw = _call_tier2(create_prompt, temperature=0.2)
+            self.log_llm_io(
+                "pe_hypothesize",
+                create_prompt,
+                raw or "",
+                "tier2",
+                (time.monotonic() - _t0) * 1000.0,
+            )
             self.basket["hypothesis_raw"] = raw or ""
         else:
             # T-hypothesize-standards-injection: prepend coding standards for file-write tasks
@@ -1225,7 +1242,15 @@ class PeChain(IgorBase):
             self.log.info(f"HYPOTHESIZE: calling tier.2 prompt_len={len(prompt)}")
 
             # Routes to cheap background tier (Qwen) — verified T-verify-pe-chain-qwen-tier
+            _t0 = time.monotonic()
             raw = _call_tier2(prompt, temperature=0.2)
+            self.log_llm_io(
+                "pe_hypothesize",
+                prompt,
+                raw or "",
+                "tier2",
+                (time.monotonic() - _t0) * 1000.0,
+            )
             self.basket["hypothesis_raw"] = raw or ""
 
         if not raw:
@@ -1262,7 +1287,16 @@ class PeChain(IgorBase):
                 errors,
                 _strip_line_prefix(actual[:_HYPOTHESIZE_ACTUAL_CHAR_CAP]),
             )
+            _t0 = time.monotonic()
             raw = _call_tier2(retry_prompt, temperature=0.2)
+            if raw:
+                self.log_llm_io(
+                    "pe_hypothesize_retry",
+                    retry_prompt,
+                    raw,
+                    "tier2",
+                    (time.monotonic() - _t0) * 1000.0,
+                )
             if not raw:
                 break
             retry_edits = _parse_hypothesis(raw)
@@ -1682,7 +1716,11 @@ class PeChain(IgorBase):
             f"REPLAN: calling tier.2 attempt={self.basket.get('attempt_count')}"
         )
         # Routes to cheap background tier (Qwen) — verified T-verify-pe-chain-qwen-tier
+        _t0 = time.monotonic()
         raw = _call_tier2(prompt, temperature=0.2)
+        self.log_llm_io(
+            "pe_replan", prompt, raw or "", "tier2", (time.monotonic() - _t0) * 1000.0
+        )
         self.basket["hypothesis_raw"] = raw or ""
 
         if not raw:
@@ -1894,6 +1932,9 @@ class PeChain(IgorBase):
             return self.basket
 
         self.basket["escalate_reason"] = reason
+        self.log_state_snapshot(
+            "escalation", {k: str(v)[:500] for k, v in self.basket.items()}
+        )
         self.log.info(f"ESCALATE: {ticket_id} — {reason}")
 
         # D331: HIGH inertia → propose for approval instead of blocking.
