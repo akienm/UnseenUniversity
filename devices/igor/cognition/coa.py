@@ -235,21 +235,25 @@ class COA(IgorBase):
                             except Exception as _psych_e:
                                 self.log.error("PSYCH_LOG: %s", _psych_e)
                     else:
-                        # NE produced no result — escalate rather than go mute.
-                        # D-escalate-as-default-2026-05-10: escalate is the
-                        # default fallback when habit inventory exhausts.
-                        try:
-                            from .escalate import escalate_to_channel as _esc
+                        # NE produced no result — escalate only when LLM gate is on.
+                        # When IGOR_NE_LLM_ENABLED=false, result=None is expected
+                        # (deterministic arc runs, LLM inference skipped); escalating
+                        # that case floods watch_problems with lever-less noise.
+                        import os as _os
 
-                            _esc(
-                                f"[NE] cycle produced no result — Igor may be stuck. "
-                                f"Last valence: {self._last_ne_valence:.2f}. "
-                                "Nothing actionable in TWM — watch-question scan runs "
-                                "next lever-watcher cycle.",
-                                dedup_key="ne-empty-result",
-                            )
-                        except Exception as _esc_e:
-                            self.log.error("NE_ESCALATE: %s", _esc_e)
+                        if _os.getenv("IGOR_NE_LLM_ENABLED", "false").lower() == "true":
+                            try:
+                                from .escalate import escalate_to_channel as _esc
+
+                                _esc(
+                                    f"[NE] cycle produced no result — Igor may be stuck. "
+                                    f"Last valence: {self._last_ne_valence:.2f}. "
+                                    "Nothing actionable in TWM — watch-question scan runs "
+                                    "next lever-watcher cycle.",
+                                    dedup_key="ne-empty-result",
+                                )
+                            except Exception as _esc_e:
+                                self.log.error("NE_ESCALATE: %s", _esc_e)
                 except Exception as _bare_e:
                     self.log.error("BARE_EXCEPT: %s", _bare_e)
                 # NE grader — fresh-context quality evaluation (T-igor-ne-grader-pass)
