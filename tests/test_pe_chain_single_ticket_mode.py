@@ -24,33 +24,33 @@ class TestEnforceSingleTicketMode:
     def test_unset_env_var_is_passthrough(self, monkeypatch):
         monkeypatch.delenv("IGOR_SINGLE_TICKET", raising=False)
         basket = {"ticket_id": "T-anything"}
-        result = pe_chain._enforce_single_ticket_mode(basket)
+        result = pe_chain.PeChain(basket=basket)._enforce_single_ticket_mode()
         assert "error" not in result
         assert result["ticket_id"] == "T-anything"
 
     def test_empty_env_var_is_passthrough(self, monkeypatch):
         monkeypatch.setenv("IGOR_SINGLE_TICKET", "")
         basket = {"ticket_id": "T-anything"}
-        result = pe_chain._enforce_single_ticket_mode(basket)
+        result = pe_chain.PeChain(basket=basket)._enforce_single_ticket_mode()
         assert "error" not in result
 
     def test_whitespace_only_env_var_is_passthrough(self, monkeypatch):
         monkeypatch.setenv("IGOR_SINGLE_TICKET", "   ")
         basket = {"ticket_id": "T-anything"}
-        result = pe_chain._enforce_single_ticket_mode(basket)
+        result = pe_chain.PeChain(basket=basket)._enforce_single_ticket_mode()
         assert "error" not in result
 
     def test_matching_ticket_passes(self, monkeypatch):
         monkeypatch.setenv("IGOR_SINGLE_TICKET", "T-cc-walk-02")
         basket = {"ticket_id": "T-cc-walk-02"}
-        result = pe_chain._enforce_single_ticket_mode(basket)
+        result = pe_chain.PeChain(basket=basket)._enforce_single_ticket_mode()
         assert "error" not in result
         assert result["ticket_id"] == "T-cc-walk-02"
 
     def test_nonmatching_ticket_blocked(self, monkeypatch):
         monkeypatch.setenv("IGOR_SINGLE_TICKET", "T-cc-walk-02")
         basket = {"ticket_id": "T-other"}
-        result = pe_chain._enforce_single_ticket_mode(basket)
+        result = pe_chain.PeChain(basket=basket)._enforce_single_ticket_mode()
         assert "error" in result
         assert "single_ticket_mode" in result["error"]
         assert "T-cc-walk-02" in result["error"]
@@ -61,13 +61,13 @@ class TestEnforceSingleTicketMode:
         whole point is that nothing autonomous slips through."""
         monkeypatch.setenv("IGOR_SINGLE_TICKET", "T-cc-walk-02")
         basket: dict = {}
-        result = pe_chain._enforce_single_ticket_mode(basket)
+        result = pe_chain.PeChain(basket=basket)._enforce_single_ticket_mode()
         assert "error" in result
 
     def test_env_strips_leading_trailing_whitespace(self, monkeypatch):
         monkeypatch.setenv("IGOR_SINGLE_TICKET", "  T-cc-walk-02  ")
         basket = {"ticket_id": "T-cc-walk-02"}
-        result = pe_chain._enforce_single_ticket_mode(basket)
+        result = pe_chain.PeChain(basket=basket)._enforce_single_ticket_mode()
         assert "error" not in result
 
 

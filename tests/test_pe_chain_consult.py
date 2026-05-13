@@ -23,6 +23,16 @@ from wild_igor.igor.tools import pe_chain
 # ── _maybe_consult_stuck helper ──────────────────────────────────────────────
 
 
+def _call_consult(basket, **kwargs):
+    """Test helper: invoke the class method, returning the PeChain so callers
+    can read chain.basket. Uses the same PeChain instance for repeat calls so
+    the per-basket rate-limit and multi-turn session re-use behavior is
+    exercised exactly as in production."""
+    chain = pe_chain.PeChain(basket=basket)
+    chain._maybe_consult_stuck(**kwargs)
+    return chain
+
+
 class TestMaybeConsultStuck:
     def test_consult_fires_on_first_call(self):
         basket = {"ticket_id": "T-demo"}
@@ -34,11 +44,10 @@ class TestMaybeConsultStuck:
         with patch(
             "wild_igor.igor.cognition.consult.ConsultSession", return_value=mock_session
         ):
-            pe_chain._maybe_consult_stuck(
-                basket, stuck_reason="situate_empty", summary="stuck"
-            )
-        assert basket["consult_results"]
-        entry = basket["consult_results"][0]
+            chain = pe_chain.PeChain(basket=basket)
+            chain._maybe_consult_stuck(stuck_reason="situate_empty", summary="stuck")
+        assert chain.basket["consult_results"]
+        entry = chain.basket["consult_results"][0]
         assert entry["stuck_reason"] == "situate_empty"
         assert entry["hypotheses"] == ["h1"]
         assert entry["next_question"] == "q?"
@@ -55,14 +64,11 @@ class TestMaybeConsultStuck:
         with patch(
             "wild_igor.igor.cognition.consult.ConsultSession", return_value=mock_session
         ) as mock_cls:
-            pe_chain._maybe_consult_stuck(
-                basket, stuck_reason="situate_empty", summary="s"
-            )
-            pe_chain._maybe_consult_stuck(
-                basket, stuck_reason="situate_empty", summary="s again"
-            )
+            chain = pe_chain.PeChain(basket=basket)
+            chain._maybe_consult_stuck(stuck_reason="situate_empty", summary="s")
+            chain._maybe_consult_stuck(stuck_reason="situate_empty", summary="s again")
         assert mock_cls.call_count == 1
-        assert len(basket["consult_results"]) == 1
+        assert len(chain.basket["consult_results"]) == 1
 
     def test_different_reasons_reuse_session(self):
         """T-consult-multi-turn-follow-through: different stuck reasons on the
@@ -77,19 +83,18 @@ class TestMaybeConsultStuck:
         with patch(
             "wild_igor.igor.cognition.consult.ConsultSession", return_value=mock_session
         ) as mock_cls:
-            pe_chain._maybe_consult_stuck(
-                basket, stuck_reason="situate_empty", summary="s"
-            )
-            pe_chain._maybe_consult_stuck(
-                basket, stuck_reason="preflight_unrelated", summary="s"
-            )
+            chain = pe_chain.PeChain(basket=basket)
+            chain._maybe_consult_stuck(stuck_reason="situate_empty", summary="s")
+            chain._maybe_consult_stuck(stuck_reason="preflight_unrelated", summary="s")
         assert mock_cls.call_count == 1, "session should be re-used across reasons"
         assert mock_session.ask.call_count == 2, "both reasons should ask()"
-        assert len(basket["consult_results"]) == 2
+        assert len(chain.basket["consult_results"]) == 2
         # Both result entries reference the same session_id
-        assert {r["session_id"] for r in basket["consult_results"]} == {"consult-abc"}
+        assert {r["session_id"] for r in chain.basket["consult_results"]} == {
+            "consult-abc"
+        }
         # Session stays live on basket until _conclude_consult_session runs
-        assert basket.get("_consult_session") is mock_session
+        assert chain.basket.get("_consult_session") is mock_session
 
     def test_import_failure_non_fatal(self):
         """If consult module can't import, helper silently skips."""
@@ -99,11 +104,10 @@ class TestMaybeConsultStuck:
             side_effect=ImportError("simulated"),
         ):
             # Must not raise
-            pe_chain._maybe_consult_stuck(
-                basket, stuck_reason="situate_empty", summary="s"
-            )
+            chain = pe_chain.PeChain(basket=basket)
+            chain._maybe_consult_stuck(stuck_reason="situate_empty", summary="s")
         # Rate-limit still marked (basket knows we tried this reason)
-        assert "situate_empty" in basket.get("_consulted_reasons", set())
+        assert "situate_empty" in chain.basket.get("_consulted_reasons", set())
 
     def test_consult_call_failure_non_fatal(self):
         basket = {"ticket_id": "T-demo"}
@@ -112,11 +116,12 @@ class TestMaybeConsultStuck:
             side_effect=RuntimeError("boom"),
         ):
             # Must not raise
-            pe_chain._maybe_consult_stuck(
-                basket, stuck_reason="situate_empty", summary="s"
-            )
+            chain = pe_chain.PeChain(basket=basket)
+            chain._maybe_consult_stuck(stuck_reason="situate_empty", summary="s")
         # No consult_results recorded (since the session failed)
-        assert "consult_results" not in basket or not basket["consult_results"]
+        assert (
+            "consult_results" not in chain.basket or not chain.basket["consult_results"]
+        )
 
 
 # ── SITUATE → consult hook ───────────────────────────────────────────────────
@@ -134,7 +139,7 @@ class TestSituateHook:
 
         with patch.object(
             pe_chain, "_call_tier2", return_value="wild_igor/igor/brainstem/kernel.py\n"
-        ), patch.object(pe_chain, "_maybe_consult_stuck") as mock_consult:
+        ), patch.object(pe_chain.PeChain, "_maybe_consult_stuck") as mock_consult:
             pe_chain.pe_situate(basket)
 
         # kernel.py is HIGH-inertia + not in description → filtered to []
@@ -156,7 +161,7 @@ class TestSituateHook:
         }
         with patch.object(
             pe_chain, "_call_tier2", return_value=f"{real_path}\n"
-        ), patch.object(pe_chain, "_maybe_consult_stuck") as mock_consult:
+        ), patch.object(pe_chain.PeChain, "_maybe_consult_stuck") as mock_consult:
             pe_chain.pe_situate(basket)
         mock_consult.assert_not_called()
 
@@ -172,8 +177,9 @@ class TestSituateHook:
             "ticket_description": "Fix something in pe_chain.",
         }
 
-        def fake_consult(b, stuck_reason, **_kw):
-            b.setdefault("consult_results", []).append(
+        def fake_consult(self, stuck_reason, **_kw):
+            # Class-method patch: `self` is the PeChain instance.
+            self.basket.setdefault("consult_results", []).append(
                 {
                     "stuck_reason": stuck_reason,
                     "hypotheses": [f"you probably need to change {real_path}"],
@@ -184,13 +190,16 @@ class TestSituateHook:
                 }
             )
 
-        with patch.object(
-            pe_chain, "_call_tier2", return_value=""
-        ), patch.object(pe_chain, "_maybe_consult_stuck", side_effect=fake_consult):
-            pe_chain.pe_situate(basket)
+        with patch.object(pe_chain, "_call_tier2", return_value=""), patch.object(
+            pe_chain.PeChain,
+            "_maybe_consult_stuck",
+            autospec=True,
+            side_effect=fake_consult,
+        ):
+            result = pe_chain.pe_situate(basket)
 
-        assert basket["plan_files"] == [real_path]
-        assert basket["situate_source"] == "consult_hints"
+        assert result["plan_files"] == [real_path]
+        assert result["situate_source"] == "consult_hints"
 
     def test_situate_consult_hints_ignored_when_path_not_on_disk(self):
         """Hypotheses naming non-existent paths should not populate plan_files."""
@@ -201,8 +210,8 @@ class TestSituateHook:
             "ticket_description": "Fix something.",
         }
 
-        def fake_consult(b, stuck_reason, **_kw):
-            b.setdefault("consult_results", []).append(
+        def fake_consult(self, stuck_reason, **_kw):
+            self.basket.setdefault("consult_results", []).append(
                 {
                     "stuck_reason": stuck_reason,
                     "hypotheses": ["try wild_igor/igor/tools/nonexistent_ghost.py"],
@@ -213,13 +222,16 @@ class TestSituateHook:
                 }
             )
 
-        with patch.object(
-            pe_chain, "_call_tier2", return_value=""
-        ), patch.object(pe_chain, "_maybe_consult_stuck", side_effect=fake_consult):
-            pe_chain.pe_situate(basket)
+        with patch.object(pe_chain, "_call_tier2", return_value=""), patch.object(
+            pe_chain.PeChain,
+            "_maybe_consult_stuck",
+            autospec=True,
+            side_effect=fake_consult,
+        ):
+            result = pe_chain.pe_situate(basket)
 
-        assert basket["plan_files"] == []
-        assert basket["situate_source"] == "empty"
+        assert result["plan_files"] == []
+        assert result["situate_source"] == "empty"
 
     def test_situate_includes_ticket_description_in_consult_extra(self):
         """ticket_description must appear in the extra dict passed to ConsultState
@@ -231,17 +243,27 @@ class TestSituateHook:
         real_ConsultSession = None
         try:
             from wild_igor.igor.cognition.consult import ConsultSession as _CS
+
             real_ConsultSession = _CS
         except Exception:
             pass
 
         class FakeSession:
             session_id = "fake"
+
             def __init__(self, state: ConsultState):
                 captured_state.append(state)
+
             def ask(self, q):
                 from wild_igor.igor.cognition.consult import ConsultResult
-                return ConsultResult(hypotheses=[], next_question="", confidence=0.5, turn_idx=0, raw_text="")
+
+                return ConsultResult(
+                    hypotheses=[],
+                    next_question="",
+                    confidence=0.5,
+                    turn_idx=0,
+                    raw_text="",
+                )
 
         basket = {
             "ticket_id": "T-demo",
@@ -250,8 +272,9 @@ class TestSituateHook:
             "ticket_description": "We need to change wild_igor/igor/tools/pe_chain.py.",
         }
 
-        with patch.object(pe_chain, "_call_tier2", return_value=""), \
-             patch("wild_igor.igor.cognition.consult.ConsultSession", FakeSession):
+        with patch.object(pe_chain, "_call_tier2", return_value=""), patch(
+            "wild_igor.igor.cognition.consult.ConsultSession", FakeSession
+        ):
             pe_chain.pe_situate(basket)
 
         assert len(captured_state) == 1
@@ -309,16 +332,23 @@ class TestPreflightHook:
 
 
 def _stub_close_loop_downstream(pc):
-    """Stop close_loop recursion by making downstream steps set 'error' key."""
+    """Stop close_loop recursion by making downstream class methods set 'error'.
 
-    def _make_error(b):
-        b["error"] = "test-stub abort"
-        return b
+    pe_close_loop calls self._pe_replan(), self.pe_implement(), self.pe_test(),
+    self.pe_close_loop() recursively. The downstream stubs need to receive
+    `self` (autospec=True) and write into self.basket.
+    """
+
+    def _make_error(self):
+        self.basket["error"] = "test-stub abort"
+        return self.basket
 
     return [
-        patch.object(pc, "_pe_replan", side_effect=_make_error),
-        patch.object(pc, "pe_implement", side_effect=_make_error),
-        patch.object(pc, "pe_test", side_effect=_make_error),
+        patch.object(pc.PeChain, "_pe_replan", autospec=True, side_effect=_make_error),
+        patch.object(
+            pc.PeChain, "pe_implement", autospec=True, side_effect=_make_error
+        ),
+        patch.object(pc.PeChain, "pe_test", autospec=True, side_effect=_make_error),
         patch.object(pc, "_post_to_channel"),
     ]
 
@@ -336,14 +366,14 @@ class TestCloseLoopConsultHook:
             "plan_summary": "fix X",
         }
         patches = _stub_close_loop_downstream(pc)
-        consult_patch = patch.object(pc, "_maybe_consult_stuck")
+        consult_patch = patch.object(pc.PeChain, "_maybe_consult_stuck")
         patches.append(consult_patch)
-        for p in patches:
-            p.start()
+        started = [p.start() for p in patches]
         try:
             pc.pe_close_loop(basket)
-            pc._maybe_consult_stuck.assert_called_once()
-            _, kwargs = pc._maybe_consult_stuck.call_args
+            mock_consult = started[-1]
+            mock_consult.assert_called_once()
+            _, kwargs = mock_consult.call_args
             assert kwargs["stuck_reason"] == "implement_fails_twice"
         finally:
             for p in patches:
@@ -362,13 +392,13 @@ class TestCloseLoopConsultHook:
             "plan_summary": "fix",
         }
         patches = _stub_close_loop_downstream(pc)
-        consult_patch = patch.object(pc, "_maybe_consult_stuck")
+        consult_patch = patch.object(pc.PeChain, "_maybe_consult_stuck")
         patches.append(consult_patch)
-        for p in patches:
-            p.start()
+        started = [p.start() for p in patches]
         try:
             pc.pe_close_loop(basket)
-            pc._maybe_consult_stuck.assert_not_called()
+            mock_consult = started[-1]
+            mock_consult.assert_not_called()
         finally:
             for p in patches:
                 p.stop()

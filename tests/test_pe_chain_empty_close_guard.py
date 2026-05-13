@@ -45,7 +45,7 @@ class TestPeCloseLoopGuards:
             "attempt_count": 0,
         }
         # Stub _pe_close so we can verify it was NOT called
-        with patch.object(pe_chain, "_pe_close") as close_mock, patch.object(
+        with patch.object(pe_chain.PeChain, "_pe_close") as close_mock, patch.object(
             pe_chain, "_run_bash", return_value="ok"
         ):
             result = pe_chain.pe_close_loop(basket)
@@ -63,16 +63,23 @@ class TestPeCloseLoopGuards:
             "attempt_count": 0,
         }
         with patch.object(
-            pe_chain, "_pe_commit", return_value=basket
+            pe_chain.PeChain, "_pe_commit", autospec=True
         ) as commit_mock, patch.object(
-            pe_chain, "_pe_close", return_value=basket
+            pe_chain.PeChain, "_pe_close", autospec=True
         ) as close_mock:
-            # Make _pe_commit return basket with a healthy commit_result
-            def commit_side_effect(b):
-                b["commit_result"] = "fix: T-test — pe_chain autonomous edit"
-                return b
+            # Make _pe_commit return basket with a healthy commit_result.
+            # autospec=True passes `self` as the first arg, so we mutate self.basket.
+            def commit_side_effect(chain_self):
+                chain_self.basket["commit_result"] = (
+                    "fix: T-test — pe_chain autonomous edit"
+                )
+                return chain_self.basket
+
+            def close_side_effect(chain_self):
+                return chain_self.basket
 
             commit_mock.side_effect = commit_side_effect
+            close_mock.side_effect = close_side_effect
             pe_chain.pe_close_loop(basket)
         commit_mock.assert_called_once()
         close_mock.assert_called_once()
@@ -94,7 +101,7 @@ class TestPeCloseDefensiveGuard:
             "implement_files": [],
         }
         with patch.object(pe_chain, "_run_bash", return_value="ok") as bash_mock:
-            result = pe_chain._pe_close(basket)
+            result = pe_chain.PeChain(basket=basket)._pe_close()
         assert result.get("escalate_reason")
         assert "defensive guard" in result["escalate_reason"].lower()
         assert self._no_done_calls(bash_mock)
@@ -107,7 +114,7 @@ class TestPeCloseDefensiveGuard:
             "commit_result": "skipped: no edit applied",
         }
         with patch.object(pe_chain, "_run_bash", return_value="ok") as bash_mock:
-            result = pe_chain._pe_close(basket)
+            result = pe_chain.PeChain(basket=basket)._pe_close()
         assert result.get("escalate_reason")
         assert self._no_done_calls(bash_mock)
 
@@ -119,7 +126,7 @@ class TestPeCloseDefensiveGuard:
             "commit_result": "fix: looks legit",
         }
         with patch.object(pe_chain, "_run_bash", return_value="ok") as bash_mock:
-            result = pe_chain._pe_close(basket)
+            result = pe_chain.PeChain(basket=basket)._pe_close()
         assert result.get("escalate_reason")
         assert self._no_done_calls(bash_mock)
 
@@ -133,7 +140,7 @@ class TestPeCloseDefensiveGuard:
         }
         with patch.object(
             pe_chain, "_run_bash", return_value="Closed T-test"
-        ), patch.object(pe_chain, "_conclude_consult_session"), patch.object(
+        ), patch.object(pe_chain.PeChain, "_conclude_consult_session"), patch.object(
             pe_chain, "_post_to_channel"
         ):
             try:
@@ -145,6 +152,6 @@ class TestPeCloseDefensiveGuard:
             with patch(
                 "wild_igor.igor.tools.ops.close_goal_by_ticket", return_value="ok"
             ):
-                result = pe_chain._pe_close(basket)
+                result = pe_chain.PeChain(basket=basket)._pe_close()
         assert not result.get("escalate_reason")
         assert "close_result" in result

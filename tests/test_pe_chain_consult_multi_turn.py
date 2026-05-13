@@ -43,12 +43,11 @@ class TestMultiTurnFollowThrough:
         with patch(
             "wild_igor.igor.cognition.consult.ConsultSession", return_value=mock
         ) as mock_cls:
-            pe_chain._maybe_consult_stuck(
-                basket, stuck_reason="situate_empty", summary="stuck"
-            )
+            chain = pe_chain.PeChain(basket=basket)
+            chain._maybe_consult_stuck(stuck_reason="situate_empty", summary="stuck")
         mock_cls.assert_called_once()
-        assert basket["_consult_session"] is mock
-        assert basket["consult_results"][0]["turn_idx"] == 0
+        assert chain.basket["_consult_session"] is mock
+        assert chain.basket["consult_results"][0]["turn_idx"] == 0
 
     def test_followup_does_not_open_new_session(self):
         basket = {"ticket_id": "T-demo"}
@@ -56,11 +55,9 @@ class TestMultiTurnFollowThrough:
         with patch(
             "wild_igor.igor.cognition.consult.ConsultSession", return_value=mock
         ) as mock_cls:
-            pe_chain._maybe_consult_stuck(
-                basket, stuck_reason="situate_empty", summary="s1"
-            )
-            pe_chain._maybe_consult_stuck(
-                basket,
+            chain = pe_chain.PeChain(basket=basket)
+            chain._maybe_consult_stuck(stuck_reason="situate_empty", summary="s1")
+            chain._maybe_consult_stuck(
                 stuck_reason="implement_fails_twice",
                 summary="s2",
                 what_failed="AssertionError: expected 1, got 2",
@@ -77,11 +74,9 @@ class TestMultiTurnFollowThrough:
         with patch(
             "wild_igor.igor.cognition.consult.ConsultSession", return_value=mock
         ):
-            pe_chain._maybe_consult_stuck(
-                basket, stuck_reason="situate_empty", summary="s"
-            )
-            pe_chain._maybe_consult_stuck(
-                basket,
+            chain = pe_chain.PeChain(basket=basket)
+            chain._maybe_consult_stuck(stuck_reason="situate_empty", summary="s")
+            chain._maybe_consult_stuck(
                 stuck_reason="implement_fails_twice",
                 summary="s2",
                 what_failed="AssertionError",
@@ -100,12 +95,9 @@ class TestMultiTurnFollowThrough:
         with patch(
             "wild_igor.igor.cognition.consult.ConsultSession", return_value=mock
         ):
-            pe_chain._maybe_consult_stuck(
-                basket, stuck_reason="situate_empty", summary="s"
-            )
-            pe_chain._maybe_consult_stuck(
-                basket, stuck_reason="situate_empty", summary="s again"
-            )
+            chain = pe_chain.PeChain(basket=basket)
+            chain._maybe_consult_stuck(stuck_reason="situate_empty", summary="s")
+            chain._maybe_consult_stuck(stuck_reason="situate_empty", summary="s again")
         assert mock.ask.call_count == 1
 
 
@@ -116,30 +108,36 @@ class TestConcludeConsultSession:
     def test_no_session_no_op(self):
         basket = {"ticket_id": "T-demo"}
         # Must not raise
-        pe_chain._conclude_consult_session(basket)
-        assert "consult_conclusion" not in basket
+        chain = pe_chain.PeChain(basket=basket)
+        chain._conclude_consult_session()
+        assert "consult_conclusion" not in chain.basket
 
     def test_concludes_live_session_and_records_summary(self):
         basket = {"ticket_id": "T-demo"}
         mock = _mock_session()
         basket["_consult_session"] = mock
-        pe_chain._conclude_consult_session(basket)
+        chain = pe_chain.PeChain(basket=basket)
+        chain._conclude_consult_session()
         mock.conclude.assert_called_once()
-        assert basket.get("consult_conclusion", {}).get("final_hypothesis") == "final-h"
-        assert basket["consult_conclusion"]["turn_count"] == 2
+        assert (
+            chain.basket.get("consult_conclusion", {}).get("final_hypothesis")
+            == "final-h"
+        )
+        assert chain.basket["consult_conclusion"]["turn_count"] == 2
         # Live session is popped (no more accumulation)
-        assert "_consult_session" not in basket
+        assert "_consult_session" not in chain.basket
 
     def test_conclude_failure_non_fatal(self):
         basket = {"ticket_id": "T-demo"}
         mock = _mock_session()
         mock.conclude.side_effect = RuntimeError("boom")
         basket["_consult_session"] = mock
-        pe_chain._conclude_consult_session(basket)
+        chain = pe_chain.PeChain(basket=basket)
+        chain._conclude_consult_session()
         # Conclusion not recorded but no exception escapes
-        assert "consult_conclusion" not in basket
+        assert "consult_conclusion" not in chain.basket
         # And the session reference is still cleared
-        assert "_consult_session" not in basket
+        assert "_consult_session" not in chain.basket
 
 
 # ── Source regression guards (call sites) ────────────────────────────────────
@@ -157,11 +155,11 @@ class TestSourceCallSites:
         src = (
             Path(__file__).resolve().parent.parent / "wild_igor/igor/tools/pe_chain.py"
         ).read_text()
-        close_idx = src.index("def _pe_close(basket: dict)")
+        close_idx = src.index("def _pe_close(self)")
         # Find the next top-level def after _pe_close
-        next_idx = src.index("\ndef ", close_idx + 1)
+        next_idx = src.index("\n    def ", close_idx + 1)
         body = src[close_idx:next_idx]
-        assert "_conclude_consult_session(basket)" in body, (
+        assert "self._conclude_consult_session()" in body, (
             "_pe_close must conclude any live consult session — "
             "T-consult-multi-turn-follow-through"
         )
@@ -172,10 +170,10 @@ class TestSourceCallSites:
         src = (
             Path(__file__).resolve().parent.parent / "wild_igor/igor/tools/pe_chain.py"
         ).read_text()
-        esc_idx = src.index("def _pe_escalate(basket: dict")
-        next_idx = src.index("\ndef ", esc_idx + 1)
+        esc_idx = src.index("def _pe_escalate(self, reason:")
+        next_idx = src.index("\n    def ", esc_idx + 1)
         body = src[esc_idx:next_idx]
-        assert "_conclude_consult_session(basket)" in body, (
+        assert "self._conclude_consult_session()" in body, (
             "_pe_escalate must conclude any live consult session — "
             "T-consult-multi-turn-follow-through"
         )

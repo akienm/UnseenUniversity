@@ -14,7 +14,12 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from wild_igor.igor.tools.pe_chain import _drop_out_of_scope_high_inertia_hypotheses
+from wild_igor.igor.tools.pe_chain import PeChain
+
+
+def _drop_out_of_scope_high_inertia_hypotheses(basket):
+    """Test shim — call the class method, return the mutated basket."""
+    return PeChain(basket=basket)._drop_out_of_scope_high_inertia_hypotheses()
 
 
 class TestPreImplementHighInertiaFilter(unittest.TestCase):

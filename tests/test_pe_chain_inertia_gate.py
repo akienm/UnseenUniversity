@@ -98,8 +98,8 @@ class TestEscalateGateIntegration:
         """Call _pe_escalate with the test basket. Returns the mutated basket."""
         from wild_igor.igor.tools import pe_chain
 
-        # The function is module-private (underscore-prefixed) but importable.
-        return pe_chain._pe_escalate(basket, reason)
+        # _pe_escalate is now a PeChain method; tests call it via an instance.
+        return pe_chain.PeChain(basket=basket)._pe_escalate(reason)
 
     def test_hallucinated_high_inertia_outside_scope_is_dropped(self, monkeypatch):
         """Key regression: a brainstem hallucination must NOT get proposed and
