@@ -28,10 +28,15 @@ import urllib.request
 
 _UC_PORT = int(os.environ.get("IGOR_UC_PORT", "8082"))
 _UC_BASE = os.environ.get("IGOR_UC_BASE", f"http://localhost:{_UC_PORT}")
+_registered = False
 
 
 def _register_with_uc() -> None:
-    """POST /api/agents/register — fire-and-forget, never blocks MCP init."""
+    """POST /api/agents/register — fire-and-forget, once per process."""
+    global _registered
+    if _registered:
+        return
+    _registered = True
     try:
         body = json.dumps(
             {
@@ -48,7 +53,7 @@ def _register_with_uc() -> None:
         with urllib.request.urlopen(req, timeout=3.0) as resp:
             resp.read()
     except Exception:
-        pass  # UC may not be running; degrade silently
+        _registered = False  # allow retry if UC was not reachable
 
 
 # ── JSON-RPC dispatch ─────────────────────────────────────────────────────────
