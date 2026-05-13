@@ -29,6 +29,7 @@ intentionally shared (only one experiment tick per root-loop iteration).
 
 from __future__ import annotations
 
+import logging
 import os
 import threading
 import time
@@ -39,6 +40,8 @@ from ..igor_base import IgorBase
 if TYPE_CHECKING:
     from ..memory.cortex import Cortex
     from ..cognition.narrative_engine import NarrativeEngine as _NE
+
+_coa_log = logging.getLogger(__name__)
 
 
 # ------------------------------------------------------------------
@@ -154,18 +157,13 @@ class COA(IgorBase):
         import time as _t
 
         from ..cognition import milieu as milieu_mod
-        from ..cognition.forensic_logger import log_error
 
         try:
             from .daemon_supervisor import supervisor as _sup
 
             _sup.heartbeat("ne-worker")
         except Exception as e:
-            import logging
-
-            logging.getLogger(__name__).debug(
-                "daemon_supervisor.heartbeat(ne-worker) failed: %s", e
-            )
+            self.log.debug("daemon_supervisor.heartbeat(ne-worker) failed: %s", e)
 
         if self._ne_thread is not None and self._ne_thread.is_alive():
             return  # Already running
@@ -190,6 +188,9 @@ class COA(IgorBase):
 
             self._ne_last_twm_fingerprint = _fingerprint
             self._ne_last_run_time = _now
+            self.log.info(
+                "NE_TICK twm_count=%d twm_max_id=%d", _fingerprint[0], _fingerprint[1]
+            )
 
             igor = self._igor
 
@@ -199,7 +200,11 @@ class COA(IgorBase):
                     _t.sleep(0.5)
                     _waited += 0.5
                 try:
+                    _ne_t0 = _t.monotonic()
                     result = self.ne.run(verbose=False)
+                    self.log.info(
+                        "NE_RUN elapsed_ms=%.0f", (_t.monotonic() - _ne_t0) * 1000.0
+                    )
                     if result:
                         _ne_state = result.get("internal_state", {})
                         _m = milieu_mod.get()
@@ -211,10 +216,7 @@ class COA(IgorBase):
                                     _ne_state.get("valence", 0.0)
                                 )
                             except (TypeError, ValueError) as _bare_e:
-                                log_error(
-                                    kind="BARE_EXCEPT",
-                                    detail=f"wild_igor/igor/cognition/coa.py: {_bare_e}",
-                                )
+                                self.log.error("BARE_EXCEPT: %s", _bare_e)
                             # Append psych snapshot to longitudinal log
                             try:
                                 import json as _json
@@ -231,9 +233,7 @@ class COA(IgorBase):
                                 with open(_psych_log, "a") as _f:
                                     _f.write(_json.dumps(_psych_entry) + "\n")
                             except Exception as _psych_e:
-                                log_error(
-                                    kind="PSYCH_LOG", detail=f"coa.py: {_psych_e}"
-                                )
+                                self.log.error("PSYCH_LOG: %s", _psych_e)
                     else:
                         # NE produced no result — escalate rather than go mute.
                         # D-escalate-as-default-2026-05-10: escalate is the
@@ -249,12 +249,9 @@ class COA(IgorBase):
                                 dedup_key="ne-empty-result",
                             )
                         except Exception as _esc_e:
-                            log_error(kind="NE_ESCALATE", detail=f"coa.py: {_esc_e}")
+                            self.log.error("NE_ESCALATE: %s", _esc_e)
                 except Exception as _bare_e:
-                    log_error(
-                        kind="BARE_EXCEPT",
-                        detail=f"wild_igor/igor/cognition/coa.py: {_bare_e}",
-                    )
+                    self.log.error("BARE_EXCEPT: %s", _bare_e)
                 # NE grader — fresh-context quality evaluation (T-igor-ne-grader-pass)
                 try:
                     if result:
@@ -268,7 +265,7 @@ class COA(IgorBase):
                             with open(_psych_log, "a") as _f:
                                 _f.write(_json.dumps(_grade_result) + "\n")
                 except Exception as _grade_e:
-                    log_error(kind="NE_GRADER", detail=f"coa.py: {_grade_e}")
+                    self.log.error("NE_GRADER: %s", _grade_e)
                 # Annotate pending engrams (batch_size=2 to stay within budget)
                 try:
                     from ..memory.purpose_annotator import (
@@ -277,20 +274,18 @@ class COA(IgorBase):
 
                     _n_annotated = _annotate_pending(self._cortex, batch_size=2)
                     if _n_annotated > 0:
-                        import logging as _logging
-
-                        _logging.getLogger(__name__).info(
+                        self.log.info(
                             "purpose_annotator: annotated %d engrams", _n_annotated
                         )
                 except Exception as _ann_e:
-                    log_error(kind="PURPOSE_ANNOTATOR", detail=f"coa.py: {_ann_e}")
+                    self.log.error("PURPOSE_ANNOTATOR: %s", _ann_e)
                 # Scan watch_problems for incoming levers (D-escalate-as-default-2026-05-10)
                 try:
                     from .watch_problems import lever_watcher as _lever_watcher
 
                     _lever_watcher()
                 except Exception as _lw_e:
-                    log_error(kind="LEVER_WATCHER", detail=f"coa.py: {_lw_e}")
+                    self.log.error("LEVER_WATCHER: %s", _lw_e)
                 # Dreaming: cross-session synthesis every IGOR_DREAMING_INTERVAL cycles
                 try:
                     import os as _os
@@ -303,24 +298,19 @@ class COA(IgorBase):
 
                             _dreaming_run()
                 except Exception as _dream_e:
-                    log_error(kind="DREAMING", detail=f"coa.py: {_dream_e}")
+                    self.log.error("DREAMING: %s", _dream_e)
                 try:
                     _exp_sched = getattr(igor, "_experiment_scheduler", None)
                     if _exp_sched is not None:
                         _exp = _exp_sched.tick()
                         if _exp:
-                            import logging
-
-                            logging.getLogger(__name__).info(
+                            self.log.info(
                                 "experiment_tick: ran %s → %s",
                                 _exp.experiment_id,
                                 _exp.status.value,
                             )
                 except Exception as _exp_e:
-                    log_error(
-                        kind="EXPERIMENT_TICK",
-                        detail=f"coa.py ne_worker: {_exp_e}",
-                    )
+                    self.log.error("EXPERIMENT_TICK: %s", _exp_e)
 
             self._ne_thread = threading.Thread(
                 target=_ne_worker, daemon=True, name="ne-worker"
@@ -336,7 +326,7 @@ class COA(IgorBase):
                     staleness_threshold_secs=600.0,
                 )
             except Exception as _exc:
-                log_error(kind="SILENT_EXCEPT", detail=f"coa.py:tick: {_exc}")
+                self.log.error("SILENT_EXCEPT: %s", _exc)
         finally:
             self._ne_spawn_lock.release()
 
@@ -419,7 +409,7 @@ Score each dimension 0.0-1.0. Respond ONLY with valid JSON:
 
         return entry
     except Exception as _e:
-        log_error(kind="NE_GRADER", detail=f"_grade_ne_output: {_e}")
+        _coa_log.error("NE_GRADER: %s", _e)
         return None
 
 
