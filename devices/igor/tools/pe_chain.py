@@ -150,12 +150,22 @@ The 0-arg wrappers exist because PROC_PLAN / PROC_FILTER / PROC_PROBE
 habits dispatch them (not pe_plan/pe_filter/pe_probe directly, which
 require basket).
 
-If you want to change HOW A STEP WORKS, edit its function in this file.
-If you want to change THE ORDER OF STEPS or add branching logic, that's
-a codebase-wide decision (D331 escalation, D300 TWM coordination) —
+If you want to change HOW A STEP WORKS, edit its method on `PeChain` in
+this file. If you want to change THE ORDER OF STEPS or add branching logic,
+that's a codebase-wide decision (D331 escalation, D300 TWM coordination) —
 discuss with Akien first.
 
-Updated 2026-04-29T17:08:53Z
+CLASS REFACTOR (2026-05-12)
+───────────────────────────
+The pe_* step functions and their private helpers (_pe_*, _maybe_consult_stuck,
+_conclude_consult_session, _drop_out_of_scope_high_inertia_hypotheses,
+_close_goal_on_escalate, _enforce_single_ticket_mode) are now methods on
+`PeChain(IgorBase)`. The basket is `self.basket`. Module-level shims for the
+public pe_* names preserve the basket-passing API so the debugger and tests
+that call individual phases in isolation keep working. Private methods do not
+get shims — tests update to use `PeChain(basket=...)._method()`.
+
+Updated 2026-05-12
 """
 
 import json
@@ -167,6 +177,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ..paths import paths as _paths
+from ..igor_base import IgorBase
 
 log = logging.getLogger(__name__)
 
@@ -208,9 +219,7 @@ def _load_ticket(ticket_id: str) -> dict | None:
             if t.get("id") == ticket_id:
                 return t
     except Exception as _exc:
-        from ..cognition.forensic_logger import log_error as _le
-
-        _le(kind="SILENT_EXCEPT", detail=f"pe_chain.py:76: {_exc}")
+        log.debug("SILENT_EXCEPT: %s", _exc)
     return None
 
 
@@ -232,168 +241,2041 @@ _CONSULT_FOLLOWUP_QUESTIONS = {
 }
 
 
-def _maybe_consult_stuck(
-    basket: dict,
-    stuck_reason: str,
-    summary: str,
-    what_i_tried: str = "",
-    what_failed: str = "",
-) -> None:
-    """T-consult-pe-chain-wire + T-consult-multi-turn-follow-through:
-    fire a peer-LLM consult at a pe_chain stuck point.
+class PeChain(IgorBase):
+    """Coding sprint execution chain — PROC_CODE_A_TICKET implementation.
 
-    The ConsultSession is basket-persistent — first stuck event on a basket
-    opens a session; subsequent events with a *different* stuck_reason on
-    the same basket re-use that session (multi-turn follow-through). The
-    per-reason rate-limit prevents spam on the same stuck shape.
-
-    Session close is driven by _conclude_consult_session(), called at goal
-    termination (_pe_close on success, _pe_escalate on abort) — not here.
-    That is what makes the session conversation-shaped across the life of
-    the goal, per D-consult-primitive-2026-04-23.
-
-    Non-fatal: any consult or import failure is swallowed; the pe_chain
-    step continues with its original empty/escalate path.
-
-    Results stored in basket['consult_results'] (list of dicts):
-        {stuck_reason, hypotheses, next_question, confidence, session_id, turn_idx}
-    Live session stored in basket['_consult_session'] (popped on conclude).
+    basket is shared working memory for one ticket-resolution run.
+    Phase methods read/write self.basket. Module-level shims preserve
+    the basket-passing API for the debugger and isolated test calls.
     """
-    # Per-basket per-reason rate limit — same reason doesn't re-ask
-    consulted = basket.setdefault("_consulted_reasons", set())
-    if stuck_reason in consulted:
-        return
-    consulted.add(stuck_reason)
 
-    try:
-        from ..cognition.consult import ConsultSession, ConsultState
-    except Exception as imp_exc:
-        log.debug("consult import failed (non-fatal): %s", imp_exc)
-        return
+    def __init__(self, basket: dict | None = None) -> None:
+        super().__init__()
+        self.basket: dict = basket if basket is not None else {}
 
-    ticket_id = basket.get("ticket_id")
-    pursuit_id = basket.get("pursuit_id") or basket.get("goal_id")
+    def _maybe_consult_stuck(
+        self,
+        stuck_reason: str,
+        summary: str,
+        what_i_tried: str = "",
+        what_failed: str = "",
+    ) -> None:
+        """T-consult-pe-chain-wire + T-consult-multi-turn-follow-through:
+        fire a peer-LLM consult at a pe_chain stuck point.
 
-    # Build per-kind extras from the basket
-    extra: dict = {}
-    if basket.get("ticket_description"):
-        extra["ticket_description"] = str(basket["ticket_description"])[:1000]
-    if isinstance(basket.get("hypothesis"), dict):
-        extra["last_hypothesis"] = str(basket["hypothesis"])[:800]
-    if basket.get("plan_summary"):
-        extra["plan_summary"] = str(basket["plan_summary"])[:800]
-    if basket.get("last_error"):
-        extra["last_error"] = str(basket["last_error"])[:800]
-    if basket.get("test_output"):
-        extra["test_output_tail"] = str(basket["test_output"])[-800:]
+        The ConsultSession is self.basket-persistent — first stuck event on a self.basket
+        opens a session; subsequent events with a *different* stuck_reason on
+        the same self.basket re-use that session (multi-turn follow-through). The
+        per-reason rate-limit prevents spam on the same stuck shape.
 
-    # Basket-persistent session: re-use if this basket already opened one,
-    # otherwise open fresh on the first stuck event of the goal.
-    session = basket.get("_consult_session")
-    is_first_turn = session is None
+        Session close is driven by _conclude_consult_session(), called at goal
+        termination (_pe_close on success, _pe_escalate on abort) — not here.
+        That is what makes the session conversation-shaped across the life of
+        the goal, per D-consult-primitive-2026-04-23.
 
-    if is_first_turn:
-        state = ConsultState(
-            problem_kind="coding",
-            summary=summary,
-            what_i_tried=what_i_tried,
-            what_failed=what_failed,
-            ticket_id=ticket_id,
-            pursuit_id=pursuit_id,
-            extra=extra,
-        )
+        Non-fatal: any consult or import failure is swallowed; the pe_chain
+        step continues with its original empty/escalate path.
+
+        Results stored in self.basket['consult_results'] (list of dicts):
+            {stuck_reason, hypotheses, next_question, confidence, session_id, turn_idx}
+        Live session stored in self.basket['_consult_session'] (popped on conclude).
+        """
+        # Per-self.basket per-reason rate limit — same reason doesn't re-ask
+        consulted = self.basket.setdefault("_consulted_reasons", set())
+        if stuck_reason in consulted:
+            return
+        consulted.add(stuck_reason)
+
         try:
-            session = ConsultSession(state)
-            basket["_consult_session"] = session
-        except Exception as open_exc:
-            log.debug("consult session open failed (non-fatal): %s", open_exc)
+            from ..cognition.consult import ConsultSession, ConsultState
+        except Exception as imp_exc:
+            self.log.debug("consult import failed (non-fatal): %s", imp_exc)
             return
 
-    # First turn: the canonical per-reason initial question. Subsequent turns:
-    # feed the new stuck_reason + fresh evidence so the LLM reasons across
-    # the accumulated conversation state rather than starting over.
-    if is_first_turn:
-        question = _CONSULT_INITIAL_QUESTIONS.get(
-            stuck_reason, "What am I missing about why I'm stuck?"
-        )
-    else:
-        base = _CONSULT_FOLLOWUP_QUESTIONS.get(
-            stuck_reason,
-            f"New stuck reason: {stuck_reason}. What am I still missing?",
-        )
-        evidence_lines: list[str] = []
-        if what_failed:
-            evidence_lines.append(f"what_failed_now: {what_failed[:500]}")
-        if extra.get("last_error"):
-            evidence_lines.append(f"last_error_now: {extra['last_error'][:500]}")
-        if extra.get("test_output_tail"):
-            evidence_lines.append(
-                f"test_output_tail_now: {extra['test_output_tail'][-500:]}"
+        ticket_id = self.basket.get("ticket_id")
+        pursuit_id = self.basket.get("pursuit_id") or self.basket.get("goal_id")
+
+        # Build per-kind extras from the self.basket
+        extra: dict = {}
+        if self.basket.get("ticket_description"):
+            extra["ticket_description"] = str(self.basket["ticket_description"])[:1000]
+        if isinstance(self.basket.get("hypothesis"), dict):
+            extra["last_hypothesis"] = str(self.basket["hypothesis"])[:800]
+        if self.basket.get("plan_summary"):
+            extra["plan_summary"] = str(self.basket["plan_summary"])[:800]
+        if self.basket.get("last_error"):
+            extra["last_error"] = str(self.basket["last_error"])[:800]
+        if self.basket.get("test_output"):
+            extra["test_output_tail"] = str(self.basket["test_output"])[-800:]
+
+        # Basket-persistent session: re-use if this self.basket already opened one,
+        # otherwise open fresh on the first stuck event of the goal.
+        session = self.basket.get("_consult_session")
+        is_first_turn = session is None
+
+        if is_first_turn:
+            state = ConsultState(
+                problem_kind="coding",
+                summary=summary,
+                what_i_tried=what_i_tried,
+                what_failed=what_failed,
+                ticket_id=ticket_id,
+                pursuit_id=pursuit_id,
+                extra=extra,
             )
-        question = base + ("\n\n" + "\n".join(evidence_lines) if evidence_lines else "")
+            try:
+                session = ConsultSession(state)
+                self.basket["_consult_session"] = session
+            except Exception as open_exc:
+                self.log.debug("consult session open failed (non-fatal): %s", open_exc)
+                return
 
-    try:
-        result = session.ask(question)
-    except Exception as ask_exc:
-        log.debug("consult ask failed (non-fatal): %s", ask_exc)
-        return
-
-    basket.setdefault("consult_results", []).append(
-        {
-            "stuck_reason": stuck_reason,
-            "hypotheses": list(result.hypotheses),
-            "next_question": result.next_question,
-            "confidence": result.confidence,
-            "session_id": session.session_id,
-            "turn_idx": result.turn_idx,
-        }
-    )
-    log.info(
-        "PE_CHAIN consult fired: reason=%s turn=%d conf=%.2f hyps=%d",
-        stuck_reason,
-        result.turn_idx,
-        result.confidence,
-        len(result.hypotheses),
-    )
-
-
-def _conclude_consult_session(basket: dict) -> None:
-    """Close any live consult session attached to this basket.
-
-    Always call at goal termination (success path via _pe_close, abort via
-    _pe_escalate). The session lives for the duration of the goal; concluding
-    it here is what makes multi-turn consult conversation-shaped across the
-    goal, per D-consult-primitive-2026-04-23. Non-fatal — any conclude
-    failure is logged and swallowed.
-    """
-    session = basket.pop("_consult_session", None)
-    if session is None:
-        return
-    try:
-        conclusion = session.conclude()
-        basket["consult_conclusion"] = {
-            "final_hypothesis": conclusion.final_hypothesis,
-            "confidence": conclusion.confidence,
-            "turn_count": conclusion.turn_count,
-            "session_id": session.session_id,
-            "aborted": conclusion.aborted,
-        }
-        if conclusion.aborted:
-            log.info(
-                "PE_CHAIN consult aborted (low confidence): session=%s turns=%d conf=%.2f — escalation signal",
-                session.session_id,
-                conclusion.turn_count,
-                conclusion.confidence,
+        # First turn: the canonical per-reason initial question. Subsequent turns:
+        # feed the new stuck_reason + fresh evidence so the LLM reasons across
+        # the accumulated conversation state rather than starting over.
+        if is_first_turn:
+            question = _CONSULT_INITIAL_QUESTIONS.get(
+                stuck_reason, "What am I missing about why I'm stuck?"
             )
         else:
-            log.info(
-                "PE_CHAIN consult concluded: session=%s turns=%d conf=%.2f",
-                session.session_id,
-                conclusion.turn_count,
-                conclusion.confidence,
+            base = _CONSULT_FOLLOWUP_QUESTIONS.get(
+                stuck_reason,
+                f"New stuck reason: {stuck_reason}. What am I still missing?",
             )
-    except Exception as close_exc:
-        log.debug("consult conclude failed (non-fatal): %s", close_exc)
+            evidence_lines: list[str] = []
+            if what_failed:
+                evidence_lines.append(f"what_failed_now: {what_failed[:500]}")
+            if extra.get("last_error"):
+                evidence_lines.append(f"last_error_now: {extra['last_error'][:500]}")
+            if extra.get("test_output_tail"):
+                evidence_lines.append(
+                    f"test_output_tail_now: {extra['test_output_tail'][-500:]}"
+                )
+            question = base + (
+                "\n\n" + "\n".join(evidence_lines) if evidence_lines else ""
+            )
+
+        try:
+            result = session.ask(question)
+        except Exception as ask_exc:
+            self.log.debug("consult ask failed (non-fatal): %s", ask_exc)
+            return
+
+        self.basket.setdefault("consult_results", []).append(
+            {
+                "stuck_reason": stuck_reason,
+                "hypotheses": list(result.hypotheses),
+                "next_question": result.next_question,
+                "confidence": result.confidence,
+                "session_id": session.session_id,
+                "turn_idx": result.turn_idx,
+            }
+        )
+        self.log.info(
+            "PE_CHAIN consult fired: reason=%s turn=%d conf=%.2f hyps=%d",
+            stuck_reason,
+            result.turn_idx,
+            result.confidence,
+            len(result.hypotheses),
+        )
+
+    def _conclude_consult_session(self) -> None:
+        """Close any live consult session attached to this self.basket.
+
+        Always call at goal termination (success path via _pe_close, abort via
+        _pe_escalate). The session lives for the duration of the goal; concluding
+        it here is what makes multi-turn consult conversation-shaped across the
+        goal, per D-consult-primitive-2026-04-23. Non-fatal — any conclude
+        failure is logged and swallowed.
+        """
+        session = self.basket.pop("_consult_session", None)
+        if session is None:
+            return
+        try:
+            conclusion = session.conclude()
+            self.basket["consult_conclusion"] = {
+                "final_hypothesis": conclusion.final_hypothesis,
+                "confidence": conclusion.confidence,
+                "turn_count": conclusion.turn_count,
+                "session_id": session.session_id,
+                "aborted": conclusion.aborted,
+            }
+            if conclusion.aborted:
+                self.log.info(
+                    "PE_CHAIN consult aborted (low confidence): session=%s turns=%d conf=%.2f — escalation signal",
+                    session.session_id,
+                    conclusion.turn_count,
+                    conclusion.confidence,
+                )
+            else:
+                self.log.info(
+                    "PE_CHAIN consult concluded: session=%s turns=%d conf=%.2f",
+                    session.session_id,
+                    conclusion.turn_count,
+                    conclusion.confidence,
+                )
+        except Exception as close_exc:
+            self.log.debug("consult conclude failed (non-fatal): %s", close_exc)
+
+    def pe_entry_init(self) -> dict:
+        """
+        ENTRY step: extract ticket_id from active GOAL, seed self.basket constants.
+
+        Reads from: active GOAL memory (TWM + cortex)
+        Writes to self.basket:
+          ticket_id       str    — from goal source_message
+          attempt_count   int    — 0 (fresh start)
+          expected        str    — constant: "tests pass, requirements met"
+          goal_id         str    — GOAL memory id (for close step)
+        """
+        self.basket = self.basket if self.basket is not None else {}
+
+        # If ticket_id already seeded (e.g. from test or direct call), keep it
+        if self.basket.get("ticket_id"):
+            self.basket.setdefault("attempt_count", 0)
+            self.basket.setdefault("expected", "tests pass, requirements met")
+            self.log.info(f"ENTRY: ticket_id already set: {self.basket['ticket_id']}")
+            return self._enforce_single_ticket_mode()
+
+        goal = _get_active_goal()
+        if not goal:
+            self.basket["error"] = "pe_entry_init: no active GOAL memory found"
+            self.log.info("ENTRY: no active goal")
+            return self.basket
+
+        task = goal.metadata.get("source_message", goal.narrative[:120])
+        ticket_id = _extract_ticket_id(task)
+        if not ticket_id:
+            self.basket["error"] = f"pe_entry_init: no ticket ID in goal: {task[:80]}"
+            self.log.info(f"ENTRY: no ticket_id in goal task: {task[:60]}")
+            return self.basket
+
+        self.basket["ticket_id"] = ticket_id
+        self.basket["goal_id"] = goal.id
+        self.basket["attempt_count"] = 0
+        self.basket["expected"] = "tests pass, requirements met"
+        self.log.info(f"ENTRY: ticket_id={ticket_id} goal={goal.id}")
+        return self._enforce_single_ticket_mode()
+
+    def _enforce_single_ticket_mode(self) -> dict:
+        """If IGOR_SINGLE_TICKET is set, gate ENTRY to that one ticket id only."""
+        allowed = os.environ.get("IGOR_SINGLE_TICKET", "").strip()
+        if not allowed:
+            return self.basket
+        current = self.basket.get("ticket_id")
+        if current == allowed:
+            self.log.info(
+                "[pe_chain] single-ticket mode: %s claimable (matches IGOR_SINGLE_TICKET)",
+                current,
+            )
+            return self.basket
+        if current:
+            self.log.info(
+                "[pe_chain] single-ticket mode: only %s may be claimed; skipping %s",
+                allowed,
+                current,
+            )
+        else:
+            self.log.info(
+                "[pe_chain] single-ticket mode: only %s may be claimed; no ticket in self.basket",
+                allowed,
+            )
+        self.basket["error"] = (
+            f"single_ticket_mode: IGOR_SINGLE_TICKET={allowed} blocks {current!r}"
+        )
+        return self.basket
+
+    def pe_claim(self) -> dict:
+        """
+        CLAIM step: mark ticket in_progress in cc_queue.
+
+        Reads from self.basket: ticket_id
+        Writes to self.basket:  claim_result (str — confirmation or error)
+        """
+        if self.basket.get("error"):
+            return self.basket
+
+        ticket_id = self.basket.get("ticket_id")
+        if not ticket_id:
+            self.basket["error"] = "pe_claim: no ticket_id in self.basket"
+            return self.basket
+
+        result = _run_bash(["python3", str(_CC_QUEUE), "claim", ticket_id])
+        self.basket["claim_result"] = result
+        self.log.info(f"CLAIM: {ticket_id} → {result[:80]}")
+        if "in_progress, not pending" in result:
+            # Ticket already claimed by goal_continuation step 0 — this is our ticket, proceed
+            self.log.info(
+                f"CLAIM: {ticket_id} already in_progress — proceeding (goal owns it)"
+            )
+        elif "not pending" in result or "not found" in result:
+            self.basket["error"] = f"pe_claim: cannot claim — {result.strip()}"
+            self.log.info(f"CLAIM: aborting chain — {result.strip()}")
+            # Evict GOAL_READY so PROC_CODING_SPRINT doesn't immediately re-fire
+            _evict_goal_ready_twm(ticket_id)
+        return self.basket
+
+    def pe_read_ticket(self) -> dict:
+        """
+        READ_TICKET step: load ticket details into self.basket.
+
+        Reads from self.basket: ticket_id
+        Writes to self.basket:
+          ticket_description  str       — full description text
+          ticket_title        str       — short title
+          plan_files          list[str] — required_files from ticket (may be [])
+        """
+        if self.basket.get("error"):
+            return self.basket
+
+        ticket_id = self.basket.get("ticket_id")
+        if not ticket_id:
+            self.basket["error"] = "pe_read_ticket: no ticket_id in self.basket"
+            return self.basket
+
+        ticket = _load_ticket(ticket_id)
+        if not ticket:
+            self.basket["error"] = (
+                f"pe_read_ticket: ticket {ticket_id!r} not found in queue"
+            )
+            self.log.info(f"READ_TICKET: {ticket_id} not found")
+            return self.basket
+
+        self.basket["ticket_description"] = ticket.get("description") or ticket.get(
+            "title", ""
+        )
+        self.basket["ticket_title"] = ticket.get("title", "")
+        self.basket["plan_files"] = ticket.get("required_files") or []
+
+        # Abort before SITUATE when description is absent — prevents title-semantic hallucination
+        _desc = self.basket["ticket_description"].strip()
+        _title = self.basket.get("ticket_title", "").strip()
+        if len(_desc) < 50 or _desc == _title:
+            self.basket["error"] = (
+                f"pe_read_ticket: {ticket_id} has no description "
+                f"(len={len(_desc)}) — add Affected files + scope before Igor can plan this"
+            )
+            self.log.info(
+                "READ_TICKET: %s aborted — description absent or title-only", ticket_id
+            )
+            try:
+                _post_to_channel(
+                    f"[pe_chain] ✗ {ticket_id}: can't plan — no description. "
+                    f"Please add to the ticket: (1) what problem to solve, "
+                    f"(2) Affected files, (3) scope boundary. "
+                    f"Title was: '{_title[:60]}'",
+                    dedup_key=f"no-desc-{ticket_id}",
+                )
+            except Exception:
+                pass
+            return self.basket
+
+        # D333: load CC-approved plan if present (D331 escalation → approval flow)
+        # Only load approved_plan if it is valid JSON with edit structure. Prose
+        # approved_plan is an escalation artifact written by cmd_approve copying
+        # Igor's escalation text verbatim — if loaded, HYPOTHESIZE injects it as
+        # "CC-APPROVED PLAN:" into the description and the LLM re-proposes the same
+        # hallucinated file. Prose is silently discarded so the chain runs clean.
+        approved_plan = ticket.get("approved_plan")
+        approval_notes = ticket.get("approval_notes")
+        if approved_plan:
+            try:
+                parsed = json.loads(approved_plan)
+                if isinstance(parsed, (list, dict)):
+                    self.basket["approved_plan"] = approved_plan
+                    self.log.info(
+                        f"READ_TICKET: {ticket_id} has approved_plan ({len(approved_plan)} chars)"
+                    )
+                else:
+                    self.log.info(
+                        f"READ_TICKET: {ticket_id} approved_plan is not edit structure — skipping"
+                    )
+            except (json.JSONDecodeError, TypeError):
+                self.log.info(
+                    f"READ_TICKET: {ticket_id} approved_plan is prose (escalation artifact) — skipping"
+                )
+        if approval_notes:
+            self.basket["approval_notes"] = approval_notes
+            self.log.info(f"READ_TICKET: {ticket_id} has approval_notes")
+
+        self.log.info(
+            f"READ_TICKET: {ticket_id} desc_len={len(self.basket['ticket_description'])} "
+            f"plan_files={self.basket['plan_files']}"
+        )
+        return self.basket
+
+    def _drop_out_of_scope_high_inertia_hypotheses(self) -> dict:
+        """Pre-implement filter — drop HIGH-inertia hypotheses whose target file
+        isn't named in the ticket description, BEFORE scope_guard / pe_implement
+        runs. (T-igor-cognition-bypassing-advisor)
+
+        Closes the gap where pe_hypothesize emits a brainstem hallucination,
+        scope_guard catches it, _pe_escalate drops it and clears escalate_reason,
+        then pe_implement runs on a now-empty hypothesis list and triggers an
+        empty-close guard with a confusing 'implement_skipped / no edits' reason
+        instead of naming what actually went wrong.
+
+        Behavior:
+          - Loads ticket description from disk when absent from self.basket so the
+            scope check has something to compare against.
+          - For each hypothesis: when target_file is HIGH-inertia AND not named
+            in the description, drops it from self.basket['hypotheses'] and records
+            the drop in self.basket['_dropped_high_inertia'].
+          - self.basket['hypothesis'] is updated to the new first remaining edit
+            (or {} when the list empties).
+          - When the filter empties the list AND at least one drop occurred,
+            sets self.basket['escalate_reason'] to a clean message naming the
+            dropped files so the caller blocks with an informative reason.
+          - When no description is available anywhere, the filter is a no-op
+            (the existing _pe_escalate backstop handles that case).
+        """
+        if self.basket.get("error") or self.basket.get("escalate_reason"):
+            return self.basket
+
+        hypotheses = self.basket.get("hypotheses") or []
+        if not hypotheses:
+            return self.basket
+
+        description = self.basket.get("ticket_description", "") or ""
+        ticket_id = self.basket.get("ticket_id", "")
+        if not description and ticket_id and ticket_id != "unknown":
+            _t = _load_ticket(ticket_id)
+            description = (_t.get("description", "") or "") if _t else ""
+
+        if not description:
+            return self.basket
+
+        from .scope_guard import _classify_tier
+
+        kept: list[dict] = []
+        dropped: list[str] = []
+        for hyp in hypotheses:
+            if not isinstance(hyp, dict):
+                kept.append(hyp)
+                continue
+            target_file = hyp.get("file", "") or ""
+            if not target_file:
+                kept.append(hyp)
+                continue
+            if _classify_tier(target_file) != "HIGH":
+                kept.append(hyp)
+                continue
+            basename = Path(target_file).name
+            if target_file in description or basename in description:
+                kept.append(hyp)
+                continue
+            dropped.append(target_file)
+            self.log.info(
+                "PRE-IMPLEMENT FILTER: dropped HIGH-inertia hypothesis %s "
+                "(not named in ticket description for %s)",
+                target_file,
+                ticket_id or "?",
+            )
+
+        if not dropped:
+            return self.basket
+
+        self.basket["hypotheses"] = kept
+        self.basket["hypothesis"] = kept[0] if kept else {}
+        self.basket.setdefault("_dropped_high_inertia", []).extend(dropped)
+
+        if not kept:
+            self.basket["escalate_reason"] = (
+                "all proposed edits were out-of-scope HIGH-inertia hallucinations "
+                f"(dropped: {', '.join(dropped)})"
+            )
+
+        return self.basket
+
+    def pe_plan(self) -> dict:
+        """
+        PLAN step: generate implementation plan before touching any files.
+
+        If ticket has a 'plan' key, use it directly (fast path).
+        Otherwise call tier.2 Ollama to generate plan_summary + test_criterion.
+        Calls store_plan() for durable record. Non-fatal if tier.2 unavailable.
+
+        Reads from self.basket: ticket_id, ticket_description, ticket (raw dict)
+        Writes to self.basket:
+          plan_summary    str  — 1-2 sentence plan
+          test_criterion  str  — how to verify the fix
+          plan_source     str  — "ticket_plan" | "tier2_ollama" | "ticket_description"
+        """
+        if self.basket.get("error"):
+            return self.basket
+
+        ticket_id = self.basket.get("ticket_id", "unknown")
+        description = self.basket.get("ticket_description", "")
+        ticket = self.basket.get("ticket") or {}
+
+        if ticket.get("plan"):
+            self.basket["plan_summary"] = ticket["plan"]
+            self.basket["test_criterion"] = ticket.get("test_criterion", "")
+            self.basket["plan_source"] = "ticket_plan"
+            self.log.info(f"PLAN: using ticket.plan for {ticket_id}")
+            return self.basket
+
+        if description:
+            prompt = _PLAN_PROMPT.format(
+                ticket_id=ticket_id, description=description[:_DESC_CAP_REASONING]
+            )
+            self.log.info(f"PLAN: calling tier.2 for {ticket_id}")
+            # Routes to cheap background tier (Qwen) — verified T-verify-pe-chain-qwen-tier
+            raw = _call_tier2(prompt, temperature=0.7)
+            if raw:
+                plan_summary = ""
+                test_criterion = ""
+                for line in raw.splitlines():
+                    line = line.strip()
+                    if line.startswith("PLAN:"):
+                        plan_summary = line[5:].strip()
+                    elif line.startswith("TEST:"):
+                        test_criterion = line[5:].strip()
+                self.basket["plan_summary"] = plan_summary or raw[:200]
+                self.basket["test_criterion"] = test_criterion
+                self.basket["plan_source"] = "tier2_ollama"
+                self.log.info(f"PLAN: tier.2 plan={self.basket['plan_summary'][:80]}")
+            else:
+                self.basket["plan_summary"] = description[:_DESC_CAP_FALLBACK]
+                self.basket["test_criterion"] = ""
+                self.basket["plan_source"] = "ticket_description"
+                self.log.info(
+                    "PLAN: tier.2 unavailable — using ticket description as plan"
+                )
+        else:
+            self.basket["plan_summary"] = f"Implement {ticket_id}"
+            self.basket["test_criterion"] = ""
+            self.basket["plan_source"] = "empty"
+
+        if self.basket.get("plan_summary"):
+            try:
+                from .ops import store_plan as _store_plan
+
+                _store_plan(ticket_id, self.basket["plan_summary"])
+            except Exception as e:
+                self.log.warning("[pe_chain] pe_plan: store_plan failed: %s", e)
+
+        return self.basket
+
+    def pe_filter(self) -> dict:
+        """
+        FILTER step: pre-implementation safety checklist.
+
+        Checks:
+          1. plan_defined: self.basket["plan_summary"] is present
+          2. test_defined: self.basket["test_criterion"] is present (warn if missing)
+          3. not_high_inertia: plan_files don't include HIGH inertia paths (hard fail)
+
+        Escalates only on HIGH inertia violation. Other issues warn and proceed.
+
+        Reads from self.basket: plan_summary, test_criterion, plan_files
+        Writes to self.basket:
+          filter_result  str   — "PASS" | "WARN: reasons" | "FAIL: reasons"
+          filter_checks  dict  — check_name → bool
+        """
+        if self.basket.get("error"):
+            return self.basket
+
+        checks: dict[str, bool] = {}
+        warnings: list[str] = []
+        hard_fails: list[str] = []
+
+        checks["plan_defined"] = bool(self.basket.get("plan_summary"))
+        if not checks["plan_defined"]:
+            warnings.append("no plan_summary")
+
+        checks["test_defined"] = bool(self.basket.get("test_criterion"))
+        if not checks["test_defined"]:
+            warnings.append("no test_criterion")
+
+        plan_files = self.basket.get("plan_files") or []
+        hi_files = [f for f in plan_files if any(h in f for h in _FILTER_HIGH_INERTIA)]
+        checks["not_high_inertia"] = len(hi_files) == 0
+        if hi_files:
+            hard_fails.append(f"HIGH inertia files: {hi_files}")
+
+        self.basket["filter_checks"] = checks
+
+        if hard_fails:
+            self.basket["filter_result"] = f"FAIL: {';'.join(hard_fails)}"
+            self.basket["escalate_reason"] = (
+                f"filter_fail: {self.basket['filter_result']}"
+            )
+            self.log.info(f"FILTER: {self.basket['filter_result']} — escalating")
+        elif warnings:
+            self.basket["filter_result"] = f"WARN: {';'.join(warnings)}"
+            self.log.info(
+                f"FILTER: {self.basket['filter_result']} — proceeding with warnings"
+            )
+        else:
+            self.basket["filter_result"] = "PASS"
+            self.log.info(f"FILTER: PASS for {self.basket.get('ticket_id')}")
+
+        return self.basket
+
+    def pe_situate(self) -> dict:
+        """
+        SITUATE step: resolve plan_files — which files need to change?
+
+        Sources checked in order; first non-empty wins:
+          1. ticket required_files (already in self.basket['plan_files'])
+          2. 'Affected files:' structured field parsed from ticket description
+             (matches the /ticket template). Skips tier.2 when human-authored.
+          3. prior OBSERVE memory deposit for this ticket_id
+          4. tier.2 Qwen call with the guardrailed _SITUATE_PROMPT (temp 0.1)
+          5. consult peer-LLM when tier.2 returns empty; extract .py paths from
+             hypotheses (T-consult-situate-feedback-loop). ticket_description is
+             included in the consult context so the peer can name specific files.
+
+        Tier.2 output (path 4) is post-filtered to drop HIGH-inertia files not
+        named verbatim in the description. Path 5 (consult hints) applies the
+        same filter. Rationale: Qwen empirically hallucinates brainstem/kernel.py
+        as a canonical HIGH-inertia target for sparse tickets.
+
+        Reads from self.basket: ticket_description, plan_files (may be [])
+        Writes to self.basket:
+          plan_files      list[str]  — resolved file paths (updated if was empty)
+          situate_source  str        — "ticket_required_files" | "affected_files_field"
+                                        | "prior_observe_memory" | "tier2_ollama"
+                                        | "consult_hints" | "empty"
+        """
+        if self.basket.get("error"):
+            return self.basket
+
+        if not self.basket.get("ticket_description"):
+            self.basket["error"] = "pe_situate: no ticket_description in self.basket"
+            return self.basket
+
+        # Fast path 1: required_files already populated from ticket
+        if self.basket.get("plan_files"):
+            self.basket["situate_source"] = "ticket_required_files"
+            self.log.info(
+                f"SITUATE: using ticket required_files: {self.basket['plan_files']}"
+            )
+            return self.basket
+
+        description = self.basket["ticket_description"]
+
+        # Fast path 2: 'Affected files:' structured field from /ticket template.
+        # T-situate-accepts-declared-new-files: accept declared paths whether
+        # they exist yet or not — new-file tickets were dying at this step
+        # because _parse_file_list silently filtered non-existent paths.
+        affected, new_paths = _affected_files_from_description_detailed(description)
+        if affected:
+            self.basket["plan_files"] = affected
+            self.basket["situate_source"] = "affected_files_field"
+            if new_paths:
+                self.basket["new_files"] = new_paths
+                self.log.info(
+                    "SITUATE: using 'Affected files:' field: %s (new: %s)",
+                    affected,
+                    new_paths,
+                )
+            else:
+                self.log.info(f"SITUATE: using 'Affected files:' field: {affected}")
+            return self.basket
+
+        # Memory path: check prior observe deposits for this ticket before tier.2
+        ticket_id = self.basket.get("ticket_id", "")
+        if ticket_id:
+            prior_files = _situate_from_memory(ticket_id)
+            if prior_files:
+                self.basket["plan_files"] = prior_files
+                self.basket["situate_source"] = "prior_observe_memory"
+                self.log.info(
+                    f"SITUATE: recalled {len(prior_files)} files from prior observe deposit"
+                )
+                return self.basket
+
+        # Slow path: call tier.2 to figure out which files
+        prompt = _SITUATE_PROMPT.format(description=description[:_DESC_CAP_REASONING])
+        self.log.info(
+            "SITUATE: calling tier.2 (no required_files, Affected files field, or prior memory)"
+        )
+
+        # Temp 0.1: extraction task, not generation — reduces hallucination pressure.
+        raw = _call_tier2(prompt, temperature=0.1)
+        if raw:
+            files = _parse_file_list(raw)
+            filtered = _filter_high_inertia_not_in_description(files, description)
+            self.log.info(
+                "SITUATE: tier.2 returned %d files, kept %d: %s",
+                len(files),
+                len(filtered),
+                filtered,
+            )
+        else:
+            files = []
+            filtered = []
+            self.log.info("SITUATE: tier.2 unavailable — trying consult")
+
+        if filtered:
+            self.basket["plan_files"] = filtered
+            self.basket["situate_source"] = "tier2_ollama"
+            return self.basket
+
+        # T-consult-pe-chain-wire + T-consult-situate-feedback-loop:
+        # tier.2 returned nothing usable (unavailable or post-filter empty).
+        # Consult a peer-LLM for file-path hypotheses; extract any .py paths
+        # from the returned hypotheses and use them as a 5th resolution path.
+        # ticket_description is included in the consult extra so the peer has
+        # enough context to name specific files rather than generic advice.
+        self._maybe_consult_stuck(
+            stuck_reason="situate_empty",
+            summary=f"SITUATE returned 0 files for ticket {self.basket.get('ticket_id', '?')}",
+            what_i_tried=(
+                f"tier.2 qwen raw={raw[:200]!r}" if raw else "tier.2 unavailable"
+            ),
+            what_failed=(
+                f"post-filter dropped all {len(files)} tier.2 proposals"
+                if files
+                else "tier.2 returned no output"
+            ),
+        )
+        hint_files = _files_from_consult_hints(self.basket, description)
+        if hint_files:
+            self.basket["plan_files"] = hint_files
+            self.basket["situate_source"] = "consult_hints"
+            self.log.info(
+                "SITUATE: consult hints resolved %d file(s): %s",
+                len(hint_files),
+                hint_files,
+            )
+            return self.basket
+
+        self.basket["plan_files"] = []
+        self.basket["situate_source"] = "empty"
+        return self.basket
+
+    def pe_observe(self) -> dict:
+        """
+        OBSERVE step: two-pass grep+read to load relevant file sections into self.basket.
+
+        Pass 1 (map): grep for patterns derived from ticket_description across plan_files.
+                      Finds which line in each file is most relevant.
+                      Writes self.basket["line_ranges"]: {filepath: center_line}
+
+        Pass 2 (drill): read each file section centred on the matched line.
+                        Writes self.basket["actual"]: concatenation of all sections.
+                        Small context, high signal — not the full file.
+
+        If no grep matches found, falls back to reading the first N lines of each file.
+
+        Reads from self.basket: ticket_description, plan_files
+        Writes to self.basket:
+          line_ranges   dict[str, int]  — {filepath: best_match_line}
+          actual        str             — concatenated file sections (numbered lines)
+          observe_hits  int             — number of grep matches found
+        """
+        if self.basket.get("error"):
+            return self.basket
+
+        plan_files = self.basket.get("plan_files", [])
+        ticket_description = self.basket.get("ticket_description", "")
+
+        # Log the repo root in use — caught the cert-walk-W-1 silent-wrong-root bug
+        # (worktree intended, main read instead) only by inspecting the dump after
+        # the fact. This log line surfaces the routing decision at the moment OBSERVE
+        # reads files, so future divergences are visible immediately.
+        self.log.info(
+            "pe_observe reading from repo_root=%s (files=%s)",
+            _get_repo_root(),
+            plan_files,
+        )
+
+        if not plan_files:
+            # No files to observe — leave actual empty, HYPOTHESIZE will adapt
+            self.basket["line_ranges"] = {}
+            self.basket["actual"] = ""
+            self.basket["observe_hits"] = 0
+            self.log.info("OBSERVE: no plan_files — skipping")
+            return self.basket
+
+        patterns = _extract_grep_patterns(ticket_description)
+        self.log.info(f"OBSERVE: patterns={patterns} files={plan_files}")
+
+        line_ranges: dict[str, int] = {}
+
+        # Pass 1: grep each file with each pattern, collect best hit per file
+        for filepath in plan_files:
+            best_line = None
+            for pattern in patterns:
+                hits = _grep_file(pattern, str(_get_repo_root() / filepath))
+                if hits:
+                    best_line = hits[0]
+                    break  # first pattern match wins for this file
+            if best_line is not None:
+                line_ranges[filepath] = best_line
+            else:
+                # No grep match — use line 1 as fallback (read from top)
+                line_ranges[filepath] = 1
+
+        self.basket["line_ranges"] = line_ranges
+        self.basket["observe_hits"] = sum(
+            1 for f in plan_files if line_ranges.get(f, 1) > 1
+        )
+
+        # Pass 2: read each section
+        sections = []
+        for filepath, center_line in line_ranges.items():
+            header = f"\n# === {filepath} (around line {center_line}) ===\n"
+            section = _read_file_section(filepath, center_line)
+            sections.append(header + section)
+
+        self.basket["actual"] = "\n".join(sections)
+        self.log.info(
+            f"OBSERVE: {len(plan_files)} files, {self.basket['observe_hits']} grep hits, "
+            f"actual_len={len(self.basket['actual'])}"
+        )
+        return self.basket
+
+    def pe_run_bash(self) -> dict:
+        """
+        RUN_BASH step: run self.basket["bash_cmd"], write output to self.basket["bash_output"].
+
+        Layer 4 node — wraps _run_bash() as a self.basket-aware step function.
+        Used by tpl-layer4-run-bash code_ref slot.
+
+        Reads from self.basket: bash_cmd (str | list)
+        Writes to self.basket:
+          bash_output  str  — stdout+stderr, capped at 600 chars
+        """
+        if self.basket.get("error"):
+            return self.basket
+
+        cmd = self.basket.get("bash_cmd")
+        if not cmd:
+            self.basket["error"] = "pe_run_bash: no bash_cmd in self.basket"
+            return self.basket
+
+        args = cmd if isinstance(cmd, list) else cmd.split()
+        out = _run_bash(args, timeout=self.basket.get("bash_timeout", 30))
+        self.basket["bash_output"] = out
+        self.log.info(f"RUN_BASH: cmd={str(args)[:60]} output_len={len(out)}")
+        return self.basket
+
+    def pe_store_observe_results(self) -> dict:
+        """
+        STORE_OBSERVE_RESULTS: deposit OBSERVE findings as a FACTUAL memory.
+
+        If observe_hits > 0, stores a compact summary of grep results in Igor's
+        long-term graph via store_factual. Builds a persistent codebase knowledge
+        base from exploration sessions — Igor remembers what he found, not just
+        what he coded.
+
+        Non-fatal: store failure is logged and skipped; chain continues.
+
+        Reads from self.basket: ticket_id, ticket_description, actual, observe_hits, plan_files
+        Writes to self.basket:
+          observe_stored_id  str | None  — memory ID deposited, or None if skipped
+        """
+        if self.basket.get("error"):
+            return self.basket
+
+        hits = self.basket.get("observe_hits", 0)
+        actual = self.basket.get("actual", "")
+        ticket_id = self.basket.get("ticket_id", "?")
+        ticket_description = self.basket.get("ticket_description", "")
+        plan_files = self.basket.get("plan_files", [])
+
+        if not actual or hits == 0:
+            self.basket["observe_stored_id"] = None
+            self.log.info("STORE_OBSERVE_RESULTS: no hits — skipping deposit")
+            return self.basket
+
+        files_str = ", ".join(plan_files[:5])
+        summary = (
+            f"Codebase search for [{ticket_id}]: {ticket_description[:80]}. "
+            f"Files: {files_str}. "
+            f"Grep hits: {hits}. "
+            f"Excerpt: {actual[:400]}"
+        )
+
+        try:
+            from .graph_write import store_factual as _store_factual
+
+            result = _store_factual(summary)
+            self.basket["observe_stored_id"] = result
+            self.log.info(f"STORE_OBSERVE_RESULTS: deposited — {result[:60]}")
+        except Exception as e:
+            self.basket["observe_stored_id"] = None
+            self.log.info(f"STORE_OBSERVE_RESULTS: store failed ({e}) — continuing")
+
+        return self.basket
+
+    def pe_hypothesize(self) -> dict:
+        """
+        HYPOTHESIZE step: tier.2 call → structured edit JSON (multi-edit).
+
+        Given self.basket[ticket_description] and self.basket[actual] (observed code section),
+        calls Ollama with a tight prompt asking for minimal, exact edits.
+
+        Output format: {"edits": [{file, old_string, new_string}, ...]}
+
+        Validates that each old_string exists verbatim in the target file.
+        On validation failure: stores error in self.basket[hypothesis_error] but does NOT
+        set self.basket[error] — IMPLEMENT can still run with valid edits,
+        or REPLAN can retry.
+
+        Reads from self.basket: ticket_description, actual, plan_files
+        Writes to self.basket:
+          hypotheses        list[dict]   — [{file, old_string, new_string}, ...] or []
+          hypothesis        dict | None  — first edit (backwards compat for REPLAN/logging)
+          hypothesis_raw    str          — raw LLM output (for debugging)
+          hypothesis_error  str | None   — validation error if any edit invalid
+        """
+        if self.basket.get("error"):
+            return self.basket
+
+        # D333: if CC approved a plan, use it directly instead of calling LLM
+        approved_plan = self.basket.get("approved_plan")
+        if approved_plan:
+            self.log.info("HYPOTHESIZE: using CC-approved plan (skipping tier.2 call)")
+            try:
+                parsed = json.loads(approved_plan)
+                edits = parsed.get("edits", [])
+                if not edits and isinstance(parsed, list):
+                    edits = parsed  # allow bare list format
+            except (json.JSONDecodeError, TypeError):
+                # approved_plan is prose, not JSON — treat as description enhancement
+                # and fall through to normal hypothesize with enriched context
+                notes = self.basket.get("approval_notes", "")
+                self.basket["ticket_description"] = (
+                    f"{self.basket.get('ticket_description', '')}\n\n"
+                    f"CC-APPROVED PLAN:\n{approved_plan}\n"
+                    f"{f'CC NOTES: {notes}' if notes else ''}"
+                )
+                self.log.info(
+                    "HYPOTHESIZE: approved_plan is prose — enriching description"
+                )
+                approved_plan = None  # fall through to normal path
+
+        if approved_plan:
+            # Validate approved edits the same way we validate LLM edits
+            validation_errors = _validate_hypotheses(edits, _get_repo_root())
+            if validation_errors:
+                self.log.warning(
+                    f"HYPOTHESIZE: approved_plan has validation errors: {validation_errors}"
+                )
+                self.basket["hypothesis_error"] = "; ".join(validation_errors)
+            self.basket["hypotheses"] = edits
+            self.basket["hypothesis"] = edits[0] if edits else None
+            self.basket["hypothesis_raw"] = approved_plan
+            self.basket["hypothesis_error"] = self.basket.get("hypothesis_error")
+            return self.basket
+
+        description = self.basket.get("ticket_description", "")
+        actual = self.basket.get("actual", "")
+
+        if not description:
+            self.basket["error"] = (
+                "pe_hypothesize: no ticket_description in self.basket"
+            )
+            return self.basket
+
+        if not actual:
+            new_files = self.basket.get("new_files") or []
+            if not new_files:
+                # No observed code and no declared new files — ungrounded
+                self.basket["hypotheses"] = []
+                self.basket["hypothesis"] = None
+                self.basket["hypothesis_raw"] = ""
+                self.basket["hypothesis_error"] = (
+                    "no actual code observed — hypothesis ungrounded"
+                )
+                self.log.info("HYPOTHESIZE: no actual — skipping tier.2 call")
+                return self.basket
+            # New-file creation: no existing code to observe — ask LLM to generate content
+            target = new_files[0]
+            create_prompt = (
+                "You are creating a new source file. "
+                'Produce exactly one JSON object with an "edits" key containing one edit. '
+                'Use old_string="" (empty string) and new_string equal to the complete file content. '
+                "Do not include anything outside the JSON.\n\n"
+                f"File to create: {target}\n\n"
+                f"Ticket: {description[:_DESC_CAP_REASONING]}\n\n"
+                "Output JSON:\n"
+                '{"edits": [{"file": "<path>", "old_string": "", "new_string": "<full file content>"}]}'
+            )
+            self.log.info(
+                f"HYPOTHESIZE: new-file path — target={target} prompt_len={len(create_prompt)}"
+            )
+            raw = _call_tier2(create_prompt, temperature=0.2)
+            self.basket["hypothesis_raw"] = raw or ""
+        else:
+            # T-hypothesize-standards-injection: prepend coding standards for file-write tasks
+            standards_block = _get_coding_standards()
+            standards_prefix = f"\n{standards_block}\n" if standards_block else ""
+
+            prompt = _HYPOTHESIZE_PROMPT.format(
+                description=description[:_DESC_CAP_REASONING],
+                actual=_strip_line_prefix(actual[:_HYPOTHESIZE_ACTUAL_CHAR_CAP]),
+            )
+            if standards_prefix:
+                lines = prompt.split("\n", 1)
+                prompt = (
+                    lines[0] + "\n" + standards_prefix + lines[1]
+                    if len(lines) > 1
+                    else prompt + standards_prefix
+                )
+                self.log.info(
+                    f"HYPOTHESIZE: standards injected ({len(standards_block)} chars)"
+                )
+
+            self.log.info(f"HYPOTHESIZE: calling tier.2 prompt_len={len(prompt)}")
+
+            # Routes to cheap background tier (Qwen) — verified T-verify-pe-chain-qwen-tier
+            raw = _call_tier2(prompt, temperature=0.2)
+            self.basket["hypothesis_raw"] = raw or ""
+
+        if not raw:
+            self.basket["hypotheses"] = []
+            self.basket["hypothesis"] = None
+            self.basket["hypothesis_error"] = "tier.2 unavailable"
+            self.log.info("HYPOTHESIZE: tier.2 unavailable")
+            return self.basket
+
+        edits = _parse_hypothesis(raw)
+        if not edits:
+            self.basket["hypotheses"] = []
+            self.basket["hypothesis"] = None
+            self.basket["hypothesis_error"] = f"parse failed: {raw[:120]}"
+            self.log.info(f"HYPOTHESIZE: parse failed: {raw[:80]}")
+            return self.basket
+
+        # Validate each edit
+        errors = _validate_hypotheses(edits, _get_repo_root())
+
+        # T-pe-chain-hypothesize-retry: when old_string fails verbatim match, the
+        # LLM has paraphrased the actual code. Retry with the failure + actual
+        # content fed back so the next attempt can re-anchor on real characters.
+        retry_attempts = 0
+        while errors and edits and retry_attempts < _HYPOTHESIZE_MAX_RETRIES:
+            retry_attempts += 1
+            self.log.info(
+                f"HYPOTHESIZE: validation failed ({'; '.join(errors)}), "
+                f"retry {retry_attempts}/{_HYPOTHESIZE_MAX_RETRIES}"
+            )
+            retry_prompt = _build_retry_prompt(
+                prompt,
+                edits,
+                errors,
+                _strip_line_prefix(actual[:_HYPOTHESIZE_ACTUAL_CHAR_CAP]),
+            )
+            raw = _call_tier2(retry_prompt, temperature=0.2)
+            if not raw:
+                break
+            retry_edits = _parse_hypothesis(raw)
+            if not retry_edits:
+                self.log.info(f"HYPOTHESIZE: retry parse failed: {raw[:80]}")
+                break
+            edits = retry_edits
+            self.basket["hypothesis_raw"] = raw
+            errors = _validate_hypotheses(edits, _get_repo_root())
+
+        if errors:
+            self.basket["hypotheses"] = edits  # keep for debugging
+            self.basket["hypothesis"] = edits[0]
+            self.basket["hypothesis_error"] = (
+                f"validation failed after {retry_attempts} retries: {'; '.join(errors)}"
+            )
+            self.log.info(
+                f"HYPOTHESIZE: validation failed after {retry_attempts} retries: "
+                f"{'; '.join(errors)}"
+            )
+            return self.basket
+
+        self.basket["hypotheses"] = edits
+        self.basket["hypothesis"] = edits[0]  # backwards compat
+        self.basket["hypothesis_error"] = None
+        files_touched = sorted(set(e["file"] for e in edits))
+        self.log.info(
+            f"HYPOTHESIZE: {len(edits)} valid edit(s) in {', '.join(files_touched)}"
+        )
+        return self.basket
+
+    def pe_implement(self) -> dict:
+        """
+        IMPLEMENT step: apply self.basket[hypotheses] edits to target files.
+
+        Reads self.basket[hypotheses]: [{file, old_string, new_string}, ...]
+        Falls back to self.basket[hypothesis] (single dict) for backwards compat.
+        Applies edits in sequence. Stops on first error.
+        Writes to self.basket:
+          implement_result   str        — "ok: N/N edits" | "skipped: <reason>" | "error: <msg>"
+          implement_skipped  bool       — True if no valid edits to apply
+          implement_results  list[str]  — per-edit result strings
+          implement_files    list[str]  — files successfully modified
+        """
+        if self.basket.get("error"):
+            return self.basket
+
+        hypothesis_error = self.basket.get("hypothesis_error")
+        edits = self.basket.get("hypotheses") or []
+        # Backwards compat: single hypothesis dict
+        if not edits and self.basket.get("hypothesis"):
+            edits = [self.basket["hypothesis"]]
+
+        if not edits or hypothesis_error:
+            reason = hypothesis_error or "no hypothesis"
+            self.basket["implement_result"] = f"skipped: {reason}"
+            self.basket["implement_skipped"] = True
+            self.basket["implement_results"] = []
+            self.basket["implement_files"] = []
+            self.log.info(f"IMPLEMENT: skipped — {reason}")
+            return self.basket
+
+        results = []
+        files_modified = []
+        for i, edit in enumerate(edits):
+            filepath = _get_repo_root() / edit["file"]
+            old_string = edit["old_string"]
+            new_string = edit["new_string"]
+
+            try:
+                if not filepath.exists() and old_string == "":
+                    # New-file creation: write new_string as the complete file content
+                    filepath.parent.mkdir(parents=True, exist_ok=True)
+                    filepath.write_text(new_string)
+                    msg = f"edit[{i}] created: {edit['file']}"
+                    results.append(msg)
+                    files_modified.append(edit["file"])
+                    self.log.info(
+                        f"IMPLEMENT: created new file {edit['file']} ({len(new_string)} chars)"
+                    )
+                    continue
+
+                content = filepath.read_text(errors="replace")
+                if old_string not in content:
+                    msg = f"edit[{i}] error: old_string not in {edit['file']}"
+                    results.append(msg)
+                    self.log.info(f"IMPLEMENT: {msg}")
+                    self.basket["implement_result"] = msg
+                    self.basket["implement_skipped"] = True
+                    self.basket["implement_results"] = results
+                    self.basket["implement_files"] = files_modified
+                    return self.basket
+
+                new_content = content.replace(old_string, new_string, 1)
+                filepath.write_text(new_content)
+                msg = f"edit[{i}] ok: {edit['file']}"
+                results.append(msg)
+                files_modified.append(edit["file"])
+                self.log.info(
+                    f"IMPLEMENT: applied edit[{i}] in {edit['file']} "
+                    f"old_len={len(old_string)} new_len={len(new_string)}"
+                )
+            except Exception as e:
+                msg = f"edit[{i}] error: {e}"
+                results.append(msg)
+                self.log.info(f"IMPLEMENT: {msg}")
+                self.basket["implement_result"] = msg
+                self.basket["implement_skipped"] = True
+                self.basket["implement_results"] = results
+                self.basket["implement_files"] = files_modified
+                return self.basket
+
+        self.basket["implement_result"] = (
+            f"ok: {len(results)}/{len(edits)} edits applied"
+        )
+        self.basket["implement_skipped"] = False
+        self.basket["implement_results"] = results
+        self.basket["implement_files"] = files_modified
+        self.log.info(
+            f"IMPLEMENT: {len(results)} edits applied in {', '.join(files_modified)}"
+        )
+        return self.basket
+
+    def pe_test(self, preflight: bool = False) -> dict:
+        """
+        TEST step: run the test suite, store result in self.basket.
+
+        If preflight=True, this is a pre-edit sanity check. If it fails,
+        caller should escalate immediately (not attempt fixes).
+
+        Calls run_tests() from ops.py if available, else falls back to
+        subprocess pytest invocation.
+
+        Reads from self.basket: (nothing required)
+        Writes to self.basket:
+          test_result  str  — "pass" | "fail: <details>"
+        """
+        if self.basket.get("error"):
+            return self.basket
+
+        # Try ops.run_tests first (registered tool)
+        try:
+            from .ops import run_tests as _run_tests
+
+            raw = _run_tests()
+            # Use exit code embedded by run_tests() as primary signal — immune to
+            # threading exception noise in stderr that contains the word "error"
+            # (T-pe-chain-preflight-false-fail).
+            if raw.startswith("[exit:0]"):
+                passed = True
+            elif raw.startswith("[exit:"):
+                passed = False
+            else:
+                # Fallback for callers that don't embed exit code
+                passed = (
+                    "passed" in raw
+                    and "failed" not in raw
+                    and "error" not in raw.lower()
+                )
+            self.basket["test_result"] = "pass" if passed else f"fail: {raw[:300]}"
+            self.basket["test_output"] = raw
+            level = "preflight" if preflight else "post-edit"
+            self.log.info(
+                f"TEST ({level}, ops.run_tests): {self.basket['test_result'][:80]}"
+            )
+            return self.basket
+        except Exception as _exc:
+            self.log.error("SILENT_EXCEPT: %s", _exc)
+
+        # Fallback: direct pytest subprocess. 300s timeout matches ops.run_tests
+        # (full suite takes ~3.5 min on akiendell). Without this, pe_chain
+        # misreads timeout as a red suite (T-pe-chain-preflight-timeout-misdiagnosis).
+        # Keep in sync with ops._PREFLIGHT_IGNORE — these are the same exclusions.
+        _fallback_ignore = [
+            "tests/test_pe_chain_qwen_tier.py",
+            "tests/test_pr_load_as_primary_attractor.py",
+        ]
+        _ignore_args = [a for p in _fallback_ignore for a in ("--ignore", p)]
+        result = _run_bash(
+            ["python", "-m", "pytest", "tests/", "-x", "-q", "--tb=short"]
+            + _ignore_args,
+            timeout=600,
+        )
+        # Check only the last 5 lines for "error" — pytest's summary lands there;
+        # threading exception noise appears earlier (T-pe-chain-preflight-false-fail).
+        _summary = "\n".join(result.splitlines()[-5:])
+        passed = (
+            "passed" in result
+            and "failed" not in result
+            and "error" not in _summary.lower()
+        )
+        self.basket["test_result"] = "pass" if passed else f"fail: {result[:300]}"
+        self.basket["test_output"] = result
+        level = "preflight" if preflight else "post-edit"
+        self.log.info(f"TEST ({level}, pytest): {self.basket['test_result'][:80]}")
+        return self.basket
+
+    def pe_probe(self) -> dict:
+        """
+        PROBE step: optional post-implementation behavioral test via cc_send.
+
+        Reads ticket["probe_criterion"] — if absent, skip (non-fatal).
+        If present: inject probe stimulus via cc_send, wait 3s, read last 3 Igor
+        channel messages, check if response matches "expect:" line in criterion.
+
+        Reads from self.basket: ticket (raw dict), ticket_id
+        Writes to self.basket:
+          probe_result  str  — "PASS" | "SKIP: reason" | "FAIL: reason"
+        On FAIL: sets self.basket["escalate_reason"] = "probe_fail: ..."
+        """
+        if self.basket.get("error"):
+            return self.basket
+
+        ticket = self.basket.get("ticket") or {}
+        probe_criterion = ticket.get("probe_criterion", "")
+        if not probe_criterion:
+            self.basket["probe_result"] = "SKIP: no probe_criterion"
+            self.log.info(
+                f"PROBE: skip — no probe_criterion for {self.basket.get('ticket_id')}"
+            )
+            return self.basket
+
+        try:
+            import time
+            import urllib.request
+            import json as _json
+
+            stimulus = probe_criterion[:200]
+            payload = _json.dumps({"content": f"[probe] {stimulus}"}).encode()
+            req = urllib.request.Request(
+                "http://localhost:8080/api/cc_send",
+                data=payload,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=5):
+                pass
+            self.log.info(f"PROBE: sent stimulus: {stimulus[:60]}")
+            time.sleep(3)
+
+            # Read recent channel for Igor's response
+            req2 = urllib.request.Request(
+                "http://localhost:8080/api/channel_read?limit=3"
+            )
+            with urllib.request.urlopen(req2, timeout=5) as resp:
+                data = _json.loads(resp.read())
+            messages = data if isinstance(data, list) else data.get("messages", [])
+            igor_msgs = [
+                m.get("content", "") for m in messages if m.get("author") == "igor"
+            ]
+
+            expected = ""
+            for line in probe_criterion.splitlines():
+                if line.lower().startswith("expect:"):
+                    expected = line[7:].strip().lower()
+
+            if expected:
+                found = any(expected in m.lower() for m in igor_msgs)
+                if found:
+                    self.basket["probe_result"] = "PASS"
+                    self.log.info("PROBE: PASS — expected pattern found")
+                else:
+                    self.basket["probe_result"] = (
+                        f"FAIL: expected '{expected}' not in Igor response"
+                    )
+                    self.basket["escalate_reason"] = (
+                        f"probe_fail: {self.basket['probe_result']}"
+                    )
+                    self.log.info(f"PROBE: {self.basket['probe_result']}")
+            else:
+                self.basket["probe_result"] = "PASS: stimulus sent, no expected pattern"
+                self.log.info("PROBE: PASS (no expected pattern)")
+
+        except Exception as e:
+            self.log.warning("[pe_chain] pe_probe failed: %s", e)
+            self.basket["probe_result"] = f"SKIP: probe error ({e})"
+            self.log.info(f"PROBE: skip due to error: {e}")
+
+        return self.basket
+
+    def pe_close_loop(self) -> dict:
+        """
+        CLOSE LOOP step: dispatch based on test_result.
+
+        BRANCHIF test_result == "pass":
+          → pe_commit: git commit the change
+          → pe_close: close goal + mark ticket done
+          → return self.basket (chain complete)
+
+        BRANCHIF test_result starts with "fail" AND attempt_count < MAX_ATTEMPTS:
+          → increment attempt_count
+          → pe_replan: tier.2 call to revise hypothesis
+          → pe_implement: apply revised hypothesis
+          → pe_test: run tests again
+          → recurse back into pe_close_loop
+
+        BRANCHIF attempt_count >= MAX_ATTEMPTS:
+          → pe_escalate: post to channel, mark ticket blocked
+
+        Reads from self.basket: test_result, attempt_count, hypothesis, ticket_id, goal_id
+        Writes to self.basket:  commit_result, close_result, escalate_reason (on escalation)
+        """
+        if self.basket.get("error"):
+            return self.basket
+
+        test_result = self.basket.get("test_result", "")
+        attempt_count = self.basket.get("attempt_count", 0)
+
+        # ── Pass path ──────────────────────────────────────────────────────────────
+        if test_result == "pass" or (
+            test_result and not test_result.startswith("fail")
+        ):
+            # Guard: if implement was skipped (HYPOTHESIZE validation failed, no
+            # edit applied), closing the ticket would falsely mark it done. Escalate
+            # instead so a human can review and re-queue.
+            if self.basket.get("implement_skipped"):
+                return self._pe_escalate(
+                    reason=(
+                        "implement_skipped: HYPOTHESIZE produced an invalid old_string "
+                        "and no edit was applied — ticket needs re-queue with a corrected "
+                        f"hypothesis. Error: {self.basket.get('hypothesis_error', 'unknown')[:120]}"
+                    ),
+                )
+            self.basket = self._pe_commit()
+            # Belt-and-suspenders: even if implement_skipped wasn't set on this
+            # self.basket (e.g. the self.basket arrived from a fragmented dispatch where
+            # implement_skipped was lost), _pe_commit will have written
+            # commit_result="skipped: no edit applied" when files=[]. Catch that
+            # here so the close path can't fire on a skipped commit.
+            if (self.basket.get("commit_result") or "").startswith("skipped"):
+                return self._pe_escalate(
+                    reason=(
+                        "commit skipped without edits applied — self.basket likely lost "
+                        "implement_skipped flag across dispatch. "
+                        f"commit_result={self.basket.get('commit_result')!r}"
+                    ),
+                )
+            self.basket = self._pe_close()
+            return self.basket
+
+        # ── Fail path ──────────────────────────────────────────────────────────────
+        if attempt_count >= _MAX_ATTEMPTS:
+            return self._pe_escalate(reason=f"exhausted {_MAX_ATTEMPTS} attempts")
+
+        # Increment and replan
+        self.basket["attempt_count"] = attempt_count + 1
+        self.log.info(
+            f"CLOSE_LOOP: test failed, attempt {self.basket['attempt_count']}/{_MAX_ATTEMPTS} — replanning"
+        )
+
+        # D316/D317: post ESCALATION_NEEDED at attempt 2 so CC can prepare a fix
+        # while Igor makes its final attempt. Richer than the final ✗ blocked message.
+        if self.basket["attempt_count"] >= 2 and not self.basket.get(
+            "_escalation_sent"
+        ):
+            ticket_id = self.basket.get("ticket_id", "unknown")
+            _post_to_channel(
+                f"[pe_chain] ESCALATION_NEEDED {ticket_id} attempt={self.basket['attempt_count']}/{_MAX_ATTEMPTS} "
+                f"files={','.join(e.get('file','?') for e in self.basket.get('hypotheses', [self.basket.get('hypothesis') or {}]))} "
+                f"error={self.basket.get('hypothesis_error', self.basket.get('test_result', '?'))[:100]} "
+                f"plan={self.basket.get('plan_summary', '?')[:80]}"
+            )
+            self.basket["_escalation_sent"] = True
+            self.log.info(f"CLOSE_LOOP: ESCALATION_NEEDED posted for {ticket_id}")
+
+            # T-consult-pe-chain-wire: fire a consult on second attempt.
+            # Peer-LLM gets the hypothesis + test failure; hypotheses stored
+            # in self.basket for human review + future use. Rate-limited per self.basket.
+            self._maybe_consult_stuck(
+                stuck_reason="implement_fails_twice",
+                summary=f"implement failed twice for {ticket_id}",
+                what_i_tried=f"hypothesis={str(self.basket.get('hypothesis') or {})[:200]}",
+                what_failed=str(
+                    self.basket.get("hypothesis_error")
+                    or self.basket.get("test_result")
+                    or "?"
+                )[:300],
+            )
+
+        self.basket = self._pe_replan()
+        if self.basket.get("error"):
+            return self.basket
+        self.basket = self.pe_implement()
+        if self.basket.get("error"):
+            return self.basket
+        self.basket = self.pe_test()
+
+        # Recurse — tail call for next iteration
+        return self.pe_close_loop()
+
+    def _pe_replan(self) -> dict:
+        """
+        REPLAN: tier.2 call to revise hypothesis after test failure.
+        Overwrites self.basket[hypotheses] with revised edits.
+        """
+        edits = self.basket.get("hypotheses") or []
+        if not edits and self.basket.get("hypothesis"):
+            edits = [self.basket["hypothesis"]]
+
+        # Format previous edits for the prompt
+        prev_lines = []
+        for i, e in enumerate(edits):
+            prev_lines.append(
+                f"  edit[{i}]: file={e.get('file', '?')} "
+                f"old_string={e.get('old_string', '')[:150]} "
+                f"new_string={e.get('new_string', '')[:150]}"
+            )
+        previous_edits = "\n".join(prev_lines) if prev_lines else "  (none)"
+
+        prompt = _REPLAN_PROMPT.format(
+            description=self.basket.get("ticket_description", "")[:300],
+            previous_edits=previous_edits,
+            test_result=self.basket.get("test_result", "")[:300],
+            actual=self.basket.get("actual", "")[:1500],
+        )
+        self.log.info(
+            f"REPLAN: calling tier.2 attempt={self.basket.get('attempt_count')}"
+        )
+        # Routes to cheap background tier (Qwen) — verified T-verify-pe-chain-qwen-tier
+        raw = _call_tier2(prompt, temperature=0.2)
+        self.basket["hypothesis_raw"] = raw or ""
+
+        if not raw:
+            self.basket["hypotheses"] = []
+            self.basket["hypothesis"] = None
+            self.basket["hypothesis_error"] = "replan: tier.2 unavailable"
+            return self.basket
+
+        new_edits = _parse_hypothesis(raw)
+        if not new_edits:
+            self.basket["hypotheses"] = []
+            self.basket["hypothesis"] = None
+            self.basket["hypothesis_error"] = f"replan: parse failed: {raw[:80]}"
+            return self.basket
+
+        errors = _validate_hypotheses(new_edits, _get_repo_root())
+        if errors:
+            self.basket["hypotheses"] = new_edits
+            self.basket["hypothesis"] = new_edits[0]
+            self.basket["hypothesis_error"] = f"replan validation: {'; '.join(errors)}"
+            return self.basket
+
+        self.basket["hypotheses"] = new_edits
+        self.basket["hypothesis"] = new_edits[0]
+        self.basket["hypothesis_error"] = None
+        files_touched = sorted(set(e["file"] for e in new_edits))
+        self.log.info(
+            f"REPLAN: {len(new_edits)} revised edit(s) in {', '.join(files_touched)}"
+        )
+        return self.basket
+
+    def _pe_commit(self) -> dict:
+        """COMMIT: git add + commit all changed files."""
+        files = self.basket.get("implement_files") or []
+        # Backwards compat: fall back to single hypothesis file
+        if not files:
+            hyp = self.basket.get("hypothesis")
+            if hyp and not self.basket.get("implement_skipped"):
+                files = [hyp.get("file", "")]
+
+        if not files or self.basket.get("implement_skipped"):
+            self.basket["commit_result"] = "skipped: no edit applied"
+            return self.basket
+
+        ticket_id = self.basket.get("ticket_id", "unknown")
+
+        # git add each file
+        for filepath in files:
+            result = _run_bash(
+                ["git", "-C", str(_get_repo_root()), "add", filepath],
+                timeout=15,
+            )
+            if "error" in result.lower() or "fatal" in result.lower():
+                self.basket["commit_result"] = (
+                    f"git add failed ({filepath}): {result[:100]}"
+                )
+                self.log.info(f"COMMIT: git add failed: {result[:80]}")
+                return self.basket
+
+        file_list = ", ".join(files)
+        msg = f"fix: {ticket_id} — pe_chain autonomous edit ({len(files)} file(s))\n\nCo-Authored-By: Igor <igor@theigors>"
+        result = _run_bash(
+            ["git", "-C", str(_get_repo_root()), "commit", "-m", msg],
+            timeout=15,
+        )
+        self.basket["commit_result"] = result[:120]
+        self.log.info(f"COMMIT: {len(files)} file(s) [{file_list}]: {result[:80]}")
+        return self.basket
+
+    def _pe_close(self) -> dict:
+        """CLOSE: mark ticket done + close the active GOAL memory.
+
+        Defensive last-line guard: refuse to close when no edits were applied.
+        This catches any caller path that bypassed the pe_close_loop guards
+        (e.g. fragmented self.basket dispatch). T-pe-chain-empty-close-detection.
+        """
+        ticket_id = self.basket.get("ticket_id", "")
+        test_result = self.basket.get("test_result", "pass")
+
+        # Refuse-to-close if no real work shipped. Fail loud so the next leak
+        # is debuggable instead of silently marking another ticket done-empty.
+        implement_skipped = bool(self.basket.get("implement_skipped"))
+        commit_skipped = (self.basket.get("commit_result") or "").startswith("skipped")
+        no_edits = not (self.basket.get("implement_files") or [])
+        if implement_skipped or commit_skipped or no_edits:
+            self.log.warning(
+                "CLOSE refused: ticket=%s implement_skipped=%s commit_skipped=%s "
+                "no_edits=%s commit_result=%r — escalating instead",
+                ticket_id,
+                implement_skipped,
+                commit_skipped,
+                no_edits,
+                self.basket.get("commit_result"),
+            )
+            return self._pe_escalate(
+                reason=(
+                    "_pe_close defensive guard: refusing to close empty work. "
+                    f"implement_skipped={implement_skipped} commit_skipped={commit_skipped} "
+                    f"no_edits={no_edits}"
+                ),
+            )
+
+        # Conclude any live consult session before tearing down the goal
+        self._conclude_consult_session()
+
+        # Close ticket
+        if ticket_id:
+            result = _run_bash(
+                [
+                    "python3",
+                    str(_CC_QUEUE),
+                    "done",
+                    ticket_id,
+                    f"pe_chain autonomous: {test_result[:80]}",
+                ],
+                timeout=15,
+            )
+            self.basket["close_result"] = result[:120]
+            self.log.info(f"CLOSE: ticket {ticket_id} → {result[:60]}")
+
+        # Close goal
+        try:
+            from .ops import close_goal_by_ticket as _close_goal
+
+            goal_result = _close_goal(ticket_id)
+            self.basket["goal_close_result"] = goal_result
+            self.log.info(f"CLOSE: goal → {goal_result[:60]}")
+        except Exception as e:
+            self.basket["goal_close_result"] = f"[error: {e}]"
+
+        # Post success to channel
+        _post_to_channel(
+            f"[pe_chain] ✓ {ticket_id}: edit applied, tests pass, committed."
+        )
+        return self.basket
+
+    def _close_goal_on_escalate(self) -> None:
+        """Deactivate the active GOAL when pe_chain escalates early (preflight/filter/scope).
+
+        T-pe-chain-goal-close-on-escalate: without this, goal_continuation re-emits
+        GOAL_READY on the next cycle and fires PROC_CODING_SPRINT again, letting LLM
+        territory hallucinate out-of-scope file edits.
+        """
+        ticket_id = self.basket.get("ticket_id", "unknown")
+        try:
+            from .ops import close_goal_by_ticket as _close_goal
+
+            goal_result = _close_goal(ticket_id)
+            self.basket["goal_close_result"] = goal_result
+            self.log.info(f"ESCALATE: goal closed → {goal_result[:60]}")
+        except Exception as e:
+            self.basket["goal_close_result"] = f"[error: {e}]"
+            self.log.info(f"ESCALATE: goal close error: {e}")
+
+    def _pe_escalate(self, reason: str) -> dict:
+        """D331: ESCALATE — compose design proposal for HIGH inertia, or block for other reasons."""
+        ticket_id = self.basket.get("ticket_id", "unknown")
+
+        # Conclude any live consult session — escalation ends the goal regardless of reason
+        self._conclude_consult_session()
+
+        # Recover ticket_id from active GOAL if self.basket lost it
+        if ticket_id == "unknown":
+            goal = _get_active_goal()
+            if goal:
+                task = goal.metadata.get("source_message", goal.narrative[:120])
+                recovered = _extract_ticket_id(task)
+                if recovered:
+                    ticket_id = recovered
+                    self.basket["ticket_id"] = ticket_id
+                    self.log.info(
+                        f"ESCALATE: recovered ticket_id={ticket_id} from active GOAL"
+                    )
+
+        # T-scope-guard-reattempt-loop short-term mitigation (2026-04-19):
+        # If ticket_id still "unknown" after recovery attempt, this self.basket is
+        # malformed — it reached _pe_escalate via a code path that didn't run
+        # pe_entry_init (likely engram-driven direct invocation). Log the self.basket
+        # shape to forensic logger for a future session to trace the origin,
+        # and DO NOT post the '✗ unknown' channel spam. The echo Akien's been
+        # seeing for two weeks stops here. Real pe_chain blocks with real
+        # ticket_ids continue to post normally.
+        if ticket_id == "unknown":
+            try:
+                # Keep the log line bounded — the self.basket can be huge.
+                keys_present = sorted(list(self.basket.keys()))[:20]
+                hyp = self.basket.get("hypothesis") or {}
+                hyp_summary = ""
+                if isinstance(hyp, dict):
+                    hyp_summary = (
+                        f"file={hyp.get('file','')[:60]} "
+                        f"old_len={len(str(hyp.get('old_string','')))} "
+                        f"new_len={len(str(hyp.get('new_string','')))}"
+                    )
+                self.log.error(
+                    "MALFORMED_BASKET: pe_escalate without ticket_id reason=%s keys=%s hyp=%s",
+                    reason[:120],
+                    keys_present,
+                    hyp_summary[:200],
+                )
+            except Exception as e:
+                self.log.debug(
+                    "_escalate_step: _post_to_channel (malformed) failed: %s", e
+                )
+            self.log.info(
+                f"ESCALATE: malformed self.basket (no ticket_id) — suppressed channel post. Reason was: {reason[:120]}"
+            )
+            self.basket["escalate_reason"] = f"malformed: {reason}"
+            return self.basket
+
+        self.basket["escalate_reason"] = reason
+        self.log.info(f"ESCALATE: {ticket_id} — {reason}")
+
+        # D331: HIGH inertia → propose for approval instead of blocking.
+        # T-escalate-validates-file-exists: if the target_file doesn't exist
+        # under the repo root, tier2 hallucinated a path. Asking CC to approve
+        # editing a nonexistent file is noise — rewrite the reason and fall
+        # through to the block branch so the real bug is visible.
+        # T-pe-chain-inertia-gate-hallucinated-target (2026-04-23): extends the
+        # same logic to paths that EXIST but aren't named in the ticket's
+        # 'Affected files:' section. Tier2 empirically defaults HIGH-inertia
+        # hallucinations to real files (brainstem/core_patterns.py), which the
+        # exists-check lets through. Cross-check against the ticket scope using
+        # the same filter SITUATE uses (_filter_high_inertia_not_in_description);
+        # if hypothesis is HIGH-inertia AND not named in description, treat as
+        # hallucinated so the proposal doesn't post with the wrong target.
+        is_high_inertia = "HIGH inertia" in reason
+        target_file = ""
+        _hyp = self.basket.get("hypothesis")
+        if isinstance(_hyp, dict):
+            target_file = _hyp.get("file", "") or ""
+        if (
+            is_high_inertia
+            and target_file
+            and not (_get_repo_root() / target_file).exists()
+        ):
+            self.log.info(
+                f"ESCALATE: hallucinated-file suppressed — {target_file} "
+                f"does not exist; dropping hypothesis and continuing"
+            )
+            self.basket["hypotheses"] = [
+                h
+                for h in self.basket.get("hypotheses", [])
+                if not (isinstance(h, dict) and h.get("file") == target_file)
+            ]
+            if (
+                isinstance(self.basket.get("hypothesis"), dict)
+                and self.basket.get("hypothesis", {}).get("file") == target_file
+            ):
+                self.basket["hypothesis"] = (
+                    self.basket["hypotheses"][0] if self.basket["hypotheses"] else {}
+                )
+            self.basket.pop("escalate_reason", None)
+            return self.basket
+        elif is_high_inertia and target_file:
+            description = self.basket.get("ticket_description", "") or ""
+            # If description not in self.basket (READ_TICKET skipped or ENGRAM path),
+            # load from disk so the cross-check has real scope to compare against.
+            if not description:
+                _t = (
+                    _load_ticket(ticket_id)
+                    if ticket_id and ticket_id != "unknown"
+                    else None
+                )
+                description = (_t.get("description", "") or "") if _t else ""
+                if description:
+                    self.log.info(
+                        f"ESCALATE: loaded ticket description from disk for cross-check ({len(description)} chars)"
+                    )
+            if not description:
+                # No description anywhere — cannot verify scope. Suppress to avoid false proposal.
+                reason = (
+                    f"hallucinated HIGH-inertia target: {target_file} "
+                    f"(no ticket description available to verify scope)"
+                )
+                self.basket["escalate_reason"] = reason
+                self.log.info(
+                    f"ESCALATE: suppressed HIGH inertia proposal — no description for cross-check"
+                )
+                is_high_inertia = False
+            else:
+                kept = _filter_high_inertia_not_in_description(
+                    [target_file], description
+                )
+                if not kept:
+                    self.log.info(
+                        f"ESCALATE: hallucinated-scope suppressed — {target_file} "
+                        f"not in ticket scope; dropping hypothesis and continuing"
+                    )
+                    self.basket["hypotheses"] = [
+                        h
+                        for h in self.basket.get("hypotheses", [])
+                        if not (isinstance(h, dict) and h.get("file") == target_file)
+                    ]
+                    if (
+                        isinstance(self.basket.get("hypothesis"), dict)
+                        and self.basket.get("hypothesis", {}).get("file") == target_file
+                    ):
+                        self.basket["hypothesis"] = (
+                            self.basket["hypotheses"][0]
+                            if self.basket["hypotheses"]
+                            else {}
+                        )
+                    self.basket.pop("escalate_reason", None)
+                    return self.basket
+
+        if is_high_inertia and ticket_id and ticket_id != "unknown":
+            # Compose a design proposal from the self.basket
+            plan = self.basket.get("plan_summary", "")
+            hypothesis = self.basket.get("hypothesis", {})
+            target_file = (
+                hypothesis.get("file", "") if isinstance(hypothesis, dict) else ""
+            )
+            proposal = (
+                f"Igor wants to edit {target_file} (HIGH inertia). "
+                f"Plan: {plan[:200]}. "
+                f"Reason: {reason[:100]}"
+            )
+            _post_to_channel(
+                f"[DESIGN PROPOSAL] {ticket_id}: {proposal[:250]}. "
+                f"Awaiting CC approval — run: cc_queue.py approve {ticket_id}"
+            )
+            _run_bash(
+                ["python3", str(_CC_QUEUE), "propose", ticket_id, proposal[:300]],
+                timeout=15,
+            )
+            # T-cc-inbox-producer: also push to CC inbox so /readinbox surfaces the
+            # pending approval on next CC turn (Akien doesn't have to flag it).
+            try:
+                from ..cognition.cc_inbox_bridge import post_to_cc_inbox as _cc_post
+
+                _cc_post(
+                    kind="pe_chain_design_proposal",
+                    summary=f"Igor proposes edit to {target_file} (HIGH inertia)",
+                    body=proposal,
+                    ticket_id=ticket_id,
+                    urgency="high",
+                    response_expected=True,
+                )
+            except Exception as e:
+                self.log.debug(
+                    "_escalate_step: cortex.twm_write (for_approval) failed: %s", e
+                )
+        else:
+            # Dedup on (ticket_id, reason-prefix): if the same ticket blocks for
+            # the same reason twice within 30 min, only the first hits the channel.
+            # The root cause — a habit/goal re-firing the same blocked op — is
+            # tracked under T-scope-guard-reattempt-loop (follow-up).
+            _post_to_channel(
+                f"[pe_chain] ✗ {ticket_id}: blocked after {self.basket.get('attempt_count', 0)} attempts. "
+                f"Reason: {reason}. Needs human review.",
+                dedup_key=f"pe_chain:blocked:{ticket_id}:{reason[:80]}",
+            )
+            if ticket_id and ticket_id != "unknown":
+                _run_bash(
+                    ["python3", str(_CC_QUEUE), "block", ticket_id, reason[:120]],
+                    timeout=15,
+                )
+            # T-cc-inbox-producer: push to CC inbox so /readinbox shows the block.
+            # These are the drops we want CC to see without relying on Akien.
+            try:
+                from ..cognition.cc_inbox_bridge import post_to_cc_inbox as _cc_post
+
+                _cc_post(
+                    kind="pe_chain_block",
+                    summary=f"{ticket_id} blocked: {reason[:120]}",
+                    body=f"attempts={self.basket.get('attempt_count', 0)}. full reason: {reason}",
+                    ticket_id=(
+                        ticket_id if ticket_id and ticket_id != "unknown" else None
+                    ),
+                    urgency="normal",
+                    response_expected=True,
+                )
+            except Exception as e:
+                self.log.debug(
+                    "_escalate_step: cortex.twm_write (blocked) failed: %s", e
+                )
+
+        self._close_goal_on_escalate()
+
+        return self.basket
+
+    def _run_entry_chain(self) -> dict:
+        """
+        Run the full PROC_CODE_A_TICKET chain:
+        ENTRY → CLAIM → READ_TICKET → PLAN → FILTER → SITUATE → OBSERVE →
+        STORE_OBSERVE_RESULTS → HYPOTHESIZE → IMPLEMENT → TEST → PROBE → CLOSE_LOOP.
+
+        Returns the final self.basket dict.
+        Caller checks self.basket.get("error") for fatal failure.
+        self.basket.get("escalate_reason") indicates exhausted retries.
+        """
+        self.basket = self.pe_entry_init()
+        if self.basket.get("error"):
+            return self.basket
+        ticket_id = self.basket.get("ticket_id")
+        if ticket_id:
+            _ticket = _load_ticket(ticket_id)
+            if _ticket and _ticket.get("worker") not in (None, "", "igor"):
+                worker = _ticket["worker"]
+                msg = f"pe_chain: ticket {ticket_id} has worker={worker} — skipping (Igor only works worker=igor tickets)"
+                self.basket["error"] = msg
+                self.log.info(f"ENTRY: {msg}")
+                return self.basket
+        self.basket = self.pe_claim()
+        if self.basket.get("error"):
+            return self.basket
+        self.basket = self.pe_read_ticket()
+        if self.basket.get("error"):
+            return self.basket
+        self.basket = self.pe_plan()
+        if self.basket.get("error"):
+            return self.basket
+        self.basket = self.pe_filter()
+        if self.basket.get("escalate_reason"):
+            self._close_goal_on_escalate()
+            return self.basket
+        self.basket = self.pe_situate()
+        if self.basket.get("error"):
+            return self.basket
+        self.basket = self.pe_observe()
+        if self.basket.get("error"):
+            return self.basket
+        self.basket = self.pe_store_observe_results()
+        if self.basket.get("error"):
+            return self.basket
+
+        # PRE-FLIGHT: Run tests BEFORE hypothesize to catch broken test suite early.
+        # On failure, try preflight_heal to classify + auto-repair known rot patterns
+        # (e.g. live-network test with no mock). If heal succeeds, re-run pre-flight
+        # once and proceed. Otherwise escalate as before.
+        self.basket = self.pe_test(preflight=True)
+        if self.basket.get("test_result", "").startswith("fail"):
+            from .preflight_heal import heal_and_commit as _heal
+
+            failure_text = (
+                self.basket.get("test_output")
+                or self.basket["test_result"][len("fail: ") :]
+            )
+            heal = _heal(failure_text, _get_repo_root())
+            if heal.healed:
+                self.log.info(
+                    f"PRE-FLIGHT HEAL: {heal.recognizer} applied {len(heal.edits)} edit(s) "
+                    f"(commit {heal.commit_sha}) — re-running pre-flight"
+                )
+                self.basket = self.pe_test(preflight=True)
+                if self.basket.get("test_result", "").startswith("fail"):
+                    self.basket["escalate_reason"] = (
+                        f"pre-flight: still broken after heal ({heal.recognizer}) — "
+                        f"{self.basket['test_result'][:100]}. Skipping attempts."
+                    )
+                    self.log.info(
+                        f"PRE-FLIGHT FAILED (post-heal): {self.basket['escalate_reason']}"
+                    )
+                    # T-consult-pe-chain-wire: consult on post-heal failure
+                    self._maybe_consult_stuck(
+                        stuck_reason="preflight_unrelated",
+                        summary=f"pre-flight still red after heal for {self.basket.get('ticket_id', '?')}",
+                        what_i_tried=f"applied heal recognizer={heal.recognizer}",
+                        what_failed=self.basket["test_result"][:300],
+                    )
+                    self._close_goal_on_escalate()
+                    return self.basket
+                self.log.info(f"PRE-FLIGHT HEALED via {heal.recognizer} — proceeding")
+            else:
+                # T-pe-chain-preflight-timeout-misdiagnosis: distinguish timeout
+                # (tests didn't finish in time) from red-suite (tests actually
+                # failed). The consult + escalate_reason should say what happened,
+                # not blur both into "test suite broken".
+                _is_timeout = "[run_tests] timeout" in self.basket.get(
+                    "test_output", ""
+                ) or "[run_tests] timeout" in self.basket.get("test_result", "")
+                if _is_timeout:
+                    self.basket["escalate_reason"] = (
+                        f"pre-flight: test suite timed out — "
+                        f"{self.basket['test_result'][:100]}. Skipping attempts."
+                    )
+                    self.log.info(
+                        f"PRE-FLIGHT TIMEOUT: {self.basket['escalate_reason']}"
+                    )
+                    self._maybe_consult_stuck(
+                        stuck_reason="preflight_timeout",
+                        summary=f"pre-flight timed out for {self.basket.get('ticket_id', '?')}",
+                        what_i_tried="ran pre-flight test suite; it didn't finish in the subprocess budget",
+                        what_failed=self.basket["test_result"][:300],
+                    )
+                else:
+                    self.basket["escalate_reason"] = (
+                        f"pre-flight: test suite already broken — "
+                        f"{self.basket['test_result'][:100]}. Skipping attempts."
+                    )
+                    self.log.info(
+                        f"PRE-FLIGHT TEST FAILED: {self.basket['escalate_reason']}"
+                    )
+                    # T-consult-preflight-trigger-narrow: removed unactionable consult.
+                    # "no recognizer matched" means infra is broken — Igor cannot act
+                    # on that hypothesis, so the consult just fires on repeat.
+                self._close_goal_on_escalate()
+                return self.basket
+
+        self.basket = self.pe_hypothesize()
+        if self.basket.get("error"):
+            return self.basket
+
+        # Pre-implement scope filter: drop HIGH-inertia hypotheses whose target
+        # isn't named in the ticket description so pe_implement never runs on
+        # hallucinated brainstem proposals. When the drop empties the list,
+        # escalate with a clear "all proposals out of scope" reason instead of
+        # falling through to the empty-implement / empty-close cascade.
+        self.basket = self._drop_out_of_scope_high_inertia_hypotheses()
+        if self.basket.get("escalate_reason"):
+            _evict_goal_ready_twm(self.basket.get("ticket_id", ""))
+            self._close_goal_on_escalate()
+            return self.basket
+
+        from .scope_guard import run_scope_guard as _scope_guard
+
+        self.basket = _scope_guard(self.basket)
+        if self.basket.get("escalate_reason"):
+            # Evict GOAL_READY so sprint doesn't immediately re-fire the blocked chain
+            _evict_goal_ready_twm(self.basket.get("ticket_id", ""))
+            self._close_goal_on_escalate()
+            return self.basket
+        self.basket = self.pe_implement()
+        if self.basket.get("error"):
+            return self.basket
+        self.basket = self.pe_test()
+        if self.basket.get("error"):
+            return self.basket
+        self.basket = self.pe_probe()
+        if self.basket.get("error"):
+            return self.basket
+        self.basket = self.pe_close_loop()
+        return self.basket
+
+
+# ── Module-level shims — preserve basket-passing API for debugger/tests ──────
+
+
+def pe_entry_init(basket: dict | None = None) -> dict:
+    return PeChain(basket=basket or {}).pe_entry_init()
+
+
+def pe_claim(basket: dict) -> dict:
+    return PeChain(basket=basket).pe_claim()
+
+
+def pe_read_ticket(basket: dict) -> dict:
+    return PeChain(basket=basket).pe_read_ticket()
+
+
+def pe_plan(basket: dict) -> dict:
+    return PeChain(basket=basket).pe_plan()
+
+
+def pe_filter(basket: dict) -> dict:
+    return PeChain(basket=basket).pe_filter()
+
+
+def pe_situate(basket: dict) -> dict:
+    return PeChain(basket=basket).pe_situate()
+
+
+def pe_observe(basket: dict) -> dict:
+    return PeChain(basket=basket).pe_observe()
+
+
+def pe_run_bash(basket: dict) -> dict:
+    return PeChain(basket=basket).pe_run_bash()
+
+
+def pe_store_observe_results(basket: dict) -> dict:
+    return PeChain(basket=basket).pe_store_observe_results()
+
+
+def pe_hypothesize(basket: dict) -> dict:
+    return PeChain(basket=basket).pe_hypothesize()
+
+
+def pe_implement(basket: dict) -> dict:
+    return PeChain(basket=basket).pe_implement()
+
+
+def pe_probe(basket: dict) -> dict:
+    return PeChain(basket=basket).pe_probe()
+
+
+def pe_close_loop(basket: dict) -> dict:
+    return PeChain(basket=basket).pe_close_loop()
+
+
+def pe_test(basket: dict, preflight: bool = False) -> dict:
+    return PeChain(basket=basket).pe_test(preflight=preflight)
 
 
 def _evict_goal_ready_twm(ticket_id: str) -> None:
@@ -452,195 +2334,12 @@ def _get_active_goal() -> dict | None:
 # Caller checks basket.get("error") to detect failure.
 
 
-def pe_entry_init(basket: dict | None = None) -> dict:
-    """
-    ENTRY step: extract ticket_id from active GOAL, seed basket constants.
-
-    Reads from: active GOAL memory (TWM + cortex)
-    Writes to basket:
-      ticket_id       str    — from goal source_message
-      attempt_count   int    — 0 (fresh start)
-      expected        str    — constant: "tests pass, requirements met"
-      goal_id         str    — GOAL memory id (for close step)
-    """
-    basket = basket if basket is not None else {}
-
-    # If ticket_id already seeded (e.g. from test or direct call), keep it
-    if basket.get("ticket_id"):
-        basket.setdefault("attempt_count", 0)
-        basket.setdefault("expected", "tests pass, requirements met")
-        log.info(f"ENTRY: ticket_id already set: {basket['ticket_id']}")
-        return _enforce_single_ticket_mode(basket)
-
-    goal = _get_active_goal()
-    if not goal:
-        basket["error"] = "pe_entry_init: no active GOAL memory found"
-        log.info("ENTRY: no active goal")
-        return basket
-
-    task = goal.metadata.get("source_message", goal.narrative[:120])
-    ticket_id = _extract_ticket_id(task)
-    if not ticket_id:
-        basket["error"] = f"pe_entry_init: no ticket ID in goal: {task[:80]}"
-        log.info(f"ENTRY: no ticket_id in goal task: {task[:60]}")
-        return basket
-
-    basket["ticket_id"] = ticket_id
-    basket["goal_id"] = goal.id
-    basket["attempt_count"] = 0
-    basket["expected"] = "tests pass, requirements met"
-    log.info(f"ENTRY: ticket_id={ticket_id} goal={goal.id}")
-    return _enforce_single_ticket_mode(basket)
-
-
 # T-igor-single-ticket-mode: cert-protocol kill-switch.
 # When IGOR_SINGLE_TICKET=<ticket_id> is set, pe_chain only allows that one
 # ticket through ENTRY. All other tickets are skipped with a log line so
 # the cert protocol (single-step Igor through one ticket at a time, validate
 # end product, mark complete) can run without Igor greedily auto-claiming
 # adjacent tickets in the queue.
-def _enforce_single_ticket_mode(basket: dict) -> dict:
-    """If IGOR_SINGLE_TICKET is set, gate ENTRY to that one ticket id only."""
-    allowed = os.environ.get("IGOR_SINGLE_TICKET", "").strip()
-    if not allowed:
-        return basket
-    current = basket.get("ticket_id")
-    if current == allowed:
-        log.info(
-            "[pe_chain] single-ticket mode: %s claimable (matches IGOR_SINGLE_TICKET)",
-            current,
-        )
-        return basket
-    if current:
-        log.info(
-            "[pe_chain] single-ticket mode: only %s may be claimed; skipping %s",
-            allowed,
-            current,
-        )
-    else:
-        log.info(
-            "[pe_chain] single-ticket mode: only %s may be claimed; no ticket in basket",
-            allowed,
-        )
-    basket["error"] = (
-        f"single_ticket_mode: IGOR_SINGLE_TICKET={allowed} blocks {current!r}"
-    )
-    return basket
-
-
-def pe_claim(basket: dict) -> dict:
-    """
-    CLAIM step: mark ticket in_progress in cc_queue.
-
-    Reads from basket: ticket_id
-    Writes to basket:  claim_result (str — confirmation or error)
-    """
-    if basket.get("error"):
-        return basket
-
-    ticket_id = basket.get("ticket_id")
-    if not ticket_id:
-        basket["error"] = "pe_claim: no ticket_id in basket"
-        return basket
-
-    result = _run_bash(["python3", str(_CC_QUEUE), "claim", ticket_id])
-    basket["claim_result"] = result
-    log.info(f"CLAIM: {ticket_id} → {result[:80]}")
-    if "in_progress, not pending" in result:
-        # Ticket already claimed by goal_continuation step 0 — this is our ticket, proceed
-        log.info(f"CLAIM: {ticket_id} already in_progress — proceeding (goal owns it)")
-    elif "not pending" in result or "not found" in result:
-        basket["error"] = f"pe_claim: cannot claim — {result.strip()}"
-        log.info(f"CLAIM: aborting chain — {result.strip()}")
-        # Evict GOAL_READY so PROC_CODING_SPRINT doesn't immediately re-fire
-        _evict_goal_ready_twm(ticket_id)
-    return basket
-
-
-def pe_read_ticket(basket: dict) -> dict:
-    """
-    READ_TICKET step: load ticket details into basket.
-
-    Reads from basket: ticket_id
-    Writes to basket:
-      ticket_description  str       — full description text
-      ticket_title        str       — short title
-      plan_files          list[str] — required_files from ticket (may be [])
-    """
-    if basket.get("error"):
-        return basket
-
-    ticket_id = basket.get("ticket_id")
-    if not ticket_id:
-        basket["error"] = "pe_read_ticket: no ticket_id in basket"
-        return basket
-
-    ticket = _load_ticket(ticket_id)
-    if not ticket:
-        basket["error"] = f"pe_read_ticket: ticket {ticket_id!r} not found in queue"
-        log.info(f"READ_TICKET: {ticket_id} not found")
-        return basket
-
-    basket["ticket_description"] = ticket.get("description") or ticket.get("title", "")
-    basket["ticket_title"] = ticket.get("title", "")
-    basket["plan_files"] = ticket.get("required_files") or []
-
-    # Abort before SITUATE when description is absent — prevents title-semantic hallucination
-    _desc = basket["ticket_description"].strip()
-    _title = basket.get("ticket_title", "").strip()
-    if len(_desc) < 50 or _desc == _title:
-        basket["error"] = (
-            f"pe_read_ticket: {ticket_id} has no description "
-            f"(len={len(_desc)}) — add Affected files + scope before Igor can plan this"
-        )
-        log.info(
-            "READ_TICKET: %s aborted — description absent or title-only", ticket_id
-        )
-        try:
-            _post_to_channel(
-                f"[pe_chain] ✗ {ticket_id}: can't plan — no description. "
-                f"Please add to the ticket: (1) what problem to solve, "
-                f"(2) Affected files, (3) scope boundary. "
-                f"Title was: '{_title[:60]}'",
-                dedup_key=f"no-desc-{ticket_id}",
-            )
-        except Exception:
-            pass
-        return basket
-
-    # D333: load CC-approved plan if present (D331 escalation → approval flow)
-    # Only load approved_plan if it is valid JSON with edit structure. Prose
-    # approved_plan is an escalation artifact written by cmd_approve copying
-    # Igor's escalation text verbatim — if loaded, HYPOTHESIZE injects it as
-    # "CC-APPROVED PLAN:" into the description and the LLM re-proposes the same
-    # hallucinated file. Prose is silently discarded so the chain runs clean.
-    approved_plan = ticket.get("approved_plan")
-    approval_notes = ticket.get("approval_notes")
-    if approved_plan:
-        try:
-            parsed = json.loads(approved_plan)
-            if isinstance(parsed, (list, dict)):
-                basket["approved_plan"] = approved_plan
-                log.info(
-                    f"READ_TICKET: {ticket_id} has approved_plan ({len(approved_plan)} chars)"
-                )
-            else:
-                log.info(
-                    f"READ_TICKET: {ticket_id} approved_plan is not edit structure — skipping"
-                )
-        except (json.JSONDecodeError, TypeError):
-            log.info(
-                f"READ_TICKET: {ticket_id} approved_plan is prose (escalation artifact) — skipping"
-            )
-    if approval_notes:
-        basket["approval_notes"] = approval_notes
-        log.info(f"READ_TICKET: {ticket_id} has approval_notes")
-
-    log.info(
-        f"READ_TICKET: {ticket_id} desc_len={len(basket['ticket_description'])} "
-        f"plan_files={basket['plan_files']}"
-    )
-    return basket
 
 
 # ── SITUATE ───────────────────────────────────────────────────────────────────
@@ -1105,90 +2804,6 @@ def _filter_high_inertia_not_in_description(
     return kept
 
 
-def _drop_out_of_scope_high_inertia_hypotheses(basket: dict) -> dict:
-    """Pre-implement filter — drop HIGH-inertia hypotheses whose target file
-    isn't named in the ticket description, BEFORE scope_guard / pe_implement
-    runs. (T-igor-cognition-bypassing-advisor)
-
-    Closes the gap where pe_hypothesize emits a brainstem hallucination,
-    scope_guard catches it, _pe_escalate drops it and clears escalate_reason,
-    then pe_implement runs on a now-empty hypothesis list and triggers an
-    empty-close guard with a confusing 'implement_skipped / no edits' reason
-    instead of naming what actually went wrong.
-
-    Behavior:
-      - Loads ticket description from disk when absent from basket so the
-        scope check has something to compare against.
-      - For each hypothesis: when target_file is HIGH-inertia AND not named
-        in the description, drops it from basket['hypotheses'] and records
-        the drop in basket['_dropped_high_inertia'].
-      - basket['hypothesis'] is updated to the new first remaining edit
-        (or {} when the list empties).
-      - When the filter empties the list AND at least one drop occurred,
-        sets basket['escalate_reason'] to a clean message naming the
-        dropped files so the caller blocks with an informative reason.
-      - When no description is available anywhere, the filter is a no-op
-        (the existing _pe_escalate backstop handles that case).
-    """
-    if basket.get("error") or basket.get("escalate_reason"):
-        return basket
-
-    hypotheses = basket.get("hypotheses") or []
-    if not hypotheses:
-        return basket
-
-    description = basket.get("ticket_description", "") or ""
-    ticket_id = basket.get("ticket_id", "")
-    if not description and ticket_id and ticket_id != "unknown":
-        _t = _load_ticket(ticket_id)
-        description = (_t.get("description", "") or "") if _t else ""
-
-    if not description:
-        return basket
-
-    from .scope_guard import _classify_tier
-
-    kept: list[dict] = []
-    dropped: list[str] = []
-    for hyp in hypotheses:
-        if not isinstance(hyp, dict):
-            kept.append(hyp)
-            continue
-        target_file = hyp.get("file", "") or ""
-        if not target_file:
-            kept.append(hyp)
-            continue
-        if _classify_tier(target_file) != "HIGH":
-            kept.append(hyp)
-            continue
-        basename = Path(target_file).name
-        if target_file in description or basename in description:
-            kept.append(hyp)
-            continue
-        dropped.append(target_file)
-        log.info(
-            "PRE-IMPLEMENT FILTER: dropped HIGH-inertia hypothesis %s "
-            "(not named in ticket description for %s)",
-            target_file,
-            ticket_id or "?",
-        )
-
-    if not dropped:
-        return basket
-
-    basket["hypotheses"] = kept
-    basket["hypothesis"] = kept[0] if kept else {}
-    basket.setdefault("_dropped_high_inertia", []).extend(dropped)
-
-    if not kept:
-        basket["escalate_reason"] = (
-            "all proposed edits were out-of-scope HIGH-inertia hallucinations "
-            f"(dropped: {', '.join(dropped)})"
-        )
-
-    return basket
-
-
 # ── PLAN ──────────────────────────────────────────────────────────────────────
 
 _PLAN_PROMPT = """You are planning a code change for a software ticket.
@@ -1203,131 +2818,9 @@ TEST: <one sentence: how to verify the fix works>
 Be specific. Mention function/file/class names. Two lines only."""
 
 
-def pe_plan(basket: dict) -> dict:
-    """
-    PLAN step: generate implementation plan before touching any files.
-
-    If ticket has a 'plan' key, use it directly (fast path).
-    Otherwise call tier.2 Ollama to generate plan_summary + test_criterion.
-    Calls store_plan() for durable record. Non-fatal if tier.2 unavailable.
-
-    Reads from basket: ticket_id, ticket_description, ticket (raw dict)
-    Writes to basket:
-      plan_summary    str  — 1-2 sentence plan
-      test_criterion  str  — how to verify the fix
-      plan_source     str  — "ticket_plan" | "tier2_ollama" | "ticket_description"
-    """
-    if basket.get("error"):
-        return basket
-
-    ticket_id = basket.get("ticket_id", "unknown")
-    description = basket.get("ticket_description", "")
-    ticket = basket.get("ticket") or {}
-
-    if ticket.get("plan"):
-        basket["plan_summary"] = ticket["plan"]
-        basket["test_criterion"] = ticket.get("test_criterion", "")
-        basket["plan_source"] = "ticket_plan"
-        log.info(f"PLAN: using ticket.plan for {ticket_id}")
-        return basket
-
-    if description:
-        prompt = _PLAN_PROMPT.format(
-            ticket_id=ticket_id, description=description[:_DESC_CAP_REASONING]
-        )
-        log.info(f"PLAN: calling tier.2 for {ticket_id}")
-        # Routes to cheap background tier (Qwen) — verified T-verify-pe-chain-qwen-tier
-        raw = _call_tier2(prompt, temperature=0.7)
-        if raw:
-            plan_summary = ""
-            test_criterion = ""
-            for line in raw.splitlines():
-                line = line.strip()
-                if line.startswith("PLAN:"):
-                    plan_summary = line[5:].strip()
-                elif line.startswith("TEST:"):
-                    test_criterion = line[5:].strip()
-            basket["plan_summary"] = plan_summary or raw[:200]
-            basket["test_criterion"] = test_criterion
-            basket["plan_source"] = "tier2_ollama"
-            log.info(f"PLAN: tier.2 plan={basket['plan_summary'][:80]}")
-        else:
-            basket["plan_summary"] = description[:_DESC_CAP_FALLBACK]
-            basket["test_criterion"] = ""
-            basket["plan_source"] = "ticket_description"
-            log.info("PLAN: tier.2 unavailable — using ticket description as plan")
-    else:
-        basket["plan_summary"] = f"Implement {ticket_id}"
-        basket["test_criterion"] = ""
-        basket["plan_source"] = "empty"
-
-    if basket.get("plan_summary"):
-        try:
-            from .ops import store_plan as _store_plan
-
-            _store_plan(ticket_id, basket["plan_summary"])
-        except Exception as e:
-            log.warning("[pe_chain] pe_plan: store_plan failed: %s", e)
-
-    return basket
-
-
 # ── FILTER ────────────────────────────────────────────────────────────────────
 
 from .inertia_map import HIGH_PATHS as _FILTER_HIGH_INERTIA
-
-
-def pe_filter(basket: dict) -> dict:
-    """
-    FILTER step: pre-implementation safety checklist.
-
-    Checks:
-      1. plan_defined: basket["plan_summary"] is present
-      2. test_defined: basket["test_criterion"] is present (warn if missing)
-      3. not_high_inertia: plan_files don't include HIGH inertia paths (hard fail)
-
-    Escalates only on HIGH inertia violation. Other issues warn and proceed.
-
-    Reads from basket: plan_summary, test_criterion, plan_files
-    Writes to basket:
-      filter_result  str   — "PASS" | "WARN: reasons" | "FAIL: reasons"
-      filter_checks  dict  — check_name → bool
-    """
-    if basket.get("error"):
-        return basket
-
-    checks: dict[str, bool] = {}
-    warnings: list[str] = []
-    hard_fails: list[str] = []
-
-    checks["plan_defined"] = bool(basket.get("plan_summary"))
-    if not checks["plan_defined"]:
-        warnings.append("no plan_summary")
-
-    checks["test_defined"] = bool(basket.get("test_criterion"))
-    if not checks["test_defined"]:
-        warnings.append("no test_criterion")
-
-    plan_files = basket.get("plan_files") or []
-    hi_files = [f for f in plan_files if any(h in f for h in _FILTER_HIGH_INERTIA)]
-    checks["not_high_inertia"] = len(hi_files) == 0
-    if hi_files:
-        hard_fails.append(f"HIGH inertia files: {hi_files}")
-
-    basket["filter_checks"] = checks
-
-    if hard_fails:
-        basket["filter_result"] = f"FAIL: {';'.join(hard_fails)}"
-        basket["escalate_reason"] = f"filter_fail: {basket['filter_result']}"
-        log.info(f"FILTER: {basket['filter_result']} — escalating")
-    elif warnings:
-        basket["filter_result"] = f"WARN: {';'.join(warnings)}"
-        log.info(f"FILTER: {basket['filter_result']} — proceeding with warnings")
-    else:
-        basket["filter_result"] = "PASS"
-        log.info(f"FILTER: PASS for {basket.get('ticket_id')}")
-
-    return basket
 
 
 def _situate_from_memory(ticket_id: str) -> list[str]:
@@ -1367,138 +2860,6 @@ def _situate_from_memory(ticket_id: str) -> list[str]:
     except Exception as e:
         log.debug("_situate_from_memory: lookup failed (%s) — continuing to tier.2", e)
         return []
-
-
-def pe_situate(basket: dict) -> dict:
-    """
-    SITUATE step: resolve plan_files — which files need to change?
-
-    Sources checked in order; first non-empty wins:
-      1. ticket required_files (already in basket['plan_files'])
-      2. 'Affected files:' structured field parsed from ticket description
-         (matches the /ticket template). Skips tier.2 when human-authored.
-      3. prior OBSERVE memory deposit for this ticket_id
-      4. tier.2 Qwen call with the guardrailed _SITUATE_PROMPT (temp 0.1)
-      5. consult peer-LLM when tier.2 returns empty; extract .py paths from
-         hypotheses (T-consult-situate-feedback-loop). ticket_description is
-         included in the consult context so the peer can name specific files.
-
-    Tier.2 output (path 4) is post-filtered to drop HIGH-inertia files not
-    named verbatim in the description. Path 5 (consult hints) applies the
-    same filter. Rationale: Qwen empirically hallucinates brainstem/kernel.py
-    as a canonical HIGH-inertia target for sparse tickets.
-
-    Reads from basket: ticket_description, plan_files (may be [])
-    Writes to basket:
-      plan_files      list[str]  — resolved file paths (updated if was empty)
-      situate_source  str        — "ticket_required_files" | "affected_files_field"
-                                    | "prior_observe_memory" | "tier2_ollama"
-                                    | "consult_hints" | "empty"
-    """
-    if basket.get("error"):
-        return basket
-
-    if not basket.get("ticket_description"):
-        basket["error"] = "pe_situate: no ticket_description in basket"
-        return basket
-
-    # Fast path 1: required_files already populated from ticket
-    if basket.get("plan_files"):
-        basket["situate_source"] = "ticket_required_files"
-        log.info(f"SITUATE: using ticket required_files: {basket['plan_files']}")
-        return basket
-
-    description = basket["ticket_description"]
-
-    # Fast path 2: 'Affected files:' structured field from /ticket template.
-    # T-situate-accepts-declared-new-files: accept declared paths whether
-    # they exist yet or not — new-file tickets were dying at this step
-    # because _parse_file_list silently filtered non-existent paths.
-    affected, new_paths = _affected_files_from_description_detailed(description)
-    if affected:
-        basket["plan_files"] = affected
-        basket["situate_source"] = "affected_files_field"
-        if new_paths:
-            basket["new_files"] = new_paths
-            log.info(
-                "SITUATE: using 'Affected files:' field: %s (new: %s)",
-                affected,
-                new_paths,
-            )
-        else:
-            log.info(f"SITUATE: using 'Affected files:' field: {affected}")
-        return basket
-
-    # Memory path: check prior observe deposits for this ticket before tier.2
-    ticket_id = basket.get("ticket_id", "")
-    if ticket_id:
-        prior_files = _situate_from_memory(ticket_id)
-        if prior_files:
-            basket["plan_files"] = prior_files
-            basket["situate_source"] = "prior_observe_memory"
-            log.info(
-                f"SITUATE: recalled {len(prior_files)} files from prior observe deposit"
-            )
-            return basket
-
-    # Slow path: call tier.2 to figure out which files
-    prompt = _SITUATE_PROMPT.format(description=description[:_DESC_CAP_REASONING])
-    log.info(
-        "SITUATE: calling tier.2 (no required_files, Affected files field, or prior memory)"
-    )
-
-    # Temp 0.1: extraction task, not generation — reduces hallucination pressure.
-    raw = _call_tier2(prompt, temperature=0.1)
-    if raw:
-        files = _parse_file_list(raw)
-        filtered = _filter_high_inertia_not_in_description(files, description)
-        log.info(
-            "SITUATE: tier.2 returned %d files, kept %d: %s",
-            len(files),
-            len(filtered),
-            filtered,
-        )
-    else:
-        files = []
-        filtered = []
-        log.info("SITUATE: tier.2 unavailable — trying consult")
-
-    if filtered:
-        basket["plan_files"] = filtered
-        basket["situate_source"] = "tier2_ollama"
-        return basket
-
-    # T-consult-pe-chain-wire + T-consult-situate-feedback-loop:
-    # tier.2 returned nothing usable (unavailable or post-filter empty).
-    # Consult a peer-LLM for file-path hypotheses; extract any .py paths
-    # from the returned hypotheses and use them as a 5th resolution path.
-    # ticket_description is included in the consult extra so the peer has
-    # enough context to name specific files rather than generic advice.
-    _maybe_consult_stuck(
-        basket,
-        stuck_reason="situate_empty",
-        summary=f"SITUATE returned 0 files for ticket {basket.get('ticket_id', '?')}",
-        what_i_tried=f"tier.2 qwen raw={raw[:200]!r}" if raw else "tier.2 unavailable",
-        what_failed=(
-            f"post-filter dropped all {len(files)} tier.2 proposals"
-            if files
-            else "tier.2 returned no output"
-        ),
-    )
-    hint_files = _files_from_consult_hints(basket, description)
-    if hint_files:
-        basket["plan_files"] = hint_files
-        basket["situate_source"] = "consult_hints"
-        log.info(
-            "SITUATE: consult hints resolved %d file(s): %s",
-            len(hint_files),
-            hint_files,
-        )
-        return basket
-
-    basket["plan_files"] = []
-    basket["situate_source"] = "empty"
-    return basket
 
 
 # ── OBSERVE ───────────────────────────────────────────────────────────────────
@@ -1691,167 +3052,10 @@ def _read_file_section(
         return f"[read_file_section error: {e}]"
 
 
-def pe_observe(basket: dict) -> dict:
-    """
-    OBSERVE step: two-pass grep+read to load relevant file sections into basket.
-
-    Pass 1 (map): grep for patterns derived from ticket_description across plan_files.
-                  Finds which line in each file is most relevant.
-                  Writes basket["line_ranges"]: {filepath: center_line}
-
-    Pass 2 (drill): read each file section centred on the matched line.
-                    Writes basket["actual"]: concatenation of all sections.
-                    Small context, high signal — not the full file.
-
-    If no grep matches found, falls back to reading the first N lines of each file.
-
-    Reads from basket: ticket_description, plan_files
-    Writes to basket:
-      line_ranges   dict[str, int]  — {filepath: best_match_line}
-      actual        str             — concatenated file sections (numbered lines)
-      observe_hits  int             — number of grep matches found
-    """
-    if basket.get("error"):
-        return basket
-
-    plan_files = basket.get("plan_files", [])
-    ticket_description = basket.get("ticket_description", "")
-
-    # Log the repo root in use — caught the cert-walk-W-1 silent-wrong-root bug
-    # (worktree intended, main read instead) only by inspecting the dump after
-    # the fact. This log line surfaces the routing decision at the moment OBSERVE
-    # reads files, so future divergences are visible immediately.
-    log.info(
-        "pe_observe reading from repo_root=%s (files=%s)",
-        _get_repo_root(),
-        plan_files,
-    )
-
-    if not plan_files:
-        # No files to observe — leave actual empty, HYPOTHESIZE will adapt
-        basket["line_ranges"] = {}
-        basket["actual"] = ""
-        basket["observe_hits"] = 0
-        log.info("OBSERVE: no plan_files — skipping")
-        return basket
-
-    patterns = _extract_grep_patterns(ticket_description)
-    log.info(f"OBSERVE: patterns={patterns} files={plan_files}")
-
-    line_ranges: dict[str, int] = {}
-
-    # Pass 1: grep each file with each pattern, collect best hit per file
-    for filepath in plan_files:
-        best_line = None
-        for pattern in patterns:
-            hits = _grep_file(pattern, str(_get_repo_root() / filepath))
-            if hits:
-                best_line = hits[0]
-                break  # first pattern match wins for this file
-        if best_line is not None:
-            line_ranges[filepath] = best_line
-        else:
-            # No grep match — use line 1 as fallback (read from top)
-            line_ranges[filepath] = 1
-
-    basket["line_ranges"] = line_ranges
-    basket["observe_hits"] = sum(1 for f in plan_files if line_ranges.get(f, 1) > 1)
-
-    # Pass 2: read each section
-    sections = []
-    for filepath, center_line in line_ranges.items():
-        header = f"\n# === {filepath} (around line {center_line}) ===\n"
-        section = _read_file_section(filepath, center_line)
-        sections.append(header + section)
-
-    basket["actual"] = "\n".join(sections)
-    log.info(
-        f"OBSERVE: {len(plan_files)} files, {basket['observe_hits']} grep hits, "
-        f"actual_len={len(basket['actual'])}"
-    )
-    return basket
-
-
 # ── RUN_BASH (public basket-aware wrapper) ────────────────────────────────────
 
 
-def pe_run_bash(basket: dict) -> dict:
-    """
-    RUN_BASH step: run basket["bash_cmd"], write output to basket["bash_output"].
-
-    Layer 4 node — wraps _run_bash() as a basket-aware step function.
-    Used by tpl-layer4-run-bash code_ref slot.
-
-    Reads from basket: bash_cmd (str | list)
-    Writes to basket:
-      bash_output  str  — stdout+stderr, capped at 600 chars
-    """
-    if basket.get("error"):
-        return basket
-
-    cmd = basket.get("bash_cmd")
-    if not cmd:
-        basket["error"] = "pe_run_bash: no bash_cmd in basket"
-        return basket
-
-    args = cmd if isinstance(cmd, list) else cmd.split()
-    out = _run_bash(args, timeout=basket.get("bash_timeout", 30))
-    basket["bash_output"] = out
-    log.info(f"RUN_BASH: cmd={str(args)[:60]} output_len={len(out)}")
-    return basket
-
-
 # ── STORE_OBSERVE_RESULTS ─────────────────────────────────────────────────────
-
-
-def pe_store_observe_results(basket: dict) -> dict:
-    """
-    STORE_OBSERVE_RESULTS: deposit OBSERVE findings as a FACTUAL memory.
-
-    If observe_hits > 0, stores a compact summary of grep results in Igor's
-    long-term graph via store_factual. Builds a persistent codebase knowledge
-    base from exploration sessions — Igor remembers what he found, not just
-    what he coded.
-
-    Non-fatal: store failure is logged and skipped; chain continues.
-
-    Reads from basket: ticket_id, ticket_description, actual, observe_hits, plan_files
-    Writes to basket:
-      observe_stored_id  str | None  — memory ID deposited, or None if skipped
-    """
-    if basket.get("error"):
-        return basket
-
-    hits = basket.get("observe_hits", 0)
-    actual = basket.get("actual", "")
-    ticket_id = basket.get("ticket_id", "?")
-    ticket_description = basket.get("ticket_description", "")
-    plan_files = basket.get("plan_files", [])
-
-    if not actual or hits == 0:
-        basket["observe_stored_id"] = None
-        log.info("STORE_OBSERVE_RESULTS: no hits — skipping deposit")
-        return basket
-
-    files_str = ", ".join(plan_files[:5])
-    summary = (
-        f"Codebase search for [{ticket_id}]: {ticket_description[:80]}. "
-        f"Files: {files_str}. "
-        f"Grep hits: {hits}. "
-        f"Excerpt: {actual[:400]}"
-    )
-
-    try:
-        from .graph_write import store_factual as _store_factual
-
-        result = _store_factual(summary)
-        basket["observe_stored_id"] = result
-        log.info(f"STORE_OBSERVE_RESULTS: deposited — {result[:60]}")
-    except Exception as e:
-        basket["observe_stored_id"] = None
-        log.info(f"STORE_OBSERVE_RESULTS: store failed ({e}) — continuing")
-
-    return basket
 
 
 # ── HYPOTHESIZE ───────────────────────────────────────────────────────────────
@@ -1998,9 +3202,7 @@ def _parse_hypothesis(raw: str) -> list[dict] | None:
         if all(k in obj for k in ("file", "old_string", "new_string")):
             return [obj]
     except Exception as _exc:
-        from ..cognition.forensic_logger import log_error as _le
-
-        _le(kind="SILENT_EXCEPT", detail=f"pe_chain.py:1082: {_exc}")
+        log.debug("SILENT_EXCEPT: %s", _exc)
 
     # Fallback: extract fields with regex (single edit only)
     try:
@@ -2020,9 +3222,7 @@ def _parse_hypothesis(raw: str) -> list[dict] | None:
                 }
             ]
     except Exception as _exc:
-        from ..cognition.forensic_logger import log_error as _le
-
-        _le(kind="SILENT_EXCEPT", detail=f"pe_chain.py:1102: {_exc}")
+        log.debug("SILENT_EXCEPT: %s", _exc)
 
     return None
 
@@ -2087,355 +3287,10 @@ def _build_retry_prompt(
     )
 
 
-def pe_hypothesize(basket: dict) -> dict:
-    """
-    HYPOTHESIZE step: tier.2 call → structured edit JSON (multi-edit).
-
-    Given basket[ticket_description] and basket[actual] (observed code section),
-    calls Ollama with a tight prompt asking for minimal, exact edits.
-
-    Output format: {"edits": [{file, old_string, new_string}, ...]}
-
-    Validates that each old_string exists verbatim in the target file.
-    On validation failure: stores error in basket[hypothesis_error] but does NOT
-    set basket[error] — IMPLEMENT can still run with valid edits,
-    or REPLAN can retry.
-
-    Reads from basket: ticket_description, actual, plan_files
-    Writes to basket:
-      hypotheses        list[dict]   — [{file, old_string, new_string}, ...] or []
-      hypothesis        dict | None  — first edit (backwards compat for REPLAN/logging)
-      hypothesis_raw    str          — raw LLM output (for debugging)
-      hypothesis_error  str | None   — validation error if any edit invalid
-    """
-    if basket.get("error"):
-        return basket
-
-    # D333: if CC approved a plan, use it directly instead of calling LLM
-    approved_plan = basket.get("approved_plan")
-    if approved_plan:
-        log.info("HYPOTHESIZE: using CC-approved plan (skipping tier.2 call)")
-        try:
-            parsed = json.loads(approved_plan)
-            edits = parsed.get("edits", [])
-            if not edits and isinstance(parsed, list):
-                edits = parsed  # allow bare list format
-        except (json.JSONDecodeError, TypeError):
-            # approved_plan is prose, not JSON — treat as description enhancement
-            # and fall through to normal hypothesize with enriched context
-            notes = basket.get("approval_notes", "")
-            basket["ticket_description"] = (
-                f"{basket.get('ticket_description', '')}\n\n"
-                f"CC-APPROVED PLAN:\n{approved_plan}\n"
-                f"{f'CC NOTES: {notes}' if notes else ''}"
-            )
-            log.info("HYPOTHESIZE: approved_plan is prose — enriching description")
-            approved_plan = None  # fall through to normal path
-
-    if approved_plan:
-        # Validate approved edits the same way we validate LLM edits
-        validation_errors = _validate_hypotheses(edits, _get_repo_root())
-        if validation_errors:
-            log.warning(
-                f"HYPOTHESIZE: approved_plan has validation errors: {validation_errors}"
-            )
-            basket["hypothesis_error"] = "; ".join(validation_errors)
-        basket["hypotheses"] = edits
-        basket["hypothesis"] = edits[0] if edits else None
-        basket["hypothesis_raw"] = approved_plan
-        basket["hypothesis_error"] = basket.get("hypothesis_error")
-        return basket
-
-    description = basket.get("ticket_description", "")
-    actual = basket.get("actual", "")
-
-    if not description:
-        basket["error"] = "pe_hypothesize: no ticket_description in basket"
-        return basket
-
-    if not actual:
-        new_files = basket.get("new_files") or []
-        if not new_files:
-            # No observed code and no declared new files — ungrounded
-            basket["hypotheses"] = []
-            basket["hypothesis"] = None
-            basket["hypothesis_raw"] = ""
-            basket["hypothesis_error"] = (
-                "no actual code observed — hypothesis ungrounded"
-            )
-            log.info("HYPOTHESIZE: no actual — skipping tier.2 call")
-            return basket
-        # New-file creation: no existing code to observe — ask LLM to generate content
-        target = new_files[0]
-        create_prompt = (
-            "You are creating a new source file. "
-            'Produce exactly one JSON object with an "edits" key containing one edit. '
-            'Use old_string="" (empty string) and new_string equal to the complete file content. '
-            "Do not include anything outside the JSON.\n\n"
-            f"File to create: {target}\n\n"
-            f"Ticket: {description[:_DESC_CAP_REASONING]}\n\n"
-            "Output JSON:\n"
-            '{"edits": [{"file": "<path>", "old_string": "", "new_string": "<full file content>"}]}'
-        )
-        log.info(
-            f"HYPOTHESIZE: new-file path — target={target} prompt_len={len(create_prompt)}"
-        )
-        raw = _call_tier2(create_prompt, temperature=0.2)
-        basket["hypothesis_raw"] = raw or ""
-    else:
-        # T-hypothesize-standards-injection: prepend coding standards for file-write tasks
-        standards_block = _get_coding_standards()
-        standards_prefix = f"\n{standards_block}\n" if standards_block else ""
-
-        prompt = _HYPOTHESIZE_PROMPT.format(
-            description=description[:_DESC_CAP_REASONING],
-            actual=_strip_line_prefix(actual[:_HYPOTHESIZE_ACTUAL_CHAR_CAP]),
-        )
-        if standards_prefix:
-            lines = prompt.split("\n", 1)
-            prompt = (
-                lines[0] + "\n" + standards_prefix + lines[1]
-                if len(lines) > 1
-                else prompt + standards_prefix
-            )
-            log.info(f"HYPOTHESIZE: standards injected ({len(standards_block)} chars)")
-
-        log.info(f"HYPOTHESIZE: calling tier.2 prompt_len={len(prompt)}")
-
-        # Routes to cheap background tier (Qwen) — verified T-verify-pe-chain-qwen-tier
-        raw = _call_tier2(prompt, temperature=0.2)
-        basket["hypothesis_raw"] = raw or ""
-
-    if not raw:
-        basket["hypotheses"] = []
-        basket["hypothesis"] = None
-        basket["hypothesis_error"] = "tier.2 unavailable"
-        log.info("HYPOTHESIZE: tier.2 unavailable")
-        return basket
-
-    edits = _parse_hypothesis(raw)
-    if not edits:
-        basket["hypotheses"] = []
-        basket["hypothesis"] = None
-        basket["hypothesis_error"] = f"parse failed: {raw[:120]}"
-        log.info(f"HYPOTHESIZE: parse failed: {raw[:80]}")
-        return basket
-
-    # Validate each edit
-    errors = _validate_hypotheses(edits, _get_repo_root())
-
-    # T-pe-chain-hypothesize-retry: when old_string fails verbatim match, the
-    # LLM has paraphrased the actual code. Retry with the failure + actual
-    # content fed back so the next attempt can re-anchor on real characters.
-    retry_attempts = 0
-    while errors and edits and retry_attempts < _HYPOTHESIZE_MAX_RETRIES:
-        retry_attempts += 1
-        log.info(
-            f"HYPOTHESIZE: validation failed ({'; '.join(errors)}), "
-            f"retry {retry_attempts}/{_HYPOTHESIZE_MAX_RETRIES}"
-        )
-        retry_prompt = _build_retry_prompt(
-            prompt,
-            edits,
-            errors,
-            _strip_line_prefix(actual[:_HYPOTHESIZE_ACTUAL_CHAR_CAP]),
-        )
-        raw = _call_tier2(retry_prompt, temperature=0.2)
-        if not raw:
-            break
-        retry_edits = _parse_hypothesis(raw)
-        if not retry_edits:
-            log.info(f"HYPOTHESIZE: retry parse failed: {raw[:80]}")
-            break
-        edits = retry_edits
-        basket["hypothesis_raw"] = raw
-        errors = _validate_hypotheses(edits, _get_repo_root())
-
-    if errors:
-        basket["hypotheses"] = edits  # keep for debugging
-        basket["hypothesis"] = edits[0]
-        basket["hypothesis_error"] = (
-            f"validation failed after {retry_attempts} retries: {'; '.join(errors)}"
-        )
-        log.info(
-            f"HYPOTHESIZE: validation failed after {retry_attempts} retries: "
-            f"{'; '.join(errors)}"
-        )
-        return basket
-
-    basket["hypotheses"] = edits
-    basket["hypothesis"] = edits[0]  # backwards compat
-    basket["hypothesis_error"] = None
-    files_touched = sorted(set(e["file"] for e in edits))
-    log.info(f"HYPOTHESIZE: {len(edits)} valid edit(s) in {', '.join(files_touched)}")
-    return basket
-
-
 # ── IMPLEMENT ────────────────────────────────────────────────────────────────
 
 
-def pe_implement(basket: dict) -> dict:
-    """
-    IMPLEMENT step: apply basket[hypotheses] edits to target files.
-
-    Reads basket[hypotheses]: [{file, old_string, new_string}, ...]
-    Falls back to basket[hypothesis] (single dict) for backwards compat.
-    Applies edits in sequence. Stops on first error.
-    Writes to basket:
-      implement_result   str        — "ok: N/N edits" | "skipped: <reason>" | "error: <msg>"
-      implement_skipped  bool       — True if no valid edits to apply
-      implement_results  list[str]  — per-edit result strings
-      implement_files    list[str]  — files successfully modified
-    """
-    if basket.get("error"):
-        return basket
-
-    hypothesis_error = basket.get("hypothesis_error")
-    edits = basket.get("hypotheses") or []
-    # Backwards compat: single hypothesis dict
-    if not edits and basket.get("hypothesis"):
-        edits = [basket["hypothesis"]]
-
-    if not edits or hypothesis_error:
-        reason = hypothesis_error or "no hypothesis"
-        basket["implement_result"] = f"skipped: {reason}"
-        basket["implement_skipped"] = True
-        basket["implement_results"] = []
-        basket["implement_files"] = []
-        log.info(f"IMPLEMENT: skipped — {reason}")
-        return basket
-
-    results = []
-    files_modified = []
-    for i, edit in enumerate(edits):
-        filepath = _get_repo_root() / edit["file"]
-        old_string = edit["old_string"]
-        new_string = edit["new_string"]
-
-        try:
-            if not filepath.exists() and old_string == "":
-                # New-file creation: write new_string as the complete file content
-                filepath.parent.mkdir(parents=True, exist_ok=True)
-                filepath.write_text(new_string)
-                msg = f"edit[{i}] created: {edit['file']}"
-                results.append(msg)
-                files_modified.append(edit["file"])
-                log.info(
-                    f"IMPLEMENT: created new file {edit['file']} ({len(new_string)} chars)"
-                )
-                continue
-
-            content = filepath.read_text(errors="replace")
-            if old_string not in content:
-                msg = f"edit[{i}] error: old_string not in {edit['file']}"
-                results.append(msg)
-                log.info(f"IMPLEMENT: {msg}")
-                basket["implement_result"] = msg
-                basket["implement_skipped"] = True
-                basket["implement_results"] = results
-                basket["implement_files"] = files_modified
-                return basket
-
-            new_content = content.replace(old_string, new_string, 1)
-            filepath.write_text(new_content)
-            msg = f"edit[{i}] ok: {edit['file']}"
-            results.append(msg)
-            files_modified.append(edit["file"])
-            log.info(
-                f"IMPLEMENT: applied edit[{i}] in {edit['file']} "
-                f"old_len={len(old_string)} new_len={len(new_string)}"
-            )
-        except Exception as e:
-            msg = f"edit[{i}] error: {e}"
-            results.append(msg)
-            log.info(f"IMPLEMENT: {msg}")
-            basket["implement_result"] = msg
-            basket["implement_skipped"] = True
-            basket["implement_results"] = results
-            basket["implement_files"] = files_modified
-            return basket
-
-    basket["implement_result"] = f"ok: {len(results)}/{len(edits)} edits applied"
-    basket["implement_skipped"] = False
-    basket["implement_results"] = results
-    basket["implement_files"] = files_modified
-    log.info(f"IMPLEMENT: {len(results)} edits applied in {', '.join(files_modified)}")
-    return basket
-
-
 # ── TEST ──────────────────────────────────────────────────────────────────────
-
-
-def pe_test(basket: dict, preflight: bool = False) -> dict:
-    """
-    TEST step: run the test suite, store result in basket.
-
-    If preflight=True, this is a pre-edit sanity check. If it fails,
-    caller should escalate immediately (not attempt fixes).
-
-    Calls run_tests() from ops.py if available, else falls back to
-    subprocess pytest invocation.
-
-    Reads from basket: (nothing required)
-    Writes to basket:
-      test_result  str  — "pass" | "fail: <details>"
-    """
-    if basket.get("error"):
-        return basket
-
-    # Try ops.run_tests first (registered tool)
-    try:
-        from .ops import run_tests as _run_tests
-
-        raw = _run_tests()
-        # Use exit code embedded by run_tests() as primary signal — immune to
-        # threading exception noise in stderr that contains the word "error"
-        # (T-pe-chain-preflight-false-fail).
-        if raw.startswith("[exit:0]"):
-            passed = True
-        elif raw.startswith("[exit:"):
-            passed = False
-        else:
-            # Fallback for callers that don't embed exit code
-            passed = (
-                "passed" in raw and "failed" not in raw and "error" not in raw.lower()
-            )
-        basket["test_result"] = "pass" if passed else f"fail: {raw[:300]}"
-        basket["test_output"] = raw
-        level = "preflight" if preflight else "post-edit"
-        log.info(f"TEST ({level}, ops.run_tests): {basket['test_result'][:80]}")
-        return basket
-    except Exception as _exc:
-        from ..cognition.forensic_logger import log_error as _le
-
-        _le(kind="SILENT_EXCEPT", detail=f"pe_chain.py:1379: {_exc}")
-
-    # Fallback: direct pytest subprocess. 300s timeout matches ops.run_tests
-    # (full suite takes ~3.5 min on akiendell). Without this, pe_chain
-    # misreads timeout as a red suite (T-pe-chain-preflight-timeout-misdiagnosis).
-    # Keep in sync with ops._PREFLIGHT_IGNORE — these are the same exclusions.
-    _fallback_ignore = [
-        "tests/test_pe_chain_qwen_tier.py",
-        "tests/test_pr_load_as_primary_attractor.py",
-    ]
-    _ignore_args = [a for p in _fallback_ignore for a in ("--ignore", p)]
-    result = _run_bash(
-        ["python", "-m", "pytest", "tests/", "-x", "-q", "--tb=short"] + _ignore_args,
-        timeout=600,
-    )
-    # Check only the last 5 lines for "error" — pytest's summary lands there;
-    # threading exception noise appears earlier (T-pe-chain-preflight-false-fail).
-    _summary = "\n".join(result.splitlines()[-5:])
-    passed = (
-        "passed" in result
-        and "failed" not in result
-        and "error" not in _summary.lower()
-    )
-    basket["test_result"] = "pass" if passed else f"fail: {result[:300]}"
-    basket["test_output"] = result
-    level = "preflight" if preflight else "post-edit"
-    log.info(f"TEST ({level}, pytest): {basket['test_result'][:80]}")
-    return basket
 
 
 # ── CLOSE LOOP ───────────────────────────────────────────────────────────────
@@ -2486,740 +3341,13 @@ def _post_to_channel(message: str, dedup_key: str | None = None) -> None:
 # ── PROBE ─────────────────────────────────────────────────────────────────────
 
 
-def pe_probe(basket: dict) -> dict:
-    """
-    PROBE step: optional post-implementation behavioral test via cc_send.
-
-    Reads ticket["probe_criterion"] — if absent, skip (non-fatal).
-    If present: inject probe stimulus via cc_send, wait 3s, read last 3 Igor
-    channel messages, check if response matches "expect:" line in criterion.
-
-    Reads from basket: ticket (raw dict), ticket_id
-    Writes to basket:
-      probe_result  str  — "PASS" | "SKIP: reason" | "FAIL: reason"
-    On FAIL: sets basket["escalate_reason"] = "probe_fail: ..."
-    """
-    if basket.get("error"):
-        return basket
-
-    ticket = basket.get("ticket") or {}
-    probe_criterion = ticket.get("probe_criterion", "")
-    if not probe_criterion:
-        basket["probe_result"] = "SKIP: no probe_criterion"
-        log.info(f"PROBE: skip — no probe_criterion for {basket.get('ticket_id')}")
-        return basket
-
-    try:
-        import time
-        import urllib.request
-        import json as _json
-
-        stimulus = probe_criterion[:200]
-        payload = _json.dumps({"content": f"[probe] {stimulus}"}).encode()
-        req = urllib.request.Request(
-            "http://localhost:8080/api/cc_send",
-            data=payload,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=5):
-            pass
-        log.info(f"PROBE: sent stimulus: {stimulus[:60]}")
-        time.sleep(3)
-
-        # Read recent channel for Igor's response
-        req2 = urllib.request.Request("http://localhost:8080/api/channel_read?limit=3")
-        with urllib.request.urlopen(req2, timeout=5) as resp:
-            data = _json.loads(resp.read())
-        messages = data if isinstance(data, list) else data.get("messages", [])
-        igor_msgs = [
-            m.get("content", "") for m in messages if m.get("author") == "igor"
-        ]
-
-        expected = ""
-        for line in probe_criterion.splitlines():
-            if line.lower().startswith("expect:"):
-                expected = line[7:].strip().lower()
-
-        if expected:
-            found = any(expected in m.lower() for m in igor_msgs)
-            if found:
-                basket["probe_result"] = "PASS"
-                log.info("PROBE: PASS — expected pattern found")
-            else:
-                basket["probe_result"] = (
-                    f"FAIL: expected '{expected}' not in Igor response"
-                )
-                basket["escalate_reason"] = f"probe_fail: {basket['probe_result']}"
-                log.info(f"PROBE: {basket['probe_result']}")
-        else:
-            basket["probe_result"] = "PASS: stimulus sent, no expected pattern"
-            log.info("PROBE: PASS (no expected pattern)")
-
-    except Exception as e:
-        log.warning("[pe_chain] pe_probe failed: %s", e)
-        basket["probe_result"] = f"SKIP: probe error ({e})"
-        log.info(f"PROBE: skip due to error: {e}")
-
-    return basket
-
-
-def pe_close_loop(basket: dict) -> dict:
-    """
-    CLOSE LOOP step: dispatch based on test_result.
-
-    BRANCHIF test_result == "pass":
-      → pe_commit: git commit the change
-      → pe_close: close goal + mark ticket done
-      → return basket (chain complete)
-
-    BRANCHIF test_result starts with "fail" AND attempt_count < MAX_ATTEMPTS:
-      → increment attempt_count
-      → pe_replan: tier.2 call to revise hypothesis
-      → pe_implement: apply revised hypothesis
-      → pe_test: run tests again
-      → recurse back into pe_close_loop
-
-    BRANCHIF attempt_count >= MAX_ATTEMPTS:
-      → pe_escalate: post to channel, mark ticket blocked
-
-    Reads from basket: test_result, attempt_count, hypothesis, ticket_id, goal_id
-    Writes to basket:  commit_result, close_result, escalate_reason (on escalation)
-    """
-    if basket.get("error"):
-        return basket
-
-    test_result = basket.get("test_result", "")
-    attempt_count = basket.get("attempt_count", 0)
-
-    # ── Pass path ──────────────────────────────────────────────────────────────
-    if test_result == "pass" or (test_result and not test_result.startswith("fail")):
-        # Guard: if implement was skipped (HYPOTHESIZE validation failed, no
-        # edit applied), closing the ticket would falsely mark it done. Escalate
-        # instead so a human can review and re-queue.
-        if basket.get("implement_skipped"):
-            return _pe_escalate(
-                basket,
-                reason=(
-                    "implement_skipped: HYPOTHESIZE produced an invalid old_string "
-                    "and no edit was applied — ticket needs re-queue with a corrected "
-                    f"hypothesis. Error: {basket.get('hypothesis_error', 'unknown')[:120]}"
-                ),
-            )
-        basket = _pe_commit(basket)
-        # Belt-and-suspenders: even if implement_skipped wasn't set on this
-        # basket (e.g. the basket arrived from a fragmented dispatch where
-        # implement_skipped was lost), _pe_commit will have written
-        # commit_result="skipped: no edit applied" when files=[]. Catch that
-        # here so the close path can't fire on a skipped commit.
-        if (basket.get("commit_result") or "").startswith("skipped"):
-            return _pe_escalate(
-                basket,
-                reason=(
-                    "commit skipped without edits applied — basket likely lost "
-                    "implement_skipped flag across dispatch. "
-                    f"commit_result={basket.get('commit_result')!r}"
-                ),
-            )
-        basket = _pe_close(basket)
-        return basket
-
-    # ── Fail path ──────────────────────────────────────────────────────────────
-    if attempt_count >= _MAX_ATTEMPTS:
-        return _pe_escalate(basket, reason=f"exhausted {_MAX_ATTEMPTS} attempts")
-
-    # Increment and replan
-    basket["attempt_count"] = attempt_count + 1
-    log.info(
-        f"CLOSE_LOOP: test failed, attempt {basket['attempt_count']}/{_MAX_ATTEMPTS} — replanning"
-    )
-
-    # D316/D317: post ESCALATION_NEEDED at attempt 2 so CC can prepare a fix
-    # while Igor makes its final attempt. Richer than the final ✗ blocked message.
-    if basket["attempt_count"] >= 2 and not basket.get("_escalation_sent"):
-        ticket_id = basket.get("ticket_id", "unknown")
-        _post_to_channel(
-            f"[pe_chain] ESCALATION_NEEDED {ticket_id} attempt={basket['attempt_count']}/{_MAX_ATTEMPTS} "
-            f"files={','.join(e.get('file','?') for e in basket.get('hypotheses', [basket.get('hypothesis') or {}]))} "
-            f"error={basket.get('hypothesis_error', basket.get('test_result', '?'))[:100]} "
-            f"plan={basket.get('plan_summary', '?')[:80]}"
-        )
-        basket["_escalation_sent"] = True
-        log.info(f"CLOSE_LOOP: ESCALATION_NEEDED posted for {ticket_id}")
-
-        # T-consult-pe-chain-wire: fire a consult on second attempt.
-        # Peer-LLM gets the hypothesis + test failure; hypotheses stored
-        # in basket for human review + future use. Rate-limited per basket.
-        _maybe_consult_stuck(
-            basket,
-            stuck_reason="implement_fails_twice",
-            summary=f"implement failed twice for {ticket_id}",
-            what_i_tried=f"hypothesis={str(basket.get('hypothesis') or {})[:200]}",
-            what_failed=str(
-                basket.get("hypothesis_error") or basket.get("test_result") or "?"
-            )[:300],
-        )
-
-    basket = _pe_replan(basket)
-    if basket.get("error"):
-        return basket
-    basket = pe_implement(basket)
-    if basket.get("error"):
-        return basket
-    basket = pe_test(basket)
-
-    # Recurse — tail call for next iteration
-    return pe_close_loop(basket)
-
-
-def _pe_replan(basket: dict) -> dict:
-    """
-    REPLAN: tier.2 call to revise hypothesis after test failure.
-    Overwrites basket[hypotheses] with revised edits.
-    """
-    edits = basket.get("hypotheses") or []
-    if not edits and basket.get("hypothesis"):
-        edits = [basket["hypothesis"]]
-
-    # Format previous edits for the prompt
-    prev_lines = []
-    for i, e in enumerate(edits):
-        prev_lines.append(
-            f"  edit[{i}]: file={e.get('file', '?')} "
-            f"old_string={e.get('old_string', '')[:150]} "
-            f"new_string={e.get('new_string', '')[:150]}"
-        )
-    previous_edits = "\n".join(prev_lines) if prev_lines else "  (none)"
-
-    prompt = _REPLAN_PROMPT.format(
-        description=basket.get("ticket_description", "")[:300],
-        previous_edits=previous_edits,
-        test_result=basket.get("test_result", "")[:300],
-        actual=basket.get("actual", "")[:1500],
-    )
-    log.info(f"REPLAN: calling tier.2 attempt={basket.get('attempt_count')}")
-    # Routes to cheap background tier (Qwen) — verified T-verify-pe-chain-qwen-tier
-    raw = _call_tier2(prompt, temperature=0.2)
-    basket["hypothesis_raw"] = raw or ""
-
-    if not raw:
-        basket["hypotheses"] = []
-        basket["hypothesis"] = None
-        basket["hypothesis_error"] = "replan: tier.2 unavailable"
-        return basket
-
-    new_edits = _parse_hypothesis(raw)
-    if not new_edits:
-        basket["hypotheses"] = []
-        basket["hypothesis"] = None
-        basket["hypothesis_error"] = f"replan: parse failed: {raw[:80]}"
-        return basket
-
-    errors = _validate_hypotheses(new_edits, _get_repo_root())
-    if errors:
-        basket["hypotheses"] = new_edits
-        basket["hypothesis"] = new_edits[0]
-        basket["hypothesis_error"] = f"replan validation: {'; '.join(errors)}"
-        return basket
-
-    basket["hypotheses"] = new_edits
-    basket["hypothesis"] = new_edits[0]
-    basket["hypothesis_error"] = None
-    files_touched = sorted(set(e["file"] for e in new_edits))
-    log.info(f"REPLAN: {len(new_edits)} revised edit(s) in {', '.join(files_touched)}")
-    return basket
-
-
-def _pe_commit(basket: dict) -> dict:
-    """COMMIT: git add + commit all changed files."""
-    files = basket.get("implement_files") or []
-    # Backwards compat: fall back to single hypothesis file
-    if not files:
-        hyp = basket.get("hypothesis")
-        if hyp and not basket.get("implement_skipped"):
-            files = [hyp.get("file", "")]
-
-    if not files or basket.get("implement_skipped"):
-        basket["commit_result"] = "skipped: no edit applied"
-        return basket
-
-    ticket_id = basket.get("ticket_id", "unknown")
-
-    # git add each file
-    for filepath in files:
-        result = _run_bash(
-            ["git", "-C", str(_get_repo_root()), "add", filepath],
-            timeout=15,
-        )
-        if "error" in result.lower() or "fatal" in result.lower():
-            basket["commit_result"] = f"git add failed ({filepath}): {result[:100]}"
-            log.info(f"COMMIT: git add failed: {result[:80]}")
-            return basket
-
-    file_list = ", ".join(files)
-    msg = f"fix: {ticket_id} — pe_chain autonomous edit ({len(files)} file(s))\n\nCo-Authored-By: Igor <igor@theigors>"
-    result = _run_bash(
-        ["git", "-C", str(_get_repo_root()), "commit", "-m", msg],
-        timeout=15,
-    )
-    basket["commit_result"] = result[:120]
-    log.info(f"COMMIT: {len(files)} file(s) [{file_list}]: {result[:80]}")
-    return basket
-
-
-def _pe_close(basket: dict) -> dict:
-    """CLOSE: mark ticket done + close the active GOAL memory.
-
-    Defensive last-line guard: refuse to close when no edits were applied.
-    This catches any caller path that bypassed the pe_close_loop guards
-    (e.g. fragmented basket dispatch). T-pe-chain-empty-close-detection.
-    """
-    ticket_id = basket.get("ticket_id", "")
-    test_result = basket.get("test_result", "pass")
-
-    # Refuse-to-close if no real work shipped. Fail loud so the next leak
-    # is debuggable instead of silently marking another ticket done-empty.
-    implement_skipped = bool(basket.get("implement_skipped"))
-    commit_skipped = (basket.get("commit_result") or "").startswith("skipped")
-    no_edits = not (basket.get("implement_files") or [])
-    if implement_skipped or commit_skipped or no_edits:
-        log.warning(
-            "CLOSE refused: ticket=%s implement_skipped=%s commit_skipped=%s "
-            "no_edits=%s commit_result=%r — escalating instead",
-            ticket_id,
-            implement_skipped,
-            commit_skipped,
-            no_edits,
-            basket.get("commit_result"),
-        )
-        return _pe_escalate(
-            basket,
-            reason=(
-                "_pe_close defensive guard: refusing to close empty work. "
-                f"implement_skipped={implement_skipped} commit_skipped={commit_skipped} "
-                f"no_edits={no_edits}"
-            ),
-        )
-
-    # Conclude any live consult session before tearing down the goal
-    _conclude_consult_session(basket)
-
-    # Close ticket
-    if ticket_id:
-        result = _run_bash(
-            [
-                "python3",
-                str(_CC_QUEUE),
-                "done",
-                ticket_id,
-                f"pe_chain autonomous: {test_result[:80]}",
-            ],
-            timeout=15,
-        )
-        basket["close_result"] = result[:120]
-        log.info(f"CLOSE: ticket {ticket_id} → {result[:60]}")
-
-    # Close goal
-    try:
-        from .ops import close_goal_by_ticket as _close_goal
-
-        goal_result = _close_goal(ticket_id)
-        basket["goal_close_result"] = goal_result
-        log.info(f"CLOSE: goal → {goal_result[:60]}")
-    except Exception as e:
-        basket["goal_close_result"] = f"[error: {e}]"
-
-    # Post success to channel
-    _post_to_channel(f"[pe_chain] ✓ {ticket_id}: edit applied, tests pass, committed.")
-    return basket
-
-
-def _close_goal_on_escalate(basket: dict) -> None:
-    """Deactivate the active GOAL when pe_chain escalates early (preflight/filter/scope).
-
-    T-pe-chain-goal-close-on-escalate: without this, goal_continuation re-emits
-    GOAL_READY on the next cycle and fires PROC_CODING_SPRINT again, letting LLM
-    territory hallucinate out-of-scope file edits.
-    """
-    ticket_id = basket.get("ticket_id", "unknown")
-    try:
-        from .ops import close_goal_by_ticket as _close_goal
-
-        goal_result = _close_goal(ticket_id)
-        basket["goal_close_result"] = goal_result
-        log.info(f"ESCALATE: goal closed → {goal_result[:60]}")
-    except Exception as e:
-        basket["goal_close_result"] = f"[error: {e}]"
-        log.info(f"ESCALATE: goal close error: {e}")
-
-
-def _pe_escalate(basket: dict, reason: str) -> dict:
-    """D331: ESCALATE — compose design proposal for HIGH inertia, or block for other reasons."""
-    ticket_id = basket.get("ticket_id", "unknown")
-
-    # Conclude any live consult session — escalation ends the goal regardless of reason
-    _conclude_consult_session(basket)
-
-    # Recover ticket_id from active GOAL if basket lost it
-    if ticket_id == "unknown":
-        goal = _get_active_goal()
-        if goal:
-            task = goal.metadata.get("source_message", goal.narrative[:120])
-            recovered = _extract_ticket_id(task)
-            if recovered:
-                ticket_id = recovered
-                basket["ticket_id"] = ticket_id
-                log.info(f"ESCALATE: recovered ticket_id={ticket_id} from active GOAL")
-
-    # T-scope-guard-reattempt-loop short-term mitigation (2026-04-19):
-    # If ticket_id still "unknown" after recovery attempt, this basket is
-    # malformed — it reached _pe_escalate via a code path that didn't run
-    # pe_entry_init (likely engram-driven direct invocation). Log the basket
-    # shape to forensic logger for a future session to trace the origin,
-    # and DO NOT post the '✗ unknown' channel spam. The echo Akien's been
-    # seeing for two weeks stops here. Real pe_chain blocks with real
-    # ticket_ids continue to post normally.
-    if ticket_id == "unknown":
-        try:
-            from ..cognition.forensic_logger import log_error as _le
-
-            # Keep the log line bounded — the basket can be huge.
-            keys_present = sorted(list(basket.keys()))[:20]
-            hyp = basket.get("hypothesis") or {}
-            hyp_summary = ""
-            if isinstance(hyp, dict):
-                hyp_summary = (
-                    f"file={hyp.get('file','')[:60]} "
-                    f"old_len={len(str(hyp.get('old_string','')))} "
-                    f"new_len={len(str(hyp.get('new_string','')))}"
-                )
-            _le(
-                kind="MALFORMED_BASKET",
-                detail=(
-                    f"pe_escalate called on basket without ticket_id. "
-                    f"reason={reason[:120]}. basket_keys={keys_present}. "
-                    f"hypothesis={hyp_summary[:200]}"
-                ),
-            )
-        except Exception as e:
-            log.debug("_escalate_step: _post_to_channel (malformed) failed: %s", e)
-        log.info(
-            f"ESCALATE: malformed basket (no ticket_id) — suppressed channel post. Reason was: {reason[:120]}"
-        )
-        basket["escalate_reason"] = f"malformed: {reason}"
-        return basket
-
-    basket["escalate_reason"] = reason
-    log.info(f"ESCALATE: {ticket_id} — {reason}")
-
-    # D331: HIGH inertia → propose for approval instead of blocking.
-    # T-escalate-validates-file-exists: if the target_file doesn't exist
-    # under the repo root, tier2 hallucinated a path. Asking CC to approve
-    # editing a nonexistent file is noise — rewrite the reason and fall
-    # through to the block branch so the real bug is visible.
-    # T-pe-chain-inertia-gate-hallucinated-target (2026-04-23): extends the
-    # same logic to paths that EXIST but aren't named in the ticket's
-    # 'Affected files:' section. Tier2 empirically defaults HIGH-inertia
-    # hallucinations to real files (brainstem/core_patterns.py), which the
-    # exists-check lets through. Cross-check against the ticket scope using
-    # the same filter SITUATE uses (_filter_high_inertia_not_in_description);
-    # if hypothesis is HIGH-inertia AND not named in description, treat as
-    # hallucinated so the proposal doesn't post with the wrong target.
-    is_high_inertia = "HIGH inertia" in reason
-    target_file = ""
-    _hyp = basket.get("hypothesis")
-    if isinstance(_hyp, dict):
-        target_file = _hyp.get("file", "") or ""
-    if (
-        is_high_inertia
-        and target_file
-        and not (_get_repo_root() / target_file).exists()
-    ):
-        log.info(
-            f"ESCALATE: hallucinated-file suppressed — {target_file} "
-            f"does not exist; dropping hypothesis and continuing"
-        )
-        basket["hypotheses"] = [
-            h
-            for h in basket.get("hypotheses", [])
-            if not (isinstance(h, dict) and h.get("file") == target_file)
-        ]
-        if (
-            isinstance(basket.get("hypothesis"), dict)
-            and basket.get("hypothesis", {}).get("file") == target_file
-        ):
-            basket["hypothesis"] = (
-                basket["hypotheses"][0] if basket["hypotheses"] else {}
-            )
-        basket.pop("escalate_reason", None)
-        return basket
-    elif is_high_inertia and target_file:
-        description = basket.get("ticket_description", "") or ""
-        # If description not in basket (READ_TICKET skipped or ENGRAM path),
-        # load from disk so the cross-check has real scope to compare against.
-        if not description:
-            _t = (
-                _load_ticket(ticket_id)
-                if ticket_id and ticket_id != "unknown"
-                else None
-            )
-            description = (_t.get("description", "") or "") if _t else ""
-            if description:
-                log.info(
-                    f"ESCALATE: loaded ticket description from disk for cross-check ({len(description)} chars)"
-                )
-        if not description:
-            # No description anywhere — cannot verify scope. Suppress to avoid false proposal.
-            reason = (
-                f"hallucinated HIGH-inertia target: {target_file} "
-                f"(no ticket description available to verify scope)"
-            )
-            basket["escalate_reason"] = reason
-            log.info(
-                f"ESCALATE: suppressed HIGH inertia proposal — no description for cross-check"
-            )
-            is_high_inertia = False
-        else:
-            kept = _filter_high_inertia_not_in_description([target_file], description)
-            if not kept:
-                log.info(
-                    f"ESCALATE: hallucinated-scope suppressed — {target_file} "
-                    f"not in ticket scope; dropping hypothesis and continuing"
-                )
-                basket["hypotheses"] = [
-                    h
-                    for h in basket.get("hypotheses", [])
-                    if not (isinstance(h, dict) and h.get("file") == target_file)
-                ]
-                if (
-                    isinstance(basket.get("hypothesis"), dict)
-                    and basket.get("hypothesis", {}).get("file") == target_file
-                ):
-                    basket["hypothesis"] = (
-                        basket["hypotheses"][0] if basket["hypotheses"] else {}
-                    )
-                basket.pop("escalate_reason", None)
-                return basket
-
-    if is_high_inertia and ticket_id and ticket_id != "unknown":
-        # Compose a design proposal from the basket
-        plan = basket.get("plan_summary", "")
-        hypothesis = basket.get("hypothesis", {})
-        target_file = hypothesis.get("file", "") if isinstance(hypothesis, dict) else ""
-        proposal = (
-            f"Igor wants to edit {target_file} (HIGH inertia). "
-            f"Plan: {plan[:200]}. "
-            f"Reason: {reason[:100]}"
-        )
-        _post_to_channel(
-            f"[DESIGN PROPOSAL] {ticket_id}: {proposal[:250]}. "
-            f"Awaiting CC approval — run: cc_queue.py approve {ticket_id}"
-        )
-        _run_bash(
-            ["python3", str(_CC_QUEUE), "propose", ticket_id, proposal[:300]],
-            timeout=15,
-        )
-        # T-cc-inbox-producer: also push to CC inbox so /readinbox surfaces the
-        # pending approval on next CC turn (Akien doesn't have to flag it).
-        try:
-            from ..cognition.cc_inbox_bridge import post_to_cc_inbox as _cc_post
-
-            _cc_post(
-                kind="pe_chain_design_proposal",
-                summary=f"Igor proposes edit to {target_file} (HIGH inertia)",
-                body=proposal,
-                ticket_id=ticket_id,
-                urgency="high",
-                response_expected=True,
-            )
-        except Exception as e:
-            log.debug("_escalate_step: cortex.twm_write (for_approval) failed: %s", e)
-    else:
-        # Dedup on (ticket_id, reason-prefix): if the same ticket blocks for
-        # the same reason twice within 30 min, only the first hits the channel.
-        # The root cause — a habit/goal re-firing the same blocked op — is
-        # tracked under T-scope-guard-reattempt-loop (follow-up).
-        _post_to_channel(
-            f"[pe_chain] ✗ {ticket_id}: blocked after {basket.get('attempt_count', 0)} attempts. "
-            f"Reason: {reason}. Needs human review.",
-            dedup_key=f"pe_chain:blocked:{ticket_id}:{reason[:80]}",
-        )
-        if ticket_id and ticket_id != "unknown":
-            _run_bash(
-                ["python3", str(_CC_QUEUE), "block", ticket_id, reason[:120]],
-                timeout=15,
-            )
-        # T-cc-inbox-producer: push to CC inbox so /readinbox shows the block.
-        # These are the drops we want CC to see without relying on Akien.
-        try:
-            from ..cognition.cc_inbox_bridge import post_to_cc_inbox as _cc_post
-
-            _cc_post(
-                kind="pe_chain_block",
-                summary=f"{ticket_id} blocked: {reason[:120]}",
-                body=f"attempts={basket.get('attempt_count', 0)}. full reason: {reason}",
-                ticket_id=ticket_id if ticket_id and ticket_id != "unknown" else None,
-                urgency="normal",
-                response_expected=True,
-            )
-        except Exception as e:
-            log.debug("_escalate_step: cortex.twm_write (blocked) failed: %s", e)
-
-    _close_goal_on_escalate(basket)
-
-    return basket
-
-
 # ── Chain entry point ─────────────────────────────────────────────────────────
 
 
 def run_pe_entry_chain(basket: dict | None = None) -> dict:
-    """
-    Run the full PROC_CODE_A_TICKET chain:
-    ENTRY → CLAIM → READ_TICKET → PLAN → FILTER → SITUATE → OBSERVE →
-    STORE_OBSERVE_RESULTS → HYPOTHESIZE → IMPLEMENT → TEST → PROBE → CLOSE_LOOP.
-
-    Returns the final basket dict.
-    Caller checks basket.get("error") for fatal failure.
-    basket.get("escalate_reason") indicates exhausted retries.
-    """
-    basket = pe_entry_init(basket)
-    if basket.get("error"):
-        return basket
-    ticket_id = basket.get("ticket_id")
-    if ticket_id:
-        _ticket = _load_ticket(ticket_id)
-        if _ticket and _ticket.get("worker") not in (None, "", "igor"):
-            worker = _ticket["worker"]
-            msg = f"pe_chain: ticket {ticket_id} has worker={worker} — skipping (Igor only works worker=igor tickets)"
-            basket["error"] = msg
-            log.info(f"ENTRY: {msg}")
-            return basket
-    basket = pe_claim(basket)
-    if basket.get("error"):
-        return basket
-    basket = pe_read_ticket(basket)
-    if basket.get("error"):
-        return basket
-    basket = pe_plan(basket)
-    if basket.get("error"):
-        return basket
-    basket = pe_filter(basket)
-    if basket.get("escalate_reason"):
-        _close_goal_on_escalate(basket)
-        return basket
-    basket = pe_situate(basket)
-    if basket.get("error"):
-        return basket
-    basket = pe_observe(basket)
-    if basket.get("error"):
-        return basket
-    basket = pe_store_observe_results(basket)
-    if basket.get("error"):
-        return basket
-
-    # PRE-FLIGHT: Run tests BEFORE hypothesize to catch broken test suite early.
-    # On failure, try preflight_heal to classify + auto-repair known rot patterns
-    # (e.g. live-network test with no mock). If heal succeeds, re-run pre-flight
-    # once and proceed. Otherwise escalate as before.
-    basket = pe_test(basket, preflight=True)
-    if basket.get("test_result", "").startswith("fail"):
-        from .preflight_heal import heal_and_commit as _heal
-
-        failure_text = (
-            basket.get("test_output") or basket["test_result"][len("fail: ") :]
-        )
-        heal = _heal(failure_text, _get_repo_root())
-        if heal.healed:
-            log.info(
-                f"PRE-FLIGHT HEAL: {heal.recognizer} applied {len(heal.edits)} edit(s) "
-                f"(commit {heal.commit_sha}) — re-running pre-flight"
-            )
-            basket = pe_test(basket, preflight=True)
-            if basket.get("test_result", "").startswith("fail"):
-                basket["escalate_reason"] = (
-                    f"pre-flight: still broken after heal ({heal.recognizer}) — "
-                    f"{basket['test_result'][:100]}. Skipping attempts."
-                )
-                log.info(f"PRE-FLIGHT FAILED (post-heal): {basket['escalate_reason']}")
-                # T-consult-pe-chain-wire: consult on post-heal failure
-                _maybe_consult_stuck(
-                    basket,
-                    stuck_reason="preflight_unrelated",
-                    summary=f"pre-flight still red after heal for {basket.get('ticket_id', '?')}",
-                    what_i_tried=f"applied heal recognizer={heal.recognizer}",
-                    what_failed=basket["test_result"][:300],
-                )
-                _close_goal_on_escalate(basket)
-                return basket
-            log.info(f"PRE-FLIGHT HEALED via {heal.recognizer} — proceeding")
-        else:
-            # T-pe-chain-preflight-timeout-misdiagnosis: distinguish timeout
-            # (tests didn't finish in time) from red-suite (tests actually
-            # failed). The consult + escalate_reason should say what happened,
-            # not blur both into "test suite broken".
-            _is_timeout = "[run_tests] timeout" in basket.get(
-                "test_output", ""
-            ) or "[run_tests] timeout" in basket.get("test_result", "")
-            if _is_timeout:
-                basket["escalate_reason"] = (
-                    f"pre-flight: test suite timed out — "
-                    f"{basket['test_result'][:100]}. Skipping attempts."
-                )
-                log.info(f"PRE-FLIGHT TIMEOUT: {basket['escalate_reason']}")
-                _maybe_consult_stuck(
-                    basket,
-                    stuck_reason="preflight_timeout",
-                    summary=f"pre-flight timed out for {basket.get('ticket_id', '?')}",
-                    what_i_tried="ran pre-flight test suite; it didn't finish in the subprocess budget",
-                    what_failed=basket["test_result"][:300],
-                )
-            else:
-                basket["escalate_reason"] = (
-                    f"pre-flight: test suite already broken — "
-                    f"{basket['test_result'][:100]}. Skipping attempts."
-                )
-                log.info(f"PRE-FLIGHT TEST FAILED: {basket['escalate_reason']}")
-                # T-consult-preflight-trigger-narrow: removed unactionable consult.
-                # "no recognizer matched" means infra is broken — Igor cannot act
-                # on that hypothesis, so the consult just fires on repeat.
-            _close_goal_on_escalate(basket)
-            return basket
-
-    basket = pe_hypothesize(basket)
-    if basket.get("error"):
-        return basket
-
-    # Pre-implement scope filter: drop HIGH-inertia hypotheses whose target
-    # isn't named in the ticket description so pe_implement never runs on
-    # hallucinated brainstem proposals. When the drop empties the list,
-    # escalate with a clear "all proposals out of scope" reason instead of
-    # falling through to the empty-implement / empty-close cascade.
-    basket = _drop_out_of_scope_high_inertia_hypotheses(basket)
-    if basket.get("escalate_reason"):
-        _evict_goal_ready_twm(basket.get("ticket_id", ""))
-        _close_goal_on_escalate(basket)
-        return basket
-
-    from .scope_guard import run_scope_guard as _scope_guard
-
-    basket = _scope_guard(basket)
-    if basket.get("escalate_reason"):
-        # Evict GOAL_READY so sprint doesn't immediately re-fire the blocked chain
-        _evict_goal_ready_twm(basket.get("ticket_id", ""))
-        _close_goal_on_escalate(basket)
-        return basket
-    basket = pe_implement(basket)
-    if basket.get("error"):
-        return basket
-    basket = pe_test(basket)
-    if basket.get("error"):
-        return basket
-    basket = pe_probe(basket)
-    if basket.get("error"):
-        return basket
-    basket = pe_close_loop(basket)
-    return basket
+    """Run full PROC_CODE_A_TICKET chain. Returns final basket."""
+    chain = PeChain(basket=basket)
+    return chain._run_entry_chain()
 
 
 def run_engram_cursor(engram_entry: str = "", **_) -> str:
