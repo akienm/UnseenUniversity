@@ -35,7 +35,10 @@ log = logging.getLogger(__name__)
 
 # ADC web port (default 8080, overrideable via IGOR_UC_PORT for testing)
 _UC_PORT = int(os.environ.get("IGOR_UC_PORT", "8080"))
-_HEALTH_URL = f"http://localhost:{_UC_PORT}/health"
+# Plain HTTP health port — UC serves HTTPS on _UC_PORT and plain HTTP on _UC_HTTP_PORT.
+# Health check must use plain HTTP; HTTPS on 8080 would require cert validation.
+_UC_HTTP_PORT = int(os.environ.get("IGOR_UC_HTTP_PORT", "8082"))
+_HEALTH_URL = f"http://localhost:{_UC_HTTP_PORT}/health"
 
 
 def _check_health(timeout_s: float = 3.0) -> bool:
@@ -68,7 +71,7 @@ class IgorADCShim:
         Start ADC if not running. Returns True on success, False on timeout.
 
         Steps:
-        1. Ping http://localhost:{_UC_PORT}/health
+        1. Ping http://localhost:{_UC_HTTP_PORT}/health (plain HTTP fallback port)
         2. If responds: ADC already up, return True
         3. If no response: subprocess-launch utility_closet_server.py
         4. Poll /health for up to 15s
