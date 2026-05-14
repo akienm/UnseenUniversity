@@ -6,6 +6,7 @@ from . import (
     channel_tools,
     curation_tools,
     db_tools,
+    exec_tools,
     health_tools,
     igor_tools,
     manifest_tools,
@@ -26,6 +27,7 @@ SCHEMAS: list[dict] = (
     + research_tools.SCHEMAS
     + curation_tools.SCHEMAS
     + ticket_tools.SCHEMAS
+    + exec_tools.SCHEMAS
 )
 
 
@@ -42,6 +44,7 @@ def dispatch(name: str, args: dict) -> str:
         research_tools,
         curation_tools,
         ticket_tools,
+        exec_tools,
     ):
         result = module.dispatch(name, args)
         if result is not None:
