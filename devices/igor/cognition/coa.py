@@ -200,6 +200,12 @@ class COA(IgorBase):
                     _t.sleep(0.5)
                     _waited += 0.5
                 try:
+                    # Check NE's own gate before running — if should_run() is False
+                    # the engine will return None (not a failure), don't escalate.
+                    _ne_should, _ne_reason = self.ne.should_run()
+                    if not _ne_should:
+                        self.log.debug("NE_SKIP reason=%s", _ne_reason)
+                        return
                     _ne_t0 = _t.monotonic()
                     result = self.ne.run(verbose=False)
                     self.log.info(
