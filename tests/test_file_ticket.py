@@ -88,6 +88,7 @@ class TestFileTicket:
             status="sprint",
         )
         row = _read_ticket(result["ticket_id"])
+        assert row["description"] == "checks all fields"
         assert row["size"] == "M"
         assert row["tags"] == ["ADC", "Test"]
         assert row["decision_id"] == "D-test-2026-01-01"
