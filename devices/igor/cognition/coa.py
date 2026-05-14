@@ -374,6 +374,8 @@ Score each dimension 0.0-1.0. Respond ONLY with valid JSON:
 
         raw = call_inner_cc_long(task=prompt, model="anthropic/claude-haiku-4-5")
         answer = (raw.get("answer") or "").strip()
+        if not answer:
+            return None
         if answer.startswith("```"):
             answer = answer.split("```")[1]
             if answer.startswith("json"):
