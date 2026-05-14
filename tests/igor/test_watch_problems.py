@@ -227,6 +227,37 @@ def test_confidence_never_exceeds_one(wp):
     assert abs(row[0] - 1.0) < 0.001
 
 
+def test_watch_condition_dedup(wp):
+    """Second call with same watch_condition returns the existing id, not a new row."""
+    id1 = wp.add_watch_problem(
+        problem="NE cycle produced no result",
+        watch_condition="ne-empty-result",
+    )
+    assert id1 > 0
+    id2 = wp.add_watch_problem(
+        problem="NE cycle produced no result again",
+        watch_condition="ne-empty-result",
+    )
+    assert id2 == id1
+    active = wp.read_active_problems()
+    assert sum(1 for p in active if p["watch_condition"] == "ne-empty-result") == 1
+
+
+def test_watch_condition_dedup_resolved_creates_new(wp):
+    """After resolving, a new call with the same condition creates a fresh row."""
+    id1 = wp.add_watch_problem(
+        problem="First instance",
+        watch_condition="dedup-resolved-test",
+    )
+    wp.resolve_problem(id1)
+    id2 = wp.add_watch_problem(
+        problem="Second instance after resolve",
+        watch_condition="dedup-resolved-test",
+    )
+    assert id2 != id1
+    assert id2 > 0
+
+
 def test_no_match_cycle_applies_decay(wp):
     """A no-match cycle decays confidence_score by IGOR_WATCH_CONFIDENCE_DECAY (0.95)."""
     row_id = wp.add_watch_problem(

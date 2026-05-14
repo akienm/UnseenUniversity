@@ -141,14 +141,39 @@ def add_watch_problem(
 ) -> int:
     """Add an unsolved problem to the per-instance watch list.
 
-    Returns the new row's integer id.
+    When watch_condition is not None and an unresolved row with that exact
+    condition already exists, updates last_surfaced_at on the existing row and
+    returns its id — prevents accumulation of duplicate escalation rows.
+
+    Returns the row's integer id (new or existing), or -1 on error.
     """
-    key = str(uuid.uuid4())
     try:
         conn = _conn()
         with conn:
             with conn.cursor() as cur:
                 _ensure_table(cur)
+                if watch_condition is not None:
+                    cur.execute(
+                        f"SELECT id FROM {_TABLE} "
+                        "WHERE watch_condition = %s AND resolved_at IS NULL "
+                        "LIMIT 1",
+                        (watch_condition,),
+                    )
+                    existing = cur.fetchone()
+                    if existing:
+                        existing_id = existing[0]
+                        cur.execute(
+                            f"UPDATE {_TABLE} SET last_surfaced_at = now() "
+                            "WHERE id = %s",
+                            (existing_id,),
+                        )
+                        log.debug(
+                            "watch_problems: dedup on condition %r — reusing #%d",
+                            watch_condition,
+                            existing_id,
+                        )
+                        return existing_id
+                key = str(uuid.uuid4())
                 cur.execute(
                     f"INSERT INTO {_TABLE} "
                     "(problem_key, parent_id, problem, lever_description, watch_condition) "
