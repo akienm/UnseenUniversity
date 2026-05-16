@@ -81,10 +81,25 @@ def _call_anthropic(selection: ModelSelection, prompt: str) -> str:
     return msg.content[0].text if msg.content else ""
 
 
+def _call_via_inference_device(selection: ModelSelection, prompt: str) -> str:
+    from devices.inference.device import InferenceDevice
+    from devices.inference.shim import InferenceRequest
+
+    device = InferenceDevice(mode=selection.backend)
+    req = InferenceRequest(
+        messages=[{"role": "user", "content": prompt}],
+        model=selection.model,
+        max_tokens=2048,
+    )
+    return device.dispatch(req).text
+
+
 def default_llm_call(selection: ModelSelection, prompt: str) -> str:
     """Route to the appropriate backend based on ModelSelection."""
     if selection.backend == "anthropic":
         return _call_anthropic(selection, prompt)
+    if selection.backend == "openrouter":
+        return _call_via_inference_device(selection, prompt)
     return _call_ollama(selection, prompt)
 
 

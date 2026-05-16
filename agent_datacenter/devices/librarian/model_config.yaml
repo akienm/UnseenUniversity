@@ -6,18 +6,20 @@ tiers:
   0:
     name: routine
     models:
-      - name: qwen2.5:8b
+      - name: qwen2.5:7b
         backend: ollama
-      - name: llama3.2:3b
+      - name: llama3.2:1b
         backend: ollama
     description: "Routine chat, channel replies, DB proxy responses"
 
   1:
     name: heavy
     models:
-      - name: qwen2.5:32b
+      - name: qwen/qwen-2.5-32b-instruct
+        backend: openrouter
+      - name: qwen2.5:7b
         backend: ollama
-      - name: qwen2.5:72b
+      - name: llama3.2:1b
         backend: ollama
     description: "Research, summarization, multi-step reasoning"
 
