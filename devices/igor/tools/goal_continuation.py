@@ -198,6 +198,27 @@ class GoalContinuation(IgorBase):
                     cortex.store(goal)
                     return f"[goal_continuation] goal closed — {ticket_id} already {ticket_data['status']}"
 
+            # Guard: IGOR_SINGLE_TICKET gate — deactivate early so pe_chain never
+            # claims and fails, preventing the 5-min stuck/channel-spam cycle.
+            import os as _os
+
+            _single = _os.environ.get("IGOR_SINGLE_TICKET", "").strip()
+            if _single and ticket_id and ticket_id != _single:
+                self.log.info(
+                    "SINGLE_TICKET gate: %r blocks %r — deactivating goal",
+                    _single,
+                    ticket_id,
+                )
+                goal.metadata["goal_active"] = False
+                goal.metadata["closed_reason"] = (
+                    f"IGOR_SINGLE_TICKET={_single!r} — ticket not claimable"
+                )
+                cortex.store(goal)
+                return (
+                    f"[goal_continuation] goal deactivated"
+                    f" — SINGLE_TICKET gate blocks {ticket_id!r}"
+                )
+
             if step == 0:
                 # Step 0: claim the ticket
                 if ticket_id:
