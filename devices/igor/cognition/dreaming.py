@@ -207,6 +207,205 @@ Respond ONLY with valid JSON array (may be empty):
         return []
 
 
+# ── Schema extraction helpers ─────────────────────────────────────────────────
+
+
+def _closed_tickets_by_tag(conn) -> dict[str, dict]:
+    """Return tag → {count, titles, descriptions} for tags with 3+ closed tickets
+    in the last 60 days. Only tags with a non-null string value are included."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+              metadata->'tags'->0 AS first_tag,
+              COUNT(*) AS closed_count,
+              jsonb_agg(metadata->>'title') AS titles,
+              jsonb_agg(metadata->>'description') AS descriptions
+            FROM clan.memories
+            WHERE parent_id = 'TICKETS_ROOT'
+              AND metadata->>'status' = 'done'
+              AND (metadata->>'completed_at') IS NOT NULL
+              AND metadata->'tags'->0 IS NOT NULL
+              AND metadata->'tags'->0 != 'null'
+            GROUP BY first_tag
+            HAVING COUNT(*) >= 3
+            ORDER BY closed_count DESC
+            LIMIT 20
+            """,
+        )
+        result = {}
+        for row in cur.fetchall():
+            tag = str(row[0]).strip('"')
+            if tag and tag != "null":
+                result[tag] = {
+                    "count": row[1],
+                    "titles": [t for t in (row[2] or []) if t],
+                    "descriptions": [d for d in (row[3] or []) if d],
+                }
+        return result
+
+
+def _palace_path_exists(conn, path: str) -> bool:
+    with conn.cursor() as cur:
+        cur.execute("SELECT 1 FROM clan.memory_palace WHERE path = %s LIMIT 1", (path,))
+        return cur.fetchone() is not None
+
+
+def _palace_write(conn, path: str, title: str, content: str) -> None:
+    import re
+
+    parent = re.sub(r"/[^/]+$", "", path)
+    with conn.cursor() as cur:
+        cur.execute(
+            """INSERT INTO clan.memory_palace (path, parent_path, title, content, updated_at, updated_by)
+               VALUES (%s, %s, %s, %s, NOW()::text, 'dreaming')
+               ON CONFLICT (path) DO NOTHING""",
+            (path, parent or None, title, content),
+        )
+
+
+def _synthesize_sprint_pattern(
+    tag: str, titles: list[str], descriptions: list[str], timeout_s: int = 20
+) -> str:
+    """Call inner_cc to synthesize a sprint pattern from closed tickets.
+
+    timeout_s: hard wall-clock timeout for the LLM call (default 20 s).
+    Returns empty string on failure or timeout so callers can skip gracefully.
+    """
+    import concurrent.futures
+
+    try:
+        from ..tools.inner_cc import call_inner_cc_long
+
+        sample_titles = "\n".join(f"- {t[:100]}" for t in titles[:10])
+        prompt = (
+            f"The following {tag!r} tickets were successfully completed:\n"
+            f"{sample_titles}\n\n"
+            "In 2-4 sentences, describe the common successful approach pattern "
+            "for this type of ticket — what works, what to check first, and any "
+            "recurring non-obvious considerations. Be concrete and actionable."
+        )
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _exe:
+            _fut = _exe.submit(
+                call_inner_cc_long,
+                task=prompt,
+                model="anthropic/claude-haiku-4-5",
+            )
+            try:
+                raw = _fut.result(timeout=timeout_s)
+            except concurrent.futures.TimeoutError:
+                log.warning(
+                    "dreaming: sprint_pattern timeout (%ds) for tag=%s", timeout_s, tag
+                )
+                return ""
+        return (raw.get("answer") or "").strip()
+    except Exception as e:
+        log.warning("dreaming: sprint_pattern synthesis failed for %s: %s", tag, e)
+        return ""
+
+
+def _schema_extraction_pass(conn) -> int:
+    """Hippocampal schema extraction: write palace procedure nodes for tag patterns
+    with 3+ successful sprints.
+
+    Processes at most 1 new tag per dreaming pass to keep latency bounded.
+    Returns count of palace nodes written.
+    """
+    try:
+        tags = _closed_tickets_by_tag(conn)
+        if not tags:
+            return 0
+        written = 0
+        for tag, info in tags.items():
+            tag_slug = tag.lower().replace(" ", "-")
+            palace_path = f"theigors/procedures/{tag_slug}-sprint-pattern"
+            if _palace_path_exists(conn, palace_path):
+                log.debug(
+                    "dreaming: schema %s already in palace — skipping", palace_path
+                )
+                continue
+            # Attempt synthesis for this tag — break after this regardless of
+            # success so at most one LLM call fires per dreaming pass.
+            pattern = _synthesize_sprint_pattern(
+                tag, info["titles"], info["descriptions"]
+            )
+            if pattern:
+                title = f"{tag} sprint pattern ({info['count']} successes)"
+                content = (
+                    f"# {tag} Sprint Pattern\n\n"
+                    f"Synthesized from {info['count']} closed tickets.\n\n"
+                    f"{pattern}"
+                )
+                with conn:
+                    _palace_write(conn, palace_path, title, content)
+                log.info(
+                    "dreaming: schema extracted for tag=%s → %s (%d tickets)",
+                    tag,
+                    palace_path,
+                    info["count"],
+                )
+                written += 1
+            break  # one attempt per dreaming pass — bounded latency
+        return written
+    except Exception as e:
+        log.warning("dreaming: schema_extraction_pass failed: %s", e)
+        return 0
+
+
+# ── Failure-pattern → watch_problems helpers ─────────────────────────────────
+
+_FAILURE_KEYWORDS = (
+    "failed",
+    "blocked",
+    "stuck",
+    "retry",
+    "retried",
+    "failure",
+    "error",
+)
+
+
+def _extract_failure_clusters(proposals: list[dict]) -> dict[str, list[str]]:
+    """Scan proposal content+rationale for failure keywords.
+    Returns keyword → list of matching proposal summaries (2+ triggers write)."""
+    clusters: dict[str, list[str]] = {}
+    for p in proposals:
+        text = (p.get("content", "") + " " + p.get("rationale", "")).lower()
+        for kw in _FAILURE_KEYWORDS:
+            if kw in text:
+                clusters.setdefault(kw, []).append(p.get("content", "")[:120])
+    return {kw: items for kw, items in clusters.items() if len(items) >= 2}
+
+
+def _write_failure_watch_problems(failure_clusters: dict[str, list[str]]) -> int:
+    """Write watch_problems entries for recurring failure keyword clusters.
+    Dedup is handled by watch_problems.add_watch_problem (by watch_condition)."""
+    written = 0
+    try:
+        from .watch_problems import add_watch_problem as _add_wp
+
+        for kw, summaries in failure_clusters.items():
+            problem = f"dreaming identified recurring '{kw}' pattern in synthesis"
+            watch_condition = f"dreaming:failure_keyword:{kw}"
+            lever_description = (
+                f"dreaming identified {len(summaries)} proposals referencing '{kw}': "
+                + "; ".join(summaries[:3])
+            )
+            result = _add_wp(
+                problem=problem,
+                lever_description=lever_description,
+                watch_condition=watch_condition,
+            )
+            if result >= 0:
+                written += 1
+                log.info(
+                    "dreaming: watch_problem written for keyword=%s (id=%d)", kw, result
+                )
+    except Exception as e:
+        log.warning("dreaming: write_failure_watch_problems failed: %s", e)
+    return written
+
+
 def run(paths_obj=None) -> int:
     """Run one dreaming cycle. Returns number of proposals written.
 
@@ -267,6 +466,18 @@ def run(paths_obj=None) -> int:
         log.info(
             "dreaming: wrote %d proposals from %d candidates", count, len(proposals)
         )
+
+        # Failure-pattern → watch_problems (T-igor-dreaming-outputs-actionable)
+        failure_clusters = _extract_failure_clusters(proposals)
+        if failure_clusters:
+            _write_failure_watch_problems(failure_clusters)
+
+        # Schema extraction → palace (T-igor-dreaming-schema-extraction)
+        # Runs after proposals so the DB connection is still live.
+        schema_written = _schema_extraction_pass(conn)
+        if schema_written:
+            log.info("dreaming: wrote %d palace schema nodes", schema_written)
+
         return count
     finally:
         conn.close()
