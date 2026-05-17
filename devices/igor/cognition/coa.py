@@ -279,6 +279,23 @@ class COA(IgorBase):
                                 )
                             except Exception as _imp_e:
                                 self.log.error("NE_IMPASSE: %s", _imp_e)
+                        # LIDA DMN analog: stuck for 5+ cycles → switch to synthesis
+                        # mode rather than continuing to idle. Dreaming can surface
+                        # new content and reset the cognitive state.
+                        if self._ne_stuck_count >= 5:
+                            try:
+                                from .dreaming import run as _dreaming_run
+
+                                _stuck_n = self._ne_stuck_count
+                                self._ne_stuck_count = 0
+                                _dreaming_run()
+                                self.log.info(
+                                    "NE_STUCK_DREAMING: dreaming pass triggered after "
+                                    "%d consecutive no-result cycles",
+                                    _stuck_n,
+                                )
+                            except Exception as _stuck_dream_e:
+                                self.log.error("NE_STUCK_DREAMING: %s", _stuck_dream_e)
                 except Exception as _bare_e:
                     self.log.error("BARE_EXCEPT: %s", _bare_e)
                 # NE grader — fresh-context quality evaluation (T-igor-ne-grader-pass)
