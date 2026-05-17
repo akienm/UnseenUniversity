@@ -2228,6 +2228,16 @@ class PeChain(IgorBase):
         if self.basket.get("error"):
             return self.basket
 
+        # Confidence gate: if hypothesis_error is set after all retries, fast-fail
+        # now rather than running pe_test/pe_probe on an unchanged codebase and
+        # escalating later in pe_close_loop. Same escalation path, earlier exit.
+        if self.basket.get("hypothesis_error"):
+            hyp_err = self.basket["hypothesis_error"]
+            self.log.info("CONFIDENCE_GATE: fast-fail — %s", hyp_err[:120])
+            return self._pe_escalate(
+                reason=f"confidence gate: hypothesis invalid — {hyp_err[:200]}"
+            )
+
         # Pre-implement scope filter: drop HIGH-inertia hypotheses whose target
         # isn't named in the ticket description so pe_implement never runs on
         # hallucinated brainstem proposals. When the drop empties the list,
