@@ -89,6 +89,7 @@ class COA(IgorBase):
         self._ne_last_run_time: float = 0.0
         self._last_ne_valence: float = 0.0
         self._ne_cycle_counter: int = 0
+        self._ne_stuck_count: int = 0  # consecutive no-result cycles; reset on result
 
         # Background-COA state (unused in root COA)
         self._task_queue: list[Any] = []
@@ -212,6 +213,7 @@ class COA(IgorBase):
                         "NE_RUN elapsed_ms=%.0f", (_t.monotonic() - _ne_t0) * 1000.0
                     )
                     if result:
+                        self._ne_stuck_count = 0
                         _ne_state = result.get("internal_state", {})
                         _m = milieu_mod.get()
                         if _ne_state and _m:
@@ -241,6 +243,7 @@ class COA(IgorBase):
                             except Exception as _psych_e:
                                 self.log.error("PSYCH_LOG: %s", _psych_e)
                     else:
+                        self._ne_stuck_count += 1
                         try:
                             from .escalate import escalate_to_channel as _esc
 
@@ -253,6 +256,29 @@ class COA(IgorBase):
                             )
                         except Exception as _esc_e:
                             self.log.error("NE_ESCALATE: %s", _esc_e)
+                        # SOAR-style impasse: after 3 no-result cycles write a
+                        # self-diagnostic subgoal to TWM so the next cycle has
+                        # actionable content rather than looping identically.
+                        if self._ne_stuck_count == 3:
+                            try:
+                                self._cortex.twm_push(
+                                    source="coa_impasse",
+                                    content_csb=(
+                                        f"IMPASSE|NE produced no result "
+                                        f"{self._ne_stuck_count} consecutive cycles — "
+                                        "self-diagnostic subgoal: what is blocking cognition?"
+                                    ),
+                                    salience=0.9,
+                                    urgency=0.7,
+                                    category="impasse",
+                                    ttl_seconds=600,
+                                )
+                                self.log.info(
+                                    "NE_IMPASSE stuck_count=%d — impasse subgoal pushed to TWM",
+                                    self._ne_stuck_count,
+                                )
+                            except Exception as _imp_e:
+                                self.log.error("NE_IMPASSE: %s", _imp_e)
                 except Exception as _bare_e:
                     self.log.error("BARE_EXCEPT: %s", _bare_e)
                 # NE grader — fresh-context quality evaluation (T-igor-ne-grader-pass)
