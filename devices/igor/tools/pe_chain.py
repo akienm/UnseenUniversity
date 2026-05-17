@@ -2102,6 +2102,92 @@ class PeChain(IgorBase):
                     "_escalate_step: cortex.twm_write (blocked) failed: %s", e
                 )
 
+        # Failure accumulator: track patterns; auto-file a sprint ticket at count >= 3.
+        # failure_type must be a finite enum — classify reason into a known category.
+        try:
+            _reason_lo = reason.lower()
+            if "old_string" in _reason_lo or "not found in file" in _reason_lo:
+                _ftype = "old_string_not_found"
+            elif "confidence gate" in _reason_lo:
+                _ftype = "confidence_gate"
+            elif "high inertia" in _reason_lo or "hallucinated" in _reason_lo:
+                _ftype = "high_inertia_target"
+            elif "exhausted" in _reason_lo and "attempt" in _reason_lo:
+                _ftype = "exhausted_attempts"
+            else:
+                _ftype = "other"
+
+            import psycopg2 as _pg2
+
+            _fa_conn = _pg2.connect(_DB_URL, connect_timeout=5)
+            try:
+                with _fa_conn:
+                    with _fa_conn.cursor() as _cur:
+                        _cur.execute(
+                            """INSERT INTO infra.pe_failure_log (failure_type, count, last_seen)
+                               VALUES (%s, 1, NOW())
+                               ON CONFLICT (failure_type) DO UPDATE
+                                 SET count     = infra.pe_failure_log.count + 1,
+                                     last_seen = NOW()
+                               RETURNING count, ticket_filed""",
+                            (_ftype,),
+                        )
+                        _row = _cur.fetchone()
+                        _count, _filed = _row if _row else (0, True)
+                        if _count >= 3 and not _filed:
+                            _slug = _ftype.replace("_", "-")
+                            _auto_id = f"T-igor-recurring-{_slug}"
+                            _auto_ticket = [
+                                {
+                                    "id": _auto_id,
+                                    "title": f"Recurring pe_chain failure: {_ftype}",
+                                    "size": "S",
+                                    "tags": [
+                                        "PeChain",
+                                        "Metacognition",
+                                        "SelfImprovement",
+                                    ],
+                                    "status": "sprint",
+                                    "priority": 0.7,
+                                    "description": (
+                                        f"pe_chain has escalated with failure_type='{_ftype}' "
+                                        f"{_count} times. Recurring pattern detected by failure accumulator.\n\n"
+                                        f"**Affected files:** wild_igor/igor/tools/pe_chain.py\n"
+                                        f"**Design rules:** theigors/rules/coding\n"
+                                        f"**Scope boundary:** In scope: root-cause analysis and fix for {_ftype}. "
+                                        f"Out of scope: other failure types.\n"
+                                        f"**Test plan:** After fix, infra.pe_failure_log count for '{_ftype}' "
+                                        f"stops growing."
+                                    ),
+                                }
+                            ]
+                            import json as _json_fa
+                            import tempfile as _tmp
+
+                            _f = _tmp.NamedTemporaryFile(
+                                mode="w", suffix=".json", delete=False
+                            )
+                            _json_fa.dump(_auto_ticket, _f)
+                            _f.close()
+                            _run_bash(
+                                ["python3", str(_CC_QUEUE), "add", _f.name],
+                                timeout=15,
+                            )
+                            _cur.execute(
+                                "UPDATE infra.pe_failure_log SET ticket_filed = TRUE WHERE failure_type = %s",
+                                (_ftype,),
+                            )
+                            self.log.info(
+                                "FAILURE_ACCUMULATOR: auto-filed %s after %d escalations of type %s",
+                                _auto_id,
+                                _count,
+                                _ftype,
+                            )
+            finally:
+                _fa_conn.close()
+        except Exception as _fa_e:
+            self.log.error("FAILURE_ACCUMULATOR: %s", _fa_e)
+
         self._close_goal_on_escalate()
 
         return self.basket
