@@ -4711,7 +4711,7 @@ class Cortex(IgorBase):
                 params,
             ).fetchall()
 
-        return [
+        items = [
             {
                 "id": r["id"],
                 "timestamp": r["timestamp"],
@@ -4737,6 +4737,22 @@ class Cortex(IgorBase):
             }
             for r in rows
         ]
+        # Lateral inhibition: within each category, the dominant signal suppresses
+        # nearby competitors at read time. Stored salience is never mutated.
+        # Condition: max_salience >= 0.7 AND competitor within 0.25 of max → * 0.4.
+        by_cat: dict[str, list] = {}
+        for item in items:
+            by_cat.setdefault(item["category"], []).append(item)
+        for cat_items in by_cat.values():
+            max_sal = max(i["salience"] for i in cat_items)
+            if max_sal >= 0.7:
+                for item in cat_items:
+                    if (
+                        item["salience"] < max_sal
+                        and item["salience"] >= max_sal - 0.25
+                    ):
+                        item["salience"] = round(item["salience"] * 0.4, 4)
+        return items
 
     def twm_evict_category(self, category: str) -> int:
         """
