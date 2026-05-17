@@ -310,6 +310,45 @@ class COA(IgorBase):
                             _psych_log.parent.mkdir(parents=True, exist_ok=True)
                             with open(_psych_log, "a") as _f:
                                 _f.write(_json.dumps(_grade_result) + "\n")
+                            # Feed grader result back into cognition so NE can self-correct.
+                            # Threshold: overall < 0.4 OR any dimension < 0.3.
+                            try:
+                                _dims = (
+                                    "memory_retrieval_quality",
+                                    "context_assembly_quality",
+                                    "output_coherence",
+                                )
+                                _overall = _grade_result.get("overall_score", 1.0)
+                                _failing = [
+                                    d for d in _dims if _grade_result.get(d, 1.0) < 0.3
+                                ]
+                                if _overall < 0.4 or _failing:
+                                    _alert_dim = _failing[0] if _failing else "overall"
+                                    _alert_score = (
+                                        _grade_result.get(_alert_dim, _overall)
+                                        if _failing
+                                        else _overall
+                                    )
+                                    self._cortex.twm_push(
+                                        source="coa_ne_grader",
+                                        content_csb=(
+                                            f"NE_QUALITY_ALERT"
+                                            f"|dim={_alert_dim}"
+                                            f"|score={_alert_score:.2f}"
+                                        ),
+                                        salience=0.75,
+                                        urgency=0.5,
+                                        category="ne_quality",
+                                        ttl_seconds=300,
+                                    )
+                                    self.log.info(
+                                        "NE_QUALITY_ALERT dim=%s score=%.2f overall=%.2f",
+                                        _alert_dim,
+                                        _alert_score,
+                                        _overall,
+                                    )
+                            except Exception as _qa_e:
+                                self.log.error("NE_QUALITY_ALERT: %s", _qa_e)
                 except Exception as _grade_e:
                     self.log.error("NE_GRADER: %s", _grade_e)
                 # Annotate pending engrams (batch_size=2 to stay within budget)
