@@ -4737,6 +4737,24 @@ class Cortex(IgorBase):
             }
             for r in rows
         ]
+        # Age decay: older TWM items have lower effective salience at read time.
+        # effective_salience = stored * exp(-age_seconds / 1800.0)  (half-life = 30 min)
+        # Stored salience is never mutated — this is read-time only.
+        import math as _math
+
+        _now = datetime.now()
+        for item in items:
+            try:
+                _ts = datetime.fromisoformat(item["timestamp"])
+                if _ts.tzinfo is not None:
+                    _ts = _ts.replace(tzinfo=None)
+                _age_s = (_now - _ts).total_seconds()
+                if _age_s > 0:
+                    item["salience"] = round(
+                        item["salience"] * _math.exp(-_age_s / 1800.0), 4
+                    )
+            except Exception:
+                pass  # malformed timestamp — leave salience unchanged
         # Lateral inhibition: within each category, the dominant signal suppresses
         # nearby competitors at read time. Stored salience is never mutated.
         # Condition: max_salience >= 0.7 AND competitor within 0.25 of max → * 0.4.
