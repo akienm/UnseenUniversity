@@ -187,6 +187,12 @@ def run_scope_guard(basket: dict) -> dict:
             reason = f"HIGH inertia {op_type} requires human approval: {target_file}"
             log.info(f"ESCALATED: file={target_file} tier=HIGH op={op_type}")
             try:
+                from .pe_chain_priors import append_prior as _append_prior
+
+                _append_prior(target_file, "HIGH_INERTIA", "scope_guard")
+            except Exception as _pr_e:
+                log.debug("SCOPE_GUARD: prior append failed — %s", _pr_e)
+            try:
                 from .pe_chain import _pe_escalate as _pe_esc
 
                 return _pe_esc(basket, reason=reason)
@@ -217,6 +223,12 @@ def run_scope_guard(basket: dict) -> dict:
     if tier == "HIGH" and op_delta >= 1:
         reason = f"HIGH inertia {op_type} requires human approval: {target_file}"
         log.info(f"ESCALATED: file={target_file} tier=HIGH op={op_type}")
+        try:
+            from .pe_chain_priors import append_prior as _append_prior
+
+            _append_prior(target_file, "HIGH_INERTIA", "scope_guard")
+        except Exception as _pr_e:
+            log.debug("SCOPE_GUARD: prior append failed — %s", _pr_e)
         # Call _pe_escalate to properly close goal + mark ticket blocked
         try:
             from .pe_chain import _pe_escalate as _pe_esc

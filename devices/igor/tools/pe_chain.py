@@ -1239,6 +1239,17 @@ class PeChain(IgorBase):
                     f"HYPOTHESIZE: standards injected ({len(standards_block)} chars)"
                 )
 
+            # Inject negative priors so model avoids known-bad targets
+            try:
+                from .pe_chain_priors import build_priors_prompt_block as _priors_block
+
+                _pb = _priors_block()
+                if _pb:
+                    prompt = prompt.replace("\nJSON:", f"\n{_pb}\nJSON:")
+                    self.log.info("HYPOTHESIZE: priors injected (%d chars)", len(_pb))
+            except Exception as _pr_e:
+                self.log.debug("pe_hypothesize: priors injection failed: %s", _pr_e)
+
             self.log.info(f"HYPOTHESIZE: calling tier.2 prompt_len={len(prompt)}")
 
             # Routes to cheap background tier (Qwen) — verified T-verify-pe-chain-qwen-tier
@@ -1317,6 +1328,18 @@ class PeChain(IgorBase):
                 f"HYPOTHESIZE: validation failed after {retry_attempts} retries: "
                 f"{'; '.join(errors)}"
             )
+            # Record each failing file as a negative prior
+            try:
+                from .pe_chain_priors import append_prior as _append_prior
+
+                for _edit in edits:
+                    _tgt = _edit.get("file", "")
+                    if _tgt:
+                        _append_prior(
+                            _tgt, "OLD_STRING_NOT_FOUND", "old_string_mismatch"
+                        )
+            except Exception as _pr_e:
+                self.log.debug("pe_hypothesize: prior append failed: %s", _pr_e)
             return self.basket
 
         self.basket["hypotheses"] = edits
