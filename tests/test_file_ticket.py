@@ -61,6 +61,22 @@ def _last_action_log(tool_name: str) -> dict:
         conn.close()
 
 
+def _delete_ticket(ticket_id: str) -> None:
+    """Remove a test-created ticket from clan.memories so it doesn't pollute the live queue."""
+    import psycopg2
+
+    conn = psycopg2.connect(os.environ["IGOR_HOME_DB_URL"])
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "DELETE FROM clan.memories WHERE id = %s AND parent_id = 'TICKETS_ROOT'",
+                    (ticket_id,),
+                )
+    finally:
+        conn.close()
+
+
 class TestFileTicket:
     def test_inserts_in_tickets_root(self):
         from agent_datacenter.devices.librarian.tools.ticket_tools import file_ticket
@@ -70,10 +86,13 @@ class TestFileTicket:
             description="automated test ticket",
         )
         ticket_id = result["ticket_id"]
-        row = _read_ticket(ticket_id)
-        assert row["kind"] == "ticket"
-        assert row["id"] == ticket_id
-        assert row["title"] == "test file ticket inserts row"
+        try:
+            row = _read_ticket(ticket_id)
+            assert row["kind"] == "ticket"
+            assert row["id"] == ticket_id
+            assert row["title"] == "test file ticket inserts row"
+        finally:
+            _delete_ticket(ticket_id)
 
     def test_metadata_fields(self):
         from agent_datacenter.devices.librarian.tools.ticket_tools import file_ticket
@@ -87,25 +106,32 @@ class TestFileTicket:
             priority=0.8,
             status="sprint",
         )
-        row = _read_ticket(result["ticket_id"])
-        assert row["description"] == "checks all fields"
-        assert row["size"] == "M"
-        assert row["tags"] == ["ADC", "Test"]
-        assert row["decision_id"] == "D-test-2026-01-01"
-        assert row["priority"] == 0.8
-        assert row["status"] == "sprint"
+        ticket_id = result["ticket_id"]
+        try:
+            row = _read_ticket(ticket_id)
+            assert row["description"] == "checks all fields"
+            assert row["size"] == "M"
+            assert row["tags"] == ["ADC", "Test"]
+            assert row["decision_id"] == "D-test-2026-01-01"
+            assert row["priority"] == 0.8
+            assert row["status"] == "sprint"
+        finally:
+            _delete_ticket(ticket_id)
 
     def test_action_log_entry(self):
         from agent_datacenter.devices.librarian.tools.ticket_tools import file_ticket
 
-        file_ticket(
+        result = file_ticket(
             title="test file ticket action log",
             description="verify action log entry",
         )
-        log_row = _last_action_log("file_ticket")
-        assert log_row
-        assert log_row["device_id"] == "librarian"
-        assert "T-test-file-ticket-action-log" in str(log_row["args_json"])
+        try:
+            log_row = _last_action_log("file_ticket")
+            assert log_row
+            assert log_row["device_id"] == "librarian"
+            assert "T-test-file-ticket-action-log" in str(log_row["args_json"])
+        finally:
+            _delete_ticket(result["ticket_id"])
 
     def test_upsert_on_conflict(self):
         """Second call with same title updates rather than errors."""
@@ -113,5 +139,9 @@ class TestFileTicket:
 
         file_ticket(title="test upsert ticket", description="first")
         result = file_ticket(title="test upsert ticket", description="second")
-        row = _read_ticket(result["ticket_id"])
-        assert row["description"] == "second"
+        ticket_id = result["ticket_id"]
+        try:
+            row = _read_ticket(ticket_id)
+            assert row["description"] == "second"
+        finally:
+            _delete_ticket(ticket_id)
