@@ -117,8 +117,8 @@ def _read_psych_log(paths_obj) -> list[dict]:
                 if line:
                     try:
                         entries.append(json.loads(line))
-                    except Exception:
-                        pass
+                    except Exception as _json_e:
+                        log.debug("dreaming: psych_log json parse failed: %s", _json_e)
         return entries[-PSYCH_LOG_WINDOW:]
     except Exception as e:
         log.debug("dreaming: psych_log read failed: %s", e)

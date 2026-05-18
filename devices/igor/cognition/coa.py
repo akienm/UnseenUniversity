@@ -491,8 +491,8 @@ Score each dimension 0.0-1.0. Respond ONLY with valid JSON:
                     f"mem={mrq:.2f} ctx={caq:.2f} coh={oc:.2f} — {scores.get('notes','')}",
                     dedup_key="ne-grader-low-score",
                 )
-            except Exception:
-                pass
+            except Exception as _esc_e:
+                _coa_log.warning("NE_GRADER: _esc push failed: %s", _esc_e)
 
         return entry
     except Exception as _e:

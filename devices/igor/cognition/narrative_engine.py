@@ -622,8 +622,8 @@ class NarrativeEngine(IgorBase):
 
             if _is_task_boundary(getattr(self, "_last_run_wall_ts", 0.0)):
                 last_narrative = ""
-        except Exception:
-            pass
+        except Exception as _tb_e:
+            log.warning("NE._run_turn: task_boundary check failed: %s", _tb_e)
         self._last_run_wall_ts = __import__("time").time()
 
         prompt = self._build_prompt(obs_text, last_narrative)
@@ -2117,7 +2117,10 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                         (head_parents & tail_parents) or (head_children & tail_children)
                     ):
                         continue
-                except Exception:
+                except Exception as _sim_e:
+                    log.debug(
+                        "NE._find_best_tail_match: similarity check failed: %s", _sim_e
+                    )
                     continue
                 best_score = sim
                 best_match = tail
@@ -2343,7 +2346,11 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                                     (json.dumps(pruned_links), row["id"]),
                                 )
                             counts["pruned"] += len(links) - len(pruned_links)
-                    except Exception:
+                    except Exception as _prune_e:
+                        log.debug(
+                            "NE._deep_consolidation_pass: link prune failed: %s",
+                            _prune_e,
+                        )
                         continue
             except Exception as _bare_e:
                 log_error(
