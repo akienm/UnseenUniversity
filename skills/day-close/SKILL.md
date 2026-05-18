@@ -203,6 +203,34 @@ Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
 git pull --rebase origin main && git push origin main
 ```
 
+### 13.5. Friday: /eval-run + /weekly-retro + /audit-expert
+
+**Only on Fridays** (`date +%u` = 5). Skip on other days.
+
+```bash
+if [ "$(date +%u)" = "5" ]; then
+  echo "Friday detected — running weekly capability + expert audit pass"
+  # Step A: eval-run
+  # /eval-run  (run inline per that skill's steps)
+
+  # Step B: weekly-retro
+  # /weekly-retro  (run inline per that skill's steps)
+
+  # Step C: audit-expert (weekly mode — 3 random experts)
+  # /audit-expert  (weekly default; runs after retro so retro findings inform expert context)
+fi
+```
+
+Also on the **first Monday of each month** (`date +%u` = 1 and `date +%d` ≤ 7):
+run `/audit-expert --mode=monthly` (full 11-expert panel).
+
+```bash
+if [ "$(date +%u)" = "1" ] && [ "$(date +%d)" -le 7 ]; then
+  echo "First Monday — running full monthly expert panel"
+  # /audit-expert --mode=monthly
+fi
+```
+
 ### 14. /savestate (session-close — include Step 1 summary)
 
 This is the deliberate end-of-session close. Include the session-close

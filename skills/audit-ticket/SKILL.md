@@ -160,6 +160,21 @@ Amended ticket (if AMEND): <diff from input>
 Child proposals (if SPLIT): <list>
 ```
 
+## Challenge (always — advisory, never blocks verdict)
+
+After all checks, always ask:
+
+```
+CHALLENGE: Is there a simpler implementation that achieves the same goal?
+  - Could the scope be cut further without losing the KR impact?
+  - Is there an existing primitive (tool, table, skill) that makes this ticket
+    unnecessary or half the size?
+  - If this ticket fails, what's the next simplest thing that would still move the needle?
+```
+
+Output labeled `CHALLENGE:` — never blocks PASS, AMEND, SPLIT, or DISCARD.
+This fires on every audit-ticket run, no exceptions.
+
 ## Hard rules
 
 - Always run checks 1–8 first, then checks 9–16.

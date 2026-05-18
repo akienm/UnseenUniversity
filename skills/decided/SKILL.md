@@ -37,6 +37,33 @@ Always write a one-to-two sentence summary and assign a decision id of the
 form `D-<kebab-slug>-YYYY-MM-DD`. A decision without a D-id can't be
 rolled up or traced back from the tickets it spawned.
 
+### 2.6. Extract hypothesis (mandatory — 3 questions)
+
+Always ask Akien these three questions before proceeding. They are not optional.
+The hypothesis must be extracted and stored on the decision record before audit-design runs.
+
+**Question 1:** "Which goal does this serve?" — answer with G-xxx, or explicit `none` with one-sentence reason.
+
+**Question 2:** "What should be observably different after these tickets ship?" — the testable claim in plain English. One sentence.
+
+**Question 3:** "How will we know? What's the signal?" — a metric, log line, behavior, or eval question that can be checked with current infrastructure.
+
+Store answers in the decision record (both the .md file and palace node metadata):
+```
+## Hypothesis
+<Question 2 answer>
+
+## Measurement Signal
+<Question 3 answer>
+
+## Goal Link
+<G-xxx or "none: <reason>">
+```
+
+If Akien can't answer Question 2 in one falsifiable sentence, the design may not be ready to ticket yet — surface that and offer to continue designing.
+
+Then run `/audit-hypothesis` on the extracted hypothesis. If AMEND: apply fixes before proceeding to Step 2.5.
+
 ### 2.5. Audit the design (audit-design)
 
 Always invoke `audit-design` on the decision summary + scope context before

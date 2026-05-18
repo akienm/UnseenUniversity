@@ -262,7 +262,22 @@ Until `audit_telemetry.emit_run_record()` ships, the run record is described
 in this step but not yet emitted programmatically. Until then, the audit's
 PASS/AMEND verdict stands as its own record in the parent /decided output.
 
-### 7. Return verdict
+### 7. Challenge (always — advisory, never blocks PASS)
+
+After all checks, always ask:
+
+```
+CHALLENGE: Is there a better architectural approach to achieve this goal?
+  - Name one alternative architecture or design that was considered and rejected.
+  - If no alternative was considered: is this the first design that came to mind,
+    or the best one? What would change if you had to argue for a different approach?
+  - Could a simpler design achieve the same goal with fewer moving parts?
+```
+
+Output labeled `CHALLENGE:` — never labeled AMEND. Akien can proceed without acting on it.
+This fires on every run, PASS or AMEND, no exceptions.
+
+### 8. Return verdict
 
 PASS or AMEND, in the output shape above. /decided gates Step 3 on this
 return.
