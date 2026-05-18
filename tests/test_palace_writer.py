@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 import pytest
 
 from agent_datacenter.devices.librarian.palace_writer import (
@@ -266,3 +266,56 @@ class TestTrustHierarchy:
         writer._conn = MagicMock(return_value=mock_conn_ctx)
 
         assert writer._load_principals() == {}
+
+
+# ── Behavioral observation emission ───────────────────────────────────────────
+
+
+class TestEmitBehavioralObservation:
+    def _patched_writer(self) -> tuple[PalaceWriter, list[tuple]]:
+        """Return writer with emit_behavioral_observation patched to record calls."""
+        calls: list[tuple] = []
+        writer = _writer()
+        writer.emit_behavioral_observation = MagicMock(
+            side_effect=lambda **kw: calls.append(kw)
+        )
+        return writer, calls
+
+    def test_write_low_emits_answered(self):
+        writer, calls = self._patched_writer()
+        writer.write(_req(sources=[("url", "x", 0.9)], confidence=0.4))
+        assert calls, "emit_behavioral_observation not called"
+        assert calls[0]["outcome"] == "answered"
+        assert calls[0]["tier"] == "low"
+
+    def test_write_rejected_emits_failed(self):
+        writer, calls = self._patched_writer()
+        writer.write(_req(confidence=0.0))
+        assert calls[0]["outcome"] == "failed"
+        assert calls[0]["tier"] == "rejected"
+
+    def test_write_protected_emits_escalated(self):
+        inbox: list[dict] = []
+        writer = _writer(human_authored=True, inbox_calls=inbox)
+        writer.emit_behavioral_observation = MagicMock()
+        writer.write(_req(confidence=0.9))
+        writer.emit_behavioral_observation.assert_called_once()
+        kw = writer.emit_behavioral_observation.call_args.kwargs
+        assert kw["outcome"] == "escalated"
+        assert kw["tier"] == "protected"
+
+    def test_write_high_pending_emits_escalated(self):
+        inbox: list[dict] = []
+        writer = _writer(inbox_calls=inbox)
+        writer.emit_behavioral_observation = MagicMock()
+        sources = [("url", f"s{i}", 0.9) for i in range(5)]
+        writer.write(_req(sources=sources, confidence=0.85))
+        writer.emit_behavioral_observation.assert_called_once()
+        kw = writer.emit_behavioral_observation.call_args.kwargs
+        assert kw["outcome"] == "escalated"
+        assert kw["tier"] == "high_pending"
+
+    def test_write_low_passes_path_as_topic(self):
+        writer, calls = self._patched_writer()
+        writer.write(_req(path="some/node", confidence=0.4))
+        assert calls[0]["topic"] == "some/node"

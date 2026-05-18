@@ -18,6 +18,7 @@ Confidence is never 1.0 — all values are clamped to [0.0, 0.999].
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import re
@@ -33,6 +34,25 @@ _PRINCIPAL_RE = re.compile(
     r"###\s+(\w+)[^\n]*\n.*?\*\*credibility_multiplier:\*\*\s+(\d+)",
     re.DOTALL,
 )
+
+_PROPOSALS_DDL = """
+CREATE TABLE IF NOT EXISTS instance.proposals (
+    id                  serial PRIMARY KEY,
+    kind                text NOT NULL,
+    content             text NOT NULL,
+    metadata            jsonb NOT NULL DEFAULT '{}',
+    status              text NOT NULL DEFAULT 'pending',
+    source_module       text,
+    occurrence_count    int NOT NULL DEFAULT 1,
+    first_seen_at       timestamptz NOT NULL DEFAULT now(),
+    created_at          timestamptz NOT NULL DEFAULT now(),
+    committed_at        timestamptz,
+    committed_memory_id bigint,
+    rejected_at         timestamptz,
+    rejected_reason     text,
+    CONSTRAINT proposals_status_check CHECK (status IN ('pending', 'committed', 'rejected'))
+)
+"""
 
 
 # ── Data classes ──────────────────────────────────────────────────────────────
@@ -193,6 +213,74 @@ class PalaceWriter:
                 summary[:80],
             )
 
+    # ── Behavioral observation ────────────────────────────────────────────────
+
+    def emit_behavioral_observation(
+        self,
+        topic: str,
+        confidence: float,
+        tier: str,
+        outcome: str,
+        effective_sources: float,
+    ) -> None:
+        """Write a kind='librarian_observation' entry to instance.proposals.
+
+        Deduplicates by fingerprint (same as dreaming._add_proposal); repeated
+        calls for the same topic/outcome increment occurrence_count.
+        """
+        topic = topic[:100]
+        content = (
+            f"Librarian researched '{topic}'. Outcome: {outcome}. "
+            f"Confidence: {confidence:.2f}. Tier: {tier}. "
+            f"Effective sources: {effective_sources:.0f}."
+        )
+        fp = hashlib.md5(("librarian_observation" + content[:200]).encode()).hexdigest()
+        metadata = json.dumps(
+            {
+                "source": "librarian",
+                "topic": topic,
+                "confidence": confidence,
+                "tier": tier,
+                "effective_sources": effective_sources,
+                "outcome": outcome,
+                "fingerprint": fp,
+            }
+        )
+        try:
+            with self._conn() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(_PROPOSALS_DDL)
+                conn.commit()
+                with conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "SELECT id FROM instance.proposals WHERE status='pending' "
+                            "AND metadata->>'fingerprint' = %s",
+                            (fp,),
+                        )
+                        row = cur.fetchone()
+                        if row:
+                            cur.execute(
+                                "UPDATE instance.proposals "
+                                "SET occurrence_count = occurrence_count + 1 "
+                                "WHERE id = %s",
+                                (row[0],),
+                            )
+                        else:
+                            cur.execute(
+                                "INSERT INTO instance.proposals "
+                                "(kind, content, metadata, source_module) "
+                                "VALUES (%s, %s, %s::jsonb, %s)",
+                                (
+                                    "librarian_observation",
+                                    content,
+                                    metadata,
+                                    "librarian",
+                                ),
+                            )
+        except Exception as exc:
+            log.warning("palace_writer: emit_behavioral_observation failed: %s", exc)
+
     # ── Write ─────────────────────────────────────────────────────────────────
 
     def write(self, req: PalaceWriteRequest) -> WriteResult:
@@ -204,13 +292,21 @@ class PalaceWriter:
 
         # Tier evaluation
         if req.confidence_score <= 0.0 or effective < 1.0:
-            return WriteResult(
+            result = WriteResult(
                 path=req.path,
                 tier="rejected",
                 written=False,
                 effective_sources=effective,
                 reason="confidence_score=0 or no provenance sources",
             )
+            self.emit_behavioral_observation(
+                topic=req.path,
+                confidence=req.confidence_score,
+                tier="rejected",
+                outcome="failed",
+                effective_sources=effective,
+            )
+            return result
 
         if effective >= 5.0 and req.confidence_score >= 0.8:
             tier = "high"
@@ -233,13 +329,21 @@ class PalaceWriter:
                 body=body,
                 urgency="normal",
             )
-            return WriteResult(
+            result = WriteResult(
                 path=req.path,
                 tier="protected",
                 written=False,
                 effective_sources=effective,
                 reason="human-authored node — escalated to CC inbox for review",
             )
+            self.emit_behavioral_observation(
+                topic=req.path,
+                confidence=req.confidence_score,
+                tier="protected",
+                outcome="escalated",
+                effective_sources=effective,
+            )
+            return result
 
         # HIGH tier: escalate, do not write directly
         if tier == "high":
@@ -256,13 +360,21 @@ class PalaceWriter:
                 body=body,
                 urgency="normal",
             )
-            return WriteResult(
+            result = WriteResult(
                 path=req.path,
                 tier="high_pending",
                 written=False,
                 effective_sources=effective,
                 reason="HIGH tier — escalated to CC inbox, pending Akien approval",
             )
+            self.emit_behavioral_observation(
+                topic=req.path,
+                confidence=req.confidence_score,
+                tier="high_pending",
+                outcome="escalated",
+                effective_sources=effective,
+            )
+            return result
 
         # LOW and MEDIUM: write with provenance metadata
         self._do_write(req, tier, effective)
@@ -273,13 +385,21 @@ class PalaceWriter:
             req.confidence_score,
             effective,
         )
-        return WriteResult(
+        result = WriteResult(
             path=req.path,
             tier=tier,
             written=True,
             effective_sources=effective,
             reason=f"{tier} tier write completed with provenance tag",
         )
+        self.emit_behavioral_observation(
+            topic=req.path,
+            confidence=req.confidence_score,
+            tier=tier,
+            outcome="answered",
+            effective_sources=effective,
+        )
+        return result
 
     def _do_write(self, req: PalaceWriteRequest, tier: str, effective: float) -> None:
         provenance_json = json.dumps(

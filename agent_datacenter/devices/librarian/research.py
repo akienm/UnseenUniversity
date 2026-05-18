@@ -141,10 +141,12 @@ class ResearchEngine:
         router: InferenceRouter | None = None,
         llm_call: LLMCallable | None = None,
         fetch_fn: FetchCallable | None = None,
+        observation_fn=None,
     ) -> None:
         self._router = router or InferenceRouter()
         self._llm_call = llm_call or default_llm_call
         self._fetch_fn = fetch_fn or _default_fetch
+        self._observation_fn = observation_fn
 
     def summarize(self, text: str, style: str = "brief") -> SummarizeResult:
         """Summarize text. style: 'brief' | 'detailed' | 'bullets'."""
@@ -244,6 +246,19 @@ class ResearchEngine:
 
         selection = self._router.select(task_type="research")
         answer = self._llm_call(selection, prompt)
+
+        if not answer.strip() and self._observation_fn is not None:
+            try:
+                self._observation_fn(
+                    topic=query[:100],
+                    confidence=0.0,
+                    tier="rejected",
+                    outcome="failed",
+                    effective_sources=float(len(sources)),
+                )
+            except Exception:
+                pass
+
         return ResearchResult(
             query=query,
             breadth=breadth,

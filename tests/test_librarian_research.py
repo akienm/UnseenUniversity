@@ -193,3 +193,38 @@ class TestResearchTools:
 
     def test_dispatch_unknown_returns_none(self):
         assert research_tools.dispatch("no_such_tool", {}) is None
+
+
+class TestResearchObservationFn:
+    def test_observation_fn_called_on_empty_answer(self):
+        calls: list[dict] = []
+
+        def stub_llm(selection, prompt):
+            return ""  # empty → failure
+
+        def obs_fn(**kw):
+            calls.append(kw)
+
+        engine = ResearchEngine(llm_call=stub_llm, observation_fn=obs_fn)
+        engine.research("missing topic")
+        assert calls, "observation_fn should be called on empty answer"
+        assert calls[0]["outcome"] == "failed"
+        assert calls[0]["topic"] == "missing topic"
+
+    def test_observation_fn_not_called_on_success(self):
+        calls: list[dict] = []
+
+        def obs_fn(**kw):
+            calls.append(kw)
+
+        engine = ResearchEngine(llm_call=_stub_llm, observation_fn=obs_fn)
+        engine.research("normal query")
+        assert not calls, "observation_fn should not be called when answer is non-empty"
+
+    def test_observation_fn_none_is_silent(self):
+        def stub_llm(selection, prompt):
+            return ""
+
+        engine = ResearchEngine(llm_call=stub_llm, observation_fn=None)
+        result = engine.research("topic")
+        assert result.answer == ""
