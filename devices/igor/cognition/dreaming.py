@@ -312,7 +312,7 @@ def _closed_tickets_by_tag(conn) -> dict[str, dict]:
               jsonb_agg(metadata->>'description') AS descriptions
             FROM clan.memories
             WHERE parent_id = 'TICKETS_ROOT'
-              AND metadata->>'status' = 'done'
+              AND metadata->>'status' IN ('done', 'awaiting_validation', 'closed')
               AND (metadata->>'completed_at') IS NOT NULL
               AND metadata->'tags'->0 IS NOT NULL
               AND metadata->'tags'->0 != 'null'

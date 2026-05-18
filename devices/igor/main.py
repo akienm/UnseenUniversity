@@ -990,7 +990,14 @@ class Igor(IgorBase):
                 except Exception:
                     meta = {}
                 status = meta.get("status", "").lower()
-                if status in ("closed", "deferred", "done", "completed", "dismissed"):
+                if status in (
+                    "closed",
+                    "deferred",
+                    "done",
+                    "awaiting_validation",
+                    "completed",
+                    "dismissed",
+                ):
                     continue
                 open_items.append(
                     {

@@ -18,10 +18,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ..paths import paths as _paths
+
 _DB_URL = _paths().home_db_url
 _STALE_HOURS = int(os.getenv("IGOR_STALE_TASK_HOURS", "2"))
 
-_RESOLVED_STATUSES = {"done", "closed", "shelved", "dismissed", "completed"}
+_RESOLVED_STATUSES = {
+    "done",
+    "awaiting_validation",
+    "closed",
+    "shelved",
+    "dismissed",
+    "completed",
+}
 
 log = logging.getLogger(__name__)
 
@@ -49,7 +57,7 @@ def run_stale_task_reaper(db_url: str | None = None) -> dict:
                   AND "timestamp" < to_char(NOW() - (%s || ' hours')::interval, 'YYYY-MM-DD"T"HH24:MI:SS')
                   AND (
                       metadata->>'status' IS NULL
-                      OR metadata->>'status' NOT IN ('done','closed','shelved','dismissed','completed')
+                      OR metadata->>'status' NOT IN ('done','awaiting_validation','closed','shelved','dismissed','completed')
                   )
                 """,
                 (_STALE_HOURS,),
