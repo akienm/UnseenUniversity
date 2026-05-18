@@ -83,9 +83,12 @@ class TestDailyConsoleFileHandler(unittest.TestCase):
     def test_prunes_files_older_than_retention(self):
         with tempfile.TemporaryDirectory() as tmp:
             log_dir = Path(tmp)
-            # Create stale files
-            old = log_dir / "20260101.console.log"
-            recent = log_dir / "20260506.console.log"
+            today = datetime.now()
+            old_date = (today - timedelta(days=10)).strftime("%Y%m%d")
+            recent_date = (today - timedelta(days=3)).strftime("%Y%m%d")
+
+            old = log_dir / f"{old_date}.console.log"
+            recent = log_dir / f"{recent_date}.console.log"
             old.write_text("old", encoding="utf-8")
             recent.write_text("recent", encoding="utf-8")
 
