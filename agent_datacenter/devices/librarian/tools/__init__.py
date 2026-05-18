@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from . import (
+    budget_tools,
     channel_tools,
     curation_tools,
     db_tools,
@@ -32,6 +33,7 @@ SCHEMAS: list[dict] = (
     + exec_tools.SCHEMAS
     + file_tools.SCHEMAS
     + proposal_tools.SCHEMAS
+    + budget_tools.SCHEMAS
 )
 
 
@@ -51,6 +53,7 @@ def dispatch(name: str, args: dict) -> str:
         exec_tools,
         file_tools,
         proposal_tools,
+        budget_tools,
     ):
         result = module.dispatch(name, args)
         if result is not None:

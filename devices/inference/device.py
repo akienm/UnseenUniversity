@@ -199,13 +199,24 @@ class InferenceDevice(BaseDevice):
         """
         if self._blocked:
             raise RuntimeError(f"InferenceDevice blocked: {self._block_reason}")
+        if self._mode == "openrouter":
+            from devices.inference.budget_gate import check_balance, record_spend
+
+            ok, msg = check_balance()
+            if not ok:
+                raise RuntimeError(f"OR budget gate: {msg}")
         t0 = time.time()
         if self._mode == "openrouter":
             raw = self._or_call(request)
         else:
             raw = self._ollama_call(request)
         elapsed_ms = round((time.time() - t0) * 1000)
-        return _parse_response(raw, elapsed_ms=elapsed_ms)
+        resp = _parse_response(raw, elapsed_ms=elapsed_ms)
+        if self._mode == "openrouter":
+            record_spend(
+                resp.model or request.model, resp.input_tokens, resp.output_tokens
+            )
+        return resp
 
     def _or_call(self, req: InferenceRequest) -> dict:
         api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
