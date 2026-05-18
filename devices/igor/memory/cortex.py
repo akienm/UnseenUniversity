@@ -3139,7 +3139,8 @@ class Cortex(IgorBase):
                 try:
                     recorded_at = datetime.fromisoformat(recorded_at_str)
                     total += TAIL_GRADIENT.apply_for(weight, recorded_at, now)
-                except Exception:
+                except Exception as _grad_e:
+                    log.debug("cortex.get_tail_heat: gradient calc failed: %s", _grad_e)
                     continue
             return round(total, 4)
         except Exception:
@@ -3421,7 +3422,10 @@ class Cortex(IgorBase):
                         recent_heat += decayed
                     else:
                         earlier_heat += decayed
-                except Exception:
+                except Exception as _heat_e:
+                    log.debug(
+                        "cortex.get_tail_heat_trend: heat calc failed: %s", _heat_e
+                    )
                     continue
 
             if earlier_heat < 1e-6:
@@ -4109,7 +4113,12 @@ class Cortex(IgorBase):
                 if vec:
                     self._upsert_embedding(row["id"], _json.dumps(vec))
                     updated += 1
-            except Exception:
+            except Exception as _emb_e:
+                log.debug(
+                    "cortex.refresh_embeddings: embed/upsert failed id=%s: %s",
+                    row["id"],
+                    _emb_e,
+                )
                 continue
 
         return updated
@@ -4753,8 +4762,11 @@ class Cortex(IgorBase):
                     item["salience"] = round(
                         item["salience"] * _math.exp(-_age_s / 1800.0), 4
                     )
-            except Exception:
-                pass  # malformed timestamp — leave salience unchanged
+            except Exception as _ts_e:
+                log.debug(
+                    "cortex.apply_salience_decay: malformed timestamp, leaving unchanged: %s",
+                    _ts_e,
+                )
         # Lateral inhibition: within each category, the dominant signal suppresses
         # nearby competitors at read time. Stored salience is never mutated.
         # Condition: max_salience >= 0.7 AND competitor within 0.25 of max → * 0.4.
@@ -5965,7 +5977,8 @@ class Cortex(IgorBase):
                     layer="adoption",
                 )
                 adopted += 1
-            except Exception:
+            except Exception as _adopt_e:
+                log.debug("cortex._adopt_orphans: adoption failed: %s", _adopt_e)
                 continue
 
         return adopted

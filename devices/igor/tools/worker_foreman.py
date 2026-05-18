@@ -11,10 +11,13 @@ Tools registered:
 """
 
 import json
+import logging
 import os
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
+
+_log = logging.getLogger(__name__)
 
 from lab.utility_closet.registry import Tool, registry
 from ..paths import paths
@@ -101,8 +104,8 @@ def launch_next_worker() -> str:
                 if _active:
                     _tid = _active[0].metadata.get("source_message", "")[:60]
                     return f"[foreman] igor goal already active: {_tid} — skipping"
-            except Exception:
-                pass
+            except Exception as _goal_e:
+                _log.debug("worker_foreman: cortex goal check failed: %s", _goal_e)
             return adopt_next_ticket()
 
         # If anything is in_progress, check if the daemon is alive.

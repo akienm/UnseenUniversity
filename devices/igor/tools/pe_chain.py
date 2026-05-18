@@ -567,8 +567,8 @@ class PeChain(IgorBase):
                     f"Title was: '{_title[:60]}'",
                     dedup_key=f"no-desc-{ticket_id}",
                 )
-            except Exception:
-                pass
+            except Exception as _post_e:
+                self.log.warning("pe_chain.pe_plan: channel post failed: %s", _post_e)
             return self.basket
 
         # D333: load CC-approved plan if present (D331 escalation → approval flow)
