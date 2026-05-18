@@ -187,7 +187,11 @@ class GoalContinuation(IgorBase):
             # Guard: close goal if ticket is already done/closed
             if ticket_id:
                 ticket_data = self._load_ticket(ticket_id)
-                if ticket_data and ticket_data.get("status") in ("done", "closed"):
+                if ticket_data and ticket_data.get("status") in (
+                    "done",
+                    "awaiting_validation",
+                    "closed",
+                ):
                     self.log.info(
                         f"GOAL_CLOSE: {ticket_id} is already {ticket_data['status']} — archiving goal"
                     )
