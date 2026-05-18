@@ -34,7 +34,7 @@ class TestPeReadTicketDescriptionGate:
         with patch(
             "wild_igor.igor.tools.pe_chain._load_ticket",
             return_value=fake_ticket,
-        ):
+        ), patch("wild_igor.igor.tools.pe_chain._post_to_channel"):
             result = pe_chain.pe_read_ticket(basket)
         assert "error" in result, "Expected error key in basket"
         assert "no description" in result["error"]
@@ -49,7 +49,7 @@ class TestPeReadTicketDescriptionGate:
         with patch(
             "wild_igor.igor.tools.pe_chain._load_ticket",
             return_value=fake_ticket,
-        ):
+        ), patch("wild_igor.igor.tools.pe_chain._post_to_channel"):
             result = pe_chain.pe_read_ticket(basket)
         assert "error" in result, "Expected error key in basket for short description"
         assert "no description" in result["error"]
@@ -65,7 +65,7 @@ class TestPeReadTicketDescriptionGate:
         with patch(
             "wild_igor.igor.tools.pe_chain._load_ticket",
             return_value=fake_ticket,
-        ):
+        ), patch("wild_igor.igor.tools.pe_chain._post_to_channel"):
             result = pe_chain.pe_read_ticket(basket)
         assert (
             "error" in result
