@@ -203,3 +203,115 @@ def test_cycle_counter_triggers_at_interval(monkeypatch):
 
     # 9 cycles / interval 3 → 3 triggers
     assert len(run_calls) == 3
+
+
+# ── Librarian observation helpers ─────────────────────────────────────────────
+
+
+def test_is_convergent_true_when_both_domains():
+    from wild_igor.igor.cognition.dreaming import _is_convergent
+
+    assert _is_convergent(
+        "Librarian researched this topic and igor's valence dropped — pattern detected."
+    )
+
+
+def test_is_convergent_false_librarian_only():
+    from wild_igor.igor.cognition.dreaming import _is_convergent
+
+    assert not _is_convergent("Librarian observation about research quality.")
+
+
+def test_is_convergent_false_psych_only():
+    from wild_igor.igor.cognition.dreaming import _is_convergent
+
+    assert not _is_convergent("Igor valence low and arousal high during this period.")
+
+
+def test_synthesize_sets_convergence_flag():
+    """Proposals with rationale citing both librarian + psych terms get convergence=True."""
+    from wild_igor.igor.cognition.dreaming import _synthesize
+
+    convergent_proposals = [
+        {
+            "kind": "habit",
+            "content": "Cross-check librarian and igor observations.",
+            "rationale": "Librarian research and igor psych data both highlight this gap.",
+            "conditions": "",
+            "heuristics": "",
+        }
+    ]
+    non_convergent_proposals = [
+        {
+            "kind": "watch_q",
+            "content": "Watch for repeated failures in retrieval.",
+            "rationale": "Repeated retrieval failures in recent cycles.",
+            "conditions": "",
+            "heuristics": "",
+        }
+    ]
+    all_proposals = convergent_proposals + non_convergent_proposals
+
+    fake_inner_cc = MagicMock()
+    fake_inner_cc.call_inner_cc_long.return_value = {
+        "answer": json.dumps(all_proposals)
+    }
+    with patch.dict("sys.modules", {"wild_igor.igor.tools.inner_cc": fake_inner_cc}):
+        results = _synthesize(
+            psych_entries=[{"ts": 1, "valence": 0.5, "arousal": 0.5, "notes": ""}],
+            watch_problems=[],
+        )
+
+    assert len(results) == 2
+    assert (
+        results[0].get("convergence") is True
+    ), "convergent proposal should be flagged"
+    assert (
+        "convergence" not in results[1]
+    ), "non-convergent proposal should not be flagged"
+
+
+def test_add_proposal_stores_extra_metadata(pg_test_schema):
+    """extra_metadata is merged into the stored metadata JSON."""
+    if pg_test_schema is None:
+        pytest.skip("pg_test_schema not available")
+    from wild_igor.igor.cognition.dreaming import (
+        _add_proposal,
+        _conn,
+        _ensure_proposals,
+    )
+
+    conn = _conn()
+    try:
+        with conn:
+            _ensure_proposals(conn)
+        with conn:
+            pid = _add_proposal(
+                conn,
+                kind="habit",
+                content="test extra metadata content unique-xmeta-1",
+                source_module="dreaming",
+                extra_metadata={"convergence": True, "test_key": "test_val"},
+            )
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT metadata FROM instance.proposals WHERE id = %s",
+                (pid,),
+            )
+            meta = cur.fetchone()[0]
+    finally:
+        conn.close()
+
+    assert meta.get("convergence") is True
+    assert meta.get("test_key") == "test_val"
+    assert "fingerprint" in meta
+
+
+def test_read_librarian_observations_returns_list(pg_test_schema):
+    """_read_librarian_observations() returns a list (empty or populated)."""
+    if pg_test_schema is None:
+        pytest.skip("pg_test_schema not available")
+    from wild_igor.igor.cognition.dreaming import _read_librarian_observations
+
+    result = _read_librarian_observations()
+    assert isinstance(result, list)
