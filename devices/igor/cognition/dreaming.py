@@ -33,6 +33,7 @@ _PG_URL = os.environ.get(
 DREAMING_INTERVAL_DEFAULT: int = 50
 PSYCH_LOG_WINDOW: int = 20
 WATCH_PROBLEMS_WINDOW: int = 10
+LIBRARIAN_OBS_WINDOW: int = 10
 
 _PROPOSALS_DDL = """
 CREATE TABLE IF NOT EXISTS instance.proposals (
@@ -69,9 +70,18 @@ def _fingerprint(kind: str, content: str) -> str:
     return hashlib.md5((kind + content[:200]).encode()).hexdigest()
 
 
-def _add_proposal(conn, *, kind: str, content: str, source_module: str) -> int:
+def _add_proposal(
+    conn,
+    *,
+    kind: str,
+    content: str,
+    source_module: str,
+    extra_metadata: dict | None = None,
+) -> int:
     fp = _fingerprint(kind, content)
-    metadata = {"fingerprint": fp, "source": source_module}
+    metadata: dict = {"fingerprint": fp, "source": source_module}
+    if extra_metadata:
+        metadata.update(extra_metadata)
     with conn.cursor() as cur:
         cur.execute(
             "SELECT id FROM instance.proposals WHERE status='pending' "
@@ -147,7 +157,58 @@ def _read_watch_problems() -> list[dict]:
         return []
 
 
-def _synthesize(psych_entries: list[dict], watch_problems: list[dict]) -> list[dict]:
+def _read_librarian_observations() -> list[dict]:
+    """Read recent pending librarian_observation proposals."""
+    try:
+        conn = _conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT kind, content, metadata, occurrence_count
+                    FROM instance.proposals
+                    WHERE kind = 'librarian_observation' AND status = 'pending'
+                    ORDER BY created_at DESC LIMIT %s
+                    """,
+                    (LIBRARIAN_OBS_WINDOW,),
+                )
+                rows = cur.fetchall()
+                result = []
+                for row in rows:
+                    meta = row[2] if isinstance(row[2], dict) else {}
+                    result.append(
+                        {
+                            "content": row[1],
+                            "confidence": meta.get("confidence", 0.0),
+                            "tier": meta.get("tier", ""),
+                            "outcome": meta.get("outcome", ""),
+                            "topic": meta.get("topic", ""),
+                            "occurrence_count": row[3],
+                        }
+                    )
+                return result
+        finally:
+            conn.close()
+    except Exception as e:
+        log.debug("dreaming: librarian_observations read failed: %s", e)
+        return []
+
+
+_LIBRARIAN_TERMS = frozenset({"librarian", "research", "observation", "synthesize"})
+_PSYCH_TERMS = frozenset({"igor", "psych", "psychological", "valence", "arousal"})
+
+
+def _is_convergent(rationale: str) -> bool:
+    """True when rationale references both Librarian and Igor-psych domains."""
+    r = rationale.lower()
+    return any(t in r for t in _LIBRARIAN_TERMS) and any(t in r for t in _PSYCH_TERMS)
+
+
+def _synthesize(
+    psych_entries: list[dict],
+    watch_problems: list[dict],
+    librarian_obs: list[dict] | None = None,
+) -> list[dict]:
     """Call haiku to synthesize cross-session patterns. Returns list of proposals."""
     try:
         from ..tools.inner_cc import call_inner_cc_long
@@ -161,6 +222,30 @@ def _synthesize(psych_entries: list[dict], watch_problems: list[dict]) -> list[d
             f"- [{w['confidence']:.2f}] {w['problem'][:80]}" for w in watch_problems
         )
 
+        librarian_lines = ""
+        if librarian_obs:
+            parts = []
+            for obs in librarian_obs:
+                outcome = obs.get("outcome", "")
+                topic = obs.get("topic", obs.get("content", ""))[:80]
+                count = obs.get("occurrence_count", 1)
+                conf = obs.get("confidence", 0.0)
+                tier = obs.get("tier", "")
+                if outcome == "failed" and count >= 2:
+                    parts.append(f"- [FAILED x{count}] Could not synthesize '{topic}'")
+                else:
+                    parts.append(
+                        f"- [confidence={conf:.2f}, {tier} tier] Researched '{topic}' → {outcome}"
+                    )
+            librarian_lines = "\n".join(parts)
+
+        librarian_section = (
+            f"\nRecent Librarian behavioral observations (last {len(librarian_obs)}):\n"
+            f"{librarian_lines}\n"
+            if librarian_obs
+            else ""
+        )
+
         prompt = f"""You are analyzing an AI agent's cognitive patterns across recent sessions.
 
 Recent psychological log entries (last 10 cycles):
@@ -168,7 +253,7 @@ Recent psychological log entries (last 10 cycles):
 
 Active watch problems (by confidence):
 {watch_summary or "(none)"}
-
+{librarian_section}
 Identify 0-3 recurring patterns that would benefit from:
 - A new procedural habit (kind=habit): a reusable response pattern
 - A new watch question (kind=watch_q): something worth watching for
@@ -188,20 +273,24 @@ Respond ONLY with valid JSON array (may be empty):
         raw = call_inner_cc_long(task=prompt, model="anthropic/claude-haiku-4-5")
         answer = (raw.get("answer") or "").strip()
         if answer.startswith("```"):
-            parts = answer.split("```")
-            answer = parts[1] if len(parts) > 1 else ""
+            parts_split = answer.split("```")
+            answer = parts_split[1] if len(parts_split) > 1 else ""
             if answer.startswith("json"):
                 answer = answer[4:]
         proposals = json.loads(answer)
         if not isinstance(proposals, list):
             return []
-        return [
-            p
-            for p in proposals
-            if isinstance(p, dict)
-            and p.get("kind") in ("habit", "watch_q", "playbook")
-            and p.get("content")
-        ]
+        valid = []
+        for p in proposals:
+            if (
+                isinstance(p, dict)
+                and p.get("kind") in ("habit", "watch_q", "playbook")
+                and p.get("content")
+            ):
+                if _is_convergent(p.get("rationale", "")):
+                    p["convergence"] = True
+                valid.append(p)
+        return valid
     except Exception as e:
         log.warning("dreaming: synthesis failed: %s", e)
         return []
@@ -427,12 +516,13 @@ def run(paths_obj=None) -> int:
 
     psych_entries = _read_psych_log(paths_obj)
     watch_problems = _read_watch_problems()
+    librarian_obs = _read_librarian_observations()
 
-    if not psych_entries and not watch_problems:
+    if not psych_entries and not watch_problems and not librarian_obs:
         log.debug("dreaming: nothing to synthesize (empty inputs)")
         return 0
 
-    proposals = _synthesize(psych_entries, watch_problems)
+    proposals = _synthesize(psych_entries, watch_problems, librarian_obs)
     if not proposals:
         return 0
 
@@ -454,11 +544,13 @@ def run(paths_obj=None) -> int:
                         )
                     else:
                         content = p["content"]
+                    extra = {"convergence": True} if p.get("convergence") else None
                     _add_proposal(
                         conn,
                         kind=p["kind"],
                         content=content,
                         source_module="dreaming",
+                        extra_metadata=extra,
                     )
                     count += 1
                 except Exception as e:
