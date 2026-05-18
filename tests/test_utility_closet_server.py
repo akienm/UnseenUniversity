@@ -384,3 +384,39 @@ class TestDashboard:
         data = response.json()
         assert data["agent"] == "igor"
         assert data["memory_count"] == 500
+
+
+class TestWebSocketRouting:
+    """Web browser messages route through comms://akien/web (T-web-akien-comms)."""
+
+    def test_ws_message_appended_as_akien_web(self, tmp_path):
+        """WS message type='message' lands in channel file with comms://akien/web author."""
+        srv = _import_server()
+        srv._CHANNEL_DIR = tmp_path / "cc_channel"
+        srv._CHANNEL_FILE = srv._CHANNEL_DIR / "messages.jsonl"
+        srv._CHANNEL_DIR.mkdir(parents=True, exist_ok=True)
+
+        from starlette.testclient import TestClient
+
+        app = srv._make_app()
+        client = TestClient(app)
+
+        with client.websocket_connect("/ws") as ws:
+            ws.send_json(
+                {"type": "message", "content": "hello from browser", "author": "akien"}
+            )
+            # Allow the server to process the message before closing
+            import time
+
+            time.sleep(0.1)
+
+        assert srv._CHANNEL_FILE.exists(), "channel file should be created"
+        entries = [
+            json.loads(line)
+            for line in srv._CHANNEL_FILE.read_text().splitlines()
+            if line.strip()
+        ]
+        assert entries, "channel file should have at least one entry"
+        msg_entries = [e for e in entries if e.get("content") == "hello from browser"]
+        assert msg_entries, "channel file should contain the sent message"
+        assert msg_entries[0]["author"] == "comms://akien/web"
