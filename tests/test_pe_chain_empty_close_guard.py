@@ -30,7 +30,8 @@ class TestPeCloseLoopGuards:
             "ticket_id": "T-test",
             "attempt_count": 0,
         }
-        result = pe_chain.pe_close_loop(basket)
+        with patch.object(pe_chain, "_post_to_channel"):
+            result = pe_chain.pe_close_loop(basket)
         assert result.get("escalate_reason"), "expected escalation"
         assert "implement_skipped" in result["escalate_reason"]
 
@@ -47,7 +48,7 @@ class TestPeCloseLoopGuards:
         # Stub _pe_close so we can verify it was NOT called
         with patch.object(pe_chain.PeChain, "_pe_close") as close_mock, patch.object(
             pe_chain, "_run_bash", return_value="ok"
-        ):
+        ), patch.object(pe_chain, "_post_to_channel"):
             result = pe_chain.pe_close_loop(basket)
         assert result.get("escalate_reason"), "expected escalation"
         assert "commit skipped" in result["escalate_reason"].lower()
@@ -100,7 +101,9 @@ class TestPeCloseDefensiveGuard:
             "implement_skipped": True,
             "implement_files": [],
         }
-        with patch.object(pe_chain, "_run_bash", return_value="ok") as bash_mock:
+        with patch.object(
+            pe_chain, "_run_bash", return_value="ok"
+        ) as bash_mock, patch.object(pe_chain, "_post_to_channel"):
             result = pe_chain.PeChain(basket=basket)._pe_close()
         assert result.get("escalate_reason")
         assert "defensive guard" in result["escalate_reason"].lower()
@@ -113,7 +116,9 @@ class TestPeCloseDefensiveGuard:
             "implement_files": ["foo.py"],
             "commit_result": "skipped: no edit applied",
         }
-        with patch.object(pe_chain, "_run_bash", return_value="ok") as bash_mock:
+        with patch.object(
+            pe_chain, "_run_bash", return_value="ok"
+        ) as bash_mock, patch.object(pe_chain, "_post_to_channel"):
             result = pe_chain.PeChain(basket=basket)._pe_close()
         assert result.get("escalate_reason")
         assert self._no_done_calls(bash_mock)
@@ -125,7 +130,9 @@ class TestPeCloseDefensiveGuard:
             "implement_files": [],
             "commit_result": "fix: looks legit",
         }
-        with patch.object(pe_chain, "_run_bash", return_value="ok") as bash_mock:
+        with patch.object(
+            pe_chain, "_run_bash", return_value="ok"
+        ) as bash_mock, patch.object(pe_chain, "_post_to_channel"):
             result = pe_chain.PeChain(basket=basket)._pe_close()
         assert result.get("escalate_reason")
         assert self._no_done_calls(bash_mock)
