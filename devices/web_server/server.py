@@ -1240,13 +1240,138 @@ async def _page_palace_node(request: Request):
     meta_html = ""
     if metadata:
         meta_html = f"<pre>{_html_mod.escape(str(metadata))}</pre>"
+    edit_link = (
+        f' · <a href="/palace-edit/{_html_mod.escape(node_path)}">Edit</a>'
+        if os.environ.get("ADC_EDIT_TOKEN")
+        else ""
+    )
     body = (
-        f"<p style='color:#888'>{ntype} · updated {str(updated)[:19]}</p>"
+        f"<p style='color:#888'>{ntype} · updated {str(updated)[:19]}{edit_link}</p>"
         f"<pre>{safe_content}</pre>"
         + (f"<h2>Metadata</h2>{meta_html}" if meta_html else "")
         + f'<p style="margin-top:1rem"><a href="/palace">← Back to palace</a></p>'
     )
     return HTMLResponse(_html_wrap(title or path, body))
+
+
+def _check_edit_token(token: str) -> bool:
+    """Return True if token matches ADC_EDIT_TOKEN env var."""
+    expected = os.environ.get("ADC_EDIT_TOKEN", "")
+    return bool(expected and token == expected)
+
+
+async def _page_palace_edit_get(request: Request):
+    """GET /palace-edit/{path} — edit form for a palace node."""
+    if not os.environ.get("ADC_EDIT_TOKEN"):
+        return HTMLResponse(
+            _html_wrap("Edit Disabled", "<p>Set ADC_EDIT_TOKEN to enable editing.</p>"),
+            status_code=403,
+        )
+    node_path = request.path_params.get("node_path", "")
+    conn = _db_conn()
+    if not conn:
+        return HTMLResponse(_html_wrap(f"Edit: {node_path}", _no_db_msg()))
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT path, title, content FROM adc.palace WHERE path = %s",
+                (node_path,),
+            )
+            row = cur.fetchone()
+    except Exception as exc:
+        conn.close()
+        return HTMLResponse(
+            _html_wrap(node_path, f'<p class="err">DB error: {exc}</p>')
+        )
+    finally:
+        conn.close()
+
+    import html as _html_mod
+
+    if not row:
+        return HTMLResponse(
+            _html_wrap(node_path, f'<p class="err">Node not found: {node_path}</p>'),
+            status_code=404,
+        )
+    _, title, content = row
+    safe_path = _html_mod.escape(node_path)
+    safe_title = _html_mod.escape(title or "")
+    safe_content = _html_mod.escape(content or "")
+    body = (
+        f'<p style="color:#888">Editing <code>{safe_path}</code></p>'
+        f'<form method="POST" action="/palace-edit/{safe_path}">'
+        f'<div style="margin-bottom:.5rem">'
+        f"<label>Title<br>"
+        f'<input name="title" value="{safe_title}" style="width:100%;background:#1a1a1a;color:#e0e0e0;border:1px solid #444;padding:.3rem"></label></div>'
+        f'<div style="margin-bottom:.5rem">'
+        f"<label>Content<br>"
+        f'<textarea name="content" rows="20" style="width:100%;background:#1a1a1a;color:#e0e0e0;border:1px solid #444;padding:.3rem;font-family:monospace">{safe_content}</textarea></label></div>'
+        f'<div style="margin-bottom:.5rem">'
+        f"<label>Token<br>"
+        f'<input type="password" name="_token" placeholder="ADC_EDIT_TOKEN" style="width:16rem;background:#1a1a1a;color:#e0e0e0;border:1px solid #444;padding:.3rem"></label></div>'
+        f'<button type="submit" style="background:#2a6a2a;color:#e0e0e0;border:none;padding:.4rem 1rem;cursor:pointer">Save</button>'
+        f' <a href="/palace/{safe_path}" style="margin-left:.5rem">Cancel</a>'
+        f"</form>"
+    )
+    return HTMLResponse(_html_wrap(f"Edit: {title or node_path}", body))
+
+
+async def _page_palace_edit_post(request: Request):
+    """POST /palace-edit/{path} — save updated palace node content."""
+    if not os.environ.get("ADC_EDIT_TOKEN"):
+        return HTMLResponse(
+            _html_wrap("Edit Disabled", "<p>Set ADC_EDIT_TOKEN to enable editing.</p>"),
+            status_code=403,
+        )
+    node_path = request.path_params.get("node_path", "")
+    try:
+        form = await request.form()
+    except Exception:
+        return HTMLResponse(
+            _html_wrap("Error", "<p>Invalid form data.</p>"), status_code=400
+        )
+    token = form.get("_token", "")
+    if not _check_edit_token(token):
+        return HTMLResponse(
+            _html_wrap("Forbidden", "<p>Invalid token.</p>"), status_code=403
+        )
+    new_title = (form.get("title") or "").strip()
+    new_content = (form.get("content") or "").strip()
+    conn = _db_conn()
+    if not conn:
+        return HTMLResponse(_html_wrap("Edit", _no_db_msg()), status_code=503)
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE adc.palace SET title=%s, content=%s, updated_at=now()"
+                " WHERE path=%s",
+                (new_title, new_content, node_path),
+            )
+            updated_rows = cur.rowcount
+        conn.commit()
+    except Exception as exc:
+        conn.close()
+        return HTMLResponse(
+            _html_wrap("Edit Error", f'<p class="err">DB error: {exc}</p>'),
+            status_code=500,
+        )
+    finally:
+        conn.close()
+
+    if updated_rows == 0:
+        return HTMLResponse(
+            _html_wrap("Not Found", f"<p>Node not found: {node_path}</p>"),
+            status_code=404,
+        )
+    import html as _html_mod
+
+    safe_path = _html_mod.escape(node_path)
+    return HTMLResponse(
+        _html_wrap(
+            "Saved",
+            f'<p>Saved <a href="/palace/{safe_path}">{safe_path}</a></p>',
+        )
+    )
 
 
 async def _page_decisions(request: Request):
@@ -1418,6 +1543,10 @@ def _make_app() -> Starlette:
         # Palace browser (read-only)
         Route("/rack", _page_rack),
         Route("/palace", _page_palace),
+        Route("/palace-edit/{node_path:path}", _page_palace_edit_get, methods=["GET"]),
+        Route(
+            "/palace-edit/{node_path:path}", _page_palace_edit_post, methods=["POST"]
+        ),
         Route("/palace/{node_path:path}", _page_palace_node),
         Route("/decisions", _page_decisions),
         Route("/goals", _page_goals),
