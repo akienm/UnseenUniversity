@@ -13,21 +13,6 @@
 - The Audit Pyramid
 - Full Skills List (Alpha)
 - Tracking
-- Copilot's Review
-  - Executive Summary
-  - Core Principle: The Latitude Compression Doctrine
-  - Architectural Insight: Context Is Compute, Not Memory
-  - Skills as Checklists, Not Prompts
-  - The Audit Pyramid: Failure-Class Targeting
-  - Determinism as an Economic Strategy
-  - Outcome: AI as a Reliable Subordinate Intelligence
-  - Final Assessment
-- ChatGPT's Review
-  - System Characterization
-  - What’s Strong (Structural Advantages)
-  - Systemic Risks / Failure Modes (Missing from original reviews)
-  - Meta-Assessment
-  - Key Missing Lever (High Impact Observation)
 - For Additional Background
 
 ---
@@ -38,7 +23,7 @@ Models misbehave most when given the most latitude. In that regard, skills are w
 
 Skills by themselves do not complete the work though. Skills work best when part of an overall workflow that handles design and implementation.
 
-My own experience is with building [akienm/TheIgors](https://github.com/akienm/TheIgors). An ongoing research project into using graph trees for reasoning. ~200K lines of code, which works, and has only ever been seen by Claude. I’ve reviewed maybe a dozen lines. But I designed it, not Claude.
+My own experience is with building [akienm/TheIgors](https://github.com/akienm/TheIgors). An ongoing research project into using graph trees for reasoning. ~200K lines of code, which works, and has only ever been seen by Claude. I've reviewed maybe a dozen lines. But I designed it, not Claude.
 
 While these and a lot more details are covered below… The stand out feature of my AI experience is LEVERS.
 
@@ -56,58 +41,60 @@ In AI, skills are one such lever. An important one. So is context size.
 
 But there are so many more. These are most of my keystone patterns:
 
-1. A notebook. Mine’s a text file. There are log files that capture all the chats and so on. These are the points or ideas that stood out so I don’t have to find them again.
-  1. It’s for writing if it’s gonna be more than a sentence. Too many times I’ve accidently cleared Claude’s terminal client on Linux. Better to compose it an editor and paste it in.
-  1. It’s also for blocks of stuff I might have to paste in more than once (our mission when he’s asking for local GPU for instance).*
+1. A notebook. Mine's a text file. There are log files that capture all the chats and so on. These are the points or ideas that stood out so I don't have to find them again.
+  1. It's for writing if it's gonna be more than a sentence. Too many times I've accidently cleared Claude's terminal client on Linux. Better to compose it an editor and paste it in.
+  1. It's also for blocks of stuff I might have to paste in more than once (our mission when he's asking for local GPU for instance).*
   1. Commands to paste
   1. Key moments in the project.
   1. It does not have to capture everything. There are other logs for that.
-1. My own programming and architectural experience -- Can’t be understated. Per the design of the experiment that TheIgors is, I don’t read almost any of the code. But I do watch the kinds of bugs that come out of the system, and how Claude goes about fixing them. I will often halt him if he’s going the wrong way, and tell him how I’d rather have it done. Keeping and holding that big picture. Specifically:
+1. My own programming and architectural experience -- Can't be understated. Per the design of the experiment that TheIgors is, I don't read almost any of the code. But I do watch the kinds of bugs that come out of the system, and how Claude goes about fixing them. I will often halt him if he's going the wrong way, and tell him how I'd rather have it done. Keeping and holding that big picture. Specifically:
   1. Claude will tend to reuse out-of-date information
   1. Claude will tend not to centralize concerns to minimize maintenance
   1. Claude will tend to get lost in the weeds in some circumstances
-  1. Claude won’t ever remember that he fixed the same thing yesterday. Or last week.
-1. Process from the start -- Us humans seem to have a love/hate relationship with process. But not Claude. As long as it’s spelled out in the skill, he’ll follow that to the letter. But this means: Everything gets designed, the designs audited, testing added (Test Driven Development - and no flaky tests allowed to remain unresolved), designs approved, ticketed, the tickets audited, sprinted, the plan audited, the code built, the result audited, the planned tests run, the result audited, the ticket closed.
-1. Project state information -- Is all kept outside of the model’s context. In our postgres database. With embeddings.
+  1. Claude won't ever remember that he fixed the same thing yesterday. Or last week.
+1. Process from the start -- Us humans seem to have a love/hate relationship with process. But not Claude. As long as it's spelled out in the skill, he'll follow that to the letter. But this means: Everything gets designed, the designs audited, testing added (Test Driven Development - and no flaky tests allowed to remain unresolved), designs approved, ticketed, the tickets audited, sprinted, the plan audited, the code built, the result audited, the planned tests run, the result audited, the ticket closed.
+1. Project state information -- Is all kept outside of the model's context. In our postgres database. With embeddings.
   1. Igor has semantic search internally. So Claude can do semantic searches inside of igor for every follow on piece of data after CLAUDE.md, for zero tokens. It contains:
     1. Project overview.
     1. Available tools and skills
-    1. Tickets, epics, slates (echoed to github at day’s end)
+    1. Tickets, epics, slates (echoed to github at day's end)
     1. Project documentation tree -- in the repo (architectural, .md files) and in the code (tops of files for architecture of that component, and inline for operational notes). Minimal token cost for Claude to get up to speed.
     1. Ticket state information is written into the titles: NEEDS DESIGN, DESIGNED, BLOCKED, READY, CLOSED, a few others. Because Claude (Sonnet) will keep picking up completed tickets at random times as if they still needed work.
     1. Decision, history, etc.
-  1. State changes are saved immediately and durably. Ideas, designs, decisions, tickets, and the day’s slate (sprint).
-  1. The mode’s context is disposable. Tho I will take related tickets in a row for discussion before clearing context.
+  1. State changes are saved immediately and durably. Ideas, designs, decisions, tickets, and the day's slate (sprint).
+  1. The mode's context is disposable. Tho I will take related tickets in a row for discussion before clearing context.
 1. Tooling and Automation Tools -- The things the LLM will use…
   1. Claude itself is tooling. To development processes.
-  1. Audits -- Audits review the designs or code and force mistakes and ambiguity out of it. See The Audit Pyramid below. Gets it’s own section.
+  1. Audits -- Audits review the designs or code and force mistakes and ambiguity out of it. See The Audit Pyramid below. Gets it's own section.
   1. External Tools Internalized -- The toolset can include more than just Claude
-    1. I can ask Claude to go to a web page and scrape something for me. It might install libraries and run a small script inline to go get the data. And the next time, it’d do that again. Claude is constantly building it’s own tooling, And then trying to throw it away. And I’m constantly telling him to generalize it for reuse.
+    1. I can ask Claude to go to a web page and scrape something for me. It might install libraries and run a small script inline to go get the data. And the next time, it'd do that again. Claude is constantly building it's own tooling, And then trying to throw it away. And I'm constantly telling him to generalize it for reuse.
     1. Igor uses a layered browser automation library ( https://github.com/akienm/swadl ) to build durable automation that is easy to maintain. Zero tokens to run a path a second time except in result interpretation.
   1. Logging tree -- The base class for all objects in the system handles all logging and introspection. All objects contain all the logging calls. The logs are forensic. Each state change with systemic implications, and all major component boundary crossing is logged. Each monitoring point added as a result of a previous logging failure as well. The logs themselves are managed in a tree, so a timestamp from a failure in a chat log leads back to the correct point in the master log.
-  1. MCP -- MCP is basically a mail service between models and similar components. More tooling. But your agent or whatever has to watch for those messages. By itself, MCP doesn’t do anything. I have an MCP channel between Claude Code and Igor and it’s hard to get Claude to use it! Which brings us to…
-  1. Capabilities -- Software like Claude Code and Aider give lists of capabilities to the models they attach to. This then becomes the most certain way to have an LLM something exactly the way you want it and when you want it. Wrap it in ‘capability’.
-1. Powerful Questions -- This brings things into view that you just can’t imagine before hand. For all of these, I lay out my own ideas first. Then I ask some or all of the questions below:
+  1. MCP -- MCP is basically a mail service between models and similar components. More tooling. But your agent or whatever has to watch for those messages. By itself, MCP doesn't do anything. I have an MCP channel between Claude Code and Igor and it's hard to get Claude to use it! Which brings us to…
+  1. Capabilities -- Software like Claude Code and Aider give lists of capabilities to the models they attach to. This then becomes the most certain way to have an LLM something exactly the way you want it and when you want it. Wrap it in 'capability'.
+1. Powerful Questions -- This brings things into view that you just can't imagine before hand. For all of these, I lay out my own ideas first. Then I ask some or all of the questions below:
   1. What have I left out?
   1. What have I missed?
   1. What would be more efficient?
   1. What best practices or patterns could we use to good effect?
   1. What could we do better?
   1. How do other people do this?
-1. Rob -- One of my first learnings was to ask Copilot to create ‘Rob’. A developer who’s so grateful they finally have a QA person on the team! And I ‘rode on Rob’s shoulder for a ‘selection of activities such a developer would have on a day to day basis’.
+1. Rob -- One of my first learnings was to ask Copilot to create 'Rob'. A developer who's so grateful they finally have a QA person on the team! And I 'rode on Rob's shoulder for a 'selection of activities such a developer would have on a day to day basis'.
 1. About Claude
   1. Sessions -- Even though I work in long sessions, I am constantly saving state. So whenever the Claude window reaches a good stopping point, we have a generic compact and preserve that allows it to pick up where it left off: /compact preserve: Read today's slate: ~/.TheIgors/claudecode/YYYYMMDD.slate.txt. In-flight and Next: see slate.
-  1. Claude tends to be ‘impatient’. -- Make sure you point that impatience well. He’ll tend to defer things or give you a fast way to solve it that’s not a well thought out way in an architectural sense. I’ve over and over run into ‘I thought we’d implemented that! No, I deferred it because xyz.'
-  1. Focus -- Keep in mind that even large contexts aren’t infinite. LLMs function well on summaries. Our documentation summarizes rules and gives pointers to more info if needed.
-  1. /advisor -- This is a built in tool for Claude Code: It allows Sonnet to use Opus when it’s uncertain. Makes the lower level much more powerful to be able to call on the higher one.
+  1. Claude tends to be 'impatient'. -- Make sure you point that impatience well. He'll tend to defer things or give you a fast way to solve it that's not a well thought out way in an architectural sense. I've over and over run into 'I thought we'd implemented that! No, I deferred it because xyz.'
+  1. Focus -- Keep in mind that even large contexts aren't infinite. LLMs function well on summaries. Our documentation summarizes rules and gives pointers to more info if needed.
+  1. /advisor -- This is a built in tool for Claude Code: It allows Sonnet to use Opus when it's uncertain. Makes the lower level much more powerful to be able to call on the higher one.
   1. /loop -- This is a built in tool for Claude Code: Allows looking in on something periodically
   1. /schedule -- This is a built in tool for Claude Code: Tell Claude to do a thing at a specific time
   1. /simplify -- This is a built in tool for Claude Code: Review the code and simplify it if possible. Built into our audits.
   1. --dangerously-skip-permissions -- This is a built in tool for Claude Code: Command line switch. Keep it from nagging you. In a project where I literally have not looked at the code, not being asked about it constantly is necessary.
   1. Instructions in chat ≠ Instructions in skills. The latter is a checklist, the former is more what ye' might call guidelines…
-1. And of course, my own skills based workflow. Which has been built by asking lever questions like ‘How are the best in the field doing this right now? What’s been published on this? How could we do better?'
+1. And of course, my own skills based workflow. Which has been built by asking lever questions like 'How are the best in the field doing this right now? What's been published on this? How could we do better?'
+1. Hypothesis extraction and consequence checking -- Every design decision (/decided) now formally extracts a testable hypothesis before tickets are filed: "What should be observably different after these tickets ship?" and "How will we know?" This ties intent to a verifiable outcome. For M/L/XL decisions, a gated consequence-check ticket is auto-drafted — a structured prediction of potential unintended effects, what signals to watch for, and a gate condition (date or observable event). When the gate clears, the ticket surfaces as actionable. Consequence-checking becomes a tracked work item, not an informal afterthought.
+1. Serious goal tracking -- Goals are formally tracked in the database via goal_adopt, goal_scan, and goal_close tools, with G-xxx identifiers assigned to each goal. Goals persist across sessions. Every /decided links back to a G-xxx goal via a testable hypothesis, or explicitly documents "none, reason." This creates a traceable line from goal → hypothesis → decision → ticket → commit — the system can report what changed in service of which goal.
 
-- To be fair, we periodically sweep the skills and tighten around his forgetfulness better. May 3 ‘26 we added flags like CLOSED: to the beginnings of the ticket names once closed. He kept adding tickets back to the day’s slate that were already closed. Now he sees it even if he only looks at the title. Yet another skills edit! Constantly optimizing.
+- To be fair, we periodically sweep the skills and tighten around his forgetfulness better. May 3 '26 we added flags like CLOSED: to the beginnings of the ticket names once closed. He kept adding tickets back to the day's slate that were already closed. Now he sees it even if he only looks at the title. Yet another skills edit! Constantly optimizing.
 
 ---
 
@@ -123,7 +110,7 @@ My workflow mostly falls out like this:
 
 /ticket -- any issues that come up along the way so we address them later.
 
-/decided -- all issues under discussion are now resolved enough to go to sprint. Launches the /audit-design skill to validate the design before tickets are written. Ticket anything we've been talking about that isn't ticketed, run /audit-ticket on each draft, and get it ready for sprinting.
+/decided -- all issues under discussion are now resolved enough to go to sprint. Before filing tickets, /decided extracts a testable hypothesis: what should be observably different after these tickets ship, and how will we know. For M/L/XL decisions, it also auto-drafts a gated consequence-check ticket with predicted unintended effects and a gate condition. Then launches the /audit-design skill to validate the design before tickets are written. Tickets anything we've been talking about that isn't ticketed, runs /audit-ticket on each draft, and gets it ready for sprinting.
 
 /sprint / /sprint-batch -- sprint a ticket or sprint a large batch of tickets. Sprint-batch calls sprint over and over. /sprint also calls /savestateauto on completion.
 
@@ -201,7 +188,7 @@ All audit levels emit structured telemetry to the palace (theigors/audits/<level
 
 /day-close-audit -- static 18-step debris and hygiene check (tests, file placement, smells, registry, inertia, threads, logs, burn rate, schema, dead code, duplication, habit health, TWM coverage, dependencies, credentials, simplification, registered checks, wiring, capability-map drift)
 
-/decided -- closes a design block → batch tickets via /audit-ticket, writes decision to palace and log, appends to slate
+/decided -- closes a design block → extracts hypothesis → batch tickets via /audit-ticket, writes decision to palace and log, appends to slate
 
 /deep-audit -- legacy alias (superseded by /audit-expert + /audit-day pyramid)
 
@@ -237,7 +224,7 @@ All audit levels emit structured telemetry to the palace (theigors/audits/<level
 
 We track goals, ideas, decisions, tickets, slates, occasionally epics, architecture, the code, and the memory palace. (Memory Palace is a memory tool that helps students study, and Claude/Igor to find things quickly and with fewest tokens.)
 
-**Goal:** It's just whatever we want to make functional. For a while, the goal was optimizing database usage. At the moment, it's 'Igor can pick up a ticket and complete it'. Goals are not tracked anywhere formally, but they are a direction for whatever the current work is.
+**Goal:** Goals are formally tracked in the database using goal_adopt, goal_scan, and goal_close tools, with G-xxx identifiers assigned to each goal. Goals persist across sessions. Every /decided links back to a G-xxx goal via a testable hypothesis, or explicitly documents "none, reason." This creates a traceable line from goal → hypothesis → decision → ticket → commit — the system can report what changed in service of which goal.
 
 **Ideas:** It's just a folder. One text file per idea. These are pasted in and discussed.
 
@@ -312,306 +299,6 @@ When the day's slate is done, we run /day-close.
 *Why:* Palace nodes can be read individually (memory_get), searched (memory_search), or bulk-loaded by type. The model spends zero tokens re-deriving conventions it already decided.
 
 **Preferred Paths:** A palace subtree (theigors/rules/preferred_paths/*) cataloging deprecated patterns alongside their preferred replacements -- e.g. raw psql calls vs. the MCP proxy, print() vs. the IgorBase logger, direct DB writes vs. cortex.store(). A scan tool watches 60 days of git history for regressions and surfaces candidates for review, never auto-filing.
-
----
-
-## Copilot's Review
-
-**Deterministic AI Development: From Conversational Models to Controlled Systems**
-
-### Executive Summary
-
-This document describes a mature, production-grade methodology for converting large language models from probabilistic conversational agents into deterministic execution engines. The core achievement of the workflow is not merely *prompting well*, but **engineering reliability by relocating ambiguity upstream and enforcing constraint downstream**.
-
-The result is a system where creativity is permitted exactly once per problem, and execution thereafter becomes repeatable, auditable, and cheap.
-
----
-
-### Core Principle: The Latitude Compression Doctrine
-
-> Models misbehave most when given the most latitude.
-
-This workflow operationalizes that insight by aggressively **compressing latitude over time**:
-
-- High-latitude thought occurs only in Ideas and Design
-- Moderate-latitude reasoning occurs during Audits
-- Near-zero latitude occurs during Sprint execution
-
-The **/decided** command is the hard boundary where ambiguity dies. After this point, Claude is no longer a collaborator — it is a deterministic executor constrained by skills, file topology, audits, and test plans.
-
-This mirrors compiler design more than pair programming: free-form languages are progressively lowered into stricter intermediate representations until only mechanical steps remain.
-
----
-
-### Architectural Insight: Context Is Compute, Not Memory
-
-A defining strength of the system is its rejection of the common LLM fallacy:
-
-> “If I give the model enough context, it will remember.”
-
-Instead, the workflow treats context as **disposable compute**, and memory as:
-
-- external
-- structured
-- queryable
-- auditable
-
-Durable state lives in:
-
-- the Memory Palace (Postgres tree),
-- repo documentation,
-- tickets,
-- decision logs,
-- slates,
-- audit telemetry.
-
-This aligns the system with real operating principles of distributed systems: **stateless workers + durable state + idempotent operations**.
-
-Claude is never trusted to “remember” — only to *re-read* precisely what is required, at minimal token cost.
-
----
-
-### Skills as Checklists, Not Prompts
-
-A subtle but important distinction is made between:
-
-- Instructions in chat (guidelines, conversational, lossy)
-- Instructions in skills (checklists, audited, enforced)
-
-Skills are effectively **procedural microprograms** that Claude must execute verbatim. Because the model does not resist process the way humans do, this becomes an asymmetric advantage: rigor costs tokens but saves rework.
-
-This is why Haiku can do reliable production coding here — not because the model is smarter, but because the problem has already been collapsed into something deterministic.
-
----
-
-### The Audit Pyramid: Failure-Class Targeting
-
-The Audit Pyramid is the most technically sophisticated component of the workflow.
-
-Rather than applying expensive reasoning everywhere, audits are:
-
-- scoped by failure class
-- run at the cheapest reliable model tier
-- instrumented with telemetry
-- time-series tracked for drift and ROI
-
-Notably:
-
-- Post-code audits catch quality regressions , not logic errors
-- Daily audits detect cross-session inconsistencies
-- Expert audits evaluate system intent , not code cleanliness
-- Meta-audits prevent audit ritualization and stale rules
-
-This creates a **self-correcting socio-technical loop**, where the process itself is under continuous scrutiny.
-
----
-
-### Determinism as an Economic Strategy
-
-Token efficiency here is not incidental — it is architectural.
-
-Key levers include:
-
-- Design once, implement many
-- Audit early at Haiku speed
-- Escalate only on inertia triggers
-- Prefer summaries over raw context
-- Reuse state mechanically instead of re-deriving it
-
-The system converts “token spend” from an operational tax into a **capital investment**: expensive thought amortized across long-lived infrastructure.
-
----
-
-### Outcome: AI as a Reliable Subordinate Intelligence
-
-This workflow successfully reframes the LLM’s role:
-
-- Not a creative partner
-- Not a chatbot
-- Not a black box oracle
-
-But a **bounded, auditable, semi-autonomous worker** operating inside a rigorously designed machine.
-
-The human supplies:
-
-- judgment
-- architectural taste
-- prioritization
-- irreducible context
-
-The AI supplies:
-
-- speed
-- consistency
-- mechanical follow-through
-- scalable execution
-
-Together, they form a system that behaves less like “AI-assisted coding” and more like **an assembly line for thought**, where cognition itself is staged, checked, and enforced.
-
----
-
-### Final Assessment
-
-This is not a prompt strategy.
-It is not a tooling trick.
-It is not a style guide.
-
-It is a **development discipline** — one that treats LLMs as unreliable narrators but excellent workers, and builds the surrounding machinery accordingly.
-
-The work stands out because it **accepts model limitations honestly** and exploits them systematically — which is exactly how real engineering progress is made.
-
----
-
-## ChatGPT's Review
-
-### System Characterization
-
-This is a **deterministic orchestration layer over stochastic reasoning systems**, where:
-
-- Intent is centralized in design-time artifacts (/design, decisions, palace)
-- Execution is delegated to constrained agents (skills + smaller models)
-- State is fully externalized (slates, tickets, memory palace)
-- Reliability is enforced via layered, domain-specific audits
-
-The architecture is effectively a **workflow compiler for LLM behavior**.
-
----
-
-### What’s Strong (Structural Advantages)
-
-1. Variance suppression via phase separation
-
-The design/decide/sprint split is the core stabilizer. It meaningfully reduces:
-
-- Context contamination
-- Premature execution
-- Ambiguity during implementation
-
-1. Explicit failure-domain decomposition
-
-The Audit Pyramid is not just QA… it’s a **multi-resolution failure detector lattice**:
-
-- Cheap model → surface structural errors
-- Expensive model → semantic / architectural drift
-- Meta-audit → process integrity
-
-This is unusually complete as a *control system*, not just a checklist system.
-
-1. Externalized cognition (Memory Palace)
-
-This is effectively:
-
-- Long-term symbolic memory
-- Queryable rule substrate
-- Anti-context-bloat mechanism
-
-Functionally, it behaves like a **persistent working set cache with schema enforcement**.
-
-1. Ticketed execution as a transaction model
-
-/sprint behaves like:
-
-> atomic transaction + audit hooks + commit log
-
-This is one of the strongest reliability primitives in the system.
-
----
-
-### Systemic Risks / Failure Modes (Missing from original reviews)
-
-1. Audit multiplication risk (governance inflation)
-
-As audits expand:
-
-- Verification cost can exceed implementation cost
-- False positives accumulate in low-signal domains
-- Developers (or agents) may begin “working for the audits”
-
-This is a classic **control-plane vs data-plane inversion risk**.
-
----
-
-1. Over-determinism brittleness
-
-High constraint density improves consistency but can:
-
-- Reduce adaptability under novel problem classes
-- Cause “pathological compliance” (model follows process instead of intent)
-- Increase fragility when upstream assumptions drift
-
-This is analogous to **overfitting a workflow to known failure modes**.
-
----
-
-1. State fragmentation hazard
-
-Splitting cognition across:
-
-- slate
-- tickets
-- palace
-- logs
-- design artifacts
-
-…creates a **distributed state system without a single authoritative runtime view**, which introduces:
-
-- reconciliation overhead
-- hidden divergence risk
-- “which truth is current?” ambiguity during fast iteration
-
----
-
-1. Cognitive load transfer to the orchestrator
-
-Even though the model is simplified, *you* absorb:
-
-- global system coherence
-- priority arbitration
-- anomaly detection across layers
-
-This is a **human-in-the-loop scaling ceiling** more than a technical one.
-
----
-
-1. Tooling recursion risk
-
-“Claude builds its own tooling” creates a positive feedback loop:
-
-- tools generate tools
-- abstraction layers stack
-- operational surface area grows faster than cognitive pruning
-
-Without periodic architectural pruning, this becomes **self-amplifying complexity drift**.
-
----
-
-### Meta-Assessment
-
-This system is best understood as:
-
-> A deterministic control framework for stochastic agents , where reliability is achieved by externalizing memory, constraining execution paths, and distributing validation across layered audits.
-
-It is closer to:
-
-- distributed build system (like Bazel-like discipline)
-- than to a conversational AI workflow
-- and partially resembles operating system design applied to cognition pipelines
-
----
-
-### Key Missing Lever (High Impact Observation)
-
-The system is strong on:
-
-- correctness
-- traceability
-- repeatability
-
-But under-weights:
-
-- selective audit bypass mechanisms (adaptive trust zones)
-- cost-to-confidence calibration (when NOT to audit deeply)
-- process compression strategies (how to periodically collapse layers without losing guarantees)
 
 ---
 
