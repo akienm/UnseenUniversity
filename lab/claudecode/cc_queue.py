@@ -34,8 +34,9 @@ Usage:
     cc_queue.py log <msg>                     — append a free-form log entry
     cc_queue.py flush_decision <id> <summary> — flush decision to Igor memory
     cc_queue.py flush_session <session> <summary> — flush session blob to Igor memory
+    cc_queue.py next                              — highest-priority unclaimed sprint ticket (respects gate file)
     cc_queue.py worker-launch                     — ensure worker daemon is running (spawns konsole if not)
-    cc_queue.py reset <id>                        — reset one ticket from in_progress → sprint (retry after timeout)
+    cc_queue.py reset [--timeout] <id>           — reset one ticket from in_progress → sprint; --timeout increments counter, trips gate at 3
     cc_queue.py reset-stale                       — reset all in_progress tickets → sprint (daemon startup cleanup)
     cc_queue.py set-worker <worker> <id> [<id>]  — assign worker (igor|claude) to ticket(s)
     cc_queue.py needs-review <id>                — mark ticket triage (review gate)
@@ -67,6 +68,7 @@ def _ssl_ctx() -> ssl.SSLContext:
 
 LOG_PATH = os.path.expanduser("~/.TheIgors/cc_channel/log.jsonl")
 CLOSED_TICKETS_PATH = os.path.expanduser("~/.TheIgors/claudecode/closed_tickets.txt")
+GATE_FILE = os.path.expanduser("~/.TheIgors/cc_channel/queue_gate.json")
 STATUS_ORDER = {
     # Canonical statuses (what happens next):
     "triage": 0,
@@ -1108,28 +1110,95 @@ def cmd_worker_launch(args):
     print(f"Launched worker daemon — konsole PID {proc.pid}")
 
 
+def _trip_gate(ticket_id: str, reason: str) -> None:
+    """Write GATE_FILE to circuit-break the daemon queue."""
+    os.makedirs(os.path.dirname(GATE_FILE), exist_ok=True)
+    gate_data = {
+        "tripped": True,
+        "reason": reason,
+        "ticket_id": ticket_id,
+        "tripped_at": _now(),
+    }
+    with open(GATE_FILE, "w") as f:
+        json.dump(gate_data, f, indent=2)
+    _log({"action": "gate_tripped", "ticket_id": ticket_id, "reason": reason})
+    print(f"GATE TRIPPED: {ticket_id} — {reason}")
+
+
+def cmd_next(args):
+    """Return highest-priority unclaimed sprint ticket for the worker daemon.
+
+    Respects GATE_FILE circuit breaker — prints nothing when gate is tripped.
+    Skips worker=igor (pe_chain) and worker=claude (interactive CC) tickets.
+    Output: one ticket ID line, or nothing if gate tripped / queue empty.
+    """
+    if os.path.exists(GATE_FILE):
+        try:
+            gate_data = json.loads(open(GATE_FILE).read())
+            if gate_data.get("tripped"):
+                return
+        except Exception:
+            pass  # corrupt gate file → treat as not tripped
+
+    tasks = _load()
+    candidates = [
+        t
+        for t in tasks
+        if t.get("status") == "sprint"
+        and not t.get("gate")
+        and t.get("worker") not in ("igor", "claude")
+    ]
+    if not candidates:
+        return
+
+    def _priority_key(t):
+        p = t.get("priority", 99)
+        try:
+            v = float(str(p).lstrip("pP"))
+            # 0-1 floats are importance scores (higher=better) → negate for min-sort
+            # integers ≥2 are P-numbers (lower=better) → use directly
+            return -v if v <= 1.0 else v
+        except (ValueError, TypeError):
+            return 99.0
+
+    best = min(candidates, key=_priority_key)
+    print(best["id"])
+
+
 def cmd_reset(args):
-    """Reset a single ticket back to sprint (e.g., after a timeout)."""
-    if not args:
-        print("Usage: reset <id>")
+    """Reset a single ticket back to sprint (e.g., after a timeout).
+
+    --timeout: daemon timeout reset — increments timeout_count in ticket
+               metadata and trips GATE_FILE after 3 consecutive timeouts.
+    """
+    timeout_mode = "--timeout" in args
+    clean_args = [a for a in args if a != "--timeout"]
+    if not clean_args:
+        print("Usage: reset [--timeout] <id>")
         sys.exit(1)
     tasks = _load()
-    t = _find(tasks, args[0])
+    t = _find(tasks, clean_args[0])
     if not t:
-        print(f"Task {args[0]} not found.")
+        print(f"Task {clean_args[0]} not found.")
         sys.exit(1)
     prev = t["status"]
     if prev in _TERMINAL_STATUSES:
         print(
-            f"Skipping reset of {args[0]}: already terminal ({prev}) — will not reopen."
+            f"Skipping reset of {clean_args[0]}: already terminal ({prev}) — will not reopen."
         )
         return
     t["status"] = "sprint"
     t["claimed_at"] = None
     t["blocked_at"] = None
+    if timeout_mode:
+        count = (t.get("timeout_count") or 0) + 1
+        t["timeout_count"] = count
+        _log({"action": "timeout_reset", "id": clean_args[0], "timeout_count": count})
+        if count >= 3:
+            _trip_gate(clean_args[0], f"{count} consecutive timeouts")
     _save(tasks)
-    _log({"action": "reset", "id": args[0], "prev_status": prev})
-    print(f"Reset {args[0]}: {prev} → sprint (blocked_at cleared)")
+    _log({"action": "reset", "id": clean_args[0], "prev_status": prev})
+    print(f"Reset {clean_args[0]}: {prev} → sprint (blocked_at cleared)")
 
 
 def cmd_reset_stale(args):
@@ -1254,6 +1323,7 @@ COMMANDS = {
     "flush_session": cmd_flush_session,
     "worker-launch": cmd_worker_launch,
     "notify-igor": cmd_notify_igor,
+    "next": cmd_next,
     "reset": cmd_reset,
     "reset-stale": cmd_reset_stale,
     "setstatus": cmd_setstatus,
