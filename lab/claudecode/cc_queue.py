@@ -254,8 +254,9 @@ def _format_task_line(t: dict) -> str:
     size = t.get("size", "?")
     epic = f" #{t['epic']}" if t.get("epic") else ""
     worker_tag = " [igor]" if t.get("worker") == "igor" else ""
+    created_by_tag = f" [{t.get('created_by') or 'unknown'}]"
     gh_tag = f" GH#{t['github_issue']}" if t.get("github_issue") else ""
-    return f"  {icon} [{t['id']}] ({size}){epic}{worker_tag}{gh_tag} {t['title']}  [{t['status']}]"
+    return f"  {icon} [{t['id']}] ({size}){epic}{worker_tag}{created_by_tag}{gh_tag} {t['title']}  [{t['status']}]"
 
 
 def _print_task(t: dict) -> None:
@@ -916,6 +917,7 @@ def cmd_add(args):
             nt["worker"] = _infer_worker(nt)
         # Embed status prefix in title for one-grep searchability
         nt["title"] = _with_status_prefix(nt["status"], nt["title"])
+        nt.setdefault("created_by", None)
         nt.setdefault("result", None)
         nt.setdefault("claimed_at", None)
         nt.setdefault("completed_at", None)
