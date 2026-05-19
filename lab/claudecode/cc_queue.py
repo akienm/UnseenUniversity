@@ -355,6 +355,10 @@ def cmd_claim(args):
             f"(ticket worker={t.get('worker')!r}, claiming as={as_worker!r})."
         )
         sys.exit(1)
+    if not t.get("scraps_validated"):
+        if not _scraps_validate(t):
+            print(f"Scraps blocked claim of {args[0]} — fix issues above.")
+            sys.exit(1)
     t["status"] = "in_progress"
     t["title"] = _with_status_prefix("in_progress", t["title"])
     t["claimed_at"] = _now()
@@ -890,6 +894,33 @@ def _infer_worker(t: dict) -> str:
     return "igor"
 
 
+def _scraps_validate(ticket: dict) -> bool:
+    """Pre-flight: call ScrapsDevice.validate_ticket(); degrade gracefully if offline.
+
+    Returns True (proceed) or False (caller should abort transition).
+    On pass, stamps ticket['scraps_validated'] = validated_at in-place.
+    On offline, prints a warning and returns True (never hard-block on device offline).
+    On invalid, prints the issue list and returns False.
+    """
+    try:
+        from devices.scraps.scraps_device import ScrapsDevice
+
+        result = ScrapsDevice().validate_ticket(ticket)
+    except Exception as exc:
+        print(f"Scraps offline — validation skipped ({exc})")
+        return True
+
+    if result.get("valid"):
+        ticket["scraps_validated"] = result["validated_at"]
+        return True
+
+    issues = result.get("issues") or ["unknown issue"]
+    print("Scraps validation failed:")
+    for issue in issues:
+        print(f"  - {issue}")
+    return False
+
+
 def cmd_add(args):
     """Add tasks from a JSON file (array of task objects) or inline JSON string."""
     if not args:
@@ -915,8 +946,6 @@ def cmd_add(args):
         # D-worker-mode-routing-2026-04-21: auto-default by metadata if unset
         if "worker" not in nt or nt.get("worker") in (None, ""):
             nt["worker"] = _infer_worker(nt)
-        # Embed status prefix in title for one-grep searchability
-        nt["title"] = _with_status_prefix(nt["status"], nt["title"])
         nt.setdefault("created_by", None)
         nt.setdefault("result", None)
         nt.setdefault("claimed_at", None)
@@ -926,6 +955,13 @@ def cmd_add(args):
         nt.setdefault("github_issue", None)
         nt.setdefault("decision_id", None)
         nt.setdefault("gate", None)
+        # Scraps pre-flight runs before status prefix is applied so the
+        # original title is visible to the generic-title check.
+        if not _scraps_validate(nt):
+            print(f"  blocked: {nt['id']} — fix issues above to add.")
+            continue
+        # Embed status prefix in title for one-grep searchability
+        nt["title"] = _with_status_prefix(nt["status"], nt["title"])
         tasks.append(nt)
         _log({"action": "add", "id": nt["id"], "title": nt["title"]})
         print(f"  added: {nt['id']} — {nt['title']}")
