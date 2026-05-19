@@ -24,6 +24,8 @@ from devices.inference.shim import InferenceShim
 from devices.postgres.device import PostgresDevice
 from devices.rack_test.device import RackTestDevice
 from devices.rack_test.shim import RackTestShim
+from devices.scraps.scraps_device import ScrapsDevice
+from devices.scraps.shim import ScrapsShim
 from devices.sensor.device import SensorDevice
 from devices.sensor.shim import SensorShim
 from devices.swadl.device import SwadlDevice
@@ -44,6 +46,7 @@ ALL_DEVICE_CLASSES = [
     DiscordBotDevice,
     SwadlDevice,
     RackTestDevice,
+    ScrapsDevice,
     SensorDevice,
 ]
 
@@ -57,6 +60,7 @@ ALL_SHIM_CLASSES = [
     DiscordBotShim,
     SwadlShim,
     RackTestShim,
+    ScrapsShim,
     SensorShim,
 ]
 
