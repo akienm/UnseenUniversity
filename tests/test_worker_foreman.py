@@ -128,6 +128,11 @@ class TestInferWorker(unittest.TestCase):
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+_VALID_DESC = (
+    "**Affected files:** tests\n" "**Test plan:** unit test only — no DB changes."
+)
+
+
 class TestCmdAddWorkerDefault(unittest.TestCase):
     """cmd_add auto-defaults worker when not set; respects explicit worker."""
 
@@ -164,7 +169,13 @@ class TestCmdAddWorkerDefault(unittest.TestCase):
 
     def test_plain_ticket_gets_worker_igor(self):
         """New plain ticket with no worker field → inferred 'igor'."""
-        nt = {"id": "T-add-plain", "title": "small chore", "size": "S", "tags": []}
+        nt = {
+            "id": "T-add-plain",
+            "title": "small chore",
+            "size": "S",
+            "tags": [],
+            "description": _VALID_DESC,
+        }
         persisted = self._run_add(nt)
         self.assertEqual(persisted.get("worker"), "igor")
 
@@ -175,6 +186,7 @@ class TestCmdAddWorkerDefault(unittest.TestCase):
             "title": "risky edit",
             "size": "M",
             "tags": ["HIGH"],
+            "description": _VALID_DESC,
         }
         persisted = self._run_add(nt)
         self.assertEqual(persisted.get("worker"), "claude")
@@ -187,6 +199,7 @@ class TestCmdAddWorkerDefault(unittest.TestCase):
             "size": "S",
             "tags": [],
             "worker": "claude",
+            "description": _VALID_DESC,
         }
         persisted = self._run_add(nt)
         self.assertEqual(persisted.get("worker"), "claude")
@@ -199,6 +212,7 @@ class TestCmdAddWorkerDefault(unittest.TestCase):
             "size": "M",
             "tags": ["HIGH"],
             "worker": "igor",
+            "description": _VALID_DESC,
         }
         persisted = self._run_add(nt)
         self.assertEqual(persisted.get("worker"), "igor")

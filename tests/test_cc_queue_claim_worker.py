@@ -68,6 +68,9 @@ def _seed_ticket(ticket_id: str, worker: str | None) -> None:
             "worker": worker,
             "tags": ["test"],
             "kind": "ticket",
+            # Pre-stamp so cmd_claim skips Scraps (worker-routing tests don't
+            # care about Scraps; seed tickets have no description to validate).
+            "scraps_validated": "2026-01-01T00:00:00+00:00",
         }
         cur.execute(
             "DELETE FROM clan.memories WHERE id = %s",
