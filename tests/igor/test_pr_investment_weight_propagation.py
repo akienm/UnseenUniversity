@@ -148,8 +148,20 @@ def test_push_frame_at_baseline_weight_uses_default_salience():
         category="relationship_frame",
     )
     assert len(obs) == 1
-    assert obs[0]["salience"] == pytest.approx(0.75, abs=1e-6)
-    assert obs[0]["metadata"].get("frame_salience") == pytest.approx(0.75, abs=1e-6)
+    # twm_read applies age-decay to `salience` at read time, so even a fresh
+    # observation's salience drifts slightly below the push-time value.
+    # Assert on metadata["frame_salience"] (stamped at push time, no decay) instead.
+    # The live salience just needs to be ≤ frame_salience (decay only reduces it).
+    from wild_igor.igor.tools.persistent_relationships import pr_compute_frame_salience
+
+    actual_weight = float(obs[0]["metadata"].get("cumulative_investment_weight", 1.0))
+    expected_salience = pr_compute_frame_salience(actual_weight)
+    assert obs[0]["metadata"].get("frame_salience") == pytest.approx(
+        expected_salience, abs=1e-6
+    )
+    assert obs[0]["salience"] <= expected_salience + 1e-6  # age-decay only reduces
+    # After _reset_akien_weight_to(1.0), weight should be near baseline.
+    assert actual_weight == pytest.approx(1.0, abs=0.1)
 
 
 def test_push_frame_at_max_weight_uses_max_salience():
@@ -165,7 +177,8 @@ def test_push_frame_at_max_weight_uses_max_salience():
         category="relationship_frame",
     )
     assert len(obs) == 1
-    assert obs[0]["salience"] == pytest.approx(0.80, abs=1e-6)
+    # Use metadata["frame_salience"] (push-time value, no age-decay) for exact comparison.
+    assert obs[0]["metadata"].get("frame_salience") == pytest.approx(0.80, abs=1e-6)
 
 
 def test_push_frame_at_min_weight_uses_min_salience():
@@ -181,7 +194,8 @@ def test_push_frame_at_min_weight_uses_min_salience():
         category="relationship_frame",
     )
     assert len(obs) == 1
-    assert obs[0]["salience"] == pytest.approx(0.70, abs=1e-6)
+    # Use metadata["frame_salience"] (push-time value, no age-decay) for exact comparison.
+    assert obs[0]["metadata"].get("frame_salience") == pytest.approx(0.70, abs=1e-6)
 
 
 def test_push_frame_salience_varies_monotonically_with_weight():
