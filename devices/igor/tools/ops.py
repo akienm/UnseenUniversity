@@ -159,6 +159,7 @@ def queue_task(task_json: str) -> str:
             return f"skip (exists): {task['id']}"
 
         task.setdefault("status", "pending")
+        task["created_by"] = "igor"
         task.setdefault("result", None)
         task.setdefault("claimed_at", None)
         task.setdefault("completed_at", None)
