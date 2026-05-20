@@ -6,15 +6,20 @@ model: haiku
 
 # /note — Log a notable event
 
-Append to `~/TheIgors/lab/notes.log`:
+Run:
 ```
-<ISO datetime> | <note text> | <related tickets if any>
-```
-
-Also append to today's slate `## Notes` section:
-```bash
-echo "$(date -Iseconds) | Haiku extracts 15 nodes vs gpt-4o-mini's 10 — Haiku is the reading model | T-reading-benchmark" >> ~/TheIgors/lab/notes.log
-echo "- note: <summary>" >> ~/.TheIgors/claudecode/$(date +%Y%m%d).slate.txt
+python run "<note text and any related ticket IDs>"
 ```
 
-That's it. No DSB writes, no decision pipeline. Just a timestamped log line.
+The script writes a timestamped line to `THEIGORS_HOME/lab/notes.log` and
+appends `- note: <text>` to today's slate. No DB writes, no decision pipeline.
+
+**Examples:**
+```
+python run "Haiku extracts 15 nodes vs gpt-4o-mini's 10 — Haiku is the reading model | T-reading-benchmark"
+python run "Decided to defer scraps migration until after palace merge"
+```
+
+**Env vars** (set by superclaude / .env):
+- `THEIGORS_HOME` — TheIgors repo root (default: `~/TheIgors`)
+- `IGOR_HOME` — runtime dir (default: `~/.TheIgors`)

@@ -16,9 +16,9 @@ For commits outside of /sprint (one-off fixes, doc edits).
    ```
    If expired: STOP, tell Akien.
 
-2. **Test**:
-   ```bash
-   cd ~/TheIgors && source venv/bin/activate && python -m pytest tests/ -x -q 2>&1 | tail -20
+2. **Test** (from TheIgors repo root):
+   ```
+   uv run pytest tests/ -x -q
    ```
    Fail = STOP.
 

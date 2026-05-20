@@ -17,9 +17,16 @@
 $ErrorActionPreference = 'Stop'
 
 $repoRoot    = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$adcRoot     = Split-Path -Parent $repoRoot               # agent_datacenter root
+$localRoot   = Split-Path -Parent $adcRoot                # C:\automation\local (or equivalent)
 $runtimeRoot = "$env:USERPROFILE\.TheIgors"
 $instanceId  = if ($env:IGOR_INSTANCE_ID) { $env:IGOR_INSTANCE_ID } else { 'Igor-wild-0001' }
 $envFile     = "$runtimeRoot\$instanceId\.env"
+
+# ---- Set platform env vars used by skills scripts ----
+if (-not $env:IGOR_HOME)      { $env:IGOR_HOME      = $runtimeRoot }
+if (-not $env:THEIGORS_HOME)  { $env:THEIGORS_HOME  = "$localRoot\TheIgors" }
+if (-not $env:PYTHONUTF8)     { $env:PYTHONUTF8     = '1' }
 
 # ---- Load .env if present (KEY=value lines; ignores comments and blanks) ----
 if (Test-Path $envFile) {

@@ -23,8 +23,14 @@ The closing mark of a design conversation. Takes "the stuff we just talked about
 Always identify where the design block begins before drafting tickets — the
 scope sets which turns feed each decision.
 
-```bash
-grep -E "^(- D-|## In-flight|## Notes|DESIGN_START)" ~/.TheIgors/claudecode/$(date +%Y%m%d).slate.txt | tail -20
+```
+python -c "
+from datetime import datetime; from pathlib import Path; import os, re, sys
+slate = Path(os.environ.get('IGOR_HOME', Path.home()/'.TheIgors'))/'claudecode'/(datetime.now().strftime('%Y%m%d')+'.slate.txt')
+if slate.exists():
+    lines = [l for l in slate.read_text(encoding='utf-8').splitlines() if re.match(r'^(- D-|## In-flight|## Notes|DESIGN_START)', l)]
+    print('\n'.join(lines[-20:]))
+"
 ```
 
 Pick whichever boundary appears most recently: DESIGN_START, prior /decided,
@@ -118,7 +124,7 @@ Akien's pre-approval. Stamp the approval into the ticket body before filing
 Write the post-review batch to `/tmp/decided_batch_<decision-id>.json`, then
 append to the queue:
 ```bash
-python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py add /tmp/decided_batch_<decision-id>.json
+python "${CC_WORKFLOW_TOOLS}/cc_queue.py" add /tmp/decided_batch_<decision-id>.json
 ```
 `cc_queue.py` is the canonical writer — always go through it so the slate
 echo and session record stay consistent.
@@ -149,7 +155,7 @@ Consequence ticket shape:
     "**Test plan:** no tests — this is an observation ticket"
   ),
   "decision_id": "D-...",
-  "gate": "<YYYY-MM-DD — 14 days from today>",   # compute with: date -d '+14 days' +%Y-%m-%d
+  "gate": "<YYYY-MM-DD — 14 days from today>",   # compute with: python -c "from datetime import datetime,timedelta; print((datetime.now()+timedelta(days=14)).strftime('%Y-%m-%d'))"
   "priority": 0.3,
   "status": "sprint"
 }
@@ -187,20 +193,34 @@ Fields expected on the palace node (same shape):
 Chronological append (this is the exception to "don't write to
 decisions_log.dsb directly" — /decided is a structured writer, not a blind
 dump; the file becomes a generated echo once the palace migration ships):
-```bash
-echo "$(date -Iseconds) | D-... | <summary> | tickets: T-x, T-y, T-z" >> ~/TheIgors/lab/design_docs_for_igor/decisions_log.dsb
+```
+python -c "
+from datetime import datetime; from pathlib import Path; import os
+ts = datetime.now().isoformat(timespec='seconds')
+f = Path(os.environ.get('THEIGORS_HOME', Path.home()/'TheIgors'))/'lab'/'design_docs_for_igor'/'decisions_log.dsb'
+f.parent.mkdir(parents=True, exist_ok=True)
+f.open('a',encoding='utf-8').write(ts+' | D-... | <summary> | tickets: T-x, T-y, T-z\n')
+"
 ```
 
 ### 8. Append to slate
 
-```bash
-echo "- $D_ID: <summary> — T-x, T-y, T-z" >> ~/.TheIgors/claudecode/$(date +%Y%m%d).slate.txt
+```
+python -c "
+from datetime import datetime; from pathlib import Path; import os
+slate = Path(os.environ.get('IGOR_HOME', Path.home()/'.TheIgors'))/'claudecode'/(datetime.now().strftime('%Y%m%d')+'.slate.txt')
+slate.open('a',encoding='utf-8').write('- D-...: <summary> — T-x, T-y, T-z\n')
+"
 ```
 
 ### 9. Clear /design flag (if set)
 
-```bash
-rm -f ~/.TheIgors/cc_channel/design_mode.json
+```
+python -c "
+from pathlib import Path; import os
+f = Path(os.environ.get('IGOR_HOME', Path.home()/'.TheIgors'))/'cc_channel'/'design_mode.json'
+f.unlink(missing_ok=True)
+"
 ```
 
 ### 10. Report

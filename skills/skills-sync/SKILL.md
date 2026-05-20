@@ -8,79 +8,62 @@ model: haiku
 
 Two directions:
 - **repo → local**: show what managed skills are present/missing, then deploy all of them.
-- **local → repo**: show local-only skills (not in the manifest), offer to copy them back to the canonical source.
+- **local → repo**: show local-only skills (not in the manifest), offer to copy them back.
 
 ## Step 1 — Show current state
 
-```bash
-agentctl skills status
+```
+python run status
 ```
 
-This prints:
-- `managed` — skills in the manifest that deploy to this host
-- `present` — skills currently in `~/.claude/skills/`
-- `local-only` — present locally but NOT in the manifest (user-added)
-- `NOT deployed` — managed but not yet present locally
+Shows: managed skills for this host, present locally, local-only (not in manifest),
+and NOT deployed (managed but missing locally).
 
-## Step 2 — Find the canonical repo path
+## Step 2 — Check what would change (repo → local)
 
-```bash
-python -c "from devices.installer import DEFAULT_MASTER_ROOT; print(DEFAULT_MASTER_ROOT)"
+```
+python run diff
 ```
 
-Call this `$MASTER_ROOT`. It resolves at runtime from the installed package — no hardcoding.
+Shows skills whose content differs between master and local. Master always wins
+on deploy — local edits to managed skills will be overwritten.
 
-## Step 3 — Check what would change (repo → local)
+If none differ: "All managed skills are up to date."
 
-For each managed skill present on both sides, show content differences:
+## Step 3 — Repo → local deploy (with consent)
 
-```bash
-diff -rq "$MASTER_ROOT" ~/.claude/skills/ \
-  --exclude=".*" \
-  2>/dev/null | grep -v "^Only in ~/.claude"
-```
-
-If there are differences, list them. If none, say "all managed skills are up to date."
-
-Note: `agentctl skills deploy` uses `rsync --checksum --delete`, so **the repo always wins** for managed skills regardless of which side was edited more recently. Local edits to managed skills will be overwritten.
-
-## Step 4 — Repo → local deploy (with consent)
-
-Show a summary of what will change (skills with diffs + any NOT-deployed skills). Ask once:
+Show the diff summary. Ask once:
 
 > Deploy all managed skills from repo to local? (y/n)
 
 On yes:
-```bash
-agentctl skills deploy
+```
+python run deploy
 ```
 
-Report the `deployed:` count and any warnings from the output.
+Reports deployed count and any warnings.
 
-## Step 5 — Local → repo (reverse direction)
+## Step 4 — Local → repo (reverse direction)
 
-From the `agentctl skills status` output, identify `local-only` skills (present locally, not in the manifest).
+From the status output, identify local-only skills (present locally, not in manifest).
 
 If any exist, list them and ask once:
 
 > Copy these local-only skills to the repo? (y/n)
 
-On yes, for each skill `$NAME`:
-
-```bash
-rsync -a --delete ~/.claude/skills/$NAME/ "$MASTER_ROOT/$NAME/"
+On yes, for each `$NAME`:
+```
+python run copy-to-repo $NAME
 ```
 
-Then remind the user: **a new local-only skill copied to the repo also needs a manifest entry** or it won't deploy to other hosts. Show the entry to add to `skills/manifest.json`:
+The script copies the skill and prints the manifest.json entry to add. A new
+local-only skill copied to the repo also needs a manifest entry or it won't
+deploy to other hosts.
 
-```json
-"$NAME": {"category": "machine-agnostic", "machines": ["*"], "deploy": true}
-```
-
-After all copies are done, suggest running `agentctl skills deploy` again to confirm the round-trip.
+After all copies, suggest running deploy again to confirm the round-trip.
 
 ## Hard rules
 
 - Never add to manifest.json automatically — only show the snippet; the user decides.
 - Consent is batch, not per-file. Ask once per direction, not once per skill.
-- Always run `agentctl skills status` first so the user sees the starting state before anything changes.
+- Always run status first so the user sees the starting state.

@@ -1,0 +1,120 @@
+#!/usr/bin/env python3
+"""skills-sync — compare and sync skills between master repo and ~/.claude/skills/.
+
+Usage:
+  python run status                   # show managed vs local-only
+  python run diff                     # show content differences
+  python run deploy                   # deploy master → local (destructive for managed skills)
+  python run copy-to-repo <name>      # copy a local-only skill back to master
+"""
+import shutil
+import sys
+from pathlib import Path
+
+
+def _load_installer():
+    try:
+        from devices.installer.shim import (
+            DEFAULT_DEPLOY_TARGET,
+            DEFAULT_MANIFEST_PATH,
+            DEFAULT_MASTER_ROOT,
+        )
+        from devices.installer.manifest import load_manifest
+        from devices.installer import deploy_skills, deploy_status
+        return DEFAULT_MASTER_ROOT, DEFAULT_DEPLOY_TARGET, DEFAULT_MANIFEST_PATH, load_manifest, deploy_skills, deploy_status
+    except ImportError:
+        print(
+            "ERROR: agent_datacenter not on PYTHONPATH.\n"
+            "Activate the ADC venv or run from within it.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
+def cmd_status() -> None:
+    master, target, manifest_path, load_manifest, _, deploy_status = _load_installer()
+    info = deploy_status()
+    print(f"host:         {info['host']}")
+    print(f"master:       {master}")
+    print(f"target:       {info['target']}")
+    print(f"managed:      {len(info['managed_for_host'])}")
+    print(f"present:      {len(info['present_in_target'])}")
+    if info["local_only"]:
+        print(f"local-only:   {', '.join(info['local_only'])}")
+    if info["missing_in_target"]:
+        print(f"NOT deployed: {', '.join(info['missing_in_target'])}")
+
+
+def cmd_diff() -> None:
+    master, target, manifest_path, load_manifest, _, _ = _load_installer()
+    skills = load_manifest(manifest_path)
+    diffs  = []
+    for name in skills:
+        src = master / name
+        dst = target / name
+        if not src.is_dir() or not dst.is_dir():
+            continue
+        for src_file in src.rglob("*"):
+            if src_file.is_dir():
+                continue
+            rel      = src_file.relative_to(src)
+            dst_file = dst / rel
+            if not dst_file.exists() or src_file.read_bytes() != dst_file.read_bytes():
+                diffs.append(f"  {name}/{rel}")
+    if diffs:
+        print(f"Skills with differences (master wins on deploy):")
+        for d in diffs:
+            print(d)
+    else:
+        print("All managed skills are up to date.")
+
+
+def cmd_deploy() -> None:
+    _, _, _, _, deploy_skills, _ = _load_installer()
+    result = deploy_skills()
+    print(f"deployed:     {len(result.deployed)}")
+    for name in result.deployed:
+        print(f"  + {name}")
+    if result.skipped_missing_source:
+        print(f"missing src:  {', '.join(result.skipped_missing_source)}")
+    if result.untouched_local:
+        print(f"local-only:   {', '.join(result.untouched_local)} (untouched)")
+
+
+def cmd_copy_to_repo(name: str) -> None:
+    master, target, manifest_path, load_manifest, _, _ = _load_installer()
+    src = target / name
+    dst = master / name
+    if not src.is_dir():
+        print(f"ERROR: {src} not found in local skills", file=sys.stderr)
+        sys.exit(1)
+    if dst.exists():
+        shutil.rmtree(dst)
+    shutil.copytree(src, dst)
+    print(f"Copied {name} to {dst}")
+    print(
+        f'\nAdd to skills/manifest.json:\n'
+        f'  "{name}": {{"category": "machine-agnostic", "machines": ["*"], "deploy": true}}'
+    )
+
+
+def main() -> None:
+    action = sys.argv[1] if len(sys.argv) > 1 else "status"
+    if action == "status":
+        cmd_status()
+    elif action == "diff":
+        cmd_diff()
+    elif action == "deploy":
+        cmd_deploy()
+    elif action == "copy-to-repo":
+        if len(sys.argv) < 3:
+            print("usage: python run copy-to-repo <skill-name>", file=sys.stderr)
+            sys.exit(1)
+        cmd_copy_to_repo(sys.argv[2])
+    else:
+        print(f"unknown action: {action}. Use: status | diff | deploy | copy-to-repo <name>", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

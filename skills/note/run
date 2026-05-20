@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+"""note — log a milestone, insight, or decision to notes.log and today's slate."""
+import os
+import sys
+from datetime import datetime
+from pathlib import Path
+
+IGOR_HOME     = Path(os.environ.get("IGOR_HOME",     Path.home() / ".TheIgors"))
+THEIGORS_HOME = Path(os.environ.get("THEIGORS_HOME", Path.home() / "TheIgors"))
+
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        print("usage: python run <note text> [T-ticket-ids...]", file=sys.stderr)
+        sys.exit(1)
+
+    text = " ".join(sys.argv[1:])
+    ts   = datetime.now().isoformat(timespec="seconds")
+    line = f"{ts} | {text}"
+
+    notes_log = THEIGORS_HOME / "lab" / "notes.log"
+    notes_log.parent.mkdir(parents=True, exist_ok=True)
+    with notes_log.open("a", encoding="utf-8") as f:
+        f.write(line + "\n")
+
+    date_str = datetime.now().strftime("%Y%m%d")
+    slate    = IGOR_HOME / "claudecode" / f"{date_str}.slate.txt"
+    if slate.exists():
+        with slate.open("a", encoding="utf-8") as f:
+            f.write(f"\n- note: {text}\n")
+
+    print(line)
+
+
+if __name__ == "__main__":
+    main()
