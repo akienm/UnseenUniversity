@@ -22,6 +22,7 @@ plumbing only.
 from __future__ import annotations
 
 import json
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -244,10 +245,19 @@ class TestLaunchNextWorkerDispatch(unittest.TestCase):
         popen_instance.pid = 12345
         mock_popen.return_value = popen_instance
 
+        # Patch Cortex so the active-goal DB check inside launch_next_worker
+        # doesn't make these routing tests sensitive to live DB state.
+        mock_cortex = MagicMock()
+        mock_cortex.get_by_type.return_value = []
+        mock_mt = MagicMock()
+        mock_mt.GOAL = "GOAL"
+
         with (
             patch.object(wf, "_load_queue", return_value=tasks),
             patch.object(wf, "adopt_next_ticket", mock_adopt),
             patch.object(wf.subprocess, "Popen", mock_popen),
+            patch(_CORTEX_PATH, return_value=mock_cortex),
+            patch(_MT_PATH, mock_mt),
         ):
             result = wf.launch_next_worker()
 
@@ -333,6 +343,72 @@ class TestLaunchNextWorkerDispatch(unittest.TestCase):
 
         mock_adopt.assert_called_once()
         mock_popen.assert_not_called()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# adopt_next_ticket — IGOR_STRICT_CLAIM_MODEL env var
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+_CORTEX_PATH = "wild_igor.igor.memory.cortex.Cortex"
+_MT_PATH = "wild_igor.igor.memory.models.MemoryType"
+_OPS_GOAL_ADOPT_PATH = "wild_igor.igor.tools.ops.goal_adopt"
+
+
+class TestAdoptNextTicketStrictFlag(unittest.TestCase):
+    """adopt_next_ticket sets IGOR_STRICT_CLAIM_MODEL=1 before pe_chain runs."""
+
+    def test_env_flag_set_before_pe_chain(self):
+        """IGOR_STRICT_CLAIM_MODEL=1 is in os.environ when pe_chain is called."""
+        from wild_igor.igor.tools import worker_foreman as wf
+
+        env_at_chain_call: dict = {}
+
+        def capture_env_and_return(*_a, **_kw):
+            env_at_chain_call.update(os.environ)
+            return "chain done"
+
+        mock_cortex = MagicMock()
+        mock_cortex.get_by_type.return_value = []  # no active goals
+
+        mock_mt = MagicMock()
+        mock_mt.GOAL = "GOAL"
+
+        pending = [
+            {
+                "id": "T-strict-flag-test",
+                "title": "env test ticket",
+                "status": "sprint",
+                "priority": 5,
+                "worker": "igor",
+                "tags": [],
+            }
+        ]
+
+        mock_pe_tool = MagicMock()
+        mock_pe_tool.fn = capture_env_and_return
+
+        original_flag = os.environ.pop("IGOR_STRICT_CLAIM_MODEL", None)
+        try:
+            with (
+                patch.object(wf, "_load_queue", return_value=pending),
+                patch(_CORTEX_PATH, return_value=mock_cortex),
+                patch(_MT_PATH, mock_mt),
+                patch(_OPS_GOAL_ADOPT_PATH, return_value="adopted"),
+                patch.object(wf.registry, "get", return_value=mock_pe_tool),
+            ):
+                wf.adopt_next_ticket()
+        finally:
+            if original_flag is not None:
+                os.environ["IGOR_STRICT_CLAIM_MODEL"] = original_flag
+            else:
+                os.environ.pop("IGOR_STRICT_CLAIM_MODEL", None)
+
+        self.assertEqual(
+            env_at_chain_call.get("IGOR_STRICT_CLAIM_MODEL"),
+            "1",
+            "IGOR_STRICT_CLAIM_MODEL was not '1' when pe_chain was invoked",
+        )
 
 
 if __name__ == "__main__":
