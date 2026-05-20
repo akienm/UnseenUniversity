@@ -69,6 +69,15 @@ def _ssl_ctx() -> ssl.SSLContext:
 LOG_PATH = os.path.expanduser("~/.TheIgors/cc_channel/log.jsonl")
 CLOSED_TICKETS_PATH = os.path.expanduser("~/.TheIgors/claudecode/closed_tickets.txt")
 GATE_FILE = os.path.expanduser("~/.TheIgors/cc_channel/queue_gate.json")
+
+DIFFICULTY_TIERS = {
+    1: "Apprentice",
+    2: "Sustainer",
+    3: "Creator",
+    4: "Master",
+    5: "Teacher",
+}
+
 STATUS_ORDER = {
     # Canonical statuses (what happens next):
     "triage": 0,
@@ -259,7 +268,9 @@ def _format_task_line(t: dict) -> str:
     worker_tag = " [igor]" if t.get("worker") == "igor" else ""
     created_by_tag = f" [{t.get('created_by') or 'unknown'}]"
     gh_tag = f" GH#{t['github_issue']}" if t.get("github_issue") else ""
-    return f"  {icon} [{t['id']}] ({size}){epic}{worker_tag}{created_by_tag}{gh_tag} {t['title']}  [{t['status']}]"
+    diff = t.get("target_difficulty", 1)
+    tier_tag = f" [{DIFFICULTY_TIERS.get(diff, '?')}({diff})]" if diff != 1 else ""
+    return f"  {icon} [{t['id']}] ({size}){epic}{worker_tag}{created_by_tag}{gh_tag}{tier_tag} {t['title']}  [{t['status']}]"
 
 
 def _print_task(t: dict) -> None:
@@ -339,7 +350,39 @@ def cmd_show(args):
     print(json.dumps(t, indent=2))
 
 
+class LegacyDirectClaimError(Exception):
+    """Raised when old code tries to claim a ticket by ID without going through cmd_next.
+
+    Future trip-wire: arm by passing --legacy-raise to cmd_claim from Igor's
+    tool chain once all callers are migrated to next_ticket_id_for_worker().
+    """
+
+
 def cmd_claim(args):
+    # IGOR_STRICT_CLAIM_MODEL=1: trip-wire armed by adopt_next_ticket before
+    # pe_chain runs. Any direct cmd_claim inside the Igor tool chain raises here.
+    if os.environ.get("IGOR_STRICT_CLAIM_MODEL") == "1":
+        msg = (
+            "Direct ticket claiming is deprecated — "
+            "use cmd_next --max-difficulty=N to request tickets."
+        )
+        _igor_post(
+            f"[CLAIM_BLOCKED] LegacyDirectClaimError: {msg}", tag="legacy_direct_claim"
+        )
+        _log({"action": "legacy_direct_claim_blocked", "args": str(args)})
+        raise LegacyDirectClaimError(msg)
+
+    # --legacy-raise: surface old direct-claim callers before removal.
+    # Trip-wire stub — not yet armed in Igor's tool chain.
+    if "--legacy-raise" in args:
+        msg = (
+            "LegacyDirectClaimError: direct ticket claim is deprecated — "
+            "use next_ticket_id_for_worker('igor') / cmd_next --worker igor "
+            "to select the next ticket, then claim it."
+        )
+        print(msg)
+        sys.exit(2)
+
     # --as <worker> selects the claiming worker. Default 'igor' preserves
     # the cert_worker_freeze design (pe_chain claims without the flag stay
     # gated to worker=igor tickets). CC manual claims pass --as claude.
@@ -977,6 +1020,17 @@ def cmd_add(args):
         nt.setdefault("github_issue", None)
         nt.setdefault("decision_id", None)
         nt.setdefault("gate", None)
+        nt.setdefault("target_difficulty", 1)
+        try:
+            diff = int(nt["target_difficulty"])
+        except (ValueError, TypeError):
+            diff = -1
+        if diff not in DIFFICULTY_TIERS:
+            print(
+                f"  blocked: {nt['id']} — target_difficulty must be 1-5 (Apprentice→Teacher), got {nt['target_difficulty']!r}"
+            )
+            continue
+        nt["target_difficulty"] = diff
         # Scraps pre-flight runs before status prefix is applied so the
         # original title is visible to the generic-title check.
         if not _scraps_validate(nt):
@@ -1145,44 +1199,76 @@ def _trip_gate(ticket_id: str, reason: str) -> None:
     print(f"GATE TRIPPED: {ticket_id} — {reason}")
 
 
-def cmd_next(args):
-    """Return highest-priority unclaimed sprint ticket for the worker daemon.
+def _priority_key(t):
+    p = t.get("priority", 99)
+    try:
+        v = float(str(p).lstrip("pP"))
+        # 0-1 floats are importance scores (higher=better) → negate for min-sort
+        # integers ≥2 are P-numbers (lower=better) → use directly
+        return -v if v <= 1.0 else v
+    except (ValueError, TypeError):
+        return 99.0
 
-    Respects GATE_FILE circuit breaker — prints nothing when gate is tripped.
-    Skips worker=igor (pe_chain) and worker=claude (interactive CC) tickets.
-    Output: one ticket ID line, or nothing if gate tripped / queue empty.
+
+def next_ticket_id_for_worker(worker: "str | None" = None) -> "str | None":
+    """Return the highest-priority sprint ticket ID for a worker, or None.
+
+    worker=None    → daemon tickets (excludes igor and claude; legacy default)
+    worker='igor'  → tickets with worker='igor' only
+    worker='claude'→ tickets with worker='claude' only
+
+    Respects GATE_FILE circuit breaker — returns None when gate is tripped.
+    Does NOT claim the ticket.
     """
     if os.path.exists(GATE_FILE):
         try:
             gate_data = json.loads(open(GATE_FILE).read())
             if gate_data.get("tripped"):
-                return
+                return None
         except Exception:
             pass  # corrupt gate file → treat as not tripped
 
     tasks = _load()
-    candidates = [
-        t
-        for t in tasks
-        if t.get("status") == "sprint"
-        and not t.get("gate")
-        and t.get("worker") not in ("igor", "claude")
-    ]
+    if worker is None:
+        candidates = [
+            t
+            for t in tasks
+            if t.get("status") == "sprint"
+            and not t.get("gate")
+            and t.get("worker") not in ("igor", "claude")
+        ]
+    else:
+        candidates = [
+            t
+            for t in tasks
+            if t.get("status") == "sprint"
+            and not t.get("gate")
+            and t.get("worker") == worker
+        ]
     if not candidates:
-        return
-
-    def _priority_key(t):
-        p = t.get("priority", 99)
-        try:
-            v = float(str(p).lstrip("pP"))
-            # 0-1 floats are importance scores (higher=better) → negate for min-sort
-            # integers ≥2 are P-numbers (lower=better) → use directly
-            return -v if v <= 1.0 else v
-        except (ValueError, TypeError):
-            return 99.0
-
+        return None
     best = min(candidates, key=_priority_key)
-    print(best["id"])
+    return best["id"]
+
+
+def cmd_next(args):
+    """Return highest-priority unclaimed sprint ticket for a worker.
+
+    --worker <name>: return next ticket for this specific worker (e.g. igor).
+    No flag: legacy daemon mode — skips worker=igor and worker=claude tickets.
+    Respects GATE_FILE circuit breaker — prints nothing when gate is tripped.
+    Output: one ticket ID line, or nothing if gate tripped / queue empty.
+    """
+    worker_filter = None
+    if "--worker" in args:
+        i = args.index("--worker")
+        if i + 1 < len(args):
+            worker_filter = args[i + 1]
+            args = args[:i] + args[i + 2 :]
+
+    ticket_id = next_ticket_id_for_worker(worker_filter)
+    if ticket_id:
+        print(ticket_id)
 
 
 def cmd_reset(args):
