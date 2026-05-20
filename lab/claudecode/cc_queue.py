@@ -91,6 +91,7 @@ STATUS_ORDER = {
 }
 
 _TERMINAL_STATUSES = {"closed", "done", "cancelled"}
+_ACTIONABLE_STATUSES = {"sprint", "design", "akien", "awaiting_approval", "approval"}
 
 # Status prefix helpers — embed [status] in title for one-grep searchability
 _STATUS_PREFIX_RE = None
@@ -273,12 +274,21 @@ def cmd_list(args):
     by_epic = "--by-epic" in args
     show_gated = "--gated" in args
     by_decision = "--by-decision" in args
+    actionable = "--actionable" in args
     tasks = _load()
     if not tasks:
         print("Queue empty.")
         return
 
-    if not show_gated:
+    if actionable:
+        tasks = [
+            t
+            for t in tasks
+            if t.get("status") in _ACTIONABLE_STATUSES
+            and t.get("worker") != "igor"
+            and _gate_clear(t.get("gate"), tasks)
+        ]
+    elif not show_gated:
         tasks = [t for t in tasks if not t.get("gate")]
 
     def _priority_int(t):
@@ -533,6 +543,16 @@ def _append_to_todays_slate(ticket: dict) -> None:
                 f.writelines(out)
     except Exception as e:
         _log({"action": "slate_append_failed", "error": str(e), "id": ticket.get("id")})
+
+
+def _gate_clear(gate_val: str | None, all_tasks: list) -> bool:
+    """Return True if gate is null or references a ticket in terminal status."""
+    if not gate_val:
+        return True
+    for t in all_tasks:
+        if t["id"] in gate_val:
+            return t["status"] in _TERMINAL_STATUSES
+    return False
 
 
 def _ungate_dependents(tasks: list, closed_id: str) -> int:
