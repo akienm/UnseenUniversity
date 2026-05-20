@@ -62,21 +62,22 @@ class RsyncBackend:
 
 
 class WindowsBackend:
-    """Stub for the Windows path. Activate when the first Windows box arrives.
+    """shutil-backed deploy. Used on Windows.
 
-    Likely impl: robocopy with /MIR for a single skill dir, OR Python
-    shutil.rmtree + shutil.copytree for portability across PowerShell
-    versions. Decide when we get there.
+    Uses rmtree + copytree to achieve the same mirror semantics as
+    rsync --checksum --delete: master always wins, dst files not in src
+    are removed. Safe because we scope to ONE skill dir at a time.
     """
 
     def is_available(self) -> bool:
         return platform.system() == "Windows"
 
     def deploy_skill(self, src: Path, dst: Path) -> None:
-        raise NotImplementedError(
-            "WindowsBackend not yet implemented — activate when the first "
-            "Windows box is brought into the rack"
-        )
+        if not src.exists():
+            raise FileNotFoundError(f"source skill dir missing: {src}")
+        if dst.exists():
+            shutil.rmtree(dst)
+        shutil.copytree(src, dst)
 
 
 def select_backend() -> DeployBackend:

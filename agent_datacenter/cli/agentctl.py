@@ -80,9 +80,12 @@ def _detect_postgres() -> str:
     """Return 'local', 'docker', or 'none'."""
     if shutil.which("pg_ctl"):
         return "local"
-    result = subprocess.run(["docker", "info"], capture_output=True, timeout=5)
-    if result.returncode == 0:
-        return "docker"
+    try:
+        result = subprocess.run(["docker", "info"], capture_output=True, timeout=5)
+        if result.returncode == 0:
+            return "docker"
+    except (FileNotFoundError, OSError):
+        pass
     return "none"
 
 
@@ -149,24 +152,33 @@ def _link_superclaude() -> tuple[str, str]:
 
 
 def _shell_profile() -> Path:
-    """Return the user's shell profile path: ~/.zshrc on macOS, ~/.bashrc elsewhere."""
+    """Return the user's shell profile path (platform-aware)."""
     if platform.system() == "Darwin":
         return Path.home() / ".zshrc"
+    if platform.system() == "Windows":
+        # PowerShell current-user, all-hosts profile
+        return Path.home() / "Documents" / "PowerShell" / "Microsoft.PowerShell_profile.ps1"
     return Path.home() / ".bashrc"
 
 
 def _write_env_var_to_profile(profile: Path, name: str, value: str) -> bool:
-    """Append 'export NAME=value' to profile if not already present.
+    """Append an env-var export line to the shell profile if not already present.
 
-    Returns True if written, False if the line was already there (idempotent).
-    The idempotency check looks for a line starting with 'export NAME='
-    (anchored), so a comment mentioning the var won't fool it.
+    Returns True if written, False if already set (idempotent).
+    Uses PowerShell syntax on Windows, bash syntax elsewhere.
     """
-    export_line = f"export {name}={value}"
+    if platform.system() == "Windows":
+        export_line = f'$env:{name} = "{value}"'
+        sentinel = f"$env:{name} ="
+    else:
+        export_line = f"export {name}={value}"
+        sentinel = f"export {name}="
+
     if profile.exists():
         for line in profile.read_text().splitlines():
-            if line.startswith(f"export {name}="):
+            if line.startswith(sentinel):
                 return False  # already set — skip
+    profile.parent.mkdir(parents=True, exist_ok=True)
     with profile.open("a") as fh:
         fh.write(f"\n{export_line}\n")
     return True
@@ -248,11 +260,14 @@ def init(instance: str | None) -> None:
         written = _write_env_var_to_profile(
             profile, "CC_WORKFLOW_TOOLS", str(tools_path)
         )
-        arrow = "→" if written else "(already set)"
+        arrow = "->" if written else "(already set)"
         click.echo(f"  CC_WORKFLOW_TOOLS: {tools_path} {arrow} {profile.name}")
-        click.echo(
-            f"  hint: run 'source ~/{profile.name}' to activate CC_WORKFLOW_TOOLS in this shell"
-        )
+        if platform.system() == "Windows":
+            click.echo("  hint: restart PowerShell or run '. $PROFILE' to activate CC_WORKFLOW_TOOLS")
+        else:
+            click.echo(
+                f"  hint: run 'source ~/{profile.name}' to activate CC_WORKFLOW_TOOLS in this shell"
+            )
     else:
         click.echo(
             "  CC_WORKFLOW_TOOLS: lab/claudecode not found — skipped "
