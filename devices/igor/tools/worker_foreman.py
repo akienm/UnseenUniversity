@@ -337,6 +337,7 @@ def adopt_next_ticket() -> str:
         # Graceful fallback: if pe_chain isn't importable yet (early boot,
         # partial registration), return after goal adoption — the engram
         # chain's BRANCHIF caller can still pick up from the active goal.
+        os.environ["IGOR_STRICT_CLAIM_MODEL"] = "1"
         chain_result = None
         try:
             pe_tool = registry.get("run_pe_chain")
