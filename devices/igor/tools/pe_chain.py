@@ -631,7 +631,12 @@ class PeChain(IgorBase):
 
     def pe_claim(self) -> dict:
         """
-        CLAIM step: mark ticket in_progress in cc_queue.
+        CLAIM step: no-op — ticket is pre-claimed atomically by cmd_next.
+
+        cmd_next --worker igor marks the ticket in_progress before returning
+        its ID.  By the time pe_chain runs, the ticket is already ours.
+        This step exists only to confirm the ticket is in_progress and abort
+        early if something unexpected happened.
 
         Reads from self.basket: ticket_id
         Writes to self.basket:  claim_result (str — confirmation or error)
@@ -644,18 +649,26 @@ class PeChain(IgorBase):
             self.basket["error"] = "pe_claim: no ticket_id in self.basket"
             return self.basket
 
-        result = _run_bash(["python3", str(_CC_QUEUE), "claim", ticket_id])
-        self.basket["claim_result"] = result
-        self.log.info(f"CLAIM: {ticket_id} → {result[:80]}")
-        if "in_progress, not pending" in result:
-            # Ticket already claimed by goal_continuation step 0 — this is our ticket, proceed
-            self.log.info(
-                f"CLAIM: {ticket_id} already in_progress — proceeding (goal owns it)"
+        # Verify the ticket is already in_progress (pre-claimed via cmd_next).
+        result = _run_bash(["python3", str(_CC_QUEUE), "show", ticket_id])
+        if '"status": "in_progress"' in result or "'status': 'in_progress'" in result:
+            self.basket["claim_result"] = (
+                f"{ticket_id} confirmed in_progress (pre-claimed via cmd_next)"
             )
-        elif "not pending" in result or "not found" in result:
-            self.basket["error"] = f"pe_claim: cannot claim — {result.strip()}"
-            self.log.info(f"CLAIM: aborting chain — {result.strip()}")
-            # Evict GOAL_READY so PROC_CODING_SPRINT doesn't immediately re-fire
+            self.log.info(f"CLAIM: {ticket_id} confirmed in_progress")
+        elif "not found" in result.lower():
+            self.basket["error"] = f"pe_claim: ticket {ticket_id} not found"
+            self.log.info(f"CLAIM: aborting — {ticket_id} not found")
+            _evict_goal_ready_twm(ticket_id)
+        else:
+            # Ticket exists but not in_progress — unexpected state
+            self.basket["error"] = (
+                f"pe_claim: {ticket_id} is not in_progress — "
+                "it was not pre-claimed by cmd_next. Aborting to avoid racing."
+            )
+            self.log.info(
+                f"CLAIM: aborting — {ticket_id} not in expected in_progress state"
+            )
             _evict_goal_ready_twm(ticket_id)
         return self.basket
 
