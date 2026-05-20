@@ -388,10 +388,13 @@ class TestAdoptNextTicketStrictFlag(unittest.TestCase):
         mock_pe_tool = MagicMock()
         mock_pe_tool.fn = capture_env_and_return
 
+        mock_next_result = MagicMock()
+        mock_next_result.stdout = "T-strict-flag-test\n"
+
         original_flag = os.environ.pop("IGOR_STRICT_CLAIM_MODEL", None)
         try:
             with (
-                patch.object(wf, "_load_queue", return_value=pending),
+                patch("subprocess.run", return_value=mock_next_result),
                 patch(_CORTEX_PATH, return_value=mock_cortex),
                 patch(_MT_PATH, mock_mt),
                 patch(_OPS_GOAL_ADOPT_PATH, return_value="adopted"),
@@ -409,6 +412,52 @@ class TestAdoptNextTicketStrictFlag(unittest.TestCase):
             "1",
             "IGOR_STRICT_CLAIM_MODEL was not '1' when pe_chain was invoked",
         )
+
+    def test_empty_cmd_next_returns_no_eligible(self):
+        """adopt_next_ticket returns early when cmd_next returns empty."""
+        from wild_igor.igor.tools import worker_foreman as wf
+
+        mock_cortex = MagicMock()
+        mock_cortex.get_by_type.return_value = []
+
+        mock_mt = MagicMock()
+        mock_mt.GOAL = "GOAL"
+
+        mock_empty_result = MagicMock()
+        mock_empty_result.stdout = ""
+
+        with (
+            patch("subprocess.run", return_value=mock_empty_result),
+            patch(_CORTEX_PATH, return_value=mock_cortex),
+            patch(_MT_PATH, mock_mt),
+        ):
+            result = wf.adopt_next_ticket()
+
+        self.assertIn("no eligible", result)
+
+    def test_cmd_next_called_with_max_difficulty_1(self):
+        """adopt_next_ticket passes --max-difficulty=1 to cmd_next."""
+        from wild_igor.igor.tools import worker_foreman as wf
+
+        mock_cortex = MagicMock()
+        mock_cortex.get_by_type.return_value = []
+
+        mock_mt = MagicMock()
+        mock_mt.GOAL = "GOAL"
+
+        mock_empty_result = MagicMock()
+        mock_empty_result.stdout = ""
+
+        with (
+            patch("subprocess.run", return_value=mock_empty_result) as mock_run,
+            patch(_CORTEX_PATH, return_value=mock_cortex),
+            patch(_MT_PATH, mock_mt),
+        ):
+            wf.adopt_next_ticket()
+
+        call_args = mock_run.call_args[0][0]
+        self.assertIn("--max-difficulty=1", call_args)
+        self.assertIn("igor", call_args)
 
 
 if __name__ == "__main__":
