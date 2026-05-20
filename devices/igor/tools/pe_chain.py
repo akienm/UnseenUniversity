@@ -176,11 +176,154 @@ import subprocess
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any, TypedDict
 
 from ..paths import paths as _paths
 from ..igor_base import IgorBase
 
 log = logging.getLogger(__name__)
+
+# ── Phase contracts ────────────────────────────────────────────────────────────
+# TypedDicts document the minimal keys each phase reads and writes.
+# total=False: basket keys are always read via .get(); none are structurally
+# required at the Python level. The TypedDicts serve as explicit interface
+# documentation, enabling independent phase testing and future static analysis.
+
+
+class PeEntryInitOutput(TypedDict, total=False):
+    """Keys seeded by pe_entry_init."""
+
+    ticket_id: str
+    attempt_count: int
+    expected: str
+    goal_id: str
+    error: str
+
+
+class PeClaimOutput(TypedDict, total=False):
+    """Keys written by pe_claim (inherits entry keys)."""
+
+    ticket_id: str
+    attempt_count: int
+    expected: str
+    goal_id: str
+    error: str
+
+
+class PeReadTicketOutput(TypedDict, total=False):
+    """Keys written by pe_read_ticket."""
+
+    ticket_id: str
+    attempt_count: int
+    expected: str
+    goal_id: str
+    title: str
+    ticket_description: str
+    required_files: list
+    approved_plan: str | None
+    error: str
+
+
+class PePlanOutput(TypedDict, total=False):
+    """Keys written by pe_plan."""
+
+    ticket_id: str
+    ticket_description: str
+    plan_summary: str
+    test_criterion: str
+    error: str
+
+
+class PeFilterOutput(TypedDict, total=False):
+    """Keys written by pe_filter."""
+
+    ticket_id: str
+    ticket_description: str
+    plan_summary: str
+    test_criterion: str
+    filter_result: str
+    error: str
+
+
+class PeSituateOutput(TypedDict, total=False):
+    """Keys written by pe_situate."""
+
+    ticket_id: str
+    ticket_description: str
+    plan_summary: str
+    test_criterion: str
+    plan_files: list
+    new_files: list
+    error: str
+
+
+class PeObserveOutput(TypedDict, total=False):
+    """Keys written by pe_observe."""
+
+    ticket_id: str
+    ticket_description: str
+    plan_summary: str
+    plan_files: list
+    actual: str
+    observe_results: dict
+    error: str
+
+
+class PeHypothesizeInput(TypedDict, total=False):
+    """Minimal keys read by pe_hypothesize."""
+
+    ticket_description: str
+    actual: str
+    plan_files: list
+    new_files: list
+    approved_plan: str | None
+    error: str | None
+
+
+class PeHypothesizeOutput(TypedDict, total=False):
+    """Keys written by pe_hypothesize (superset of input)."""
+
+    ticket_description: str
+    actual: str
+    plan_files: list
+    new_files: list
+    approved_plan: str | None
+    error: str | None
+    hypotheses: list
+    hypothesis: dict | None
+    hypothesis_raw: str
+    hypothesis_error: str | None
+
+
+class PeImplementOutput(TypedDict, total=False):
+    """Keys written by pe_implement."""
+
+    hypotheses: list
+    hypothesis: dict | None
+    implement_result: str
+    implement_error: str | None
+    error: str
+
+
+class PeTestOutput(TypedDict, total=False):
+    """Keys written by pe_test."""
+
+    test_result: str
+    test_exit: int
+    error: str
+
+
+class PeCloseLoopOutput(TypedDict, total=False):
+    """Keys written by pe_close_loop."""
+
+    commit_result: str
+    goal_close_result: str
+    replan_count: int
+    escalate_reason: str
+    error: str
+
+
+# ── End phase contracts ────────────────────────────────────────────────────────
 
 _CC_QUEUE = Path.home() / "TheIgors" / "lab" / "claudecode" / "cc_queue.py"
 
@@ -2380,34 +2523,36 @@ class PeChain(IgorBase):
 
 
 # ── Module-level shims — preserve basket-passing API for debugger/tests ──────
+# Each shim is typed with the phase's contract TypedDict. The basket dict
+# satisfies the TypedDict structurally; extra keys are allowed.
 
 
-def pe_entry_init(basket: dict | None = None) -> dict:
-    return PeChain(basket=basket or {}).pe_entry_init()
+def pe_entry_init(basket: dict | None = None) -> PeEntryInitOutput:
+    return PeChain(basket=basket or {}).pe_entry_init()  # type: ignore[return-value]
 
 
-def pe_claim(basket: dict) -> dict:
-    return PeChain(basket=basket).pe_claim()
+def pe_claim(basket: PeEntryInitOutput) -> PeClaimOutput:
+    return PeChain(basket=basket).pe_claim()  # type: ignore[return-value]
 
 
-def pe_read_ticket(basket: dict) -> dict:
-    return PeChain(basket=basket).pe_read_ticket()
+def pe_read_ticket(basket: PeClaimOutput) -> PeReadTicketOutput:
+    return PeChain(basket=basket).pe_read_ticket()  # type: ignore[return-value]
 
 
-def pe_plan(basket: dict) -> dict:
-    return PeChain(basket=basket).pe_plan()
+def pe_plan(basket: PeReadTicketOutput) -> PePlanOutput:
+    return PeChain(basket=basket).pe_plan()  # type: ignore[return-value]
 
 
-def pe_filter(basket: dict) -> dict:
-    return PeChain(basket=basket).pe_filter()
+def pe_filter(basket: PePlanOutput) -> PeFilterOutput:
+    return PeChain(basket=basket).pe_filter()  # type: ignore[return-value]
 
 
-def pe_situate(basket: dict) -> dict:
-    return PeChain(basket=basket).pe_situate()
+def pe_situate(basket: PeFilterOutput) -> PeSituateOutput:
+    return PeChain(basket=basket).pe_situate()  # type: ignore[return-value]
 
 
-def pe_observe(basket: dict) -> dict:
-    return PeChain(basket=basket).pe_observe()
+def pe_observe(basket: PeSituateOutput) -> PeObserveOutput:
+    return PeChain(basket=basket).pe_observe()  # type: ignore[return-value]
 
 
 def pe_run_bash(basket: dict) -> dict:
@@ -2418,24 +2563,24 @@ def pe_store_observe_results(basket: dict) -> dict:
     return PeChain(basket=basket).pe_store_observe_results()
 
 
-def pe_hypothesize(basket: dict) -> dict:
-    return PeChain(basket=basket).pe_hypothesize()
+def pe_hypothesize(basket: PeHypothesizeInput) -> PeHypothesizeOutput:
+    return PeChain(basket=basket).pe_hypothesize()  # type: ignore[return-value]
 
 
-def pe_implement(basket: dict) -> dict:
-    return PeChain(basket=basket).pe_implement()
+def pe_implement(basket: PeHypothesizeOutput) -> PeImplementOutput:
+    return PeChain(basket=basket).pe_implement()  # type: ignore[return-value]
 
 
 def pe_probe(basket: dict) -> dict:
     return PeChain(basket=basket).pe_probe()
 
 
-def pe_close_loop(basket: dict) -> dict:
-    return PeChain(basket=basket).pe_close_loop()
+def pe_close_loop(basket: dict) -> PeCloseLoopOutput:
+    return PeChain(basket=basket).pe_close_loop()  # type: ignore[return-value]
 
 
-def pe_test(basket: dict, preflight: bool = False) -> dict:
-    return PeChain(basket=basket).pe_test(preflight=preflight)
+def pe_test(basket: dict, preflight: bool = False) -> PeTestOutput:
+    return PeChain(basket=basket).pe_test(preflight=preflight)  # type: ignore[return-value]
 
 
 def _evict_goal_ready_twm(ticket_id: str) -> None:
