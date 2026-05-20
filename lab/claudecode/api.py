@@ -6,7 +6,7 @@ rewrite business logic, just re-exports from the canonical scripts.
 
 Usage:
     from lab.claudecode.api import (
-        list_tickets, add_ticket, claim_ticket, done_ticket, block_ticket,
+        list_tickets, add_ticket, done_ticket, block_ticket,
         start_session, append_change, append_decision, finalize_session, show_session,
         post_message, read_messages,
         add_decision, show_decisions, get_decision,
@@ -33,7 +33,6 @@ if str(_CC_DIR) not in sys.path:
 from cc_queue import (
     cmd_list as _cq_list,
     cmd_add as _cq_add,
-    cmd_claim as claim_ticket,
     cmd_done as _cq_done,
     cmd_block as block_ticket,
     cmd_show as show_ticket,
