@@ -76,11 +76,26 @@ class TestNextTicketIdForWorkerMaxDifficulty:
         assert result != "T-over"
 
 
+def _make_mock_db_conn(ticket: dict):
+    """Return a mock psycopg2 connection that simulates the atomic claim for ticket."""
+    from unittest.mock import MagicMock
+
+    conn = MagicMock()
+    cur = MagicMock()
+    conn.cursor.return_value = cur
+    cur.fetchone.return_value = (dict(ticket),)
+    return conn
+
+
 class TestCmdNextMaxDifficultyFlag:
     def _cmd_next(self, args, tasks):
+        # cmd_next now does an atomic claim via _db_conn after finding the ticket.
+        # Mock _db_conn so the claim succeeds without a real DB.
+        first_task = tasks[0] if tasks else {}
+        mock_conn = _make_mock_db_conn(first_task)
         with patch.object(q, "_load", return_value=tasks), patch(
             "os.path.exists", return_value=False
-        ):
+        ), patch.object(q, "_db_conn", return_value=mock_conn):
             buf = io.StringIO()
             with patch("sys.stdout", buf):
                 q.cmd_next(args)

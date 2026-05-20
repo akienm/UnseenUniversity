@@ -1,38 +1,30 @@
-"""Tests for cc_queue.py cmd_claim worker check.
+"""Tests for cc_queue.py cmd_claim — removed, always raises LegacyDirectClaimError.
 
 # author-model: opus
 
-Original: pinned the cmd_claim source-line shape to enforce that pe_chain
-(no --as flag) cannot claim non-igor tickets — load-bearing for the
-cert_worker_freeze design (T-flip-igor-worker-tickets-during-cert).
+Original: tested the cert_worker_freeze design — worker routing through cmd_claim.
 
-Updated 2026-05-03 (T-cc-queue-claim-as-flag): cmd_claim now accepts an
-optional `--as <worker>` flag. Default remains 'igor' so pe_chain calls
-without the flag preserve the cert_worker_freeze gate. CC manual claims
-pass `--as claude` to claim claude-worker tickets explicitly.
-
-The four behavior cases tested:
-  (a) worker=igor, no flag    → success  (legacy pe_chain path)
-  (b) worker=claude, no flag  → reject   (cert freeze still blocks Igor)
-  (c) worker=claude, --as claude → success (new CC manual path)
-  (d) worker=igor, --as claude   → reject (cross-worker claim blocked)
+Updated 2026-05-20: cmd_claim is removed. Workers must use:
+    cc_queue.py next --worker <name>
+All four original claim-routing cases are obsolete. These tests now verify that
+any invocation of cmd_claim raises LegacyDirectClaimError unconditionally,
+regardless of worker, flags, or DB state.
 """
 
 from __future__ import annotations
 
-import json
+import importlib.util as _ilu
 import os
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 REPO = Path(__file__).resolve().parent.parent
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
-
-import importlib.util as _ilu
 
 _spec = _ilu.find_spec("lab.claudecode.cc_queue")
 CC_QUEUE = (
@@ -42,69 +34,11 @@ CC_QUEUE = (
 )
 del _ilu, _spec
 
-
-def _seeded_db_url() -> str | None:
-    """Return the test DB URL if one is set; tests skip otherwise."""
-    return os.environ.get("IGOR_HOME_DB_URL")
-
-
-def _seed_ticket(ticket_id: str, worker: str | None) -> None:
-    """Insert a pending ticket directly into clan.memories with the given worker."""
-    import psycopg2
-
-    conn = psycopg2.connect(_seeded_db_url())
-    try:
-        cur = conn.cursor()
-        # cc_queue.py reads tickets from clan.memories where parent_id = TICKETS_ROOT_ID.
-        # Import the constant rather than hardcoding it to stay in sync.
-        sys.path.insert(0, str(REPO))
-        from lab.claudecode.cc_queue import TICKETS_ROOT_ID
-
-        metadata = {
-            "id": ticket_id,
-            "title": f"Test ticket {ticket_id}",
-            "size": "S",
-            "status": "pending",
-            "worker": worker,
-            "tags": ["test"],
-            "kind": "ticket",
-            # Pre-stamp so cmd_claim skips Scraps (worker-routing tests don't
-            # care about Scraps; seed tickets have no description to validate).
-            "scraps_validated": "2026-01-01T00:00:00+00:00",
-        }
-        cur.execute(
-            "DELETE FROM clan.memories WHERE id = %s",
-            (ticket_id,),
-        )
-        cur.execute(
-            """
-            INSERT INTO clan.memories
-              (id, narrative, memory_type, parent_id, metadata, timestamp,
-               source, scope, confidence, updated_at)
-            VALUES (%s, %s, 'FACTUAL', %s, %s::jsonb, NOW(), 'cc_queue_test',
-                    'class', 1.0, NOW())
-            """,
-            (ticket_id, metadata["title"], TICKETS_ROOT_ID, json.dumps(metadata)),
-        )
-        conn.commit()
-    finally:
-        conn.close()
-
-
-def _cleanup_ticket(ticket_id: str) -> None:
-    import psycopg2
-
-    conn = psycopg2.connect(_seeded_db_url())
-    try:
-        cur = conn.cursor()
-        cur.execute("DELETE FROM clan.memories WHERE id = %s", (ticket_id,))
-        conn.commit()
-    finally:
-        conn.close()
+from lab.claudecode.cc_queue import LegacyDirectClaimError, cmd_claim
 
 
 def _run_claim(*args: str) -> subprocess.CompletedProcess:
-    """Invoke cc_queue.py claim against the live (test-schema) DB."""
+    """Invoke cc_queue.py claim via subprocess."""
     return subprocess.run(
         [sys.executable, str(CC_QUEUE), "claim", *args],
         capture_output=True,
@@ -113,54 +47,28 @@ def _run_claim(*args: str) -> subprocess.CompletedProcess:
     )
 
 
-@pytest.fixture
-def db_required():
-    if not _seeded_db_url():
-        pytest.skip("IGOR_HOME_DB_URL not set — claim-worker behavior tests skipped")
+class TestCmdClaimRemoved:
+    """cmd_claim always raises LegacyDirectClaimError — all routing logic is gone."""
 
+    def test_claim_always_raises_in_process(self):
+        """cmd_claim raises LegacyDirectClaimError in-process, no env flag required."""
+        with patch("lab.claudecode.cc_queue._igor_post", return_value=False):
+            with pytest.raises(LegacyDirectClaimError) as exc_info:
+                cmd_claim(["T-any-ticket"])
+        assert "next --worker" in str(exc_info.value)
 
-class TestCmdClaimWorkerCheck:
-    def test_igor_worker_no_flag_succeeds(self, db_required):
-        """Legacy pe_chain path — worker=igor + no --as flag → claim succeeds."""
-        tid = "T-test-claim-igor-noflag"
-        _seed_ticket(tid, "igor")
-        try:
-            r = _run_claim(tid)
-            assert r.returncode == 0, f"stdout={r.stdout!r} stderr={r.stderr!r}"
-            assert "Claimed" in r.stdout
-        finally:
-            _cleanup_ticket(tid)
+    def test_claim_subprocess_exits_nonzero(self):
+        """cc_queue.py claim via subprocess exits non-zero and prints the error."""
+        r = _run_claim("T-any-ticket")
+        assert r.returncode != 0
+        assert "LegacyDirectClaimError" in r.stderr or "no longer supported" in r.stderr
 
-    def test_claude_worker_no_flag_rejects(self, db_required):
-        """Cert-freeze gate — worker=claude + no --as flag → reject (default as=igor)."""
-        tid = "T-test-claim-claude-noflag"
-        _seed_ticket(tid, "claude")
-        try:
-            r = _run_claim(tid)
-            assert r.returncode != 0
-            assert "worker mismatch" in r.stdout or "not pending" in r.stdout
-        finally:
-            _cleanup_ticket(tid)
+    def test_claim_subprocess_with_as_flag_also_exits_nonzero(self):
+        """--as flag does not restore old behavior — claim is gone."""
+        r = _run_claim("T-any-ticket", "--as", "claude")
+        assert r.returncode != 0
 
-    def test_claude_worker_as_claude_succeeds(self, db_required):
-        """CC manual path — worker=claude + --as claude → claim succeeds."""
-        tid = "T-test-claim-claude-asclaude"
-        _seed_ticket(tid, "claude")
-        try:
-            r = _run_claim(tid, "--as", "claude")
-            assert r.returncode == 0, f"stdout={r.stdout!r} stderr={r.stderr!r}"
-            assert "Claimed" in r.stdout
-            assert "as claude" in r.stdout
-        finally:
-            _cleanup_ticket(tid)
-
-    def test_igor_worker_as_claude_rejects(self, db_required):
-        """Cross-worker claim — worker=igor + --as claude → reject."""
-        tid = "T-test-claim-igor-asclaude"
-        _seed_ticket(tid, "igor")
-        try:
-            r = _run_claim(tid, "--as", "claude")
-            assert r.returncode != 0
-            assert "worker mismatch" in r.stdout or "not pending" in r.stdout
-        finally:
-            _cleanup_ticket(tid)
+    def test_claim_subprocess_with_igor_worker_also_exits_nonzero(self):
+        """worker=igor path is also gone — no special case."""
+        r = _run_claim("T-any-ticket", "--as", "igor")
+        assert r.returncode != 0

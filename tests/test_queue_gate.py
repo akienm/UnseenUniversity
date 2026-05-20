@@ -83,21 +83,33 @@ def _cleanup_ticket(ticket_id: str) -> None:
         conn.close()
 
 
+def _make_mock_db_conn(ticket_id: str, metadata: dict):
+    """Return a mock psycopg2 connection that simulates the atomic claim SELECT+UPDATE."""
+    import json as _json
+
+    mock_conn = mock.MagicMock()
+    mock_cur = mock.MagicMock()
+    mock_conn.cursor.return_value = mock_cur
+    # Simulate SELECT ... FOR UPDATE returning the ticket metadata
+    mock_cur.fetchone.return_value = (dict(metadata),)
+    return mock_conn
+
+
 @unittest.skipUnless(_db_url(), "IGOR_HOME_DB_URL not set")
 class TestCmdNextDB(unittest.TestCase):
     """cmd_next returns correct ticket from real DB."""
 
     def setUp(self):
         self._ids = ["T-gate-test-hi", "T-gate-test-lo"]
-        _seed_ticket("T-gate-test-hi", priority=0.95)
-        _seed_ticket("T-gate-test-lo", priority=0.5)
+        _seed_ticket("T-gate-test-hi", priority=0.95, worker="igor")
+        _seed_ticket("T-gate-test-lo", priority=0.5, worker="igor")
 
     def tearDown(self):
         for tid in self._ids:
             _cleanup_ticket(tid)
 
     def test_next_returns_highest_priority(self):
-        """cmd_next with two candidates returns the higher-importance ticket."""
+        """cmd_next --worker igor returns the higher-importance ticket and claims it."""
         with tempfile.TemporaryDirectory() as tmpdir:
             gate_file = os.path.join(tmpdir, "queue_gate.json")
             with mock.patch.object(cc_queue, "GATE_FILE", gate_file):
@@ -105,7 +117,7 @@ class TestCmdNextDB(unittest.TestCase):
                 with mock.patch(
                     "builtins.print", side_effect=lambda *a: captured.append(str(a[0]))
                 ):
-                    cc_queue.cmd_next([])
+                    cc_queue.cmd_next(["--worker", "igor"])
                 self.assertEqual(len(captured), 1)
                 self.assertEqual(captured[0], "T-gate-test-hi")
 
@@ -120,9 +132,26 @@ class TestCmdNextGateFile(unittest.TestCase):
                 "status": "sprint",
                 "priority": 0.9,
                 "gate": None,
-                "worker": None,
+                "worker": "igor",
             }
         ]
+
+    def _mock_db_conn(self):
+        """Mock psycopg2 connection for the atomic claim step."""
+        conn = mock.MagicMock()
+        cur = mock.MagicMock()
+        conn.cursor.return_value = cur
+        cur.fetchone.return_value = (
+            {
+                "id": "T-a",
+                "title": "Test ticket T-a",
+                "status": "sprint",
+                "priority": 0.9,
+                "gate": None,
+                "worker": "igor",
+            },
+        )
+        return conn
 
     def test_returns_nothing_when_gate_tripped(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -144,7 +173,7 @@ class TestCmdNextGateFile(unittest.TestCase):
             ), mock.patch(
                 "builtins.print", side_effect=lambda *a: output.append(str(a[0]))
             ):
-                cc_queue.cmd_next([])
+                cc_queue.cmd_next(["--worker", "igor"])
 
             self.assertEqual(
                 output, [], "cmd_next should print nothing when gate is tripped"
@@ -158,10 +187,10 @@ class TestCmdNextGateFile(unittest.TestCase):
             output = []
             with mock.patch.object(cc_queue, "GATE_FILE", gate_file), mock.patch.object(
                 cc_queue, "_load", self._fake_load
-            ), mock.patch(
+            ), mock.patch.object(cc_queue, "_db_conn", self._mock_db_conn), mock.patch(
                 "builtins.print", side_effect=lambda *a: output.append(str(a[0]))
             ):
-                cc_queue.cmd_next([])
+                cc_queue.cmd_next(["--worker", "igor"])
 
             self.assertEqual(output, ["T-a"])
 
@@ -174,14 +203,15 @@ class TestCmdNextGateFile(unittest.TestCase):
             output = []
             with mock.patch.object(cc_queue, "GATE_FILE", gate_file), mock.patch.object(
                 cc_queue, "_load", self._fake_load
-            ), mock.patch(
+            ), mock.patch.object(cc_queue, "_db_conn", self._mock_db_conn), mock.patch(
                 "builtins.print", side_effect=lambda *a: output.append(str(a[0]))
             ):
-                cc_queue.cmd_next([])
+                cc_queue.cmd_next(["--worker", "igor"])
 
             self.assertEqual(output, ["T-a"], "corrupt gate file should not block next")
 
-    def test_skips_igor_worker_tickets(self):
+    def test_worker_igor_only_returns_igor_tickets(self):
+        """--worker igor only returns tickets with worker=igor."""
         tasks = [
             {
                 "id": "T-igor",
@@ -191,51 +221,84 @@ class TestCmdNextGateFile(unittest.TestCase):
                 "worker": "igor",
             },
             {
-                "id": "T-ok",
-                "status": "sprint",
-                "priority": 0.5,
-                "gate": None,
-                "worker": None,
-            },
-        ]
-        with tempfile.TemporaryDirectory() as tmpdir:
-            gate_file = os.path.join(tmpdir, "queue_gate.json")
-            output = []
-            with mock.patch.object(cc_queue, "GATE_FILE", gate_file), mock.patch.object(
-                cc_queue, "_load", lambda: tasks
-            ), mock.patch(
-                "builtins.print", side_effect=lambda *a: output.append(str(a[0]))
-            ):
-                cc_queue.cmd_next([])
-            self.assertEqual(output, ["T-ok"])
-
-    def test_skips_claude_worker_tickets(self):
-        tasks = [
-            {
                 "id": "T-claude",
                 "status": "sprint",
-                "priority": 0.99,
+                "priority": 0.9,
                 "gate": None,
                 "worker": "claude",
             },
-            {
-                "id": "T-ok",
-                "status": "sprint",
-                "priority": 0.5,
-                "gate": None,
-                "worker": None,
-            },
         ]
+        mock_conn = mock.MagicMock()
+        mock_cur = mock.MagicMock()
+        mock_conn.cursor.return_value = mock_cur
+        mock_cur.fetchone.return_value = (
+            {
+                "id": "T-igor",
+                "title": "Test igor ticket",
+                "status": "sprint",
+                "priority": 0.99,
+                "gate": None,
+                "worker": "igor",
+            },
+        )
         with tempfile.TemporaryDirectory() as tmpdir:
             gate_file = os.path.join(tmpdir, "queue_gate.json")
             output = []
             with mock.patch.object(cc_queue, "GATE_FILE", gate_file), mock.patch.object(
                 cc_queue, "_load", lambda: tasks
-            ), mock.patch(
+            ), mock.patch.object(cc_queue, "_db_conn", lambda: mock_conn), mock.patch(
                 "builtins.print", side_effect=lambda *a: output.append(str(a[0]))
             ):
-                cc_queue.cmd_next([])
-            self.assertEqual(output, ["T-ok"])
+                cc_queue.cmd_next(["--worker", "igor"])
+            self.assertEqual(output, ["T-igor"])
+
+    def test_worker_claude_only_returns_claude_tickets(self):
+        """--worker claude only returns tickets with worker=claude."""
+        tasks = [
+            {
+                "id": "T-igor",
+                "status": "sprint",
+                "priority": 0.99,
+                "gate": None,
+                "worker": "igor",
+            },
+            {
+                "id": "T-claude",
+                "status": "sprint",
+                "priority": 0.9,
+                "gate": None,
+                "worker": "claude",
+            },
+        ]
+        mock_conn = mock.MagicMock()
+        mock_cur = mock.MagicMock()
+        mock_conn.cursor.return_value = mock_cur
+        mock_cur.fetchone.return_value = (
+            {
+                "id": "T-claude",
+                "title": "Test claude ticket",
+                "status": "sprint",
+                "priority": 0.9,
+                "gate": None,
+                "worker": "claude",
+            },
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            gate_file = os.path.join(tmpdir, "queue_gate.json")
+            output = []
+            with mock.patch.object(cc_queue, "GATE_FILE", gate_file), mock.patch.object(
+                cc_queue, "_load", lambda: tasks
+            ), mock.patch.object(cc_queue, "_db_conn", lambda: mock_conn), mock.patch(
+                "builtins.print", side_effect=lambda *a: output.append(str(a[0]))
+            ):
+                cc_queue.cmd_next(["--worker", "claude"])
+            self.assertEqual(output, ["T-claude"])
+
+    def test_missing_worker_flag_exits_with_error(self):
+        """cmd_next without --worker exits 1 — direct claiming without worker is forbidden."""
+        with self.assertRaises(SystemExit) as cm:
+            cc_queue.cmd_next([])
+        self.assertEqual(cm.exception.code, 1)
 
 
 @unittest.skipUnless(_db_url(), "IGOR_HOME_DB_URL not set")
