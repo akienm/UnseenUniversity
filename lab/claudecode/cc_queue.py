@@ -1210,12 +1210,15 @@ def _priority_key(t):
         return 99.0
 
 
-def next_ticket_id_for_worker(worker: "str | None" = None) -> "str | None":
+def next_ticket_id_for_worker(
+    worker: "str | None" = None, max_difficulty: "int | None" = None
+) -> "str | None":
     """Return the highest-priority sprint ticket ID for a worker, or None.
 
-    worker=None    → daemon tickets (excludes igor and claude; legacy default)
-    worker='igor'  → tickets with worker='igor' only
-    worker='claude'→ tickets with worker='claude' only
+    worker=None         → daemon tickets (excludes igor and claude; legacy default)
+    worker='igor'       → tickets with worker='igor' only
+    worker='claude'     → tickets with worker='claude' only
+    max_difficulty=N    → only tickets where target_difficulty <= N (unset → treated as 1)
 
     Respects GATE_FILE circuit breaker — returns None when gate is tripped.
     Does NOT claim the ticket.
@@ -1245,6 +1248,10 @@ def next_ticket_id_for_worker(worker: "str | None" = None) -> "str | None":
             and not t.get("gate")
             and t.get("worker") == worker
         ]
+    if max_difficulty is not None:
+        candidates = [
+            t for t in candidates if t.get("target_difficulty", 1) <= max_difficulty
+        ]
     if not candidates:
         return None
     best = min(candidates, key=_priority_key)
@@ -1254,19 +1261,30 @@ def next_ticket_id_for_worker(worker: "str | None" = None) -> "str | None":
 def cmd_next(args):
     """Return highest-priority unclaimed sprint ticket for a worker.
 
-    --worker <name>: return next ticket for this specific worker (e.g. igor).
-    No flag: legacy daemon mode — skips worker=igor and worker=claude tickets.
+    --worker <name>:       return next ticket for this specific worker (e.g. igor).
+    --max-difficulty=N:    only return tickets where target_difficulty <= N.
+    No flags: legacy daemon mode — skips worker=igor and worker=claude tickets.
     Respects GATE_FILE circuit breaker — prints nothing when gate is tripped.
     Output: one ticket ID line, or nothing if gate tripped / queue empty.
     """
     worker_filter = None
+    max_difficulty = None
+
     if "--worker" in args:
         i = args.index("--worker")
         if i + 1 < len(args):
             worker_filter = args[i + 1]
             args = args[:i] + args[i + 2 :]
 
-    ticket_id = next_ticket_id_for_worker(worker_filter)
+    for arg in args:
+        if arg.startswith("--max-difficulty="):
+            try:
+                max_difficulty = int(arg.split("=", 1)[1])
+            except ValueError:
+                print(f"Invalid --max-difficulty value: {arg}", file=sys.stderr)
+                sys.exit(1)
+
+    ticket_id = next_ticket_id_for_worker(worker_filter, max_difficulty)
     if ticket_id:
         print(ticket_id)
 
