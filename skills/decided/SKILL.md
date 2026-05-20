@@ -123,6 +123,42 @@ python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py add /tmp/decided_batch_<decision-id>.js
 `cc_queue.py` is the canonical writer — always go through it so the slate
 echo and session record stay consistent.
 
+### 5.5. Draft consequence-check ticket (M/L/XL decisions, or S-only with behavioral hypothesis)
+
+When any ticket in the batch is M, L, or XL size — or the decision narrative explicitly mentions MEDIUM+ inertia files — or a behavioral hypothesis was extracted in Step 2.6 (Q2 answer is present) — draft a gated consequence-check follow-on ticket.
+
+**Skip when:** every ticket in the batch is S AND no behavioral hypothesis was extracted in Step 2.6 AND the decision narrative mentions no MEDIUM+ inertia files.
+
+**Gate field:** For M/L/XL or MEDIUM+ inertia decisions, use `<YYYY-MM-DD — 14 days from today>`. For S-only batches where the hypothesis triggered the ticket, set the gate to the ID of the last ticket in the batch (e.g., `T-<last-ticket-slug>`) so verification fires only after the batch ships.
+
+Consequence ticket shape:
+```python
+{
+  "id": "T-consequence-<D-slug>",
+  "title": "Consequence check: <decision summary, ≤60 chars>",
+  "size": "S",
+  "tags": ["Consequence", "Workflow"],
+  "description": (
+    "**What changed:** <one sentence from the decision summary>\n"
+    "**Predicted unintended effects:** <list from the pre-mortem pass — what could silently break, regress, or diverge>\n"
+    "**Signals to watch:** <specific log lines, behavioral changes, or metric shifts to look for>\n"
+    "**Gate condition:** Check by <YYYY-MM-DD 14 days from today> or when <observable event>.\n\n"
+    "**Affected files:** None — observation and verification only\n"
+    "**Design rules:** none apply\n"
+    "**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n"
+    "**Test plan:** no tests — this is an observation ticket"
+  ),
+  "decision_id": "D-...",
+  "gate": "<YYYY-MM-DD — 14 days from today>",   # compute with: date -d '+14 days' +%Y-%m-%d
+  "priority": 0.3,
+  "status": "sprint"
+}
+```
+
+The "Predicted unintended effects" field must come from reasoning about the decision at filing time — not boilerplate. Ask: what implicit assumptions does this change make? What could regress silently? What adjacent subsystems depend on behavior this touches?
+
+Run `/audit-ticket` on this draft before filing. File via `cc_queue.py add` alongside the batch (append to the same `/tmp/decided_batch_<D-id>.json` file, or add separately — either is fine).
+
 ### 6. Write to Igor memory palace
 
 Always create a decision node so the rollup loop can find it. Until
@@ -206,6 +242,7 @@ Multiple decisions in one session:
 - Every ticket in a /decided batch carries `decision_id` — no orphaned tickets.
 - /audit-ticket runs on EVERY draft, not just the first or biggest.
 - HIGH-inertia approvals land in the ticket body before filing; they are not kept in CC's conversational memory.
+- Every M/L/XL decision — and every S-only decision where Step 2.6 extracted a behavioral hypothesis — gets a consequence-check ticket (Step 5.5). Consequence-checking is tracked work, not an informal afterthought.
 
 ## Hard rules
 
