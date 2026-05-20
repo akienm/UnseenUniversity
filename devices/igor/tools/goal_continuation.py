@@ -14,7 +14,7 @@ run_goal_continuation():
   - Reads active GOAL from cortex (instance-scoped GOAL memories)
   - Checks current_step in goal metadata (default: 0)
   - Executes the appropriate mechanical step:
-      step 0: claim the ticket (cc_queue.py claim {ticket_id})
+      step 0: advance immediately (ticket pre-claimed atomically by cmd_next)
       step 1: show the ticket; parse grep_for field and store in goal metadata
       step 2: if grep_for present — run grep for each pattern, post results
               if grep_for absent  — skip (no-op, advance to step 3)
