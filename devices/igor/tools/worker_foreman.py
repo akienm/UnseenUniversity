@@ -311,25 +311,27 @@ def adopt_next_ticket() -> str:
             _tid = _active[0].metadata.get("source_message", "")[:60]
             return f"[adopt] active goal exists: {_tid} — skipping"
 
-        tasks = _load_queue()
-        if not tasks:
-            return "queue empty — nothing to adopt"
-        pending = [t for t in tasks if t.get("status") == "sprint"]
-        if not pending:
-            return "no sprint tickets"
-        pending_sorted = sorted(
-            pending,
-            key=lambda t: weighted_ticket_score(
-                t.get("priority", 99), t.get("tags", [])
-            ),
+        result = subprocess.run(
+            [
+                "python3",
+                str(_CC_QUEUE_SCRIPT),
+                "next",
+                "--worker",
+                "igor",
+                "--max-difficulty=1",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
-        pick = pending_sorted[0]
-        ticket_id = pick["id"]
+        ticket_id = result.stdout.strip()
+        if not ticket_id:
+            return "no eligible tickets (cmd_next returned empty)"
 
         from .ops import goal_adopt as _goal_adopt
 
         adopt_result = _goal_adopt(
-            f"work ticket {ticket_id}: {pick.get('title','')} [engram pickup]",
+            f"work ticket {ticket_id} [engram pickup]",
         )
 
         # Drive the coding chain in-process. Prefer the tool registry so other
