@@ -42,13 +42,15 @@ Proceed inline anyway? (y to claim CC-side, or fire the delegate)
 
 When no match: silent — proceed to Step 2 directly.
 
-### 2. Claim ticket
+### 2. Confirm ticket is in_progress
+
+Tickets arrive pre-claimed — cmd_next atomically marks the ticket in_progress
+before handing it to the sprint runner. Verify it is in the expected state:
 ```bash
-python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py claim <id>
+python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py show <id> | grep '"status"'
 ```
-Always claim before working — the claim marks the ticket in-progress so the
-queue and slate reflect active work. Then add the ticket ID to today's slate
-under `## Planned` or `## Ad hoc`.
+If status is not `in_progress`, something went wrong — do not proceed; surface
+to Akien. Then add the ticket ID to today's slate under `## Planned` or `## Ad hoc`.
 
 ### 3. Select executor
 - **CC inline**: default for code changes in this repo

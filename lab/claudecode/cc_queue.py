@@ -25,7 +25,6 @@ Usage:
     cc_queue.py list --gated                  — include gated tickets in the list
     cc_queue.py list --by-decision            — group output by decision_id
     cc_queue.py add <json-file>               — add task from JSON file (defaults to triage)
-    cc_queue.py claim <id>                    — mark task in_progress
     cc_queue.py done <id> <msg>               — mark task awaiting_validation (Igor's submit path)
     cc_queue.py close <id> <msg>              — mark task closed (CC's validated-close path)
     cc_queue.py block <id> <msg>              — mark task hold with reason
@@ -34,7 +33,7 @@ Usage:
     cc_queue.py log <msg>                     — append a free-form log entry
     cc_queue.py flush_decision <id> <summary> — flush decision to Igor memory
     cc_queue.py flush_session <session> <summary> — flush session blob to Igor memory
-    cc_queue.py next                              — highest-priority unclaimed sprint ticket (respects gate file)
+    cc_queue.py next --worker <name> [--max-difficulty=N]  — claim+return highest-priority sprint ticket for worker; errors if --worker omitted
     cc_queue.py worker-launch                     — ensure worker daemon is running (spawns konsole if not)
     cc_queue.py reset [--timeout] <id>           — reset one ticket from in_progress → sprint; --timeout increments counter, trips gate at 3
     cc_queue.py reset-stale                       — reset all in_progress tickets → sprint (daemon startup cleanup)
@@ -351,75 +350,30 @@ def cmd_show(args):
 
 
 class LegacyDirectClaimError(Exception):
-    """Raised when old code tries to claim a ticket by ID without going through cmd_next.
+    """Raised unconditionally when any code calls cmd_claim directly.
 
-    Future trip-wire: arm by passing --legacy-raise to cmd_claim from Igor's
-    tool chain once all callers are migrated to next_ticket_id_for_worker().
+    Direct claiming is removed. Workers must request tickets via:
+        cc_queue.py next --worker <name>
+    cmd_next atomically finds and marks the ticket in_progress in one step.
     """
 
 
 def cmd_claim(args):
-    # IGOR_STRICT_CLAIM_MODEL=1: trip-wire armed by adopt_next_ticket before
-    # pe_chain runs. Any direct cmd_claim inside the Igor tool chain raises here.
-    if os.environ.get("IGOR_STRICT_CLAIM_MODEL") == "1":
-        msg = (
-            "Direct ticket claiming is deprecated — "
-            "use cmd_next --max-difficulty=N to request tickets."
-        )
+    """cmd_claim is no longer supported — use: cc_queue.py next --worker <name>"""
+    msg = (
+        "cmd_claim is no longer supported. "
+        "Workers must request tickets via: cc_queue.py next --worker <name>\n"
+        "cmd_next atomically finds and claims the next ticket in one step. "
+        "If you see this error, a caller is using the removed direct-claim path."
+    )
+    _log({"action": "legacy_direct_claim_attempt", "args": str(args)})
+    try:
         _igor_post(
             f"[CLAIM_BLOCKED] LegacyDirectClaimError: {msg}", tag="legacy_direct_claim"
         )
-        _log({"action": "legacy_direct_claim_blocked", "args": str(args)})
-        raise LegacyDirectClaimError(msg)
-
-    # --legacy-raise: surface old direct-claim callers before removal.
-    # Trip-wire stub — not yet armed in Igor's tool chain.
-    if "--legacy-raise" in args:
-        msg = (
-            "LegacyDirectClaimError: direct ticket claim is deprecated — "
-            "use next_ticket_id_for_worker('igor') / cmd_next --worker igor "
-            "to select the next ticket, then claim it."
-        )
-        print(msg)
-        sys.exit(2)
-
-    # --as <worker> selects the claiming worker. Default 'igor' preserves
-    # the cert_worker_freeze design (pe_chain claims without the flag stay
-    # gated to worker=igor tickets). CC manual claims pass --as claude.
-    as_worker = "igor"
-    if "--as" in args:
-        i = args.index("--as")
-        if i + 1 >= len(args):
-            print("Usage: claim <id> [--as <worker>]")
-            sys.exit(1)
-        as_worker = args[i + 1]
-        args = args[:i] + args[i + 2 :]
-    if not args:
-        print("Usage: claim <id> [--as <worker>]")
-        sys.exit(1)
-    tasks = _load()
-    t = _find(tasks, args[0])
-    if not t:
-        print(f"Task {args[0]} not found.")
-        sys.exit(1)
-    if t["status"] not in ("pending", "sprint") or (
-        t.get("worker") and t.get("worker") != as_worker
-    ):
-        print(
-            f"Task {args[0]} is {t['status']} or worker mismatch "
-            f"(ticket worker={t.get('worker')!r}, claiming as={as_worker!r})."
-        )
-        sys.exit(1)
-    if not t.get("scraps_validated"):
-        if not _scraps_validate(t):
-            print(f"Scraps blocked claim of {args[0]} — fix issues above.")
-            sys.exit(1)
-    t["status"] = "in_progress"
-    t["title"] = _with_status_prefix("in_progress", t["title"])
-    t["claimed_at"] = _now()
-    _save(tasks)
-    _log({"action": "claim", "id": args[0], "title": t["title"], "as": as_worker})
-    print(f"Claimed {args[0]} as {as_worker}: {t['title']}")
+    except Exception:
+        pass
+    raise LegacyDirectClaimError(msg)
 
 
 def _close_igor_goal(ticket_id: str) -> None:
@@ -1211,17 +1165,15 @@ def _priority_key(t):
 
 
 def next_ticket_id_for_worker(
-    worker: "str | None" = None, max_difficulty: "int | None" = None
+    worker: str, max_difficulty: "int | None" = None
 ) -> "str | None":
     """Return the highest-priority sprint ticket ID for a worker, or None.
 
-    worker=None         → daemon tickets (excludes igor and claude; legacy default)
-    worker='igor'       → tickets with worker='igor' only
-    worker='claude'     → tickets with worker='claude' only
+    worker must be supplied — 'igor', 'claude', or another named worker.
     max_difficulty=N    → only tickets where target_difficulty <= N (unset → treated as 1)
 
     Respects GATE_FILE circuit breaker — returns None when gate is tripped.
-    Does NOT claim the ticket.
+    Does NOT claim the ticket — cmd_next performs the atomic claim.
     """
     if os.path.exists(GATE_FILE):
         try:
@@ -1232,22 +1184,13 @@ def next_ticket_id_for_worker(
             pass  # corrupt gate file → treat as not tripped
 
     tasks = _load()
-    if worker is None:
-        candidates = [
-            t
-            for t in tasks
-            if t.get("status") == "sprint"
-            and not t.get("gate")
-            and t.get("worker") not in ("igor", "claude")
-        ]
-    else:
-        candidates = [
-            t
-            for t in tasks
-            if t.get("status") == "sprint"
-            and not t.get("gate")
-            and t.get("worker") == worker
-        ]
+    candidates = [
+        t
+        for t in tasks
+        if t.get("status") == "sprint"
+        and not t.get("gate")
+        and t.get("worker") == worker
+    ]
     if max_difficulty is not None:
         candidates = [
             t for t in candidates if t.get("target_difficulty", 1) <= max_difficulty
@@ -1259,24 +1202,37 @@ def next_ticket_id_for_worker(
 
 
 def cmd_next(args):
-    """Return highest-priority unclaimed sprint ticket for a worker.
+    """Claim and return the highest-priority sprint ticket for a worker.
 
-    --worker <name>:       return next ticket for this specific worker (e.g. igor).
+    --worker <name>:       required — worker requesting a ticket (e.g. igor, claude).
     --max-difficulty=N:    only return tickets where target_difficulty <= N.
-    No flags: legacy daemon mode — skips worker=igor and worker=claude tickets.
+
+    Errors (exit 1) when --worker is omitted — direct claiming without a worker name
+    is no longer allowed.  Atomically marks the ticket in_progress before printing
+    its ID so no other worker can race for the same ticket.
     Respects GATE_FILE circuit breaker — prints nothing when gate is tripped.
     Output: one ticket ID line, or nothing if gate tripped / queue empty.
     """
+    if "--worker" not in args:
+        print(
+            "ERROR: cc_queue.py next requires --worker <name>.\n"
+            "Usage: cc_queue.py next --worker <name> [--max-difficulty=N]",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     worker_filter = None
     max_difficulty = None
+    remaining = list(args)
 
-    if "--worker" in args:
-        i = args.index("--worker")
-        if i + 1 < len(args):
-            worker_filter = args[i + 1]
-            args = args[:i] + args[i + 2 :]
+    i = remaining.index("--worker")
+    if i + 1 >= len(remaining):
+        print("ERROR: --worker requires a value.", file=sys.stderr)
+        sys.exit(1)
+    worker_filter = remaining[i + 1]
+    del remaining[i : i + 2]
 
-    for arg in args:
+    for arg in remaining:
         if arg.startswith("--max-difficulty="):
             try:
                 max_difficulty = int(arg.split("=", 1)[1])
@@ -1285,8 +1241,51 @@ def cmd_next(args):
                 sys.exit(1)
 
     ticket_id = next_ticket_id_for_worker(worker_filter, max_difficulty)
-    if ticket_id:
-        print(ticket_id)
+    if not ticket_id:
+        return
+
+    # Atomically mark in_progress so no other worker can race for this ticket.
+    import psycopg2
+
+    conn = _db_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT metadata FROM clan.memories WHERE id = %s FOR UPDATE",
+            (ticket_id,),
+        )
+        row = cur.fetchone()
+        if not row or not row[0]:
+            conn.rollback()
+            return
+        t = dict(row[0])
+        t.pop("kind", None)
+        if t.get("status") != "sprint":
+            conn.rollback()
+            return  # another worker claimed it between our read and lock
+        now = _now()
+        t["status"] = "in_progress"
+        t["title"] = _with_status_prefix("in_progress", t["title"])
+        t["claimed_at"] = now
+        metadata = dict(t)
+        metadata["kind"] = "ticket"
+        cur.execute(
+            """UPDATE clan.memories SET
+                metadata = %s::jsonb,
+                narrative = %s,
+                updated_at = %s
+            WHERE id = %s""",
+            (json.dumps(metadata), _narrative_for(t), now, ticket_id),
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+    _log({"action": "claim_via_next", "id": ticket_id, "worker": worker_filter})
+    print(ticket_id)
 
 
 def cmd_reset(args):
