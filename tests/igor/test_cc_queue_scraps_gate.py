@@ -1,10 +1,11 @@
-"""Tests for T-cc-queue-scraps-gate — Scraps pre-flight in cmd_add and cmd_claim.
+"""Tests for T-cc-queue-scraps-gate — Scraps pre-flight in cmd_add.
 
+Scraps validation lives entirely in cmd_add — never in cmd_claim (removed).
 Four cases from the test plan:
   1. add with empty description → Scraps issues printed, ticket not added
   2. valid ticket add → passes, metadata contains scraps_validated timestamp
-  3. Scraps offline during claim → warning printed, transition proceeds
-  4. claim on already-validated ticket → Scraps not called (no redundant call)
+  3. Scraps offline during add → warning printed, ticket still added
+  4. cmd_claim always raises LegacyDirectClaimError (claim path removed)
 
 # author-model: claude-sonnet-4-6
 """
@@ -22,7 +23,12 @@ _REPO = Path(__file__).resolve().parent.parent
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-from lab.claudecode.cc_queue import _scraps_validate, cmd_add, cmd_claim
+from lab.claudecode.cc_queue import (
+    LegacyDirectClaimError,
+    _scraps_validate,
+    cmd_add,
+    cmd_claim,
+)
 
 
 def _make_ticket(**kwargs) -> dict:
@@ -122,64 +128,22 @@ class TestCmdAddScrapsGate:
         assert "Scraps offline" in out
 
 
-class TestCmdClaimScrapsGate:
-    def _seed_and_claim(
-        self, ticket: dict, claim_args: list[str] | None = None
-    ) -> tuple[list, str, int]:
-        """Seed a ticket then call cmd_claim; return (tasks, stdout, exit_code)."""
-        import copy
+class TestCmdClaimRemoved:
+    """cmd_claim is removed — always raises LegacyDirectClaimError.
 
-        tasks = [copy.deepcopy(ticket)]
-        saved: list[dict] = []
-        exit_code = 0
+    Scraps validation now lives entirely in cmd_add (at add-time).
+    Workers must use: cc_queue.py next --worker <name>
+    """
 
-        def mock_load():
-            return list(tasks)
+    def test_cmd_claim_always_raises(self):
+        """cmd_claim raises LegacyDirectClaimError unconditionally."""
+        with patch("lab.claudecode.cc_queue._igor_post", return_value=False):
+            with pytest.raises(LegacyDirectClaimError) as exc_info:
+                cmd_claim(["T-test-scraps-gate"])
+        assert "next --worker" in str(exc_info.value)
 
-        def mock_save(ts):
-            saved.extend(copy.deepcopy(ts))
-
-        buf = StringIO()
-        args = claim_args or [ticket["id"], "--as", "claude"]
-        try:
-            with (
-                patch("lab.claudecode.cc_queue._load", mock_load),
-                patch("lab.claudecode.cc_queue._save", mock_save),
-                patch("lab.claudecode.cc_queue._log"),
-                patch("sys.stdout", buf),
-            ):
-                cmd_claim(args)
-        except SystemExit as e:
-            exit_code = int(e.code or 0)
-
-        return saved, buf.getvalue(), exit_code
-
-    def test_claim_offline_scraps_proceeds(self):
-        ticket = _make_ticket()
-        with patch(
-            "devices.scraps.scraps_device.ScrapsDevice",
-            side_effect=Exception("offline"),
-        ):
-            saved, out, code = self._seed_and_claim(ticket)
-        assert code == 0, f"offline Scraps must not block claim, out={out!r}"
-        assert "Scraps offline" in out
-        assert any(t.get("status") == "in_progress" for t in saved)
-
-    def test_already_validated_skips_scraps_call(self):
-        """If scraps_validated is set, ScrapsDevice must not be called."""
-        ticket = _make_ticket(scraps_validated="2026-05-19T12:00:00+00:00")
-        mock_device = MagicMock()
-        with patch(
-            "devices.scraps.scraps_device.ScrapsDevice", return_value=mock_device
-        ):
-            saved, out, code = self._seed_and_claim(ticket)
-        mock_device.validate_ticket.assert_not_called()
-        assert code == 0
-        assert any(t.get("status") == "in_progress" for t in saved)
-
-    def test_invalid_ticket_blocks_claim(self):
-        ticket = _make_ticket(description="")
-        saved, out, code = self._seed_and_claim(ticket)
-        assert code != 0, "invalid ticket must block claim"
-        assert "Scraps validation failed" in out
-        assert not any(t.get("status") == "in_progress" for t in saved)
+    def test_cmd_claim_raises_even_with_valid_ticket(self):
+        """cmd_claim raises even when the ticket would otherwise be valid."""
+        with patch("lab.claudecode.cc_queue._igor_post", return_value=False):
+            with pytest.raises(LegacyDirectClaimError):
+                cmd_claim(["T-test-scraps-gate", "--as", "claude"])

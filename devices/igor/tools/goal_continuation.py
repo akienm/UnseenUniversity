@@ -224,35 +224,18 @@ class GoalContinuation(IgorBase):
                 )
 
             if step == 0:
-                # Step 0: claim the ticket
+                # Step 0: ticket was pre-claimed atomically by cmd_next — advance to step 1.
+                # Direct claiming is removed; if a ticket ID is present it is already
+                # in_progress before goal_continuation ever sees it.
                 if ticket_id:
-                    # Claim attempt cap: crash+restart must not re-claim indefinitely.
-                    attempts = int(goal.metadata.get("claim_attempt_count", 0))
-                    if attempts >= _MAX_CLAIM_ATTEMPTS:
-                        self.log.info(
-                            f"STEP0 cap: claim_attempt_count={attempts} >= {_MAX_CLAIM_ATTEMPTS}"
-                            f" for {ticket_id} — manual intervention required"
-                        )
-                        _post_to_channel(
-                            f"[GOAL BLOCKED] {ticket_id} — claim attempt cap reached"
-                            f" ({attempts} attempts). Manual intervention needed."
-                        )
-                        return (
-                            f"[goal_continuation] claim attempt cap for {ticket_id}"
-                            f" ({attempts} attempts)"
-                        )
-                    goal.metadata["claim_attempt_count"] = attempts + 1
-                    out = self._run_bash(
-                        ["python3", str(_CC_QUEUE), "claim", ticket_id]
-                    )
-                    msg = f"[GOAL STEP 0] Claiming {ticket_id}: {out[:200]}"
+                    msg = f"[GOAL STEP 0] {ticket_id} pre-claimed via cmd_next — advancing"
                     _post_to_channel(msg)
                     goal.metadata["current_step"] = 1
                     cortex.store(goal)
                     self.log.info(
-                        f"STEP0 ticket={ticket_id} attempt={attempts + 1} result={out[:80]}"
+                        f"STEP0 ticket={ticket_id} pre-claimed, advancing to step 1"
                     )
-                    return f"[goal_continuation] claimed {ticket_id}: {out[:80]}"
+                    return f"[goal_continuation] {ticket_id} pre-claimed, advancing to step 1"
                 else:
                     # No ticket ID — skip straight to ready
                     msg = f"[GOAL ACTIVE] {task[:100]} — no ticket ID found, ready for LLM planning"
