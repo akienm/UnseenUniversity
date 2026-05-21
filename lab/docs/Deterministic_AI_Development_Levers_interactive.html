@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Levers — Interactive Spec</title>
+  <style>
+    :root {
+      --bg: #1a1a2e; --surface: #16213e; --card: #0f3460;
+      --accent: #e94560; --text: #eaeaea; --muted: #9ca3af;
+      --border: #2d3748; --link: #60a5fa; --green: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif;
+           font-size: 15px; line-height: 1.7; }
+
+    /* Nav */
+    nav { background: var(--surface); border-bottom: 1px solid var(--border);
+          position: sticky; top: 0; z-index: 100; padding: 0 1.5rem; }
+    nav ul { display: flex; list-style: none; gap: 0; overflow-x: auto; }
+    nav li a { display: block; padding: .9rem 1.1rem; color: var(--muted); text-decoration: none;
+               font-size: .82rem; font-weight: 500; white-space: nowrap;
+               border-bottom: 2px solid transparent; transition: all .2s; }
+    nav li a:hover, nav li a.active { color: var(--text); border-bottom-color: var(--accent); }
+
+    main { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    section { display: none; }
+    section.active { display: block; }
+
+    h1 { font-size: 1.7rem; font-weight: 700; margin-bottom: .25rem; }
+    .subtitle { color: var(--muted); font-size: .875rem; margin-bottom: 1.5rem; }
+    h2 { font-size: 1.15rem; font-weight: 600; color: var(--accent);
+         margin: 1.75rem 0 .6rem; padding-bottom: .3rem; border-bottom: 1px solid var(--border); }
+    p { margin-bottom: .85rem; }
+    a { color: var(--link); }
+    ul, ol { padding-left: 1.4rem; margin-bottom: .85rem; }
+    li { margin-bottom: .25rem; }
+    code { background: var(--card); padding: .1em .3em; border-radius: 3px;
+           font-size: .875em; font-family: monospace; color: #f9a8d4; }
+    pre { background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+          padding: 1rem; overflow-x: auto; margin-bottom: 1rem; white-space: pre-wrap; }
+
+    /* Control panel */
+    .ctrl-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+                padding: 1rem 1.25rem; margin-bottom: 1.75rem; display: flex;
+                align-items: center; gap: .75rem; flex-wrap: wrap; }
+    .ctrl-bar span { color: var(--muted); font-size: .82rem; margin-right: .25rem; }
+    .btn { padding: .45rem .9rem; border-radius: 5px; border: none; cursor: pointer;
+           font-size: .82rem; font-weight: 600; transition: opacity .15s; }
+    .btn:hover { opacity: .85; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+    .btn-copy { background: var(--green); color: #fff; }
+    .copied { background: #374151 !important; color: var(--muted) !important; }
+    .toggle-all { display: flex; gap: .4rem; margin-left: auto; }
+
+    /* Lever card */
+    .lever-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+                  padding: 1.1rem 1.25rem; margin-bottom: .75rem;
+                  display: flex; gap: 1rem; align-items: flex-start; }
+    .lever-card.disabled { opacity: .45; }
+    .toggle-wrap { flex-shrink: 0; margin-top: .2rem; }
+    .toggle { position: relative; display: inline-block; width: 38px; height: 22px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+              background: #374151; border-radius: 22px; transition: .2s; }
+    .slider::before { position: absolute; content: ""; height: 14px; width: 14px; left: 4px;
+                      bottom: 4px; background: #fff; border-radius: 50%; transition: .2s; }
+    input:checked + .slider { background: var(--green); }
+    input:checked + .slider::before { transform: translateX(16px); }
+    .lever-body { flex: 1; }
+    .lever-header { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .35rem; }
+    .lever-num { color: var(--accent); font-weight: 700; font-size: .85rem; min-width: 1.5rem; }
+    .lever-name { font-weight: 600; font-size: .95rem; }
+    .lever-desc { font-size: .875rem; color: var(--muted); line-height: 1.5; }
+    .lever-tags { margin-top: .4rem; display: flex; gap: .35rem; flex-wrap: wrap; }
+    .tag { font-size: .68rem; padding: .1em .5em; border-radius: 3px; font-weight: 600;
+           background: rgba(96,165,250,.12); color: var(--link); border: 1px solid rgba(96,165,250,.25); }
+
+    /* Output textarea */
+    .output-area { width: 100%; min-height: 180px; background: var(--card);
+                   border: 1px solid var(--border); border-radius: 6px; color: var(--text);
+                   font-family: monospace; font-size: .82rem; padding: .85rem; resize: vertical;
+                   line-height: 1.5; margin-top: .75rem; }
+    .output-label { font-size: .8rem; color: var(--muted); margin-bottom: .3rem; }
+
+    @media (max-width: 600px) {
+      nav li a { padding: .7rem .55rem; font-size: .77rem; }
+      main { padding: 1.25rem 1rem 3rem; }
+      .lever-card { flex-direction: column; gap: .5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <ul>
+    <li><a href="#" data-section="configure" class="active">Configure</a></li>
+    <li><a href="#" data-section="export">Export</a></li>
+    <li><a href="#" data-section="about">About</a></li>
+  </ul>
+</nav>
+
+<main>
+
+<!-- ── CONFIGURE ── -->
+<section id="configure" class="active">
+  <h1>Levers — Interactive Spec</h1>
+  <p class="subtitle">Toggle levers on/off, then export a JSON config or a copy-as-prompt string. Changes are reflected live in the Export tab.</p>
+
+  <div class="ctrl-bar">
+    <span>Presets:</span>
+    <button class="btn btn-secondary" onclick="applyPreset('all')">All on</button>
+    <button class="btn btn-secondary" onclick="applyPreset('minimal')">Minimal</button>
+    <button class="btn btn-secondary" onclick="applyPreset('autonomous')">Autonomous sprint</button>
+    <div class="toggle-all">
+      <button class="btn btn-secondary" onclick="applyPreset('none')">Disable all</button>
+    </div>
+  </div>
+
+  <div id="lever-list"></div>
+</section>
+
+<!-- ── EXPORT ── -->
+<section id="export">
+  <h1>Export</h1>
+  <p class="subtitle">Copy the current configuration as JSON or as a natural-language prompt.</p>
+
+  <h2>Copy as JSON</h2>
+  <p>Paste into another Claude Code session, a config file, or a tool that reads lever configs.</p>
+  <button class="btn btn-copy" id="btn-copy-json" onclick="copyJSON()">Copy JSON</button>
+  <div class="output-label" style="margin-top:.75rem">Preview:</div>
+  <pre id="json-preview"></pre>
+
+  <h2>Copy as Prompt</h2>
+  <p>A natural-language instruction block listing every enabled lever — paste at the start of a new session to load the configuration.</p>
+  <button class="btn btn-copy" id="btn-copy-prompt" onclick="copyPrompt()">Copy Prompt</button>
+  <div class="output-label" style="margin-top:.75rem">Preview:</div>
+  <pre id="prompt-preview"></pre>
+</section>
+
+<!-- ── ABOUT ── -->
+<section id="about">
+  <h1>About</h1>
+  <p class="subtitle">How this interactive spec works</p>
+  <p>Each lever corresponds to one of the keystone patterns in the <strong>Deterministic AI Development: Levers</strong> document. Toggle any subset on/off, then use the Export tab to generate a JSON config or a copy-as-prompt string.</p>
+  <p>The <strong>JSON format</strong> is:</p>
+  <pre>{"levers": {"lever-id": true|false, ...}, "preset": "custom"}</pre>
+  <p>The <strong>copy-as-prompt format</strong> begins with a brief preamble followed by a bulleted list of enabled levers with one-line descriptions — suitable for pasting at the start of a Claude Code session.</p>
+  <p>Source document: <a href="Deterministic_AI_Development_Levers_A_layer_on_top_of_skills.html">Levers HTML doc</a> · Template: <a href="html_spec_template.html">html_spec_template.html</a></p>
+</section>
+
+</main>
+
+<script>
+// ── Lever definitions ──────────────────────────────────────────────────────
+const LEVERS = [
+  {
+    id: "notebook",
+    num: 1,
+    name: "A Notebook",
+    desc: "Maintain a text file for ideas, key moments, and commands to paste. Context is disposable; the notebook is durable.",
+    tags: ["state", "context"],
+    presets: { minimal: true, autonomous: false }
+  },
+  {
+    id: "architectural-experience",
+    num: 2,
+    name: "Architectural Experience",
+    desc: "Apply human architectural judgement: centralize concerns, prevent reuse of stale info, redirect when Claude goes deep on the wrong path.",
+    tags: ["oversight", "design"],
+    presets: { minimal: true, autonomous: false }
+  },
+  {
+    id: "process",
+    num: 3,
+    name: "Process from the Start",
+    desc: "Design → audit → test (TDD, no flaky tests) → ticket → sprint → close. Claude follows checklists reliably; invest in the process.",
+    tags: ["workflow", "quality"],
+    presets: { minimal: true, autonomous: true }
+  },
+  {
+    id: "external-state",
+    num: 4,
+    name: "Project State Outside the Context",
+    desc: "All state in Postgres with embeddings. Ticket state written into titles. Semantic search costs zero tokens. Context is disposable.",
+    tags: ["state", "database"],
+    presets: { minimal: true, autonomous: true }
+  },
+  {
+    id: "tooling",
+    num: 5,
+    name: "Tooling and Automation",
+    desc: "Audits, MCP, capabilities, logging tree. Wrap behavior in a named capability — most certain way to get an LLM to do something exactly as intended.",
+    tags: ["tooling", "workflow"],
+    presets: { minimal: false, autonomous: true }
+  },
+  {
+    id: "powerful-questions",
+    num: 6,
+    name: "Powerful Questions",
+    desc: "At every design boundary ask: What have I left out? What could we do better? How do other people do this? These surface gaps nothing else finds.",
+    tags: ["design", "quality"],
+    presets: { minimal: true, autonomous: false }
+  },
+  {
+    id: "rob",
+    num: 7,
+    name: "Rob (Persona Riding)",
+    desc: "Ask Claude to embody a developer who is grateful to finally have QA. Ride on Rob's shoulder across day-to-day activities to expose gaps.",
+    tags: ["qa", "persona"],
+    presets: { minimal: false, autonomous: false }
+  },
+  {
+    id: "claude-session-hygiene",
+    num: 8,
+    name: "Claude Session Hygiene",
+    desc: "Compact+preserve on context boundaries. Watch for impatience and deferred work. Use /advisor, /loop, /schedule as meta-tools.",
+    tags: ["sessions", "context"],
+    presets: { minimal: true, autonomous: true }
+  },
+  {
+    id: "skills-workflow",
+    num: 9,
+    name: "Skills-Based Workflow",
+    desc: "Everything wrapped in a skill: /decided, /sprint-batch, /context-load, /day-close. Skills are checklists — Claude follows them reliably.",
+    tags: ["workflow", "skills"],
+    presets: { minimal: true, autonomous: true }
+  },
+  {
+    id: "hypothesis-consequence",
+    num: 10,
+    name: "Hypothesis Extraction & Consequence Checking",
+    desc: "Every /decided extracts a testable hypothesis (3 questions). M/L/XL decisions get a gated consequence-check ticket. Consequence-checking is tracked work.",
+    tags: ["design", "hypothesis"],
+    presets: { minimal: false, autonomous: true }
+  },
+  {
+    id: "encapsulation",
+    num: 11,
+    name: "Encapsulation as Design Principle",
+    desc: "Workers request work via black-box interfaces. Dispatch IS assignment. audit-design Check 10 detects subsystems reaching across boundaries they shouldn't.",
+    tags: ["architecture", "design"],
+    presets: { minimal: false, autonomous: true }
+  },
+  {
+    id: "goal-tracking",
+    num: 12,
+    name: "Serious Goal Tracking",
+    desc: "Goals tracked in DB with G-xxx IDs. Every /decided links to a goal. Creates a traceable line: goal → hypothesis → decision → ticket → commit.",
+    tags: ["goals", "tracking"],
+    presets: { minimal: false, autonomous: true }
+  }
+];
+
+// ── State ──────────────────────────────────────────────────────────────────
+const state = {};
+LEVERS.forEach(l => { state[l.id] = true; });
+
+// ── Render levers ──────────────────────────────────────────────────────────
+function renderLevers() {
+  const container = document.getElementById('lever-list');
+  container.innerHTML = '';
+  LEVERS.forEach(lever => {
+    const card = document.createElement('div');
+    card.className = 'lever-card' + (state[lever.id] ? '' : ' disabled');
+    card.id = 'card-' + lever.id;
+    card.innerHTML = `
+      <div class="toggle-wrap">
+        <label class="toggle">
+          <input type="checkbox" ${state[lever.id] ? 'checked' : ''}
+                 onchange="toggle('${lever.id}', this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="lever-body">
+        <div class="lever-header">
+          <span class="lever-num">${lever.num}.</span>
+          <span class="lever-name">${lever.name}</span>
+        </div>
+        <div class="lever-desc">${lever.desc}</div>
+        <div class="lever-tags">${lever.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// ── Toggle ─────────────────────────────────────────────────────────────────
+function toggle(id, checked) {
+  state[id] = checked;
+  const card = document.getElementById('card-' + id);
+  card.className = 'lever-card' + (checked ? '' : ' disabled');
+  refreshExport();
+}
+
+// ── Presets ────────────────────────────────────────────────────────────────
+const PRESETS = {
+  all:        () => LEVERS.forEach(l => { state[l.id] = true; }),
+  none:       () => LEVERS.forEach(l => { state[l.id] = false; }),
+  minimal:    () => LEVERS.forEach(l => { state[l.id] = l.presets.minimal; }),
+  autonomous: () => LEVERS.forEach(l => { state[l.id] = l.presets.autonomous; }),
+};
+
+function applyPreset(name) {
+  PRESETS[name]?.();
+  renderLevers();
+  refreshExport();
+}
+
+// ── Export ─────────────────────────────────────────────────────────────────
+function buildJSON() {
+  const enabledCount = LEVERS.filter(l => state[l.id]).length;
+  const preset = enabledCount === LEVERS.length ? 'all'
+               : enabledCount === 0 ? 'none' : 'custom';
+  const leversObj = {};
+  LEVERS.forEach(l => { leversObj[l.id] = state[l.id]; });
+  return JSON.stringify({ levers: leversObj, preset }, null, 2);
+}
+
+function buildPrompt() {
+  const enabled = LEVERS.filter(l => state[l.id]);
+  if (enabled.length === 0) return '(No levers enabled — nothing to import.)';
+  const lines = [
+    'Deterministic AI Development — Lever Configuration',
+    '',
+    'The following development levers are active for this session:',
+    '',
+    ...enabled.map(l => `  ${l.num}. ${l.name}: ${l.desc}`),
+    '',
+    'Apply these patterns throughout this session.',
+  ];
+  return lines.join('\n');
+}
+
+function refreshExport() {
+  document.getElementById('json-preview').textContent = buildJSON();
+  document.getElementById('prompt-preview').textContent = buildPrompt();
+}
+
+// ── Copy helpers ───────────────────────────────────────────────────────────
+function copyText(text, btnId) {
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById(btnId);
+    const original = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1800);
+  });
+}
+function copyJSON()   { copyText(buildJSON(), 'btn-copy-json'); }
+function copyPrompt() { copyText(buildPrompt(), 'btn-copy-prompt'); }
+
+// ── Tab navigation ─────────────────────────────────────────────────────────
+document.querySelectorAll('nav a').forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    const target = link.dataset.section;
+    document.querySelectorAll('nav a').forEach(l => l.classList.remove('active'));
+    document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+    link.classList.add('active');
+    const sec = document.getElementById(target);
+    if (sec) sec.classList.add('active');
+    window.scrollTo(0, 0);
+    if (target === 'export') refreshExport();
+  });
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+renderLevers();
+refreshExport();
+</script>
+</body>
+</html>
