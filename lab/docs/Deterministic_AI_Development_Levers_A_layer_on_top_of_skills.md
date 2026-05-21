@@ -91,8 +91,9 @@ But there are so many more. These are most of my keystone patterns:
   1. --dangerously-skip-permissions -- This is a built in tool for Claude Code: Command line switch. Keep it from nagging you. In a project where I literally have not looked at the code, not being asked about it constantly is necessary.
   1. Instructions in chat ≠ Instructions in skills. The latter is a checklist, the former is more what ye' might call guidelines…
 1. And of course, my own skills based workflow. Which has been built by asking lever questions like 'How are the best in the field doing this right now? What's been published on this? How could we do better?'
-1. Hypothesis extraction and consequence checking -- Every design decision (/decided) now formally extracts a testable hypothesis before tickets are filed: "What should be observably different after these tickets ship?" and "How will we know?" This ties intent to a verifiable outcome. For M/L/XL decisions, a gated consequence-check ticket is auto-drafted — a structured prediction of potential unintended effects, what signals to watch for, and a gate condition (date or observable event). When the gate clears, the ticket surfaces as actionable. Consequence-checking becomes a tracked work item, not an informal afterthought.
-1. Serious goal tracking -- Goals are formally tracked in the database via goal_adopt, goal_scan, and goal_close tools, with G-xxx identifiers assigned to each goal. Goals persist across sessions. Every /decided links back to a G-xxx goal via a testable hypothesis, or explicitly documents "none, reason." This creates a traceable line from goal → hypothesis → decision → ticket → commit — the system can report what changed in service of which goal.
+1. Hypothesis extraction and consequence checking -- Every design decision (/decided) now formally extracts a testable hypothesis before tickets are filed: three questions must be answered (1) Which goal does this serve? (answer with G-xxx or "none, reason"), (2) What should be observably different after these tickets ship? (plain English, falsifiable), (3) How will we know? (metric, log line, behavior, or eval). This ties intent to a verifiable outcome. For M/L/XL decisions, a gated consequence-check ticket is auto-drafted — a structured prediction of potential unintended effects, what signals to watch for, and a gate condition (date or observable event). When the gate clears, the ticket surfaces as actionable. Consequence-checking becomes a tracked work item, not an informal afterthought.
+1. Encapsulation as first-class design principle -- Workers request work via encapsulated black-box interfaces; subsystems do not reach across boundaries they shouldn't; callers don't know internals they don't need to. This appears as: (a) dispatch IS assignment (queue is black box, workers call "anything for me?" periodically), (b) audit-design Check 10 (encapsulation surface — detects subsystems knowing internals they shouldn't), (c) systems architect + process/meta engineer experts explicitly scan for coupling that could be a service. The pattern extends beyond code (the database proxy, inference proxy, MCP channels, ADC device model) to work management itself — Goal 3.7 (shared task service) generalizes this for multi-agent platforms.
+1. Serious goal tracking -- Goals are formally tracked in the database via goal_adopt, goal_scan, and goal_close tools, with G-xxx identifiers assigned to each goal. Goals persist across sessions. Every /decided links back to a G-xxx goal via testable hypothesis extraction (question 1), or explicitly documents "none, reason." This creates a traceable line from goal → hypothesis → decision → ticket → commit — the system can report what changed in service of which goal.
 
 - To be fair, we periodically sweep the skills and tighten around his forgetfulness better. May 3 '26 we added flags like CLOSED: to the beginnings of the ticket names once closed. He kept adding tickets back to the day's slate that were already closed. Now he sees it even if he only looks at the title. Yet another skills edit! Constantly optimizing.
 
@@ -110,9 +111,9 @@ My workflow mostly falls out like this:
 
 /ticket -- any issues that come up along the way so we address them later.
 
-/decided -- all issues under discussion are now resolved enough to go to sprint. Before filing tickets, /decided extracts a testable hypothesis: what should be observably different after these tickets ship, and how will we know. For M/L/XL decisions, it also auto-drafts a gated consequence-check ticket with predicted unintended effects and a gate condition. Then launches the /audit-design skill to validate the design before tickets are written. Tickets anything we've been talking about that isn't ticketed, runs /audit-ticket on each draft, and gets it ready for sprinting.
+/decided -- all issues under discussion are now resolved enough to go to sprint. Before filing tickets, /decided extracts a testable hypothesis with three mandatory questions: (1) which goal (G-xxx or none, reason), (2) what observable difference, (3) how will we know. For M/L/XL decisions, it also auto-drafts a gated consequence-check ticket with predicted unintended effects and a gate condition. Then launches /audit-design to validate the design against 10 positive checks (goal frame, success observable, alternatives considered, constraints named, closing-pass done, no conflicts, palace-rules honored, scope decomposed, executor/tier named, encapsulation surface clear). Tickets anything we've been talking about that isn't ticketed, runs /audit-ticket on each draft, and gets it ready for sprinting.
 
-/sprint / /sprint-batch -- sprint a ticket or sprint a large batch of tickets. Sprint-batch calls sprint over and over. /sprint also calls /savestateauto on completion.
+/sprint / /sprint-batch -- sprint a ticket or sprint a large batch of tickets. Sprint-batch calls sprint over and over. Topo-sorts by dependencies before starting. Per-ticket: capability-check → verify in_progress status (dispatch IS assignment, no claim) → infrastructure brief → pull+work → cleanup → test → commit+push → close → /savestate. /sprint also calls /savestate on completion.
 
 /audit-precode -- runs automatically between plan approval and the first edit in /sprint. Validates that named files exist, symbols exist, preferred-paths rules are satisfied, and the test plan is named. Haiku-speed. Escalates to Sonnet on high-inertia touches.
 
@@ -136,19 +137,19 @@ We have a family of scoped audits, each targeting a different failure class and 
 
 **Daily cross-session** (/audit-day, Sonnet): run by /day-close. Inherits all 18 day-close-audit static checks plus: fix-one-leave-many sweep (function signature changed in N callers but M others missed), watch-for notes from prior runs (hit/age/expire), subsystem index vs. reality, inertia tag drift, TWM coverage gaps, habit health. Auto-drafts a scan-for-rest ticket to /tmp/ when fix-one-leave-many is detected.
 
-**Design-gate** (/audit-design, Opus): runs at the opening of a /decided block. Reviews the design itself: inertia levels, blast radius, reversibility, test strategy, simplicity vs. bespoke complexity.
+**Design-gate** (/audit-design, Opus): runs at the opening of a /decided block. Reviews the design against 10 positive checks: positive-target goal, runtime-observable success, alternatives considered, constraints named, "what am I missing" closing pass done, no conflicts with recent decisions, palace-rules honored, scope decomposed into PRs, executor+inertia per piece, encapsulation surface clear (no subsystems reaching across boundaries they shouldn't). Blocks /decided Step 3 on AMEND until fixed.
 
 **Expert panel** (/audit-expert, Opus): broadest-lens review. Each expert sees the whole codebase through their field's sharpest questions -- not "is this code clean?" but "is this system doing what this discipline demands?" Per expert: ≤5 severity-tagged observations, ≤2 watch-for notes (stored in palace with TTL ≤ 14 days), 0–1 candidate ticket drafts routed through /audit-ticket before filing.
 
 | # | Expert | Broadest lens |
 | --- | --- | --- |
 | 1 | Cognitive Scientist | Is reasoning architecture consistent with human cognition models? |
-| 2 | Systems Architect | Is subsystem decomposition clean? Coupling, cohesion, blast radius. |
+| 2 | Systems Architect | Is subsystem decomposition clean? Coupling, cohesion, blast radius, encapsulation surface (subsystems reaching across interfaces they shouldn't?). |
 | 3 | Safety Engineer | What are the failure modes? Runaway processes, unrecoverable states. |
 | 4 | HCI Specialist | Is Igor legible to its users? Feedback quality, error clarity, trust signals. |
 | 5 | Distributed Systems | Is the multi-instance design sound? Consistency, idempotency, clock drift. |
 | 6 | ML Engineer | Is the learning architecture coherent? Feedback loops, distribution shift. |
-| 7 | Process / Meta Engineer | Is the development process self-improving? Audit ROI, tech-debt rate. |
+| 7 | Process / Meta Engineer | Is the development process self-improving? Audit ROI, tech-debt rate, design decision encapsulation (are decisions being made at the right layer?). |
 | 8 | Security Engineer | What can go wrong from adversarial inputs? Injection, secret exposure. |
 | 9 | Reliability Engineer | What does the on-call story look like? MTTR, alerting gaps. |
 | 10 | Data Engineer | Is the persistence layer sound? Schema drift, migration safety, lineage. |
@@ -170,7 +171,7 @@ All audit levels emit structured telemetry to the palace (theigors/audits/<level
 
 /audit-debris -- post-commit debris cleanup: temp files, debug artifacts, docstring rot, test DB cleanup, file placement
 
-/audit-design -- design-gate review before /decided: inertia, blast radius, reversibility, simplicity
+/audit-design -- design-gate review before /decided: 10 positive checks (goal frame, success observable, alternatives, constraints, closing-pass, conflicts, palace-rules, scope decomposition, executor/tier, encapsulation surface)
 
 /audit-expert -- 11-expert broadest-lens panel; weekly (3 random), monthly (full), on-demand by area
 
@@ -210,9 +211,9 @@ All audit levels emit structured telemetry to the palace (theigors/audits/<level
 
 /savestateauto -- lightweight state flush called by other skills: writes in-flight hypothesis to slate, clears debug flag, emits compact preserve string
 
-/sprint -- per-ticket execution loop: claim → audit-precode → infrastructure brief → pull+work → cleanup → test → commit+push → close → savestateauto
+/sprint -- per-ticket execution loop: verify in_progress status (dispatch IS assignment, no claim) → capability check → audit-precode → infrastructure brief → pull+work → cleanup → test → commit+push → close → /savestate
 
-/sprint-batch -- multi-ticket sprint: topo-sort by dependencies, shared setup once, per-ticket loop, batch teardown
+/sprint-batch -- multi-ticket sprint: topo-sort by dependencies, shared setup once, per-ticket loop via /sprint-ticket, batch teardown with /autocompact
 
 /test-fix -- test/fix/test-again loop for failing suites
 
@@ -253,7 +254,12 @@ The last questions I ask at the end of the design step are always at least:
 
 When it's done, /decided.
 
-This creates an entry in the decisions log. Each decision also creates one or more tickets. As each ticket is created, /audit-ticket runs the filing-time audit:
+Before filing tickets, /decided extracts a testable hypothesis with three mandatory questions:
+1. Which goal does this serve? (answer with G-xxx, or "none, reason")
+2. What should be observably different after these tickets ship? (one falsifiable sentence)
+3. How will we know? (metric, log line, behavior, or eval question)
+
+This creates an entry in the decisions log and links the decision to a goal. Each decision also creates one or more tickets. As each ticket is created, /audit-ticket runs the filing-time audit:
 
 - Is this a dupe with any other tickets?
 - Is this already done in the code?
