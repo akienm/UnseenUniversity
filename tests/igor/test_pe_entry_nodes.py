@@ -156,22 +156,25 @@ class TestPeEntryInit:
 
 
 class TestPeClaim:
-    def test_calls_cc_queue_claim(self, basket_with_ticket):
+    def test_confirms_in_progress_via_show(self, basket_with_ticket):
+        """pe_claim verifies ticket is in_progress using cc_queue show (not claim)."""
+        in_progress_response = '{"status": "in_progress", "id": "T-test-ticket"}'
         with patch(
             "wild_igor.igor.tools.pe_chain._run_bash",
-            return_value="Claimed T-test-ticket",
+            return_value=in_progress_response,
         ) as mock_bash:
             result = pe_claim(basket_with_ticket)
-        assert result["claim_result"] == "Claimed T-test-ticket"
+        assert "error" not in result
+        assert "claim_result" in result
+        assert "confirmed in_progress" in result["claim_result"]
         call_args = mock_bash.call_args[0][0]
-        assert "claim" in call_args
+        assert "show" in call_args
         assert "T-test-ticket" in call_args
 
     def test_error_passthrough(self):
         basket = {"error": "prior error"}
         result = pe_claim(basket)
         assert result["error"] == "prior error"
-        # should not have called _run_bash
 
     def test_error_when_no_ticket_id(self):
         result = pe_claim({})
@@ -179,9 +182,24 @@ class TestPeClaim:
         assert "ticket_id" in result["error"]
 
     def test_claim_result_written_to_basket(self, basket_with_ticket):
-        with patch("wild_igor.igor.tools.pe_chain._run_bash", return_value="ok"):
+        in_progress_response = '{"status": "in_progress", "id": "T-test-ticket"}'
+        with patch(
+            "wild_igor.igor.tools.pe_chain._run_bash",
+            return_value=in_progress_response,
+        ):
             result = pe_claim(basket_with_ticket)
         assert "claim_result" in result
+
+    def test_errors_when_ticket_not_in_progress(self, basket_with_ticket):
+        """pe_claim aborts if ticket is sprint status (not pre-claimed via cmd_next)."""
+        sprint_response = '{"status": "sprint", "id": "T-test-ticket"}'
+        with patch(
+            "wild_igor.igor.tools.pe_chain._run_bash",
+            return_value=sprint_response,
+        ):
+            result = pe_claim(basket_with_ticket)
+        assert "error" in result
+        assert "not in_progress" in result["error"]
 
 
 # ── pe_read_ticket ────────────────────────────────────────────────────────────
@@ -259,7 +277,7 @@ class TestRunPeEntryChain:
             ),
             patch(
                 "wild_igor.igor.tools.pe_chain._run_bash",
-                return_value="Claimed T-test-ticket",
+                return_value='{"status": "in_progress", "id": "T-test-ticket"}',
             ),
             patch("wild_igor.igor.tools.pe_chain._call_tier2", return_value=None),
             patch(
@@ -295,7 +313,7 @@ class TestRunPeEntryChain:
         assert result["ticket_description"] == SAMPLE_TICKET["description"]
         assert result["ticket_title"] == SAMPLE_TICKET["title"]
         assert result["plan_files"] == ["wild_igor/igor/tools/ops.py"]
-        assert result["claim_result"] == "Claimed T-test-ticket"
+        assert "confirmed in_progress" in result["claim_result"]
         assert result["attempt_count"] == 0
         assert result["expected"] == "tests pass, requirements met"
 
@@ -328,7 +346,10 @@ class TestRunPeEntryChain:
                 "wild_igor.igor.tools.pe_chain._load_queue_tasks",
                 return_value=[SAMPLE_TICKET],
             ),
-            patch("wild_igor.igor.tools.pe_chain._run_bash", return_value="ok"),
+            patch(
+                "wild_igor.igor.tools.pe_chain._run_bash",
+                return_value='{"status": "in_progress", "id": "T-test-ticket"}',
+            ),
             patch("wild_igor.igor.tools.pe_chain._call_tier2", return_value=None),
             patch(
                 "wild_igor.igor.tools.pe_chain._REPO_ROOT_DEFAULT",
