@@ -27,8 +27,7 @@ The full chain (run_pe_chain / run_pe_entry_chain):
 
    1. pe_entry_init(basket)        — extract ticket_id from active GOAL;
                                      seed constants (expected, attempt_count).
-   2. pe_claim(basket)             — mark ticket in_progress in cc_queue.
-   3. pe_read_ticket(basket)       — load description + required_files.
+   2. pe_read_ticket(basket)       — load description + required_files.
    4. pe_plan(basket)              — tier.2 Ollama: plan_summary +
                                      test_criterion (D333 flavor;
                                      approved_plan if present via D331).
@@ -348,6 +347,14 @@ def _run_bash(cmd: list, timeout: int = 30) -> str:
         return f"[ERROR] {e}"
 
 
+try:
+    from lab.claudecode.cc_queue import LegacyDirectClaimError
+except ImportError:
+
+    class LegacyDirectClaimError(Exception):  # type: ignore[no-redef]
+        pass
+
+
 def _load_queue_tasks() -> list[dict]:
     """Load all tickets from canonical Postgres storage."""
     from lab.claudecode.cc_queue import load_tasks
@@ -609,19 +616,19 @@ class PeChain(IgorBase):
         current = self.basket.get("ticket_id")
         if current == allowed:
             self.log.info(
-                "[pe_chain] single-ticket mode: %s claimable (matches IGOR_SINGLE_TICKET)",
+                "[pe_chain] single-ticket mode: %s allowed (matches IGOR_SINGLE_TICKET)",
                 current,
             )
             return self.basket
         if current:
             self.log.info(
-                "[pe_chain] single-ticket mode: only %s may be claimed; skipping %s",
+                "[pe_chain] single-ticket mode: only %s allowed; blocking %s",
                 allowed,
                 current,
             )
         else:
             self.log.info(
-                "[pe_chain] single-ticket mode: only %s may be claimed; no ticket in self.basket",
+                "[pe_chain] single-ticket mode: only %s allowed; no ticket in self.basket",
                 allowed,
             )
         self.basket["error"] = (
@@ -630,47 +637,11 @@ class PeChain(IgorBase):
         return self.basket
 
     def pe_claim(self) -> dict:
-        """
-        CLAIM step: no-op — ticket is pre-claimed atomically by cmd_next.
-
-        cmd_next --worker igor marks the ticket in_progress before returning
-        its ID.  By the time pe_chain runs, the ticket is already ours.
-        This step exists only to confirm the ticket is in_progress and abort
-        early if something unexpected happened.
-
-        Reads from self.basket: ticket_id
-        Writes to self.basket:  claim_result (str — confirmation or error)
-        """
-        if self.basket.get("error"):
-            return self.basket
-
-        ticket_id = self.basket.get("ticket_id")
-        if not ticket_id:
-            self.basket["error"] = "pe_claim: no ticket_id in self.basket"
-            return self.basket
-
-        # Verify the ticket is already in_progress (pre-claimed via cmd_next).
-        result = _run_bash(["python3", str(_CC_QUEUE), "show", ticket_id])
-        if '"status": "in_progress"' in result or "'status': 'in_progress'" in result:
-            self.basket["claim_result"] = (
-                f"{ticket_id} confirmed in_progress (pre-claimed via cmd_next)"
-            )
-            self.log.info(f"CLAIM: {ticket_id} confirmed in_progress")
-        elif "not found" in result.lower():
-            self.basket["error"] = f"pe_claim: ticket {ticket_id} not found"
-            self.log.info(f"CLAIM: aborting — {ticket_id} not found")
-            _evict_goal_ready_twm(ticket_id)
-        else:
-            # Ticket exists but not in_progress — unexpected state
-            self.basket["error"] = (
-                f"pe_claim: {ticket_id} is not in_progress — "
-                "it was not pre-claimed by cmd_next. Aborting to avoid racing."
-            )
-            self.log.info(
-                f"CLAIM: aborting — {ticket_id} not in expected in_progress state"
-            )
-            _evict_goal_ready_twm(ticket_id)
-        return self.basket
+        raise LegacyDirectClaimError(
+            "pe_claim is no longer supported — claiming was removed. "
+            "Tickets reach in_progress via adopt_top_queue_ticket (PROC_QUEUE_DRAIN). "
+            "Remove any call site that reaches this method."
+        )
 
     def pe_read_ticket(self) -> dict:
         """
@@ -2517,7 +2488,7 @@ class PeChain(IgorBase):
     def _run_entry_chain(self) -> dict:
         """
         Run the full PROC_CODE_A_TICKET chain:
-        ENTRY → CLAIM → READ_TICKET → PLAN → FILTER → SITUATE → OBSERVE →
+        ENTRY → READ_TICKET → PLAN → FILTER → SITUATE → OBSERVE →
         STORE_OBSERVE_RESULTS → HYPOTHESIZE → IMPLEMENT → TEST → PROBE → CLOSE_LOOP.
 
         Returns the final self.basket dict.
@@ -2536,9 +2507,6 @@ class PeChain(IgorBase):
                 self.basket["error"] = msg
                 self.log.info(f"ENTRY: {msg}")
                 return self.basket
-        self.basket = self.pe_claim()
-        if self.basket.get("error"):
-            return self.basket
         self.basket = self.pe_read_ticket()
         if self.basket.get("error"):
             return self.basket
@@ -2688,10 +2656,12 @@ def pe_entry_init(basket: dict | None = None) -> PeEntryInitOutput:
 
 
 def pe_claim(basket: PeEntryInitOutput) -> PeClaimOutput:
-    return PeChain(basket=basket).pe_claim()  # type: ignore[return-value]
+    raise LegacyDirectClaimError(
+        "pe_claim is no longer supported. Remove this call site."
+    )
 
 
-def pe_read_ticket(basket: PeClaimOutput) -> PeReadTicketOutput:
+def pe_read_ticket(basket: PeEntryInitOutput) -> PeReadTicketOutput:
     return PeChain(basket=basket).pe_read_ticket()  # type: ignore[return-value]
 
 
@@ -2747,7 +2717,7 @@ def _evict_goal_ready_twm(ticket_id: str) -> None:
     """
     Expire any GOAL_READY TWM observations for this ticket.
 
-    Called after SCOPE_GUARD escalation or pe_claim abort so
+    Called after SCOPE_GUARD escalation so
     PROC_CODING_SPRINT stops re-firing the same failing chain.
     Non-fatal — logs and returns on any error.
     """
@@ -3907,7 +3877,7 @@ try:
             name="run_pe_chain",
             description=(
                 "Run the PROC_CODE_A_TICKET coding sprint chain. "
-                "Chain: ENTRY → CLAIM → READ_TICKET → PLAN → FILTER → SITUATE → "
+                "Chain: ENTRY → READ_TICKET → PLAN → FILTER → SITUATE → "
                 "OBSERVE → HYPOTHESIZE → IMPLEMENT → TEST → PROBE → CLOSE_LOOP. "
                 "Called by PROC_PE_CHAIN habit when coding sprint begins."
             ),
@@ -4019,11 +3989,6 @@ try:
             pe_entry_init,
             "pe_entry_init",
             "ENTRY step: extract ticket_id from active GOAL, seed basket constants.",
-        ),
-        (
-            pe_claim,
-            "pe_claim",
-            "CLAIM step: mark ticket in_progress in cc_queue.",
         ),
         (
             pe_read_ticket,

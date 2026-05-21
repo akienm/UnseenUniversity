@@ -14,7 +14,7 @@ run_goal_continuation():
   - Reads active GOAL from cortex (instance-scoped GOAL memories)
   - Checks current_step in goal metadata (default: 0)
   - Executes the appropriate mechanical step:
-      step 0: advance immediately (ticket pre-claimed atomically by cmd_next)
+      step 0: advance immediately (ticket is in_progress — set by adopt_top_queue_ticket)
       step 1: show the ticket; parse grep_for field and store in goal metadata
       step 2: if grep_for present — run grep for each pattern, post results
               if grep_for absent  — skip (no-op, advance to step 3)
@@ -50,8 +50,6 @@ _CHANNEL_FILE = Path.home() / ".TheIgors" / "cc_channel" / "messages.jsonl"
 # Must match _HUMAN_AUTHORS in main.py.
 _HUMAN_AUTHORS: frozenset = frozenset({"claude-code", "akien"})
 _HUMAN_IDLE_LIMIT_S: float = 1800.0  # 30 min — skip if no human activity beyond this
-# Claim attempt cap: prevent indefinite re-claims on crash+restart cycles.
-_MAX_CLAIM_ATTEMPTS: int = 3
 
 
 class GoalContinuation(IgorBase):
@@ -150,7 +148,7 @@ class GoalContinuation(IgorBase):
         """
         D274: Drive mechanical progress on active GOAL memories.
 
-        Step 0: claim the ticket
+        Step 0: advance (ticket is already in_progress — set by adopt_top_queue_ticket)
         Step 1: show ticket details; parse grep_for into goal metadata
         Step 2: if grep_for present — run grep, post results; else skip
         Step 3: post GOAL READY signal; LLM takes over from here
@@ -215,7 +213,7 @@ class GoalContinuation(IgorBase):
                 )
                 goal.metadata["goal_active"] = False
                 goal.metadata["closed_reason"] = (
-                    f"IGOR_SINGLE_TICKET={_single!r} — ticket not claimable"
+                    f"IGOR_SINGLE_TICKET={_single!r} — ticket blocked by single-ticket gate"
                 )
                 cortex.store(goal)
                 return (
@@ -224,18 +222,15 @@ class GoalContinuation(IgorBase):
                 )
 
             if step == 0:
-                # Step 0: ticket was pre-claimed atomically by cmd_next — advance to step 1.
-                # Direct claiming is removed; if a ticket ID is present it is already
-                # in_progress before goal_continuation ever sees it.
+                # Step 0: ticket is already in_progress (set by adopt_top_queue_ticket).
+                # Claiming is removed. Just advance to step 1.
                 if ticket_id:
-                    msg = f"[GOAL STEP 0] {ticket_id} pre-claimed via cmd_next — advancing"
+                    msg = f"[GOAL STEP 0] {ticket_id} in queue — advancing"
                     _post_to_channel(msg)
                     goal.metadata["current_step"] = 1
                     cortex.store(goal)
-                    self.log.info(
-                        f"STEP0 ticket={ticket_id} pre-claimed, advancing to step 1"
-                    )
-                    return f"[goal_continuation] {ticket_id} pre-claimed, advancing to step 1"
+                    self.log.info(f"STEP0 ticket={ticket_id} advancing to step 1")
+                    return f"[goal_continuation] {ticket_id} advancing to step 1"
                 else:
                     # No ticket ID — skip straight to ready
                     msg = f"[GOAL ACTIVE] {task[:100]} — no ticket ID found, ready for LLM planning"
@@ -381,7 +376,7 @@ registry.register(
         name="run_goal_continuation",
         description=(
             "D274: Drive mechanical progress on active GOAL memories. "
-            "Step 0: claim ticket. Step 1: show ticket + parse grep_for. "
+            "Step 0: advance (ticket already in_progress). Step 1: show ticket + parse grep_for. "
             "Step 2: grep codebase (if grep_for present). "
             "Step 3: post GOAL READY signal. Step 4+: LLM handles. "
             "Called by PROC_GOAL_CONTINUATION on 2-min schedule."

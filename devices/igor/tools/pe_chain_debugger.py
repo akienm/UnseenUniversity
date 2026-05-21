@@ -22,8 +22,7 @@ sessions (stimulus must be freshly injected).
 
 Engram sequence (canonical for coding work)
 ──────────────────────────────────────────
-ENTRY → CLAIM → READ_TICKET → PLAN → SITUATE → HYPOTHESIZE → IMPLEMENT
-      → OBSERVE → CLOSE
+ENTRY → READ_TICKET → PLAN → SITUATE → OBSERVE → HYPOTHESIZE → IMPLEMENT → CLOSE
 
 Each step is a pe_* function in pe_chain.py. Breakpoint names are
 upper-case step names (the part after pe_). The debugger simply calls them
@@ -67,7 +66,6 @@ log = logging.getLogger(__name__)
 # basket["actual"] is populated before the LLM call).
 STEPS: list[tuple[str, Callable]] = [
     ("ENTRY", pe_chain.pe_entry_init),
-    ("CLAIM", pe_chain.pe_claim),
     ("READ_TICKET", pe_chain.pe_read_ticket),
     ("PLAN", pe_chain.pe_plan),
     ("SITUATE", pe_chain.pe_situate),
@@ -346,7 +344,7 @@ registry.register(
         description=(
             "Begin a pe_chain debug session — inject a ticket_id stimulus, "
             "run the engram sequence up to a named breakpoint, and return the "
-            "basket + inspect snapshot at the pause. Breakpoints: ENTRY, CLAIM, "
+            "basket + inspect snapshot at the pause. Breakpoints: ENTRY, "
             "READ_TICKET, PLAN, SITUATE, HYPOTHESIZE (default), IMPLEMENT, "
             "OBSERVE, or END (run the whole chain)."
         ),
