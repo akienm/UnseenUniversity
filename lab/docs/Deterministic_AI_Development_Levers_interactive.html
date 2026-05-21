@@ -223,7 +223,7 @@ const LEVERS = [
     id: "skills-workflow",
     num: 9,
     name: "Skills-Based Workflow",
-    desc: "Everything wrapped in a skill: /decided, /sprint-batch, /context-load, /day-close. Skills are checklists — Claude follows them reliably.",
+    desc: "Everything wrapped in a skill: /sorted, /sprint-batch, /context-load, /day-close. Skills are checklists — Claude follows them reliably.",
     tags: ["workflow", "skills"],
     presets: { minimal: true, autonomous: true }
   },
@@ -231,7 +231,7 @@ const LEVERS = [
     id: "hypothesis-consequence",
     num: 10,
     name: "Hypothesis Extraction & Consequence Checking",
-    desc: "Every /decided extracts a testable hypothesis (3 questions). M/L/XL decisions get a gated consequence-check ticket. Consequence-checking is tracked work.",
+    desc: "Every /sorted extracts a testable hypothesis (3 questions). M/L/XL decisions get a gated consequence-check ticket. Consequence-checking is tracked work.",
     tags: ["design", "hypothesis"],
     presets: { minimal: false, autonomous: true }
   },
@@ -247,7 +247,7 @@ const LEVERS = [
     id: "goal-tracking",
     num: 12,
     name: "Serious Goal Tracking",
-    desc: "Goals tracked in DB with G-xxx IDs. Every /decided links to a goal. Creates a traceable line: goal → hypothesis → decision → ticket → commit.",
+    desc: "Goals tracked in DB with G-xxx IDs. Every /sorted links to a goal. Creates a traceable line: goal → hypothesis → decision → ticket → commit.",
     tags: ["goals", "tracking"],
     presets: { minimal: false, autonomous: true }
   }

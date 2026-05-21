@@ -198,7 +198,7 @@
 
   <div class="card">
     <h3>10. Hypothesis Extraction &amp; Consequence Checking</h3>
-    <p>Every design decision (<code>/decided</code>) formally extracts a testable hypothesis before tickets are filed. Three mandatory questions:</p>
+    <p>Every design decision (<code>/sorted</code>) formally extracts a testable hypothesis before tickets are filed. Three mandatory questions:</p>
     <ol>
       <li>Which goal does this serve? (G-xxx or "none, reason")</li>
       <li>What should be observably different after these tickets ship? (plain English, falsifiable)</li>
@@ -220,7 +220,7 @@
 
   <div class="card">
     <h3>12. Serious Goal Tracking</h3>
-    <p>Goals are formally tracked in the database with G-xxx identifiers. Every <code>/decided</code> links to a G-xxx via testable hypothesis, or explicitly documents "none, reason." Creates a traceable line: <strong>goal → hypothesis → decision → ticket → commit</strong>.</p>
+    <p>Goals are formally tracked in the database with G-xxx identifiers. Every <code>/sorted</code> links to a G-xxx via testable hypothesis, or explicitly documents "none, reason." Creates a traceable line: <strong>goal → hypothesis → decision → ticket → commit</strong>.</p>
   </div>
 </section>
 
@@ -250,7 +250,7 @@
   </div>
 
   <div class="card">
-    <h3><code>/decided</code></h3>
+    <h3><code>/sorted</code></h3>
     <p>All issues under discussion are resolved enough to go to sprint. Before filing tickets:</p>
     <ol>
       <li>Extracts a testable hypothesis (3 questions)</li>
@@ -274,7 +274,7 @@
 
   <div class="card">
     <h3><code>/fixit</code></h3>
-    <p>Shorthand for <code>/decided</code> + <code>/sprint-batch</code> in one go.</p>
+    <p>Shorthand for <code>/sorted</code> + <code>/sprint-batch</code> in one go.</p>
   </div>
 
   <div class="card">
@@ -385,7 +385,7 @@
       <tr><td><code>/audit-audits</code></td><td>Meta-audit over all audit telemetry; checks cadence, TTL compliance, confidence calibration</td></tr>
       <tr><td><code>/audit-day</code></td><td>Cross-day code health: inherits all day-close-audit checks + fix-one-leave-many sweep + watch-for management + telemetry</td></tr>
       <tr><td><code>/audit-debris</code></td><td>Post-commit debris cleanup: temp files, debug artifacts, docstring rot, test DB cleanup, file placement</td></tr>
-      <tr><td><code>/audit-design</code></td><td>Design-gate review before /decided: 10 positive checks (goal frame, success observable, alternatives, constraints, closing-pass, conflicts, palace-rules, scope decomposition, executor/tier, encapsulation surface)</td></tr>
+      <tr><td><code>/audit-design</code></td><td>Design-gate review before /sorted: 10 positive checks (goal frame, success observable, alternatives, constraints, closing-pass, conflicts, palace-rules, scope decomposition, executor/tier, encapsulation surface)</td></tr>
       <tr><td><code>/audit-expert</code></td><td>11-expert broadest-lens panel; weekly (3 random), monthly (full), on-demand by area</td></tr>
       <tr><td><code>/audit-precode</code></td><td>Pre-edit plan validation: file/symbol existence, preferred-paths, HIGH-inertia reaffirmation, test plan named</td></tr>
       <tr><td><code>/audit-smell</code></td><td>Post-code quality scan: premature abstractions, missing log calls, misleading names, bespoke vs. standard patterns</td></tr>
@@ -394,10 +394,10 @@
       <tr><td><code>/context-load</code></td><td>Loads project overview, palace rules, today's slate, recent decisions, pending approvals, inbox</td></tr>
       <tr><td><code>/day-close</code></td><td>Closes out the day: savestateauto, slate finalization, /audit-day, docs commit, GitHub Discussion, push</td></tr>
       <tr><td><code>/day-close-audit</code></td><td>Static 18-step debris and hygiene check (tests, file placement, smells, registry, inertia, threads, logs, burn rate, schema, dead code, duplication, habit health, TWM coverage, dependencies, credentials, simplification, registered checks, wiring, capability-map drift)</td></tr>
-      <tr><td><code>/decided</code></td><td>Closes a design block → extracts hypothesis → batch tickets via /audit-ticket, writes decision to palace and log, appends to slate</td></tr>
+      <tr><td><code>/sorted</code></td><td>Closes a design block (formerly /decided) → extracts hypothesis → batch tickets via /audit-ticket, writes decision to palace and log, appends to slate</td></tr>
       <tr><td><code>/design</code></td><td>Design-mode session marker; writes DESIGN_START to slate, sets design_mode flag</td></tr>
       <tr><td><code>/export-chat</code></td><td>Exports current Claude Code chat window to a dated markdown file (works around tmux scrollback limits)</td></tr>
-      <tr><td><code>/fixit</code></td><td>Shorthand for /decided + /sprint-batch on the just-filed tickets in one go</td></tr>
+      <tr><td><code>/fixit</code></td><td>Shorthand for /sorted + /sprint-batch on the just-filed tickets in one go</td></tr>
       <tr><td><code>/map-igor</code></td><td>On-demand JSON snapshot of Igor's full state (15 sections); Haiku; 14-day TTL</td></tr>
       <tr><td><code>/note</code></td><td>Adds a random note to the day's slate</td></tr>
       <tr><td><code>/readigor</code></td><td>Reads the web interface for Igor so Claude can be brought up to speed without pasting</td></tr>
@@ -419,7 +419,7 @@
 
   <div class="card">
     <h3>Goals</h3>
-    <p>Formally tracked in the database using <code>goal_adopt</code>, <code>goal_scan</code>, and <code>goal_close</code> tools, with G-xxx identifiers. Goals persist across sessions. Every <code>/decided</code> links to a G-xxx via testable hypothesis, or explicitly documents "none, reason." Creates a traceable line: <strong>goal → hypothesis → decision → ticket → commit</strong>.</p>
+    <p>Formally tracked in the database using <code>goal_adopt</code>, <code>goal_scan</code>, and <code>goal_close</code> tools, with G-xxx identifiers. Goals persist across sessions. Every <code>/sorted</code> links to a G-xxx via testable hypothesis, or explicitly documents "none, reason." Creates a traceable line: <strong>goal → hypothesis → decision → ticket → commit</strong>.</p>
   </div>
 
   <div class="card">
@@ -430,7 +430,7 @@
   <div class="card">
     <h3>Decisions</h3>
     <p><code>/design</code> starts a design session. Free-form discussion until a point of design is clear enough that Haiku can reliably build it without fail. The last questions are always: "What am I missing? What could we do better?"</p>
-    <p>When done, <code>/decided</code>. Before filing, it extracts a testable hypothesis with three mandatory questions.</p>
+    <p>When done, <code>/sorted</code>. Before filing, it extracts a testable hypothesis with three mandatory questions.</p>
   </div>
 
   <div class="card">
