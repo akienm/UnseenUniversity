@@ -1641,6 +1641,11 @@ class PeChain(IgorBase):
             self.log.info(
                 f"TEST ({level}, ops.run_tests): {self.basket['test_result'][:80]}"
             )
+            if not preflight and self.basket.get("test_result") == "pass":
+                _gate = self._check_new_tests_in_diff()
+                if _gate:
+                    self.basket["test_result"] = _gate
+                    self.log.info("TEST: new-tests gate FAIL — %s", _gate[:80])
             return self.basket
         except Exception as _exc:
             self.log.error("SILENT_EXCEPT: %s", _exc)
@@ -1671,7 +1676,61 @@ class PeChain(IgorBase):
         self.basket["test_output"] = result
         level = "preflight" if preflight else "post-edit"
         self.log.info(f"TEST ({level}, pytest): {self.basket['test_result'][:80]}")
+        if not preflight and self.basket.get("test_result") == "pass":
+            _gate = self._check_new_tests_in_diff()
+            if _gate:
+                self.basket["test_result"] = _gate
+                self.log.info("TEST: new-tests gate FAIL — %s", _gate[:80])
         return self.basket
+
+    def _check_new_tests_in_diff(self) -> str | None:
+        """
+        Gate: igor-tagged tickets must write at least one new def test_* function.
+
+        Returns None when the gate passes (new test found, or ticket has an explicit
+        'no tests because:' exemption). Returns a "fail: ..." string otherwise.
+        Degrades gracefully — any git error returns None so the gate never blocks
+        the chain due to infrastructure issues.
+        """
+        desc = self.basket.get("ticket_description", "").lower()
+        if "no tests because:" in desc:
+            self.log.info(
+                "TEST: new-tests gate skipped — ticket has 'no tests because:' exemption"
+            )
+            return None
+
+        import subprocess as _sp
+
+        try:
+            proc = _sp.run(
+                ["git", "diff", "HEAD"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                cwd=os.path.expanduser("~/TheIgors"),
+            )
+            diff = proc.stdout
+        except Exception as _exc:
+            self.log.warning("TEST: new-tests gate diff failed (non-fatal) — %s", _exc)
+            return None
+
+        new_test_fns = [
+            l
+            for l in diff.splitlines()
+            if l.startswith("+") and not l.startswith("+++") and "def test_" in l
+        ]
+        if new_test_fns:
+            self.log.info(
+                "TEST: new-tests gate OK — %d new test_* function(s) in diff",
+                len(new_test_fns),
+            )
+            return None
+
+        return (
+            "fail: no new def test_* functions found in diff — "
+            "every igor ticket must include at least one new test. "
+            "Add test coverage, or add 'no tests because: <reason>' to the ticket description."
+        )
 
     def pe_probe(self) -> dict:
         """
