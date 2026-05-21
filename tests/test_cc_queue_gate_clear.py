@@ -78,3 +78,48 @@ class TestUngateDependents:
         n = cc_queue._ungate_dependents(tasks, "T-a")
         assert n == 0
         assert tasks[0]["gate"] == "T-z"
+
+
+class TestGateClearDateParsing:
+    """_gate_clear date-format gate support (T-gate-date-parsing)."""
+
+    def test_future_date_blocks(self):
+        # A gate string starting with a future YYYY-MM-DD should block (return False)
+        clear = cc_queue._gate_clear("2099-01-01", [])
+        assert clear is False
+
+    def test_past_date_clears(self):
+        # A gate string starting with a past date should clear (return True)
+        clear = cc_queue._gate_clear("2000-01-01", [])
+        assert clear is True
+
+    def test_today_clears(self):
+        from datetime import date
+
+        today = date.today().isoformat()
+        clear = cc_queue._gate_clear(today, [])
+        assert clear is True
+
+    def test_date_with_trailing_text_blocks_when_future(self):
+        # "2099-06-19 — 30 days after T-skill-telemetry-rollup closed; ..."
+        # The date is future so it should block even though text contains a ticket id
+        tasks = [{"id": "T-skill-telemetry-rollup", "status": "closed"}]
+        clear = cc_queue._gate_clear(
+            "2099-06-19 — 30 days after T-skill-telemetry-rollup closed", tasks
+        )
+        assert clear is False
+
+    def test_unknown_format_fails_closed(self):
+        # A gate string that is neither a date nor a known ticket id → blocked
+        clear = cc_queue._gate_clear("some narrative text with no ticket or date", [])
+        assert clear is False
+
+    def test_null_gate_clears(self):
+        clear = cc_queue._gate_clear(None, [])
+        assert clear is True
+
+    def test_ticket_id_gate_still_works(self):
+        # Legacy ticket-id gate still works when no date prefix present
+        tasks = [{"id": "T-dep", "status": "closed"}]
+        clear = cc_queue._gate_clear("T-dep", tasks)
+        assert clear is True
