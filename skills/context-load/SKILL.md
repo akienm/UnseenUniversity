@@ -196,6 +196,15 @@ mcp__librarian__summarize(topic="session_start", depth="brief")
 Surface as one line in the briefing: `Librarian: <summary>`.
 When the tool is unavailable or errors, skip silently — never block context-load on librarian.
 
+## Step 5.9 — Skill violation summary (graceful degradation)
+
+Surface CC's own drift pattern at session start — closes the reinforcement loop:
+```bash
+python run violation-summary
+```
+Output when violations exist: `Most-forgotten rules (last 30 days): 1. sprint-ticket/always-run-tests (3×), ...`
+Silent when the log is empty or has no records in the last 30 days. Never blocks context-load.
+
 ## Step 6 — Assemble briefing
 
 Always stay inside the 2000-token (~8000-char) budget. Output shape:
@@ -208,6 +217,7 @@ ADC palace: <N nodes — project summary line + last day rollup>
 Decisions: <last 10 from palace.decisions.*>
 Channel: <recent or "quiet">
 Librarian: <snapshot or "offline">
+Violations: <most-forgotten rules, or silent if none>
 [~NNN tokens]
 Ready.
 ```

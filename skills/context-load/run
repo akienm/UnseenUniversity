@@ -2,8 +2,9 @@
 """context-load — session startup helpers.
 
 Usage:
-  python run create-slate   # ensure today's slate exists; print it
-  python run debug-flag     # set debug session flag
+  python run create-slate         # ensure today's slate exists; print it
+  python run debug-flag           # set debug session flag
+  python run violation-summary    # print top recurring forget-flag violations
 """
 import os
 import sys
@@ -39,14 +40,47 @@ def debug_flag() -> None:
     print(f"debug flag: {flag}")
 
 
+def violation_summary(n: int = 5, days: int = 30) -> None:
+    """Print top forget-flag violations from the last `days` days. Silent when log is empty."""
+    try:
+        import sys
+        import pathlib
+
+        # Ensure ADC root is on sys.path so the package import works
+        _root = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+        if _root not in sys.path:
+            sys.path.insert(0, _root)
+
+        from lab.claudecode.skill_telemetry import top_violations
+
+        results = top_violations(n=n, days=days)
+    except Exception:
+        return  # graceful degradation — never block context-load on this
+
+    if not results:
+        return
+
+    lines = [
+        f"  {i + 1}. {skill}/{flag} ({count}×)"
+        for i, (skill, flag, count) in enumerate(results)
+    ]
+    print("Most-forgotten rules (last 30 days):")
+    print("\n".join(lines))
+
+
 def main() -> None:
     action = sys.argv[1] if len(sys.argv) > 1 else "create-slate"
     if action == "create-slate":
         create_slate()
     elif action == "debug-flag":
         debug_flag()
+    elif action == "violation-summary":
+        violation_summary()
     else:
-        print(f"unknown: {action}. Use: create-slate | debug-flag", file=sys.stderr)
+        print(
+            f"unknown: {action}. Use: create-slate | debug-flag | violation-summary",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
 
