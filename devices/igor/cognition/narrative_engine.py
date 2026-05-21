@@ -791,7 +791,9 @@ class NarrativeEngine(IgorBase):
         # effective_importance = causal_coherence * (1-w) + milieu_alignment * w
         # where w = 0.4 * arousal (high arousal → affect biases selection more).
         # Frames affectively congruent with current milieu need less causal weight to promote.
-        _aff_milieu = __import__("igor.cognition.milieu", fromlist=["get"]).get()
+        _aff_milieu = __import__(
+            "wild_igor.igor.cognition.milieu", fromlist=["get"]
+        ).get()
         try:
             _aff_ms = _aff_milieu.get_state() if _aff_milieu else None
         except Exception as e:
@@ -1205,7 +1207,7 @@ class NarrativeEngine(IgorBase):
         # Optionally enrich with milieu valence
         _valence_str = ""
         try:
-            _mil = __import__("igor.cognition.milieu", fromlist=["get"]).get()
+            _mil = __import__("wild_igor.igor.cognition.milieu", fromlist=["get"]).get()
             _ms = _mil.get_state() if _mil else None
             if _ms:
                 _v = _ms.valence
@@ -1434,7 +1436,9 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
         # Get milieu arousal to modulate tension accumulation rate
         _arousal = 0.3  # default if milieu unavailable
         try:
-            _milieu_mod = __import__("igor.cognition.milieu", fromlist=["get"]).get()
+            _milieu_mod = __import__(
+                "wild_igor.igor.cognition.milieu", fromlist=["get"]
+            ).get()
             _ms = _milieu_mod.get_state() if _milieu_mod else None
             if _ms:
                 _arousal = max(0.1, _ms.arousal)
@@ -1534,7 +1538,9 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                     _closure_valence = min(1.0, 0.3 + gap_tension * 0.4)
                     _closure_arousal = min(1.0, 0.4 + gap_tension * 0.3)
                     try:
-                        _m = __import__("igor.cognition.milieu", fromlist=["get"]).get()
+                        _m = __import__(
+                            "wild_igor.igor.cognition.milieu", fromlist=["get"]
+                        ).get()
                         if _m:
                             _m.ingest_ne_state(
                                 {
@@ -1680,7 +1686,9 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
 
         # Get current milieu for context
         try:
-            _milieu_mod = __import__("igor.cognition.milieu", fromlist=["get"]).get()
+            _milieu_mod = __import__(
+                "wild_igor.igor.cognition.milieu", fromlist=["get"]
+            ).get()
             _ms = _milieu_mod.get_state() if _milieu_mod else None
             _arousal = max(0.0, _ms.arousal) if _ms else 0.0
         except Exception as e:
