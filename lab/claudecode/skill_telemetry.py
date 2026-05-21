@@ -1,5 +1,5 @@
 """
-skill_telemetry.py — Contract schema for per-skill behavioral telemetry.
+skill_telemetry.py — Contract schema + logger for per-skill behavioral telemetry.
 
 Two concerns CC needs telemetry for:
   1. CC forgets rules ("forget-flags"): each skill declares the behavioral
@@ -13,17 +13,19 @@ Storage (JSONL, no Postgres dependency):
 
 Palace node at theigors/skill-telemetry/schema carries the canonical spec.
 
-T-skill-telemetry-schema — this file (schema only; no runtime emit logic)
-T-skill-telemetry-logger — adds emit_violation() / emit_outcome()
+T-skill-telemetry-schema — schema dataclasses + path helpers
+T-skill-telemetry-logger — append_violation / append_outcome / query functions
 T-skill-telemetry-contracts — per-skill contracts for the 15 core skills
 T-skill-telemetry-rollup — surfaces top violations into context-load
 """
 
 from __future__ import annotations
 
+import json
 import os
+from collections import Counter
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -114,3 +116,97 @@ class OutcomeRecord:
             "postconditions_met": self.postconditions_met,
             "session_id": self.session_id,
         }
+
+
+# ── Logger ─────────────────────────────────────────────────────────────────────
+
+
+def _append_jsonl(path: Path, record: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record) + "\n")
+
+
+def _read_jsonl(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    records = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line:
+            try:
+                records.append(json.loads(line))
+            except json.JSONDecodeError:
+                pass
+    return records
+
+
+def _cutoff_ts(days: int) -> str:
+    return (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+
+
+def append_violation(
+    skill: str,
+    flag_name: str,
+    context: str,
+    session_id: str = "",
+) -> ViolationRecord:
+    """Append a violation record to violation_log.jsonl."""
+    rec = ViolationRecord(
+        skill=skill,
+        flag_name=flag_name,
+        context=context,
+        session_id=session_id,
+    )
+    _append_jsonl(violation_log_path(), rec.to_dict())
+    return rec
+
+
+def append_outcome(
+    skill: str,
+    postconditions_met: dict[str, bool],
+    session_id: str = "",
+) -> OutcomeRecord:
+    """Append an outcome record to outcome_log.jsonl."""
+    rec = OutcomeRecord(
+        skill=skill,
+        postconditions_met=postconditions_met,
+        session_id=session_id,
+    )
+    _append_jsonl(outcome_log_path(), rec.to_dict())
+    return rec
+
+
+def top_violations(n: int = 10, days: int = 30) -> list[tuple[str, str, int]]:
+    """Return top N (skill, flag_name) pairs by frequency over the last `days` days.
+
+    Each entry is (skill, flag_name, count), sorted by count descending.
+    """
+    cutoff = _cutoff_ts(days)
+    records = _read_jsonl(violation_log_path())
+    counter: Counter[tuple[str, str]] = Counter()
+    for r in records:
+        if r.get("ts", "") >= cutoff:
+            key = (r.get("skill", ""), r.get("flag_name", ""))
+            counter[key] += 1
+    return [(skill, flag, count) for (skill, flag), count in counter.most_common(n)]
+
+
+def skill_outcome_trend(skill: str, days: int = 30) -> dict[str, list[bool]]:
+    """Return per-metric pass/fail history for a skill over the last `days` days.
+
+    Returns dict[metric_name, list[bool]] — chronological order.
+    """
+    cutoff = _cutoff_ts(days)
+    records = _read_jsonl(outcome_log_path())
+    trend: dict[str, list[bool]] = {}
+    for r in records:
+        if r.get("skill") == skill and r.get("ts", "") >= cutoff:
+            for metric, passed in r.get("postconditions_met", {}).items():
+                trend.setdefault(metric, []).append(bool(passed))
+    return trend
+
+
+def monthly_rollup(n: int = 10) -> list[tuple[str, str, int]]:
+    """Return top N forget-flags by frequency over the last 30 days."""
+    return top_violations(n=n, days=30)

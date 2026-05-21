@@ -100,3 +100,105 @@ def test_log_paths_default_to_theigors(monkeypatch):
     assert vp.name == "violation_log.jsonl"
     assert op.name == "outcome_log.jsonl"
     assert "claudecode" in str(vp)
+
+
+# ── Logger tests ───────────────────────────────────────────────────────────────
+
+
+from lab.claudecode.skill_telemetry import (
+    append_outcome,
+    append_violation,
+    monthly_rollup,
+    skill_outcome_trend,
+    top_violations,
+)
+
+
+def test_append_violation_creates_jsonl(monkeypatch, tmp_path):
+    monkeypatch.setenv("IGOR_HOME", str(tmp_path))
+    rec = append_violation(
+        "sprint-ticket", "always-run-tests", "skipped tests before commit"
+    )
+    log = tmp_path / "claudecode" / "violation_log.jsonl"
+    assert log.exists()
+    import json
+
+    line = json.loads(log.read_text().strip())
+    assert line["skill"] == "sprint-ticket"
+    assert line["flag_name"] == "always-run-tests"
+    assert line["context"] == "skipped tests before commit"
+    assert "ts" in line
+
+
+def test_append_outcome_creates_jsonl(monkeypatch, tmp_path):
+    monkeypatch.setenv("IGOR_HOME", str(tmp_path))
+    append_outcome("sprint-ticket", {"tests-green": True, "diff-clean": False})
+    log = tmp_path / "claudecode" / "outcome_log.jsonl"
+    assert log.exists()
+    import json
+
+    line = json.loads(log.read_text().strip())
+    assert line["skill"] == "sprint-ticket"
+    assert line["postconditions_met"]["tests-green"] is True
+    assert line["postconditions_met"]["diff-clean"] is False
+
+
+def test_top_violations_counts(monkeypatch, tmp_path):
+    monkeypatch.setenv("IGOR_HOME", str(tmp_path))
+    append_violation("decided", "hypothesis-first", "skipped")
+    append_violation("decided", "hypothesis-first", "skipped again")
+    append_violation("sprint-ticket", "run-tests", "skipped tests")
+
+    results = top_violations(n=5, days=7)
+    assert len(results) == 2
+    top_skill, top_flag, top_count = results[0]
+    assert top_skill == "decided"
+    assert top_flag == "hypothesis-first"
+    assert top_count == 2
+
+
+def test_top_violations_excludes_old_records(monkeypatch, tmp_path):
+    import json
+    from datetime import datetime, timedelta, timezone
+
+    monkeypatch.setenv("IGOR_HOME", str(tmp_path))
+    log = tmp_path / "claudecode" / "violation_log.jsonl"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    old_ts = (datetime.now(timezone.utc) - timedelta(days=40)).isoformat()
+    log.write_text(
+        json.dumps(
+            {
+                "ts": old_ts,
+                "skill": "old",
+                "flag_name": "stale",
+                "context": "",
+                "session_id": "",
+            }
+        )
+        + "\n"
+    )
+    append_violation("new-skill", "recent-flag", "recent")
+    results = top_violations(n=5, days=30)
+    skills = [r[0] for r in results]
+    assert "old" not in skills
+    assert "new-skill" in skills
+
+
+def test_skill_outcome_trend(monkeypatch, tmp_path):
+    monkeypatch.setenv("IGOR_HOME", str(tmp_path))
+    append_outcome("sprint-ticket", {"tests-green": True})
+    append_outcome("sprint-ticket", {"tests-green": False})
+    append_outcome("other-skill", {"tests-green": True})
+
+    trend = skill_outcome_trend("sprint-ticket", days=7)
+    assert "tests-green" in trend
+    assert trend["tests-green"] == [True, False]
+    assert "other-skill" not in str(trend)
+
+
+def test_monthly_rollup_delegates_to_top_violations(monkeypatch, tmp_path):
+    monkeypatch.setenv("IGOR_HOME", str(tmp_path))
+    append_violation("decided", "hypothesis-first", "skipped")
+    results = monthly_rollup(n=5)
+    assert len(results) >= 1
+    assert results[0][0] == "decided"
