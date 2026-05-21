@@ -138,6 +138,30 @@ review.
 | tags=[Capability], skill file only + exempt-line in body | PASS (note exemption) |
 | tags=[Skills], no handler/MCP keywords in body | SKIP (not a capability ticket) |
 
+### 17. Skill feedback-loop check (when Affected files touch skills/)
+
+Scan the `Affected files:` section for any `skills/<name>/` path. For each matched
+skill name, run `/audit-feedback` on it:
+
+```bash
+python skills/audit-feedback/run check <name>
+```
+
+If the skill dir is absent or the run script doesn't exist: skip silently, note
+`[audit-feedback] skills/<name>/ not yet deployed — skipped`.
+
+If `/audit-feedback` returns AMEND: add each missing property to the findings as an
+advisory item. These do **not** auto-block the verdict — they require Akien to
+acknowledge the gap explicitly (he may accept the risk or defer fixing the skill).
+
+Example finding:
+```
+- [feedback-loop] skills/note/ missing: self-verification, failure-surface
+  → add read-back assertion after write; add sys.exit(1) on error path
+```
+
+**Match pattern:** `skills/([a-z0-9_-]+)/` anywhere in the description text.
+
 ## Output format
 
 ```
@@ -155,6 +179,7 @@ Findings:
 - [observability] no observable log line named
 - [split] 3+ verbs in one ticket (proposed: T-a + T-b)
 - [audit-emphasis] <tag or "none">
+- [feedback-loop] skills/<name>/ missing: <property list> (advisory — does not block)
 
 Amended ticket (if AMEND): <diff from input>
 Child proposals (if SPLIT): <list>
