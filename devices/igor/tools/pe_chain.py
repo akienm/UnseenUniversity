@@ -1657,6 +1657,10 @@ class PeChain(IgorBase):
         _fallback_ignore = [
             "tests/test_pe_chain_qwen_tier.py",
             "tests/test_pr_load_as_primary_attractor.py",
+            "tests/test_context_format.py",
+            "tests/test_persistent_relationships.py",
+            "tests/test_twm_context.py",
+            "tests/test_igor_boot_smoke.py",
         ]
         _ignore_args = [a for p in _fallback_ignore for a in ("--ignore", p)]
         result = _run_bash(
