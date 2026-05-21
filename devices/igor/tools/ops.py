@@ -680,6 +680,8 @@ def adopt_top_queue_ticket() -> str:
         from lab.claudecode import cc_queue as _cc_queue
 
         tasks = _cc_queue.load_tasks()
+        _max_diff_env = os.environ.get("IGOR_MAX_DIFFICULTY", "")
+        _max_diff = int(_max_diff_env) if _max_diff_env.isdigit() else None
         pending = [
             t
             for t in tasks
@@ -687,6 +689,7 @@ def adopt_top_queue_ticket() -> str:
             and t.get("worker") == "igor"
             and not t.get("blocked_at")
             and not t.get("gate")
+            and (_max_diff is None or int(t.get("target_difficulty") or 1) <= _max_diff)
         ]
         if not pending:
             return "[queue_drain] no sprint tickets — queue empty"
