@@ -200,6 +200,7 @@ class COA(IgorBase):
                 while getattr(igor, "_is_processing", False) and _waited < 10.0:
                     _t.sleep(0.5)
                     _waited += 0.5
+                result = None  # initialized here; set after ne.run() succeeds
                 try:
                     # Check NE's own gate before running — if should_run() is False
                     # the engine will return None (not a failure), don't escalate.
