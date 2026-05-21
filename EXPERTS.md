@@ -6,6 +6,7 @@
 - Are device boundaries and bus interfaces well-defined and not bypassed by shortcuts?
 - What is the blast radius if a single minion, device, or bus segment fails?
 - Is the skeleton/workspace abstraction sufficient for the workload it must support?
+- Are there components reaching across interfaces they shouldn't — knowing another device's internals when a dispatcher or service would suffice? What could be extracted into a named service?
 
 ## Security Engineer
 **Lens:** What can go wrong from adversarial inputs or trust boundary violations?
@@ -20,6 +21,7 @@
 - Is the skill library accumulating ROI or becoming a maintenance burden?
 - Are test coverage and documentation keeping pace with new device integrations?
 - What does the ticket velocity trend say about the factory's actual throughput?
+- Is the development process itself encapsulated — are design decisions being made at the right layer, or are implementation details leaking into the design conversation?
 
 ## Product Manager
 **Lens:** Is agent_datacenter delivering value toward its stated factory goal?
