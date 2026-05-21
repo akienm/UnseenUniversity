@@ -1,0 +1,38 @@
+[
+  {
+    "id": "T-audit-feedback-build",
+    "title": "Build /audit-feedback skill",
+    "size": "M",
+    "tags": ["Skills", "Audit", "Feedback"],
+    "status": "sprint",
+    "priority": 0.7,
+    "decision_id": "D-audit-feedback-2026-05-20",
+    "gate": null,
+    "target_difficulty": 2,
+    "description": "**Problem:** Skills currently have no structural requirement to verify their own output, surface failures, or preserve learning. The 'I'm only as good as my feedback loop' principle is stated but not enforced.\n\n**Proposed shape:** Create `skills/audit-feedback/SKILL.md` and `skills/audit-feedback/run`. The run script reads a skill directory and produces a structured report (machine-readable). The SKILL.md interprets that report against five properties and returns PASS or AMEND.\n\n**Five feedback-loop properties to check:**\n1. **Self-verification** — does the skill verify its own output before reporting success? (look for: post-write read-back, assertion, test call, or explicit 'verify' step in SKILL.md)\n2. **Observability** — is the result visible to the user? (look for: print statement in run script, slate append, explicit output step in SKILL.md)\n3. **Failure surface** — is failure detected and reported, not swallowed? (look for: try/except with print, explicit error step, non-zero exit on failure)\n4. **Context feedback** — is the outcome fed back into Claude's active context? (look for: run script that prints result, SKILL.md step that reads and reports output, not just 'write to file and move on')\n5. **Learning preservation** — is a learned fix captured durably? (look for: AMEND step that writes to SKILL.md, palace node, or decision; or explicit 'record fix' step)\n\n**run script actions:**\n- `python run check <skill-name>` — emits JSON with one entry per property: `{property, status: present|absent|unclear, evidence: <line/step that satisfies or lacks it>}`\n- `python run check-all` — runs check on all skills under `skills/`, emits summary table\n\n**SKILL.md behavior:**\n- Reads run output, applies LLM judgment on 'unclear' entries\n- Returns PASS (all 5 present) or AMEND (list missing properties with specific additions needed)\n- AMEND output format: `AMEND: <skill-name>\\n  missing: <property>\\n  add: <specific step or code pattern>`\n\n**Affected files:**\n- `skills/audit-feedback/SKILL.md` (new)\n- `skills/audit-feedback/run` (new Python script, no extension)\n\n**Design rules:**\n- run script must itself pass /audit-feedback (self-referential; check manually at filing)\n- Cross-platform: Python only, no bash/ps1\n- No Postgres dependency — reads skill dirs from filesystem only\n\n**Scope boundary:** Only the audit-feedback skill itself. Wiring into /audit-ticket is a separate ticket (T-audit-ticket-integrate-feedback, gated on this one).\n\n**Test plan:**\n- `python run check note` against skills/note — should show: self-verification absent (no read-back), observability present (print line), failure surface absent (no try/except), context feedback present (print), learning preservation absent (no record-fix step) — gives AMEND\n- `python run check savestate` — similar profile\n- `python run check audit-feedback` once written — should pass all 5 (self-referential smoke test)"
+  },
+  {
+    "id": "T-audit-ticket-integrate-feedback",
+    "title": "Wire /audit-feedback into /audit-ticket for skill-touching tickets",
+    "size": "S",
+    "tags": ["Skills", "Audit", "Workflow"],
+    "status": "sprint",
+    "priority": 0.5,
+    "decision_id": "D-audit-feedback-2026-05-20",
+    "gate": "T-audit-feedback-build",
+    "target_difficulty": 1,
+    "description": "**Problem:** /audit-ticket currently has no skill-quality gate. Tickets that add or modify skills can pass audit without ever checking whether those skills close their feedback loop.\n\n**Proposed shape:** Add a step to `skills/audit-ticket/SKILL.md` (after the existing checks, before PASS verdict): detect if the ticket's 'Affected files' section includes any `skills/<name>/` path. If yes, run `/audit-feedback <name>` on each affected skill. If /audit-feedback returns AMEND, surface the missing properties as an AMEND item on the ticket (don't block, but require acknowledgment).\n\n**Affected files:**\n- `skills/audit-ticket/SKILL.md` — add step between existing checks and final verdict\n\n**Design rules:**\n- Detection is text-matching on 'Affected files' section — simple, no parsing\n- /audit-feedback AMEND does not auto-block the ticket; it adds to the AMEND list so Akien can override explicitly\n- If /audit-feedback is not yet deployed (skill dir absent), skip silently with a note\n\n**Scope boundary:** Only SKILL.md edit. No run script changes. No other audit skills touched.\n\n**Test plan:**\n- File a test ticket with 'Affected files: skills/note/' — verify /audit-ticket now surfaces the /audit-feedback AMEND items\n- File a test ticket with no skills/ paths — verify /audit-ticket does not invoke /audit-feedback"
+  },
+  {
+    "id": "T-consequence-audit-feedback",
+    "title": "Consequence check: /audit-feedback skill adoption",
+    "size": "S",
+    "tags": ["Consequence", "Workflow"],
+    "status": "sprint",
+    "priority": 0.3,
+    "decision_id": "D-audit-feedback-2026-05-20",
+    "gate": "2026-06-03",
+    "target_difficulty": 1,
+    "description": "**What changed:** /audit-feedback skill added; /audit-ticket now calls it for skill-touching tickets.\n\n**Predicted unintended effects:**\n- AMEND fatigue: if most existing skills fail all 5 checks, every skill ticket generates noise. Could lead to reflexive dismissal of AMEND results.\n- False-positive 'present': the run script does text-matching for patterns like 'print' or 'try/except' — could mark a property satisfied when the code path never actually executes.\n- Integration overhead: /audit-ticket already has multiple audit calls; adding another may slow the filing flow noticeably if check-all is slow.\n- Scope creep: 'learning preservation' is the hardest property to detect mechanically; LLM interpretation of 'unclear' entries may vary session to session.\n\n**Signals to watch:**\n- First 5 /audit-ticket runs on skill-touching tickets: how many produce AMEND from /audit-feedback? If >3 of 5, consider raising the baseline or adjusting the 5 properties.\n- Any ticket where /audit-feedback AMEND was overridden: record why — if the same reason appears twice, update the detection heuristic.\n- run script check time: if `python run check-all` takes >10s, optimize or cache.\n\n**Gate condition:** Check by 2026-06-03 or after 5 skill-touching tickets have been filed through /audit-ticket, whichever comes first.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket"
+  }
+]
