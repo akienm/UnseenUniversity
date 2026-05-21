@@ -1112,7 +1112,8 @@ class TestPeImplement:
 
 class TestPeTest:
     def test_pass_result_when_tests_pass(self):
-        basket = {}
+        # new-tests gate exempted via ticket_description
+        basket = {"ticket_description": "no tests because: pe_chain unit test"}
         with patch(
             "wild_igor.igor.tools.pe_chain._run_bash",
             return_value="61 passed in 0.9s",
@@ -1127,7 +1128,7 @@ class TestPeTest:
         assert result["test_result"] == "pass"
 
     def test_fail_result_when_tests_fail(self):
-        basket = {}
+        basket = {"ticket_description": "no tests because: pe_chain unit test"}
         with patch(
             "wild_igor.igor.tools.pe_chain._run_bash",
             return_value="3 failed, 58 passed in 1.2s\nFAILED tests/test_x.py",
@@ -1144,7 +1145,7 @@ class TestPeTest:
         mock_bash.assert_not_called()
 
     def test_test_result_always_set_on_success(self):
-        basket = {}
+        basket = {"ticket_description": "no tests because: pe_chain unit test"}
         with patch(
             "wild_igor.igor.tools.pe_chain._run_bash",
             return_value="5 passed in 0.1s",
@@ -1152,6 +1153,47 @@ class TestPeTest:
             with patch.dict("sys.modules", {"wild_igor.igor.tools.ops": None}):
                 result = pe_test(basket)
         assert "test_result" in result
+
+    def test_new_tests_gate_fails_when_no_new_test_functions(self):
+        # Gate fires when tests pass but diff has no new def test_ lines
+        basket = {}  # no exemption in description
+        with patch(
+            "wild_igor.igor.tools.pe_chain._run_bash",
+            return_value="5 passed in 0.1s",
+        ):
+            with patch.dict("sys.modules", {"wild_igor.igor.tools.ops": None}):
+                with patch("subprocess.run") as mock_sp:
+                    mock_sp.return_value.stdout = (
+                        "--- a/foo.py\n+++ b/foo.py\n+def helper():\n    pass\n"
+                    )
+                    result = pe_test(basket)
+        assert result["test_result"].startswith("fail: no new def test_")
+
+    def test_new_tests_gate_passes_when_diff_has_test_function(self):
+        # Gate passes when diff contains +def test_something
+        basket = {}
+        with patch(
+            "wild_igor.igor.tools.pe_chain._run_bash",
+            return_value="6 passed in 0.1s",
+        ):
+            with patch.dict("sys.modules", {"wild_igor.igor.tools.ops": None}):
+                with patch("subprocess.run") as mock_sp:
+                    mock_sp.return_value.stdout = "--- a/tests/test_foo.py\n+++ b/tests/test_foo.py\n+def test_new_behavior():\n    assert True\n"
+                    result = pe_test(basket)
+        assert result["test_result"] == "pass"
+
+    def test_new_tests_gate_exempted_by_description(self):
+        # "no tests because:" in description skips the gate entirely
+        basket = {"ticket_description": "no tests because: observability-only change"}
+        with patch(
+            "wild_igor.igor.tools.pe_chain._run_bash",
+            return_value="5 passed in 0.1s",
+        ):
+            with patch.dict("sys.modules", {"wild_igor.igor.tools.ops": None}):
+                with patch("subprocess.run") as mock_sp:
+                    mock_sp.return_value.stdout = ""  # empty diff, no tests
+                    result = pe_test(basket)
+        assert result["test_result"] == "pass"
 
 
 # ── pe_close_loop ─────────────────────────────────────────────────────────────
