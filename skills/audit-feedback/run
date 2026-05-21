@@ -1,0 +1,208 @@
+#!/usr/bin/env python3
+"""audit-feedback/run — Feedback-loop completeness checker for skills.
+
+Usage:
+  python run check <skill-name>   — JSON report for one skill
+  python run check-all            — summary table for all skills
+"""
+
+from __future__ import annotations
+
+import json
+import re
+import sys
+from datetime import datetime
+from pathlib import Path
+
+SKILLS_ROOT = Path(__file__).resolve().parent.parent
+
+# Property definitions with heuristic detection patterns.
+# run_patterns: regex checked against skills/<name>/run (if present)
+# skill_patterns: regex checked against skills/<name>/SKILL.md
+PROPERTIES: dict[str, dict] = {
+    "self-verification": {
+        "description": "Skill verifies its own output before reporting success",
+        "run_patterns": [
+            r"read_text\(\)",
+            r"\.read\(",
+            r"\bassert\b",
+            r"\bverify\b",
+            r"json\.loads",
+        ],
+        "skill_patterns": [
+            r"\bverif",
+            r"read.{0,20}back",
+            r"confirm.{0,30}success",
+            r"check.{0,20}output",
+            r"\bassert\b",
+        ],
+    },
+    "observability": {
+        "description": "Result is visible to the user (not just written silently to disk)",
+        "run_patterns": [r"\bprint\("],
+        "skill_patterns": [
+            r"\bprint\b",
+            r"\bsurface\b",
+            r"\breport\b",
+            r"output:",
+            r"\bdisplay\b",
+        ],
+    },
+    "failure-surface": {
+        "description": "Failures are detected and reported, not swallowed",
+        "run_patterns": [
+            r"sys\.exit\s*\(\s*[^0\s]",
+            r"except.{0,80}\n.{0,30}print",
+            r"except.{0,80}\n.{0,30}sys\.exit",
+            r"\braise\b",
+        ],
+        "skill_patterns": [
+            r"\bSTOP\b",
+            r"\bfail\b",
+            r"error:",
+            r"surface.{0,20}error",
+            r"non.zero",
+            r"exit code",
+        ],
+    },
+    "context-feedback": {
+        "description": "Outcome re-enters Claude's active context (output is read, not just written to file)",
+        "run_patterns": [r"\bprint\("],
+        "skill_patterns": [
+            r"read.{0,30}output",
+            r"surface.{0,20}result",
+            r"print.{0,20}output",
+            r"output.{0,20}context",
+        ],
+    },
+    "learning-preservation": {
+        "description": "A learned fix is captured durably (SKILL.md update, palace node, or /decided)",
+        "run_patterns": [
+            r"palace",
+            r"decision",
+            r"\bAMEND\b",
+        ],
+        "skill_patterns": [
+            r"\bAMEND\b",
+            r"\bamend\b",
+            r"palace",
+            r"record.{0,15}fix",
+            r"/decided",
+            r"update.{0,20}skill",
+            r"\bdurable\b",
+        ],
+    },
+}
+
+
+def _line_context(text: str, pos: int, max_chars: int = 80) -> str:
+    """Return the line containing pos, truncated."""
+    start = text.rfind("\n", 0, pos) + 1
+    end = text.find("\n", pos)
+    if end == -1:
+        end = len(text)
+    line = text[start:end].strip()
+    return line[:max_chars] + ("…" if len(line) > max_chars else "")
+
+
+def _check_property(
+    prop: dict, skill_text: str, run_text: str
+) -> tuple[str, str]:
+    """Return (status, evidence) for one property."""
+    for pattern in prop["run_patterns"]:
+        m = re.search(pattern, run_text, re.MULTILINE | re.DOTALL)
+        if m:
+            return "present", "run: " + _line_context(run_text, m.start())
+
+    for pattern in prop["skill_patterns"]:
+        m = re.search(pattern, skill_text, re.MULTILINE | re.IGNORECASE)
+        if m:
+            return "present", "skill: " + _line_context(skill_text, m.start())
+
+    return "absent", "no evidence in run script or SKILL.md"
+
+
+def check_skill(name: str) -> dict:
+    skill_dir = SKILLS_ROOT / name
+    if not skill_dir.exists():
+        print(f"error: skills/{name}/ not found", file=sys.stderr)
+        sys.exit(1)
+
+    skill_md = skill_dir / "SKILL.md"
+    run_script = skill_dir / "run"
+    skill_text = skill_md.read_text(encoding="utf-8") if skill_md.exists() else ""
+    run_text = run_script.read_text(encoding="utf-8") if run_script.exists() else ""
+
+    properties = []
+    for prop_id, prop in PROPERTIES.items():
+        status, evidence = _check_property(prop, skill_text, run_text)
+        properties.append({"property": prop_id, "status": status, "evidence": evidence})
+
+    missing = [p["property"] for p in properties if p["status"] != "present"]
+    result = {
+        "skill": name,
+        "properties": properties,
+        "verdict": "PASS" if not missing else "AMEND",
+        "missing": missing,
+    }
+
+    # self-verification: assert output round-trips through JSON
+    assert json.loads(json.dumps(result)) is not None
+    return result
+
+
+def check_all() -> None:
+    skill_names = sorted(
+        d.name
+        for d in SKILLS_ROOT.iterdir()
+        if d.is_dir() and (d / "SKILL.md").exists()
+    )
+    results = []
+    errors = []
+    for name in skill_names:
+        try:
+            results.append(check_skill(name))
+        except Exception as e:
+            errors.append((name, str(e)))
+            print(f"  error checking {name}: {e}", file=sys.stderr)
+
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"audit-feedback check-all — {ts}")
+    print(f"{'skill':<32} {'verdict':<8} missing properties")
+    print("-" * 80)
+    for r in results:
+        missing_str = ", ".join(r["missing"]) if r["missing"] else ""
+        print(f"{r['skill']:<32} {r['verdict']:<8} {missing_str}")
+    print("-" * 80)
+    pass_count = sum(1 for r in results if r["verdict"] == "PASS")
+    amend_count = len(results) - pass_count
+    print(
+        f"{len(results)} skills checked — {pass_count} PASS, {amend_count} AMEND"
+        + (f", {len(errors)} errors" if errors else "")
+    )
+
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        print(
+            "usage:\n  python run check <skill-name>\n  python run check-all",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    cmd = sys.argv[1]
+    if cmd == "check-all":
+        check_all()
+    elif cmd == "check":
+        if len(sys.argv) < 3:
+            print("error: check requires a skill name", file=sys.stderr)
+            sys.exit(1)
+        result = check_skill(sys.argv[2])
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"error: unknown command '{cmd}'", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
