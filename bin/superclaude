@@ -170,7 +170,7 @@ export CLAUDE_TMUX_SESSION
 
 if [[ -n "${TMUX:-}" ]]; then
     # Already inside tmux — launch directly
-    exec claude --dangerously-skip-permissions "$@"
+    exec claude --dangerously-skip-permissions -n "$(hostname)" "$@"
 else
     # Outside tmux — create session (or reuse) and launch Claude inside it
     tmux new-session -d -s "$CLAUDE_TMUX_SESSION" 2>/dev/null || true

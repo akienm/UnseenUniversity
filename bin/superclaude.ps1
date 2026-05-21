@@ -63,4 +63,4 @@ if (-not $claude) {
     exit 1
 }
 
-& claude --dangerously-skip-permissions @args
+& claude --dangerously-skip-permissions -n $env:COMPUTERNAME @args
