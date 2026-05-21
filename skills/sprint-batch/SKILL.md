@@ -44,9 +44,8 @@ Ask Akien to pick when the graph is cyclic.
 
 Always run setup once at batch start — per-ticket re-setup just burns time:
 ```bash
-cd ~/TheIgors
+cd ${THEIGORS_HOME:-$HOME/TheIgors}
 git pull --rebase origin main
-source venv/bin/activate
 export IGOR_HOME_DB_URL=postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001
 ```
 

@@ -21,34 +21,16 @@ When the warning fires, always surface it to Akien and offer: run
 Akien decides.
 
 ## Step 0.5 — Debug flag
-```bash
-touch ~/.TheIgors/Igor-wild-0001/debug_session.flag
+```
+python run debug-flag
 ```
 
 ## Step 1 — Today's slate
 
 Always ensure today's slate exists — context-load creates one when the
 current day has no file yet:
-```bash
-SLATE=~/.TheIgors/claudecode/$(date +%Y%m%d).slate.txt
-if [ ! -f "$SLATE" ]; then
-  mkdir -p "$(dirname "$SLATE")"
-  cat > "$SLATE" <<EOF
-# Slate $(date +%Y-%m-%d)
-
-## Notes
-
-## In-flight
-NONE
-
-## Planned
-
-## Ad hoc
-
-## Done today
-EOF
-fi
-cat "$SLATE"
+```
+python run create-slate
 ```
 
 Section order is salience-first (D-slate-salience-order-2026-04-20): read

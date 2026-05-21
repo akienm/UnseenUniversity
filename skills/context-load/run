@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+"""context-load — session startup helpers.
+
+Usage:
+  python run create-slate   # ensure today's slate exists; print it
+  python run debug-flag     # set debug session flag
+"""
+import os
+import sys
+from datetime import datetime
+from pathlib import Path
+
+IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".TheIgors"))
+
+
+def create_slate() -> None:
+    date_str = datetime.now().strftime("%Y%m%d")
+    date_fmt = datetime.now().strftime("%Y-%m-%d")
+    slate = IGOR_HOME / "claudecode" / f"{date_str}.slate.txt"
+    slate.parent.mkdir(parents=True, exist_ok=True)
+    if not slate.exists():
+        slate.write_text(
+            f"# Slate {date_fmt}\n\n"
+            "## Notes\n\n"
+            "## In-flight\nNONE\n\n"
+            "## Planned\n\n"
+            "## Ad hoc\n\n"
+            "## Done today\n",
+            encoding="utf-8",
+        )
+    print(slate.read_text(encoding="utf-8"))
+
+
+def debug_flag() -> None:
+    flag_dir = IGOR_HOME / "Igor-wild-0001"
+    flag_dir.mkdir(parents=True, exist_ok=True)
+    flag = flag_dir / "debug_session.flag"
+    flag.touch()
+    print(f"debug flag: {flag}")
+
+
+def main() -> None:
+    action = sys.argv[1] if len(sys.argv) > 1 else "create-slate"
+    if action == "create-slate":
+        create_slate()
+    elif action == "debug-flag":
+        debug_flag()
+    else:
+        print(f"unknown: {action}. Use: create-slate | debug-flag", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

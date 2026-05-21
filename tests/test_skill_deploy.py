@@ -149,9 +149,9 @@ def test_deploy_status_shape(fake_skill_tree):
     assert "my_local_skill" in info["local_only"]
 
 
-def test_windows_backend_deploy_raises_not_implemented():
-    with pytest.raises(NotImplementedError, match="WindowsBackend not yet implemented"):
-        WindowsBackend().deploy_skill(Path("/tmp/src"), Path("/tmp/dst"))
+def test_windows_backend_deploy_raises_on_missing_source(tmp_path):
+    with pytest.raises(FileNotFoundError, match="source skill dir missing"):
+        WindowsBackend().deploy_skill(tmp_path / "nonexistent", tmp_path / "dst")
 
 
 @pytest.mark.skipif(

@@ -158,7 +158,7 @@ def test_shell_profile_returns_bashrc_on_linux(monkeypatch) -> None:
     assert p.parent == Path.home()
 
 
-def test_shell_profile_returns_bashrc_on_windows(monkeypatch) -> None:
+def test_shell_profile_returns_powershell_on_windows(monkeypatch) -> None:
     monkeypatch.setattr(platform, "system", lambda: "Windows")
     p = _shell_profile()
-    assert p.name == ".bashrc"
+    assert p.name == "Microsoft.PowerShell_profile.ps1"

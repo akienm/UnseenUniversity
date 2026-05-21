@@ -126,8 +126,8 @@ ready to ship.
 ### 8. Test
 
 Always run tests before commit:
-```bash
-cd ~/TheIgors && source venv/bin/activate && python -m pytest tests/ -x -q 2>&1 | grep -A 5 -E "FAIL|ERROR|assert|Exception" | head -120 || true
+```
+python run test
 ```
 Empty output = all tests pass. Non-empty = failures (grep captures failure line + 5 lines of traceback context). A green run is the signal to stage. A red run means fix the failure first — never commit-and-see.
 
@@ -184,7 +184,9 @@ Always let pre-commit hooks run. Push non-force to main.
 Always close with a one-line summary of what actually shipped:
 ```bash
 python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py close <id> "what was built"
-echo "- done: <id> — <summary>" >> ~/.TheIgors/claudecode/$(date +%Y%m%d).slate.txt
+```
+```
+python run done-slate <id> "what was built"
 ```
 
 ### 12. Retroactive incidental ticket

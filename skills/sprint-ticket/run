@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+"""sprint-ticket — per-ticket sprint helpers.
+
+Usage:
+  python run test                              # run pytest; empty output = pass
+  python run done-slate <ticket-id> <summary> # append done line to today's slate
+"""
+import os
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
+
+IGOR_HOME     = Path(os.environ.get("IGOR_HOME",     Path.home() / ".TheIgors"))
+THEIGORS_HOME = Path(os.environ.get("THEIGORS_HOME", Path.home() / "TheIgors"))
+
+
+def cmd_test() -> None:
+    result = subprocess.run(
+        ["uv", "run", "pytest", "tests/", "-x", "-q"],
+        cwd=THEIGORS_HOME,
+        capture_output=True,
+        text=True,
+    )
+    combined = result.stdout + result.stderr
+    # Grep-equivalent: lines matching failure patterns + 5 lines of context
+    lines = combined.splitlines()
+    failure_keywords = {"FAIL", "ERROR", "assert", "Exception"}
+    output_lines = []
+    for i, line in enumerate(lines):
+        if any(kw in line for kw in failure_keywords):
+            start = max(0, i - 0)
+            end   = min(len(lines), i + 6)
+            output_lines.extend(lines[start:end])
+    # Deduplicate while preserving order
+    seen = set()
+    deduped = []
+    for ln in output_lines:
+        if ln not in seen:
+            seen.add(ln)
+            deduped.append(ln)
+    if deduped:
+        print("\n".join(deduped[:120]))
+    # Empty output = all tests pass (matches original grep | head -120 || true)
+
+
+def cmd_done_slate(ticket_id: str, summary: str) -> None:
+    date_str = datetime.now().strftime("%Y%m%d")
+    slate = IGOR_HOME / "claudecode" / f"{date_str}.slate.txt"
+    if slate.exists():
+        with slate.open("a", encoding="utf-8") as f:
+            f.write(f"\n- done: {ticket_id} — {summary}\n")
+    print(f"done: {ticket_id} — {summary}")
+
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        print("usage: python run test | done-slate <id> <summary>", file=sys.stderr)
+        sys.exit(1)
+    action = sys.argv[1]
+    if action == "test":
+        cmd_test()
+    elif action == "done-slate":
+        if len(sys.argv) < 4:
+            print("usage: python run done-slate <ticket-id> <summary>", file=sys.stderr)
+            sys.exit(1)
+        cmd_done_slate(sys.argv[2], " ".join(sys.argv[3:]))
+    else:
+        print(f"unknown: {action}. Use: test | done-slate", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
