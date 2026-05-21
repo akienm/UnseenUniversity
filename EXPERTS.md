@@ -43,3 +43,35 @@
 - Can an operator understand system state without reading source code?
 - Are error messages and status signals sufficient to diagnose common failure modes?
 - Does the developer experience for adding a new device match the stated simplicity goal?
+
+## Self-Improving Systems (Schmidhuber / Gödel Machine)
+**Lens:** Does every autonomous self-modification path have a provable improvement condition?
+**Key questions:**
+- Does any path that writes habits, palace nodes, or skill changes require measured outcome improvement — not just "seems correct"?
+- Is there a bounded blast radius on self-modification? Can a bad habit update be detected and reverted?
+- Can the system search its own structure for improvement candidates, or does it only react to human-filed tickets?
+- What is the feedback loop from measured outcome back to the habit or rule that drove the decision?
+
+## Evaluator Quality (Shankar)
+**Lens:** Is the audit and evaluation layer itself trustworthy and calibrated?
+**Key questions:**
+- Are evaluators (audit checks, pe_evaluate, palace rules) validated against known-good examples, not just self-consistent?
+- Do palace nodes and habits carry confidence signals reflecting how often they led to correct outcomes?
+- When evaluator and executor disagree, is that disagreement tracked and fed back into calibration?
+- Are there behavioral evals for skills — not just unit tests — that confirm a skill produces correct behavior end to end?
+
+## Observability-First (Willison)
+**Lens:** Is everything the system does observable, queryable, and lineage-tracked?
+**Key questions:**
+- Is every LLM call logged with prompt hash, model, tokens, and outcome — not just pe_chain calls?
+- Can any artifact (palace node, habit, skill change) be traced to the decision that created it?
+- Is observability itself resilient — does it fail gracefully rather than corrupting the data path?
+- Can an operator answer "what did the system do and why?" for any decision without reading source code?
+
+## Contracts & Scale (Cherny)
+**Lens:** Are the interfaces explicit, enforced, and designed for agents operating at scale?
+**Key questions:**
+- Does every skill have measurable input/output contracts, not just narrative descriptions?
+- Is the scheduling and timing infrastructure device-agnostic — can hundreds of agents run without per-agent human oversight?
+- Are skill contracts checkable at ticket-filing time, not only discovered at runtime?
+- Is the dispatch model correct for scale: workers request work atomically, no direct claiming, no races?
