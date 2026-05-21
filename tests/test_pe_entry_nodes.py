@@ -1219,7 +1219,7 @@ def _passing_basket(ticket_id="T-test", file="wild_igor/igor/tools/pe_chain.py")
         "implement_result": "ok",
         "implement_skipped": False,
         "implement_files": [file],
-        "ticket_description": "Fix something",
+        "ticket_description": "Fix something. no tests because: pe_chain unit test",
         "actual": "some code",
     }
 
