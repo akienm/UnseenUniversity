@@ -306,6 +306,10 @@ When the day's slate is done, we run /day-close.
 
 **Preferred Paths:** A palace subtree (theigors/rules/preferred_paths/*) cataloging deprecated patterns alongside their preferred replacements -- e.g. raw psql calls vs. the MCP proxy, print() vs. the IgorBase logger, direct DB writes vs. cortex.store(). A scan tool watches 60 days of git history for regressions and surfaces candidates for review, never auto-filing.
 
+**Levers Doc Sync Rule:** Whenever a skill file is edited or a new workflow capability is added, the levers doc must be updated to reflect the change before the sprint closes (sprint-ticket step 12.5). The levers doc is the single human-readable summary of how we work; it rots when sprints ship behavior changes without updating it. A forever audit check (levers-doc-skill-sync) fires LOW when skill files were modified in the last day without a corresponding levers doc update.
+
+*Why:* Skills encode behavior; this doc encodes the design intent behind the behavior. When they diverge, new sessions have no way to understand why the system works the way it does.
+
 ---
 
 ## For Additional Background
