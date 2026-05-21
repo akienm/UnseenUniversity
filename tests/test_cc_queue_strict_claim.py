@@ -54,16 +54,18 @@ class TestStrictClaimModel:
             with pytest.raises(LegacyDirectClaimError):
                 cmd_claim(["T-whatever"])
 
-    def test_posts_to_channel_before_raising(self):
-        """cmd_claim posts [CLAIM_BLOCKED] to channel before raising."""
+    def test_does_not_post_to_channel(self):
+        """cmd_claim does NOT post to channel — prevents the NE feedback loop.
+
+        Prior behavior (posting [CLAIM_BLOCKED] to Igor's input channel) caused
+        Igor's NE to generate a response about the old model and retry, creating
+        a ~20s loop. The fix: only log the attempt, never post to channel.
+        """
         mock_post = MagicMock(return_value=False)
         with patch("lab.claudecode.cc_queue._igor_post", mock_post):
             with pytest.raises(LegacyDirectClaimError):
                 cmd_claim(["T-whatever"])
-        mock_post.assert_called_once()
-        posted_content = mock_post.call_args[0][0]
-        assert "CLAIM_BLOCKED" in posted_content
-        assert "LegacyDirectClaimError" in posted_content
+        mock_post.assert_not_called()
 
     def test_logs_attempt_before_raising(self):
         """cmd_claim logs the legacy attempt before raising."""
