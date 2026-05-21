@@ -1756,11 +1756,68 @@ class PeChain(IgorBase):
 
         return self.basket
 
+    def pe_evaluate(self) -> dict:
+        """
+        EVALUATE step: binary check of sprint outcome against the ticket Test plan.
+
+        Runs AFTER pe_test passes, BEFORE _pe_commit. Uses a separate model call
+        so the executor cannot judge its own homework (two-model split per
+        D-articles-synthesis-2026-05-21 / URL-8 VentureBeat /goals).
+
+        Non-blocking: any evaluator failure defaults to "done" so the sprint is
+        never stuck by evaluator unavailability.
+
+        Reads from self.basket: ticket_description, test_result, plan_summary
+        Writes to self.basket:
+          evaluate_result  str  — "done" | "not_done" | "skipped"
+          evaluate_reason  str  — empty for done/skipped; one-sentence for not_done
+        """
+        if self.basket.get("error"):
+            return self.basket
+
+        try:
+            from .pe_evaluator import evaluate_sprint_outcome
+        except Exception as imp_exc:
+            self.log.debug("pe_evaluator import failed (non-fatal): %s", imp_exc)
+            self.basket["evaluate_result"] = "done"
+            self.basket["evaluate_reason"] = "evaluator unavailable — passed through"
+            return self.basket
+
+        try:
+            import subprocess
+
+            result = subprocess.run(
+                ["git", "diff", "HEAD~1", "HEAD", "--stat"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                cwd=os.path.expanduser("~/TheIgors"),
+            )
+            diff_stat = result.stdout[:1500]
+        except Exception:
+            diff_stat = "(diff unavailable)"
+
+        verdict, reason = evaluate_sprint_outcome(
+            ticket_description=self.basket.get("ticket_description", ""),
+            test_result=self.basket.get("test_result", "pass"),
+            diff_stat=diff_stat,
+            plan_summary=self.basket.get("plan_summary", ""),
+            call_model_fn=_call_tier2,
+        )
+        self.basket["evaluate_result"] = verdict
+        self.basket["evaluate_reason"] = reason
+        if verdict == "not_done":
+            self.log.warning("EVALUATE: not_done — %s", reason[:80])
+        else:
+            self.log.info("EVALUATE: %s", verdict)
+        return self.basket
+
     def pe_close_loop(self) -> dict:
         """
         CLOSE LOOP step: dispatch based on test_result.
 
         BRANCHIF test_result == "pass":
+          → pe_evaluate: binary check against test plan (two-model split)
           → pe_commit: git commit the change
           → pe_close: close goal + mark ticket done
           → return self.basket (chain complete)
@@ -1799,6 +1856,29 @@ class PeChain(IgorBase):
                         f"hypothesis. Error: {self.basket.get('hypothesis_error', 'unknown')[:120]}"
                     ),
                 )
+            # Evaluator pass — independent model checks test plan conditions.
+            # If not_done and retries remain, treat like a test failure and replan.
+            self.basket = self.pe_evaluate()
+            if (
+                self.basket.get("evaluate_result") == "not_done"
+                and attempt_count < _MAX_ATTEMPTS
+            ):
+                reason = self.basket.get("evaluate_reason", "evaluator: not_done")
+                self.basket["test_result"] = f"fail: evaluator: {reason}"
+                self.basket["attempt_count"] = attempt_count + 1
+                self.log.info(
+                    "CLOSE_LOOP: evaluator not_done, attempt %d/%d — replanning",
+                    self.basket["attempt_count"],
+                    _MAX_ATTEMPTS,
+                )
+                self.basket = self._pe_replan()
+                if self.basket.get("error"):
+                    return self.basket
+                self.basket = self.pe_implement()
+                if self.basket.get("error"):
+                    return self.basket
+                self.basket = self.pe_test()
+                return self.pe_close_loop()
             self.basket = self._pe_commit()
             # Belt-and-suspenders: even if implement_skipped wasn't set on this
             # self.basket (e.g. the self.basket arrived from a fragmented dispatch where
@@ -2586,6 +2666,10 @@ def pe_implement(basket: PeHypothesizeOutput) -> PeImplementOutput:
 
 def pe_probe(basket: dict) -> dict:
     return PeChain(basket=basket).pe_probe()
+
+
+def pe_evaluate(basket: dict) -> dict:
+    return PeChain(basket=basket).pe_evaluate()
 
 
 def pe_close_loop(basket: dict) -> PeCloseLoopOutput:
