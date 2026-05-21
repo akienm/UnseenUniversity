@@ -966,6 +966,25 @@ def _scraps_validate(ticket: dict) -> bool:
     return False
 
 
+_REQUIRED_DESCRIPTION_SECTIONS = [
+    "**Affected files:**",
+    "**Scope boundary:**",
+    "**Test plan:**",
+]
+
+
+def _check_description_contracts(ticket_id: str, description: str) -> None:
+    """Warn when required description sections are missing. Non-blocking."""
+    if not description:
+        return
+    missing = [s for s in _REQUIRED_DESCRIPTION_SECTIONS if s not in description]
+    if missing:
+        print(
+            f"  WARNING ({ticket_id}): description missing required section(s): "
+            + ", ".join(missing)
+        )
+
+
 def cmd_add(args):
     """Add tasks from a JSON file (array of task objects) or inline JSON string."""
     if not args:
@@ -1016,6 +1035,7 @@ def cmd_add(args):
         if not _scraps_validate(nt):
             print(f"  blocked: {nt['id']} — fix issues above to add.")
             continue
+        _check_description_contracts(nt["id"], nt.get("description", ""))
         # Embed status prefix in title for one-grep searchability
         nt["title"] = _with_status_prefix(nt["status"], nt["title"])
         tasks.append(nt)
