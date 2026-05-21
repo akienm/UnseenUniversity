@@ -72,10 +72,26 @@ for n in read_watch_next('expert'):
 ```
 
 ### 2. Select experts
-- **Weekly**: choose 3 experts at random from the 11 (shuffle by day-of-week seed).
-- **Monthly**: all 11.
-- **On-demand with --experts**: the named ones.
-- **On-demand with --area**: map area → relevant experts:
+
+Always load the expert panel from the project root first:
+```bash
+python run load .
+```
+This reads `EXPERTS.md` if present; falls back to the default 11-expert list when absent.
+The loaded JSON is the authoritative panel for this run — use it for all selection below.
+
+Select based on invocation mode:
+```bash
+python run select weekly .              # 3 day-seeded random experts
+python run select monthly .             # all experts in the loaded panel
+python run select experts:Safety,HCI .  # named experts (partial match)
+python run select area:cognition .      # area-mapped experts (default panel only)
+```
+
+- **Weekly**: choose 3 experts at random from the loaded list (day-of-week seed — deterministic within a day).
+- **Monthly**: all experts in the loaded panel.
+- **On-demand with --experts**: the named ones (partial name match).
+- **On-demand with --area** (default 11-expert panel only — area names are Igor-specific):
   - `cognition` → Cognitive Scientist, ML Engineer, Safety Engineer
   - `memory` → Data Engineer, Systems Architect, Reliability Engineer
   - `network` → Distributed Systems, Security Engineer

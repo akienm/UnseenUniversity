@@ -1,0 +1,231 @@
+#!/usr/bin/env python3
+"""audit-expert/run — Load and select experts from EXPERTS.md.
+
+Usage:
+  python run load .                      — print JSON expert list for current dir
+  python run load <project-path>         — print JSON expert list for given dir
+  python run select weekly <path>        — print 3 day-seeded random experts
+  python run select monthly <path>       — print all experts
+  python run select experts:<n1,n2> <path>  — print named experts (partial match)
+"""
+
+from __future__ import annotations
+
+import json
+import random
+import sys
+from datetime import date
+from pathlib import Path
+
+
+DEFAULT_EXPERTS: list[dict] = [
+    {
+        "name": "Cognitive Scientist",
+        "lens": "Is Igor's reasoning architecture consistent with human cognition models?",
+        "key_questions": [
+            "Does salience gating and attention mechanism align with predictive coding / anticipation models?",
+            "Are working memory limits respected across the narrative engine's context budget?",
+            "Does the activate → focus → proposal cycle reflect coherent goal-directed behavior?",
+        ],
+    },
+    {
+        "name": "Systems Architect",
+        "lens": "Is the subsystem decomposition clean with enforced contract boundaries?",
+        "key_questions": [
+            "Are device boundaries and bus interfaces well-defined and not bypassed by shortcuts?",
+            "What is the blast radius if a single minion, device, or bus segment fails?",
+            "Is the skeleton/workspace abstraction sufficient for the workload it must support?",
+        ],
+    },
+    {
+        "name": "Safety Engineer",
+        "lens": "What are the failure modes and how bad can they cascade?",
+        "key_questions": [
+            "What runaway processes are possible and what stops them short of human intervention?",
+            "Which states are unrecoverable, and do guards prevent entering them?",
+            "Are correlated failures isolated or can one subsystem cascade into others?",
+        ],
+    },
+    {
+        "name": "Human-Computer Interaction",
+        "lens": "Is Igor legible and trustworthy to its users?",
+        "key_questions": [
+            "Are error messages and status signals interpretable without reading source code?",
+            "Does Igor's channel output give Akien the right signal-to-noise ratio for oversight?",
+            "What trust signals are missing when Igor makes high-stakes or irreversible decisions?",
+        ],
+    },
+    {
+        "name": "Distributed Systems",
+        "lens": "Is the multi-instance, multi-machine design sound under realistic failure conditions?",
+        "key_questions": [
+            "Are clock-drift and partition-tolerance assumptions explicit and tested?",
+            "Where do idempotency guarantees break down under concurrent writes to shared state?",
+            "Is the OR routing layer's consistency model correct for the failure modes it must survive?",
+        ],
+    },
+    {
+        "name": "Machine Learning Engineer",
+        "lens": "Is the learning architecture coherent and are the feedback loops healthy?",
+        "key_questions": [
+            "Is training data quality sufficient and distribution shift being tracked?",
+            "Are feedback loops closing cleanly without introducing systematic bias?",
+            "Does cold-start behavior produce safe, recoverable initial states?",
+        ],
+    },
+    {
+        "name": "Process / Meta Engineer",
+        "lens": "Is the development process self-improving?",
+        "key_questions": [
+            "Is the audit → ticket → sprint cycle closing tickets faster than it opens them?",
+            "Where is tech debt accumulating silently without a corresponding ticket?",
+            "Are skill and workflow changes compound-positive or creating downstream friction?",
+        ],
+    },
+    {
+        "name": "Security Engineer",
+        "lens": "What can break from adversarial or unexpected inputs?",
+        "key_questions": [
+            "What trust boundaries exist and are they enforced at the right layer?",
+            "Where could injection paths (prompt injection, SQL) reach privileged operations?",
+            "Is the audit trail complete enough to reconstruct any incident post-hoc?",
+        ],
+    },
+    {
+        "name": "Reliability Engineer",
+        "lens": "What does the on-call story look like when something goes wrong at 3 a.m.?",
+        "key_questions": [
+            "What alerting gaps would leave an incident undiscovered for hours?",
+            "Which degradation paths have no graceful fallback and no runbook entry?",
+            "Is MTTR improving sprint over sprint, or are the same failure modes recurring?",
+        ],
+    },
+    {
+        "name": "Data Engineer",
+        "lens": "Is the persistence layer sound and defensible over time?",
+        "key_questions": [
+            "Are schema migrations safe under concurrent reads and writes to clan.memories?",
+            "Is data lineage traceable from palace nodes back to their originating decisions?",
+            "What retention policy gaps could cause the DB to grow unbounded or lose working state?",
+        ],
+    },
+    {
+        "name": "Product Manager",
+        "lens": "Is Igor actually making measurable progress toward its stated goal?",
+        "key_questions": [
+            "What is the ticket velocity trend and what pattern of blocker is driving it?",
+            "Are capabilities expanding toward the endgame goal or drifting into infrastructure?",
+            "Is scope creep absorbing cycles that should go toward the autonomy roadmap?",
+        ],
+    },
+]
+
+_AREA_MAP: dict[str, list[str]] = {
+    "cognition": ["Cognitive Scientist", "Machine Learning Engineer", "Safety Engineer"],
+    "memory": ["Data Engineer", "Systems Architect", "Reliability Engineer"],
+    "network": ["Distributed Systems", "Security Engineer"],
+    "tools": ["Human-Computer Interaction", "Process / Meta Engineer", "Product Manager"],
+}
+
+
+def _parse_experts_md(text: str) -> list[dict]:
+    """Parse EXPERTS.md format into list of expert dicts."""
+    experts: list[dict] = []
+    current: dict | None = None
+    for line in text.splitlines():
+        stripped = line.strip()
+        if line.startswith("## ") and not line.startswith("### "):
+            if current and current.get("lens"):
+                experts.append(current)
+            current = {"name": line[3:].strip(), "lens": "", "key_questions": []}
+        elif current is not None:
+            if stripped.startswith("**Lens:**"):
+                current["lens"] = stripped[len("**Lens:**") :].strip()
+            elif stripped.startswith("- "):
+                current["key_questions"].append(stripped[2:].strip())
+    if current and current.get("lens"):
+        experts.append(current)
+    return experts
+
+
+def load_experts(project_root: str) -> list[dict]:
+    """Load from EXPERTS.md at project_root. Falls back to DEFAULT_EXPERTS if absent."""
+    experts_path = Path(project_root) / "EXPERTS.md"
+    if not experts_path.exists():
+        return DEFAULT_EXPERTS
+    parsed = _parse_experts_md(experts_path.read_text(encoding="utf-8"))
+    return parsed if parsed else DEFAULT_EXPERTS
+
+
+def select_experts(
+    experts: list[dict],
+    mode: str,
+    names: list[str] | None = None,
+    area: str | None = None,
+    seed: int | None = None,
+) -> list[dict]:
+    """Return the selected subset of experts for the given mode."""
+    if mode == "monthly":
+        return experts
+
+    if mode == "explicit" and names:
+        nl = [n.lower() for n in names]
+        return [e for e in experts if any(n in e["name"].lower() for n in nl)]
+
+    if mode == "area" and area:
+        target_names = _AREA_MAP.get(area.lower(), [])
+        tl = [n.lower() for n in target_names]
+        matched = [e for e in experts if any(t in e["name"].lower() for t in tl)]
+        return matched if matched else experts[:3]
+
+    # weekly: 3 random, seeded by day-of-week (deterministic within a day)
+    day_seed = seed if seed is not None else date.today().weekday()
+    rng = random.Random(day_seed)
+    return rng.sample(experts, min(3, len(experts)))
+
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        print(
+            "usage:\n"
+            "  python run load <project-path>\n"
+            "  python run select weekly <project-path>\n"
+            "  python run select monthly <project-path>\n"
+            "  python run select experts:<n1,n2> <project-path>",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    cmd = sys.argv[1]
+
+    if cmd == "load":
+        project_root = sys.argv[2] if len(sys.argv) > 2 else "."
+        experts = load_experts(project_root)
+        print(json.dumps(experts, indent=2))
+
+    elif cmd == "select":
+        if len(sys.argv) < 4:
+            print("error: select requires mode and project-path", file=sys.stderr)
+            sys.exit(1)
+        mode_arg = sys.argv[2]
+        project_root = sys.argv[3]
+        experts = load_experts(project_root)
+
+        if mode_arg.startswith("experts:"):
+            names = mode_arg[len("experts:") :].split(",")
+            selected = select_experts(experts, "explicit", names=names)
+        elif mode_arg.startswith("area:"):
+            area = mode_arg[len("area:"):]
+            selected = select_experts(experts, "area", area=area)
+        else:
+            selected = select_experts(experts, mode_arg)
+
+        print(json.dumps(selected, indent=2))
+
+    else:
+        print(f"error: unknown command '{cmd}'", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
