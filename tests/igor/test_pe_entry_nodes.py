@@ -26,7 +26,6 @@ from wild_igor.igor.tools.pe_chain import (
     _parse_hypothesis,
     _situate_from_memory,
     _validate_hypothesis,
-    pe_claim,
     pe_close_loop,
     pe_entry_init,
     pe_hypothesize,
@@ -152,54 +151,17 @@ class TestPeEntryInit:
         assert result["ticket_id"] == "T-x"
 
 
-# ── pe_claim ──────────────────────────────────────────────────────────────────
+# ── pe_claim — tombstone ──────────────────────────────────────────────────────
 
 
 class TestPeClaim:
-    def test_confirms_in_progress_via_show(self, basket_with_ticket):
-        """pe_claim verifies ticket is in_progress using cc_queue show (not claim)."""
-        in_progress_response = '{"status": "in_progress", "id": "T-test-ticket"}'
-        with patch(
-            "wild_igor.igor.tools.pe_chain._run_bash",
-            return_value=in_progress_response,
-        ) as mock_bash:
-            result = pe_claim(basket_with_ticket)
-        assert "error" not in result
-        assert "claim_result" in result
-        assert "confirmed in_progress" in result["claim_result"]
-        call_args = mock_bash.call_args[0][0]
-        assert "show" in call_args
-        assert "T-test-ticket" in call_args
+    def test_raises_legacy_error(self):
+        """pe_claim is removed — any call site must raise LegacyDirectClaimError."""
+        import pytest
+        from wild_igor.igor.tools.pe_chain import pe_claim, LegacyDirectClaimError
 
-    def test_error_passthrough(self):
-        basket = {"error": "prior error"}
-        result = pe_claim(basket)
-        assert result["error"] == "prior error"
-
-    def test_error_when_no_ticket_id(self):
-        result = pe_claim({})
-        assert "error" in result
-        assert "ticket_id" in result["error"]
-
-    def test_claim_result_written_to_basket(self, basket_with_ticket):
-        in_progress_response = '{"status": "in_progress", "id": "T-test-ticket"}'
-        with patch(
-            "wild_igor.igor.tools.pe_chain._run_bash",
-            return_value=in_progress_response,
-        ):
-            result = pe_claim(basket_with_ticket)
-        assert "claim_result" in result
-
-    def test_errors_when_ticket_not_in_progress(self, basket_with_ticket):
-        """pe_claim aborts if ticket is sprint status (not pre-claimed via cmd_next)."""
-        sprint_response = '{"status": "sprint", "id": "T-test-ticket"}'
-        with patch(
-            "wild_igor.igor.tools.pe_chain._run_bash",
-            return_value=sprint_response,
-        ):
-            result = pe_claim(basket_with_ticket)
-        assert "error" in result
-        assert "not in_progress" in result["error"]
+        with pytest.raises(LegacyDirectClaimError):
+            pe_claim({})
 
 
 # ── pe_read_ticket ────────────────────────────────────────────────────────────
@@ -269,15 +231,11 @@ class TestPeReadTicket:
 
 class TestRunPeEntryChain:
     def test_full_chain_populates_basket(self):
-        """Full chain: basket seeded with ticket_id → claim → read → test pass."""
+        """Full chain: basket seeded with ticket_id → read → plan → test pass."""
         with (
             patch(
                 "wild_igor.igor.tools.pe_chain._load_queue_tasks",
                 return_value=[SAMPLE_TICKET],
-            ),
-            patch(
-                "wild_igor.igor.tools.pe_chain._run_bash",
-                return_value='{"status": "in_progress", "id": "T-test-ticket"}',
             ),
             patch("wild_igor.igor.tools.pe_chain._call_tier2", return_value=None),
             patch(
@@ -285,8 +243,6 @@ class TestRunPeEntryChain:
                 Path(__file__).resolve().parent.parent,
             ),
             patch("wild_igor.igor.tools.pe_chain._post_to_channel"),
-            # Now class methods; patch on PeChain. autospec=True so `self` is
-            # passed as the first arg — side effects mutate self.basket.
             patch.object(
                 pe_chain.PeChain,
                 "pe_test",
@@ -313,7 +269,7 @@ class TestRunPeEntryChain:
         assert result["ticket_description"] == SAMPLE_TICKET["description"]
         assert result["ticket_title"] == SAMPLE_TICKET["title"]
         assert result["plan_files"] == ["wild_igor/igor/tools/ops.py"]
-        assert "confirmed in_progress" in result["claim_result"]
+        assert "claim_result" not in result  # claiming removed
         assert result["attempt_count"] == 0
         assert result["expected"] == "tests pass, requirements met"
 
@@ -326,7 +282,7 @@ class TestRunPeEntryChain:
             result = run_pe_entry_chain({})
 
         assert "error" in result
-        mock_bash.assert_not_called()  # CLAIM never ran
+        mock_bash.assert_not_called()  # READ_TICKET never ran
 
     def test_chain_stops_when_ticket_not_found(self):
         with patch("wild_igor.igor.tools.pe_chain._load_queue_tasks", return_value=[]):

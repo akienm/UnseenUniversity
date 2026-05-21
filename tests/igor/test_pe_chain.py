@@ -1,15 +1,15 @@
 """
 test_pe_chain.py — Registration coverage for pe_* per-step MCPCALL tools.
 
-T-engram-mcpcall-register-pe-steps: the 12 ENGRAM_CODE_* engram payloads
-call one of pe_entry_init / pe_claim / pe_read_ticket / pe_plan / pe_filter /
+T-engram-mcpcall-register-pe-steps: the 11 ENGRAM_CODE_* engram payloads
+call one of pe_entry_init / pe_read_ticket / pe_plan / pe_filter /
 pe_situate / pe_observe / pe_hypothesize / pe_implement / pe_test / pe_probe /
 pe_close_loop via MCPCALL. Before this ticket, only the high-level wrappers
 (run_pe_chain, run_pe_plan, run_pe_filter, run_pe_probe) were registered, so
 every per-step MCPCALL hit the unknown-tool branch silently.
 
 These tests verify:
-  1. Each of the 12 names is resolvable via the tool registry.
+  1. Each of the 11 names is resolvable via the tool registry.
   2. The registered fn is callable with zero args (how MCPCALL dispatches).
   3. A dry registry.execute for each name does NOT return the
      "Unknown tool" error message that registry.execute() emits when a
@@ -33,7 +33,6 @@ from lab.utility_closet.registry import registry
 
 PE_STEP_NAMES = [
     "pe_entry_init",
-    "pe_claim",
     "pe_read_ticket",
     "pe_plan",
     "pe_filter",
