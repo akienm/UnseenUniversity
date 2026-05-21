@@ -346,7 +346,7 @@ class TestLaunchNextWorkerDispatch(unittest.TestCase):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# adopt_next_ticket — IGOR_STRICT_CLAIM_MODEL env var
+# adopt_next_ticket — pe_chain dispatch
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -356,16 +356,16 @@ _OPS_GOAL_ADOPT_PATH = "wild_igor.igor.tools.ops.goal_adopt"
 
 
 class TestAdoptNextTicketStrictFlag(unittest.TestCase):
-    """adopt_next_ticket sets IGOR_STRICT_CLAIM_MODEL=1 before pe_chain runs."""
+    """adopt_next_ticket dispatches to pe_chain (claiming removed)."""
 
-    def test_env_flag_set_before_pe_chain(self):
-        """IGOR_STRICT_CLAIM_MODEL=1 is in os.environ when pe_chain is called."""
+    def test_pe_chain_called_on_adopt(self):
+        """adopt_next_ticket calls pe_chain after dispatching the ticket."""
         from wild_igor.igor.tools import worker_foreman as wf
 
-        env_at_chain_call: dict = {}
+        chain_was_called = []
 
-        def capture_env_and_return(*_a, **_kw):
-            env_at_chain_call.update(os.environ)
+        def record_call(*_a, **_kw):
+            chain_was_called.append(True)
             return "chain done"
 
         mock_cortex = MagicMock()
@@ -374,43 +374,23 @@ class TestAdoptNextTicketStrictFlag(unittest.TestCase):
         mock_mt = MagicMock()
         mock_mt.GOAL = "GOAL"
 
-        pending = [
-            {
-                "id": "T-strict-flag-test",
-                "title": "env test ticket",
-                "status": "sprint",
-                "priority": 5,
-                "worker": "igor",
-                "tags": [],
-            }
-        ]
-
         mock_pe_tool = MagicMock()
-        mock_pe_tool.fn = capture_env_and_return
+        mock_pe_tool.fn = record_call
 
         mock_next_result = MagicMock()
-        mock_next_result.stdout = "T-strict-flag-test\n"
+        mock_next_result.stdout = "T-adopt-test\n"
 
-        original_flag = os.environ.pop("IGOR_STRICT_CLAIM_MODEL", None)
-        try:
-            with (
-                patch("subprocess.run", return_value=mock_next_result),
-                patch(_CORTEX_PATH, return_value=mock_cortex),
-                patch(_MT_PATH, mock_mt),
-                patch(_OPS_GOAL_ADOPT_PATH, return_value="adopted"),
-                patch.object(wf.registry, "get", return_value=mock_pe_tool),
-            ):
-                wf.adopt_next_ticket()
-        finally:
-            if original_flag is not None:
-                os.environ["IGOR_STRICT_CLAIM_MODEL"] = original_flag
-            else:
-                os.environ.pop("IGOR_STRICT_CLAIM_MODEL", None)
+        with (
+            patch("subprocess.run", return_value=mock_next_result),
+            patch(_CORTEX_PATH, return_value=mock_cortex),
+            patch(_MT_PATH, mock_mt),
+            patch(_OPS_GOAL_ADOPT_PATH, return_value="adopted"),
+            patch.object(wf.registry, "get", return_value=mock_pe_tool),
+        ):
+            wf.adopt_next_ticket()
 
-        self.assertEqual(
-            env_at_chain_call.get("IGOR_STRICT_CLAIM_MODEL"),
-            "1",
-            "IGOR_STRICT_CLAIM_MODEL was not '1' when pe_chain was invoked",
+        self.assertTrue(
+            chain_was_called, "pe_chain.fn() was not called by adopt_next_ticket"
         )
 
     def test_empty_cmd_next_returns_no_eligible(self):

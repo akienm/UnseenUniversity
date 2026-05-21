@@ -98,11 +98,11 @@ class TestGoalContinuationSteps(unittest.TestCase):
             result = gc.run_goal_continuation()
         self.assertIn("no active goals", result)
 
-    def test_step0_claim(self):
-        """Step 0 runs cc_queue claim and advances to step 1."""
+    def test_step0_advances(self):
+        """Step 0 advances to step 1 (claiming removed — ticket already in_progress)."""
         goal = _make_goal(step=0)
-        result, posted, cortex = _run_step(goal, bash_returns=["Claimed T-test-001"])
-        self.assertIn("claimed", result)
+        result, posted, cortex = _run_step(goal)
+        self.assertIn("advancing", result)
         self.assertEqual(goal.metadata["current_step"], 1)
         self.assertTrue(any("GOAL STEP 0" in m for m in posted))
 

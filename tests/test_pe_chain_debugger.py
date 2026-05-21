@@ -77,7 +77,6 @@ class TestStart:
         # Runs ENTRY through HYPOTHESIZE inclusive (OBSERVE precedes HYPOTHESIZE)
         assert steps_run == [
             "ENTRY",
-            "CLAIM",
             "READ_TICKET",
             "PLAN",
             "SITUATE",
@@ -163,7 +162,7 @@ class TestSnapshot:
             assert key in snap, f"missing key: {key}"
 
     def test_snapshot_is_deep_copy_of_basket(self, stub_steps):
-        r = dbg.start("T-foo", breakpoint="CLAIM")
+        r = dbg.start("T-foo", breakpoint="READ_TICKET")
         sid = r["session_id"]
         snap_basket = r["snapshot"]["basket"]
         # Mutate the snapshot; the session's live basket should be unaffected
@@ -195,7 +194,7 @@ class TestLifecycle:
         # Abandon any existing
         for s in dbg.list_sessions()["sessions"]:
             dbg.abandon(s["session_id"])
-        s1 = dbg.start("T-foo", breakpoint="CLAIM")["session_id"]
+        s1 = dbg.start("T-foo", breakpoint="READ_TICKET")["session_id"]
         s2 = dbg.start("T-bar", breakpoint="PLAN")["session_id"]
         ids = {s["session_id"] for s in dbg.list_sessions()["sessions"]}
         assert s1 in ids and s2 in ids
@@ -210,7 +209,6 @@ def test_step_names_covers_canonical_sequence():
     names = dbg.step_names()
     for expected in (
         "ENTRY",
-        "CLAIM",
         "READ_TICKET",
         "PLAN",
         "SITUATE",
@@ -219,6 +217,9 @@ def test_step_names_covers_canonical_sequence():
         "OBSERVE",
     ):
         assert expected in names
+    assert (
+        "CLAIM" not in names
+    ), "CLAIM was removed — it must not appear in the debugger sequence"
 
 
 # ── Exception in a step doesn't kill the debugger ────────────────────────────
@@ -237,8 +238,7 @@ class TestRobustness:
 
         new_steps = [
             ("ENTRY", ok),
-            ("CLAIM", bad),
-            ("READ_TICKET", ok),
+            ("READ_TICKET", bad),
             ("PLAN", ok),
             ("SITUATE", ok),
             ("HYPOTHESIZE", ok),
@@ -246,7 +246,7 @@ class TestRobustness:
             ("OBSERVE", ok),
         ]
         monkeypatch.setattr(dbg, "STEPS", new_steps)
-        r = dbg.start("T-foo", breakpoint="READ_TICKET")
+        r = dbg.start("T-foo", breakpoint="PLAN")
         assert r["ok"] is True
         assert "debugger_error" in r["snapshot"]["basket"]
         assert "boom" in r["snapshot"]["basket"]["debugger_error"]
