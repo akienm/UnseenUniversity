@@ -543,12 +543,41 @@ def _append_to_todays_slate(ticket: dict) -> None:
 
 
 def _gate_clear(gate_val: str | None, all_tasks: list) -> bool:
-    """Return True if gate is null or references a ticket in terminal status."""
+    """Return True if gate is null, a past/today date, or a closed ticket reference.
+
+    Priority:
+    1. Null gate → clear.
+    2. First token matches YYYY-MM-DD → date gate; clear only if date <= today.
+    3. Any ticket ID found in the string → check that ticket's terminal status.
+    4. Unknown format → fail closed (blocked).
+    """
+    import re as _re
+    from datetime import date as _date
+    import logging as _logging
+
     if not gate_val:
         return True
+
+    # Date gate: first token is YYYY-MM-DD
+    first_token = gate_val.split()[0] if gate_val.strip() else ""
+    if _re.fullmatch(r"\d{4}-\d{2}-\d{2}", first_token):
+        try:
+            gate_date = _date.fromisoformat(first_token)
+            clear = gate_date <= _date.today()
+            if not clear:
+                _logging.getLogger(__name__).debug(
+                    "[gate-date] blocked until %s (gate: %s)", gate_date, gate_val[:60]
+                )
+            return clear
+        except ValueError:
+            pass  # malformed date — fall through to fail-closed
+
+    # Ticket-ID gate: scan for any known ticket id in the string
     for t in all_tasks:
         if t["id"] in gate_val:
             return t["status"] in _TERMINAL_STATUSES
+
+    # Unknown format → fail closed
     return False
 
 
