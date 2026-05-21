@@ -1257,6 +1257,10 @@ _PREFLIGHT_IGNORE = [
     # Ollama-dependent: skips cleanly when Ollama not available, but transiently
     # fails (assertGreater 0 > 0) when Ollama is up but returns no prompt_eval_count
     "tests/test_twm_context.py",
+    # Boot smoke: spawns a subprocess Igor instance (~24s). Races with the 30s
+    # global pytest timeout when Igor is already running concurrently (DB/thread
+    # contention). Pre-flight is not the right place to run a 24s subprocess.
+    "tests/test_igor_boot_smoke.py",
 ]
 
 
