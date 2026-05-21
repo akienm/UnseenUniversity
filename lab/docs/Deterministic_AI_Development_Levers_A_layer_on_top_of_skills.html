@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deterministic AI Development: Levers</title>
+  <style>
+    :root {
+      --bg: #1a1a2e; --surface: #16213e; --card: #0f3460;
+      --accent: #e94560; --text: #eaeaea; --muted: #9ca3af;
+      --border: #2d3748; --link: #60a5fa;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif;
+           font-size: 15px; line-height: 1.7; }
+
+    /* Navigation */
+    nav { background: var(--surface); border-bottom: 1px solid var(--border);
+          position: sticky; top: 0; z-index: 100; padding: 0 1.5rem; }
+    nav ul { display: flex; list-style: none; gap: 0; overflow-x: auto; }
+    nav li a { display: block; padding: 1rem 1.2rem; color: var(--muted); text-decoration: none;
+               font-size: 0.85rem; font-weight: 500; white-space: nowrap;
+               border-bottom: 2px solid transparent; transition: all .2s; }
+    nav li a:hover, nav li a.active { color: var(--text); border-bottom-color: var(--accent); }
+
+    /* Main layout */
+    main { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+    /* Sections */
+    section { display: none; }
+    section.active { display: block; }
+
+    h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: .3rem; color: var(--text); }
+    .subtitle { color: var(--muted); margin-bottom: 2rem; font-size: .9rem; }
+    h2 { font-size: 1.3rem; font-weight: 600; color: var(--accent); margin: 2rem 0 .75rem;
+         padding-bottom: .4rem; border-bottom: 1px solid var(--border); }
+    h3 { font-size: 1rem; font-weight: 600; color: var(--link); margin: 1.2rem 0 .4rem; }
+    p { margin-bottom: .9rem; }
+    a { color: var(--link); }
+    ul, ol { padding-left: 1.5rem; margin-bottom: .9rem; }
+    li { margin-bottom: .3rem; }
+    li > ul, li > ol { margin-top: .3rem; }
+    code { background: var(--card); padding: .1em .35em; border-radius: 3px;
+           font-size: .875em; font-family: monospace; color: #f9a8d4; }
+    pre { background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+          padding: 1rem; overflow-x: auto; margin-bottom: 1rem; }
+    pre code { background: none; padding: 0; color: #e2e8f0; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; font-size: .875rem; }
+    th { background: var(--card); padding: .6rem .75rem; text-align: left; color: var(--muted);
+         font-weight: 600; border-bottom: 1px solid var(--border); }
+    td { padding: .55rem .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:hover td { background: rgba(255,255,255,.03); }
+
+    /* Card */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+            padding: 1.25rem; margin-bottom: 1rem; }
+    .card h3 { margin-top: 0; }
+
+    /* Badge */
+    .badge { display: inline-block; background: var(--accent); color: #fff;
+             font-size: .7rem; font-weight: 700; padding: .15em .45em;
+             border-radius: 3px; margin-right: .4rem; vertical-align: middle; }
+    .badge.green { background: #10b981; }
+    .badge.blue  { background: #3b82f6; }
+    .badge.gray  { background: #4b5563; }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      nav li a { padding: .75rem .7rem; font-size: .78rem; }
+      main { padding: 1.25rem 1rem 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <ul>
+    <li><a href="#" data-section="intro" class="active">Introduction</a></li>
+    <li><a href="#" data-section="levers">Levers</a></li>
+    <li><a href="#" data-section="workflow">Workflow</a></li>
+    <li><a href="#" data-section="audits">Audit Pyramid</a></li>
+    <li><a href="#" data-section="skills">Skills</a></li>
+    <li><a href="#" data-section="tracking">Tracking</a></li>
+    <li><a href="#" data-section="background">Background</a></li>
+  </ul>
+</nav>
+
+<main>
+
+<!-- ── INTRO ─────────────────────────────────────────────── -->
+<section id="intro" class="active">
+  <h1>Deterministic AI Development: Levers</h1>
+  <p class="subtitle">A layer on top of skills — Akien Maciain, Test Automation Architect</p>
+
+  <p>Models misbehave most when given the most latitude. Skills are like checklists of things to do — they keep the model focused on doing just what you want. But skills alone do not complete the work. They work best as part of a workflow that handles design and implementation.</p>
+
+  <p>My experience comes from building <a href="https://github.com/akienm/TheIgors" target="_blank">akienm/TheIgors</a>, an ongoing research project into using graph trees for reasoning. ~200K lines of code, which works, and has only ever been seen by Claude. I've reviewed maybe a dozen lines — I designed it, not Claude.</p>
+
+  <p>The standout feature of my AI experience is <strong>LEVERS</strong>: ideas, practices, tools, phrases, or questions that provide outsized benefits. In aggregate, they let me treat Claude as a savant — brilliant in some ways, forgetful in others. Rather than fighting that, we build around it: a resilient structure that keeps its forgettings from becoming an issue.</p>
+</section>
+
+<!-- ── LEVERS ─────────────────────────────────────────────── -->
+<section id="levers">
+  <h1>Levers</h1>
+  <p class="subtitle">Keystone patterns that provide outsized returns</p>
+
+  <div class="card">
+    <h3>1. A Notebook</h3>
+    <p>Mine is a text file. Log files capture all chats. The notebook captures the points or ideas that stood out so I don't have to find them again.</p>
+    <ul>
+      <li>For writing if it'll be more than a sentence — too many times I've accidentally cleared Claude's terminal. Compose in an editor, paste in.</li>
+      <li>Blocks of stuff I might paste in more than once.</li>
+      <li>Commands to paste, key moments in the project.</li>
+      <li>Does not have to capture everything — there are other logs for that.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>2. My Own Programming and Architectural Experience</h3>
+    <p>Can't be understated. I don't read almost any of the code — but I watch the kinds of bugs that come out of the system, how Claude goes about fixing them, and will often halt and redirect. Key patterns to watch:</p>
+    <ul>
+      <li>Claude tends to reuse out-of-date information</li>
+      <li>Claude tends not to centralize concerns to minimize maintenance</li>
+      <li>Claude tends to get lost in the weeds in some circumstances</li>
+      <li>Claude won't remember fixing the same thing yesterday — or last week</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>3. Process from the Start</h3>
+    <p>Humans have a love/hate relationship with process. Not Claude. As long as it's spelled out in the skill, it'll follow it to the letter. Everything gets designed, designs audited, testing added (TDD, no flaky tests allowed), designs approved, ticketed, audited, sprinted, built, the result audited, planned tests run, ticket closed.</p>
+  </div>
+
+  <div class="card">
+    <h3>4. Project State Information — Kept Outside the Context</h3>
+    <p>All state lives in Postgres with embeddings. Igor has semantic search internally — Claude can search for any follow-on piece of data after CLAUDE.md for zero tokens. State includes:</p>
+    <ul>
+      <li>Project overview</li>
+      <li>Available tools and skills</li>
+      <li>Tickets, epics, slates (echoed to GitHub at day's end)</li>
+      <li>Project documentation tree (architectural .md files in repo, inline for operational notes)</li>
+      <li>Ticket state written into titles: CLOSED:, BLOCKED:, sprint, etc.</li>
+      <li>Decision history</li>
+    </ul>
+    <p>State changes are saved immediately and durably. The model's context is disposable.</p>
+  </div>
+
+  <div class="card">
+    <h3>5. Tooling and Automation</h3>
+    <ul>
+      <li><strong>Claude itself is tooling</strong> — to development processes</li>
+      <li><strong>Audits</strong> — force mistakes and ambiguity out at every layer. See Audit Pyramid.</li>
+      <li><strong>External Tools Internalized</strong> — Claude can scrape pages, install libraries, run inline scripts, build its own tooling</li>
+      <li><strong>Logging tree</strong> — base class for all objects handles all logging. Logs are forensic. Timestamp from a failure in a chat log leads to the correct point in the master log.</li>
+      <li><strong>MCP</strong> — mail service between models. Channel between Claude Code and Igor.</li>
+      <li><strong>Capabilities</strong> — wrapping behavior in a named capability is the most certain way to have an LLM do something exactly the way you want and when you want it.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>6. Powerful Questions</h3>
+    <p>These bring things into view you couldn't imagine beforehand. Always lay out your own ideas first, then ask:</p>
+    <ul>
+      <li>What have I left out?</li>
+      <li>What have I missed?</li>
+      <li>What would be more efficient?</li>
+      <li>What best practices or patterns could we use to good effect?</li>
+      <li>What could we do better?</li>
+      <li>How do other people do this?</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>7. Rob</h3>
+    <p>One of the first learnings: ask Claude to create "Rob" — a developer so grateful they finally have a QA person on the team. Ride on Rob's shoulder for activities such a developer would have day to day.</p>
+  </div>
+
+  <div class="card">
+    <h3>8. About Claude</h3>
+    <ul>
+      <li><strong>Sessions</strong> — Even in long sessions, save state constantly. Generic compact+preserve: <code>/compact preserve: Read today's slate: ~/.TheIgors/claudecode/YYYYMMDD.slate.txt. In-flight and Next: see slate.</code></li>
+      <li><strong>Impatience</strong> — Claude will defer things or give fast non-architectural solutions. Point that impatience well. Watch for "I thought we'd implemented that!"</li>
+      <li><strong>Focus</strong> — Large contexts aren't infinite. LLMs function well on summaries. Documentation summarizes rules and gives pointers.</li>
+      <li><code>/advisor</code> — Sonnet can call Opus when uncertain.</li>
+      <li><code>/loop</code> — Periodic check-ins on something.</li>
+      <li><code>/schedule</code> — Tell Claude to do a thing at a specific time.</li>
+      <li><code>--dangerously-skip-permissions</code> — Stop the permission nagging in a project where you don't read the code.</li>
+      <li>Instructions in chat ≠ Instructions in skills. The latter is a checklist; the former is more what ye' might call <em>guidelines…</em></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>9. Skills-Based Workflow</h3>
+    <p>My own workflow, built by asking lever questions like "How are the best in the field doing this right now? What's been published? How could we do better?"</p>
+  </div>
+
+  <div class="card">
+    <h3>10. Hypothesis Extraction &amp; Consequence Checking</h3>
+    <p>Every design decision (<code>/decided</code>) formally extracts a testable hypothesis before tickets are filed. Three mandatory questions:</p>
+    <ol>
+      <li>Which goal does this serve? (G-xxx or "none, reason")</li>
+      <li>What should be observably different after these tickets ship? (plain English, falsifiable)</li>
+      <li>How will we know? (metric, log line, behavior, or eval)</li>
+    </ol>
+    <p>For M/L/XL decisions, a gated consequence-check ticket is auto-drafted — predicted unintended effects, signals to watch, and a gate condition (date or observable event). Consequence-checking becomes tracked work, not an informal afterthought.</p>
+  </div>
+
+  <div class="card">
+    <h3>11. Encapsulation as First-Class Design Principle</h3>
+    <p>Workers request work via encapsulated black-box interfaces; subsystems do not reach across boundaries they shouldn't; callers don't know internals they don't need to. This appears as:</p>
+    <ul>
+      <li><strong>Dispatch IS assignment</strong> — queue is black box; workers call "anything for me?" periodically</li>
+      <li><strong>Audit-design Check 10</strong> — encapsulation surface detection (subsystems knowing internals they shouldn't)</li>
+      <li><strong>Expert lenses</strong> — systems architect + process/meta explicitly scan for coupling that could be a service</li>
+      <li>Pattern extends beyond code to work management itself — Goal 3.7 (shared task service) generalizes for multi-agent platforms</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>12. Serious Goal Tracking</h3>
+    <p>Goals are formally tracked in the database with G-xxx identifiers. Every <code>/decided</code> links to a G-xxx via testable hypothesis, or explicitly documents "none, reason." Creates a traceable line: <strong>goal → hypothesis → decision → ticket → commit</strong>.</p>
+  </div>
+</section>
+
+<!-- ── WORKFLOW ─────────────────────────────────────────────── -->
+<section id="workflow">
+  <h1>Workflow</h1>
+  <p class="subtitle">The daily and per-decision flow</p>
+
+  <div class="card">
+    <h3><code>/context-load</code></h3>
+    <p>The agent reads the project overview, list of available tools, palace rules, and today's slate. Gets centered. About 2K tokens.</p>
+  </div>
+
+  <div class="card">
+    <h3><code>/design</code></h3>
+    <p>Work through any tickets that are blocked. Free-form discussion until a point of design is clear enough that Haiku can reliably build it without fail. Last questions always include: "What am I missing? What could we do better?"</p>
+  </div>
+
+  <div class="card">
+    <h3><code>/note</code></h3>
+    <p>Adds any random note that might be important later to the day's slate.</p>
+  </div>
+
+  <div class="card">
+    <h3><code>/ticket</code></h3>
+    <p>Any issue that comes up along the way so we address it later.</p>
+  </div>
+
+  <div class="card">
+    <h3><code>/decided</code></h3>
+    <p>All issues under discussion are resolved enough to go to sprint. Before filing tickets:</p>
+    <ol>
+      <li>Extracts a testable hypothesis (3 questions)</li>
+      <li>Runs <code>/audit-design</code> (10 positive checks)</li>
+      <li>Drafts tickets → runs <code>/audit-ticket</code> on each</li>
+      <li>For M/L/XL: auto-drafts a gated consequence-check ticket</li>
+      <li>Files everything via <code>cc_queue.py</code></li>
+      <li>Writes decision to palace + decisions log</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h3><code>/sprint</code> / <code>/sprint-batch</code></h3>
+    <p>Sprint a ticket or sprint a large batch. Sprint-batch topo-sorts by dependencies. Per-ticket: <em>capability-check → verify in_progress status (dispatch IS assignment, no claim) → infrastructure brief → pull+work → cleanup → test → commit+push → close → /savestate.</em></p>
+  </div>
+
+  <div class="card">
+    <h3><code>/audit-precode</code></h3>
+    <p>Runs automatically between plan approval and the first edit. Validates that named files exist, symbols exist, preferred-paths rules are satisfied, test plan named. Haiku-speed; escalates to Sonnet on high-inertia touches.</p>
+  </div>
+
+  <div class="card">
+    <h3><code>/fixit</code></h3>
+    <p>Shorthand for <code>/decided</code> + <code>/sprint-batch</code> in one go.</p>
+  </div>
+
+  <div class="card">
+    <h3><code>/day-close</code></h3>
+    <p>Cleans up, runs <code>/audit-day</code>, closes out the day's slate. Creates GitHub Discussion, pushes docs.</p>
+  </div>
+</section>
+
+<!-- ── AUDITS ─────────────────────────────────────────────── -->
+<section id="audits">
+  <h1>The Audit Pyramid</h1>
+  <p class="subtitle">Scoped audits, each targeting a different failure class at the cheapest model that can reliably catch it</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Stage</th>
+        <th>Command</th>
+        <th>Model</th>
+        <th>What it checks</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge">Pre-filing</span></td>
+        <td><code>/audit-ticket</code></td>
+        <td>Haiku</td>
+        <td>Duplicate, already-done, scope, HIGH-inertia gate, design-rules, build-tightness grade</td>
+      </tr>
+      <tr>
+        <td><span class="badge">Pre-code</span></td>
+        <td><code>/audit-precode</code></td>
+        <td>Haiku→Sonnet</td>
+        <td>File/symbol existence, HIGH-inertia reaffirmation, preferred-paths, test plan named</td>
+      </tr>
+      <tr>
+        <td><span class="badge">Post-code</span></td>
+        <td><code>/audit-smell</code></td>
+        <td>Sonnet</td>
+        <td>Premature abstractions, missing log calls, misleading names, bespoke vs. standard patterns</td>
+      </tr>
+      <tr>
+        <td><span class="badge">Post-build</span></td>
+        <td><code>/audit-debris</code></td>
+        <td>Haiku</td>
+        <td>Temp files, debug prints, log growth, test DB cleanup, docstring rot</td>
+      </tr>
+      <tr>
+        <td><span class="badge">Daily</span></td>
+        <td><code>/audit-day</code></td>
+        <td>Sonnet</td>
+        <td>18 static checks + fix-one-leave-many sweep + watch-for notes + inertia drift</td>
+      </tr>
+      <tr>
+        <td><span class="badge blue">Design-gate</span></td>
+        <td><code>/audit-design</code></td>
+        <td>Opus</td>
+        <td>10 positive checks on the decision narrative before tickets are filed</td>
+      </tr>
+      <tr>
+        <td><span class="badge green">Expert panel</span></td>
+        <td><code>/audit-expert</code></td>
+        <td>Opus</td>
+        <td>11 experts, each seeing the whole system through their discipline's sharpest questions</td>
+      </tr>
+      <tr>
+        <td><span class="badge gray">Meta</span></td>
+        <td><code>/audit-audits</code></td>
+        <td>Sonnet/Opus</td>
+        <td>Audits the audit pyramid itself — cadence, TTL, calibration, findings-to-ticket rate</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Expert Panel (11 Experts)</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Expert</th><th>Broadest lens</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td>Cognitive Scientist</td><td>Is reasoning architecture consistent with human cognition models?</td></tr>
+      <tr><td>2</td><td>Systems Architect</td><td>Is subsystem decomposition clean? Coupling, cohesion, blast radius, encapsulation surface.</td></tr>
+      <tr><td>3</td><td>Safety Engineer</td><td>What are the failure modes? Runaway processes, unrecoverable states.</td></tr>
+      <tr><td>4</td><td>HCI Specialist</td><td>Is Igor legible to its users? Feedback quality, error clarity, trust signals.</td></tr>
+      <tr><td>5</td><td>Distributed Systems</td><td>Is the multi-instance design sound? Consistency, idempotency, clock drift.</td></tr>
+      <tr><td>6</td><td>ML Engineer</td><td>Is the learning architecture coherent? Feedback loops, distribution shift.</td></tr>
+      <tr><td>7</td><td>Process / Meta Engineer</td><td>Is the development process self-improving? Audit ROI, tech-debt rate.</td></tr>
+      <tr><td>8</td><td>Security Engineer</td><td>What can go wrong from adversarial inputs? Injection, secret exposure.</td></tr>
+      <tr><td>9</td><td>Reliability Engineer</td><td>What does the on-call story look like? MTTR, alerting gaps.</td></tr>
+      <tr><td>10</td><td>Data Engineer</td><td>Is the persistence layer sound? Schema drift, migration safety, lineage.</td></tr>
+      <tr><td>11</td><td>Product Manager</td><td>Is Igor making progress toward its stated goal? Velocity, blocker patterns.</td></tr>
+    </tbody>
+  </table>
+
+  <p>Cadence: weekly runs 3 random experts; monthly runs the full panel (with Ultraview on HIGH findings).</p>
+</section>
+
+<!-- ── SKILLS ─────────────────────────────────────────────── -->
+<section id="skills">
+  <h1>Full Skills List</h1>
+  <p class="subtitle">Alpha — lives in <code>~/.claude/skills/</code></p>
+
+  <table>
+    <thead>
+      <tr><th>Skill</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>/audit-audits</code></td><td>Meta-audit over all audit telemetry; checks cadence, TTL compliance, confidence calibration</td></tr>
+      <tr><td><code>/audit-day</code></td><td>Cross-day code health: inherits all day-close-audit checks + fix-one-leave-many sweep + watch-for management + telemetry</td></tr>
+      <tr><td><code>/audit-debris</code></td><td>Post-commit debris cleanup: temp files, debug artifacts, docstring rot, test DB cleanup, file placement</td></tr>
+      <tr><td><code>/audit-design</code></td><td>Design-gate review before /decided: 10 positive checks (goal frame, success observable, alternatives, constraints, closing-pass, conflicts, palace-rules, scope decomposition, executor/tier, encapsulation surface)</td></tr>
+      <tr><td><code>/audit-expert</code></td><td>11-expert broadest-lens panel; weekly (3 random), monthly (full), on-demand by area</td></tr>
+      <tr><td><code>/audit-precode</code></td><td>Pre-edit plan validation: file/symbol existence, preferred-paths, HIGH-inertia reaffirmation, test plan named</td></tr>
+      <tr><td><code>/audit-smell</code></td><td>Post-code quality scan: premature abstractions, missing log calls, misleading names, bespoke vs. standard patterns</td></tr>
+      <tr><td><code>/audit-ticket</code></td><td>Filing-time ticket audit: duplicate, already-done, scope, HIGH-inertia gate, design-rules, build-tightness grade</td></tr>
+      <tr><td><code>/commit</code></td><td>Does the commit, pull (and merge), push</td></tr>
+      <tr><td><code>/context-load</code></td><td>Loads project overview, palace rules, today's slate, recent decisions, pending approvals, inbox</td></tr>
+      <tr><td><code>/day-close</code></td><td>Closes out the day: savestateauto, slate finalization, /audit-day, docs commit, GitHub Discussion, push</td></tr>
+      <tr><td><code>/day-close-audit</code></td><td>Static 18-step debris and hygiene check (tests, file placement, smells, registry, inertia, threads, logs, burn rate, schema, dead code, duplication, habit health, TWM coverage, dependencies, credentials, simplification, registered checks, wiring, capability-map drift)</td></tr>
+      <tr><td><code>/decided</code></td><td>Closes a design block → extracts hypothesis → batch tickets via /audit-ticket, writes decision to palace and log, appends to slate</td></tr>
+      <tr><td><code>/design</code></td><td>Design-mode session marker; writes DESIGN_START to slate, sets design_mode flag</td></tr>
+      <tr><td><code>/export-chat</code></td><td>Exports current Claude Code chat window to a dated markdown file (works around tmux scrollback limits)</td></tr>
+      <tr><td><code>/fixit</code></td><td>Shorthand for /decided + /sprint-batch on the just-filed tickets in one go</td></tr>
+      <tr><td><code>/map-igor</code></td><td>On-demand JSON snapshot of Igor's full state (15 sections); Haiku; 14-day TTL</td></tr>
+      <tr><td><code>/note</code></td><td>Adds a random note to the day's slate</td></tr>
+      <tr><td><code>/readigor</code></td><td>Reads the web interface for Igor so Claude can be brought up to speed without pasting</td></tr>
+      <tr><td><code>/readinbox</code></td><td>Reads Igor's inbox (messages from build processes, Claude, internal subsystems)</td></tr>
+      <tr><td><code>/savestate</code></td><td>Full session close: savestateauto + compose preserve string + inject compaction</td></tr>
+      <tr><td><code>/savestateauto</code></td><td>Lightweight state flush: writes in-flight hypothesis to slate, clears debug flag, emits compact preserve string</td></tr>
+      <tr><td><code>/sprint</code></td><td>Per-ticket execution: verify in_progress → capability check → audit-precode → work → test → commit → close → /savestate</td></tr>
+      <tr><td><code>/sprint-batch</code></td><td>Multi-ticket sprint: topo-sort, shared setup, per-ticket loop via /sprint-ticket, batch teardown</td></tr>
+      <tr><td><code>/test-fix</code></td><td>Test/fix/test-again loop for failing suites</td></tr>
+      <tr><td><code>/ticket</code></td><td>Creates or updates a ticket; runs /audit-ticket on each draft before filing</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── TRACKING ─────────────────────────────────────────────── -->
+<section id="tracking">
+  <h1>Tracking</h1>
+  <p class="subtitle">Goals, decisions, tickets, slates, architecture, palace</p>
+
+  <div class="card">
+    <h3>Goals</h3>
+    <p>Formally tracked in the database using <code>goal_adopt</code>, <code>goal_scan</code>, and <code>goal_close</code> tools, with G-xxx identifiers. Goals persist across sessions. Every <code>/decided</code> links to a G-xxx via testable hypothesis, or explicitly documents "none, reason." Creates a traceable line: <strong>goal → hypothesis → decision → ticket → commit</strong>.</p>
+  </div>
+
+  <div class="card">
+    <h3>Ideas</h3>
+    <p>One text file per idea in a folder. Brainstorm and chat with free AIs in web chats to sort details with no paid tokens.</p>
+  </div>
+
+  <div class="card">
+    <h3>Decisions</h3>
+    <p><code>/design</code> starts a design session. Free-form discussion until a point of design is clear enough that Haiku can reliably build it without fail. The last questions are always: "What am I missing? What could we do better?"</p>
+    <p>When done, <code>/decided</code>. Before filing, it extracts a testable hypothesis with three mandatory questions.</p>
+  </div>
+
+  <div class="card">
+    <h3>Slate</h3>
+    <p>A slate is a day's work. Sections:</p>
+    <ul>
+      <li><strong>In-flight</strong> — what are we doing right now</li>
+      <li><strong>Planned</strong> — what's still planned for this slate</li>
+      <li><strong>Ad hoc</strong> — reactive additions</li>
+      <li><strong>Done today</strong></li>
+    </ul>
+    <p>When done: <code>/day-close</code>.</p>
+  </div>
+
+  <div class="card">
+    <h3>Architecture &amp; Code</h3>
+    <p>Everything documented at a high level in the project in .md files in the repo. Actual documentation for each file is IN THE FILE at the top. The AI reads architecture files first, then file tops, then functional code — minimizing the number of files to look at.</p>
+  </div>
+
+  <div class="card">
+    <h3>Memory Palace</h3>
+    <p>A structured Postgres tree (<code>theigors/rules/*</code>, <code>theigors/decisions/*</code>, <code>theigors/audits/*</code>, etc.) that serves as the canonical index for conventions, rules, audit telemetry, and decision history. CLAUDE.md is a thin bootstrap shim; the palace is the source of truth.</p>
+    <p>Palace nodes can be read individually (<code>memory_get</code>), searched (<code>memory_search</code>), or bulk-loaded by type. The model spends zero tokens re-deriving conventions it already decided.</p>
+  </div>
+
+  <div class="card">
+    <h3>Preferred Paths</h3>
+    <p>A palace subtree (<code>theigors/rules/preferred_paths/*</code>) cataloging deprecated patterns alongside preferred replacements — e.g. raw psql calls vs. the MCP proxy, print() vs. IgorBase logger. A scan tool watches 60 days of git history for regressions and surfaces candidates for review, never auto-filing.</p>
+  </div>
+
+  <div class="card">
+    <h3>Levers Doc Sync Rule</h3>
+    <p>Whenever a skill file is edited or a new workflow capability is added, this document must be updated before the sprint closes (sprint-ticket step 12.5). A forever audit check (<code>levers-doc-skill-sync</code>) fires LOW when skill files were modified in the last day without a corresponding levers doc update.</p>
+    <p><em>Why:</em> Skills encode behavior; this doc encodes the design intent behind the behavior. When they diverge, new sessions have no way to understand why the system works the way it does.</p>
+  </div>
+</section>
+
+<!-- ── BACKGROUND ─────────────────────────────────────────────── -->
+<section id="background">
+  <h1>For Additional Background</h1>
+
+  <div class="card">
+    <h3><a href="https://github.com/akienm/agent_datacenter" target="_blank">akienm/agent_datacenter</a></h3>
+    <p>Generalized AI runtime substrate: IMAP bus, device model, rack, installer</p>
+  </div>
+
+  <div class="card">
+    <h3><a href="https://github.com/akienm/TheIgors" target="_blank">akienm/TheIgors</a></h3>
+    <p>Igor: graph-matrix reasoning engine, persistent Postgres memory, habit scoring</p>
+  </div>
+</section>
+
+</main>
+
+<script>
+  // Tab navigation
+  const links = document.querySelectorAll('nav a');
+  const sections = document.querySelectorAll('section');
+
+  links.forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const target = link.dataset.section;
+      links.forEach(l => l.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      link.classList.add('active');
+      document.getElementById(target).classList.add('active');
+      window.scrollTo(0, 0);
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><!-- TITLE --></title>
+  <style>
+    :root {
+      --bg: #1a1a2e; --surface: #16213e; --card: #0f3460;
+      --accent: #e94560; --text: #eaeaea; --muted: #9ca3af;
+      --border: #2d3748; --link: #60a5fa;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif;
+           font-size: 15px; line-height: 1.7; }
+
+    /* Navigation */
+    nav { background: var(--surface); border-bottom: 1px solid var(--border);
+          position: sticky; top: 0; z-index: 100; padding: 0 1.5rem; display: flex;
+          align-items: center; gap: 1rem; }
+    .nav-title { font-weight: 700; font-size: .85rem; color: var(--muted);
+                 white-space: nowrap; padding: 1rem 0; }
+    nav ul { display: flex; list-style: none; gap: 0; overflow-x: auto; flex: 1; }
+    nav li a { display: block; padding: 1rem .9rem; color: var(--muted); text-decoration: none;
+               font-size: .82rem; font-weight: 500; white-space: nowrap;
+               border-bottom: 2px solid transparent; transition: all .2s; }
+    nav li a:hover, nav li a.active { color: var(--text); border-bottom-color: var(--accent); }
+
+    /* Main */
+    main { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+    /* Sections */
+    section { display: none; }
+    section.active { display: block; }
+
+    h1 { font-size: 1.7rem; font-weight: 700; margin-bottom: .3rem; }
+    .subtitle { color: var(--muted); font-size: .875rem; margin-bottom: 1.75rem; }
+    h2 { font-size: 1.2rem; font-weight: 600; color: var(--accent); margin: 1.75rem 0 .6rem;
+         padding-bottom: .35rem; border-bottom: 1px solid var(--border); }
+    h3 { font-size: .95rem; font-weight: 600; color: var(--link); margin: 1.1rem 0 .35rem; }
+    p { margin-bottom: .85rem; }
+    a { color: var(--link); }
+    ul, ol { padding-left: 1.4rem; margin-bottom: .85rem; }
+    li { margin-bottom: .25rem; }
+    code { background: var(--card); padding: .1em .3em; border-radius: 3px;
+           font-size: .875em; font-family: monospace; color: #f9a8d4; }
+    pre { background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+          padding: 1rem; overflow-x: auto; margin-bottom: 1rem; }
+    pre code { background: none; padding: 0; color: #e2e8f0; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1.4rem; font-size: .86rem; }
+    th { background: var(--card); padding: .55rem .7rem; text-align: left; color: var(--muted);
+         font-weight: 600; border-bottom: 1px solid var(--border); }
+    td { padding: .5rem .7rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:hover td { background: rgba(255,255,255,.03); }
+
+    /* Card */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+            padding: 1.1rem 1.25rem; margin-bottom: .9rem; }
+    .card h3 { margin-top: 0; }
+
+    /* Two columns */
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    @media (max-width: 600px) { .cols { grid-template-columns: 1fr; } }
+
+    /* Badge */
+    .badge { display: inline-block; background: var(--accent); color: #fff;
+             font-size: .7rem; font-weight: 700; padding: .15em .45em;
+             border-radius: 3px; margin-right: .35rem; vertical-align: middle; }
+    .badge.green { background: #10b981; }
+    .badge.blue  { background: #3b82f6; }
+    .badge.gray  { background: #4b5563; }
+
+    /* Note */
+    .note { background: rgba(96,165,250,.08); border-left: 3px solid var(--link);
+            padding: .75rem 1rem; border-radius: 0 6px 6px 0; margin-bottom: 1rem;
+            font-size: .875rem; }
+
+    @media (max-width: 600px) {
+      nav li a { padding: .7rem .55rem; font-size: .77rem; }
+      main { padding: 1.25rem 1rem 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-title"><!-- DOC TITLE SHORT --></span>
+  <ul>
+    <!-- Add one <li> per tab:
+    <li><a href="#" data-section="overview" class="active">Overview</a></li>
+    <li><a href="#" data-section="details">Details</a></li>
+    -->
+  </ul>
+</nav>
+
+<main>
+
+  <!-- ── SECTION EXAMPLE ── -->
+  <!--
+  <section id="overview" class="active">
+    <h1>Section Title</h1>
+    <p class="subtitle">Subtitle or date</p>
+
+    <div class="card">
+      <h3>Card heading</h3>
+      <p>Content here.</p>
+    </div>
+
+    <div class="note">Callout note with <code>inline code</code>.</div>
+
+    <table>
+      <thead><tr><th>Col A</th><th>Col B</th></tr></thead>
+      <tbody>
+        <tr><td>Row 1</td><td>Value</td></tr>
+      </tbody>
+    </table>
+
+    <div class="cols">
+      <div class="card"><h3>Left</h3><p>Content.</p></div>
+      <div class="card"><h3>Right</h3><p>Content.</p></div>
+    </div>
+  </section>
+  -->
+
+</main>
+
+<script>
+  const links = document.querySelectorAll('nav a');
+  const sections = document.querySelectorAll('section');
+  links.forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const target = link.dataset.section;
+      links.forEach(l => l.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      link.classList.add('active');
+      const sec = document.getElementById(target);
+      if (sec) sec.classList.add('active');
+      window.scrollTo(0, 0);
+    });
+  });
+</script>
+</body>
+</html>
