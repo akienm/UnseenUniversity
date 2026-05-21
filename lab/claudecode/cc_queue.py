@@ -367,12 +367,9 @@ def cmd_claim(args):
         "If you see this error, a caller is using the removed direct-claim path."
     )
     _log({"action": "legacy_direct_claim_attempt", "args": str(args)})
-    try:
-        _igor_post(
-            f"[CLAIM_BLOCKED] LegacyDirectClaimError: {msg}", tag="legacy_direct_claim"
-        )
-    except Exception:
-        pass
+    # Do NOT post to Igor's input channel — that creates a feedback loop where
+    # Igor's NE receives the error, generates a response describing the old model,
+    # and may retry the claim. The log entry above is sufficient for auditing.
     raise LegacyDirectClaimError(msg)
 
 
