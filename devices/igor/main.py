@@ -5237,6 +5237,7 @@ class Igor(IgorBase):
         # may contain <tool>name</tool> tags in docs that would misfire as tool calls.
         _response_from_tool_dispatch = False
         used_habit = False
+        response_text = None  # initialized here; set inside if-habit or LLM path
 
         if habit:
             dashboard.print_habit_trigger(habit)
@@ -5692,7 +5693,7 @@ class Igor(IgorBase):
             # Fall through to LLM reasoning.
             if used_habit is False and _turn_habit:
                 loginfo("[dim][→] no habit match — LLM fallthrough[/]")
-            elif response_text is None and not used_habit:
+            elif _turn_habit and response_text is None and not used_habit:
                 loginfo("[dim][→] habit suppressed — LLM fallthrough[/]")
 
             # ── tier.0: pure Python response — zero LLM cost (#154) ───────────
