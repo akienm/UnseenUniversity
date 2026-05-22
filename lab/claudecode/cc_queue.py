@@ -12,8 +12,8 @@ Statuses (what happens next):
     design      — needs design work before sprinting
     approval    — plan submitted, awaiting Akien sign-off
     akien       — requires Akien to take an external action
-    sprint      — ready to claim and work
-    in_progress — claimed, actively in flight
+    sprint      — ready to pick up and work
+    in_progress — assigned, actively in flight
     hold        — explicitly paused (reason in ticket)
     dependency  — gated on a future event or condition
     pending     — waiting on a specific other ticket (list it)
@@ -33,7 +33,7 @@ Usage:
     cc_queue.py log <msg>                     — append a free-form log entry
     cc_queue.py flush_decision <id> <summary> — flush decision to Igor memory
     cc_queue.py flush_session <session> <summary> — flush session blob to Igor memory
-    cc_queue.py next --worker <name> [--max-difficulty=N]  — claim+return highest-priority sprint ticket for worker; errors if --worker omitted
+    cc_queue.py next --worker <name> [--max-difficulty=N]  — mark in_progress + return highest-priority sprint ticket for worker; errors if --worker omitted
     cc_queue.py worker-launch                     — ensure worker daemon is running (spawns konsole if not)
     cc_queue.py reset [--timeout] <id>           — reset one ticket from in_progress → sprint; --timeout increments counter, trips gate at 3
     cc_queue.py reset-stale                       — reset all in_progress tickets → sprint (daemon startup cleanup)
@@ -208,6 +208,39 @@ def load_tasks() -> list[dict]:
 def save_tasks(tasks: list[dict]) -> None:
     """Save tickets via canonical Postgres UPSERT."""
     _save(tasks)
+
+
+def set_status_in_progress(ticket_id: str) -> bool:
+    """Targeted single-ticket status flip sprint→in_progress. Returns True if updated."""
+    conn = _db_conn()
+    try:
+        cur = conn.cursor()
+        now = datetime.now(timezone.utc).isoformat()
+        cur.execute(
+            """
+            UPDATE clan.memories
+            SET metadata = jsonb_set(
+                    jsonb_set(metadata, '{status}', '"in_progress"'),
+                    '{claimed_at}', to_jsonb(%s::text)
+                ),
+                updated_at = %s
+            WHERE id = %s
+              AND metadata->>'status' = 'sprint'
+              AND parent_id = %s
+            """,
+            (now, now, ticket_id, TICKETS_ROOT_ID),
+        )
+        updated = cur.rowcount > 0
+        conn.commit()
+        if updated:
+            import logging
+
+            logging.getLogger(__name__).info(
+                f"QUEUE_DRAIN: reconciled {ticket_id} → in_progress"
+            )
+        return updated
+    finally:
+        conn.close()
 
 
 def _log(entry: dict):
