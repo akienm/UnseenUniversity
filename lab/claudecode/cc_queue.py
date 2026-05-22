@@ -378,20 +378,21 @@ def cmd_show(args):
 
 
 class LegacyDirectClaimError(Exception):
-    """Raised unconditionally when any code calls cmd_claim directly.
+    """Raised unconditionally when any code tries to autonomously claim a ticket.
 
-    Direct claiming is removed. Workers must request tickets via:
-        cc_queue.py next --worker <name>
-    cmd_next atomically finds and marks the ticket in_progress in one step.
+    Autonomous claiming is removed. Igor owns no ticket unless CC explicitly
+    dispatches it via:
+        cc_queue.py dispatch <ticket-id> [--by <name>]
+    Workers must not pull from the queue on their own initiative.
     """
 
 
 def cmd_claim(args):
-    """cmd_claim is no longer supported — use: cc_queue.py next --worker <name>"""
+    """cmd_claim is no longer supported — tickets are dispatched by CC via dispatch command."""
     msg = (
         "cmd_claim is no longer supported. "
-        "Workers must request tickets via: cc_queue.py next --worker <name>\n"
-        "cmd_next atomically finds and claims the next ticket in one step. "
+        "Igor receives tickets only when CC dispatches them: cc_queue.py dispatch <ticket-id>.\n"
+        "Workers must not autonomously claim from the queue. "
         "If you see this error, a caller is using the removed direct-claim path."
     )
     _log({"action": "legacy_direct_claim_attempt", "args": str(args)})
@@ -399,6 +400,88 @@ def cmd_claim(args):
     # Igor's NE receives the error, generates a response describing the old model,
     # and may retry the claim. The log entry above is sufficient for auditing.
     raise LegacyDirectClaimError(msg)
+
+
+def cmd_dispatch(args):
+    """Dispatch a ticket to a worker — the ONLY legitimate path for CC to assign work.
+
+    Usage: dispatch <ticket-id> [--by <dispatcher>]
+
+    Sets status=in_progress and records dispatched_by + dispatched_at.
+    Igor must not call this himself — it is the CC→Igor handoff command.
+    After dispatching, CC calls goal_adopt("work ticket <id>") via the Igor channel.
+
+    Raises SystemExit(1) if ticket not found or not in sprint status.
+    """
+    if not args:
+        print("Usage: dispatch <ticket-id> [--by <dispatcher>]", file=sys.stderr)
+        sys.exit(1)
+
+    dispatched_by = "cc"
+    clean_args = list(args)
+    if "--by" in clean_args:
+        i = clean_args.index("--by")
+        if i + 1 < len(clean_args):
+            dispatched_by = clean_args[i + 1]
+            del clean_args[i : i + 2]
+        else:
+            print("ERROR: --by requires a value.", file=sys.stderr)
+            sys.exit(1)
+
+    ticket_id = clean_args[0] if clean_args else None
+    if not ticket_id:
+        print("Usage: dispatch <ticket-id> [--by <dispatcher>]", file=sys.stderr)
+        sys.exit(1)
+
+    conn = _db_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT metadata FROM clan.memories WHERE id = %s FOR UPDATE",
+            (ticket_id,),
+        )
+        row = cur.fetchone()
+        if not row or not row[0]:
+            print(f"Ticket {ticket_id} not found.", file=sys.stderr)
+            conn.rollback()
+            sys.exit(1)
+        t = dict(row[0])
+        t.pop("kind", None)
+        if t.get("status") not in ("sprint", "in_progress"):
+            print(
+                f"Ticket {ticket_id} is not in sprint status (current: {t.get('status')}).",
+                file=sys.stderr,
+            )
+            conn.rollback()
+            sys.exit(1)
+        now = _now()
+        t["status"] = "in_progress"
+        t["title"] = _with_status_prefix("in_progress", t["title"])
+        t["dispatched_by"] = dispatched_by
+        t["dispatched_at"] = now
+        # Keep claimed_at for compatibility with downstream status readers
+        t["claimed_at"] = now
+        metadata = dict(t)
+        metadata["kind"] = "ticket"
+        cur.execute(
+            """UPDATE clan.memories SET
+                metadata = %s::jsonb,
+                narrative = %s,
+                updated_at = %s
+            WHERE id = %s""",
+            (json.dumps(metadata), _narrative_for(t), now, ticket_id),
+        )
+        conn.commit()
+    except SystemExit:
+        raise
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+    _log({"action": "dispatch", "id": ticket_id, "dispatched_by": dispatched_by})
+    print(f"dispatched {ticket_id} → {dispatched_by}")
 
 
 def _close_igor_goal(ticket_id: str) -> None:
@@ -1517,6 +1600,7 @@ COMMANDS = {
     "worker-launch": cmd_worker_launch,
     "notify-igor": cmd_notify_igor,
     "next": cmd_next,
+    "dispatch": cmd_dispatch,
     "reset": cmd_reset,
     "reset-stale": cmd_reset_stale,
     "setstatus": cmd_setstatus,
