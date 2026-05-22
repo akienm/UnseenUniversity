@@ -9,6 +9,8 @@ because the gate only checked filesystem existence of the hypothesized path.
 
 from __future__ import annotations
 
+from unittest.mock import MagicMock
+
 import pytest
 
 from wild_igor.igor.tools.pe_chain import (
@@ -93,6 +95,24 @@ class TestHighInertiaScopeFilter:
 class TestEscalateGateIntegration:
     """End-to-end: _pe_escalate must drop hallucinated HIGH-inertia hypotheses
     without blocking the ticket, and must still propose for legitimate ones."""
+
+    @pytest.fixture(autouse=True)
+    def _no_failure_log_writes(self, monkeypatch):
+        """Prevent _pe_escalate's failure accumulator from writing to infra.pe_failure_log.
+
+        The accumulator uses psycopg2.connect inline; stub it so test runs don't
+        contaminate the real DB with escalation counts.
+        """
+        import psycopg2
+
+        mock_cur = MagicMock()
+        mock_cur.fetchone.return_value = None
+        mock_conn = MagicMock()
+        mock_conn.__enter__ = lambda s: mock_conn
+        mock_conn.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value.__enter__ = lambda s: mock_cur
+        mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
+        monkeypatch.setattr(psycopg2, "connect", MagicMock(return_value=mock_conn))
 
     def _escalate_with(self, basket, reason):
         """Call _pe_escalate with the test basket. Returns the mutated basket."""
