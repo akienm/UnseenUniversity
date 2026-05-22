@@ -57,7 +57,10 @@ def test_goal_adopt_records_origin_when_awaiting_reply():
             "20260412180000123456" if "f" in fmt else "18:00"
         )
         _dt.now.return_value.isoformat.return_value = "2026-04-12T18:00:00"
-        with patch("wild_igor.igor.memory.cortex.Cortex", _FakeCortex):
+        with (
+            patch("wild_igor.igor.memory.cortex.Cortex", _FakeCortex),
+            patch("wild_igor.igor.tools.ops._channel_append"),
+        ):
             result = _ops.goal_adopt(
                 "look at the ticket list",
                 goal_id="GOAL_TEST_001",
@@ -108,7 +111,10 @@ def test_goal_adopt_no_origin_when_not_awaiting_reply():
         def twm_evict_category(self, cat):
             return 0
 
-    with patch("wild_igor.igor.memory.cortex.Cortex", _FakeCortex):
+    with (
+        patch("wild_igor.igor.memory.cortex.Cortex", _FakeCortex),
+        patch("wild_igor.igor.tools.ops._channel_append"),
+    ):
         result = _ops.goal_adopt("write the failing test")
 
     assert "Goal set" in result
@@ -146,7 +152,10 @@ def test_goal_adopt_evicts_prior_active_goal_before_push():
             call_log.append(("push", kw))
             return 1
 
-    with patch("wild_igor.igor.memory.cortex.Cortex", _FakeCortex):
+    with (
+        patch("wild_igor.igor.memory.cortex.Cortex", _FakeCortex),
+        patch("wild_igor.igor.tools.ops._channel_append"),
+    ):
         _ops.goal_adopt("first goal", goal_id="GOAL_A")
         _ops.goal_adopt("second goal", goal_id="GOAL_B")
 
