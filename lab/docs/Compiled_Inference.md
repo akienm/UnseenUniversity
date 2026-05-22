@@ -80,6 +80,14 @@ But that's just the token math. The more important point is reliability. A scrip
 
 We use Haiku for the implementation work, Sonnet for mid-complexity tasks, and Opus for auditing designs and reviewing the results of all the audits. Right tool for the right layer.
 
+### Build in the QE processes
+
+This is also where you stop treating QE as a gate at the end and start treating it as the structure the AI works inside.
+
+Formal design before any code is written. A design audit before the design is approved. Every piece of work ticketed. Every ticket audited before it goes to sprint — is it a duplicate, is it already done, is it the right size, what are the passing conditions? Before the first edit, an audit of the proposed files — do they exist, do the symbols exist, is the approach sound? After the build, an audit of the result. And at the end of the verification period, an audit of the original hypothesis — did the change actually do what we said it would?
+
+That is a rigorous QE process. Most human teams find it too heavy to maintain consistently. AI doesn't gripe about process. It just does it. Right the first time, every time, if you demand it. The humans who defined those processes finally get to see them followed to the letter — because the thing doing the work has no opinion about overhead.
+
 ### Getting the AI to use the tooling
 
 This is the other half of the problem. You can build all the tools in the world and the AI will still default to whatever it has the most training on.
