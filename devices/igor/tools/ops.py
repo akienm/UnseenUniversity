@@ -213,6 +213,23 @@ def goal_adopt(
     dispatch path also calls pr_accrete_commitment in parallel so the
     commitment lands as an accreted memory in the relationship subtree.
     """
+    # Reject NE system text masquerading as task assignments. Habit dispatch
+    # passes TWM observation text verbatim; these prefixes identify NE-generated
+    # outputs that are not real task assignments from CC or Akien.
+    _REJECT_PREFIXES = (
+        "[NE action impulse]:",
+        "ACTION_IMPULSE|",
+        "ACTIVE_GOAL|",
+        "PROC_",
+    )
+    _task_stripped = task_description.strip()
+    if any(_task_stripped.startswith(p) for p in _REJECT_PREFIXES):
+        log.warning(
+            "goal_adopt: rejecting NE system text as task (not a real assignment): %s",
+            task_description[:120],
+        )
+        return f"rejected: system observation text is not a task assignment: {task_description[:60]}"
+
     try:
         from ..memory.cortex import Cortex as _Cortex
         from ..memory.models import Memory as _Mem, MemoryType as _MT
