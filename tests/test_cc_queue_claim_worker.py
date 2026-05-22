@@ -6,6 +6,8 @@ Original: tested the cert_worker_freeze design — worker routing through cmd_cl
 
 Updated 2026-05-20: cmd_claim is removed. Workers must use:
     cc_queue.py next --worker <name>
+Updated 2026-05-22: autonomous pickup removed entirely. Igor receives tickets only
+    via CC dispatch: cc_queue.py dispatch <ticket-id>
 All four original claim-routing cases are obsolete. These tests now verify that
 any invocation of cmd_claim raises LegacyDirectClaimError unconditionally,
 regardless of worker, flags, or DB state.
@@ -55,7 +57,7 @@ class TestCmdClaimRemoved:
         with patch("lab.claudecode.cc_queue._igor_post", return_value=False):
             with pytest.raises(LegacyDirectClaimError) as exc_info:
                 cmd_claim(["T-any-ticket"])
-        assert "next --worker" in str(exc_info.value)
+        assert "dispatch" in str(exc_info.value)
 
     def test_claim_subprocess_exits_nonzero(self):
         """cc_queue.py claim via subprocess exits non-zero and prints the error."""

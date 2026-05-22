@@ -132,7 +132,7 @@ class TestCmdClaimRemoved:
     """cmd_claim is removed — always raises LegacyDirectClaimError.
 
     Scraps validation now lives entirely in cmd_add (at add-time).
-    Workers must use: cc_queue.py next --worker <name>
+    Workers receive tickets only via CC dispatch: cc_queue.py dispatch <ticket-id>
     """
 
     def test_cmd_claim_always_raises(self):
@@ -140,7 +140,7 @@ class TestCmdClaimRemoved:
         with patch("lab.claudecode.cc_queue._igor_post", return_value=False):
             with pytest.raises(LegacyDirectClaimError) as exc_info:
                 cmd_claim(["T-test-scraps-gate"])
-        assert "next --worker" in str(exc_info.value)
+        assert "dispatch" in str(exc_info.value)
 
     def test_cmd_claim_raises_even_with_valid_ticket(self):
         """cmd_claim raises even when the ticket would otherwise be valid."""
