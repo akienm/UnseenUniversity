@@ -157,12 +157,11 @@ def launch_next_worker() -> str:
 
         # Mark in_progress immediately — prevents double-launch if foreman fires again
         # before the worker gets to run /sprint and claim the ticket itself.
-        next_ticket["status"] = "in_progress"
-        next_ticket["claimed_at"] = _now()
-        # T-cc-queue-write-race: canonical save (Postgres + echo).
+        # Targeted single-row UPDATE avoids writing the full task list (which leaks
+        # test fixture data to the real DB when tests mock _load_queue but not save_tasks).
         from lab.claudecode import cc_queue as _cc_queue
 
-        _cc_queue.save_tasks(tasks)
+        _cc_queue.set_status_in_progress(ticket_id)
 
         # Launch via cc_queue.py worker-launch — fire-and-forget, don't block on CC session startup
         proc = subprocess.Popen(
