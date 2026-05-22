@@ -28,6 +28,16 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _channel_append(entry: dict) -> None:
+    """Append one JSON entry to the CC channel messages.jsonl. Silently fails."""
+    import json as _json
+
+    _ch_path = paths().cc_channel / "messages.jsonl"
+    _ch_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(_ch_path, "a") as _f:
+        _f.write(_json.dumps(entry) + "\n")
+
+
 # ── store_decision ─────────────────────────────────────────────────────────────
 
 
@@ -273,11 +283,7 @@ def goal_adopt(
 
         # Post to shared channel so goal is visible across sessions
         try:
-            _ch_path = paths().cc_channel / "messages.jsonl"
-            _ch_path.parent.mkdir(parents=True, exist_ok=True)
-            import json as _json
-
-            entry = _json.dumps(
+            _channel_append(
                 {
                     "ts": ts.strftime("%H:%M:%S"),
                     "author": "igor",
@@ -285,12 +291,10 @@ def goal_adopt(
                     "session": "igor",
                 }
             )
-            with open(_ch_path, "a") as _f:
-                _f.write(entry + "\n")
         except Exception as _exc:
             from ..cognition.forensic_logger import log_error as _le
 
-            _le(kind="SILENT_EXCEPT", detail=f"ops.py:233: {_exc}")
+            _le(kind="SILENT_EXCEPT", detail=f"ops.py:goal_adopt channel: {_exc}")
 
         return f"On it. Goal set: {task_short[:80]}. Proceeding."
     except Exception as e:
@@ -326,10 +330,7 @@ def goal_fail_active() -> str:
         if fails >= 3:
             # Escalate: persistence hunting exhausted — post to channel
             try:
-                _ch_path = paths().cc_channel / "messages.jsonl"
-                import json as _json
-
-                entry = _json.dumps(
+                _channel_append(
                     {
                         "ts": datetime.now(timezone.utc).strftime("%H:%M:%S"),
                         "author": "igor",
@@ -337,12 +338,13 @@ def goal_fail_active() -> str:
                         "session": "igor",
                     }
                 )
-                with open(_ch_path, "a") as _f:
-                    _f.write(entry + "\n")
             except Exception as _exc:
                 from ..cognition.forensic_logger import log_error as _le
 
-                _le(kind="SILENT_EXCEPT", detail=f"ops.py:283: {_exc}")
+                _le(
+                    kind="SILENT_EXCEPT",
+                    detail=f"ops.py:goal_fail_active channel: {_exc}",
+                )
             return f"Stuck on goal after {fails} attempts: {task[:80]}. Posted to channel. Waiting for guidance."
 
         # Persistence hunt: search for alternative approaches
@@ -421,24 +423,18 @@ def goal_close(goal_id: str) -> str:
 
         # Post to channel
         try:
-            _ch_path = paths().cc_channel / "messages.jsonl"
-            ts_str = datetime.now(timezone.utc).strftime("%H:%M:%S")
-            import json as _json
-
-            entry = _json.dumps(
+            _channel_append(
                 {
-                    "ts": ts_str,
+                    "ts": datetime.now(timezone.utc).strftime("%H:%M:%S"),
                     "author": "igor",
                     "content": f"Goal closed: {goal_id} — {goal.metadata.get('source_message', '')[:60]}",
                     "session": "igor",
                 }
             )
-            with open(_ch_path, "a") as _f:
-                _f.write(entry + "\n")
         except Exception as _exc:
             from ..cognition.forensic_logger import log_error as _le
 
-            _le(kind="SILENT_EXCEPT", detail=f"ops.py:375: {_exc}")
+            _le(kind="SILENT_EXCEPT", detail=f"ops.py:goal_close channel: {_exc}")
 
         return f"Goal {goal_id} closed. Well done."
     except Exception as e:
