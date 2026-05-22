@@ -218,9 +218,12 @@ class TestPeReadTicket:
         ticket_no_desc = {**SAMPLE_TICKET}
         del ticket_no_desc["description"]
         basket = {"ticket_id": "T-test-ticket"}
-        with patch(
-            "wild_igor.igor.tools.pe_chain._load_queue_tasks",
-            return_value=[ticket_no_desc],
+        with (
+            patch(
+                "wild_igor.igor.tools.pe_chain._load_queue_tasks",
+                return_value=[ticket_no_desc],
+            ),
+            patch("wild_igor.igor.tools.pe_chain._post_to_channel"),
         ):
             result = pe_read_ticket(basket)
         assert result["ticket_description"] == SAMPLE_TICKET["title"]
