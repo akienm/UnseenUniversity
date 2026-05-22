@@ -720,13 +720,10 @@ def adopt_top_queue_ticket() -> str:
         ticket_id = top["id"]
 
         # Mark ticket in_progress atomically before creating the GOAL.
-        # pe_claim requires in_progress (set by cmd_next in the manual CC flow).
-        # queue_drain is the igor-autonomous adoption path — mirror that behaviour.
-        top["status"] = "in_progress"
-        import datetime as _dt
-
-        top["claimed_at"] = _dt.datetime.now(_dt.timezone.utc).isoformat()
-        _cc_queue.save_tasks(tasks)
+        # Use set_status_in_progress (targeted single-row UPDATE) to avoid writing
+        # the full task list — save_tasks() on the full list leaked test fixtures
+        # to the real DB when tests mocked load_tasks but not save_tasks.
+        _cc_queue.set_status_in_progress(ticket_id)
 
         # Adopt it via goal_adopt (defined in this module)
         result = goal_adopt(f"work ticket {ticket_id}")
