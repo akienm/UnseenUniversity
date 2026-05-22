@@ -182,6 +182,7 @@ from .forensic_logger import log_ne_run, cts as _cts, log_error
 from ..memory.cortex import Cortex
 from ..memory.models import Memory, MemoryType
 from ..igor_base import IgorBase
+from ..paths import paths as _paths
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 NE_MODEL = "ollama"  # reasoning cache key (stable; do not change)
@@ -1237,14 +1238,9 @@ class NarrativeEngine(IgorBase):
         broad semantic matching collapses to personal relevance (D-activate-primitive-2026-05-10).
         """
         try:
-            import os
             import psycopg2
 
-            pg_url = os.environ.get(
-                "IGOR_HOME_DB_URL",
-                "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-            )
-            conn = psycopg2.connect(pg_url)
+            conn = psycopg2.connect(_paths().home_db_url)
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT id, narrative FROM clan.memories"

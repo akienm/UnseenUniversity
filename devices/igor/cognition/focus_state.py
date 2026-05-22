@@ -26,12 +26,11 @@ import logging
 import os
 import time
 
+from ..paths import paths as _paths
+
 log = logging.getLogger(__name__)
 
-_PG_URL = os.environ.get(
-    "IGOR_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
+_PG_URL = _paths().home_db_url
 
 HYSTERESIS_FACTOR: float = 1.2
 EXPIRY_CYCLES: int = 5
