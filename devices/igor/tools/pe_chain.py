@@ -1609,9 +1609,15 @@ class PeChain(IgorBase):
             self.basket["test_result"] = "pass" if passed else f"fail: {raw[:300]}"
             self.basket["test_output"] = raw
             level = "preflight" if preflight else "post-edit"
-            self.log.info(
-                f"TEST ({level}, ops.run_tests): {self.basket['test_result'][:80]}"
-            )
+            if passed:
+                self.log.info("TEST (%s, ops.run_tests): pass", level)
+            else:
+                # Log full failure reason — 80-char truncation made diagnosis impossible
+                self.log.info(
+                    "TEST (%s, ops.run_tests): FAIL\n%s",
+                    level,
+                    self.basket["test_result"][:600],
+                )
             if not preflight and self.basket.get("test_result") == "pass":
                 _gate = self._check_new_tests_in_diff()
                 if _gate:

@@ -22,6 +22,14 @@ from wild_igor.igor.env_sync import load_igor_env_into_environ
 class TestLoadIgorEnvIntoEnviron(unittest.TestCase):
     def setUp(self):
         self._saved = dict(os.environ)
+        # Clear all IGOR_* vars so tests don't inherit the live runner's env.
+        # Igor's main loop loads IGOR_CLOUD_PROGRAMMING=true at startup, which
+        # causes load_igor_env_into_environ(overwrite=False) to skip applying
+        # the cfg file value, making assertIn("IGOR_CLOUD_PROGRAMMING", applied)
+        # fail. tearDown restores the full saved env.
+        for key in list(os.environ):
+            if key.startswith("IGOR_"):
+                del os.environ[key]
 
     def tearDown(self):
         os.environ.clear()
