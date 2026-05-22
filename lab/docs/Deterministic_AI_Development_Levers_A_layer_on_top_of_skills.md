@@ -94,6 +94,9 @@ But there are so many more. These are most of my keystone patterns:
 1. Hypothesis extraction and consequence checking -- Every design decision (/sorted) now formally extracts a testable hypothesis before tickets are filed: three questions must be answered (1) Which goal does this serve? (answer with G-xxx or "none, reason"), (2) What should be observably different after these tickets ship? (plain English, falsifiable), (3) How will we know? (metric, log line, behavior, or eval). This ties intent to a verifiable outcome. For M/L/XL decisions, a gated consequence-check ticket is auto-drafted — a structured prediction of potential unintended effects, what signals to watch for, and a gate condition (date or observable event). When the gate clears, the ticket surfaces as actionable. Consequence-checking becomes a tracked work item, not an informal afterthought.
 1. Encapsulation as first-class design principle -- Workers request work via encapsulated black-box interfaces; subsystems do not reach across boundaries they shouldn't; callers don't know internals they don't need to. This appears as: (a) dispatch IS assignment (queue is black box, workers call "anything for me?" periodically), (b) audit-design Check 10 (encapsulation surface — detects subsystems knowing internals they shouldn't), (c) systems architect + process/meta engineer experts explicitly scan for coupling that could be a service. The pattern extends beyond code (the database proxy, inference proxy, MCP channels, ADC device model) to work management itself — Goal 3.7 (shared task service) generalizes this for multi-agent platforms.
 1. Serious goal tracking -- Goals are formally tracked in the database via goal_adopt, goal_scan, and goal_close tools, with G-xxx identifiers assigned to each goal. Goals persist across sessions. Every /sorted links back to a G-xxx goal via testable hypothesis extraction (question 1), or explicitly documents "none, reason." This creates a traceable line from goal → hypothesis → decision → ticket → commit — the system can report what changed in service of which goal.
+1. Self improvement -- Use the tool's strengths to improve the tool itself. The audit-of-audits (/audit-audits) examines results from all audits to find patterns in what's being caught, what's being missed, and where the process itself can sharpen. Skills are edited based on what Claude repeatedly gets wrong. The system is always improving its own operating procedures.
+1. Design around the tool -- Claude has real strengths and real weaknesses. Design explicitly around both. Don't fight the weaknesses; wrap them. Claude will reuse stale information, lose the big picture, forget yesterday's fix, and defer architectural decisions when under pressure. Each of these has a countermeasure: decision tracking, palace memory, state written outside context, process encoded in skills, audits that catch drift. I'm constantly saying 'I know you don't remember this, but yesterday we decided...' And that's even with decision tracking and memory in place. Each bit of extra clarity costs tokens. The design question is always: what does it *really* need to know to do what's in front of it?
+1. Temperature -- If the model is producing too many errors or getting too creative in the wrong direction, ask it to lower its temperature. Temperature is a model parameter between 0 and 1: higher values produce more creative and varied output, lower values produce more focused and deterministic output. When you need reliable execution of a known procedure, lower temperature helps. Most users never touch this, but it's a real lever.
 
 - To be fair, we periodically sweep the skills and tighten around his forgetfulness better. May 3 '26 we added flags like CLOSED: to the beginnings of the ticket names once closed. He kept adding tickets back to the day's slate that were already closed. Now he sees it even if he only looks at the title. Yet another skills edit! Constantly optimizing.
 
@@ -175,49 +178,65 @@ All audit levels emit structured telemetry to the palace (theigors/audits/<level
 
 /audit-expert -- 11-expert broadest-lens panel; weekly (3 random), monthly (full), on-demand by area
 
+/audit-goal -- goal quality gate: 7 checks on any G-xxx goal before it's treated as authoritative; blocks vague or unmeasurable goals upstream of everything else; Opus
+
+/audit-hypothesis -- hypothesis quality gate: 5 checks before /sorted files tickets; catches untestable claims, unobservable measurements, invalid goal links, contradictions with recently falsified hypotheses, missing time horizons; Opus
+
 /audit-precode -- pre-edit plan validation: file/symbol existence, preferred-paths, HIGH-inertia reaffirmation, test plan named
 
 /audit-smell -- post-code quality scan: premature abstractions, missing log calls, misleading names, bespoke vs. standard patterns
 
-/audit-ticket -- filing-time ticket audit (replaces /review Mode A): duplicate, already-done, scope, HIGH-inertia gate, design-rules, build-tightness grade
+/audit-ticket -- filing-time ticket audit: duplicate, already-done, scope, HIGH-inertia gate, design-rules, build-tightness grade
 
 /commit -- does the commit, pull (and merge), push
 
 /context-load -- loads project overview, palace rules, today's slate, recent decisions, pending approvals, inbox
 
-/day-close -- closes out the day: savestateauto, slate finalization, /audit-day, docs commit, GitHub Discussion, push
+/day-close -- closes out the day: slate finalization, /audit-day, docs commit, GitHub Discussion, push
 
 /day-close-audit -- static 18-step debris and hygiene check (tests, file placement, smells, registry, inertia, threads, logs, burn rate, schema, dead code, duplication, habit health, TWM coverage, dependencies, credentials, simplification, registered checks, wiring, capability-map drift)
 
-/sorted -- closes a design block (formerly /decided) → extracts hypothesis → batch tickets via /audit-ticket, writes decision to palace and log, appends to slate
-
-/deep-audit -- legacy alias (superseded by /audit-expert + /audit-day pyramid)
-
 /design -- design-mode session marker; writes DESIGN_START to slate, sets design_mode flag
+
+/dream -- manually trigger Igor's dreaming pass via channel message; polls up to 30s for the dreaming summary response
+
+/eval-run -- weekly capability snapshot: 5 behavioral questions about what Igor can actually do, independent of ticket velocity; feeds goal KR progress; run Fridays or standalone
 
 /export-chat -- exports current Claude Code chat window to a dated markdown file (works around tmux scrollback limits)
 
 /fixit -- shorthand for /sorted + /sprint-batch on the just-filed tickets in one go
 
-/map-igor -- on-demand JSON snapshot of Igor's full state (15 sections: palace tree, tickets, gates, processes, schema, logs, inbox, channels, etc.); Haiku; 14-day TTL
+/goal -- create, list, update, block, and retire G-xxx goals; the layer above decisions that anchors all design work to measurable outcomes
 
 /note -- adds a random note to the day's slate
 
-/readigor -- reads the web interface for Igor so Claude can be brought up to speed without pasting
+/outcome -- review a decision's hypothesis against observable evidence; records confirmed / falsified / needs-more-time; updates goal KR progress; closes the learning loop
+
+/question -- parking lot for Q-xxx observations not yet ready to decide; survives compaction; questions can be promoted to hypotheses or decisions when ready
 
 /readinbox -- reads Igor's inbox (messages from build processes, Claude, internal subsystems)
 
-/savestate -- full session close: savestateauto + compose preserve string + inject compaction
+/savestate -- full session close: compose preserve string + inject compaction
 
-/savestateauto -- lightweight state flush called by other skills: writes in-flight hypothesis to slate, clears debug flag, emits compact preserve string
+/skills-sync -- sync skills between local (~/.claude/skills/) and the canonical repo; repo→local deploys managed skills, local→repo promotes a local-only skill into the canonical set
 
-/sprint -- per-ticket execution loop: verify in_progress status (dispatch IS assignment, no claim) → capability check → audit-precode → infrastructure brief → pull+work → cleanup → test → commit+push → close → /savestate
+/sorted -- closes a design block → extracts hypothesis → batch tickets via /audit-ticket, writes decision to palace and log, appends to slate. Named /sorted rather than /decided because not every ticket actually requires formal design — but by the time you run this, whatever needed sorting has been sorted. The name also avoids models over-weighting the word "decided" and treating the command as more ceremonial than it is. (Underlying skill file is still named `decided`.)
+
+/sprint -- per-ticket execution loop: capability check → audit-precode → infrastructure brief → pull+work → cleanup → test → commit+push → close → /savestate
 
 /sprint-batch -- multi-ticket sprint: topo-sort by dependencies, shared setup once, per-ticket loop via /sprint-ticket, batch teardown with /autocompact
+
+/sprint-loop -- autonomous queue drain with pre-scheduled wakeup; schedules ScheduleWakeup before each batch so compact mid-sprint can't lose the loop; terminates when queue is empty
+
+/sprint-ticket -- single-ticket execution unit: capability check, claim, build, test, commit, close, savestate; called by /sprint and /sprint-batch
 
 /test-fix -- test/fix/test-again loop for failing suites
 
 /ticket -- creates or updates a ticket; runs /audit-ticket on each draft before filing
+
+/weekly-retro -- Friday hypothesis + goal review: confirmation rate, goal KR trends, priority changes for next week; called automatically by /day-close on Fridays or standalone
+
+/workflow -- 30-second reference map of the full tracking and workflow system; run when you've been away, after compaction, or when you're not sure which skill to use next
 
 ---
 
