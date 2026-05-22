@@ -158,6 +158,10 @@ class TestCmdAddWorkerDefault(unittest.TestCase):
                 MagicMock(path=MagicMock(exists=lambda _p: False)),
             ),
             patch("lab.claudecode.cc_queue.json.loads", return_value=[new_ticket]),
+            # _scraps_validate calls ScrapsDevice → InferenceDevice → live
+            # OpenRouter API call. These tests cover worker routing, not ticket
+            # validation, so mock it out to keep tests fast and offline-safe.
+            patch.object(cc_queue, "_scraps_validate", return_value=True),
         ):
             # cmd_add takes a json-file-or-inline-json string; we bypass file
             # existence check (mocked os.path.exists → False) so it goes
