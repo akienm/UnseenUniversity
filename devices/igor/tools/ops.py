@@ -677,7 +677,7 @@ def adopt_top_queue_ticket() -> str:
 
         if active:
             task = active[0].metadata.get("source_message", active[0].narrative[:60])
-            # Ensure the corresponding ticket is in_progress so pe_claim succeeds.
+            # Ensure the corresponding ticket is in_progress.
             # Adoption before this fix created the GOAL but omitted the status flip;
             # this reconcile pass is safe to run every drain tick.
             import re as _re
@@ -685,22 +685,7 @@ def adopt_top_queue_ticket() -> str:
             m = _re.search(r"work ticket (T-[\w-]+)", task)
             if m:
                 ticket_id_for_goal = m.group(1)
-                _tasks = _cc_queue.load_tasks()
-                for _t in _tasks:
-                    if _t["id"] == ticket_id_for_goal and _t.get("status") == "sprint":
-                        import datetime as _dt2
-
-                        _t["status"] = "in_progress"
-                        _t["claimed_at"] = _dt2.datetime.now(
-                            _dt2.timezone.utc
-                        ).isoformat()
-                        _cc_queue.save_tasks(_tasks)
-                        import logging as _log2
-
-                        _log2.getLogger(__name__).info(
-                            f"QUEUE_DRAIN: reconciled {ticket_id_for_goal} → in_progress"
-                        )
-                        break
+                _cc_queue.set_status_in_progress(ticket_id_for_goal)
             return f"[queue_drain] active goal already exists: {task[:80]} — skipping"
 
         # Read top pending ticket — T-cc-queue-drop-json-stage-b: canonical Postgres
