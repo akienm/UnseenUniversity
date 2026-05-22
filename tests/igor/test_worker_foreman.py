@@ -267,8 +267,8 @@ class TestLaunchNextWorkerDispatch(unittest.TestCase):
 
         return result, mock_adopt, mock_popen
 
-    def test_worker_igor_routes_to_adopt(self):
-        """Top pending worker='igor' → adopt_next_ticket is called, no konsole."""
+    def test_worker_igor_returns_dispatch_hint(self):
+        """Top pending worker='igor' → dispatch hint returned, no adopt, no konsole."""
         tasks = [
             {
                 "id": "T-igor-1",
@@ -281,9 +281,10 @@ class TestLaunchNextWorkerDispatch(unittest.TestCase):
         ]
         result, mock_adopt, mock_popen = self._run_launch(tasks)
 
-        mock_adopt.assert_called_once_with()
+        mock_adopt.assert_not_called()
         mock_popen.assert_not_called()
-        self.assertIn("adopted", result)
+        self.assertIn("T-igor-1", result)
+        self.assertIn("dispatch", result.lower())
 
     def test_worker_claude_routes_to_konsole(self):
         """Top pending worker='claude' → konsole-spawn path, not adopt."""
@@ -324,7 +325,7 @@ class TestLaunchNextWorkerDispatch(unittest.TestCase):
         mock_popen.assert_called_once()
 
     def test_igor_chosen_over_later_claude(self):
-        """Worker field of the *top-priority* pending ticket drives dispatch."""
+        """Worker field of the *top-priority* pending ticket drives dispatch hint."""
         tasks = [
             {
                 "id": "T-lower-claude",
@@ -345,8 +346,10 @@ class TestLaunchNextWorkerDispatch(unittest.TestCase):
         ]
         result, mock_adopt, mock_popen = self._run_launch(tasks)
 
-        mock_adopt.assert_called_once()
+        mock_adopt.assert_not_called()
         mock_popen.assert_not_called()
+        self.assertIn("T-top-igor", result)
+        self.assertIn("dispatch", result.lower())
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -360,45 +363,29 @@ _OPS_GOAL_ADOPT_PATH = "wild_igor.igor.tools.ops.goal_adopt"
 
 
 class TestAdoptNextTicketStrictFlag(unittest.TestCase):
-    """adopt_next_ticket dispatches to pe_chain (claiming removed)."""
+    """adopt_next_ticket raises LegacyDirectClaimError unconditionally."""
 
-    def test_pe_chain_called_on_adopt(self):
-        """adopt_next_ticket calls pe_chain after dispatching the ticket."""
+    def test_adopt_next_ticket_raises_legacy_error(self):
+        """adopt_next_ticket always raises — autonomous pickup is removed."""
+        from lab.claudecode.cc_queue import LegacyDirectClaimError
         from wild_igor.igor.tools import worker_foreman as wf
 
-        chain_was_called = []
-
-        def record_call(*_a, **_kw):
-            chain_was_called.append(True)
-            return "chain done"
-
-        mock_cortex = MagicMock()
-        mock_cortex.get_by_type.return_value = []  # no active goals
-
-        mock_mt = MagicMock()
-        mock_mt.GOAL = "GOAL"
-
-        mock_pe_tool = MagicMock()
-        mock_pe_tool.fn = record_call
-
-        mock_next_result = MagicMock()
-        mock_next_result.stdout = "T-adopt-test\n"
-
-        with (
-            patch("subprocess.run", return_value=mock_next_result),
-            patch(_CORTEX_PATH, return_value=mock_cortex),
-            patch(_MT_PATH, mock_mt),
-            patch(_OPS_GOAL_ADOPT_PATH, return_value="adopted"),
-            patch.object(wf.registry, "get", return_value=mock_pe_tool),
-        ):
+        with self.assertRaises(LegacyDirectClaimError) as ctx:
             wf.adopt_next_ticket()
+        self.assertIn("dispatch", str(ctx.exception).lower())
 
-        self.assertTrue(
-            chain_was_called, "pe_chain.fn() was not called by adopt_next_ticket"
-        )
-
-    def test_empty_cmd_next_returns_no_eligible(self):
-        """adopt_next_ticket returns early when cmd_next returns empty."""
+    def test_launch_next_worker_igor_ticket_returns_dispatch_hint(self):
+        """launch_next_worker with worker=igor returns dispatch hint, not adopted."""
+        tasks = [
+            {
+                "id": "T-igor-dispatch",
+                "title": "needs dispatch",
+                "status": "sprint",
+                "priority": 5,
+                "worker": "igor",
+                "tags": [],
+            }
+        ]
         from wild_igor.igor.tools import worker_foreman as wf
 
         mock_cortex = MagicMock()
@@ -407,41 +394,16 @@ class TestAdoptNextTicketStrictFlag(unittest.TestCase):
         mock_mt = MagicMock()
         mock_mt.GOAL = "GOAL"
 
-        mock_empty_result = MagicMock()
-        mock_empty_result.stdout = ""
-
         with (
-            patch("subprocess.run", return_value=mock_empty_result),
+            patch.object(wf, "_load_queue", return_value=tasks),
+            patch("wild_igor.igor.tools.worker_foreman.subprocess.Popen", MagicMock()),
             patch(_CORTEX_PATH, return_value=mock_cortex),
             patch(_MT_PATH, mock_mt),
         ):
-            result = wf.adopt_next_ticket()
+            result = wf.launch_next_worker()
 
-        self.assertIn("no eligible", result)
-
-    def test_cmd_next_called_with_max_difficulty_1(self):
-        """adopt_next_ticket passes --max-difficulty=1 to cmd_next."""
-        from wild_igor.igor.tools import worker_foreman as wf
-
-        mock_cortex = MagicMock()
-        mock_cortex.get_by_type.return_value = []
-
-        mock_mt = MagicMock()
-        mock_mt.GOAL = "GOAL"
-
-        mock_empty_result = MagicMock()
-        mock_empty_result.stdout = ""
-
-        with (
-            patch("subprocess.run", return_value=mock_empty_result) as mock_run,
-            patch(_CORTEX_PATH, return_value=mock_cortex),
-            patch(_MT_PATH, mock_mt),
-        ):
-            wf.adopt_next_ticket()
-
-        call_args = mock_run.call_args[0][0]
-        self.assertIn("--max-difficulty=1", call_args)
-        self.assertIn("igor", call_args)
+        self.assertIn("T-igor-dispatch", result)
+        self.assertIn("dispatch", result.lower())
 
 
 if __name__ == "__main__":

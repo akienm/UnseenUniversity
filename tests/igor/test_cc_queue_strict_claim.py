@@ -30,8 +30,7 @@ class TestStrictClaimModel:
         with patch("lab.claudecode.cc_queue._igor_post", return_value=False):
             with pytest.raises(LegacyDirectClaimError) as exc_info:
                 cmd_claim(["T-whatever"])
-        assert "cmd_next" in str(exc_info.value)
-        assert "next --worker" in str(exc_info.value)
+        assert "dispatch" in str(exc_info.value)
 
     def test_raises_without_strict_flag(self):
         """cmd_claim raises even when IGOR_STRICT_CLAIM_MODEL is not set."""

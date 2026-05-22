@@ -88,12 +88,11 @@ def launch_next_worker() -> str:
             return "queue is empty — nothing to launch"
 
         # Dispatch switch: peek the next pending ticket's worker before any
-        # status mutation so the Igor path doesn't mark it in_progress
-        # twice (adopt_next_ticket / goal_adopt does its own bookkeeping).
+        # status mutation. Igor tickets need CC to dispatch them explicitly —
+        # workers must not pull from the queue on their own initiative.
         worker = _peek_next_pending_worker(tasks)
         if worker == "igor":
-            # Check active GOAL — for igor tickets a GOAL memory IS the "daemon".
-            # Without this guard, PROC_WORKER_FOREMAN re-adopts every 2 minutes.
+            # Check active GOAL — report if Igor already has work.
             try:
                 from ..memory.cortex import Cortex as _Cortex
                 from ..memory.models import MemoryType as _MT
@@ -106,7 +105,23 @@ def launch_next_worker() -> str:
                     return f"[foreman] igor goal already active: {_tid} — skipping"
             except Exception as _goal_e:
                 _log.debug("worker_foreman: cortex goal check failed: %s", _goal_e)
-            return adopt_next_ticket()
+
+            # D-igor-queue-encapsulation: no autonomous ticket pickup.
+            # Surface the top ticket ID so CC can dispatch it explicitly.
+            pending = [t for t in tasks if t.get("status") == "sprint"]
+            if not pending:
+                return "[foreman] no sprint tickets for igor — queue empty"
+            from ..cognition.anticipation import weighted_ticket_score as _wts
+
+            pending_sorted = sorted(
+                pending,
+                key=lambda t: _wts(t.get("priority", 99), t.get("tags", [])),
+            )
+            top_id = pending_sorted[0]["id"]
+            return (
+                f"[foreman] igor ticket ready: {top_id} — "
+                f"dispatch via: cc_queue.py dispatch {top_id}"
+            )
 
         # If anything is in_progress, check if the daemon is alive.
         # One daemon runs one ticket at a time — daemon alive means work is in progress.
@@ -285,80 +300,23 @@ def queue_pending_count() -> str:
 
 
 def adopt_next_ticket() -> str:
-    """Adopt the next-best pending ticket as Igor's active goal and run pe_chain.
+    """REMOVED — autonomous ticket pickup is no longer supported.
 
-    Replaces the konsole-spawn pattern of launch_next_worker: Igor works the
-    ticket in-process via pe_chain, not via a new CC session. Picks the same
-    weighted_ticket_score ordering as launch_next_worker for consistency.
+    Igor owns no ticket unless CC explicitly dispatches it:
+        cc_queue.py dispatch <ticket-id>
 
-    D-worker-mode-routing-2026-04-21: invoked by launch_next_worker when the
-    top pending ticket has worker='igor'. Adopts the goal, then drives the
-    PROC_CODE_A_TICKET chain via pe_chain.run_pe_chain (the registered tool).
-    If pe_chain is unavailable, returns after goal_adopt so the engram-chain
-    BRANCHIF caller can still pick up.
-
-    Returns a descriptive status string.
+    This function used to call cmd_next (a claim path) autonomously.
+    That violated the design principle: workers must not pull from the queue
+    on their own initiative. CC dispatches; Igor works.
     """
-    try:
-        from ..memory.cortex import Cortex as _Cortex
-        from ..memory.models import MemoryType as _MT
+    from lab.claudecode.cc_queue import LegacyDirectClaimError
 
-        _cortex = _Cortex(None)
-        _goals = _cortex.get_by_type(_MT.GOAL)
-        _active = [g for g in _goals if g.metadata.get("goal_active")]
-        if _active:
-            _tid = _active[0].metadata.get("source_message", "")[:60]
-            return f"[adopt] active goal exists: {_tid} — skipping"
-
-        result = subprocess.run(
-            [
-                "python3",
-                str(_CC_QUEUE_SCRIPT),
-                "next",
-                "--worker",
-                "igor",
-                "--max-difficulty=1",
-            ],
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-        ticket_id = result.stdout.strip()
-        if not ticket_id:
-            return "no eligible tickets (cmd_next returned empty)"
-
-        from .ops import goal_adopt as _goal_adopt
-
-        adopt_result = _goal_adopt(
-            f"work ticket {ticket_id} [engram pickup]",
-        )
-
-        # Drive the coding chain in-process. Prefer the tool registry so other
-        # agents can substitute (run_engram_cursor for custom entry points).
-        # Graceful fallback: if pe_chain isn't importable yet (early boot,
-        # partial registration), return after goal adoption — the engram
-        # chain's BRANCHIF caller can still pick up from the active goal.
-        chain_result = None
-        try:
-            pe_tool = registry.get("run_pe_chain")
-            if pe_tool is not None:
-                chain_result = pe_tool.fn()
-            else:
-                from .pe_chain import run_pe_chain as _run_pe_chain
-
-                chain_result = _run_pe_chain()
-        except Exception as chain_exc:
-            chain_result = f"[pe_chain skipped: {chain_exc}]"
-
-        adopt_str = (
-            adopt_result[:120] if isinstance(adopt_result, str) else str(adopt_result)
-        )
-        chain_str = (
-            chain_result[:160] if isinstance(chain_result, str) else str(chain_result)
-        )
-        return f"adopted {ticket_id}: {adopt_str} | chain: {chain_str}"
-    except Exception as e:
-        return f"[ERROR] adopt_next_ticket: {e}"
+    raise LegacyDirectClaimError(
+        "adopt_next_ticket is no longer supported. "
+        "Igor receives tickets only when CC dispatches them: "
+        "cc_queue.py dispatch <ticket-id>. "
+        "Workers must not autonomously claim from the queue."
+    )
 
 
 # ── Register tools ──────────────────────────────────────────────────────────

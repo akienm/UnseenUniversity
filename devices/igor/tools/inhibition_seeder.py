@@ -27,6 +27,7 @@ import os
 from lab.utility_closet.registry import Tool, registry
 
 from ..paths import paths as _paths
+
 logger = logging.getLogger(__name__)
 
 DB_URL = _paths().home_db_url
@@ -85,13 +86,10 @@ INHIBITION_SPEC = [
         "code_ref": "tools/filesystem.py:check_disk_usage",
         "status": "pending",
     },
-    {
-        "habit_id": "PROC_QUEUE_DRAIN",
-        "ttl_seconds": 300,
-        "result_format": "str",
-        "code_ref": "ops:adopt_top_queue_ticket",
-        "status": "pending",
-    },
+    # PROC_QUEUE_DRAIN removed: autonomous queue pickup violates the dispatch model.
+    # Igor receives tickets only when CC dispatches them via cc_queue.py dispatch.
+    # Workers must not pull from the queue on their own initiative.
+    # D-igor-queue-encapsulation: "there is no more claiming tickets for anybody."
     {
         "habit_id": "PROC_CHUNK_INSPECTOR",
         "ttl_seconds": 1800,
@@ -197,6 +195,7 @@ def _seed_one(conn, entry: dict) -> tuple[bool, str]:
             conn.rollback()
         except Exception as _exc:
             from ..cognition.forensic_logger import log_error as _le
+
             _le(kind="SILENT_EXCEPT", detail=f"inhibition_seeder.py:198: {_exc}")
         return False, f"error: {exc}"
 
