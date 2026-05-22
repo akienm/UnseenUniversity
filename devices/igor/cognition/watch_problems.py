@@ -28,6 +28,8 @@ from datetime import datetime, timezone, timedelta
 import psycopg2
 import psycopg2.extras
 
+from ..paths import paths as _paths
+
 log = logging.getLogger(__name__)
 
 _TABLE = "watch_problems"
@@ -120,12 +122,10 @@ _CONFIDENCE_DECAY_DEFAULT = 0.95
 
 
 def _conn() -> "psycopg2.connection":
-    db_url = os.environ.get(
-        "IGOR_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-    )
     search_path = os.environ.get("IGOR_LOCAL_SEARCH_PATH", "instance,infra,public")
-    return psycopg2.connect(db_url, options=f"-c search_path={search_path}")
+    return psycopg2.connect(
+        _paths().home_db_url, options=f"-c search_path={search_path}"
+    )
 
 
 def _ensure_table(cur) -> None:
