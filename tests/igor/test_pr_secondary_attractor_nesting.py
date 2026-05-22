@@ -59,7 +59,10 @@ def _delete_test_accretions_and_goals():
 
 @pytest.fixture(autouse=True)
 def cleanup_each():
-    yield
+    from unittest.mock import patch
+
+    with patch("wild_igor.igor.tools.ops._channel_append"):
+        yield
     _delete_test_accretions_and_goals()
 
 

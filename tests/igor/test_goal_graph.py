@@ -327,13 +327,16 @@ def test_state_transition_rejects_invalid_state():
 
 @_skip_no_db
 def test_goal_adopt_accepts_parent_goal_facia_id():
+    from unittest.mock import patch
+
     from wild_igor.igor.memory.cortex import Cortex
     from wild_igor.igor.tools.ops import goal_adopt
 
-    result = goal_adopt(
-        "sprint goal graph tests",
-        parent_goal_facia_id="PR_GOAL_STRATEGIC_SELF_GOALGRAPH",
-    )
+    with patch("wild_igor.igor.tools.ops._channel_append"):
+        result = goal_adopt(
+            "sprint goal graph tests",
+            parent_goal_facia_id="PR_GOAL_STRATEGIC_SELF_GOALGRAPH",
+        )
     assert "On it" in result
     # Verify the GOAL memory has the pointer
     cortex = Cortex(None)
