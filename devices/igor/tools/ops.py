@@ -672,77 +672,24 @@ def read_queue_top() -> str:
 
 
 def adopt_top_queue_ticket() -> str:
+    """REMOVED — autonomous queue drain is no longer supported.
+
+    Igor owns no ticket unless CC explicitly dispatches it:
+        cc_queue.py dispatch <ticket-id>
+
+    This function used to be called by PROC_QUEUE_DRAIN on a 30-min schedule
+    to autonomously pick from the queue. That violated the design principle:
+    workers must not pull from the queue on their own initiative.
+    CC dispatches; Igor works.
     """
-    T-goal-queue-consumer: If no active GOAL exists, pick the top pending ticket
-    and adopt it as a goal. Called by PROC_QUEUE_DRAIN on a 30-min schedule.
-    Returns what was adopted, or why nothing was adopted.
-    """
-    try:
-        from ..memory.cortex import Cortex as _Cortex
-        from ..memory.models import MemoryType as _MT
+    from lab.claudecode.cc_queue import LegacyDirectClaimError
 
-        # Check for active goals — don't pile on
-        cortex = _Cortex(None)
-        goals = cortex.get_by_type(_MT.GOAL)
-        active = [g for g in goals if g.metadata.get("goal_active")]
-
-        from lab.claudecode import cc_queue as _cc_queue
-
-        if active:
-            task = active[0].metadata.get("source_message", active[0].narrative[:60])
-            # Ensure the corresponding ticket is in_progress.
-            # Adoption before this fix created the GOAL but omitted the status flip;
-            # this reconcile pass is safe to run every drain tick.
-            import re as _re
-
-            m = _re.search(r"work ticket (T-[\w-]+)", task)
-            if m:
-                ticket_id_for_goal = m.group(1)
-                _cc_queue.set_status_in_progress(ticket_id_for_goal)
-            return f"[queue_drain] active goal already exists: {task[:80]} — skipping"
-
-        # Read top pending ticket — T-cc-queue-drop-json-stage-b: canonical Postgres
-
-        tasks = _cc_queue.load_tasks()
-        _max_diff_env = os.environ.get("IGOR_MAX_DIFFICULTY", "")
-        _max_diff = int(_max_diff_env) if _max_diff_env.isdigit() else None
-        pending = [
-            t
-            for t in tasks
-            if t.get("status") == "sprint"
-            and t.get("worker") == "igor"
-            and not t.get("blocked_at")
-            and not t.get("gate")
-            and (_max_diff is None or int(t.get("target_difficulty") or 1) <= _max_diff)
-        ]
-        if not pending:
-            return "[queue_drain] no sprint tickets — queue empty"
-
-        def _sort_prio(t):
-            p = t.get("priority")
-            try:
-                f = float(p)
-                # Float weights (0.0-1.0): higher = better → sort descending (-f)
-                # Integer ranks (>1): lower = better → sort ascending (f)
-                return (-f if 0.0 < f <= 1.0 else f, t.get("id", ""))
-            except (TypeError, ValueError):
-                return (0.5, t.get("id", ""))
-
-        pending.sort(key=_sort_prio)
-        top = pending[0]
-        ticket_id = top["id"]
-
-        # Mark ticket in_progress atomically before creating the GOAL.
-        # Use set_status_in_progress (targeted single-row UPDATE) to avoid writing
-        # the full task list — save_tasks() on the full list leaked test fixtures
-        # to the real DB when tests mocked load_tasks but not save_tasks.
-        _cc_queue.set_status_in_progress(ticket_id)
-
-        # Adopt it via goal_adopt (defined in this module)
-        result = goal_adopt(f"work ticket {ticket_id}")
-        return f"[queue_drain] adopted {ticket_id}: {result[:120]}"
-    except Exception as e:
-        return f"[queue_drain] error: {e}"
+    raise LegacyDirectClaimError(
+        "adopt_top_queue_ticket is no longer supported. "
+        "Igor receives tickets only when CC dispatches them: "
+        "cc_queue.py dispatch <ticket-id>. "
+        "PROC_QUEUE_DRAIN must not autonomously pick from the queue."
+    )
 
 
 # ── flush_habit_cache ──────────────────────────────────────────────────────────
