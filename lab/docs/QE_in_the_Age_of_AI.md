@@ -40,6 +40,8 @@ In test automation specifically: with an established flow layer (page objects, f
 
 That is not replacing the QE function. That is the QE function running faster.
 
+We still need testers who will think of the things the developers did not, those who will define how to test it (because I promise you from experience 'and remember to add automated tests' is important, but not enough), those who will tell the AI what the constraints are, because AIs assume their own constraints when none exist. And most importantly, we need the domain expertiese of business experts. We need these experts for the same reasons we haven't simply handed all cyber and IT to AI and retired ourselves.
+
 ### 2. QE as the architect of the compilation loop
 
 This is the less obvious argument, and the more important one.
@@ -76,8 +78,6 @@ AI answered that question. The new question is: *can we verify it fast enough, a
 That is the Quality Engineering mandate in an AI-accelerated organization. Not a checkpoint at the end of development. Not a brake on velocity. The architect of the system that makes velocity sustainable.
 
 The manager who built an app in a day needs someone to tell them whether it works, whether it will keep working, and how to make the next app faster and more reliable than this one.
-
-That is Chad's team.
 
 ---
 
