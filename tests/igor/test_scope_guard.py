@@ -2,22 +2,30 @@
 tests/test_scope_guard.py — T-scope-guard-proc unit tests.
 
 Tests _classify_tier() and run_scope_guard() without DB or channel I/O.
-The ring write and channel post inside run_scope_guard are wrapped in try/except,
-so they fail silently when Cortex/channel_post aren't available in test — that's fine.
-We test the classification logic and the escalation decision directly.
 """
 
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-# Note: scope_guard imports cortex/channel_post lazily inside try/except blocks,
-# so they fail silently without DB in tests — no module-level stubs needed.
-
 from wild_igor.igor.tools.scope_guard import (
     _classify_tier,
     run_scope_guard,
 )  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _no_channel_io():
+    """Block channel writes for every test in this module.
+
+    Without this, the MEDIUM-inertia test posts to the real channel on every pytest
+    run — writing to production infra.channel_messages. HIGH-inertia paths call
+    _pe_escalate via a lazy import that fails silently; only the MEDIUM path reaches
+    real Postgres.
+    """
+    with patch("wild_igor.igor.tools.channel_post.post_to_channel"):
+        yield
+
 
 # ── _classify_tier ────────────────────────────────────────────────────────────
 
