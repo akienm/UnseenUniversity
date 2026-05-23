@@ -32,7 +32,7 @@ class TestAppointHomeDb:
             with patch(
                 "lab.utility_closet.machine_manager.get_machine",
                 return_value=mock_machine,
-            ):
+            ), patch("lab.claudecode.utility_closet_server._comms", None):
                 result = appoint_home_db("akiendell")
             assert result["env_updated"] is True
             assert "10.0.0.99" in result["new_host"]
@@ -53,7 +53,7 @@ class TestAppointHomeDb:
             with patch(
                 "lab.utility_closet.machine_manager.get_machine",
                 return_value=mock_machine,
-            ):
+            ), patch("lab.claudecode.utility_closet_server._comms", None):
                 result = appoint_home_db("yoga9i")
             assert len(result["manual_steps"]) >= 3
         finally:

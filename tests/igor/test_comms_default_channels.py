@@ -152,12 +152,21 @@ class TestCommsHealthEndpoint:
 
 
 class TestCommsMessageRouting:
-    """Messages sent through comms are routed to the channel's transport."""
+    """Messages sent through comms are routed to the channel's transport.
+
+    These tests force MemoryTransport (by unsetting IGOR_HOME_DB_URL before
+    _init_comms) so test messages never land in the production Postgres
+    channel_messages table where Igor's NE would see them.
+    """
 
     def test_send_to_shared(self):
+        import os
+
         from lab.claudecode.utility_closet_server import _init_comms
 
-        _init_comms()
+        with patch.dict(os.environ, {}, clear=False) as env:
+            env.pop("IGOR_HOME_DB_URL", None)
+            _init_comms()
 
         from lab.claudecode import utility_closet_server as uc
         from lab.utility_closet.comms import ChannelMessage
@@ -173,9 +182,13 @@ class TestCommsMessageRouting:
         assert len(result) >= 1
 
     def test_send_to_agent_channel(self):
+        import os
+
         from lab.claudecode.utility_closet_server import _init_comms
 
-        _init_comms()
+        with patch.dict(os.environ, {}, clear=False) as env:
+            env.pop("IGOR_HOME_DB_URL", None)
+            _init_comms()
 
         from lab.claudecode import utility_closet_server as uc
         from lab.utility_closet.comms import ChannelMessage
@@ -189,9 +202,13 @@ class TestCommsMessageRouting:
         assert uc._comms.send(msg) is True
 
     def test_subscriber_notified(self):
+        import os
+
         from lab.claudecode.utility_closet_server import _init_comms
 
-        _init_comms()
+        with patch.dict(os.environ, {}, clear=False) as env:
+            env.pop("IGOR_HOME_DB_URL", None)
+            _init_comms()
 
         from lab.claudecode import utility_closet_server as uc
         from lab.utility_closet.comms import ChannelMessage
