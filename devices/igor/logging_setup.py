@@ -39,10 +39,10 @@ class TimerHandle:
     Lightweight structured timer for forensic logs.
 
     Usage:
-        timer = log.get_timer("pe_chain.hypothesize", ticket="T-foo")
+        timer = log.get_timer("ne.process_turn", ticket="T-foo")
         # ... do work ...
         timer.stop(result="ok", tokens=412)
-        # Emits one log line: name=pe_chain.hypothesize started=20260406... elapsed=3.142 ticket=T-foo result=ok tokens=412
+        # Emits one log line: name=ne.process_turn started=20260406... elapsed=3.142 ticket=T-foo result=ok tokens=412
 
     Created via logging_setup.get_timer(log, name, level=logging.DEBUG, **context).
     Do not instantiate directly.
@@ -90,7 +90,7 @@ def get_timer(
     Return a TimerHandle that starts immediately.
 
     logger:          the logging.Logger to emit to
-    name:            timer name (e.g. "pe_chain.hypothesize")
+    name:            timer name (e.g. "ne.process_turn")
     level:           log level for the stop() call (default DEBUG)
     context_kwargs:  key=value pairs included in every stop() line
 

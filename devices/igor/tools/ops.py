@@ -992,94 +992,6 @@ registry.register(
 )
 
 
-# ── run_coding_sprint ──────────────────────────────────────────────────────────
-
-
-def run_coding_sprint() -> str:
-    """
-    T-programming-engrams: First-cut coding sprint (D300).
-    Fires when TWM contains GOAL_READY (via PROC_CODING_SPRINT habit).
-    Reads ACTIVE_GOAL + active GOAL memory details, then posts a structured
-    coding prompt to the channel for LLM pickup.
-
-    Reactive cascade: goal_continuation step 3 writes GOAL_READY to TWM →
-    PROC_CODING_SPRINT fires this tool → prompt posted → LLM takes over.
-
-    After posting the prompt, GOAL_READY is evicted from TWM (consumed).
-    """
-    try:
-        import re as _re
-
-        from ..memory.cortex import Cortex as _Cortex
-        from ..memory.models import MemoryType as _MT
-
-        cortex = _Cortex(None)
-
-        # Guard: only proceed if GOAL_READY is in TWM — prevents double-fire when
-        # called by SchedulerSource on a tick before goal_continuation completes step 3.
-        goal_ready_entries = cortex.twm_read(
-            category="goal_ready", include_integrated=False
-        )
-        if not goal_ready_entries:
-            return "[coding_sprint] no GOAL_READY in TWM — skipping (scheduler tick)"
-
-        # 2. Get active GOAL memory for ticket details / narrative
-        goals = cortex.get_by_type(_MT.GOAL)
-        active = [g for g in goals if g.metadata.get("goal_active")]
-        if not active:
-            return "[coding_sprint] no active GOAL memory — skipping"
-
-        # 1. Get active goal text — TWM preferred; fall back to GOAL memory source_message
-        # ACTIVE_GOAL has 2h TTL and may have expired between adoption and sprint
-        active_goal = cortex.twm_get_active_goal()
-        if not active_goal:
-            # Fall back: use the active GOAL memory's source_message
-            goal_mem = sorted(
-                active,
-                key=lambda g: g.metadata.get("adopted_at", ""),
-                reverse=True,
-            )[0]
-            active_goal = goal_mem.metadata.get(
-                "source_message", goal_mem.narrative[:100]
-            )
-        goal = sorted(
-            active,
-            key=lambda g: g.metadata.get("adopted_at", ""),
-            reverse=True,
-        )[0]
-
-        # 3. Extract ticket_id from goal source_message
-        source_msg = goal.metadata.get("source_message", "")
-        m = _re.search(r"\b(T-[\w-]+)\b", source_msg)
-        ticket_id = m.group(1) if m else None
-
-        # 4. Run pe_chain directly — Igor executes the coding sprint natively
-        # (replaces old pattern of posting [CODING SPRINT] to channel for CC pickup)
-        cortex.twm_evict_category("goal_ready")  # consume signal before chain runs
-        from .pe_chain import run_pe_chain as _run_pe_chain
-
-        chain_result = _run_pe_chain()
-        return f"[coding_sprint] chain done for {ticket_id or active_goal[:40]}: {chain_result[:120]}"
-
-    except Exception as e:
-        return f"[coding_sprint] error: {e}"
-
-
-registry.register(
-    Tool(
-        name="run_coding_sprint",
-        description=(
-            "T-programming-engrams: Fire a coding sprint when TWM contains GOAL_READY (D300). "
-            "Reads ACTIVE_GOAL + active GOAL memory, posts a structured coding prompt "
-            "to the channel for LLM pickup, then evicts GOAL_READY from TWM. "
-            "Called by PROC_CODING_SPRINT habit on twm_trigger=GOAL_READY."
-        ),
-        parameters={"type": "object", "properties": {}, "required": []},
-        fn=run_coding_sprint,
-    )
-)
-
-
 # ── store_plan ─────────────────────────────────────────────────────────────────
 
 _DB_URL = _paths().home_db_url
@@ -1208,16 +1120,13 @@ _RUN_TESTS_TIMEOUT_SEC = (
     600  # suite takes ~280s on akiendelllinux CPU-only; 300 was too tight
 )
 
-# Tests excluded from preflight — network-calling or shared-state-flaky tests
-# that are unrelated to any specific ticket's work and would always block pe_chain.
+# Tests excluded from run_tests — network-calling or shared-state-flaky tests.
 # Add a comment explaining each exclusion so future readers know the reason.
 _PREFLIGHT_IGNORE = [
-    # Makes live Qwen network calls; background threads crash → threading.py timeout
-    "tests/test_pe_chain_qwen_tier.py",
     # Shared-TWM-state flake: body.motor count off-by-one when run with full suite
     "tests/test_pr_load_as_primary_attractor.py",
     # Makes live OpenRouter API calls (test_or_cheap); fails under load when Igor
-    # is also calling OR concurrently during pe_chain PLAN step
+    # is also calling OR concurrently
     "tests/test_context_format.py",
     # Cross-test state: pr_touch timestamp not visible after write when Igor's
     # live loop concurrently touches PR_AKIEN — proper fix needs T-test-postgres-schema
@@ -1235,14 +1144,11 @@ _PREFLIGHT_IGNORE = [
 def run_tests() -> str:
     """Run the test suite. Returns last 30 lines of output.
 
-    Timeout is 300s — the full suite has ~3988 tests and takes ~3.5 min
-    on akiendell (T-pe-chain-preflight-timeout-misdiagnosis). Returning
-    a '[run_tests] timeout' marker on TimeoutExpired (distinct from a
-    real test failure) lets pe_chain's pre-flight classify the stuck-
-    reason correctly instead of misreading timeout as red tests.
+    Timeout is 600s — the full suite takes ~400s on akiendell.
+    Returns '[run_tests] timeout' on TimeoutExpired so callers can distinguish
+    timeout from actual test failures.
 
-    _PREFLIGHT_IGNORE excludes network-calling and shared-state-flaky tests
-    that block preflight for reasons unrelated to ticket work.
+    _PREFLIGHT_IGNORE excludes network-calling and shared-state-flaky tests.
     """
     import subprocess
     from pathlib import Path

@@ -49,9 +49,7 @@ from . import (
     memory_query,
     boredom_idle,
     goal_continuation,
-    scope_guard,
     after_action_reviewer,
-    pe_chain,
     habit_chunker,
     or_model_refresh,
     memory_snapshot,
@@ -74,7 +72,6 @@ from . import (
     tiered_research,
     hardware_detect,
     self_inspect,
-    pe_chain_debugger,
     share_pattern,
 )
 from ..arbiter import (

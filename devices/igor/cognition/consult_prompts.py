@@ -3,17 +3,12 @@
 T-consult-prompts: replaces the inline stubs in consult.py with per-kind
 templates that force the right register (peer-consultant, not answerer).
 
-Two problem kinds supported:
+Problem kind supported:
     reasoning — Igor's conversational turn is stuck (BG WINNOW fires with
                 near-zero confidence on a non-habit tier fallthrough).
                 State bundle: user_turn + thread_excerpt + twm_topk.
 
-    coding — Igor's pe_chain is stuck (SITUATE returns 0, pre-flight blocks
-             unrelated, implement fails twice). State bundle: ticket_desc +
-             pe_chain_tail + last_hypothesis + last_error.
-
-Both kinds share the same return shape: {hypotheses, next_question, confidence}.
-What differs is the framing of what-I-know and what-would-unstick-me.
+Return shape: {hypotheses, next_question, confidence}.
 """
 
 from __future__ import annotations
@@ -68,28 +63,12 @@ _REASONING_SYSTEM = (
     "conversational frame, or my own state.\n\n" + _RESPONSE_SHAPE
 )
 
-_CODING_SYSTEM = (
-    _REGISTER_PREAMBLE
-    + "\n\n"
-    + "In this consult: my code-execution chain (pe_chain) is stuck. It "
-    "could be that SITUATE returned no files, that pre-flight blocked on an "
-    "unrelated test, that my IMPLEMENT attempt keeps failing, or something "
-    "else. I have the ticket description, a tail of my pe_chain log, my last "
-    "hypothesis, and the last error. Help me understand what's blocking me — "
-    "whether my plan is wrong, the environment is wrong, or I'm missing "
-    "context.\n\n" + _RESPONSE_SHAPE
-)
-
 
 def build_system_prompt(problem_kind: str) -> str:
     """Return the system prompt for the given problem kind.
 
-    Falls back to the reasoning prompt for any unknown kind — keeps the
-    register invariant even if callers expand the taxonomy without updating
-    this module.
+    Falls back to the reasoning prompt for any unknown kind.
     """
-    if problem_kind == "coding":
-        return _CODING_SYSTEM
     return _REASONING_SYSTEM
 
 
@@ -115,16 +94,10 @@ def build_state_message(state: "ConsultState") -> str:
     # Per-kind extras — emitted in a consistent order if present.
     # Truncate to 2000 chars/field to avoid prompt-bloat from giant logs.
     order = [
-        # coding
-        "ticket_desc",
-        "pe_chain_tail",
-        "last_hypothesis",
-        "last_error",
-        # reasoning
         "user_turn",
         "thread_excerpt",
         "twm_topk",
-        # general catch-all — any other extra keys appended in insertion order
+        # general catch-all ��� any other extra keys appended in insertion order
     ]
     emitted: set[str] = set()
     for key in order:

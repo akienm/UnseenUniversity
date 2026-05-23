@@ -518,8 +518,8 @@ class HeartbeatSource(BasePushSource):
         so _drain_action_impulses() picks it up → BG scores the habit → code_ref fires.
 
         Deduplication: _twm_trigger_dispatched tracks TWM entry IDs to prevent
-        re-firing on the same TWM entry. Eviction from TWM (by run_coding_sprint or
-        TTL) clears the entry naturally; dispatched IDs are pruned here to avoid unbounded growth.
+        re-firing on the same TWM entry. Eviction from TWM (by TTL expiry)
+        clears the entry naturally; dispatched IDs are pruned here to avoid unbounded growth.
         """
         try:
             trigger_habits = cortex.get_procedural_by_metadata_key("twm_trigger")

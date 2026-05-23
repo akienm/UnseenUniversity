@@ -66,8 +66,8 @@ def post_to_channel(
     If dedup_key is provided and the same key was posted within
     dedup_window_minutes, the channel write is suppressed (a NOTE-level
     entry is written to the forensic logger for audit). Silences the
-    Igor echo loop observed on 2026-04-18 where SCOPE_GUARD / pe_chain
-    blocks on the same (file, op) tuple fired to channel every 10-60 min.
+    Igor echo loop observed on 2026-04-18 where repeated escalations
+    on the same topic fired to channel every 10-60 min.
     """
     if dedup_key and _should_suppress(dedup_key, dedup_window_minutes):
         try:

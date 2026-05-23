@@ -13,11 +13,11 @@ Usage:
     from wild_igor.igor.cognition.consult import consult, ConsultSession, ConsultState
 
     state = ConsultState(
-        problem_kind="coding",
-        summary="pe_chain SITUATE returned 0 files for T-foo",
-        what_i_tried="ran qwen-2.5-coder at temp=0.1",
-        what_failed="post-filter dropped all results as HIGH-inertia",
-        extra={"ticket_desc": "...", "pe_chain_tail": "..."},
+        problem_kind="reasoning",
+        summary="Igor stuck in NE loop on T-foo",
+        what_i_tried="reviewed TWM state and thread context",
+        what_failed="confidence stayed near zero after 3 cycles",
+        extra={"user_turn": "...", "thread_excerpt": "..."},
     )
     # one-shot helper:
     result = consult(state, "What am I missing about the post-filter?")
@@ -127,8 +127,8 @@ ProblemKind = Literal["reasoning", "coding"]
 @dataclass
 class ConsultState:
     """Input bundle to a consult session. Shape common across problem kinds;
-    extra dict carries per-kind context (ticket_desc + pe_chain_tail for
-    coding; user_turn + thread_excerpt + twm_topk for reasoning)."""
+    extra dict carries per-kind context (user_turn + thread_excerpt + twm_topk for reasoning).
+    """
 
     problem_kind: ProblemKind
     summary: str  # one-line: what's stuck

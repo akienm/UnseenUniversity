@@ -6,7 +6,7 @@ import path: `from .cognition.cc_inbox_bridge import post_to_cc_inbox`.
 The underlying cc_inbox.append() is already non-fatal on I/O error, but
 this bridge adds a second safety net — any exception from the append call
 is caught and logged (not raised), so a failing inbox never breaks a
-triggering subsystem (pe_chain ESCALATE, scope_guard block, etc.).
+triggering subsystem (consult escalate, ticket_trip, etc.).
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ def post_to_cc_inbox(
     """Append an entry to CC's inbox. Fire-and-forget — never raises.
 
     kind: short category string for CC-side filtering
-          (pe_chain_escalate, scope_guard_block, ticket_trip, etc.)
+          (consult_escalate, ticket_trip, cloud_fallback_engaged, etc.)
     summary: one-line summary shown in /readinbox list
     body: longer detail shown on request
     ticket_id: optional — surfaces in inbox display, lets CC pivot to ticket

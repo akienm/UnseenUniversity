@@ -353,9 +353,9 @@ def load_igor_env_into_environ(
 ) -> dict[str, str]:
     """Hydrate os.environ from Igor's instance cfg files WITHOUT a DB connection.
 
-    For standalone tools (pe_chain_debugger, cert harnesses, ad-hoc REPL
-    scripts) that import pe_chain or cognition modules from a fresh Python
-    process. Igor's main loop loads cfg via boot_env_sync(); standalone
+    For standalone tools (ad-hoc REPL scripts, cert harnesses) that import
+    cognition modules from a fresh Python process. Igor's main loop loads
+    cfg via boot_env_sync(); standalone
     callers need this lighter path so routing matches autonomous behavior.
 
     Mirrors boot_env_sync's source ordering (last wins): swarm.cfg →
