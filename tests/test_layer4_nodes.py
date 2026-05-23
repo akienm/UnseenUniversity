@@ -16,9 +16,6 @@ Each node tested for:
   5. JSON serialisability of metadata + payload
   6. node_executor integration — scaffold STOPIF/EMITIF/FORKIF/BRANCHIF behaviour
 
-Also covers pe_chain.pe_run_bash:
-  7. pe_run_bash basket contract (reads bash_cmd, writes bash_output)
-
 No live DB required — tests run against seed script data + node_executor directly.
 """
 
@@ -567,44 +564,3 @@ class TestVerifyResultExecutor:
         basket = {}
         execute_node(mem, "__entry__", basket)
         assert basket.get("verify_passed") is False
-
-
-# ── 8. pe_run_bash basket contract ───────────────────────────────────────────
-
-
-class TestPeRunBash:
-    def setup_method(self):
-        from wild_igor.igor.tools.pe_chain import pe_run_bash
-
-        self.pe_run_bash = pe_run_bash
-
-    def test_missing_bash_cmd_sets_error(self):
-        basket = {}
-        result = self.pe_run_bash(basket)
-        assert "error" in result
-        assert "bash_cmd" in result["error"]
-
-    def test_runs_simple_command(self):
-        basket = {"bash_cmd": ["echo", "hello"]}
-        result = self.pe_run_bash(basket)
-        assert "bash_output" in result
-        assert "hello" in result["bash_output"]
-
-    def test_str_cmd_split(self):
-        basket = {"bash_cmd": "echo world"}
-        result = self.pe_run_bash(basket)
-        assert "world" in result.get("bash_output", "")
-
-    def test_output_capped_at_600(self):
-        # Generate output longer than 600 chars
-        long_str = "x" * 700
-        basket = {"bash_cmd": ["echo", long_str]}
-        result = self.pe_run_bash(basket)
-        assert len(result.get("bash_output", "")) <= 600
-
-    def test_error_basket_passthrough(self):
-        basket = {"error": "prior error", "bash_cmd": ["echo", "hi"]}
-        result = self.pe_run_bash(basket)
-        # Should pass through without running command
-        assert result.get("error") == "prior error"
-        assert "bash_output" not in result

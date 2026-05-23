@@ -1,11 +1,7 @@
 """
-Regression test for T-cert-debugger-env-mirror —
-load_igor_env_into_environ() helper + pe_chain_debugger.start integration.
+Tests for load_igor_env_into_environ() helper.
 
-The cert harness silently routed every HYPOTHESIZE call through local Ollama
-qwen2.5:7b instead of cloud OR qwen-2.5-coder-32b for 7+ attempts because
-/tmp/run_walk_02.py never set IGOR_CLOUD_PROGRAMMING=true. This helper makes
-standalone tools mirror Igor's runtime env without reaching the DB.
+The helper makes standalone tools mirror Igor's runtime env without reaching the DB.
 """
 
 from __future__ import annotations
@@ -101,31 +97,6 @@ class TestLoadIgorEnvIntoEnviron(unittest.TestCase):
             with patch("pathlib.Path.home", return_value=tmp_path):
                 applied = load_igor_env_into_environ()
         self.assertIn("IGOR_CLOUD_PROGRAMMING", applied)
-
-
-class TestPeChainDebuggerLoadsEnv(unittest.TestCase):
-    """Integration check: pe_chain_debugger.start invokes the helper."""
-
-    def setUp(self):
-        self._saved = dict(os.environ)
-
-    def tearDown(self):
-        os.environ.clear()
-        os.environ.update(self._saved)
-
-    def test_start_calls_load_igor_env_into_environ(self):
-        from wild_igor.igor.tools import pe_chain_debugger
-
-        with patch("wild_igor.igor.env_sync.load_igor_env_into_environ") as mock_load:
-            mock_load.return_value = {"IGOR_CLOUD_PROGRAMMING": "true"}
-            # Call with an unknown breakpoint so start() returns before
-            # actually running pe_chain — we only need to assert the load
-            # call landed.
-            result = pe_chain_debugger.start(
-                ticket_id="T-noop", breakpoint="UNKNOWN_BP"
-            )
-        self.assertFalse(result["ok"])
-        mock_load.assert_called_once()
 
 
 if __name__ == "__main__":

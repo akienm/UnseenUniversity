@@ -1,11 +1,10 @@
 """tests/test_consult_prompts.py — system + state prompts per problem kind.
 
 Covers:
-- build_system_prompt returns reasoning vs coding template appropriately
-- Both templates assert Igor identity, 'do not solve', JSON return shape
+- build_system_prompt returns reasoning template; unknown kinds fall back
+- Template asserts Igor identity, 'do not solve', JSON return shape
 - build_state_message emits common + extra fields in consistent order
-- Per-kind extras (ticket_desc/pe_chain_tail/last_error for coding;
-  user_turn/thread_excerpt/twm_topk for reasoning) surface by key
+- Per-kind extras (user_turn/thread_excerpt/twm_topk for reasoning) surface by key
 - Long extra values truncated to 2000 chars
 - Unknown problem_kind falls back to reasoning prompt (register preserved)
 """
@@ -26,10 +25,6 @@ class TestSystemPrompt:
         p = build_system_prompt("reasoning")
         assert "conversational reasoning" in p
 
-    def test_coding_kind_returns_coding_template(self):
-        p = build_system_prompt("coding")
-        assert "pe_chain" in p
-
     def test_unknown_kind_falls_back_to_reasoning(self):
         """Register must be preserved even if taxonomy expands."""
         p = build_system_prompt("unknown_kind_xyz")
@@ -38,46 +33,40 @@ class TestSystemPrompt:
 
 
 class TestRegisterInvariants:
-    """Both templates must force the peer-consultant register."""
+    """Template must force the peer-consultant register."""
 
     def test_identity_marker_present(self):
-        for kind in ("reasoning", "coding"):
-            p = build_system_prompt(kind)
-            assert "Igor" in p
-            assert "graph matrix reasoning engine" in p
+        p = build_system_prompt("reasoning")
+        assert "Igor" in p
+        assert "graph matrix reasoning engine" in p
 
     def test_do_not_solve_present(self):
-        for kind in ("reasoning", "coding"):
-            p = build_system_prompt(kind)
-            assert "DO NOT SOLVE" in p.upper() or "do not solve" in p.lower()
+        p = build_system_prompt("reasoning")
+        assert "DO NOT SOLVE" in p.upper() or "do not solve" in p.lower()
 
     def test_do_not_generate_code(self):
-        for kind in ("reasoning", "coding"):
-            p = build_system_prompt(kind)
-            assert "not generate code" in p.lower() or "not write replies" in p.lower()
+        p = build_system_prompt("reasoning")
+        assert "not generate code" in p.lower() or "not write replies" in p.lower()
 
     def test_json_response_shape(self):
-        for kind in ("reasoning", "coding"):
-            p = build_system_prompt(kind)
-            assert "hypotheses" in p
-            assert "next_question" in p
-            assert "confidence" in p
-            assert "JSON" in p
+        p = build_system_prompt("reasoning")
+        assert "hypotheses" in p
+        assert "next_question" in p
+        assert "confidence" in p
+        assert "JSON" in p
 
     def test_frame_as_questions(self):
-        for kind in ("reasoning", "coding"):
-            p = build_system_prompt(kind)
-            assert "frame" in p.lower() and "questions" in p.lower()
+        p = build_system_prompt("reasoning")
+        assert "frame" in p.lower() and "questions" in p.lower()
 
     def test_integrate_not_replace(self):
         """Must say LLM helps Igor see — doesn't answer for Igor."""
-        for kind in ("reasoning", "coding"):
-            p = build_system_prompt(kind)
-            assert (
-                "integrate" in p.lower()
-                or "not answering on my behalf" in p.lower()
-                or "you are not" in p.lower()
-            )
+        p = build_system_prompt("reasoning")
+        assert (
+            "integrate" in p.lower()
+            or "not answering on my behalf" in p.lower()
+            or "you are not" in p.lower()
+        )
 
 
 # ── state message ────────────────────────────────────────────────────────────
@@ -111,29 +100,6 @@ class TestStateMessage:
         msg = build_state_message(state)
         assert "pursuit-abc" in msg
 
-    def test_extra_coding_fields_ordered(self):
-        """Coding-kind extras appear in canonical order: ticket_desc first,
-        then pe_chain_tail, last_hypothesis, last_error."""
-        state = ConsultState(
-            problem_kind="coding",
-            summary="s",
-            extra={
-                "last_error": "socket timeout",
-                "ticket_desc": "fix the X bug",
-                "pe_chain_tail": "SITUATE: 0 files",
-                "last_hypothesis": "edit Y",
-            },
-        )
-        msg = build_state_message(state)
-        # Verify ordering: ticket_desc before pe_chain_tail before last_hypothesis before last_error
-        positions = {
-            key: msg.index(key)
-            for key in ("ticket_desc", "pe_chain_tail", "last_hypothesis", "last_error")
-        }
-        assert positions["ticket_desc"] < positions["pe_chain_tail"]
-        assert positions["pe_chain_tail"] < positions["last_hypothesis"]
-        assert positions["last_hypothesis"] < positions["last_error"]
-
     def test_extra_reasoning_fields_ordered(self):
         state = ConsultState(
             problem_kind="reasoning",
@@ -155,9 +121,9 @@ class TestStateMessage:
         """Prompt-bloat guard: extras capped at 2000 chars."""
         big = "X" * 5000
         state = ConsultState(
-            problem_kind="coding",
+            problem_kind="reasoning",
             summary="s",
-            extra={"pe_chain_tail": big},
+            extra={"some_field": big},
         )
         msg = build_state_message(state)
         # The truncated section should have at most 2000 Xs
@@ -182,15 +148,10 @@ class TestIntegrationWithConsultSession:
     """With consult_prompts available, ConsultSession's lazy import loads our
     templates instead of the inline stubs."""
 
-    def test_session_uses_kind_specific_system_prompt(self, monkeypatch, tmp_path):
+    def test_session_uses_reasoning_system_prompt(self, monkeypatch, tmp_path):
         from wild_igor.igor.cognition import consult as cm
 
         monkeypatch.setattr(cm, "CONSULT_LOG_PATH", tmp_path / "consults.log")
-        coding_state = ConsultState(problem_kind="coding", summary="s")
-        session = cm.ConsultSession(coding_state)
-        sys_msg = session._messages[0]["content"]
-        assert "pe_chain" in sys_msg
-
         reasoning_state = ConsultState(problem_kind="reasoning", summary="s")
         r_session = cm.ConsultSession(reasoning_state)
         r_sys_msg = r_session._messages[0]["content"]
