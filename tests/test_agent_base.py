@@ -181,18 +181,24 @@ class TestAgentBaseInit:
 
 
 class TestIgorBaseSubclass:
-    def test_igor_base_is_agent_base(self):
-        from lab.utility_closet.agent_base import AgentBase
+    def test_igor_base_is_diagnostic_base(self):
+        from diagnostic_base.base import DiagnosticBase
         from wild_igor.igor.igor_base import IgorBase
 
-        assert issubclass(IgorBase, AgentBase)
+        assert issubclass(IgorBase, DiagnosticBase)
 
-    def test_igor_base_has_log_dir(self):
+    def test_igor_base_has_log_root(self):
         from wild_igor.igor.igor_base import IgorBase
 
         obj = IgorBase()
-        assert obj._log_dir is not None
-        assert "logs" in str(obj._log_dir)
+        assert hasattr(obj, "_log_root")
+        assert obj._log_root is not None
+
+    def test_igor_base_device_id(self):
+        from wild_igor.igor.igor_base import IgorBase
+
+        obj = IgorBase()
+        assert obj._device_id == "igor"
 
     def test_igor_base_log_has_get_timer(self):
         from wild_igor.igor.igor_base import IgorBase
@@ -200,20 +206,26 @@ class TestIgorBaseSubclass:
         obj = IgorBase()
         assert hasattr(obj.log, "get_timer")
 
+    def test_igor_base_logger_is_tagged_logger(self):
+        from diagnostic_base.tagged_logger import TaggedLogger
+        from wild_igor.igor.igor_base import IgorBase
+
+        obj = IgorBase()
+        assert isinstance(obj.logger, TaggedLogger)
+
     def test_igor_base_get_name(self):
         from wild_igor.igor.igor_base import IgorBase
 
         obj = IgorBase()
         name = obj.get_name()
-        assert "IgorBase:" in name
+        assert isinstance(name, str) and len(name) > 0
 
-    def test_igor_base_time_it(self):
+    def test_igor_base_elapsed_s(self):
         from wild_igor.igor.igor_base import IgorBase
 
         obj = IgorBase()
-        with obj.time_it("igor_test"):
-            pass
-        assert "igor_test" in obj._perf_history
+        elapsed = obj.elapsed_s()
+        assert isinstance(elapsed, float) and elapsed >= 0
 
 
 class TestIgorBaseBackwardCompat:
@@ -241,7 +253,6 @@ class TestIgorBaseBackwardCompat:
 
         obj = MyComponent()
         assert obj.value == 42
-        assert "MyComponent:" in obj.get_name()
-        with obj.time_it("compat_test"):
-            pass
-        assert len(obj._perf_history["compat_test"]) == 1
+        assert obj._device_id == "igor"
+        name = obj.get_name()
+        assert isinstance(name, str) and len(name) > 0
