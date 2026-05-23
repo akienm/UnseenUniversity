@@ -127,7 +127,7 @@ class _IgorSafeLogger(_EmergencySafeLogger):
         """
         Return a TimerHandle that starts immediately.
 
-        timer = self.log.get_timer("pe_chain.hypothesize", ticket="T-foo")
+        timer = self.log.get_timer("ne.process_turn", ticket="T-foo")
         # ... work ...
         timer.stop(result="ok", tokens=412)
         """

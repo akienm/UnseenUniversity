@@ -278,7 +278,7 @@ def foreman_scan() -> str:
 # ── Engram-chain helpers (T-retire-worker-foreman Phase A) ───────────────────
 #
 # The biomimetic replacement for launch_next_worker: Igor picks up a ticket
-# himself, adopts it as a goal, and runs pe_chain in-process — no separate
+# himself, adopts it as a goal, and works it via external rack device — no separate
 # konsole spawn. These two tools are used by the ENGRAM_TICKET_PICKUP_* chain
 # (seeded separately, not active until Akien flips habits to point here).
 # Keeping them in this file so the eventual deletion removes one file, not
@@ -427,7 +427,7 @@ registry.register(
         description=(
             "Adopt the next-best pending ticket as Igor's active goal — the "
             "biomimetic replacement for launch_next_worker's konsole spawn. "
-            "Igor then works the ticket in-process via pe_chain. Called by "
+            "Igor then works the ticket via external rack device. Called by "
             "the ENGRAM_TICKET_PICKUP_ADOPT engram after queue_pending_count "
             "returns a non-zero count. No arguments."
         ),

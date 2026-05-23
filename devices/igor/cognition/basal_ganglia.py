@@ -128,8 +128,6 @@ MANAGEMENT_PHRASES: dict[str, str] = {
     "goal continuation": "PROC_GOAL_CONTINUATION",
     "continue goal": "PROC_GOAL_CONTINUATION",
     "advance goal": "PROC_GOAL_CONTINUATION",
-    "coding sprint": "PROC_CODING_SPRINT",
-    "run coding sprint": "PROC_CODING_SPRINT",
     "close goal": "PROC_CLOSE_GOAL",
     "close the goal": "PROC_CLOSE_GOAL",
     "mark goal done": "PROC_CLOSE_GOAL",

@@ -6,7 +6,7 @@ itself can become a tree just from having tag:<name> in the metadata."
 
 No new table, no new memory type. Any key in a memory's metadata JSONB that
 starts with 'tag:' marks that memory as tagged. Slash-separated paths
-(tag:pe_chain/situate) produce a nested tree when assembled across memories.
+(tag:cognition/ne) produce a nested tree when assembled across memories.
 
 This module holds the pure helpers (no DB). DB-backed methods live on Cortex:
 apply_tag, get_tags_for, memories_with_tag, tag_tree.

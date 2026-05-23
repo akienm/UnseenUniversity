@@ -1,9 +1,8 @@
 """
 inertia_map.py — single source of truth for file inertia tiers.
 
-Previously scope_guard, self_edit, skill_filter, and pe_chain each
-maintained their own copy of the same HIGH/MEDIUM/LOW file lists.
-This module unifies them (T-scope-guard-dedup-with-self-edit).
+Previously self_edit and skill_filter each maintained their own copy of
+the same HIGH/MEDIUM/LOW file lists. This module unifies them.
 
 Tiers:
   HIGH   (0.90+) — brainstem/, memory/models.py, cognition/reasoners/base.py

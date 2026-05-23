@@ -147,7 +147,7 @@ def flag_reply_gap(cortex: "Cortex", gap: ReplyGap) -> Optional[str]:
                 f"REPLY_GAP: user said {gap.user_input[:200]!r} "
                 f"but Igor did not reply. Detected {gap.turns_ago} turns later "
                 f"via reply-prod signal. Needs sleep review to find root cause "
-                f"(pe_chain blocked? missing habit? scope guard stall?)."
+                f"(missing habit? stuck reasoning? external noise?)."
             ),
             memory_type=MemoryType.EPISODIC,
             metadata={

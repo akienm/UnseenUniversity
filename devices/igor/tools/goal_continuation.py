@@ -19,10 +19,7 @@ run_goal_continuation():
       step 2: if grep_for present — run grep for each pattern, post results
               if grep_for absent  — skip (no-op, advance to step 3)
       step 3: post "[GOAL READY]" signal so LLM can take over
-      step 4+: LLM territory — no mechanical advance, but re-emit GOAL_READY
-               to TWM if the reactive listener has no live entry (crash/restart
-               recovery; the listener in push_sources._check_twm_trigger_habits
-               fires PROC_CODING_SPRINT on a live entry)
+      step 4+: LLM territory — no mechanical advance
   - Advances current_step in goal metadata
   - Posts result to channel as igor
 
@@ -200,8 +197,8 @@ class GoalContinuation(IgorBase):
                     cortex.store(goal)
                     return f"[goal_continuation] goal closed — {ticket_id} already {ticket_data['status']}"
 
-            # Guard: IGOR_SINGLE_TICKET gate — deactivate early so pe_chain never
-            # claims and fails, preventing the 5-min stuck/channel-spam cycle.
+            # Guard: IGOR_SINGLE_TICKET gate — deactivate goals for tickets not matching,
+            # preventing channel-spam from goal_continuation firing on the wrong ticket.
             import os as _os
 
             _single = _os.environ.get("IGOR_SINGLE_TICKET", "").strip()
@@ -287,23 +284,13 @@ class GoalContinuation(IgorBase):
                     return "[goal_continuation] step 2 skip — no grep_for"
 
             elif step == 3:
-                # Step 3: post ready signal — LLM takes over from here
+                # Step 3: post ready signal — mechanical steps done, LLM takes over
                 grep_steps = "0-2" if goal.metadata.get("grep_for") else "0-1"
                 msg = (
                     f"[GOAL READY] {task[:100]} — mechanical steps done. "
                     f"Steps {grep_steps} complete. Ready for implementation planning."
                 )
                 _post_to_channel(msg)
-                # D300: TWM is inter-subsystem channel — write GOAL_READY so
-                # PROC_CODING_SPRINT fires reactively when it sees the signal.
-                cortex.twm_push(
-                    source="goal_continuation",
-                    content_csb=f"GOAL_READY|{ticket_id or goal.id}",
-                    salience=0.85,
-                    category="goal_ready",
-                    ttl_seconds=600,  # 10 minutes — sprint must fire within this window
-                    urgency=0.8,
-                )
                 goal.metadata["current_step"] = 4
                 cortex.store(goal)
                 self.log.info(f"STEP3 posted ready for ticket={ticket_id}")
@@ -311,52 +298,6 @@ class GoalContinuation(IgorBase):
 
             else:
                 # Step 4+: goal is in LLM territory — don't auto-advance.
-                # Re-emit GOAL_READY if TWM lost the signal (crash/restart/TTL expiry).
-                # The reactive listener (push_sources._check_twm_trigger_habits) needs a
-                # live TWM entry to fire PROC_CODING_SPRINT. Without this, a goal that
-                # was at step=4 pre-restart polls forever with nothing to trigger on.
-                if ticket_id:
-                    try:
-                        # T-scope-guard-reattempt-loop: don't re-emit if the ticket
-                        # is waiting for CC approval or is blocked — that would loop
-                        # back into the same SCOPE_GUARD escalation.
-                        ticket_data = self._load_ticket(ticket_id)
-                        if ticket_data and ticket_data.get("status") in (
-                            "awaiting_approval",
-                            "blocked",
-                        ):
-                            self.log.info(
-                                f"STEP4 skip re-emit for {ticket_id}"
-                                f" — status={ticket_data['status']}"
-                            )
-                            return (
-                                f"[goal_continuation] step={step} — skip re-emit"
-                                f" ({ticket_data['status']})"
-                            )
-                        live = cortex.twm_read(
-                            limit=5, include_integrated=False, category="goal_ready"
-                        )
-                        live_for_ticket = [
-                            e for e in live if ticket_id in e.get("content_csb", "")
-                        ]
-                        if not live_for_ticket:
-                            cortex.twm_push(
-                                source="goal_continuation",
-                                content_csb=f"GOAL_READY|{ticket_id}",
-                                salience=0.85,
-                                category="goal_ready",
-                                ttl_seconds=600,
-                                urgency=0.8,
-                            )
-                            self.log.info(
-                                f"STEP4 re-emit GOAL_READY for {ticket_id} (TWM was empty)"
-                            )
-                            return (
-                                f"[goal_continuation] step={step} — re-emitted"
-                                f" GOAL_READY for {ticket_id}"
-                            )
-                    except Exception as e:
-                        self.log.info(f"STEP4 re-emit check failed: {e}")
                 return f"[goal_continuation] step={step} — LLM territory, skipping"
 
         except Exception as e:
