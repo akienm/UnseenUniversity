@@ -138,7 +138,7 @@ import os
 from pathlib import Path
 
 from .inertia_map import bucket_of as _im_bucket_of
-from lab.utility_closet.registry import Tool, registry
+from wild_igor.igor.tools.registry import Tool, registry
 
 log = logging.getLogger(__name__)
 

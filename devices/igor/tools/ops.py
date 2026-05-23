@@ -16,7 +16,7 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-from lab.utility_closet.registry import Tool, registry
+from wild_igor.igor.tools.registry import Tool, registry
 from ..paths import paths
 
 from ..paths import paths as _paths
