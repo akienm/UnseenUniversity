@@ -40,6 +40,7 @@ class DiscordBotDevice(BaseDevice):
     DEVICE_ID = "discord-bot"
 
     def __init__(self) -> None:
+        super().__init__()
         self._blocked = False
         self._block_reason = ""
         self._startup_errors: list[str] = []

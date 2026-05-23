@@ -83,6 +83,7 @@ class ScrapsDevice(BaseDevice):
     DEVICE_ID = "scraps"
 
     def __init__(self) -> None:
+        super().__init__()
         self._startup_errors: list[str] = []
         self._blocked: bool = False
         self._block_reason: str = ""

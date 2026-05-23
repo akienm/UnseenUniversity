@@ -75,6 +75,7 @@ class InferenceDevice(BaseDevice):
         mode: str = _MODE,
         endpoint: str = _ENDPOINT,
     ) -> None:
+        super().__init__()
         self._mode = mode
         self._endpoint = endpoint or (_OLLAMA_DEFAULT if mode == "ollama" else "")
         self._blocked = False

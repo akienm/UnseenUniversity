@@ -92,6 +92,7 @@ class WebServerDevice(BaseDevice):
     DEVICE_ID = "web-server"
 
     def __init__(self) -> None:
+        super().__init__()
         self._proc: subprocess.Popen | None = None
         self._blocked = False
         self._block_reason = ""

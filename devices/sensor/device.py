@@ -152,6 +152,7 @@ class SensorDevice(BaseDevice):
     DEVICE_ID = "sensor"
 
     def __init__(self) -> None:
+        super().__init__()
         self._startup_errors: list[str] = []
         try:
             import psutil as _psutil  # noqa: F401

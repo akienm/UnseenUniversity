@@ -41,6 +41,7 @@ class ClaudeDevice(BaseDevice):
     DEVICE_ID = "claude"
 
     def __init__(self, imap_server=None) -> None:
+        super().__init__()
         self._imap = imap_server
         self._blocked = False
         self._block_reason = ""

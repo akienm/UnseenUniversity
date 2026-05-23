@@ -53,9 +53,9 @@ class RackTestDevice(BaseDevice):
         self._health_status = health_status
         self.recorded_calls: list[dict[str, Any]] = []
         self._failure_map: dict[str, Exception] = {}
-        self._start_time = time.time()
         self._blocked = False
         self._block_reason = ""
+        super().__init__(device_id=DEVICE_ID)
 
     # ── Call recording / failure injection ───────────────────────────────────
 
@@ -167,7 +167,7 @@ class RackTestDevice(BaseDevice):
         self._check_failure("uptime")
         if self._mode == self.MODE_REAL:
             return self._delegate("uptime")
-        result = time.time() - self._start_time
+        result = self.elapsed_s()
         return self._record("uptime", result=result)
 
     def startup_errors(self) -> list:

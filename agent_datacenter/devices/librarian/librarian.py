@@ -36,6 +36,7 @@ class Librarian(BaseDevice):
     """
 
     def __init__(self) -> None:
+        super().__init__(device_id="librarian")
         self._started_at = time.monotonic()
         self._startup_errors: list[str] = []
         self._blocked: str | None = None

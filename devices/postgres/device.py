@@ -56,6 +56,7 @@ def _pg_connect():
 
 class PostgresDevice(BaseDevice):
     def __init__(self, shim: PostgresShim | None = None, registry=None) -> None:
+        super().__init__(device_id="postgres")
         self._shim = shim
         self._registry = (
             registry  # DeviceRegistry; when set, ops check block status first

@@ -199,6 +199,7 @@ class SummarizerDevice(BaseDevice):
     DEVICE_ID = "summarizer"
 
     def __init__(self, inference=None) -> None:
+        super().__init__()
         self._inference = inference  # InferenceDevice instance; injected or lazy-loaded
         self._blocked = False
 

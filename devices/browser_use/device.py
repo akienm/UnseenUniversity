@@ -39,6 +39,7 @@ class BrowserUseDevice(BaseDevice):
     DEVICE_ID = "browser-use"
 
     def __init__(self, cdp_port: int = _CDP_PORT) -> None:
+        super().__init__()
         self._cdp_port = cdp_port
         self._blocked = False
         self._block_reason = ""

@@ -62,6 +62,7 @@ class IgorDevice(BaseDevice):
         tmux_session: str = _DEFAULT_SESSION,
         igor_home: str = _DEFAULT_HOME,
     ) -> None:
+        super().__init__()
         self._session = tmux_session
         self._igor_home = igor_home
         self._blocked = False

@@ -11,26 +11,30 @@ documented per method; extra keys are allowed.
 
 from __future__ import annotations
 
-import logging
 import threading
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from diagnostic_base.base import DiagnosticBase
 from diagnostic_base.perf import Stopwatch
 
 if TYPE_CHECKING:
     from bus.imap_server import IMAPServer
 
-log = logging.getLogger(__name__)
-
 INTERFACE_VERSION = "1.0"
-_DEFAULT_LOG_ROOT = Path("datacenter_logs")
 
 
-class BaseDevice(ABC):
+class BaseDevice(DiagnosticBase, ABC):
     """Abstract base for all rack devices."""
+
+    def __init__(self, device_id: str = "", **kwargs):
+        if not device_id:
+            device_id = (
+                getattr(type(self), "DEVICE_ID", None) or type(self).__name__.lower()
+            )
+        super().__init__(device_id=device_id, **kwargs)
 
     @abstractmethod
     def who_am_i(self) -> dict:
@@ -132,7 +136,7 @@ class BaseDevice(ABC):
             device_id=device_id,
             class_name=type(self).__name__,
             comment=comment,
-            log_root=log_root or _DEFAULT_LOG_ROOT,
+            log_root=log_root or self._log_root,
         )
 
     def start_heartbeat(
@@ -158,7 +162,7 @@ class BaseDevice(ABC):
 
             router = Router(imap_server)
             device_id = self.who_am_i().get("device_id", "unknown")
-            log.info("heartbeat: starting for %s (interval=%ss)", device_id, interval_s)
+            self.info(f"heartbeat: starting for {device_id} (interval={interval_s}s)")
             while not _stop.is_set():
                 try:
                     env = Envelope.now(
@@ -173,9 +177,9 @@ class BaseDevice(ABC):
                     )
                     router.send("comms://heartbeat", env)
                 except Exception as exc:
-                    log.debug("heartbeat send failed (non-fatal): %s", exc)
+                    self.debug(f"heartbeat send failed (non-fatal): {exc}")
                 _stop.wait(interval_s)
-            log.info("heartbeat: stopped for %s", device_id)
+            self.info(f"heartbeat: stopped for {device_id}")
 
         t = threading.Thread(
             target=_beat, daemon=True, name=f"heartbeat-{type(self).__name__}"
