@@ -1,4 +1,9 @@
 """
+DEPRECATED — emit.py is a stopgap superseded by DiagnosticBase's JSON sink.
+All call sites in pe_chain, ops, scope_guard were removed (2026-05-23).
+This file is kept only for the prune_emissions() utility; the emit() function
+has no callers and should not be used in new code.
+
 emit.py — Operational log standard: one file per event.
 
 These are rolling operational/diagnostic logs — NOT long-term knowledge.
