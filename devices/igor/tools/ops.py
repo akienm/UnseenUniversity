@@ -313,6 +313,27 @@ def goal_adopt(
 
             _le(kind="SILENT_EXCEPT", detail=f"ops.py:goal_adopt channel: {_exc}")
 
+        try:
+            from lab.claudecode.emit import emit as _emit_fn
+
+            _source = _meta.get("source_message", "")
+            _is_dispatch = "CC_DISPATCH" in str(_source) or "work ticket" in str(
+                _source
+            )
+            _emit_fn(
+                "goal_lifecycle",
+                "goal_adopt",
+                {
+                    "goal_id": goal_id,
+                    "task": task_short,
+                    "source": "CC_DISPATCH" if _is_dispatch else "engram_pickup",
+                    "awaiting_reply": awaiting_reply,
+                },
+                key=goal_id,
+            )
+        except Exception:
+            pass
+
         return f"On it. Goal set: {task_short[:80]}. Proceeding."
     except Exception as e:
         return f"[ERROR] goal_adopt: {e}"
@@ -499,6 +520,17 @@ def close_goal(goal_id: str = None) -> dict:
         goal.metadata["completed_at"] = ts
         goal.narrative = goal.narrative.rstrip() + "\nStatus: COMPLETED."
         cortex.store(goal)
+        try:
+            from lab.claudecode.emit import emit as _emit_fn
+
+            _emit_fn(
+                "goal_lifecycle",
+                "goal_complete",
+                {"goal_id": goal_id, "title": title[:120]},
+                key=goal_id,
+            )
+        except Exception:
+            pass
         return {"closed": goal_id, "title": title}
     except Exception as e:
         return {"closed": None, "reason": f"error: {e}"}

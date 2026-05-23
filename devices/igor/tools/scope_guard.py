@@ -193,6 +193,22 @@ def run_scope_guard(basket: dict) -> dict:
             except Exception as _pr_e:
                 log.debug("SCOPE_GUARD: prior append failed — %s", _pr_e)
             try:
+                from lab.claudecode.emit import emit as _emit_fn
+
+                _emit_fn(
+                    "scope_guard",
+                    "escalate_high",
+                    {
+                        "file": target_file,
+                        "tier": tier,
+                        "op_type": op_type,
+                        "ticket_id": basket.get("ticket_id"),
+                    },
+                    key=basket.get("ticket_id"),
+                )
+            except Exception:
+                pass
+            try:
                 from .pe_chain import _pe_escalate as _pe_esc
 
                 return _pe_esc(basket, reason=reason)
@@ -258,6 +274,22 @@ def run_scope_guard(basket: dict) -> dict:
             log.info(f"SCOPE_GUARD: medium channel post failed — {exc}")
     else:
         log.info(f"PASS: file={target_file} tier={tier} op={op_type}")
+        try:
+            from lab.claudecode.emit import emit as _emit_fn
+
+            _emit_fn(
+                "scope_guard",
+                "pass",
+                {
+                    "file": target_file,
+                    "tier": tier,
+                    "op_type": op_type,
+                    "ticket_id": basket.get("ticket_id"),
+                },
+                key=basket.get("ticket_id"),
+            )
+        except Exception:
+            pass
 
     return basket
 
