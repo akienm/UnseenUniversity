@@ -1467,6 +1467,29 @@ class PeChain(IgorBase):
                         )
             except Exception as _pr_e:
                 self.log.debug("pe_hypothesize: prior append failed: %s", _pr_e)
+            try:
+                from lab.claudecode.emit import emit as _emit_fn
+
+                _emit_fn(
+                    "pe_chain",
+                    "hypothesize_fail",
+                    {
+                        "ticket_id": self.basket.get("ticket_id"),
+                        "retry_attempts": retry_attempts,
+                        "errors": errors,
+                        "edits": [
+                            {
+                                "file": e.get("file"),
+                                "old_string": e.get("old_string", "")[:500],
+                                "new_string": e.get("new_string", "")[:200],
+                            }
+                            for e in edits
+                        ],
+                    },
+                    key=self.basket.get("ticket_id"),
+                )
+            except Exception:
+                pass
             return self.basket
 
         self.basket["hypotheses"] = edits
@@ -1476,6 +1499,22 @@ class PeChain(IgorBase):
         self.log.info(
             f"HYPOTHESIZE: {len(edits)} valid edit(s) in {', '.join(files_touched)}"
         )
+        try:
+            from lab.claudecode.emit import emit as _emit_fn
+
+            _emit_fn(
+                "pe_chain",
+                "hypothesize_pass",
+                {
+                    "ticket_id": self.basket.get("ticket_id"),
+                    "retry_attempts": retry_attempts,
+                    "files": files_touched,
+                    "edit_count": len(edits),
+                },
+                key=self.basket.get("ticket_id"),
+            )
+        except Exception:
+            pass
         return self.basket
 
     def pe_implement(self) -> dict:
