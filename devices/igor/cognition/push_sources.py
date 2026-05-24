@@ -2728,7 +2728,7 @@ class SelfTestSource(BasePushSource):
 
 class StaleChatLogBackfiller(BasePushSource):
     """
-    Keep today's CC chat mirror fresh under ~/.agent_datacenter/logs/CC.0/.
+    Keep today's CC chat mirror fresh under ~/.unseen_university/logs/CC.0/.
 
     Runs cc_log_stop_hook.py every 5min — scans all project dirs so ADC
     sessions are included. Historical files are not rebuilt here; that's
@@ -2766,7 +2766,7 @@ class StaleChatLogBackfiller(BasePushSource):
                 capture_output=True,
                 text=True,
                 timeout=60,
-                cwd=str(Path.home() / "dev/src/agent_datacenter"),
+                cwd=str(Path.home() / "dev/src/UnseenUniversity"),
             )
 
             if result.returncode == 0:

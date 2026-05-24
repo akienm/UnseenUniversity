@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 # Ensure TheIgors root is in sys.path so lab.claudecode resolves (with __path__
-# extension to agent_datacenter for the canonical file).
+# extension to unseen_university for the canonical file).
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))

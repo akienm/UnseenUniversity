@@ -24,15 +24,15 @@ from tempfile import TemporaryDirectory
 # Test mode must be set BEFORE bus.imap_server is imported.
 os.environ.setdefault("AGENT_DATACENTER_TEST_MODE", "1")
 
-from agent_datacenter.announce import (
+from unseen_university.announce import (
     DatacenterClient,
     IdentityEnvelope,
 )
-from agent_datacenter.skeleton.skeleton import Skeleton
+from unseen_university.skeleton.skeleton import Skeleton
 from bus.imap_server import IMAPServer
 from skeleton.registry import DeviceRegistry
 
-CANONICAL_PROFILES = Path("/home/akien/dev/src/agent_datacenter/config/profiles")
+CANONICAL_PROFILES = Path("/home/akien/dev/src/UnseenUniversity/config/profiles")
 
 
 class _IgorShape:

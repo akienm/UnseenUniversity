@@ -10,7 +10,7 @@ Replaces the raw flag-file dance with a first-class API:
 Backwards-compat: still writes/removes debug_session.flag so Igor's existing
 main.py crash-recovery check (main.py:3350) keeps working during MCP burn-in.
 
-MCP surface (via agent_datacenter when it arrives) will call these functions.
+MCP surface (via unseen_university when it arrives) will call these functions.
 Until then, lab/claudecode/debug_session_cli.py wraps them for skill invocation.
 """
 

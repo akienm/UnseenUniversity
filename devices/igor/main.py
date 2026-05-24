@@ -744,7 +744,7 @@ class Igor(IgorBase):
 
         # Start the facade poll loop (drains web_server messages → incoming queue).
         # T-igor-network-remove: net_listener removed (Discord/Gmail inbound disabled
-        # until agent_datacenter listener device ships).
+        # until unseen_university listener device ships).
         web_server.start(
             stats_fn=self.get_stats,
             cortex_fn=lambda: self.cortex,
@@ -862,7 +862,7 @@ class Igor(IgorBase):
         self._push_state_inventory()
 
         # ── Datacenter announce (slice 4 minimal) ────────────────────────────
-        # Igor reads its own manifest from the agent_datacenter at boot.
+        # Igor reads its own manifest from the unseen_university at boot.
         # Build-to-intent: always try to connect; absence is the failure mode,
         # not a configuration switch. On any failure (no daemon, missing
         # profile, timeout) we log a warning and continue without the manifest.
@@ -889,7 +889,7 @@ class Igor(IgorBase):
         self._coa._last_ne_valence = value
 
     def _wire_datacenter(self) -> None:
-        """Connect to agent_datacenter and cache the manifest. No-op if a
+        """Connect to unseen_university and cache the manifest. No-op if a
         client was passed in (test seam) or if anything fails (no daemon).
 
         Slice 4b: after wiring, attaches dc_client to cortex so the engram
@@ -915,7 +915,7 @@ class Igor(IgorBase):
         try:
             import socket as _socket
 
-            from agent_datacenter.announce import (
+            from unseen_university.announce import (
                 DatacenterClient,
                 IdentityEnvelope,
             )
@@ -7951,7 +7951,7 @@ class Igor(IgorBase):
                     web_server.send(response, session_id=_session_id)
             elif msg.source == "discord" and response:
                 # T-igor-network-remove: discord_bot removed from process.
-                # Discord reply path disabled until agent_datacenter IPC ships.
+                # Discord reply path disabled until unseen_university IPC ships.
                 import logging as _logging
 
                 _logging.getLogger("igor.main").warning(

@@ -2,7 +2,7 @@
 test_network_proxy.py — Tests for T-network-proxy: NetworkProxy + HostStats.
 
 T-igor-network-remove: network/proxy.py removed. Tests skipped until proxy
-relocates to agent_datacenter or another module.
+relocates to unseen_university or another module.
 
 Tests:
   - HostStats.record() increments counts correctly

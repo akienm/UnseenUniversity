@@ -149,7 +149,7 @@ if _repo_root not in sys.path:
 
 _LOG_DIR = paths().logs
 
-# Deferred import — diagnostic_base is in agent_datacenter, available via pip install -e
+# Deferred import — diagnostic_base is in unseen_university, available via pip install -e
 try:
     from diagnostic_base.base import DiagnosticBase as _DiagnosticBase
 

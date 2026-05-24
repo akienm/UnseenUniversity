@@ -1,7 +1,7 @@
 """
 Discord tool - lets Igor send messages to Discord channels.
 T-igor-network-remove: discord_bot is no longer in-process. This tool
-returns a disabled message until agent_datacenter IPC ships.
+returns a disabled message until unseen_university IPC ships.
 """
 
 from lab.utility_closet.registry import Tool, registry
@@ -17,7 +17,7 @@ def send_discord_message(channel_id: int, text: str) -> str:
         discord_bot.send(channel_id, text)
         return f"Queued message to channel {channel_id}: {text[:60]}{'...' if len(text) > 60 else ''}"
     except ImportError:
-        return "Discord bot not available (network module removed; agent_datacenter IPC pending)"
+        return "Discord bot not available (network module removed; unseen_university IPC pending)"
 
 
 registry.register(
