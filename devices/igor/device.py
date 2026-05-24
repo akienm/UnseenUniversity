@@ -139,9 +139,6 @@ class IgorDevice(BaseDevice):
         return {
             "paths": {
                 "instance": os.path.join(self._igor_home, "instance_log.jsonl"),
-                "utility_closet": os.path.join(
-                    os.path.expanduser("~/.TheIgors"), "logs", "utility_closet.log"
-                ),
             }
         }
 
