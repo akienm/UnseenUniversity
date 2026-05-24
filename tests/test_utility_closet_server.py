@@ -42,6 +42,12 @@ def _patch_runtime(tmp_path):
             "IGOR_RUNTIME_ROOT": str(tmp_path),
             "IGOR_INSTANCE_ID": "Igor-wild-0001",
             "IGOR_WEB_PORT": "18080",  # Use non-standard port for tests
+            # Null out DB URLs so _channel_append never mirrors to production Postgres.
+            # Without this, every test call to _channel_append / agent_send leaks
+            # test messages ("hello world", "test message", etc.) into the live
+            # infra.channel_messages table which is visible to all channel readers.
+            "IGOR_HOME_DB_URL": "",
+            "IGOR_DB_URL": "",
         },
     ):
         yield tmp_path
