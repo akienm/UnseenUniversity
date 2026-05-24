@@ -208,8 +208,8 @@ def activate(
             from . import focus_state as _fs
 
             _fs.update_from_activation(top_id, top_score)
-        except Exception:
-            pass
+        except Exception as _fse:
+            log.debug("activate: focus_state update skipped: %s", _fse)
 
         return new_score
 
@@ -217,8 +217,8 @@ def activate(
         if _close_conn:
             try:
                 conn.close()
-            except Exception:
-                pass
+            except Exception as _ce:
+                log.debug("activate: conn.close failed: %s", _ce)
 
 
 def _propagate_cte(
