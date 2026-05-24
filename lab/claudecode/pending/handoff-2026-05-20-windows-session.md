@@ -14,7 +14,7 @@ the Linux dev environment. Akien and I worked through it systematically.
 ### Tier 0: Environment setup
 
 - Confirmed Python 3.12 on Windows; chose **uv** as the package manager for per-repo venvs
-- Set up `.venv` in all three Python repos: agent_datacenter, swadl, TheIgors
+- Set up `.venv` in all three Python repos: UnseenUniversity, swadl, TheIgors
 - `python-diagnostic-base-class` is Akien's own package; it's not on PyPI. Source is at
   `C:\automation\local\python_diagnostic_base_class\`. Linux instance published it to GitHub
   at `github.com/akienm/python_diagnostic_base_class`. pyproject.toml now references it via
@@ -199,7 +199,7 @@ python lab/claudecode/cc_queue.py add lab/claudecode/pending/D-audit-feedback-20
 
 Committed in `d811b0f` (Windows) and `16846be` (Linux, already in main):
 - `devices/installer/backends.py` — WindowsBackend implemented
-- `agent_datacenter/cli/agentctl.py` — Windows init fixes (4 changes)
+- `UnseenUniversity/cli/agentctl.py` — Windows init fixes (4 changes)
 - `pyproject.toml` — pyyaml, mcp, python-diagnostic-base-class added
 - `bin/superclaude.ps1` — IGOR_HOME, THEIGORS_HOME, PYTHONUTF8 exports added
 - `skills/note/SKILL.md` + `skills/note/run` — migrated
@@ -213,7 +213,7 @@ Committed in `d811b0f` (Windows) and `16846be` (Linux, already in main):
 ## How to pick this up on Linux
 
 ```bash
-cd ~/agent_datacenter   # or wherever your ADC clone lives
+cd ~/UnseenUniversity   # or wherever your ADC clone lives
 git pull origin main
 
 # File the /audit-feedback tickets:

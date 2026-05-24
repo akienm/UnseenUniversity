@@ -1,9 +1,9 @@
 """
-Reference chat agent — minimal example of building on agent_datacenter.
+Reference chat agent — minimal example of building on unseen_university.
 
 Demonstrates:
 - Direct Anthropic SDK usage (no frameworks)
-- Optional memory persistence via agent_datacenter.db
+- Optional memory persistence via unseen_university.db
 - Clean shutdown on 'quit', 'exit', or Ctrl+C
 
 Usage:
@@ -36,7 +36,7 @@ def _try_init_db():
     Fails silently — memory is optional.
     """
     try:
-        from agent_datacenter.db_proxy import make_dc_proxy
+        from unseen_university.db_proxy import make_dc_proxy
 
         proxy = make_dc_proxy()
         # Smoke-test the connection.

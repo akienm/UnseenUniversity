@@ -1,5 +1,5 @@
 """
-TemplateDevice — hello-world starter for agent_datacenter.
+TemplateDevice — hello-world starter for unseen_university.
 
 Copy this folder. Rename TemplateDevice to YourAgentDevice.
 Fill in the stubs. Register with the rack.
@@ -11,7 +11,7 @@ stub so it passes isinstance checks and the contract test suite immediately.
 from __future__ import annotations
 
 import time
-from agent_datacenter.device import BaseDevice, INTERFACE_VERSION
+from unseen_university.device import BaseDevice, INTERFACE_VERSION
 
 _START_TIME = time.time()
 

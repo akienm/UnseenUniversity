@@ -24,7 +24,7 @@ def _load_installer():
         return DEFAULT_MASTER_ROOT, DEFAULT_DEPLOY_TARGET, DEFAULT_MANIFEST_PATH, load_manifest, deploy_skills, deploy_status
     except ImportError:
         print(
-            "ERROR: agent_datacenter not on PYTHONPATH.\n"
+            "ERROR: unseen_university not on PYTHONPATH.\n"
             "Activate the ADC venv or run from within it.",
             file=sys.stderr,
         )

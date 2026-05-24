@@ -138,7 +138,7 @@ class TestValidateTicket:
 
 class TestScrapsTools:
     def test_dispatch_returns_json(self):
-        from agent_datacenter.devices.librarian.tools import scraps_tools
+        from unseen_university.devices.librarian.tools import scraps_tools
 
         raw = scraps_tools.dispatch("scraps_validate_ticket", {"ticket": _GOOD_TICKET})
         assert raw is not None
@@ -146,12 +146,12 @@ class TestScrapsTools:
         assert "valid" in parsed
 
     def test_dispatch_unknown_returns_none(self):
-        from agent_datacenter.devices.librarian.tools import scraps_tools
+        from unseen_university.devices.librarian.tools import scraps_tools
 
         assert scraps_tools.dispatch("unknown_tool", {}) is None
 
     def test_dispatch_bad_input(self):
-        from agent_datacenter.devices.librarian.tools import scraps_tools
+        from unseen_university.devices.librarian.tools import scraps_tools
 
         raw = scraps_tools.dispatch("scraps_validate_ticket", {"ticket": "not a dict"})
         assert raw is not None
@@ -159,7 +159,7 @@ class TestScrapsTools:
         assert "error" in parsed
 
     def test_schema_present_in_librarian(self):
-        from agent_datacenter.devices.librarian import tools as _tools
+        from unseen_university.devices.librarian import tools as _tools
 
         names = [s["name"] for s in _tools.SCHEMAS]
         assert "scraps_validate_ticket" in names

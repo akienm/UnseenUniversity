@@ -26,7 +26,7 @@ import urllib.request
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
-from agent_datacenter.device import BaseDevice, INTERFACE_VERSION
+from unseen_university.device import BaseDevice, INTERFACE_VERSION
 from devices.inference.shim import InferenceRequest, InferenceResponse
 
 _START_TIME = time.time()

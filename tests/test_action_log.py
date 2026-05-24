@@ -1,4 +1,4 @@
-"""Tests for agent_datacenter.action_log — T-adc-action-log."""
+"""Tests for unseen_university.action_log — T-adc-action-log."""
 
 from __future__ import annotations
 
@@ -73,14 +73,14 @@ def _last_row(tool_name: str, device_id: str = "test-device") -> dict:
 
 class TestAppendAction:
     def test_inserts_row(self):
-        from agent_datacenter.action_log import append_action
+        from unseen_university.action_log import append_action
 
         before = _count_rows("test_tool_insert")
         append_action("test-device", "test_tool_insert", {"x": 1}, "ok")
         assert _count_rows("test_tool_insert") == before + 1
 
     def test_row_fields(self):
-        from agent_datacenter.action_log import append_action
+        from unseen_university.action_log import append_action
 
         append_action(
             "test-device",
@@ -100,14 +100,14 @@ class TestAppendAction:
         assert row["ts"] is not None
 
     def test_none_args_stored_as_empty_dict(self):
-        from agent_datacenter.action_log import append_action
+        from unseen_university.action_log import append_action
 
         append_action("test-device", "test_tool_none_args", None, "ok")
         row = _last_row("test_tool_none_args")
         assert row["args_json"] == {}
 
     def test_no_raise_on_bad_url(self, monkeypatch):
-        import agent_datacenter.action_log as al
+        import unseen_university.action_log as al
 
         monkeypatch.setattr(al, "_PG_URL", "postgresql://nobody:x@localhost:1/bad")
         # Must not raise — fire-and-forget contract

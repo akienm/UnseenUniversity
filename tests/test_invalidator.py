@@ -15,8 +15,8 @@ os.environ.setdefault("AGENT_DATACENTER_TEST_MODE", "1")
 
 import pytest
 
-from agent_datacenter.announce import Invalidator
-from agent_datacenter.announce.manifest import INVALIDATE_MAILBOX
+from unseen_university.announce import Invalidator
+from unseen_university.announce.manifest import INVALIDATE_MAILBOX
 from bus.imap_server import IMAPServer
 
 CANONICAL_PROFILES = Path(__file__).parent.parent / "config" / "profiles"

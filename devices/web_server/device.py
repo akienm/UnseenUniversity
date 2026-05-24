@@ -1,12 +1,12 @@
 """
-WebServerDevice — rack device for the agent_datacenter web server.
+WebServerDevice — rack device for the unseen_university web server.
 
 Manages the Starlette/uvicorn web server (server.py) as a subprocess.
 Provides the web UI, WebSocket hub, agent registration, and dashboard API
 that were previously hosted by TheIgors/lab/claudecode/utility_closet_server.py.
 
 Port: ADC_WEB_PORT env var (falls back to IGOR_UC_PORT), default 8080.
-PID file: ~/.agent_datacenter/web_server.pid
+PID file: ~/.unseen_university/web_server.pid
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-from agent_datacenter.device import BaseDevice, INTERFACE_VERSION
+from unseen_university.device import BaseDevice, INTERFACE_VERSION
 
 log = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ _START_TIME = time.time()
 _RUNTIME_ROOT = Path(
     os.environ.get("ADC_RUNTIME_ROOT")
     or os.environ.get("IGOR_RUNTIME_ROOT")
-    or Path.home() / ".agent_datacenter"
+    or Path.home() / ".unseen_university"
 )
 _PID_FILE = _RUNTIME_ROOT / "web_server.pid"
 _LOG_FILE = _RUNTIME_ROOT / "logs" / "web_server.log"
@@ -56,7 +56,7 @@ def _check_health() -> dict | None:
     urls = []
     if (
         os.environ.get("IGOR_SSL_CERT")
-        or (Path.home() / ".agent_datacenter" / "certs" / "localhost+3.pem").exists()
+        or (Path.home() / ".unseen_university" / "certs" / "localhost+3.pem").exists()
     ):
         urls.append(f"https://localhost:{_PORT}/health")
     urls.append(f"http://localhost:{_PORT}/health")
@@ -82,7 +82,7 @@ def _check_health() -> dict | None:
 
 class WebServerDevice(BaseDevice):
     """
-    Rack device that manages the agent_datacenter web server subprocess.
+    Rack device that manages the unseen_university web server subprocess.
 
     The server exposes the web UI, WebSocket hub, /api/agents/* registration
     endpoints, and the /health + /metrics platform APIs. Agents (Igor, CC)

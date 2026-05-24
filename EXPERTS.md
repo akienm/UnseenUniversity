@@ -1,4 +1,4 @@
-# Experts for agent_datacenter
+# Experts for UnseenUniversity
 
 ## Systems Architect
 **Lens:** Is the datacenter subsystem decomposition clean with enforced contract boundaries?
@@ -24,7 +24,7 @@
 - Is the development process itself encapsulated — are design decisions being made at the right layer, or are implementation details leaking into the design conversation?
 
 ## Product Manager
-**Lens:** Is agent_datacenter delivering value toward its stated factory goal?
+**Lens:** Is UnseenUniversity delivering value toward its stated factory goal?
 **Key questions:**
 - Which capabilities on the roadmap are blocked, and what is the root cause?
 - Is scope creep from infrastructure work absorbing time meant for product features?

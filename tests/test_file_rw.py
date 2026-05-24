@@ -48,7 +48,7 @@ def _last_action_log(tool_name: str) -> dict:
 
 class TestFileRW:
     def test_write_and_read_roundtrip(self):
-        from agent_datacenter.devices.librarian.tools.file_tools import (
+        from unseen_university.devices.librarian.tools.file_tools import (
             file_read,
             file_write,
         )
@@ -67,7 +67,7 @@ class TestFileRW:
             Path(tmp).unlink(missing_ok=True)
 
     def test_write_action_log(self):
-        from agent_datacenter.devices.librarian.tools.file_tools import file_write
+        from unseen_university.devices.librarian.tools.file_tools import file_write
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             tmp = f.name
@@ -81,7 +81,7 @@ class TestFileRW:
             Path(tmp).unlink(missing_ok=True)
 
     def test_read_action_log(self):
-        from agent_datacenter.devices.librarian.tools.file_tools import (
+        from unseen_university.devices.librarian.tools.file_tools import (
             file_read,
             file_write,
         )
@@ -99,7 +99,7 @@ class TestFileRW:
             Path(tmp).unlink(missing_ok=True)
 
     def test_write_mkdir_creates_parents(self):
-        from agent_datacenter.devices.librarian.tools.file_tools import file_write
+        from unseen_university.devices.librarian.tools.file_tools import file_write
 
         with tempfile.TemporaryDirectory() as d:
             path = str(Path(d) / "a" / "b" / "c" / "test.txt")
@@ -108,7 +108,7 @@ class TestFileRW:
             assert result["written_bytes"] > 0
 
     def test_append_mode(self):
-        from agent_datacenter.devices.librarian.tools.file_tools import (
+        from unseen_university.devices.librarian.tools.file_tools import (
             file_read,
             file_write,
         )

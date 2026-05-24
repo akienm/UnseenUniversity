@@ -14,7 +14,7 @@ The palace is a **shared agent-layer resource** serving four first-class consume
 - **Igor** — his palace stays in TheIgors postgres; this palace federates via pointer node
 - **Rack-Minion** — reads capability map, project standards, task context
 
-**Storage:** Postgres table in the agent_datacenter rack database (not TheIgors).
+**Storage:** Postgres table in the UnseenUniversity rack database (not TheIgors).
 **Igor's palace stays separate** — `palace.projects.theigors` is a pointer node only.
 
 **Organizing principle:** Flat namespaces with tags, not nested project hierarchies.
@@ -139,7 +139,7 @@ No `.decisions` sub-node — decisions are flat at `palace.decisions.*` with tag
 
 | Project | Summary node | Notes |
 |---|---|---|
-| `agent_datacenter` | `palace.projects.agent_datacenter.summary` | Primary rack; owns this schema |
+| `UnseenUniversity` | `palace.projects.unseen_university.summary` | Primary rack; owns this schema |
 | `theigors` | `palace.projects.theigors.summary` | **Pointer only** — see federation below |
 
 ---
@@ -154,7 +154,7 @@ palace.tickets.<T-id>
   content: Full ticket description (problem, affected files, scope, test plan).
   node_type: ticket
   metadata:
-    tags: ["agent_datacenter", "infrastructure"]   # project + domain tags
+    tags: ["UnseenUniversity", "infrastructure"]   # project + domain tags
     status: pending | in_progress | done | blocked
     size: S | M | L | XL
     decision_id: D-xxx                              # which decision spawned this
@@ -193,7 +193,7 @@ palace.decisions.<D-id>
     abc1234
   node_type: decision
   metadata:
-    tags: ["agent_datacenter", "architecture"]
+    tags: ["UnseenUniversity", "architecture"]
     date: "2026-05-07"
     status: open | closed
     spawned_tickets: ["T-xxx", "T-yyy"]
@@ -218,7 +218,7 @@ palace.sessions.<YYYYMMDD-N>
     In-flight at end: <T-ids or NONE>
   node_type: session
   metadata:
-    tags: ["agent_datacenter"]      # primary project for this session
+    tags: ["UnseenUniversity"]      # primary project for this session
     date: "2026-05-07"
     session_number: 2
     transcript: "20260507-2"        # pointer to palace.transcripts.<key>
@@ -303,7 +303,7 @@ CREATE INDEX palace_updated_idx ON palace (updated_at DESC);
 
 `metadata` fields used:
 - `tags` (array) — project/domain membership; replaces path hierarchy for association
-  - query: `WHERE metadata @> '{"tags": ["agent_datacenter"]}'`
+  - query: `WHERE metadata @> '{"tags": ["UnseenUniversity"]}'`
 - `pointer_to` (string) — for `node_type='pointer'`, where the real content lives
 - `status` (string) — for tickets/decisions: pending | in_progress | done | blocked | open | closed
 - `decision_id` (string) — on ticket nodes: which decision spawned this
@@ -319,7 +319,7 @@ What each downstream ticket needs from this schema before it can start:
 | Ticket | Needs from palace schema |
 |---|---|
 | context-load redesign | `palace.shared.*` + `palace.days.*` populated — reads rules/akien/capabilities + last 10 day summaries |
-| docs tree migration | `palace.projects.agent_datacenter.*` nodes — knows where project docs land |
+| docs tree migration | `palace.projects.unseen_university.*` nodes — knows where project docs land |
 | session record writer | `palace.sessions.*` + `palace.transcripts.*` namespaces defined (this doc) |
 | decision enrichment | `palace.decisions.*` namespace defined (this doc) — richer D-id nodes |
 
@@ -330,7 +330,7 @@ What each downstream ticket needs from this schema before it can start:
 1. **Create `palace` table + indexes** in rack Postgres (one migration script)
 2. **Seed `palace.shared.akien.*`** from CC auto-memory + CLAUDE.md
 3. **Seed `palace.shared.rules.*`** from TheIgors memory_palace `theigors/rules/*` (copy, not federate)
-4. **Seed `palace.projects.agent_datacenter.*`** (summary, map, standards) from CLAUDE.md + phase map
+4. **Seed `palace.projects.unseen_university.*`** (summary, map, standards) from CLAUDE.md + phase map
 5. **Add `palace.projects.theigors` pointer node** — federation pointer only
 6. **Seed `palace.decisions.*`** from existing `lab/design_docs/decisions/D-*.md` stubs (enriched)
 7. **Update context-load** to read `palace.shared.*` + `palace.days.*` (last 10) at session start
@@ -362,7 +362,7 @@ ORDER BY updated_at DESC;
 -- All tickets for a project (tag filter)
 SELECT path, title, metadata->>'status' FROM palace
 WHERE node_type = 'ticket'
-  AND metadata @> '{"tags": ["agent_datacenter"]}'
+  AND metadata @> '{"tags": ["UnseenUniversity"]}'
 ORDER BY updated_at DESC;
 
 -- Drill from session to transcript

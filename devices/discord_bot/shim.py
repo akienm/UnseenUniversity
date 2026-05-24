@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 import os
 
-from agent_datacenter.shim import BaseShim
+from unseen_university.shim import BaseShim
 
 from .device import DiscordBotDevice
 from . import bot as _bot

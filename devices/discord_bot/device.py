@@ -1,5 +1,5 @@
 """
-DiscordBotDevice — rack device for the agent_datacenter Discord bot.
+DiscordBotDevice — rack device for the unseen_university Discord bot.
 
 Phase 5: bot code lives in bot.py (this package). The device starts the bot
 thread and monitors health via is_running() + discord.log recency.
@@ -17,7 +17,7 @@ import os
 import time
 from datetime import datetime, timezone
 
-from agent_datacenter.device import BaseDevice, INTERFACE_VERSION
+from unseen_university.device import BaseDevice, INTERFACE_VERSION
 
 from . import bot as _bot
 
@@ -33,7 +33,7 @@ class DiscordBotDevice(BaseDevice):
     """
     Rack device for the Discord bot.
 
-    The bot runs as a daemon thread (bot.py) within the agent_datacenter
+    The bot runs as a daemon thread (bot.py) within the unseen_university
     process. Health is measured via is_running() + discord.log recency.
     """
 

@@ -9,7 +9,7 @@
 ## The paradox
 
 The installer is a device on the rack. The rack is what the installer installs.
-Something *outside* agent_datacenter must bootstrap v0.
+Something *outside* UnseenUniversity must bootstrap v0.
 
 ---
 
@@ -19,7 +19,7 @@ The existing `igor` bash launcher (`~/TheIgors/igor` + `first_start.py`) is the 
 bridge. It is:
 
 - Already working and tested
-- **Not** a device — it lives outside agent_datacenter entirely
+- **Not** a device — it lives outside UnseenUniversity entirely
 - Sufficient for Phases 1-3 development (local machine, Akien present)
 
 No Phase 1-3 work touches the installer problem.
@@ -28,10 +28,10 @@ No Phase 1-3 work touches the installer problem.
 
 ## Phase 4 target: `agentctl init`
 
-The target installer is a proper device that ships as part of agent_datacenter itself:
+The target installer is a proper device that ships as part of UnseenUniversity itself:
 
 ```bash
-pip install agent_datacenter
+pip install UnseenUniversity
 agentctl init
 ```
 
@@ -44,7 +44,7 @@ That command must:
 5. Print: `rack is up. Add devices with agentctl register.`
 
 **Constraints (non-negotiable):**
-- No Igor required — agent_datacenter is Igor-independent
+- No Igor required — UnseenUniversity is Igor-independent
 - Portable: Ubuntu + macOS (arm64 and x86)
 - Works at work: no TheIgors dependencies, no `~/.TheIgors/` assumed present
 - Single command from a clean machine (only prereq: Python ≥3.11 + pip)
@@ -55,7 +55,7 @@ That command must:
 
 Starting from zero on a fresh ubuntu or macOS box:
 
-1. `pip install agent_datacenter` — no errors
+1. `pip install UnseenUniversity` — no errors
 2. `agentctl init` — skeleton up, IMAP running, Postgres found or Docker-launched
 3. `agentctl status` — all registered devices show healthy
 4. Optional: `agentctl register igor --home ~/TheIgors` — Igor joins the rack

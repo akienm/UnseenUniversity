@@ -33,7 +33,7 @@ import urllib.error
 from datetime import datetime, timezone
 from typing import Literal
 
-from agent_datacenter.device import BaseDevice, INTERFACE_VERSION
+from unseen_university.device import BaseDevice, INTERFACE_VERSION
 
 log = logging.getLogger(__name__)
 

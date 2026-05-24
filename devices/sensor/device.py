@@ -30,7 +30,7 @@ from datetime import datetime, timezone
 from glob import glob
 from typing import Any
 
-from agent_datacenter.device import BaseDevice, INTERFACE_VERSION
+from unseen_university.device import BaseDevice, INTERFACE_VERSION
 
 _START_TIME = time.time()
 

@@ -6,7 +6,7 @@ When multiple minions work concurrently, the single-working-tree assumption brea
 a feature branch per ticket; merge-back is to local main, push to GitHub is explicit.
 
 Workspace layout:
-    ~/.agent_datacenter/<instance>/workspace/TheIgors/   ← clone root
+    ~/.unseen_university/<instance>/workspace/TheIgors/   ← clone root
 
 Branch naming:
     minion/<instance>/<ticket-id>
@@ -28,7 +28,7 @@ import subprocess
 from pathlib import Path
 
 _DEFAULT_REPO_ORIGIN = str(Path.home() / "TheIgors")
-_WORKSPACE_BASE = Path.home() / ".agent_datacenter"
+_WORKSPACE_BASE = Path.home() / ".unseen_university"
 
 
 def _run(cmd: list[str], cwd: Path, check: bool = True) -> subprocess.CompletedProcess:
@@ -54,7 +54,7 @@ class MinionWorkspace:
 
     @property
     def workspace_path(self) -> Path:
-        """~/.agent_datacenter/<instance>/workspace/TheIgors"""
+        """~/.unseen_university/<instance>/workspace/TheIgors"""
         return _WORKSPACE_BASE / self.instance / "workspace" / "TheIgors"
 
     def is_cloned(self) -> bool:

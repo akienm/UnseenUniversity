@@ -9,8 +9,8 @@ the return *shapes* are correct.
 
 import pytest
 
-from agent_datacenter.device import BaseDevice, INTERFACE_VERSION
-from agent_datacenter.shim import BaseShim
+from unseen_university.device import BaseDevice, INTERFACE_VERSION
+from unseen_university.shim import BaseShim
 from devices.browser_use.device import BrowserUseDevice
 from devices.browser_use.shim import BrowserUseShim
 from devices.claude.device import ClaudeDevice

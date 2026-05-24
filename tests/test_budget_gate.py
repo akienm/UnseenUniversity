@@ -249,24 +249,24 @@ class TestMaybeAlert:
 
 class TestBudgetToolsSchemas:
     def test_schemas_registered(self):
-        from agent_datacenter.devices.librarian.tools import budget_tools
+        from unseen_university.devices.librarian.tools import budget_tools
 
         names = {s["name"] for s in budget_tools.SCHEMAS}
         assert "check_openrouter_balance" in names
         assert "openrouter_burn_rate" in names
 
     def test_schemas_in_librarian_tools_init(self):
-        from agent_datacenter.devices.librarian import tools
+        from unseen_university.devices.librarian import tools
 
         names = {s["name"] for s in tools.SCHEMAS}
         assert "check_openrouter_balance" in names
         assert "openrouter_burn_rate" in names
 
     def test_dispatch_routes_check_balance(self):
-        from agent_datacenter.devices.librarian import tools
+        from unseen_university.devices.librarian import tools
 
         with patch(
-            "agent_datacenter.devices.librarian.tools.budget_tools._fetch_or_balance",
+            "unseen_university.devices.librarian.tools.budget_tools._fetch_or_balance",
             return_value=None,
         ):
             result = tools.dispatch("check_openrouter_balance", {})
@@ -274,10 +274,10 @@ class TestBudgetToolsSchemas:
         assert "unavailable" in result.lower() or "balance" in result.lower()
 
     def test_dispatch_routes_burn_rate(self):
-        from agent_datacenter.devices.librarian import tools
+        from unseen_university.devices.librarian import tools
 
         with patch(
-            "agent_datacenter.devices.librarian.tools.budget_tools._burn_trajectory",
+            "unseen_university.devices.librarian.tools.budget_tools._burn_trajectory",
             return_value={"trend": "no_data", "sample_count": 0, "note": "test"},
         ):
             result = tools.dispatch("openrouter_burn_rate", {"window_hours": 24})
@@ -285,13 +285,13 @@ class TestBudgetToolsSchemas:
         assert isinstance(result, str)
 
     def test_dispatch_unknown_returns_none_from_module(self):
-        from agent_datacenter.devices.librarian.tools import budget_tools
+        from unseen_university.devices.librarian.tools import budget_tools
 
         assert budget_tools.dispatch("not_a_budget_tool", {}) is None
 
     def test_burn_rate_graceful_no_db(self, monkeypatch):
         monkeypatch.delenv("IGOR_HOME_DB_URL", raising=False)
-        from agent_datacenter.devices.librarian.tools.budget_tools import (
+        from unseen_university.devices.librarian.tools.budget_tools import (
             _openrouter_burn_rate,
         )
 

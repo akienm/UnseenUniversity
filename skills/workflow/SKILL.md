@@ -81,7 +81,7 @@ OTHER SKILLS
   /commit              ← structured git commit
   /export-chat         ← export conversation to file
   /sprint-loop         ← continuous sprint mode
-  /skills-sync         ← sync skills from agent_datacenter to ~/.claude/skills/
+  /skills-sync         ← sync skills from unseen_university to ~/.claude/skills/
 
 ══════════════════════════════════════════════════════════════
 WHERE AM I? — QUICK GUIDE

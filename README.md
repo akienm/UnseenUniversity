@@ -1,4 +1,4 @@
-# agent_datacenter
+# UnseenUniversity
 
 Runtime substrate for agent deployments. **Not a framework** — a rack you plug
 devices into. The cognition is yours; the bus, the registry, and the plug-in
@@ -104,7 +104,7 @@ How an agent plugs in:
    (`comms://` addresses + permission overlays).
 
 The full protocol — round-trip, error contract, invalidation, IDLE-driven
-push — lives in `agent_datacenter/announce/` with full docstrings on each
+push — lives in `UnseenUniversity/announce/` with full docstrings on each
 module.
 
 ---
@@ -118,7 +118,7 @@ The same announce protocol serves two kinds of agent.
 Long-running Python process. Imports the client directly:
 
 ```python
-from agent_datacenter.announce import DatacenterClient, IdentityEnvelope
+from unseen_university.announce import DatacenterClient, IdentityEnvelope
 
 identity = IdentityEnvelope(
     agent_id="my-agent",
@@ -162,7 +162,7 @@ CC calls them like any other MCP tool; the wrapper holds a singleton
 A **shim** is the per-device transport adapter. The base contract:
 
 ```python
-from agent_datacenter.skeleton import BaseShim
+from unseen_university.skeleton import BaseShim
 
 class MyShim(BaseShim):
     device_id = "my-device"
@@ -180,13 +180,13 @@ agentctl skills deploy          # push master skills to ~/.claude/skills/
 ```
 
 The skill installer pushes a curated set of slash commands from
-`agent_datacenter/skills/` to `~/.claude/skills/` on the local box. The
-manifest at `agent_datacenter/skills/manifest.json` controls what lands
+`UnseenUniversity/skills/` to `~/.claude/skills/` on the local box. The
+manifest at `UnseenUniversity/skills/manifest.json` controls what lands
 where (machine-agnostic vs lineage-specific; per-host filtering). User-added
 local skills not listed in the manifest are never touched.
 
 The `RsyncBackend` (in `devices/installer/backends.py`) is the default
-deployment mechanism: idempotent rsync from `agent_datacenter/skills/<name>/`
+deployment mechanism: idempotent rsync from `UnseenUniversity/skills/<name>/`
 to `~/.claude/skills/<name>/` with a manifest-aware allowlist.
 
 ---
@@ -211,8 +211,8 @@ allowed_devices:
   - web_server
 ```
 
-Canonical profiles live at `agent_datacenter/config/profiles/<agent-type>.yaml`.
-Runtime copies sync to `~/.agent_datacenter/profiles/<agent-type>.yaml` on
+Canonical profiles live at `UnseenUniversity/config/profiles/<agent-type>.yaml`.
+Runtime copies sync to `~/.unseen_university/profiles/<agent-type>.yaml` on
 install. Inheritance uses deep-merge; child YAMLs can override individual
 keys via the `__replace__` sentinel for explicit list-replacement.
 
@@ -230,7 +230,7 @@ pip install -e .
 agentctl init --instance my-first-agent
 
 # 3. Define a profile (config/profiles/my-first-agent.yaml)
-cat > ~/.agent_datacenter/profiles/my-first-agent.yaml <<'EOF'
+cat > ~/.unseen_university/profiles/my-first-agent.yaml <<'EOF'
 profile_version: "1.0"
 agent_type: my-first-agent
 description: "Smoke test agent"
@@ -240,8 +240,8 @@ EOF
 
 # 4. Plug in via Python
 python3 -c "
-from agent_datacenter.announce import DatacenterClient, IdentityEnvelope
-from agent_datacenter.bus.imap_server import IMAPServer
+from unseen_university.announce import DatacenterClient, IdentityEnvelope
+from unseen_university.bus.imap_server import IMAPServer
 
 server = IMAPServer()
 server.start()
@@ -269,11 +269,11 @@ rack is just the substrate.
 
 | Path | What it is |
 |---|---|
-| `agent_datacenter/announce/` | Announce protocol — envelopes, broker, client, manifest, listener |
-| `agent_datacenter/bus/` | IMAP server + envelope shape + comms:// router |
-| `agent_datacenter/skeleton/` | MCP aggregator + flat-file registry + health |
-| `agent_datacenter/cli/` | `agentctl` command-line interface |
-| `agent_datacenter/skills/` | Master skill set (deployed to ~/.claude/skills/) |
+| `UnseenUniversity/announce/` | Announce protocol — envelopes, broker, client, manifest, listener |
+| `UnseenUniversity/bus/` | IMAP server + envelope shape + comms:// router |
+| `UnseenUniversity/skeleton/` | MCP aggregator + flat-file registry + health |
+| `UnseenUniversity/cli/` | `agentctl` command-line interface |
+| `UnseenUniversity/skills/` | Master skill set (deployed to ~/.claude/skills/) |
 | `devices/<name>/` | Per-device implementations (one subdir each) |
 | `devices/installer/` | The skill installer (manifest + shim + backends) |
 | `config/profiles/` | Canonical agent-type profiles (YAML) |

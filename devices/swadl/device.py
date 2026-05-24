@@ -15,7 +15,7 @@ from __future__ import annotations
 import time
 from datetime import datetime, timezone
 
-from agent_datacenter.device import BaseDevice, INTERFACE_VERSION
+from unseen_university.device import BaseDevice, INTERFACE_VERSION
 
 _START_TIME = time.time()
 _STUB_DETAIL = "SWADL API not stable — stub pending API stabilization"

@@ -1,5 +1,5 @@
 # Igor agent profile — canonical source.
-# Runtime copy lives at ~/.agent_datacenter/profiles/igor.yaml (synced on install).
+# Runtime copy lives at ~/.unseen_university/profiles/igor.yaml (synced on install).
 # Design: announce-protocol-design-2026-05-01-opus-pass.md § 4.3
 # Decision: D-announce-protocol-2026-05-01
 

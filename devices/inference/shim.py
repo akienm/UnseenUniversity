@@ -21,7 +21,7 @@ import subprocess
 import time
 from dataclasses import dataclass, field
 
-from agent_datacenter.shim import BaseShim
+from unseen_university.shim import BaseShim
 
 
 @dataclass

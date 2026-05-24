@@ -1,5 +1,5 @@
 """
-Discord bot — standalone module for agent_datacenter.
+Discord bot — standalone module for unseen_university.
 
 Adapted from wild_igor/igor/network/discord_bot.py.
 All TheIgors imports removed; uses ADC_RUNTIME_ROOT for paths.
@@ -22,7 +22,7 @@ import aiohttp
 _RUNTIME_ROOT = Path(
     os.environ.get("ADC_RUNTIME_ROOT")
     or os.environ.get("IGOR_RUNTIME_ROOT")
-    or Path.home() / ".agent_datacenter"
+    or Path.home() / ".unseen_university"
 )
 _LOG_DIR = _RUNTIME_ROOT / "logs"
 _LOG_DIR.mkdir(parents=True, exist_ok=True)

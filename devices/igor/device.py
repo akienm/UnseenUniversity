@@ -20,13 +20,13 @@ import subprocess
 import time
 from datetime import datetime, timezone
 
-from agent_datacenter.device import BaseDevice, INTERFACE_VERSION
+from unseen_university.device import BaseDevice, INTERFACE_VERSION
 
 _START_TIME = time.time()
 _DEFAULT_SESSION = os.environ.get("IGOR_TMUX_SESSION", "igor")
 _DEFAULT_HOME = os.environ.get(
     "IGOR_HOME",
-    os.path.expanduser("~/.agent_datacenter/Igor-wild-0001"),
+    os.path.expanduser("~/.unseen_university/Igor-wild-0001"),
 )
 
 

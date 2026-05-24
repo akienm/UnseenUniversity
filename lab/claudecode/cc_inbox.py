@@ -2,7 +2,7 @@
 
 DEPRECATED: Migrate callers to comms://CC.0 (Router.send) directly.
 This shim is dual-write: every append() goes to both the JSONL file and the
-IMAP CC.0 mailbox (if agent_datacenter IMAP is reachable). The JSONL file is
+IMAP CC.0 mailbox (if unseen_university IMAP is reachable). The JSONL file is
 the authoritative read/mark-read source during the migration window; after
 verification, the JSONL backend will be removed (Phase 5).
 
@@ -55,7 +55,7 @@ def _get_imap_router():
     _imap_init_done = True
     try:
         from bus.imap_server import IMAPServer
-        from agent_datacenter.bus.router import Router
+        from unseen_university.bus.router import Router
 
         s = IMAPServer()
         s.start()

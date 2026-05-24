@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 
 from devices.web_server.device import WebServerDevice, _check_health
 from devices.web_server.shim import WebServerShim
-from agent_datacenter.device import INTERFACE_VERSION
+from unseen_university.device import INTERFACE_VERSION
 
 
 class TestWebServerDeviceContract(unittest.TestCase):

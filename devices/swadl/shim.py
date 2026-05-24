@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 
-from agent_datacenter.shim import BaseShim
+from unseen_university.shim import BaseShim
 
 log = logging.getLogger(__name__)
 

@@ -1,5 +1,5 @@
 """
-BrowserUseDevice — browser automation device for agent_datacenter.
+BrowserUseDevice — browser automation device for unseen_university.
 
 Wraps browser-use Agent dispatch behind the BaseDevice contract. The shim
 (BrowserUseShim) manages the Chrome process lifetime; this device manages
@@ -18,7 +18,7 @@ import os
 import time
 from datetime import datetime, timezone
 
-from agent_datacenter.device import BaseDevice, INTERFACE_VERSION
+from unseen_university.device import BaseDevice, INTERFACE_VERSION
 
 _START_TIME = time.time()
 _CDP_PORT = int(os.environ.get("BROWSER_USE_CDP_PORT", "9222"))

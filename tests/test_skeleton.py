@@ -19,10 +19,10 @@ import pytest
 # Set test mode BEFORE importing anything that pulls in bus.imap_server.
 os.environ.setdefault("AGENT_DATACENTER_TEST_MODE", "1")
 
-from agent_datacenter.device import BaseDevice, INTERFACE_VERSION
-from agent_datacenter.skeleton.exceptions import AuthError, RegistrationError
-from agent_datacenter.skeleton.health import rack_health_async
-from agent_datacenter.skeleton.skeleton import Skeleton
+from unseen_university.device import BaseDevice, INTERFACE_VERSION
+from unseen_university.skeleton.exceptions import AuthError, RegistrationError
+from unseen_university.skeleton.health import rack_health_async
+from unseen_university.skeleton.skeleton import Skeleton
 from config.device_config import DeviceConfig
 from skeleton.registry import DeviceRegistry
 from tests.fixtures.stub_devices import StubDevice

@@ -5,7 +5,7 @@ Why flat-file and not Postgres: the skeleton manages Postgres. If the registry
 lived in Postgres, skeleton couldn't restart Postgres when Postgres goes down —
 circular dependency. A JSON flat file breaks the cycle.
 
-File location: {runtime_dir}/devices.json (default ~/.agent_datacenter/devices.json)
+File location: {runtime_dir}/devices.json (default ~/.unseen_university/devices.json)
 Write discipline: always write to .tmp then rename — never corrupts main file on crash.
 
 Device record shape:
@@ -49,7 +49,7 @@ from config.device_config import DeviceConfig
 
 log = logging.getLogger(__name__)
 
-DEFAULT_REGISTRY_DIR = Path.home() / ".agent_datacenter"
+DEFAULT_REGISTRY_DIR = Path.home() / ".unseen_university"
 DEFAULT_REGISTRY_PATH = DEFAULT_REGISTRY_DIR / "devices.json"
 
 

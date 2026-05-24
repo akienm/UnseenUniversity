@@ -16,7 +16,7 @@ os.environ.setdefault("AGENT_DATACENTER_TEST_MODE", "1")
 
 import pytest
 
-from agent_datacenter.announce import (
+from unseen_university.announce import (
     ANNOUNCE_EVENTS_MAILBOX,
     ANNOUNCE_MAILBOX,
     AnnounceBroker,
@@ -297,7 +297,7 @@ def test_announce_ignores_replies_addressed_to_other_agents(server, listener):
 
 def _post_invalidate(server, target, reason="changed"):
     """Helper: drop a kind=invalidate envelope onto comms://invalidate."""
-    from agent_datacenter.announce.manifest import INVALIDATE_MAILBOX
+    from unseen_university.announce.manifest import INVALIDATE_MAILBOX
 
     server.create_mailbox(INVALIDATE_MAILBOX)  # idempotent
     env = Envelope.now(

@@ -53,7 +53,7 @@ def _check_mailbox_imap(conn, mailbox: str) -> list[str]:
     """Return list of from_device values for unseen messages with intent for mailbox."""
     import json
 
-    from agent_datacenter.announce.notify import has_intent
+    from unseen_university.announce.notify import has_intent
 
     try:
         status, _ = conn.select(mailbox, readonly=True)

@@ -10,8 +10,8 @@ import pytest
 
 os.environ.setdefault("AGENT_DATACENTER_TEST_MODE", "1")
 
-from agent_datacenter.device import BaseDevice, INTERFACE_VERSION
-from agent_datacenter.devices.librarian import Librarian
+from unseen_university.device import BaseDevice, INTERFACE_VERSION
+from unseen_university.devices.librarian import Librarian
 from bus.imap_server import IMAPServer
 from diagnostic_base.perf import Stopwatch
 
@@ -186,7 +186,7 @@ class TestBaseDeviceHeartbeat:
         bad_imap = MagicMock()
 
         with patch(
-            "agent_datacenter.bus.router.Router.send", side_effect=Exception("boom")
+            "unseen_university.bus.router.Router.send", side_effect=Exception("boom")
         ):
             t = dev.start_heartbeat(bad_imap, interval_s=0.05, stop=stop)
             time.sleep(0.15)

@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from agent_datacenter.cli.agentctl import (
+from unseen_university.cli.agentctl import (
     _detect_cc_workflow_tools,
     _shell_profile,
     _write_env_var_to_profile,
@@ -87,7 +87,7 @@ def test_write_env_var_preserves_existing_content(tmp_path: Path) -> None:
 def test_detect_cc_workflow_tools_returns_path_or_none() -> None:
     """Smoke test: returns a Path if cc_queue.py exists there, else None."""
     result = _detect_cc_workflow_tools()
-    # On this machine lab/claudecode is in TheIgors, not in agent_datacenter,
+    # On this machine lab/claudecode is in TheIgors, not in unseen_university,
     # so the function should gracefully return None.
     assert result is None or isinstance(result, Path)
 

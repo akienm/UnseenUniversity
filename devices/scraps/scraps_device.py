@@ -16,7 +16,7 @@ import time
 from datetime import datetime, timezone
 from typing import Any
 
-from agent_datacenter.device import INTERFACE_VERSION, BaseDevice
+from unseen_university.device import INTERFACE_VERSION, BaseDevice
 
 from devices.scraps import validation_rules
 

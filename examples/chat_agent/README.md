@@ -1,14 +1,14 @@
 # Reference chat agent
 
-This is the canonical minimal example of an agent built on `agent_datacenter`.
+This is the canonical minimal example of an agent built on `UnseenUniversity`.
 It shows the correct patterns — direct Anthropic SDK, optional Postgres memory
-via `agent_datacenter.db`, and clean exit handling — without any framework glue.
+via `UnseenUniversity.db`, and clean exit handling — without any framework glue.
 Read it before writing a new agent; it is the design reference, not production code.
 
 ## Prerequisites
 
 ```
-pip install anthropic        # not bundled in agent_datacenter deps
+pip install anthropic        # not bundled in UnseenUniversity deps
 export ANTHROPIC_API_KEY=sk-...
 ```
 

@@ -29,7 +29,7 @@ import shutil
 import subprocess
 import time
 
-from agent_datacenter.shim import BaseShim
+from unseen_university.shim import BaseShim
 
 log = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ _DEFAULT_SESSION = os.environ.get("IGOR_TMUX_SESSION", "igor")
 _DEFAULT_LAUNCHER = os.environ.get("IGOR_LAUNCHER", "igor")
 _DEFAULT_HOME = os.environ.get(
     "IGOR_HOME",
-    os.path.expanduser("~/.agent_datacenter/Igor-wild-0001"),
+    os.path.expanduser("~/.unseen_university/Igor-wild-0001"),
 )
 _STARTUP_TIMEOUT = 15.0
 

@@ -83,25 +83,25 @@ def _seed_rows() -> list[tuple]:
                 "ROOT: 'Akien makes the world suck less' (Fred Rogers flavor, not Silicon Valley).\n"
                 "Central project: Igor Experiment (1.x) — brain-modeled, small hardware, emergent\n"
                 "self-awareness, recursive self-improvement toward Igor designing himself.\n"
-                "Platform: agent_datacenter (3.x) as universal erector set — Igor, OpenClaw-style\n"
+                "Platform: UnseenUniversity (3.x) as universal erector set — Igor, OpenClaw-style\n"
                 "agents, CC, SWADL automation all as equal first-class consumers.\n"
                 "Compute efficiency as planetary good (2.x) — graph-tree traces live paths only,\n"
                 "no GPU required; MIT license as safety mechanism.\n"
                 "Sustainability via SWADL consulting + writing corpus (4.x).\n"
                 "Governing values: CP1-CP6 — honest, learning-safe, make-visible, everyone (not just users),\n"
                 "inherent worth of every being, look-for-the-helpers.\n\n"
-                "Full tree: /home/akien/.agent_datacenter/akien/goals_tree.20260507.md"
+                "Full tree: /home/akien/.unseen_university/akien/goals_tree.20260507.md"
             ),
             tags=["shared", "akien"],
             extra={
-                "pointer_to": "/home/akien/.agent_datacenter/akien/goals_tree.20260507.md"
+                "pointer_to": "/home/akien/.unseen_university/akien/goals_tree.20260507.md"
             },
         ),
         row(
             "palace.shared.akien.profile",
             "Akien profile",
             (
-                "Akien MacIain — builds Igor (brain-modeled AI experiment) and agent_datacenter\n"
+                "Akien MacIain — builds Igor (brain-modeled AI experiment) and UnseenUniversity\n"
                 "(portable agent runtime). Creative professional with coding background;\n"
                 "native mode is 'dump ideas → organize.' Prefers terse CC responses with\n"
                 "concrete action over explanation. High latitude: 'up to you, approved, go.'\n"
@@ -116,7 +116,7 @@ def _seed_rows() -> list[tuple]:
             "Coding standards",
             (
                 "- No SQLite anywhere. Postgres or flat-file only.\n"
-                "- No TheIgors imports inside agent_datacenter — portability hard rule.\n"
+                "- No TheIgors imports inside UnseenUniversity — portability hard rule.\n"
                 "- OOP-first: BaseDevice / BaseShim are the design center.\n"
                 "  No standalone functions doing device work.\n"
                 "- bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly.\n"
@@ -162,7 +162,7 @@ def _seed_rows() -> list[tuple]:
             "Capability inventory index",
             (
                 "Installed devices:\n"
-                "- Librarian (agent_datacenter/devices/librarian/) — MCP server, DB proxy,\n"
+                "- Librarian (UnseenUniversity/devices/librarian/) — MCP server, DB proxy,\n"
                 "  inference routing, research/summarization, health aggregation.\n"
                 "  MCP tools: db_query, db_dispatch, memory_get, memory_search, memory_list_by_type,\n"
                 "  channel_read, channel_send, rack_health, traces_recent, habit_list,\n"
@@ -185,10 +185,10 @@ def _seed_rows() -> list[tuple]:
             ),
             tags=["shared", "audits"],
         ),
-        # ── palace.projects.agent_datacenter ─────────────────────────────────
+        # ── palace.projects.unseen_university ─────────────────────────────────
         row(
-            "palace.projects.agent_datacenter.summary",
-            "agent_datacenter — executive summary",
+            "palace.projects.unseen_university.summary",
+            "UnseenUniversity — executive summary",
             (
                 "Portable agent runtime substrate — the erector set for building agents.\n"
                 "Igor is one device on the rack; CC is a consumer; Librarian is the MCP aggregator.\n\n"
@@ -199,13 +199,13 @@ def _seed_rows() -> list[tuple]:
                 "out of Igor monolith into shared ADC devices); Igor diagnostic tickets\n"
                 "(T-igor-console-logging, T-igor-web-message-receive)."
             ),
-            tags=["agent_datacenter", "projects"],
+            tags=["UnseenUniversity", "projects"],
         ),
         row(
-            "palace.projects.agent_datacenter.map",
-            "agent_datacenter — architecture map",
+            "palace.projects.unseen_university.map",
+            "UnseenUniversity — architecture map",
             (
-                "agent_datacenter/\n"
+                "UnseenUniversity/\n"
                 "  skeleton/    — MCP aggregator, flat-file registry, no Postgres dependency\n"
                 "  bus/         — comms:// routing, IMAP client/server, heartbeat\n"
                 "  devices/     — one subdir per device (independently deployable)\n"
@@ -219,11 +219,11 @@ def _seed_rows() -> list[tuple]:
                 "Seams: devices communicate via bus/ (comms://); no direct cross-device imports.\n"
                 "Librarian is the single MCP entry point for CC and Igor."
             ),
-            tags=["agent_datacenter", "projects"],
+            tags=["UnseenUniversity", "projects"],
         ),
         row(
-            "palace.projects.agent_datacenter.standards",
-            "agent_datacenter — standards and conventions",
+            "palace.projects.unseen_university.standards",
+            "UnseenUniversity — standards and conventions",
             (
                 "Beyond palace.shared.rules.coding:\n"
                 "- Every device inherits BaseDevice (device.py design center).\n"
@@ -235,7 +235,7 @@ def _seed_rows() -> list[tuple]:
                 "- Tests: pytest, no live-DB required (mock pool via patch of get_conn).\n"
                 "- Log hierarchy: datacenter_logs/<device>/<subsystem>/ — no flat root logs."
             ),
-            tags=["agent_datacenter", "projects"],
+            tags=["UnseenUniversity", "projects"],
         ),
         # ── palace.projects.theigors (federation pointer) ────────────────────
         row(

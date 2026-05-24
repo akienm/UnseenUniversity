@@ -5,7 +5,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock, call, patch
 import pytest
 
-from agent_datacenter.devices.librarian.palace_writer import (
+from unseen_university.devices.librarian.palace_writer import (
     PalaceWriter,
     PalaceWriteRequest,
     ProvenanceEntry,

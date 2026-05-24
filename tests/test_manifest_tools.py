@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from agent_datacenter.devices.librarian.tools.manifest_tools import (
+from unseen_university.devices.librarian.tools.manifest_tools import (
     _ROUTING_MAP,
     datacenter_manifest,
     dispatch,

@@ -1,4 +1,4 @@
-"""Installer device — deploys agent_datacenter master skills to ~/.claude/skills/."""
+"""Installer device — deploys unseen_university master skills to ~/.claude/skills/."""
 
 from .shim import (
     DEFAULT_DEPLOY_TARGET,

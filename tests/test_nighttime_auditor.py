@@ -43,12 +43,12 @@ def _make_row(tool_name, exit_code=0, args_json=None, result_summary="ok"):
 
 class TestBuildSummary:
     def test_empty_rows_returns_empty(self):
-        from agent_datacenter.devices.librarian.nighttime_auditor import _build_summary
+        from unseen_university.devices.librarian.nighttime_auditor import _build_summary
 
         assert _build_summary([]) == ""
 
     def test_summary_contains_tool_counts(self):
-        from agent_datacenter.devices.librarian.nighttime_auditor import _build_summary
+        from unseen_university.devices.librarian.nighttime_auditor import _build_summary
 
         rows = [
             _make_row("shell_exec"),
@@ -60,7 +60,7 @@ class TestBuildSummary:
         assert "file_read: 1" in summary
 
     def test_failed_executions_highlighted(self):
-        from agent_datacenter.devices.librarian.nighttime_auditor import _build_summary
+        from unseen_university.devices.librarian.nighttime_auditor import _build_summary
 
         rows = [_make_row("shell_exec", exit_code=1)]
         summary = _build_summary(rows)
@@ -68,7 +68,7 @@ class TestBuildSummary:
         assert "exit=1" in summary
 
     def test_high_volume_flagged(self):
-        from agent_datacenter.devices.librarian.nighttime_auditor import (
+        from unseen_university.devices.librarian.nighttime_auditor import (
             _HIGH_VOLUME_THRESHOLD,
             _build_summary,
         )
@@ -78,7 +78,7 @@ class TestBuildSummary:
         assert "HIGH VOLUME" in summary or "Potential loop" in summary
 
     def test_tickets_filed_listed(self):
-        from agent_datacenter.devices.librarian.nighttime_auditor import _build_summary
+        from unseen_university.devices.librarian.nighttime_auditor import _build_summary
 
         rows = [
             _make_row(
@@ -91,7 +91,7 @@ class TestBuildSummary:
         assert "T-test-xyz" in summary
 
     def test_large_write_flagged(self):
-        from agent_datacenter.devices.librarian.nighttime_auditor import (
+        from unseen_university.devices.librarian.nighttime_auditor import (
             _LARGE_WRITE_BYTES,
             _build_summary,
         )
@@ -109,7 +109,7 @@ class TestBuildSummary:
 
 class TestRunAudit:
     def test_no_post_when_empty(self):
-        from agent_datacenter.devices.librarian import nighttime_auditor as na
+        from unseen_university.devices.librarian import nighttime_auditor as na
 
         with patch.object(na, "_fetch_window", return_value=[]):
             with patch.object(na, "_post_to_channel") as mock_post:
@@ -118,7 +118,7 @@ class TestRunAudit:
                 mock_post.assert_not_called()
 
     def test_posts_once_when_rows_present(self):
-        from agent_datacenter.devices.librarian import nighttime_auditor as na
+        from unseen_university.devices.librarian import nighttime_auditor as na
 
         rows = [_make_row("shell_exec"), _make_row("file_read")]
         with patch.object(na, "_fetch_window", return_value=rows):
@@ -133,7 +133,7 @@ class TestRunAudit:
 class TestStartAuditor:
     def test_thread_starts_on_initialize(self):
         """start_nighttime_auditor() starts exactly one daemon thread."""
-        import agent_datacenter.devices.librarian.nighttime_auditor as na
+        import unseen_university.devices.librarian.nighttime_auditor as na
 
         # Reset the guard so we can test start
         na._started = False

@@ -15,7 +15,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from agent_datacenter.announce.notify import has_intent
+from unseen_university.announce.notify import has_intent
 
 # ── Direct address ─────────────────────────────────────────────────────────────
 

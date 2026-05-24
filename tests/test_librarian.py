@@ -9,10 +9,10 @@ from unittest.mock import patch
 
 import pytest
 
-from agent_datacenter.device import INTERFACE_VERSION
-from agent_datacenter.devices.librarian import Librarian
-from agent_datacenter.devices.librarian.librarian import OOK
-from agent_datacenter.devices.librarian.mcp_server import _dispatch
+from unseen_university.device import INTERFACE_VERSION
+from unseen_university.devices.librarian import Librarian
+from unseen_university.devices.librarian.librarian import OOK
+from unseen_university.devices.librarian.mcp_server import _dispatch
 
 
 class TestLibrarianContract:
@@ -122,7 +122,7 @@ class TestMcpServer:
         assert "protocolVersion" in resp["result"]
 
     def test_tools_list_returns_schemas(self):
-        from agent_datacenter.devices.librarian.tools import SCHEMAS
+        from unseen_university.devices.librarian.tools import SCHEMAS
 
         msg = {"jsonrpc": "2.0", "id": 2, "method": "tools/list"}
         resp = _dispatch(msg)

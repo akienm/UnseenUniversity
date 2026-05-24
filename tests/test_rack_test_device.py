@@ -16,8 +16,8 @@ from __future__ import annotations
 
 import pytest
 
-from agent_datacenter.device import BaseDevice, INTERFACE_VERSION
-from agent_datacenter.shim import BaseShim
+from unseen_university.device import BaseDevice, INTERFACE_VERSION
+from unseen_university.shim import BaseShim
 from devices.rack_test.device import RackTestDevice
 from devices.rack_test.shim import RackTestShim
 from tests.fixtures.stub_devices import StubDevice

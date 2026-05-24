@@ -113,7 +113,7 @@ else
     "SELECT path, title, left(content, 400) AS content_preview
      FROM adc.palace
      WHERE path IN (
-       'palace.projects.agent_datacenter.summary',
+       'palace.projects.unseen_university.summary',
        'palace.shared.akien.goals',
        'palace.shared.akien.profile'
      )

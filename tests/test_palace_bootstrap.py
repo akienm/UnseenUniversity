@@ -105,16 +105,16 @@ class TestSeededNodes:
         assert "SQLite" in node["content"] or "sqlite" in node["content"].lower()
 
     def test_adc_summary_exists(self, conn):
-        node = self._get(conn, "palace.projects.agent_datacenter.summary")
+        node = self._get(conn, "palace.projects.unseen_university.summary")
         assert node is not None
         assert node["node_type"] == "doc"
 
     def test_adc_map_exists(self, conn):
-        node = self._get(conn, "palace.projects.agent_datacenter.map")
+        node = self._get(conn, "palace.projects.unseen_university.map")
         assert node is not None
 
     def test_adc_standards_exists(self, conn):
-        node = self._get(conn, "palace.projects.agent_datacenter.standards")
+        node = self._get(conn, "palace.projects.unseen_university.standards")
         assert node is not None
 
     def test_theigors_pointer_exists(self, conn):

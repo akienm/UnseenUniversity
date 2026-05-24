@@ -29,12 +29,12 @@ pytestmark = pytest.mark.skipif(not _db_reachable(), reason="Igor DB not reachab
 
 class TestProposeChange:
     def test_inserts_row(self):
-        from agent_datacenter.devices.librarian.tools.proposal_tools import (
+        from unseen_university.devices.librarian.tools.proposal_tools import (
             propose_change,
         )
 
         with patch(
-            "agent_datacenter.devices.librarian.tools.proposal_tools._notify_channel"
+            "unseen_university.devices.librarian.tools.proposal_tools._notify_channel"
         ):
             result = propose_change(
                 file_path="test/fake_file.py",
@@ -48,13 +48,13 @@ class TestProposeChange:
         assert result["status"] == "pending"
 
     def test_row_appears_in_list_proposals(self):
-        from agent_datacenter.devices.librarian.tools.proposal_tools import (
+        from unseen_university.devices.librarian.tools.proposal_tools import (
             list_proposals,
             propose_change,
         )
 
         with patch(
-            "agent_datacenter.devices.librarian.tools.proposal_tools._notify_channel"
+            "unseen_university.devices.librarian.tools.proposal_tools._notify_channel"
         ):
             result = propose_change(
                 file_path="test/list_test.py",
@@ -70,13 +70,13 @@ class TestProposeChange:
 
     def test_duplicate_allowed(self):
         """Same file_path + old_snippet creates a second row (no silent dedup)."""
-        from agent_datacenter.devices.librarian.tools.proposal_tools import (
+        from unseen_university.devices.librarian.tools.proposal_tools import (
             list_proposals,
             propose_change,
         )
 
         with patch(
-            "agent_datacenter.devices.librarian.tools.proposal_tools._notify_channel"
+            "unseen_university.devices.librarian.tools.proposal_tools._notify_channel"
         ):
             r1 = propose_change(
                 file_path="test/dup.py",
@@ -94,12 +94,12 @@ class TestProposeChange:
         assert r1["proposal_id"] != r2["proposal_id"]
 
     def test_channel_notification_called(self):
-        from agent_datacenter.devices.librarian.tools.proposal_tools import (
+        from unseen_university.devices.librarian.tools.proposal_tools import (
             propose_change,
         )
 
         with patch(
-            "agent_datacenter.devices.librarian.tools.proposal_tools._notify_channel"
+            "unseen_university.devices.librarian.tools.proposal_tools._notify_channel"
         ) as mock_notify:
             propose_change(
                 file_path="test/notify.py",
@@ -113,12 +113,12 @@ class TestProposeChange:
         import psycopg2
         import psycopg2.extras
 
-        from agent_datacenter.devices.librarian.tools.proposal_tools import (
+        from unseen_university.devices.librarian.tools.proposal_tools import (
             propose_change,
         )
 
         with patch(
-            "agent_datacenter.devices.librarian.tools.proposal_tools._notify_channel"
+            "unseen_university.devices.librarian.tools.proposal_tools._notify_channel"
         ):
             propose_change(
                 file_path="test/action_log.py",

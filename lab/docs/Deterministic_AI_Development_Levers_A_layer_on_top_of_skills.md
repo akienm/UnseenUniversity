@@ -333,5 +333,5 @@ When the day's slate is done, we run /day-close.
 
 ## For Additional Background
 
-- GitHub -- akienm/agent_datacenter -- Generalized AI runtime substrate: IMAP bus, device model, rack, installer
+- GitHub -- akienm/UnseenUniversity -- Generalized AI runtime substrate: IMAP bus, device model, rack, installer
 - GitHub -- akienm/TheIgors -- Igor: graph-matrix reasoning engine, persistent Postgres memory, habit scoring

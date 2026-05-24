@@ -23,7 +23,7 @@ _PREFIX = f"palace.test_{random.randint(10_000_000, 99_999_999)}"
 @pytest.fixture(scope="module", autouse=True)
 def seed_nodes():
     """Seed a small subtree; tear it down after the module."""
-    from agent_datacenter.devices.librarian.tools.palace_tools import palace_write
+    from unseen_university.devices.librarian.tools.palace_tools import palace_write
 
     palace_write(
         f"{_PREFIX}.alpha",
@@ -52,33 +52,33 @@ def seed_nodes():
 
 class TestPalaceLs:
     def test_lists_nodes_under_prefix(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import palace_ls
+        from unseen_university.devices.librarian.tools.palace_tools import palace_ls
 
         result = palace_ls(_PREFIX)
         assert "Alpha Node" in result
         assert "Beta Node" in result
 
     def test_lists_child_nodes(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import palace_ls
+        from unseen_university.devices.librarian.tools.palace_tools import palace_ls
 
         result = palace_ls(f"{_PREFIX}.alpha")
         assert "alpha" in result
         assert "child" in result
 
     def test_empty_prefix_not_empty(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import palace_ls
+        from unseen_university.devices.librarian.tools.palace_tools import palace_ls
 
         result = palace_ls("")
         assert "node(s)" in result
 
     def test_unknown_prefix_returns_message(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import palace_ls
+        from unseen_university.devices.librarian.tools.palace_tools import palace_ls
 
         result = palace_ls("palace.nonexistent_xyz_999")
         assert "No nodes found" in result
 
     def test_limit_respected(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import palace_ls
+        from unseen_university.devices.librarian.tools.palace_tools import palace_ls
 
         result = palace_ls(_PREFIX, limit=1)
         # Only 1 result line after the header
@@ -91,27 +91,27 @@ class TestPalaceLs:
 
 class TestPalaceRead:
     def test_reads_known_node(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import palace_read
+        from unseen_university.devices.librarian.tools.palace_tools import palace_read
 
         result = palace_read(f"{_PREFIX}.alpha")
         assert "Alpha Node" in result
         assert "content about alpha" in result
 
     def test_unknown_path_returns_message(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import palace_read
+        from unseen_university.devices.librarian.tools.palace_tools import palace_read
 
         result = palace_read("palace.does.not.exist.xyz")
         assert "No node found" in result
 
     def test_result_includes_node_type(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import palace_read
+        from unseen_university.devices.librarian.tools.palace_tools import palace_read
 
         result = palace_read(f"{_PREFIX}.alpha")
         assert "node_type" in result
         assert "doc" in result
 
     def test_result_includes_tags(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import palace_read
+        from unseen_university.devices.librarian.tools.palace_tools import palace_read
 
         result = palace_read(f"{_PREFIX}.alpha")
         assert "test" in result
@@ -123,7 +123,7 @@ class TestPalaceRead:
 
 class TestPalaceWrite:
     def test_write_creates_node(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import (
+        from unseen_university.devices.librarian.tools.palace_tools import (
             palace_read,
             palace_write,
         )
@@ -135,7 +135,7 @@ class TestPalaceWrite:
         assert "written content" in result
 
     def test_write_is_idempotent(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import palace_write
+        from unseen_university.devices.librarian.tools.palace_tools import palace_write
 
         path = f"{_PREFIX}.idem_test"
         palace_write(path, "Idem", "v1")
@@ -143,7 +143,7 @@ class TestPalaceWrite:
         assert "Written" in result
 
     def test_write_returns_path_and_timestamp(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import palace_write
+        from unseen_university.devices.librarian.tools.palace_tools import palace_write
 
         result = palace_write(f"{_PREFIX}.ts_test", "TS", "content")
         assert f"{_PREFIX}.ts_test" in result
@@ -155,13 +155,13 @@ class TestPalaceWrite:
 
 class TestPalaceSearch:
     def test_finds_node_by_content(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import palace_search
+        from unseen_university.devices.librarian.tools.palace_tools import palace_search
 
         result = palace_search("alpha extraction")
         assert _PREFIX in result
 
     def test_tag_filter_narrows_results(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import palace_search
+        from unseen_university.devices.librarian.tools.palace_tools import palace_search
 
         # alpha tag should match alpha node but not beta
         result = palace_search("content", tags=["alpha"])
@@ -169,13 +169,13 @@ class TestPalaceSearch:
         assert f"{_PREFIX}.beta" not in result
 
     def test_no_match_returns_message(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import palace_search
+        from unseen_university.devices.librarian.tools.palace_tools import palace_search
 
         result = palace_search("xyzzy_nonexistent_term_9q8w7e")
         assert "No results" in result
 
     def test_limit_respected(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import palace_search
+        from unseen_university.devices.librarian.tools.palace_tools import palace_search
 
         result = palace_search("content", limit=1)
         # Should have at most 1 result block (heuristic: count path occurrences)
@@ -187,20 +187,20 @@ class TestPalaceSearch:
 
 class TestDispatch:
     def test_dispatch_palace_ls(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import dispatch
+        from unseen_university.devices.librarian.tools.palace_tools import dispatch
 
         result = dispatch("palace_ls", {"prefix": _PREFIX})
         assert result is not None
         assert "Alpha" in result
 
     def test_dispatch_palace_read(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import dispatch
+        from unseen_university.devices.librarian.tools.palace_tools import dispatch
 
         result = dispatch("palace_read", {"path": f"{_PREFIX}.beta"})
         assert "Beta Node" in result
 
     def test_dispatch_palace_write(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import dispatch
+        from unseen_university.devices.librarian.tools.palace_tools import dispatch
 
         result = dispatch(
             "palace_write",
@@ -209,18 +209,18 @@ class TestDispatch:
         assert "Written" in result
 
     def test_dispatch_palace_search(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import dispatch
+        from unseen_university.devices.librarian.tools.palace_tools import dispatch
 
         result = dispatch("palace_search", {"query": "beta testing"})
         assert result is not None
 
     def test_dispatch_unknown_returns_none(self):
-        from agent_datacenter.devices.librarian.tools.palace_tools import dispatch
+        from unseen_university.devices.librarian.tools.palace_tools import dispatch
 
         assert dispatch("not_a_palace_tool", {}) is None
 
     def test_schemas_registered_in_init(self):
-        from agent_datacenter.devices.librarian.tools import SCHEMAS
+        from unseen_university.devices.librarian.tools import SCHEMAS
 
         names = {s["name"] for s in SCHEMAS}
         assert {"palace_ls", "palace_read", "palace_write", "palace_search"} <= names

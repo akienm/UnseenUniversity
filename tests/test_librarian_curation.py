@@ -89,7 +89,7 @@ def _seed_memory(
 
 
 def test_librarian_curate_in_schemas():
-    from agent_datacenter.devices.librarian.tools import SCHEMAS
+    from unseen_university.devices.librarian.tools import SCHEMAS
 
     names = {s["name"] for s in SCHEMAS}
     assert "librarian_curate" in names
@@ -100,7 +100,7 @@ def test_librarian_curate_in_schemas():
 
 def test_finds_duplicate_factual_pair():
     """Two FACTUAL memories with identical narrative → archive_action proposal."""
-    from agent_datacenter.devices.librarian.tools.curation_tools import run_curation
+    from unseen_university.devices.librarian.tools.curation_tools import run_curation
 
     narrative = (
         "The sky is blue and the grass is green and identical narrative text here"
@@ -119,7 +119,7 @@ def test_finds_duplicate_factual_pair():
 
 def test_no_duplicate_proposal_for_different_narratives():
     """Two FACTUAL memories with different narratives → no duplicate finding."""
-    from agent_datacenter.devices.librarian.tools.curation_tools import run_curation
+    from unseen_university.devices.librarian.tools.curation_tools import run_curation
 
     id_a = _unique_id()
     id_b = _unique_id()
@@ -151,7 +151,7 @@ def test_no_duplicate_proposal_for_different_narratives():
 
 def test_finds_stale_episodic():
     """EPISODIC memory with activation_count=0 and no last_activated_at → stale proposal."""
-    from agent_datacenter.devices.librarian.tools.curation_tools import run_curation
+    from unseen_university.devices.librarian.tools.curation_tools import run_curation
 
     id_ = _unique_id()
     _seed_memory(
@@ -167,7 +167,7 @@ def test_finds_stale_episodic():
 
 def test_recently_activated_not_flagged():
     """EPISODIC memory with recent last_activated_at is NOT flagged as stale."""
-    from agent_datacenter.devices.librarian.tools.curation_tools import run_curation
+    from unseen_university.devices.librarian.tools.curation_tools import run_curation
 
     id_ = _unique_id()
     _seed_memory(id_, "EPISODIC", f"Recent active event {id_}", activation_count=5)
@@ -210,7 +210,7 @@ def test_recently_activated_not_flagged():
 
 def test_finds_duplicate_code_refs():
     """Two PROCEDURAL memories sharing same code_ref → archive_action proposal."""
-    from agent_datacenter.devices.librarian.tools.curation_tools import run_curation
+    from unseen_university.devices.librarian.tools.curation_tools import run_curation
 
     code_ref = f"wild_igor.igor.tools.test_fn:{_unique_id()}"
     id_a = _unique_id()
@@ -228,7 +228,7 @@ def test_finds_duplicate_code_refs():
 
 def test_dry_run_writes_no_proposals():
     """dry_run=True runs analysis but does not write to instance.proposals."""
-    from agent_datacenter.devices.librarian.tools.curation_tools import run_curation
+    from unseen_university.devices.librarian.tools.curation_tools import run_curation
 
     narrative = (
         "Dry run test narrative that is identical and unique for this test run only"
@@ -260,7 +260,7 @@ def test_dry_run_writes_no_proposals():
 
 
 def test_dispatch_librarian_curate():
-    from agent_datacenter.devices.librarian.tools import dispatch
+    from unseen_university.devices.librarian.tools import dispatch
 
     result_str = dispatch("librarian_curate", {"dry_run": True})
     assert result_str is not None
@@ -270,7 +270,7 @@ def test_dispatch_librarian_curate():
 
 
 def test_dispatch_unknown_returns_none():
-    from agent_datacenter.devices.librarian.tools.curation_tools import dispatch
+    from unseen_university.devices.librarian.tools.curation_tools import dispatch
 
     assert dispatch("not_a_curation_tool", {}) is None
 
@@ -312,7 +312,7 @@ def _clean_quality_log():
 
 
 def test_quality_log_in_schemas():
-    from agent_datacenter.devices.librarian.tools import SCHEMAS
+    from unseen_university.devices.librarian.tools import SCHEMAS
 
     names = {s["name"] for s in SCHEMAS}
     assert "librarian_quality_log" in names
@@ -320,7 +320,7 @@ def test_quality_log_in_schemas():
 
 def test_read_quality_log_empty():
     """No rows for unknown memory → all zeros, not prune_candidate."""
-    from agent_datacenter.devices.librarian.tools.curation_tools import read_quality_log
+    from unseen_university.devices.librarian.tools.curation_tools import read_quality_log
 
     result = read_quality_log("TEST_nonexistent_xyz")
     assert result["loaded_count"] == 0
@@ -330,7 +330,7 @@ def test_read_quality_log_empty():
 
 def test_read_quality_log_loaded_and_used():
     """5 loaded, 4 used → used_rate 80% → not prune_candidate."""
-    from agent_datacenter.devices.librarian.tools.curation_tools import read_quality_log
+    from unseen_university.devices.librarian.tools.curation_tools import read_quality_log
 
     mem_id = _unique_id()
     for _ in range(4):
@@ -345,7 +345,7 @@ def test_read_quality_log_loaded_and_used():
 
 def test_read_quality_log_prune_candidate():
     """5 loaded, 0 used → used_rate 0% → prune_candidate."""
-    from agent_datacenter.devices.librarian.tools.curation_tools import read_quality_log
+    from unseen_university.devices.librarian.tools.curation_tools import read_quality_log
 
     mem_id = _unique_id()
     for _ in range(5):
@@ -358,7 +358,7 @@ def test_read_quality_log_prune_candidate():
 
 
 def test_dispatch_quality_log():
-    from agent_datacenter.devices.librarian.tools import dispatch
+    from unseen_university.devices.librarian.tools import dispatch
 
     result_str = dispatch("librarian_quality_log", {"memory_id": "TEST_dispatch_check"})
     assert result_str is not None

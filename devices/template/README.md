@@ -1,6 +1,6 @@
 # Agent Template
 
-Starter kit for a new agent_datacenter device. No Igor required.
+Starter kit for a new UnseenUniversity device. No Igor required.
 
 ## Quickstart
 

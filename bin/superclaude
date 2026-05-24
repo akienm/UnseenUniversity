@@ -1,6 +1,6 @@
 #!/bin/bash
 # superclaude — Claude Code launcher with rack server + fresh-install wizard
-# Canonical home: agent_datacenter/bin/superclaude
+# Canonical home: UnseenUniversity/bin/superclaude
 # D232: fresh-install wizard. D335: start rack server before Claude Code.
 # Starts rack server if not running, then launches Claude Code with all args forwarded.
 

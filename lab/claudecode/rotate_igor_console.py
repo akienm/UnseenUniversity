@@ -30,7 +30,7 @@ from pathlib import Path
 
 def _adc_home() -> Path:
     return Path(
-        os.environ.get("AGENT_DATACENTER_HOME", str(Path.home() / ".agent_datacenter"))
+        os.environ.get("UNSEEN_UNIVERSITY_HOME", str(Path.home() / ".unseen_university"))
     )
 
 

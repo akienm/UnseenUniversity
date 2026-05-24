@@ -22,7 +22,7 @@ Ownership rule: ClaudeShim never kills an ADC process it did not launch.
 The hook calls:
   python3 -m devices.claude.ygm_check
 
-from the agent_datacenter repo root, so the PYTHONPATH needs to be set
+from the unseen_university repo root, so the PYTHONPATH needs to be set
 to the repo root in the hook command.
 """
 
@@ -38,7 +38,7 @@ import urllib.request
 from pathlib import Path
 from typing import Optional
 
-from agent_datacenter.shim import BaseShim
+from unseen_university.shim import BaseShim
 from devices.claude.constants import GLOBAL_MAILBOX, get_session_mailbox
 
 log = logging.getLogger(__name__)

@@ -6,12 +6,12 @@ import json
 
 import pytest
 
-from agent_datacenter.devices.librarian.research import (
+from unseen_university.devices.librarian.research import (
     ResearchEngine,
     SummarizeResult,
     ResearchResult,
 )
-from agent_datacenter.devices.librarian.tools import research_tools
+from unseen_university.devices.librarian.tools import research_tools
 
 
 def _stub_llm(selection, prompt):
@@ -118,7 +118,7 @@ class TestResearchEngine:
         assert result.answer, "LLM should still run after fetch failure"
 
     def test_curated_source_index_has_required_entries(self):
-        from agent_datacenter.devices.librarian.sources import SOURCES, match_sources
+        from unseen_university.devices.librarian.sources import SOURCES, match_sources
 
         all_text = " ".join(
             s["description"].lower() + " " + s["url"].lower() for s in SOURCES
@@ -135,7 +135,7 @@ class TestResearchEngine:
 class TestResearchTools:
     def test_summarize_tool_returns_json(self):
         from unittest.mock import patch
-        from agent_datacenter.devices.librarian.research import ResearchEngine
+        from unseen_university.devices.librarian.research import ResearchEngine
 
         with patch.object(
             ResearchEngine,
@@ -154,7 +154,7 @@ class TestResearchTools:
 
     def test_research_tool_returns_json(self):
         from unittest.mock import patch
-        from agent_datacenter.devices.librarian.research import ResearchEngine
+        from unseen_university.devices.librarian.research import ResearchEngine
 
         with patch.object(
             ResearchEngine,
@@ -175,7 +175,7 @@ class TestResearchTools:
 
     def test_dispatch_routes_summarize(self):
         from unittest.mock import patch
-        from agent_datacenter.devices.librarian.research import (
+        from unseen_university.devices.librarian.research import (
             ResearchEngine,
             SummarizeResult,
         )

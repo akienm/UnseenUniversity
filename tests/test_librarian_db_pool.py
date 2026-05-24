@@ -8,8 +8,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from agent_datacenter.devices.librarian import db as db_module
-from agent_datacenter.devices.librarian.tools import db_tools
+from unseen_university.devices.librarian import db as db_module
+from unseen_university.devices.librarian.tools import db_tools
 
 
 @pytest.fixture(autouse=True)
@@ -45,7 +45,7 @@ class TestGetConn:
     def test_checkout_and_returns_connection(self):
         mock_pool, mock_conn, _ = _make_mock_pool()
         with patch(
-            "agent_datacenter.devices.librarian.db._get_pool", return_value=mock_pool
+            "unseen_university.devices.librarian.db._get_pool", return_value=mock_pool
         ):
             with db_module.get_conn() as conn:
                 assert conn is mock_conn
@@ -54,7 +54,7 @@ class TestGetConn:
     def test_commits_on_clean_exit(self):
         mock_pool, mock_conn, _ = _make_mock_pool()
         with patch(
-            "agent_datacenter.devices.librarian.db._get_pool", return_value=mock_pool
+            "unseen_university.devices.librarian.db._get_pool", return_value=mock_pool
         ):
             with db_module.get_conn():
                 pass
@@ -63,7 +63,7 @@ class TestGetConn:
     def test_rolls_back_on_exception(self):
         mock_pool, mock_conn, _ = _make_mock_pool()
         with patch(
-            "agent_datacenter.devices.librarian.db._get_pool", return_value=mock_pool
+            "unseen_university.devices.librarian.db._get_pool", return_value=mock_pool
         ):
             with pytest.raises(ValueError):
                 with db_module.get_conn():
@@ -79,13 +79,13 @@ class TestGetConn:
         mock_pool.getconn.side_effect = psycopg2.pool.PoolError("exhausted")
 
         with patch(
-            "agent_datacenter.devices.librarian.db._get_pool", return_value=mock_pool
+            "unseen_university.devices.librarian.db._get_pool", return_value=mock_pool
         ):
             with patch(
-                "agent_datacenter.devices.librarian.db._CHECKOUT_TIMEOUT_S", 0.1
+                "unseen_university.devices.librarian.db._CHECKOUT_TIMEOUT_S", 0.1
             ):
                 with patch(
-                    "agent_datacenter.devices.librarian.db._CHECKOUT_RETRY_INTERVAL_S",
+                    "unseen_university.devices.librarian.db._CHECKOUT_RETRY_INTERVAL_S",
                     0.01,
                 ):
                     with pytest.raises(
@@ -115,7 +115,7 @@ class TestDbToolsWithPool:
         mock_cur.description = [("id",), ("name",)]
 
         with patch(
-            "agent_datacenter.devices.librarian.db._get_pool", return_value=mock_pool
+            "unseen_university.devices.librarian.db._get_pool", return_value=mock_pool
         ):
             result = json.loads(db_tools.db_query("SELECT 1"))
 
@@ -126,7 +126,7 @@ class TestDbToolsWithPool:
         mock_pool, mock_conn, mock_cur = _make_mock_pool(rowcount=3)
 
         with patch(
-            "agent_datacenter.devices.librarian.db._get_pool", return_value=mock_pool
+            "unseen_university.devices.librarian.db._get_pool", return_value=mock_pool
         ):
             result = json.loads(db_tools.db_dispatch("UPDATE foo SET x=1"))
 

@@ -13,7 +13,7 @@ os.environ.setdefault("AGENT_DATACENTER_TEST_MODE", "1")
 
 from bus.imap_server import IMAPServer
 from bus.envelope import Envelope
-from agent_datacenter.devices.librarian.health_aggregator import HealthAggregator
+from unseen_university.devices.librarian.health_aggregator import HealthAggregator
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -194,7 +194,7 @@ class TestIdleLoop:
 
 class TestRackHealthTool:
     def test_rack_health_no_aggregator(self):
-        from agent_datacenter.devices.librarian.tools import health_tools
+        from unseen_university.devices.librarian.tools import health_tools
 
         health_tools._aggregator = None
         result = json.loads(health_tools.rack_health())
@@ -202,7 +202,7 @@ class TestRackHealthTool:
         assert result["devices"] == []
 
     def test_rack_health_with_aggregator(self, imap):
-        from agent_datacenter.devices.librarian.tools import health_tools
+        from unseen_university.devices.librarian.tools import health_tools
 
         agg = HealthAggregator(imap, interval_s=30.0)
         health_tools.set_aggregator(agg)
@@ -216,7 +216,7 @@ class TestRackHealthTool:
         health_tools._aggregator = None  # cleanup
 
     def test_tool_dispatch_routes(self, imap):
-        from agent_datacenter.devices.librarian.tools import health_tools
+        from unseen_university.devices.librarian.tools import health_tools
 
         agg = HealthAggregator(imap, interval_s=30.0)
         health_tools.set_aggregator(agg)
@@ -225,7 +225,7 @@ class TestRackHealthTool:
         health_tools._aggregator = None
 
     def test_rack_health_in_schema(self):
-        from agent_datacenter.devices.librarian.tools import SCHEMAS
+        from unseen_university.devices.librarian.tools import SCHEMAS
 
         names = {s["name"] for s in SCHEMAS}
         assert "rack_health" in names

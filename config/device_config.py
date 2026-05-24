@@ -9,11 +9,11 @@ All defaults are rack-level sensible. Override per device at registration time.
 
 Runtime path helpers
 --------------------
-agent_datacenter_home() → ~/.agent_datacenter/ (or $AGENT_DATACENTER_HOME)
-agent_datacenter_logs() → $AGENT_DATACENTER_HOME/logs/
+unseen_university_home() → ~/.unseen_university/ (or $UNSEEN_UNIVERSITY_HOME)
+unseen_university_logs() → $UNSEEN_UNIVERSITY_HOME/logs/
 
-Set AGENT_DATACENTER_HOME to relocate the entire runtime tree (CI, multi-user,
-non-home mounts). Default is ~/.agent_datacenter/ for single-user desktop use.
+Set UNSEEN_UNIVERSITY_HOME to relocate the entire runtime tree (CI, multi-user,
+non-home mounts). Default is ~/.unseen_university/ for single-user desktop use.
 """
 
 import os
@@ -22,19 +22,19 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-def agent_datacenter_home() -> Path:
-    """Root of the agent_datacenter runtime tree."""
+def unseen_university_home() -> Path:
+    """Root of the unseen_university runtime tree."""
     return Path(
         os.environ.get(
-            "AGENT_DATACENTER_HOME",
-            str(Path.home() / ".agent_datacenter"),
+            "UNSEEN_UNIVERSITY_HOME",
+            str(Path.home() / ".unseen_university"),
         )
     )
 
 
-def agent_datacenter_logs() -> Path:
-    """Root of the hierarchical log tree: $AGENT_DATACENTER_HOME/logs/"""
-    return agent_datacenter_home() / "logs"
+def unseen_university_logs() -> Path:
+    """Root of the hierarchical log tree: $UNSEEN_UNIVERSITY_HOME/logs/"""
+    return unseen_university_home() / "logs"
 
 
 @dataclass

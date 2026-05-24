@@ -1748,14 +1748,14 @@ _IGOR_TAGS = {
     "twm",
 }
 _IGOR_REPO = "akienm/TheIgors"
-_ADC_REPO = "akienm/agent_datacenter"
+_ADC_REPO = "akienm/unseen_university"
 
 
 def _gh_repo_for(ticket: dict) -> str:
     """Return the GitHub repo slug for a ticket based on worker and tags.
 
     Routing rule: worker=igor OR tags intersect IGOR_TAGS → TheIgors.
-    Everything else → agent_datacenter.
+    Everything else → unseen_university.
     """
     if ticket.get("worker") == "igor":
         return _IGOR_REPO

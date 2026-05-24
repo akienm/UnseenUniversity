@@ -13,14 +13,14 @@ from pathlib import Path
 
 import pytest
 
-from agent_datacenter.announce.broker import AnnounceError, AnnounceBroker
-from agent_datacenter.announce.envelope import (
+from unseen_university.announce.broker import AnnounceError, AnnounceBroker
+from unseen_university.announce.envelope import (
     ANNOUNCE_MAILBOX,
     IdentityEnvelope,
     ValidationError,
 )
-from agent_datacenter.announce.manifest import MANIFEST_SCHEMA_VERSION, Manifest
-from agent_datacenter.announce.profile import ProfileNotFoundError
+from unseen_university.announce.manifest import MANIFEST_SCHEMA_VERSION, Manifest
+from unseen_university.announce.profile import ProfileNotFoundError
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -230,7 +230,7 @@ def _profiles_dir_with(tmp_path: Path, *names: str) -> Path:
 
 
 def test_cc_profile_loads_and_has_expected_shape(tmp_path: Path) -> None:
-    from agent_datacenter.announce.profile import load_profile
+    from unseen_university.announce.profile import load_profile
 
     pdir = _profiles_dir_with(tmp_path, "cc.yaml")
     profile = load_profile("cc", profiles_dir=pdir)
@@ -246,7 +246,7 @@ def test_cc_profile_loads_and_has_expected_shape(tmp_path: Path) -> None:
 
 
 def test_research_orca_profile_loads_and_has_expected_shape(tmp_path: Path) -> None:
-    from agent_datacenter.announce.profile import load_profile
+    from unseen_university.announce.profile import load_profile
 
     pdir = _profiles_dir_with(tmp_path, "research-orca.yaml")
     profile = load_profile("research-orca", profiles_dir=pdir)
@@ -261,8 +261,8 @@ def test_research_orca_profile_loads_and_has_expected_shape(tmp_path: Path) -> N
 
 
 def test_broker_resolves_research_orca_with_narrow_devices(tmp_path: Path) -> None:
-    from agent_datacenter.announce.broker import AnnounceBroker
-    from agent_datacenter.announce.envelope import IdentityEnvelope
+    from unseen_university.announce.broker import AnnounceBroker
+    from unseen_university.announce.envelope import IdentityEnvelope
 
     pdir = _profiles_dir_with(tmp_path, "research-orca.yaml")
     registry = _FakeRegistry(

@@ -12,7 +12,7 @@ No daemon runs — Akien is not a process.
 
 ## Data home
 
-`~/.agent_datacenter/akien/` (or `$ADC_RUNTIME_ROOT/akien/`):
+`~/.unseen_university/akien/` (or `$ADC_RUNTIME_ROOT/akien/`):
 
 | Dir | Purpose |
 |---|---|

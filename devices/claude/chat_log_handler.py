@@ -1,10 +1,10 @@
 """
 chat_log_handler.py — logging.Handler + Formatter for CC chat transcripts.
 
-Implements agent_datacenter's logging interface (BaseDevice contract) for
+Implements unseen_university's logging interface (BaseDevice contract) for
 Claude Code session transcripts. JSONL events (user/assistant turns) are
 ingested as LogRecords and written to date-partitioned markdown at:
-    $AGENT_DATACENTER_HOME/logs/CC.0/YYYY-MM-DD.md
+    $UNSEEN_UNIVERSITY_HOME/logs/CC.0/YYYY-MM-DD.md
 
 Format matches export_chat.py (### User — / ### Assistant — with full datetime).
 Each day file is rebuilt from scratch on flush() — same idempotent model as
@@ -140,9 +140,9 @@ class ChatLogHandler(logging.Handler):
     def __init__(self, output_dir: Path | None = None) -> None:
         super().__init__()
         if output_dir is None:
-            from config.device_config import agent_datacenter_logs
+            from config.device_config import unseen_university_logs
 
-            output_dir = agent_datacenter_logs() / "CC.0"
+            output_dir = unseen_university_logs() / "CC.0"
         self._output_dir = Path(output_dir)
         self.setFormatter(CCEventFormatter())
         self._buffer: dict[str, dict[str, list[str]]] = {}

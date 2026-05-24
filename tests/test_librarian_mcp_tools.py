@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from agent_datacenter.devices.librarian.tools import SCHEMAS, dispatch
-from agent_datacenter.devices.librarian.tools import (
+from unseen_university.devices.librarian.tools import SCHEMAS, dispatch
+from unseen_university.devices.librarian.tools import (
     db_tools,
     memory_tools,
     channel_tools,
@@ -78,7 +78,7 @@ class TestDbTools:
             yield conn
 
         with patch(
-            "agent_datacenter.devices.librarian.tools.db_tools.get_conn", _fake_get_conn
+            "unseen_university.devices.librarian.tools.db_tools.get_conn", _fake_get_conn
         ):
             result = db_tools.db_query("SELECT 1", pg_url="postgresql://fake/db")
         data = json.loads(result)
@@ -100,7 +100,7 @@ class TestDbTools:
             yield conn
 
         with patch(
-            "agent_datacenter.devices.librarian.tools.db_tools.get_conn", _fake_get_conn
+            "unseen_university.devices.librarian.tools.db_tools.get_conn", _fake_get_conn
         ):
             result = db_tools.db_dispatch(
                 "DELETE FROM t", pg_url="postgresql://fake/db"
@@ -111,7 +111,7 @@ class TestDbTools:
 
     def test_dispatch_routes_db_query(self):
         with patch(
-            "agent_datacenter.devices.librarian.tools.db_tools.db_query",
+            "unseen_university.devices.librarian.tools.db_tools.db_query",
             return_value='{"rows":[],"count":0}',
         ) as mock_fn:
             result = db_tools.dispatch("db_query", {"sql": "SELECT 1"})
@@ -166,7 +166,7 @@ class TestMemoryTools:
 
     def test_dispatch_routes_memory_get(self):
         with patch(
-            "agent_datacenter.devices.librarian.tools.memory_tools.memory_get",
+            "unseen_university.devices.librarian.tools.memory_tools.memory_get",
             return_value="ok",
         ) as mock_fn:
             result = memory_tools.dispatch("memory_get", {"memory_id": "abc"})
@@ -202,7 +202,7 @@ class TestChannelTools:
 
     def test_dispatch_routes_channel_send(self):
         with patch(
-            "agent_datacenter.devices.librarian.tools.channel_tools.channel_send",
+            "unseen_university.devices.librarian.tools.channel_tools.channel_send",
             return_value="sent",
         ) as mock_fn:
             result = channel_tools.dispatch("channel_send", {"content": "hi"})
@@ -256,7 +256,7 @@ class TestIgorTools:
 
     def test_dispatch_routes_tail_heat(self):
         with patch(
-            "agent_datacenter.devices.librarian.tools.igor_tools.tail_heat",
+            "unseen_university.devices.librarian.tools.igor_tools.tail_heat",
             return_value="heat=1.0",
         ) as mock_fn:
             result = igor_tools.dispatch("tail_heat", {"node_id": "abc"})
@@ -272,14 +272,14 @@ class TestIgorTools:
 class TestMcpServerDispatch:
     def test_tools_list_returns_all_schemas(self):
         import io
-        from agent_datacenter.devices.librarian.mcp_server import _dispatch
+        from unseen_university.devices.librarian.mcp_server import _dispatch
 
         msg = {"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}
         resp = _dispatch(msg)
         assert resp["result"]["tools"] == SCHEMAS
 
     def test_tools_call_unknown_tool(self):
-        from agent_datacenter.devices.librarian.mcp_server import _dispatch
+        from unseen_university.devices.librarian.mcp_server import _dispatch
 
         msg = {
             "jsonrpc": "2.0",
@@ -291,7 +291,7 @@ class TestMcpServerDispatch:
         assert "Unknown tool" in resp["result"]["content"][0]["text"]
 
     def test_initialize_response(self):
-        from agent_datacenter.devices.librarian.mcp_server import _dispatch
+        from unseen_university.devices.librarian.mcp_server import _dispatch
 
         msg = {
             "jsonrpc": "2.0",

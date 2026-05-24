@@ -17,14 +17,14 @@ import threading
 import time
 from datetime import datetime, timezone, timedelta
 
-# Set test mode BEFORE any agent_datacenter bus imports
+# Set test mode BEFORE any unseen_university bus imports
 os.environ.setdefault("AGENT_DATACENTER_TEST_MODE", "1")
 
 import pytest
 
 from bus.envelope import Envelope
 from bus.imap_server import IMAPServer, _STUB_MAILBOXES, _STUB_SEEN
-from agent_datacenter.bus.router import AddressError, Router
+from unseen_university.bus.router import AddressError, Router
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 

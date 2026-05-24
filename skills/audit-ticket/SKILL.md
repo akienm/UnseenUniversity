@@ -111,9 +111,9 @@ one" — pure skill-consumer tickets, OR "is the enforcer, not a consumer" —
 the rule-implementing ticket itself). Note the exemption in output.
 
 **Check:** scan Affected files for both sides:
-- HANDLER paths (any one match): `agent_datacenter/devices/`,
+- HANDLER paths (any one match): `UnseenUniversity/devices/`,
   `lab/claudecode/mcp_*`, `wild_igor/igor/**/device*.py`,
-  `agent_datacenter/**/capability*.py`
+  `UnseenUniversity/**/capability*.py`
 - SKILL CONSUMER paths (any one match): `/home/akien/.claude/skills/*`
 
 Both sides present → PASS this check.

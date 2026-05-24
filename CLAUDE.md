@@ -1,4 +1,4 @@
-# agent_datacenter — Claude Code bootstrap
+# UnseenUniversity — Claude Code bootstrap
 
 This is the portable agent runtime substrate. It is **not** TheIgors.
 
@@ -29,7 +29,7 @@ This is the portable agent runtime substrate. It is **not** TheIgors.
 ## Hard rules
 
 - No SQLite. Postgres or flat-file only.
-- No TheIgors imports. agent_datacenter must be portable without TheIgors present.
+- No TheIgors imports. UnseenUniversity must be portable without TheIgors present.
 - No live keys or passwords in source. `.env` is gitignored.
 - `pip install -e .` must succeed at all times (even with empty stubs).
 

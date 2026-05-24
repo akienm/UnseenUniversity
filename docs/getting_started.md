@@ -1,8 +1,8 @@
 # Getting Started
 
-*Migrated from ClaudeAndAkien 2026-04-27. Updated for agent_datacenter Phase 0.*
+*Migrated from ClaudeAndAkien 2026-04-27. Updated for UnseenUniversity Phase 0.*
 
-agent_datacenter turns an empty machine into a rack: devices plug in, the IMAP bus
+UnseenUniversity turns an empty machine into a rack: devices plug in, the IMAP bus
 routes messages, and every agent (Claude, Igor, or custom) runs as a first-class device.
 
 ---
@@ -18,7 +18,7 @@ routes messages, and every agent (Claude, Igor, or custom) runs as a first-class
 ## Phase 4+ (target): one-command bootstrap
 
 ```bash
-pip install agent_datacenter
+pip install UnseenUniversity
 agentctl init
 ```
 
@@ -41,8 +41,8 @@ under `devices/` for per-device startup instructions as they ship.
 ## Install the package (development)
 
 ```bash
-git clone https://github.com/akienm/agent_datacenter
-cd agent_datacenter
+git clone https://github.com/akienm/UnseenUniversity
+cd UnseenUniversity
 pip install -e .
 ```
 
@@ -51,7 +51,7 @@ pip install -e .
 ## Project structure
 
 ```
-agent_datacenter/  — core package (rack, device, shim base classes)
+UnseenUniversity/  — core package (rack, device, shim base classes)
 bus/               — IMAP bus (comms:// routing, pub/sub)
 skeleton/          — MCP aggregator + flat-file device registry
 devices/           — one directory per device (postgres, igor, claude, ...)

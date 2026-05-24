@@ -97,9 +97,9 @@ class TestIdleWait:
 class TestRunForever:
     def test_pump_called_on_wakeup(self, imap):
         """run_forever calls pump() when a message arrives."""
-        from agent_datacenter.announce.broker import AnnounceBroker
-        from agent_datacenter.announce.listener import AnnounceListener
-        from agent_datacenter.announce.envelope import ANNOUNCE_MAILBOX
+        from unseen_university.announce.broker import AnnounceBroker
+        from unseen_university.announce.listener import AnnounceListener
+        from unseen_university.announce.envelope import ANNOUNCE_MAILBOX
         from unittest.mock import MagicMock, patch
 
         imap.create_mailbox(ANNOUNCE_MAILBOX)
@@ -132,9 +132,9 @@ class TestRunForever:
         assert len(pumped) >= 1, "pump() was never called after message arrival"
 
     def test_stops_cleanly_on_stop_event(self, imap):
-        from agent_datacenter.announce.broker import AnnounceBroker
-        from agent_datacenter.announce.listener import AnnounceListener
-        from agent_datacenter.announce.envelope import ANNOUNCE_MAILBOX
+        from unseen_university.announce.broker import AnnounceBroker
+        from unseen_university.announce.listener import AnnounceListener
+        from unseen_university.announce.envelope import ANNOUNCE_MAILBOX
         from unittest.mock import MagicMock
 
         imap.create_mailbox(ANNOUNCE_MAILBOX)

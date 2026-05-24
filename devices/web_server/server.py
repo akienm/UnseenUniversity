@@ -118,7 +118,7 @@ def get_logger(name: str) -> logging.Logger:
 _RUNTIME_ROOT = Path(
     os.environ.get("ADC_RUNTIME_ROOT")
     or os.environ.get("IGOR_RUNTIME_ROOT")
-    or Path.home() / ".agent_datacenter"
+    or Path.home() / ".unseen_university"
 )
 _INSTANCE_DIR = _RUNTIME_ROOT / os.environ.get("IGOR_INSTANCE_ID", "Igor-wild-0001")
 # Web UI dist: env var override, or default to TheIgors sibling (dev layout).
@@ -174,7 +174,7 @@ def _init_comms():
     """Initialize the comms module with default channels.
 
     Optional — requires lab.utility_closet.comms (TheIgors dependency).
-    When unavailable (standalone agent_datacenter deployment), comms is
+    When unavailable (standalone unseen_university deployment), comms is
     disabled and the web UI shows no channel panel.
     """
     global _comms

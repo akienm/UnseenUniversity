@@ -12,8 +12,8 @@ import os
 import time
 from typing import TYPE_CHECKING
 
-from agent_datacenter.device import BaseDevice, INTERFACE_VERSION
-from agent_datacenter.skeleton.exceptions import DeviceBlockedError
+from unseen_university.device import BaseDevice, INTERFACE_VERSION
+from unseen_university.skeleton.exceptions import DeviceBlockedError
 
 if TYPE_CHECKING:
     from devices.postgres.shim import PostgresShim

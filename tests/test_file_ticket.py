@@ -79,7 +79,7 @@ def _delete_ticket(ticket_id: str) -> None:
 
 class TestFileTicket:
     def test_inserts_in_tickets_root(self):
-        from agent_datacenter.devices.librarian.tools.ticket_tools import file_ticket
+        from unseen_university.devices.librarian.tools.ticket_tools import file_ticket
 
         result = file_ticket(
             title="test file ticket inserts row",
@@ -95,7 +95,7 @@ class TestFileTicket:
             _delete_ticket(ticket_id)
 
     def test_metadata_fields(self):
-        from agent_datacenter.devices.librarian.tools.ticket_tools import file_ticket
+        from unseen_university.devices.librarian.tools.ticket_tools import file_ticket
 
         result = file_ticket(
             title="test file ticket metadata",
@@ -119,7 +119,7 @@ class TestFileTicket:
             _delete_ticket(ticket_id)
 
     def test_action_log_entry(self):
-        from agent_datacenter.devices.librarian.tools.ticket_tools import file_ticket
+        from unseen_university.devices.librarian.tools.ticket_tools import file_ticket
 
         result = file_ticket(
             title="test file ticket action log",
@@ -135,7 +135,7 @@ class TestFileTicket:
 
     def test_upsert_on_conflict(self):
         """Second call with same title updates rather than errors."""
-        from agent_datacenter.devices.librarian.tools.ticket_tools import file_ticket
+        from unseen_university.devices.librarian.tools.ticket_tools import file_ticket
 
         file_ticket(title="test upsert ticket", description="first")
         result = file_ticket(title="test upsert ticket", description="second")

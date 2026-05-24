@@ -18,7 +18,7 @@ from __future__ import annotations
 import time
 from datetime import datetime, timezone
 
-from agent_datacenter.device import BaseDevice, INTERFACE_VERSION
+from unseen_university.device import BaseDevice, INTERFACE_VERSION
 from devices.claude.constants import get_session_mailbox, GLOBAL_MAILBOX
 
 _START_TIME = time.time()
@@ -120,9 +120,9 @@ class ClaudeDevice(BaseDevice):
         return []
 
     def logs(self) -> dict:
-        from config.device_config import agent_datacenter_logs
+        from config.device_config import unseen_university_logs
 
-        return {"paths": {"chat": str(agent_datacenter_logs() / "CC.0")}}
+        return {"paths": {"chat": str(unseen_university_logs() / "CC.0")}}
 
     def update_info(self) -> dict:
         return {"current_version": "0.1.0", "update_available": False}

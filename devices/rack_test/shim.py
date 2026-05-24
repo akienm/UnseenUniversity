@@ -11,7 +11,7 @@ from __future__ import annotations
 import time
 from typing import Any
 
-from agent_datacenter.shim import BaseShim
+from unseen_university.shim import BaseShim
 
 from .device import RackTestDevice
 

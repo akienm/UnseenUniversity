@@ -12,7 +12,7 @@ from unittest.mock import patch, MagicMock
 
 from devices.discord_bot.device import DiscordBotDevice
 from devices.discord_bot.shim import DiscordBotShim
-from agent_datacenter.device import INTERFACE_VERSION
+from unseen_university.device import INTERFACE_VERSION
 
 
 class TestDiscordBotDeviceContract(unittest.TestCase):

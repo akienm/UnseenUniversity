@@ -10,7 +10,7 @@ and check returncode in self_test.
 
 from __future__ import annotations
 
-from agent_datacenter.shim import BaseShim
+from unseen_university.shim import BaseShim
 
 
 class TemplateShim(BaseShim):

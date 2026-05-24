@@ -1,13 +1,13 @@
 # Framework Overview
 
-*Migrated from ClaudeAndAkien 2026-04-27. Updated for agent_datacenter.*
+*Migrated from ClaudeAndAkien 2026-04-27. Updated for UnseenUniversity.*
 
 ---
 
 ## The Core Insight
 
 A Claude Code session is not just a coding assistant — it's a worker with a context window,
-tools, and the ability to coordinate with other sessions. agent_datacenter treats CC sessions
+tools, and the ability to coordinate with other sessions. UnseenUniversity treats CC sessions
 as first-class agents (devices) that share state through the IMAP bus and communicate via
 comms:// addresses.
 

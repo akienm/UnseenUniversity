@@ -19,7 +19,7 @@ import argparse
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from agent_datacenter.devices.librarian.tools.palace_tools import (
+from unseen_university.devices.librarian.tools.palace_tools import (
     palace_ls,
     palace_read,
     palace_search,

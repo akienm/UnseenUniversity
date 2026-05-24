@@ -15,9 +15,9 @@ from pathlib import Path
 
 import pytest
 
-from agent_datacenter.announce.broker import AnnounceBroker, ManifestAssembler
-from agent_datacenter.announce.envelope import IdentityEnvelope
-from agent_datacenter.announce.manifest import Manifest
+from unseen_university.announce.broker import AnnounceBroker, ManifestAssembler
+from unseen_university.announce.envelope import IdentityEnvelope
+from unseen_university.announce.manifest import Manifest
 
 CANONICAL_PROFILES = Path(__file__).parent.parent / "config" / "profiles"
 
@@ -169,7 +169,7 @@ def test_shared_address_is_comms_shared(tmp_path: Path) -> None:
 
 
 def test_cc_profile_has_visibility_primary(tmp_path: Path) -> None:
-    from agent_datacenter.announce.profile import load_profile
+    from unseen_university.announce.profile import load_profile
 
     shutil.copy(CANONICAL_PROFILES / "cc.yaml", tmp_path / "cc.yaml")
     profile = load_profile("cc", profiles_dir=tmp_path)
@@ -177,7 +177,7 @@ def test_cc_profile_has_visibility_primary(tmp_path: Path) -> None:
 
 
 def test_igor_profile_has_visibility_primary(tmp_path: Path) -> None:
-    from agent_datacenter.announce.profile import load_profile
+    from unseen_university.announce.profile import load_profile
 
     shutil.copy(CANONICAL_PROFILES / "igor.yaml", tmp_path / "igor.yaml")
     profile = load_profile("igor", profiles_dir=tmp_path)

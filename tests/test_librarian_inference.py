@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from agent_datacenter.devices.librarian.inference import InferenceRouter, ModelSelection
+from unseen_university.devices.librarian.inference import InferenceRouter, ModelSelection
 
 
 @pytest.fixture()

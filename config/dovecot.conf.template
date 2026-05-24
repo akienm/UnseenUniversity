@@ -1,4 +1,4 @@
-# Dovecot configuration template for agent_datacenter rack.
+# Dovecot configuration template for UnseenUniversity rack.
 #
 # Copy to /etc/dovecot/dovecot.conf (or include from there) and fill in
 # the <PLACEHOLDER> values for your deployment.

@@ -30,7 +30,7 @@ pytestmark = pytest.mark.skipif(not _db_available, reason="Igor DB not reachable
 
 class TestShellExec:
     def test_echo_stdout(self):
-        from agent_datacenter.devices.librarian.tools.exec_tools import shell_exec
+        from unseen_university.devices.librarian.tools.exec_tools import shell_exec
 
         result = shell_exec("echo hello")
         assert result["stdout"].strip() == "hello"
@@ -38,14 +38,14 @@ class TestShellExec:
         assert result["timed_out"] is False
 
     def test_exit_nonzero(self):
-        from agent_datacenter.devices.librarian.tools.exec_tools import shell_exec
+        from unseen_university.devices.librarian.tools.exec_tools import shell_exec
 
         result = shell_exec("false")
         assert result["exit_code"] != 0
         assert result["timed_out"] is False
 
     def test_timeout(self):
-        from agent_datacenter.devices.librarian.tools.exec_tools import shell_exec
+        from unseen_university.devices.librarian.tools.exec_tools import shell_exec
 
         result = shell_exec("sleep 999", timeout_s=0.1)
         assert result["timed_out"] is True
@@ -55,7 +55,7 @@ class TestShellExec:
         import psycopg2
         import psycopg2.extras
 
-        from agent_datacenter.devices.librarian.tools.exec_tools import shell_exec
+        from unseen_university.devices.librarian.tools.exec_tools import shell_exec
 
         shell_exec("echo action_log_test_marker")
 
@@ -75,7 +75,7 @@ class TestShellExec:
 
     def test_max_timeout_capped(self):
         """timeout_s > 300 is silently capped at 300."""
-        from agent_datacenter.devices.librarian.tools.exec_tools import shell_exec
+        from unseen_university.devices.librarian.tools.exec_tools import shell_exec
 
         # Just verify it doesn't raise and returns a result
         result = shell_exec("echo capped", timeout_s=99999)

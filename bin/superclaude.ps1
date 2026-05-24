@@ -17,7 +17,7 @@
 $ErrorActionPreference = 'Stop'
 
 $repoRoot    = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$adcRoot     = Split-Path -Parent $repoRoot               # agent_datacenter root
+$adcRoot     = Split-Path -Parent $repoRoot               # UnseenUniversity root
 $localRoot   = Split-Path -Parent $adcRoot                # C:\automation\local (or equivalent)
 $runtimeRoot = "$env:USERPROFILE\.TheIgors"
 $instanceId  = if ($env:IGOR_INSTANCE_ID) { $env:IGOR_INSTANCE_ID } else { 'Igor-wild-0001' }

@@ -27,7 +27,7 @@ _PREFIX = f"palace.test_cli_{random.randint(10_000_000, 99_999_999)}"
 
 @pytest.fixture(scope="module", autouse=True)
 def seed_nodes():
-    from agent_datacenter.devices.librarian.tools.palace_tools import palace_write
+    from unseen_university.devices.librarian.tools.palace_tools import palace_write
 
     palace_write(
         f"{_PREFIX}.alpha", "Alpha CLI", "alpha cli content", tags=["test", "alpha"]
@@ -186,7 +186,7 @@ class TestEdit:
 
 class TestDelete:
     def test_delete_with_yes_flag(self, capsys):
-        from agent_datacenter.devices.librarian.tools.palace_tools import palace_write
+        from unseen_university.devices.librarian.tools.palace_tools import palace_write
 
         path = f"{_PREFIX}.to_delete"
         palace_write(path, "To Delete", "delete me")
@@ -195,7 +195,7 @@ class TestDelete:
         assert "Deleted" in out
 
     def test_delete_confirms_interactive(self, capsys):
-        from agent_datacenter.devices.librarian.tools.palace_tools import palace_write
+        from unseen_university.devices.librarian.tools.palace_tools import palace_write
 
         path = f"{_PREFIX}.to_delete_interactive"
         palace_write(path, "To Delete Interactive", "delete me too")
@@ -215,7 +215,7 @@ class TestDelete:
         assert "No node found" in out
 
     def test_delete_json_flag(self, capsys):
-        from agent_datacenter.devices.librarian.tools.palace_tools import palace_write
+        from unseen_university.devices.librarian.tools.palace_tools import palace_write
 
         path = f"{_PREFIX}.to_delete_json"
         palace_write(path, "To Delete JSON", "json delete")

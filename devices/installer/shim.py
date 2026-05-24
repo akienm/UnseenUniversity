@@ -1,6 +1,6 @@
 """
 InstallerShim — orchestrates skill deploys from the master home in
-agent_datacenter/skills/ to a target directory (default ~/.claude/skills/).
+unseen_university/skills/ to a target directory (default ~/.claude/skills/).
 
 Per-skill triage lives in skills/manifest.json (which skills are managed,
 which machines they deploy to). Skills present in the target dir but NOT

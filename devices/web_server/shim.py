@@ -4,7 +4,7 @@ WebServerShim — lifecycle shim for the web server device.
 
 from __future__ import annotations
 
-from agent_datacenter.shim import BaseShim
+from unseen_university.shim import BaseShim
 
 from .device import WebServerDevice, _check_health, _PORT
 

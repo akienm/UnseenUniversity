@@ -15,7 +15,7 @@ os.environ.setdefault("AGENT_DATACENTER_TEST_MODE", "1")
 
 import pytest
 
-from agent_datacenter.announce import (
+from unseen_university.announce import (
     ANNOUNCE_EVENTS_MAILBOX,
     ANNOUNCE_MAILBOX,
     AnnounceBroker,

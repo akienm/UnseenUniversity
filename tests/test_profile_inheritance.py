@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pytest
 
-from agent_datacenter.announce.profile import (
+from unseen_university.announce.profile import (
     ProfileNotFoundError,
     ProfileValidationError,
     load_profile,

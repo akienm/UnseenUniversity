@@ -3,7 +3,7 @@ AkienShim — Akien as an addressable rack entity.
 
 Akien is not a daemon. This shim:
   - Gives Akien's traffic a comms:// address (comms://akien/)
-  - Points at ~/.agent_datacenter/akien/{inbox,outbox,ideas}
+  - Points at ~/.unseen_university/akien/{inbox,outbox,ideas}
   - Returns identity + address info via who_am_i()
 
 No running process is started or stopped. start()/stop() are no-ops.
@@ -16,10 +16,10 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from agent_datacenter.shim import BaseShim
+from unseen_university.shim import BaseShim
 
 _DATA_ROOT = (
-    Path(os.environ.get("ADC_RUNTIME_ROOT", Path.home() / ".agent_datacenter"))
+    Path(os.environ.get("ADC_RUNTIME_ROOT", Path.home() / ".unseen_university"))
     / "akien"
 )
 

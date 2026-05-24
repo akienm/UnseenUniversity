@@ -16,9 +16,9 @@ os.environ.setdefault("AGENT_DATACENTER_TEST_MODE", "1")
 
 import pytest
 
-from agent_datacenter.announce import AnnounceMcpServer
-from agent_datacenter.announce.manifest import INVALIDATE_MAILBOX
-from agent_datacenter.skeleton.skeleton import Skeleton
+from unseen_university.announce import AnnounceMcpServer
+from unseen_university.announce.manifest import INVALIDATE_MAILBOX
+from unseen_university.skeleton.skeleton import Skeleton
 from bus.envelope import Envelope
 from bus.imap_server import IMAPServer
 from skeleton.registry import DeviceRegistry

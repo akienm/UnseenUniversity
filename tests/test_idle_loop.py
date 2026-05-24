@@ -13,7 +13,7 @@ os.environ.setdefault("AGENT_DATACENTER_TEST_MODE", "1")
 
 import pytest
 
-from agent_datacenter.announce import AnnounceIdleLoop
+from unseen_university.announce import AnnounceIdleLoop
 from bus.envelope import Envelope
 from bus.imap_server import IMAPServer
 
