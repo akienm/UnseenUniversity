@@ -406,5 +406,99 @@ class TestAdoptNextTicketStrictFlag(unittest.TestCase):
         self.assertIn("dispatch", result.lower())
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# daemon-dead stale-reset race (T-worker-foreman-save-tasks-race-stale-bul)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestDaemonDeadRaceCondition(unittest.TestCase):
+    """Daemon-dead branch uses targeted reset, not bulk save_tasks.
+
+    Race: ticket in_progress at load time; setstatus/close cancels it
+    concurrently in DB; reset_stale_in_progress returns False → ticket
+    stays terminal, not resurrected as sprint.
+    """
+
+    def _run_foreman_with_stale_in_progress(
+        self, reset_returns: bool
+    ) -> tuple[str, MagicMock]:
+        """Run launch_next_worker with one in_progress ticket (claude worker).
+
+        daemon_pid exists but is dead; reset_stale_in_progress is mocked.
+        Returns (result, mock_reset).
+        """
+        from wild_igor.igor.tools import worker_foreman as wf
+
+        task = {
+            "id": "T-stale-1",
+            "title": "was in progress",
+            "status": "in_progress",
+            "priority": 5,
+            "worker": "claude",
+            "claimed_at": "2026-05-24T00:00:00+00:00",
+            "tags": [],
+        }
+        tasks = [task]
+
+        mock_reset = MagicMock(return_value=reset_returns)
+        mock_cortex = MagicMock()
+        mock_cortex.get_by_type.return_value = []
+        mock_mt = MagicMock()
+        mock_mt.GOAL = "GOAL"
+
+        fake_pids = {"daemon": {"konsole_pid": 99999}}
+        fake_pids_path = MagicMock()
+        fake_pids_path.exists.return_value = True
+        fake_pids_path.read_text.return_value = json.dumps(fake_pids)
+
+        with (
+            patch.object(wf, "_load_queue", return_value=tasks),
+            patch.object(wf, "_WORKER_PIDS_PATH", fake_pids_path),
+            patch.object(wf, "_pid_alive", return_value=False),
+            patch(
+                "wild_igor.igor.tools.worker_foreman._cc_queue",
+                create=True,
+            ),
+            patch(
+                "lab.claudecode.cc_queue.reset_stale_in_progress",
+                mock_reset,
+            ),
+            patch(_CORTEX_PATH, return_value=mock_cortex),
+            patch(_MT_PATH, mock_mt),
+        ):
+            # Patch reset inside the foreman's imported cc_queue reference
+            import lab.claudecode.cc_queue as ccq
+
+            orig = ccq.reset_stale_in_progress
+            ccq.reset_stale_in_progress = mock_reset
+            try:
+                result = wf.launch_next_worker()
+            finally:
+                ccq.reset_stale_in_progress = orig
+
+        return result, mock_reset, task
+
+    def test_concurrent_cancel_leaves_ticket_terminal(self):
+        """reset_stale_in_progress returns False → in-memory status stays in_progress."""
+        result, mock_reset, task = self._run_foreman_with_stale_in_progress(
+            reset_returns=False
+        )
+        mock_reset.assert_called_once_with("T-stale-1")
+        # Ticket must NOT have been flipped to sprint in memory
+        self.assertEqual(task["status"], "in_progress")
+        # Queue should report clear (no sprint-ready tickets)
+        self.assertIn("clear", result)
+
+    def test_genuinely_stale_ticket_is_reset(self):
+        """reset_stale_in_progress returns True → in-memory status becomes sprint."""
+        result, mock_reset, task = self._run_foreman_with_stale_in_progress(
+            reset_returns=True
+        )
+        mock_reset.assert_called_once_with("T-stale-1")
+        # Ticket should have been reset in memory
+        self.assertEqual(task["status"], "sprint")
+        self.assertNotIn("claimed_at", task)
+
+
 if __name__ == "__main__":
     unittest.main()
