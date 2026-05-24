@@ -72,12 +72,12 @@ class _BootstrapPathManager:
 
     @property
     def logs(self) -> Path:
-        # ADC-canonical path: ~/.agent_datacenter/logs/<instance_id>/
+        # ADC-canonical path: ~/.unseen_university/logs/<instance_id>/
         # Overrideable via IGOR_LOG_DIR for non-standard deployments.
         override = os.getenv("IGOR_LOG_DIR")
         if override:
             return Path(override).expanduser().resolve()
-        return Path.home() / ".agent_datacenter" / "logs" / self._instance_id
+        return Path.home() / ".unseen_university" / "logs" / self._instance_id
 
     @property
     def cache(self) -> Path:

@@ -6,7 +6,7 @@ running, the web UI silently degrades. This shim implements the ADC
 specification's auto-restart requirement: any resident can automagically
 restart ADC if it's down by reaching for it.
 
-Implements BaseShim from agent_datacenter.shim:
+Implements BaseShim from unseen_university.shim:
   - start(): ping /health; if down, subprocess-launch ADC and poll for up
   - stop(): send shutdown signal only if Igor owns the process
   - restart(): stop() + start()
