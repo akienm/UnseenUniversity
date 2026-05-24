@@ -238,6 +238,44 @@ def set_status_in_progress(ticket_id: str) -> bool:
         conn.close()
 
 
+def reset_stale_in_progress(ticket_id: str) -> bool:
+    """Reset a stale in_progress ticket to sprint, ONLY if still in_progress in DB.
+
+    Race-safe: the WHERE clause gates on current DB status, so a concurrent
+    setstatus/close that already made the ticket terminal is never overwritten.
+    Returns True if the reset happened, False if the ticket was already terminal.
+    """
+    conn = _db_conn()
+    try:
+        cur = conn.cursor()
+        now = datetime.now(timezone.utc).isoformat()
+        cur.execute(
+            """
+            UPDATE clan.memories
+            SET metadata = jsonb_set(
+                    metadata #- '{claimed_at}',
+                    '{status}', '"sprint"'
+                ),
+                updated_at = %s
+            WHERE id = %s
+              AND metadata->>'status' = 'in_progress'
+              AND parent_id = %s
+            """,
+            (now, ticket_id, TICKETS_ROOT_ID),
+        )
+        updated = cur.rowcount > 0
+        conn.commit()
+        if updated:
+            import logging
+
+            logging.getLogger(__name__).info(
+                f"QUEUE_DRAIN: reset stale claim {ticket_id} → sprint"
+            )
+        return updated
+    finally:
+        conn.close()
+
+
 def _log(entry: dict):
     os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
     entry["ts"] = datetime.now(timezone.utc).isoformat()
