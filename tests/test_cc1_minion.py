@@ -38,7 +38,7 @@ def _mock_client(responses: list) -> MagicMock:
 class TestCC1MinionUnit:
     def test_captures_bash_tool_call(self):
         """run_skill captures a Bash tool_use block in RunResult.tool_calls."""
-        from agent_datacenter.test_minions.cc1 import CC1Minion
+        from unseen_university.test_minions.cc1 import CC1Minion
 
         bash_block = _make_tool_use_block(
             "tu_1", "Bash", {"command": "cc_queue.py claim T-test"}
@@ -65,7 +65,7 @@ class TestCC1MinionUnit:
 
     def test_no_tool_calls_end_turn(self):
         """When haiku responds with end_turn and no tools, RunResult.tool_calls is empty."""
-        from agent_datacenter.test_minions.cc1 import CC1Minion
+        from unseen_university.test_minions.cc1 import CC1Minion
 
         client = _mock_client(
             [
@@ -87,7 +87,7 @@ class TestCC1MinionUnit:
 
     def test_respects_max_rounds(self):
         """Loop stops at max_rounds even when haiku keeps returning tool_use."""
-        from agent_datacenter.test_minions.cc1 import CC1Minion
+        from unseen_university.test_minions.cc1 import CC1Minion
 
         bash_block = _make_tool_use_block("tu_x", "Bash", {"command": "echo loop"})
         tool_response = _make_response([bash_block], stop_reason="tool_use")
@@ -105,7 +105,7 @@ class TestCC1MinionUnit:
 
     def test_multiple_tool_calls_accumulated(self):
         """Tool calls from multiple rounds are all captured in tool_calls list."""
-        from agent_datacenter.test_minions.cc1 import CC1Minion
+        from unseen_university.test_minions.cc1 import CC1Minion
 
         r1 = _make_response(
             [_make_tool_use_block("tu_1", "Bash", {"command": "echo first"})],
@@ -132,7 +132,7 @@ class TestCC1MinionUnit:
 
     def test_skill_path_loaded(self, tmp_path):
         """skill_path argument loads file content as skill."""
-        from agent_datacenter.test_minions.cc1 import CC1Minion
+        from unseen_university.test_minions.cc1 import CC1Minion
 
         skill_file = tmp_path / "skill.md"
         skill_file.write_text("## Step 1\nAlways run: echo from-file")
@@ -159,8 +159,8 @@ class TestCC1MinionUnit:
 class TestCC1MinionLive:
     def test_sprint_claim_step_emits_cc_queue_call(self):
         """Live: haiku following the sprint_claim fixture calls cc_queue.py claim."""
-        from agent_datacenter.test_minions.cc1 import CC1Minion
-        from agent_datacenter.test_minions.fixtures.sprint_claim import (
+        from unseen_university.test_minions.cc1 import CC1Minion
+        from unseen_university.test_minions.fixtures.sprint_claim import (
             EXPECTED_BASH_PATTERNS,
             SKILL,
             TASK,

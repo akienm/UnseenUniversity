@@ -20,7 +20,7 @@ sys.path.insert(
         Path(__file__).resolve().parent.parent.parent
         / "dev"
         / "src"
-        / "agent_datacenter"
+        / "unseen_university"
     ),
 )
 
@@ -29,12 +29,12 @@ pytestmark = pytest.mark.skipif(
     reason="IGOR_HOME_DB_URL not set",
 )
 
-from agent_datacenter.devices.librarian.tools.db_tools import (  # noqa: E402
+from unseen_university.devices.librarian.tools.db_tools import (  # noqa: E402
     db_dispatch,
     db_query,
     dispatch,
 )
-from agent_datacenter.devices.librarian.tools import SCHEMAS  # noqa: E402
+from unseen_university.devices.librarian.tools import SCHEMAS  # noqa: E402
 
 
 class TestDbQuery:

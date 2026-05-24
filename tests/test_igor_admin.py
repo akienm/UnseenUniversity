@@ -30,7 +30,7 @@ if str(REPO) not in sys.path:
 CC_DIR = REPO / "lab" / "claudecode"
 IGOR_ADMIN = CC_DIR / "igor_admin.py"
 
-# cc_queue.py is now canonical in agent_datacenter; resolve via __path__ extension
+# cc_queue.py is now canonical in unseen_university; resolve via __path__ extension
 import importlib.util as _ilu
 
 _spec = _ilu.find_spec("lab.claudecode.cc_queue")
@@ -112,11 +112,11 @@ def test_decision_manager_path_bug_fixed():
     - The correct path string is present in the source
     - The function exists and is callable without ImportError
     """
-    # Check the corrected path string is in the source (now points to agent_datacenter)
+    # Check the corrected path string is in the source (now points to unseen_university)
     source = (CC_DIR / "decision_manager.py").read_text()
     assert (
-        "agent_datacenter" in source and '"lab"' in source and '"claudecode"' in source
-    ), "decision_manager.py path does not reference agent_datacenter/lab/claudecode"
+        "unseen_university" in source and '"lab"' in source and '"claudecode"' in source
+    ), "decision_manager.py path does not reference unseen_university/lab/claudecode"
     assert (
         'TheIgors" / "claudecode"' not in source
     ), "Old broken path still present in decision_manager.py"

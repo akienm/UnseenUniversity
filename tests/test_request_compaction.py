@@ -15,11 +15,11 @@ sys.path.insert(
         Path(__file__).resolve().parent.parent.parent
         / "dev"
         / "src"
-        / "agent_datacenter"
+        / "unseen_university"
     ),
 )
 
-from agent_datacenter.devices.librarian.tools.channel_tools import (
+from unseen_university.devices.librarian.tools.channel_tools import (
     _request_compaction,
 )  # noqa: E402
 

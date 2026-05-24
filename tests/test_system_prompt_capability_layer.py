@@ -50,7 +50,7 @@ def _fake_cortex():
 
 def _client_with_manifest(profile_etag="aaa", tools=None, state_refs=None):
     """Build a stub DatacenterClient holding a synthetic manifest."""
-    from agent_datacenter.announce import DatacenterClient, IdentityEnvelope
+    from unseen_university.announce import DatacenterClient, IdentityEnvelope
 
     identity = IdentityEnvelope(
         agent_id="igor",
