@@ -143,16 +143,16 @@ def launch_next_worker() -> str:
             if daemon_alive:
                 ids = ", ".join(t["id"] for t in in_progress)
                 return f"worker already running: {ids} — waiting for completion signal"
-            # Daemon is dead — reset stale in_progress claims so queue unblocks
-            for t in in_progress:
-                t["status"] = "sprint"
-                t.pop("claimed_at", None)
-            # T-cc-queue-write-race: route through canonical cc_queue.save_tasks
-            # (Postgres + queue.json echo). Previous direct write_text bypassed
-            # Postgres = drift source.
+            # Daemon is dead — reset stale in_progress claims so queue unblocks.
+            # Targeted single-row UPDATE guards against concurrent terminal-status
+            # writes: WHERE status='in_progress' prevents overwriting a ticket
+            # that was cancelled/closed between load and save (T-worker-foreman-race).
             from lab.claudecode import cc_queue as _cc_queue
 
-            _cc_queue.save_tasks(tasks)
+            for t in in_progress:
+                if _cc_queue.reset_stale_in_progress(t["id"]):
+                    t["status"] = "sprint"
+                    t.pop("claimed_at", None)
 
         # Find next sprint-ready ticket (skip blocked/gated)
         pending = [t for t in tasks if t["status"] == "sprint"]
