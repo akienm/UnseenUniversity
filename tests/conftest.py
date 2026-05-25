@@ -120,7 +120,7 @@ def _redirect_inbox_to_test_dir(tmp_path_factory):
     """
     test_inbox = tmp_path_factory.mktemp("igor_test_inbox")
 
-    from wild_igor.igor.paths import PathManager
+    from devices.igor.paths import PathManager
 
     orig_inbox = PathManager.inbox.fget
 
@@ -157,8 +157,8 @@ def _test_data_lifecycle():
 
     # Best-effort cleanup — never block the test session on failure
     try:
-        from wild_igor.igor.memory.cortex import Cortex
-        from wild_igor.igor.memory.test_data_lifecycle import cleanup_test_data
+        from devices.igor.memory.cortex import Cortex
+        from devices.igor.memory.test_data_lifecycle import cleanup_test_data
 
         cortex = Cortex()
         removed = cleanup_test_data(cortex)

@@ -1,3 +1,8 @@
+# TODO(T-igor-import-rewrite): delete this hook once wild_igor imports are rewritten to devices.igor
+def pytest_ignore_collect(collection_path, path, config):
+    return True
+
+
 """conftest.py — pytest session fixtures for TheIgors tests.
 
 Prevents tests from creating directories in the live ~/.TheIgors/ instance.
