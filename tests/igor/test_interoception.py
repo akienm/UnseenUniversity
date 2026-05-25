@@ -35,8 +35,8 @@ def _make_milieu(tmp_path):
     os.environ["IGOR_INSTANCE_DIR"] = str(tmp_path)
     os.environ["IGOR_MILIEU_DIR"] = str(tmp_path)
 
-    from wild_igor.igor.cognition import milieu as milieu_mod
-    from wild_igor.igor.cognition.milieu import Milieu
+    from devices.igor.cognition import milieu as milieu_mod
+    from devices.igor.cognition.milieu import Milieu
 
     m = Milieu.__new__(Milieu)
     m._instance_id = "test"
@@ -64,8 +64,8 @@ class TestNudgeVAD(unittest.TestCase):
     def test_nudge_adds_deltas(self):
         """nudge_vad adds deltas directly without EMA remapping."""
         with (
-            patch("wild_igor.igor.cognition.milieu.Milieu._save"),
-            patch("wild_igor.igor.cognition.milieu._contribute_to_global"),
+            patch("devices.igor.cognition.milieu.Milieu._save"),
+            patch("devices.igor.cognition.milieu._contribute_to_global"),
         ):
             m = self._make()
             m.nudge_vad(0.05, 0.10, -0.03)
@@ -76,8 +76,8 @@ class TestNudgeVAD(unittest.TestCase):
     def test_nudge_clamps_to_range(self):
         """nudge_vad keeps values within [-1, 1]."""
         with (
-            patch("wild_igor.igor.cognition.milieu.Milieu._save"),
-            patch("wild_igor.igor.cognition.milieu._contribute_to_global"),
+            patch("devices.igor.cognition.milieu.Milieu._save"),
+            patch("devices.igor.cognition.milieu._contribute_to_global"),
         ):
             m = self._make()
             m._state.valence = 0.95
@@ -87,8 +87,8 @@ class TestNudgeVAD(unittest.TestCase):
     def test_nudge_accumulates_on_repeated_calls(self):
         """Repeated small nudges accumulate (additive, not EMA)."""
         with (
-            patch("wild_igor.igor.cognition.milieu.Milieu._save"),
-            patch("wild_igor.igor.cognition.milieu._contribute_to_global"),
+            patch("devices.igor.cognition.milieu.Milieu._save"),
+            patch("devices.igor.cognition.milieu._contribute_to_global"),
         ):
             m = self._make()
             for _ in range(5):
@@ -97,8 +97,8 @@ class TestNudgeVAD(unittest.TestCase):
 
     def test_nudge_updates_session_samples(self):
         with (
-            patch("wild_igor.igor.cognition.milieu.Milieu._save"),
-            patch("wild_igor.igor.cognition.milieu._contribute_to_global"),
+            patch("devices.igor.cognition.milieu.Milieu._save"),
+            patch("devices.igor.cognition.milieu._contribute_to_global"),
         ):
             m = self._make()
             m.nudge_vad(0.1, 0.0, 0.0)
@@ -110,7 +110,7 @@ class TestNudgeVAD(unittest.TestCase):
 
 def _make_source():
     """Make an InteroceptionSource without instantiating module singletons."""
-    from wild_igor.igor.cognition.push_sources import InteroceptionSource
+    from devices.igor.cognition.push_sources import InteroceptionSource
 
     src = InteroceptionSource.__new__(InteroceptionSource)
     src._last_run = None
@@ -301,10 +301,10 @@ class TestPushCalmNudge(unittest.TestCase):
         mock_psutil.virtual_memory.return_value.percent = 25.0
         mock_psutil.disk_usage.return_value.percent = 40.0
 
-        import wild_igor.igor.cognition.milieu as real_milieu_mod
+        import devices.igor.cognition.milieu as real_milieu_mod
 
         with patch.dict(sys.modules, {"psutil": mock_psutil}):
-            with patch("wild_igor.igor.cognition.push_sources.MACHINES_JSON", ""):
+            with patch("devices.igor.cognition.push_sources.MACHINES_JSON", ""):
                 with patch.object(
                     real_milieu_mod, "get", return_value=mock_milieu_instance
                 ):

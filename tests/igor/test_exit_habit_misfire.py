@@ -12,14 +12,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
 
 def _make_habit(
     trigger, author_filter=None, habit_type="action", code_ref="tools.runner:exit_self"
 ):
     """Build a minimal mock habit Memory."""
-    from igor.memory.models import Memory, MemoryType
+    from devices.igor.memory.models import Memory, MemoryType
 
     meta = {
         "trigger": trigger,
@@ -55,17 +54,17 @@ class TestAuthorFilterListSupport(unittest.TestCase):
     """author_filter stored as list must work correctly in select_habit."""
 
     def setUp(self):
-        from igor.cognition import basal_ganglia
+        from devices.igor.cognition import basal_ganglia
 
         basal_ganglia._refractory_map.clear()
 
     def tearDown(self):
-        from igor.cognition import basal_ganglia
+        from devices.igor.cognition import basal_ganglia
 
         basal_ganglia._refractory_map.clear()
 
     def _run_select(self, habits, text, author):
-        from igor.cognition.basal_ganglia import select_habit
+        from devices.igor.cognition.basal_ganglia import select_habit
 
         parsed = _make_parsed(text=text)
         winner, _conf, _near = select_habit(parsed, habits, author=author)
@@ -126,7 +125,7 @@ class TestExitTriggerTightening(unittest.TestCase):
     )
 
     def _score(self, text):
-        from igor.cognition.basal_ganglia import _score_habit
+        from devices.igor.cognition.basal_ganglia import _score_habit
 
         habit = _make_habit(trigger=self.NEW_TRIGGER)
         return _score_habit(habit, text.lower(), set(text.lower().split()))

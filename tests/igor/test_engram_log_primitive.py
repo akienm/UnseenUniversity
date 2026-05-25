@@ -21,11 +21,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 class TestEngramLogPrimitive:
     def test_engram_log_appends_to_turn_ctx(self):
         """engram_log appends a structured entry to TurnContext engram_logs list."""
-        from wild_igor.igor.tools.engram_log import (
+        from devices.igor.tools.engram_log import (
             engram_execution_context,
             engram_log,
         )
-        from wild_igor.igor.cognition import forensic_logger
+        from devices.igor.cognition import forensic_logger
 
         forensic_logger.init_turn_ctx("t-001", "thread-x", "test input")
         try:
@@ -53,11 +53,11 @@ class TestEngramLogPrimitive:
 
     def test_engram_log_without_turn_ctx_does_not_raise(self):
         """engram_log is safe when no TurnContext is active."""
-        from wild_igor.igor.tools.engram_log import (
+        from devices.igor.tools.engram_log import (
             engram_execution_context,
             engram_log,
         )
-        from wild_igor.igor.cognition import forensic_logger
+        from devices.igor.cognition import forensic_logger
 
         forensic_logger._current_turn.ctx = None
         with engram_execution_context(habit_id="hab-002"):
@@ -65,7 +65,7 @@ class TestEngramLogPrimitive:
 
     def test_context_manager_clears_on_exit(self):
         """Thread-local habit_id is None after the context manager exits."""
-        from wild_igor.igor.tools.engram_log import (
+        from devices.igor.tools.engram_log import (
             _ctx,
             engram_execution_context,
         )
@@ -77,7 +77,7 @@ class TestEngramLogPrimitive:
 
     def test_scheduler_source_call_tool_wraps_context(self):
         """SchedulerSource._call_tool injects habit_id before calling the tool fn."""
-        from wild_igor.igor.tools.engram_log import _ctx
+        from devices.igor.tools.engram_log import _ctx
 
         captured_habit_ids = []
 
@@ -92,17 +92,17 @@ class TestEngramLogPrimitive:
         fake_registry.get.return_value = fake_tool
 
         # Import after patching to avoid circular issues
-        from wild_igor.igor.cognition.push_sources import SchedulerSource
+        from devices.igor.cognition.push_sources import SchedulerSource
 
         src = SchedulerSource.__new__(SchedulerSource)
 
         with (
             patch(
-                "wild_igor.igor.cognition.push_sources.SchedulerSource._call_tool",
+                "devices.igor.cognition.push_sources.SchedulerSource._call_tool",
                 SchedulerSource._call_tool.__get__(src),
             ),
             patch(
-                "wild_igor.igor.cognition.push_sources.registry",
+                "devices.igor.cognition.push_sources.registry",
                 fake_registry,
                 create=True,
             ),

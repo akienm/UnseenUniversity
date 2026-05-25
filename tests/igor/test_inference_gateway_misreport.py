@@ -19,7 +19,7 @@ def _make_gateway():
     test_inference_gateway_mode.py's helper, intentionally duplicated to keep
     these test files independent of each other.
     """
-    from wild_igor.igor.cognition.inference_gateway import InferenceGateway
+    from devices.igor.cognition.inference_gateway import InferenceGateway
 
     gw = InferenceGateway.__new__(InferenceGateway)
     gw._t2 = MagicMock(name="t2_ollama")
@@ -182,7 +182,7 @@ def test_diagnostic_cloud_attempted_is_bool_not_object_repr():
         captured[kind] = detail
 
     with patch(
-        "wild_igor.igor.cognition.forensic_logger.log_anomaly",
+        "devices.igor.cognition.forensic_logger.log_anomaly",
         side_effect=_mock_log_anomaly,
     ):
         gw.reason(
@@ -224,7 +224,7 @@ def test_diagnostic_per_attempt_errors_distinct():
         captured[kind] = detail
 
     with patch(
-        "wild_igor.igor.cognition.forensic_logger.log_anomaly",
+        "devices.igor.cognition.forensic_logger.log_anomaly",
         side_effect=_mock_log_anomaly,
     ):
         gw.reason(

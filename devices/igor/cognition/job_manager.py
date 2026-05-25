@@ -132,7 +132,7 @@ class JobManager(IgorBase):
                     self._jobs[j.job_id] = j
             except Exception as _bare_e:
                 get_logger(__name__).warning(
-                    "bare except in wild_igor/igor/cognition/job_manager.py: %s",
+                    "bare except in devices/igor/cognition/job_manager.py: %s",
                     _bare_e,
                 )
 
@@ -182,7 +182,7 @@ class JobManager(IgorBase):
                         jobs.append(Job(**data))
                     except Exception as _bare_e:
                         get_logger(__name__).warning(
-                            "bare except in wild_igor/igor/cognition/job_manager.py: %s",
+                            "bare except in devices/igor/cognition/job_manager.py: %s",
                             _bare_e,
                         )
             return jobs

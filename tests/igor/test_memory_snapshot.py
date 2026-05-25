@@ -6,12 +6,12 @@ import os
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
-from wild_igor.igor.tools.memory_snapshot import run_memory_snapshot
+from devices.igor.tools.memory_snapshot import run_memory_snapshot
 
 
 class TestMemorySnapshot:
     def test_skips_before_2200(self):
-        with patch("wild_igor.igor.tools.memory_snapshot.datetime") as mock_dt:
+        with patch("devices.igor.tools.memory_snapshot.datetime") as mock_dt:
             mock_dt.now.return_value = MagicMock(hour=19)
             mock_dt.now().__class__ = datetime
             result = run_memory_snapshot()
@@ -24,8 +24,8 @@ class TestMemorySnapshot:
         stamp.write_text(today)
 
         with (
-            patch("wild_igor.igor.tools.memory_snapshot.datetime") as mock_dt,
-            patch("wild_igor.igor.tools.memory_snapshot._STAMP_FILE", stamp),
+            patch("devices.igor.tools.memory_snapshot.datetime") as mock_dt,
+            patch("devices.igor.tools.memory_snapshot._STAMP_FILE", stamp),
         ):
             mock_dt.now.return_value = MagicMock(hour=23)
             mock_dt.now(timezone.utc if False else None)
@@ -57,8 +57,8 @@ class TestMemorySnapshot:
         mock_conn.__exit__ = MagicMock(return_value=False)
 
         with (
-            patch("wild_igor.igor.tools.memory_snapshot.datetime") as mock_dt,
-            patch("wild_igor.igor.tools.memory_snapshot._STAMP_FILE", stamp),
+            patch("devices.igor.tools.memory_snapshot.datetime") as mock_dt,
+            patch("devices.igor.tools.memory_snapshot._STAMP_FILE", stamp),
             patch("psycopg2.connect", return_value=mock_conn),
         ):
             mock_dt.now.side_effect = lambda tz=None: MagicMock(

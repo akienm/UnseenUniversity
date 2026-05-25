@@ -27,7 +27,7 @@ import unittest
 
 _BOOT_SNIPPET = (
     "import sys\n"
-    "from wild_igor.igor.main import Igor\n"
+    "from devices.igor.main import Igor\n"
     "igor = Igor(instance_id='boot-smoke-test')\n"
     "print('BOOT_OK', flush=True)\n"
     "sys.exit(0)\n"

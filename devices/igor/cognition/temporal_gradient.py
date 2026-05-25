@@ -15,7 +15,7 @@ Pending migrations (same pattern, different parameters):
   - narrative_engine.py twm_decay_slot()     — ×0.70 per NE cycle
 
 Usage:
-    from wild_igor.igor.cognition.temporal_gradient import TemporalGradient
+    from devices.igor.cognition.temporal_gradient import TemporalGradient
 
     g = TemporalGradient(half_life_hours=24.0)
     factor = g.factor(elapsed_hours=12.0)    # → 0.5  (half gone after 12h)

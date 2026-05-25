@@ -18,7 +18,7 @@ class TestStorePlan:
 
     def test_store_plan_executes_upsert(self):
         """store_plan must call execute with INSERT ON CONFLICT SQL and correct params."""
-        from wild_igor.igor.tools.ops import store_plan
+        from devices.igor.tools.ops import store_plan
 
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -50,7 +50,7 @@ class TestStorePlan:
 
     def test_store_plan_returns_confirmation(self):
         """store_plan must return a confirmation string containing the ticket_id."""
-        from wild_igor.igor.tools.ops import store_plan
+        from devices.igor.tools.ops import store_plan
 
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -68,7 +68,7 @@ class TestStorePlan:
 
     def test_store_plan_db_error_returns_error_string(self):
         """store_plan must catch DB errors and return an error string, not raise."""
-        from wild_igor.igor.tools.ops import store_plan
+        from devices.igor.tools.ops import store_plan
 
         with patch("psycopg2.connect", side_effect=Exception("connection refused")):
             result = store_plan("T-any", "any plan")
@@ -85,19 +85,19 @@ class TestReadActiveGoalPlan:
 
     def test_no_active_goals_returns_no_active_goal_memory(self):
         """When no active GOAL memories exist, return 'no active GOAL memory'."""
-        from wild_igor.igor.tools.ops import read_active_goal_plan
+        from devices.igor.tools.ops import read_active_goal_plan
 
         mock_cortex = MagicMock()
         mock_cortex.get_by_type.return_value = []  # no goals at all
 
-        with patch("wild_igor.igor.memory.cortex.Cortex", return_value=mock_cortex):
+        with patch("devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
             result = read_active_goal_plan()
 
         assert "no active GOAL memory" in result
 
     def test_active_goal_no_plan_returns_no_plan_stored(self):
         """When active goal exists but traversal_contexts has no row, return 'no plan stored'."""
-        from wild_igor.igor.tools.ops import read_active_goal_plan
+        from devices.igor.tools.ops import read_active_goal_plan
 
         mock_goal = MagicMock()
         mock_goal.metadata = {
@@ -119,7 +119,7 @@ class TestReadActiveGoalPlan:
         mock_cursor.__exit__ = MagicMock(return_value=False)
         mock_conn.cursor.return_value = mock_cursor
 
-        with patch("wild_igor.igor.memory.cortex.Cortex", return_value=mock_cortex):
+        with patch("devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
             with patch("psycopg2.connect", return_value=mock_conn):
                 result = read_active_goal_plan()
 
@@ -128,7 +128,7 @@ class TestReadActiveGoalPlan:
 
     def test_active_goal_with_plan_returns_formatted_string(self):
         """When active goal has a stored plan, return formatted '[active_goal_plan] T-xxx: ...'."""
-        from wild_igor.igor.tools.ops import read_active_goal_plan
+        from devices.igor.tools.ops import read_active_goal_plan
 
         mock_goal = MagicMock()
         mock_goal.metadata = {
@@ -151,7 +151,7 @@ class TestReadActiveGoalPlan:
         mock_cursor.__exit__ = MagicMock(return_value=False)
         mock_conn.cursor.return_value = mock_cursor
 
-        with patch("wild_igor.igor.memory.cortex.Cortex", return_value=mock_cortex):
+        with patch("devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
             with patch("psycopg2.connect", return_value=mock_conn):
                 result = read_active_goal_plan()
 
@@ -163,7 +163,7 @@ class TestReadActiveGoalPlan:
 
     def test_active_goal_no_ticket_id_in_source(self):
         """When active goal source_message has no T-xxx pattern, return informative message."""
-        from wild_igor.igor.tools.ops import read_active_goal_plan
+        from devices.igor.tools.ops import read_active_goal_plan
 
         mock_goal = MagicMock()
         mock_goal.metadata = {
@@ -176,7 +176,7 @@ class TestReadActiveGoalPlan:
         mock_cortex = MagicMock()
         mock_cortex.get_by_type.return_value = [mock_goal]
 
-        with patch("wild_igor.igor.memory.cortex.Cortex", return_value=mock_cortex):
+        with patch("devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
             result = read_active_goal_plan()
 
         assert "no ticket ID found" in result

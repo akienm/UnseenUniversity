@@ -13,7 +13,7 @@ Key constraint: chunk size is chapter-aware (do not split across chapter boundar
 Rate: configurable, default 30s between chunks.
 
 Usage:
-  from wild_igor.igor.cognition.reading_indexer import index_content
+  from devices.igor.cognition.reading_indexer import index_content
   content_id = "<uuid>"
   index_content(content_id)  # → deposits FACT_CLOUD nodes + queues T-graph-integrator
 """

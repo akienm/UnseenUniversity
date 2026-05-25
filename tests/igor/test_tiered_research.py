@@ -10,7 +10,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.tools.tiered_research import (  # noqa: E402
+from devices.igor.tools.tiered_research import (  # noqa: E402
     _TIERS,
     _tier_memory,
     _tier_web,
@@ -27,7 +27,7 @@ class TestTieredResearch:
         assert _TIERS == ["memory", "web", "local_llm", "cloud_llm"]
 
     def test_stops_at_first_resolving_tier(self):
-        with patch("wild_igor.igor.tools.tiered_research._try_tier") as mock_try:
+        with patch("devices.igor.tools.tiered_research._try_tier") as mock_try:
             mock_try.side_effect = lambda tier, q: (
                 "Found in memory" if tier == "memory" else None
             )
@@ -45,7 +45,7 @@ class TestTieredResearch:
             return None
 
         with patch(
-            "wild_igor.igor.tools.tiered_research._try_tier", side_effect=fake_try
+            "devices.igor.tools.tiered_research._try_tier", side_effect=fake_try
         ):
             result = tiered_research("test")
             assert "[web]" in result
@@ -59,14 +59,14 @@ class TestTieredResearch:
             return None
 
         with patch(
-            "wild_igor.igor.tools.tiered_research._try_tier", side_effect=fake_try
+            "devices.igor.tools.tiered_research._try_tier", side_effect=fake_try
         ):
             tiered_research("test", max_tier="web")
             assert "local_llm" not in call_order
             assert "cloud_llm" not in call_order
 
     def test_all_tiers_fail(self):
-        with patch("wild_igor.igor.tools.tiered_research._try_tier", return_value=None):
+        with patch("devices.igor.tools.tiered_research._try_tier", return_value=None):
             result = tiered_research("impossible question")
             assert "no tier resolved" in result
 
@@ -79,7 +79,7 @@ class TestTieredResearch:
             return None
 
         with patch(
-            "wild_igor.igor.tools.tiered_research._try_tier", side_effect=fake_try
+            "devices.igor.tools.tiered_research._try_tier", side_effect=fake_try
         ):
             result = tiered_research("test")
             assert "[web]" in result
@@ -87,13 +87,13 @@ class TestTieredResearch:
 
 class TestTierMemory:
     def test_returns_none_on_empty_results(self):
-        with patch("wild_igor.igor.memory.cortex.Cortex") as MockCortex:
+        with patch("devices.igor.memory.cortex.Cortex") as MockCortex:
             cortex = MockCortex.return_value
             cortex.search.return_value = []
             assert _tier_memory("test") is None
 
     def test_returns_narratives_on_match(self):
-        with patch("wild_igor.igor.memory.cortex.Cortex") as MockCortex:
+        with patch("devices.igor.memory.cortex.Cortex") as MockCortex:
             cortex = MockCortex.return_value
             mem = MagicMock()
             mem.narrative = "This is a detailed answer about the topic at hand"
@@ -106,14 +106,14 @@ class TestTierMemory:
 class TestTierWeb:
     def test_returns_none_on_no_results(self):
         with patch(
-            "wild_igor.igor.tools.web_search.web_search",
+            "devices.igor.tools.web_search.web_search",
             return_value="No results found for: test",
         ):
             assert _tier_web("test") is None
 
     def test_returns_results(self):
         with patch(
-            "wild_igor.igor.tools.web_search.web_search",
+            "devices.igor.tools.web_search.web_search",
             return_value="**Title**\nhttps://example.com\nSnippet text",
         ):
             result = _tier_web("test")

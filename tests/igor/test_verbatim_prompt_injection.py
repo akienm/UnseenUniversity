@@ -40,8 +40,8 @@ def _fresh_igor():
     only the attributes _build_verbatim_block actually reads. If the helper
     grows new attribute dependencies later, add them here.
     """
-    from wild_igor.igor.main import Igor
-    from wild_igor.igor.memory.cortex import Cortex
+    from devices.igor.main import Igor
+    from devices.igor.memory.cortex import Cortex
 
     inst = Igor.__new__(Igor)
     inst.cortex = Cortex(None)
@@ -50,7 +50,7 @@ def _fresh_igor():
 
 
 def _push_verbatim_source(thread_id: str, content: str):
-    from wild_igor.igor.memory.cortex import Cortex
+    from devices.igor.memory.cortex import Cortex
 
     Cortex(None).twm_push(
         source="user_input_verbatim",
@@ -65,7 +65,7 @@ def _push_verbatim_source(thread_id: str, content: str):
 
 
 def _push_tool_result_verbatim(thread_id: str, content: str, tool: str = "read_file"):
-    from wild_igor.igor.memory.cortex import Cortex
+    from devices.igor.memory.cortex import Cortex
 
     Cortex(None).twm_push(
         source="tool_result_verbatim",
@@ -132,7 +132,7 @@ def test_block_omits_tool_section_when_no_entries_match():
 
 
 def test_block_truncates_tool_result_above_cap():
-    from wild_igor.igor.main import Igor
+    from devices.igor.main import Igor
 
     igor = _fresh_igor()
     # Use repeated sentence (not raw chars) to dodge credential scrubber

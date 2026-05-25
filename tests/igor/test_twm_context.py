@@ -122,7 +122,7 @@ COMPLEX_QUESTIONS = [
 def _call_ollama(prompt: str, context: str) -> dict:
     try:
         import ollama
-        from wild_igor.igor.cognition.inference_ollama import OLLAMA_LOCAL_MODEL
+        from devices.igor.cognition.inference_ollama import OLLAMA_LOCAL_MODEL
 
         full = f"{context}\n\nUser question: {prompt}"
         t0 = time.perf_counter()

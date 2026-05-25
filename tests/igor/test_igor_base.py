@@ -8,7 +8,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from wild_igor.igor.igor_base import IgorBase
+from devices.igor.igor_base import IgorBase
 
 
 class TestIgorBaseLLMIO:
@@ -17,7 +17,7 @@ class TestIgorBaseLLMIO:
     def test_log_llm_io_writes_json_line(self):
         """Verify log_llm_io writes a parseable JSON line with all required fields."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch("wild_igor.igor.igor_base.paths") as mock_paths_fn:
+            with patch("devices.igor.igor_base.paths") as mock_paths_fn:
                 mock_runtime = Path(tmpdir)
                 mock_paths_fn.return_value.runtime = mock_runtime
 
@@ -57,7 +57,7 @@ class TestIgorBaseLLMIO:
     def test_log_llm_io_caps_prompt_at_16kb(self):
         """Verify log_llm_io caps prompt at 16KB."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch("wild_igor.igor.igor_base.paths") as mock_paths_fn:
+            with patch("devices.igor.igor_base.paths") as mock_paths_fn:
                 mock_runtime = Path(tmpdir)
                 mock_paths_fn.return_value.runtime = mock_runtime
 
@@ -86,7 +86,7 @@ class TestIgorBaseLLMIO:
     def test_log_llm_io_caps_response_at_8kb(self):
         """Verify log_llm_io caps response at 8KB."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch("wild_igor.igor.igor_base.paths") as mock_paths_fn:
+            with patch("devices.igor.igor_base.paths") as mock_paths_fn:
                 mock_runtime = Path(tmpdir)
                 mock_paths_fn.return_value.runtime = mock_runtime
 
@@ -116,7 +116,7 @@ class TestIgorBaseLLMIO:
         """Verify log_llm_io catches exceptions and never raises."""
         logger = IgorBase()
 
-        with patch("wild_igor.igor.igor_base.paths") as mock_paths_fn:
+        with patch("devices.igor.igor_base.paths") as mock_paths_fn:
             mock_paths_fn.side_effect = RuntimeError("Forced error")
             # This should not raise even though paths() fails
             logger.log_llm_io(
@@ -135,7 +135,7 @@ class TestIgorBaseStateSnapshot:
     def test_log_state_snapshot_writes_json_line(self):
         """Verify log_state_snapshot writes a parseable JSON line with label and state."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch("wild_igor.igor.igor_base.paths") as mock_paths_fn:
+            with patch("devices.igor.igor_base.paths") as mock_paths_fn:
                 mock_runtime = Path(tmpdir)
                 mock_paths_fn.return_value.runtime = mock_runtime
 
@@ -165,7 +165,7 @@ class TestIgorBaseStateSnapshot:
     def test_log_state_snapshot_with_complex_state(self):
         """Verify log_state_snapshot handles complex nested state."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch("wild_igor.igor.igor_base.paths") as mock_paths_fn:
+            with patch("devices.igor.igor_base.paths") as mock_paths_fn:
                 mock_runtime = Path(tmpdir)
                 mock_paths_fn.return_value.runtime = mock_runtime
 
@@ -192,7 +192,7 @@ class TestIgorBaseStateSnapshot:
         """Verify log_state_snapshot catches exceptions and never raises."""
         logger = IgorBase()
 
-        with patch("wild_igor.igor.igor_base.paths") as mock_paths_fn:
+        with patch("devices.igor.igor_base.paths") as mock_paths_fn:
             mock_paths_fn.side_effect = RuntimeError("Forced error")
             # This should not raise even though paths() fails
             logger.log_state_snapshot(label="test", state={"key": "value"})
@@ -201,7 +201,7 @@ class TestIgorBaseStateSnapshot:
     def test_multiple_log_entries_in_same_file(self):
         """Verify multiple log_state_snapshot calls append to the same daily file."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch("wild_igor.igor.igor_base.paths") as mock_paths_fn:
+            with patch("devices.igor.igor_base.paths") as mock_paths_fn:
                 mock_runtime = Path(tmpdir)
                 mock_paths_fn.return_value.runtime = mock_runtime
 

@@ -9,9 +9,8 @@ import sys
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
-from igor.dashboard.terminal import (
+from devices.igor.dashboard.terminal import (
     _cloud_pct,
     _latency_p50,
     _latency_p95,

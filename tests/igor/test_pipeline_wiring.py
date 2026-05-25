@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 def test_cascade_situation_importable_from_turn_pipeline():
     """CascadeSituation must be importable from turn_pipeline (used by main.py)."""
-    from wild_igor.igor.cognition.turn_pipeline import CascadeSituation
+    from devices.igor.cognition.turn_pipeline import CascadeSituation
 
     s = CascadeSituation(query="test", context={"intent": "greeting"}, stakes=0.3)
     assert s.query == "test"
@@ -29,7 +29,7 @@ def test_cascade_situation_importable_from_turn_pipeline():
 
 
 def test_llm_peer_advisor_importable():
-    from wild_igor.igor.cognition.llm_peer_advisor import LLMPeerAdvisor
+    from devices.igor.cognition.llm_peer_advisor import LLMPeerAdvisor
 
     cortex = MagicMock()
     peer = LLMPeerAdvisor(cortex=cortex, level="interactive")
@@ -37,7 +37,7 @@ def test_llm_peer_advisor_importable():
 
 
 def test_turn_pipeline_constructs_with_cortex():
-    from wild_igor.igor.cognition.turn_pipeline import TurnPipeline
+    from devices.igor.cognition.turn_pipeline import TurnPipeline
 
     cortex = MagicMock()
     cortex.search.return_value = []
@@ -63,7 +63,7 @@ def test_pipeline_disabled_for_impulse():
 
 def test_cascade_situation_with_milieu():
     """CascadeSituation.context accepts milieu dict without error."""
-    from wild_igor.igor.cognition.turn_pipeline import CascadeSituation
+    from devices.igor.cognition.turn_pipeline import CascadeSituation
 
     s = CascadeSituation(
         query="what is igor?",
@@ -80,12 +80,12 @@ def test_cascade_situation_with_milieu():
 
 def test_pipeline_cascade_match_skips_gateway():
     """When cascade matches, pipeline produces reply_text — no LLM needed."""
-    from wild_igor.igor.cognition.experiment_cascade import (
+    from devices.igor.cognition.experiment_cascade import (
         CascadeResult,
         CascadeSituation,
         CascadeStatus,
     )
-    from wild_igor.igor.cognition.turn_pipeline import TurnPipeline
+    from devices.igor.cognition.turn_pipeline import TurnPipeline
 
     cortex = MagicMock()
     cortex.search.return_value = [
@@ -94,7 +94,7 @@ def test_pipeline_cascade_match_skips_gateway():
     cortex.twm_push.return_value = 1
 
     # Build a cascade that always matches at level 0
-    from wild_igor.igor.cognition.experiment_cascade import (
+    from devices.igor.cognition.experiment_cascade import (
         BaseCascadeLevel,
         ExperimentCascade,
     )
@@ -121,15 +121,15 @@ def test_pipeline_cascade_match_skips_gateway():
 
 def test_pipeline_escalate_uses_peer():
     """When cascade escalates, pipeline calls the peer advisor."""
-    from wild_igor.igor.cognition.experiment_cascade import (
+    from devices.igor.cognition.experiment_cascade import (
         CascadeResult,
         CascadeSituation,
         CascadeStatus,
         BaseCascadeLevel,
         ExperimentCascade,
     )
-    from wild_igor.igor.cognition.turn_pipeline import TurnPipeline
-    from wild_igor.igor.cognition.reasoning_workflow import (
+    from devices.igor.cognition.turn_pipeline import TurnPipeline
+    from devices.igor.cognition.reasoning_workflow import (
         PeerAdvisor,
         Conversation,
     )

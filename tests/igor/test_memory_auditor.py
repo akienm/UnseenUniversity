@@ -18,9 +18,8 @@ os.environ.setdefault(
     "IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
 )
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "wild_igor"))
 
-from igor.cognition.narrative_engine import NarrativeEngine  # noqa: E402
+from devices.igor.cognition.narrative_engine import NarrativeEngine  # noqa: E402
 
 
 class TestProvenanceCompleteness(unittest.TestCase):

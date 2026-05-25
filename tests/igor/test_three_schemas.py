@@ -19,14 +19,14 @@ class TestPGDatabaseProxySearchPath:
 
     def test_default_search_path(self):
         with patch("psycopg2.pool.ThreadedConnectionPool"):
-            from wild_igor.igor.memory.db_proxy import PGDatabaseProxy
+            from devices.igor.memory.db_proxy import PGDatabaseProxy
 
             proxy = PGDatabaseProxy("postgresql://fake", search_path=None)
             assert proxy._search_path == "instance,clan,infra,public"
 
     def test_custom_search_path(self):
         with patch("psycopg2.pool.ThreadedConnectionPool"):
-            from wild_igor.igor.memory.db_proxy import PGDatabaseProxy
+            from devices.igor.memory.db_proxy import PGDatabaseProxy
 
             proxy = PGDatabaseProxy(
                 "postgresql://fake", search_path="clan,infra,public"
@@ -35,7 +35,7 @@ class TestPGDatabaseProxySearchPath:
 
     def test_infra_only_search_path(self):
         with patch("psycopg2.pool.ThreadedConnectionPool"):
-            from wild_igor.igor.memory.db_proxy import PGDatabaseProxy
+            from devices.igor.memory.db_proxy import PGDatabaseProxy
 
             proxy = PGDatabaseProxy("postgresql://fake", search_path="infra,public")
             assert proxy._search_path == "infra,public"
@@ -48,7 +48,7 @@ class TestFactorySearchPaths:
                                "IGOR_HOME_SEARCH_PATH": "", "IGOR_LOCAL_SEARCH_PATH": ""})
     @patch("psycopg2.pool.ThreadedConnectionPool")
     def test_home_proxy_excludes_instance(self, mock_pool):
-        from wild_igor.igor.memory.db_proxy import make_home_proxy
+        from devices.igor.memory.db_proxy import make_home_proxy
 
         proxy = make_home_proxy()
         assert proxy._search_path == "clan,infra,public"
@@ -57,7 +57,7 @@ class TestFactorySearchPaths:
                                "IGOR_HOME_SEARCH_PATH": "", "IGOR_LOCAL_SEARCH_PATH": ""})
     @patch("psycopg2.pool.ThreadedConnectionPool")
     def test_local_proxy_includes_all(self, mock_pool):
-        from wild_igor.igor.memory.db_proxy import make_local_proxy
+        from devices.igor.memory.db_proxy import make_local_proxy
 
         proxy = make_local_proxy()
         assert proxy._search_path == "instance,clan,infra,public"
@@ -65,7 +65,7 @@ class TestFactorySearchPaths:
     @patch.dict("os.environ", {"IGOR_HOME_DB_URL": "postgresql://fake"})
     @patch("psycopg2.pool.ThreadedConnectionPool")
     def test_infra_proxy_infra_only(self, mock_pool):
-        from wild_igor.igor.memory.db_proxy import make_infra_proxy
+        from devices.igor.memory.db_proxy import make_infra_proxy
 
         proxy = make_infra_proxy()
         assert proxy._search_path == "infra,public"
@@ -76,7 +76,7 @@ class TestFactorySearchPaths:
 
         os.environ.pop("IGOR_HOME_DB_URL", None)
         os.environ.pop("IGOR_DB_URL", None)
-        from wild_igor.igor.memory.db_proxy import make_infra_proxy
+        from devices.igor.memory.db_proxy import make_infra_proxy
 
         result = make_infra_proxy()
         assert result is None
@@ -87,7 +87,7 @@ class TestSearchPathOnConnect:
 
     @patch("psycopg2.pool.ThreadedConnectionPool")
     def test_context_sets_search_path(self, mock_pool_cls):
-        from wild_igor.igor.memory.db_proxy import PGDatabaseProxy
+        from devices.igor.memory.db_proxy import PGDatabaseProxy
 
         mock_pool = MagicMock()
         mock_pool_cls.return_value = mock_pool
@@ -108,7 +108,7 @@ class TestMigrationEntries:
     """Migration list contains all three-schema entries."""
 
     def test_schema_creation_migrations_exist(self):
-        from wild_igor.igor.memory.cortex import _SCHEMA_MIGRATIONS
+        from devices.igor.memory.cortex import _SCHEMA_MIGRATIONS
 
         names = {name for name, _ in _SCHEMA_MIGRATIONS}
         assert "m050_schema_instance" in names
@@ -116,7 +116,7 @@ class TestMigrationEntries:
         assert "m050_schema_infra" in names
 
     def test_clan_table_migrations_exist(self):
-        from wild_igor.igor.memory.cortex import _SCHEMA_MIGRATIONS
+        from devices.igor.memory.cortex import _SCHEMA_MIGRATIONS
 
         names = {name for name, _ in _SCHEMA_MIGRATIONS}
         clan_tables = [
@@ -137,7 +137,7 @@ class TestMigrationEntries:
             assert f"m050_clan_{table}" in names, f"Missing clan migration for {table}"
 
     def test_instance_table_migrations_exist(self):
-        from wild_igor.igor.memory.cortex import _SCHEMA_MIGRATIONS
+        from devices.igor.memory.cortex import _SCHEMA_MIGRATIONS
 
         names = {name for name, _ in _SCHEMA_MIGRATIONS}
         instance_tables = [
@@ -155,7 +155,7 @@ class TestMigrationEntries:
             ), f"Missing instance migration for {table}"
 
     def test_infra_table_migrations_exist(self):
-        from wild_igor.igor.memory.cortex import _SCHEMA_MIGRATIONS
+        from devices.igor.memory.cortex import _SCHEMA_MIGRATIONS
 
         names = {name for name, _ in _SCHEMA_MIGRATIONS}
         infra_tables = [
@@ -176,7 +176,7 @@ class TestMigrationEntries:
 
     def test_migrations_table_stays_in_public(self):
         """_migrations must stay in public — it's the bootstrap table."""
-        from wild_igor.igor.memory.cortex import _SCHEMA_MIGRATIONS
+        from devices.igor.memory.cortex import _SCHEMA_MIGRATIONS
 
         names = {name for name, _ in _SCHEMA_MIGRATIONS}
         assert "m050_infra__migrations" not in names
@@ -184,7 +184,7 @@ class TestMigrationEntries:
 
     def test_schema_creation_before_moves(self):
         """Schema creation must come before ALTER TABLE SET SCHEMA."""
-        from wild_igor.igor.memory.cortex import _SCHEMA_MIGRATIONS
+        from devices.igor.memory.cortex import _SCHEMA_MIGRATIONS
 
         names = [name for name, _ in _SCHEMA_MIGRATIONS]
         schema_idx = max(
@@ -201,7 +201,7 @@ class TestMigrationEntries:
 
     def test_memories_before_fk_dependents(self):
         """memories must move before tables that reference it via FK."""
-        from wild_igor.igor.memory.cortex import _SCHEMA_MIGRATIONS
+        from devices.igor.memory.cortex import _SCHEMA_MIGRATIONS
 
         names = [name for name, _ in _SCHEMA_MIGRATIONS]
         mem_idx = names.index("m050_clan_memories")
@@ -220,14 +220,14 @@ class TestPGSchemaBootstrap:
     """_PG_SCHEMA creates schemas on fresh DB."""
 
     def test_pg_schema_creates_schemas(self):
-        from wild_igor.igor.memory.cortex import _PG_SCHEMA
+        from devices.igor.memory.cortex import _PG_SCHEMA
 
         assert "CREATE SCHEMA IF NOT EXISTS instance" in _PG_SCHEMA
         assert "CREATE SCHEMA IF NOT EXISTS clan" in _PG_SCHEMA
         assert "CREATE SCHEMA IF NOT EXISTS infra" in _PG_SCHEMA
 
     def test_pg_schema_creates_schemas_before_tables(self):
-        from wild_igor.igor.memory.cortex import _PG_SCHEMA
+        from devices.igor.memory.cortex import _PG_SCHEMA
 
         schema_pos = _PG_SCHEMA.index("CREATE SCHEMA IF NOT EXISTS instance")
         table_pos = _PG_SCHEMA.index("CREATE TABLE IF NOT EXISTS _migrations")

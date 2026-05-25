@@ -34,7 +34,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 def test_machine_lookup_resolves_canonical_hostname():
-    from wild_igor.igor.tools.machine_lookup import machine_lookup
+    from devices.igor.tools.machine_lookup import machine_lookup
 
     out = machine_lookup(name="akienyoga9i")
     assert "hostname: akienyoga9i" in out
@@ -46,7 +46,7 @@ def test_machine_lookup_resolves_canonical_hostname():
 def test_machine_lookup_resolves_short_alias_yoga9i():
     """The exact case Igor flagged: 'yoga9i' should resolve to akienyoga9i,
     not be treated as a hostname."""
-    from wild_igor.igor.tools.machine_lookup import machine_lookup
+    from devices.igor.tools.machine_lookup import machine_lookup
 
     out = machine_lookup(name="yoga9i")
     assert "hostname: akienyoga9i" in out
@@ -54,7 +54,7 @@ def test_machine_lookup_resolves_short_alias_yoga9i():
 
 def test_machine_lookup_resolves_phrase_alias():
     """Multi-word aliases like 'the dell' work."""
-    from wild_igor.igor.tools.machine_lookup import machine_lookup
+    from devices.igor.tools.machine_lookup import machine_lookup
 
     out = machine_lookup(name="the dell")
     assert "hostname: akiendell" in out
@@ -62,14 +62,14 @@ def test_machine_lookup_resolves_phrase_alias():
 
 def test_machine_lookup_resolves_pi_alias():
     """Three-machine alias coverage check — 'pi' resolves to akienpi."""
-    from wild_igor.igor.tools.machine_lookup import machine_lookup
+    from devices.igor.tools.machine_lookup import machine_lookup
 
     out = machine_lookup(name="pi")
     assert "hostname: akienpi" in out
 
 
 def test_machine_lookup_case_insensitive():
-    from wild_igor.igor.tools.machine_lookup import machine_lookup
+    from devices.igor.tools.machine_lookup import machine_lookup
 
     assert "hostname: akienyoga9i" in machine_lookup(name="YOGA9I")
     assert "hostname: akienyoga9i" in machine_lookup(name="Yoga9i")
@@ -77,7 +77,7 @@ def test_machine_lookup_case_insensitive():
 
 
 def test_machine_lookup_unregistered_returns_clear_error():
-    from wild_igor.igor.tools.machine_lookup import machine_lookup
+    from devices.igor.tools.machine_lookup import machine_lookup
 
     out = machine_lookup(name="totally-fake-machine")
     assert "[NOT REGISTERED]" in out
@@ -87,7 +87,7 @@ def test_machine_lookup_unregistered_returns_clear_error():
 
 
 def test_machine_lookup_empty_input_returns_error():
-    from wild_igor.igor.tools.machine_lookup import machine_lookup
+    from devices.igor.tools.machine_lookup import machine_lookup
 
     assert "[ERROR]" in machine_lookup(name="")
     assert "[ERROR]" in machine_lookup(name="   ")
@@ -97,7 +97,7 @@ def test_machine_lookup_empty_input_returns_error():
 def test_machine_lookup_includes_aliases_in_output():
     """The lookup result should show what other aliases the resolved
     machine has, so the caller can learn the canonical and use it next time."""
-    from wild_igor.igor.tools.machine_lookup import machine_lookup
+    from devices.igor.tools.machine_lookup import machine_lookup
 
     out = machine_lookup(name="yoga9i")
     assert "aliases:" in out
@@ -109,7 +109,7 @@ def test_machine_lookup_includes_aliases_in_output():
 
 
 def test_machine_list_all_returns_all_registered_machines():
-    from wild_igor.igor.tools.machine_lookup import machine_list_all
+    from devices.igor.tools.machine_lookup import machine_list_all
 
     out = machine_list_all()
     # Five known machines as of 2026-04-13
@@ -123,7 +123,7 @@ def test_machine_list_all_returns_all_registered_machines():
 
 
 def test_machine_list_all_shows_aliases_per_machine():
-    from wild_igor.igor.tools.machine_lookup import machine_list_all
+    from devices.igor.tools.machine_lookup import machine_list_all
 
     out = machine_list_all()
     assert "aliases:" in out
@@ -137,7 +137,7 @@ def test_machine_list_all_shows_aliases_per_machine():
 
 def test_machine_lookup_registered_in_tool_registry():
     # Ensure the module is loaded so its registrations fire
-    import wild_igor.igor.tools.machine_lookup  # noqa: F401
+    import devices.igor.tools.machine_lookup  # noqa: F401
     from lab.utility_closet.registry import registry
 
     assert registry.get("machine_lookup") is not None
@@ -145,7 +145,7 @@ def test_machine_lookup_registered_in_tool_registry():
 
 
 def test_machine_lookup_tool_has_required_param():
-    import wild_igor.igor.tools.machine_lookup  # noqa: F401
+    import devices.igor.tools.machine_lookup  # noqa: F401
     from lab.utility_closet.registry import registry
 
     tool = registry.get("machine_lookup")

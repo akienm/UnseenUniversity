@@ -1,4 +1,4 @@
-"""Tests for wild_igor/igor/cognition/playbook.py (T-igor-playbook-memory-type)."""
+"""Tests for devices/igor/cognition/playbook.py (T-igor-playbook-memory-type)."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import pytest
 def _clean_playbooks(pg_test_schema):
     if pg_test_schema is None:
         pytest.skip("pg_test_schema not available")
-    from wild_igor.igor.cognition import playbook
+    from devices.igor.cognition import playbook
 
     yield
     # Clean up any PLAYBOOK entries seeded by tests
@@ -35,7 +35,7 @@ def _clean_playbooks(pg_test_schema):
 
 @pytest.fixture
 def pb(pg_test_schema):
-    from wild_igor.igor.cognition import playbook
+    from devices.igor.cognition import playbook
 
     return playbook
 
@@ -174,7 +174,7 @@ def test_ne_playbook_context_returns_empty_when_no_playbooks(pg_test_schema):
     """NE._playbook_context() returns empty string when no active playbooks."""
     from unittest.mock import MagicMock
 
-    from wild_igor.igor.cognition.narrative_engine import NarrativeEngine
+    from devices.igor.cognition.narrative_engine import NarrativeEngine
 
     cortex = MagicMock()
     ne = NarrativeEngine.__new__(NarrativeEngine)
@@ -186,8 +186,8 @@ def test_ne_playbook_context_returns_block_with_playbooks(pg_test_schema):
     """NE._playbook_context() returns non-empty block when active playbooks exist."""
     from unittest.mock import MagicMock
 
-    from wild_igor.igor.cognition import playbook as pb_mod
-    from wild_igor.igor.cognition.narrative_engine import NarrativeEngine
+    from devices.igor.cognition import playbook as pb_mod
+    from devices.igor.cognition.narrative_engine import NarrativeEngine
 
     pb_mod.add_playbook(
         "NE test playbook — verifying injection path",

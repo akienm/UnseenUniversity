@@ -22,7 +22,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from wild_igor.igor.memory.twm_leap import leap_sweep
+from devices.igor.memory.twm_leap import leap_sweep
 
 
 class _FakeConn:

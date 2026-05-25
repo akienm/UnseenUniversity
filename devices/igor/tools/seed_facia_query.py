@@ -3,7 +3,7 @@
 Seed facia memory query pattern for Igor.
 
 Usage:
-  python3 wild_igor/igor/tools/seed_facia_query.py
+  python3 devices/igor/tools/seed_facia_query.py
 """
 
 import json

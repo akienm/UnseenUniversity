@@ -198,7 +198,7 @@ def _load_checkpoint() -> dict:
             return json.loads(_CHECKPOINT_FILE.read_text())
     except Exception as _bare_e:
         get_logger(__name__).warning(
-            "bare except in wild_igor/igor/cognition/consolidation.py: %s", _bare_e
+            "bare except in devices/igor/cognition/consolidation.py: %s", _bare_e
         )
     return {"last_run_ts": 0.0, "processed_ids": []}
 
@@ -213,7 +213,7 @@ def _save_checkpoint(ts: float, processed_ids: list[str]) -> None:
         _CHECKPOINT_FILE.write_text(json.dumps(data, indent=2))
     except Exception as _bare_e:
         get_logger(__name__).warning(
-            "bare except in wild_igor/igor/cognition/consolidation.py: %s", _bare_e
+            "bare except in devices/igor/cognition/consolidation.py: %s", _bare_e
         )
 
 
@@ -487,7 +487,7 @@ def run_consolidation(cortex: Cortex) -> dict:
             )
     except Exception as _bare_e:
         get_logger(__name__).warning(
-            "bare except in wild_igor/igor/cognition/consolidation.py: %s", _bare_e
+            "bare except in devices/igor/cognition/consolidation.py: %s", _bare_e
         )
 
     _last_run = now

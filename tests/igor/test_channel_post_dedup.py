@@ -13,9 +13,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "wild_igor"))
 
-from igor.tools import channel_post as cp
+from devices.igor.tools import channel_post as cp
 
 
 class TestDedupSuppression(unittest.TestCase):

@@ -21,7 +21,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch, call
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
 # ── stub heavy imports before NE import ──────────────────────────────────────
 
@@ -43,7 +42,7 @@ _stub_modules()
 
 # ── import NE internals directly (no live DB needed) ─────────────────────────
 
-from igor.cognition.narrative_engine import (
+from devices.igor.cognition.narrative_engine import (
     NarrativeEngine,
     _PE_HEAT_THRESHOLD,
     _PE_REINFORCE_DELTA,
@@ -192,7 +191,7 @@ class TestApplyOutputReturnsPromotedIds(unittest.TestCase):
         milieu_mock = MagicMock()
         milieu_mock.get.return_value = None
         with patch.dict(sys.modules, {"igor.cognition.milieu": milieu_mock}):
-            from igor.memory.models import Memory, MemoryType
+            from devices.igor.memory.models import Memory, MemoryType
             result_dict = {
                 "summary_csb": "test",
                 "salience_updates": [],

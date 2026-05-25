@@ -59,7 +59,7 @@ def _make_fake_cortex(node_count=10, edge_count=25, embedded=5, activated=3):
 
 def test_reading_graph_baseline_format():
     """_format_report returns expected fields."""
-    from wild_igor.igor.tools import reading_measure
+    from devices.igor.tools import reading_measure
 
     stats = {
         "node_count": 10,
@@ -87,7 +87,7 @@ def test_reading_graph_baseline_format():
 
 def test_gather_stats_no_nodes():
     """_gather_stats returns error dict when book has no nodes."""
-    from wild_igor.igor.tools import reading_measure
+    from devices.igor.tools import reading_measure
 
     fake_cortex = MagicMock()
     conn_ctx = MagicMock()

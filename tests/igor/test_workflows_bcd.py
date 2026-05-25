@@ -11,7 +11,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition.reasoning_workflow import (  # noqa: E402
+from devices.igor.cognition.reasoning_workflow import (  # noqa: E402
     ActionPlan,
     ClaimEvaluation,
     Conversation,

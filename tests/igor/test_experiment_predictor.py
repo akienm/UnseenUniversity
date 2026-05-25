@@ -12,7 +12,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition.experiment_cascade import (  # noqa: E402
+from devices.igor.cognition.experiment_cascade import (  # noqa: E402
     BaseCascadeLevel,
     CascadeResult,
     CascadeSituation,
@@ -24,7 +24,7 @@ from wild_igor.igor.cognition.experiment_cascade import (  # noqa: E402
     _StubLevel,
     build_default_cascade,
 )
-from wild_igor.igor.cognition.experiment_predictor import (  # noqa: E402
+from devices.igor.cognition.experiment_predictor import (  # noqa: E402
     INITIAL_CONFIDENCE,
     MIN_TOKEN_LEN,
     SKIP_THRESHOLD,
@@ -378,7 +378,7 @@ def test_level_graduates_to_skip_after_consistent_misses():
 
     # Run the cascade 5 times with the same query; Level 1 always matches
     with patch(
-        "wild_igor.igor.memory.search_widen.widen_search",
+        "devices.igor.memory.search_widen.widen_search",
         return_value=([mock_mem], "token_like"),
     ):
         for _ in range(5):
@@ -390,7 +390,7 @@ def test_level_graduates_to_skip_after_consistent_misses():
     # On the next run, Level 0 should be skipped entirely
     cortex.search.reset_mock()
     with patch(
-        "wild_igor.igor.memory.search_widen.widen_search",
+        "devices.igor.memory.search_widen.widen_search",
         return_value=([mock_mem], "token_like"),
     ):
         result = cascade.attempt(_situation("igor dev facia"))

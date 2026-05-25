@@ -477,13 +477,13 @@ def _deposit_nodes(nodes: list, cortex, question: str) -> int:
                     cortex.add_child(parent_cp, uid)
                 except Exception as _bare_e:
                     logging.getLogger(__name__).warning(
-                        "bare except in wild_igor/igor/tools/inner_cc.py: %s", _bare_e
+                        "bare except in devices/igor/tools/inner_cc.py: %s", _bare_e
                     )
 
             deposited += 1
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/tools/inner_cc.py: %s", _bare_e
+                "bare except in devices/igor/tools/inner_cc.py: %s", _bare_e
             )
     return deposited
 
@@ -517,7 +517,7 @@ def _tool_inner_cc(
             cortex = _running_instance.cortex
     except Exception as _bare_e:
         logging.getLogger(__name__).warning(
-            "bare except in wild_igor/igor/tools/inner_cc.py: %s", _bare_e
+            "bare except in devices/igor/tools/inner_cc.py: %s", _bare_e
         )
 
     model = _HAIKU_MODEL if long_running else _DEFAULT_MODEL

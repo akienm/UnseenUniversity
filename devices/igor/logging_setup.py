@@ -248,7 +248,7 @@ def setup_logging(log_dir: Path) -> None:
     igor_root.addHandler(dcfh)
 
     # Utility-closet logs — since D335 moved infrastructure modules out of
-    # wild_igor/igor/ into lab/utility_closet/, those loggers no longer route
+    # devices/igor/ into lab/utility_closet/, those loggers no longer route
     # through igor_root. Wire the same ConsoleHandler + file handler so
     # WARNINGs (e.g. db_proxy slow-query lines) still show in yellow on
     # the console. Without this, the slow-query highlighting silently

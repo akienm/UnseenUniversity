@@ -371,7 +371,7 @@ class NarrativeEngine(IgorBase):
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                    detail=f"devices/igor/cognition/narrative_engine.py: {_bare_e}",
                 )
 
         pred = ProspectivePrediction(
@@ -419,7 +419,7 @@ class NarrativeEngine(IgorBase):
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                detail=f"devices/igor/cognition/narrative_engine.py: {_bare_e}",
             )
 
         if delta < 0.1:
@@ -430,7 +430,7 @@ class NarrativeEngine(IgorBase):
                 except Exception as _bare_e:
                     log_error(
                         kind="BARE_EXCEPT",
-                        detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                        detail=f"devices/igor/cognition/narrative_engine.py: {_bare_e}",
                     )
             return
 
@@ -446,7 +446,7 @@ class NarrativeEngine(IgorBase):
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                    detail=f"devices/igor/cognition/narrative_engine.py: {_bare_e}",
                 )
         if actual_habit_id and seed_ids:
             try:
@@ -454,7 +454,7 @@ class NarrativeEngine(IgorBase):
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                    detail=f"devices/igor/cognition/narrative_engine.py: {_bare_e}",
                 )
 
         # Boost salience on recent TWM context proportional to surprise magnitude
@@ -466,7 +466,7 @@ class NarrativeEngine(IgorBase):
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                    detail=f"devices/igor/cognition/narrative_engine.py: {_bare_e}",
                 )
 
     # ── Trigger logic ──────────────────────────────────────────────────────────
@@ -567,7 +567,7 @@ class NarrativeEngine(IgorBase):
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                detail=f"devices/igor/cognition/narrative_engine.py: {_bare_e}",
             )
 
         # Mark filtered-out unintegrated obs as integrated so they stop counting
@@ -651,7 +651,7 @@ class NarrativeEngine(IgorBase):
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                    detail=f"devices/igor/cognition/narrative_engine.py: {_bare_e}",
                 )
 
         # Always write deterministic arc — no inference needed, always current.
@@ -685,7 +685,7 @@ class NarrativeEngine(IgorBase):
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                    detail=f"devices/igor/cognition/narrative_engine.py: {_bare_e}",
                 )
         else:
             promoted, impulses, _pe_promoted_ids = self._apply_output(
@@ -793,7 +793,7 @@ class NarrativeEngine(IgorBase):
         # where w = 0.4 * arousal (high arousal → affect biases selection more).
         # Frames affectively congruent with current milieu need less causal weight to promote.
         _aff_milieu = __import__(
-            "wild_igor.igor.cognition.milieu", fromlist=["get"]
+            "devices.igor.cognition.milieu", fromlist=["get"]
         ).get()
         try:
             _aff_ms = _aff_milieu.get_state() if _aff_milieu else None
@@ -1054,7 +1054,7 @@ class NarrativeEngine(IgorBase):
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                detail=f"devices/igor/cognition/narrative_engine.py: {_bare_e}",
             )
 
     # ── LLM calls ─────────────────────────────────────────────────────────────
@@ -1095,7 +1095,7 @@ class NarrativeEngine(IgorBase):
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                    detail=f"devices/igor/cognition/narrative_engine.py: {_bare_e}",
                 )
         except Exception as e:
             print(f"{_cts()}[NE] inference failed: {e}")
@@ -1208,7 +1208,7 @@ class NarrativeEngine(IgorBase):
         # Optionally enrich with milieu valence
         _valence_str = ""
         try:
-            _mil = __import__("wild_igor.igor.cognition.milieu", fromlist=["get"]).get()
+            _mil = __import__("devices.igor.cognition.milieu", fromlist=["get"]).get()
             _ms = _mil.get_state() if _mil else None
             if _ms:
                 _v = _ms.valence
@@ -1395,7 +1395,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                detail=f"devices/igor/cognition/narrative_engine.py: {_bare_e}",
             )
 
     def _parse_ne_json(self, text: str) -> Optional[dict]:
@@ -1433,7 +1433,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
         _arousal = 0.3  # default if milieu unavailable
         try:
             _milieu_mod = __import__(
-                "wild_igor.igor.cognition.milieu", fromlist=["get"]
+                "devices.igor.cognition.milieu", fromlist=["get"]
             ).get()
             _ms = _milieu_mod.get_state() if _milieu_mod else None
             if _ms:
@@ -1535,7 +1535,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                     _closure_arousal = min(1.0, 0.4 + gap_tension * 0.3)
                     try:
                         _m = __import__(
-                            "wild_igor.igor.cognition.milieu", fromlist=["get"]
+                            "devices.igor.cognition.milieu", fromlist=["get"]
                         ).get()
                         if _m:
                             _m.ingest_ne_state(
@@ -1683,7 +1683,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
         # Get current milieu for context
         try:
             _milieu_mod = __import__(
-                "wild_igor.igor.cognition.milieu", fromlist=["get"]
+                "devices.igor.cognition.milieu", fromlist=["get"]
             ).get()
             _ms = _milieu_mod.get_state() if _milieu_mod else None
             _arousal = max(0.0, _ms.arousal) if _ms else 0.0
@@ -1737,7 +1737,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                 except Exception as _e:
                     log_error(
                         kind="BARE_EXCEPT",
-                        detail=f"wild_igor/igor/cognition/narrative_engine.py reconsolidate JSON parse: {_e}",
+                        detail=f"devices/igor/cognition/narrative_engine.py reconsolidate JSON parse: {_e}",
                     )
 
                 if parsed is None or parsed.get("action") in (None, "skip", "confirm"):
@@ -1786,7 +1786,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                 except Exception as _e:
                     log_error(
                         kind="BARE_EXCEPT",
-                        detail=f"wild_igor/igor/cognition/narrative_engine.py reconsolidate store: {_e}",
+                        detail=f"devices/igor/cognition/narrative_engine.py reconsolidate store: {_e}",
                     )
 
         return updated
@@ -1878,7 +1878,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                 except Exception as _bare_e:
                     log_error(
                         kind="BARE_EXCEPT",
-                        detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                        detail=f"devices/igor/cognition/narrative_engine.py: {_bare_e}",
                     )
         return merged
 
@@ -1914,7 +1914,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                detail=f"devices/igor/cognition/narrative_engine.py: {_bare_e}",
             )
 
         mem = Memory(
@@ -1949,7 +1949,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/narrative_engine.py: {_bare_e}",
+                detail=f"devices/igor/cognition/narrative_engine.py: {_bare_e}",
             )
 
     # ── T-sleep-memory-auditor: prior-version chaining for reading memories ───

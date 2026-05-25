@@ -14,7 +14,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path.home() / "TheIgors"))
 
 from wild_igor.tools.swadl_flows.gmail import GmailFlow, MessageSummary
 

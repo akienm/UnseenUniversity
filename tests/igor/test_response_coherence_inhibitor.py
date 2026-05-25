@@ -31,7 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 def test_tokenize_content_strips_stopwords():
-    from wild_igor.igor.cognition.response_coherence_inhibitor import tokenize_content
+    from devices.igor.cognition.response_coherence_inhibitor import tokenize_content
 
     tokens = tokenize_content("the quick brown fox is with us in our house")
     # 'the', 'is', 'with', 'in', 'our' are all stopwords
@@ -46,7 +46,7 @@ def test_tokenize_content_strips_stopwords():
 
 
 def test_tokenize_content_filters_short_words():
-    from wild_igor.igor.cognition.response_coherence_inhibitor import tokenize_content
+    from devices.igor.cognition.response_coherence_inhibitor import tokenize_content
 
     tokens = tokenize_content("a is at on of two cat")
     # All <3 chars removed
@@ -58,7 +58,7 @@ def test_tokenize_content_filters_short_words():
 
 
 def test_tokenize_content_lowercases():
-    from wild_igor.igor.cognition.response_coherence_inhibitor import tokenize_content
+    from devices.igor.cognition.response_coherence_inhibitor import tokenize_content
 
     tokens = tokenize_content("Akien GRAPH Matrix")
     assert "akien" in tokens
@@ -67,7 +67,7 @@ def test_tokenize_content_lowercases():
 
 
 def test_tokenize_content_handles_empty_and_none():
-    from wild_igor.igor.cognition.response_coherence_inhibitor import tokenize_content
+    from devices.igor.cognition.response_coherence_inhibitor import tokenize_content
 
     assert tokenize_content("") == set()
     assert tokenize_content(None) == set()  # type: ignore
@@ -77,14 +77,14 @@ def test_tokenize_content_handles_empty_and_none():
 
 
 def test_jaccard_identical_strings_returns_one():
-    from wild_igor.igor.cognition.response_coherence_inhibitor import jaccard_overlap
+    from devices.igor.cognition.response_coherence_inhibitor import jaccard_overlap
 
     text = "biomimicry engineering and persistent relationships matter"
     assert jaccard_overlap(text, text) == pytest.approx(1.0, abs=1e-6)
 
 
 def test_jaccard_disjoint_strings_returns_zero():
-    from wild_igor.igor.cognition.response_coherence_inhibitor import jaccard_overlap
+    from devices.igor.cognition.response_coherence_inhibitor import jaccard_overlap
 
     a = "biomimicry engineering coherence patterns"
     b = "weather forecast tomorrow afternoon sunny"
@@ -96,7 +96,7 @@ def test_jaccard_2026_04_13_failure_case_scores_low():
     about long-term goals, learning, planning, meta-goals. Igor's habit
     fired on 'graph' and dumped a preparse-config paragraph. The Jaccard
     overlap should be well below COHERENCE_THRESHOLD."""
-    from wild_igor.igor.cognition.response_coherence_inhibitor import (
+    from devices.igor.cognition.response_coherence_inhibitor import (
         jaccard_overlap,
         COHERENCE_THRESHOLD,
     )
@@ -129,7 +129,7 @@ def test_jaccard_coherent_answer_scores_above_threshold():
     """A coherent answer to the same question should score above the
     threshold. Tests that the inhibitor doesn't false-positive on
     legitimate answers that don't repeat every word."""
-    from wild_igor.igor.cognition.response_coherence_inhibitor import (
+    from devices.igor.cognition.response_coherence_inhibitor import (
         jaccard_overlap,
         COHERENCE_THRESHOLD,
     )
@@ -162,7 +162,7 @@ def test_jaccard_coherent_answer_scores_above_threshold():
 def test_check_coherence_flags_2026_04_13_case():
     """End-to-end: feed the failing transcript pair into check_coherence
     and verify it logs + pushes the marker."""
-    from wild_igor.igor.cognition.response_coherence_inhibitor import check_coherence
+    from devices.igor.cognition.response_coherence_inhibitor import check_coherence
 
     cortex = MagicMock()
     cortex.write_ring = MagicMock()
@@ -204,7 +204,7 @@ def test_check_coherence_flags_2026_04_13_case():
 
 def test_check_coherence_passes_coherent_answer():
     """A coherent answer should NOT be flagged."""
-    from wild_igor.igor.cognition.response_coherence_inhibitor import check_coherence
+    from devices.igor.cognition.response_coherence_inhibitor import check_coherence
 
     cortex = MagicMock()
     cortex.write_ring = MagicMock()
@@ -232,7 +232,7 @@ def test_check_coherence_passes_coherent_answer():
 def test_check_coherence_gates_short_prompts():
     """A two-word prompt shouldn't be subject to coherence checking —
     not enough signal to compute meaningful overlap."""
-    from wild_igor.igor.cognition.response_coherence_inhibitor import check_coherence
+    from devices.igor.cognition.response_coherence_inhibitor import check_coherence
 
     cortex = MagicMock()
     cortex.write_ring = MagicMock()
@@ -257,7 +257,7 @@ def test_check_coherence_gates_short_responses():
     """Terse habit responses ('On it.') shouldn't be subject to coherence
     checking — the bare-ack guard handles those, and a 2-word response
     wouldn't have meaningful Jaccard signal anyway."""
-    from wild_igor.igor.cognition.response_coherence_inhibitor import check_coherence
+    from devices.igor.cognition.response_coherence_inhibitor import check_coherence
 
     cortex = MagicMock()
     cortex.write_ring = MagicMock()
@@ -278,7 +278,7 @@ def test_check_coherence_gates_short_responses():
 
 def test_check_coherence_never_raises():
     """An exploding cortex shouldn't break check_coherence."""
-    from wild_igor.igor.cognition.response_coherence_inhibitor import check_coherence
+    from devices.igor.cognition.response_coherence_inhibitor import check_coherence
 
     bad_cortex = MagicMock()
     bad_cortex.write_ring = MagicMock(side_effect=RuntimeError("boom"))
@@ -299,7 +299,7 @@ def test_check_coherence_never_raises():
 def test_check_coherence_does_not_modify_text():
     """Detection-only contract — the prompt and response strings are
     never modified by check_coherence."""
-    from wild_igor.igor.cognition.response_coherence_inhibitor import check_coherence
+    from devices.igor.cognition.response_coherence_inhibitor import check_coherence
 
     cortex = MagicMock()
     cortex.write_ring = MagicMock()
@@ -332,7 +332,7 @@ class TestSuppressIncoherent:
         # narrowed to habit-sourced emissions only. An LLM reply flagged by
         # Jaccard would have been silently dropped; habit emissions still get
         # nuked when off-topic.
-        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+        from devices.igor.cognition.response_coherence_inhibitor import (
             suppress_incoherent,
         )
 
@@ -345,7 +345,7 @@ class TestSuppressIncoherent:
     def test_preserves_flagged_non_habit(self):
         # Non-habit flagged responses (LLM, tier0, etc.) are preserved —
         # Jaccard word-overlap is the wrong metric for conversational replies.
-        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+        from devices.igor.cognition.response_coherence_inhibitor import (
             suppress_incoherent,
         )
 
@@ -356,7 +356,7 @@ class TestSuppressIncoherent:
         assert text == "new-concept LLM reply"
 
     def test_preserves_coherent(self):
-        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+        from devices.igor.cognition.response_coherence_inhibitor import (
             suppress_incoherent,
         )
 
@@ -366,7 +366,7 @@ class TestSuppressIncoherent:
         assert text == original
 
     def test_preserves_gated(self):
-        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+        from devices.igor.cognition.response_coherence_inhibitor import (
             suppress_incoherent,
         )
 
@@ -376,7 +376,7 @@ class TestSuppressIncoherent:
         assert text == original
 
     def test_preserves_when_no_flagged_key(self):
-        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+        from devices.igor.cognition.response_coherence_inhibitor import (
             suppress_incoherent,
         )
 
@@ -391,7 +391,7 @@ class TestSuppressIncoherent:
 
 class TestInhibitorStuckCounter:
     def setup_method(self):
-        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+        from devices.igor.cognition.response_coherence_inhibitor import (
             _reset_inhibitor_fires,
         )
 
@@ -399,7 +399,7 @@ class TestInhibitorStuckCounter:
 
     def test_three_fires_emit_stuck_and_return_stuck_reason(self):
         from unittest.mock import MagicMock, patch
-        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+        from devices.igor.cognition.response_coherence_inhibitor import (
             check_coherence,
         )
 
@@ -414,7 +414,7 @@ class TestInhibitorStuckCounter:
         prompt = "neurons cortex hippocampus amygdala synapse biology dendrites prefrontal thalamus basal ganglia"
         response = "configure threshold preparse stage token enable disable pipeline queue handler"
 
-        with patch("wild_igor.igor.tools.channel_post.post_to_channel") as mock_post:
+        with patch("devices.igor.tools.channel_post.post_to_channel") as mock_post:
             # Fire 1 and 2 — below threshold
             r1 = check_coherence(cortex, prompt, response, thread_id="t1")
             r2 = check_coherence(cortex, prompt, response, thread_id="t1")
@@ -430,7 +430,7 @@ class TestInhibitorStuckCounter:
 
     def test_fourth_fire_still_returns_stuck(self):
         from unittest.mock import MagicMock, patch
-        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+        from devices.igor.cognition.response_coherence_inhibitor import (
             check_coherence,
         )
 
@@ -439,7 +439,7 @@ class TestInhibitorStuckCounter:
         prompt = "neurons cortex hippocampus amygdala synapse biology dendrites prefrontal thalamus basal ganglia"
         response = "configure threshold preparse stage token enable disable pipeline queue handler"
 
-        with patch("wild_igor.igor.tools.channel_post.post_to_channel"):
+        with patch("devices.igor.tools.channel_post.post_to_channel"):
             for _ in range(3):
                 check_coherence(cortex, prompt, response, thread_id="t2")
             r4 = check_coherence(cortex, prompt, response, thread_id="t2")
@@ -449,7 +449,7 @@ class TestInhibitorStuckCounter:
 
     def test_different_threads_have_independent_counters(self):
         from unittest.mock import MagicMock, patch
-        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+        from devices.igor.cognition.response_coherence_inhibitor import (
             check_coherence,
         )
 
@@ -457,7 +457,7 @@ class TestInhibitorStuckCounter:
         prompt = "neurons cortex hippocampus amygdala synapse biology dendrites prefrontal thalamus basal ganglia"
         response = "configure threshold preparse stage token enable disable pipeline queue handler"
 
-        with patch("wild_igor.igor.tools.channel_post.post_to_channel"):
+        with patch("devices.igor.tools.channel_post.post_to_channel"):
             for _ in range(3):
                 check_coherence(cortex, prompt, response, thread_id="tA")
             r_b = check_coherence(cortex, prompt, response, thread_id="tB")

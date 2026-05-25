@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from wild_igor.igor.tools.or_model_refresh import _find_closest, refresh_or_models
+from devices.igor.tools.or_model_refresh import _find_closest, refresh_or_models
 
 
 class TestFindClosest:
@@ -40,7 +40,7 @@ class TestRefreshOrModels:
             "openai/gpt-4o-mini-2024-07-18",
         ]
         with patch(
-            "wild_igor.igor.tools.or_model_refresh._fetch_or_models",
+            "devices.igor.tools.or_model_refresh._fetch_or_models",
             return_value=fake_candidates,
         ):
             with patch.dict(
@@ -64,7 +64,7 @@ class TestRefreshOrModels:
             "OPENROUTER_WINNOW_MODEL": current,
         }
         with patch(
-            "wild_igor.igor.tools.or_model_refresh._fetch_or_models",
+            "devices.igor.tools.or_model_refresh._fetch_or_models",
             return_value=[current],
         ):
             with patch.dict(os.environ, all_vars):
@@ -74,7 +74,7 @@ class TestRefreshOrModels:
 
     def test_returns_message_when_fetch_fails(self):
         with patch(
-            "wild_igor.igor.tools.or_model_refresh._fetch_or_models",
+            "devices.igor.tools.or_model_refresh._fetch_or_models",
             return_value=[],
         ):
             result = refresh_or_models()

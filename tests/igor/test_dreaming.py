@@ -1,4 +1,4 @@
-"""Tests for wild_igor/igor/cognition/dreaming.py (T-igor-dreaming-module)."""
+"""Tests for devices/igor/cognition/dreaming.py (T-igor-dreaming-module)."""
 
 from __future__ import annotations
 
@@ -69,7 +69,7 @@ def psych_log_with_entries(mock_paths):
 def test_dreaming_disabled_when_interval_zero(mock_paths, monkeypatch):
     """IGOR_DREAMING_INTERVAL=0 → run() returns 0 immediately."""
     monkeypatch.setenv("IGOR_DREAMING_INTERVAL", "0")
-    from wild_igor.igor.cognition import dreaming
+    from devices.igor.cognition import dreaming
 
     result = dreaming.run(paths_obj=mock_paths)
     assert result == 0
@@ -81,11 +81,11 @@ def test_dreaming_disabled_when_interval_zero(mock_paths, monkeypatch):
 def test_dreaming_empty_inputs_returns_zero(mock_paths, monkeypatch):
     """No psych_log, no watch_problems → run() returns 0 without synthesis call."""
     monkeypatch.setenv("IGOR_DREAMING_INTERVAL", "50")
-    from wild_igor.igor.cognition import dreaming
+    from devices.igor.cognition import dreaming
 
     with patch(
-        "wild_igor.igor.cognition.dreaming._read_watch_problems", return_value=[]
-    ), patch("wild_igor.igor.cognition.dreaming._synthesize") as mock_synth:
+        "devices.igor.cognition.dreaming._read_watch_problems", return_value=[]
+    ), patch("devices.igor.cognition.dreaming._synthesize") as mock_synth:
         result = dreaming.run(paths_obj=mock_paths)
 
     assert result == 0
@@ -98,7 +98,7 @@ def test_dreaming_empty_inputs_returns_zero(mock_paths, monkeypatch):
 def test_dreaming_writes_proposals(psych_log_with_entries, monkeypatch):
     """Mocked haiku returning 1 proposal → 1 row in instance.proposals."""
     monkeypatch.setenv("IGOR_DREAMING_INTERVAL", "50")
-    from wild_igor.igor.cognition import dreaming
+    from devices.igor.cognition import dreaming
 
     mock_proposals = [
         {
@@ -109,7 +109,7 @@ def test_dreaming_writes_proposals(psych_log_with_entries, monkeypatch):
     ]
 
     with patch(
-        "wild_igor.igor.cognition.dreaming._synthesize",
+        "devices.igor.cognition.dreaming._synthesize",
         return_value=mock_proposals,
     ):
         result = dreaming.run(paths_obj=psych_log_with_entries)
@@ -135,7 +135,7 @@ def test_dreaming_writes_proposals(psych_log_with_entries, monkeypatch):
 def test_dreaming_deduplicates_identical_proposals(psych_log_with_entries, monkeypatch):
     """Two identical proposals → occurrence_count increments, not two rows."""
     monkeypatch.setenv("IGOR_DREAMING_INTERVAL", "50")
-    from wild_igor.igor.cognition import dreaming
+    from devices.igor.cognition import dreaming
 
     proposal = [
         {
@@ -146,7 +146,7 @@ def test_dreaming_deduplicates_identical_proposals(psych_log_with_entries, monke
     ]
 
     with patch(
-        "wild_igor.igor.cognition.dreaming._synthesize",
+        "devices.igor.cognition.dreaming._synthesize",
         return_value=proposal,
     ):
         dreaming.run(paths_obj=psych_log_with_entries)
@@ -173,7 +173,7 @@ def test_dreaming_deduplicates_identical_proposals(psych_log_with_entries, monke
 
 def test_cycle_counter_triggers_at_interval(monkeypatch):
     """COA._ne_cycle_counter triggers dreaming.run() every N cycles."""
-    from wild_igor.igor.cognition.coa import COA
+    from devices.igor.cognition.coa import COA
 
     monkeypatch.setenv("IGOR_DREAMING_INTERVAL", "3")
 
@@ -190,14 +190,14 @@ def test_cycle_counter_triggers_at_interval(monkeypatch):
         run_calls.append(1)
         return 1
 
-    with patch("wild_igor.igor.cognition.dreaming.run", side_effect=_fake_run):
+    with patch("devices.igor.cognition.dreaming.run", side_effect=_fake_run):
         import os as _os
 
         interval = int(_os.getenv("IGOR_DREAMING_INTERVAL", "50"))
         for _ in range(9):
             coa._ne_cycle_counter += 1
             if coa._ne_cycle_counter % interval == 0:
-                from wild_igor.igor.cognition import dreaming as _dreaming
+                from devices.igor.cognition import dreaming as _dreaming
 
                 _dreaming.run()
 
@@ -209,7 +209,7 @@ def test_cycle_counter_triggers_at_interval(monkeypatch):
 
 
 def test_is_convergent_true_when_both_domains():
-    from wild_igor.igor.cognition.dreaming import _is_convergent
+    from devices.igor.cognition.dreaming import _is_convergent
 
     assert _is_convergent(
         "Librarian researched this topic and igor's valence dropped — pattern detected."
@@ -217,20 +217,20 @@ def test_is_convergent_true_when_both_domains():
 
 
 def test_is_convergent_false_librarian_only():
-    from wild_igor.igor.cognition.dreaming import _is_convergent
+    from devices.igor.cognition.dreaming import _is_convergent
 
     assert not _is_convergent("Librarian observation about research quality.")
 
 
 def test_is_convergent_false_psych_only():
-    from wild_igor.igor.cognition.dreaming import _is_convergent
+    from devices.igor.cognition.dreaming import _is_convergent
 
     assert not _is_convergent("Igor valence low and arousal high during this period.")
 
 
 def test_synthesize_sets_convergence_flag():
     """Proposals with rationale citing both librarian + psych terms get convergence=True."""
-    from wild_igor.igor.cognition.dreaming import _synthesize
+    from devices.igor.cognition.dreaming import _synthesize
 
     convergent_proposals = [
         {
@@ -256,7 +256,7 @@ def test_synthesize_sets_convergence_flag():
     fake_inner_cc.call_inner_cc_long.return_value = {
         "answer": json.dumps(all_proposals)
     }
-    with patch.dict("sys.modules", {"wild_igor.igor.tools.inner_cc": fake_inner_cc}):
+    with patch.dict("sys.modules", {"devices.igor.tools.inner_cc": fake_inner_cc}):
         results = _synthesize(
             psych_entries=[{"ts": 1, "valence": 0.5, "arousal": 0.5, "notes": ""}],
             watch_problems=[],
@@ -275,7 +275,7 @@ def test_add_proposal_stores_extra_metadata(pg_test_schema):
     """extra_metadata is merged into the stored metadata JSON."""
     if pg_test_schema is None:
         pytest.skip("pg_test_schema not available")
-    from wild_igor.igor.cognition.dreaming import (
+    from devices.igor.cognition.dreaming import (
         _add_proposal,
         _conn,
         _ensure_proposals,
@@ -311,7 +311,7 @@ def test_read_librarian_observations_returns_list(pg_test_schema):
     """_read_librarian_observations() returns a list (empty or populated)."""
     if pg_test_schema is None:
         pytest.skip("pg_test_schema not available")
-    from wild_igor.igor.cognition.dreaming import _read_librarian_observations
+    from devices.igor.cognition.dreaming import _read_librarian_observations
 
     result = _read_librarian_observations()
     assert isinstance(result, list)

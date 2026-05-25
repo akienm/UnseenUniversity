@@ -17,7 +17,7 @@ def _ticket(**overrides):
         "size": "S",
         "worker": "igor",
         "result": "pe_chain autonomous: pass",
-        "description": "Add a helper function.\n\n**Affected files:** wild_igor/igor/tools/helper.py",
+        "description": "Add a helper function.\n\n**Affected files:** devices/igor/tools/helper.py",
         "decision_id": None,
         "gate": None,
         "completed_at": "2026-05-18T00:00:00Z",
@@ -71,12 +71,12 @@ class TestTryAutoValidate:
         assert result is False
 
     def test_skip_high_inertia_brainstem(self):
-        t = _ticket(description="Affected files: wild_igor/igor/brainstem/core.py")
+        t = _ticket(description="Affected files: devices/igor/brainstem/core.py")
         result, _ = self._run(t)
         assert result is False
 
     def test_skip_high_inertia_memory_models(self):
-        t = _ticket(description="Affected files: wild_igor/igor/memory/models.py")
+        t = _ticket(description="Affected files: devices/igor/memory/models.py")
         result, _ = self._run(t)
         assert result is False
 

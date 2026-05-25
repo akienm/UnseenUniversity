@@ -4,7 +4,7 @@ Seed coding standards as graph nodes — so cortex.search() surfaces them
 during HYPOTHESIZE when Igor writes code.
 
 Usage:
-  python3 wild_igor/igor/tools/seed_coding_standards.py
+  python3 devices/igor/tools/seed_coding_standards.py
 """
 
 import json

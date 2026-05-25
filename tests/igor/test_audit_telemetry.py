@@ -51,7 +51,7 @@ class TestAuditRunRecordYaml(unittest.TestCase):
                 self.Finding(
                     check="prefer-mcp-over-psql",
                     severity="high",
-                    file_or_target="wild_igor/igor/tools/foo.py",
+                    file_or_target="devices/igor/tools/foo.py",
                     matched_pattern="psycopg2.connect",
                 )
             ],
@@ -60,7 +60,7 @@ class TestAuditRunRecordYaml(unittest.TestCase):
         self.assertIn("findings:", yaml)
         self.assertIn("check: prefer-mcp-over-psql", yaml)
         self.assertIn("severity: high", yaml)
-        self.assertIn("file_or_target: wild_igor/igor/tools/foo.py", yaml)
+        self.assertIn("file_or_target: devices/igor/tools/foo.py", yaml)
 
     def test_overridden_finding(self):
         from lab.claudecode.audit_telemetry import AuditFinding

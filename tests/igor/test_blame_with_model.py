@@ -198,8 +198,8 @@ class TestIntegrationLive:
         """consult.py has recent commits with Co-Authored-By trailers."""
         import subprocess as _sp
 
-        repo_root = Path(__file__).resolve().parent.parent
-        target = repo_root / "wild_igor" / "igor" / "cognition" / "consult.py"
+        repo_root = Path(__file__).resolve().parent.parent.parent
+        target = repo_root / "devices" / "igor" / "cognition" / "consult.py"
         if not target.exists():
             return  # integration only runs in a checkout
         # Skip if file isn't tracked (fresh worktree)

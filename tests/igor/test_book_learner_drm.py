@@ -20,7 +20,7 @@ def _make_args(run: bool = True, calibre_id: int = 42) -> types.SimpleNamespace:
 
 
 def _drm_handle(calibre_id: int = 42) -> dict:
-    from igor.tools.ebook_reader import DRM_FAILED
+    from devices.igor.tools.ebook_reader import DRM_FAILED
 
     return {
         DRM_FAILED: True,
@@ -37,7 +37,6 @@ class TestHandleDrmBlocked:
         """With args.run=False, no Cortex or DB calls made."""
         import sys
 
-        sys.path.insert(0, "/home/akien/TheIgors/wild_igor")
         sys.path.insert(0, "/home/akien/TheIgors/lab/claudecode")
 
         from book_learner import _handle_drm_blocked
@@ -53,7 +52,6 @@ class TestHandleDrmBlocked:
         """With args.run=True, exactly one BOOK_DRM_BLOCKED memory is deposited."""
         import sys
 
-        sys.path.insert(0, "/home/akien/TheIgors/wild_igor")
         sys.path.insert(0, "/home/akien/TheIgors/lab/claudecode")
 
         from book_learner import _handle_drm_blocked
@@ -88,7 +86,6 @@ class TestHandleDrmBlocked:
         """With args.run=True and calibre_id set, reading_list updated to failed."""
         import sys
 
-        sys.path.insert(0, "/home/akien/TheIgors/wild_igor")
         sys.path.insert(0, "/home/akien/TheIgors/lab/claudecode")
 
         from book_learner import _handle_drm_blocked

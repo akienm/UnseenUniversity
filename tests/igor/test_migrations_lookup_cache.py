@@ -16,7 +16,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.memory import cortex as cortex_mod
+from devices.igor.memory import cortex as cortex_mod
 
 
 @pytest.fixture(autouse=True)

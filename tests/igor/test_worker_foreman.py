@@ -236,7 +236,7 @@ class TestLaunchNextWorkerDispatch(unittest.TestCase):
 
         Returns (result, mock_adopt, mock_popen) for inspection.
         """
-        from wild_igor.igor.tools import worker_foreman as wf
+        from devices.igor.tools import worker_foreman as wf
 
         mock_adopt = MagicMock(return_value="adopted T-xyz: mocked")
         mock_popen = MagicMock()
@@ -357,9 +357,9 @@ class TestLaunchNextWorkerDispatch(unittest.TestCase):
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-_CORTEX_PATH = "wild_igor.igor.memory.cortex.Cortex"
-_MT_PATH = "wild_igor.igor.memory.models.MemoryType"
-_OPS_GOAL_ADOPT_PATH = "wild_igor.igor.tools.ops.goal_adopt"
+_CORTEX_PATH = "devices.igor.memory.cortex.Cortex"
+_MT_PATH = "devices.igor.memory.models.MemoryType"
+_OPS_GOAL_ADOPT_PATH = "devices.igor.tools.ops.goal_adopt"
 
 
 class TestAdoptNextTicketStrictFlag(unittest.TestCase):
@@ -368,7 +368,7 @@ class TestAdoptNextTicketStrictFlag(unittest.TestCase):
     def test_adopt_next_ticket_raises_legacy_error(self):
         """adopt_next_ticket always raises — autonomous pickup is removed."""
         from lab.claudecode.cc_queue import LegacyDirectClaimError
-        from wild_igor.igor.tools import worker_foreman as wf
+        from devices.igor.tools import worker_foreman as wf
 
         with self.assertRaises(LegacyDirectClaimError) as ctx:
             wf.adopt_next_ticket()
@@ -386,7 +386,7 @@ class TestAdoptNextTicketStrictFlag(unittest.TestCase):
                 "tags": [],
             }
         ]
-        from wild_igor.igor.tools import worker_foreman as wf
+        from devices.igor.tools import worker_foreman as wf
 
         mock_cortex = MagicMock()
         mock_cortex.get_by_type.return_value = []
@@ -396,7 +396,7 @@ class TestAdoptNextTicketStrictFlag(unittest.TestCase):
 
         with (
             patch.object(wf, "_load_queue", return_value=tasks),
-            patch("wild_igor.igor.tools.worker_foreman.subprocess.Popen", MagicMock()),
+            patch("devices.igor.tools.worker_foreman.subprocess.Popen", MagicMock()),
             patch(_CORTEX_PATH, return_value=mock_cortex),
             patch(_MT_PATH, mock_mt),
         ):
@@ -427,7 +427,7 @@ class TestDaemonDeadRaceCondition(unittest.TestCase):
         daemon_pid exists but is dead; reset_stale_in_progress is mocked.
         Returns (result, mock_reset).
         """
-        from wild_igor.igor.tools import worker_foreman as wf
+        from devices.igor.tools import worker_foreman as wf
 
         task = {
             "id": "T-stale-1",
@@ -456,7 +456,7 @@ class TestDaemonDeadRaceCondition(unittest.TestCase):
             patch.object(wf, "_WORKER_PIDS_PATH", fake_pids_path),
             patch.object(wf, "_pid_alive", return_value=False),
             patch(
-                "wild_igor.igor.tools.worker_foreman._cc_queue",
+                "devices.igor.tools.worker_foreman._cc_queue",
                 create=True,
             ),
             patch(

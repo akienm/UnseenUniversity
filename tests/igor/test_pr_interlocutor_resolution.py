@@ -33,15 +33,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 @pytest.fixture(scope="module", autouse=True)
 def ensure_seeded():
     """Re-seed so PR_AKIEN has the new author_handles metadata field."""
-    from wild_igor.igor.tools import seed_persistent_relationships as _seed
+    from devices.igor.tools import seed_persistent_relationships as _seed
 
     rc = _seed.seed()
     assert rc == 0
 
 
 def _fresh_igor():
-    from wild_igor.igor.main import Igor
-    from wild_igor.igor.memory.cortex import Cortex
+    from devices.igor.main import Igor
+    from devices.igor.memory.cortex import Cortex
 
     inst = Igor.__new__(Igor)
     inst.cortex = Cortex(None)
@@ -52,19 +52,19 @@ def _fresh_igor():
 
 
 def test_resolve_facia_by_author_finds_akien():
-    from wild_igor.igor.tools.persistent_relationships import resolve_facia_by_author
+    from devices.igor.tools.persistent_relationships import resolve_facia_by_author
 
     assert resolve_facia_by_author("akien") == "PR_AKIEN"
 
 
 def test_resolve_facia_by_author_finds_claude_code():
-    from wild_igor.igor.tools.persistent_relationships import resolve_facia_by_author
+    from devices.igor.tools.persistent_relationships import resolve_facia_by_author
 
     assert resolve_facia_by_author("claude-code") == "PR_AKIEN"
 
 
 def test_resolve_facia_by_author_is_case_insensitive():
-    from wild_igor.igor.tools.persistent_relationships import resolve_facia_by_author
+    from devices.igor.tools.persistent_relationships import resolve_facia_by_author
 
     assert resolve_facia_by_author("AKIEN") == "PR_AKIEN"
     assert resolve_facia_by_author("Akien") == "PR_AKIEN"
@@ -72,14 +72,14 @@ def test_resolve_facia_by_author_is_case_insensitive():
 
 
 def test_resolve_facia_by_author_unknown_returns_none():
-    from wild_igor.igor.tools.persistent_relationships import resolve_facia_by_author
+    from devices.igor.tools.persistent_relationships import resolve_facia_by_author
 
     assert resolve_facia_by_author("totally-fake-handle") is None
     assert resolve_facia_by_author("unknownuser") is None
 
 
 def test_resolve_facia_by_author_handles_empty_input():
-    from wild_igor.igor.tools.persistent_relationships import resolve_facia_by_author
+    from devices.igor.tools.persistent_relationships import resolve_facia_by_author
 
     assert resolve_facia_by_author("") is None
     assert resolve_facia_by_author("   ") is None
@@ -132,7 +132,7 @@ def test_resolve_frame_unknown_human_falls_back_to_pr_akien():
 
 def test_pr_akien_metadata_carries_author_handles():
     """The seed script should have populated PR_AKIEN.metadata.author_handles."""
-    from wild_igor.igor.tools import persistent_relationships as _pr
+    from devices.igor.tools import persistent_relationships as _pr
 
     row = _pr._resolve_facia("PR_AKIEN")
     assert row is not None

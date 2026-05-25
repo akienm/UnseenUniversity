@@ -49,7 +49,7 @@ _VALID_ANSWER = json.dumps(
 
 
 def test_single_shot_makes_one_call():
-    from wild_igor.igor.tools.inner_cc import call_inner_cc
+    from devices.igor.tools.inner_cc import call_inner_cc
 
     with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}), patch(
         "urllib.request.urlopen", return_value=_or_response(_VALID_ANSWER)
@@ -69,7 +69,7 @@ def test_single_shot_makes_one_call():
 
 
 def test_long_running_uses_multi_turn_path():
-    from wild_igor.igor.tools.inner_cc import call_inner_cc
+    from devices.igor.tools.inner_cc import call_inner_cc
 
     # First response is plain text (not terminal JSON), second is the final answer.
     responses = iter(
@@ -97,7 +97,7 @@ def test_long_running_uses_multi_turn_path():
 
 
 def test_anthropic_model_adds_cache_headers():
-    from wild_igor.igor.tools.inner_cc import _make_or_request
+    from devices.igor.tools.inner_cc import _make_or_request
 
     captured_request = {}
 
@@ -132,7 +132,7 @@ def test_anthropic_model_adds_cache_headers():
 
 
 def test_non_anthropic_model_no_cache_headers():
-    from wild_igor.igor.tools.inner_cc import _make_or_request
+    from devices.igor.tools.inner_cc import _make_or_request
 
     captured_request = {}
 

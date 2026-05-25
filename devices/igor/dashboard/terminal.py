@@ -110,7 +110,7 @@ def render(
             )
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/dashboard/terminal.py: %s", _bare_e
+                "bare except in devices/igor/dashboard/terminal.py: %s", _bare_e
             )
     lines.append(f"  [dim]Action tree: {proc:>6,} nodes[/]")
     lines.append(f"  [dim]Meaning tree:{interp:>6,} nodes{edge_str}[/]")

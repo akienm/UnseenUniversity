@@ -17,12 +17,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
 
 @pytest.fixture()
 def cortex(tmp_path):
-    from wild_igor.igor.memory import cortex as cortex_mod
+    from devices.igor.memory import cortex as cortex_mod
 
     with patch.object(
         cortex_mod, "make_home_proxy", return_value=MagicMock()
@@ -60,7 +59,7 @@ class TestHeatFieldStorage:
 class TestSearchHeatPriming:
     def _minimal_search(self, cortex, query, heat):
         """Drive cortex.search with mocked internals and a populated heat field."""
-        from wild_igor.igor.memory.models import Memory, MemoryType
+        from devices.igor.memory.models import Memory, MemoryType
 
         hot_node = Memory(
             id="hot", narrative="test query content", memory_type=MemoryType.FACTUAL
@@ -130,7 +129,7 @@ class TestSearchHeatPriming:
 
     def test_heat_bump_capped_at_point_one(self, cortex):
         """Heat bump is capped at +0.10 regardless of heat value."""
-        from wild_igor.igor.memory.models import Memory, MemoryType
+        from devices.igor.memory.models import Memory, MemoryType
 
         node = Memory(id="x", narrative="query", memory_type=MemoryType.FACTUAL)
         node.activation_count = 0

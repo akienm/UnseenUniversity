@@ -9,7 +9,7 @@ import pytest
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-from wild_igor.igor.memory.cortex import (
+from devices.igor.memory.cortex import (
     TWM_CONVERSATION_ACTIVE_SEC,
     TWM_CONVERSATION_DECAY_SEC,
     TWM_CONVERSATION_BG_CAP,
@@ -187,7 +187,7 @@ class TestGateDecay:
 class TestUserInputValues:
     def test_user_input_salience_is_095(self):
         """UserInputSource should push at 0.95 salience (conversation is primary job)."""
-        from wild_igor.igor.cognition.push_sources import UserInputSource
+        from devices.igor.cognition.push_sources import UserInputSource
 
         src = UserInputSource()
         # Can't easily call push_message without a real cortex, but verify the

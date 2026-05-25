@@ -128,12 +128,12 @@ def _want_extract_worker(response_text: str, user_input: str, cortex) -> None:
             _C().print(f"[dim cyan][WANT] Recorded: {mem_id} — {want[:60]}[/]")
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/tools/want_tracker.py: %s", _bare_e
+                "bare except in devices/igor/tools/want_tracker.py: %s", _bare_e
             )
 
     except Exception as _bare_e:
         logging.getLogger(__name__).warning(
-            "bare except in wild_igor/igor/tools/want_tracker.py: %s", _bare_e
+            "bare except in devices/igor/tools/want_tracker.py: %s", _bare_e
         )
 
 

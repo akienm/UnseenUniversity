@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition.prompt_contexts import (
+from devices.igor.cognition.prompt_contexts import (
     reasoning_context,
     Provenance,
     TUTOR_DIRECTIVE,

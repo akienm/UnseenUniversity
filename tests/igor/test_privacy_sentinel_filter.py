@@ -13,7 +13,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.main import _is_raw_tool_leak  # noqa: E402
+from devices.igor.main import _is_raw_tool_leak  # noqa: E402
 
 # ── Privacy sentinel detection ───────────────────────────────────────────────
 

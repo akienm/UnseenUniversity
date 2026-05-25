@@ -90,7 +90,7 @@ def assess_valence(interaction_text: str, response_text: str, cortex=None) -> fl
                 return result
     except Exception as _bare_e:
         get_logger(__name__).warning(
-            "bare except in wild_igor/igor/cognition/judgments.py: %s", _bare_e
+            "bare except in devices/igor/cognition/judgments.py: %s", _bare_e
         )
 
     # ── Keyword fallback ──────────────────────────────────────────────────────

@@ -14,7 +14,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "wild_igor"))
 
 
 def _mk_ne():
@@ -24,7 +23,7 @@ def _mk_ne():
     milieu state via __import__. It doesn't use self.log or any other
     attrs, so a bare shell is enough.
     """
-    from igor.cognition import narrative_engine as ne_module
+    from devices.igor.cognition import narrative_engine as ne_module
 
     return ne_module.NarrativeEngine.__new__(ne_module.NarrativeEngine)
 

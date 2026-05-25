@@ -69,32 +69,32 @@ _SAMPLE_SKILL = textwrap.dedent("""\
 
 class TestParseFrontmatter(unittest.TestCase):
     def test_extracts_name(self):
-        from wild_igor.igor.tools.skill_importer import _parse_frontmatter
+        from devices.igor.tools.skill_importer import _parse_frontmatter
 
         meta, _ = _parse_frontmatter(_SAMPLE_SKILL)
         self.assertEqual(meta["name"], "sample")
 
     def test_extracts_description(self):
-        from wild_igor.igor.tools.skill_importer import _parse_frontmatter
+        from devices.igor.tools.skill_importer import _parse_frontmatter
 
         meta, _ = _parse_frontmatter(_SAMPLE_SKILL)
         self.assertIn("sample skill", meta["description"])
 
     def test_extracts_model(self):
-        from wild_igor.igor.tools.skill_importer import _parse_frontmatter
+        from devices.igor.tools.skill_importer import _parse_frontmatter
 
         meta, _ = _parse_frontmatter(_SAMPLE_SKILL)
         self.assertEqual(meta["model"], "haiku")
 
     def test_body_excludes_frontmatter(self):
-        from wild_igor.igor.tools.skill_importer import _parse_frontmatter
+        from devices.igor.tools.skill_importer import _parse_frontmatter
 
         _, body = _parse_frontmatter(_SAMPLE_SKILL)
         self.assertNotIn("---", body)
         self.assertIn("Step 1", body)
 
     def test_no_frontmatter_returns_empty_meta(self):
-        from wild_igor.igor.tools.skill_importer import _parse_frontmatter
+        from devices.igor.tools.skill_importer import _parse_frontmatter
 
         text = "# No frontmatter here\n\nJust prose."
         meta, body = _parse_frontmatter(text)
@@ -104,7 +104,7 @@ class TestParseFrontmatter(unittest.TestCase):
 
 class TestSplitSteps(unittest.TestCase):
     def _split(self, text):
-        from wild_igor.igor.tools.skill_importer import _split_steps, _parse_frontmatter
+        from devices.igor.tools.skill_importer import _split_steps, _parse_frontmatter
 
         _, body = _parse_frontmatter(text)
         return _split_steps(body)
@@ -125,7 +125,7 @@ class TestSplitSteps(unittest.TestCase):
         self.assertIn("git status", steps[1]["text"])
 
     def test_no_steps_returns_empty(self):
-        from wild_igor.igor.tools.skill_importer import _split_steps
+        from devices.igor.tools.skill_importer import _split_steps
 
         steps = _split_steps("Just prose with no step headers.")
         self.assertEqual(steps, [])
@@ -133,7 +133,7 @@ class TestSplitSteps(unittest.TestCase):
 
 class TestExtractBashBlocks(unittest.TestCase):
     def test_finds_bash_blocks(self):
-        from wild_igor.igor.tools.skill_importer import _extract_bash_blocks
+        from devices.igor.tools.skill_importer import _extract_bash_blocks
 
         text = "Some text\n```bash\necho hello\n```\nMore text"
         blocks = _extract_bash_blocks(text)
@@ -141,7 +141,7 @@ class TestExtractBashBlocks(unittest.TestCase):
         self.assertIn("echo hello", blocks[0])
 
     def test_finds_multiple_blocks(self):
-        from wild_igor.igor.tools.skill_importer import (
+        from devices.igor.tools.skill_importer import (
             _extract_bash_blocks,
             _split_steps,
             _parse_frontmatter,
@@ -154,7 +154,7 @@ class TestExtractBashBlocks(unittest.TestCase):
         self.assertIn("git status", blocks[0])
 
     def test_no_bash_blocks_returns_empty(self):
-        from wild_igor.igor.tools.skill_importer import _extract_bash_blocks
+        from devices.igor.tools.skill_importer import _extract_bash_blocks
 
         blocks = _extract_bash_blocks("Just prose, no code.")
         self.assertEqual(blocks, [])
@@ -162,7 +162,7 @@ class TestExtractBashBlocks(unittest.TestCase):
 
 class TestExtractSkillRefs(unittest.TestCase):
     def test_finds_skill_refs(self):
-        from wild_igor.igor.tools.skill_importer import _extract_skill_refs
+        from devices.igor.tools.skill_importer import _extract_skill_refs
 
         text = "Run /commit then /filter on the plan."
         refs = _extract_skill_refs(text)
@@ -170,14 +170,14 @@ class TestExtractSkillRefs(unittest.TestCase):
         self.assertIn("filter", refs)
 
     def test_skips_path_components(self):
-        from wild_igor.igor.tools.skill_importer import _extract_skill_refs
+        from devices.igor.tools.skill_importer import _extract_skill_refs
 
         text = "File at /home/akien/TheIgors/tools/runner.py"
         refs = _extract_skill_refs(text)
         self.assertNotIn("home", refs)
 
     def test_no_refs_returns_empty(self):
-        from wild_igor.igor.tools.skill_importer import _extract_skill_refs
+        from devices.igor.tools.skill_importer import _extract_skill_refs
 
         refs = _extract_skill_refs("No skill references here.")
         self.assertEqual(refs, [])
@@ -185,7 +185,7 @@ class TestExtractSkillRefs(unittest.TestCase):
 
 class TestExtractHardRules(unittest.TestCase):
     def test_finds_hard_rules(self):
-        from wild_igor.igor.tools.skill_importer import (
+        from devices.igor.tools.skill_importer import (
             _extract_hard_rules,
             _parse_frontmatter,
         )
@@ -197,7 +197,7 @@ class TestExtractHardRules(unittest.TestCase):
         self.assertIn("Always verify before closing", rules)
 
     def test_no_hard_rules_section(self):
-        from wild_igor.igor.tools.skill_importer import _extract_hard_rules
+        from devices.igor.tools.skill_importer import _extract_hard_rules
 
         rules = _extract_hard_rules("## Step 1\nDo this.\n## Step 2\nDo that.")
         self.assertEqual(rules, [])
@@ -205,7 +205,7 @@ class TestExtractHardRules(unittest.TestCase):
 
 class TestBuildPayload(unittest.TestCase):
     def _build(self, text=_SAMPLE_SKILL):
-        from wild_igor.igor.tools.skill_importer import (
+        from devices.igor.tools.skill_importer import (
             _build_payload,
             _split_steps,
             _extract_hard_rules,
@@ -286,20 +286,20 @@ class TestImportSkill(unittest.TestCase):
         if not skill_path.exists():
             self.skipTest(f"Skill file not found: {skill_path}")
 
-        from wild_igor.igor.tools.skill_importer import import_skill
+        from devices.igor.tools.skill_importer import import_skill
 
         result = import_skill(skill_name="filter")
         self.assertIn("SKILL_FILTER_ENTRY", result)
         self.assertIn("seeded", result)
 
     def test_import_nonexistent_skill(self):
-        from wild_igor.igor.tools.skill_importer import import_skill
+        from devices.igor.tools.skill_importer import import_skill
 
         result = import_skill(skill_name="nonexistent_xyz")
         self.assertIn("not found", result)
 
     def test_import_empty_name(self):
-        from wild_igor.igor.tools.skill_importer import import_skill
+        from devices.igor.tools.skill_importer import import_skill
 
         result = import_skill(skill_name="")
         self.assertIn("skill_name required", result)
@@ -311,7 +311,7 @@ class TestImportSkill(unittest.TestCase):
         if not skill_path.exists():
             self.skipTest(f"Skill file not found: {skill_path}")
 
-        from wild_igor.igor.tools.skill_importer import import_skill
+        from devices.igor.tools.skill_importer import import_skill
 
         result = import_skill(skill_name="sprint")
         self.assertIn("SKILL_SPRINT_ENTRY", result)
@@ -320,7 +320,7 @@ class TestImportSkill(unittest.TestCase):
     def test_reimport_reflects_change(self):
         """Probe criterion: re-import after change reflects updated content."""
         import tempfile, os
-        from wild_igor.igor.tools.skill_importer import import_skill
+        from devices.igor.tools.skill_importer import import_skill
         import psycopg2, json
 
         db_url = os.environ.get(
@@ -417,7 +417,7 @@ class TestImportAllSkills(unittest.TestCase):
         if not skills_dir.exists():
             self.skipTest(f"Skills directory not found: {skills_dir}")
 
-        from wild_igor.igor.tools.skill_importer import import_all_skills
+        from devices.igor.tools.skill_importer import import_all_skills
 
         result = import_all_skills()
         self.assertIn("skills imported", result)
@@ -426,7 +426,7 @@ class TestImportAllSkills(unittest.TestCase):
         self.assertIn("sprint", result)
 
     def test_bad_dir_returns_not_found(self):
-        from wild_igor.igor.tools.skill_importer import import_all_skills
+        from devices.igor.tools.skill_importer import import_all_skills
 
         result = import_all_skills(skills_dir="/nonexistent/path/xyz")
         self.assertIn("not found", result)

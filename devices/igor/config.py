@@ -9,7 +9,7 @@ precedence:
   3. Code default (lowest — safe fallback)
 
 Usage:
-    from wild_igor.igor.config import get, get_bool, get_int, get_float
+    from devices.igor.config import get, get_bool, get_int, get_float
 
     enabled = get_bool("IGOR_TURN_PIPELINE", False)
     timeout = get_float("IGOR_OLLAMA_TIMEOUT_SECS", 7200.0)  # 2hr (rule: theigors/rules/local-inference-no-timeouts)

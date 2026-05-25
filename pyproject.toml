@@ -18,5 +18,8 @@ dependencies = [
 where = ["."]
 include = ["unseen_university*", "bus*", "diagnostic_base*", "skeleton*", "devices*", "config*", "lab*"]
 
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
 [project.scripts]
 agentctl = "unseen_university.rack:main"

@@ -10,7 +10,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
 # Import MachineRecord for building test fixtures
 from lab.utility_closet.machine_manager import MachineRecord
@@ -60,7 +59,7 @@ def _call_endpoint(machines, healthy_map=None, in_use_map=None, override=""):
     from starlette.testclient import TestClient
     from starlette.applications import Starlette
     from starlette.routing import Route
-    import igor.web.server as srv
+    import devices.igor.web.server as srv
     import threading
 
     if healthy_map is None:

@@ -19,7 +19,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from wild_igor.igor.cognition.consult import ConsultResult, ConsultState
+from devices.igor.cognition.consult import ConsultResult, ConsultState
 
 # The hook is an inline block inside _process_network_msg — the simplest
 # way to exercise its shape is to replicate its key moves in a helper that
@@ -38,7 +38,7 @@ def _simulate_reasoning_consult_hook(
     by the existence of the block in main.py; this test validates the state
     shape and TWM push behavior.)
     """
-    from wild_igor.igor.cognition.consult import ConsultSession
+    from devices.igor.cognition.consult import ConsultSession
 
     state = ConsultState(
         problem_kind="reasoning",
@@ -90,7 +90,7 @@ def _simulate_reasoning_consult_hook(
 class TestReasoningConsultHappyPath:
     def test_state_built_with_reasoning_kind(self, tmp_path, monkeypatch):
         """ConsultSession opens with problem_kind='reasoning' and user_turn extra."""
-        from wild_igor.igor.cognition import consult as cm
+        from devices.igor.cognition import consult as cm
 
         monkeypatch.setattr(cm, "CONSULT_LOG_PATH", tmp_path / "consults.log")
 
@@ -120,7 +120,7 @@ class TestReasoningConsultHappyPath:
         assert kwargs["thread_id"] == "t-thread-1"
 
     def test_salience_and_ttl_set(self, tmp_path, monkeypatch):
-        from wild_igor.igor.cognition import consult as cm
+        from devices.igor.cognition import consult as cm
 
         monkeypatch.setattr(cm, "CONSULT_LOG_PATH", tmp_path / "consults.log")
         good_reply = '{"hypotheses": ["h"], "next_question": "q?", "confidence": 0.5}'
@@ -144,7 +144,7 @@ class TestReasoningConsultHappyPath:
 
 class TestReasoningConsultFailureIsolation:
     def test_consult_api_failure_does_not_raise(self, tmp_path, monkeypatch):
-        from wild_igor.igor.cognition import consult as cm
+        from devices.igor.cognition import consult as cm
 
         monkeypatch.setattr(cm, "CONSULT_LOG_PATH", tmp_path / "consults.log")
         cortex = MagicMock()
@@ -163,7 +163,7 @@ class TestReasoningConsultFailureIsolation:
         # hook still runs TWM push with empty top_hypothesis. Confirm no exception.
 
     def test_twm_push_failure_does_not_raise(self, tmp_path, monkeypatch):
-        from wild_igor.igor.cognition import consult as cm
+        from devices.igor.cognition import consult as cm
 
         monkeypatch.setattr(cm, "CONSULT_LOG_PATH", tmp_path / "consults.log")
         good_reply = '{"hypotheses": ["h"], "next_question": "q?", "confidence": 0.5}'
@@ -191,7 +191,7 @@ class TestHookPresenceInMain:
         from pathlib import Path
 
         main_py = (
-            Path(__file__).resolve().parent.parent / "wild_igor" / "igor" / "main.py"
+            Path(__file__).resolve().parent.parent.parent / "devices" / "igor" / "main.py"
         )
         content = main_py.read_text()
         # Look for the marker comment + the key ConsultSession usage

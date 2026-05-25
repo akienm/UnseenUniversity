@@ -24,7 +24,7 @@ Tests:
 
 import pytest
 
-pass  # T-igor-channels-relocate: proxy moved to wild_igor/igor/tools/network_proxy.py
+pass  # T-igor-channels-relocate: proxy moved to devices/igor/tools/network_proxy.py
 
 import json
 import sys
@@ -33,9 +33,8 @@ import unittest.mock as mock
 from io import BytesIO
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
-from igor.tools.network_proxy import HostStats, NetworkProxy, _extract_host
+from devices.igor.tools.network_proxy import HostStats, NetworkProxy, _extract_host
 
 # ── HostStats unit tests ──────────────────────────────────────────────────────
 
@@ -263,21 +262,21 @@ class TestNetworkProxyReport(unittest.TestCase):
 
 class TestGetNetworkProxyReportTool(unittest.TestCase):
     def test_returns_string(self):
-        from igor.tools.metrics import _get_network_proxy_report
+        from devices.igor.tools.metrics import _get_network_proxy_report
 
         result = _get_network_proxy_report()
         self.assertIsInstance(result, str)
 
     def test_no_calls_message_via_tool(self):
         """Patching global proxy to a fresh instance verifies the no-calls path."""
-        from igor.tools import metrics as metrics_mod
-        import igor.tools.network_proxy as proxy_mod
+        from devices.igor.tools import metrics as metrics_mod
+        import devices.igor.tools.network_proxy as proxy_mod
 
         fresh_proxy = NetworkProxy()
         original = proxy_mod.proxy
         proxy_mod.proxy = fresh_proxy
         try:
-            from igor.tools.metrics import _get_network_proxy_report
+            from devices.igor.tools.metrics import _get_network_proxy_report
 
             result = _get_network_proxy_report()
             self.assertIn("no outbound calls", result)

@@ -157,7 +157,7 @@ def _cli(argv: list[str]) -> int:
         print("IGOR_DB_PATH must be set for live verify.", file=sys.stderr)
         return 2
 
-    from wild_igor.igor.memory.cortex import Cortex
+    from devices.igor.memory.cortex import Cortex
 
     cortex = Cortex(Path(db_path_str), instance_id=os.environ.get("IGOR_INSTANCE_ID"))
     results = verify(args.engram_id, queries, cortex=cortex, top_k=args.top_k)

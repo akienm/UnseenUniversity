@@ -5,7 +5,7 @@ Runs the same chapter through multiple models via the inference gateway,
 collects extraction results, and produces a comparison table.
 
 Usage (from CLI or test):
-    python -m wild_igor.igor.tools.reading_benchmark --book "Title" --chapter 3
+    python -m devices.igor.tools.reading_benchmark --book "Title" --chapter 3
 
 Each pass uses _reading_extract_worker with model_override to force a specific
 model through the gateway. Results stored in benchmark_results/ as JSON.

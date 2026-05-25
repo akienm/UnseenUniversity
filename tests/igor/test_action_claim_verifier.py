@@ -35,7 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 def test_detect_finds_i_ticketed_it():
-    from wild_igor.igor.cognition.action_claim_verifier import detect_action_claims
+    from devices.igor.cognition.action_claim_verifier import detect_action_claims
 
     claims = detect_action_claims("I ticketed it. The defect is recorded.")
     assert len(claims) >= 1
@@ -44,7 +44,7 @@ def test_detect_finds_i_ticketed_it():
 
 def test_detect_finds_the_ticket_is_already_in_database():
     """The exact phrase from the 2026-04-13 transcript."""
-    from wild_igor.igor.cognition.action_claim_verifier import detect_action_claims
+    from devices.igor.cognition.action_claim_verifier import detect_action_claims
 
     text = (
         "The ticket about the privacy-guard halt is already in the shared "
@@ -55,28 +55,28 @@ def test_detect_finds_the_ticket_is_already_in_database():
 
 
 def test_detect_finds_i_filed_that():
-    from wild_igor.igor.cognition.action_claim_verifier import detect_action_claims
+    from devices.igor.cognition.action_claim_verifier import detect_action_claims
 
     claims = detect_action_claims("done — I filed that as a ticket.")
     assert len(claims) >= 1
 
 
 def test_detect_finds_i_added_it_to_the_queue():
-    from wild_igor.igor.cognition.action_claim_verifier import detect_action_claims
+    from devices.igor.cognition.action_claim_verifier import detect_action_claims
 
     claims = detect_action_claims("I added that to the queue.")
     assert len(claims) >= 1
 
 
 def test_detect_finds_i_committed_it():
-    from wild_igor.igor.cognition.action_claim_verifier import detect_action_claims
+    from devices.igor.cognition.action_claim_verifier import detect_action_claims
 
     claims = detect_action_claims("I committed that change.")
     assert len(claims) >= 1
 
 
 def test_detect_skips_innocuous_text():
-    from wild_igor.igor.cognition.action_claim_verifier import detect_action_claims
+    from devices.igor.cognition.action_claim_verifier import detect_action_claims
 
     assert detect_action_claims("Hello, what would you like to tackle?") == []
     assert detect_action_claims("That's an interesting question.") == []
@@ -88,7 +88,7 @@ def test_detect_skips_passive_voice_without_claim():
     """We're catching 'I did X' style claims, not general references to
     tickets existing. The pattern requires Igor saying he just did
     something — past tense, first person, completed action."""
-    from wild_igor.igor.cognition.action_claim_verifier import detect_action_claims
+    from devices.igor.cognition.action_claim_verifier import detect_action_claims
 
     # These describe state without claiming Igor just did them
     benign = [
@@ -104,7 +104,7 @@ def test_detect_skips_passive_voice_without_claim():
 
 
 def test_find_evidence_returns_dict_shape():
-    from wild_igor.igor.cognition.action_claim_verifier import find_evidence
+    from devices.igor.cognition.action_claim_verifier import find_evidence
 
     cortex = MagicMock()
     cortex.search_ring = MagicMock(return_value=[])
@@ -118,13 +118,13 @@ def test_find_evidence_returns_dict_shape():
 
 def test_find_evidence_picks_up_recent_queue_write():
     """When _cc_queue_recently_modified returns True, queue_modified=True."""
-    from wild_igor.igor.cognition.action_claim_verifier import find_evidence
+    from devices.igor.cognition.action_claim_verifier import find_evidence
 
     cortex = MagicMock()
     cortex.search_ring = MagicMock(return_value=[])
 
     with patch(
-        "wild_igor.igor.cognition.action_claim_verifier._cc_queue_recently_modified",
+        "devices.igor.cognition.action_claim_verifier._cc_queue_recently_modified",
         return_value=True,
     ):
         result = find_evidence(cortex)
@@ -134,13 +134,13 @@ def test_find_evidence_picks_up_recent_queue_write():
 
 def test_find_evidence_no_evidence_when_quiet():
     """When _cc_queue_recently_modified returns False and no ring results, any_evidence=False."""
-    from wild_igor.igor.cognition.action_claim_verifier import find_evidence
+    from devices.igor.cognition.action_claim_verifier import find_evidence
 
     cortex = MagicMock()
     cortex.search_ring = MagicMock(return_value=[])
 
     with patch(
-        "wild_igor.igor.cognition.action_claim_verifier._cc_queue_recently_modified",
+        "devices.igor.cognition.action_claim_verifier._cc_queue_recently_modified",
         return_value=False,
     ):
         result = find_evidence(cortex)
@@ -152,7 +152,7 @@ def test_find_evidence_no_evidence_when_quiet():
 
 
 def test_check_response_noop_on_clean_text():
-    from wild_igor.igor.cognition.action_claim_verifier import check_response
+    from devices.igor.cognition.action_claim_verifier import check_response
 
     cortex = MagicMock()
     cortex.search_ring = MagicMock(return_value=[])
@@ -167,7 +167,7 @@ def test_check_response_noop_on_clean_text():
 
 def test_check_response_noop_when_claim_has_evidence():
     """Action claim present, queue recently updated → verified, no warning fired."""
-    from wild_igor.igor.cognition.action_claim_verifier import check_response
+    from devices.igor.cognition.action_claim_verifier import check_response
 
     cortex = MagicMock()
     cortex.search_ring = MagicMock(return_value=[])
@@ -175,7 +175,7 @@ def test_check_response_noop_when_claim_has_evidence():
     cortex.twm_push = MagicMock()
 
     with patch(
-        "wild_igor.igor.cognition.action_claim_verifier._cc_queue_recently_modified",
+        "devices.igor.cognition.action_claim_verifier._cc_queue_recently_modified",
         return_value=True,
     ):
         unverified = check_response(cortex, "I ticketed it. Done.", turn_id="testturn")
@@ -187,7 +187,7 @@ def test_check_response_noop_when_claim_has_evidence():
 def test_check_response_logs_and_pushes_when_unverified():
     """The exact 2026-04-13 case: claim present, no evidence anchor —
     should log CONFAB_CAUGHT and push high-salience TWM marker."""
-    from wild_igor.igor.cognition.action_claim_verifier import check_response
+    from devices.igor.cognition.action_claim_verifier import check_response
 
     cortex = MagicMock()
     cortex.search_ring = MagicMock(return_value=[])
@@ -198,7 +198,7 @@ def test_check_response_logs_and_pushes_when_unverified():
     )  # no prior confab — don't suppress
 
     with patch(
-        "wild_igor.igor.cognition.action_claim_verifier._cc_queue_recently_modified",
+        "devices.igor.cognition.action_claim_verifier._cc_queue_recently_modified",
         return_value=False,
     ):
         unverified = check_response(
@@ -220,7 +220,7 @@ def test_check_response_logs_and_pushes_when_unverified():
 
 def test_check_response_never_raises():
     """Pass garbage to check_response and verify it returns gracefully."""
-    from wild_igor.igor.cognition.action_claim_verifier import check_response
+    from devices.igor.cognition.action_claim_verifier import check_response
 
     # Cortex that explodes on every method
     bad_cortex = MagicMock()
@@ -239,7 +239,7 @@ def test_check_response_never_raises():
 def test_check_response_does_not_modify_text():
     """Detection-only sprint — response_text is never mutated. The reply
     goes through verbatim regardless of whether claims are caught."""
-    from wild_igor.igor.cognition.action_claim_verifier import check_response
+    from devices.igor.cognition.action_claim_verifier import check_response
 
     cortex = MagicMock()
     cortex.search_ring = MagicMock(return_value=[])
@@ -263,7 +263,7 @@ class TestSuppressFalseClaims:
     """suppress_false_claims strips unverified claims from response text."""
 
     def test_strips_single_claim(self):
-        from wild_igor.igor.cognition.action_claim_verifier import (
+        from devices.igor.cognition.action_claim_verifier import (
             suppress_false_claims,
         )
 
@@ -274,7 +274,7 @@ class TestSuppressFalseClaims:
         assert "Let me know" in result
 
     def test_strips_multiple_claims(self):
-        from wild_igor.igor.cognition.action_claim_verifier import (
+        from devices.igor.cognition.action_claim_verifier import (
             suppress_false_claims,
         )
 
@@ -286,7 +286,7 @@ class TestSuppressFalseClaims:
         assert "done" in result
 
     def test_preserves_text_when_no_claims(self):
-        from wild_igor.igor.cognition.action_claim_verifier import (
+        from devices.igor.cognition.action_claim_verifier import (
             suppress_false_claims,
         )
 
@@ -295,7 +295,7 @@ class TestSuppressFalseClaims:
         assert result == text
 
     def test_never_returns_empty(self):
-        from wild_igor.igor.cognition.action_claim_verifier import (
+        from devices.igor.cognition.action_claim_verifier import (
             suppress_false_claims,
         )
 
@@ -306,7 +306,7 @@ class TestSuppressFalseClaims:
         assert len(result) > 0
 
     def test_cleans_double_spaces(self):
-        from wild_igor.igor.cognition.action_claim_verifier import (
+        from devices.igor.cognition.action_claim_verifier import (
             suppress_false_claims,
         )
 
@@ -316,7 +316,7 @@ class TestSuppressFalseClaims:
         assert "  " not in result
 
     def test_handles_none_inputs(self):
-        from wild_igor.igor.cognition.action_claim_verifier import (
+        from devices.igor.cognition.action_claim_verifier import (
             suppress_false_claims,
         )
 
@@ -333,7 +333,7 @@ class TestRefractoryWindow:
 
     def test_coherence_second_fire_suppressed_when_ring_has_recent_failure(self):
         from unittest.mock import MagicMock
-        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+        from devices.igor.cognition.response_coherence_inhibitor import (
             check_coherence,
         )
 
@@ -353,7 +353,7 @@ class TestRefractoryWindow:
 
     def test_coherence_first_fire_not_suppressed_when_ring_empty(self):
         from unittest.mock import MagicMock
-        from wild_igor.igor.cognition.response_coherence_inhibitor import (
+        from devices.igor.cognition.response_coherence_inhibitor import (
             check_coherence,
         )
 
@@ -369,17 +369,17 @@ class TestRefractoryWindow:
 
     def test_confab_second_fire_suppressed_when_ring_has_recent_confab(self):
         from unittest.mock import MagicMock, patch
-        from wild_igor.igor.cognition.action_claim_verifier import check_response
+        from devices.igor.cognition.action_claim_verifier import check_response
 
         cortex = MagicMock()
         cortex.read_ring_memory.return_value = [{"category": "confab_caught"}]
 
         text = "I've just ticketed it in the database."
         with patch(
-            "wild_igor.igor.cognition.action_claim_verifier._cc_queue_recently_modified",
+            "devices.igor.cognition.action_claim_verifier._cc_queue_recently_modified",
             return_value=False,
         ), patch(
-            "wild_igor.igor.cognition.action_claim_verifier._recent_tool_results",
+            "devices.igor.cognition.action_claim_verifier._recent_tool_results",
             return_value=[],
         ):
             claims = check_response(cortex, text, thread_id="thread-C")

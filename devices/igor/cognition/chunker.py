@@ -18,7 +18,7 @@ with capacity-profile information to group atoms into machine-sized
 batches.
 
 Usage:
-    from wild_igor.igor.cognition.chunker import chunk_input
+    from devices.igor.cognition.chunker import chunk_input
 
     for chunk in chunk_input(text):
         # chunk.text — the atom's text

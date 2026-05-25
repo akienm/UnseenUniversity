@@ -17,7 +17,6 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch, call
 from datetime import datetime
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
 
 class TestSelfTest(unittest.TestCase):
@@ -25,7 +24,7 @@ class TestSelfTest(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        from wild_igor.igor.cognition.self_test import (
+        from devices.igor.cognition.self_test import (
             _get_instance_dir,
             _get_blob_index_path,
             _get_test_log_path,
@@ -47,21 +46,21 @@ class TestSelfTest(unittest.TestCase):
 
     def test_get_instance_dir(self):
         """Verify instance directory path uses paths().instance (not IGOR_DB_PATH)."""
-        from igor.paths import paths as _paths
+        from devices.igor.paths import paths as _paths
 
         instance_dir = self.get_instance_dir()
         self.assertEqual(instance_dir, _paths().instance)
 
     def test_get_blob_index_path(self):
         """Verify blob_index.json path is under paths().instance."""
-        from igor.paths import paths as _paths
+        from devices.igor.paths import paths as _paths
 
         path = self.get_blob_index_path()
         self.assertEqual(path, _paths().instance / "blob_index.json")
 
     def test_get_test_log_path(self):
         """Verify test log path is under paths().instance."""
-        from igor.paths import paths as _paths
+        from devices.igor.paths import paths as _paths
 
         path = self.get_test_log_path()
         self.assertEqual(path, _paths().instance / "self_test_log.jsonl")
@@ -194,7 +193,7 @@ class TestSelfTest(unittest.TestCase):
         mock_cortex = MagicMock()
 
         # Mock search results
-        from wild_igor.igor.memory.models import Memory, MemoryType
+        from devices.igor.memory.models import Memory, MemoryType
 
         mock_memory = Memory(
             id="test-mem-1",
@@ -232,10 +231,10 @@ class TestSelfTest(unittest.TestCase):
         # Should return empty string gracefully
         self.assertEqual(answer, "")
 
-    @patch("wild_igor.igor.cognition.self_test._get_cortex")
-    @patch("wild_igor.igor.cognition.self_test._get_word_graph")
-    @patch("wild_igor.igor.cognition.self_test.get_blob_metadata")
-    @patch("wild_igor.igor.cognition.self_test.get_chunks")
+    @patch("devices.igor.cognition.self_test._get_cortex")
+    @patch("devices.igor.cognition.self_test._get_word_graph")
+    @patch("devices.igor.cognition.self_test.get_blob_metadata")
+    @patch("devices.igor.cognition.self_test.get_chunks")
     def test_consolidate_content_no_cortex(
         self, mock_get_chunks, mock_metadata, mock_wg, mock_cortex
     ):
@@ -247,10 +246,10 @@ class TestSelfTest(unittest.TestCase):
         # Should log error and return early
         mock_metadata.assert_not_called()
 
-    @patch("wild_igor.igor.cognition.self_test._get_cortex")
-    @patch("wild_igor.igor.cognition.self_test._get_word_graph")
-    @patch("wild_igor.igor.cognition.self_test.get_blob_metadata")
-    @patch("wild_igor.igor.cognition.self_test.get_chunks")
+    @patch("devices.igor.cognition.self_test._get_cortex")
+    @patch("devices.igor.cognition.self_test._get_word_graph")
+    @patch("devices.igor.cognition.self_test.get_blob_metadata")
+    @patch("devices.igor.cognition.self_test.get_chunks")
     def test_consolidate_content_no_metadata(
         self, mock_get_chunks, mock_metadata, mock_wg, mock_cortex
     ):

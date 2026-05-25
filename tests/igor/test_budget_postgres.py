@@ -116,7 +116,7 @@ def test_db_proxy_is_singleton():
 
 def test_query_costs_log_handles_missing_file(tmp_path, monkeypatch):
     """When costs.log is absent, returns a zero-spend dict with a note."""
-    import wild_igor.igor.paths as paths_mod
+    import devices.igor.paths as paths_mod
     from lab.utility_closet.budget import query_costs_log
 
     class _FakePaths:

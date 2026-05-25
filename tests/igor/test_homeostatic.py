@@ -14,10 +14,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
-import igor.cognition.milieu as milieu_mod
-from igor.cognition.milieu import (
+import devices.igor.cognition.milieu as milieu_mod
+from devices.igor.cognition.milieu import (
     DECAY_AROUSAL,
     DECAY_DOMINANCE,
     DECAY_VALENCE,

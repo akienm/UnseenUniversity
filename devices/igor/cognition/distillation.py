@@ -71,7 +71,7 @@ def _load_checkpoint() -> dict:
             return json.loads(_CHECKPOINT_FILE.read_text())
     except Exception as _bare_e:
         log.warning(
-            "bare except in wild_igor/igor/cognition/distillation.py: %s", _bare_e
+            "bare except in devices/igor/cognition/distillation.py: %s", _bare_e
         )
     return {"last_run_ts": 0.0, "processed_ids": []}
 
@@ -85,7 +85,7 @@ def _save_checkpoint(ts: float, processed_ids: list[str]) -> None:
         _CHECKPOINT_FILE.write_text(json.dumps(data, indent=2))
     except Exception as _bare_e:
         log.warning(
-            "bare except in wild_igor/igor/cognition/distillation.py: %s", _bare_e
+            "bare except in devices/igor/cognition/distillation.py: %s", _bare_e
         )
 
 
@@ -334,7 +334,7 @@ def _run_graduation_pass(cortex: Cortex) -> int:
 
     except Exception as _bare_e:
         log.warning(
-            "bare except in wild_igor/igor/cognition/distillation.py graduation: %s",
+            "bare except in devices/igor/cognition/distillation.py graduation: %s",
             _bare_e,
         )
 
@@ -383,7 +383,7 @@ def run_distillation(cortex: Cortex) -> dict:
         episodics = [cortex._to_memory(r) for r in rows]
     except Exception as _bare_e:
         log.warning(
-            "bare except in wild_igor/igor/cognition/distillation.py fetch: %s",
+            "bare except in devices/igor/cognition/distillation.py fetch: %s",
             _bare_e,
         )
         return {"error": "fetch_failed"}
@@ -456,7 +456,7 @@ def run_distillation(cortex: Cortex) -> dict:
 
             except Exception as _bare_e:
                 log.warning(
-                    "bare except in wild_igor/igor/cognition/distillation.py store: %s",
+                    "bare except in devices/igor/cognition/distillation.py store: %s",
                     _bare_e,
                 )
                 skipped += 1

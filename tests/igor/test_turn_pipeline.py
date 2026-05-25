@@ -14,25 +14,25 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition.decision_blob import (  # noqa: E402
+from devices.igor.cognition.decision_blob import (  # noqa: E402
     DecisionBlob,
     Intent,
     ProposedExperiment,
     Provenance as DBProvenance,
 )
-from wild_igor.igor.cognition.experiment_cascade import (  # noqa: E402
+from devices.igor.cognition.experiment_cascade import (  # noqa: E402
     BaseCascadeLevel,
     CascadeResult,
     CascadeSituation,
     CascadeStatus,
     ExperimentCascade,
 )
-from wild_igor.igor.cognition.prompt_contexts import PromptContext  # noqa: E402
-from wild_igor.igor.cognition.reasoning_workflow import (  # noqa: E402
+from devices.igor.cognition.prompt_contexts import PromptContext  # noqa: E402
+from devices.igor.cognition.reasoning_workflow import (  # noqa: E402
     Conversation,
     PeerAdvisor,
 )
-from wild_igor.igor.cognition.turn_pipeline import (  # noqa: E402
+from devices.igor.cognition.turn_pipeline import (  # noqa: E402
     PathStep,
     TurnPipeline,
     TurnResult,
@@ -365,7 +365,7 @@ def test_blob_from_cascade_match_no_data_falls_back():
 
 
 def test_blob_from_workflow_output_carries_proposed_experiment():
-    from wild_igor.igor.cognition.reasoning_workflow import (
+    from devices.igor.cognition.reasoning_workflow import (
         Conversation,
         WorkflowA_ExperimentDesign,
         WorkflowComplete,
@@ -393,7 +393,7 @@ def test_blob_from_workflow_output_carries_proposed_experiment():
 
 
 def test_blob_from_workflow_non_experiment_output_defers():
-    from wild_igor.igor.cognition.reasoning_workflow import (
+    from devices.igor.cognition.reasoning_workflow import (
         Conversation,
         WorkflowComplete,
         WorkflowRun,

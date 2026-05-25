@@ -20,7 +20,7 @@ from unseen_university.device import BaseDevice, INTERFACE_VERSION
 from unseen_university.shim import BaseShim
 from devices.rack_test.device import RackTestDevice
 from devices.rack_test.shim import RackTestShim
-from tests.fixtures.stub_devices import StubDevice
+from fixtures.stub_devices import StubDevice
 
 # ── Contract ──────────────────────────────────────────────────────────────────
 

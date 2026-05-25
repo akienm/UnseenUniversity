@@ -12,10 +12,14 @@ Cleanup is explicit via the SWADLBaseAutomation context manager; the
 browser quits even on assertion failure.
 """
 
+import sys
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 import pytest
+
+sys.path.insert(0, str(Path.home() / "TheIgors"))
 
 
 def is_chat_server_up():

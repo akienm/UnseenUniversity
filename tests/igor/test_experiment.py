@@ -15,7 +15,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition.experiment import (  # noqa: E402
+from devices.igor.cognition.experiment import (  # noqa: E402
     Experiment,
     ExperimentStatus,
     Hypothesis,
@@ -285,7 +285,7 @@ def test_parent_blob_id_preserved():
 
 
 def test_from_proposed_bridge():
-    from wild_igor.igor.cognition.decision_blob import ProposedExperiment
+    from devices.igor.cognition.decision_blob import ProposedExperiment
 
     proposed = ProposedExperiment(
         hypothesis="calling tool X with input Y produces Z",

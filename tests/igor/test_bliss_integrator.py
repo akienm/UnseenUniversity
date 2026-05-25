@@ -1,4 +1,4 @@
-"""Tests for wild_igor.igor.cognition.bliss_integrator.
+"""Tests for devices.igor.cognition.bliss_integrator.
 
 Covers: subscription to Pursuit events, EMA accumulation + decay,
 disabled-gate fallback, milieu feedback application.
@@ -15,8 +15,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition import bliss_integrator as bmod  # noqa: E402
-from wild_igor.igor.cognition import pursuits as pmod  # noqa: E402
+from devices.igor.cognition import bliss_integrator as bmod  # noqa: E402
+from devices.igor.cognition import pursuits as pmod  # noqa: E402
 
 
 @pytest.fixture(autouse=True)

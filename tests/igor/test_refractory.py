@@ -15,11 +15,10 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from unittest.mock import MagicMock
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
 
 def _make_habit(hid, trigger, habit_type="action", activation=0):
-    from igor.memory.models import Memory, MemoryType
+    from devices.igor.memory.models import Memory, MemoryType
 
     m = Memory(
         id=hid,
@@ -45,7 +44,7 @@ def _make_parsed(text, intent="action_request"):
 
 def _clear_refractory():
     """Reset module-level refractory map between tests."""
-    from igor.cognition import basal_ganglia
+    from devices.igor.cognition import basal_ganglia
 
     basal_ganglia._refractory_map.clear()
 
@@ -61,7 +60,7 @@ class TestRefractoryScoreHabit(unittest.TestCase):
 
     def test_first_call_full_score(self):
         """First call returns a full positive score (no refractory entry)."""
-        from igor.cognition import basal_ganglia
+        from devices.igor.cognition import basal_ganglia
 
         habit = _make_habit("PROC_TEST_REFRAC", "keyword")
         now = datetime.now(timezone.utc)
@@ -70,7 +69,7 @@ class TestRefractoryScoreHabit(unittest.TestCase):
 
     def test_second_call_within_ttl_suppressed(self):
         """Score is ~10% of original when habit is in refractory."""
-        from igor.cognition import basal_ganglia
+        from devices.igor.cognition import basal_ganglia
 
         habit = _make_habit("PROC_TEST_REFRAC2", "keyword")
         now = datetime.now(timezone.utc)
@@ -96,7 +95,7 @@ class TestRefractoryScoreHabit(unittest.TestCase):
 
     def test_score_full_after_ttl_expires(self):
         """Score returns to full once TTL has elapsed."""
-        from igor.cognition import basal_ganglia
+        from devices.igor.cognition import basal_ganglia
 
         habit = _make_habit("PROC_TEST_REFRAC3", "keyword")
         now = datetime.now(timezone.utc)
@@ -121,7 +120,7 @@ class TestRefractoryScoreHabit(unittest.TestCase):
 
     def test_expired_key_removed_from_map(self):
         """Stale refractory key is cleaned up when accessed."""
-        from igor.cognition import basal_ganglia
+        from devices.igor.cognition import basal_ganglia
 
         habit = _make_habit("PROC_TEST_REFRAC4", "keyword")
         now = datetime.now(timezone.utc)
@@ -136,7 +135,7 @@ class TestRefractoryScoreHabit(unittest.TestCase):
 
     def test_suppression_is_only_refractory_factor(self):
         """Suppression multiplier matches _REFRACTORY_FACTOR exactly."""
-        from igor.cognition import basal_ganglia
+        from devices.igor.cognition import basal_ganglia
 
         habit = _make_habit("PROC_TEST_REFRAC5", "keyword")
         now = datetime.now(timezone.utc)
@@ -169,7 +168,7 @@ class TestRefractorySelectHabit(unittest.TestCase):
 
     def test_winner_is_marked_refractory_after_select(self):
         """After select_habit returns a winner, that habit.id is in _refractory_map."""
-        from igor.cognition import basal_ganglia
+        from devices.igor.cognition import basal_ganglia
 
         habit = _make_habit("PROC_REFRAC_WINNER", "hello")
         parsed = self._make_mock_parsed("hello there")
@@ -180,7 +179,7 @@ class TestRefractorySelectHabit(unittest.TestCase):
 
     def test_refractory_expiry_is_in_future(self):
         """Refractory expiry timestamp is in the future relative to now."""
-        from igor.cognition import basal_ganglia
+        from devices.igor.cognition import basal_ganglia
 
         habit = _make_habit("PROC_REFRAC_EXPIRY", "hello")
         parsed = self._make_mock_parsed("hello there")
@@ -192,7 +191,7 @@ class TestRefractorySelectHabit(unittest.TestCase):
 
     def test_second_select_within_ttl_suppressed(self):
         """Habit that just fired scores below threshold on immediate re-select."""
-        from igor.cognition import basal_ganglia
+        from devices.igor.cognition import basal_ganglia
 
         habit = _make_habit("PROC_REFRAC_SECOND", "hello")
         parsed = self._make_mock_parsed("hello there")
@@ -210,8 +209,8 @@ class TestRefractorySelectHabit(unittest.TestCase):
     def test_management_phrase_sets_refractory(self):
         """Management-phrase dispatch now sets refractory to prevent double-fire.
         T-management-phrase-word-boundary: same phrase can't re-fire within TTL."""
-        from igor.cognition import basal_ganglia
-        from igor.memory.models import Memory, MemoryType
+        from devices.igor.cognition import basal_ganglia
+        from devices.igor.memory.models import Memory, MemoryType
 
         basal_ganglia._refractory_map.pop("PROC_SWARM_UPDATE", None)
         habit = Memory(
@@ -229,8 +228,8 @@ class TestRefractorySelectHabit(unittest.TestCase):
         """Partial substring of phrase must NOT trigger dispatch.
         T-management-phrase-word-boundary: 'goal continuation: ...' in prose
         must not fire PROC_GOAL_CONTINUATION."""
-        from igor.cognition import basal_ganglia
-        from igor.memory.models import Memory, MemoryType
+        from devices.igor.cognition import basal_ganglia
+        from devices.igor.memory.models import Memory, MemoryType
 
         habit = Memory(
             id="PROC_GOAL_CONTINUATION",
@@ -258,8 +257,8 @@ class TestRefractorySelectHabit(unittest.TestCase):
 
     def test_compile_phrase_does_not_set_refractory(self):
         """Compile-phrase pre-check dispatch does NOT add to _refractory_map."""
-        from igor.cognition import basal_ganglia
-        from igor.memory.models import Memory, MemoryType
+        from devices.igor.cognition import basal_ganglia
+        from devices.igor.memory.models import Memory, MemoryType
 
         habit = Memory(
             id="PROC_HABIT_COMPILER",
@@ -273,7 +272,7 @@ class TestRefractorySelectHabit(unittest.TestCase):
 
     def test_no_winner_does_not_set_refractory(self):
         """When no winner is selected, _refractory_map stays empty."""
-        from igor.cognition import basal_ganglia
+        from devices.igor.cognition import basal_ganglia
 
         habit = _make_habit("PROC_UNLIKELY", "xxxxunlikelytrigger")
         parsed = self._make_mock_parsed("hello there")

@@ -408,7 +408,7 @@ def preparse(user_input: str, habits: list, model: str = "") -> str:
     except Exception as _bare_e:
         log_error(
             kind="BARE_EXCEPT",
-            detail=f"wild_igor/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
+            detail=f"devices/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
         )
 
     return _rule_based_csb(user_input, habits)
@@ -597,7 +597,7 @@ class OllamaReasoner(LocalReasoner, IgorBase):
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
+                    detail=f"devices/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
                 )
 
         # rule: theigors/rules/local-inference-no-timeouts — local takes
@@ -678,7 +678,7 @@ class OllamaReasoner(LocalReasoner, IgorBase):
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
+                    detail=f"devices/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
                 )
             text = response["message"]["content"]
             if not text or not text.strip():
@@ -701,7 +701,7 @@ class OllamaReasoner(LocalReasoner, IgorBase):
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
+                    detail=f"devices/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
                 )
             return text, 0.0  # Local = no cost
         except Exception as exc:
@@ -1069,7 +1069,7 @@ VALENCE: <positive|neutral|negative>"""
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
+                detail=f"devices/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
             )
 
     # Try Ollama batch model (qwen2.5:14b — better reasoning than 1B)

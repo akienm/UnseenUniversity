@@ -126,7 +126,7 @@ Commands:
 
 LEGACY NOTE
 ───────────
-wild_igor/igor/cognition/reading_indexer.py is the old path — a
+devices/igor/cognition/reading_indexer.py is the old path — a
 pre-engine reader that predates the blob model. Kept for reference
 but not invoked in the live pipeline. Do not add features there.
 
@@ -571,11 +571,11 @@ def _ensure_worker_script(worker_path: Path, repo: Path) -> None:
 """reading_worker.py — Background worker for reading runs."""
 import sys, os
 sys.path.insert(0, "{repo}")
-sys.path.insert(0, "{repo / 'wild_igor'}")
+sys.path.insert(0, "{repo / 'devices' / 'igor'}")
 
 _instance_dir = "{instance_dir}"
 try:
-    sys.path.insert(0, "{repo / 'wild_igor' / 'setup_assets'}")
+    sys.path.insert(0, "{repo / 'devices' / 'igor' / 'setup_assets'}")
     from installer import load_cfg
     load_cfg(_instance_dir)
 except Exception:

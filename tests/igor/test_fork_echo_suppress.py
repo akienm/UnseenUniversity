@@ -35,7 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 @pytest.fixture(scope="module", autouse=True)
 def ensure_seeded():
-    from wild_igor.igor.tools import seed_persistent_relationships as _seed
+    from devices.igor.tools import seed_persistent_relationships as _seed
 
     rc = _seed.seed()
     assert rc == 0
@@ -140,7 +140,7 @@ def test_suppression_source_grep_present_in_main():
     main.py with the expected gate. A behavioral test against the real
     drain loop would require setting up the full Igor instance + web_server
     stack which is heavy; the source check captures the actual fix shape."""
-    main_py = Path(__file__).resolve().parent.parent / "wild_igor" / "igor" / "main.py"
+    main_py = Path(__file__).resolve().parent.parent.parent / "devices" / "igor" / "main.py"
     text = main_py.read_text()
     assert "_suppress_user_echo" in text
     assert "T-fork-echo-suppress-on-bouquet" in text
@@ -152,7 +152,7 @@ def test_suppression_source_grep_present_in_main():
 def test_suppression_logs_to_reply_obligation_log():
     """Source-level: the suppression path calls _reply_obligation_log
     with stage='echo_suppressed' so we can trace how often it fires."""
-    main_py = Path(__file__).resolve().parent.parent / "wild_igor" / "igor" / "main.py"
+    main_py = Path(__file__).resolve().parent.parent.parent / "devices" / "igor" / "main.py"
     text = main_py.read_text()
     assert (
         '_reply_obligation_log(\n                            "echo_suppressed"' in text

@@ -25,7 +25,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from wild_igor.igor.cognition.node_executor import execute_node, ExecutionResult
+from devices.igor.cognition.node_executor import execute_node, ExecutionResult
 
 # ── Pull schema from seed script (single source of truth) ────────────────────
 

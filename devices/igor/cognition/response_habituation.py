@@ -100,7 +100,7 @@ class ResponseHabituation(IgorBase):
                 json.dump(self._store, f)
         except Exception as _bare_e:
             get_logger(__name__).warning(
-                "bare except in wild_igor/igor/cognition/response_habituation.py: %s",
+                "bare except in devices/igor/cognition/response_habituation.py: %s",
                 _bare_e,
             )
 

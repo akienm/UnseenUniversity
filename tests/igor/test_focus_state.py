@@ -1,4 +1,4 @@
-"""Tests for wild_igor/igor/cognition/focus_state.py (T-igor-focus-state)."""
+"""Tests for devices/igor/cognition/focus_state.py (T-igor-focus-state)."""
 
 import pytest
 
@@ -7,7 +7,7 @@ import pytest
 def _clean_focus(pg_test_schema):
     if pg_test_schema is None:
         pytest.skip("pg_test_schema not available")
-    from wild_igor.igor.cognition import focus_state
+    from devices.igor.cognition import focus_state
 
     focus_state.reset_focus()
     yield
@@ -16,7 +16,7 @@ def _clean_focus(pg_test_schema):
 
 @pytest.fixture
 def fs(pg_test_schema):
-    from wild_igor.igor.cognition import focus_state
+    from devices.igor.cognition import focus_state
 
     return focus_state
 

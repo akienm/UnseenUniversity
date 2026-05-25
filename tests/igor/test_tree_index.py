@@ -1,11 +1,11 @@
-"""Tests for wild_igor/igor/memory/tree_index.py (D257)."""
+"""Tests for devices/igor/memory/tree_index.py (D257)."""
 
 import os
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from wild_igor.igor.memory.tree_index import TreeIndex, _CP_NODES, seed_well_known_trees
+from devices.igor.memory.tree_index import TreeIndex, _CP_NODES, seed_well_known_trees
 
 DB_URL = os.getenv(
     "IGOR_HOME_DB_URL",
@@ -96,7 +96,7 @@ class TestCreateGet:
         _delete_tree(DB_URL, "_test_rules_override")
 
     def test_create_registers_in_node_registry(self):
-        from wild_igor.igor.memory.node_id import node_exists
+        from devices.igor.memory.node_id import node_exists
 
         idx = TreeIndex(db_url=DB_URL)
         tid = idx.create("_test_registry", CP1_ID)

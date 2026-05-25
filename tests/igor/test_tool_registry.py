@@ -19,7 +19,6 @@ import time
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
 from lab.utility_closet.registry import Tool, ToolRegistry, ToolStats
 
@@ -212,7 +211,7 @@ class TestGetToolRegistryReport(unittest.TestCase):
     def test_no_calls_message(self):
         """If the global registry has no stats, report says 'No tool calls'."""
         # Import the function but patch the registry it uses
-        from igor.tools import metrics as metrics_mod
+        from devices.igor.tools import metrics as metrics_mod
         from lab.utility_closet.registry import ToolRegistry
         import unittest.mock as mock
 
@@ -224,7 +223,7 @@ class TestGetToolRegistryReport(unittest.TestCase):
             real_registry = reg_mod.registry
             reg_mod.registry = empty_reg
             try:
-                from igor.tools.metrics import _get_tool_registry_report
+                from devices.igor.tools.metrics import _get_tool_registry_report
 
                 result = _get_tool_registry_report()
                 self.assertIn("No tool calls", result)
@@ -249,7 +248,7 @@ class TestGetToolRegistryReport(unittest.TestCase):
         original = reg_mod.registry
         reg_mod.registry = test_reg
         try:
-            from igor.tools.metrics import _get_tool_registry_report
+            from devices.igor.tools.metrics import _get_tool_registry_report
 
             result = _get_tool_registry_report()
             self.assertIn("demo_tool", result)

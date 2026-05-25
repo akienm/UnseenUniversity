@@ -1,4 +1,4 @@
-"""Tests for wild_igor.igor.web.server poll loop epoch check (T-adc-registration-recovery)."""
+"""Tests for devices.igor.web.server poll loop epoch check (T-adc-registration-recovery)."""
 
 import sys
 from pathlib import Path
@@ -15,7 +15,7 @@ class TestPollLoopEpochCheck:
     def _run_n_polls(self, n: int):
         """Import server and run _poll_loop for exactly n poll iterations."""
         import importlib
-        import wild_igor.igor.web.server as srv
+        import devices.igor.web.server as srv
 
         importlib.reload(srv)
 

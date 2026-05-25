@@ -23,9 +23,8 @@ import time
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
-from igor.cognition.daemon_supervisor import DaemonSupervisor
+from devices.igor.cognition.daemon_supervisor import DaemonSupervisor
 
 
 def _live_thread() -> threading.Thread:
@@ -162,7 +161,7 @@ class TestDaemonSupervisorReportStr(unittest.TestCase):
 class TestGetDaemonReportTool(unittest.TestCase):
     def test_smoke(self):
         """_get_daemon_report should return a string without raising."""
-        from igor.tools.metrics import _get_daemon_report
+        from devices.igor.tools.metrics import _get_daemon_report
 
         result = _get_daemon_report()
         self.assertIsInstance(result, str)

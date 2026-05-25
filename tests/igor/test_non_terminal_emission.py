@@ -15,7 +15,7 @@ from unittest.mock import MagicMock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition.residue_scan import scan_after_reply
+from devices.igor.cognition.residue_scan import scan_after_reply
 
 
 def test_stub_returns_none():

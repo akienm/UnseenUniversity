@@ -18,7 +18,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition.word_graph import WordGraph
+from devices.igor.cognition.word_graph import WordGraph
 
 
 def _fresh_graph():

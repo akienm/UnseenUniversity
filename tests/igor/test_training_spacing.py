@@ -20,9 +20,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
-from igor.cognition.training_corpus import (
+from devices.igor.cognition.training_corpus import (
     SPACING_INTERVALS_DAYS,
     _next_pass_ts,
     schedule_training_passes,

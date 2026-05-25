@@ -52,7 +52,7 @@ class _IgorShape:
 
 def _wire(stub):
     """Bind Igor._wire_datacenter to the stub instance and run it."""
-    from wild_igor.igor.main import Igor
+    from devices.igor.main import Igor
 
     Igor._wire_datacenter(stub)
 
@@ -152,7 +152,7 @@ class TestIgorDatacenterBoot(unittest.TestCase):
         # listener replies", which times out and falls back. We monkey-patch
         # IMAPServer().start() to raise so we exercise the import-failure path
         # rather than waiting 2 seconds for an announce timeout.
-        from wild_igor.igor import main as main_mod
+        from devices.igor import main as main_mod
 
         stub = _IgorShape(instance_id="wild-0001", datacenter_client=None)
 

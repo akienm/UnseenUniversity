@@ -9,7 +9,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.tools.hardware_detect import (  # noqa: E402
+from devices.igor.tools.hardware_detect import (  # noqa: E402
     _detect_cpu,
     _detect_ip,
     _detect_network,

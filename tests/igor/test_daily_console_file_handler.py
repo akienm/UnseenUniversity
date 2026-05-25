@@ -15,9 +15,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "wild_igor"))
 
-from igor.logging_setup import DailyConsoleFileHandler, setup_logging
+from devices.igor.logging_setup import DailyConsoleFileHandler, setup_logging
 
 
 def _fresh_igor_root():

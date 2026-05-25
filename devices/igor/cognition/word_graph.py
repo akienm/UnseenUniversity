@@ -713,7 +713,7 @@ class WordGraph(IgorBase):
                     ).fetchall()
             except Exception as _e:
                 get_logger(__name__).warning(
-                    "bare except in wild_igor/igor/cognition/word_graph.py spread_from_words: %s",
+                    "bare except in devices/igor/cognition/word_graph.py spread_from_words: %s",
                     _e,
                 )
                 break
@@ -752,7 +752,7 @@ class WordGraph(IgorBase):
                 ).fetchall()
         except Exception as _e:
             get_logger(__name__).warning(
-                "bare except in wild_igor/igor/cognition/word_graph.py words_to_doc_ids: %s",
+                "bare except in devices/igor/cognition/word_graph.py words_to_doc_ids: %s",
                 _e,
             )
             return {}

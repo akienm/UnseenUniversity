@@ -44,13 +44,13 @@ def _home_conn():
 @pytest.fixture(scope="module", autouse=True)
 def ensure_seeded():
     """Run the seed script once before all tests. Idempotent — safe to re-run."""
-    from wild_igor.igor.tools import seed_persistent_relationships as _seed
+    from devices.igor.tools import seed_persistent_relationships as _seed
 
     rc = _seed.seed()
     assert rc == 0
     yield
     # Restore baseline so other tests / sessions see active/1.0
-    from wild_igor.igor.tools import persistent_relationships as _pr
+    from devices.igor.tools import persistent_relationships as _pr
 
     _pr.pr_set_status(name="PR_AKIEN", status="active")
     _pr.pr_set_status(name="PR_IGORS_PROJECT", status="active")
@@ -126,7 +126,7 @@ def test_seed_creates_three_trees_rows():
 
 def test_seed_is_idempotent():
     """Running the seed twice doesn't create duplicates."""
-    from wild_igor.igor.tools import seed_persistent_relationships as _seed
+    from devices.igor.tools import seed_persistent_relationships as _seed
 
     rc = _seed.seed()
     assert rc == 0
@@ -147,7 +147,7 @@ def test_seed_is_idempotent():
 
 
 def test_pr_list_returns_seeded_relationships():
-    from wild_igor.igor.tools import persistent_relationships as _pr
+    from devices.igor.tools import persistent_relationships as _pr
 
     out = _pr.pr_list()
     assert "PR_AKIEN" in out
@@ -157,7 +157,7 @@ def test_pr_list_returns_seeded_relationships():
 
 
 def test_pr_get_resolves_by_id():
-    from wild_igor.igor.tools import persistent_relationships as _pr
+    from devices.igor.tools import persistent_relationships as _pr
 
     out = _pr.pr_get(name="PR_AKIEN")
     assert "id: PR_AKIEN" in out
@@ -167,28 +167,28 @@ def test_pr_get_resolves_by_id():
 
 
 def test_pr_get_resolves_by_display_name():
-    from wild_igor.igor.tools import persistent_relationships as _pr
+    from devices.igor.tools import persistent_relationships as _pr
 
     out = _pr.pr_get(name="Akien")
     assert "id: PR_AKIEN" in out
 
 
 def test_pr_get_resolves_by_lowercase_short_form():
-    from wild_igor.igor.tools import persistent_relationships as _pr
+    from devices.igor.tools import persistent_relationships as _pr
 
     out = _pr.pr_get(name="akien")
     assert "id: PR_AKIEN" in out
 
 
 def test_pr_get_returns_not_found_for_nonexistent():
-    from wild_igor.igor.tools import persistent_relationships as _pr
+    from devices.igor.tools import persistent_relationships as _pr
 
     out = _pr.pr_get(name="NotARealRelationship")
     assert "No persistent-relationship" in out
 
 
 def test_pr_touch_updates_last_activity_ts():
-    from wild_igor.igor.tools import persistent_relationships as _pr
+    from devices.igor.tools import persistent_relationships as _pr
 
     before = _pr._resolve_facia("PR_AKIEN")
     before_ts = before["metadata"]["last_activity_ts"]
@@ -201,7 +201,7 @@ def test_pr_touch_updates_last_activity_ts():
 
 
 def test_pr_set_status_persists_and_rejects_invalid():
-    from wild_igor.igor.tools import persistent_relationships as _pr
+    from devices.igor.tools import persistent_relationships as _pr
 
     out = _pr.pr_set_status(name="PR_AKIEN", status="dormant")
     assert "status=dormant" in out
@@ -217,7 +217,7 @@ def test_pr_set_status_persists_and_rejects_invalid():
 
 
 def test_pr_update_weight_clamps_to_range():
-    from wild_igor.igor.tools import persistent_relationships as _pr
+    from devices.igor.tools import persistent_relationships as _pr
 
     # Guard: reset to 1.0 baseline in case cross-test state pollution left a different value
     row = _pr._resolve_facia("PR_AKIEN")

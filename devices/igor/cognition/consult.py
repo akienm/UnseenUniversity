@@ -10,7 +10,7 @@ The LLM is a peer consultant, never the answerer. Prompt templates force the
 register (see consult_prompts.py).
 
 Usage:
-    from wild_igor.igor.cognition.consult import consult, ConsultSession, ConsultState
+    from devices.igor.cognition.consult import consult, ConsultSession, ConsultState
 
     state = ConsultState(
         problem_kind="reasoning",

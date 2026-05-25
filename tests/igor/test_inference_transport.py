@@ -194,7 +194,7 @@ class TestRunInferenceSignature(unittest.TestCase):
         self.assertFalse(out.startswith("[inference-error]"))
 
     def test_metadata_complexity_threaded_to_ctx(self):
-        import wild_igor.igor.cognition.inference_gateway as ig
+        import devices.igor.cognition.inference_gateway as ig
 
         t, _ = self._transport_with_mock_gw("ok")
         captured = {}
@@ -209,7 +209,7 @@ class TestRunInferenceSignature(unittest.TestCase):
         self.assertEqual(captured.get("complexity"), "high")
 
     def test_metadata_research_mode_threaded(self):
-        import wild_igor.igor.cognition.inference_gateway as ig
+        import devices.igor.cognition.inference_gateway as ig
 
         t, _ = self._transport_with_mock_gw("ok")
         captured = {}

@@ -38,14 +38,14 @@ def _connect():
 @pytest.fixture
 def cortex():
     os.environ.setdefault("IGOR_HOME_DB_URL", DB_URL)
-    from wild_igor.igor.memory.cortex import Cortex
+    from devices.igor.memory.cortex import Cortex
 
     return Cortex(None)
 
 
 def _make_test_memory(cortex) -> str:
     """Deposit a tagged test memory, return its id."""
-    from wild_igor.igor.memory.models import Memory, MemoryType
+    from devices.igor.memory.models import Memory, MemoryType
 
     mem = Memory(
         narrative="test narrative for delete_memory FK cascade",
@@ -129,7 +129,7 @@ def test_delete_memory_source_deletes_children_first():
     would start failing again and flooding logs at MB/sec.
     """
     src = (
-        Path(__file__).resolve().parent.parent / "wild_igor/igor/memory/cortex.py"
+        Path(__file__).resolve().parent.parent / "devices/igor/memory/cortex.py"
     ).read_text()
     # Locate delete_memory body and confirm ordering
     fn_idx = src.index("def delete_memory(self, memory_id: str)")

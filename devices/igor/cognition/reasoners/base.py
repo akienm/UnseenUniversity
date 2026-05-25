@@ -399,7 +399,7 @@ class BaseReasoner(ABC, IgorBase):
             ]
         except Exception as _bare_e:
             get_logger(__name__).warning(
-                "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
+                "bare except in devices/igor/cognition/reasoners/base.py: %s", _bare_e
             )
         filtered = [e for e in all_entries if e["category"] not in _RING_EXCLUDE]
         entries = filtered[-_RING_CONTEXT_LIMIT:]
@@ -438,7 +438,7 @@ class BaseReasoner(ABC, IgorBase):
                     lines.append(f"  → {goal[:200]}")
         except Exception as _bare_e:
             get_logger(__name__).warning(
-                "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
+                "bare except in devices/igor/cognition/reasoners/base.py: %s", _bare_e
             )
 
         # ── Change 4: inject high-urgency TWM observations ────────────────────
@@ -464,7 +464,7 @@ class BaseReasoner(ABC, IgorBase):
                     lines.append(f"  [urgency={urg:.1f}] {o['content_csb'][:150]}")
         except Exception as _bare_e:
             get_logger(__name__).warning(
-                "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
+                "bare except in devices/igor/cognition/reasoners/base.py: %s", _bare_e
             )
 
         if not entries:
@@ -492,7 +492,7 @@ class BaseReasoner(ABC, IgorBase):
                     anchor_ts = _ne_ts_str
         except Exception as _bare_e:
             get_logger(__name__).warning(
-                "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
+                "bare except in devices/igor/cognition/reasoners/base.py: %s", _bare_e
             )
 
         # Helper: format a ring-entry timestamp so Igor can distinguish
@@ -684,7 +684,7 @@ def _deposit_winnow_node(user_input: str, queries: list[str], cortex) -> None:
         cortex.store(mem)
     except Exception as _bare_e:
         get_logger(__name__).warning(
-            "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
+            "bare except in devices/igor/cognition/reasoners/base.py: %s", _bare_e
         )
 
 
@@ -734,7 +734,7 @@ def _winnow_context_method(
                 wg_hints = "Activated concepts: " + ", ".join(w for w, _ in predicted)
         except Exception as _bare_e:
             get_logger(__name__).warning(
-                "bare except in wild_igor/igor/cognition/reasoners/base.py: %s",
+                "bare except in devices/igor/cognition/reasoners/base.py: %s",
                 _bare_e,
             )
 
@@ -758,7 +758,7 @@ def _winnow_context_method(
             ][:3]
     except Exception as _bare_e:
         get_logger(__name__).warning(
-            "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
+            "bare except in devices/igor/cognition/reasoners/base.py: %s", _bare_e
         )
 
     if not queries:
@@ -776,7 +776,7 @@ def _winnow_context_method(
                     results.append(m)
         except Exception as _bare_e:
             get_logger(__name__).warning(
-                "bare except in wild_igor/igor/cognition/reasoners/base.py: %s",
+                "bare except in devices/igor/cognition/reasoners/base.py: %s",
                 _bare_e,
             )
 
@@ -800,7 +800,7 @@ def _winnow_context_method(
         )
     except Exception as _bare_e:
         get_logger(__name__).warning(
-            "bare except in wild_igor/igor/cognition/reasoners/base.py: %s", _bare_e
+            "bare except in devices/igor/cognition/reasoners/base.py: %s", _bare_e
         )
 
     return results

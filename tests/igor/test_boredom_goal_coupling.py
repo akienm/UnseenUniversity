@@ -25,7 +25,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition.push_sources import BoredomSource  # noqa: E402
+from devices.igor.cognition.push_sources import BoredomSource  # noqa: E402
 
 
 def _now_iso(offset_days: float = 0.0) -> str:
@@ -78,7 +78,7 @@ def _mock_cortex_capturing_pushes() -> MagicMock:
 def test_surface_empty_when_no_goals():
     cortex = _mock_cortex_capturing_pushes()
     src = BoredomSource()
-    with patch("wild_igor.igor.tools.goal_graph._fetch_goal_facia", return_value=[]):
+    with patch("devices.igor.tools.goal_graph._fetch_goal_facia", return_value=[]):
         out = src._surface_active_goals(cortex)
     assert out == []
     assert not cortex.twm_push.called
@@ -91,7 +91,7 @@ def test_surface_empty_when_all_dormant():
         _goal_facia("PR_GOAL_1", "dormant one", status="dormant"),
         _goal_facia("PR_GOAL_2", "archived one", status="archived"),
     ]
-    with patch("wild_igor.igor.tools.goal_graph._fetch_goal_facia", return_value=goals):
+    with patch("devices.igor.tools.goal_graph._fetch_goal_facia", return_value=goals):
         out = src._surface_active_goals(cortex)
     assert out == []
     assert not cortex.twm_push.called
@@ -106,7 +106,7 @@ def test_surface_pushes_top_goal():
     goals = [
         _goal_facia("PR_GOAL_ASP", "help the world suck less", weight=2.0),
     ]
-    with patch("wild_igor.igor.tools.goal_graph._fetch_goal_facia", return_value=goals):
+    with patch("devices.igor.tools.goal_graph._fetch_goal_facia", return_value=goals):
         out = src._surface_active_goals(cortex)
     assert len(out) == 1
     assert cortex.twm_push.call_count == 1
@@ -132,7 +132,7 @@ def test_surface_only_one_goal_even_when_many_candidates():
     goals = [
         _goal_facia(f"PR_GOAL_{i}", f"goal {i}", weight=1.0 + i * 0.1) for i in range(5)
     ]
-    with patch("wild_igor.igor.tools.goal_graph._fetch_goal_facia", return_value=goals):
+    with patch("devices.igor.tools.goal_graph._fetch_goal_facia", return_value=goals):
         out = src._surface_active_goals(cortex)
     assert len(out) == 1
     assert cortex.twm_push.call_count == 1
@@ -148,7 +148,7 @@ def test_ranking_prefers_higher_weight():
         _goal_facia("PR_GOAL_LOW", "low weight", weight=0.5),
         _goal_facia("PR_GOAL_HIGH", "high weight", weight=2.0),
     ]
-    with patch("wild_igor.igor.tools.goal_graph._fetch_goal_facia", return_value=goals):
+    with patch("devices.igor.tools.goal_graph._fetch_goal_facia", return_value=goals):
         src._surface_active_goals(cortex)
     meta = cortex.twm_push.call_args.kwargs["metadata"]
     assert meta["facia_id"] == "PR_GOAL_HIGH"
@@ -161,7 +161,7 @@ def test_ranking_prefers_recent_over_stale():
         _goal_facia("PR_GOAL_STALE", "stale", weight=1.0, age_days=60),
         _goal_facia("PR_GOAL_FRESH", "fresh", weight=1.0, age_days=0),
     ]
-    with patch("wild_igor.igor.tools.goal_graph._fetch_goal_facia", return_value=goals):
+    with patch("devices.igor.tools.goal_graph._fetch_goal_facia", return_value=goals):
         src._surface_active_goals(cortex)
     meta = cortex.twm_push.call_args.kwargs["metadata"]
     assert meta["facia_id"] == "PR_GOAL_FRESH"
@@ -175,7 +175,7 @@ def test_ranking_progress_gap_boost():
         _goal_facia("PR_GOAL_DONE", "almost done", weight=1.0, progress=0.9),
         _goal_facia("PR_GOAL_OPEN", "untouched", weight=1.0, progress=0.0),
     ]
-    with patch("wild_igor.igor.tools.goal_graph._fetch_goal_facia", return_value=goals):
+    with patch("devices.igor.tools.goal_graph._fetch_goal_facia", return_value=goals):
         src._surface_active_goals(cortex)
     meta = cortex.twm_push.call_args.kwargs["metadata"]
     assert meta["facia_id"] == "PR_GOAL_OPEN"
@@ -188,7 +188,7 @@ def test_surface_degrades_on_fetch_failure():
     cortex = _mock_cortex_capturing_pushes()
     src = BoredomSource()
     with patch(
-        "wild_igor.igor.tools.goal_graph._fetch_goal_facia",
+        "devices.igor.tools.goal_graph._fetch_goal_facia",
         side_effect=RuntimeError("db down"),
     ):
         out = src._surface_active_goals(cortex)
@@ -201,7 +201,7 @@ def test_surface_degrades_on_twm_push_failure():
     cortex.twm_push.side_effect = RuntimeError("twm unavailable")
     src = BoredomSource()
     goals = [_goal_facia("PR_GOAL_X", "x")]
-    with patch("wild_igor.igor.tools.goal_graph._fetch_goal_facia", return_value=goals):
+    with patch("devices.igor.tools.goal_graph._fetch_goal_facia", return_value=goals):
         out = src._surface_active_goals(cortex)
     # twm_push was called once but returned an error — helper swallowed it
     assert out == []
@@ -226,7 +226,7 @@ def test_surface_handles_missing_metadata_fields():
             },
         }
     ]
-    with patch("wild_igor.igor.tools.goal_graph._fetch_goal_facia", return_value=goals):
+    with patch("devices.igor.tools.goal_graph._fetch_goal_facia", return_value=goals):
         out = src._surface_active_goals(cortex)
     # Zero weight → score 0, but still surfaces as the only active goal
     assert len(out) == 1
@@ -241,7 +241,7 @@ def test_surfaced_goal_carries_cp1_provisional_flag():
     cortex = _mock_cortex_capturing_pushes()
     src = BoredomSource()
     goals = [_goal_facia("PR_GOAL_CP", "cp test")]
-    with patch("wild_igor.igor.tools.goal_graph._fetch_goal_facia", return_value=goals):
+    with patch("devices.igor.tools.goal_graph._fetch_goal_facia", return_value=goals):
         src._surface_active_goals(cortex)
     meta = cortex.twm_push.call_args.kwargs["metadata"]
     assert meta["cp1_provisional"] is True

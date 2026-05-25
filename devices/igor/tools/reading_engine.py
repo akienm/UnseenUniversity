@@ -323,7 +323,7 @@ def process_blob(
     # Add repo to path for book_learner imports
     repo = Path(__file__).parent.parent.parent.parent
     sys.path.insert(0, str(repo))
-    sys.path.insert(0, str(repo / "wild_igor"))
+    sys.path.insert(0, str(repo / "devices" / "igor"))
 
     # Import extraction functions from book_learner
     from claudecode.book_learner import (

@@ -193,8 +193,8 @@ class IgorBase(_BASE):  # type: ignore[valid-type,misc]
         ):
             _module = type(self).__module__ or ""
             _name = (
-                _module[len("wild_igor.") :]
-                if _module.startswith("wild_igor.")
+                _module[len("devices.") :]
+                if _module.startswith("devices.")
                 else (_module or self.__class__.__name__)
             )
             self.__class__._log_instance = _igor_get_logger(_name)

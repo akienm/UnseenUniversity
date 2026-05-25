@@ -313,7 +313,7 @@ class HeartbeatSource(BasePushSource):
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}",
+                detail=f"devices/igor/cognition/push_sources.py: {_bare_e}",
             )
 
         # T-twm-relevance-decay: goal-relevance-weighted TTL shortening every heartbeat
@@ -322,7 +322,7 @@ class HeartbeatSource(BasePushSource):
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/push_sources.py twm_apply_goal_decay: {_bare_e}",
+                detail=f"devices/igor/cognition/push_sources.py twm_apply_goal_decay: {_bare_e}",
             )
 
         session_mins = int((now - self._session_start).total_seconds() / 60)
@@ -417,7 +417,7 @@ class HeartbeatSource(BasePushSource):
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}",
+                    detail=f"devices/igor/cognition/push_sources.py: {_bare_e}",
                 )
             if level in ("CRITICAL", "EXHAUSTED"):
                 self._alert_discord(f"[Igor heartbeat] {msg}")
@@ -474,7 +474,7 @@ class HeartbeatSource(BasePushSource):
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}",
+                detail=f"devices/igor/cognition/push_sources.py: {_bare_e}",
             )
         return [obs_id]
 
@@ -629,7 +629,7 @@ class HeartbeatSource(BasePushSource):
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/push_sources.py HeartbeatSource._run_orphan_adoption: {_bare_e}",
+                detail=f"devices/igor/cognition/push_sources.py HeartbeatSource._run_orphan_adoption: {_bare_e}",
             )
 
     def _check_env_sync(self, cortex) -> None:
@@ -644,7 +644,7 @@ class HeartbeatSource(BasePushSource):
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}",
+                detail=f"devices/igor/cognition/push_sources.py: {_bare_e}",
             )
 
     def _alert_discord(self, message: str):
@@ -661,7 +661,7 @@ class HeartbeatSource(BasePushSource):
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}",
+                detail=f"devices/igor/cognition/push_sources.py: {_bare_e}",
             )
 
 
@@ -708,7 +708,7 @@ class UserInputSource(BasePushSource):
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}",
+                    detail=f"devices/igor/cognition/push_sources.py: {_bare_e}",
                 )
         return obs_id
 
@@ -996,7 +996,7 @@ class MilieuSource(BasePushSource):
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/push_sources.py MilieuSource bliss_integrator: {_bare_e}",
+                detail=f"devices/igor/cognition/push_sources.py MilieuSource bliss_integrator: {_bare_e}",
             )
 
         state = m.get_state()
@@ -1051,7 +1051,7 @@ class MilieuSource(BasePushSource):
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}",
+                detail=f"devices/igor/cognition/push_sources.py: {_bare_e}",
             )
 
         return result_ids
@@ -1381,7 +1381,7 @@ class ResourceMonitorSource(BasePushSource):
         except Exception as _e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/push_sources.py is_local_inference_available: {_e}",
+                detail=f"devices/igor/cognition/push_sources.py is_local_inference_available: {_e}",
             )
 
         cloud_ok = False
@@ -1431,7 +1431,7 @@ class ResourceMonitorSource(BasePushSource):
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/push_sources.py ResourceMonitorSource._check_inference_availability: {_bare_e}",
+                detail=f"devices/igor/cognition/push_sources.py ResourceMonitorSource._check_inference_availability: {_bare_e}",
             )
             return []
 
@@ -1813,7 +1813,7 @@ class BoredomSource(BasePushSource):
         except Exception as _e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/push_sources.py BoredomSource milieu nudge: {_e}",
+                detail=f"devices/igor/cognition/push_sources.py BoredomSource milieu nudge: {_e}",
             )
 
         self._last_fired = now
@@ -1862,7 +1862,7 @@ class BoredomSource(BasePushSource):
         except Exception as exc:
             log_error(
                 kind="BORED_GOAL_IMPORT_FAIL",
-                detail=f"wild_igor/igor/cognition/push_sources.py BoredomSource: {exc}",
+                detail=f"devices/igor/cognition/push_sources.py BoredomSource: {exc}",
             )
             return []
 
@@ -1871,7 +1871,7 @@ class BoredomSource(BasePushSource):
         except Exception as exc:
             log_error(
                 kind="BORED_GOAL_FETCH_FAIL",
-                detail=f"wild_igor/igor/cognition/push_sources.py BoredomSource: {exc}",
+                detail=f"devices/igor/cognition/push_sources.py BoredomSource: {exc}",
             )
             return []
 
@@ -1954,7 +1954,7 @@ class BoredomSource(BasePushSource):
                 log_error(
                     kind="BORED_GOAL_PUSH_FAIL",
                     detail=(
-                        f"wild_igor/igor/cognition/push_sources.py "
+                        f"devices/igor/cognition/push_sources.py "
                         f"BoredomSource goal surface {g['id']}: {exc}"
                     ),
                 )
@@ -2942,6 +2942,6 @@ def run_background_sources(cortex) -> int:
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/push_sources.py: {_bare_e}",
+                detail=f"devices/igor/cognition/push_sources.py: {_bare_e}",
             )
     return pushed

@@ -184,7 +184,7 @@ def _parse_env_file(env_path: Path) -> dict:
                 vars_dict[key] = value
     except Exception as _bare_e:
         logging.getLogger(__name__).warning(
-            "bare except in wild_igor/igor/env_sync.py: %s", _bare_e
+            "bare except in devices/igor/env_sync.py: %s", _bare_e
         )
     return vars_dict
 

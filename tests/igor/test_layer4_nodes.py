@@ -27,7 +27,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from wild_igor.igor.cognition.node_executor import execute_node, ExecutionResult
+from devices.igor.cognition.node_executor import execute_node, ExecutionResult
 
 from claudecode.seed_layer4_read_codebase import (
     TEMPLATE_ID as RC_ID,

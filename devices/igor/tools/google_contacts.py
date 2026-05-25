@@ -236,7 +236,7 @@ def _store_contact_memory(
         cortex.store(mem)
     except Exception as _bare_e:
         logging.getLogger(__name__).warning(
-            "bare except in wild_igor/igor/tools/google_contacts.py: %s", _bare_e
+            "bare except in devices/igor/tools/google_contacts.py: %s", _bare_e
         )
 
 

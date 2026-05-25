@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition.uc_watchdog import (  # noqa: E402
+from devices.igor.cognition.uc_watchdog import (  # noqa: E402
     DOWN_THRESHOLD,
     RESTART_COOLDOWN_SEC,
     UtilityClosetWatchdog,
@@ -23,7 +23,7 @@ from wild_igor.igor.cognition.uc_watchdog import (  # noqa: E402
 class TestIsUcUp:
     def test_up_when_socket_connects(self):
         with patch(
-            "wild_igor.igor.cognition.uc_watchdog.socket.create_connection"
+            "devices.igor.cognition.uc_watchdog.socket.create_connection"
         ) as mock:
             mock.return_value.__enter__ = MagicMock(return_value=MagicMock())
             mock.return_value.__exit__ = MagicMock(return_value=False)
@@ -31,14 +31,14 @@ class TestIsUcUp:
 
     def test_down_when_oserror(self):
         with patch(
-            "wild_igor.igor.cognition.uc_watchdog.socket.create_connection",
+            "devices.igor.cognition.uc_watchdog.socket.create_connection",
             side_effect=OSError("connection refused"),
         ):
             assert is_uc_up() is False
 
     def test_down_when_timeout(self):
         with patch(
-            "wild_igor.igor.cognition.uc_watchdog.socket.create_connection",
+            "devices.igor.cognition.uc_watchdog.socket.create_connection",
             side_effect=socket.timeout("timed out"),
         ):
             assert is_uc_up() is False
@@ -46,8 +46,8 @@ class TestIsUcUp:
 
 class TestRelaunchUc:
     def test_skip_when_server_missing(self, tmp_path):
-        with patch("wild_igor.igor.cognition.uc_watchdog.log_error") as mock_log, patch(
-            "wild_igor.igor.cognition.uc_watchdog.subprocess.Popen"
+        with patch("devices.igor.cognition.uc_watchdog.log_error") as mock_log, patch(
+            "devices.igor.cognition.uc_watchdog.subprocess.Popen"
         ) as mock_popen:
             ok = relaunch_uc(
                 server_path=tmp_path / "missing.py",
@@ -61,8 +61,8 @@ class TestRelaunchUc:
     def test_skip_when_python_missing(self, tmp_path):
         server = tmp_path / "uc.py"
         server.write_text("# stub")
-        with patch("wild_igor.igor.cognition.uc_watchdog.log_error") as mock_log, patch(
-            "wild_igor.igor.cognition.uc_watchdog.subprocess.Popen"
+        with patch("devices.igor.cognition.uc_watchdog.log_error") as mock_log, patch(
+            "devices.igor.cognition.uc_watchdog.subprocess.Popen"
         ) as mock_popen:
             ok = relaunch_uc(
                 server_path=server,
@@ -79,7 +79,7 @@ class TestRelaunchUc:
         python.write_text("#!/bin/sh")
         log = tmp_path / "uc.log"
         with patch(
-            "wild_igor.igor.cognition.uc_watchdog.subprocess.Popen"
+            "devices.igor.cognition.uc_watchdog.subprocess.Popen"
         ) as mock_popen:
             ok = relaunch_uc(server_path=server, python_path=python, log_path=log)
         assert ok is True
@@ -93,9 +93,9 @@ class TestRelaunchUc:
         python = tmp_path / "py"
         python.write_text("#!/bin/sh")
         with patch(
-            "wild_igor.igor.cognition.uc_watchdog.subprocess.Popen",
+            "devices.igor.cognition.uc_watchdog.subprocess.Popen",
             side_effect=OSError("boom"),
-        ), patch("wild_igor.igor.cognition.uc_watchdog.log_error") as mock_log:
+        ), patch("devices.igor.cognition.uc_watchdog.log_error") as mock_log:
             ok = relaunch_uc(
                 server_path=server,
                 python_path=python,
@@ -119,7 +119,7 @@ class TestWatchdogPush:
     def test_resets_counter_when_up(self):
         wd = UtilityClosetWatchdog()
         wd._consecutive_down = 5
-        with patch("wild_igor.igor.cognition.uc_watchdog.is_uc_up", return_value=True):
+        with patch("devices.igor.cognition.uc_watchdog.is_uc_up", return_value=True):
             ids = wd.push(self._cortex())
         assert ids == []
         assert wd._consecutive_down == 0
@@ -127,8 +127,8 @@ class TestWatchdogPush:
     def test_no_relaunch_below_threshold(self):
         wd = UtilityClosetWatchdog()
         with patch(
-            "wild_igor.igor.cognition.uc_watchdog.is_uc_up", return_value=False
-        ), patch("wild_igor.igor.cognition.uc_watchdog.relaunch_uc") as mock_rl:
+            "devices.igor.cognition.uc_watchdog.is_uc_up", return_value=False
+        ), patch("devices.igor.cognition.uc_watchdog.relaunch_uc") as mock_rl:
             wd.push(self._cortex())
         assert wd._consecutive_down == 1
         assert not mock_rl.called
@@ -138,9 +138,9 @@ class TestWatchdogPush:
         wd._consecutive_down = DOWN_THRESHOLD - 1
         cortex = self._cortex()
         with patch(
-            "wild_igor.igor.cognition.uc_watchdog.is_uc_up", return_value=False
+            "devices.igor.cognition.uc_watchdog.is_uc_up", return_value=False
         ), patch(
-            "wild_igor.igor.cognition.uc_watchdog.relaunch_uc", return_value=True
+            "devices.igor.cognition.uc_watchdog.relaunch_uc", return_value=True
         ) as mock_rl:
             ids = wd.push(cortex)
         assert mock_rl.called
@@ -154,8 +154,8 @@ class TestWatchdogPush:
         wd._consecutive_down = DOWN_THRESHOLD
         wd._last_restart_ts = time.monotonic() - 30  # 30s ago, well under cooldown
         with patch(
-            "wild_igor.igor.cognition.uc_watchdog.is_uc_up", return_value=False
-        ), patch("wild_igor.igor.cognition.uc_watchdog.relaunch_uc") as mock_rl:
+            "devices.igor.cognition.uc_watchdog.is_uc_up", return_value=False
+        ), patch("devices.igor.cognition.uc_watchdog.relaunch_uc") as mock_rl:
             wd.push(self._cortex())
         assert not mock_rl.called
 
@@ -164,9 +164,9 @@ class TestWatchdogPush:
         wd._consecutive_down = DOWN_THRESHOLD
         wd._last_restart_ts = time.monotonic() - (RESTART_COOLDOWN_SEC + 30)
         with patch(
-            "wild_igor.igor.cognition.uc_watchdog.is_uc_up", return_value=False
+            "devices.igor.cognition.uc_watchdog.is_uc_up", return_value=False
         ), patch(
-            "wild_igor.igor.cognition.uc_watchdog.relaunch_uc", return_value=True
+            "devices.igor.cognition.uc_watchdog.relaunch_uc", return_value=True
         ) as mock_rl:
             wd.push(self._cortex())
         assert mock_rl.called
@@ -175,6 +175,6 @@ class TestWatchdogPush:
         assert UtilityClosetWatchdog.TIMING_TIER == "slow"
 
     def test_registered_in_push_sources(self):
-        from wild_igor.igor.cognition import push_sources
+        from devices.igor.cognition import push_sources
 
         assert hasattr(push_sources, "uc_watchdog")

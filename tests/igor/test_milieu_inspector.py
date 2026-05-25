@@ -17,9 +17,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
-from igor.tools.metrics import _emotion_label, _get_milieu_state
+from devices.igor.tools.metrics import _emotion_label, _get_milieu_state
 
 
 class TestEmotionLabel(unittest.TestCase):

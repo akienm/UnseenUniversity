@@ -15,7 +15,7 @@ Real-world cases verified:
 
 import pytest
 
-from wild_igor.igor.cognition.response_coherence_inhibitor import suppress_incoherent
+from devices.igor.cognition.response_coherence_inhibitor import suppress_incoherent
 
 
 def _flagged(score: float) -> dict:
@@ -146,7 +146,7 @@ class TestLlmViaLabel:
         from pathlib import Path
 
         src = (
-            Path(__file__).resolve().parent.parent / "wild_igor/igor/main.py"
+            Path(__file__).resolve().parent.parent / "devices/igor/main.py"
         ).read_text()
         assert 'f"llm_via_{_turn_habit.id}"' in src, (
             "main.py coherence source_label must emit 'llm_via_<id>' for "

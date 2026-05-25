@@ -9,7 +9,7 @@ import pathlib
 import re
 
 _COGNITION_DIR = (
-    pathlib.Path(__file__).parent.parent / "wild_igor" / "igor" / "cognition"
+    pathlib.Path(__file__).parent.parent.parent / "devices" / "igor" / "cognition"
 )
 _SUBSYSTEMS_MD = _COGNITION_DIR / "SUBSYSTEMS.md"
 

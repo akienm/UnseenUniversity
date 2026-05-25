@@ -5,7 +5,7 @@ Prompts for instance name and DB host, creates the instance directory,
 and writes a minimal .env file.
 
 Usage (from bash):
-    python3 wild_igor/igor/first_start.py
+    python3 devices/igor/first_start.py
 Exit codes:
     0 — .env written successfully (caller should re-source it)
     1 — user aborted or error
@@ -39,7 +39,7 @@ def run() -> None:
 
     # --- Instance name ---
     ts = datetime.now().strftime("%Y%m%d%H%M%S")
-    default_name = f"wild_igor_{ts}"
+    default_name = f"igor_{ts}"
     raw_name = _prompt("Instance name", default_name)
     # Normalise: strip leading "igor_" if user typed it (we add it for folder)
     instance_short = raw_name.lstrip()

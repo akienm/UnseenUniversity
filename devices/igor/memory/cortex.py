@@ -1300,7 +1300,7 @@ class Cortex(IgorBase):
                 )
             except Exception as _bare_e:
                 logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                    "bare except in devices/igor/memory/cortex.py: %s", _bare_e
                 )
 
             # T-migration-runner: run after all CREATE TABLEs so every target table exists
@@ -1338,7 +1338,7 @@ class Cortex(IgorBase):
                         )
                 except Exception as _bare_e:
                     logging.getLogger(__name__).warning(
-                        "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                        "bare except in devices/igor/memory/cortex.py: %s", _bare_e
                     )
             # #123: backfill scope from memory_type (idempotent data migration)
             conn.execute(
@@ -1581,7 +1581,7 @@ class Cortex(IgorBase):
                 self._auto_wire_interpretive(memory)
             except Exception as _bare_e:
                 logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                    "bare except in devices/igor/memory/cortex.py: %s", _bare_e
                 )
         # T-calving-trigger-on-write: check if tree is over threshold
         if memory.parent_id:
@@ -2351,7 +2351,7 @@ class Cortex(IgorBase):
                     m.narrative = m.narrative + "\n[FULL CONTENT]\n" + blob[:blob_chars]
             except Exception as _bare_e:
                 logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                    "bare except in devices/igor/memory/cortex.py: %s", _bare_e
                 )
         return memories
 
@@ -2366,7 +2366,7 @@ class Cortex(IgorBase):
                     counts[tag] = counts.get(tag, 0) + 1
             except Exception as _bare_e:
                 logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                    "bare except in devices/igor/memory/cortex.py: %s", _bare_e
                 )
         return dict(sorted(counts.items(), key=lambda x: x[1], reverse=True))
 
@@ -2578,7 +2578,7 @@ class Cortex(IgorBase):
                 )
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/memory/cortex.py orphan rescue: %s",
+                "bare except in devices/igor/memory/cortex.py orphan rescue: %s",
                 _bare_e,
             )
 
@@ -2644,7 +2644,7 @@ class Cortex(IgorBase):
                     all_memories = all_memories + _factual_kw
             except Exception as _fk_e:
                 logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py "
+                    "bare except in devices/igor/memory/cortex.py "
                     "factual_kw_supplement: %s",
                     _fk_e,
                 )
@@ -2677,7 +2677,7 @@ class Cortex(IgorBase):
                 _traversal = self.traverse_from(_anchors, depth=2, limit=req.limit * 2)
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                "bare except in devices/igor/memory/cortex.py: %s", _bare_e
             )
 
         # Candidate pool: merge traversal + text results, dedup by id (#172)
@@ -2697,7 +2697,7 @@ class Cortex(IgorBase):
                     _merged[m.id] = m
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                "bare except in devices/igor/memory/cortex.py: %s", _bare_e
             )
 
         for score, m in text_scored:
@@ -2794,7 +2794,7 @@ class Cortex(IgorBase):
                                 )
                     except Exception as _bare_e:
                         logging.getLogger(__name__).warning(
-                            "bare except in wild_igor/igor/memory/cortex.py: %s",
+                            "bare except in devices/igor/memory/cortex.py: %s",
                             _bare_e,
                         )
 
@@ -2905,7 +2905,7 @@ class Cortex(IgorBase):
                 return result
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                "bare except in devices/igor/memory/cortex.py: %s", _bare_e
             )
 
         # Phase 1 fallback: candidates already scored + merged (#172); return top N
@@ -3009,7 +3009,7 @@ class Cortex(IgorBase):
                 )
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                "bare except in devices/igor/memory/cortex.py: %s", _bare_e
             )
 
     # ── #309: Memory reconsolidation flag ─────────────────────────────────────
@@ -3074,7 +3074,7 @@ class Cortex(IgorBase):
                 flagged += 1
             except Exception as _bare_e:
                 logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py _flag_for_reconsolidation: %s",
+                    "bare except in devices/igor/memory/cortex.py _flag_for_reconsolidation: %s",
                     _bare_e,
                 )
         if flagged:
@@ -3113,7 +3113,7 @@ class Cortex(IgorBase):
                 conn.execute("DELETE FROM tails WHERE recorded_at < %s", (cutoff,))
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                "bare except in devices/igor/memory/cortex.py: %s", _bare_e
             )
 
     def get_tail_heat(self, node_id: str) -> float:
@@ -3205,7 +3205,7 @@ class Cortex(IgorBase):
                 conn.execute("DELETE FROM traces WHERE recorded_at < %s", (cutoff,))
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                "bare except in devices/igor/memory/cortex.py: %s", _bare_e
             )
         return trace_id  # T-trails-infra: caller uses this as trail_id for tails
 
@@ -3275,7 +3275,7 @@ class Cortex(IgorBase):
                             existing = row
                     except Exception as _bare_e:
                         logging.getLogger(__name__).warning(
-                            "bare except in wild_igor/igor/memory/cortex.py: %s",
+                            "bare except in devices/igor/memory/cortex.py: %s",
                             _bare_e,
                         )
 
@@ -3289,7 +3289,7 @@ class Cortex(IgorBase):
                                 )
                         except Exception as _bare_e:
                             logging.getLogger(__name__).warning(
-                                "bare except in wild_igor/igor/memory/cortex.py: %s",
+                                "bare except in devices/igor/memory/cortex.py: %s",
                                 _bare_e,
                             )
                     elif delta >= creation_threshold:
@@ -3304,14 +3304,14 @@ class Cortex(IgorBase):
                             )
                         except Exception as _bare_e:
                             logging.getLogger(__name__).warning(
-                                "bare except in wild_igor/igor/memory/cortex.py: %s",
+                                "bare except in devices/igor/memory/cortex.py: %s",
                                 _bare_e,
                             )
 
                     pairs_processed += 1
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                "bare except in devices/igor/memory/cortex.py: %s", _bare_e
             )
 
     def get_recent_traces(self, limit: int = 10) -> list:
@@ -3504,7 +3504,7 @@ class Cortex(IgorBase):
                 )
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                "bare except in devices/igor/memory/cortex.py: %s", _bare_e
             )
         return ctx_id
 
@@ -3542,7 +3542,7 @@ class Cortex(IgorBase):
                 )
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                "bare except in devices/igor/memory/cortex.py: %s", _bare_e
             )
 
     def get_by_activation(self, limit: int = 30) -> list:
@@ -3652,7 +3652,7 @@ class Cortex(IgorBase):
                 current_frontier = next_frontier
         except Exception as _bare_e:
             _log.warning(
-                "bare except in wild_igor/igor/memory/cortex.py"
+                "bare except in devices/igor/memory/cortex.py"
                 " spreading_activation memory layer: %s",
                 _bare_e,
             )
@@ -3687,7 +3687,7 @@ class Cortex(IgorBase):
                     )
             except Exception as _bare_e:
                 _log.warning(
-                    "bare except in wild_igor/igor/memory/cortex.py"
+                    "bare except in devices/igor/memory/cortex.py"
                     " spreading_activation wg layer: %s",
                     _bare_e,
                 )
@@ -3882,7 +3882,7 @@ class Cortex(IgorBase):
                             seen.add(rid)
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                "bare except in devices/igor/memory/cortex.py: %s", _bare_e
             )
 
         # 3: Recent TWM items with explicit memory_id in metadata
@@ -3905,7 +3905,7 @@ class Cortex(IgorBase):
                     seen.add(mid)
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                "bare except in devices/igor/memory/cortex.py: %s", _bare_e
             )
 
         return anchors[:5]
@@ -4006,7 +4006,7 @@ class Cortex(IgorBase):
                 return json.loads(row["embedding"])
             except Exception as _bare_e:
                 logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                    "bare except in devices/igor/memory/cortex.py: %s", _bare_e
                 )
 
         # Not in separate table — compute via embedder and store
@@ -4019,7 +4019,7 @@ class Cortex(IgorBase):
                 return vec
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                "bare except in devices/igor/memory/cortex.py: %s", _bare_e
             )
         return None
 
@@ -4222,7 +4222,7 @@ class Cortex(IgorBase):
                 _links = json.loads(row["links_weighted"] or "{}")
             except Exception as _bare_e:
                 logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                    "bare except in devices/igor/memory/cortex.py: %s", _bare_e
                 )
         # #128: load last_accessed
         _last_accessed = None
@@ -4231,7 +4231,7 @@ class Cortex(IgorBase):
                 _last_accessed = datetime.fromisoformat(row["last_accessed"])
             except Exception as _bare_e:
                 logging.getLogger(__name__).warning(
-                    "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                    "bare except in devices/igor/memory/cortex.py: %s", _bare_e
                 )
         return Memory(
             id=row["id"],
@@ -5142,7 +5142,7 @@ class Cortex(IgorBase):
             )
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                "bare except in devices/igor/memory/cortex.py: %s", _bare_e
             )
 
     # ── T-twm-relevance-decay: goal-relevance-weighted TTL shortening ─────────
@@ -5237,7 +5237,7 @@ class Cortex(IgorBase):
 
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/memory/cortex.py twm_apply_goal_decay: %s",
+                "bare except in devices/igor/memory/cortex.py twm_apply_goal_decay: %s",
                 _bare_e,
             )
 
@@ -5425,7 +5425,7 @@ class Cortex(IgorBase):
                     updated += 1
                 except Exception as _bare_e:
                     logging.getLogger(__name__).warning(
-                        "bare except in wild_igor/igor/memory/cortex.py: %s", _bare_e
+                        "bare except in devices/igor/memory/cortex.py: %s", _bare_e
                     )
 
         return {"updated": updated, "nre_ended": nre_ended}
@@ -5727,7 +5727,7 @@ class Cortex(IgorBase):
                                         _is_convergence = True
                         except Exception as _bare_e:
                             logging.getLogger(__name__).warning(
-                                "bare except in wild_igor/igor/memory/cortex.py: %s",
+                                "bare except in devices/igor/memory/cortex.py: %s",
                                 _bare_e,
                             )
                     if not _is_convergence:

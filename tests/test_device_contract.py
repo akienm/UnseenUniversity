@@ -32,7 +32,7 @@ from devices.swadl.device import SwadlDevice
 from devices.swadl.shim import SwadlShim
 from devices.template.device import TemplateDevice
 from devices.template.shim import TemplateShim
-from tests.fixtures.stub_devices import StubDevice, StubShim
+from fixtures.stub_devices import StubDevice, StubShim
 
 # Extend this list as each device phase ships
 ALL_DEVICE_CLASSES = [

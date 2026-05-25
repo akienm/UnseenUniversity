@@ -23,7 +23,7 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-from wild_igor.igor.paths import paths as _paths
+from devices.igor.paths import paths as _paths
 
 log = logging.getLogger(__name__)
 

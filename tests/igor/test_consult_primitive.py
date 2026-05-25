@@ -22,7 +22,7 @@ from unittest.mock import patch
 
 import pytest
 
-from wild_igor.igor.cognition import consult as cm
+from devices.igor.cognition import consult as cm
 
 GOOD_JSON = '{"hypotheses": ["h1", "h2"], "next_question": "is X?", "confidence": 0.7}'
 GOOD_JSON_WITH_FENCE = f"```json\n{GOOD_JSON}\n```"
@@ -414,7 +414,7 @@ class TestConsultLogPath:
             [
                 sys.executable,
                 "-c",
-                "from wild_igor.igor.cognition import consult; print(consult.CONSULT_LOG_PATH)",
+                "from devices.igor.cognition import consult; print(consult.CONSULT_LOG_PATH)",
             ],
             env={**__import__("os").environ, **env},
             capture_output=True,

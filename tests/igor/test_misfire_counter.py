@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from wild_igor.igor.tools.misfire_counter import MisfireCounter, get_misfire_counter
+from devices.igor.tools.misfire_counter import MisfireCounter, get_misfire_counter
 
 
 @pytest.fixture
@@ -230,8 +230,8 @@ class TestMisfireCounterIntegration:
 
     def test_bash_runner_integration(self):
         """Test that run_bash correctly records exit 127."""
-        from wild_igor.igor.tools.runner import run_bash
-        from wild_igor.igor.tools.misfire_counter import get_misfire_counter
+        from devices.igor.tools.runner import run_bash
+        from devices.igor.tools.misfire_counter import get_misfire_counter
 
         # Get the global counter instance
         counter = get_misfire_counter()
@@ -254,7 +254,7 @@ class TestMisfireCounterIntegration:
     def test_tool_error_integration(self, temp_log_path):
         """Test that tool errors are recorded."""
         from lab.utility_closet.registry import registry
-        from wild_igor.igor.tools.misfire_counter import MisfireCounter
+        from devices.igor.tools.misfire_counter import MisfireCounter
 
         counter = MisfireCounter(log_path=temp_log_path, threshold=3)
 

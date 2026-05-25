@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, call
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path.home() / "TheIgors"))
 
 from wild_igor.tools.swadl_pages.gmail_compose import ComposePage
 from wild_igor.tools.swadl_pages.gmail_inbox import InboxPage

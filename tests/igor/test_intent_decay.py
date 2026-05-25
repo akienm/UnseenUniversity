@@ -105,7 +105,7 @@ def _seed_goal(
 
 
 def test_find_aged_goals_returns_empty_for_fresh_goal():
-    from wild_igor.igor.tools.intent_decay import find_aged_goals
+    from devices.igor.tools.intent_decay import find_aged_goals
 
     _seed_goal("GOAL_TEST_DECAY_FRESH", age_hours=0.1)  # 6 minutes old
     aged = find_aged_goals()
@@ -114,7 +114,7 @@ def test_find_aged_goals_returns_empty_for_fresh_goal():
 
 
 def test_find_aged_goals_catches_old_awaiting_reply_goal():
-    from wild_igor.igor.tools.intent_decay import find_aged_goals
+    from devices.igor.tools.intent_decay import find_aged_goals
 
     _seed_goal(
         "GOAL_TEST_DECAY_AWAITING",
@@ -133,7 +133,7 @@ def test_find_aged_goals_catches_old_awaiting_reply_goal():
 
 def test_find_aged_goals_skips_fresh_awaiting_reply_goal():
     """Awaiting-reply goal younger than 1h is NOT aged yet."""
-    from wild_igor.igor.tools.intent_decay import find_aged_goals
+    from devices.igor.tools.intent_decay import find_aged_goals
 
     _seed_goal(
         "GOAL_TEST_DECAY_AWAITING_FRESH",
@@ -146,7 +146,7 @@ def test_find_aged_goals_skips_fresh_awaiting_reply_goal():
 
 
 def test_find_aged_goals_catches_very_old_ordinary_goal():
-    from wild_igor.igor.tools.intent_decay import find_aged_goals
+    from devices.igor.tools.intent_decay import find_aged_goals
 
     _seed_goal(
         "GOAL_TEST_DECAY_ORDINARY",
@@ -161,7 +161,7 @@ def test_find_aged_goals_catches_very_old_ordinary_goal():
 
 def test_find_aged_goals_skips_day_old_ordinary_goal():
     """An ordinary goal 12h old is NOT aged — ordinary threshold is 24h."""
-    from wild_igor.igor.tools.intent_decay import find_aged_goals
+    from devices.igor.tools.intent_decay import find_aged_goals
 
     _seed_goal(
         "GOAL_TEST_DECAY_ORDINARY_FRESH",
@@ -175,7 +175,7 @@ def test_find_aged_goals_skips_day_old_ordinary_goal():
 
 def test_find_aged_goals_thresholds_differ_by_type():
     """At age 2h, an awaiting_reply goal is aged but an ordinary goal isn't."""
-    from wild_igor.igor.tools.intent_decay import find_aged_goals
+    from devices.igor.tools.intent_decay import find_aged_goals
 
     _seed_goal(
         "GOAL_TEST_DECAY_TYPE_A",
@@ -197,8 +197,8 @@ def test_find_aged_goals_thresholds_differ_by_type():
 
 
 def test_surface_aged_intents_pushes_twm_markers():
-    from wild_igor.igor.tools.intent_decay import surface_aged_intents
-    from wild_igor.igor.memory.cortex import Cortex
+    from devices.igor.tools.intent_decay import surface_aged_intents
+    from devices.igor.memory.cortex import Cortex
 
     cortex = Cortex(None)
     cortex.twm_evict_category("aged_intent")
@@ -228,7 +228,7 @@ def test_surface_aged_intents_pushes_twm_markers():
 
 def test_surface_aged_intents_returns_clean_message_when_none():
     """No aged goals → friendly empty message, no exceptions."""
-    from wild_igor.igor.tools.intent_decay import surface_aged_intents
+    from devices.igor.tools.intent_decay import surface_aged_intents
 
     # Don't seed any old goals
     out = surface_aged_intents()
@@ -243,7 +243,7 @@ def test_surface_aged_intents_returns_clean_message_when_none():
 
 
 def _make_quiet_cortex():
-    from wild_igor.igor.memory.cortex import Cortex
+    from devices.igor.memory.cortex import Cortex
 
     cortex = Cortex(None)
     cortex._conversation_active_ts = None  # quiet
@@ -251,7 +251,7 @@ def _make_quiet_cortex():
 
 
 def _make_active_cortex():
-    from wild_igor.igor.memory.cortex import Cortex
+    from devices.igor.memory.cortex import Cortex
 
     cortex = Cortex(None)
     cortex._conversation_active_ts = datetime.now()
@@ -259,7 +259,7 @@ def _make_active_cortex():
 
 
 def test_source_has_required_interface():
-    from wild_igor.igor.cognition.intent_decay_source import IntentDecaySource
+    from devices.igor.cognition.intent_decay_source import IntentDecaySource
 
     src = IntentDecaySource()
     assert src.name == "intent_decay_source"
@@ -268,7 +268,7 @@ def test_source_has_required_interface():
 
 
 def test_source_skips_during_active_conversation():
-    from wild_igor.igor.cognition.intent_decay_source import IntentDecaySource
+    from devices.igor.cognition.intent_decay_source import IntentDecaySource
 
     src = IntentDecaySource()
     cortex = _make_active_cortex()
@@ -278,7 +278,7 @@ def test_source_skips_during_active_conversation():
 
 
 def test_source_runs_during_quiet_period():
-    from wild_igor.igor.cognition.intent_decay_source import IntentDecaySource
+    from devices.igor.cognition.intent_decay_source import IntentDecaySource
 
     src = IntentDecaySource()
     cortex = _make_quiet_cortex()
@@ -288,7 +288,7 @@ def test_source_runs_during_quiet_period():
 
 
 def test_source_rate_limited_within_interval():
-    from wild_igor.igor.cognition.intent_decay_source import IntentDecaySource
+    from devices.igor.cognition.intent_decay_source import IntentDecaySource
 
     src = IntentDecaySource()
     cortex = _make_quiet_cortex()
@@ -304,7 +304,7 @@ def test_source_rate_limited_within_interval():
 def test_source_registered_in_run_background_sources():
     """The source must be in the lazy-load + dispatch tuple so it
     actually runs in the main loop, not just in tests."""
-    import wild_igor.igor.cognition.push_sources as _ps
+    import devices.igor.cognition.push_sources as _ps
 
     assert hasattr(_ps, "intent_decay_source")
     src_text = Path(_ps.__file__).read_text()

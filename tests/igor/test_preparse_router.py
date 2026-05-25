@@ -17,7 +17,7 @@ os.environ.setdefault(
     "IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
 )
 
-from wild_igor.igor.cognition.preparse_router import (
+from devices.igor.cognition.preparse_router import (
     Batch,
     DispatchResult,
     RouterResult,
@@ -29,8 +29,8 @@ from wild_igor.igor.cognition.preparse_router import (
     _format_block,
     _merge_csv,
 )
-from wild_igor.igor.cognition.chunker import Chunk, chunk_input
-from wild_igor.igor.cognition.cluster_router import (
+from devices.igor.cognition.chunker import Chunk, chunk_input
+from devices.igor.cognition.cluster_router import (
     record_dispatch,
     capacity_clear,
 )
@@ -166,7 +166,7 @@ def test_dispatch_parallel_preserves_order():
 
 def test_dispatch_records_to_capacity_profile():
     """Successful dispatches record outcome to cluster_router.capacity."""
-    from wild_igor.igor.cognition.cluster_router import capacity_observations
+    from devices.igor.cognition.cluster_router import capacity_observations
 
     batch = Batch(
         chunks=[Chunk(text="hello world", kind="sentence")],
@@ -292,7 +292,7 @@ def test_route_preparse_fallback_to_local_when_all_fail():
     """If every per-batch dispatch fails, router tries whole-input local
     preparse as fallback."""
     with patch(
-        "wild_igor.igor.cognition.local_preparse.preparse_local",
+        "devices.igor.cognition.local_preparse.preparse_local",
         return_value=_FAKE_CSB,
     ):
         result = route_preparse(
@@ -308,7 +308,7 @@ def test_route_preparse_fallback_to_local_when_all_fail():
 def test_route_preparse_total_failure_returns_none_merged():
     """Per-batch all fail AND fallback local returns None → merged_csb=None."""
     with patch(
-        "wild_igor.igor.cognition.local_preparse.preparse_local",
+        "devices.igor.cognition.local_preparse.preparse_local",
         return_value=None,
     ):
         result = route_preparse(

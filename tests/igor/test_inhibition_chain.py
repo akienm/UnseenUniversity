@@ -16,9 +16,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import MagicMock
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
-from igor.cognition.inhibition_chain import (
+from devices.igor.cognition.inhibition_chain import (
     TWMCheckNode,
     InferenceCheckNode,
     InhibitionChain,
@@ -163,7 +162,7 @@ class TestInhibitionChain(unittest.TestCase):
         self.assertFalse(inhibited)
 
     def test_default_chain_returns_inhibition_chain_instance(self):
-        from igor.cognition.inhibition_chain import InhibitionChain as IC
+        from devices.igor.cognition.inhibition_chain import InhibitionChain as IC
 
         self.assertIsInstance(default_chain(), IC)
 

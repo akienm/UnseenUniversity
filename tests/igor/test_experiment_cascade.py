@@ -13,7 +13,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition.experiment_cascade import (  # noqa: E402
+from devices.igor.cognition.experiment_cascade import (  # noqa: E402
     CascadeResult,
     CascadeSituation,
     CascadeStatus,
@@ -25,7 +25,7 @@ from wild_igor.igor.cognition.experiment_cascade import (  # noqa: E402
     _StubLevel,
     build_default_cascade,
 )
-from wild_igor.igor.cognition.experiment import (  # noqa: E402
+from devices.igor.cognition.experiment import (  # noqa: E402
     ExperimentStatus,
     Outcome,
 )
@@ -115,7 +115,7 @@ def test_level1_matches_via_widen_search():
     mock_memory = MagicMock()
     mock_memory.id = "PR_IGORS_PROJECT"
     with patch(
-        "wild_igor.igor.memory.search_widen.widen_search",
+        "devices.igor.memory.search_widen.widen_search",
         return_value=([mock_memory], "token_like"),
     ):
         result = level.try_probe(cortex, _situation())
@@ -128,7 +128,7 @@ def test_level1_exhausted_when_widen_returns_empty():
     cortex = _make_mock_cortex()
     level = Level1WidenOnMiss()
     with patch(
-        "wild_igor.igor.memory.search_widen.widen_search",
+        "devices.igor.memory.search_widen.widen_search",
         return_value=([], None),
     ):
         result = level.try_probe(cortex, _situation())
@@ -139,7 +139,7 @@ def test_level1_exhausted_when_widen_raises():
     cortex = _make_mock_cortex()
     level = Level1WidenOnMiss()
     with patch(
-        "wild_igor.igor.memory.search_widen.widen_search",
+        "devices.igor.memory.search_widen.widen_search",
         side_effect=RuntimeError("widen broke"),
     ):
         result = level.try_probe(cortex, _situation())
@@ -201,7 +201,7 @@ def test_walker_advances_through_exhausted_levels():
     cascade.register(Level5LLMEscalationStub())
 
     with patch(
-        "wild_igor.igor.memory.search_widen.widen_search",
+        "devices.igor.memory.search_widen.widen_search",
         return_value=([], None),
     ):
         result = cascade.attempt(_situation())
@@ -251,7 +251,7 @@ def test_walker_budget_exhaustion():
 
 def test_walker_handles_level_exception_gracefully():
     """A level that raises shouldn't crash the walker; treated as exhausted."""
-    from wild_igor.igor.cognition.experiment_cascade import BaseCascadeLevel
+    from devices.igor.cognition.experiment_cascade import BaseCascadeLevel
 
     cortex = _make_mock_cortex()
 
@@ -302,7 +302,7 @@ def test_default_cascade_walks_to_llm_when_everything_empty():
     cortex = _make_mock_cortex(search_results=[])
     cascade = build_default_cascade(cortex)
     with patch(
-        "wild_igor.igor.memory.search_widen.widen_search",
+        "devices.igor.memory.search_widen.widen_search",
         return_value=([], None),
     ):
         result = cascade.attempt(_situation())
@@ -324,7 +324,7 @@ def test_default_cascade_matches_at_level_1_when_widen_hits():
     mock_memory = MagicMock()
     mock_memory.id = "PR_IGORS_PROJECT"
     with patch(
-        "wild_igor.igor.memory.search_widen.widen_search",
+        "devices.igor.memory.search_widen.widen_search",
         return_value=([mock_memory], "token_like"),
     ):
         result = cascade.attempt(_situation("igor dev"))

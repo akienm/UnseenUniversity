@@ -12,7 +12,7 @@ Design:
   - History = children with version_of == parent.id, sorted by version_ts
 
 Usage:
-    from wild_igor.igor.memory.versioning import version_before_update
+    from devices.igor.memory.versioning import version_before_update
 
     # In cortex.store(), before the INSERT OR REPLACE:
     if memory.metadata.get("versioned"):

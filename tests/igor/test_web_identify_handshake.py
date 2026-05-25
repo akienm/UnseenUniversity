@@ -29,7 +29,7 @@ class _FakeMsg:
 class TestWebIdentifyHandshake:
     def _make_igor_stub(self):
         """Build a minimal stub that exercises _process_network_msg."""
-        from wild_igor.igor.main import Igor
+        from devices.igor.main import Igor
 
         igor = MagicMock(spec=Igor)
         igor.interaction_count = 0
@@ -38,7 +38,7 @@ class TestWebIdentifyHandshake:
         igor._user_ctx_mgr = MagicMock()
 
         # Attach the real method bound to the stub
-        from wild_igor.igor.main import Igor as _RealIgor
+        from devices.igor.main import Igor as _RealIgor
         igor._process_network_msg = lambda msg, tid: _RealIgor._process_network_msg(
             igor, msg, tid
         )
@@ -50,7 +50,7 @@ class TestWebIdentifyHandshake:
         msg = _FakeMsg(content="__identify__:Akien", author="Akien", source="web")
 
         with (
-            patch("wild_igor.igor.main.Igor._process") as mock_process,
+            patch("devices.igor.main.Igor._process") as mock_process,
         ):
             igor._process_network_msg(msg, "web:thread1")
 
@@ -65,7 +65,7 @@ class TestWebIdentifyHandshake:
         igor = self._make_igor_stub()
         msg = _FakeMsg(content="__identify__:Akien", author="Akien", source="web")
 
-        with patch("wild_igor.igor.main.Igor._process"):
+        with patch("devices.igor.main.Igor._process"):
             igor._process_network_msg(msg, "web:thread1")
 
         igor._user_ctx_mgr.preseed.assert_called_once_with("web:thread1", "Akien")
@@ -75,7 +75,7 @@ class TestWebIdentifyHandshake:
         from pathlib import Path
 
         src = (
-            Path(__file__).resolve().parent.parent / "wild_igor/igor/main.py"
+            Path(__file__).resolve().parent.parent / "devices/igor/main.py"
         ).read_text()
         assert 'msg.content.startswith("__identify__:")' in src, (
             "_process_network_msg must check for __identify__: prefix "

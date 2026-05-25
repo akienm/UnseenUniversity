@@ -6,9 +6,9 @@ import pytest
 from pathlib import Path
 from datetime import datetime
 
-from wild_igor.igor.memory.cortex import Cortex
-from wild_igor.igor.memory.models import Memory, MemoryType
-from wild_igor.igor.cognition.graph_integrator import (
+from devices.igor.memory.cortex import Cortex
+from devices.igor.memory.models import Memory, MemoryType
+from devices.igor.cognition.graph_integrator import (
     integrate_graph,
     _fetch_fact_clouds,
     _calculate_edge_weight,
@@ -145,7 +145,7 @@ def test_integrate_graph_complete(cortex_test, monkeypatch):
         return None
 
     monkeypatch.setattr(
-        "wild_igor.igor.cognition.blob_store.get_blob_metadata",
+        "devices.igor.cognition.blob_store.get_blob_metadata",
         mock_get_blob_metadata,
     )
 
@@ -203,7 +203,7 @@ def test_integrate_graph_no_facts(cortex_test, monkeypatch):
         return None
 
     monkeypatch.setattr(
-        "wild_igor.igor.cognition.blob_store.get_blob_metadata",
+        "devices.igor.cognition.blob_store.get_blob_metadata",
         mock_get_blob_metadata,
     )
 

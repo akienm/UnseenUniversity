@@ -19,12 +19,12 @@ import tempfile
 
 
 def test_no_escalations_returns_graceful_message(tmp_path):
-    from wild_igor.igor.tools.training_pass import start_training_pass
+    from devices.igor.tools.training_pass import start_training_pass
 
     fake_log = tmp_path / "reasoning_calls.log"
     fake_log.write_text("2026-03-31|tier_select|...|selected=tier.2\n")
 
-    with patch("wild_igor.igor.tools.training_pass._REASONING_LOG", fake_log):
+    with patch("devices.igor.tools.training_pass._REASONING_LOG", fake_log):
         result = start_training_pass()
 
     assert "no cloud escalations" in result.lower()
@@ -34,7 +34,7 @@ def test_no_escalations_returns_graceful_message(tmp_path):
 
 
 def test_escalations_call_inner_cc_long(tmp_path):
-    from wild_igor.igor.tools.training_pass import start_training_pass
+    from devices.igor.tools.training_pass import start_training_pass
 
     fake_log = tmp_path / "reasoning_calls.log"
     fake_log.write_text(
@@ -59,10 +59,10 @@ def test_escalations_call_inner_cc_long(tmp_path):
 
     mock_cortex = MagicMock()
 
-    with patch("wild_igor.igor.tools.training_pass._REASONING_LOG", fake_log), patch(
-        "wild_igor.igor.tools.training_pass._get_cortex", return_value=mock_cortex
+    with patch("devices.igor.tools.training_pass._REASONING_LOG", fake_log), patch(
+        "devices.igor.tools.training_pass._get_cortex", return_value=mock_cortex
     ), patch(
-        "wild_igor.igor.tools.inner_cc.call_inner_cc_long", return_value=mock_result
+        "devices.igor.tools.inner_cc.call_inner_cc_long", return_value=mock_result
     ) as mock_long:
 
         result = start_training_pass()
@@ -76,7 +76,7 @@ def test_escalations_call_inner_cc_long(tmp_path):
 
 
 def test_read_escalations_filters_by_tier(tmp_path):
-    from wild_igor.igor.tools.training_pass import _read_cloud_escalations
+    from devices.igor.tools.training_pass import _read_cloud_escalations
 
     fake_log = tmp_path / "reasoning_calls.log"
     fake_log.write_text(
@@ -91,7 +91,7 @@ def test_read_escalations_filters_by_tier(tmp_path):
         "|tier=tier.3.5|in=90|out=18|ctx=450|cost=$0.0005|elapsed=500ms|turns=1|resp=haiku response\n"
     )
 
-    with patch("wild_igor.igor.tools.training_pass._REASONING_LOG", fake_log):
+    with patch("devices.igor.tools.training_pass._REASONING_LOG", fake_log):
         results = _read_cloud_escalations(n=10, min_tier="tier.3.5")
 
     tiers = [r["tier"] for r in results]

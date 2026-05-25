@@ -179,7 +179,7 @@ def _load_queue() -> list:
             )
         except Exception as _bare_e:
             log_error(
-                kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/learner.py: {_bare_e}"
+                kind="BARE_EXCEPT", detail=f"devices/igor/tools/learner.py: {_bare_e}"
             )
     return []
 
@@ -323,7 +323,7 @@ def _discover_urls_via_browser(topic: str) -> list[tuple[str, str]]:
                 except Exception as _bare_e:
                     log_error(
                         kind="BARE_EXCEPT",
-                        detail=f"wild_igor/igor/tools/learner.py: {_bare_e}",
+                        detail=f"devices/igor/tools/learner.py: {_bare_e}",
                     )
             if isinstance(result, dict):
                 status = result.get("status", "?")
@@ -466,7 +466,7 @@ def learn_about(user_input: str) -> str:
             clear_cloud_ok_override(reason="learn_about tonight")
         except Exception as _bare_e:
             log_error(
-                kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/learner.py: {_bare_e}"
+                kind="BARE_EXCEPT", detail=f"devices/igor/tools/learner.py: {_bare_e}"
             )
 
     # ── 1. Calibre non-fiction ─────────────────────────────────────────────
@@ -772,7 +772,7 @@ def list_absorbed_books(**_kwargs) -> str:
                 lines.append(f"\nCurrently in drain queue: {len(active)} item(s)")
         except Exception as _bare_e:
             log_error(
-                kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/learner.py: {_bare_e}"
+                kind="BARE_EXCEPT", detail=f"devices/igor/tools/learner.py: {_bare_e}"
             )
 
     return "\n".join(lines)
@@ -1654,7 +1654,7 @@ def ingest_calibre_igor_books(**_kwargs) -> str:
     Idempotent by calibre://{id} source URL; re-run after adding Calibre tags.
     Called daily by PROC_CALIBRE_INGEST.
     """
-    from wild_igor.igor._sqlite_guard import real_sqlite3 as sqlite3
+    from devices.igor._sqlite_guard import real_sqlite3 as sqlite3
 
     if not _CALIBRE_DB.exists():
         return f"[ingest_calibre_igor_books] Calibre DB not found: {_CALIBRE_DB}"

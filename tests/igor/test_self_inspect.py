@@ -19,7 +19,7 @@ pytestmark = pytest.mark.skipif(
 
 
 def _inspect(aspect: str):
-    from wild_igor.igor.tools.self_inspect import inspect
+    from devices.igor.tools.self_inspect import inspect
 
     return inspect(aspect)
 
@@ -105,7 +105,7 @@ def test_routing_decisions_returns_dict():
 
 
 def test_tool_dispatcher_returns_json_string():
-    from wild_igor.igor.tools.self_inspect import self_inspect
+    from devices.igor.tools.self_inspect import self_inspect
 
     out = self_inspect("list")
     assert isinstance(out, str)
@@ -115,8 +115,8 @@ def test_tool_dispatcher_returns_json_string():
 
 def test_introspection_is_read_only():
     """Introspecting does not mutate TWM or milieu."""
-    from wild_igor.igor.memory.cortex import Cortex
-    from wild_igor.igor.paths import paths
+    from devices.igor.memory.cortex import Cortex
+    from devices.igor.paths import paths
 
     cortex = Cortex()
     with cortex._local_conn() as conn:
@@ -135,7 +135,7 @@ def test_introspection_is_read_only():
 
 def test_tool_registered_in_registry():
     """T-igor-self-introspection: tool is discoverable via the registry."""
-    from wild_igor.igor.tools import self_inspect as _  # noqa: F401
+    from devices.igor.tools import self_inspect as _  # noqa: F401
     from lab.utility_closet.registry import registry
 
     assert registry.get("self_inspect") is not None

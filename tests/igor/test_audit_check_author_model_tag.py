@@ -21,7 +21,8 @@ from lab.claudecode.audit_check_author_model_tag import (  # noqa: E402
     is_recognized_token,
 )
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+_DEVICES_IGOR = REPO_ROOT / "devices" / "igor"
 
 
 class TestHasAuthorModelTag:
@@ -90,9 +91,8 @@ class TestIsRecognizedToken:
 
 
 class TestIsEnforcedPath:
-    def test_wild_igor_py_enforced(self, tmp_path):
-        # Create a path under wild_igor/
-        target = REPO_ROOT / "wild_igor" / "igor" / "_synthetic_for_test.py"
+    def test_devices_igor_py_enforced(self, tmp_path):
+        target = _DEVICES_IGOR / "_synthetic_for_test.py"
         assert is_enforced_path(target) is True
 
     def test_lab_utility_closet_py_enforced(self):
@@ -104,7 +104,7 @@ class TestIsEnforcedPath:
         assert is_enforced_path(target) is True
 
     def test_init_py_exempt(self):
-        target = REPO_ROOT / "wild_igor" / "igor" / "__init__.py"
+        target = _DEVICES_IGOR / "__init__.py"
         assert is_enforced_path(target) is False
 
     def test_tests_dir_exempt(self):
@@ -112,7 +112,7 @@ class TestIsEnforcedPath:
         assert is_enforced_path(target) is False
 
     def test_non_py_exempt(self):
-        target = REPO_ROOT / "wild_igor" / "igor" / "foo.md"
+        target = _DEVICES_IGOR / "foo.md"
         assert is_enforced_path(target) is False
 
     def test_outside_enforced_dirs_exempt(self):
@@ -171,7 +171,7 @@ class TestGetNewFilesInRange:
         # Mock the git diff call
         class _R:
             returncode = 0
-            stdout = "lab/claudecode/new_file.py\nwild_igor/igor/another.py\n"
+            stdout = "lab/claudecode/new_file.py\ndevices/igor/another.py\n"
 
         with patch(
             "lab.claudecode.audit_check_author_model_tag.subprocess.run",

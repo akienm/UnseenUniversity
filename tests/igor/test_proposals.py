@@ -7,7 +7,7 @@ import pytest
 def proposals(pg_test_schema):
     if pg_test_schema is None:
         pytest.skip("pg_test_schema not available")
-    from wild_igor.igor.cognition import proposals
+    from devices.igor.cognition import proposals
 
     return proposals
 

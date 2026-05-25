@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition.approach_frame_audit import (  # noqa: E402
+from devices.igor.cognition.approach_frame_audit import (  # noqa: E402
     AUDIT_WINDOW_END,
     AUDIT_WINDOW_START,
     DEFAULT_COOLDOWN_DAYS,
@@ -20,7 +20,7 @@ from wild_igor.igor.cognition.approach_frame_audit import (  # noqa: E402
     _in_audit_window,
     _score_avoidance,
 )
-from wild_igor.igor.memory.models import Memory, MemoryType  # noqa: E402
+from devices.igor.memory.models import Memory, MemoryType  # noqa: E402
 
 
 class TestAuditWindow:
@@ -108,7 +108,7 @@ class TestApproachFrameAuditSource:
     def test_does_not_fire_outside_window(self):
         src = ApproachFrameAuditSource()
         cortex = self._make_cortex()
-        with patch("wild_igor.igor.cognition.approach_frame_audit.datetime") as mock_dt:
+        with patch("devices.igor.cognition.approach_frame_audit.datetime") as mock_dt:
             mock_now = MagicMock()
             mock_now.hour = 14
             mock_dt.now.return_value = mock_now
@@ -125,7 +125,7 @@ class TestApproachFrameAuditSource:
         src._last_audit_ts = time.monotonic() - 3600  # 1h ago, well under 3 days
         src._last_check_ts = 0
         cortex = self._make_cortex()
-        with patch("wild_igor.igor.cognition.approach_frame_audit.datetime") as mock_dt:
+        with patch("devices.igor.cognition.approach_frame_audit.datetime") as mock_dt:
             mock_now = MagicMock()
             mock_now.hour = 23
             mock_dt.now.return_value = mock_now
@@ -148,7 +148,7 @@ class TestApproachFrameAuditSource:
         cortex = self._make_cortex(memories)
         from datetime import datetime as real_dt, timezone as real_tz
 
-        with patch("wild_igor.igor.cognition.approach_frame_audit.datetime") as mock_dt:
+        with patch("devices.igor.cognition.approach_frame_audit.datetime") as mock_dt:
             mock_now = MagicMock()
             mock_now.hour = 23
             mock_dt.now.side_effect = lambda *a, **kw: (
@@ -175,7 +175,7 @@ class TestApproachFrameAuditSource:
         cortex = self._make_cortex(memories)
         from datetime import datetime as real_dt, timezone as real_tz
 
-        with patch("wild_igor.igor.cognition.approach_frame_audit.datetime") as mock_dt:
+        with patch("devices.igor.cognition.approach_frame_audit.datetime") as mock_dt:
             mock_now = MagicMock()
             mock_now.hour = 23
             mock_dt.now.side_effect = lambda *a, **kw: (
@@ -207,7 +207,7 @@ class TestApproachFrameAuditSource:
         cortex = self._make_cortex(memories)
         from datetime import datetime as real_dt, timezone as real_tz
 
-        with patch("wild_igor.igor.cognition.approach_frame_audit.datetime") as mock_dt:
+        with patch("devices.igor.cognition.approach_frame_audit.datetime") as mock_dt:
             mock_now = MagicMock()
             mock_now.hour = 23
             mock_dt.now.side_effect = lambda *a, **kw: (
@@ -235,7 +235,7 @@ class TestApproachFrameAuditSource:
         cortex = self._make_cortex(memories)
         from datetime import datetime as real_dt, timezone as real_tz
 
-        with patch("wild_igor.igor.cognition.approach_frame_audit.datetime") as mock_dt:
+        with patch("devices.igor.cognition.approach_frame_audit.datetime") as mock_dt:
             mock_now = MagicMock()
             mock_now.hour = 23
             mock_dt.now.side_effect = lambda *a, **kw: (
@@ -259,6 +259,6 @@ class TestApproachFrameAuditSource:
         assert ApproachFrameAuditSource.TIMING_TIER == "slow"
 
     def test_registered_in_push_sources(self):
-        from wild_igor.igor.cognition import push_sources
+        from devices.igor.cognition import push_sources
 
         assert hasattr(push_sources, "approach_frame_audit_source")

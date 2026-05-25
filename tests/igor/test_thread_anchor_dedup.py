@@ -12,9 +12,8 @@ import sys
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "wild_igor"))
 
-from igor.tools.thread_anchor import _strip_thread_prefix
+from devices.igor.tools.thread_anchor import _strip_thread_prefix
 
 
 class TestStripThreadPrefix(unittest.TestCase):

@@ -14,7 +14,7 @@ from __future__ import annotations
 import unittest
 from unittest.mock import MagicMock
 
-from wild_igor.igor.cognition import system_prompt as sp
+from devices.igor.cognition import system_prompt as sp
 
 
 def _fake_memory(narr, mem_type, inertia=0.5):
@@ -28,7 +28,7 @@ def _fake_memory(narr, mem_type, inertia=0.5):
 
 def _fake_cortex():
     """Minimal cortex stub returning enough memories to build a real prompt."""
-    from wild_igor.igor.memory.models import MemoryType
+    from devices.igor.memory.models import MemoryType
 
     cortex = MagicMock()
 

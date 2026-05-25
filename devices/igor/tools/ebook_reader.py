@@ -27,7 +27,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from wild_igor.igor._sqlite_guard import real_sqlite3 as sqlite3
+from devices.igor._sqlite_guard import real_sqlite3 as sqlite3
 import sys
 import tempfile
 from dataclasses import dataclass, field, asdict
@@ -336,7 +336,7 @@ def _parse_epub(path: Path) -> tuple[list[str], list[int], list[str]]:
         except TypeError as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}",
+                detail=f"devices/igor/tools/ebook_reader.py: {_bare_e}",
             )
 
     _walk_toc(book.toc)
@@ -582,7 +582,7 @@ def _local_copy(path: Path) -> tuple[Path, bool]:
     except OSError as _bare_e:
         log_error(
             kind="BARE_EXCEPT",
-            detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}",
+            detail=f"devices/igor/tools/ebook_reader.py: {_bare_e}",
         )
     # Copy to local tmp
     import shutil
@@ -621,7 +621,7 @@ def _load_book_content(
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}",
+                    detail=f"devices/igor/tools/ebook_reader.py: {_bare_e}",
                 )
             return result
         # DRM removal failed — return sentinel so callers can handle it
@@ -764,7 +764,7 @@ def read_chunk(handle=None, n: int = 0, handle_key: str = "", **_) -> dict:
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}",
+                    detail=f"devices/igor/tools/ebook_reader.py: {_bare_e}",
                 )
 
     # G54: reading → interpretive tree extraction (fire-and-forget daemon thread)
@@ -1075,7 +1075,7 @@ def _reading_extract_worker(
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}",
+                    detail=f"devices/igor/tools/ebook_reader.py: {_bare_e}",
                 )
 
         try:
@@ -1093,7 +1093,7 @@ def _reading_extract_worker(
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}",
+                detail=f"devices/igor/tools/ebook_reader.py: {_bare_e}",
             )
 
     except json.JSONDecodeError as _e:
@@ -1104,7 +1104,7 @@ def _reading_extract_worker(
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}",
+                detail=f"devices/igor/tools/ebook_reader.py: {_bare_e}",
             )
     except Exception as _e:
         try:
@@ -1116,7 +1116,7 @@ def _reading_extract_worker(
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}",
+                detail=f"devices/igor/tools/ebook_reader.py: {_bare_e}",
             )
 
 
@@ -1143,7 +1143,7 @@ def _load_reading_state() -> dict:
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}",
+                    detail=f"devices/igor/tools/ebook_reader.py: {_bare_e}",
                 )
     return {}
 
@@ -1570,7 +1570,7 @@ def _fg_reading_loop(handle_key: str, session_id: str) -> None:
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/tools/ebook_reader.py: {_bare_e}",
+                    detail=f"devices/igor/tools/ebook_reader.py: {_bare_e}",
                 )
 
         # Chapter boundary soft prompt — gates nothing, just offers discussion

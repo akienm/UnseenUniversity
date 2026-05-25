@@ -2,7 +2,7 @@
 test_channels.py — Channel registry and acquisition tests.
 
 Tests for D230/D231 acquisition channel framework.
-T-igor-channels-relocate: channels relocated to wild_igor/igor/acquisition/.
+T-igor-channels-relocate: channels relocated to devices/igor/acquisition/.
 """
 
 import json
@@ -11,15 +11,15 @@ from pathlib import Path
 
 import pytest
 
-from wild_igor.igor.acquisition import (
+from devices.igor.acquisition import (
     AcquireRequest,
     ChannelFailure,
     AcquireResult,
     ChannelReliability,
     get_registry,
 )
-from wild_igor.igor.acquisition.file_inbox import FileInboxChannel
-from wild_igor.igor.acquisition.direct_url import DirectURLChannel
+from devices.igor.acquisition.file_inbox import FileInboxChannel
+from devices.igor.acquisition.direct_url import DirectURLChannel
 
 
 class TestAcquireRequest:
@@ -67,7 +67,7 @@ class TestAcquireResult:
 
     def test_result_creation(self):
         """Create an AcquireResult."""
-        from wild_igor.igor.acquisition import BlobMeta
+        from devices.igor.acquisition import BlobMeta
 
         blob = b"test content"
         meta = BlobMeta(
@@ -89,14 +89,14 @@ class TestChannelRegistry:
     def test_registry_empty_at_start(self):
         """Registry should support registration."""
         # Create a fresh registry (not the global one)
-        from wild_igor.igor.acquisition import ChannelRegistry
+        from devices.igor.acquisition import ChannelRegistry
 
         registry = ChannelRegistry()
         assert len(registry.list_channels()) == 0
 
     def test_register_channel(self):
         """Register a channel."""
-        from wild_igor.igor.acquisition import ChannelRegistry, Channel
+        from devices.igor.acquisition import ChannelRegistry, Channel
 
         registry = ChannelRegistry()
 
@@ -117,7 +117,7 @@ class TestChannelRegistry:
 
     def test_duplicate_registration_fails(self):
         """Registering same channel name twice should fail."""
-        from wild_igor.igor.acquisition import ChannelRegistry, Channel
+        from devices.igor.acquisition import ChannelRegistry, Channel
 
         registry = ChannelRegistry()
 
@@ -171,7 +171,7 @@ class TestFileInboxChannel:
             import os
 
             # Monkey-patch paths().inbox to point to our temp dir
-            from wild_igor.igor import paths as paths_module
+            from devices.igor import paths as paths_module
 
             original_inbox = paths_module._BootstrapPathManager.inbox.fget
 

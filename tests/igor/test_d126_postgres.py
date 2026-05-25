@@ -31,7 +31,7 @@ _add_repo_to_path()
 # Pre-import before any patch blocks so PGDatabaseProxy is bound to the real
 # class in the shim's namespace; patches replace it in unseen_university.db_proxy
 # only, and the binding in the shim is never the Mock.
-from wild_igor.igor.memory import db_proxy as _db_proxy_module  # noqa: E402
+from devices.igor.memory import db_proxy as _db_proxy_module  # noqa: E402
 
 # ── make_home_proxy / make_local_proxy routing ────────────────────────────────
 
@@ -46,7 +46,7 @@ class TestProxyFactories(unittest.TestCase):
         env["IGOR_HOME_DB_URL"] = "postgresql://fake/db"
         with patch.dict(os.environ, env, clear=True):
             with patch("unseen_university.db_proxy.PGDatabaseProxy") as MockPG:
-                from wild_igor.igor.memory import db_proxy
+                from devices.igor.memory import db_proxy
 
                 db_proxy.make_home_proxy()
                 MockPG.assert_called_once_with(
@@ -66,7 +66,7 @@ class TestProxyFactories(unittest.TestCase):
         clean_env.update(env)
         with patch.dict(os.environ, clean_env, clear=True):
             with patch("unseen_university.db_proxy.PGDatabaseProxy") as MockPG:
-                from wild_igor.igor.memory import db_proxy
+                from devices.igor.memory import db_proxy
 
                 db_proxy.make_home_proxy()
                 MockPG.assert_called_once_with(
@@ -78,7 +78,7 @@ class TestProxyFactories(unittest.TestCase):
         env["IGOR_LOCAL_DB_URL"] = "postgresql://local/db"
         with patch.dict(os.environ, env, clear=True):
             with patch("unseen_university.db_proxy.PGDatabaseProxy") as MockPG:
-                from wild_igor.igor.memory import db_proxy
+                from devices.igor.memory import db_proxy
 
                 db_proxy.make_local_proxy()
                 MockPG.assert_called_once_with(
@@ -96,7 +96,7 @@ class TestProxyFactories(unittest.TestCase):
         clean_env["IGOR_HOME_DB_URL"] = "postgresql://test:test@localhost/test"
         with patch.dict(os.environ, clean_env, clear=True):
             with patch("unseen_university.db_proxy.PGDatabaseProxy") as MockPG:
-                from wild_igor.igor.memory import db_proxy
+                from devices.igor.memory import db_proxy
 
                 db_proxy.make_local_proxy(Path("/tmp/test.db"))
                 MockPG.assert_called_once_with(
@@ -112,8 +112,8 @@ class TestPendingReplyStore(unittest.TestCase):
     """Test PendingReplyStore using Postgres (make_local_proxy / make_home_proxy)."""
 
     def _make_store(self, on_worry=None):
-        from wild_igor.igor.memory.db_proxy import make_home_proxy, make_local_proxy
-        from wild_igor.igor.memory.pending_replies import PendingReplyStore
+        from devices.igor.memory.db_proxy import make_home_proxy, make_local_proxy
+        from devices.igor.memory.pending_replies import PendingReplyStore
 
         local_proxy = make_local_proxy()
         home_proxy = make_home_proxy()
@@ -121,7 +121,7 @@ class TestPendingReplyStore(unittest.TestCase):
 
     def setUp(self):
         # Clear test rows so each test starts with a known baseline
-        from wild_igor.igor.memory.db_proxy import make_local_proxy
+        from devices.igor.memory.db_proxy import make_local_proxy
 
         try:
             with make_local_proxy()() as conn:
@@ -178,7 +178,7 @@ class TestWordGraphPostgresCompat(unittest.TestCase):
 
         Post T-sqlite-out-word-graph-db: WordGraph is Postgres-only. No db_path.
         """
-        from wild_igor.igor.cognition.word_graph import WordGraph
+        from devices.igor.cognition.word_graph import WordGraph
 
         wg = WordGraph(name="test")
         self.assertIsNotNone(wg)

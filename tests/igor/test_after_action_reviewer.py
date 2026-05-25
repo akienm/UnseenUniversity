@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 # Note: after_action_reviewer imports cortex/ollama lazily inside try/except,
 # so they fail silently without DB/Ollama in tests — no module-level stubs needed.
 
-from wild_igor.igor.tools.after_action_reviewer import _extract_cc_turn
+from devices.igor.tools.after_action_reviewer import _extract_cc_turn
 
 # ── _extract_cc_turn ──────────────────────────────────────────────────────────
 

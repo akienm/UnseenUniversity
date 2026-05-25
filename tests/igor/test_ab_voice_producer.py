@@ -12,13 +12,13 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition.decision_blob import (  # noqa: E402
+from devices.igor.cognition.decision_blob import (  # noqa: E402
     DecisionBlob,
     Intent,
     Provenance,
 )
-from wild_igor.igor.cognition.prompt_contexts import PromptContext  # noqa: E402
-from wild_igor.igor.cognition.turn_pipeline import (  # noqa: E402
+from devices.igor.cognition.prompt_contexts import PromptContext  # noqa: E402
+from devices.igor.cognition.turn_pipeline import (  # noqa: E402
     ABVoiceProducer,
     VoiceProducer,
 )

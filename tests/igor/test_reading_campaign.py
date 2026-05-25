@@ -23,7 +23,6 @@ os.environ.setdefault(
 )
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lab"))
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "wild_igor"))
 
 from claudecode.reading_campaign import (  # noqa: E402
     _parse_master_list,
@@ -197,7 +196,7 @@ class TestMasterListParser(unittest.TestCase):
             "[x] [calibre] Completed item should be skipped (calibre://999)\n"
             "[ ] [url] Blog Post Title — https://example.com/foo.html\n"
             "[ ] [file] /home/akien/doc.pdf\n"
-            "[ ] [code] wild_igor/igor/main.py\n"
+            "[ ] [code] devices/igor/main.py\n"
             "not-a-bracket-line\n"
         )
         with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as f:

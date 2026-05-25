@@ -9,16 +9,15 @@ import sys
 from pathlib import Path
 import unittest
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
-from igor.cognition.thalamus import _classify_intent, _graph_weight_intent_hint
+from devices.igor.cognition.thalamus import _classify_intent, _graph_weight_intent_hint
 
 
 class TestRelationalPronounGuard(unittest.TestCase):
     """Peer/vision inputs must not be misclassified as code_task or action_request."""
 
     def _intent(self, text: str) -> str:
-        from igor.cognition.thalamus import _extract_keywords
+        from devices.igor.cognition.thalamus import _extract_keywords
         kw = _extract_keywords(text)
         return _classify_intent(text, kw)
 
@@ -53,7 +52,7 @@ class TestLexicalCascadeUnchanged(unittest.TestCase):
     """Verify existing intent patterns still work after the guard insertion."""
 
     def _intent(self, text: str) -> str:
-        from igor.cognition.thalamus import _extract_keywords
+        from devices.igor.cognition.thalamus import _extract_keywords
         kw = _extract_keywords(text)
         return _classify_intent(text, kw)
 

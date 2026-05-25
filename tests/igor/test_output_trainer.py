@@ -16,12 +16,11 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 import tempfile
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
 
 class TestParseInteractionLine(unittest.TestCase):
     def setUp(self):
-        from igor.tools.output_trainer import OutputTrainer
+        from devices.igor.tools.output_trainer import OutputTrainer
 
         self.trainer = OutputTrainer(db_url="unused", log_dir=Path("/tmp"))
 
@@ -44,7 +43,7 @@ class TestParseInteractionLine(unittest.TestCase):
 
 class TestReadCandidateTurns(unittest.TestCase):
     def setUp(self):
-        from igor.tools.output_trainer import OutputTrainer
+        from devices.igor.tools.output_trainer import OutputTrainer
 
         self.tmp = tempfile.mkdtemp()
         self.trainer = OutputTrainer(db_url="unused", log_dir=Path(self.tmp))
@@ -136,7 +135,7 @@ class TestReadCandidateTurns(unittest.TestCase):
 
 class TestExtractTrigger(unittest.TestCase):
     def setUp(self):
-        from igor.tools.output_trainer import OutputTrainer
+        from devices.igor.tools.output_trainer import OutputTrainer
 
         self.trainer = OutputTrainer(db_url="unused", log_dir=Path("/tmp"))
 
@@ -182,14 +181,14 @@ class TestExtractTrigger(unittest.TestCase):
         self.assertIn("threading", trigger)
 
     def test_strip_input_prefix_web_message(self):
-        from igor.tools.output_trainer import OutputTrainer
+        from devices.igor.tools.output_trainer import OutputTrainer
 
         inp = "TALKING WITH: Akien | relationship: operator\n[Web message from akien]: you are?"
         result = OutputTrainer._strip_input_prefix(inp)
         self.assertEqual(result, "you are?")
 
     def test_strip_input_prefix_plain_text(self):
-        from igor.tools.output_trainer import OutputTrainer
+        from devices.igor.tools.output_trainer import OutputTrainer
 
         inp = "what is a basket dict"
         result = OutputTrainer._strip_input_prefix(inp)
@@ -198,7 +197,7 @@ class TestExtractTrigger(unittest.TestCase):
 
 class TestTriggerAlreadyCovered(unittest.TestCase):
     def setUp(self):
-        from igor.tools.output_trainer import OutputTrainer
+        from devices.igor.tools.output_trainer import OutputTrainer
 
         self.trainer = OutputTrainer(db_url="unused", log_dir=Path("/tmp"))
 
@@ -237,7 +236,7 @@ class TestTriggerAlreadyCovered(unittest.TestCase):
 class TestRunOutputTrainingPass(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
-        from igor.tools.output_trainer import OutputTrainer
+        from devices.igor.tools.output_trainer import OutputTrainer
 
         self.trainer = OutputTrainer(
             db_url="postgresql://test/test", log_dir=Path(self.tmp)

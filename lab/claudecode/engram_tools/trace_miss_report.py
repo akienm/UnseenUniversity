@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
-from wild_igor.igor.igor_base import IgorBase
+from devices.igor.igor_base import IgorBase
 
 from .confab_scanner import ConfabScanner, Match
 

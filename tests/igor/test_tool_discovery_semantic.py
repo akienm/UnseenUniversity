@@ -12,9 +12,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import wild_igor.igor.tools  # noqa: E402, F401 — ensure all tools registered
-from wild_igor.igor.cognition import push_sources  # noqa: E402 — triggers tool import
-from wild_igor.igor.tools.memory_query import (  # noqa: E402
+import devices.igor.tools  # noqa: E402, F401 — ensure all tools registered
+from devices.igor.cognition import push_sources  # noqa: E402 — triggers tool import
+from devices.igor.tools.memory_query import (  # noqa: E402
     _SYNONYM_MAP,
     find_tool,
 )

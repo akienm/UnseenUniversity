@@ -73,7 +73,7 @@ def sudo_relay_run(script: str, timeout_secs: int = DEFAULT_TIMEOUT) -> dict:
             "ok": False,
             "error": (
                 "Sudoer daemon does not appear to be running. "
-                "Ask Akien to start it: bash ~/TheIgors/wild_igor/igor/tools/sudoer_daemon.sh"
+                "Ask Akien to start it: bash ~/TheIgors/devices/igor/tools/sudoer_daemon.sh"
             ),
         }
 

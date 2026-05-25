@@ -266,7 +266,7 @@ class GoalContinuation(IgorBase):
                 # Step 2: grep step — only if grep_for was stored in step 1
                 grep_for = goal.metadata.get("grep_for", [])
                 if grep_for and ticket_id:
-                    search_root = str(Path.home() / "TheIgors" / "wild_igor" / "igor")
+                    search_root = str(Path(__file__).parent.parent)
                     results = self._run_grep_patterns(grep_for, search_root)
                     msg = f"[GOAL STEP 2] Search results for {ticket_id}:\n{results}"
                     _post_to_channel(msg)

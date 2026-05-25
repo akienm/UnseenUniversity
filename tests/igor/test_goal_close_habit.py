@@ -29,8 +29,8 @@ def _add_repo_to_path():
 
 _add_repo_to_path()
 
-_CORTEX_PATH = "wild_igor.igor.memory.cortex.Cortex"
-_MT_PATH = "wild_igor.igor.memory.models.MemoryType"
+_CORTEX_PATH = "devices.igor.memory.cortex.Cortex"
+_MT_PATH = "devices.igor.memory.models.MemoryType"
 
 
 def _make_goal(
@@ -50,7 +50,7 @@ def _make_goal(
 
 def _run_close_goal(goal_id=None, goals=None) -> tuple[dict, MagicMock]:
     """Call close_goal with mocked Cortex. Returns (result, mock_cortex)."""
-    from wild_igor.igor.tools.ops import close_goal
+    from devices.igor.tools.ops import close_goal
 
     mock_cortex = MagicMock()
     if goals is not None:
@@ -143,7 +143,7 @@ class TestCloseGoalExplicitId(unittest.TestCase):
         mock_mt = MagicMock()
         mock_mt.GOAL = "GOAL"
 
-        from wild_igor.igor.tools.ops import close_goal
+        from devices.igor.tools.ops import close_goal
 
         with patch(_CORTEX_PATH, return_value=mock_cortex), patch(_MT_PATH, mock_mt):
             result = close_goal(goal_id="GOAL_SPECIFIC")
@@ -159,7 +159,7 @@ class TestCloseGoalExplicitId(unittest.TestCase):
         mock_mt = MagicMock()
         mock_mt.GOAL = "GOAL"
 
-        from wild_igor.igor.tools.ops import close_goal
+        from devices.igor.tools.ops import close_goal
 
         with patch(_CORTEX_PATH, return_value=mock_cortex), patch(_MT_PATH, mock_mt):
             result = close_goal(goal_id="GOAL_NONEXISTENT")
@@ -176,7 +176,7 @@ class TestCloseGoalExplicitId(unittest.TestCase):
         mock_mt = MagicMock()
         mock_mt.GOAL = "GOAL"
 
-        from wild_igor.igor.tools.ops import close_goal
+        from devices.igor.tools.ops import close_goal
 
         with patch(_CORTEX_PATH, return_value=mock_cortex), patch(_MT_PATH, mock_mt):
             result = close_goal(goal_id=goal.id)

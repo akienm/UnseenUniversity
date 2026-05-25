@@ -12,11 +12,10 @@ import threading
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
 
 def _make_cortex(db_path: str):
-    from igor.memory.cortex import Cortex
+    from devices.igor.memory.cortex import Cortex
 
     return Cortex(Path(db_path))
 
@@ -29,7 +28,7 @@ class TestStoreMemory(unittest.TestCase):
         self._tmp.close()
         os.environ["IGOR_DB_PATH"] = self._db_path
         # Reset per-process write counter between tests
-        import igor.tools.graph_write as gw
+        import devices.igor.tools.graph_write as gw
 
         gw._write_count = 0
 
@@ -39,7 +38,7 @@ class TestStoreMemory(unittest.TestCase):
             del os.environ["IGOR_DB_PATH"]
 
     def test_store_interpretive_returns_id(self):
-        from igor.tools.graph_write import store_memory
+        from devices.igor.tools.graph_write import store_memory
 
         result = store_memory("This is a test insight", "INTERPRETIVE")
         self.assertNotIn("ERROR", result)
@@ -47,7 +46,7 @@ class TestStoreMemory(unittest.TestCase):
         self.assertIn("This is a test insight", result)
 
     def test_stored_node_retrievable(self):
-        from igor.tools.graph_write import store_memory
+        from devices.igor.tools.graph_write import store_memory
 
         result = store_memory("Retrievable insight", "FACTUAL")
         mem_id = result.split()[1].rstrip(":")
@@ -59,7 +58,7 @@ class TestStoreMemory(unittest.TestCase):
         self.assertTrue(mem.metadata.get("turn_deposited"))
 
     def test_store_with_parent_creates_child_link(self):
-        from igor.tools.graph_write import store_memory
+        from devices.igor.tools.graph_write import store_memory
 
         # Store a parent first
         r1 = store_memory("Parent node", "FACTUAL")
@@ -72,15 +71,15 @@ class TestStoreMemory(unittest.TestCase):
         self.assertIn(child_id, parent.children_ids)
 
     def test_invalid_memory_type_returns_error(self):
-        from igor.tools.graph_write import store_memory
+        from devices.igor.tools.graph_write import store_memory
 
         result = store_memory("Some text", "BOGUS_TYPE")
         self.assertIn("ERROR", result)
         self.assertIn("BOGUS_TYPE", result)
 
     def test_rate_limit_blocks_excess_writes(self):
-        import igor.tools.graph_write as gw
-        from igor.tools.graph_write import store_memory
+        import devices.igor.tools.graph_write as gw
+        from devices.igor.tools.graph_write import store_memory
 
         gw._write_count = gw._WRITE_LIMIT
         result = store_memory("Should be blocked", "FACTUAL")
@@ -91,7 +90,7 @@ class TestStoreMemory(unittest.TestCase):
     )
     def test_no_db_path_still_works(self):
         """IGOR_DB_PATH is no longer required — Postgres handles it via IGOR_HOME_DB_URL."""
-        from igor.tools.graph_write import store_memory
+        from devices.igor.tools.graph_write import store_memory
 
         if "IGOR_DB_PATH" in os.environ:
             del os.environ["IGOR_DB_PATH"]
@@ -100,7 +99,7 @@ class TestStoreMemory(unittest.TestCase):
         self.assertNotIn("ERROR", result)
 
     def test_valence_arousal_stored(self):
-        from igor.tools.graph_write import store_memory
+        from devices.igor.tools.graph_write import store_memory
 
         result = store_memory(
             "Emotional node", "EXPERIENTIAL", valence="0.8", arousal="-0.3"
@@ -119,7 +118,7 @@ class TestLinkMemory(unittest.TestCase):
         self._db_path = self._tmp.name
         self._tmp.close()
         os.environ["IGOR_DB_PATH"] = self._db_path
-        import igor.tools.graph_write as gw
+        import devices.igor.tools.graph_write as gw
 
         gw._write_count = 0
 
@@ -129,7 +128,7 @@ class TestLinkMemory(unittest.TestCase):
             del os.environ["IGOR_DB_PATH"]
 
     def test_link_memory_creates_edge(self):
-        from igor.tools.graph_write import store_memory, link_memory
+        from devices.igor.tools.graph_write import store_memory, link_memory
 
         r1 = store_memory("Node A", "FACTUAL")
         r2 = store_memory("Node B", "FACTUAL")
@@ -142,13 +141,13 @@ class TestLinkMemory(unittest.TestCase):
         self.assertIn(id_b, parent.children_ids)
 
     def test_missing_parent_returns_error(self):
-        from igor.tools.graph_write import link_memory
+        from devices.igor.tools.graph_write import link_memory
 
         result = link_memory("nonexistent", "alsononexistent")
         self.assertIn("ERROR", result)
 
     def test_empty_ids_returns_error(self):
-        from igor.tools.graph_write import link_memory
+        from devices.igor.tools.graph_write import link_memory
 
         self.assertIn("ERROR", link_memory("", "child"))
         self.assertIn("ERROR", link_memory("parent", ""))
@@ -161,7 +160,7 @@ class TestEmbedNode(unittest.TestCase):
         self._db_path = self._tmp.name
         self._tmp.close()
         os.environ["IGOR_DB_PATH"] = self._db_path
-        import igor.tools.graph_write as gw
+        import devices.igor.tools.graph_write as gw
 
         gw._write_count = 0
 
@@ -171,14 +170,14 @@ class TestEmbedNode(unittest.TestCase):
             del os.environ["IGOR_DB_PATH"]
 
     def test_embed_nonexistent_returns_error(self):
-        from igor.tools.graph_write import embed_node
+        from devices.igor.tools.graph_write import embed_node
 
         result = embed_node("nosuchid")
         self.assertIn("ERROR", result)
 
     def test_embed_existing_returns_skipped_or_embedded(self):
         """Ollama likely not available in test env — must gracefully return skip."""
-        from igor.tools.graph_write import store_memory, embed_node
+        from devices.igor.tools.graph_write import store_memory, embed_node
 
         r = store_memory("Embeddable insight", "INTERPRETIVE")
         mem_id = r.split()[1].rstrip(":")
@@ -191,7 +190,7 @@ class TestEmbedNode(unittest.TestCase):
         )
 
     def test_empty_id_returns_error(self):
-        from igor.tools.graph_write import embed_node
+        from devices.igor.tools.graph_write import embed_node
 
         self.assertIn("ERROR", embed_node(""))
 
@@ -199,7 +198,7 @@ class TestEmbedNode(unittest.TestCase):
 class TestToolRegistration(unittest.TestCase):
 
     def test_all_three_tools_registered(self):
-        import igor.tools.graph_write  # noqa — triggers registration
+        import devices.igor.tools.graph_write  # noqa — triggers registration
         from lab.utility_closet.registry import registry
 
         names = {t.name for t in registry.all()}

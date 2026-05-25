@@ -189,7 +189,7 @@ async def _run_browser_agent(
                 final_url = state.url
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/tools/browser.py: %s", _bare_e
+                "bare except in devices/igor/tools/browser.py: %s", _bare_e
             )
         history.append(
             {
@@ -247,7 +247,7 @@ async def _run_browser_agent(
                 final_url = visited[-1]
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/tools/browser.py: %s", _bare_e
+                "bare except in devices/igor/tools/browser.py: %s", _bare_e
             )
 
         # Extract result text — prefer final_result(), fall back to accumulated
@@ -257,7 +257,7 @@ async def _run_browser_agent(
             extracted = result.final_result()
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/tools/browser.py: %s", _bare_e
+                "bare except in devices/igor/tools/browser.py: %s", _bare_e
             )
         if not extracted:
             try:

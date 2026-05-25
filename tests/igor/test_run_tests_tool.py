@@ -16,16 +16,14 @@ def _import_run_tests():
     import types
 
     # Save originals for all modules we may stub, so we can restore after
-    # load. Missing wild_igor.igor.tools.registry from this list bled a fake
+    # load. Missing devices.igor.tools.registry from this list bled a fake
     # _Registry into downstream tests that looked up tools at call-time
     # (test_tiered_research, test_tool_discovery_semantic).
     _stub_pkgs = [
-        "wild_igor",
-        "wild_igor.igor",
-        "wild_igor.igor.tools",
+        "devices.igor.tools",
         "lab.utility_closet.registry",
-        "wild_igor.igor.memory",
-        "wild_igor.igor.paths",
+        "devices.igor.memory",
+        "devices.igor.paths",
     ]
     _orig_mods = {pkg: sys.modules.get(pkg) for pkg in _stub_pkgs}
 
@@ -50,9 +48,9 @@ def _import_run_tests():
     sys.modules["lab.utility_closet.registry"] = fake_registry_mod
 
     # Stub paths (unconditional — ops.py needs a callable paths at import time)
-    fake_paths_mod = types.ModuleType("wild_igor.igor.paths")
+    fake_paths_mod = types.ModuleType("devices.igor.paths")
     fake_paths_mod.paths = MagicMock()
-    sys.modules["wild_igor.igor.paths"] = fake_paths_mod
+    sys.modules["devices.igor.paths"] = fake_paths_mod
 
     # Stub psycopg2 so module-level DB code doesn't fail
     if "psycopg2" not in sys.modules:
@@ -61,7 +59,7 @@ def _import_run_tests():
         sys.modules["psycopg2"] = fake_pg
 
     # Now import the module fresh (or reuse cached)
-    mod_name = "wild_igor.igor.tools.ops"
+    mod_name = "devices.igor.tools.ops"
     if mod_name in sys.modules:
         del sys.modules[mod_name]
 
@@ -69,7 +67,7 @@ def _import_run_tests():
 
     spec = importlib.util.spec_from_file_location(
         mod_name,
-        Path(__file__).parent.parent / "wild_igor" / "igor" / "tools" / "ops.py",
+        Path(__file__).parent.parent.parent / "devices" / "igor" / "tools" / "ops.py",
     )
     mod = importlib.util.module_from_spec(spec)
     sys.modules[mod_name] = mod

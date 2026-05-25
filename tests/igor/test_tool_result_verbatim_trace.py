@@ -33,7 +33,7 @@ def test_tool_result_verbatim_round_trip_via_twm_category():
     back by category returns the full untruncated content. This is the
     same infrastructure pattern as user_input_verbatim from f0ad6dab."""
     import psycopg2
-    from wild_igor.igor.memory.cortex import Cortex
+    from devices.igor.memory.cortex import Cortex
 
     db_url = os.environ.get(
         "IGOR_HOME_DB_URL",
@@ -113,7 +113,7 @@ def test_synth_window_raised_to_40k():
     require running the full LLM tool dispatch path, which is heavy and
     LLM-dependent. The source check captures the actual fix.
     """
-    main_py = Path(__file__).resolve().parent.parent / "wild_igor" / "igor" / "main.py"
+    main_py = Path(__file__).resolve().parent.parent.parent / "devices" / "igor" / "main.py"
     text = main_py.read_text()
     # The synth prompt block is uniquely identifiable by 'Result:\n' followed
     # by the truncation pattern.
@@ -129,7 +129,7 @@ def test_synth_window_raised_to_40k():
 def test_fallback_window_raised_to_4k():
     """The user-visible fallback wrapper '[<tool> result: ...]' should
     slice at 4000 chars, not 800."""
-    main_py = Path(__file__).resolve().parent.parent / "wild_igor" / "igor" / "main.py"
+    main_py = Path(__file__).resolve().parent.parent.parent / "devices" / "igor" / "main.py"
     text = main_py.read_text()
     assert (
         "str(_tool_result)[:4000]" in text
@@ -143,7 +143,7 @@ def test_fallback_window_raised_to_4k():
 def test_tool_result_verbatim_push_in_main_py():
     """The dispatch path should push a tool_result_verbatim observation
     to TWM right after _tool_result is captured."""
-    main_py = Path(__file__).resolve().parent.parent / "wild_igor" / "igor" / "main.py"
+    main_py = Path(__file__).resolve().parent.parent.parent / "devices" / "igor" / "main.py"
     text = main_py.read_text()
     assert 'source="tool_result_verbatim"' in text
     assert 'category="tool_result_verbatim"' in text
@@ -158,7 +158,7 @@ def test_ring_truncations_unchanged_at_300_500():
     """Ring entries (RESOLVED, TOOL_RESULT) should stay short — they're
     for memory compaction, not for user-visible output. Verify the
     hotfix didn't accidentally inflate them too."""
-    main_py = Path(__file__).resolve().parent.parent / "wild_igor" / "igor" / "main.py"
+    main_py = Path(__file__).resolve().parent.parent.parent / "devices" / "igor" / "main.py"
     text = main_py.read_text()
     # RESOLVED ring entries stay at 300
     assert "str(_tool_result)[:300]" in text

@@ -12,13 +12,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
-from igor.memory.models import Memory, MemoryType, MemoryScope, default_scope
+from devices.igor.memory.models import Memory, MemoryType, MemoryScope, default_scope
 
 
 def _make_cortex(db_path: str):
-    from igor.memory.cortex import Cortex
+    from devices.igor.memory.cortex import Cortex
     return Cortex(Path(db_path))
 
 

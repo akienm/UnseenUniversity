@@ -246,7 +246,7 @@ class MilieuInterruptor(BaseInterruptor):
 
         except Exception as _bare_e:
             get_logger(__name__).warning(
-                "bare except in wild_igor/igor/cognition/interruptors.py: %s", _bare_e
+                "bare except in devices/igor/cognition/interruptors.py: %s", _bare_e
             )
 
         return None
@@ -340,6 +340,6 @@ def run_all(cortex=None) -> list[str]:
                 alerts.append(result)
         except Exception as _bare_e:
             get_logger(__name__).warning(
-                "bare except in wild_igor/igor/cognition/interruptors.py: %s", _bare_e
+                "bare except in devices/igor/cognition/interruptors.py: %s", _bare_e
             )
     return alerts

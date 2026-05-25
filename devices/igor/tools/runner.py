@@ -309,7 +309,7 @@ def _resolve_repo_path(repo_path: str = None, project_id: str = None) -> str:
                 return _mem.metadata["path"]
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/tools/runner.py: %s", _bare_e
+                "bare except in devices/igor/tools/runner.py: %s", _bare_e
             )
     return str(Path.home() / "TheIgors")
 

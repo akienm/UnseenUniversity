@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, patch, call
 
 def _make_gateway():
     """Build a minimal InferenceGateway with mock tier reasoners."""
-    from wild_igor.igor.cognition.inference_gateway import InferenceGateway
+    from devices.igor.cognition.inference_gateway import InferenceGateway
 
     gw = InferenceGateway.__new__(InferenceGateway)
     gw._t2 = MagicMock(name="t2_ollama")
@@ -130,7 +130,7 @@ def test_mode_override_twm_error_safe_default():
     cortex = MagicMock()
     cortex.twm_read.side_effect = RuntimeError("db gone")
 
-    with patch("wild_igor.igor.cognition.inference_gateway.log_error") as mock_log:
+    with patch("devices.igor.cognition.inference_gateway.log_error") as mock_log:
         text, cost, used_api = gw.reason(
             "hello",
             [],

@@ -33,7 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 @pytest.fixture(scope="module", autouse=True)
 def ensure_seeded():
-    from wild_igor.igor.tools import seed_persistent_relationships as _seed
+    from devices.igor.tools import seed_persistent_relationships as _seed
 
     rc = _seed.seed()
     assert rc == 0
@@ -61,7 +61,7 @@ def _delete_test_accretions_and_goals():
 def cleanup_each():
     from unittest.mock import patch
 
-    with patch("wild_igor.igor.tools.ops._channel_append"):
+    with patch("devices.igor.tools.ops._channel_append"):
         yield
     _delete_test_accretions_and_goals()
 
@@ -71,7 +71,7 @@ def cleanup_each():
 
 def test_goal_adopt_accepts_pr_facia_id_kwarg():
     """The new pr_facia_id kwarg is accepted without error."""
-    from wild_igor.igor.tools.ops import goal_adopt
+    from devices.igor.tools.ops import goal_adopt
 
     result = goal_adopt(
         task_description="test task with relationship",
@@ -83,8 +83,8 @@ def test_goal_adopt_accepts_pr_facia_id_kwarg():
 
 def test_goal_adopt_stores_pr_facia_id_in_goal_metadata():
     """When pr_facia_id is supplied, the GOAL memory's metadata carries it."""
-    from wild_igor.igor.tools.ops import goal_adopt
-    from wild_igor.igor.memory.cortex import Cortex
+    from devices.igor.tools.ops import goal_adopt
+    from devices.igor.memory.cortex import Cortex
 
     goal_adopt(
         task_description="test relationship-nested task",
@@ -100,8 +100,8 @@ def test_goal_adopt_stores_pr_facia_id_in_goal_metadata():
 
 def test_goal_adopt_stores_pr_facia_id_in_twm_metadata():
     """The TWM ACTIVE_GOAL observation also carries pr_facia_id."""
-    from wild_igor.igor.tools.ops import goal_adopt
-    from wild_igor.igor.memory.cortex import Cortex
+    from devices.igor.tools.ops import goal_adopt
+    from devices.igor.memory.cortex import Cortex
 
     goal_adopt(
         task_description="another relationship-nested task",
@@ -124,8 +124,8 @@ def test_goal_adopt_stores_pr_facia_id_in_twm_metadata():
 def test_goal_adopt_without_pr_facia_id_omits_field():
     """Legacy callers (no pr_facia_id) do NOT get the field added —
     backward compatibility check."""
-    from wild_igor.igor.tools.ops import goal_adopt
-    from wild_igor.igor.memory.cortex import Cortex
+    from devices.igor.tools.ops import goal_adopt
+    from devices.igor.memory.cortex import Cortex
 
     goal_adopt(
         task_description="legacy goal — no relationship",
@@ -145,7 +145,7 @@ def test_commitment_accretion_helper_works_with_goal_id():
     """The pr_accrete_commitment function (which the dispatch path also
     calls) creates a commitment memory with the goal linkage. This is the
     side effect that makes commitments visible in pr_recent_accretions."""
-    from wild_igor.igor.tools import pr_accretion as _pra
+    from devices.igor.tools import pr_accretion as _pra
 
     mem_id = _pra.pr_accrete_commitment(
         facia_id="PR_AKIEN",

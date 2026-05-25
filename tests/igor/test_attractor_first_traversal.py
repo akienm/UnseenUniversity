@@ -36,7 +36,7 @@ class TestAttractorFirstTraversal(unittest.TestCase):
         Helper: patch _get_context_anchors + traverse_from, run search(),
         return (traverse_from mock, search result).
         """
-        from wild_igor.igor.memory.cortex import Cortex, SearchRequest
+        from devices.igor.memory.cortex import Cortex, SearchRequest
 
         cortex = Cortex.__new__(Cortex)
 

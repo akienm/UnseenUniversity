@@ -28,7 +28,7 @@ _add_repo()
 
 class TestTokenize(unittest.TestCase):
     def _tok(self, text):
-        from wild_igor.igor.tools.deferred_self_task import _tokenize
+        from devices.igor.tools.deferred_self_task import _tokenize
 
         return _tokenize(text)
 
@@ -57,7 +57,7 @@ class TestTokenize(unittest.TestCase):
 
 class TestComparePredictionToResult(unittest.TestCase):
     def _cmp(self, pred, result):
-        from wild_igor.igor.tools.deferred_self_task import compare_prediction_to_result
+        from devices.igor.tools.deferred_self_task import compare_prediction_to_result
 
         return compare_prediction_to_result(pred, result)
 
@@ -104,7 +104,7 @@ class TestPushDeferredResultSource(unittest.TestCase):
     """Verify prediction notes use source=deferred_prediction."""
 
     def _push(self, title, result):
-        from wild_igor.igor.tools.deferred_self_task import push_deferred_result_to_twm
+        from devices.igor.tools.deferred_self_task import push_deferred_result_to_twm
 
         mock_cortex = MagicMock()
         push_deferred_result_to_twm(mock_cortex, "job-123", title, result)
@@ -147,8 +147,8 @@ class TestEvaluateDeferredPredictions(unittest.TestCase):
         return {"source": source, "content_csb": content}
 
     def test_match_fires_milieu_reward(self):
-        import wild_igor.igor.cognition.milieu as milieu_mod
-        from wild_igor.igor.tools.deferred_self_task import (
+        import devices.igor.cognition.milieu as milieu_mod
+        from devices.igor.tools.deferred_self_task import (
             evaluate_deferred_predictions,
         )
 
@@ -174,8 +174,8 @@ class TestEvaluateDeferredPredictions(unittest.TestCase):
         self.assertLessEqual(reward_val, 0.8)
 
     def test_mismatch_writes_ring_no_reward(self):
-        import wild_igor.igor.cognition.milieu as milieu_mod
-        from wild_igor.igor.tools.deferred_self_task import (
+        import devices.igor.cognition.milieu as milieu_mod
+        from devices.igor.tools.deferred_self_task import (
             evaluate_deferred_predictions,
         )
 
@@ -201,7 +201,7 @@ class TestEvaluateDeferredPredictions(unittest.TestCase):
         mock_instance.ingest_resolution_reward.assert_not_called()
 
     def test_no_predictions_is_noop(self):
-        from wild_igor.igor.tools.deferred_self_task import (
+        from devices.igor.tools.deferred_self_task import (
             evaluate_deferred_predictions,
         )
 
@@ -215,7 +215,7 @@ class TestEvaluateDeferredPredictions(unittest.TestCase):
         mock_cortex.write_ring.assert_not_called()
 
     def test_no_results_is_noop(self):
-        from wild_igor.igor.tools.deferred_self_task import (
+        from devices.igor.tools.deferred_self_task import (
             evaluate_deferred_predictions,
         )
 
@@ -230,7 +230,7 @@ class TestEvaluateDeferredPredictions(unittest.TestCase):
         mock_cortex.write_ring.assert_not_called()
 
     def test_match_writes_prediction_match_ring(self):
-        from wild_igor.igor.tools.deferred_self_task import (
+        from devices.igor.tools.deferred_self_task import (
             evaluate_deferred_predictions,
         )
 
@@ -246,7 +246,7 @@ class TestEvaluateDeferredPredictions(unittest.TestCase):
             ),
         ]
 
-        with patch("wild_igor.igor.cognition.milieu") as mock_milieu_mod:
+        with patch("devices.igor.cognition.milieu") as mock_milieu_mod:
             mock_milieu_mod.get.return_value = MagicMock()
             evaluate_deferred_predictions(mock_cortex)
 

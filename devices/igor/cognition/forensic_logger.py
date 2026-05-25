@@ -292,7 +292,7 @@ def finalize_turn_ctx(
         _purge_old_turn_traces(today)
     except Exception as _bare_e:
         sys.stderr.write(
-            f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n"
+            f"[forensic_logger] bare except in devices/igor/cognition/forensic_logger.py: {_bare_e}\n"
         )
     finally:
         _current_turn.ctx = None
@@ -310,7 +310,7 @@ def _purge_old_turn_traces(today: str) -> None:
                 p.unlink(missing_ok=True)
     except Exception as _bare_e:
         sys.stderr.write(
-            f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n"
+            f"[forensic_logger] bare except in devices/igor/cognition/forensic_logger.py: {_bare_e}\n"
         )
 
 
@@ -358,7 +358,7 @@ def _prepend(log_name: str, entry: str) -> None:
         path.write_text(entry + "\n" + existing, encoding="utf-8")
     except Exception as _bare_e:
         sys.stderr.write(
-            f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n"
+            f"[forensic_logger] bare except in devices/igor/cognition/forensic_logger.py: {_bare_e}\n"
         )
 
 
@@ -662,7 +662,7 @@ def log_cognition_metric(
             f.write(entry)
     except Exception as _bare_e:
         sys.stderr.write(
-            f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n"
+            f"[forensic_logger] bare except in devices/igor/cognition/forensic_logger.py: {_bare_e}\n"
         )
 
 
@@ -684,7 +684,7 @@ def log_anomaly(
             f.write(entry)
     except Exception as _bare_e:
         sys.stderr.write(
-            f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n"
+            f"[forensic_logger] bare except in devices/igor/cognition/forensic_logger.py: {_bare_e}\n"
         )
 
 
@@ -707,7 +707,7 @@ def log_batch_call(
             f.write(entry)
     except Exception as _bare_e:
         sys.stderr.write(
-            f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n"
+            f"[forensic_logger] bare except in devices/igor/cognition/forensic_logger.py: {_bare_e}\n"
         )
 
 
@@ -856,7 +856,7 @@ def log_pipeline_step(
         )
     except Exception as _bare_e:
         sys.stderr.write(
-            f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n"
+            f"[forensic_logger] bare except in devices/igor/cognition/forensic_logger.py: {_bare_e}\n"
         )
 
 
@@ -872,7 +872,7 @@ def _purge_old_pipeline_traces(today: str) -> None:
                 p.unlink(missing_ok=True)
     except Exception as _bare_e:
         sys.stderr.write(
-            f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n"
+            f"[forensic_logger] bare except in devices/igor/cognition/forensic_logger.py: {_bare_e}\n"
         )
 
 
@@ -947,7 +947,7 @@ def log_inference_io(
 
     except Exception as _bare_e:
         sys.stderr.write(
-            f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n"
+            f"[forensic_logger] bare except in devices/igor/cognition/forensic_logger.py: {_bare_e}\n"
         )
 
 
@@ -963,7 +963,7 @@ def _purge_old_inference_io(today: str) -> None:
                 p.unlink(missing_ok=True)
     except Exception as _bare_e:
         sys.stderr.write(
-            f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n"
+            f"[forensic_logger] bare except in devices/igor/cognition/forensic_logger.py: {_bare_e}\n"
         )
 
 
@@ -1009,7 +1009,7 @@ def log_interaction(
         _purge_old_interaction(today)
     except Exception as _bare_e:
         sys.stderr.write(
-            f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n"
+            f"[forensic_logger] bare except in devices/igor/cognition/forensic_logger.py: {_bare_e}\n"
         )
 
 
@@ -1025,7 +1025,7 @@ def _purge_old_interaction(today: str) -> None:
                 p.unlink(missing_ok=True)
     except Exception as _bare_e:
         sys.stderr.write(
-            f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n"
+            f"[forensic_logger] bare except in devices/igor/cognition/forensic_logger.py: {_bare_e}\n"
         )
 
 
@@ -1085,7 +1085,7 @@ def log_startup(
         path.write_text("=== BOOT READY ===\n\n".join(blocks), encoding="utf-8")
     except Exception as _bare_e:
         sys.stderr.write(
-            f"[forensic_logger] bare except in wild_igor/igor/cognition/forensic_logger.py: {_bare_e}\n"
+            f"[forensic_logger] bare except in devices/igor/cognition/forensic_logger.py: {_bare_e}\n"
         )
 
 

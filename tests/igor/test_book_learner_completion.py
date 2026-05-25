@@ -10,7 +10,6 @@ from unittest.mock import MagicMock, patch, call
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "lab"))
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
 
 class TestDepositCompletionRecord(unittest.TestCase):
@@ -65,7 +64,7 @@ class TestDepositCompletionRecord(unittest.TestCase):
 
     def test_episodic_memory_type(self):
         """Completion node is EPISODIC."""
-        from igor.memory.models import MemoryType
+        from devices.igor.memory.models import MemoryType
         cortex = self._make_cortex()
         self.fn(
             cortex=cortex,

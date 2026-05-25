@@ -149,7 +149,7 @@ def fetch(url: str, title: str, source: str = "gutenberg") -> tuple[str, str]:
             )
     except Exception as _bare_e:
         get_logger(__name__).warning(
-            "bare except in wild_igor/igor/cognition/training_corpus.py: %s", _bare_e
+            "bare except in devices/igor/cognition/training_corpus.py: %s", _bare_e
         )
 
     # Check disk before fetching

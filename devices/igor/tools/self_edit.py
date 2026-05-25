@@ -26,8 +26,8 @@ from lab.utility_closet.registry import Tool, registry
 from ..cognition.forensic_logger import log_self_edit
 from ..paths import paths
 
-SOURCE_ROOT = Path(__file__).parent.parent  # wild_igor/igor/
-REPO_ROOT = SOURCE_ROOT.parent  # wild_igor/
+SOURCE_ROOT = Path(__file__).parent.parent  # devices/igor/
+REPO_ROOT = SOURCE_ROOT.parent.parent  # UnseenUniversity/
 
 # Paths Igor may READ but never WRITE (change.26).
 # Core patterns can only be changed by akien via Claude Code.
@@ -59,7 +59,7 @@ def _log_blocked_self_edit_attempt(path: str) -> None:
             f.write(entry)
     except Exception as _bare_e:
         logging.getLogger(__name__).warning(
-            "bare except in wild_igor/igor/tools/self_edit.py: %s", _bare_e
+            "bare except in devices/igor/tools/self_edit.py: %s", _bare_e
         )
 
 
@@ -88,7 +88,7 @@ def _log_blocked_edit(path: str):
             f.write(entry)
     except Exception as _bare_e:
         logging.getLogger(__name__).warning(
-            "bare except in wild_igor/igor/tools/self_edit.py: %s", _bare_e
+            "bare except in devices/igor/tools/self_edit.py: %s", _bare_e
         )
 
 
@@ -98,9 +98,9 @@ def _get_inertia(path: str) -> tuple[float, str]:
 
 
 def _path_to_module_name(rel_path: str) -> str:
-    """Convert 'tools/filesystem.py' → 'wild_igor.igor.tools.filesystem'."""
+    """Convert 'tools/filesystem.py' → 'devices.igor.tools.filesystem'."""
     name = rel_path.replace("\\", "/").removesuffix(".py").replace("/", ".")
-    return f"wild_igor.igor.{name}"
+    return f"devices.igor.{name}"
 
 
 def _get_self_edit_cortex():

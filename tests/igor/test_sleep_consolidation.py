@@ -10,7 +10,7 @@ import pytest
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-from wild_igor.igor.cognition.sleep_consolidation import (
+from devices.igor.cognition.sleep_consolidation import (
     SleepConsolidation,
     QUIET_THRESHOLD_SEC,
     MIN_INTERVAL_SEC,

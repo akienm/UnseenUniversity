@@ -17,7 +17,6 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "lab"))
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
 
 @pytest.fixture()
@@ -35,7 +34,7 @@ def cortex_mock():
 
 
 def _make_milieu_state(arousal: float):
-    from igor.cognition.milieu import MilieuState
+    from devices.igor.cognition.milieu import MilieuState
 
     ms = MilieuState()
     ms.arousal = arousal

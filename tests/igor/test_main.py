@@ -25,7 +25,7 @@ class TestCCToolBypass(unittest.TestCase):
         the CC gate should match and dispatch directly without calling thalamus.process().
         """
         # Mock the Igor instance and components
-        from wild_igor.igor.main import Igor
+        from devices.igor.main import Igor
         from lab.utility_closet.registry import registry
 
         mock_igor = MagicMock(spec=Igor)
@@ -66,7 +66,7 @@ class TestCCToolBypass(unittest.TestCase):
 
     def test_cc_hot_reload_gate(self):
         """
-        When Igor receives 'CC: hot_reload wild_igor/igor/tools/goal_continuation.py',
+        When Igor receives 'CC: hot_reload devices/igor/tools/goal_continuation.py',
         the gate should convert the file path to module name and dispatch reload_module.
         """
         from lab.utility_closet.registry import registry
@@ -78,7 +78,7 @@ class TestCCToolBypass(unittest.TestCase):
 
         # Verify it can be called with a module name
         # (Use a non-critical module to test; goal_continuation is low inertia)
-        result = tool.execute(module_name="wild_igor.igor.tools.goal_continuation")
+        result = tool.execute(module_name="devices.igor.tools.goal_continuation")
         self.assertIsInstance(result, str)
         # Result should contain "Reloaded" or error message, not a crash
 

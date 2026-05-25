@@ -106,7 +106,7 @@ def _prepend_log(entry: str):
         CHANGES_LOG.write_text(entry + "\n" + existing, encoding="utf-8")
     except OSError as _bare_e:
         logging.getLogger(__name__).warning(
-            "bare except in wild_igor/igor/boot_check.py: %s", _bare_e
+            "bare except in devices/igor/boot_check.py: %s", _bare_e
         )
 
 
@@ -177,7 +177,7 @@ def run(cortex=None):
             cortex.write_ring(summary, category="system_info")
         except Exception as _bare_e:
             logging.getLogger(__name__).warning(
-                "bare except in wild_igor/igor/boot_check.py: %s", _bare_e
+                "bare except in devices/igor/boot_check.py: %s", _bare_e
             )
 
 

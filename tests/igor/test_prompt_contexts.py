@@ -13,7 +13,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition.prompt_contexts import (  # noqa: E402
+from devices.igor.cognition.prompt_contexts import (  # noqa: E402
     HYPOTHESIS_DISCLAIMER,
     SIX_RULES_BLOCK,
     VOICE_DISCLAIMER,

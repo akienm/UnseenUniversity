@@ -19,7 +19,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch, call
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -28,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 def _fake_mem(
     mem_id, narrative, mtype_str="EPISODIC", activation_count=1, metadata=None
 ):
-    from igor.memory.models import Memory, MemoryType
+    from devices.igor.memory.models import Memory, MemoryType
 
     mtype_map = {
         "EPISODIC": MemoryType.EPISODIC,
@@ -59,7 +58,7 @@ def _make_mock_cortex():
 
 class TestKeywordOverlap(unittest.TestCase):
     def setUp(self):
-        from igor.cognition.distillation import _keyword_overlap
+        from devices.igor.cognition.distillation import _keyword_overlap
 
         self.ko = _keyword_overlap
 
@@ -90,7 +89,7 @@ class TestClusterByEmbeddingsFallback(unittest.TestCase):
     """When embeddings unavailable, keyword fallback clusters correctly."""
 
     def test_keyword_fallback_groups_similar_memories(self):
-        from igor.cognition.distillation import _cluster_by_embeddings
+        from devices.igor.cognition.distillation import _cluster_by_embeddings
 
         mems = [
             _fake_mem("E1", "memory graph traversal activation nodes"),
@@ -112,7 +111,7 @@ class TestClusterByEmbeddingsFallback(unittest.TestCase):
         self.assertNotIn("E3", cluster_ids)  # no overlap
 
     def test_singleton_clusters_excluded(self):
-        from igor.cognition.distillation import _cluster_by_embeddings
+        from devices.igor.cognition.distillation import _cluster_by_embeddings
 
         mems = [
             _fake_mem("E1", "memory graph traversal"),
@@ -130,8 +129,8 @@ class TestClusterByEmbeddingsFallback(unittest.TestCase):
 class TestIsNovel(unittest.TestCase):
     def test_returns_true_when_no_embedding_available(self):
         """If embed() returns None, assume novel (can't check)."""
-        from igor.cognition.distillation import _is_novel
-        from igor.memory.models import MemoryType
+        from devices.igor.cognition.distillation import _is_novel
+        from devices.igor.memory.models import MemoryType
 
         cortex = _make_mock_cortex()
         with patch("igor.cognition.distillation._is_novel") as mock_novel:
@@ -141,8 +140,8 @@ class TestIsNovel(unittest.TestCase):
 
     def test_novel_when_no_existing_nodes(self):
         """Empty existing pool → always novel."""
-        from igor.cognition.distillation import _is_novel
-        from igor.memory.models import MemoryType
+        from devices.igor.cognition.distillation import _is_novel
+        from devices.igor.memory.models import MemoryType
 
         cortex = _make_mock_cortex()
         cortex._conn.return_value.execute.return_value.fetchall.return_value = []
@@ -162,7 +161,7 @@ class TestRunDistillationGating(unittest.TestCase):
         import importlib
 
         os.environ["IGOR_DISTILLATION_ENABLED"] = "false"
-        import igor.cognition.distillation as dm
+        import devices.igor.cognition.distillation as dm
 
         importlib.reload(dm)
         result = dm.run_distillation(_make_mock_cortex())
@@ -173,7 +172,7 @@ class TestRunDistillationGating(unittest.TestCase):
         import importlib
 
         os.environ["IGOR_DISTILLATION_ENABLED"] = "true"
-        import igor.cognition.distillation as dm
+        import devices.igor.cognition.distillation as dm
 
         importlib.reload(dm)
         dm._last_run = time.time()  # just ran
@@ -191,7 +190,7 @@ class TestRunDistillationExtraction(unittest.TestCase):
         import importlib
 
         os.environ["IGOR_DISTILLATION_ENABLED"] = "true"
-        import igor.cognition.distillation as dm
+        import devices.igor.cognition.distillation as dm
 
         importlib.reload(dm)
         dm._last_run = 0.0
@@ -280,7 +279,7 @@ class TestGraduationPass(unittest.TestCase):
         """EXPERIENTIAL with activation_count >= threshold → PROCEDURAL stored."""
         import importlib
 
-        import igor.cognition.distillation as dm
+        import devices.igor.cognition.distillation as dm
 
         importlib.reload(dm)
 
@@ -322,7 +321,7 @@ class TestGraduationPass(unittest.TestCase):
 
     def test_already_graduated_not_re_graduated(self):
         """EXPERIENTIAL with graduated_to already set → skipped."""
-        import igor.cognition.distillation as dm
+        import devices.igor.cognition.distillation as dm
 
         exp_mem = _fake_mem(
             "EXP_ALREADY",
@@ -354,7 +353,7 @@ class TestDistillationThreadWiring(unittest.TestCase):
     def test_background_method_exists_on_main(self):
         """Igor main class has _run_distillation_background method."""
         import inspect
-        from igor.main import Igor
+        from devices.igor.main import Igor
 
         self.assertTrue(
             hasattr(Igor, "_run_distillation_background"),
@@ -364,7 +363,7 @@ class TestDistillationThreadWiring(unittest.TestCase):
     def test_distillation_thread_attr_initialized(self):
         """_distillation_thread initialized to None in __init__."""
         import inspect
-        from igor.main import Igor
+        from devices.igor.main import Igor
 
         src = inspect.getsource(Igor.__init__)
         self.assertIn("_distillation_thread", src)

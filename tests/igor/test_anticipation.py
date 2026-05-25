@@ -15,9 +15,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
-import igor.cognition.anticipation as ant
+import devices.igor.cognition.anticipation as ant
 
 
 def _patch_path(tmp: Path):

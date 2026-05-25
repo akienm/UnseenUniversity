@@ -28,14 +28,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 
 def _fake_template(template_id: str, pattern_name: str, slots: list) -> "Memory":
-    from igor.memory.models import Memory, MemoryType
+    from devices.igor.memory.models import Memory, MemoryType
 
     m = Memory(
         id=template_id,
@@ -67,13 +66,13 @@ def _make_mock_cortex(templates: list = None):
 
 class TestRecognizePatternEmpty(unittest.TestCase):
     def test_empty_input(self):
-        from igor.tools.template_tools import recognize_pattern
+        from devices.igor.tools.template_tools import recognize_pattern
 
         result = recognize_pattern("")
         self.assertTrue(result.startswith("ERROR:"))
 
     def test_whitespace_input(self):
-        from igor.tools.template_tools import recognize_pattern
+        from devices.igor.tools.template_tools import recognize_pattern
 
         result = recognize_pattern("   ")
         self.assertTrue(result.startswith("ERROR:"))
@@ -81,7 +80,7 @@ class TestRecognizePatternEmpty(unittest.TestCase):
 
 class TestRecognizePatternNoTemplates(unittest.TestCase):
     def test_no_templates_in_matrix(self):
-        from igor.tools.template_tools import recognize_pattern
+        from devices.igor.tools.template_tools import recognize_pattern
 
         with patch("igor.tools.template_tools._get_cortex") as mock_ctx:
             mock_ctx.return_value = _make_mock_cortex(templates=[])
@@ -92,7 +91,7 @@ class TestRecognizePatternNoTemplates(unittest.TestCase):
 
 class TestRecognizePatternLlmUnavailable(unittest.TestCase):
     def test_no_api_key(self):
-        from igor.tools.template_tools import recognize_pattern
+        from devices.igor.tools.template_tools import recognize_pattern
 
         tpl = _fake_template(
             "tpl-cached-probe",
@@ -110,7 +109,7 @@ class TestRecognizePatternLlmUnavailable(unittest.TestCase):
 
 class TestRecognizePatternLlmSuccess(unittest.TestCase):
     def test_valid_json_response(self):
-        from igor.tools.template_tools import recognize_pattern
+        from devices.igor.tools.template_tools import recognize_pattern
 
         tpl = _fake_template(
             "tpl-cached-probe",
@@ -138,7 +137,7 @@ class TestRecognizePatternLlmSuccess(unittest.TestCase):
         self.assertAlmostEqual(parsed["confidence"], 0.92)
 
     def test_bad_json_from_llm(self):
-        from igor.tools.template_tools import recognize_pattern
+        from devices.igor.tools.template_tools import recognize_pattern
 
         tpl = _fake_template("tpl-cached-probe", "CACHED_PROBE", [])
         with patch("igor.tools.template_tools._get_cortex") as mock_ctx:
@@ -149,7 +148,7 @@ class TestRecognizePatternLlmSuccess(unittest.TestCase):
         self.assertTrue(result.startswith("ERROR:"))
 
     def test_missing_key_in_response(self):
-        from igor.tools.template_tools import recognize_pattern
+        from devices.igor.tools.template_tools import recognize_pattern
 
         tpl = _fake_template("tpl-cached-probe", "CACHED_PROBE", [])
         llm_reply = json.dumps({"pattern_name": "CACHED_PROBE"})  # missing keys
@@ -166,13 +165,13 @@ class TestRecognizePatternLlmSuccess(unittest.TestCase):
 
 class TestParameterizeTemplateEmpty(unittest.TestCase):
     def test_empty_code(self):
-        from igor.tools.template_tools import parameterize_template
+        from devices.igor.tools.template_tools import parameterize_template
 
         result = parameterize_template("", "CACHED_PROBE")
         self.assertTrue(result.startswith("ERROR:"))
 
     def test_empty_pattern_name(self):
-        from igor.tools.template_tools import parameterize_template
+        from devices.igor.tools.template_tools import parameterize_template
 
         result = parameterize_template("def run(): pass", "")
         self.assertTrue(result.startswith("ERROR:"))
@@ -180,7 +179,7 @@ class TestParameterizeTemplateEmpty(unittest.TestCase):
 
 class TestParameterizeTemplateNotFound(unittest.TestCase):
     def test_unknown_pattern(self):
-        from igor.tools.template_tools import parameterize_template
+        from devices.igor.tools.template_tools import parameterize_template
 
         with patch("igor.tools.template_tools._get_cortex") as mock_ctx:
             mock_ctx.return_value = _make_mock_cortex(templates=[])
@@ -192,7 +191,7 @@ class TestParameterizeTemplateNotFound(unittest.TestCase):
 
 class TestParameterizeTemplateLlmSuccess(unittest.TestCase):
     def test_valid_extraction(self):
-        from igor.tools.template_tools import parameterize_template
+        from devices.igor.tools.template_tools import parameterize_template
 
         tpl = _fake_template(
             "tpl-cached-probe",
@@ -236,7 +235,7 @@ class TestParameterizeTemplateLlmSuccess(unittest.TestCase):
 
     def test_template_id_always_forced(self):
         """template_id in output is always the real node id, not whatever LLM says."""
-        from igor.tools.template_tools import parameterize_template
+        from devices.igor.tools.template_tools import parameterize_template
 
         tpl = _fake_template(
             "tpl-cached-probe",
@@ -262,7 +261,7 @@ class TestParameterizeTemplateLlmSuccess(unittest.TestCase):
         self.assertEqual(parsed["template_id"], "tpl-cached-probe")  # forced correct
 
     def test_bad_json_from_llm(self):
-        from igor.tools.template_tools import parameterize_template
+        from devices.igor.tools.template_tools import parameterize_template
 
         tpl = _fake_template(
             "tpl-cached-probe",
@@ -302,7 +301,7 @@ class TestPatternExtractorHabitMetadata(unittest.TestCase):
 
     def setUp(self):
         # Prevent actual DB access during module load
-        with patch("wild_igor.igor.memory.cortex.Cortex"):
+        with patch("devices.igor.memory.cortex.Cortex"):
             self.habits = self._load_habits()
 
     def test_all_three_habits_present(self):
@@ -359,14 +358,14 @@ class TestPatternExtractorHabitMetadata(unittest.TestCase):
 class TestToolRegistration(unittest.TestCase):
     def test_recognize_pattern_registered(self):
         from lab.utility_closet.registry import registry
-        import igor.tools.template_tools  # noqa: F401 — ensure registration runs
+        import devices.igor.tools.template_tools  # noqa: F401 — ensure registration runs
 
         tool = registry.get("recognize_pattern")
         self.assertIsNotNone(tool, "recognize_pattern not in registry")
 
     def test_parameterize_template_registered(self):
         from lab.utility_closet.registry import registry
-        import igor.tools.template_tools  # noqa: F401
+        import devices.igor.tools.template_tools  # noqa: F401
 
         tool = registry.get("parameterize_template")
         self.assertIsNotNone(tool, "parameterize_template not in registry")

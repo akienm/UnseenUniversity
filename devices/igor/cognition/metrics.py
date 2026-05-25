@@ -61,7 +61,7 @@ def _escalation_rate() -> tuple[float, int, int]:
                 return rate, cloud, total
             except Exception as _bare_e:
                 get_logger(__name__).warning(
-                    "bare except in wild_igor/igor/cognition/metrics.py: %s", _bare_e
+                    "bare except in devices/igor/cognition/metrics.py: %s", _bare_e
                 )
     return 0.0, 0, 0
 
@@ -210,7 +210,7 @@ def _consolidation_stats(cortex) -> dict | None:
                 }
     except Exception as _bare_e:
         get_logger(__name__).warning(
-            "bare except in wild_igor/igor/cognition/metrics.py: %s", _bare_e
+            "bare except in devices/igor/cognition/metrics.py: %s", _bare_e
         )
     return None
 
@@ -398,7 +398,7 @@ def build_report(
             lines.append("")
     except Exception as _bare_e:
         get_logger(__name__).warning(
-            "bare except in wild_igor/igor/cognition/metrics.py: %s", _bare_e
+            "bare except in devices/igor/cognition/metrics.py: %s", _bare_e
         )
 
     # ── Word graph ────────────────────────────────────────────

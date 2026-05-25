@@ -10,7 +10,6 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "wild_igor"))
 
 from lab.utility_closet.machine_manager import MachineRecord
 
@@ -180,7 +179,7 @@ class TestRoute(unittest.TestCase):
 
     def _route(self, machines, healthy_hosts=None, env_override=""):
         """Run route("tier2") with mocked machine list and health."""
-        from igor.cognition import cluster_router
+        from devices.igor.cognition import cluster_router
 
         if healthy_hosts is None:
             # All online machines are healthy by default
@@ -275,7 +274,7 @@ class TestRoute(unittest.TestCase):
         # 2026-04-18: post-collapse, extraction resolves to ollama_model
         # (the single local model on the machine), regardless of whether
         # an ollama_model_batch happens to be set on older rows.
-        from igor.cognition import cluster_router
+        from devices.igor.cognition import cluster_router
 
         machines = [
             _machine(
@@ -304,7 +303,7 @@ class TestRoute(unittest.TestCase):
 
 class TestRouteBatch(unittest.TestCase):
     def _route_batch(self, machines, n, healthy_hosts=None):
-        from igor.cognition import cluster_router
+        from devices.igor.cognition import cluster_router
 
         if healthy_hosts is None:
             healthy_hosts = {m.ollama_host for m in machines if m.status == "online"}

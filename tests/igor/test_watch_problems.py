@@ -21,7 +21,7 @@ def wp(pg_test_schema):
     """Import watch_problems with test schema active."""
     if pg_test_schema is None:
         pytest.skip("pg_test_schema not available")
-    from wild_igor.igor.cognition import watch_problems
+    from devices.igor.cognition import watch_problems
 
     watch_problems._lever_watcher_last_run = 0.0
     return watch_problems
@@ -90,12 +90,12 @@ def test_escalate_creates_watch_entry(pg_test_schema):
     if pg_test_schema is None:
         pytest.skip("pg_test_schema not available")
     from unittest.mock import patch
-    from wild_igor.igor.cognition import watch_problems
+    from devices.igor.cognition import watch_problems
 
     before = len(watch_problems.read_active_problems())
 
-    with patch("wild_igor.igor.tools.channel_post.post_to_channel"):
-        from wild_igor.igor.cognition.escalate import escalate_to_channel
+    with patch("devices.igor.tools.channel_post.post_to_channel"):
+        from devices.igor.cognition.escalate import escalate_to_channel
 
         escalate_to_channel(
             "[NE] stuck — no result",
@@ -125,7 +125,7 @@ def test_lever_watcher_finds_match(wp):
             )
     conn.close()
     fake_twm = [{"content_csb": "user mentioned fee schedule update for billing"}]
-    with patch("wild_igor.igor.cognition.escalate.escalate_to_channel"):
+    with patch("devices.igor.cognition.escalate.escalate_to_channel"):
         count = wp.lever_watcher(recent_twm_rows=fake_twm)
     assert count >= 1
 
@@ -213,7 +213,7 @@ def test_confidence_never_exceeds_one(wp):
     conn.close()
 
     fake_twm = [{"content_csb": "echo foxtrot golf hotel seen once"}]
-    with patch("wild_igor.igor.cognition.escalate.escalate_to_channel"):
+    with patch("devices.igor.cognition.escalate.escalate_to_channel"):
         wp.lever_watcher(recent_twm_rows=fake_twm)
 
     conn = _test_conn()

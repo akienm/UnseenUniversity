@@ -18,7 +18,7 @@ from unittest.mock import MagicMock
 
 
 def _make_gateway():
-    from wild_igor.igor.cognition.inference_gateway import InferenceGateway
+    from devices.igor.cognition.inference_gateway import InferenceGateway
 
     gw = InferenceGateway.__new__(InferenceGateway)
     gw._t2 = MagicMock(name="t2_ollama")

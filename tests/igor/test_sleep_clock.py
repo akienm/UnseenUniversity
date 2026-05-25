@@ -14,7 +14,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition.sleep_clock import (  # noqa: E402
+from devices.igor.cognition.sleep_clock import (  # noqa: E402
     MIN_AWAKE_HOURS,
     MIN_SLEEP_INTERVAL_SEC,
     SLEEP_WINDOW_END,
@@ -60,7 +60,7 @@ class TestSleepClockSource:
     def test_fires_during_sleep_window(self):
         src = SleepClockSource()
         cortex = self._make_cortex()
-        with patch("wild_igor.igor.cognition.sleep_clock.datetime") as mock_dt:
+        with patch("devices.igor.cognition.sleep_clock.datetime") as mock_dt:
             mock_dt.now.return_value = MagicMock(hour=23)
             mock_dt.now.return_value.hour = 23
             mock_dt.side_effect = lambda *a, **k: MagicMock(
@@ -68,7 +68,7 @@ class TestSleepClockSource:
             )
             from datetime import datetime as real_dt, timezone as real_tz
 
-            with patch("wild_igor.igor.cognition.sleep_clock.datetime") as mock_dt2:
+            with patch("devices.igor.cognition.sleep_clock.datetime") as mock_dt2:
                 mock_now = MagicMock()
                 mock_now.hour = 23
                 mock_dt2.now.side_effect = lambda *a, **kw: (
@@ -81,7 +81,7 @@ class TestSleepClockSource:
     def test_does_not_fire_outside_sleep_window(self):
         src = SleepClockSource()
         cortex = self._make_cortex()
-        with patch("wild_igor.igor.cognition.sleep_clock.datetime") as mock_dt:
+        with patch("devices.igor.cognition.sleep_clock.datetime") as mock_dt:
             mock_now = MagicMock()
             mock_now.hour = 14
             mock_dt.now.return_value = mock_now
@@ -92,7 +92,7 @@ class TestSleepClockSource:
         src = SleepClockSource()
         src._last_sleep_ts = time.monotonic() - 60
         cortex = self._make_cortex()
-        with patch("wild_igor.igor.cognition.sleep_clock.datetime") as mock_dt:
+        with patch("devices.igor.cognition.sleep_clock.datetime") as mock_dt:
             mock_now = MagicMock()
             mock_now.hour = 23
             mock_dt.now.return_value = mock_now
@@ -106,7 +106,7 @@ class TestSleepClockSource:
         cortex = self._make_cortex()
         from datetime import datetime as real_dt, timezone as real_tz
 
-        with patch("wild_igor.igor.cognition.sleep_clock.datetime") as mock_dt:
+        with patch("devices.igor.cognition.sleep_clock.datetime") as mock_dt:
             mock_now = MagicMock()
             mock_now.hour = 23
             mock_dt.now.side_effect = lambda *a, **kw: (
@@ -119,7 +119,7 @@ class TestSleepClockSource:
         src = SleepClockSource()
         cortex = self._make_cortex()
         with patch.dict(os.environ, {"IGOR_SLEEP_CLOCK": "false"}):
-            with patch("wild_igor.igor.cognition.sleep_clock.datetime") as mock_dt:
+            with patch("devices.igor.cognition.sleep_clock.datetime") as mock_dt:
                 mock_now = MagicMock()
                 mock_now.hour = 23
                 mock_dt.now.return_value = mock_now
@@ -141,6 +141,6 @@ class TestSleepClockSource:
         assert SleepClockSource.TIMING_TIER == "slow"
 
     def test_registered_in_push_sources(self):
-        from wild_igor.igor.cognition import push_sources
+        from devices.igor.cognition import push_sources
 
         assert hasattr(push_sources, "sleep_clock_source")

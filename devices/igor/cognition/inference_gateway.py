@@ -292,7 +292,7 @@ class InferenceGateway(IgorBase):
                         except Exception as _bare_e:
                             log_error(
                                 kind="BARE_EXCEPT",
-                                detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
+                                detail=f"devices/igor/cognition/inference_gateway.py: {_bare_e}",
                             )
                     return result
                 except Exception as exc:
@@ -544,7 +544,7 @@ class InferenceGateway(IgorBase):
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
+                detail=f"devices/igor/cognition/inference_gateway.py: {_bare_e}",
             )
 
         # ── Cloud availability: single check, shared across all profiles ───────
@@ -801,7 +801,7 @@ class InferenceGateway(IgorBase):
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
+                detail=f"devices/igor/cognition/inference_gateway.py: {_bare_e}",
             )
 
         # T-inference-misreport-fix: distinguish failure modes in the user-facing
@@ -1294,7 +1294,7 @@ def make_context(
     except Exception as _bare_e:
         log_error(
             kind="BARE_EXCEPT",
-            detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
+            detail=f"devices/igor/cognition/inference_gateway.py: {_bare_e}",
         )
 
     cloud_ok_override = True
@@ -1305,7 +1305,7 @@ def make_context(
     except Exception as _bare_e:
         log_error(
             kind="BARE_EXCEPT",
-            detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
+            detail=f"devices/igor/cognition/inference_gateway.py: {_bare_e}",
         )
 
     local_available = False
@@ -1316,7 +1316,7 @@ def make_context(
     except Exception as _bare_e:
         log_error(
             kind="BARE_EXCEPT",
-            detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
+            detail=f"devices/igor/cognition/inference_gateway.py: {_bare_e}",
         )
 
     balance_ok = False
@@ -1391,7 +1391,7 @@ def _try_restart_local_ollama() -> bool:
     except Exception as _bare_e:
         log_error(
             kind="BARE_EXCEPT",
-            detail=f"wild_igor/igor/cognition/inference_gateway.py: {_bare_e}",
+            detail=f"devices/igor/cognition/inference_gateway.py: {_bare_e}",
         )
 
     try:

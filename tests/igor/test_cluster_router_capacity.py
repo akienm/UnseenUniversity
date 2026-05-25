@@ -22,7 +22,7 @@ os.environ.setdefault(
     "IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
 )
 
-from wild_igor.igor.cognition.cluster_router import (
+from devices.igor.cognition.cluster_router import (
     record_dispatch,
     safe_ceiling,
     p50_latency,
@@ -131,7 +131,7 @@ def test_cold_start_detection():
     """Machine silent > threshold → is_cold_start True."""
     record_dispatch("hotel", 100, 100, "success")
     # Patch time to simulate 10-minute silence
-    with patch("wild_igor.igor.cognition.cluster_router.time.monotonic") as mt:
+    with patch("devices.igor.cognition.cluster_router.time.monotonic") as mt:
         original_obs = capacity_observations("hotel")[0]
         mt.return_value = original_obs.ts + 700  # 700s > 300s threshold
         # Need at least 2 obs for cold_start to fire
@@ -139,7 +139,7 @@ def test_cold_start_detection():
     record_dispatch("hotel", 100, 100, "success")
     assert is_cold_start("hotel") is False  # just now
     # Patch only the is_cold_start time check
-    with patch("wild_igor.igor.cognition.cluster_router.time.monotonic") as mt:
+    with patch("devices.igor.cognition.cluster_router.time.monotonic") as mt:
         last_ts = capacity_observations("hotel")[-1].ts
         mt.return_value = last_ts + 700
         assert is_cold_start("hotel") is True

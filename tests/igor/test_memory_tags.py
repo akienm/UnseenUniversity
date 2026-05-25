@@ -12,7 +12,7 @@ import uuid
 
 import pytest
 
-from wild_igor.igor.memory.tag_tree import (
+from devices.igor.memory.tag_tree import (
     TAG_PREFIX,
     build_tag_tree,
     extract_tag_names,
@@ -76,13 +76,13 @@ def _cortex():
         pytest.skip("IGOR_HOME_DB_URL not set; cortex DB tests require Postgres")
     from pathlib import Path
 
-    from wild_igor.igor.memory.cortex import Cortex
+    from devices.igor.memory.cortex import Cortex
 
     return Cortex(instance_id="tag-test")
 
 
 def _store_factual(cortex, narrative: str, metadata: dict | None = None):
-    from wild_igor.igor.memory.models import Memory, MemoryType
+    from devices.igor.memory.models import Memory, MemoryType
 
     mid = f"T-mem-{uuid.uuid4().hex[:8]}"
     m = Memory(

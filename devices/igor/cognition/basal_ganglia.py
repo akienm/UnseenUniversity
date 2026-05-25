@@ -708,7 +708,7 @@ def select_habit(
                 _wg_scores = _word_graph.score(_score_text, [h.id for h in habits])
             except Exception as _bare_e:
                 get_logger(__name__).warning(
-                    "bare except in wild_igor/igor/cognition/basal_ganglia.py: %s",
+                    "bare except in devices/igor/cognition/basal_ganglia.py: %s",
                     _bare_e,
                 )
 
@@ -847,7 +847,7 @@ def select_habit(
                     )
             except Exception as _bare_e:
                 get_logger(__name__).warning(
-                    "bare except in wild_igor/igor/cognition/basal_ganglia.py: %s",
+                    "bare except in devices/igor/cognition/basal_ganglia.py: %s",
                     _bare_e,
                 )
 

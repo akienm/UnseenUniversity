@@ -12,7 +12,7 @@ Calve_subtree is the extraction primitive. This module adds:
   - Import/graft with dependency resolution
 
 Usage:
-    from wild_igor.igor.memory.engram_export import export_engram, import_engram
+    from devices.igor.memory.engram_export import export_engram, import_engram
 
     # Export
     template = export_engram(cortex, "ENGRAM_CODE_INIT")

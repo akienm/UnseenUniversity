@@ -25,7 +25,7 @@ from unseen_university.skeleton.health import rack_health_async
 from unseen_university.skeleton.skeleton import Skeleton
 from config.device_config import DeviceConfig
 from skeleton.registry import DeviceRegistry
-from tests.fixtures.stub_devices import StubDevice
+from fixtures.stub_devices import StubDevice
 
 CANONICAL_PROFILES = Path(__file__).parent.parent / "config" / "profiles"
 

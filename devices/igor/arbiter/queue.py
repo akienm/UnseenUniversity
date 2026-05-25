@@ -136,7 +136,7 @@ def submit(
             )
         except Exception as _bare_e:
             log_error(
-                kind="BARE_EXCEPT", detail=f"wild_igor/igor/arbiter/queue.py: {_bare_e}"
+                kind="BARE_EXCEPT", detail=f"devices/igor/arbiter/queue.py: {_bare_e}"
             )
     return new_id
 
@@ -197,7 +197,7 @@ def _ping_discord(item_id: int, description: str):
         )
     except Exception as _bare_e:
         log_error(
-            kind="BARE_EXCEPT", detail=f"wild_igor/igor/arbiter/queue.py: {_bare_e}"
+            kind="BARE_EXCEPT", detail=f"devices/igor/arbiter/queue.py: {_bare_e}"
         )
 
 

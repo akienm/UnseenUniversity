@@ -13,7 +13,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.memory.engram_export import (
+from devices.igor.memory.engram_export import (
     EngramTemplate,
     _scan_dependencies,
     export_engram,

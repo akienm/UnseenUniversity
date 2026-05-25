@@ -128,7 +128,7 @@ def preparse_via_openrouter(
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
+                detail=f"devices/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
             )
 
     return _rule_based_csb(user_input, habits)
@@ -345,7 +345,7 @@ def _habit_extract_worker(
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
+                detail=f"devices/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
             )
 
         console.print(
@@ -356,12 +356,12 @@ def _habit_extract_worker(
     except json.JSONDecodeError as _bare_e:
         log_error(
             kind="BARE_EXCEPT",
-            detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
+            detail=f"devices/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
         )
     except Exception as _bare_e:
         log_error(
             kind="BARE_EXCEPT",
-            detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
+            detail=f"devices/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
         )
 
 
@@ -422,7 +422,7 @@ class OpenRouterReasoner(BaseReasoner):
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
-                detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
+                detail=f"devices/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
             )
 
         # ── Blob expansion: append full content for high-relevance blob memories ─
@@ -432,7 +432,7 @@ class OpenRouterReasoner(BaseReasoner):
             except Exception as _bare_e:
                 log_error(
                     kind="BARE_EXCEPT",
-                    detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
+                    detail=f"devices/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
                 )
 
         _query_chars = len(user_input)  # raw query before context append
@@ -522,7 +522,7 @@ class OpenRouterReasoner(BaseReasoner):
                 except Exception as _bare_e:
                     log_error(
                         kind="BARE_EXCEPT",
-                        detail=f"wild_igor/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
+                        detail=f"devices/igor/cognition/reasoners/openrouter_reasoner.py: {_bare_e}",
                     )
             elif ctx_chars > CONTEXT_WARN_CHARS:
                 console.print(

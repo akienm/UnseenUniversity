@@ -3,7 +3,7 @@
 Seed tool discovery habit and memory for Igor.
 
 Usage:
-  python3 wild_igor/igor/tools/seed_tool_discovery.py
+  python3 devices/igor/tools/seed_tool_discovery.py
 """
 
 import json

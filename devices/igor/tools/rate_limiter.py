@@ -63,7 +63,7 @@ class TurnRateLimiter:
                 from ..cognition.forensic_logger import log_anomaly as _la
                 _la(kind="RATE_LIMIT", detail=f"total={self._total}|tool={tool_name}|limit={TOTAL_LIMIT}")
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/rate_limiter.py: {_bare_e}")
+                log_error(kind="BARE_EXCEPT", detail=f"devices/igor/tools/rate_limiter.py: {_bare_e}")
             return (
                 f"RATE_LIMIT: Reached {TOTAL_LIMIT} total tool calls this turn. "
                 f"Synthesise your response with what you have so far."
@@ -76,7 +76,7 @@ class TurnRateLimiter:
                 from ..cognition.forensic_logger import log_anomaly as _la
                 _la(kind="RATE_LIMIT", detail=f"tool={tool_name}|count={count}|per_turn_limit={limit}")
             except Exception as _bare_e:
-                log_error(kind="BARE_EXCEPT", detail=f"wild_igor/igor/tools/rate_limiter.py: {_bare_e}")
+                log_error(kind="BARE_EXCEPT", detail=f"devices/igor/tools/rate_limiter.py: {_bare_e}")
             return (
                 f"RATE_LIMIT: {tool_name} called {count} times this turn "
                 f"(per-turn limit={limit}). Use what you have so far."

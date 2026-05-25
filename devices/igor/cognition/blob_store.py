@@ -22,14 +22,14 @@ from typing import Optional
 
 from ..igor_base import get_logger
 
-from wild_igor.igor.memory.db_proxy import make_home_proxy
+from devices.igor.memory.db_proxy import make_home_proxy
 
 logger = get_logger(__name__)
 
 
 def _get_instance_dir() -> Path:
     """Get the instance directory."""
-    from wild_igor.igor.paths import paths as _paths
+    from devices.igor.paths import paths as _paths
 
     return _paths().instance
 

@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition.push_sources import (  # noqa: E402
+from devices.igor.cognition.push_sources import (  # noqa: E402
     StaleChatLogBackfiller,
 )
 
@@ -60,7 +60,7 @@ class TestStaleChatLogBackfiller:
         src = StaleChatLogBackfiller()
         cortex = MagicMock()
         with patch("subprocess.run") as mock_run, patch(
-            "wild_igor.igor.cognition.push_sources.log_error"
+            "devices.igor.cognition.push_sources.log_error"
         ) as mock_log:
             mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="boom")
             src.push(cortex)

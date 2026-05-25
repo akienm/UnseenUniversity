@@ -11,12 +11,12 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition.wandering_search import (  # noqa: E402
+from devices.igor.cognition.wandering_search import (  # noqa: E402
     DEFAULT_SPIN_TOP_K,
     WanderingSearch,
     _parse_links_weighted,
 )
-from wild_igor.igor.memory.models import Memory, MemoryType  # noqa: E402
+from devices.igor.memory.models import Memory, MemoryType  # noqa: E402
 
 
 def _mem(mem_id, narrative="", links_weighted=None, links=None):

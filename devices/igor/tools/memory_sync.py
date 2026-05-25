@@ -89,7 +89,7 @@ def _log(msg: str) -> None:
         with _SYNC_LOG.open("a") as f:
             f.write(f"{datetime.now().isoformat()} {msg}\n")
     except Exception as _bare_e:
-        _log(f"bare except in wild_igor/igor/tools/memory_sync.py: {_bare_e}")
+        _log(f"bare except in devices/igor/tools/memory_sync.py: {_bare_e}")
 
 
 def _pg_connect(url: str):
@@ -286,14 +286,14 @@ def sync_memories(full: str = "false") -> str:
             swarm.rollback()
             local.rollback()
         except Exception as _bare_e:
-            _log(f"bare except in wild_igor/igor/tools/memory_sync.py: {_bare_e}")
+            _log(f"bare except in devices/igor/tools/memory_sync.py: {_bare_e}")
         return f"Sync error: {e}"
     finally:
         try:
             local.close()
             swarm.close()
         except Exception as _bare_e:
-            _log(f"bare except in wild_igor/igor/tools/memory_sync.py: {_bare_e}")
+            _log(f"bare except in devices/igor/tools/memory_sync.py: {_bare_e}")
 
 
 registry.register(

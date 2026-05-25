@@ -6,9 +6,9 @@ from unittest.mock import patch, MagicMock
 
 class TestEscalateToChannel(unittest.TestCase):
     def test_escalate_calls_post_to_channel(self):
-        from wild_igor.igor.cognition.escalate import escalate_to_channel
+        from devices.igor.cognition.escalate import escalate_to_channel
 
-        with patch("wild_igor.igor.tools.channel_post.post_to_channel") as mock_channel:
+        with patch("devices.igor.tools.channel_post.post_to_channel") as mock_channel:
             escalate_to_channel("test escalation message", dedup_key="test-key")
             mock_channel.assert_called_once_with(
                 "test escalation message",
@@ -18,19 +18,19 @@ class TestEscalateToChannel(unittest.TestCase):
             )
 
     def test_escalate_swallows_channel_failure(self):
-        from wild_igor.igor.cognition.escalate import escalate_to_channel
+        from devices.igor.cognition.escalate import escalate_to_channel
 
         with patch(
-            "wild_igor.igor.tools.channel_post.post_to_channel",
+            "devices.igor.tools.channel_post.post_to_channel",
             side_effect=RuntimeError("channel down"),
         ):
             # Must not raise
             escalate_to_channel("message", dedup_key="key")
 
     def test_escalate_no_dedup_key(self):
-        from wild_igor.igor.cognition.escalate import escalate_to_channel
+        from devices.igor.cognition.escalate import escalate_to_channel
 
-        with patch("wild_igor.igor.tools.channel_post.post_to_channel") as mock_channel:
+        with patch("devices.igor.tools.channel_post.post_to_channel") as mock_channel:
             escalate_to_channel("message without dedup")
             mock_channel.assert_called_once_with(
                 "message without dedup",
@@ -45,7 +45,7 @@ class TestNEEmptyResultEscalation(unittest.TestCase):
 
     def _make_coa(self):
         """Build a minimal COA with a mocked NE that returns falsy."""
-        from wild_igor.igor.cognition.coa import COA
+        from devices.igor.cognition.coa import COA
 
         igor_mock = MagicMock()
         igor_mock._is_processing = False
@@ -67,16 +67,16 @@ class TestNEEmptyResultEscalation(unittest.TestCase):
         coa, igor_mock = self._make_coa()
 
         with patch(
-            "wild_igor.igor.cognition.escalate.escalate_to_channel"
+            "devices.igor.cognition.escalate.escalate_to_channel"
         ) as mock_esc, patch(
-            "wild_igor.igor.tools.channel_post.post_to_channel"
+            "devices.igor.tools.channel_post.post_to_channel"
         ), patch(
-            "wild_igor.igor.cognition.milieu.get", return_value=None
+            "devices.igor.cognition.milieu.get", return_value=None
         ):
             result = coa.ne.run(verbose=False)
             # result is None — simulate the else branch
             if not result:
-                from wild_igor.igor.cognition.escalate import escalate_to_channel
+                from devices.igor.cognition.escalate import escalate_to_channel
 
                 escalate_to_channel(
                     f"[NE] cycle produced no result — Igor may be stuck. "
@@ -95,7 +95,7 @@ class TestNEEmptyResultEscalation(unittest.TestCase):
         coa, _ = self._make_coa()
         coa.ne.run.return_value = {"internal_state": {"valence": 0.5}}
 
-        with patch("wild_igor.igor.cognition.escalate.escalate_to_channel") as mock_esc:
+        with patch("devices.igor.cognition.escalate.escalate_to_channel") as mock_esc:
             result = coa.ne.run(verbose=False)
             if result:
                 pass  # normal path — no escalation

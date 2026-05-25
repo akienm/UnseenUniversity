@@ -242,7 +242,7 @@ class _BootstrapPathManager:
 
     @property
     def source_root(self) -> Path:
-        """Repo root (~/TheIgors). This file lives at wild_igor/igor/paths.py."""
+        """Repo root (~/TheIgors). This file lives at devices/igor/paths.py."""
         return Path(__file__).resolve().parent.parent.parent
 
 

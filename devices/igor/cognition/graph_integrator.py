@@ -19,7 +19,7 @@ Used by:
   - Retrospective: called by quiet-period replay habit (T-bio-replay)
 
 Usage:
-  from wild_igor.igor.cognition.graph_integrator import integrate_graph
+  from devices.igor.cognition.graph_integrator import integrate_graph
   content_id = "<uuid>"
   integrate_graph(content_id)  # → creates co-occurrence edges + ROOT node
 """

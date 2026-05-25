@@ -34,7 +34,7 @@ class TestDeepConsolidationNarrativeLimit(unittest.TestCase):
         Exercise just the TWM-promotion block of _deep_consolidation_pass.
         Returns the narrative stored via cortex.store().
         """
-        from wild_igor.igor.cognition.narrative_engine import NarrativeEngine
+        from devices.igor.cognition.narrative_engine import NarrativeEngine
 
         mock_cortex = MagicMock()
         mock_cortex.twm_read.return_value = [
@@ -54,7 +54,7 @@ class TestDeepConsolidationNarrativeLimit(unittest.TestCase):
         ne._consolidation_interrupted = False
 
         with patch(
-            "wild_igor.igor.cognition.narrative_engine._NE_CONTENT_PREFIXES", []
+            "devices.igor.cognition.narrative_engine._NE_CONTENT_PREFIXES", []
         ):
             with patch.object(ne, "_consolidation_merge_pass", return_value=0):
                 with patch.object(ne, "_reconsolidation_pass", return_value=0):
@@ -83,7 +83,7 @@ class TestDeepConsolidationNarrativeLimit(unittest.TestCase):
                         pass
 
                     # Direct call to inner logic
-                    from wild_igor.igor.memory.models import Memory, MemoryType
+                    from devices.igor.memory.models import Memory, MemoryType
                     from datetime import datetime
 
                     stored_narratives = []
@@ -128,7 +128,7 @@ class TestDeepConsolidationNarrativeLimit(unittest.TestCase):
 
     def test_narrative_engine_py_uses_2000_limit(self):
         """Verify the source code has the updated limit."""
-        src = Path("wild_igor/igor/cognition/narrative_engine.py").read_text()
+        src = Path("devices/igor/cognition/narrative_engine.py").read_text()
         self.assertIn("content[:2000]", src)
         self.assertNotIn(
             "content[:500]",
@@ -142,7 +142,7 @@ class TestConsolidationExtractionPromptLimit(unittest.TestCase):
 
     def test_consolidation_py_uses_400_limit(self):
         """Verify the source code has the updated extraction snippet limit."""
-        src = Path("wild_igor/igor/cognition/consolidation.py").read_text()
+        src = Path("devices/igor/cognition/consolidation.py").read_text()
         self.assertIn("m.narrative[:400]", src)
         self.assertNotIn(
             "m.narrative[:200]",
@@ -152,7 +152,7 @@ class TestConsolidationExtractionPromptLimit(unittest.TestCase):
 
     def test_extraction_prompt_includes_400_chars(self):
         """_cluster_episodics + snippet building uses [:400]."""
-        from wild_igor.igor.cognition.consolidation import _cluster_episodics
+        from devices.igor.cognition.consolidation import _cluster_episodics
 
         mems = []
         for i in range(2):
@@ -163,7 +163,7 @@ class TestConsolidationExtractionPromptLimit(unittest.TestCase):
 
         # Mock _keyword_overlap to force cluster together
         with patch(
-            "wild_igor.igor.cognition.consolidation._keyword_overlap",
+            "devices.igor.cognition.consolidation._keyword_overlap",
             return_value=0.5,
         ):
             clusters = _cluster_episodics(mems, threshold=0.15)

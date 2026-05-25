@@ -2,7 +2,7 @@
 test_agent_base.py — T-uc-base-class-extract
 
 Tests for AgentBase (lab/utility_closet/agent_base.py) and the
-IgorBase thin subclass (wild_igor/igor/igor_base.py).
+IgorBase thin subclass (devices/igor/igor_base.py).
 """
 
 import sys
@@ -183,45 +183,45 @@ class TestAgentBaseInit:
 class TestIgorBaseSubclass:
     def test_igor_base_is_diagnostic_base(self):
         from diagnostic_base.base import DiagnosticBase
-        from wild_igor.igor.igor_base import IgorBase
+        from devices.igor.igor_base import IgorBase
 
         assert issubclass(IgorBase, DiagnosticBase)
 
     def test_igor_base_has_log_root(self):
-        from wild_igor.igor.igor_base import IgorBase
+        from devices.igor.igor_base import IgorBase
 
         obj = IgorBase()
         assert hasattr(obj, "_log_root")
         assert obj._log_root is not None
 
     def test_igor_base_device_id(self):
-        from wild_igor.igor.igor_base import IgorBase
+        from devices.igor.igor_base import IgorBase
 
         obj = IgorBase()
         assert obj._device_id == "igor"
 
     def test_igor_base_log_has_get_timer(self):
-        from wild_igor.igor.igor_base import IgorBase
+        from devices.igor.igor_base import IgorBase
 
         obj = IgorBase()
         assert hasattr(obj.log, "get_timer")
 
     def test_igor_base_logger_is_tagged_logger(self):
         from diagnostic_base.tagged_logger import TaggedLogger
-        from wild_igor.igor.igor_base import IgorBase
+        from devices.igor.igor_base import IgorBase
 
         obj = IgorBase()
         assert isinstance(obj.logger, TaggedLogger)
 
     def test_igor_base_get_name(self):
-        from wild_igor.igor.igor_base import IgorBase
+        from devices.igor.igor_base import IgorBase
 
         obj = IgorBase()
         name = obj.get_name()
         assert isinstance(name, str) and len(name) > 0
 
     def test_igor_base_elapsed_s(self):
-        from wild_igor.igor.igor_base import IgorBase
+        from devices.igor.igor_base import IgorBase
 
         obj = IgorBase()
         elapsed = obj.elapsed_s()
@@ -231,20 +231,20 @@ class TestIgorBaseSubclass:
 class TestIgorBaseBackwardCompat:
     def test_get_logger_importable(self):
         """from ..igor_base import get_logger still works."""
-        from wild_igor.igor.igor_base import get_logger
+        from devices.igor.igor_base import get_logger
 
         log = get_logger("test_compat")
         assert hasattr(log, "debug")
 
     def test_emergency_safe_logger_importable(self):
-        from wild_igor.igor.igor_base import _EmergencySafeLogger
+        from devices.igor.igor_base import _EmergencySafeLogger
 
         log = _EmergencySafeLogger("test")
         assert hasattr(log, "warning")
 
     def test_existing_subclass_works(self):
         """A class that inherits IgorBase the old way still works."""
-        from wild_igor.igor.igor_base import IgorBase
+        from devices.igor.igor_base import IgorBase
 
         class MyComponent(IgorBase):
             def __init__(self):

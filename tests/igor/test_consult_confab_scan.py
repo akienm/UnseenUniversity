@@ -16,7 +16,7 @@ from unittest.mock import patch
 
 import pytest
 
-from wild_igor.igor.cognition import consult as cm
+from devices.igor.cognition import consult as cm
 
 # JSON replies that will and won't trigger confab tells
 CLEAN_REPLY = (

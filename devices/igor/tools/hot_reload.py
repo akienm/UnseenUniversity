@@ -9,28 +9,28 @@ reload_module(module_name):
     HIGH inertia modules are blocked — they require a restart.
 
 list_loaded_modules():
-    Show all currently loaded wild_igor modules so Igor knows what
+    Show all currently loaded devices.igor modules so Igor knows what
     can be reloaded.
 
 Part of #207.
 """
+
 from __future__ import annotations
 
 import importlib
 import sys
 from lab.utility_closet.registry import Tool, registry
 
-
 # ── Inertia guard ─────────────────────────────────────────────────────────────
 # Modules whose reload would corrupt live state or violate architectural safety.
 
 _BLOCKED_PREFIXES = (
-    "wild_igor.igor.brainstem",
-    "wild_igor.igor.memory.models",        # dataclass defs — isinstance breaks on reload
-    "wild_igor.igor.memory.cortex",        # owns live DB proxy
-    "wild_igor.igor.cognition.reasoners.base",
-    "wild_igor.igor.tools.registry",       # registry itself — would wipe all tools
-    "wild_igor.igor.tools.hot_reload",     # this module
+    "devices.igor.brainstem",
+    "devices.igor.memory.models",  # dataclass defs — isinstance breaks on reload
+    "devices.igor.memory.cortex",  # owns live DB proxy
+    "devices.igor.cognition.reasoners.base",
+    "devices.igor.tools.registry",  # registry itself — would wipe all tools
+    "devices.igor.tools.hot_reload",  # this module
 )
 
 
@@ -49,7 +49,9 @@ def reload_module(module_name: str) -> str:
 
     if module_name not in sys.modules:
         # Try a short-form lookup: if user typed "tools.filesystem", expand it
-        candidates = [k for k in sys.modules if k.endswith("." + module_name) or k == module_name]
+        candidates = [
+            k for k in sys.modules if k.endswith("." + module_name) or k == module_name
+        ]
         if len(candidates) == 1:
             module_name = candidates[0]
         elif len(candidates) > 1:
@@ -71,8 +73,8 @@ def reload_module(module_name: str) -> str:
     except Exception as exc:
         return f"Error reloading '{module_name}': {exc}"
 
-    after_tools  = set(registry._tools.keys())
-    new_tools    = sorted(after_tools - before_tools)
+    after_tools = set(registry._tools.keys())
+    new_tools = sorted(after_tools - before_tools)
     updated_tools = sorted(after_tools & before_tools)
 
     parts = [f"Reloaded '{module_name}'."]
@@ -88,53 +90,57 @@ def reload_module(module_name: str) -> str:
 
 def list_loaded_modules() -> str:
     """
-    List all currently loaded wild_igor modules by dotted name.
+    List all currently loaded devices.igor modules by dotted name.
     Use this to find the exact name to pass to reload_module().
     """
     modules = sorted(
-        k for k in sys.modules
-        if k.startswith("wild_igor.igor")
-        and sys.modules[k] is not None
+        k
+        for k in sys.modules
+        if k.startswith("devices.igor") and sys.modules[k] is not None
     )
     if not modules:
-        return "No wild_igor modules found in sys.modules."
+        return "No devices.igor modules found in sys.modules."
     return "\n".join(modules)
 
 
 # ── Register tools ─────────────────────────────────────────────────────────────
 
-registry.register(Tool(
-    name="reload_module",
-    description=(
-        "Hot-reload a Python module by dotted name without restarting Igor. "
-        "Tool modules re-register automatically after reload. "
-        "HIGH inertia modules (brainstem, memory.models, cortex) are blocked. "
-        "Use list_loaded_modules() to find the exact module name. "
-        "Example: reload_module('wild_igor.igor.tools.filesystem')"
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "module_name": {
-                "type": "string",
-                "description": "Dotted module name, e.g. 'wild_igor.igor.tools.filesystem'",
+registry.register(
+    Tool(
+        name="reload_module",
+        description=(
+            "Hot-reload a Python module by dotted name without restarting Igor. "
+            "Tool modules re-register automatically after reload. "
+            "HIGH inertia modules (brainstem, memory.models, cortex) are blocked. "
+            "Use list_loaded_modules() to find the exact module name. "
+            "Example: reload_module('devices.igor.tools.filesystem')"
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "module_name": {
+                    "type": "string",
+                    "description": "Dotted module name, e.g. 'devices.igor.tools.filesystem'",
+                },
             },
+            "required": ["module_name"],
         },
-        "required": ["module_name"],
-    },
-    fn=reload_module,
-))
+        fn=reload_module,
+    )
+)
 
-registry.register(Tool(
-    name="list_loaded_modules",
-    description=(
-        "List all currently loaded wild_igor modules by dotted name. "
-        "Use this to find the exact name to pass to reload_module()."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {},
-        "required": [],
-    },
-    fn=list_loaded_modules,
-))
+registry.register(
+    Tool(
+        name="list_loaded_modules",
+        description=(
+            "List all currently loaded devices.igor modules by dotted name. "
+            "Use this to find the exact name to pass to reload_module()."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        fn=list_loaded_modules,
+    )
+)

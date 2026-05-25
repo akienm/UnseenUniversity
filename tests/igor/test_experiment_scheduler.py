@@ -14,7 +14,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition.experiment import (  # noqa: E402
+from devices.igor.cognition.experiment import (  # noqa: E402
     Experiment,
     ExperimentStatus,
     Hypothesis,
@@ -23,7 +23,7 @@ from wild_igor.igor.cognition.experiment import (  # noqa: E402
     Probe,
     ProbeKind,
 )
-from wild_igor.igor.cognition.experiment_scheduler import (  # noqa: E402
+from devices.igor.cognition.experiment_scheduler import (  # noqa: E402
     DEFAULT_TIMEOUT_SEC,
     SAFE_PROBE_KINDS,
     ExperimentScheduler,
@@ -176,7 +176,7 @@ def test_run_one_unsupported_probe_kind_aborts():
         target="test",
     )
     # Temporarily shrink whitelist to force an abort
-    import wild_igor.igor.cognition.experiment_scheduler as _mod
+    import devices.igor.cognition.experiment_scheduler as _mod
 
     orig = _mod.SAFE_PROBE_KINDS
     _mod.SAFE_PROBE_KINDS = frozenset()
@@ -366,7 +366,7 @@ def test_habit_dryrun_found():
         probe=Probe(kind=ProbeKind.HABIT_DRYRUN, target="habit-123"),
     )
     exp.advance(ExperimentStatus.RUNNING)
-    from wild_igor.igor.cognition.experiment_scheduler import _dispatch_habit_dryrun
+    from devices.igor.cognition.experiment_scheduler import _dispatch_habit_dryrun
 
     obs = _dispatch_habit_dryrun(cortex, exp)
     assert obs.outcome == Outcome.MATCH
@@ -381,7 +381,7 @@ def test_habit_dryrun_not_found():
         probe=Probe(kind=ProbeKind.HABIT_DRYRUN, target="nonexistent"),
     )
     exp.advance(ExperimentStatus.RUNNING)
-    from wild_igor.igor.cognition.experiment_scheduler import _dispatch_habit_dryrun
+    from devices.igor.cognition.experiment_scheduler import _dispatch_habit_dryrun
 
     obs = _dispatch_habit_dryrun(cortex, exp)
     assert obs.outcome == Outcome.MISMATCH
@@ -397,9 +397,9 @@ def test_channel_send_success():
         probe=Probe(kind=ProbeKind.CHANNEL_SEND, target="test message"),
     )
     exp.advance(ExperimentStatus.RUNNING)
-    from wild_igor.igor.cognition.experiment_scheduler import _dispatch_channel_send
+    from devices.igor.cognition.experiment_scheduler import _dispatch_channel_send
 
-    with patch("wild_igor.igor.tools.channel_post.post_to_channel") as mock_post:
+    with patch("devices.igor.tools.channel_post.post_to_channel") as mock_post:
         obs = _dispatch_channel_send(cortex, exp)
     assert obs.outcome == Outcome.MATCH
     mock_post.assert_called_once()
@@ -412,10 +412,10 @@ def test_channel_send_failure():
         probe=Probe(kind=ProbeKind.CHANNEL_SEND, target="test message"),
     )
     exp.advance(ExperimentStatus.RUNNING)
-    from wild_igor.igor.cognition.experiment_scheduler import _dispatch_channel_send
+    from devices.igor.cognition.experiment_scheduler import _dispatch_channel_send
 
     with patch(
-        "wild_igor.igor.tools.channel_post.post_to_channel",
+        "devices.igor.tools.channel_post.post_to_channel",
         side_effect=ConnectionError("down"),
     ):
         obs = _dispatch_channel_send(cortex, exp)
@@ -436,9 +436,9 @@ def test_sim_turn_cascade_match():
         ),
     )
     exp.advance(ExperimentStatus.RUNNING)
-    from wild_igor.igor.cognition.experiment_scheduler import _dispatch_sim_turn
+    from devices.igor.cognition.experiment_scheduler import _dispatch_sim_turn
 
-    from wild_igor.igor.cognition.experiment_cascade import (
+    from devices.igor.cognition.experiment_cascade import (
         CascadeResult,
         CascadeStatus,
     )
@@ -451,7 +451,7 @@ def test_sim_turn_cascade_match():
         reason="matched",
     )
     with patch(
-        "wild_igor.igor.cognition.experiment_cascade.build_default_cascade",
+        "devices.igor.cognition.experiment_cascade.build_default_cascade",
         return_value=mock_cascade,
     ):
         obs = _dispatch_sim_turn(cortex, exp)

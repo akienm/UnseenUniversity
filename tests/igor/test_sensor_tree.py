@@ -43,7 +43,7 @@ def _make_cortex(sensors=None):
 
 class TestEvaluators:
     def test_file_mtime_detects_change(self):
-        from wild_igor.igor.cognition.sensor_tree import _eval_file_mtime
+        from devices.igor.cognition.sensor_tree import _eval_file_mtime
 
         with tempfile.NamedTemporaryFile(delete=False) as f:
             f.write(b"test")
@@ -57,7 +57,7 @@ class TestEvaluators:
             os.unlink(path)
 
     def test_file_mtime_no_change(self):
-        from wild_igor.igor.cognition.sensor_tree import _eval_file_mtime
+        from devices.igor.cognition.sensor_tree import _eval_file_mtime
 
         with tempfile.NamedTemporaryFile(delete=False) as f:
             f.write(b"test")
@@ -71,7 +71,7 @@ class TestEvaluators:
             os.unlink(path)
 
     def test_file_mtime_first_check(self):
-        from wild_igor.igor.cognition.sensor_tree import _eval_file_mtime
+        from devices.igor.cognition.sensor_tree import _eval_file_mtime
 
         with tempfile.NamedTemporaryFile(delete=False) as f:
             f.write(b"test")
@@ -85,26 +85,26 @@ class TestEvaluators:
             os.unlink(path)
 
     def test_file_mtime_missing_file(self):
-        from wild_igor.igor.cognition.sensor_tree import _eval_file_mtime
+        from devices.igor.cognition.sensor_tree import _eval_file_mtime
 
         result = _eval_file_mtime("/nonexistent/path/xyz", {})
         assert result["triggered"] is True
         assert "not found" in result["detail"]
 
     def test_disk_usage_below_threshold(self):
-        from wild_igor.igor.cognition.sensor_tree import _eval_disk_usage
+        from devices.igor.cognition.sensor_tree import _eval_disk_usage
 
         result = _eval_disk_usage("/", {"threshold": 99.9})
         assert result["triggered"] is False
 
     def test_disk_usage_above_threshold(self):
-        from wild_igor.igor.cognition.sensor_tree import _eval_disk_usage
+        from devices.igor.cognition.sensor_tree import _eval_disk_usage
 
         result = _eval_disk_usage("/", {"threshold": 0.001})
         assert result["triggered"] is True
 
     def test_process_alive_check(self):
-        from wild_igor.igor.cognition.sensor_tree import _eval_process_alive
+        from devices.igor.cognition.sensor_tree import _eval_process_alive
 
         # python should be running (us)
         result = _eval_process_alive("python", {"condition": "unreachable"})
@@ -112,7 +112,7 @@ class TestEvaluators:
         assert "alive" in result["detail"]
 
     def test_process_not_found(self):
-        from wild_igor.igor.cognition.sensor_tree import _eval_process_alive
+        from devices.igor.cognition.sensor_tree import _eval_process_alive
 
         result = _eval_process_alive(
             "nonexistent_process_xyz_12345", {"condition": "unreachable"}
@@ -122,19 +122,19 @@ class TestEvaluators:
 
 class TestEvaluateSensor:
     def test_unknown_watch_type(self):
-        from wild_igor.igor.cognition.sensor_tree import evaluate_sensor
+        from devices.igor.cognition.sensor_tree import evaluate_sensor
 
         result = evaluate_sensor({"watch_type": "quantum_flux", "target": "x"})
         assert result is None
 
     def test_missing_target(self):
-        from wild_igor.igor.cognition.sensor_tree import evaluate_sensor
+        from devices.igor.cognition.sensor_tree import evaluate_sensor
 
         result = evaluate_sensor({"watch_type": "file_mtime"})
         assert result is None
 
     def test_valid_sensor(self):
-        from wild_igor.igor.cognition.sensor_tree import evaluate_sensor
+        from devices.igor.cognition.sensor_tree import evaluate_sensor
 
         result = evaluate_sensor(
             {"watch_type": "disk_usage", "target": "/", "threshold": 99.9}
@@ -145,7 +145,7 @@ class TestEvaluateSensor:
 
 class TestSensorTreeSource:
     def test_no_sensors_no_push(self):
-        from wild_igor.igor.cognition.sensor_tree import SensorTreeSource
+        from devices.igor.cognition.sensor_tree import SensorTreeSource
 
         source = SensorTreeSource()
         cortex = _make_cortex(sensors=[])
@@ -153,7 +153,7 @@ class TestSensorTreeSource:
         assert pushed == []
 
     def test_no_root_no_push(self):
-        from wild_igor.igor.cognition.sensor_tree import SensorTreeSource
+        from devices.igor.cognition.sensor_tree import SensorTreeSource
 
         source = SensorTreeSource()
         cortex = _make_cortex()  # no sensors, get returns None
@@ -161,7 +161,7 @@ class TestSensorTreeSource:
         assert pushed == []
 
     def test_triggered_sensor_pushes_to_twm(self):
-        from wild_igor.igor.cognition.sensor_tree import SensorTreeSource
+        from devices.igor.cognition.sensor_tree import SensorTreeSource
 
         sensors = [
             {
@@ -185,7 +185,7 @@ class TestSensorTreeSource:
         assert call_kwargs["source"] == "sensor_tree"
 
     def test_suppresses_repeated_triggers(self):
-        from wild_igor.igor.cognition.sensor_tree import SensorTreeSource
+        from devices.igor.cognition.sensor_tree import SensorTreeSource
 
         sensors = [
             {
@@ -212,7 +212,7 @@ class TestSensorTreeSource:
         assert len(pushed2) == 0
 
     def test_non_triggered_clears_suppression(self):
-        from wild_igor.igor.cognition.sensor_tree import SensorTreeSource
+        from devices.igor.cognition.sensor_tree import SensorTreeSource
 
         sensors = [
             {
@@ -236,7 +236,7 @@ class TestSensorTreeSource:
         assert "SENSOR_DISK_ROOT" not in source._suppressed
 
     def test_action_habit_fires(self):
-        from wild_igor.igor.cognition.sensor_tree import SensorTreeSource
+        from devices.igor.cognition.sensor_tree import SensorTreeSource
 
         sensors = [
             {
@@ -263,7 +263,7 @@ class TestSensorTreeSource:
         assert len(action_calls) == 1
 
     def test_respects_check_interval(self):
-        from wild_igor.igor.cognition.sensor_tree import SensorTreeSource
+        from devices.igor.cognition.sensor_tree import SensorTreeSource
 
         import time
 
@@ -277,7 +277,7 @@ class TestSensorTreeSource:
 
 class TestCreateSensor:
     def test_creates_sensor_node(self):
-        from wild_igor.igor.cognition.sensor_tree import create_sensor
+        from devices.igor.cognition.sensor_tree import create_sensor
 
         cortex = _make_cortex()
         # Pretend root exists

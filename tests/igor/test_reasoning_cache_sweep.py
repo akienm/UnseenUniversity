@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from wild_igor.igor.cognition import reasoning_cache as rc
+from devices.igor.cognition import reasoning_cache as rc
 
 
 @pytest.fixture

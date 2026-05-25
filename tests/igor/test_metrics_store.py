@@ -101,7 +101,7 @@ class TestListMetricNames:
 
 class TestMigrationEntry:
     def test_m052_exists(self):
-        from wild_igor.igor.memory.cortex import _SCHEMA_MIGRATIONS
+        from devices.igor.memory.cortex import _SCHEMA_MIGRATIONS
 
         names = {name for name, _ in _SCHEMA_MIGRATIONS}
         assert "m052_metrics_store" in names

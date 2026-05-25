@@ -77,7 +77,7 @@ def observe(label: str, value, context: dict = None) -> None:
         path.write_text(entry + "\n" + existing, encoding="utf-8")
     except Exception as _bare_e:
         get_logger(__name__).warning(
-            "bare except in wild_igor/igor/cognition/observer.py: %s", _bare_e
+            "bare except in devices/igor/cognition/observer.py: %s", _bare_e
         )
 
     # Layer 2: EXPERIENTIAL memory
@@ -110,5 +110,5 @@ def observe(label: str, value, context: dict = None) -> None:
             _cortex.store(m)
         except Exception as _bare_e:
             get_logger(__name__).warning(
-                "bare except in wild_igor/igor/cognition/observer.py: %s", _bare_e
+                "bare except in devices/igor/cognition/observer.py: %s", _bare_e
             )

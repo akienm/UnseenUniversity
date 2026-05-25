@@ -14,13 +14,13 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 import pytest
 
-pass  # T-igor-channels-relocate: system_proxy moved to wild_igor/igor/tools/system_proxy.py
+pass  # T-igor-channels-relocate: system_proxy moved to devices/igor/tools/system_proxy.py
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.tools.system_proxy import (
+from devices.igor.tools.system_proxy import (
     DiskInfo,
     MemoryInfo,
     ProcessInfo,
@@ -128,7 +128,7 @@ class TestHardwareProperty:
     def test_hardware_empty_on_import_failure(self):
         proxy = SystemProxy()
         with patch(
-            "wild_igor.igor.tools.hardware_detect.detect_hardware",
+            "devices.igor.tools.hardware_detect.detect_hardware",
             side_effect=ImportError("nope"),
         ):
             if hasattr(proxy, "_hardware_cache"):

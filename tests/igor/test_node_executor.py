@@ -15,8 +15,8 @@ Tests for execute_node() function including:
 import pytest
 from dataclasses import dataclass, field
 
-from wild_igor.igor.cognition.node_executor import execute_node, ExecutionResult
-from wild_igor.igor.memory.models import Memory, MemoryType
+from devices.igor.cognition.node_executor import execute_node, ExecutionResult
+from devices.igor.memory.models import Memory, MemoryType
 
 
 class MockMemory:
@@ -183,7 +183,7 @@ class TestNoopCommentInstruction:
         basket = {}
         # Capture log output
         import logging
-        from wild_igor.igor.cognition import node_executor as ne_mod
+        from devices.igor.cognition import node_executor as ne_mod
 
         records = []
 
@@ -800,7 +800,7 @@ class TestMcpCallInstruction:
         basket = {"call_args": {"text": "hello"}}
 
         with patch(
-            "wild_igor.igor.cognition.node_executor._tool_registry", mock_registry
+            "devices.igor.cognition.node_executor._tool_registry", mock_registry
         ):
             result = execute_node(memory, "my_trigger", basket)
 
@@ -823,7 +823,7 @@ class TestMcpCallInstruction:
         basket = {}
 
         with patch(
-            "wild_igor.igor.cognition.node_executor._tool_registry", empty_registry
+            "devices.igor.cognition.node_executor._tool_registry", empty_registry
         ):
             result = execute_node(memory, "my_trigger", basket)
 
@@ -852,7 +852,7 @@ class TestMcpCallInstruction:
         basket = {}
 
         with patch(
-            "wild_igor.igor.cognition.node_executor._tool_registry", mock_registry
+            "devices.igor.cognition.node_executor._tool_registry", mock_registry
         ):
             result = execute_node(memory, "my_trigger", basket)
 
@@ -882,7 +882,7 @@ class TestMcpCallInstruction:
         basket = {"tool_key": "dynamic_tool", "args": {}}
 
         with patch(
-            "wild_igor.igor.cognition.node_executor._tool_registry", mock_registry
+            "devices.igor.cognition.node_executor._tool_registry", mock_registry
         ):
             result = execute_node(memory, "my_trigger", basket)
 

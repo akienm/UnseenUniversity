@@ -137,7 +137,7 @@ def launch_next_worker() -> str:
                 except Exception as _e:
                     log_error(
                         kind="BARE_EXCEPT",
-                        detail=f"wild_igor/igor/tools/worker_foreman.py pids read: {_e}",
+                        detail=f"devices/igor/tools/worker_foreman.py pids read: {_e}",
                     )
             daemon_alive = daemon_pid and _pid_alive(daemon_pid)
             if daemon_alive:

@@ -14,7 +14,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition.experiment import (  # noqa: E402
+from devices.igor.cognition.experiment import (  # noqa: E402
     Experiment,
     ExperimentStatus,
     Hypothesis,
@@ -23,7 +23,7 @@ from wild_igor.igor.cognition.experiment import (  # noqa: E402
     Probe,
     ProbeKind,
 )
-from wild_igor.igor.cognition.experiment_cascade import (  # noqa: E402
+from devices.igor.cognition.experiment_cascade import (  # noqa: E402
     MIN_OVERLAP_TOKENS,
     CascadeSituation,
     CascadeStatus,
@@ -228,7 +228,7 @@ def test_min_overlap_tokens_default():
 
 
 def test_default_cascade_level_4_is_concrete_not_stub():
-    from wild_igor.igor.cognition.experiment_cascade import build_default_cascade
+    from devices.igor.cognition.experiment_cascade import build_default_cascade
 
     cortex = MagicMock()
     cortex.search.return_value = []

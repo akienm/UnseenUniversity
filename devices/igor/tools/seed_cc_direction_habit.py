@@ -3,7 +3,7 @@
 Seed PROC_RECEIVE_CC_DIRECTION habit.
 
 Usage:
-  python3 wild_igor/igor/tools/seed_cc_direction_habit.py
+  python3 devices/igor/tools/seed_cc_direction_habit.py
 
 Fires when Igor receives a long CC message that contains strategic direction
 keywords. Calls receive_cc_direction() to deposit FACTUAL + TWM + ack.

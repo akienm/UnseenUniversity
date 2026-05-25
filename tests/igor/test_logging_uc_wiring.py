@@ -19,9 +19,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "wild_igor"))
 
-from igor.logging_setup import ConsoleHandler, setup_logging
+from devices.igor.logging_setup import ConsoleHandler, setup_logging
 
 
 class TestUCLoggerWiring(unittest.TestCase):

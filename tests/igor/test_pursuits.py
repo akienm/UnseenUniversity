@@ -1,4 +1,4 @@
-"""Tests for wild_igor.igor.cognition.pursuits — MVP behavior.
+"""Tests for devices.igor.cognition.pursuits — MVP behavior.
 
 Covers spawn→commitment dopamine, completion path, abandonment path,
 suspend/resume, parent/child nesting, and the disabled-gate fallback.
@@ -14,7 +14,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from wild_igor.igor.cognition import pursuits as mod  # noqa: E402
+from devices.igor.cognition import pursuits as mod  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
