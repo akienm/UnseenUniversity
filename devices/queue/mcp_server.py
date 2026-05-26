@@ -1,0 +1,181 @@
+"""Queue MCP server — stdio JSON-RPC 2.0.
+
+Wire into Claude Code settings as 'datacenter':
+    {
+      "mcpServers": {
+        "datacenter": {
+          "command": "python",
+          "args": ["-m", "devices.queue.mcp_server"],
+          "env": {"IGOR_HOME_DB_URL": "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"}
+        }
+      }
+    }
+
+This makes queue_next, queue_peek, queue_show, queue_list available as
+mcp__datacenter__queue_next, etc. in Claude Code sessions.
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+
+from devices.queue.device import QueueDevice
+
+_device = QueueDevice()
+
+_TOOL_SCHEMAS = [
+    {
+        "name": "queue_next",
+        "description": "Atomically return the next eligible ticket for a worker and mark it in_progress. Returns null when queue is empty or gate is tripped.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "worker": {
+                    "type": "string",
+                    "description": "Worker name, e.g. 'claude' or 'igor'",
+                }
+            },
+            "required": ["worker"],
+        },
+    },
+    {
+        "name": "queue_peek",
+        "description": "Return the next eligible ticket for a worker without marking it in_progress. Read-only.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "worker": {
+                    "type": "string",
+                    "description": "Worker name, e.g. 'claude' or 'igor'",
+                }
+            },
+            "required": ["worker"],
+        },
+    },
+    {
+        "name": "queue_show",
+        "description": "Return a single ticket by ID, or null if not found.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "ticket_id": {
+                    "type": "string",
+                    "description": "Ticket ID, e.g. 'T-retire-worker-daemon-sh'",
+                }
+            },
+            "required": ["ticket_id"],
+        },
+    },
+    {
+        "name": "queue_list",
+        "description": "List tickets matching optional worker and status filters.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "worker": {
+                    "type": "string",
+                    "description": "Filter by worker name. Omit for all workers.",
+                },
+                "status": {
+                    "type": "string",
+                    "description": "Filter by status. Defaults to 'sprint' (ready-to-work).",
+                    "default": "sprint",
+                },
+            },
+        },
+    },
+]
+
+
+def _dispatch(msg: dict) -> dict | None:
+    method = msg.get("method", "")
+    msg_id = msg.get("id")
+
+    if method == "initialize":
+        return {
+            "jsonrpc": "2.0",
+            "id": msg_id,
+            "result": {
+                "protocolVersion": "2024-11-05",
+                "serverInfo": {"name": "datacenter", "version": "1.0.0"},
+                "capabilities": {"tools": {}},
+            },
+        }
+
+    if method == "tools/list":
+        return {
+            "jsonrpc": "2.0",
+            "id": msg_id,
+            "result": {"tools": _TOOL_SCHEMAS},
+        }
+
+    if method == "tools/call":
+        params = msg.get("params", {})
+        name = params.get("name", "")
+        args = params.get("arguments", {})
+        try:
+            if name == "queue_next":
+                result = _device.queue_next(worker=args["worker"])
+            elif name == "queue_peek":
+                result = _device.queue_peek(worker=args["worker"])
+            elif name == "queue_show":
+                result = _device.queue_show(ticket_id=args["ticket_id"])
+            elif name == "queue_list":
+                result = _device.queue_list(
+                    worker=args.get("worker"),
+                    status=args.get("status", "sprint"),
+                )
+            else:
+                result = f"ERROR: unknown tool {name!r}"
+        except Exception as exc:
+            result = f"ERROR: {exc}"
+
+        text = json.dumps(result, default=str) if result is not None else "null"
+        return {
+            "jsonrpc": "2.0",
+            "id": msg_id,
+            "result": {
+                "content": [{"type": "text", "text": text}],
+                "isError": isinstance(result, str) and result.startswith("ERROR"),
+            },
+        }
+
+    if method == "notifications/initialized":
+        return None
+
+    if msg_id is not None:
+        return {
+            "jsonrpc": "2.0",
+            "id": msg_id,
+            "error": {"code": -32601, "message": f"Method not found: {method}"},
+        }
+    return None
+
+
+def serve() -> None:
+    for line in sys.stdin:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            msg = json.loads(line)
+        except json.JSONDecodeError:
+            print(
+                json.dumps(
+                    {
+                        "jsonrpc": "2.0",
+                        "id": None,
+                        "error": {"code": -32700, "message": "Parse error"},
+                    }
+                ),
+                flush=True,
+            )
+            continue
+        response = _dispatch(msg)
+        if response is not None:
+            print(json.dumps(response, default=str), flush=True)
+
+
+if __name__ == "__main__":
+    serve()
