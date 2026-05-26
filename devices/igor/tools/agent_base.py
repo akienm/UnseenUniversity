@@ -102,7 +102,7 @@ class AgentBase:
     def log(self) -> _EmergencySafeLogger:
         if not self.__class__._logger:
             _module = type(self).__module__ or ""
-            for prefix in ("devices.", "lab.utility_closet."):
+            for prefix in ("devices.",):
                 if _module.startswith(prefix):
                     _module = _module[len(prefix) :]
                     break
