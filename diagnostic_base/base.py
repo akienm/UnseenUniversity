@@ -68,10 +68,11 @@ def _json_file_sink(message) -> None:
 
 
 def prune_json_logs(log_root: Path | str | None = None, days: int = 30) -> int:
-    """Delete JSON log files older than `days` days. Returns count deleted.
+    """Delete JSON log files and trace JSONL records older than `days` days.
 
     Call from day-close to enforce the 30-day rolling retention window.
-    Each device prunes its own local log tree.
+    Each device prunes its own local log tree (log/json/ and trace/).
+    Returns count of files deleted.
     """
     import time as _time
 
@@ -81,6 +82,13 @@ def prune_json_logs(log_root: Path | str | None = None, days: int = 30) -> int:
     cutoff = _time.time() - days * 86400
     deleted = 0
     for f in root.rglob("log/json/*.json"):
+        try:
+            if f.stat().st_mtime < cutoff:
+                f.unlink()
+                deleted += 1
+        except Exception:
+            pass
+    for f in root.rglob("trace/*.jsonl"):
         try:
             if f.stat().st_mtime < cutoff:
                 f.unlink()
@@ -255,6 +263,88 @@ class DiagnosticBase:
     def timeout_remaining(self, timeout_s: float) -> float:
         """Seconds remaining before timeout_s is exhausted. Negative if expired."""
         return timeout_s - self.elapsed_s()
+
+    # ── Structured trace ─────────────────────────────────────────────────────
+    #
+    # trace_record() writes one JSON line per event to trace/<YYYYMMDD>.jsonl.
+    # When debug_mode is True the same event is also emitted via the loguru
+    # logger at DEBUG level so it appears in the live console.
+    #
+    # last_traces() reads from the on-disk JSONL files — most-recent first.
+
+    debug_mode: bool = False
+
+    def trace_record(self, event: str, data: "dict | None" = None) -> None:
+        """Append one structured trace event to trace/<YYYYMMDD>.jsonl.
+
+        Each record: {ts, device, event, data}. Silent noop on any I/O error.
+        When debug_mode is True, also logs via self.logger.debug().
+        """
+        try:
+            ts = datetime.now(timezone.utc)
+            record: dict = {
+                "ts": ts.isoformat(),
+                "device": self._device_id,
+                "event": event,
+            }
+            if data is not None:
+                record["data"] = data
+
+            trace_dir = self._log_root / self._device_id / "trace"
+            trace_dir.mkdir(parents=True, exist_ok=True)
+            day_file = trace_dir / f"{ts.strftime('%Y%m%d')}.jsonl"
+            with day_file.open("a", encoding="utf-8") as fh:
+                fh.write(json.dumps(record, default=str) + "\n")
+
+            if self.debug_mode:
+                self.logger.debug(f"trace: {event} {data or ''}")
+        except Exception:
+            pass
+
+    def last_traces(
+        self,
+        n: int = 20,
+        since: "datetime | None" = None,
+    ) -> "list[dict]":
+        """Return the N most-recent trace records, newest first.
+
+        Reads all JSONL files under trace/ for this device and returns records
+        sorted descending by ts. If `since` is supplied, only records with
+        ts >= since are returned (before the n-cap).
+        """
+        trace_dir = self._log_root / self._device_id / "trace"
+        if not trace_dir.exists():
+            return []
+        records: list[dict] = []
+        for jsonl in sorted(trace_dir.glob("*.jsonl"), reverse=True):
+            try:
+                for raw in jsonl.read_text(encoding="utf-8").splitlines():
+                    raw = raw.strip()
+                    if not raw:
+                        continue
+                    try:
+                        rec = json.loads(raw)
+                    except Exception:
+                        continue
+                    if since is not None:
+                        try:
+                            from datetime import timezone as _tz
+
+                            rec_ts = datetime.fromisoformat(rec["ts"])
+                            if rec_ts.tzinfo is None:
+                                rec_ts = rec_ts.replace(tzinfo=_tz.utc)
+                            cmp_since = since
+                            if cmp_since.tzinfo is None:
+                                cmp_since = cmp_since.replace(tzinfo=_tz.utc)
+                            if rec_ts < cmp_since:
+                                continue
+                        except Exception:
+                            pass
+                    records.append(rec)
+            except Exception:
+                pass
+        records.sort(key=lambda r: r.get("ts", ""), reverse=True)
+        return records[:n]
 
     # ── Context manager ───────────────────────────────────────────────────────
 

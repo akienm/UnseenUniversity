@@ -209,3 +209,123 @@ class TestJsonLogSink:
         assert deleted == 1
         assert not old_file.exists()
         assert new_file.exists()
+
+    def test_prune_removes_old_trace_files(self, tmp_path):
+        """prune_json_logs also prunes trace/*.jsonl files older than retention."""
+        import os
+        import time as _time
+        from diagnostic_base.base import prune_json_logs
+
+        trace_dir = tmp_path / "dev" / "trace"
+        trace_dir.mkdir(parents=True)
+        old_file = trace_dir / "20260101.jsonl"
+        old_file.write_text("{}\n")
+        old_ts = _time.time() - 31 * 86400
+        os.utime(old_file, (old_ts, old_ts))
+
+        new_file = trace_dir / "20260525.jsonl"
+        new_file.write_text("{}\n")
+
+        deleted = prune_json_logs(log_root=tmp_path, days=30)
+        assert deleted == 1
+        assert not old_file.exists()
+        assert new_file.exists()
+
+
+class TestTrace:
+    def test_trace_record_writes_jsonl(self, tmp_path):
+        from diagnostic_base.base import _logger_cache
+
+        class _TraceDev(DiagnosticBase):
+            _log_root = tmp_path
+
+        _logger_cache.pop(_TraceDev, None)
+        obj = _TraceDev(device_id="tracedev")
+        obj.trace_record("test_event", {"x": 1})
+
+        trace_dir = tmp_path / "tracedev" / "trace"
+        files = list(trace_dir.glob("*.jsonl"))
+        assert len(files) == 1
+        line = json.loads(files[0].read_text().strip())
+        assert line["device"] == "tracedev"
+        assert line["event"] == "test_event"
+        assert line["data"] == {"x": 1}
+        assert "ts" in line
+
+    def test_trace_record_no_data(self, tmp_path):
+        from diagnostic_base.base import _logger_cache
+
+        class _TraceDev2(DiagnosticBase):
+            _log_root = tmp_path
+
+        _logger_cache.pop(_TraceDev2, None)
+        obj = _TraceDev2(device_id="td2")
+        obj.trace_record("no_data_event")
+
+        trace_dir = tmp_path / "td2" / "trace"
+        line = json.loads(list(trace_dir.glob("*.jsonl"))[0].read_text().strip())
+        assert line["event"] == "no_data_event"
+        assert "data" not in line
+
+    def test_last_traces_returns_recent_first(self, tmp_path):
+        from diagnostic_base.base import _logger_cache
+
+        class _TraceDev3(DiagnosticBase):
+            _log_root = tmp_path
+
+        _logger_cache.pop(_TraceDev3, None)
+        obj = _TraceDev3(device_id="td3")
+        obj.trace_record("alpha")
+        obj.trace_record("beta")
+        obj.trace_record("gamma")
+
+        traces = obj.last_traces(n=10)
+        assert len(traces) == 3
+        events = [t["event"] for t in traces]
+        assert events[0] == "gamma"
+        assert events[-1] == "alpha"
+
+    def test_last_traces_n_cap(self, tmp_path):
+        from diagnostic_base.base import _logger_cache
+
+        class _TraceDev4(DiagnosticBase):
+            _log_root = tmp_path
+
+        _logger_cache.pop(_TraceDev4, None)
+        obj = _TraceDev4(device_id="td4")
+        for i in range(10):
+            obj.trace_record(f"event_{i}")
+
+        traces = obj.last_traces(n=3)
+        assert len(traces) == 3
+
+    def test_last_traces_empty_when_no_trace_dir(self, tmp_path):
+        from diagnostic_base.base import _logger_cache
+
+        class _TraceDev5(DiagnosticBase):
+            _log_root = tmp_path
+
+        _logger_cache.pop(_TraceDev5, None)
+        obj = _TraceDev5(device_id="td5_nodir")
+        assert obj.last_traces() == []
+
+    def test_devices_trace_isolated(self, tmp_path):
+        from diagnostic_base.base import _logger_cache
+
+        class _DevA(DiagnosticBase):
+            _log_root = tmp_path
+
+        class _DevB(DiagnosticBase):
+            _log_root = tmp_path
+
+        _logger_cache.pop(_DevA, None)
+        _logger_cache.pop(_DevB, None)
+        a = _DevA(device_id="dev_a")
+        b = _DevB(device_id="dev_b")
+        a.trace_record("from_a")
+        b.trace_record("from_b")
+
+        a_traces = a.last_traces()
+        b_traces = b.last_traces()
+        assert all(t["device"] == "dev_a" for t in a_traces)
+        assert all(t["device"] == "dev_b" for t in b_traces)
