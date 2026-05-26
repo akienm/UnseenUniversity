@@ -251,7 +251,7 @@ def test_instance_history_no_cortex():
 
 
 def test_tools_registered():
-    from lab.utility_closet.registry import registry
+    from devices.igor.tools.registry import registry
 
     assert "igor_instance_current" in registry._tools
     assert "igor_instance_history" in registry._tools

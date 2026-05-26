@@ -30,7 +30,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from lab.utility_closet.registry import Tool, registry
+from devices.igor.tools.registry import Tool, registry
 
 logger = logging.getLogger(__name__)
 

@@ -22,7 +22,7 @@ ROI tracking:
 import json
 import os
 
-from lab.utility_closet.registry import Tool, registry
+from devices.igor.tools.registry import Tool, registry
 
 
 def _get_cortex():

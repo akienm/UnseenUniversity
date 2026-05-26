@@ -6,7 +6,7 @@ Also provides get_milieu_state to read current affective state.
 
 import time
 
-from lab.utility_closet.registry import Tool, registry
+from devices.igor.tools.registry import Tool, registry
 
 # ── Milieu helpers ────────────────────────────────────────────────────────────
 
@@ -262,7 +262,7 @@ def _get_tool_registry_report(top: int = 20, **_) -> str:
     Return per-tool call count, error rate, p50/p95 latency from the live ToolRegistry.
     Sorted by call count descending. Shows top N tools.
     """
-    from lab.utility_closet.registry import registry as _registry
+    from devices.igor.tools.registry import registry as _registry
 
     stats = _registry.tool_stats()
     if not stats:

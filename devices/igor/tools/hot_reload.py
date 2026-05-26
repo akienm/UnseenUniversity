@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import importlib
 import sys
-from lab.utility_closet.registry import Tool, registry
+from devices.igor.tools.registry import Tool, registry
 
 # ── Inertia guard ─────────────────────────────────────────────────────────────
 # Modules whose reload would corrupt live state or violate architectural safety.

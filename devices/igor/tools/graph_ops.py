@@ -12,7 +12,7 @@ Gates:
 import os
 import logging
 
-from lab.utility_closet.registry import Tool, registry
+from devices.igor.tools.registry import Tool, registry
 
 logger = logging.getLogger("igor.tools.graph_ops")
 

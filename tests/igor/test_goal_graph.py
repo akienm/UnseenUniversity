@@ -367,7 +367,7 @@ def test_goal_adopt_accepts_parent_goal_facia_id():
 
 
 def test_tools_registered():
-    from lab.utility_closet.registry import registry
+    from devices.igor.tools.registry import registry
 
     assert "goal_list" in registry._tools
     assert "goal_decompose" in registry._tools

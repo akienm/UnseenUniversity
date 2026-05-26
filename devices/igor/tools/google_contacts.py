@@ -22,7 +22,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from lab.utility_closet.registry import Tool, registry
+from devices.igor.tools.registry import Tool, registry
 from .google_calendar import _get_service, _enabled
 
 _PEOPLE_SCOPES = ["https://www.googleapis.com/auth/contacts"]

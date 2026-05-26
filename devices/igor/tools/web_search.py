@@ -6,7 +6,7 @@ Uses DuckDuckGo HTML endpoint. No API key required.
 import certifi
 import requests
 from bs4 import BeautifulSoup
-from lab.utility_closet.registry import Tool, registry
+from devices.igor.tools.registry import Tool, registry
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "

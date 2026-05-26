@@ -24,7 +24,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from lab.utility_closet.registry import Tool, registry
+from devices.igor.tools.registry import Tool, registry
 
 WORKSPACE = Path(__file__).parent.parent.parent / "workspace"
 WORKSPACE.mkdir(exist_ok=True)

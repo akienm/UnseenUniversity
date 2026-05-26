@@ -590,7 +590,7 @@ class HeartbeatSource(BasePushSource):
     def _call_twm_trigger_tool(self, code_ref: str, habit_id: str = "") -> str:
         """Call a twm_trigger habit's code_ref directly (D301 fix)."""
         try:
-            from lab.utility_closet.registry import registry
+            from devices.igor.tools.registry import registry
             from ..tools.engram_log import engram_execution_context
 
             fn_name = code_ref.split(":")[-1]
@@ -1234,7 +1234,7 @@ class SchedulerSource(BasePushSource):
     def _call_tool(self, code_ref: str, habit_id: str = "") -> str:
         """Resolve code_ref to a registered tool and call it."""
         try:
-            from lab.utility_closet.registry import registry
+            from devices.igor.tools.registry import registry
             from ..tools.engram_log import engram_execution_context
 
             # code_ref format: "module:fn_name" or just "fn_name"
@@ -2591,7 +2591,7 @@ class CapabilityAwarenessSource(BasePushSource):
 
     def _tool_count(self) -> int:
         try:
-            from lab.utility_closet.registry import registry
+            from devices.igor.tools.registry import registry
 
             return len(registry._tools)
         except Exception:

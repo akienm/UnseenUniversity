@@ -19,7 +19,7 @@ from pathlib import Path
 
 _log = logging.getLogger(__name__)
 
-from lab.utility_closet.registry import Tool, registry
+from devices.igor.tools.registry import Tool, registry
 from ..paths import paths
 from ..cognition.anticipation import (
     weighted_ticket_score,

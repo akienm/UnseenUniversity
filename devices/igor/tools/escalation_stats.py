@@ -22,7 +22,7 @@ from collections import defaultdict
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-from lab.utility_closet.registry import Tool, registry
+from devices.igor.tools.registry import Tool, registry
 
 from ..paths import paths as _paths
 log = logging.getLogger(__name__)

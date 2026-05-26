@@ -112,7 +112,7 @@ def receive_cc_direction(content: str) -> str:
 # ── Tool registration ─────────────────────────────────────────────────────────
 
 try:
-    from lab.utility_closet.registry import registry, Tool
+    from devices.igor.tools.registry import registry, Tool
 
     registry.register(
         Tool(

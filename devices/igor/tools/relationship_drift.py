@@ -39,7 +39,7 @@ import json
 from datetime import datetime, timezone
 from typing import Optional
 
-from lab.utility_closet.registry import Tool, registry
+from devices.igor.tools.registry import Tool, registry
 
 # ── Per-type rhythm defaults (in days) ──────────────────────────────────────
 

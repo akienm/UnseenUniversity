@@ -292,14 +292,14 @@ class TestCloseGoalToolRegistered(unittest.TestCase):
     """Verify close_goal is registered in the tool registry."""
 
     def test_close_goal_in_registry(self):
-        from lab.utility_closet.registry import registry
+        from devices.igor.tools.registry import registry
 
         names = {t.name for t in registry.all()}
         self.assertIn("close_goal", names)
 
     def test_close_goal_no_required_args(self):
         """close_goal tool registration has no required parameters (goal_id is optional)."""
-        from lab.utility_closet.registry import registry
+        from devices.igor.tools.registry import registry
 
         tool = next((t for t in registry.all() if t.name == "close_goal"), None)
         self.assertIsNotNone(tool)

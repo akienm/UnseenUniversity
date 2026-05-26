@@ -29,7 +29,7 @@ machine_manager.py without modifying it.
 
 from typing import Optional
 
-from lab.utility_closet.registry import Tool, registry
+from devices.igor.tools.registry import Tool, registry
 
 
 def _format_machine(m) -> str:

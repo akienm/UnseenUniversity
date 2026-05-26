@@ -81,7 +81,7 @@ class TestMemorySearch(unittest.TestCase):
             "IGOR_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
-        from lab.utility_closet.registry import registry
+        from devices.igor.tools.registry import registry
         import devices.igor.tools.memory_query  # noqa
 
         self.assertIn("memory_search", registry._tools)
@@ -90,7 +90,7 @@ class TestMemorySearch(unittest.TestCase):
 class TestFindTool(unittest.TestCase):
 
     def setUp(self):
-        from lab.utility_closet.registry import registry, Tool
+        from devices.igor.tools.registry import registry, Tool
 
         self._injected = {
             "test_alpha_tool": Tool(
@@ -116,7 +116,7 @@ class TestFindTool(unittest.TestCase):
             registry._tools[k] = v
 
     def tearDown(self):
-        from lab.utility_closet.registry import registry
+        from devices.igor.tools.registry import registry
 
         for k in self._injected:
             registry._tools.pop(k, None)
@@ -160,7 +160,7 @@ class TestFindTool(unittest.TestCase):
             "IGOR_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
-        from lab.utility_closet.registry import registry
+        from devices.igor.tools.registry import registry
         import devices.igor.tools.memory_query  # noqa
 
         self.assertIn("find_tool", registry._tools)

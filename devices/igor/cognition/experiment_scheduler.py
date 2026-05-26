@@ -199,7 +199,7 @@ def _dispatch_db_query(cortex: "Cortex", experiment: Experiment) -> Observation:
 
 
 def _dispatch_tool_call(cortex: "Cortex", experiment: Experiment) -> Observation:
-    from lab.utility_closet.registry import registry
+    from devices.igor.tools.registry import registry
 
     probe = experiment.probe
     tool = registry.get(probe.target)

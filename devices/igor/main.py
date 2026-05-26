@@ -1550,7 +1550,7 @@ class Igor(IgorBase):
 
                 response_text = _run_schema(habit, self.cortex, "")
             elif code_ref:
-                from lab.utility_closet.registry import registry as _tool_registry
+                from devices.igor.tools.registry import registry as _tool_registry
 
                 tool_name = code_ref.split(":")[-1]
                 # Execution tools must only be called via explicit LLM tool calls with
@@ -3363,7 +3363,7 @@ class Igor(IgorBase):
                     )
                     response_text = _cleaned
                     try:
-                        from lab.utility_closet.registry import registry as _bg_tool_reg
+                        from devices.igor.tools.registry import registry as _bg_tool_reg
 
                         _tool_result = _bg_tool_reg.execute(_tool_name, _tool_kwargs)
                         self.cortex.write_ring(
@@ -3657,7 +3657,7 @@ class Igor(IgorBase):
         if author == "claude-code" and user_input.startswith("CC:"):
             _cc_cmd = user_input[3:].strip()
             try:
-                from lab.utility_closet.registry import registry as _cc_registry
+                from devices.igor.tools.registry import registry as _cc_registry
                 import logging as _cc_log
 
                 _cc_logger = _cc_log.getLogger("igor.main")
@@ -5286,7 +5286,7 @@ class Igor(IgorBase):
                     # G11: actually dispatch to the tool. Auto-extracts args by schema:
                     # no required args → call with none; one required arg → pass user_input.
                     # Multi-arg tools can't be auto-dispatched; describe and skip habit.
-                    from lab.utility_closet.registry import registry as _tool_registry
+                    from devices.igor.tools.registry import registry as _tool_registry
                     from .tools.engram_log import (
                         engram_execution_context as _engram_ctx,
                     )
@@ -5920,7 +5920,7 @@ class Igor(IgorBase):
                 )
                 response_text = _cleaned
                 try:
-                    from lab.utility_closet.registry import registry as _tool_reg
+                    from devices.igor.tools.registry import registry as _tool_reg
 
                     _tool_result = _tool_reg.execute(_tool_name, _tool_kwargs)
                     console.print(
@@ -8783,7 +8783,7 @@ class Igor(IgorBase):
         _tool_words = ("what tools do you have", "list tools", "list your tools")
         if any(p in t for p in _tool_words):
             try:
-                from lab.utility_closet.registry import registry as _reg
+                from devices.igor.tools.registry import registry as _reg
 
                 all_tools = _reg.all()
                 total = len(all_tools)

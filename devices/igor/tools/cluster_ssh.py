@@ -21,7 +21,7 @@ import subprocess
 import urllib.request
 from pathlib import Path
 
-from lab.utility_closet.registry import Tool, registry
+from devices.igor.tools.registry import Tool, registry
 from ..paths import paths
 
 # ── Config ────────────────────────────────────────────────────────────────────

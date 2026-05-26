@@ -167,7 +167,7 @@ def _make_job_fn(task_type: str, payload: str, cortex: "Cortex"):
         def _fn():
             try:
                 args = json.loads(args_raw) if args_raw else {}
-                from lab.utility_closet.registry import registry
+                from devices.igor.tools.registry import registry
 
                 tool = registry.get(tool_name)
                 if tool is None:

@@ -529,7 +529,7 @@ def _tool_audit_conversation_health(hours: str = "24") -> str:
 
 # ── Registration ──────────────────────────────────────────────────────────────
 
-from lab.utility_closet.registry import Tool, registry  # noqa: E402
+from devices.igor.tools.registry import Tool, registry  # noqa: E402
 
 registry.register(
     Tool(

@@ -96,6 +96,6 @@ def test_extract_cc_turn_returns_all_fields():
 
 def test_run_after_action_review_is_registered():
     """Verify the tool is registered in the registry."""
-    from lab.utility_closet.registry import registry
+    from devices.igor.tools.registry import registry
 
     assert "run_after_action_review" in registry._tools

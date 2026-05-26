@@ -14,7 +14,7 @@ Disk governor: eviction is automatic before fetch and after each training run.
 
 import os
 from pathlib import Path
-from lab.utility_closet.registry import Tool, registry
+from devices.igor.tools.registry import Tool, registry
 
 
 def _load_wg() -> "WordGraph":  # type: ignore[name-defined]  # noqa: F821

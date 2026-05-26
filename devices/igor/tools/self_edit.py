@@ -22,7 +22,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .inertia_map import bucket_of as _im_bucket_of, weight_of as _im_weight_of
-from lab.utility_closet.registry import Tool, registry
+from devices.igor.tools.registry import Tool, registry
 from ..cognition.forensic_logger import log_self_edit
 from ..paths import paths
 

@@ -24,7 +24,7 @@ run_inhibition_seed_pass() is also registered as a tool for Igor to call.
 import logging
 import os
 
-from lab.utility_closet.registry import Tool, registry
+from devices.igor.tools.registry import Tool, registry
 
 from ..paths import paths as _paths
 

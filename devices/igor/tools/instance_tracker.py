@@ -32,7 +32,7 @@ from datetime import datetime
 from pathlib import Path
 
 from ..paths import paths as _paths
-from lab.utility_closet.registry import Tool, registry
+from devices.igor.tools.registry import Tool, registry
 
 logger = logging.getLogger(__name__)
 

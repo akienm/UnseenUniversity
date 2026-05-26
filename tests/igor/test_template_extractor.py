@@ -357,14 +357,14 @@ class TestPatternExtractorHabitMetadata(unittest.TestCase):
 
 class TestToolRegistration(unittest.TestCase):
     def test_recognize_pattern_registered(self):
-        from lab.utility_closet.registry import registry
+        from devices.igor.tools.registry import registry
         import devices.igor.tools.template_tools  # noqa: F401 — ensure registration runs
 
         tool = registry.get("recognize_pattern")
         self.assertIsNotNone(tool, "recognize_pattern not in registry")
 
     def test_parameterize_template_registered(self):
-        from lab.utility_closet.registry import registry
+        from devices.igor.tools.registry import registry
         import devices.igor.tools.template_tools  # noqa: F401
 
         tool = registry.get("parameterize_template")

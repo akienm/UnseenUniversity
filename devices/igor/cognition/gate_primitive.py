@@ -81,7 +81,7 @@ def evaluate_gate(
         # Custom evaluator: call the registered function
         fn_name = code_ref.split(":")[-1] if ":" in code_ref else code_ref
         try:
-            from lab.utility_closet.registry import registry
+            from devices.igor.tools.registry import registry
 
             tool = registry.get(fn_name)
             if tool:

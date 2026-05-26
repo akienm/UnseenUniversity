@@ -20,7 +20,7 @@ import unittest
 from pathlib import Path
 
 
-from lab.utility_closet.registry import Tool, ToolRegistry, ToolStats
+from devices.igor.tools.registry import Tool, ToolRegistry, ToolStats
 
 # ── ToolStats unit tests ──────────────────────────────────────────────────────
 
@@ -212,11 +212,11 @@ class TestGetToolRegistryReport(unittest.TestCase):
         """If the global registry has no stats, report says 'No tool calls'."""
         # Import the function but patch the registry it uses
         from devices.igor.tools import metrics as metrics_mod
-        from lab.utility_closet.registry import ToolRegistry
+        from devices.igor.tools.registry import ToolRegistry
         import unittest.mock as mock
 
         empty_reg = ToolRegistry()
-        with mock.patch("igor.tools.metrics.registry", empty_reg):
+        with mock.patch("devices.igor.tools.metrics.registry", empty_reg):
             # Patch the registry inside _get_tool_registry_report
             import lab.utility_closet.registry as reg_mod
 
@@ -231,7 +231,7 @@ class TestGetToolRegistryReport(unittest.TestCase):
                 reg_mod.registry = real_registry
 
     def test_report_format_with_calls(self):
-        from lab.utility_closet.registry import ToolRegistry, Tool
+        from devices.igor.tools.registry import ToolRegistry, Tool
         import lab.utility_closet.registry as reg_mod
 
         test_reg = ToolRegistry()

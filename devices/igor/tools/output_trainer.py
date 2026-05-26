@@ -454,7 +454,7 @@ def run_output_training_pass() -> str:
 
 # ── Tool registration ─────────────────────────────────────────────────────────
 
-from lab.utility_closet.registry import Tool, registry  # noqa: E402
+from devices.igor.tools.registry import Tool, registry  # noqa: E402
 
 registry.register(
     Tool(

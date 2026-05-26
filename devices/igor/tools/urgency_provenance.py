@@ -21,7 +21,7 @@ Manufactured sources — urgency is system noise:
 
 import logging
 
-from lab.utility_closet.registry import Tool, registry
+from devices.igor.tools.registry import Tool, registry
 
 logger = logging.getLogger(__name__)
 

@@ -21,7 +21,7 @@ _HEARTBEAT_SECS = int(os.getenv("IGOR_CLOUD_HEARTBEAT_SECS", "45"))
 from rich.console import Console
 
 from ...memory.models import Memory
-from lab.utility_closet.registry import registry
+from devices.igor.tools.registry import registry
 from lab.utility_closet.budget import check_budget_floor as _check_budget_floor
 from ... import tools as _tools  # noqa: F401 — registers all tools
 from .base import (
@@ -262,7 +262,7 @@ def _habit_extract_worker(
                 # code_ref format: "module.path:tool_name" — we check the tool_name
                 # against the registry (same lookup path used at dispatch time).
                 _tool_name = code_ref.split(":")[-1] if ":" in code_ref else code_ref
-                from lab.utility_closet.registry import registry as _cr_registry
+                from devices.igor.tools.registry import registry as _cr_registry
 
                 if _cr_registry.get(_tool_name) is not None:
                     metadata["code_ref"] = code_ref
