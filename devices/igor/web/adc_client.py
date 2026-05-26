@@ -1,11 +1,11 @@
 """
-Utility closet client — D335 Phase 2.
+ADC client — thin REST client for Igor ↔ ADC web server communication.
 
-Thin REST client that Igor uses to register with the utility closet platform.
+Thin REST client that Igor uses to register with the ADC platform.
 All methods are fire-and-forget with logging — never block Igor's main loop.
 
 Usage in main.py:
-    from .web.utility_closet_client import uc_client
+    from .web.adc_client import uc_client
     uc_client.register("igor", capabilities=["chat", "tools", "habits"])
     uc_client.push_stats(stats_dict)
     uc_client.send_message("hello", session_id="shared")
@@ -200,7 +200,7 @@ def _get(path: str, timeout: float = 5.0) -> Optional[dict]:
         return None
 
 
-class UtilityClosetClient(IgorBase):
+class AdcClient(IgorBase):
     """Client for communicating with the utility closet platform server."""
 
     def __init__(self):
@@ -403,4 +403,4 @@ class UtilityClosetClient(IgorBase):
 
 
 # Module-level singleton
-uc_client = UtilityClosetClient()
+uc_client = AdcClient()

@@ -1,20 +1,16 @@
 """
-web/server.py — Thin facade over utility_closet_client.
+web/server.py — Thin facade over adc_client.
 
-T-uc-web-server-refactor: Igor no longer runs its own web server. All HTTP,
-WebSocket, and UI serving is handled by lab/claudecode/utility_closet_server.py
-on port 8080 (the utility closet). This module preserves the legacy API
-(`start`, `send`, `broadcast_activity`, `broadcast_name_resolved`, `incoming`)
-so main.py and listener.py don't need to change.
+Igor no longer runs its own web server. All HTTP, WebSocket, and UI serving
+is handled by the ADC web_server device on port 8080. This module preserves
+the legacy API (`start`, `send`, `broadcast_activity`, `broadcast_name_resolved`,
+`incoming`) so main.py and listener.py don't need to change.
 
-Outbound: send() forwards through uc_client.send_message() to UC.
+Outbound: send() forwards through uc_client.send_message() to ADC.
 Inbound: a background polling thread drains uc_client.poll_messages() into
   the `incoming` queue, where listener._poll_web picks it up as before.
-Activity/name broadcasts: passed through to UC via new uc_client methods
-  (fire-and-forget — if UC isn't up, they're silently dropped).
-
-Legacy HTTP/WebSocket/uvicorn code removed. Claude bridge proxy removed
-(claude_bridge.py is being deleted as part of the same refactor).
+Activity/name broadcasts: passed through to ADC via new uc_client methods
+  (fire-and-forget — if ADC isn't up, they're silently dropped).
 """
 
 import logging
@@ -26,7 +22,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from .utility_closet_client import uc_client
+from .adc_client import uc_client
 
 log = logging.getLogger(__name__)
 
