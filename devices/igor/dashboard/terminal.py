@@ -257,7 +257,7 @@ def _latency_p95(samples: list) -> int:
 
 def _get_budget_line() -> str:
     try:
-        from lab.utility_closet.budget import budget_status
+        from devices.igor.tools.resource_manager import budget_status
 
         s = budget_status()
         remaining = s["remaining_usd"]

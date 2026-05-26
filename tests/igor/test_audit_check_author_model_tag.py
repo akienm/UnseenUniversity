@@ -95,14 +95,6 @@ class TestIsEnforcedPath:
         target = _DEVICES_IGOR / "_synthetic_for_test.py"
         assert is_enforced_path(target) is True
 
-    def test_lab_utility_closet_py_enforced(self):
-        target = REPO_ROOT / "lab" / "utility_closet" / "_synthetic_for_test.py"
-        assert is_enforced_path(target) is True
-
-    def test_lab_claudecode_py_enforced(self):
-        target = REPO_ROOT / "lab" / "claudecode" / "_synthetic_for_test.py"
-        assert is_enforced_path(target) is True
-
     def test_init_py_exempt(self):
         target = _DEVICES_IGOR / "__init__.py"
         assert is_enforced_path(target) is False
@@ -122,28 +114,37 @@ class TestIsEnforcedPath:
 
 class TestCheckFiles:
     def test_compliant_file_passes(self, tmp_path):
-        target = REPO_ROOT / "lab" / "claudecode" / "_synthetic_compliant.py"
+        import lab.claudecode.audit_check_author_model_tag as _mod
+
+        target = _DEVICES_IGOR / "_synthetic_compliant.py"
         target.write_text('"""ok."""\n# author-model: opus\nx = 1\n')
         try:
-            assert check_files([target]) == []
+            with patch.object(_mod, "REPO_ROOT", REPO_ROOT):
+                assert check_files([target]) == []
         finally:
             target.unlink()
 
     def test_missing_tag_flagged(self):
-        target = REPO_ROOT / "lab" / "claudecode" / "_synthetic_no_tag.py"
+        import lab.claudecode.audit_check_author_model_tag as _mod
+
+        target = _DEVICES_IGOR / "_synthetic_no_tag.py"
         target.write_text('"""ok."""\nx = 1\n')
         try:
-            violations = check_files([target])
+            with patch.object(_mod, "REPO_ROOT", REPO_ROOT):
+                violations = check_files([target])
             assert len(violations) == 1
             assert "missing 'author-model:'" in violations[0]
         finally:
             target.unlink()
 
     def test_unrecognized_token_flagged(self):
-        target = REPO_ROOT / "lab" / "claudecode" / "_synthetic_bad_token.py"
+        import lab.claudecode.audit_check_author_model_tag as _mod
+
+        target = _DEVICES_IGOR / "_synthetic_bad_token.py"
         target.write_text("# author-model: gpt4\nx = 1\n")
         try:
-            violations = check_files([target])
+            with patch.object(_mod, "REPO_ROOT", REPO_ROOT):
+                violations = check_files([target])
             assert len(violations) == 1
             assert "not recognized" in violations[0]
         finally:

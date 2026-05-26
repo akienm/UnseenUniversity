@@ -1426,7 +1426,7 @@ class Igor(IgorBase):
         # refreshes the file echo. Akien 2026-04-14: "it's an echo of the
         # database, that's all."
         try:
-            from lab.utility_closet.machine_manager import register_self
+            from .tools.machine_manager import register_self
 
             if register_self(hostname, ip):
                 console.print(
@@ -4169,7 +4169,7 @@ class Igor(IgorBase):
                 # Gateway failed — try distributed preparse router (T-wire-graph-preparse-pipeline)
                 try:
                     from .cognition.preparse_router import route_preparse
-                    from lab.utility_closet.machine_manager import get_ranked_machines
+                    from .tools.machine_manager import get_ranked_machines
 
                     _machines = [m.hostname for m in get_ranked_machines()]
                     _rr = route_preparse(_preparse_input, machines=_machines)
@@ -4717,7 +4717,7 @@ class Igor(IgorBase):
             # Inhibitory signal — we still proceed, but Igor knows the state.
             _threshold_prefix = ""
             try:
-                from lab.utility_closet.filesystem import (
+                from .tools.filesystem import (
                     evaluate_threshold_habits as _eval_thresh,
                 )
 

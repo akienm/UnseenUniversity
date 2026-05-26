@@ -512,7 +512,7 @@ class InferenceGateway(IgorBase):
 
         # ── Budget depletion guard ─────────────────────────────────────────────
         try:
-            from lab.utility_closet.budget import is_cloud_blocked as _blocked_check
+            from devices.igor.tools.resource_manager import is_cloud_blocked as _blocked_check
 
             _blocked, _block_reason = _blocked_check()
             if _blocked:
@@ -1322,7 +1322,7 @@ def make_context(
     balance_ok = False
     try:
         if os.getenv("OPENROUTER_API_KEY", ""):
-            from lab.utility_closet.budget import budget_status
+            from devices.igor.tools.resource_manager import budget_status
 
             balance_ok = budget_status().get("remaining_usd", 1.0) > 0.50
     except Exception:

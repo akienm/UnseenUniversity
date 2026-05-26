@@ -367,7 +367,7 @@ class HeartbeatSource(BasePushSource):
     def _check_budget(self, cortex) -> list[int]:
         """Push high-salience budget alert if warn/critical. Fire Discord once per level."""
         try:
-            from lab.utility_closet.budget import budget_status
+            from devices.igor.tools.resource_manager import budget_status
 
             s = budget_status()
         except Exception:
@@ -428,7 +428,7 @@ class HeartbeatSource(BasePushSource):
     def _check_burn_trajectory(self, cortex) -> list[int]:
         """Push TWM alert if burn rate is high AND days_remaining is low. Once per session."""
         try:
-            from lab.utility_closet.budget import get_balance_trajectory
+            from devices.igor.tools.resource_manager import get_balance_trajectory
 
             traj = get_balance_trajectory(window_hours=48.0)
         except Exception:
@@ -1292,7 +1292,7 @@ class ResourceMonitorSource(BasePushSource):
             return []
 
         try:
-            from lab.utility_closet.filesystem import (
+            from devices.igor.tools.filesystem import (
                 evaluate_threshold_habits,
                 _resource_load_dict,
             )
@@ -1387,7 +1387,7 @@ class ResourceMonitorSource(BasePushSource):
         cloud_ok = False
         try:
             if _os.getenv("OPENROUTER_API_KEY", "").strip():
-                from lab.utility_closet.budget import budget_status
+                from devices.igor.tools.resource_manager import budget_status
 
                 cloud_ok = budget_status().get("remaining_usd", 1.0) > 0.50
         except Exception:

@@ -64,7 +64,7 @@ def _lookup_in_all_machines(name: str):
     agent asking 'is pi a known machine?' gets a useful answer even
     when the pi is offline or has no inference_rank.
     """
-    from lab.utility_closet.machine_manager import get_all_machines
+    from .machine_manager import get_all_machines
 
     needle = name.lower().strip()
     for m in get_all_machines():
@@ -109,7 +109,7 @@ def machine_list_all(**_) -> str:
     subset. Sorted by canonical hostname.
     """
     try:
-        from lab.utility_closet.machine_manager import get_all_machines
+        from .machine_manager import get_all_machines
     except Exception as e:
         return f"[ERROR] machine_manager import failed: {e}"
 

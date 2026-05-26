@@ -67,7 +67,7 @@ class BudgetInterruptor(BaseInterruptor):
 
     def check(self, cortex=None) -> str | None:
         try:
-            from lab.utility_closet.budget import budget_status
+            from devices.igor.tools.resource_manager import budget_status
 
             s = budget_status()
         except Exception:

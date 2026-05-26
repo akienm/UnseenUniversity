@@ -22,7 +22,7 @@ from rich.console import Console
 
 from ...memory.models import Memory
 from devices.igor.tools.registry import registry
-from lab.utility_closet.budget import check_budget_floor as _check_budget_floor
+from devices.igor.tools.resource_manager import check_budget_floor as _check_budget_floor
 from ... import tools as _tools  # noqa: F401 — registers all tools
 from .base import (
     BaseReasoner,

@@ -59,7 +59,7 @@ def start_reading_bootstrap(config: str = "") -> str:
     # ── 1. Record OR balance baseline ────────────────────────────────────────
     _balance_str = "unavailable"
     try:
-        from lab.utility_closet.budget import fetch_openrouter_balance as _fetch_bal
+        from .resource_manager import fetch_openrouter_balance as _fetch_bal
 
         _bal = _fetch_bal()
         if _bal and "balance" in _bal:

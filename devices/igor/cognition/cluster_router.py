@@ -26,7 +26,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from ..igor_base import IgorBase
-from lab.utility_closet.machine_manager import (
+from ..tools.machine_manager import (
     MachineRecord,
     get_ranked_machines,
     is_in_use,
