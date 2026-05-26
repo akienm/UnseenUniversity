@@ -26,6 +26,21 @@ This is the portable agent runtime substrate. It is **not** TheIgors.
 
 ---
 
+## Workflow — picking what to work on
+
+**Use `/query-ticket` to ask what's next.** It is the single canonical entry
+point for "what should I work on?" — it abstracts cc_queue.py today and will
+transparently switch to the ADC queue rack device when that ships.
+
+- `/query-ticket` — read-only, surfaces next ticket, never claims
+- `/sprint` (no args) → calls `/query-ticket` logic internally
+- Never call `cc_queue.py next` or `cc_queue.py list` directly to pick work
+
+The worker daemon (`worker_daemon.sh`) is **suspended** — no autonomous CC
+sprinting until the ADC queue device design is decided.
+
+---
+
 ## Hard rules
 
 - No SQLite. Postgres or flat-file only.
