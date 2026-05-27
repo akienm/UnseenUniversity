@@ -3,7 +3,7 @@ WebServerDevice — rack device for the unseen_university web server.
 
 Manages the Starlette/uvicorn web server (server.py) as a subprocess.
 Provides the web UI, WebSocket hub, agent registration, and dashboard API
-that were previously hosted by TheIgors/lab/claudecode/utility_closet_server.py.
+Manages the ADC web server subprocess.
 
 Port: ADC_WEB_PORT env var (falls back to IGOR_UC_PORT), default 8080.
 PID file: ~/.unseen_university/web_server.pid

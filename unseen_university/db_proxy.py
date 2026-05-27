@@ -2,8 +2,7 @@
 db.py — Full Postgres database proxy for unseen_university.
 
 Canonical home for DatabaseProxy infrastructure. No TheIgors imports, no SQLite.
-Both wild_igor/igor/memory/db_proxy.py and lab/utility_closet/db_proxy.py re-export
-from here.
+wild_igor/igor/memory/db_proxy.py re-exports from here.
 
 Callers:
     proxy = make_home_proxy()   # Igor's clan DB (IGOR_HOME_DB_URL)

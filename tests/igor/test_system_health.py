@@ -10,9 +10,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-
 # Import MachineRecord for building test fixtures
-from lab.utility_closet.machine_manager import MachineRecord
+from devices.igor.tools.machine_manager import MachineRecord
 
 
 def _machine(
@@ -72,10 +71,10 @@ def _call_endpoint(machines, healthy_map=None, in_use_map=None, override=""):
     fake_lock = threading.Lock()
 
     with patch(
-        "lab.utility_closet.machine_manager.get_ranked_machines", return_value=machines
+        "devices.igor.tools.machine_manager.get_ranked_machines", return_value=machines
     ):
         with patch(
-            "lab.utility_closet.machine_manager.is_in_use",
+            "devices.igor.tools.machine_manager.is_in_use",
             side_effect=lambda h: in_use_map.get(h, False),
         ):
             with patch("igor.cognition.cluster_router._health_cache", fake_cache):

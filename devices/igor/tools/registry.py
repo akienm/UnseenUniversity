@@ -1,8 +1,7 @@
-"""Tool + ToolRegistry + ToolStats — self-contained, no lab.utility_closet dependency.
+"""Tool + ToolRegistry + ToolStats — canonical UU tool registry.
 
-Migrated from lab/utility_closet/registry.py into UU so all devices can
-import without depending on the TheIgors repo. The AgentBase dependency
-now comes from the local agent_base module.
+Self-contained: all devices import from here.
+The AgentBase dependency comes from the local agent_base module.
 
 Tools are AI-agnostic: they describe their parameters once, and adapter
 methods (to_anthropic_schema / to_openai_schema / to_text_description)

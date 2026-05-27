@@ -218,7 +218,7 @@ class TestGetToolRegistryReport(unittest.TestCase):
         empty_reg = ToolRegistry()
         with mock.patch("devices.igor.tools.metrics.registry", empty_reg):
             # Patch the registry inside _get_tool_registry_report
-            import lab.utility_closet.registry as reg_mod
+            import devices.igor.tools.registry as reg_mod
 
             real_registry = reg_mod.registry
             reg_mod.registry = empty_reg
@@ -232,7 +232,7 @@ class TestGetToolRegistryReport(unittest.TestCase):
 
     def test_report_format_with_calls(self):
         from devices.igor.tools.registry import ToolRegistry, Tool
-        import lab.utility_closet.registry as reg_mod
+        import devices.igor.tools.registry as reg_mod
 
         test_reg = ToolRegistry()
         test_reg.register(

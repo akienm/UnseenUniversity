@@ -21,7 +21,7 @@ def _import_run_tests():
     # (test_tiered_research, test_tool_discovery_semantic).
     _stub_pkgs = [
         "devices.igor.tools",
-        "lab.utility_closet.registry",
+        "devices.igor.tools.registry",
         "devices.igor.memory",
         "devices.igor.paths",
     ]
@@ -33,7 +33,7 @@ def _import_run_tests():
             sys.modules[pkg] = types.ModuleType(pkg)
 
     # Stub registry so Tool/registry.register calls are no-ops
-    fake_registry_mod = types.ModuleType("lab.utility_closet.registry")
+    fake_registry_mod = types.ModuleType("devices.igor.tools.registry")
 
     class _Tool:
         def __init__(self, **kwargs):
@@ -45,7 +45,7 @@ def _import_run_tests():
 
     fake_registry_mod.Tool = _Tool
     fake_registry_mod.registry = _Registry()
-    sys.modules["lab.utility_closet.registry"] = fake_registry_mod
+    sys.modules["devices.igor.tools.registry"] = fake_registry_mod
 
     # Stub paths (unconditional — ops.py needs a callable paths at import time)
     fake_paths_mod = types.ModuleType("devices.igor.paths")

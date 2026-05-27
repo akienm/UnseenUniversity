@@ -3,9 +3,7 @@ ClaudeShim — manages Claude Code session presence on the rack.
 
 start():
   1. ADC health check: ping http://localhost:<ADC_WEB_PORT>/health.
-     If no response within 3s, subprocess-launch utility_closet_server.py
-     (path configured via ADC_SERVER_PATH env, default ~/TheIgors venv path).
-     Poll /health for up to 15s; log result either way.
+     If no response within 3s, start via WebServerDevice.
      ADC failure does NOT block CC startup — this step is advisory.
   2. Create CC.0 mailbox on the IMAP bus.
   3. Register a UserPromptSubmit hook in ~/.claude/settings.json that calls
@@ -17,7 +15,7 @@ stop():  Removes the YGM hook from settings.json (leaves CC.0 mailbox
 self_test(): Verifies hook is registered, settings.json is valid JSON,
              and ADC /health is reachable.
 
-Ownership rule: ClaudeShim never kills an ADC process it did not launch.
+Ownership rule: ClaudeShim never stops an ADC device it did not start.
 
 The hook calls:
   python3 -m devices.claude.ygm_check
@@ -31,11 +29,8 @@ from __future__ import annotations
 import json
 import logging
 import os
-import subprocess
-import time
 import urllib.error
 import urllib.request
-from pathlib import Path
 from typing import Optional
 
 from unseen_university.shim import BaseShim
@@ -44,16 +39,8 @@ from devices.claude.constants import GLOBAL_MAILBOX, get_session_mailbox
 log = logging.getLogger(__name__)
 
 # ── ADC health-check helpers ──────────────────────────────────────────────────
-# ADC web port (default 8080, overrideable via ADC_WEB_PORT for testing)
 _ADC_PORT = int(os.environ.get("ADC_WEB_PORT", "8080"))
 _ADC_HEALTH_URL = f"http://localhost:{_ADC_PORT}/health"
-
-# ADC server script path (configurable for portability; defaults to TheIgors location)
-_ADC_SERVER_PATH = os.environ.get(
-    "ADC_SERVER_PATH",
-    str(Path.home() / "TheIgors" / "lab" / "claudecode" / "utility_closet_server.py"),
-)
-_ADC_VENV_PYTHON = str(Path.home() / "TheIgors" / "venv" / "bin" / "python")
 
 
 def _check_adc_health(timeout_s: float = 3.0) -> bool:
@@ -119,8 +106,8 @@ class ClaudeShim(BaseShim):
 
     def __init__(self, imap_server=None) -> None:
         self._imap = imap_server
-        self._adc_process: Optional[subprocess.Popen] = None
         self._adc_owned: bool = False
+        self._adc_device = None
 
     @property
     def device_id(self) -> str:
@@ -128,9 +115,9 @@ class ClaudeShim(BaseShim):
 
     def _ensure_adc_running(self) -> bool:
         """
-        Ensure ADC (utility_closet_server) is running.
+        Ensure ADC web server is running via WebServerDevice.
 
-        Returns True if ADC is responding, False on timeout.
+        Returns True if ADC is responding, False on failure.
         Never raises — all errors are logged and False is returned.
         Caller must not block CC startup on a False return.
         """
@@ -140,45 +127,22 @@ class ClaudeShim(BaseShim):
                 self._adc_owned = False
                 return True
 
-            # ADC not responding — try to launch it
-            server_path = Path(_ADC_SERVER_PATH)
-            venv_python = Path(_ADC_VENV_PYTHON)
-            if not server_path.exists():
-                log.error("ADC server script not found at %s", server_path)
-                return False
-            if not venv_python.exists():
-                log.error("TheIgors venv Python not found at %s", venv_python)
-                return False
-
-            log.info("ADC not responding — launching %s", server_path)
-            env = os.environ.copy()
-            env["ADC_WEB_PORT"] = str(_ADC_PORT)
+            log.info("ADC not responding — starting via WebServerDevice")
             try:
-                self._adc_process = subprocess.Popen(
-                    [str(venv_python), str(server_path)],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    cwd=str(server_path.parent.parent.parent),
-                    env=env,
-                )
+                from devices.web_server.device import WebServerDevice
+
+                self._adc_device = WebServerDevice()
+                self._adc_device.start()
                 self._adc_owned = True
-                log.info("Launched ADC subprocess (PID %d)", self._adc_process.pid)
             except Exception as exc:
-                log.error("Failed to launch ADC subprocess: %s", exc)
+                log.error("Failed to start ADC via WebServerDevice: %s", exc)
                 return False
 
-            # Poll /health for up to 15s
-            start_time = time.monotonic()
-            deadline = 15.0
-            poll_interval = 0.5
-            while time.monotonic() - start_time < deadline:
-                if _check_adc_health(timeout_s=2.0):
-                    elapsed = time.monotonic() - start_time
-                    log.info("ADC came up after %.1f seconds", elapsed)
-                    return True
-                time.sleep(poll_interval)
+            if _check_adc_health(timeout_s=5.0):
+                log.info("ADC web server started successfully")
+                return True
 
-            log.error("ADC did not respond to /health within %d seconds", int(deadline))
+            log.error("ADC did not respond to /health after start()")
             return False
         except Exception as exc:
             log.error("_ensure_adc_running failed: %s", exc)

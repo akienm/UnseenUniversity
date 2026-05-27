@@ -61,7 +61,7 @@ class TestEvaluateGate:
         mock_registry = MagicMock()
         mock_registry.get.return_value = mock_tool
 
-        with patch("lab.utility_closet.registry.registry", mock_registry):
+        with patch("devices.igor.tools.registry.registry", mock_registry):
             should_gate, reason = evaluate_gate(gate, cortex, {"user_input": "test"})
         assert should_gate is True
         assert reason == "claim unverified"
@@ -78,7 +78,7 @@ class TestEvaluateGate:
         mock_registry = MagicMock()
         mock_registry.get.return_value = mock_tool
 
-        with patch("lab.utility_closet.registry.registry", mock_registry):
+        with patch("devices.igor.tools.registry.registry", mock_registry):
             should_gate, reason = evaluate_gate(gate, cortex, {"user_input": "test"})
         assert should_gate is False
         assert reason == "all clear"
@@ -95,7 +95,7 @@ class TestEvaluateGate:
         mock_registry = MagicMock()
         mock_registry.get.return_value = mock_tool
 
-        with patch("lab.utility_closet.registry.registry", mock_registry):
+        with patch("devices.igor.tools.registry.registry", mock_registry):
             should_gate, reason = evaluate_gate(gate, cortex, {"user_input": "test"})
         assert should_gate is False
         assert "evaluator_error" in reason
@@ -169,7 +169,7 @@ class TestDispatchGate:
         mock_registry = MagicMock()
         mock_registry.get.return_value = mock_tool
 
-        with patch("lab.utility_closet.registry.registry", mock_registry):
+        with patch("devices.igor.tools.registry.registry", mock_registry):
             result = dispatch_gate(gate, cortex, {"user_input": "test"})
         assert result["gated"] is False
         assert result["obs_id"] is None

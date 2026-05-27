@@ -25,8 +25,7 @@ sys.path.insert(0, str(Path.home() / "TheIgors"))
 def is_chat_server_up():
     """Probe localhost:8080 with a real HTTP request — TCP-connect alone is
     insufficient because other services may squat the port without speaking
-    HTTP (Igor's utility_closet_server is one such squatter). Any 2xx/3xx/4xx
-    HTTP response counts as "the chat server is reachable"; 5xx, timeouts,
+    HTTP. Any 2xx/3xx/4xx response counts as reachable; 5xx, timeouts,
     and connection failures all skip."""
     try:
         req = urllib.request.Request("http://localhost:8080/", method="GET")

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+#!/usr/bin/env python3
 """
-Utility Closet Server — D335: shared agent platform layer.
+ADC Web Server — shared agent platform layer.
 
 Standalone Starlette/uvicorn server that runs independently of any agent.
 Agents (Igor, future copilot, etc.) register as clients and push data.
@@ -26,12 +27,12 @@ Endpoints (agent — available when agent is registered):
   *    /api/agent/{id}/*      → proxied to agent's callback URL (future)
 
 Lifecycle:
-  - PID file at ~/.TheIgors/utility_closet.pid
+  - PID file at ADC_RUNTIME_ROOT/adc_web.pid
   - /health responds within 5s or considered stalled
   - Launchers (superclaude, igor) start this if not running
   - Second instance detects running/stalled via PID + health check
 
-Port: IGOR_UC_PORT env var, default 8080.
+Port: ADC_WEB_PORT env var (falls back to IGOR_UC_PORT), default 8080.
 """
 
 import asyncio
@@ -108,7 +109,6 @@ from starlette.websockets import WebSocket
 
 
 def get_logger(name: str) -> logging.Logger:
-    """stdlib logger with the same interface as lab.utility_closet.agent_base.get_logger."""
     return logging.getLogger(name)
 
 
@@ -165,56 +165,14 @@ _agents: dict = (
 _agents_lock = threading.Lock()
 _agent_stats: dict = {}  # agent_id → last stats dict pushed by agent
 
-# ── Comms module (T-uc-comms-default-channels) ──────────────────────────────
-# Initialized in _init_comms(). Provides channel routing for all UC messaging.
-_comms = None  # set by _init_comms()
+# ── Comms module ─────────────────────────────────────────────────────────────
+# Comms transport not yet migrated to UU — channel panel disabled.
+_comms = None  # reserved; set once comms migrates to UU
 
 
 def _init_comms():
-    """Initialize the comms module with default channels.
-
-    Optional — requires lab.utility_closet.comms (TheIgors dependency).
-    When unavailable (standalone unseen_university deployment), comms is
-    disabled and the web UI shows no channel panel.
-    """
-    global _comms
-    try:
-        from lab.utility_closet.comms import CommsModule, Delivery, Direction
-        from lab.utility_closet.transports.memory import MemoryTransport
-    except ImportError:
-        log.info("Comms: lab.utility_closet not available — channel panel disabled")
-        return
-
-    log_base = _RUNTIME_ROOT / "local" / "logs" / "comms"
-    _comms = CommsModule(log_base_dir=log_base)
-    _comms.set_default_transport(MemoryTransport())
-
-    try:
-        db_url = os.environ.get("IGOR_HOME_DB_URL")
-        if db_url:
-            from lab.utility_closet.transports.postgres import PostgresTransport
-
-            pg = PostgresTransport(db_url)
-            _comms.set_default_transport(pg)
-            log.info("Comms: Postgres transport active")
-    except Exception as exc:
-        log.warning("Comms: Postgres unavailable, using memory transport: %s", exc)
-
-    _comms.ensure_channel(
-        "comms://shared",
-        direction=Direction.READ_WRITE,
-        delivery=Delivery.PULL,
-        notify=False,
-        retention="1y",
-    )
-    _comms.ensure_channel(
-        "comms://akien/",
-        direction=Direction.READ_WRITE,
-        delivery=Delivery.PULL,
-        notify=False,
-        retention="1y",
-    )
-    log.info("Comms: initialized comms://shared + comms://akien/ channels")
+    log.info("Comms: not yet migrated to UU — channel panel disabled")
+    return
 
 
 # ── WebSocket session management ─────────────────────────────────────────────

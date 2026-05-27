@@ -4,11 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-import subprocess
-import tempfile
 import urllib.error
-from pathlib import Path
-from typing import Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -46,7 +42,7 @@ class TestClaudeShimEnsureADCRunning:
     """Tests for ClaudeShim._ensure_adc_running()."""
 
     def test_returns_true_when_adc_already_up(self):
-        """If ADC responds to /health, return True without launching subprocess."""
+        """If ADC responds to /health, return True without starting device."""
         with patch("devices.claude.shim._check_adc_health") as mock_health:
             mock_health.return_value = True
             shim = ClaudeShim()
@@ -54,89 +50,50 @@ class TestClaudeShimEnsureADCRunning:
             assert result is True
             assert shim._adc_owned is False
 
-    def test_returns_false_when_server_script_missing(self, tmp_path):
-        """If ADC is down and server script doesn't exist, return False."""
-        with (
-            patch("devices.claude.shim._check_adc_health") as mock_health,
-            patch(
-                "devices.claude.shim._ADC_SERVER_PATH",
-                str(tmp_path / "nonexistent.py"),
-            ),
-        ):
-            mock_health.return_value = False
-            shim = ClaudeShim()
-            result = shim._ensure_adc_running()
-            assert result is False
-
-    def test_returns_false_when_venv_python_missing(self, tmp_path):
-        """If ADC is down and venv Python doesn't exist, return False."""
-        fake_server = tmp_path / "utility_closet_server.py"
-        fake_server.write_text("# stub")
-        with (
-            patch("devices.claude.shim._check_adc_health") as mock_health,
-            patch("devices.claude.shim._ADC_SERVER_PATH", str(fake_server)),
-            patch(
-                "devices.claude.shim._ADC_VENV_PYTHON",
-                str(tmp_path / "no_python"),
-            ),
-        ):
-            mock_health.return_value = False
-            shim = ClaudeShim()
-            result = shim._ensure_adc_running()
-            assert result is False
-
-    def test_launches_subprocess_when_adc_down(self, tmp_path):
-        """If ADC is down and paths exist, subprocess.Popen should be called."""
-        fake_server = tmp_path / "utility_closet_server.py"
-        fake_server.write_text("# stub")
-        fake_python = tmp_path / "python"
-        fake_python.write_text("# stub")
-
-        mock_proc = MagicMock()
-        mock_proc.pid = 9999
-
+    def test_starts_web_server_device_when_adc_down(self):
+        """If ADC is down, start via WebServerDevice and verify health."""
+        mock_dev = MagicMock()
         call_count = [0]
 
         def health_sequence(timeout_s=3.0):
             call_count[0] += 1
             if call_count[0] == 1:
-                return False  # first call: ADC down, triggers launch
-            return True  # subsequent calls: ADC came up
+                return False  # first call: ADC down, triggers device start
+            return True  # second call: ADC came up
 
         with (
             patch("devices.claude.shim._check_adc_health", side_effect=health_sequence),
-            patch("devices.claude.shim._ADC_SERVER_PATH", str(fake_server)),
-            patch("devices.claude.shim._ADC_VENV_PYTHON", str(fake_python)),
-            patch("subprocess.Popen", return_value=mock_proc),
-            patch("time.sleep"),
+            patch("devices.web_server.device.WebServerDevice", return_value=mock_dev),
         ):
             shim = ClaudeShim()
             result = shim._ensure_adc_running()
 
         assert result is True
         assert shim._adc_owned is True
-        assert shim._adc_process is mock_proc
+        mock_dev.start.assert_called_once()
 
-    def test_returns_false_on_health_poll_timeout(self, tmp_path):
-        """If health never responds after launch, return False."""
-        fake_server = tmp_path / "utility_closet_server.py"
-        fake_server.write_text("# stub")
-        fake_python = tmp_path / "python"
-        fake_python.write_text("# stub")
-
-        mock_proc = MagicMock()
-        mock_proc.pid = 9999
+    def test_returns_false_when_device_start_raises(self):
+        """If WebServerDevice.start() raises, return False."""
+        mock_dev = MagicMock()
+        mock_dev.start.side_effect = RuntimeError("boom")
 
         with (
             patch("devices.claude.shim._check_adc_health", return_value=False),
-            patch("devices.claude.shim._ADC_SERVER_PATH", str(fake_server)),
-            patch("devices.claude.shim._ADC_VENV_PYTHON", str(fake_python)),
-            patch("subprocess.Popen", return_value=mock_proc),
-            patch("time.sleep"),
-            patch("time.monotonic") as mock_time,
+            patch("devices.web_server.device.WebServerDevice", return_value=mock_dev),
         ):
-            # Simulate time jumping past the 15s deadline immediately
-            mock_time.side_effect = [0.0, 16.0, 16.0]
+            shim = ClaudeShim()
+            result = shim._ensure_adc_running()
+
+        assert result is False
+
+    def test_returns_false_when_health_still_down_after_start(self):
+        """If device.start() succeeds but health never comes up, return False."""
+        mock_dev = MagicMock()
+
+        with (
+            patch("devices.claude.shim._check_adc_health", return_value=False),
+            patch("devices.web_server.device.WebServerDevice", return_value=mock_dev),
+        ):
             shim = ClaudeShim()
             result = shim._ensure_adc_running()
 
@@ -160,13 +117,13 @@ class TestClaudeShimStartWithADC:
 
     def test_start_proceeds_when_adc_down(self, tmp_path):
         """start() still registers hook even when ADC fails to come up."""
+        mock_dev = MagicMock()
+        mock_dev.start.side_effect = RuntimeError("no server")
         settings_path = tmp_path / "settings.json"
+
         with (
             patch("devices.claude.shim._check_adc_health", return_value=False),
-            patch(
-                "devices.claude.shim._ADC_SERVER_PATH",
-                str(tmp_path / "nonexistent.py"),
-            ),
+            patch("devices.web_server.device.WebServerDevice", return_value=mock_dev),
             patch("devices.claude.shim._SETTINGS_PATH", str(settings_path)),
         ):
             shim = ClaudeShim()

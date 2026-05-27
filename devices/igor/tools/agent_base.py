@@ -1,9 +1,6 @@
 """agent_base.py — Base class for UC-style agents.
 
-Migrated from lab/utility_closet/agent_base.py into UU so devices can
-import it without depending on the TheIgors repo.
-
-Original: T-uc-base-class-extract
+Base class for all UU devices and Igor tools.
 """
 
 import gc

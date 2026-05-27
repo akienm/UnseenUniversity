@@ -1,7 +1,7 @@
 """
-test_agent_base.py — T-uc-base-class-extract
+test_agent_base.py
 
-Tests for AgentBase (lab/utility_closet/agent_base.py) and the
+Tests for AgentBase (devices/igor/tools/agent_base.py) and the
 IgorBase thin subclass (devices/igor/igor_base.py).
 """
 
@@ -19,14 +19,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 class TestAgentBaseNaming:
     def test_get_name_returns_class_and_instance(self):
-        from lab.utility_closet.agent_base import AgentBase
+        from devices.igor.tools.agent_base import AgentBase
 
         obj = AgentBase()
         name = obj.get_name()
         assert "AgentBase:" in name
 
     def test_get_name_uses_subclass_name(self):
-        from lab.utility_closet.agent_base import AgentBase
+        from devices.igor.tools.agent_base import AgentBase
 
         class MyAgent(AgentBase):
             pass
@@ -35,7 +35,7 @@ class TestAgentBaseNaming:
         assert "MyAgent:" in my_agent.get_name()
 
     def test_instance_name_cached(self):
-        from lab.utility_closet.agent_base import AgentBase
+        from devices.igor.tools.agent_base import AgentBase
 
         obj = AgentBase()
         name1 = obj.get_name()
@@ -45,7 +45,7 @@ class TestAgentBaseNaming:
 
 class TestAgentBaseLogging:
     def test_log_property_returns_logger(self):
-        from lab.utility_closet.agent_base import AgentBase
+        from devices.igor.tools.agent_base import AgentBase
 
         obj = AgentBase()
         assert hasattr(obj.log, "debug")
@@ -54,7 +54,7 @@ class TestAgentBaseLogging:
         assert hasattr(obj.log, "error")
 
     def test_log_is_initialized_on_access(self):
-        from lab.utility_closet.agent_base import AgentBase
+        from devices.igor.tools.agent_base import AgentBase
 
         class FreshAgent(AgentBase):
             _logger = None  # explicit per-class logger slot
@@ -67,7 +67,7 @@ class TestAgentBaseLogging:
 
 class TestAgentBasePerf:
     def test_time_it_records_perf(self):
-        from lab.utility_closet.agent_base import AgentBase
+        from devices.igor.tools.agent_base import AgentBase
 
         obj = AgentBase()
         with obj.time_it("test_op"):
@@ -76,7 +76,7 @@ class TestAgentBasePerf:
         assert len(obj._perf_history["test_op"]) == 1
 
     def test_record_perf_caps_at_200(self):
-        from lab.utility_closet.agent_base import AgentBase
+        from devices.igor.tools.agent_base import AgentBase
 
         obj = AgentBase()
         for i in range(250):
@@ -84,7 +84,7 @@ class TestAgentBasePerf:
         assert len(obj._perf_history["flood"]) == 200
 
     def test_perf_summary_format(self):
-        from lab.utility_closet.agent_base import AgentBase
+        from devices.igor.tools.agent_base import AgentBase
 
         obj = AgentBase()
         for i in range(10):
@@ -95,14 +95,14 @@ class TestAgentBasePerf:
         assert "test_label" in summary
 
     def test_perf_summary_no_data(self):
-        from lab.utility_closet.agent_base import AgentBase
+        from devices.igor.tools.agent_base import AgentBase
 
         obj = AgentBase()
         summary = obj._perf_summary()
         assert "no perf data" in summary
 
     def test_record_perf_writes_to_log_dir(self):
-        from lab.utility_closet.agent_base import AgentBase
+        from devices.igor.tools.agent_base import AgentBase
 
         with tempfile.TemporaryDirectory() as tmpdir:
             obj = AgentBase(log_dir=Path(tmpdir))
@@ -114,7 +114,7 @@ class TestAgentBasePerf:
             assert "42.5ms" in content
 
     def test_record_perf_no_file_without_log_dir(self):
-        from lab.utility_closet.agent_base import AgentBase
+        from devices.igor.tools.agent_base import AgentBase
 
         obj = AgentBase()  # no log_dir
         obj.record_perf("mem_only", 10.0)
@@ -124,7 +124,7 @@ class TestAgentBasePerf:
 
 class TestAgentBaseDebug:
     def test_dump(self):
-        from lab.utility_closet.agent_base import AgentBase
+        from devices.igor.tools.agent_base import AgentBase
 
         obj = AgentBase()
         obj.custom_attr = "hello"
@@ -134,7 +134,7 @@ class TestAgentBaseDebug:
         assert "AgentBase:" in d
 
     def test_dump_truncates_long_values(self):
-        from lab.utility_closet.agent_base import AgentBase
+        from devices.igor.tools.agent_base import AgentBase
 
         obj = AgentBase()
         obj.big = "x" * 200
@@ -142,7 +142,7 @@ class TestAgentBaseDebug:
         assert "..." in d
 
     def test_get_caller(self):
-        from lab.utility_closet.agent_base import AgentBase
+        from devices.igor.tools.agent_base import AgentBase
 
         obj = AgentBase()
         caller = obj._get_caller(depth=1)
@@ -151,21 +151,21 @@ class TestAgentBaseDebug:
 
 class TestAgentBaseInit:
     def test_zero_args_init(self):
-        from lab.utility_closet.agent_base import AgentBase
+        from devices.igor.tools.agent_base import AgentBase
 
         obj = AgentBase()
         assert obj._log_dir is None
         assert isinstance(obj._perf_history, dict)
 
     def test_custom_log_dir(self):
-        from lab.utility_closet.agent_base import AgentBase
+        from devices.igor.tools.agent_base import AgentBase
 
         obj = AgentBase(log_dir=Path("/tmp/test_logs"))
         assert obj._log_dir == Path("/tmp/test_logs")
 
     def test_lazy_perf_history(self):
         """Subclasses that skip super().__init__ still work."""
-        from lab.utility_closet.agent_base import AgentBase
+        from devices.igor.tools.agent_base import AgentBase
 
         class SkipInit(AgentBase):
             def __init__(self):

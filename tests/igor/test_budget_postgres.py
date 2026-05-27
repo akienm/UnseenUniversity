@@ -36,7 +36,7 @@ def tag():
 def cleanup_tag(tag):
     """Yields the tag, then sweeps spend/config/history rows that match it."""
     yield tag
-    from lab.utility_closet.budget import _db_proxy
+    from devices.igor.tools.resource_manager import _db_proxy
 
     with _db_proxy()() as c:
         c.execute("DELETE FROM spend WHERE note LIKE %s", (f"%{tag}%",))
@@ -45,7 +45,7 @@ def cleanup_tag(tag):
 
 
 def test_record_spend_inserts_and_sums(cleanup_tag):
-    from lab.utility_closet.budget import record_spend, get_spend_total
+    from devices.igor.tools.resource_manager import record_spend, get_spend_total
 
     before = get_spend_total()
     record_spend(0.0001, "test-model-a", f"row1-{cleanup_tag}")
@@ -55,7 +55,7 @@ def test_record_spend_inserts_and_sums(cleanup_tag):
 
 
 def test_set_and_get_spending_cap(cleanup_tag):
-    from lab.utility_closet.budget import _db_proxy
+    from devices.igor.tools.resource_manager import _db_proxy
 
     key = f"spending_cap_{cleanup_tag}"
     with _db_proxy()() as c:
@@ -71,7 +71,7 @@ def test_set_and_get_spending_cap(cleanup_tag):
 
 def test_balance_history_round_trip(cleanup_tag):
     """Insert rows with sentinel-cleanup balance, read them back."""
-    from lab.utility_closet.budget import _db_proxy
+    from devices.igor.tools.resource_manager import _db_proxy
 
     sentinel = -999999.5  # cleanup_tag fixture sweeps balance < -999999.0
     now = datetime.now()
@@ -95,7 +95,7 @@ def test_balance_history_round_trip(cleanup_tag):
 
 def test_get_balance_trajectory_returns_dict_shape():
     """Shape check: trajectory dict has expected keys and types."""
-    from lab.utility_closet.budget import get_balance_trajectory
+    from devices.igor.tools.resource_manager import get_balance_trajectory
 
     traj = get_balance_trajectory(window_hours=24.0)
     assert "trend" in traj
@@ -107,7 +107,7 @@ def test_get_balance_trajectory_returns_dict_shape():
 
 
 def test_db_proxy_is_singleton():
-    from lab.utility_closet.budget import _db_proxy
+    from devices.igor.tools.resource_manager import _db_proxy
 
     a = _db_proxy()
     b = _db_proxy()
@@ -117,7 +117,7 @@ def test_db_proxy_is_singleton():
 def test_query_costs_log_handles_missing_file(tmp_path, monkeypatch):
     """When costs.log is absent, returns a zero-spend dict with a note."""
     import devices.igor.paths as paths_mod
-    from lab.utility_closet.budget import query_costs_log
+    from devices.igor.tools.resource_manager import query_costs_log
 
     class _FakePaths:
         @property

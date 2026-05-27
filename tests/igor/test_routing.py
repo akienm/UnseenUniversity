@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 
-from lab.utility_closet.machine_manager import MachineRecord
+from devices.igor.tools.machine_manager import MachineRecord
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -83,14 +83,13 @@ class TestIsInUse(unittest.TestCase):
     """Tests for machine_manager.is_in_use — mocks get_machine."""
 
     def _run(self, m: MachineRecord) -> bool:
-        # is_in_use lives in lab.utility_closet.machine_manager (the shim in
-        # igor.cognition.machine_manager only re-exports). Internal calls to
+        # is_in_use lives in devices.igor.tools.machine_manager. Internal calls to
         # get_machine / _write_override resolve in the canonical module's
-        # namespace — patch THERE, not on the shim.
-        from lab.utility_closet.machine_manager import is_in_use
+        # namespace — patch THERE, not on any re-export shim.
+        from devices.igor.tools.machine_manager import is_in_use
 
-        with patch("lab.utility_closet.machine_manager.get_machine", return_value=m):
-            with patch("lab.utility_closet.machine_manager._write_override"):
+        with patch("devices.igor.tools.machine_manager.get_machine", return_value=m):
+            with patch("devices.igor.tools.machine_manager._write_override"):
                 return is_in_use(m.hostname)
 
     def test_no_hours_no_override_available(self):
@@ -132,9 +131,9 @@ class TestIsInUse(unittest.TestCase):
             self.assertFalse(self._run(m))
 
     def test_unknown_host_returns_false(self):
-        from lab.utility_closet.machine_manager import is_in_use
+        from devices.igor.tools.machine_manager import is_in_use
 
-        with patch("lab.utility_closet.machine_manager.get_machine", return_value=None):
+        with patch("devices.igor.tools.machine_manager.get_machine", return_value=None):
             self.assertFalse(is_in_use("nonexistent"))
 
 
@@ -143,30 +142,30 @@ class TestIsInUse(unittest.TestCase):
 
 class TestResolveAlias(unittest.TestCase):
     def test_hostname_match(self):
-        from lab.utility_closet.machine_manager import resolve_alias
+        from devices.igor.tools.machine_manager import resolve_alias
 
         m = _machine(hostname="akiendell", aliases=["the dell", "my desktop"])
         with patch(
-            "lab.utility_closet.machine_manager.get_ranked_machines", return_value=[m]
+            "devices.igor.tools.machine_manager.get_ranked_machines", return_value=[m]
         ):
             self.assertEqual(resolve_alias("akiendell"), "akiendell")
 
     def test_alias_match(self):
-        from lab.utility_closet.machine_manager import resolve_alias
+        from devices.igor.tools.machine_manager import resolve_alias
 
         m = _machine(hostname="akiendell", aliases=["the dell", "my desktop"])
         with patch(
-            "lab.utility_closet.machine_manager.get_ranked_machines", return_value=[m]
+            "devices.igor.tools.machine_manager.get_ranked_machines", return_value=[m]
         ):
             self.assertEqual(resolve_alias("the dell"), "akiendell")
             self.assertEqual(resolve_alias("MY DESKTOP"), "akiendell")
 
     def test_no_match_returns_none(self):
-        from lab.utility_closet.machine_manager import resolve_alias
+        from devices.igor.tools.machine_manager import resolve_alias
 
         m = _machine(hostname="akiendell", aliases=["the dell"])
         with patch(
-            "lab.utility_closet.machine_manager.get_ranked_machines", return_value=[m]
+            "devices.igor.tools.machine_manager.get_ranked_machines", return_value=[m]
         ):
             self.assertIsNone(resolve_alias("yoga"))
 
@@ -192,14 +191,14 @@ class TestRoute(unittest.TestCase):
             m = next((x for x in machines if x.hostname == hostname), None)
             if m is None:
                 return False
-            # Canonical impl lives in lab.utility_closet.machine_manager; patch
+            # Canonical impl lives in devices.igor.tools.machine_manager; patch
             # there so internal get_machine / _write_override lookups resolve.
-            from lab.utility_closet.machine_manager import is_in_use as _real
+            from devices.igor.tools.machine_manager import is_in_use as _real
 
             with patch(
-                "lab.utility_closet.machine_manager.get_machine", return_value=m
+                "devices.igor.tools.machine_manager.get_machine", return_value=m
             ):
-                with patch("lab.utility_closet.machine_manager._write_override"):
+                with patch("devices.igor.tools.machine_manager._write_override"):
                     return _real(hostname)
 
         with patch(

@@ -10,7 +10,7 @@ import os
 
 import pytest
 
-from lab.utility_closet.table_inertia import (
+from devices.igor.tools.table_inertia import (
     HIGH,
     LOW,
     MEDIUM,
@@ -85,7 +85,7 @@ class TestMachineManagerIntegration:
             pytest.skip("IGOR_HOME_DB_URL not set; skipping DB integration test")
 
     def test_machines_inertia_returns_table_inertia(self):
-        from lab.utility_closet.machine_manager import machines_inertia
+        from devices.igor.tools.machine_manager import machines_inertia
 
         r = machines_inertia()
         assert isinstance(r, TableInertia)
@@ -93,6 +93,6 @@ class TestMachineManagerIntegration:
         assert r.row_count >= 0
 
     def test_machines_row_count_nonnegative(self):
-        from lab.utility_closet.machine_manager import machines_row_count
+        from devices.igor.tools.machine_manager import machines_row_count
 
         assert machines_row_count() >= 0
