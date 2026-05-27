@@ -12,6 +12,7 @@ Usage:
 
     log_path  = paths().logs / "errors.log"
     inbox_dir = paths().instance / "inbox"
+# tags: Infrastructure
 """
 
 from __future__ import annotations

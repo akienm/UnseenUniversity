@@ -4,6 +4,7 @@ Creates the starting memories that every Igor begins with.
 These have the highest inertia and are always active.
 
 Updated 2026-04-29T17:08:53Z
+# tags: Cognition, Memory, SmallCompute
 """
 
 from ..memory.models import Memory, MemoryType

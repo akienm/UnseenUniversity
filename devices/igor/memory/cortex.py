@@ -152,6 +152,7 @@ If you want to change:
   - TWM size/TTL        — edit TWM_MAX, TWM_TTL_EXTENSION_SECONDS
 
 Updated 2026-04-29T17:08:53Z
+# tags: Memory, Cognition
 """
 
 import logging

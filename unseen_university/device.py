@@ -7,6 +7,7 @@ The rack calls these methods for health rollup, lifecycle management, and routin
 Return shapes are intentionally loose dicts rather than typed dataclasses so that
 devices can include extra fields without breaking the rack. The rigid keywords are
 documented per method; extra keys are allowed.
+# tags: Architecture, Infrastructure
 """
 
 from __future__ import annotations

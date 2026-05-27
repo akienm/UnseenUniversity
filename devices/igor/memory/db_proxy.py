@@ -3,6 +3,7 @@ db_proxy.py — Re-export shim.
 
 Canonical implementation lives in unseen_university.db_proxy (T-db-proxy-igor-canonical).
 This shim re-exports all public names so existing imports continue to work.
+# tags: Memory, Infrastructure
 """
 
 from unseen_university.db_proxy import (  # noqa: F401

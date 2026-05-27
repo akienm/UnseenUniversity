@@ -184,6 +184,7 @@ If you want to change:
                                    (HIGH inertia — discuss first).
 
 Updated 2026-04-29T17:08:53Z
+# tags: Cognition, Architecture
 """
 
 import logging

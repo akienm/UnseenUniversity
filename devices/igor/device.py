@@ -11,6 +11,7 @@ Configuration via environment variables:
   IGOR_TMUX_SESSION    — tmux session name Igor runs in (default: igor)
   IGOR_HOME            — Igor runtime dir (default: ~/.TheIgors/Igor-wild-0001)
   IGOR_LAUNCHER        — path to igor launcher script (default: igor)
+# tags: Architecture, Infrastructure
 """
 
 from __future__ import annotations

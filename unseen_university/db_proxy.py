@@ -12,6 +12,7 @@ Callers:
 
     with proxy() as conn:
         conn.execute("SELECT ...")
+# tags: Infrastructure, Memory
 """
 
 from __future__ import annotations

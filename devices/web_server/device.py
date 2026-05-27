@@ -7,6 +7,7 @@ Manages the ADC web server subprocess.
 
 Port: ADC_WEB_PORT env var (falls back to IGOR_UC_PORT), default 8080.
 PID file: ~/.unseen_university/web_server.pid
+# tags: Infrastructure, Platform
 """
 
 from __future__ import annotations

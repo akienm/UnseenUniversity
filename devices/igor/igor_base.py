@@ -17,6 +17,7 @@ Adds for backward compat with existing IgorBase subclasses:
 stdlib → loguru intercept: installed once at module import so all
 logging.getLogger() calls from existing Igor code flow through loguru
 and hit the DiagnosticBase JSON file sink automatically.
+# tags: Architecture, Cognition
 """
 
 import json as _json
