@@ -59,11 +59,19 @@ class AkienShim(BaseShim):
     def who_am_i(self) -> dict:
         """Return identity and address information for this device."""
         return {
-            "device_id": DEVICE_ID,
+            "id": DEVICE_ID,
             "address": ADDRESS,
-            "data_root": str(_DATA_ROOT),
-            "inbox": str(_DATA_ROOT / "inbox"),
-            "outbox": str(_DATA_ROOT / "outbox"),
-            "ideas": str(_DATA_ROOT / "ideas"),
-            "kind": "human",
+            "entity_type": "human",
+            "data_home": str(_DATA_ROOT),
+            "channels": {
+                "inbox": "comms://akien/inbox",
+                "outbox": "comms://akien/outbox",
+                "ideas": "comms://akien/ideas",
+            },
+            "online": False,
         }
+
+
+def who_am_i() -> dict:
+    """Module-level access to identity information."""
+    return AkienShim().who_am_i()
