@@ -205,24 +205,6 @@ class TestReaderDeviceSummary:
 
         assert result == {"exec": "", "detail": "", "chunks": []}
 
-    def test_format_nodes_raises_not_implemented(self, tmp_path):
-        device = self._make_device()
-        with patch("devices.reader.device.fetch_uri") as mock_fetch:
-            from devices.reader.uri import FetchResult
-
-            mock_fetch.return_value = FetchResult(
-                uri="file:///test.txt",
-                content="some text",
-                sha256="aaa",
-                content_type="text/plain",
-                size_bytes=9,
-                from_cache=False,
-                blob_path=None,
-                fetched_at="2026-01-01T00:00:00+00:00",
-            )
-            with pytest.raises(NotImplementedError, match="T-reader-node-mode"):
-                device.read("file:///test.txt", format="nodes")
-
     def test_unknown_format_raises_value_error(self, tmp_path):
         device = self._make_device()
         with pytest.raises(ValueError, match="Unknown format"):

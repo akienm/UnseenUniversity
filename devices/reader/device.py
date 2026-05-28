@@ -134,17 +134,31 @@ class ReaderDevice(BaseDevice):
         Returns:
             dict for format='summary', list for format='nodes'.
         """
-        if format == "nodes":
-            raise NotImplementedError(
-                "format='nodes' is implemented in T-reader-node-mode"
-            )
-        if format != "summary":
+        if format not in ("summary", "nodes"):
             raise ValueError(
                 f"Unknown format {format!r}. Supported: 'summary', 'nodes'"
             )
 
         result = fetch_uri(uri, force_refresh=force_refresh)
+        if format == "nodes":
+            return self._apply_nodes_mode(result)
         return self._apply_summary_mode(result)
+
+    def _apply_nodes_mode(self, result: FetchResult) -> list[dict]:
+        """Run nodes output mode on a fetched FetchResult."""
+        if not result.content:
+            log.info(
+                "reader nodes: empty content for %s (binary format %s)",
+                result.uri,
+                result.content_type,
+            )
+            return []
+
+        from .chunker import chunk_text
+        from .node_extractor import extract_nodes
+
+        chunks = chunk_text(result.content)
+        return extract_nodes(chunks, result.uri, self._get_inference())
 
     def _apply_summary_mode(self, result: FetchResult) -> SummaryResult:
         """Run summary output mode on a fetched FetchResult."""

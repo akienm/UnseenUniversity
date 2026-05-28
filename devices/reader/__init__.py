@@ -9,6 +9,7 @@ T-reader-node-mode: format=nodes output (not yet implemented).
 from .blob_cache import BlobCache, BlobEntry
 from .chunker import chunk_text
 from .device import ReaderDevice
+from .node_extractor import extract_nodes
 from .uri import FetchResult, fetch_uri
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "BlobEntry",
     "chunk_text",
     "ReaderDevice",
+    "extract_nodes",
 ]
