@@ -111,17 +111,35 @@ def memory_search(query: str, limit: int = 5, **_) -> str:
     waiting for a deferred task. For large background lookups use
     DEFERRED_TASK|memory_search|<query> instead.
     """
+    import time
+    from datetime import datetime
+
     try:
         from ..memory.cortex import Cortex
 
         cortex = Cortex(None)
+        _t0 = time.monotonic()
         results = cortex.search(query, limit=int(limit))
+        _latency_ms = (time.monotonic() - _t0) * 1000.0
         if not results:
+            logger.debug(
+                "memory_search: query=%r hits=0 latency_ms=%.0f", query, _latency_ms
+            )
             return f"memory_search({query!r}): no results"
-        lines = [f"memory_search({query!r}): {len(results)} hit(s)"]
+        _now = datetime.now()
+        lines = [
+            f"memory_search({query!r}): {len(results)} hit(s) ({_latency_ms:.0f}ms)"
+        ]
         for m in results:
-            lines.append(f"  [{m.memory_type}] {m.id} — {m.narrative[:120]}")
-        logger.debug("memory_search: query=%r hits=%d", query, len(results))
+            _age_days = (_now - m.timestamp).days if m.timestamp else None
+            _age_str = f" age={_age_days}d" if _age_days is not None else ""
+            lines.append(f"  [{m.memory_type}] {m.id}{_age_str} — {m.narrative[:120]}")
+        logger.debug(
+            "memory_search: query=%r hits=%d latency_ms=%.0f",
+            query,
+            len(results),
+            _latency_ms,
+        )
         return "\n".join(lines)
     except Exception as e:
         logger.warning("memory_search: error — %s", e)
