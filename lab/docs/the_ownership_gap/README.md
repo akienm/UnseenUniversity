@@ -1,6 +1,6 @@
 # The Ownership Gap: Compiled Inference and the New Economics of AI Development
 
-*Akien Maciain*
+*Akien Maciain (With help from Claude)*
 
 ---
 
