@@ -1,0 +1,150 @@
+#!/usr/bin/env python3
+"""igor — Igor cognitive AI launcher.
+
+Bootstraps venv, discovers which Igor instance to start, then delegates to
+devices/igor/setup_assets/installer.py (restart loop + config hydration).
+
+Instance discovery (no env var required):
+  0 instances found  → fresh-install wizard (ask name + optional DB URL)
+  1 instance found   → start it, no prompt
+  >1 instances found → list choices, prompt user
+  --id flag          → override discovery
+
+Usage:
+  ./igor                    # auto-discover instance
+  ./igor --id Igor-custom   # force a specific instance
+  ./igor --help
+"""
+
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+UU_ROOT = Path(__file__).resolve().parent
+VENV_DIR = UU_ROOT / ".venv"
+_BIN = "Scripts" if sys.platform == "win32" else "bin"
+_EXT = ".exe" if sys.platform == "win32" else ""
+VENV_PYTHON = VENV_DIR / _BIN / f"python{_EXT}"
+
+_RUNTIME_ROOT = Path(
+    os.environ.get("UU_RUNTIME_ROOT") or Path.home() / ".unseen_university"
+)
+
+
+# ── Bootstrap ─────────────────────────────────────────────────────────────────
+
+
+def _bootstrap() -> None:
+    if VENV_DIR.exists() and VENV_PYTHON.exists():
+        return
+    print("igor: first run — bootstrapping venv")
+    try:
+        subprocess.run(["uv", "venv", str(VENV_DIR)], check=True, cwd=UU_ROOT)
+        subprocess.run(
+            ["uv", "pip", "install", "--python", str(VENV_PYTHON), "-e", str(UU_ROOT)],
+            check=True,
+            cwd=UU_ROOT,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        subprocess.run([sys.executable, "-m", "venv", str(VENV_DIR)], check=True)
+        subprocess.run(
+            [str(VENV_PYTHON), "-m", "pip", "install", "-e", str(UU_ROOT)], check=True
+        )
+    print("igor: bootstrap complete")
+
+
+# ── Instance discovery ────────────────────────────────────────────────────────
+
+
+def _fresh_install_wizard() -> str:
+    print()
+    print("╔══════════════════════════════════════════════════════════╗")
+    print("║  Igor — first-time setup                                 ║")
+    print("╚══════════════════════════════════════════════════════════╝")
+    print()
+    name = input("Instance name [Igor-wild-0001]: ").strip() or "Igor-wild-0001"
+    db_url = input("Postgres DB URL (leave blank to configure later): ").strip()
+
+    instance_dir = _RUNTIME_ROOT / name
+    instance_dir.mkdir(parents=True, exist_ok=True)
+
+    if db_url:
+        cfg_path = instance_dir / "igor.cfg"
+        cfg_path.write_text(f"[igor]\nIGOR_HOME_DB_URL={db_url}\n", encoding="utf-8")
+        print(f"igor: config written to {cfg_path}")
+
+    print(f"igor: instance '{name}' created at {instance_dir}")
+    print()
+    return name
+
+
+def _discover_instance(id_override: "str | None") -> str:
+    if id_override:
+        return id_override
+
+    instances = sorted(_RUNTIME_ROOT.glob("Igor-*"))
+    instances = [p for p in instances if p.is_dir()]
+
+    if len(instances) == 0:
+        return _fresh_install_wizard()
+
+    if len(instances) == 1:
+        return instances[0].name
+
+    print("Multiple Igor instances found:")
+    for i, inst in enumerate(instances, 1):
+        print(f"  {i}. {inst.name}")
+    choice = input("Which instance? [1]: ").strip() or "1"
+    try:
+        idx = int(choice) - 1
+        if 0 <= idx < len(instances):
+            return instances[idx].name
+    except ValueError:
+        pass
+    print(f"igor: invalid choice '{choice}', using {instances[0].name}")
+    return instances[0].name
+
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+
+
+def main() -> None:
+    args = sys.argv[1:]
+
+    if "--help" in args or "-h" in args:
+        print(__doc__)
+        sys.exit(0)
+
+    # Re-exec under venv python if not already there
+    if Path(sys.executable).resolve() != VENV_PYTHON.resolve():
+        _bootstrap()
+        if VENV_PYTHON.exists():
+            os.execv(str(VENV_PYTHON), [str(VENV_PYTHON), __file__] + args)
+
+    # Parse --id flag; pass remaining args through to installer
+    id_override = None
+    remaining = []
+    i = 0
+    while i < len(args):
+        if args[i] == "--id" and i + 1 < len(args):
+            id_override = args[i + 1]
+            i += 2
+        elif args[i].startswith("--id="):
+            id_override = args[i].split("=", 1)[1]
+            i += 1
+        else:
+            remaining.append(args[i])
+            i += 1
+
+    instance_id = _discover_instance(id_override)
+    os.environ["IGOR_INSTANCE_ID"] = instance_id
+    os.environ["IGOR_RUNTIME_ROOT"] = str(_RUNTIME_ROOT)
+
+    installer = UU_ROOT / "devices" / "igor" / "setup_assets" / "installer.py"
+    installer_args = ["--id", instance_id] + remaining
+    os.execv(str(VENV_PYTHON), [str(VENV_PYTHON), str(installer)] + installer_args)
+
+
+if __name__ == "__main__":
+    main()
