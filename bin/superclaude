@@ -168,14 +168,23 @@ start_rack_server
 CLAUDE_TMUX_SESSION="${CLAUDE_TMUX_SESSION:-claude-main}"
 export CLAUDE_TMUX_SESSION
 
+# Unique session name: hostname-yymmdd.HHMMSS — used for both display name
+# and remote-control handle so Igor/tools can reach this session by name.
+SESSION_NAME="$(hostname)-$(date +%y%m%d.%H%M%S)"
+
 if [[ -n "${TMUX:-}" ]]; then
     # Already inside tmux — launch directly
-    exec claude --dangerously-skip-permissions -n "$(hostname)" "$@"
+    exec claude --dangerously-skip-permissions \
+        -n "$SESSION_NAME" \
+        --remote-control "$SESSION_NAME" \
+        "$@"
 else
     # Outside tmux — create session (or reuse) and launch Claude inside it
     tmux new-session -d -s "$CLAUDE_TMUX_SESSION" 2>/dev/null || true
     # Build the command string with proper quoting
     CLAUDE_CMD="cd $(printf '%q' "$PWD") && claude --dangerously-skip-permissions"
+    CLAUDE_CMD+=" -n $(printf '%q' "$SESSION_NAME")"
+    CLAUDE_CMD+=" --remote-control $(printf '%q' "$SESSION_NAME")"
     for arg in "$@"; do
         CLAUDE_CMD+=" $(printf '%q' "$arg")"
     done
