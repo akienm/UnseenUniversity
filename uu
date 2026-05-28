@@ -1,0 +1,166 @@
+#!/usr/bin/env python3
+"""uu — Unseen University chat launcher.
+
+Bootstraps venv, reads frontend config, then opens a chat interface
+connected to Librarian. Any agent can be surfaced the same way by
+changing uu.cfg default_frontend.
+
+Usage:
+  ./uu                          # use uu.cfg default_frontend (librarian)
+  ./uu --frontend=terminal      # force terminal REPL
+  ./uu --frontend=web           # open browser to web server UI
+  ./uu --help
+"""
+
+import configparser
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+UU_ROOT = Path(__file__).resolve().parent
+VENV_DIR = UU_ROOT / ".venv"
+_BIN = "Scripts" if sys.platform == "win32" else "bin"
+_EXT = ".exe" if sys.platform == "win32" else ""
+VENV_PYTHON = VENV_DIR / _BIN / f"python{_EXT}"
+
+_RUNTIME_ROOT = Path(os.environ.get("UU_RUNTIME_ROOT") or Path.home() / ".unseen_university")
+_GLOBAL_CFG = _RUNTIME_ROOT / "uu.cfg"
+_LIBRARIAN_CFG = _RUNTIME_ROOT / "Librarian" / "config.cfg"
+
+
+# ── Bootstrap ─────────────────────────────────────────────────────────────────
+
+
+def _bootstrap() -> None:
+    if VENV_DIR.exists() and VENV_PYTHON.exists():
+        return
+    print("uu: first run — bootstrapping venv")
+    try:
+        subprocess.run(["uv", "venv", str(VENV_DIR)], check=True, cwd=UU_ROOT)
+        subprocess.run(
+            ["uv", "pip", "install", "--python", str(VENV_PYTHON), "-e", str(UU_ROOT)],
+            check=True, cwd=UU_ROOT,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        subprocess.run([sys.executable, "-m", "venv", str(VENV_DIR)], check=True)
+        subprocess.run([str(VENV_PYTHON), "-m", "pip", "install", "-e", str(UU_ROOT)], check=True)
+    print("uu: bootstrap complete")
+
+
+# ── Config ────────────────────────────────────────────────────────────────────
+
+
+def _read_config() -> configparser.ConfigParser:
+    cfg = configparser.ConfigParser()
+    cfg.read_dict({"uu": {"default_frontend": "terminal"}})
+    for path in (_GLOBAL_CFG, _LIBRARIAN_CFG):
+        if path.exists():
+            cfg.read(str(path))
+    return cfg
+
+
+def _frontend(cfg: configparser.ConfigParser, override: "str | None") -> str:
+    if override:
+        return override
+    try:
+        return cfg.get("uu", "default_frontend")
+    except (configparser.NoSectionError, configparser.NoOptionError):
+        return "terminal"
+
+
+# ── Web frontend ──────────────────────────────────────────────────────────────
+
+
+def _launch_web(cfg: configparser.ConfigParser) -> None:
+    port = int(
+        os.environ.get("ADC_WEB_PORT")
+        or os.environ.get("IGOR_UC_PORT")
+        or "8080"
+    )
+    url = f"http://localhost:{port}/"
+    print(f"uu: opening web UI at {url}")
+    import webbrowser
+    webbrowser.open(url)
+
+
+# ── Terminal frontend ─────────────────────────────────────────────────────────
+
+
+def _launch_terminal(cfg: configparser.ConfigParser) -> None:
+    """Simple stdin/stdout REPL that routes queries through Librarian's channel."""
+    # Try to import channel tooling; degrade gracefully if unavailable.
+    try:
+        sys.path.insert(0, str(UU_ROOT))
+        sys.path.insert(0, str(Path.home() / "TheIgors"))
+        from lab.claudecode.channel import post_to_channel, read_channel
+
+        def _ask(question: str) -> str:
+            post_to_channel("librarian", "uu", f"RECALL:{question}")
+            import time
+            deadline = time.time() + 10
+            while time.time() < deadline:
+                msgs = read_channel("librarian", after_ts=time.time() - 0.5)
+                for ts, sender, body in (msgs or []):
+                    if sender != "uu":
+                        return body
+                time.sleep(0.5)
+            return "(no response from Librarian — is it running?)"
+
+    except ImportError:
+        def _ask(question: str) -> str:
+            return "(Librarian not available — channel tooling not found)"
+
+    print("uu — Unseen University (Librarian chat)")
+    print("Type 'quit' or Ctrl-D to exit.\n")
+    while True:
+        try:
+            line = input("you: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            break
+        if not line:
+            continue
+        if line.lower() in ("quit", "exit", "bye"):
+            break
+        response = _ask(line)
+        print(f"librarian: {response}\n")
+
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+
+
+def main() -> None:
+    args = sys.argv[1:]
+
+    if "--help" in args or "-h" in args:
+        print(__doc__)
+        sys.exit(0)
+
+    # Re-exec under venv python if not already there
+    if Path(sys.executable).resolve() != VENV_PYTHON.resolve():
+        _bootstrap()
+        if VENV_PYTHON.exists():
+            os.execv(str(VENV_PYTHON), [str(VENV_PYTHON), __file__] + args)
+        # If venv python not available, continue with system python
+
+    # Parse --frontend flag
+    frontend_override = None
+    remaining = []
+    for arg in args:
+        if arg.startswith("--frontend="):
+            frontend_override = arg.split("=", 1)[1]
+        else:
+            remaining.append(arg)
+
+    cfg = _read_config()
+    frontend = _frontend(cfg, frontend_override)
+
+    if frontend == "web":
+        _launch_web(cfg)
+    else:
+        _launch_terminal(cfg)
+
+
+if __name__ == "__main__":
+    main()
