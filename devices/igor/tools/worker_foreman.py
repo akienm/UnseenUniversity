@@ -13,9 +13,7 @@ Tools registered:
 import json
 import logging
 import os
-import subprocess
 from datetime import datetime, timezone
-from pathlib import Path
 
 _log = logging.getLogger(__name__)
 
@@ -29,7 +27,6 @@ from ..cognition.anticipation import (
 
 _WORKER_PIDS_PATH = paths().cc_channel / "worker_pids.json"
 _WORKER_PAUSED_FLAG = paths().instance / "worker_paused.flag"
-_CC_QUEUE_SCRIPT = Path.home() / "TheIgors" / "lab" / "claudecode" / "cc_queue.py"
 
 
 def _load_queue() -> list:
@@ -175,33 +172,13 @@ def launch_next_worker() -> str:
         next_ticket = pending_sorted[0]
         ticket_id = next_ticket["id"]
 
-        # Mark in_progress immediately — prevents double-launch if foreman fires again
-        # before the worker gets to run /sprint and claim the ticket itself.
-        # Targeted single-row UPDATE avoids writing the full task list (which leaks
-        # test fixture data to the real DB when tests mock _load_queue but not save_tasks).
-        from lab.claudecode import cc_queue as _cc_queue
-
-        _cc_queue.set_status_in_progress(ticket_id)
-
-        # Launch via cc_queue.py worker-launch — fire-and-forget, don't block on CC session startup
-        proc = subprocess.Popen(
-            ["python3", str(_CC_QUEUE_SCRIPT), "worker-launch", ticket_id],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        try:
-            proc.wait(timeout=3)
-            if proc.returncode != 0:
-                err = (proc.stderr.read() or proc.stdout.read()).decode().strip()
-                return f"[ERROR] worker-launch failed for {ticket_id}: {err}"
-            out = proc.stdout.read().decode().strip()
-        except subprocess.TimeoutExpired:
-            # Still running is fine — script is spawning konsole asynchronously
-            out = f"worker-launch started (pid={proc.pid})"
+        # worker_daemon.sh is retired (2026-05-25). Surface the ticket id so CC
+        # can dispatch it explicitly — no autonomous konsole spawn.
         remaining = len(pending) - 1
         return (
-            f"launched worker for {ticket_id}: {next_ticket['title']} | "
-            f"{remaining} ticket(s) still pending | {out}"
+            f"[foreman] claude ticket ready: {ticket_id} — "
+            f"dispatch via: cc_queue.py dispatch {ticket_id} "
+            f"| {remaining} ticket(s) still pending"
         )
 
     except Exception as e:
