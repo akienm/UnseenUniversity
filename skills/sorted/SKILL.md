@@ -1,19 +1,19 @@
 ---
-name: decided
-description: Batch-ticketize conversation decisions. Reads recent conversation turns (since /design marker or prior /decided), summarizes each decision, drafts tickets per decision, runs /audit-ticket on each ticket filing-time, and writes to queue + slate + session record + Igor memory palace with two-way decision↔ticket backlinks.
+name: sorted
+description: Batch-ticketize conversation decisions. Reads recent conversation turns (since /design marker or prior /sorted), summarizes each decision, drafts tickets per decision, runs /audit-ticket on each ticket filing-time, and writes to queue + slate + session record + Igor memory palace with two-way decision↔ticket backlinks.
 model: sonnet
 ---
 
-# /decided — Close a design block → batch tickets
+# /sorted — Close a design block → batch tickets
 
 The closing mark of a design conversation. Takes "the stuff we just talked about" and makes it durable — decisions in the palace, tickets in the queue, everything linked.
 
 ## Inputs
 
-- Optional arg: a brief one-line summary, e.g. `/decided rename audit to day-close-audit`. If omitted, infer the summary from the scope.
+- Optional arg: a brief one-line summary, e.g. `/sorted rename audit to day-close-audit`. If omitted, infer the summary from the scope.
 - Scope boundary — look back to whichever is most recent:
   1. A `DESIGN_START` marker (written by /design), OR
-  2. The most recent prior /decided boundary, OR
+  2. The most recent prior /sorted boundary, OR
   3. The session start.
 
 ## Steps
@@ -33,7 +33,7 @@ if slate.exists():
 "
 ```
 
-Pick whichever boundary appears most recently: DESIGN_START, prior /decided,
+Pick whichever boundary appears most recently: DESIGN_START, prior /sorted,
 or session start. When no prior boundary exists, treat the whole conversation
 as scope.
 
@@ -109,7 +109,7 @@ per the `/ticket` description template:
 ### 4. Run /audit-ticket on each draft
 
 Always invoke /audit-ticket once per drafted ticket — filing-time quality is the
-whole point of /decided. /audit-ticket returns one of:
+whole point of /sorted. /audit-ticket returns one of:
 - **PASS** → proceed to filing.
 - **AMEND** → apply the amendments (ask Akien if ambiguous), re-submit.
 - **SPLIT** → replace the single draft with N child drafts; run /audit-ticket on each.
@@ -121,10 +121,10 @@ Akien's pre-approval. Stamp the approval into the ticket body before filing
 
 ### 5. File the tickets
 
-Write the post-review batch to `/tmp/decided_batch_<decision-id>.json`, then
+Write the post-review batch to `/tmp/sorted_batch_<decision-id>.json`, then
 append to the queue:
 ```bash
-python "${CC_WORKFLOW_TOOLS}/cc_queue.py" add /tmp/decided_batch_<decision-id>.json
+python "${CC_WORKFLOW_TOOLS}/cc_queue.py" add /tmp/sorted_batch_<decision-id>.json
 ```
 `cc_queue.py` is the canonical writer — always go through it so the slate
 echo and session record stay consistent.
@@ -163,7 +163,7 @@ Consequence ticket shape:
 
 The "Predicted unintended effects" field must come from reasoning about the decision at filing time — not boilerplate. Ask: what implicit assumptions does this change make? What could regress silently? What adjacent subsystems depend on behavior this touches?
 
-Run `/audit-ticket` on this draft before filing. File via `cc_queue.py add` alongside the batch (append to the same `/tmp/decided_batch_<D-id>.json` file, or add separately — either is fine).
+Run `/audit-ticket` on this draft before filing. File via `cc_queue.py add` alongside the batch (append to the same `/tmp/sorted_batch_<D-id>.json` file, or add separately — either is fine).
 
 ### 6. Write to Igor memory palace
 
@@ -191,7 +191,7 @@ Fields expected on the palace node (same shape):
 ### 7. Append to decisions log
 
 Chronological append (this is the exception to "don't write to
-decisions_log.dsb directly" — /decided is a structured writer, not a blind
+decisions_log.dsb directly" — /sorted is a structured writer, not a blind
 dump; the file becomes a generated echo once the palace migration ships):
 ```
 python -c "
@@ -226,7 +226,7 @@ f.unlink(missing_ok=True)
 ### 10. Report
 
 ```
-/decided <summary> — D-...
+/sorted <summary> — D-...
 Tickets filed: T-x, T-y, T-z (<N> total)
 All linked to D-... (two-way navigation via decision_id field + decision's spawned_tickets list)
 ```
@@ -237,7 +237,7 @@ Design pattern:
 ```
 /design (optional)
   → conversation turns (may include back-and-forth, questions, exploration)
-/decided <summary>
+/sorted <summary>
   → tickets filed, decision recorded, design block closes
 /sprint-batch decision:D-...
   → sprints all tickets from this decision
@@ -247,11 +247,11 @@ Multiple decisions in one session:
 ```
 /design
   → discuss topic A
-/decided A — T-a1, T-a2
+/sorted A — T-a1, T-a2
   → discuss topic B
-/decided B — T-b1
+/sorted B — T-b1
   → discuss topic C
-/decided C — T-c1, T-c2, T-c3
+/sorted C — T-c1, T-c2, T-c3
 /sprint-batch today-slate
   → sprints all 6 tickets across the three decisions
 ```
@@ -259,7 +259,7 @@ Multiple decisions in one session:
 ## Invariants
 
 - Every decision gets a D-id, even single-ticket ones — makes trace navigable.
-- Every ticket in a /decided batch carries `decision_id` — no orphaned tickets.
+- Every ticket in a /sorted batch carries `decision_id` — no orphaned tickets.
 - /audit-ticket runs on EVERY draft, not just the first or biggest.
 - HIGH-inertia approvals land in the ticket body before filing; they are not kept in CC's conversational memory.
 - Every M/L/XL decision — and every S-only decision where Step 2.6 extracted a behavioral hypothesis — gets a consequence-check ticket (Step 5.5). Consequence-checking is tracked work, not an informal afterthought.
