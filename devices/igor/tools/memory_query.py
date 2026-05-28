@@ -102,10 +102,95 @@ def get_tool_registry_report(filter_text: str = "", **_) -> str:
         return f"[ERROR listing tools] {e}"
 
 
+def _rrf_merge(list_a: list, list_b: list, k: int = 60) -> list:
+    """Reciprocal Rank Fusion of two ranked memory lists.
+
+    RRF score = sum(1 / (k + rank_i)) across all ranking signals.
+    k=60 is the canonical constant from the original RRF paper (Cormack 2009).
+    Items present in only one list are scored on that signal alone.
+    Returns a deduplicated list ordered by descending RRF score.
+    """
+    scores: dict[str, float] = {}
+    id_to_obj: dict[str, object] = {}
+    for rank, m in enumerate(list_a, start=1):
+        mid = m.id
+        scores[mid] = scores.get(mid, 0.0) + 1.0 / (k + rank)
+        id_to_obj[mid] = m
+    for rank, m in enumerate(list_b, start=1):
+        mid = m.id
+        scores[mid] = scores.get(mid, 0.0) + 1.0 / (k + rank)
+        id_to_obj[mid] = m
+    sorted_ids = sorted(scores, key=lambda x: scores[x], reverse=True)
+    return [id_to_obj[mid] for mid in sorted_ids]
+
+
+def _fts_search(db_url: str, query: str, limit: int) -> list:
+    """Pure full-text search via Postgres tsvector — no graph traversal.
+
+    Returns a list of lightweight namedtuple-like objects with .id, .memory_type,
+    .narrative, .timestamp attributes so they are compatible with cortex.search results.
+
+    Runs plainto_tsquery against all memory types (except structural ROOT/CORE_PATTERN),
+    ranked by ts_rank + activation_count. Falls back silently on any error.
+    """
+    try:
+        import psycopg2
+        import psycopg2.extras
+        from ..memory.memory_types import MemoryType
+        from datetime import datetime, timezone
+
+        class _FTSResult:
+            __slots__ = ("id", "memory_type", "narrative", "timestamp")
+
+            def __init__(self, id_, memory_type, narrative, timestamp):
+                self.id = id_
+                self.memory_type = memory_type
+                self.narrative = narrative
+                self.timestamp = timestamp
+
+        conn = psycopg2.connect(db_url)
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT id, memory_type, narrative, timestamp "
+                "FROM memories "
+                "WHERE memory_type NOT IN (%s, %s) "
+                "  AND to_tsvector('english', narrative) @@ plainto_tsquery('english', %s) "
+                "ORDER BY ts_rank(to_tsvector('english', narrative), "
+                "         plainto_tsquery('english', %s)) DESC, "
+                "         activation_count DESC "
+                "LIMIT %s",
+                (
+                    MemoryType.ROOT.value,
+                    MemoryType.CORE_PATTERN.value,
+                    query,
+                    query,
+                    limit,
+                ),
+            )
+            rows = cur.fetchall()
+        conn.close()
+        results = []
+        for r in rows:
+            ts = r["timestamp"]
+            if ts and ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+            results.append(_FTSResult(r["id"], r["memory_type"], r["narrative"], ts))
+        return results
+    except Exception as _e:
+        logger.debug("_fts_search: failed (non-fatal) — %s", _e)
+        return []
+
+
 def memory_search(query: str, limit: int = 5, **_) -> str:
     """
     Search Igor's memory store by keyword overlap. Returns top matches as a
     readable string. Synchronous — result available immediately in this turn.
+
+    Combines cortex.search() (graph-traversal + activation + embedding phases)
+    with a parallel pure-FTS signal via Reciprocal Rank Fusion (RRF, k=60).
+    RRF rewards items that rank highly in both signals without requiring threshold
+    tuning — exact-match terms get a boost, semantically-relevant neighbours
+    from graph traversal are preserved.
 
     Use this when you need to look up what you know about a topic without
     waiting for a deferred task. For large background lookups use
@@ -119,26 +204,44 @@ def memory_search(query: str, limit: int = 5, **_) -> str:
 
         cortex = Cortex(None)
         _t0 = time.monotonic()
-        results = cortex.search(query, limit=int(limit))
+        _fetch = int(limit) * 3  # fetch wider pool for RRF then trim to limit
+        results_holistic = cortex.search(query, limit=_fetch)
+
+        # Second signal: pure FTS — no graph traversal, no activation bias.
+        # Complementary to holistic search: finds exact-keyword matches that may
+        # be lightly activated or disconnected from the current attractor.
+        _db_url = _paths().home_db_url
+        results_fts = _fts_search(_db_url, query, _fetch)
+
+        # Fuse via RRF and trim to requested limit
+        if results_fts:
+            merged = _rrf_merge(results_holistic, results_fts)[: int(limit)]
+            _signal = "rrf"
+        else:
+            merged = results_holistic[: int(limit)]
+            _signal = "holistic"
+
         _latency_ms = (time.monotonic() - _t0) * 1000.0
-        if not results:
+        if not merged:
             logger.debug(
                 "memory_search: query=%r hits=0 latency_ms=%.0f", query, _latency_ms
             )
             return f"memory_search({query!r}): no results"
         _now = datetime.now()
         lines = [
-            f"memory_search({query!r}): {len(results)} hit(s) ({_latency_ms:.0f}ms)"
+            f"memory_search({query!r}): {len(merged)} hit(s)"
+            f" ({_latency_ms:.0f}ms, signal={_signal})"
         ]
-        for m in results:
+        for m in merged:
             _age_days = (_now - m.timestamp).days if m.timestamp else None
             _age_str = f" age={_age_days}d" if _age_days is not None else ""
             lines.append(f"  [{m.memory_type}] {m.id}{_age_str} — {m.narrative[:120]}")
         logger.debug(
-            "memory_search: query=%r hits=%d latency_ms=%.0f",
+            "memory_search: query=%r hits=%d latency_ms=%.0f signal=%s",
             query,
-            len(results),
+            len(merged),
             _latency_ms,
+            _signal,
         )
         return "\n".join(lines)
     except Exception as e:

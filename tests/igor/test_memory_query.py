@@ -1,8 +1,10 @@
 """
-tests/test_memory_query.py — T-memory-search-tool + T-find-tool-fuzzy
+tests/test_memory_query.py — T-memory-search-tool + T-find-tool-fuzzy + T-memory-search-rrf
 
 Tests cover:
   - memory_search: happy path, empty results, limit, error handling, registered
+  - _rrf_merge: dual-list fusion, single-list passthrough, deduplication
+  - RRF integration: signal label, items present in both lists rank higher
   - find_tool: name match, description match, no match, limit, score shown, registered
 """
 
@@ -14,6 +16,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 _CORTEX_PATH = "devices.igor.memory.cortex.Cortex"
+_FTS_PATH = "devices.igor.tools.memory_query._fts_search"
 
 
 def _add_repo():
@@ -25,21 +28,31 @@ def _add_repo():
 _add_repo()
 
 
+def _make_mem(id_: str, narrative: str = "", memory_type: str = "FACTUAL"):
+    m = MagicMock()
+    m.id = id_
+    m.narrative = narrative or f"narrative for {id_}"
+    m.memory_type = memory_type
+    m.timestamp = None
+    return m
+
+
 class TestMemorySearch(unittest.TestCase):
 
-    def _call(self, query, limit=5, hits=None):
+    def _call(self, query, limit=5, hits=None, fts_hits=None):
+        """Call memory_search with cortex and _fts_search both mocked."""
         from devices.igor.tools.memory_query import memory_search
 
         mock_cortex = MagicMock()
         mock_cortex.search.return_value = hits or []
-        with patch(_CORTEX_PATH, return_value=mock_cortex):
+        with (
+            patch(_CORTEX_PATH, return_value=mock_cortex),
+            patch(_FTS_PATH, return_value=fts_hits or []),
+        ):
             return memory_search(query, limit=limit), mock_cortex
 
     def test_returns_hits(self):
-        mem = MagicMock()
-        mem.memory_type = "FACTUAL"
-        mem.id = "FACT_001"
-        mem.narrative = "Python is a programming language"
+        mem = _make_mem("FACT_001", "Python is a programming language", "FACTUAL")
         result, _ = self._call("python", hits=[mem])
         self.assertIn("1 hit(s)", result)
         self.assertIn("FACTUAL", result)
@@ -49,9 +62,10 @@ class TestMemorySearch(unittest.TestCase):
         result, _ = self._call("xyzzy_nonexistent")
         self.assertIn("no results", result)
 
-    def test_limit_passed_to_cortex(self):
+    def test_limit_fetches_wider_pool_for_rrf(self):
+        # cortex.search is called with limit*3 so RRF has a wider pool to fuse
         _, mock_cortex = self._call("test query", limit=3)
-        mock_cortex.search.assert_called_once_with("test query", limit=3)
+        mock_cortex.search.assert_called_once_with("test query", limit=9)
 
     def test_error_returns_string(self):
         from devices.igor.tools.memory_query import memory_search
@@ -62,17 +76,24 @@ class TestMemorySearch(unittest.TestCase):
         self.assertIn("db down", result)
 
     def test_multiple_hits_formatted(self):
-        mems = []
-        for i in range(3):
-            m = MagicMock()
-            m.memory_type = "PROCEDURAL"
-            m.id = f"PROC_{i:03d}"
-            m.narrative = f"Procedure {i} description here"
-            mems.append(m)
+        mems = [
+            _make_mem(f"PROC_{i:03d}", f"Procedure {i}", "PROCEDURAL") for i in range(3)
+        ]
         result, _ = self._call("procedure", hits=mems)
         self.assertIn("3 hit(s)", result)
         self.assertIn("PROC_000", result)
         self.assertIn("PROC_002", result)
+
+    def test_holistic_signal_when_fts_empty(self):
+        mem = _make_mem("M1", "anything")
+        result, _ = self._call("anything", hits=[mem], fts_hits=[])
+        self.assertIn("signal=holistic", result)
+
+    def test_rrf_signal_when_fts_returns_results(self):
+        mem = _make_mem("M1", "anything")
+        fts_mem = _make_mem("M2", "exact match")
+        result, _ = self._call("anything", hits=[mem], fts_hits=[fts_mem])
+        self.assertIn("signal=rrf", result)
 
     def test_registered_in_registry(self):
         import os
@@ -85,6 +106,67 @@ class TestMemorySearch(unittest.TestCase):
         import devices.igor.tools.memory_query  # noqa
 
         self.assertIn("memory_search", registry._tools)
+
+
+class TestRRFMerge(unittest.TestCase):
+
+    def test_item_in_both_lists_ranks_first(self):
+        from devices.igor.tools.memory_query import _rrf_merge
+
+        # M1 is #1 in list_a, #1 in list_b → highest RRF score
+        # M2 is #2 in list_a only
+        # M3 is #2 in list_b only
+        m1 = _make_mem("M1")
+        m2 = _make_mem("M2")
+        m3 = _make_mem("M3")
+        merged = _rrf_merge([m1, m2], [m1, m3])
+        self.assertEqual(merged[0].id, "M1")
+
+    def test_deduplication(self):
+        from devices.igor.tools.memory_query import _rrf_merge
+
+        m1 = _make_mem("M1")
+        merged = _rrf_merge([m1, m1], [m1])
+        # M1 should appear only once
+        self.assertEqual(len(merged), 1)
+
+    def test_items_only_in_one_list_included(self):
+        from devices.igor.tools.memory_query import _rrf_merge
+
+        m1 = _make_mem("M1")
+        m2 = _make_mem("M2")
+        merged = _rrf_merge([m1], [m2])
+        ids = [m.id for m in merged]
+        self.assertIn("M1", ids)
+        self.assertIn("M2", ids)
+
+    def test_empty_list_b_returns_list_a(self):
+        from devices.igor.tools.memory_query import _rrf_merge
+
+        mems = [_make_mem(f"M{i}") for i in range(3)]
+        merged = _rrf_merge(mems, [])
+        self.assertEqual([m.id for m in merged], [m.id for m in mems])
+
+    def test_both_empty_returns_empty(self):
+        from devices.igor.tools.memory_query import _rrf_merge
+
+        self.assertEqual(_rrf_merge([], []), [])
+
+    def test_lower_ranked_item_overtakes_with_second_signal(self):
+        from devices.igor.tools.memory_query import _rrf_merge
+
+        # M2 is rank-2 in list_a but rank-1 in list_b
+        # M1 is rank-1 in list_a only
+        # M2 should beat M1 via RRF
+        m1 = _make_mem("M1")
+        m2 = _make_mem("M2")
+        m3 = _make_mem("M3")
+        # list_a: M1, M2, M3   list_b: M2, M3, M1
+        merged = _rrf_merge([m1, m2, m3], [m2, m3, m1])
+        # M2: 1/(60+2) + 1/(60+1) ≈ 0.01613 + 0.01639 ≈ 0.03252
+        # M1: 1/(60+1) + 1/(60+3) ≈ 0.01639 + 0.01587 ≈ 0.03226
+        # M3: 1/(60+3) + 1/(60+2) ≈ 0.01587 + 0.01613 ≈ 0.03200
+        self.assertEqual(merged[0].id, "M2")
 
 
 class TestFindTool(unittest.TestCase):
