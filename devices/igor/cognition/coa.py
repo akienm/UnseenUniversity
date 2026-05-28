@@ -90,6 +90,10 @@ class COA(IgorBase):
         self._last_ne_valence: float = 0.0
         self._ne_cycle_counter: int = 0
         self._ne_stuck_count: int = 0  # consecutive no-result cycles; reset on result
+        self._total_stuck_cycles: int = (
+            0  # cumulative (not reset by dreaming); watchdog
+        )
+        self._safe_mode_triggered: bool = False  # one-shot; prevents re-trip
 
         # Background-COA state (unused in root COA)
         self._task_queue: list[Any] = []
@@ -222,6 +226,7 @@ class COA(IgorBase):
                         self.log.debug("NE_METRIC: %s", _m_e)
                     if result:
                         self._ne_stuck_count = 0
+                        self._total_stuck_cycles = 0
                         _ne_state = result.get("internal_state", {})
                         _m = milieu_mod.get()
                         if _ne_state and _m:
@@ -252,6 +257,7 @@ class COA(IgorBase):
                                 self.log.error("PSYCH_LOG: %s", _psych_e)
                     else:
                         self._ne_stuck_count += 1
+                        self._total_stuck_cycles += 1
                         try:
                             from .escalate import escalate_to_channel as _esc
 
@@ -343,6 +349,21 @@ class COA(IgorBase):
                                 )
                             except Exception as _stuck_dream_e:
                                 self.log.error("NE_STUCK_DREAMING: %s", _stuck_dream_e)
+                        # T-igor-degrade-safe: trip watchdog on prolonged cumulative stuck
+                        _degrade_threshold = int(
+                            os.getenv("IGOR_DEGRADE_SAFE_THRESHOLD", "30")
+                        )
+                        if (
+                            self._total_stuck_cycles >= _degrade_threshold
+                            and not self._safe_mode_triggered
+                        ):
+                            try:
+                                from .safe_mode import trip as _trip_safe_mode
+
+                                if _trip_safe_mode(self._total_stuck_cycles):
+                                    self._safe_mode_triggered = True
+                            except Exception as _sm_e:
+                                self.log.error("SAFE_MODE_TRIP: %s", _sm_e)
                 except Exception as _bare_e:
                     self.log.error("BARE_EXCEPT: %s", _bare_e)
                 # NE grader — fresh-context quality evaluation (T-igor-ne-grader-pass)
