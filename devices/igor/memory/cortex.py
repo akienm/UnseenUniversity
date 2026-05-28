@@ -975,6 +975,25 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "m054_llm_calls_idx",
         "CREATE INDEX IF NOT EXISTS idx_llm_calls_ts " "ON infra.llm_calls (ts DESC)",
     ),
+    # ── T-memory-schema-v2: recall(X) substrate — typed payloads, edge_type, source_agent
+    # D-recall-api-2026-05-28: inference-free retrieval requires typed graph edges and
+    # multi-agent provenance. All columns nullable — zero breaking change to existing rows.
+    (
+        "m055_payloads",
+        "ALTER TABLE clan.memories ADD COLUMN IF NOT EXISTS payloads JSONB DEFAULT NULL",
+    ),
+    (
+        "m055_source_agent",
+        "ALTER TABLE clan.memories ADD COLUMN IF NOT EXISTS source_agent VARCHAR(128) DEFAULT NULL",
+    ),
+    (
+        "m055_edge_type",
+        "ALTER TABLE clan.interpretive_edges ADD COLUMN IF NOT EXISTS edge_type VARCHAR(64) DEFAULT NULL",
+    ),
+    (
+        "m055_edge_type_idx",
+        "CREATE INDEX IF NOT EXISTS idx_ie_edge_type ON clan.interpretive_edges (edge_type) WHERE edge_type IS NOT NULL",
+    ),
 ]
 
 

@@ -128,6 +128,11 @@ class Memory:
     # D260: engram program payload — triggers dict + named cells + data fields
     # payload.NARRATIVE is the canonical embedding source (falls back to self.narrative)
     payload: Optional[Dict[str, Any]] = None
+    # D-recall-api-2026-05-28: typed payload attachments for recall(X) substrate
+    # Keys: "code" (source text), "embedding" (pre-computed vector), "link" (URL/ref), "primitive" (raw value)
+    payloads: Optional[Dict[str, Any]] = None
+    # Multi-agent provenance — which agent wrote this memory (e.g. "igor", "librarian", "cc")
+    source_agent: Optional[str] = None
 
     def __post_init__(self):
         if self.scope is None:
