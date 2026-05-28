@@ -248,11 +248,37 @@ class COA(IgorBase):
                         try:
                             from .escalate import escalate_to_channel as _esc
 
+                            # Include recent scheduler tick results so the NE-empty
+                            # message is diagnostic rather than opaque.
+                            _sched_summary = ""
+                            try:
+                                _ticks = self._cortex.twm_read(limit=10)
+                                _tick_lines = [
+                                    r["content_csb"]
+                                    for r in _ticks
+                                    if r.get("content_csb", "").startswith(
+                                        "SCHEDULER_TICK|"
+                                    )
+                                ]
+                                if _tick_lines:
+                                    # Format: "habit_id=result" pairs, last 3 ticks
+                                    _parts = []
+                                    for _line in _tick_lines[-3:]:
+                                        _segs = _line.split("|", 2)
+                                        if len(_segs) == 3:
+                                            _parts.append(f"{_segs[1]}={_segs[2][:60]}")
+                                    if _parts:
+                                        _sched_summary = " last ticks: " + ", ".join(
+                                            _parts
+                                        )
+                            except Exception:
+                                pass
+
                             _esc(
                                 f"[NE] cycle produced no result — Igor may be stuck. "
                                 f"Last valence: {self._last_ne_valence:.2f}. "
                                 "Nothing actionable in TWM — watch-question scan runs "
-                                "next lever-watcher cycle.",
+                                f"next lever-watcher cycle.{_sched_summary}",
                                 dedup_key="ne-empty-result",
                             )
                         except Exception as _esc_e:

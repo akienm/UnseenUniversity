@@ -151,6 +151,11 @@ def launch_next_worker() -> str:
 
             for t in in_progress:
                 if _cc_queue.reset_stale_in_progress(t["id"]):
+                    _log.warning(
+                        "[worker_foreman] stale in_progress reset: %s (daemon dead, pid=%s)",
+                        t["id"],
+                        daemon_pid,
+                    )
                     t["status"] = "sprint"
                     t.pop("claimed_at", None)
 

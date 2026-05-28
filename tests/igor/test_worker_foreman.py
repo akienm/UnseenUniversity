@@ -451,6 +451,13 @@ class TestDaemonDeadRaceCondition(unittest.TestCase):
         fake_pids_path.exists.return_value = True
         fake_pids_path.read_text.return_value = json.dumps(fake_pids)
 
+        mock_popen = MagicMock()
+        popen_instance = MagicMock()
+        popen_instance.wait.return_value = 0
+        popen_instance.returncode = 0
+        popen_instance.stdout.read.return_value = b"worker-launch mocked"
+        mock_popen.return_value = popen_instance
+
         with (
             patch.object(wf, "_load_queue", return_value=tasks),
             patch.object(wf, "_WORKER_PIDS_PATH", fake_pids_path),
@@ -465,16 +472,22 @@ class TestDaemonDeadRaceCondition(unittest.TestCase):
             ),
             patch(_CORTEX_PATH, return_value=mock_cortex),
             patch(_MT_PATH, mock_mt),
+            patch.object(wf.subprocess, "Popen", mock_popen),
         ):
-            # Patch reset inside the foreman's imported cc_queue reference
+            # Patch reset and set_status_in_progress on the live module
+            # so the local `from lab.claudecode import cc_queue` inside the
+            # function body sees both mocks.
             import lab.claudecode.cc_queue as ccq
 
-            orig = ccq.reset_stale_in_progress
+            orig_reset = ccq.reset_stale_in_progress
+            orig_set = ccq.set_status_in_progress
             ccq.reset_stale_in_progress = mock_reset
+            ccq.set_status_in_progress = MagicMock()
             try:
                 result = wf.launch_next_worker()
             finally:
-                ccq.reset_stale_in_progress = orig
+                ccq.reset_stale_in_progress = orig_reset
+                ccq.set_status_in_progress = orig_set
 
         return result, mock_reset, task
 

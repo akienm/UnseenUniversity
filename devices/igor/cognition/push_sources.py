@@ -32,7 +32,7 @@ from typing import Optional
 
 from ..igor_base import IgorBase
 from ..paths import paths
-from .forensic_logger import log_error
+from .forensic_logger import log_anomaly, log_error
 
 # ── T-twm-attentional-gating: conversation mode constants ──────────────────────
 # See cortex.twm_push() for the gate implementation. UserInputSource sets
@@ -1243,7 +1243,19 @@ class SchedulerSource(BasePushSource):
             if tool is None:
                 return f"[SCHEDULER] tool not found: {fn_name}"
             with engram_execution_context(habit_id=habit_id or code_ref):
-                return str(tool.fn())
+                result = str(tool.fn())
+            # Persist error-shaped results so they survive TWM TTL expiry
+            _result_lower = result.lower()
+            if (
+                "no sprint tickets" in _result_lower
+                or _result_lower.startswith("error:")
+                or _result_lower.startswith("[error]")
+            ):
+                log_anomaly(
+                    kind="SCHEDULER_RESULT",
+                    detail=f"{habit_id or code_ref}: {result[:200]}",
+                )
+            return result
         except Exception as e:
             log_error(
                 kind="BARE_EXCEPT",
