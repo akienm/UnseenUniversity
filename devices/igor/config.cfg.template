@@ -1,0 +1,35 @@
+# ~/.unseen_university/Igor-<instance>/config.cfg
+# Igor device configuration — per-instance overrides.
+#
+# Copy this file to ~/.unseen_university/Igor-<instance>/config.cfg.
+# Values here override ~/.unseen_university/uu.cfg global defaults.
+# Launch flags override both.
+#
+# Fields not set here inherit from uu.cfg or Igor's compiled defaults.
+
+# ── Instance identity ────────────────────────────────────────────────────────
+# Set automatically by the first-run wizard. Do not edit.
+instance_id = Igor-wild-0001
+
+# ── Database ─────────────────────────────────────────────────────────────────
+# Overrides uu.cfg db_url for this Igor instance.
+# db_url = postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001
+
+# ── Model preferences ────────────────────────────────────────────────────────
+# Override the global default_model for Igor's inference calls.
+# default_model = claude-sonnet-4-6
+
+# Haiku is used for lightweight cognition passes (screening, triage).
+# haiku_model = claude-haiku-4-5-20251001
+
+# ── Logging ──────────────────────────────────────────────────────────────────
+# Override global log_level for this device.
+# log_level = INFO
+
+# ── Feature flags ────────────────────────────────────────────────────────────
+# Device-specific feature gates. Overrides uu.cfg flags of the same name.
+# Format: flag_name = true|false
+#
+# IGOR_DREAMING_ENABLED = false
+# IGOR_DEGRADE_SAFE_THRESHOLD = 30
+# IGOR_TIER5_ENABLED = false

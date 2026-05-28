@@ -1,0 +1,47 @@
+# ~/.unseen_university/uu.cfg
+# Global configuration for the Unseen University rack.
+#
+# Copy this file to ~/.unseen_university/uu.cfg and fill in the values.
+# Per-device overrides live at ~/.unseen_university/<DeviceName>/config.cfg.
+#
+# Precedence: launch flag > per-device config.cfg > this global uu.cfg.
+# Parameters not set here inherit hardcoded defaults in each device.
+#
+# Note: ~/.unseen_university/ is the runtime directory (all lowercase).
+#       The repo itself lives at ~/dev/src/UnseenUniversity/ (title case).
+
+# ── Anthropic API ────────────────────────────────────────────────────────────
+anthropic_api_key =
+
+# ── Default model ────────────────────────────────────────────────────────────
+# Model used by any device that does not override it in its own config.cfg.
+# Values: claude-sonnet-4-6, claude-haiku-4-5-20251001, claude-opus-4-7
+default_model = claude-sonnet-4-6
+
+# ── Database ─────────────────────────────────────────────────────────────────
+# PostgreSQL connection URL shared by all rack devices.
+# Individual devices may override db_url in their own config.cfg.
+db_url = postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001
+
+# ── Logging ──────────────────────────────────────────────────────────────────
+# Global log level. Per-device config.cfg can override.
+# Values: DEBUG, INFO, WARNING, ERROR
+log_level = INFO
+
+# Log root — all device log directories are created under this path.
+log_root = ~/.unseen_university/logs
+
+# ── Frontend shim ────────────────────────────────────────────────────────────
+# Which agent the ./uu launcher surfaces by default.
+# Values: librarian, igor, superclaude
+default_frontend = librarian
+
+# ── Instance identity ────────────────────────────────────────────────────────
+# Name given to this UU installation during the first-run wizard.
+# Set automatically by the wizard — do not edit unless you know why.
+instance_name =
+
+# ── Feature flags ────────────────────────────────────────────────────────────
+# Rack-wide feature gates. Per-device config.cfg can also set device-specific
+# flags. Format: flag_name = true|false
+# (no flags enabled by default on a fresh install)
