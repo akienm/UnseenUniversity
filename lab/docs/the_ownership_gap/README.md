@@ -8,13 +8,13 @@
 
 | File | Content |
 |---|---|
-| `1.Opening.md` | The hook — unnamed manager, the cost problem, the reframe |
-| `2.CompiledInference.md` | Chapter 1: The concept, the token ladder, the creation/ownership gap |
-| `3.Levers.md` | Chapter 2: Keystone patterns for making AI development work at scale |
-| `4.WorkflowAuditsModels.md` | Chapter 3: Daily practice — workflow, audits, when to reach for bigger models |
-| `5.Skills.md` | Chapter 4: The skills as built — design rationale, integration, why they are the way they are |
-| `6.Platform.md` | Chapter 5: The Unseen University platform |
-| `7.WhatWeBuilt.md` | Chapter 6: Igor — the proof of concept |
+| `0.Opening.md` | The hook — unnamed manager, the cost problem, the reframe |
+| `1.CompiledInference.md` | Chapter 1: The concept, the token ladder, the creation/ownership gap |
+| `2.Levers.md` | Chapter 2: Keystone patterns for making AI development work at scale |
+| `3.WorkflowAuditsModels.md` | Chapter 3: Daily practice — workflow, audits, when to reach for bigger models |
+| `4.Skills.md` | Chapter 4: The skills as built — design rationale, integration, why they are the way they are |
+| `5.Platform.md` | Chapter 5: The Unseen University platform |
+| `6.WhatWeBuilt.md` | Chapter 6: Igor — the proof of concept |
 
 ## Versioning
 
