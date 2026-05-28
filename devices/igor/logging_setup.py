@@ -179,7 +179,7 @@ class DailyConsoleFileHandler(logging.Handler):
         self._file = path.open("a", encoding="utf-8")
         from rich.console import Console
 
-        self._console = Console(force_terminal=True, file=self._file, highlight=False)
+        self._console = Console(file=self._file, highlight=False, no_color=True)
         self._current_date = today
         self._prune()
 
