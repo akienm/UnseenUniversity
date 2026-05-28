@@ -290,6 +290,19 @@ class COA(IgorBase):
                             )
                         except Exception as _esc_e:
                             self.log.error("NE_ESCALATE: %s", _esc_e)
+                        # T-ne-desperation-pull-ltm: surface top-N hot memories
+                        # when TWM was too empty to produce NE output.
+                        try:
+                            from .push_sources import memory_surfacer as _ms
+
+                            _forced = _ms.force_push(self._cortex, top_n=5)
+                            if _forced:
+                                self.log.info(
+                                    "NE_EMPTY_FORCE_PUSH: surfaced %d hot memories",
+                                    len(_forced),
+                                )
+                        except Exception as _fp_e:
+                            self.log.error("NE_FORCE_PUSH: %s", _fp_e)
                         # SOAR-style impasse: after 3 no-result cycles write a
                         # self-diagnostic subgoal to TWM so the next cycle has
                         # actionable content rather than looping identically.

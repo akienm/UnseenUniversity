@@ -195,6 +195,7 @@ class MemorySurfacer(BasePushSource):
         self._recent_surfaced: list[set] = (
             []
         )  # Dedup window: [set(mem_ids), ...] (change.43)
+        self._force_push_used: bool = False  # one force_push per NE cycle
 
     def push(self, cortex) -> list[int]:
         now = datetime.now()
@@ -205,6 +206,7 @@ class MemorySurfacer(BasePushSource):
             return []
 
         self._last_run = now
+        self._force_push_used = False  # reset desperation-pull gate each cycle
 
         # Pull keywords from recent ring context
         ring = cortex.read_ring_memory(limit=5)
@@ -284,6 +286,44 @@ class MemorySurfacer(BasePushSource):
             pass
 
         return pushed
+
+    def force_push(self, cortex, top_n: int = 5) -> list[int]:
+        """Desperation pull — surface top-N hot memories bypassing keyword filter.
+
+        Called from coa.py NE-empty branch (T-ne-desperation-pull-ltm).
+        Rate-limited to one call per NE cycle via _force_push_used flag;
+        flag resets when normal push() runs (MIN_INTERVAL_SEC cadence).
+        """
+        if self._force_push_used:
+            return []
+        self._force_push_used = True
+        try:
+            candidates = cortex.get_hot_nodes(threshold=1, limit=top_n)
+            if not candidates:
+                return []
+            pushed = []
+            for mem in candidates:
+                csb = (
+                    f"LTM_FORCE|{mem.memory_type.value}|id={mem.id}|"
+                    f"act={mem.activation_count}|{mem.narrative[:200]}"
+                )
+                obs_id = cortex.twm_push(
+                    source=self.name,
+                    content_csb=csb,
+                    salience=0.5,
+                    metadata={
+                        "memory_id": mem.id,
+                        "memory_type": mem.memory_type.value,
+                        "force_push": True,
+                    },
+                    ttl_seconds=300,
+                    urgency=0.2,
+                )
+                pushed.append(obs_id)
+            return pushed
+        except Exception as _e:
+            log_error(kind="FORCE_PUSH", detail=str(_e))
+            return []
 
 
 # ── HeartbeatSource ───────────────────────────────────────────────────────────
