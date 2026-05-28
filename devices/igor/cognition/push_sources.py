@@ -747,6 +747,13 @@ class UserInputSource(BasePushSource):
         """
         # T-twm-attentional-gating: mark conversation active on cortex
         cortex.mark_conversation_active()
+        # T-long-horizon-alignment-guard: Akien interaction resets the autonomous-cycle counter
+        try:
+            from ..tools.alignment_guard import reset_interaction as _ag_reset
+
+            _ag_reset()
+        except Exception:
+            pass
 
         csb = f"MSG|ch={channel}|from={author}|{content[:300]}"
         obs_id = cortex.twm_push(

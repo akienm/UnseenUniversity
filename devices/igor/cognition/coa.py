@@ -418,6 +418,24 @@ class COA(IgorBase):
                     _lever_watcher()
                 except Exception as _lw_e:
                     self.log.error("LEVER_WATCHER: %s", _lw_e)
+                # T-long-horizon-alignment-guard: emit review after N cycles on same goal
+                try:
+                    from ..tools.alignment_guard import (
+                        check_and_alert as _ag_check,
+                        extract_goal_id_from_twm as _ag_extract,
+                        record_ne_cycle as _ag_record,
+                    )
+
+                    _ag_goal_id = None
+                    try:
+                        _ag_rows = self._cortex.twm_read(limit=8)
+                        _ag_goal_id = _ag_extract(_ag_rows)
+                    except Exception:
+                        pass
+                    _ag_record(_ag_goal_id)
+                    _ag_check()
+                except Exception as _ag_e:
+                    self.log.warning("ALIGNMENT_GUARD: %s", _ag_e)
                 # Dreaming: cross-session synthesis every IGOR_DREAMING_INTERVAL cycles
                 try:
                     import os as _os
