@@ -494,6 +494,56 @@ def _write_failure_watch_problems(failure_clusters: dict[str, list[str]]) -> int
     return written
 
 
+_DECAY_DAYS = lambda: int(os.getenv("IGOR_MEMORY_DECAY_DAYS", "90"))
+_DECAY_SCORE_THRESHOLD = lambda: float(
+    os.getenv("IGOR_MEMORY_DECAY_SCORE_THRESHOLD", "0.1")
+)
+_DECAY_EXEMPT_TYPES = ("PROCEDURAL",)
+
+
+def _archive_stale_memories(conn) -> int:
+    """Mark stale low-activation memories as archived in metadata.
+
+    Non-destructive: sets metadata.archived=true (Discworld: repair, don't discard).
+    PROCEDURAL memories (habits) are always exempt.
+    Returns count of archived memories.
+    """
+    try:
+        decay_days = _DECAY_DAYS()
+        threshold = _DECAY_SCORE_THRESHOLD()
+        exempt = list(_DECAY_EXEMPT_TYPES)
+        placeholders = ",".join(["%s"] * len(exempt))
+        with conn.cursor() as cur:
+            cur.execute(
+                f"SELECT id FROM clan.memories "
+                f"WHERE last_activated_at < NOW() - INTERVAL '{decay_days} days' "
+                f"  AND (metadata->>'activation_score')::float < %s "
+                f"  AND memory_type NOT IN ({placeholders}) "
+                f"  AND (metadata->>'archived') IS DISTINCT FROM 'true' "
+                f"LIMIT 500",
+                (threshold, *exempt),
+            )
+            stale_ids = [r[0] for r in cur.fetchall()]
+        if not stale_ids:
+            return 0
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE clan.memories SET metadata = jsonb_set(metadata, '{archived}', 'true') "
+                "WHERE id = ANY(%s)",
+                (stale_ids,),
+            )
+        log.info(
+            "dreaming: archived %d stale memories (age>%dd, score<%.2f)",
+            len(stale_ids),
+            decay_days,
+            threshold,
+        )
+        return len(stale_ids)
+    except Exception as _e:
+        log.warning("_archive_stale_memories failed (non-fatal): %s", _e)
+        return 0
+
+
 def run(paths_obj=None) -> int:
     """Run one dreaming cycle. Returns number of proposals written.
 
@@ -568,6 +618,9 @@ def run(paths_obj=None) -> int:
         schema_written = _schema_extraction_pass(conn)
         if schema_written:
             log.info("dreaming: wrote %d palace schema nodes", schema_written)
+
+        # Stale memory archival (T-igor-memory-decay-dreaming)
+        _archive_stale_memories(conn)
 
         return count
     finally:
