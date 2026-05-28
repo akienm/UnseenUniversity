@@ -185,6 +185,9 @@ _INTERVAL_SECS = lambda: int(os.getenv("IGOR_CONSOLIDATION_INTERVAL_SECS", "1800
 _BATCH_SIZE = lambda: int(os.getenv("IGOR_CONSOLIDATION_BATCH", "200"))
 _MIN_IMPORTANCE = float(os.getenv("IGOR_CONSOLIDATION_MIN_IMPORTANCE", "0.4"))
 _CHECKPOINT_FILE = paths().consolidation_checkpoint
+_THEME_IMPORTANCE_THRESHOLD = float(
+    os.getenv("IGOR_THEME_IMPORTANCE_THRESHOLD", "0.75")
+)
 
 _last_run: float = 0.0
 
@@ -377,6 +380,52 @@ def _call_local_llm(prompt: str, cortex: Cortex) -> Optional[dict]:
         return None
 
 
+def _upsert_theme_palace(narrative: str, keywords: list, importance: float) -> None:
+    """Upsert a theigors/themes/* node in adc.palace for high-importance patterns.
+
+    Non-blocking: logs on failure, never raises.
+    Existing nodes accumulate content (append bullet); new nodes are created fresh.
+    """
+    import re
+
+    try:
+        import os as _os
+
+        db_url = _os.getenv("IGOR_HOME_DB_URL")
+        if not db_url:
+            return
+        # slug from first keyword, max 40 chars, lowercase, alphanum+dash only
+        slug_src = (keywords[0] if keywords else narrative[:40]).lower()
+        slug = re.sub(r"[^a-z0-9]+", "-", slug_src).strip("-")[:40]
+        path = f"theigors/themes/{slug}"
+        bullet = f"- [{datetime.utcnow().strftime('%Y-%m-%d')}] (imp={importance:.2f}) {narrative}"
+        import psycopg2
+
+        with psycopg2.connect(db_url) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT content FROM adc.palace WHERE path = %s",
+                    (path,),
+                )
+                row = cur.fetchone()
+                if row:
+                    new_content = (row[0] or "") + "\n" + bullet
+                    cur.execute(
+                        "UPDATE adc.palace SET content = %s, updated_at = now() WHERE path = %s",
+                        (new_content, path),
+                    )
+                else:
+                    title = slug.replace("-", " ").title()
+                    content = narrative + "\n\nSource: consolidation pass\n" + bullet
+                    cur.execute(
+                        "INSERT INTO adc.palace (path, title, content, node_type, updated_at)"
+                        " VALUES (%s, %s, %s, 'theme', now())",
+                        (path, title, content),
+                    )
+    except Exception as _e:
+        get_logger(__name__).debug("theme palace upsert failed (non-fatal): %s", _e)
+
+
 # ── Main consolidation pass ────────────────────────────────────────────────────
 
 
@@ -471,6 +520,8 @@ def run_consolidation(cortex: Cortex) -> dict:
             )
             if mem:
                 extracted += 1
+                if importance >= _THEME_IMPORTANCE_THRESHOLD:
+                    _upsert_theme_palace(narrative, keywords, importance)
         except Exception:
             skipped += 1
 
