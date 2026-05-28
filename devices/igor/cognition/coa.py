@@ -213,6 +213,13 @@ class COA(IgorBase):
                     self.log.info(
                         "NE_RUN elapsed_ms=%.0f", (_t.monotonic() - _ne_t0) * 1000.0
                     )
+                    try:
+                        self._cortex.record_metric(
+                            "cognition.ne_cycle_result",
+                            1.0 if result else 0.0,
+                        )
+                    except Exception as _m_e:
+                        self.log.debug("NE_METRIC: %s", _m_e)
                     if result:
                         self._ne_stuck_count = 0
                         _ne_state = result.get("internal_state", {})

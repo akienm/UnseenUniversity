@@ -267,6 +267,22 @@ class MemorySurfacer(BasePushSource):
         while len(self._recent_surfaced) > self.SURFACE_WINDOW:
             self._recent_surfaced.pop(0)
 
+        # T-cognition-health-metrics: emit infra.metrics data points
+        try:
+            cortex.record_metric("cognition.ltm_surfaced_count", float(len(pushed)))
+        except Exception:
+            pass
+        try:
+            from . import milieu as _m_mod
+
+            _ms = _m_mod.get()
+            if _ms is not None:
+                _arousal = _ms.get_state().arousal
+                if _arousal > 0.3:
+                    cortex.record_metric("cognition.arousal_gate_suppression", _arousal)
+        except Exception:
+            pass
+
         return pushed
 
 

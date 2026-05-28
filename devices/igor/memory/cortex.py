@@ -4485,6 +4485,36 @@ class Cortex(IgorBase):
             }
         return None
 
+    # ── Metrics — infra.metrics time-series ────────────────────────────────────
+
+    def record_metric(
+        self,
+        name: str,
+        value: float,
+        tags: dict | None = None,
+    ) -> None:
+        """Insert one data point into infra.metrics.
+
+        Fire-and-forget: exceptions are logged but never raised so callers
+        (NE cycle, push sources) can't be blocked by a metric write failure.
+        """
+        try:
+            import json as _json
+
+            with self._db() as conn:
+                conn.execute(
+                    "INSERT INTO infra.metrics (metric_name, metric_value, tags, instance_id)"
+                    " VALUES (%s, %s, %s::jsonb, %s)",
+                    (
+                        name,
+                        float(value),
+                        _json.dumps(tags or {}),
+                        self._instance_id or "",
+                    ),
+                )
+        except Exception as _e:
+            _log.debug("record_metric failed (non-fatal): %s", _e)
+
     # ── TWM — Temporal Working Memory ──────────────────────────────────────────
 
     def mark_conversation_active(self):
