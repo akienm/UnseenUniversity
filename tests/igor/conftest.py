@@ -167,6 +167,32 @@ def _test_data_lifecycle():
     except Exception as exc:
         print(f"\n[test_data_lifecycle] cleanup skipped: {exc}")
 
+    # T-watch-problems-test-isolation: delete watch_problems rows stamped with
+    # test_data=true to prevent test accumulation in the real instance schema.
+    try:
+        import psycopg2
+
+        db_url = os.environ.get("IGOR_HOME_DB_URL") or os.environ.get("IGOR_DB_URL")
+        if db_url:
+            search_path = os.environ.get(
+                "IGOR_LOCAL_SEARCH_PATH", "instance,infra,public"
+            )
+            conn = psycopg2.connect(db_url, options=f"-c search_path={search_path}")
+            with conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "DELETE FROM watch_problems "
+                        "WHERE (metadata->>'test_data') = 'true'"
+                    )
+                    removed_wp = cur.rowcount
+            conn.close()
+            if removed_wp:
+                print(
+                    f"\n[test_data_lifecycle] cleaned up {removed_wp} watch_problems test rows"
+                )
+    except Exception as exc:
+        print(f"\n[test_data_lifecycle] watch_problems cleanup skipped: {exc}")
+
 
 @pytest.fixture(autouse=True, scope="session")
 def cc_inbox_test_tag():

@@ -174,11 +174,21 @@ def add_watch_problem(
                         )
                         return existing_id
                 key = str(uuid.uuid4())
+                _meta: dict = {}
+                if os.environ.get("IGOR_TEST_MODE") == "1":
+                    _meta["test_data"] = "true"
                 cur.execute(
                     f"INSERT INTO {_TABLE} "
-                    "(problem_key, parent_id, problem, lever_description, watch_condition) "
-                    "VALUES (%s, %s, %s, %s, %s) RETURNING id",
-                    (key, parent_id, problem, lever_description, watch_condition),
+                    "(problem_key, parent_id, problem, lever_description, watch_condition, metadata) "
+                    "VALUES (%s, %s, %s, %s, %s, %s::jsonb) RETURNING id",
+                    (
+                        key,
+                        parent_id,
+                        problem,
+                        lever_description,
+                        watch_condition,
+                        json.dumps(_meta),
+                    ),
                 )
                 row_id = cur.fetchone()[0]
         conn.close()
