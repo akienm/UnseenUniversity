@@ -196,3 +196,145 @@ def test_no_crash_without_focus_state(_cleanup):
 
     score = activate(nid, _EMB)
     assert score > 0.0
+
+
+# ── recall() tests (T-igor-uncertainty-gated-recall) ─────────────────────────
+
+
+def _set_activation(node_id: str, score: float) -> None:
+    conn = _raw_conn()
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE clan.memories SET activation_score = %s WHERE id = %s",
+                (score, node_id),
+            )
+    conn.close()
+
+
+def _insert_trace(trace_id: str, node_ids: list) -> None:
+    import json as _json
+
+    nodes_json = _json.dumps(
+        [
+            {
+                "node_id": nid,
+                "relevance": 0.8,
+                "memory_type": "FACTUAL",
+                "sequence_pos": i,
+            }
+            for i, nid in enumerate(node_ids)
+        ]
+    )
+    conn = _raw_conn()
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO clan.traces (id, recorded_at, nodes, purpose) "
+                "VALUES (%s, now()::text, %s, 'test') "
+                "ON CONFLICT (id) DO UPDATE SET nodes = EXCLUDED.nodes",
+                (trace_id, nodes_json),
+            )
+    conn.close()
+
+
+def _delete_trace(trace_id: str) -> None:
+    conn = _raw_conn()
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM clan.traces WHERE id = %s", (trace_id,))
+    conn.close()
+
+
+def test_recall_high_confidence_no_expansion(_cleanup):
+    """recall() with mean_score >= threshold returns traces=[], expanded=False."""
+    nid = "TEST_RECALL_HI"
+    _cleanup.append(nid)
+    _insert_node(nid)
+    _set_activation(nid, 0.9)  # above default threshold 0.6
+
+    import os
+
+    os.environ["IGOR_RECALL_CONFIDENCE_THRESHOLD"] = "0.6"
+    try:
+        from devices.igor.cognition.activate import recall
+
+        result = recall(top_k=1)
+    finally:
+        os.environ.pop("IGOR_RECALL_CONFIDENCE_THRESHOLD", None)
+
+    assert result["expanded"] is False
+    assert result["traces"] == []
+    assert result["mean_score"] >= 0.6
+
+
+def test_recall_low_confidence_triggers_expansion(_cleanup):
+    """recall() with mean_score < threshold fetches trace rows for matched nodes."""
+    nid = "TEST_RECALL_LO"
+    trace_id = "TEST_TRACE_RECALL_LO"
+    _cleanup.append(nid)
+    _insert_node(nid)
+    _set_activation(nid, 0.1)  # below threshold
+    _insert_trace(trace_id, [nid])
+
+    import os
+
+    os.environ["IGOR_RECALL_CONFIDENCE_THRESHOLD"] = "0.6"
+    try:
+        from devices.igor.cognition.activate import recall
+
+        result = recall(top_k=1)
+    finally:
+        os.environ.pop("IGOR_RECALL_CONFIDENCE_THRESHOLD", None)
+        _delete_trace(trace_id)
+
+    assert result["expanded"] is True
+    assert result["mean_score"] < 0.6
+    # trace rows for nid should be present
+    trace_ids = [t["id"] for t in result["traces"]]
+    assert trace_id in trace_ids
+
+
+def test_recall_trace_failure_returns_nodes_only(_cleanup):
+    """recall() returns memory nodes even when trace query fails."""
+    nid = "TEST_RECALL_FAIL"
+    _cleanup.append(nid)
+    _insert_node(nid)
+    _set_activation(nid, 0.05)  # very low — triggers expansion
+
+    from unittest.mock import patch
+
+    import os
+
+    os.environ["IGOR_RECALL_CONFIDENCE_THRESHOLD"] = "0.99"
+    try:
+        from devices.igor.cognition.activate import recall
+
+        with patch(
+            "devices.igor.cognition.activate._TRACE_EXPAND_SQL",
+            "THIS IS NOT VALID SQL !!",
+        ):
+            result = recall(top_k=1)
+    finally:
+        os.environ.pop("IGOR_RECALL_CONFIDENCE_THRESHOLD", None)
+
+    # Should get nodes but no traces, no exception
+    assert len(result["nodes"]) >= 1
+    assert result["traces"] == []
+
+
+def test_recall_empty_table_returns_empty():
+    """recall() with no activated memories returns empty result."""
+    from unittest.mock import MagicMock, patch
+
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_cursor.__enter__ = lambda s: s
+    mock_cursor.__exit__ = MagicMock(return_value=False)
+    mock_cursor.fetchall.return_value = []
+    mock_conn.cursor.return_value = mock_cursor
+
+    from devices.igor.cognition.activate import recall
+
+    result = recall(top_k=5, conn=mock_conn)
+    assert result == {"nodes": [], "traces": [], "expanded": False, "mean_score": 0.0}

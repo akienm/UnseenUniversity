@@ -9,6 +9,10 @@ Steps per call:
   5. Propagate via WITH RECURSIVE CTE on clan.interpretive_edges (T-igor-recursive-edge-traversal).
   6. Call focus_state.update_from_activation() with highest-scored node.
 
+recall() adds uncertainty-gated episode expansion (T-igor-uncertainty-gated-recall):
+  fetch top-K memories by activation_score; if mean < IGOR_RECALL_CONFIDENCE_THRESHOLD
+  (default 0.6), also expand with clan.traces rows that co-activated those nodes.
+
 T-igor-activate-primitive / T-igor-recursive-edge-traversal / D-activate-primitive-2026-05-10
 """
 
@@ -257,3 +261,117 @@ def _propagate_cte(
                 )
 
     return result
+
+
+_RECALL_CONFIDENCE_DEFAULT = 0.6
+_TRACES_PER_NODE_DEFAULT = 5
+
+_RECALL_TOP_K_SQL = """
+SELECT id, narrative, memory_type, activation_score, last_activated_at, metadata
+FROM clan.memories
+WHERE activation_score IS NOT NULL
+ORDER BY activation_score DESC
+LIMIT %s
+"""
+
+_TRACE_EXPAND_SQL = """
+SELECT DISTINCT t.id, t.recorded_at, t.query, t.nodes, t.purpose, t.thread_id
+FROM clan.traces t,
+     jsonb_array_elements(t.nodes::jsonb) node_elem
+WHERE node_elem->>'node_id' = ANY(%s)
+ORDER BY t.recorded_at DESC
+LIMIT %s
+"""
+
+
+def recall(
+    *,
+    top_k: int = 10,
+    conn=None,
+) -> dict:
+    """Top-K memory recall with uncertainty-gated episode expansion.
+
+    Fetches the top_k most recently activated memories. When their mean
+    activation_score < IGOR_RECALL_CONFIDENCE_THRESHOLD (default 0.6),
+    expands by querying clan.traces for turns that co-activated those
+    nodes — providing episode-level context alongside the node results.
+
+    Returns:
+        {
+            "nodes": [dict, ...],    top-K memory rows
+            "traces": [dict, ...],   trace rows ([] when mean score >= threshold)
+            "expanded": bool,        True when trace expansion fired
+            "mean_score": float,     mean activation_score of top-K nodes
+        }
+
+    Non-blocking: trace query failure returns memory-only result with
+    traces=[] and expanded=False; never raises.
+    """
+    threshold = float(
+        os.getenv("IGOR_RECALL_CONFIDENCE_THRESHOLD", str(_RECALL_CONFIDENCE_DEFAULT))
+    )
+    traces_limit = _TRACES_PER_NODE_DEFAULT * max(1, top_k)
+
+    _close_conn = conn is None
+    if _close_conn:
+        conn = _get_conn()
+        _ensure_migration(conn)
+
+    try:
+        import json as _json
+        import psycopg2.extras
+
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(_RECALL_TOP_K_SQL, (top_k,))
+            rows = [dict(r) for r in cur.fetchall()]
+
+        if not rows:
+            return {"nodes": [], "traces": [], "expanded": False, "mean_score": 0.0}
+
+        scores = [float(r.get("activation_score") or 0.0) for r in rows]
+        mean_score = sum(scores) / len(scores)
+
+        if mean_score >= threshold:
+            log.debug(
+                "recall: top_k=%d mean_score=%.3f >= threshold=%.3f — no expansion",
+                top_k,
+                mean_score,
+                threshold,
+            )
+            return {
+                "nodes": rows,
+                "traces": [],
+                "expanded": False,
+                "mean_score": mean_score,
+            }
+
+        # Low confidence — expand with episode traces
+        log.info(
+            "recall: top_k=%d mean_score=%.3f < threshold=%.3f — expanding with traces",
+            top_k,
+            mean_score,
+            threshold,
+        )
+        node_ids = [r["id"] for r in rows]
+        traces: list[dict] = []
+        try:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute(_TRACE_EXPAND_SQL, (node_ids, traces_limit))
+                traces = [dict(r) for r in cur.fetchall()]
+            log.info("recall: expanded with %d trace rows", len(traces))
+        except Exception as _te:
+            log.warning("recall: trace expansion failed (non-blocking): %s", _te)
+
+        return {
+            "nodes": rows,
+            "traces": traces,
+            "expanded": True,
+            "mean_score": mean_score,
+        }
+
+    finally:
+        if _close_conn:
+            try:
+                conn.close()
+            except Exception as _ce:
+                log.debug("recall: conn.close failed: %s", _ce)
