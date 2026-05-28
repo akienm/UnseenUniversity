@@ -369,6 +369,16 @@ _LTM_SURFACER_ECHO_RE = re.compile(
     r"^\s*LTM\|[A-Z]+\|id=",
     re.IGNORECASE,
 )
+# Thread context echo: [Thread context — recent exchanges in this channel:] is
+# the prompt-injection prefix built by _get_thread_context_prefix(). When the
+# NE echoes it back (typically via feedback loop: corrupted thread buffer entry
+# gets pushed to TWM as thread.recent_igor → NE echoes it), it must not reach
+# the channel. Root fix is sanitizing _update_thread_buffer(); this is the
+# defense-in-depth emit guard.
+_THREAD_CONTEXT_ECHO_RE = re.compile(
+    r"^\s*\[Thread context",
+    re.IGNORECASE,
+)
 
 
 def _is_raw_tool_leak(text: str) -> bool:
@@ -390,6 +400,7 @@ def _is_raw_tool_leak(text: str) -> bool:
         or _PRIVACY_SENTINEL_RE.match(t)
         or _CSB_OBSERVATION_ECHO_RE.match(t)
         or _LTM_SURFACER_ECHO_RE.match(t)
+        or _THREAD_CONTEXT_ECHO_RE.match(t)
     )
 
 
@@ -2326,6 +2337,11 @@ class Igor(IgorBase):
             lines.append(f"  [Earlier in conversation: {summary}]")
             lines.append("")
         for user_turn, igor_turn in buf["history"][-self._THREAD_MAX_HISTORY :]:
+            # Skip entries where igor_turn is a raw-leak echo — these are
+            # corrupted entries from prior feedback loops. Surfacing them
+            # would restart the cycle even after the emit guard fires.
+            if _is_raw_tool_leak(igor_turn):
+                continue
             lines.append(f"  User: {user_turn[:200]}")
             lines.append(f"  Igor: {igor_turn[:300]}")
         lines.append("")
@@ -2458,7 +2474,15 @@ class Igor(IgorBase):
                 "summary": "",
             }
         buf = self._thread_buffers[thread_id]
-        buf["history"].append((user_turn[:500], igor_reply[:600]))
+        # Sanitize: if igor_reply is a raw-leak echo (e.g. thread context
+        # feedback loop), store a placeholder rather than the echo so the
+        # corrupted content can't propagate into TWM next turn.
+        _safe_reply = (
+            "[response unavailable]"
+            if _is_raw_tool_leak(igor_reply)
+            else igor_reply[:600]
+        )
+        buf["history"].append((user_turn[:500], _safe_reply))
         buf["last_active"] = _t.monotonic()
 
         # If over capacity, compact oldest half in background instead of truncating
