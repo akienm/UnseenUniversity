@@ -854,7 +854,7 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "m050_instance_cloud_escalations",
         "ALTER TABLE IF EXISTS public.cloud_escalations SET SCHEMA instance",
     ),
-    # Step 4: move infra tables (utility closet / cross-agent)
+    # Step 4: move infra tables (rack server / cross-agent)
     ("m050_infra_machines", "ALTER TABLE IF EXISTS public.machines SET SCHEMA infra"),
     (
         "m050_infra_channel_messages",

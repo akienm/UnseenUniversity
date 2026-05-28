@@ -426,7 +426,7 @@ def make_local_proxy(db_path=None) -> PGDatabaseProxy:
 def make_infra_proxy() -> Optional[PGDatabaseProxy]:
     """
     Return PGDatabaseProxy for infrastructure tables only (infra schema).
-    Used by utility closet services that don't need clan or instance access.
+    Used by rack server services that don't need clan or instance access.
     Returns None if IGOR_HOME_DB_URL is not set.
     """
     db_url = os.getenv("IGOR_HOME_DB_URL") or os.getenv("IGOR_DB_URL")

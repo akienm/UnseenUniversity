@@ -144,7 +144,7 @@ Logging, channel emission, escalation, metrics, and daemon supervision.
 | forensic_logger.py | Detailed forensic log writer (high-verbosity event capture) |
 | metrics.py | Emits counters and gauges to the metrics store |
 | self_test.py | Boot-time self-test suite |
-| uc_watchdog.py | Watches the UC (utility closet) for health |
+| uc_watchdog.py | Watches the UC (rack server) for health |
 | state_coherence_check.py | Periodic check that cognition state is internally consistent |
 | observer.py | Generic observer pattern for cognition events |
 | interruptors.py | Hooks that can interrupt the NE mid-cycle |

@@ -55,7 +55,7 @@ def _open(req: urllib.request.Request, timeout: float):
 
 
 def _post(path: str, body: dict, timeout: float = 30.0) -> Optional[dict]:
-    """POST JSON to utility closet. Returns response dict or None on failure.
+    """POST JSON to rack server. Returns response dict or None on failure.
 
     T-web-chat-reply-not-surfacing (2026-04-19): timeout raised from 5.0 to 30.0
     and failure logs promoted from DEBUG to WARNING. At 5s + DEBUG, an
@@ -81,10 +81,10 @@ def _post(path: str, body: dict, timeout: float = 30.0) -> Optional[dict]:
         with _open(req, timeout) as resp:
             return json.loads(resp.read())
     except urllib.error.URLError as e:
-        log.warning("utility closet POST %s failed (URLError): %s", path, e)
+        log.warning("rack server POST %s failed (URLError): %s", path, e)
         return None
     except Exception as e:
-        log.warning("utility closet POST %s failed: %s", path, e)
+        log.warning("rack server POST %s failed: %s", path, e)
         return None
 
 
@@ -190,18 +190,18 @@ def _post_with_telemetry(
 
 
 def _get(path: str, timeout: float = 5.0) -> Optional[dict]:
-    """GET from utility closet. Returns response dict or None on failure."""
+    """GET from rack server. Returns response dict or None on failure."""
     try:
         req = urllib.request.Request(f"{_UC_BASE}{path}", method="GET")
         with _open(req, timeout) as resp:
             return json.loads(resp.read())
     except Exception as e:
-        log.debug("utility closet GET %s failed: %s", path, e)
+        log.debug("rack server GET %s failed: %s", path, e)
         return None
 
 
 class AdcClient(IgorBase):
-    """Client for communicating with the utility closet platform server."""
+    """Client for communicating with the rack server platform server."""
 
     def __init__(self):
         self._agent_id: Optional[str] = None
@@ -222,7 +222,7 @@ class AdcClient(IgorBase):
         return self._agent_id
 
     def is_available(self) -> bool:
-        """Check if the utility closet is running and healthy."""
+        """Check if the rack server is running and healthy."""
         health = _get("/health", timeout=2.0)
         return health is not None and health.get("status") == "ok"
 
@@ -232,7 +232,7 @@ class AdcClient(IgorBase):
         capabilities: Optional[list] = None,
         callback_url: str = "",
     ) -> bool:
-        """Register this agent with the utility closet.
+        """Register this agent with the rack server.
 
         Returns True if registration succeeded, False otherwise.
         Non-blocking — logs warning on failure but does not raise.
@@ -244,7 +244,7 @@ class AdcClient(IgorBase):
 
         if not self.is_available():
             log.info(
-                "Utility closet not available — running without platform registration"
+                "Rack server not available — running without platform registration"
             )
             return False
 
@@ -265,10 +265,10 @@ class AdcClient(IgorBase):
                 self._server_started_at = health.get("started_at") or health.get(
                     "boot_ts"
                 )
-            log.info("Registered with utility closet as '%s'", agent_id)
+            log.info("Registered with rack server as '%s'", agent_id)
             return True
         else:
-            log.warning("Failed to register with utility closet: %s", result)
+            log.warning("Failed to register with rack server: %s", result)
             return False
 
     def check_server_epoch(self) -> bool:
@@ -316,7 +316,7 @@ class AdcClient(IgorBase):
             return False
 
     def deregister(self) -> bool:
-        """Deregister this agent from the utility closet.
+        """Deregister this agent from the rack server.
 
         Called during shutdown. Best-effort — never raises.
         """
@@ -329,21 +329,21 @@ class AdcClient(IgorBase):
         self._registered = False
 
         if result and result.get("status") == "ok":
-            log.info("Deregistered from utility closet")
+            log.info("Deregistered from rack server")
             return True
         else:
             log.debug("Deregister failed (non-fatal): %s", result)
             return False
 
     def push_stats(self, stats: dict) -> bool:
-        """Push dashboard stats to the utility closet. Non-blocking."""
+        """Push dashboard stats to the rack server. Non-blocking."""
         if not self._registered or not self._agent_id:
             return False
         result = _post(f"/api/agents/{self._agent_id}/stats", stats)
         return result is not None and result.get("status") == "ok"
 
     def send_message(self, content: str, session_id: str = "shared") -> bool:
-        """Send a message through the utility closet to web clients.
+        """Send a message through the rack server to web clients.
 
         Uses _post_with_telemetry so drops are visible in the channel in real
         time rather than buried in logs (T-web-reply-telemetry).
@@ -362,7 +362,7 @@ class AdcClient(IgorBase):
         return result is not None and result.get("status") == "ok"
 
     def poll_messages(self) -> list:
-        """Poll for incoming messages from the utility closet.
+        """Poll for incoming messages from the rack server.
 
         Returns list of message dicts, or empty list on failure.
         """

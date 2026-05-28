@@ -54,7 +54,7 @@ class TestIgorADCShimBasics:
     def test_device_id_property(self):
         """Verify device_id property returns correct identifier."""
         shim = IgorADCShim()
-        assert shim.device_id == "adc-utility-closet"
+        assert shim.device_id == "adc-web-server"
 
     def test_self_test_when_health_check_passes(self):
         """Verify self_test() returns {passed: True} when ADC responds."""
@@ -106,9 +106,10 @@ class TestIgorADCShimStartStopRestart:
 
     def test_start_returns_false_on_launch_failure(self):
         """Verify start() returns False if subprocess launch fails."""
-        with patch("devices.igor.web.adc_shim._check_health") as mock_check, patch(
-            "subprocess.Popen"
-        ) as mock_popen:
+        with (
+            patch("devices.igor.web.adc_shim._check_health") as mock_check,
+            patch("subprocess.Popen") as mock_popen,
+        ):
             mock_check.return_value = False  # ADC not running
             mock_popen.side_effect = FileNotFoundError("server script not found")
 
@@ -119,9 +120,12 @@ class TestIgorADCShimStartStopRestart:
 
     def test_start_returns_false_on_health_poll_timeout(self):
         """Verify start() returns False if /health doesn't respond within 15s."""
-        with patch("devices.igor.web.adc_shim._check_health") as mock_check, patch(
-            "subprocess.Popen"
-        ) as mock_popen, patch("time.time") as mock_time, patch("time.sleep"):
+        with (
+            patch("devices.igor.web.adc_shim._check_health") as mock_check,
+            patch("subprocess.Popen") as mock_popen,
+            patch("time.time") as mock_time,
+            patch("time.sleep"),
+        ):
             # First call: ADC not running; subsequent calls: still not responding
             mock_check.side_effect = [False, False, False, False, False]
             mock_process = MagicMock()
@@ -168,9 +172,10 @@ class TestIgorADCShimStartStopRestart:
 
     def test_restart_calls_stop_and_start(self):
         """Verify restart() calls stop() then start()."""
-        with patch.object(IgorADCShim, "stop") as mock_stop, patch.object(
-            IgorADCShim, "start"
-        ) as mock_start:
+        with (
+            patch.object(IgorADCShim, "stop") as mock_stop,
+            patch.object(IgorADCShim, "start") as mock_start,
+        ):
             mock_stop.return_value = True
             mock_start.return_value = True
 
