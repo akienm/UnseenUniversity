@@ -83,9 +83,10 @@ def test_dreaming_empty_inputs_returns_zero(mock_paths, monkeypatch):
     monkeypatch.setenv("IGOR_DREAMING_INTERVAL", "50")
     from devices.igor.cognition import dreaming
 
-    with patch(
-        "devices.igor.cognition.dreaming._read_watch_problems", return_value=[]
-    ), patch("devices.igor.cognition.dreaming._synthesize") as mock_synth:
+    with (
+        patch("devices.igor.cognition.dreaming._read_watch_problems", return_value=[]),
+        patch("devices.igor.cognition.dreaming._synthesize") as mock_synth,
+    ):
         result = dreaming.run(paths_obj=mock_paths)
 
     assert result == 0
@@ -315,3 +316,211 @@ def test_read_librarian_observations_returns_list(pg_test_schema):
 
     result = _read_librarian_observations()
     assert isinstance(result, list)
+
+
+# ── Hebbian edge strengthening (T-dreaming-wg-hebbian) ───────────────────────
+
+
+def _insert_test_memory(conn, mem_id: str) -> None:
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO clan.memories (id, narrative, memory_type, metadata) "
+                "VALUES (%s, 'hebbian test node', 'FACTUAL', '{}') "
+                "ON CONFLICT (id) DO NOTHING",
+                (mem_id,),
+            )
+
+
+def _insert_test_trace(conn, trace_id: str, node_ids: list) -> None:
+    nodes_json = json.dumps(
+        [
+            {
+                "node_id": nid,
+                "relevance": 0.8,
+                "memory_type": "FACTUAL",
+                "sequence_pos": i,
+            }
+            for i, nid in enumerate(node_ids)
+        ]
+    )
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO clan.traces (id, recorded_at, nodes, purpose) "
+                "VALUES (%s, now()::text, %s, 'hebbian_test') "
+                "ON CONFLICT (id) DO UPDATE SET nodes = EXCLUDED.nodes",
+                (trace_id, nodes_json),
+            )
+
+
+def _cleanup_hebbian(conn, node_ids: list, trace_ids: list) -> None:
+    with conn:
+        with conn.cursor() as cur:
+            if node_ids:
+                cur.execute(
+                    "DELETE FROM clan.interpretive_edges "
+                    "WHERE from_id = ANY(%s) OR to_id = ANY(%s)",
+                    (node_ids, node_ids),
+                )
+                cur.execute("DELETE FROM clan.memories WHERE id = ANY(%s)", (node_ids,))
+            if trace_ids:
+                cur.execute("DELETE FROM clan.traces WHERE id = ANY(%s)", (trace_ids,))
+
+
+def test_hebbian_creates_edge_above_threshold(pg_test_schema):
+    """Co-activated pair appearing >= threshold times gets an edge."""
+    if pg_test_schema is None:
+        pytest.skip("pg_test_schema not available")
+    from devices.igor.cognition.dreaming import _conn, _strengthen_coactivated_edges
+
+    node_a = "TEST_HEB_A"
+    node_b = "TEST_HEB_B"
+    trace_ids = [f"TEST_HEB_TRACE_{i}" for i in range(5)]
+
+    conn = _conn()
+    try:
+        _insert_test_memory(conn, node_a)
+        _insert_test_memory(conn, node_b)
+        for tid in trace_ids:
+            _insert_test_trace(conn, tid, [node_a, node_b])
+
+        os.environ["IGOR_HEBBIAN_THRESHOLD"] = "3"
+        os.environ["IGOR_HEBBIAN_DELTA"] = "0.1"
+        os.environ["IGOR_DREAMING_LOOKBACK"] = "100"
+        try:
+            count = _strengthen_coactivated_edges(conn)
+        finally:
+            for k in (
+                "IGOR_HEBBIAN_THRESHOLD",
+                "IGOR_HEBBIAN_DELTA",
+                "IGOR_DREAMING_LOOKBACK",
+            ):
+                os.environ.pop(k, None)
+
+        # Verify the edge exists
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT weight FROM clan.interpretive_edges "
+                "WHERE from_id = %s AND to_id = %s AND layer = 'hebbian'",
+                (node_a, node_b),
+            )
+            row = cur.fetchone()
+    finally:
+        _cleanup_hebbian(conn, [node_a, node_b], trace_ids)
+        conn.close()
+
+    assert count >= 1, "Expected at least one edge upserted"
+    assert row is not None, "Hebbian edge was not created"
+    assert float(row[0]) > 0.0
+
+
+def test_hebbian_no_edge_below_threshold(pg_test_schema):
+    """Pair appearing fewer times than threshold does NOT create an edge."""
+    if pg_test_schema is None:
+        pytest.skip("pg_test_schema not available")
+    from devices.igor.cognition.dreaming import _conn, _strengthen_coactivated_edges
+
+    node_a = "TEST_HEB_LOW_A"
+    node_b = "TEST_HEB_LOW_B"
+    # Only 2 co-activations, threshold is 3
+    trace_ids = [f"TEST_HEB_LOW_TRACE_{i}" for i in range(2)]
+
+    conn = _conn()
+    try:
+        _insert_test_memory(conn, node_a)
+        _insert_test_memory(conn, node_b)
+        for tid in trace_ids:
+            _insert_test_trace(conn, tid, [node_a, node_b])
+
+        os.environ["IGOR_HEBBIAN_THRESHOLD"] = "3"
+        os.environ["IGOR_DREAMING_LOOKBACK"] = "100"
+        try:
+            _strengthen_coactivated_edges(conn)
+        finally:
+            for k in ("IGOR_HEBBIAN_THRESHOLD", "IGOR_DREAMING_LOOKBACK"):
+                os.environ.pop(k, None)
+
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT weight FROM clan.interpretive_edges "
+                "WHERE from_id = %s AND to_id = %s AND layer = 'hebbian'",
+                (node_a, node_b),
+            )
+            row = cur.fetchone()
+    finally:
+        _cleanup_hebbian(conn, [node_a, node_b], trace_ids)
+        conn.close()
+
+    assert row is None, "Edge should not be created below threshold"
+
+
+def test_hebbian_strengthens_existing_edge(pg_test_schema):
+    """Calling _strengthen_coactivated_edges twice increases weight further."""
+    if pg_test_schema is None:
+        pytest.skip("pg_test_schema not available")
+    from devices.igor.cognition.dreaming import _conn, _strengthen_coactivated_edges
+
+    node_a = "TEST_HEB_STR_A"
+    node_b = "TEST_HEB_STR_B"
+    trace_ids = [f"TEST_HEB_STR_TRACE_{i}" for i in range(4)]
+
+    conn = _conn()
+    try:
+        _insert_test_memory(conn, node_a)
+        _insert_test_memory(conn, node_b)
+        for tid in trace_ids:
+            _insert_test_trace(conn, tid, [node_a, node_b])
+
+        os.environ["IGOR_HEBBIAN_THRESHOLD"] = "3"
+        os.environ["IGOR_HEBBIAN_DELTA"] = "0.1"
+        os.environ["IGOR_DREAMING_LOOKBACK"] = "100"
+        try:
+            _strengthen_coactivated_edges(conn)
+            _strengthen_coactivated_edges(conn)
+        finally:
+            for k in (
+                "IGOR_HEBBIAN_THRESHOLD",
+                "IGOR_HEBBIAN_DELTA",
+                "IGOR_DREAMING_LOOKBACK",
+            ):
+                os.environ.pop(k, None)
+
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT weight FROM clan.interpretive_edges "
+                "WHERE from_id = %s AND to_id = %s AND layer = 'hebbian'",
+                (node_a, node_b),
+            )
+            row = cur.fetchone()
+    finally:
+        _cleanup_hebbian(conn, [node_a, node_b], trace_ids)
+        conn.close()
+
+    assert row is not None
+    assert float(row[0]) > 0.15, "Weight should be > 0.1 after two calls"
+
+
+def test_hebbian_failure_does_not_abort_dreaming(pg_test_schema):
+    """Exception in _strengthen_coactivated_edges does not raise; returns 0."""
+    if pg_test_schema is None:
+        pytest.skip("pg_test_schema not available")
+    from devices.igor.cognition.dreaming import _conn, _strengthen_coactivated_edges
+
+    conn = _conn()
+    try:
+        # Patch json.loads to blow up so the function hits the except path
+        with patch(
+            "devices.igor.cognition.dreaming.json.loads",
+            side_effect=RuntimeError("boom"),
+        ):
+            # Insert one trace so it tries to parse
+            _insert_test_trace(conn, "TEST_HEB_FAIL_TRACE", ["TEST_HEB_FAIL_A"])
+            result = _strengthen_coactivated_edges(conn)
+    finally:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM clan.traces WHERE id = 'TEST_HEB_FAIL_TRACE'")
+        conn.close()
+
+    assert result == 0, "Should return 0 on failure, not raise"
