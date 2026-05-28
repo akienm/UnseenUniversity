@@ -550,85 +550,22 @@ _HEBBIAN_LOOKBACK_DEFAULT = 100
 
 
 def _strengthen_coactivated_edges(conn) -> int:
-    """Hebbian edge strengthening: nodes that fire together wire together.
+    """Hebbian edge strengthening — delegated to Librarian edge_maintenance.
 
-    Queries recent clan.traces and counts co-activation pairs. For pairs
-    appearing together in >= IGOR_HEBBIAN_THRESHOLD traces (default 3),
-    UPSERTs a 'hebbian' layer edge in clan.interpretive_edges (create with
-    weight=delta or strengthen by delta). Non-blocking on failure.
-
-    Returns count of edges created or strengthened.
+    Logic moved to devices/librarian/edge_maintenance.py so consolidation
+    runs on Librarian's schedule, independent of Igor's dreaming pass.
+    This stub delegates to the Librarian service and remains for backwards
+    compatibility with existing dreaming.run() callers.
     """
     try:
-        threshold = int(
-            os.getenv("IGOR_HEBBIAN_THRESHOLD", str(_HEBBIAN_THRESHOLD_DEFAULT))
+        from devices.librarian.edge_maintenance import strengthen_coactivated_edges
+
+        return strengthen_coactivated_edges(conn)
+    except ImportError:
+        log.warning(
+            "_strengthen_coactivated_edges: Librarian edge_maintenance unavailable"
         )
-        delta = float(os.getenv("IGOR_HEBBIAN_DELTA", str(_HEBBIAN_DELTA_DEFAULT)))
-        lookback = int(
-            os.getenv("IGOR_DREAMING_LOOKBACK", str(_HEBBIAN_LOOKBACK_DEFAULT))
-        )
-
-        # Fetch recent trace node lists
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT nodes FROM clan.traces ORDER BY recorded_at DESC LIMIT %s",
-                (lookback,),
-            )
-            rows = cur.fetchall()
-
-        # Count co-activation pairs
-        from collections import Counter
-
-        pair_counts: Counter = Counter()
-        for (nodes_raw,) in rows:
-            try:
-                nodes = (
-                    json.loads(nodes_raw) if isinstance(nodes_raw, str) else nodes_raw
-                )
-                node_ids = [
-                    n["node_id"]
-                    for n in nodes
-                    if isinstance(n, dict) and "node_id" in n
-                ]
-            except Exception:
-                continue
-            # All ordered pairs within this trace (A,B) and (B,A) separately;
-            # use sorted order so each undirected pair is counted once
-            for i, a in enumerate(node_ids):
-                for b in node_ids[i + 1 :]:
-                    pair_counts[tuple(sorted((a, b)))] += 1
-
-        # Upsert edges for qualifying pairs
-        count = 0
-        with conn:
-            with conn.cursor() as cur:
-                for (a, b), freq in pair_counts.items():
-                    if freq < threshold:
-                        continue
-                    # UPDATE existing hebbian edge or INSERT new one
-                    cur.execute(
-                        "UPDATE clan.interpretive_edges SET weight = weight + %s "
-                        "WHERE from_id = %s AND to_id = %s AND layer = 'hebbian'",
-                        (delta, a, b),
-                    )
-                    if cur.rowcount == 0:
-                        cur.execute(
-                            "INSERT INTO clan.interpretive_edges "
-                            "(from_id, to_id, weight, layer, created_at) "
-                            "VALUES (%s, %s, %s, 'hebbian', now()::text)",
-                            (a, b, delta),
-                        )
-                    count += 1
-
-        log.info(
-            "dreaming: hebbian strengthening — %d traces scanned, %d edges upserted "
-            "(threshold=%d, delta=%.2f)",
-            len(rows),
-            count,
-            threshold,
-            delta,
-        )
-        return count
+        return 0
     except Exception as _e:
         log.warning("_strengthen_coactivated_edges failed (non-fatal): %s", _e)
         return 0
