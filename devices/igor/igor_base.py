@@ -208,8 +208,14 @@ class IgorBase(_BASE):  # type: ignore[valid-type,misc]
         response: str,
         model: str,
         elapsed_ms: float,
+        tokens_in: int = 0,
+        tokens_out: int = 0,
     ) -> None:
-        """Log an LLM inference call to ~/.TheIgors/logs/llm_io/YYYYMMDD.log."""
+        """Log an LLM inference call to ~/.TheIgors/logs/llm_io/YYYYMMDD.log.
+
+        Dual-write: file log (existing) + infra.llm_calls DB row
+        (T-universal-llm-lineage — queryable without reading log files).
+        """
         try:
             log_dir = paths().runtime / "logs" / "llm_io"
             log_dir.mkdir(parents=True, exist_ok=True)
@@ -232,6 +238,42 @@ class IgorBase(_BASE):  # type: ignore[valid-type,misc]
                 f.write(_json.dumps(entry) + "\n")
         except Exception as _e:
             self.log.error("log_llm_io failed: %s", _e)
+
+        # T-universal-llm-lineage: DB write alongside file write (fire-and-forget)
+        try:
+            import hashlib
+            import os as _os
+
+            import psycopg2
+
+            _db_url = _os.getenv("IGOR_HOME_DB_URL") or str(paths().home_db_url)
+            if _db_url:
+                _hash = hashlib.md5(
+                    prompt.encode("utf-8", errors="replace")
+                ).hexdigest()
+                _inst = _os.getenv("IGOR_INSTANCE_ID", "")
+                _conn = psycopg2.connect(_db_url)
+                with _conn:
+                    with _conn.cursor() as _cur:
+                        _cur.execute(
+                            "INSERT INTO infra.llm_calls "
+                            "(prompt_hash, model, tokens_in, tokens_out, outcome, "
+                            " source_fn, elapsed_ms, instance_id) "
+                            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                            (
+                                _hash,
+                                model,
+                                tokens_in,
+                                tokens_out,
+                                "pass",
+                                step,
+                                int(elapsed_ms),
+                                _inst,
+                            ),
+                        )
+                _conn.close()
+        except Exception:
+            pass
 
     def log_state_snapshot(self, label: str, state: Dict[str, Any]) -> None:
         """Log an arbitrary state snapshot to ~/.TheIgors/logs/snapshots/YYYYMMDD.log."""

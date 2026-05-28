@@ -886,6 +886,53 @@ _INFERENCE_IO_PROMPT_CAP = 16 * 1024  # 16 KB max per prompt
 _INFERENCE_IO_RESP_CAP = 8 * 1024  # 8 KB max per response
 
 
+def _write_llm_call_db(
+    *,
+    prompt_hash: str,
+    model: str,
+    tokens_in: int = 0,
+    tokens_out: int = 0,
+    outcome: str = "pass",
+    source_fn: str = "",
+    elapsed_ms: int = 0,
+) -> None:
+    """Fire-and-forget write to infra.llm_calls (T-universal-llm-lineage).
+
+    Swallows all exceptions — logging must never crash the caller.
+    """
+    try:
+        import os as _os
+
+        import psycopg2
+
+        db_url = _os.getenv("IGOR_HOME_DB_URL") or str(paths().home_db_url)
+        if not db_url:
+            return
+        instance_id = _os.getenv("IGOR_INSTANCE_ID", "")
+        conn = psycopg2.connect(db_url)
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO infra.llm_calls "
+                    "(prompt_hash, model, tokens_in, tokens_out, outcome, "
+                    " source_fn, elapsed_ms, instance_id) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                    (
+                        prompt_hash,
+                        model,
+                        tokens_in,
+                        tokens_out,
+                        outcome,
+                        source_fn,
+                        elapsed_ms,
+                        instance_id,
+                    ),
+                )
+        conn.close()
+    except Exception:
+        pass
+
+
 def log_inference_io(
     *,
     provider: str,  # "ollama" | "openrouter" | "anthropic"
@@ -896,15 +943,19 @@ def log_inference_io(
     response: str,  # full text response received
     elapsed_ms: int = 0,
     call_type: str = "reason",  # "reason" | "preparse" | "winnow" | "ne" | "think"
+    tokens_in: int = 0,
+    tokens_out: int = 0,
 ) -> None:
     """
     Log full prompt + response for every model inference call.
 
-    Append-only, daily rotation (inference_io.YYYYMMDD.log), purged after 2 days.
+    Dual-write: append-only file (inference_io.YYYYMMDD.log, purged after 2 days)
+    AND infra.llm_calls DB row (T-universal-llm-lineage — queryable without log files).
     Prompt capped at 16KB, response at 8KB so the log stays manageable.
     Gate: IGOR_LOG_INFERENCE_IO (default true).
     """
     try:
+        import hashlib
         import os as _os
 
         if _os.getenv("IGOR_LOG_INFERENCE_IO", "true").lower() in ("0", "false", "no"):
@@ -949,6 +1000,24 @@ def log_inference_io(
         sys.stderr.write(
             f"[forensic_logger] bare except in devices/igor/cognition/forensic_logger.py: {_bare_e}\n"
         )
+
+    # T-universal-llm-lineage: DB write alongside file write (fire-and-forget)
+    try:
+        import hashlib
+
+        _prompt_hash = hashlib.md5(prompt.encode("utf-8", errors="replace")).hexdigest()
+        _source = f"{provider}/{call_type}"
+        _write_llm_call_db(
+            prompt_hash=_prompt_hash,
+            model=model,
+            tokens_in=tokens_in,
+            tokens_out=tokens_out,
+            outcome="pass",
+            source_fn=_source,
+            elapsed_ms=elapsed_ms,
+        )
+    except Exception:
+        pass
 
 
 def _purge_old_inference_io(today: str) -> None:

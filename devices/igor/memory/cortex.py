@@ -952,6 +952,29 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "CREATE INDEX IF NOT EXISTS idx_balance_history_ts "
         "ON infra.balance_history (timestamp DESC)",
     ),
+    # ── T-universal-llm-lineage: every LLM call in one queryable table
+    # infra schema: cross-instance, queryable without reading log files
+    # (Willison observability principle — see D-expert-lenses-confidence-2026-05-21)
+    (
+        "m054_llm_calls",
+        "CREATE TABLE IF NOT EXISTS infra.llm_calls ("
+        " id          BIGSERIAL PRIMARY KEY,"
+        " ts          TIMESTAMPTZ NOT NULL DEFAULT NOW(),"
+        " prompt_hash TEXT NOT NULL,"
+        " model       TEXT NOT NULL,"
+        " tokens_in   INTEGER DEFAULT 0,"
+        " tokens_out  INTEGER DEFAULT 0,"
+        " outcome     TEXT DEFAULT 'unknown',"
+        " source_fn   TEXT DEFAULT '',"
+        " ticket_id   TEXT DEFAULT NULL,"
+        " elapsed_ms  INTEGER DEFAULT 0,"
+        " instance_id TEXT DEFAULT ''"
+        ")",
+    ),
+    (
+        "m054_llm_calls_idx",
+        "CREATE INDEX IF NOT EXISTS idx_llm_calls_ts " "ON infra.llm_calls (ts DESC)",
+    ),
 ]
 
 
