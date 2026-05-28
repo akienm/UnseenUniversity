@@ -361,6 +361,14 @@ _CSB_OBSERVATION_ECHO_RE = re.compile(
     r"^\s*MSG\|ch=",
     re.IGNORECASE,
 )
+# MemorySurfacer echo: LTM|TYPE|id=...|... is the TWM push format from
+# push_sources.MemorySurfacer. If NE or inhibition chain returns this as a
+# reply, it must be intercepted — it's internal memory metadata, not a response.
+# Defense-in-depth: root fix is "memory_surfacer" in _NE_EXCLUDED_SOURCES.
+_LTM_SURFACER_ECHO_RE = re.compile(
+    r"^\s*LTM\|[A-Z]+\|id=",
+    re.IGNORECASE,
+)
 
 
 def _is_raw_tool_leak(text: str) -> bool:
@@ -381,6 +389,7 @@ def _is_raw_tool_leak(text: str) -> bool:
         or _CSB_TOOL_LEAK_BARE_RE.match(t)
         or _PRIVACY_SENTINEL_RE.match(t)
         or _CSB_OBSERVATION_ECHO_RE.match(t)
+        or _LTM_SURFACER_ECHO_RE.match(t)
     )
 
 

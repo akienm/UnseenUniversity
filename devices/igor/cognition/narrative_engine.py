@@ -216,6 +216,7 @@ _NE_EXCLUDED_SOURCES = frozenset(
     {
         "narrative_engine",  # direct NE TWM pushes (action impulses, promoted echoes)
         "ne_loop_guard",  # reserved for any future loop-guard writes
+        "memory_surfacer",  # LTM|TYPE|id=... observations — already in relevant[] via cortex.search
     }
 )
 
