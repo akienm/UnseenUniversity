@@ -37,6 +37,7 @@ import sys
 from datetime import datetime, timezone
 
 from ..paths import paths as _paths
+
 DB_URL = _paths().home_db_url
 
 
@@ -223,10 +224,103 @@ def seed():
         ),
     )
 
+    # ── PR_GOAL_IDLE_READ_QUEUE ──────────────────────────────────────────────
+    # Concrete idle action: work through the reading queue.
+    _upsert_memory(
+        cur,
+        mem_id="PR_GOAL_IDLE_READ_QUEUE",
+        narrative=(
+            "Operational goal: when idle, work through the reading queue. "
+            "Books in Calibre, pending web articles, and reading_list entries "
+            "are all available. Reading and extracting nodes is productive idle "
+            "work that advances the learning plan without requiring external "
+            "direction."
+        ),
+        metadata=_goal_facia_metadata(
+            display_name="Work through reading queue",
+            relationship_type="goal_tactical",
+            desired_future_state=(
+                "All pending reading_list entries have been processed: chunks "
+                "read, nodes extracted, and deposited into memory. The queue "
+                "drains toward zero during idle periods."
+            ),
+            description=(
+                "Idle operational goal: read pending items in reading_list. "
+                "Concrete, always-available work that can proceed without "
+                "external direction."
+            ),
+            parent_goal_id="PR_GOAL_STRATEGIC_SELF_LEARNING_PLAN",
+            cumulative_investment_weight=1.3,
+        ),
+    )
+
+    # ── PR_GOAL_IDLE_SELF_STUDY ──────────────────────────────────────────────
+    # Concrete idle action: study own codebase to build self-knowledge.
+    _upsert_memory(
+        cur,
+        mem_id="PR_GOAL_IDLE_SELF_STUDY",
+        narrative=(
+            "Operational goal: when idle, study own codebase to build "
+            "self-knowledge. Reading devices/igor/ source files and depositing "
+            "FACTUAL memories about architecture and design decisions makes "
+            "future reasoning better without requiring external input."
+        ),
+        metadata=_goal_facia_metadata(
+            display_name="Study own codebase",
+            relationship_type="goal_tactical",
+            desired_future_state=(
+                "Igor has read and understood the key files in devices/igor/ "
+                "— cognition/, memory/, tools/, main.py — and has deposited "
+                "FACTUAL nodes capturing architectural invariants and design "
+                "decisions that would otherwise require asking Akien."
+            ),
+            description=(
+                "Idle operational goal: self-directed code study. Builds "
+                "the self-model that supports goal_graph reasoning."
+            ),
+            parent_goal_id="PR_GOAL_STRATEGIC_SELF_GOALGRAPH",
+            cumulative_investment_weight=1.2,
+        ),
+    )
+
+    # ── PR_GOAL_IDLE_WEB_LEARN ───────────────────────────────────────────────
+    # Concrete idle action: explore free web content for relevant topics.
+    _upsert_memory(
+        cur,
+        mem_id="PR_GOAL_IDLE_WEB_LEARN",
+        narrative=(
+            "Operational goal: when idle and the reading queue is empty, "
+            "explore web for relevant free content — AI papers, neuroscience, "
+            "cognitive science, philosophy of mind. Fetch via reading pipeline, "
+            "extract nodes, deposit to memory. Curiosity-driven learning that "
+            "doesn't cost Akien anything."
+        ),
+        metadata=_goal_facia_metadata(
+            display_name="Explore web and learn",
+            relationship_type="goal_tactical",
+            desired_future_state=(
+                "Igor has a steady flow of new external knowledge entering "
+                "memory from free sources — not just the explicit reading list "
+                "but self-directed web exploration on topics relevant to active "
+                "goals and curiosity attractors."
+            ),
+            description=(
+                "Idle operational goal: web-based curiosity learning. "
+                "The fallback when reading queue and self-study are both "
+                "exhausted."
+            ),
+            parent_goal_id="PR_GOAL_STRATEGIC_SELF_LEARNING_PLAN",
+            cumulative_investment_weight=1.1,
+        ),
+    )
+
     print("  seeded PR_GOAL_ASPIRATIONAL_SUCK_LESS (aspirational)")
     print("  seeded PR_GOAL_STRATEGIC_SELF_GOALGRAPH (strategic)")
     print("  seeded PR_GOAL_STRATEGIC_SELF_LEARNING_PLAN (strategic)")
     print("  seeded PR_GOAL_STRATEGIC_PROGRESS_TRACK (strategic)")
+    print("  seeded PR_GOAL_IDLE_READ_QUEUE (tactical/operational)")
+    print("  seeded PR_GOAL_IDLE_SELF_STUDY (tactical/operational)")
+    print("  seeded PR_GOAL_IDLE_WEB_LEARN (tactical/operational)")
 
     conn.close()
     print("Done.")

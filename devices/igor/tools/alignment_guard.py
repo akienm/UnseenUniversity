@@ -36,10 +36,16 @@ def record_ne_cycle(goal_id: str | None) -> None:
     """Record one completed NE cycle, tracking consecutive runs on the same goal.
 
     goal_id: facia_id of the top active goal this cycle, or None when unknown.
-    When goal_id is None, treated conservatively (same as last goal_id).
+    When goal_id is None AND we have never established a goal (post-restart
+    warmup), do not count — the guard is for extended runs on a specific goal,
+    not for the BoredomSource warmup window. When goal_id is None but we have
+    an established goal, count conservatively as still on that goal.
     """
     global _same_goal_cycles, _current_goal_id
     with _lock:
+        if goal_id is None and _current_goal_id is None:
+            # Pre-warmup: BoredomSource hasn't surfaced a goal yet; not alarming.
+            return
         if goal_id is None or goal_id == _current_goal_id:
             _same_goal_cycles += 1
         else:
