@@ -156,6 +156,7 @@ class GrannyDaemon:
             self._imap: Optional[IMAPServer] = IMAPServer()
             self._imap.start()
             self._imap.create_mailbox("CC.0")
+            self._imap.create_mailbox("feeds/granny")
         except Exception as e:
             log.warning("GrannyDaemon: IMAP setup failed — CC alerts disabled: %s", e)
             self._imap = None
@@ -216,6 +217,7 @@ class GrannyDaemon:
             if not audit.passed and not audit.escalate_to_cc:
                 log.warning("GrannyDaemon: %s failed audit — %s", tid, audit.reasons)
                 self._alert_cc(tid, str(audit.reasons), "audit_fail")
+                self._publish_feed("audit_fail", tid, str(audit.reasons))
                 continue
 
             ok, worker_id = self._device.route_ticket(ticket)
@@ -224,12 +226,16 @@ class GrannyDaemon:
                 dispatched += 1
                 self._total_dispatched += 1
                 log.info("GrannyDaemon: dispatched %s → %s", tid, worker_id)
+                self._publish_feed("dispatch", tid, f"dispatched to {worker_id}")
             else:
                 self._total_errors += 1
                 log.warning(
                     "GrannyDaemon: route failed for %s (worker=%s)", tid, worker_id
                 )
                 self._alert_cc(tid, f"route failed, worker={worker_id}", "route_fail")
+                self._publish_feed(
+                    "route_fail", tid, f"route failed, worker={worker_id}"
+                )
 
         self._dispatched_ids = new_ids  # reset to only current-cycle dispatches
         self._last_poll = time.time()
@@ -288,6 +294,20 @@ class GrannyDaemon:
             log.warning(
                 "GrannyDaemon: CC alert failed for %s (%s): %s", ticket_id, kind, e
             )
+
+    def _publish_feed(self, kind: str, ticket_id: str, details: str) -> None:
+        """Publish an event to feeds/granny. Best-effort — never raises."""
+        if self._imap is None:
+            return
+        try:
+            env = Envelope.now(
+                "Granny.0",
+                "feeds/granny",
+                {"kind": kind, "ticket_id": ticket_id, "details": details},
+            )
+            self._imap.append("feeds/granny", env)
+        except Exception as e:
+            log.warning("GrannyDaemon: feed publish failed (%s): %s", kind, e)
 
     def _post_channel(self, msg: str) -> None:
         try:

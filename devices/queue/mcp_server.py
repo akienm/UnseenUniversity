@@ -19,10 +19,67 @@ from __future__ import annotations
 
 import json
 import sys
+from typing import Optional
 
+from bus.envelope import Envelope
+from bus.imap_server import IMAPServer, _TEST_MODE
 from devices.queue.device import QueueDevice
 
 _device = QueueDevice()
+
+# ── Feeds IMAP client ─────────────────────────────────────────────────────────
+
+_feeds_imap: Optional[IMAPServer] = None
+
+
+def _get_feeds_imap() -> IMAPServer:
+    global _feeds_imap
+    if _feeds_imap is None:
+        s = IMAPServer()
+        if not _TEST_MODE:
+            s.start()
+        _feeds_imap = s
+    return _feeds_imap
+
+
+def _feeds_send_to(receiver: str, message: str) -> dict:
+    imap = _get_feeds_imap()
+    mailbox = f"feeds/{receiver}"
+    imap.create_mailbox(mailbox)
+    imap.append(
+        mailbox, Envelope.now("cc", mailbox, {"message": message, "kind": "send_to"})
+    )
+    return {"status": "ok", "mailbox": mailbox}
+
+
+def _feeds_send_feed(event: str, sender: str = "cc") -> dict:
+    imap = _get_feeds_imap()
+    mailbox = f"feeds/{sender}"
+    imap.create_mailbox(mailbox)
+    imap.append(
+        mailbox, Envelope.now(sender, mailbox, {"event": event, "kind": "send_feed"})
+    )
+    return {"status": "ok", "mailbox": mailbox}
+
+
+def _feeds_view_feed(sender: str, limit: int = 20) -> dict:
+    imap = _get_feeds_imap()
+    mailbox = f"feeds/{sender}"
+    try:
+        events = imap.fetch_recent(mailbox, limit)
+    except Exception:
+        return {"events": [], "count": 0, "mailbox": mailbox}
+    result = [
+        {
+            "from": e.from_device,
+            "to": e.to_device,
+            "sent_at": e.sent_at,
+            "payload": e.payload,
+        }
+        for e in events
+    ]
+    return {"events": result, "count": len(result), "mailbox": mailbox}
+
 
 _TOOL_SCHEMAS = [
     {
@@ -85,6 +142,61 @@ _TOOL_SCHEMAS = [
             },
         },
     },
+    {
+        "name": "send_to",
+        "description": "Send a directed message to a device's feed mailbox (feeds/<receiver>).",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "receiver": {
+                    "type": "string",
+                    "description": "Target device name, e.g. 'granny' or 'cc'",
+                },
+                "message": {
+                    "type": "string",
+                    "description": "Message text to deliver",
+                },
+            },
+            "required": ["receiver", "message"],
+        },
+    },
+    {
+        "name": "send_feed",
+        "description": "Publish an event to a sender's feed mailbox (feeds/<sender>). Default sender: 'cc'.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "event": {
+                    "type": "string",
+                    "description": "Event description to publish",
+                },
+                "sender": {
+                    "type": "string",
+                    "description": "Publishing device name. Default: 'cc'",
+                },
+            },
+            "required": ["event"],
+        },
+    },
+    {
+        "name": "view_feed",
+        "description": "Read the last N events from a device's feed mailbox (feeds/<sender>). Non-destructive.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "sender": {
+                    "type": "string",
+                    "description": "Device whose feed to read, e.g. 'granny'",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Max events to return. Default: 20",
+                    "default": 20,
+                },
+            },
+            "required": ["sender"],
+        },
+    },
 ]
 
 
@@ -126,6 +238,12 @@ def _dispatch(msg: dict) -> dict | None:
                     worker=args.get("worker"),
                     status=args.get("status", "sprint"),
                 )
+            elif name == "send_to":
+                result = _feeds_send_to(args["receiver"], args["message"])
+            elif name == "send_feed":
+                result = _feeds_send_feed(args["event"], args.get("sender", "cc"))
+            elif name == "view_feed":
+                result = _feeds_view_feed(args["sender"], args.get("limit", 20))
             else:
                 result = f"ERROR: unknown tool {name!r}"
         except Exception as exc:

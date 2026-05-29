@@ -282,8 +282,10 @@ class TestGrannyDaemonAlertCC:
             patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
         ):
             daemon.run_once()
-        daemon._imap.append.assert_called_once()
-        _, envelope = daemon._imap.append.call_args[0]
+        # append called for CC.0 alert + feeds/granny publish
+        cc_calls = [c for c in daemon._imap.append.call_args_list if c[0][0] == "CC.0"]
+        assert len(cc_calls) == 1
+        envelope = cc_calls[0][0][1]
         assert envelope.payload["kind"] == "audit_fail"
         assert envelope.payload["ticket_id"] == "T-bad"
 
@@ -299,8 +301,10 @@ class TestGrannyDaemonAlertCC:
             patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
         ):
             daemon.run_once()
-        daemon._imap.append.assert_called_once()
-        _, envelope = daemon._imap.append.call_args[0]
+        # append called for CC.0 alert + feeds/granny publish
+        cc_calls = [c for c in daemon._imap.append.call_args_list if c[0][0] == "CC.0"]
+        assert len(cc_calls) == 1
+        envelope = cc_calls[0][0][1]
         assert envelope.payload["kind"] == "route_fail"
         assert envelope.payload["ticket_id"] == "T-route-fail"
 
@@ -316,5 +320,6 @@ class TestGrannyDaemonAlertCC:
         ):
             daemon.run_once()
             daemon.run_once()
-        # alert fires only once across both cycles
-        daemon._imap.append.assert_called_once()
+        # CC.0 alert is deduped — fires only once; feeds/granny publishes each cycle
+        cc_calls = [c for c in daemon._imap.append.call_args_list if c[0][0] == "CC.0"]
+        assert len(cc_calls) == 1

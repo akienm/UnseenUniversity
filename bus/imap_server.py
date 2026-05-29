@@ -276,6 +276,23 @@ class _DovecotClient:
         M.logout()
         return messages
 
+    def fetch_recent(self, mailbox: str, limit: int = 20) -> list[bytes]:
+        """Return last `limit` messages without marking SEEN."""
+        M = self._connect()
+        try:
+            M.select(mailbox, readonly=True)
+            _, data = M.search(None, "ALL")
+            ids = data[0].split() if data[0] else []
+            tail = ids[-limit:] if len(ids) > limit else ids
+            messages = []
+            for seq in tail:
+                _, msg_data = M.fetch(seq, "(RFC822)")
+                if msg_data and msg_data[0]:
+                    messages.append(msg_data[0][1])
+            return messages
+        finally:
+            M.logout()
+
 
 # ── Public IMAPServer facade ───────────────────────────────────────────────────
 
@@ -365,6 +382,16 @@ class IMAPServer:
             return result
         assert self._client
         raw_msgs = self._client.fetch_unseen(mailbox)
+        return [Envelope.from_json(r.decode()) for r in raw_msgs]
+
+    def fetch_recent(self, mailbox: str, limit: int = 20) -> list[Envelope]:
+        """Return the last `limit` messages without marking them SEEN."""
+        if _TEST_MODE:
+            msgs = list(_STUB_MAILBOXES.get(mailbox, []))
+            tail = msgs[-limit:] if len(msgs) > limit else msgs
+            return [Envelope.from_json(raw.decode()) for raw in tail]
+        assert self._client
+        raw_msgs = self._client.fetch_recent(mailbox, limit)
         return [Envelope.from_json(r.decode()) for r in raw_msgs]
 
     def purge_old_messages(self, retention_hours: int = 24) -> int:

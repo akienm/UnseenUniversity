@@ -1466,6 +1466,58 @@ async def _page_outcomes(request: Request):
     return HTMLResponse(_simple_palace_list("Outcomes", "palace.outcomes."))
 
 
+# ── Feeds route ──────────────────────────────────────────────────────────────
+
+_feeds_imap = None
+_feeds_imap_lock = threading.Lock()
+
+
+def _get_feeds_imap():
+    global _feeds_imap
+    with _feeds_imap_lock:
+        if _feeds_imap is None:
+            try:
+                from bus.imap_server import IMAPServer, _TEST_MODE
+
+                s = IMAPServer()
+                if not _TEST_MODE:
+                    s.start()
+                _feeds_imap = s
+            except Exception as exc:
+                log.warning("feeds: IMAP init failed: %s", exc)
+    return _feeds_imap
+
+
+async def _api_feeds(request: Request):
+    """GET /feeds/{device} — last N events from device's feed mailbox as JSON."""
+    device = request.path_params.get("device", "")
+    if not device or "/" in device:
+        return JSONResponse({"error": "invalid device"}, status_code=400)
+    try:
+        limit = min(int(request.query_params.get("limit", "20")), 100)
+    except (ValueError, TypeError):
+        limit = 20
+    imap = _get_feeds_imap()
+    if imap is None:
+        return JSONResponse({"error": "feeds unavailable"}, status_code=503)
+    mailbox = f"feeds/{device}"
+    try:
+        events = imap.fetch_recent(mailbox, limit)
+    except Exception as exc:
+        log.debug("feeds: fetch_recent %s failed: %s", mailbox, exc)
+        return JSONResponse({"events": [], "count": 0, "device": device})
+    result = [
+        {
+            "from": e.from_device,
+            "to": e.to_device,
+            "sent_at": e.sent_at,
+            "payload": e.payload,
+        }
+        for e in events
+    ]
+    return JSONResponse({"events": result, "count": len(result), "device": device})
+
+
 def _make_app() -> Starlette:
     async def on_startup():
         global _loop
@@ -1511,6 +1563,8 @@ def _make_app() -> Starlette:
         Route("/questions", _page_questions),
         Route("/hypotheses", _page_hypotheses),
         Route("/outcomes", _page_outcomes),
+        # Feeds
+        Route("/feeds/{device}", _api_feeds),
     ]
 
     # Serve compiled Svelte assets if the UI has been built
