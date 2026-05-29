@@ -17,7 +17,7 @@ current-day slate doesn't exist yet, always create it now before closing
 the day being ended — that keeps the "every day has a slate" invariant
 intact.
 ```bash
-TODAY_SLATE=~/.TheIgors/claudecode/$(date +%Y%m%d).slate.txt
+TODAY_SLATE=${IGOR_HOME:-~/.unseen_university}/claudecode/$(date +%Y%m%d).slate.txt
 if [ ! -f "$TODAY_SLATE" ]; then
   cat > "$TODAY_SLATE" <<EOF
 # Slate $(date +%Y-%m-%d)
@@ -43,7 +43,7 @@ of day-close idempotent.
 
 ### 3. Close the slate for the day being ended
 
-Always update `~/.TheIgors/claudecode/<closing-day>.slate.txt` (typically
+Always update `${IGOR_HOME:-~/.unseen_university}/claudecode/<closing-day>.slate.txt` (typically
 yesterday's file when day-close runs after midnight):
 - Final status for each ticket: new, unchanged, done, closed, deferred
 - Reorder sections so the closed slate is optimized for future CC reading
@@ -66,7 +66,7 @@ Always run `/day-close-audit` — all steps. This is not optional. (Renamed
 from `/audit` on 2026-04-20 to make role clearer: `/day-close-audit` is
 the debris-and-hygiene check.)
 
-Log to: `~/.TheIgors/claudecode/logs/$(date +%Y%m%d).code_maintenance_reviews.log`
+Log to: `${IGOR_HOME:-~/.unseen_university}/claudecode/logs/$(date +%Y%m%d).code_maintenance_reviews.log`
 
 ### 5. Fix small day-close-audit findings + commit
 
@@ -78,7 +78,7 @@ When code changed: `/commit`.
 
 ### 6. Read the closing slate
 ```bash
-cat ~/.TheIgors/claudecode/<closing-day>.slate.txt
+cat ${IGOR_HOME:-~/.unseen_university}/claudecode/<closing-day>.slate.txt
 ```
 
 ### 7. Push tickets to GitHub
@@ -127,7 +127,7 @@ slate (Done today section) and any open sessions list:
 ```bash
 CLOSING_DATE=<YYYY-MM-DD>   # the day being closed
 DATESTAMP=<YYYYMMDD>        # same, no dashes
-SLATE=~/.TheIgors/claudecode/${DATESTAMP}.slate.txt
+SLATE=${IGOR_HOME:-~/.unseen_university}/claudecode/${DATESTAMP}.slate.txt
 
 # Build content from Done today section of the closing slate
 DONE_SECTION=$(sed -n '/^## Done today/,/^## /p' "$SLATE" | grep "^- " | head -20)
@@ -176,7 +176,7 @@ EOF
 
 Also write a flat-file echo (file is secondary — palace is canonical):
 ```bash
-mkdir -p ~/.TheIgors/claudecode/palace_echo
+mkdir -p ${IGOR_HOME:-~/.unseen_university}/claudecode/palace_echo
 python3 -c "
 import os, psycopg2, psycopg2.extras
 pg = os.environ.get('IGOR_HOME_DB_URL','postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001')
@@ -186,7 +186,7 @@ with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
     cur.execute('SELECT content FROM adc.palace WHERE path = %s', (f'palace.days.{datestamp}',))
     rows = cur.fetchall()
 if rows:
-    open(os.path.expanduser(f'~/.TheIgors/claudecode/palace_echo/day_{datestamp}.md'),'w').write(rows[0]['content'])
+    open(os.path.expanduser(f'${IGOR_HOME:-~/.unseen_university}/claudecode/palace_echo/day_{datestamp}.md'),'w').write(rows[0]['content'])
     print('echo written')
 conn.close()
 "

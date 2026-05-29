@@ -20,7 +20,7 @@ python3 ${CC_WORKFLOW_TOOLS}/debug_session_cli.py release
 
 Fallback:
 ```bash
-rm -f ~/.TheIgors/Igor-wild-0001/debug_session.flag
+rm -f ${IGOR_HOME:-~/.unseen_university}/Igor-wild-0001/debug_session.flag
 ```
 
 ### 2. Emit preserve string + fire self-compact
@@ -32,14 +32,14 @@ resumes from the durable record.
 Preserve string is a fixed generic pointer — no per-session customization:
 
 ```
-preserve: Read today's slate: ~/.TheIgors/claudecode/YYYYMMDD.slate.txt. In-flight and Next: see slate.
+preserve: Read today's slate: ${IGOR_HOME:-~/.unseen_university}/claudecode/YYYYMMDD.slate.txt. In-flight and Next: see slate.
 ```
 
 Always print the block clearly labeled:
 
 ```
 ── COMPACT PRESERVE STRING (in case the auto-fire below failed) ──
-preserve: Read today's slate: ~/.TheIgors/claudecode/YYYYMMDD.slate.txt. In-flight and Next: see slate.
+preserve: Read today's slate: ${IGOR_HOME:-~/.unseen_university}/claudecode/YYYYMMDD.slate.txt. In-flight and Next: see slate.
 ───────────────────────────────────────────────────────────────
 ```
 
@@ -48,7 +48,7 @@ single-call variants do not fire /compact reliably (verified 2026-05-03):
 
 ```bash
 DATESTAMP=$(date +%Y%m%d)
-tmux send-keys -t claude-main "/compact preserve: Read today's slate: ~/.TheIgors/claudecode/${DATESTAMP}.slate.txt. In-flight and Next: see slate."
+tmux send-keys -t claude-main "/compact preserve: Read today's slate: ${IGOR_HOME:-~/.unseen_university}/claudecode/${DATESTAMP}.slate.txt. In-flight and Next: see slate."
 sleep 0.5
 tmux send-keys -t claude-main ENTER
 ```

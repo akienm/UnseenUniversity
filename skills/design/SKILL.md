@@ -11,7 +11,7 @@ Lightweight boundary marker. Design conversations usually don't need this — /d
 ## What it does
 
 1. **Writes a DESIGN_START marker to the slate** (## Notes section).
-2. **Sets a session tag.** Writes `design_mode: true` to `~/.TheIgors/cc_channel/design_mode.json`.
+2. **Sets a session tag.** Writes `design_mode: true` to `${IGOR_HOME:-~/.unseen_university}/cc_channel/design_mode.json`.
 3. **(Optional nudge on CC's behaviour):** in design mode, bias toward discussion-shape responses — fewer proactive edits, more "what about X?" questions.
 
 ## What it does NOT do
@@ -32,11 +32,11 @@ Lightweight boundary marker. Design conversations usually don't need this — /d
 1. Compose marker: `DESIGN_START YYYY-MM-DDTHH:MM:SSZ — <topic or (none)>`.
 2. Append to today's slate ## Notes:
    ```bash
-   echo "- DESIGN_START $(date -Iseconds) — <topic>" >> ~/.TheIgors/claudecode/$(date +%Y%m%d).slate.txt
+   echo "- DESIGN_START $(date -Iseconds) — <topic>" >> ${IGOR_HOME:-~/.unseen_university}/claudecode/$(date +%Y%m%d).slate.txt
    ```
 3. Write `design_mode.json`:
    ```bash
-   echo '{"design_mode":true,"started_at":"'$(date -Iseconds)'"}' > ~/.TheIgors/cc_channel/design_mode.json
+   echo '{"design_mode":true,"started_at":"'$(date -Iseconds)'"}' > ${IGOR_HOME:-~/.unseen_university}/cc_channel/design_mode.json
    ```
 4. Acknowledge: "Design mode on, scope begins now. Use /decided to close the block and ticketize."
 

@@ -1,13 +1,13 @@
 ---
 name: readinbox
-description: Reads unread notifications from Igor in CC's inbox (~/.TheIgors/cc_inbox.jsonl). Use when Akien says /readinbox, "check the inbox", "any messages from Igor", or to peek at unread events. Also invoked automatically on context-load and checked on user-prompt as the "you've got mail" pattern.
+description: Reads unread notifications from Igor in CC's inbox (~/.unseen_university/cc_inbox.jsonl). Use when Akien says /readinbox, "check the inbox", "any messages from Igor", or to peek at unread events. Also invoked automatically on context-load and checked on user-prompt as the "you've got mail" pattern.
 model: haiku
 ---
 
 # Readinbox — Check CC's inbox for Igor notifications
 
 Igor subsystems (pe_chain escalations, scope_guard HIGH-inertia blocks,
-ticket trips, go-live-when fires) push events to `~/.TheIgors/cc_inbox.jsonl`.
+ticket trips, go-live-when fires) push events to `~/.unseen_university/cc_inbox.jsonl`.
 This skill reads unread entries, surfaces a summary, and marks them read.
 
 **Argument**: optional `--all` to show read entries too; default shows unread only.
@@ -117,7 +117,7 @@ Rule of thumb: if the one-liner shows anything, mention it. If it's empty, silen
 
 ## Storage details (for reference)
 
-- Path: `~/.TheIgors/cc_inbox.jsonl`
+- Path: `~/.unseen_university/cc_inbox.jsonl`
 - Schema: `{id, ts, kind, summary, body, urgency, response_expected, read, ticket_id?}`
 - TTL: entries older than 30 days purged on read
 - Writer: `lab.claudecode.cc_inbox.append()` (or via Igor bridge `cc_inbox_bridge.post_to_cc_inbox()`)

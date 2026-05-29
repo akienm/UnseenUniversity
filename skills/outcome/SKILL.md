@@ -52,7 +52,7 @@ psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
    GROUP BY 1 ORDER BY 1"
 
 # pe_chain success rate (from flight recorder logs)
-grep "HYPOTHESIZE" ~/.TheIgors/Igor-wild-0001/logs/*.log 2>/dev/null | \
+grep "HYPOTHESIZE" ~/.unseen_university/Igor-wild-0001/logs/*.log 2>/dev/null | \
   grep -c "success\|error" | head -20
 
 # proposals accumulation

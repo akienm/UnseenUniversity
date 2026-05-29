@@ -46,5 +46,5 @@ For commits outside of /sprint (one-off fixes, doc edits).
 
 ## Hard rules
 - Hooks run on every commit; pushes are non-force on main (integrity preserved).
-- Stage files specifically by name — keeps `.env`, `*.db`, and `~/.TheIgors/` runtime paths off the commit.
+- Stage files specifically by name — keeps `.env`, `*.db`, and `~/.unseen_university/` runtime paths off the commit.
 - Tests pass + no secrets = commit without asking.

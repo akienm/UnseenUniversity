@@ -102,7 +102,6 @@ python3 -c "
 import os, sys
 sys.path.insert(0, '.')
 os.environ.setdefault('IGOR_HOME_DB_URL', 'postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001')
-os.environ.setdefault('IGOR_DB_PATH', os.path.expanduser('~/.TheIgors/Igor-wild-0001/wild-0001.db'))
 from wild_igor.igor.tools.registry import registry
 import wild_igor.igor.tools
 import psycopg2

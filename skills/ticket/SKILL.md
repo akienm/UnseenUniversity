@@ -83,7 +83,7 @@ python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py done|block|claim <id>
 Always append the ticket ID to today's slate under `## Planned` or `## Ad hoc`
 — otherwise the ticket lives only in the queue and the daily view misses it:
 ```bash
-echo "- <id>: <title>" >> ~/.TheIgors/claudecode/$(date +%Y%m%d).slate.txt
+echo "- <id>: <title>" >> ${IGOR_HOME:-~/.unseen_university}/claudecode/$(date +%Y%m%d).slate.txt
 ```
 
 ### 6. Run /savestateauto

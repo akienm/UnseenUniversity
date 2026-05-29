@@ -72,7 +72,7 @@ For each finding: is there a log call in the except block? If not → add one no
 cd ~/TheIgors && source venv/bin/activate && python3 - << 'EOF'
 import sys, os
 os.environ.setdefault("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
-os.environ.setdefault("IGOR_DB_PATH", os.path.expanduser("~/.TheIgors/Igor-wild-0001/wild-0001.db"))
+)
 sys.path.insert(0, ".")
 from wild_igor.igor.tools.registry import registry
 import wild_igor.igor.tools  # noqa
@@ -112,7 +112,7 @@ Verify each usage has daemon=True or uses a queue pattern.
 ## Step 7 — Log file sizes
 
 ```bash
-du -sh ~/.TheIgors/*/logs/*.log 2>/dev/null | sort -rh | head -10
+du -sh ~/.unseen_university/logs/*.log 2>/dev/null | sort -rh | head -10
 ```
 
 Any file > 10MB → rotate or truncate.
@@ -244,7 +244,7 @@ cd ~/TheIgors && source venv/bin/activate && python3 - << 'EOF'
 import os, sys, json
 sys.path.insert(0, ".")
 os.environ.setdefault("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
-os.environ.setdefault("IGOR_DB_PATH", os.path.expanduser("~/.TheIgors/Igor-wild-0001/wild-0001.db"))
+)
 
 from wild_igor.igor.tools.registry import registry
 import wild_igor.igor.tools  # loads all tools
@@ -444,7 +444,7 @@ Exit code 0 = all OK. Any UNREFERENCED or STUB_NEAR_GATE findings → ticket or 
 
 `lab/docs/capability_map.md` is the "what's built today vs planned vs broken" doc. It rots fast. When it's >7 days old, the audit always re-verifies §1 (live), §2 (gated off), and §4 (known broken) against:
 - Palace `theigors/subsystem_index/*` for live subsystems
-- `~/.TheIgors/Igor-wild-0001/igor.switches.cfg` for gate state
+- `~/.unseen_university/Igor-wild-0001/igor.switches.cfg` for gate state
 - `cc_queue.py list` for in_progress / pending / awaiting_approval status
 - Latest `pytest` summary for known failures
 

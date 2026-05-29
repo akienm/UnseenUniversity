@@ -26,7 +26,7 @@ Any `.tmp`/`.bak`/`.swp` file = AMEND. `__pycache__`/`.pyc` = note (not blocking
 
 ### 2. Runtime files staged
 ```bash
-git diff --staged --name-only | grep -E "^~/.TheIgors/|\.db$|\.env$"
+git diff --staged --name-only | grep -E "^~/.unseen_university/|\.db$|\.env$"
 ```
 Any runtime path or `.db` file staged = AMEND (always stage by name, not `git add -A`).
 
@@ -64,7 +64,7 @@ Live rows in `test_*` schemas = AMEND (conftest teardown missed them).
 ```bash
 python3 ${CC_WORKFLOW_TOOLS}/validate_files.py 2>/dev/null | head -20
 ```
-Any misplaced file = AMEND. Code under `wild_igor/`, runtime under `~/.TheIgors/`.
+Any misplaced file = AMEND. Code under `wild_igor/`, runtime under `~/.unseen_university/`.
 
 ### 8. Docstring rot (load-bearing touched files)
 ```bash

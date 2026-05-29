@@ -44,7 +44,7 @@ read); In-flight = what's mid-work; Planned = what to pick up next; Ad hoc
 Always check the rules hash before reading — the rules only reload when
 something changed since last session:
 ```bash
-HASH_FILE=~/.TheIgors/claudecode/rules_hash.txt
+HASH_FILE=${IGOR_HOME:-~/.unseen_university}/claudecode/rules_hash.txt
 CURRENT_HASH=$(psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
   "SELECT md5(string_agg(path || '|' || coalesce(content,''), '||' ORDER BY path))
    FROM memory_palace WHERE path LIKE 'theigors/rules/%'")
@@ -67,7 +67,7 @@ igor-constraints → docs-live-in-code → do-not.
 
 ## Step 2b — Memory palace tree (hash-gated)
 ```bash
-TREE_HASH_FILE=~/.TheIgors/claudecode/palace_tree_hash.txt
+TREE_HASH_FILE=${IGOR_HOME:-~/.unseen_university}/claudecode/palace_tree_hash.txt
 CURRENT_TREE_HASH=$(psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
   "SELECT md5(string_agg(path || '|' || coalesce(title,''), '||' ORDER BY path)) FROM memory_palace")
 SAVED_TREE_HASH=$(cat "$TREE_HASH_FILE" 2>/dev/null | head -1)
@@ -98,7 +98,7 @@ Reads the ADC palace (`adc.palace`) for project context, Akien profile, and
 recent-day rollups. Separate hash file from Igor's palace (different table).
 
 ```bash
-ADC_HASH_FILE=~/.TheIgors/claudecode/adc_palace_hash.txt
+ADC_HASH_FILE=${IGOR_HOME:-~/.unseen_university}/claudecode/adc_palace_hash.txt
 ADC_PG=postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001
 CURRENT_ADC_HASH=$(psql $ADC_PG -tAc \
   "SELECT md5(string_agg(path || '|' || coalesce(updated_at::text,''), '||' ORDER BY path))

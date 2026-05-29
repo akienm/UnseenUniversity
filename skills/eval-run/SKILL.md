@@ -38,7 +38,7 @@ when active goals change.
 ```bash
 # From flight recorder logs
 grep -h "pe_chain\|HYPOTHESIZE\|commit_result" \
-  ~/.TheIgors/Igor-wild-0001/logs/*.log 2>/dev/null | \
+  ~/.unseen_university/Igor-wild-0001/logs/*.log 2>/dev/null | \
   grep "$(date -d '7 days ago' +%Y-%m-%d)\|$(date +%Y-%m-%d)" | \
   tail -100
 
@@ -62,7 +62,7 @@ psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
 **Data source:**
 ```bash
 # Channel messages about stuck NE
-grep "\[NE\].*stuck" ~/.TheIgors/Igor-wild-0001/logs/*.log 2>/dev/null | \
+grep "\[NE\].*stuck" ~/.unseen_university/Igor-wild-0001/logs/*.log 2>/dev/null | \
   awk -F'T' '{print $1}' | sort | uniq -c | tail -14
 
 # Psych log valence trend
@@ -131,7 +131,7 @@ for e in entries[:10]:
 
 # Channel escalations
 grep -h "SCOPE_GUARD\|BLOCKED\|stuck\|escalat" \
-  ~/.TheIgors/Igor-wild-0001/logs/*.log 2>/dev/null | \
+  ~/.unseen_university/Igor-wild-0001/logs/*.log 2>/dev/null | \
   grep "$(date -d '7 days ago' +%Y-%m-%d)\|$(date +%Y-%m-%d)" | \
   grep -v "test\|TEST" | wc -l
 ```
