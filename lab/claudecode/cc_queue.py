@@ -5,7 +5,7 @@ cc_queue.py — Designer/Worker Claude task queue manager.
 Canonical storage: clan.memories where parent_id='TICKETS_ROOT' (FACTUAL rows,
 metadata.kind='ticket').
 
-Log file:  ~/.TheIgors/cc_channel/log.jsonl
+Log file:  ~/.unseen_university/cc_channel/log.jsonl
 
 Statuses (what happens next):
     triage      — needs classification; any agent can triage
@@ -65,9 +65,11 @@ def _ssl_ctx() -> ssl.SSLContext:
     return ctx
 
 
-LOG_PATH = os.path.expanduser("~/.TheIgors/cc_channel/log.jsonl")
-CLOSED_TICKETS_PATH = os.path.expanduser("~/.TheIgors/claudecode/closed_tickets.txt")
-GATE_FILE = os.path.expanduser("~/.TheIgors/cc_channel/queue_gate.json")
+LOG_PATH = os.path.expanduser("~/.unseen_university/cc_channel/log.jsonl")
+CLOSED_TICKETS_PATH = os.path.expanduser(
+    "~/.unseen_university/claudecode/closed_tickets.txt"
+)
+GATE_FILE = os.path.expanduser("~/.unseen_university/cc_channel/queue_gate.json")
 
 DIFFICULTY_TIERS = {
     1: "Apprentice",
@@ -571,7 +573,9 @@ def _decision_rollup(tasks: list, decision_id: str) -> None:
     from pathlib import Path
     import os as _os
 
-    rollup_dir = Path(_os.path.expanduser("~/TheIgors/lab/design_docs/decisions"))
+    rollup_dir = Path(
+        _os.path.expanduser("~/dev/src/UnseenUniversity/lab/design_docs/decisions")
+    )
     rollup_dir.mkdir(parents=True, exist_ok=True)
     rollup_path = rollup_dir / f"{decision_id}.md"
     now = _now()
@@ -643,7 +647,9 @@ def _append_to_todays_slate(ticket: dict) -> None:
     """
     try:
         today = datetime.now(timezone.utc).strftime("%Y%m%d")
-        slate_path = os.path.expanduser(f"~/.TheIgors/claudecode/{today}.slate.txt")
+        slate_path = os.path.expanduser(
+            f"~/.unseen_university/claudecode/{today}.slate.txt"
+        )
         if not os.path.exists(slate_path):
             return
         with open(slate_path) as f:
@@ -1242,8 +1248,12 @@ def cmd_flush_session(args):
         print(f"  (session logged locally only)")
 
 
-WORKER_PIDS_PATH = os.path.expanduser("~/.TheIgors/cc_channel/worker_pids.json")
-DAEMON_PID_FILE = os.path.expanduser("~/.TheIgors/cc_channel/worker_daemon.pid")
+WORKER_PIDS_PATH = os.path.expanduser(
+    "~/.unseen_university/cc_channel/worker_pids.json"
+)
+DAEMON_PID_FILE = os.path.expanduser(
+    "~/.unseen_university/cc_channel/worker_daemon.pid"
+)
 DAEMON_SCRIPT = os.path.expanduser("~/TheIgors/lab/claudecode/worker_daemon.sh")
 
 

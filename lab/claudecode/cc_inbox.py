@@ -12,7 +12,7 @@ Akien mentioned it — now Igor's ticket-trip events, pe_chain escalations,
 scope_guard HIGH-inertia blocks push here and CC surfaces them on every
 user prompt ("you've got mail" pattern) and at session start via context-load.
 
-Storage: ~/.TheIgors/cc_inbox.jsonl — one JSON object per line, append-only.
+Storage: ~/.unseen_university/cc_inbox.jsonl — one JSON object per line, append-only.
 
 Entry schema:
     id — monotonic string id (timestamp + counter)
@@ -69,7 +69,9 @@ def _get_imap_router():
 Urgency = Literal["low", "normal", "high"]
 
 INBOX_PATH = Path(
-    os.environ.get("CC_INBOX_PATH", str(Path.home() / ".TheIgors" / "cc_inbox.jsonl"))
+    os.environ.get(
+        "CC_INBOX_PATH", str(Path.home() / ".unseen_university" / "cc_inbox.jsonl")
+    )
 )
 INBOX_TTL_DAYS = 30
 
