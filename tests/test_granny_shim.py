@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -131,3 +131,40 @@ class TestGrannyChannelPostsViaNewUtility:
         mock_post.assert_called_once_with(
             "hello from granny", author="granny-weatherwax", channel="shared"
         )
+
+
+# ── GrannyShim daemon lifecycle ───────────────────────────────────────────────
+
+
+class TestGrannyShimDaemonLifecycle:
+    def test_start_calls_daemon_start(self):
+        """Criterion 1: GrannyShim.start() starts the daemon."""
+        shim = GrannyShim()
+        with patch("devices.granny.daemon.get_daemon") as mock_get:
+            mock_daemon = MagicMock()
+            mock_get.return_value = mock_daemon
+            shim.start()
+        mock_daemon.start.assert_called_once()
+
+    def test_stop_calls_daemon_stop(self):
+        """Criterion 3: GrannyShim.stop() stops the daemon cleanly."""
+        shim = GrannyShim()
+        with patch("devices.granny.daemon.get_daemon") as mock_get:
+            mock_daemon = MagicMock()
+            mock_get.return_value = mock_daemon
+            shim.stop()
+        mock_daemon.stop.assert_called_once()
+
+    def test_daemon_is_running_after_shim_start(self):
+        """Criteria 1+2: daemon thread is alive immediately after shim starts."""
+        import devices.granny.daemon as daemon_mod
+
+        # Reset singleton so this test gets a clean daemon
+        daemon_mod._daemon = None
+        shim = GrannyShim()
+        try:
+            shim.start()
+            assert daemon_mod.get_daemon().is_running()
+        finally:
+            daemon_mod.get_daemon().stop()
+            daemon_mod._daemon = None

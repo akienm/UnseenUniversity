@@ -85,9 +85,25 @@ class GrannyShim(BaseShim):
             log.info("GrannyShim: registered with rack server")
         else:
             log.warning("GrannyShim: rack server unavailable — running unregistered")
+
+        try:
+            from devices.granny.daemon import get_daemon
+
+            get_daemon().start()
+            log.info("GrannyShim: daemon started")
+        except Exception as e:
+            log.warning("GrannyShim: daemon start failed: %s", e)
+
         return True  # shim always starts; registration is best-effort
 
     def stop(self) -> bool:
+        try:
+            from devices.granny.daemon import get_daemon
+
+            get_daemon().stop()
+            log.info("GrannyShim: daemon stopped")
+        except Exception as e:
+            log.warning("GrannyShim: daemon stop failed: %s", e)
         _post_uc("/api/agents/deregister", {"agent_id": "granny-weatherwax"})
         return True
 

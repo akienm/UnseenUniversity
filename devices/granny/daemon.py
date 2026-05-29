@@ -191,6 +191,10 @@ class GrannyDaemon:
         self._post_channel("Granny Weatherwax daemon stopped.")
         log.info("GrannyDaemon: stopped")
 
+    def is_running(self) -> bool:
+        """Return True if the daemon thread is alive."""
+        return bool(self._thread and self._thread.is_alive())
+
     def run_once(self) -> int:
         """Run one poll cycle. Returns count of tickets dispatched. Testable without threads."""
         tickets = _load_sprint_tickets()
