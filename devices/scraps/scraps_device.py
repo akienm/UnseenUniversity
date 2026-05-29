@@ -90,7 +90,7 @@ class ScrapsDevice(BaseDevice):
 
     # ── Primary API ──────────────────────────────────────────────────────────
 
-    def validate_ticket(self, ticket: dict) -> dict[str, Any]:
+    def validate_ticket(self, ticket: dict, *, silent: bool = False) -> dict[str, Any]:
         """Validate ticket content; return {valid, issues, validated_at}.
 
         Pass 1: rule-based checks (always run).
@@ -99,6 +99,8 @@ class ScrapsDevice(BaseDevice):
 
         On pass: validated_at is an ISO-8601 timestamp.
         On fail: validated_at is None; issues lists what to fix.
+
+        silent=True suppresses all channel posts — use for self-test / diagnostic callers.
         """
         tid = ticket.get("id") or ticket.get("title", "?")[:40]
         issues = validation_rules.run_all(ticket)
@@ -106,20 +108,24 @@ class ScrapsDevice(BaseDevice):
         if not issues:
             desc_len = len((ticket.get("description") or "").strip())
             if desc_len < 80:
-                self._post(
-                    "shared",
-                    f"Scraps: {tid} — rules passed, desc short ({desc_len}c), running fuzzy check",
-                )
+                if not silent:
+                    self._post(
+                        "shared",
+                        f"Scraps: {tid} — rules passed, desc short ({desc_len}c), running fuzzy check",
+                    )
                 ok, reason = _fuzzy_check(ticket)
                 if not ok:
                     issues.append(f"fuzzy check: {reason}")
-                    self._post(
-                        "shared", f"Scraps: {tid} — fuzzy check INVALID: {reason[:120]}"
-                    )
+                    if not silent:
+                        self._post(
+                            "shared",
+                            f"Scraps: {tid} — fuzzy check INVALID: {reason[:120]}",
+                        )
 
         if issues:
             issues_str = "; ".join(issues)
-            self._post("shared", f"Scraps: {tid} — validation failed: {issues_str}")
+            if not silent:
+                self._post("shared", f"Scraps: {tid} — validation failed: {issues_str}")
             return {"valid": False, "issues": issues, "validated_at": None}
 
         return {"valid": True, "issues": [], "validated_at": _now()}

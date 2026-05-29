@@ -100,7 +100,9 @@ class TestValidateTicket:
 
     def test_empty_description_invalid(self):
         d = ScrapsDevice()
-        result = d.validate_ticket({"title": "Add thing", "description": ""})
+        result = d.validate_ticket(
+            {"title": "Add thing", "description": ""}, silent=True
+        )
         assert result["valid"] is False
         assert any("description" in i for i in result["issues"])
         assert result["validated_at"] is None
@@ -111,7 +113,8 @@ class TestValidateTicket:
             {
                 "title": "TODO",
                 "description": "**Test plan:** whatever. " + "x" * 40,
-            }
+            },
+            silent=True,
         )
         assert result["valid"] is False
         assert any("title" in i for i in result["issues"])
@@ -122,7 +125,8 @@ class TestValidateTicket:
             {
                 "title": "A meaningful title here",
                 "description": "just a plain sentence with enough chars to pass length check.",
-            }
+            },
+            silent=True,
         )
         assert result["valid"] is False
         assert any("section" in i for i in result["issues"])
@@ -211,6 +215,11 @@ class TestScrapsChannelPosts:
         d.validate_ticket(_GOOD_TICKET)
         failure_posts = [msg for _, msg in posts if "failed" in msg.lower()]
         assert not failure_posts, "should not post failure for valid ticket"
+
+    def test_silent_produces_no_channel_posts(self):
+        d, posts = self._scraps_with_captured_posts()
+        d.validate_ticket({"title": "bad"}, silent=True)
+        assert not posts, "silent=True must suppress all channel posts"
 
     def test_capabilities_can_send_true(self):
         d = ScrapsDevice()

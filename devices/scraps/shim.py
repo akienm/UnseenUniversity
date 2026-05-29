@@ -30,7 +30,8 @@ class ScrapsShim(BaseShim):
                 {
                     "title": "self-test ticket",
                     "description": "**Test plan:** call validate_ticket and check shape.",
-                }
+                },
+                silent=True,
             )
             if "valid" not in result or "issues" not in result:
                 return {"passed": False, "details": f"unexpected shape: {result}"}
