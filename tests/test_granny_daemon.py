@@ -117,26 +117,33 @@ class TestTicketNeedsCC:
         assert _ticket_needs_cc({"worker": "", "tags": ["Unrelated"]}) is False
 
 
+def _make_bare_daemon(audit_passed=True, route_ok=True):
+    """Construct a GrannyDaemon bypassing __init__, with mocked device and IMAP."""
+    from devices.granny.daemon import GrannyDaemon
+
+    daemon = GrannyDaemon.__new__(GrannyDaemon)
+    daemon._dispatched_ids = set()
+    daemon._alerted_ids = set()
+    daemon._total_dispatched = 0
+    daemon._total_errors = 0
+    daemon._last_poll = None
+    daemon._imap = MagicMock()
+
+    audit = MagicMock()
+    audit.passed = audit_passed
+    audit.escalate_to_cc = True
+    audit.reasons = []
+
+    device = MagicMock()
+    device.intake_ticket.return_value = audit
+    device.route_ticket.return_value = (route_ok, "cc")
+    daemon._device = device
+    return daemon
+
+
 class TestGrannyDaemonRunOnce:
     def _make_daemon(self, audit_passed=True, route_ok=True):
-        from devices.granny.daemon import GrannyDaemon
-
-        daemon = GrannyDaemon.__new__(GrannyDaemon)
-        daemon._dispatched_ids = set()
-        daemon._total_dispatched = 0
-        daemon._total_errors = 0
-        daemon._last_poll = None
-
-        audit = MagicMock()
-        audit.passed = audit_passed
-        audit.escalate_to_cc = True
-        audit.reasons = []
-
-        device = MagicMock()
-        device.intake_ticket.return_value = audit
-        device.route_ticket.return_value = (route_ok, "cc")
-        daemon._device = device
-        return daemon
+        return _make_bare_daemon(audit_passed=audit_passed, route_ok=route_ok)
 
     def test_dispatches_two_sprint_tickets(self):
         daemon = self._make_daemon()
@@ -228,3 +235,86 @@ class TestGrannyDaemonRunOnce:
             count = daemon.run_once()
 
         assert count == 1
+
+
+class TestGrannyDaemonAlertCC:
+    def test_alert_sends_envelope_to_cc0(self):
+        daemon = _make_bare_daemon()
+        daemon._alert_cc("T-foo", "missing section", "audit_fail")
+        daemon._imap.append.assert_called_once()
+        mailbox, envelope = daemon._imap.append.call_args[0]
+        assert mailbox == "CC.0"
+        assert envelope.to_device == "CC.0"
+        assert envelope.from_device == "Granny.0"
+        assert envelope.payload["ticket_id"] == "T-foo"
+        assert envelope.payload["kind"] == "audit_fail"
+
+    def test_alert_deduplicates_same_ticket_and_kind(self):
+        daemon = _make_bare_daemon()
+        daemon._alert_cc("T-foo", "reason", "audit_fail")
+        daemon._alert_cc("T-foo", "reason", "audit_fail")
+        daemon._imap.append.assert_called_once()
+
+    def test_alert_different_kinds_both_sent(self):
+        daemon = _make_bare_daemon()
+        daemon._alert_cc("T-foo", "reason", "audit_fail")
+        daemon._alert_cc("T-foo", "reason", "route_fail")
+        assert daemon._imap.append.call_count == 2
+
+    def test_alert_imap_error_does_not_raise(self):
+        daemon = _make_bare_daemon()
+        daemon._imap.append.side_effect = Exception("dovecot down")
+        daemon._alert_cc("T-foo", "reason", "audit_fail")  # must not propagate
+
+    def test_alert_skipped_when_imap_none(self):
+        daemon = _make_bare_daemon()
+        daemon._imap = None
+        daemon._alert_cc("T-foo", "reason", "audit_fail")  # must not raise
+
+    def test_run_once_alerts_on_audit_fail(self):
+        daemon = _make_bare_daemon()
+        daemon._device.intake_ticket.return_value = MagicMock(
+            passed=False, escalate_to_cc=False, reasons=["missing section"]
+        )
+        tickets = [_ticket("T-bad")]
+        with (
+            patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
+            patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+        ):
+            daemon.run_once()
+        daemon._imap.append.assert_called_once()
+        _, envelope = daemon._imap.append.call_args[0]
+        assert envelope.payload["kind"] == "audit_fail"
+        assert envelope.payload["ticket_id"] == "T-bad"
+
+    def test_run_once_alerts_on_route_fail(self):
+        daemon = _make_bare_daemon()
+        daemon._device.intake_ticket.return_value = MagicMock(
+            passed=True, escalate_to_cc=False, reasons=[]
+        )
+        daemon._device.route_ticket.return_value = (False, "cc")
+        tickets = [_ticket("T-route-fail")]
+        with (
+            patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
+            patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+        ):
+            daemon.run_once()
+        daemon._imap.append.assert_called_once()
+        _, envelope = daemon._imap.append.call_args[0]
+        assert envelope.payload["kind"] == "route_fail"
+        assert envelope.payload["ticket_id"] == "T-route-fail"
+
+    def test_audit_fail_alert_not_duplicated_across_cycles(self):
+        daemon = _make_bare_daemon()
+        daemon._device.intake_ticket.return_value = MagicMock(
+            passed=False, escalate_to_cc=False, reasons=["bad"]
+        )
+        tickets = [_ticket("T-repeat")]
+        with (
+            patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
+            patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+        ):
+            daemon.run_once()
+            daemon.run_once()
+        # alert fires only once across both cycles
+        daemon._imap.append.assert_called_once()

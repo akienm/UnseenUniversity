@@ -32,6 +32,9 @@ import urllib.request
 from pathlib import Path
 from typing import Optional
 
+from bus.envelope import Envelope
+from bus.imap_server import IMAPServer
+
 log = logging.getLogger(__name__)
 
 POLL_INTERVAL_SEC = int(os.environ.get("GRANNY_POLL_INTERVAL", "60"))
@@ -148,6 +151,15 @@ class GrannyDaemon:
             dispatch_fn=cc_dispatch_fn,
         )
 
+        self._alerted_ids: set[str] = set()
+        try:
+            self._imap: Optional[IMAPServer] = IMAPServer()
+            self._imap.start()
+            self._imap.create_mailbox("CC.0")
+        except Exception as e:
+            log.warning("GrannyDaemon: IMAP setup failed — CC alerts disabled: %s", e)
+            self._imap = None
+
     def start(self) -> None:
         """Start the polling daemon in a background thread."""
         if self._thread and self._thread.is_alive():
@@ -199,6 +211,7 @@ class GrannyDaemon:
             audit = self._device.intake_ticket(ticket)
             if not audit.passed and not audit.escalate_to_cc:
                 log.warning("GrannyDaemon: %s failed audit — %s", tid, audit.reasons)
+                self._alert_cc(tid, str(audit.reasons), "audit_fail")
                 continue
 
             ok, worker_id = self._device.route_ticket(ticket)
@@ -212,6 +225,7 @@ class GrannyDaemon:
                 log.warning(
                     "GrannyDaemon: route failed for %s (worker=%s)", tid, worker_id
                 )
+                self._alert_cc(tid, f"route failed, worker={worker_id}", "route_fail")
 
         self._dispatched_ids = new_ids  # reset to only current-cycle dispatches
         self._last_poll = time.time()
@@ -242,7 +256,34 @@ class GrannyDaemon:
             except Exception as e:
                 self._total_errors += 1
                 log.error("GrannyDaemon: poll cycle error: %s", e)
+                self._alert_cc("__cycle__", str(e), "poll_error")
             self._stop_event.wait(timeout=POLL_INTERVAL_SEC)
+
+    def _alert_cc(self, ticket_id: str, reason: str, kind: str) -> None:
+        """Send a one-shot alert to CC.0 on unresolvable issues. Deduped per ticket+kind."""
+        dedup_key = f"{ticket_id}:{kind}"
+        if dedup_key in self._alerted_ids:
+            return
+        if self._imap is None:
+            log.debug(
+                "GrannyDaemon: _alert_cc skipped (IMAP not available): %s %s",
+                ticket_id,
+                kind,
+            )
+            return
+        try:
+            envelope = Envelope.now(
+                "Granny.0",
+                "CC.0",
+                {"ticket_id": ticket_id, "kind": kind, "reason": reason},
+            )
+            self._imap.append("CC.0", envelope)
+            self._alerted_ids.add(dedup_key)
+            log.info("GrannyDaemon: alerted CC.0 — %s %s", ticket_id, kind)
+        except Exception as e:
+            log.warning(
+                "GrannyDaemon: CC alert failed for %s (%s): %s", ticket_id, kind, e
+            )
 
     def _post_channel(self, msg: str) -> None:
         try:
