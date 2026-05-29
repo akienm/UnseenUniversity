@@ -26,7 +26,7 @@ Endpoints (agent — available when agent is registered):
   *    /api/agent/{id}/*      → proxied to agent's callback URL (future)
 
 Lifecycle:
-  - PID file at ~/.TheIgors/utility_closet.pid
+  - PID file at ~/.unseen_university/utility_closet.pid
   - /health responds within 5s or considered stalled
   - Launchers (superclaude, igor) start this if not running
   - Second instance detects running/stalled via PID + health check
@@ -115,7 +115,10 @@ from lab.utility_closet.agent_base import get_logger
 
 # ── Logging ──────────────────────────────────────────────────────────────────
 
-_LOG_DIR = Path(os.environ.get("IGOR_RUNTIME_ROOT", Path.home() / ".TheIgors")) / "logs"
+_LOG_DIR = (
+    Path(os.environ.get("IGOR_RUNTIME_ROOT", Path.home() / ".unseen_university"))
+    / "logs"
+)
 _LOG_DIR.mkdir(parents=True, exist_ok=True)
 _log_file = _LOG_DIR / "utility_closet.log"
 
@@ -133,10 +136,18 @@ log = get_logger("utility_closet")
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 
-_RUNTIME_ROOT = Path(os.environ.get("IGOR_RUNTIME_ROOT", Path.home() / ".TheIgors"))
+_RUNTIME_ROOT = Path(
+    os.environ.get("IGOR_RUNTIME_ROOT", Path.home() / ".unseen_university")
+)
 _INSTANCE_DIR = _RUNTIME_ROOT / os.environ.get("IGOR_INSTANCE_ID", "Igor-wild-0001")
 _REPO_DIR = Path(__file__).parent.parent  # ~/TheIgors
-_DIST_DIR = Path("/home/akien/dev/src/UnseenUniversity") / "devices" / "igor" / "web_ui" / "dist"
+_DIST_DIR = (
+    Path("/home/akien/dev/src/UnseenUniversity")
+    / "devices"
+    / "igor"
+    / "web_ui"
+    / "dist"
+)
 
 INBOX_DIR = _INSTANCE_DIR / "inbox"
 OUTBOX_DIR = _INSTANCE_DIR / "outbox"
@@ -251,7 +262,7 @@ def _bootstrap_mkcert() -> tuple[str, str] | None:
     import subprocess
     from pathlib import Path
 
-    cert_dir = Path.home() / ".TheIgors" / "certs"
+    cert_dir = Path.home() / ".unseen_university" / "certs"
     cert_path = cert_dir / "localhost+3.pem"
     key_path = cert_dir / "localhost+3-key.pem"
 
