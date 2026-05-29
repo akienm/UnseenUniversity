@@ -271,14 +271,20 @@ class GrannyWeatherwaxDevice(BaseDevice):
         before routing — HIGH-inertia tickets need human approval.
         """
         result = _audit_ticket(ticket)
+        tid = ticket.get("id", "?")
         if not result.passed:
-            self._log.warning("audit FAIL %s: %s", ticket.get("id"), result.reasons)
+            self._log.warning("audit FAIL %s: %s", tid, result.reasons)
+            reasons_str = "; ".join(result.reasons)
             self._post_to_channel(
                 "shared",
-                f"GRANNY_AUDIT_FAIL:{ticket.get('id','?')}:{'; '.join(result.reasons)}",
+                f"Granny: ticket {tid} failed audit — {reasons_str}",
             )
         elif result.escalate_to_cc:
-            self._log.info("audit ESCALATE %s: HIGH-inertia", ticket.get("id"))
+            self._log.info("audit ESCALATE %s: HIGH-inertia", tid)
+            self._post_to_channel(
+                "shared",
+                f"Granny: {tid} has HIGH-inertia tags — escalating to CC for approval",
+            )
         return result
 
     # ── Routing ────────────────────────────────────────────────────────────────
@@ -314,9 +320,11 @@ class GrannyWeatherwaxDevice(BaseDevice):
             if best_edge.dispatch_fn is not None:
                 ok = best_edge.dispatch_fn(ticket)
             else:
+                tid = ticket.get("id", "?")
+                title = ticket.get("title", "")[:60]
                 self._post_to_channel(
-                    best_edge.worker_id,
-                    f"GRANNY_ROUTE:{ticket.get('id','?')}",
+                    "shared",
+                    f"Granny: routed {tid} → {best_edge.worker_id} (weight={best_edge.weight:.1f}) — {title}",
                 )
                 ok = True
 
@@ -371,9 +379,13 @@ class GrannyWeatherwaxDevice(BaseDevice):
 
     def escalate_to_cc(self, ticket: dict[str, Any], reason: str) -> None:
         """Post escalation to shared channel so CC can handle this ticket."""
-        msg = f"GRANNY_ESCALATE:{ticket.get('id','?')}:{reason}"
-        self._post_to_channel("shared", msg)
-        self._log.info("escalated %s: %s", ticket.get("id"), reason)
+        tid = ticket.get("id", "?")
+        title = ticket.get("title", "")[:60]
+        self._post_to_channel(
+            "shared",
+            f"Granny: needs CC — {tid} ({title}): {reason}",
+        )
+        self._log.info("escalated %s: %s", tid, reason)
 
     # ── Status tracking ────────────────────────────────────────────────────────
 
@@ -411,11 +423,8 @@ class GrannyWeatherwaxDevice(BaseDevice):
 
     def _post_to_channel(self, channel: str, message: str) -> None:
         try:
-            import sys
+            from unseen_university.channel import post_to_channel
 
-            sys.path.insert(0, str(Path.home() / "TheIgors"))
-            from lab.claudecode.channel import post_to_channel
-
-            post_to_channel(channel, "granny-weatherwax", message)
+            post_to_channel(message, author="granny-weatherwax", channel=channel)
         except Exception as e:
             self._log.warning("channel post failed (%s): %s", channel, e)
