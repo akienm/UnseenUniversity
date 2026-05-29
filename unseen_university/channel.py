@@ -43,28 +43,31 @@ def post_to_channel(
         author: Device ID or name that produced the message.
         channel: Target channel name (default 'shared').
     """
-    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     db_url = os.environ.get("IGOR_HOME_DB_URL", "")
+    if not db_url:
+        # No channel configured — skip silently. JSONL fallback is for Postgres-down,
+        # not for "no DB URL set" (which is the test environment).
+        return
 
-    if db_url:
-        try:
-            import psycopg2
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    try:
+        import psycopg2
 
-            conn = psycopg2.connect(db_url)
-            with conn:
-                with conn.cursor() as cur:
-                    cur.execute(
-                        f"INSERT INTO {_CHANNEL_MESSAGES_TABLE}"
-                        " (ts, author, type, content, channel)"
-                        " VALUES (%s, %s, %s, %s, %s)",
-                        (ts, author, "message", message, channel),
-                    )
-            conn.close()
-            return
-        except Exception as exc:
-            log.warning("channel post Postgres failed (%s): %s", author, exc)
+        conn = psycopg2.connect(db_url)
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"INSERT INTO {_CHANNEL_MESSAGES_TABLE}"
+                    " (ts, author, type, content, channel)"
+                    " VALUES (%s, %s, %s, %s, %s)",
+                    (ts, author, "message", message, channel),
+                )
+        conn.close()
+        return
+    except Exception as exc:
+        log.warning("channel post Postgres failed (%s): %s", author, exc)
 
-    # JSONL fallback
+    # JSONL fallback — only reached when Postgres is configured but unavailable
     try:
         fallback = _JSONL_FALLBACK
         fallback.parent.mkdir(parents=True, exist_ok=True)

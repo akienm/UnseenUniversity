@@ -40,9 +40,14 @@ _RUNTIME_ROOT = Path(
 )
 _LOG_FILE = _RUNTIME_ROOT / "logs" / "granny_weatherwax.log"
 
-# Tags that always escalate to CC — no autonomous routing.
-_HIGH_INERTIA_TAGS = frozenset(
-    {"HighInertia", "Architecture", "Security", "DataMigration"}
+# Tags that escalate to CC — cross-device platform concerns only.
+# Granny routes at the device level; each device owns its internal inertia.
+# "Architecture" is intentionally absent: Igor's brainstem/cognition safety
+# is Igor's concern, not Granny's. Only tickets that change how the RACK
+# itself works (contracts between devices, rack topology, cross-device APIs)
+# belong here.
+_CC_ESCALATION_TAGS = frozenset(
+    {"RackContract", "CrossDevice", "DeviceInterface", "Security", "DataMigration"}
 )
 
 # Default routing: maps ticket tags → worker IDs (deterministic common cases).
@@ -123,9 +128,11 @@ def _audit_ticket(ticket: dict[str, Any]) -> AuditResult:
             reasons.append(f"description missing section: {section}")
 
     tags = set(ticket.get("tags", []))
-    escalate = bool(tags & _HIGH_INERTIA_TAGS)
+    escalate = bool(tags & _CC_ESCALATION_TAGS)
     if escalate:
-        reasons.append(f"HIGH-inertia tags present: {tags & _HIGH_INERTIA_TAGS}")
+        reasons.append(
+            f"platform-level tags require CC approval: {tags & _CC_ESCALATION_TAGS}"
+        )
 
     return AuditResult(
         passed=not reasons or escalate, reasons=reasons, escalate_to_cc=escalate
@@ -299,7 +306,7 @@ class GrannyWeatherwaxDevice(BaseDevice):
         ticket_tags = set(ticket.get("tags", []))
 
         # Always escalate HIGH-inertia tickets to CC
-        if ticket_tags & _HIGH_INERTIA_TAGS:
+        if ticket_tags & _CC_ESCALATION_TAGS:
             self.escalate_to_cc(ticket, "HIGH-inertia tags require CC approval")
             return (False, "escalated_to_cc")
 

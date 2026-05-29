@@ -56,7 +56,9 @@ class TestPostToChannelPostgres:
 
 
 class TestPostToChannelJsonlFallback:
-    def test_falls_back_to_jsonl_when_no_db_url(self, tmp_path):
+    def test_no_db_url_is_silent_noop(self, tmp_path):
+        # No IGOR_HOME_DB_URL = no channel configured = silent no-op.
+        # JSONL fallback is for Postgres-down, not missing config (test environment).
         fallback = tmp_path / "cc_channel" / "messages.jsonl"
         with (
             patch.dict(
@@ -64,13 +66,11 @@ class TestPostToChannelJsonlFallback:
             ),
             patch("unseen_university.channel._JSONL_FALLBACK", fallback),
         ):
-            post_to_channel("fallback message", author="granny-weatherwax")
+            post_to_channel("message when no db configured", author="granny-weatherwax")
 
-        assert fallback.exists()
-        entry = json.loads(fallback.read_text().strip())
-        assert entry["author"] == "granny-weatherwax"
-        assert entry["content"] == "fallback message"
-        assert entry["channel"] == "shared"
+        assert (
+            not fallback.exists()
+        ), "should NOT write JSONL when IGOR_HOME_DB_URL is absent"
 
     def test_falls_back_to_jsonl_when_postgres_fails(self, tmp_path):
         fallback = tmp_path / "cc_channel" / "messages.jsonl"
