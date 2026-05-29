@@ -19,6 +19,7 @@ D-shared-memory-service-2026-05-28
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 import struct
 from typing import Any
@@ -30,6 +31,11 @@ _OPENAI_DIMENSION = 1536
 
 _FALLBACK_MODEL = "hash-sha256-384"
 _FALLBACK_DIMENSION = 384
+
+_WG_MODEL = "wordgraph-spreading-v1"
+_WG_DIMENSION = 512
+
+_log = logging.getLogger(__name__)
 
 
 # ── Result type ────────────────────────────────────────────────────────────────
@@ -86,6 +92,77 @@ def _fallback_embed(texts: list[str]) -> list[dict[str, Any]]:
     ]
 
 
+# ── Word-graph backend ─────────────────────────────────────────────────────────
+
+
+def _sparse_to_dense(sparse: dict[str, float], dim: int = _WG_DIMENSION) -> list[float]:
+    """Feature-hash sparse word→float dict into a fixed-size L2-normalized dense vector.
+
+    Uses MD5 for deterministic word→index mapping (PYTHONHASHSEED-independent).
+    """
+    vec = [0.0] * dim
+    for word, score in sparse.items():
+        idx = int.from_bytes(hashlib.md5(word.encode()).digest()[:4], "little") % dim
+        vec[idx] += score
+    norm = sum(v * v for v in vec) ** 0.5
+    if norm == 0.0:
+        return vec
+    return [v / norm for v in vec]
+
+
+def _wg_embed(texts: list[str]) -> list[dict[str, Any]] | None:
+    """Word-graph spreading-activation backend.
+
+    Returns None when WordGraph is unavailable (import fails or DB unreachable).
+    """
+    try:
+        from devices.igor.cognition.word_graph import WordGraph
+    except ImportError:
+        return None
+    try:
+        wg = WordGraph()
+        return [
+            _result(
+                _sparse_to_dense(wg.text_to_activation_vector(t)),
+                _WG_MODEL,
+                _WG_DIMENSION,
+            )
+            for t in texts
+        ]
+    except Exception:
+        return None
+
+
+def _cosine(a: list[float], b: list[float]) -> float:
+    dot = sum(x * y for x, y in zip(a, b))
+    na = sum(x * x for x in a) ** 0.5
+    nb = sum(x * x for x in b) ** 0.5
+    return dot / (na * nb) if na and nb else 0.0
+
+
+def _log_wg_comparison(texts: list[str], primary: list[dict[str, Any]]) -> None:
+    """Log WG activation alongside primary embedding as a training signal.
+
+    Cosine computed after stride-downsampling primary to WG_DIMENSION.
+    Tracks how well the graph approximates the primary embedding over time.
+    """
+    wg_results = _wg_embed(texts)
+    if wg_results is None:
+        return
+    for text, pr, wr in zip(texts, primary, wg_results):
+        pv = pr["vector"]
+        wv = wr["vector"]
+        # Compare in the smaller of the two spaces to avoid index-out-of-bounds.
+        n = min(len(pv), len(wv))
+        cosine = _cosine(pv[:n], wv[:n])
+        _log.info(
+            "wg_training_signal text_len=%d primary_model=%s cosine_vs_wg=%.4f",
+            len(text),
+            pr["model"],
+            cosine,
+        )
+
+
 # ── Public API ─────────────────────────────────────────────────────────────────
 
 
@@ -104,16 +181,27 @@ def embed_batch(
 
     Returns: list of {vector: list[float], model: str, dimension: int}
     Each result corresponds to the input text at the same index.
+    Side-effect: logs WG comparison signal for graph training (best-effort).
     """
     if not texts:
         return []
 
+    results = None
     if not force_fallback:
         try:
-            return _openai_embed(texts)
+            results = _openai_embed(texts)
         except (ImportError, RuntimeError):
             pass  # fall through to hash fallback
         except Exception:
             pass  # API error — fall through
 
-    return _fallback_embed(texts)
+    if results is None:
+        results = _fallback_embed(texts)
+
+    # WG comparison for training signal — never blocks, never raises.
+    try:
+        _log_wg_comparison(texts, results)
+    except Exception:
+        pass
+
+    return results

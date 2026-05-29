@@ -764,6 +764,32 @@ class WordGraph(IgorBase):
                 doc_scores[doc_id] = doc_scores.get(doc_id, 0.0) + activation
         return doc_scores
 
+    def text_to_activation_vector(
+        self,
+        text: str,
+        depth: int = 2,
+        hop_decay: float = 0.6,
+        max_words: int = 500,
+    ) -> dict[str, float]:
+        """Spreading-activation embedding: tokenize → seed → spread → L2-normalize.
+
+        Returns dict[word, activation_score] normalized to unit L2-norm.
+        Deterministic for a fixed graph state + same input text.
+        Used by embedding_engine._wg_embed() as a training-signal complement
+        to Ollama/OpenAI embeddings — see D-wordgraph-embedding-producer-2026-05-28.
+        """
+        tokens = tokenize(text)
+        if not tokens:
+            return {}
+        seed = {w: 1.0 for w in set(tokens)}
+        scores = self.spread_from_words(
+            seed, hop_decay=hop_decay, depth=depth, max_frontier=max_words
+        )
+        norm = sum(v * v for v in scores.values()) ** 0.5
+        if norm == 0.0:
+            return scores
+        return {w: v / norm for w, v in scores.items()}
+
     # ── Graph analysis ─────────────────────────────────────────────────────────
 
     def top_hubs(
