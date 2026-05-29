@@ -123,6 +123,9 @@ class TestGrannyDaemonRunOnce:
 
         daemon = GrannyDaemon.__new__(GrannyDaemon)
         daemon._dispatched_ids = set()
+        daemon._total_dispatched = 0
+        daemon._total_errors = 0
+        daemon._last_poll = None
 
         audit = MagicMock()
         audit.passed = audit_passed

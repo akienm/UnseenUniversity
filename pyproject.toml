@@ -19,7 +19,7 @@ where = ["."]
 include = ["unseen_university*", "bus*", "diagnostic_base*", "skeleton*", "devices*", "config*", "lab*"]
 
 [tool.pytest.ini_options]
-pythonpath = ["."]
+pythonpath = [".", "tests"]
 addopts = "--import-mode=importlib"
 
 [project.scripts]

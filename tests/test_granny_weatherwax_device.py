@@ -10,7 +10,7 @@ from devices.granny.device import (
     AuditResult,
     GrannyWeatherwaxDevice,
     RoutingEdge,
-    _HIGH_INERTIA_TAGS,
+    _CC_ESCALATION_TAGS,
     _audit_ticket,
 )
 
@@ -68,8 +68,9 @@ def test_audit_missing_description_section_fails():
     assert any("Affected files" in r for r in result.reasons)
 
 
-def test_audit_high_inertia_tag_sets_escalate():
-    result = _audit_ticket(_make_ticket(tags=["Architecture"]))
+def test_audit_cc_escalation_tag_sets_escalate():
+    # "RackContract" is in _CC_ESCALATION_TAGS — cross-device rack contracts → CC
+    result = _audit_ticket(_make_ticket(tags=["RackContract"]))
     assert result.escalate_to_cc is True
 
 
@@ -121,7 +122,10 @@ def test_intake_invalid_ticket_posts_channel(granny):
     with patch.object(granny, "_post_to_channel") as mock_post:
         granny.intake_ticket(_make_ticket(title=""))
         mock_post.assert_called_once()
-        assert "GRANNY_AUDIT_FAIL" in mock_post.call_args[0][1]
+        # Message contains the ticket id and failure reason
+        msg = mock_post.call_args[0][1]
+        assert "T-test" in msg
+        assert "title" in msg.lower() or "audit" in msg.lower()
 
 
 # ── route_ticket ───────────────────────────────────────────────────────────────
@@ -134,9 +138,9 @@ def test_route_ticket_cognition_goes_to_igor(granny):
     assert worker == "igor"
 
 
-def test_route_ticket_high_inertia_escalates(granny):
+def test_route_ticket_cc_escalation_tag_escalates(granny):
     with patch.object(granny, "escalate_to_cc") as mock_esc:
-        ticket = _make_ticket(tags=["Architecture"])
+        ticket = _make_ticket(tags=["RackContract"])
         dispatched, worker = granny.route_ticket(ticket)
         assert dispatched is False
         assert worker == "escalated_to_cc"

@@ -27,6 +27,7 @@ import re
 import subprocess
 import threading
 import time
+import urllib.request
 from pathlib import Path
 from typing import Optional
 
@@ -37,6 +38,26 @@ _CC_QUEUE = (
     Path(os.environ.get("CC_WORKFLOW_TOOLS", Path.home() / "TheIgors/lab/claudecode"))
     / "cc_queue.py"
 )
+
+_UC_PORT = int(os.environ.get("IGOR_UC_PORT", "8082"))
+_UC_BASE = os.environ.get("IGOR_UC_BASE", f"http://localhost:{_UC_PORT}")
+
+
+def _post_rack(path: str, body: dict, timeout: float = 3.0) -> bool:
+    """POST JSON to rack server. Returns True on success, False on any failure."""
+    try:
+        data = json.dumps(body).encode()
+        req = urllib.request.Request(
+            f"{_UC_BASE}{path}",
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.status < 300
+    except Exception:
+        return False
+
 
 # Tags that Granny routes to CC by default (mirrors _DEFAULT_ROUTING cc paths)
 _CC_TAGS = frozenset(
@@ -111,6 +132,9 @@ class GrannyDaemon:
         self._stop_event = threading.Event()
         self._thread: Optional[threading.Thread] = None
         self._dispatched_ids: set[str] = set()
+        self._total_dispatched: int = 0
+        self._total_errors: int = 0
+        self._last_poll: Optional[float] = None
 
         # Build device with CC dispatch wired
         from devices.granny.device import GrannyWeatherwaxDevice
@@ -136,12 +160,21 @@ class GrannyDaemon:
         self._post_channel(
             "Granny Weatherwax daemon started — watching for sprint tickets."
         )
+        _post_rack(
+            "/api/agents/register",
+            {
+                "agent_id": "granny-weatherwax",
+                "capabilities": ["intake_ticket", "route_ticket", "cc_dispatch"],
+                "tmux_target": "granny",
+            },
+        )
 
     def stop(self) -> None:
         """Signal daemon to stop and wait for thread to exit."""
         self._stop_event.set()
         if self._thread:
             self._thread.join(timeout=5)
+        _post_rack("/api/agents/deregister", {"agent_id": "granny-weatherwax"})
         self._post_channel("Granny Weatherwax daemon stopped.")
         log.info("GrannyDaemon: stopped")
 
@@ -171,14 +204,31 @@ class GrannyDaemon:
             if ok:
                 new_ids.add(tid)
                 dispatched += 1
+                self._total_dispatched += 1
                 log.info("GrannyDaemon: dispatched %s → %s", tid, worker_id)
             else:
+                self._total_errors += 1
                 log.warning(
                     "GrannyDaemon: route failed for %s (worker=%s)", tid, worker_id
                 )
 
         self._dispatched_ids = new_ids  # reset to only current-cycle dispatches
+        self._last_poll = time.time()
         return dispatched
+
+    def _push_stats(self) -> None:
+        """Push current stats to the rack server dashboard (best-effort)."""
+        _post_rack(
+            "/api/agents/granny-weatherwax/stats",
+            {
+                "status": "running",
+                "total_dispatched": self._total_dispatched,
+                "total_errors": self._total_errors,
+                "poll_interval_sec": POLL_INTERVAL_SEC,
+                "last_poll": self._last_poll,
+                "dispatched_this_cycle": len(self._dispatched_ids),
+            },
+        )
 
     def _run(self) -> None:
         """Main daemon loop — polls until stop_event set."""
@@ -187,7 +237,9 @@ class GrannyDaemon:
                 n = self.run_once()
                 if n:
                     log.info("GrannyDaemon: poll cycle — %d ticket(s) dispatched", n)
+                self._push_stats()
             except Exception as e:
+                self._total_errors += 1
                 log.error("GrannyDaemon: poll cycle error: %s", e)
             self._stop_event.wait(timeout=POLL_INTERVAL_SEC)
 
