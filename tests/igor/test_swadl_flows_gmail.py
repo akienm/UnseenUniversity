@@ -14,9 +14,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-sys.path.insert(0, str(Path.home() / "TheIgors"))
+pytest.importorskip("wild_igor", reason="requires Igor internals")
 
-from wild_igor.tools.swadl_flows.gmail import GmailFlow, MessageSummary
+from wild_igor.tools.swadl_flows.gmail import GmailFlow, MessageSummary  # noqa: E402
 
 # ── send_email ─────────────────────────────────────────────────────────────
 

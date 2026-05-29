@@ -2,16 +2,9 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-# lab.claudecode is in TheIgors, not this repo — add to path
-_LAB = Path.home() / "TheIgors"
-if str(_LAB) not in sys.path:
-    sys.path.insert(0, str(_LAB))
 
 from lab.claudecode.cc_task_listener import (
     TaskListener,

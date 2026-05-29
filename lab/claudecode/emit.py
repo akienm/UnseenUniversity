@@ -39,7 +39,7 @@ from pathlib import Path
 
 
 def _emissions_root() -> Path:
-    base = os.environ.get("IGOR_RUNTIME_ROOT", str(Path.home() / ".TheIgors"))
+    base = os.environ.get("IGOR_RUNTIME_ROOT", str(Path.home() / ".unseen_university"))
     return Path(base) / "emissions"
 
 

@@ -31,7 +31,7 @@ _PG_URL = os.environ.get(
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 _PROJECTS_DIR = Path.home() / ".claude" / "projects"
-_ECHO_DIR = Path.home() / ".TheIgors" / "claudecode" / "palace_echo"
+_ECHO_DIR = Path.home() / ".unseen_university" / "claudecode" / "palace_echo"
 
 _UPSERT = """
 INSERT INTO adc.palace (path, title, content, node_type, updated_at, metadata)

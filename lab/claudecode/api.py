@@ -61,91 +61,117 @@ def done_ticket(ticket_id: str, result_msg: str):
 
 # ── session_manager ───────────────────────────────────────────────────────────
 
-from session_manager import (
-    cmd_start as start_session,
-    cmd_append_change as append_change,
-    cmd_append_decision as append_decision,
-    cmd_append_tool_output as append_tool_output,
-    cmd_finalize as finalize_session,
-    cmd_show as show_session,
-    cmd_get as get_session,
-    cmd_add as add_session,
-    cmd_render as render_sessions,
-    current_session_id,
-)
+try:
+    from session_manager import (
+        cmd_start as start_session,
+        cmd_append_change as append_change,
+        cmd_append_decision as append_decision,
+        cmd_append_tool_output as append_tool_output,
+        cmd_finalize as finalize_session,
+        cmd_show as show_session,
+        cmd_get as get_session,
+        cmd_add as add_session,
+        cmd_render as render_sessions,
+        current_session_id,
+    )
+except ImportError:
+    start_session = append_change = append_decision = append_tool_output = None
+    finalize_session = show_session = get_session = add_session = None
+    render_sessions = current_session_id = None
 
 # ── channel ───────────────────────────────────────────────────────────────────
 
-from channel import (
-    post as post_message,
-    read as read_messages,
-    listen as listen_channel,
-    active_sessions,
-    format_entry as format_channel_entry,
-)
+try:
+    from channel import (
+        post as post_message,
+        read as read_messages,
+        listen as listen_channel,
+        active_sessions,
+        format_entry as format_channel_entry,
+    )
+except ImportError:
+    post_message = read_messages = listen_channel = active_sessions = None
+    format_channel_entry = None
 
 # ── decision_manager ──────────────────────────────────────────────────────────
 
-from decision_manager import (
-    cmd_add as add_decision,
-    cmd_show as show_decisions,
-    cmd_get as get_decision,
-    cmd_resolve as resolve_decision,
-    cmd_open as open_decisions,
-    _update_dsb as update_dsb,
-    _flush_to_igor as flush_decision_to_igor,
-)
+try:
+    from decision_manager import (
+        cmd_add as add_decision,
+        cmd_show as show_decisions,
+        cmd_get as get_decision,
+        cmd_resolve as resolve_decision,
+        cmd_open as open_decisions,
+        _update_dsb as update_dsb,
+        _flush_to_igor as flush_decision_to_igor,
+    )
+except ImportError:
+    add_decision = show_decisions = get_decision = resolve_decision = None
+    open_decisions = update_dsb = flush_decision_to_igor = None
 
 # ── review_manager ────────────────────────────────────────────────────────────
 
-from review_manager import (
-    write_findings as write_review_findings,
-    get_stats as get_review_stats,
-    get_check_confidence as get_review_check_confidence,
-)
+try:
+    from review_manager import (
+        write_findings as write_review_findings,
+        get_stats as get_review_stats,
+        get_check_confidence as get_review_check_confidence,
+    )
+except ImportError:
+    write_review_findings = get_review_stats = get_review_check_confidence = None
 
 # ── github_sync ───────────────────────────────────────────────────────────────
 
-from github_sync import (
-    cmd_sync as sync_github,
-    cmd_list as list_github,
-    cmd_delta as delta_github,
-    cmd_push_queue as push_queue_to_github,
-)
+try:
+    from github_sync import (
+        cmd_sync as sync_github,
+        cmd_list as list_github,
+        cmd_delta as delta_github,
+        cmd_push_queue as push_queue_to_github,
+    )
+except ImportError:
+    sync_github = list_github = delta_github = push_queue_to_github = None
 
 # ── docs_sync ─────────────────────────────────────────────────────────────────
 
-from docs_sync import (
-    cmd_sync as sync_docs,
-    cmd_query as query_docs,
-    cmd_list as list_docs,
-)
+try:
+    from docs_sync import (
+        cmd_sync as sync_docs,
+        cmd_query as query_docs,
+        cmd_list as list_docs,
+    )
+except ImportError:
+    sync_docs = query_docs = list_docs = None
 
 # ── palace_sync ───────────────────────────────────────────────────────────────
 
-# palace_sync uses a main() entry point; expose it directly
-import palace_sync as _palace_sync
+try:
+    import palace_sync as _palace_sync
 
+    def sync_palace(dry_run: bool = False):
+        """Echo memory_palace DB → lab/theigors/ directory tree."""
+        _orig = sys.argv[:]
+        try:
+            sys.argv = [_orig[0]]
+            if dry_run:
+                sys.argv.append("--dry-run")
+            _palace_sync.main()
+        finally:
+            sys.argv = _orig
 
-def sync_palace(dry_run: bool = False):
-    """Echo memory_palace DB → lab/theigors/ directory tree."""
-    # palace_sync reads sys.argv for --dry-run; patch it temporarily
-    _orig = sys.argv[:]
-    try:
-        sys.argv = [_orig[0]]
-        if dry_run:
-            sys.argv.append("--dry-run")
-        _palace_sync.main()
-    finally:
-        sys.argv = _orig
-
+except ImportError:
+    sync_palace = None
 
 # ── slate_manager ─────────────────────────────────────────────────────────────
 
-from slate_manager import (
-    cmd_show as show_slates,
-    cmd_render as render_slate,
-    cmd_add_ticket as slate_add_ticket,
-    cmd_close_ticket as slate_close_ticket,
-    cmd_advance as slate_advance,
-)
+try:
+    from slate_manager import (
+        cmd_show as show_slates,
+        cmd_render as render_slate,
+        cmd_add_ticket as slate_add_ticket,
+        cmd_close_ticket as slate_close_ticket,
+        cmd_advance as slate_advance,
+    )
+except ImportError:
+    show_slates = render_slate = slate_add_ticket = slate_close_ticket = None
+    slate_advance = None

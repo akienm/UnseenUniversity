@@ -1,0 +1,125 @@
+{
+  "next_sweep": [],
+  "forever": [
+    {
+      "name": "no-bare-except-pass",
+      "code": "AR-001",
+      "kind": "shell",
+      "pattern": "python3 lab/claudecode/audit_check_bare_except.py",
+      "description": "Bare except: pass blocks silently swallow errors. Excludes ebook_drm vendored code.",
+      "severity": "med",
+      "added_by": "claude-code",
+      "added_at": "2026-04-14T17:32:17.892076",
+      "mode": "forever",
+      "ack_until": null
+    },
+    {
+      "name": "primary-classes-must-inherit-igorbase",
+      "code": "AR-002",
+      "kind": "shell",
+      "pattern": "python3 lab/claudecode/audit_check_igorbase.py",
+      "description": "D125 enforcement: primary component classes (cognition/, memory/, tools/, network/, brainstem/) must inherit IgorBase. Exempts classes whose only bases are third-party (BaseModel, Enum, ABC, dataclass, etc.).",
+      "severity": "med",
+      "added_by": "claude-code",
+      "added_at": "2026-04-14T17:32:17.930679",
+      "mode": "forever",
+      "ack_until": null
+    },
+    {
+      "name": "no-sqlite-imports",
+      "code": "AR-003",
+      "kind": "shell",
+      "pattern": "python3 lab/claudecode/audit_check_sqlite_imports.py",
+      "description": "Postgres-only data path for Igor (theigors/rules/database). Check catches re-introductions of SQLite in Igor's data path. Excludes legitimate external SQLite consumers (Calibre catalog, Kindle DRM keychain). T-remove-sqlite-references was the cleanup; this is reintroduction prevention.",
+      "severity": "high",
+      "added_by": "claude-code",
+      "added_at": "2026-04-14T17:38:32.767763",
+      "mode": "forever",
+      "ack_until": "2099-01-01"
+    },
+    {
+      "name": "no-hardcoded-instance-refs",
+      "code": "AR-004",
+      "kind": "shell",
+      "pattern": "python3 lab/claudecode/audit_check_hardcoded_instance.py",
+      "description": "T-hardcoded-instance-refs (#458): Igor runtime reads instance identifiers from config, not string literals. 'Igor-wild-0001' and 'choose_a_password' live in paths.py, docstrings, and the node_id constant (the settled exempt list from the 2026-04-15 sprint).",
+      "severity": "med",
+      "added_by": "claude-code",
+      "added_at": "2026-04-15T16:12:26.903828",
+      "mode": "forever",
+      "ack_until": null
+    },
+    {
+      "name": "no-cortex-store-bypass",
+      "code": "AR-005",
+      "kind": "shell",
+      "pattern": "python3 lab/claudecode/audit_check_cortex_bypass.py",
+      "description": "T-cortex-store-bypass-audit: per DP4 (single chokepoint), runtime tools/ write memories through cortex.store(). Exempts seed_*.py and memory_sync.py.",
+      "severity": "med",
+      "added_by": "claude-code",
+      "added_at": "2026-04-15T16:34:20.973133",
+      "mode": "forever",
+      "ack_until": null
+    },
+    {
+      "name": "callmap-fresh",
+      "code": "AR-006",
+      "kind": "shell",
+      "pattern": "python3 lab/claudecode/callmap.py --check",
+      "description": "lab/docs/callmap.md must match what callmap.py would currently produce",
+      "severity": "med",
+      "added_by": "claude-code",
+      "added_at": "2026-05-03T16:22:49.694141",
+      "mode": "forever",
+      "ack_until": null
+    },
+    {
+      "name": "levers-doc-skill-sync",
+      "code": "AR-007",
+      "kind": "shell",
+      "pattern": "git log --oneline --since='25 hours ago' --name-only -- '.claude/skills/' | grep -q '\\.md$' && ! git log --oneline --since='25 hours ago' --name-only -- 'lab/docs/Deterministic_AI_Development_Levers_A_layer_on_top_of_skills.md' | grep -q 'Levers'; echo 'OK'",
+      "description": "When a skill file was modified in the last day, the levers doc should also be updated. Fires a warning if skill changed but levers doc unchanged.",
+      "severity": "low",
+      "added_by": "claude-code",
+      "added_at": "2026-05-21T12:12:53.172141",
+      "mode": "forever",
+      "ack_until": null
+    },
+    {
+      "name": "negative-confidence-memories",
+      "kind": "sql",
+      "pattern": "SELECT memory_type, COUNT(*) FROM clan.memories WHERE (metadata->>'confidence')::float < 0 GROUP BY memory_type",
+      "description": "Shankar loop: surface PROCEDURAL/SEMANTIC memories with confidence < 0 (actively wrong). These should be reviewed or corrected.",
+      "severity": "low",
+      "added_by": "claude-code",
+      "added_at": "2026-05-27T19:53:43.794239",
+      "mode": "forever",
+      "ack_until": null
+    },
+    {
+      "name": "palace-decay-detection",
+      "kind": "sql",
+      "pattern": "SELECT path, title, updated_at, NOW() - updated_at AS age FROM adc.palace WHERE updated_at < NOW() - INTERVAL '30 days' ORDER BY updated_at ASC LIMIT 20",
+      "description": "Palace nodes not updated in 30+ days may be stale. Surface for spot-check \u2014 Akien approves all changes. Distinct from capability_map drift check.",
+      "severity": "low",
+      "added_by": "claude-code",
+      "added_at": "2026-05-27T20:02:11.599566",
+      "mode": "forever",
+      "ack_until": null
+    }
+  ],
+  "history": [
+    {
+      "name": "test-drain",
+      "kind": "shell",
+      "pattern": "echo",
+      "description": "smoke test of next_sweep drain",
+      "severity": "low",
+      "added_by": "claude-code",
+      "added_at": "2026-04-14T17:35:57.187770",
+      "mode": "next",
+      "ack_until": null,
+      "ran_at": "2026-04-14T17:35:58.622510"
+    }
+  ]
+}

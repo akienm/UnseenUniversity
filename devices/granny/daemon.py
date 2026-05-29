@@ -34,8 +34,9 @@ from typing import Optional
 log = logging.getLogger(__name__)
 
 POLL_INTERVAL_SEC = int(os.environ.get("GRANNY_POLL_INTERVAL", "60"))
+_UU_ROOT = Path(__file__).parent.parent.parent.resolve()
 _CC_QUEUE = (
-    Path(os.environ.get("CC_WORKFLOW_TOOLS", Path.home() / "TheIgors/lab/claudecode"))
+    Path(os.environ.get("CC_WORKFLOW_TOOLS", _UU_ROOT / "lab/claudecode"))
     / "cc_queue.py"
 )
 

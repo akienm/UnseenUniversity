@@ -90,7 +90,9 @@ def _check_jsonl_fallback(mailbox: str) -> list[str]:
     try:
         import json
 
-        cc_inbox_path = os.path.expanduser("~/.TheIgors/Igor-wild-0001/cc_inbox.jsonl")
+        cc_inbox_path = os.path.expanduser(
+            "~/.unseen_university/Igor-wild-0001/cc_inbox.jsonl"
+        )
         if not os.path.exists(cc_inbox_path):
             return []
         senders = []

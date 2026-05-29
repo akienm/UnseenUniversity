@@ -400,7 +400,7 @@ def load_existing_tickets() -> list[dict]:
         result = subprocess.run(
             [
                 "python3",
-                os.path.expanduser("~/TheIgors/lab/claudecode/cc_queue.py"),
+                str(Path(__file__).parent / "cc_queue.py"),
                 "list",
             ],
             capture_output=True,
@@ -436,12 +436,7 @@ def load_existing_tickets() -> list[dict]:
 def main():
     """Parse audit findings, match against existing tickets, surface new ones."""
     audit_dir = (
-        pathlib.Path.home()
-        / "TheIgors"
-        / "lab"
-        / "design_docs"
-        / "audit_2026"
-        / "pass2_output"
+        pathlib.Path.home() / "lab" / "design_docs" / "audit_2026" / "pass2_output"
     )
 
     # Parse all findings

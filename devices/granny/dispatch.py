@@ -17,13 +17,12 @@ from pathlib import Path
 
 log = logging.getLogger(__name__)
 
-_CC_QUEUE = (
-    Path(os.environ.get("CC_WORKFLOW_TOOLS", Path.home() / "TheIgors/lab/claudecode"))
-    / "cc_queue.py"
-)
-
 # Repo root — where CC must run so it picks up CLAUDE.md and project context.
 _UU_ROOT = Path(__file__).parent.parent.parent.resolve()
+_CC_QUEUE = (
+    Path(os.environ.get("CC_WORKFLOW_TOOLS", _UU_ROOT / "lab/claudecode"))
+    / "cc_queue.py"
+)
 
 
 def _launch_cc_instance(ticket_id: str) -> None:

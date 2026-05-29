@@ -370,7 +370,7 @@ def habit_list(query: str | None = None, limit: int = 30, pg_url: str = _PG_URL)
 
 
 def turn_trace_recent(limit: int = 5, since_minutes: int | None = None) -> str:
-    log_dir = Path.home() / ".TheIgors" / "local" / "logs"
+    log_dir = Path.home() / ".unseen_university" / "local" / "logs"
     today = datetime.now().strftime("%Y%m%d")
     log_file = log_dir / f"turn_trace.{today[:4]}-{today[4:6]}-{today[6:]}.log"
     if not log_file.exists():
@@ -436,7 +436,7 @@ def turn_trace_recent(limit: int = 5, since_minutes: int | None = None) -> str:
 def consult_sessions_recent(
     limit: int = 10, since_minutes: int | None = None, session_id: str | None = None
 ) -> str:
-    log_path = Path.home() / ".TheIgors" / "local" / "logs" / "consults.log"
+    log_path = Path.home() / ".unseen_university" / "local" / "logs" / "consults.log"
     if not log_path.exists():
         return f"No consults log found at {log_path}."
 

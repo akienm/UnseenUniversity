@@ -31,7 +31,7 @@ from typing import Any
 
 
 def _igor_home() -> Path:
-    return Path(os.environ.get("IGOR_HOME", Path.home() / ".TheIgors"))
+    return Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
 
 
 def violation_log_path() -> Path:

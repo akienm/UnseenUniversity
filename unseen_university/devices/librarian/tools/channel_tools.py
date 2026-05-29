@@ -84,7 +84,7 @@ SCHEMAS = [
         "name": "request_compaction",
         "description": (
             "Queue a /compact of the CC session. Writes the preserve string to "
-            "~/.TheIgors/cc_compact_pending.txt; the UserPromptSubmit hook fires "
+            "~/.unseen_university/cc_compact_pending.txt; the UserPromptSubmit hook fires "
             "it on the next turn. Called by /savestate to trigger compaction."
         ),
         "inputSchema": {
@@ -168,7 +168,7 @@ def _request_compaction(preserve_instructions: str) -> str:
     """Write preserve string to cc_compact_pending.txt; hook fires it on next turn."""
     from pathlib import Path
 
-    compact_file = Path.home() / ".TheIgors" / "cc_compact_pending.txt"
+    compact_file = Path.home() / ".unseen_university" / "cc_compact_pending.txt"
     try:
         compact_file.parent.mkdir(parents=True, exist_ok=True)
         compact_file.write_text(preserve_instructions)

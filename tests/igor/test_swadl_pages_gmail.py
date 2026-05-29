@@ -16,11 +16,11 @@ from unittest.mock import MagicMock, call
 
 import pytest
 
-sys.path.insert(0, str(Path.home() / "TheIgors"))
+pytest.importorskip("wild_igor", reason="requires Igor internals")
 
-from wild_igor.tools.swadl_pages.gmail_compose import ComposePage
-from wild_igor.tools.swadl_pages.gmail_inbox import InboxPage
-from wild_igor.tools.swadl_pages.gmail_message_ref import MessageRef
+from wild_igor.tools.swadl_pages.gmail_compose import ComposePage  # noqa: E402
+from wild_igor.tools.swadl_pages.gmail_inbox import InboxPage  # noqa: E402
+from wild_igor.tools.swadl_pages.gmail_message_ref import MessageRef  # noqa: E402
 
 # ── helpers ───────────────────────────────────────────────────────────────
 

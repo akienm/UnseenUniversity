@@ -27,7 +27,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-_DEFAULT_REPO_ORIGIN = str(Path.home() / "TheIgors")
+_DEFAULT_REPO_ORIGIN = str(Path(__file__).parent.parent.parent.resolve())
 _WORKSPACE_BASE = Path.home() / ".unseen_university"
 
 
@@ -54,8 +54,8 @@ class MinionWorkspace:
 
     @property
     def workspace_path(self) -> Path:
-        """~/.unseen_university/<instance>/workspace/TheIgors"""
-        return _WORKSPACE_BASE / self.instance / "workspace" / "TheIgors"
+        """~/.unseen_university/<instance>/workspace/UnseenUniversity"""
+        return _WORKSPACE_BASE / self.instance / "workspace" / "UnseenUniversity"
 
     def is_cloned(self) -> bool:
         return (self.workspace_path / ".git").exists()

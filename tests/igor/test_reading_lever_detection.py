@@ -2,13 +2,14 @@
 Tests for T-reading-lever-detection — attractor-guided chunk scoring.
 """
 
-import pytest
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "lab" / "claudecode"))
+import pytest
 
-from book_learner import _score_attractor_overlap
+pytest.importorskip("devices.igor.memory.cortex", reason="requires Igor internals")
+
+from claudecode.book_learner import _score_attractor_overlap  # noqa: E402
 
 
 class TestAttractorOverlap:

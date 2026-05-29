@@ -32,9 +32,10 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-SESSIONS_MD = Path.home() / "TheIgors" / "lab" / "docs" / "sessions.md"
+_UU_ROOT = Path(__file__).parent.parent.parent.resolve()
+SESSIONS_MD = _UU_ROOT / "lab" / "docs" / "sessions.md"
 CURRENT_SESSION_FILE = (
-    Path(os.getenv("IGOR_RUNTIME_ROOT", Path.home() / ".TheIgors"))
+    Path(os.getenv("IGOR_RUNTIME_ROOT", Path.home() / ".unseen_university"))
     / "cc_channel"
     / "current_session.txt"
 )
