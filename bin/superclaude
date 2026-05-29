@@ -16,7 +16,12 @@ else
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VENV_PYTHON="${THEIGORS_DIR}/venv/bin/python"
+# UU uses .venv/, TheIgors uses venv/ — probe in order
+if [[ -f "${THEIGORS_DIR}/.venv/bin/python" ]]; then
+    VENV_PYTHON="${THEIGORS_DIR}/.venv/bin/python"
+else
+    VENV_PYTHON="${THEIGORS_DIR}/venv/bin/python"
+fi
 
 # Try to source common functions if available
 if [[ -f "${SCRIPT_DIR}/_igor_common.sh" ]]; then

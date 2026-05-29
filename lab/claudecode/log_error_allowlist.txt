@@ -1,0 +1,61 @@
+# Log error allowlist — one grep-compatible pattern per line.
+# Lines starting with # are ignored by grep -f.
+# Each pattern should have a comment line above explaining why it is OK.
+
+# Ollama graceful tier escalation — expected behavior when Ollama is slow/down
+Ollama timed out after.*escalating to next tier
+IMPULSE_SKIP.*Ollama timed out
+
+# get_last_latency_s removed in refactor (pre-2026-04); dead habit covered by step 12
+inference latency fetch failed: cannot import name 'get_last_latency_s'
+
+# Response habits without a template fall through to LLM — intended behavior
+HABIT_RESPONSE_MISSING_TEMPLATE
+
+# Milieu.valence AttributeError — March 2026 pre-schema-migration stale log entries
+context_inject error: 'Milieu' object has no attribute 'valence'
+
+# BARE_EXCEPT in push_sources.py — log_error() signature fixed in a prior sprint
+BARE_EXCEPT.*push_sources.py.*log_error\(\) takes 0 positional
+
+# Migration rollback from 2026-03-29 — node_registry not-null constraint;
+# the migration was rolled back cleanly; resolved in subsequent sprint
+MIGRATION FAILED — rolled back: null value in column "created_at" of relation "node_registry"
+
+# Memory rename operation — "RENAMED memories 'tpl-error-recovery'" contains the word "error"
+# but is a successful rename record, not an error
+RENAMED.*tpl-error-recovery
+
+# OR model refresh offline — expected when OpenRouter is offline/rate-limited
+# Igor degrades gracefully to Ollama; not actionable
+OR model refresh: could not fetch /models \(offline or auth error\)
+
+# "your reply at ... failed to show" — success message from uc_deliver;
+# the word "failed" appears in the content of a successfully-delivered message
+your reply at.*failed to show
+
+# "No active goal to mark as failed" — Igor in idle/no-goal state; expected
+# during the strip-down phase when Igor is not running tickets
+No active goal to mark as failed
+
+# DROP session fanout=0 — no listeners registered; expected when agents are
+# not connected to the rack server
+DROP session=comms://shared fanout=0 known_sessions=\[\]
+
+# LegacyDirectClaimError — pre-dispatch-workflow error from when Igor used
+# cmd_claim; replaced by cc_queue dispatch flow
+LegacyDirectClaimError: cmd_claim raises when called without cmd_next context
+
+# Postgres connection exhaustion — 2026-05-27 autonomous sprint exhausted
+# pg connection pool; resolved; not current
+remaining connection slots are reserved for roles with the SUPERUSER attribute
+
+# cron_refresh stats report — "failed": 0 in a JSON stats object, not a real failure
+\[cron_refresh\] pending drain:.*'failed': 0
+
+# Port already in use — expected on web server restart when old process hasn't exited
+address already in use
+
+# pe_chain escalation from autonomous sprint — old_string hypothesis failure from
+# the Igor-coding-paused era; not current
+hypothesis_error.*old_string not found
