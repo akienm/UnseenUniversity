@@ -23,12 +23,14 @@ from pathlib import Path
 from typing import Optional
 
 from devices.igor.tools.registry import Tool, registry
-from ..memory.db_proxy import DatabaseProxy, make_home_proxy
+from ..memory.db_proxy import DatabaseProxy, make_home_proxy, make_local_proxy
 from ..paths import paths
 
 # ── Igor DB proxy singleton (G-DB1 W1) ────────────────────────────────────────
 _IGOR_DB_PROXY: Optional[DatabaseProxy] = None
 _IGOR_DB_PROXY_LOCK = threading.Lock()
+_LOCAL_DB_PROXY: Optional[DatabaseProxy] = None
+_LOCAL_DB_PROXY_LOCK = threading.Lock()
 
 
 def _igor_db_proxy() -> DatabaseProxy:
@@ -38,6 +40,15 @@ def _igor_db_proxy() -> DatabaseProxy:
         if _IGOR_DB_PROXY is None:
             _IGOR_DB_PROXY = make_home_proxy()
     return _IGOR_DB_PROXY
+
+
+def _local_db_proxy() -> DatabaseProxy:
+    """Return (or create) the singleton proxy for instance-schema tables (twm_observations, ring_memory)."""
+    global _LOCAL_DB_PROXY
+    with _LOCAL_DB_PROXY_LOCK:
+        if _LOCAL_DB_PROXY is None:
+            _LOCAL_DB_PROXY = make_local_proxy()
+    return _LOCAL_DB_PROXY
 
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
@@ -1052,7 +1063,7 @@ def learn_top_gap(**_kwargs) -> str:
     import time as _time
 
     try:
-        with _igor_db_proxy()() as conn:
+        with _local_db_proxy()() as conn:
             row = conn.execute(
                 """SELECT content_csb FROM twm_observations
                    WHERE content_csb LIKE %s
@@ -1235,7 +1246,7 @@ def flag_top_gap(**_kwargs) -> str:
 
     # Query highest-salience unexpired NARRATIVE_GAP
     try:
-        with _igor_db_proxy()() as conn:
+        with _local_db_proxy()() as conn:
             row = conn.execute(
                 """SELECT content_csb, salience FROM twm_observations
                    WHERE content_csb LIKE %s
@@ -1445,7 +1456,7 @@ def review_turn_traces(**_kwargs) -> str:
             from datetime import timedelta
 
             expires = (ts_now + timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M:%S")
-            with _igor_db_proxy()() as conn:
+            with _local_db_proxy()() as conn:
                 conn.execute(
                     """INSERT INTO twm_observations
                        (content_csb, salience, expires_at, timestamp, source, urgency)
