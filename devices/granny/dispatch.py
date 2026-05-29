@@ -52,6 +52,7 @@ def _launch_cc_instance(ticket_id: str) -> None:
                 str(_UU_ROOT),
                 "--",
                 "claude",
+                "--dangerously-skip-permissions",
                 "-p",
                 f"/sprint-ticket {ticket_id}",
             ],

@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import subprocess
 import threading
 import time
@@ -48,25 +49,44 @@ _SKIP_STATUSES = {"in_progress", "done", "closed", "awaiting_validation"}
 
 
 def _load_sprint_tickets() -> list[dict]:
-    """Load tickets with status=sprint from cc_queue. Returns [] on error."""
+    """Load tickets with status=sprint from cc_queue. Returns [] on error.
+
+    cc_queue.py list has no --json flag; we parse its text output to extract
+    ticket IDs then call show <id> for full JSON per ticket.
+    """
     try:
-        result = subprocess.run(
-            ["python3", str(_CC_QUEUE), "list", "--json"],
+        list_result = subprocess.run(
+            ["python3", str(_CC_QUEUE), "list"],
             capture_output=True,
             text=True,
             timeout=15,
         )
-        if result.returncode != 0:
-            log.warning("GrannyDaemon: cc_queue list failed: %s", result.stderr[:200])
+        if list_result.returncode != 0:
+            log.warning(
+                "GrannyDaemon: cc_queue list failed: %s", list_result.stderr[:200]
+            )
             return []
-        data = json.loads(result.stdout)
-        tickets = data.get("tickets", []) if isinstance(data, dict) else data
-        return [
-            t
-            for t in tickets
-            if t.get("status") in _DISPATCHABLE_STATUSES
-            and not t.get("gate")  # skip gated tickets
-        ]
+
+        # Extract ticket IDs from formatted output: "  ⬜ [T-foo-bar] (S) ..."
+        ids = re.findall(r"\[(T-[a-z0-9-]+)\]", list_result.stdout)
+
+        tickets = []
+        for tid in ids:
+            show_result = subprocess.run(
+                ["python3", str(_CC_QUEUE), "show", tid],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if show_result.returncode != 0:
+                continue
+            try:
+                t = json.loads(show_result.stdout)
+                if t.get("status") in _DISPATCHABLE_STATUSES and not t.get("gate"):
+                    tickets.append(t)
+            except json.JSONDecodeError:
+                pass
+        return tickets
     except Exception as e:
         log.warning("GrannyDaemon: failed to load tickets: %s", e)
         return []

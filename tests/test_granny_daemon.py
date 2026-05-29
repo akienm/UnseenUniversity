@@ -22,18 +22,40 @@ def _ticket(id="T-abc", status="sprint", worker="", tags=None, gate=None):
     return t
 
 
+def _run_side_effect(ticket_map: dict):
+    """Build a subprocess.run side_effect that serves list then show responses.
+
+    ticket_map: {ticket_id: ticket_dict}
+    First call (list) returns text with all IDs; subsequent show calls return
+    per-ticket JSON.
+    """
+    list_text = "\n".join(f"  ⬜ [{tid}] (S) [sprint]" for tid in ticket_map)
+
+    def _side_effect(cmd, **kwargs):
+        verb = cmd[2] if len(cmd) > 2 else ""
+        if verb == "list":
+            return MagicMock(returncode=0, stdout=list_text, stderr="")
+        if verb == "show":
+            tid = cmd[3] if len(cmd) > 3 else ""
+            if tid in ticket_map:
+                return MagicMock(
+                    returncode=0, stdout=json.dumps(ticket_map[tid]), stderr=""
+                )
+            return MagicMock(returncode=1, stdout="", stderr="not found")
+        return MagicMock(returncode=1, stdout="", stderr="unexpected")
+
+    return _side_effect
+
+
 class TestLoadSprintTickets:
     def test_returns_sprint_tickets(self):
         from devices.granny.daemon import _load_sprint_tickets
 
-        data = {
-            "tickets": [
-                _ticket("T-a", status="sprint"),
-                _ticket("T-b", status="pending"),
-            ]
-        }
-        mock_result = MagicMock(returncode=0, stdout=json.dumps(data))
-        with patch("subprocess.run", return_value=mock_result):
+        t_a = _ticket("T-a", status="sprint")
+        t_b = _ticket("T-b", status="pending")
+        with patch(
+            "subprocess.run", side_effect=_run_side_effect({"T-a": t_a, "T-b": t_b})
+        ):
             tickets = _load_sprint_tickets()
         assert len(tickets) == 1
         assert tickets[0]["id"] == "T-a"
@@ -41,23 +63,22 @@ class TestLoadSprintTickets:
     def test_skips_gated_tickets(self):
         from devices.granny.daemon import _load_sprint_tickets
 
-        data = {
-            "tickets": [
-                _ticket("T-a", status="sprint"),
-                _ticket("T-b", status="sprint", gate="T-a"),
-            ]
-        }
-        mock_result = MagicMock(returncode=0, stdout=json.dumps(data))
-        with patch("subprocess.run", return_value=mock_result):
+        t_a = _ticket("T-a", status="sprint")
+        t_b = _ticket("T-b", status="sprint", gate="T-a")
+        with patch(
+            "subprocess.run", side_effect=_run_side_effect({"T-a": t_a, "T-b": t_b})
+        ):
             tickets = _load_sprint_tickets()
         assert len(tickets) == 1
         assert tickets[0]["id"] == "T-a"
 
-    def test_returns_empty_on_subprocess_error(self):
+    def test_returns_empty_on_list_error(self):
         from devices.granny.daemon import _load_sprint_tickets
 
-        mock_result = MagicMock(returncode=1, stderr="queue error")
-        with patch("subprocess.run", return_value=mock_result):
+        with patch(
+            "subprocess.run",
+            return_value=MagicMock(returncode=1, stdout="", stderr="queue error"),
+        ):
             tickets = _load_sprint_tickets()
         assert tickets == []
 
