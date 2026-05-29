@@ -114,11 +114,17 @@ require_api_key() {
 # ─ Rack server (D335) ───────────────────────────────────────────────────────
 
 start_rack_server() {
-    local uc_dir="${CC_WORKFLOW_TOOLS:-${THEIGORS_DIR}/lab/claudecode}"
-    local uc_server="${uc_dir}/utility_closet_server.py"
+    # Derive UU root: CC_WORKFLOW_TOOLS is lab/claudecode — two levels up is repo root.
+    local uu_dir
+    if [[ -n "${CC_WORKFLOW_TOOLS:-}" ]]; then
+        uu_dir="$(dirname "$(dirname "${CC_WORKFLOW_TOOLS}")")"
+    else
+        uu_dir="${THEIGORS_DIR}"
+    fi
+    local uc_server="${uu_dir}/devices/web_server/server.py"
 
     if [[ ! -f "$uc_server" ]]; then
-        echo "Warning: utility_closet_server.py not found, skipping"
+        echo "Warning: devices/web_server/server.py not found, skipping"
         return 0
     fi
 
@@ -135,14 +141,14 @@ start_rack_server() {
 
     # Not running or stalled — start it in background
     echo "Rack server: starting..."
-    nohup "$VENV_PYTHON" "$uc_server" >> "${IGOR_HOME}/logs/utility_closet.log" 2>&1 &
+    nohup "$VENV_PYTHON" "$uc_server" >> "${IGOR_HOME}/logs/rack_server.log" 2>&1 &
     disown
 
     # Wait briefly for it to come up
     for i in 1 2 3 4 5; do
         sleep 1
         if "$VENV_PYTHON" "$uc_server" --check >/dev/null 2>&1; then
-            echo "Rack server: started (pid $(cat "${IGOR_HOME}/utility_closet.pid" 2>/dev/null || echo '?'))"
+            echo "Rack server: started (pid $(cat "${IGOR_HOME}/web_server.pid" 2>/dev/null || echo '?'))"
             return 0
         fi
     done

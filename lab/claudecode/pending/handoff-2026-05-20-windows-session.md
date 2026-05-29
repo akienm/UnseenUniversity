@@ -117,7 +117,7 @@ The feedback loop is what prevents this. Specifically:
    durable. If it lives only in conversational memory, it dies with the session.
 
 This applies not just to skills but to the whole system:
-- The utility closet should verify its own restarts
+- The rack server should verify its own restarts
 - cc_queue.py add should confirm what it wrote
 - agentctl init should verify the skills it deployed
 - The audit skills (/audit-ticket, /audit-design) should themselves have verifiable outputs

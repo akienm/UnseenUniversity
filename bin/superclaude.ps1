@@ -2,7 +2,7 @@
 #
 # What it does:
 #   1. Loads per-instance .env (so ANTHROPIC_API_KEY etc. flow into CC)
-#   2. Ensures the utility closet is running in the background
+#   2. Ensures the rack server is running in the background
 #   3. Launches `claude` with --dangerously-skip-permissions, forwarding all args
 #
 # Windows differences vs Linux superclaude:
@@ -44,8 +44,8 @@ if (Test-Path $envFile) {
 # ---- Ensure logs dir ----
 New-Item -ItemType Directory -Force -Path "$runtimeRoot\logs" | Out-Null
 
-# ---- Ensure utility closet is running ----
-& "$repoRoot\start_utility_closet.ps1"
+# ---- Ensure rack server is running ----
+& "$repoRoot\start_rack_server.ps1"
 
 # ---- Launch Claude Code ----
 $env:PYTHONUTF8 = '1'

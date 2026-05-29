@@ -5,7 +5,7 @@ audit_logging.py — T-detailed-logging-audit
 Callsite-level inventory of logging statements across the codebase. Two
 passes:
 
-1. STATIC (default): AST walk over devices/igor/ (UnseenUniversity), lab/utility_closet/, lab/.
+1. STATIC (default): AST walk over devices/igor/ (UnseenUniversity), lab/claudecode/.
    For every logging callsite, classify the pattern and resolve the host
    class. Cross-check inheritance against IgorBase/AgentBase via shared
    logic with audit_check_igorbase.py.
@@ -57,10 +57,9 @@ from audit_check_igorbase import (  # noqa: E402
     _has_igorbase_transitively,
 )
 
-# Roots to scan in static pass (within the TheIgors repo)
+# Roots to scan in static pass
 SCAN_ROOTS = (
     Path("/home/akien/dev/src/UnseenUniversity") / "devices" / "igor",
-    REPO_ROOT / "lab" / "utility_closet",
     REPO_ROOT / "lab" / "claudecode",
 )
 

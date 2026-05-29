@@ -81,10 +81,10 @@ KNOWN_IGORBASE_ANCESTORS = {
     "BaseCascadeLevel",  # experiment_cascade.py — IgorBase direct
     "BaseReasoner",  # reasoners/base.py — IgorBase direct
     "BaseInterruptor",  # interruptors.py — IgorBase direct
-    "RackModule",  # lab/utility_closet/rack.py — AgentBase direct
-    "Rack",  # lab/utility_closet/rack.py — AgentBase direct
-    "Transport",  # lab/utility_closet/comms.py — AgentBase direct
-    "MatterController",  # lab/utility_closet/matter_shelf.py — AgentBase direct
+    "RackModule",  # devices/web_server/ — AgentBase direct
+    "Rack",  # devices/web_server/ — AgentBase direct
+    "Transport",  # unseen_university/bus/ — AgentBase direct
+    "MatterController",  # devices/ — AgentBase direct
 }
 
 # Names that the audit explicitly exempts even with no IgorBase ancestry.
