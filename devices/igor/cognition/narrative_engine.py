@@ -1080,14 +1080,24 @@ class NarrativeEngine(IgorBase):
             _ctx = _mk_ctx(is_background=True)
             text = _gw().call("ne", prompt, _ctx)
             result = self._parse_ne_json(text)
+            if result is None:
+                # Retry once after stripping markdown/think-block wrappers
+                result = self._parse_ne_json(self._clean_llm_response(text))
             if result is not None:
                 _via = "cloud" if _ctx.cloud_active else "local"
                 print(f"{_cts()}[NE] {_via} ok")
                 reasoning_cache.put(NE_MODEL, prompt, text, max_twm_id)
                 self._last_ne_model = f"gateway/ne/{_via}"
                 return result
+            # Still None — log at WARNING and return minimal fallback so the
+            # cycle doesn't skip entirely (the fallback impulse keeps Igor awake).
+            import logging as _logging
+
+            _logging.getLogger(__name__).warning(
+                "[NE] JSON parse failed after cleanup — raw=%r", text[:500]
+            )
             print(
-                f"{_cts()}[NE] JSON parse failed — skipping cycle | raw={text[:150]!r}"
+                f"{_cts()}[NE] JSON parse failed — using fallback | raw={text[:150]!r}"
             )
             try:
                 from .forensic_logger import log_anomaly as _la
@@ -1098,6 +1108,26 @@ class NarrativeEngine(IgorBase):
                     kind="BARE_EXCEPT",
                     detail=f"devices/igor/cognition/narrative_engine.py: {_bare_e}",
                 )
+            return {
+                "summary_csb": "NE parse failed — no structured output from LLM",
+                "thread_topic": "NE recovery",
+                "connections": [],
+                "salience_updates": [],
+                "memory_candidates": [],
+                "action_impulses": [
+                    {
+                        "action": "re-examine TWM observations",
+                        "urgency": 0.3,
+                        "why": "NE inference returned unparseable output",
+                    }
+                ],
+                "internal_state": {
+                    "valence": 0.0,
+                    "arousal": 0.2,
+                    "notes": "NE parse failed",
+                },
+                "narrative_gaps": [],
+            }
         except Exception as e:
             print(f"{_cts()}[NE] inference failed: {e}")
         return None
@@ -1398,6 +1428,18 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                 kind="BARE_EXCEPT",
                 detail=f"devices/igor/cognition/narrative_engine.py: {_bare_e}",
             )
+
+    @staticmethod
+    def _clean_llm_response(text: str) -> str:
+        """Strip markdown fences and think-blocks from LLM output."""
+        import re
+
+        # Remove <think>...</think> blocks (Ollama reasoning models)
+        text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+        # Remove ```json ... ``` and ``` ... ``` fences
+        text = re.sub(r"```(?:json)?\s*", "", text)
+        text = text.replace("```", "")
+        return text.strip()
 
     def _parse_ne_json(self, text: str) -> Optional[dict]:
         """Extract and parse JSON from LLM response. Returns None if unparseable."""
