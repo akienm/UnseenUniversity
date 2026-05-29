@@ -108,7 +108,7 @@ class GrannyShim(BaseShim):
                     "description": (
                         "**Affected files:** none\n"
                         "**Scope boundary:** self-test only\n"
-                        "**Test plan:** verify intake_ticket returns AuditResult shape"
+                        "**Completion criteria:** verify intake_ticket returns AuditResult shape"
                     ),
                 }
             )

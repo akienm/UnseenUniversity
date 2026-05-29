@@ -1114,7 +1114,7 @@ def _scraps_validate(ticket: dict) -> bool:
 _REQUIRED_DESCRIPTION_SECTIONS = [
     "**Affected files:**",
     "**Scope boundary:**",
-    "**Test plan:**",
+    "**Completion criteria:**",
 ]
 
 

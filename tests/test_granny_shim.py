@@ -31,7 +31,7 @@ class TestGrannyShim:
                 "description": (
                     "**Affected files:** none\n"
                     "**Scope boundary:** test only\n"
-                    "**Test plan:** none needed"
+                    "**Completion criteria:** none needed"
                 ),
             }
         )
@@ -110,7 +110,7 @@ class TestGrannyChannelMessages:
                 "title": "security change",
                 "size": "M",
                 "tags": ["Security"],
-                "description": "**Affected files:** x\n**Scope boundary:** y\n**Test plan:** z",
+                "description": "**Affected files:** x\n**Scope boundary:** y\n**Completion criteria:** z",
             }
         )
         assert g._posts
