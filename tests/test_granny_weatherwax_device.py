@@ -27,7 +27,7 @@ def _make_ticket(**overrides):
             "Problem description.\n"
             "**Affected files:** foo.py\n"
             "**Scope boundary:** just this\n"
-            "**Test plan:** run pytest"
+            "**Completion criteria:** run pytest"
         ),
     }
     base.update(overrides)

@@ -123,7 +123,7 @@ def _audit_ticket(ticket: dict[str, Any]) -> AuditResult:
         reasons.append(f"invalid size: {size!r} (must be S/M/L/XL)")
 
     desc = ticket.get("description", "")
-    for section in ("Affected files", "Scope boundary", "Test plan"):
+    for section in ("Affected files", "Scope boundary", "Completion criteria"):
         if section.lower() not in desc.lower():
             reasons.append(f"description missing section: {section}")
 
