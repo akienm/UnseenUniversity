@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-IGOR_HOME="${HOME}/.TheIgors"
+IGOR_HOME="${HOME}/.unseen_university"
 
 # Derive TheIgors repo location from CC_WORKFLOW_TOOLS (two levels up) or fall back
 if [[ -n "${CC_WORKFLOW_TOOLS:-}" ]]; then
