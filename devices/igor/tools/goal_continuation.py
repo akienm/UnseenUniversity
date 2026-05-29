@@ -174,8 +174,31 @@ class GoalContinuation(IgorBase):
             goal = active[0]
             task = goal.metadata.get("source_message", goal.narrative[:80])
             step = int(goal.metadata.get("current_step", 0))
+            goal_type = goal.metadata.get("goal_type", "TACTICAL")
 
-            self.log.info(f"CHECK goal={goal.id} step={step} task={task[:60]}")
+            self.log.info(
+                f"CHECK goal={goal.id} step={step} task={task[:60]} type={goal_type}"
+            )
+
+            # D274 fallback: STANDING goals need to be pushed to TWM so NE sees them as active.
+            # When goal_continuation picks up a STANDING goal and it's not already in TWM,
+            # push it as an ACTIVE_GOAL observation so CuriositySource won't fire.
+            if goal_type == "STANDING" and step == 0:
+                try:
+                    cortex.twm_evict_category("active_goal")
+                    _twm_meta = {"goal_id": goal.id, "goal_type": "STANDING"}
+                    cortex.twm_push(
+                        source="goal_continuation",
+                        content_csb=f"ACTIVE_GOAL|id={goal.id}|type=STANDING|task={task[:80]}",
+                        salience=0.75,
+                        urgency=0.6,
+                        ttl_seconds=7200,
+                        category="active_goal",
+                        metadata=_twm_meta,
+                    )
+                    self.log.info(f"STANDING_GOAL pushed to TWM: {goal.id}")
+                except Exception as e:
+                    self.log.error(f"failed to push STANDING goal to TWM: {e}")
 
             ticket_id = self._extract_ticket_id(task)
 
