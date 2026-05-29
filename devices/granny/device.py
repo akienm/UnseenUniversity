@@ -310,12 +310,21 @@ class GrannyWeatherwaxDevice(BaseDevice):
             self.escalate_to_cc(ticket, "HIGH-inertia tags require CC approval")
             return (False, "escalated_to_cc")
 
-        # Find best edge: highest weight among all edges for any ticket tag
+        # Find best edge: highest weight; break ties by preferring edges with
+        # a dispatch_fn over skeleton edges (weight-only, no fn).
         best_edge: RoutingEdge | None = None
         with self._lock:
             for tag in ticket_tags:
                 for edge in self._edges.get(tag, []):
-                    if best_edge is None or edge.weight > best_edge.weight:
+                    if best_edge is None:
+                        best_edge = edge
+                    elif edge.weight > best_edge.weight:
+                        best_edge = edge
+                    elif (
+                        edge.weight == best_edge.weight
+                        and edge.dispatch_fn is not None
+                        and best_edge.dispatch_fn is None
+                    ):
                         best_edge = edge
 
         if best_edge is None:

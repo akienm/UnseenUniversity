@@ -13,16 +13,17 @@ from __future__ import annotations
 import logging
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 log = logging.getLogger(__name__)
 
 # Repo root — where CC must run so it picks up CLAUDE.md and project context.
 _UU_ROOT = Path(__file__).parent.parent.parent.resolve()
-_CC_QUEUE = (
-    Path(os.environ.get("CC_WORKFLOW_TOOLS", _UU_ROOT / "lab/claudecode"))
-    / "cc_queue.py"
-)
+# Always use UU's own cc_queue.py — never inherited CC_WORKFLOW_TOOLS which
+# may point to the old TheIgors checkout.
+_CC_QUEUE = _UU_ROOT / "lab" / "claudecode" / "cc_queue.py"
+_PYTHON = sys.executable  # same venv interpreter that started the daemon
 
 
 def _launch_cc_instance(ticket_id: str) -> None:
@@ -81,7 +82,7 @@ def cc_dispatch_fn(ticket: dict) -> bool:
     # Mark in_progress via cc_queue
     try:
         result = subprocess.run(
-            ["python3", str(_CC_QUEUE), "dispatch", ticket_id],
+            [_PYTHON, str(_CC_QUEUE), "dispatch", ticket_id],
             capture_output=True,
             text=True,
             timeout=10,
@@ -94,7 +95,7 @@ def cc_dispatch_fn(ticket: dict) -> bool:
         log.warning("cc_dispatch_fn: cc_queue call failed for %s: %s", ticket_id, e)
         # Continue — channel post + CC launch matter more than the queue mark
 
-    # Post to shared channel for observability
+    # Post to shared channel for observability — best-effort, never blocks launch
     try:
         from unseen_university.channel import post_to_channel
 
@@ -106,10 +107,9 @@ def cc_dispatch_fn(ticket: dict) -> bool:
             f"|tags={tags}|title={title}"
         )
         post_to_channel(msg, author="granny-weatherwax", channel="shared")
-        log.info("cc_dispatch_fn: dispatched %s to CC via channel", ticket_id)
+        log.info("cc_dispatch_fn: channel post OK for %s", ticket_id)
     except Exception as e:
-        log.error("cc_dispatch_fn: channel post failed for %s: %s", ticket_id, e)
-        return False
+        log.warning("cc_dispatch_fn: channel post failed for %s: %s", ticket_id, e)
 
     # Launch the CC instance — best-effort, never blocks return value
     _launch_cc_instance(ticket_id)

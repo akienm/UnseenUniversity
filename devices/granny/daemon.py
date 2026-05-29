@@ -25,6 +25,7 @@ import logging
 import os
 import re
 import subprocess
+import sys
 import threading
 import time
 import urllib.request
@@ -35,10 +36,9 @@ log = logging.getLogger(__name__)
 
 POLL_INTERVAL_SEC = int(os.environ.get("GRANNY_POLL_INTERVAL", "60"))
 _UU_ROOT = Path(__file__).parent.parent.parent.resolve()
-_CC_QUEUE = (
-    Path(os.environ.get("CC_WORKFLOW_TOOLS", _UU_ROOT / "lab/claudecode"))
-    / "cc_queue.py"
-)
+# Always use UU's own cc_queue.py — never inherited CC_WORKFLOW_TOOLS.
+_CC_QUEUE = _UU_ROOT / "lab" / "claudecode" / "cc_queue.py"
+_PYTHON = sys.executable
 
 _UC_PORT = int(os.environ.get("IGOR_UC_PORT", "8082"))
 _UC_BASE = os.environ.get("IGOR_UC_BASE", f"http://localhost:{_UC_PORT}")
@@ -78,7 +78,7 @@ def _load_sprint_tickets() -> list[dict]:
     """
     try:
         list_result = subprocess.run(
-            ["python3", str(_CC_QUEUE), "list"],
+            [str(_PYTHON), str(_CC_QUEUE), "list"],
             capture_output=True,
             text=True,
             timeout=15,
@@ -95,7 +95,7 @@ def _load_sprint_tickets() -> list[dict]:
         tickets = []
         for tid in ids:
             show_result = subprocess.run(
-                ["python3", str(_CC_QUEUE), "show", tid],
+                [str(_PYTHON), str(_CC_QUEUE), "show", tid],
                 capture_output=True,
                 text=True,
                 timeout=10,
