@@ -1,0 +1,134 @@
+#!/usr/bin/env python3
+"""granny — Granny Weatherwax factory orchestration daemon.
+
+Starts the GrannyDaemon polling loop in a background tmux session.
+If the session is already running, attaches to it.
+
+Usage:
+  ./granny             # start daemon in tmux session 'granny' (or attach)
+  ./granny --status    # print whether the daemon session is running
+  ./granny --stop      # send SIGTERM to daemon session
+  ./granny --help
+"""
+
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+UU_ROOT = Path(__file__).resolve().parent
+VENV_DIR = UU_ROOT / ".venv"
+_BIN = "Scripts" if sys.platform == "win32" else "bin"
+_EXT = ".exe" if sys.platform == "win32" else ""
+VENV_PYTHON = VENV_DIR / _BIN / f"python{_EXT}"
+
+TMUX_SESSION = "granny"
+
+
+# ── Bootstrap ─────────────────────────────────────────────────────────────────
+
+
+def _bootstrap() -> None:
+    if VENV_DIR.exists() and VENV_PYTHON.exists():
+        return
+    print("granny: first run — bootstrapping venv")
+    try:
+        subprocess.run(["uv", "venv", str(VENV_DIR)], check=True, cwd=UU_ROOT)
+        subprocess.run(
+            ["uv", "pip", "install", "--python", str(VENV_PYTHON), "-e", str(UU_ROOT)],
+            check=True,
+            cwd=UU_ROOT,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        subprocess.run([sys.executable, "-m", "venv", str(VENV_DIR)], check=True)
+        subprocess.run(
+            [str(VENV_PYTHON), "-m", "pip", "install", "-e", str(UU_ROOT)], check=True
+        )
+    print("granny: bootstrap complete")
+
+
+# ── tmux helpers ──────────────────────────────────────────────────────────────
+
+
+def _session_exists() -> bool:
+    r = subprocess.run(
+        ["tmux", "has-session", "-t", TMUX_SESSION],
+        capture_output=True,
+    )
+    return r.returncode == 0
+
+
+def _start_daemon() -> None:
+    """Create tmux session and run the daemon inside it."""
+    cmd = f"{VENV_PYTHON} -m devices.granny.daemon"
+    subprocess.run(
+        ["tmux", "new-session", "-d", "-s", TMUX_SESSION, "-x", "220", "-y", "50"],
+        check=True,
+        cwd=UU_ROOT,
+    )
+    subprocess.run(
+        ["tmux", "send-keys", "-t", TMUX_SESSION, cmd, "Enter"],
+        check=True,
+    )
+    print(f"granny: daemon started in tmux session '{TMUX_SESSION}'")
+
+
+def _attach() -> None:
+    os.execvp("tmux", ["tmux", "attach-session", "-t", TMUX_SESSION])
+
+
+def _stop() -> None:
+    if not _session_exists():
+        print("granny: no running session")
+        return
+    subprocess.run(["tmux", "send-keys", "-t", TMUX_SESSION, "C-c", ""])
+    print(f"granny: sent interrupt to session '{TMUX_SESSION}'")
+
+
+def _status() -> None:
+    if _session_exists():
+        print(f"granny: session '{TMUX_SESSION}' is running")
+    else:
+        print(f"granny: session '{TMUX_SESSION}' is NOT running")
+
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+
+
+def main() -> None:
+    args = sys.argv[1:]
+
+    if "--help" in args or "-h" in args:
+        print(__doc__)
+        sys.exit(0)
+
+    if "--status" in args:
+        _status()
+        sys.exit(0)
+
+    if "--stop" in args:
+        _stop()
+        sys.exit(0)
+
+    # Re-exec under venv python if not already there
+    if Path(sys.executable).resolve() != VENV_PYTHON.resolve():
+        _bootstrap()
+        if VENV_PYTHON.exists():
+            os.execv(str(VENV_PYTHON), [str(VENV_PYTHON), __file__] + args)
+
+    no_attach = "--no-attach" in args
+
+    if _session_exists():
+        if no_attach:
+            print(f"granny: session '{TMUX_SESSION}' already running")
+        else:
+            print(f"granny: attaching to existing session '{TMUX_SESSION}'")
+            _attach()
+    else:
+        _start_daemon()
+        if not no_attach:
+            _attach()
+
+
+if __name__ == "__main__":
+    main()

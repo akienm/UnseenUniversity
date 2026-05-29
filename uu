@@ -130,6 +130,23 @@ def _launch_terminal(cfg: configparser.ConfigParser) -> None:
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 
+def _ensure_granny_running() -> None:
+    """Start Granny daemon in background tmux session if not already running."""
+    try:
+        r = subprocess.run(["tmux", "has-session", "-t", "granny"], capture_output=True)
+        if r.returncode != 0:
+            granny_script = UU_ROOT / "granny"
+            if granny_script.exists():
+                subprocess.Popen(
+                    [str(VENV_PYTHON), str(granny_script), "--no-attach"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True,
+                )
+    except Exception:
+        pass  # granny is best-effort; never block uu startup
+
+
 def main() -> None:
     args = sys.argv[1:]
 
@@ -152,6 +169,8 @@ def main() -> None:
             frontend_override = arg.split("=", 1)[1]
         else:
             remaining.append(arg)
+
+    _ensure_granny_running()
 
     cfg = _read_config()
     frontend = _frontend(cfg, frontend_override)
