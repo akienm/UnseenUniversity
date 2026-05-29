@@ -15,7 +15,7 @@ interrupted by SHARED channel traffic. The primary interactive CC session
 gets the notifications.
 
 Cursor tracking: stores last-seen message timestamp in a per-session file
-at ~/.TheIgors/cc_hook_cursor_<session_id>.txt so multiple CC instances
+at ~/.unseen_university/cc_hook_cursor_<session_id>.txt so multiple CC instances
 don't step on each other.
 """
 
@@ -25,7 +25,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-CURSOR_DIR = Path.home() / ".TheIgors"
+CURSOR_DIR = Path.home() / ".unseen_university"
 COMPACT_PENDING_FILE = CURSOR_DIR / "cc_compact_pending.txt"
 MAX_MESSAGES = 20  # Cap how much we inject — context budget discipline
 MAX_CONTENT_CHARS = 400  # Per-message truncation
@@ -40,7 +40,7 @@ def _db_url():
     url = os.environ.get("IGOR_HOME_DB_URL")
     if url:
         return url
-    env_file = Path.home() / ".TheIgors" / "Igor-wild-0001" / ".env"
+    env_file = Path.home() / ".unseen_university" / "Igor-wild-0001" / ".env"
     if env_file.exists():
         for line in env_file.read_text().splitlines():
             if line.startswith("IGOR_HOME_DB_URL="):

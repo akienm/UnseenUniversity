@@ -32,7 +32,7 @@ def _clean_pending_file():
     turn. Caught 2026-04-24 after a full-suite run left session=2026-04-16a
     lingering and firing every prompt for days.
     """
-    pending = Path.home() / ".TheIgors" / "cc_compact_pending.txt"
+    pending = Path.home() / ".unseen_university" / "cc_compact_pending.txt"
     pending.unlink(missing_ok=True)
     yield
     pending.unlink(missing_ok=True)
@@ -47,7 +47,7 @@ def test_file_handoff_is_primary():
 
 def test_file_handoff_writes_preserve_string():
     """The preserve string should end up in the pending file."""
-    pending = Path.home() / ".TheIgors" / "cc_compact_pending.txt"
+    pending = Path.home() / ".unseen_university" / "cc_compact_pending.txt"
     _request_compaction("preserve: specific text here")
     if pending.exists():
         content = pending.read_text()
