@@ -100,16 +100,26 @@ class ScrapsDevice(BaseDevice):
         On pass: validated_at is an ISO-8601 timestamp.
         On fail: validated_at is None; issues lists what to fix.
         """
+        tid = ticket.get("id") or ticket.get("title", "?")[:40]
         issues = validation_rules.run_all(ticket)
 
         if not issues:
             desc_len = len((ticket.get("description") or "").strip())
             if desc_len < 80:
+                self._post(
+                    "shared",
+                    f"Scraps: {tid} — rules passed, desc short ({desc_len}c), running fuzzy check",
+                )
                 ok, reason = _fuzzy_check(ticket)
                 if not ok:
                     issues.append(f"fuzzy check: {reason}")
+                    self._post(
+                        "shared", f"Scraps: {tid} — fuzzy check INVALID: {reason[:120]}"
+                    )
 
         if issues:
+            issues_str = "; ".join(issues)
+            self._post("shared", f"Scraps: {tid} — validation failed: {issues_str}")
             return {"valid": False, "issues": issues, "validated_at": None}
 
         return {"valid": True, "issues": [], "validated_at": _now()}
@@ -132,7 +142,7 @@ class ScrapsDevice(BaseDevice):
 
     def capabilities(self) -> dict:
         return {
-            "can_send": False,
+            "can_send": True,
             "can_receive": False,
             "emitted_keywords": ["scraps_validated"],
             "mcp_endpoint": "scraps_validate_ticket",
@@ -198,3 +208,13 @@ class ScrapsDevice(BaseDevice):
         self._blocked = False
         self._block_reason = ""
         self._startup_errors.clear()
+
+    # ── Internal helpers ─────────────────────────────────────────────────────
+
+    def _post(self, channel: str, message: str) -> None:
+        try:
+            from unseen_university.channel import post_to_channel
+
+            post_to_channel(message, author="scraps", channel=channel)
+        except Exception:
+            pass

@@ -163,3 +163,55 @@ class TestScrapsTools:
 
         names = [s["name"] for s in _tools.SCHEMAS]
         assert "scraps_validate_ticket" in names
+
+
+# ── ScrapsDevice channel posts ────────────────────────────────────────────────
+
+
+class TestScrapsChannelPosts:
+    """Scraps posts to shared channel on validation failure and fuzzy escalation."""
+
+    def _scraps_with_captured_posts(self):
+        d = ScrapsDevice()
+        posts = []
+
+        def fake_post(channel, message):
+            posts.append((channel, message))
+
+        d._post = fake_post
+        return d, posts
+
+    def test_validation_failure_posts_to_channel(self):
+        d, posts = self._scraps_with_captured_posts()
+        d.validate_ticket({"title": "fix", "description": ""})
+        assert posts, "expected channel post on validation failure"
+        _, msg = posts[-1]
+        assert "failed" in msg.lower() or "validation" in msg.lower()
+        assert "Scraps" in msg
+
+    def test_fuzzy_escalation_posts_to_channel(self):
+        d, posts = self._scraps_with_captured_posts()
+        # Short description triggers fuzzy check — patch _fuzzy_check to avoid inference
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr(
+                "devices.scraps.scraps_device._fuzzy_check",
+                lambda t: (False, "INVALID: not enough detail"),
+            )
+            d.validate_ticket(
+                {
+                    "title": "Add meaningful feature",
+                    "description": "**Test plan:** short",
+                }
+            )
+        fuzzy_posts = [msg for _, msg in posts if "fuzzy" in msg.lower()]
+        assert fuzzy_posts, "expected fuzzy check channel post"
+
+    def test_valid_ticket_no_failure_post(self):
+        d, posts = self._scraps_with_captured_posts()
+        d.validate_ticket(_GOOD_TICKET)
+        failure_posts = [msg for _, msg in posts if "failed" in msg.lower()]
+        assert not failure_posts, "should not post failure for valid ticket"
+
+    def test_capabilities_can_send_true(self):
+        d = ScrapsDevice()
+        assert d.capabilities()["can_send"] is True
