@@ -18,11 +18,17 @@ This is the portable agent runtime substrate. It is **not** TheIgors.
 
 - **device.py** and **shim.py** are the design center. Every component inherits from
   `BaseDevice` / `BaseShim`. OOP-first — no standalone functions doing device work.
+  *Why: a single well-known entry point per device makes lifecycle management (start/stop/restart/self-test)
+  uniform; the framework can iterate all devices without knowing their internals.*
 - **bus/** owns comms:// routing. Nothing outside bus/ speaks to IMAP directly.
+  *Why: transport decoupling — swapping IMAP for another transport requires touching only bus/, not every device.*
 - **skeleton/** owns the MCP aggregator and flat-file registry. No Postgres dependency.
+  *Why: skeleton must boot before the DB is up; a Postgres dependency in skeleton would make cold-start impossible.*
 - **devices/** contains one subdirectory per device; each is independently deployable.
+  *Why: blast radius containment — a broken device import can't crash the whole rack on import.*
 - **datacenter_logs/<device>/<subsystem>/** is the log hierarchy. Never write to a flat
   root log file.
+  *Why: flat root logs from multiple devices are ungreppable without knowing which device wrote what; hierarchy makes per-device debugging self-contained.*
 
 ---
 
@@ -44,9 +50,13 @@ sprinting until the ADC queue device design is decided.
 ## Hard rules
 
 - No SQLite. Postgres or flat-file only.
+  *Why: SQLite under concurrent write load (multiple devices) produces lock contention and silent data loss; Postgres handles that correctly.*
 - No TheIgors imports. UnseenUniversity must be portable without TheIgors present.
+  *Why: UU is the substrate that TheIgors runs on top of, not vice versa; a circular dependency makes UU non-deployable on any other host.*
 - No live keys or passwords in source. `.env` is gitignored.
+  *Why: keys in source appear in git history permanently even after removal — the only safe state is never committed.*
 - `pip install -e .` must succeed at all times (even with empty stubs).
+  *Why: broken install blocks every other developer and CI from even importing the package; it's the first gate of the build contract.*
 
 ---
 
