@@ -2004,8 +2004,35 @@ class Igor(IgorBase):
             "yes",
         ):
             return None
+        if not near_misses:
+            return None
+
+        # Compiled inference fast-path: resolve by word overlap before hitting API
+        try:
+            from devices.scraps.habit_tiebreaker import select_by_overlap
+
+            candidates = [
+                {"id": h.id, "score": s, "narrative": h.narrative or ""}
+                for s, h in near_misses
+            ]
+            winner_id = select_by_overlap(user_input, candidates)
+            if winner_id:
+                for s, h in near_misses:
+                    if h.id == winner_id:
+                        self.cortex.write_ring(
+                            f"TIEBREAKER|resolved={winner_id}|score={s:.2f}"
+                            f"|candidates={[h2.id for _, h2 in near_misses]}"
+                            f"|method=overlap",
+                            category="habit_trace",
+                        )
+                        return h
+        except Exception as _fast_e:
+            log_error(
+                kind="BARE_EXCEPT", detail=f"habit_tiebreaker fast-path: {_fast_e}"
+            )
+
         api_key = os.getenv("OPENROUTER_API_KEY", "")
-        if not api_key or not near_misses:
+        if not api_key:
             return None
 
         import json as _json
@@ -2086,8 +2113,24 @@ class Igor(IgorBase):
             "yes",
         ):
             return False
+        if not task_goals:
+            return False
+
+        # Compiled inference fast-path: pattern-match before hitting API
+        try:
+            from devices.scraps.task_completion_check import check_completion
+
+            completed, conf = check_completion(task_goals, response_text)
+            if conf == "HIGH" and completed is not None:
+                return completed
+        except Exception as _fast_e:
+            log_error(
+                kind="BARE_EXCEPT",
+                detail=f"task_completion fast-path: {_fast_e}",
+            )
+
         api_key = os.getenv("OPENROUTER_API_KEY", "")
-        if not api_key or not task_goals:
+        if not api_key:
             return False
 
         import json as _json

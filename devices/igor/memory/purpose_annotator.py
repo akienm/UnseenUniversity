@@ -26,7 +26,21 @@ Respond with ONLY valid JSON (no other text):
 
 
 def _annotate_one(narrative: str, memory_type: str) -> dict | None:
-    """Call LLM to get purpose + category for one memory. Returns None on failure."""
+    """Get purpose + category for one memory. Fast-path: rule-based classifier; LLM fallback."""
+    # Compiled inference fast-path — avoids LLM call for the majority of cases
+    try:
+        from devices.scraps.purpose_classifier import classify_purpose
+
+        cat, conf = classify_purpose(narrative, memory_type)
+        if conf == "HIGH" and cat:
+            log.debug("_annotate_one fast-path: %s → %s", memory_type, cat)
+            # Purpose sentence is deliberately empty for rule-classified memories;
+            # category is the primary signal and carries the value.
+            return {"purpose": "", "category": cat}
+    except Exception as e:
+        log.debug("_annotate_one fast-path failed: %s", e)
+
+    # LLM fallback for ambiguous cases
     try:
         from ..tools.inner_cc import call_inner_cc_long
 
