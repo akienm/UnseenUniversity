@@ -46,6 +46,28 @@ class GrannyShim(BaseShim):
         return self._device_id
 
     def start(self) -> bool:
+        # Register CC worker dispatch_fn on the routing device
+        try:
+            from devices.granny.device import GrannyWeatherwaxDevice
+            from devices.granny.dispatch import cc_dispatch_fn
+
+            g = GrannyWeatherwaxDevice()
+            g.register_worker(
+                "cc",
+                [
+                    "Platform",
+                    "Infrastructure",
+                    "Cognition",
+                    "Database",
+                    "Training",
+                    "Research",
+                ],
+                dispatch_fn=cc_dispatch_fn,
+            )
+            log.info("GrannyShim: CC worker registered with dispatch_fn")
+        except Exception as e:
+            log.warning("GrannyShim: CC worker registration failed: %s", e)
+
         result = _post_uc(
             "/api/agents/register",
             {
