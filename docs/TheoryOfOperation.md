@@ -171,6 +171,12 @@ Memory lives in `clan.memories` — shared across all Igor instances. Instance-p
 | `INTERPRETIVE` | A pattern-match / rule of thumb | "When X, usually Y" |
 | `EPISODIC` | A specific event that happened | "On 2026-05-29 I diagnosed a routing bug in Granny" |
 | `REFERENCE` | A pointer or frame node | `PR_GOAL_ASPIRATIONAL_SUCK_LESS` (background frame) |
+| `EXPERIENTIAL` | Runtime observations, metric signals, and emotional states captured during operation | Routing speed measurements, emotional nodes, growth/learning moments |
+| `CREDENTIAL_REF` | Pointer to a credential location (not the credential itself) | "Anthropic API key — in .env ANTHROPIC_API_KEY" |
+| `IDENTITY` | Self-model facts about Igor's own nature and operating principles | "I am a memory network with spreading activation retrieval", "Every revision must reduce friction" |
+| `CORE_PATTERN` | Deep axioms and first-principles that underpin Igor's reasoning | "The world is not a safe place", "There's always a why", "Make everything suck less" |
+| `ROLE_MODEL` | Named entities in Igor's relational world — people, AI partners, cultural references | Akien (creator), Claude (reasoning partner), Igor (Discworld, cultural model) |
+| `ROOT` | Singleton instance-anchor node — the identity root for one Igor instance | `ROOT`: "I am Igor-wild-0001. I learn, I remember, I explain my reasoning." |
 
 `PROCEDURAL` nodes are the scheduled habit system. Each has a `code_ref` in metadata pointing to a registered tool function, and a `schedule_interval_sec` that the `SchedulerSource` fires on a timer.
 
@@ -379,7 +385,7 @@ Gaps found in this review become tickets. That is the intended use of this docum
 (12 rows)
 ```
 
-**GAP:** §3.4 documents 6 types; DB has 12. Six types are absent from the doc: `EXPERIENTIAL` (2,560 nodes), `CREDENTIAL_REF` (167), `IDENTITY` (30), `CORE_PATTERN` (13), `ROLE_MODEL` (9), `ROOT` (5). Filed: T-theory-doc-memory-types.
+**RESOLVED (T-theory-doc-memory-types):** §3.4 previously documented 6 types; DB has 12. The six absent types — `EXPERIENTIAL`, `CREDENTIAL_REF`, `IDENTITY`, `CORE_PATTERN`, `ROLE_MODEL`, `ROOT` — were added to the §3.4 table on 2026-05-30. Doc and DB are now aligned.
 
 ---
 
