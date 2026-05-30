@@ -1,0 +1,214 @@
+#!/usr/bin/env python3
+"""new-agent scaffold runner.
+
+Usage:
+  python run scaffold --name <slug> --purpose "<one sentence>" \
+                      --services <svc1,svc2|none> \
+                      --mode <long-running|stateless> \
+                      --deps <pkg1,pkg2|none>
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import shutil
+import sys
+from pathlib import Path
+
+import yaml
+
+
+def find_uu_root() -> Path:
+    """Locate the UnseenUniversity repo root by scanning CWD upward."""
+    seen: set[Path] = set()
+    candidates = [Path.cwd(), *Path.cwd().parents, *Path(__file__).resolve().parents]
+    for p in candidates:
+        if p in seen:
+            continue
+        seen.add(p)
+        if (p / "devices" / "template").exists() and (p / "pyproject.toml").exists():
+            return p
+    raise RuntimeError(
+        "Cannot find UnseenUniversity root (no devices/template/ + pyproject.toml found). "
+        "Run from the UU repo directory."
+    )
+
+
+def to_camel_case(slug: str) -> str:
+    """test-agent  →  TestAgent"""
+    return "".join(w.capitalize() for w in re.split(r"[-_\s]+", slug) if w)
+
+
+def to_python_name(slug: str) -> str:
+    """test-agent  →  test_agent (valid Python identifier)"""
+    return re.sub(r"[-\s]+", "_", slug).lower()
+
+
+def to_display_name(slug: str) -> str:
+    """test-agent  →  Test Agent"""
+    return " ".join(w.capitalize() for w in re.split(r"[-_\s]+", slug) if w)
+
+
+def cmd_scaffold(args: argparse.Namespace) -> None:
+    uu_root = find_uu_root()
+    template_dir = uu_root / "devices" / "template"
+
+    python_name = to_python_name(args.name)
+    camel_name = to_camel_case(args.name)
+    display_name = to_display_name(args.name)
+    purpose = args.purpose
+
+    services = (
+        []
+        if args.services.lower() in ("none", "")
+        else [s.strip() for s in args.services.split(",") if s.strip()]
+    )
+    deps = (
+        []
+        if args.deps.lower() in ("none", "")
+        else [d.strip() for d in args.deps.split(",") if d.strip()]
+    )
+
+    target_dir = uu_root / "devices" / python_name
+    if target_dir.exists():
+        print(f"ERROR: {target_dir} already exists — remove it first.", file=sys.stderr)
+        sys.exit(1)
+
+    # Copy template; skip compiled bytecode and the human README
+    shutil.copytree(
+        template_dir,
+        target_dir,
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "README.md"),
+    )
+
+    _patch_device_py(target_dir / "device.py", camel_name, python_name, display_name, purpose, deps)
+    _patch_shim_py(target_dir / "shim.py", camel_name, python_name, display_name)
+    _write_profile(uu_root, python_name, display_name, purpose, services)
+
+    print(f"Scaffolded  devices/{python_name}/")
+    print(f"Profile     config/profiles/{python_name}.yaml")
+    print(f"Device ID   {python_name}")
+    print(f"Classes     {camel_name}Device  /  {camel_name}Shim")
+    if args.name != python_name:
+        print(f"Note        '{args.name}' normalized to '{python_name}' (Python module name)")
+    print()
+    print("Next steps:")
+    print(f"  pip install -e .")
+    print(f"  python -c 'import devices.{python_name}.device, devices.{python_name}.shim'")
+    print(f"  Fill in stubs in devices/{python_name}/device.py and shim.py")
+
+
+def _patch_device_py(
+    path: Path,
+    camel_name: str,
+    python_name: str,
+    display_name: str,
+    purpose: str,
+    deps: list[str],
+) -> None:
+    text = path.read_text()
+
+    # Class name (appears in docstring and class definition)
+    text = text.replace("TemplateDevice", f"{camel_name}Device")
+
+    # Device ID constant
+    text = text.replace('DEVICE_ID = "template"', f'DEVICE_ID = "{python_name}"')
+
+    # who_am_i() fields — use json.dumps for safe Python string literal injection
+    text = text.replace('"Template Agent"', json.dumps(display_name))
+    text = text.replace(
+        '"Replace this with a description of what your agent does"',
+        json.dumps(purpose),
+    )
+
+    # Runtime dependencies
+    if deps:
+        text = text.replace('"deps": []', f'"deps": {json.dumps(deps)}')
+
+    path.write_text(text)
+
+
+def _patch_shim_py(
+    path: Path,
+    camel_name: str,
+    python_name: str,
+    display_name: str,
+) -> None:
+    text = path.read_text()
+
+    # Class names (docstring references both TemplateShim and TemplateDevice)
+    text = text.replace("TemplateShim", f"{camel_name}Shim")
+    text = text.replace("TemplateDevice", f"{camel_name}Device")
+
+    # Device ID field
+    text = text.replace('_device_id = "template"', f'_device_id = "{python_name}"')
+
+    path.write_text(text)
+
+
+def _write_profile(
+    uu_root: Path,
+    python_name: str,
+    display_name: str,
+    purpose: str,
+    services: list[str],
+) -> None:
+    profiles_dir = uu_root / "config" / "profiles"
+    profiles_dir.mkdir(parents=True, exist_ok=True)
+
+    profile_data = {
+        "profile_version": "1.0",
+        "agent_type": python_name,
+        "description": purpose,
+        "inherits": [],
+        "allowed_devices": services,
+        "device_permissions": {svc: {"mode": "read_write"} for svc in services},
+        "default_channels": ["shared"],
+        "state_refs": {},
+        "acl": {
+            "inbound": {"allow": ["skeleton", "shared"], "deny": []},
+            "outbound": {"allow": ["*"], "deny": []},
+        },
+        "visibility": "primary",
+        "surfaces": {"console": True, "mcp": True},
+    }
+    header = f"# {display_name} agent profile — generated by /new-agent scaffold.\n"
+    path = profiles_dir / f"{python_name}.yaml"
+    path.write_text(header + yaml.dump(profile_data, default_flow_style=False, sort_keys=False))
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="new-agent scaffold runner")
+    sub = parser.add_subparsers(dest="cmd")
+
+    p_scaffold = sub.add_parser("scaffold", help="Scaffold a new device from the template")
+    p_scaffold.add_argument("--name", required=True, help="Agent slug (e.g. 'my-sensor')")
+    p_scaffold.add_argument("--purpose", required=True, help="One-sentence description")
+    p_scaffold.add_argument(
+        "--services",
+        default="none",
+        help="Comma-separated rack services (or 'none')",
+    )
+    p_scaffold.add_argument(
+        "--mode",
+        choices=["long-running", "stateless"],
+        default="stateless",
+        help="Device lifecycle mode",
+    )
+    p_scaffold.add_argument(
+        "--deps",
+        default="none",
+        help="Comma-separated pip packages (or 'none')",
+    )
+
+    args = parser.parse_args()
+    if args.cmd == "scaffold":
+        cmd_scaffold(args)
+    else:
+        parser.print_help()
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

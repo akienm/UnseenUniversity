@@ -24,6 +24,7 @@
     "export-chat":       {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "fixit":             {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "goal":              {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
+    "new-agent":         {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "note":              {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "outcome":           {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "question":          {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
