@@ -339,9 +339,11 @@ class GrannyWeatherwaxDevice(BaseDevice):
             else:
                 tid = ticket.get("id", "?")
                 title = ticket.get("title", "")[:60]
+                size = ticket.get("size", "S")
+                tags = ",".join(ticket.get("tags", []))
                 self._post_to_channel(
                     "shared",
-                    f"Granny: routed {tid} → {best_edge.worker_id} (weight={best_edge.weight:.1f}) — {title}",
+                    f"GRANNY_DISPATCH|ticket={tid}|worker={best_edge.worker_id}|size={size}|tags={tags}|title={title}",
                 )
                 ok = True
 
