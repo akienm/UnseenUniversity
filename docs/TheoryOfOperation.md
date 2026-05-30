@@ -14,12 +14,12 @@ This is an outline, not a tutorial. Each section names the piece, states what it
 UnseenUniversity is a **rack** — a place where devices plug in and communicate. Not a framework you extend; a substrate you build on top of. The rack provides:
 
 - An address space (`comms://` URIs)
-- A message bus (IMAP)
+- A message bus (MCP to comms:// URI, each device has one)
 - A registry (flat-file, survives code crashes)
 - A health rollup
 - An announce protocol (identity → manifest)
 
-**Why IMAP?** IMAP is a durable, append-only store with a well-tested IDLE push mechanism. Every message persists for 24h, giving replay capability without a separate event store. IMAP servers are widely available and require no bespoke infrastructure. The tradeoff: higher latency than a socket bus, acceptable because agent cognition cycles are measured in seconds, not milliseconds.
+**MCP** MCP is implemented to comms:// devices, and polling and notification is handled by the device shim.
 
 **Why flat-file registry?** The registry must survive a cold start. If the registry lived in Postgres, a DB outage would prevent any device from announcing. Flat files are always readable, even when everything else is down.
 
@@ -149,7 +149,8 @@ Long-term memory. Each memory node:
 
 | Field | What it is |
 |---|---|
-| `id` | Unique string key (often human-readable: `PR_GOAL_ASPIRATIONAL_SUCK_LESS`) |
+| `id` | yyyymmddhhmmss123456 < memory ID used to link back to from other memories
+| `name` | Unique string key (often human-readable: `PR_GOAL_ASPIRATIONAL_SUCK_LESS`) |
 | `narrative` | The content — what Igor knows or believes |
 | `memory_type` | See §3.4 |
 | `metadata` | JSON blob — type-specific fields (goal_type, status, code_ref, etc.) |
@@ -181,6 +182,8 @@ Memory lives in `clan.memories` — shared across all Igor instances. Instance-p
 `PROCEDURAL` nodes are the scheduled habit system. Each has a `code_ref` in metadata pointing to a registered tool function, and a `schedule_interval_sec` that the `SchedulerSource` fires on a timer.
 
 **Why memory types instead of a flat store?** The NE applies different spreading-activation weights by type. PROCEDURAL nodes trigger tool calls rather than NE reasoning. FACTUAL nodes have inertia; high-inertia nodes require CC pre-approval before editing. Type separates "what kind of thing this is" from "what the content says."
+
+**Versioning:** any node type can act as a version facia — the head of an append-only version chain. REFERENCE nodes most commonly play this role. See §3.8 for the full facia pattern.
 
 ### 3.5 Two-Tier Semantic Search
 
@@ -239,6 +242,39 @@ Engrams are compiled habits. Each is a PROCEDURAL memory node with:
 The SchedulerSource in `devices/igor/cognition/push_sources.py` reads all PROCEDURAL memories with `schedule_interval_sec` and fires their `code_ref` tools on a timer.
 
 **Why habits in Postgres, not code?** Habits can be added, removed, or retimed at runtime without a code deploy. Igor can learn new habits; CC can seed new habits via `psql`. The habit system is data-driven.
+
+### 3.8 Versioning — the facia pattern
+
+Every versioned artifact in the memory graph has a **facia** node: the node that currently represents the head of its version chain. The facia is the default resolution target when the rack looks up a versioned artifact by key.
+
+Version chains are **append-only**:
+
+1. Write the new version as a new memory node.
+2. Set a `version_of` edge from the new node to the old facia.
+3. Update the key to resolve to the new node — it is now the facia.
+4. The prior facia is now a **tail**: still in the graph, still readable, no longer the head.
+
+No existing node is rewritten or deleted. The tail chain *is* the audit trail.
+
+**Example — an interpretive rule gets a new version:**
+
+```
+[RULE_V2]   ← facia (current — rack resolves to this)
+  │ version_of
+[RULE_V1]   ← tail (prior version)
+  │ version_of
+[RULE_V0]   ← tail (original)
+```
+
+To get the current version: look up the key → facia. To read history: traverse `version_of` edges from the facia toward the tail.
+
+**Applies to:** `clan.memories` nodes, agent manifests, eval rubrics, policy rules, factory specs, and agent profiles. Any artifact that can change over time follows this pattern.
+
+**Why not in-place update?** In-place rewrites destroy the audit trail silently. A facia redirect preserves every prior version without a separate log. The graph structure is the archive.
+
+**Why it feels familiar:** The facia pattern is the same trail/append model used in TWM (§3.2), pe_chain baskets (§3.6), and engrams (§3.7). New state appends; nothing is erased; history is a traversal, not a special query.
+
+REFERENCE nodes most commonly carry facia semantics — they are "pointer or frame" nodes by design (see §3.4 type table). Other node types (GOAL, INTERPRETIVE, FACTUAL) can also head a version chain when the versioned artifact is of that type.
 
 ---
 
