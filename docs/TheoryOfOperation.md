@@ -178,7 +178,7 @@ OpenAI `text-embedding-3-small` (1536-dim) with a hash-based fallback (384-dim, 
 - Called at **query time** by `devices/librarian/recall.py` — cosine similarity against stored embeddings for "what do I know about X?" queries
 - The word graph is also compared against these embeddings as a training signal (`_log_wg_comparison`)
 
-**Architectural debt**: The embedding engine lives inside `devices/scraps/` (a ticket validator device). The decision calls for it to migrate to Librarian-owned as part of the shared memory service. Tracked as `T-librarian-retrieval-service`.
+**Design note**: The embedding engine lives inside `devices/scraps/` alongside the ticket validator. It's a platform service — any agent (Igor, Librarian, future agents) calls it via `embed()` and `embed_batch()`. The organizational home (Scraps vs. standalone device vs. Librarian-owned) is a choice, not a debt; the current arrangement keeps it co-located with the one device that already calls it frequently (rule-based ticket validation), and other agents reach it as a library function.
 
 **The full retrieval stack** (Librarian recall):
 1. FTS on `narrative` text (free, instant)
