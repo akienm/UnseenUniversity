@@ -127,22 +127,28 @@ def test_recall_inference_not_used_without_escalate():
 # ── recall with mock DB ───────────────────────────────────────────────────────
 
 
-def _make_pg_conn(fts_rows=None, vec_rows=None, edge_rows=None):
+def _make_pg_conn(fts_rows=None, vec_rows=None, edge_rows=None, source_rows=None):
     conn = MagicMock()
     cur = MagicMock()
     cur.__enter__ = MagicMock(return_value=cur)
     cur.__exit__ = MagicMock(return_value=False)
 
-    call_count = [0]
-
     def fetchall_side_effect():
-        n = call_count[0]
-        call_count[0] += 1
-        if n == 0:
+        # SQL-aware dispatch: inspect the last execute() call to route correctly.
+        # Call-count order is unreliable because embedding_engine._wg_embed also
+        # calls psycopg2.connect under the patch, injecting an extra fetchall.
+        sql = ""
+        if cur.execute.call_args:
+            sql = cur.execute.call_args[0][0] if cur.execute.call_args[0] else ""
+        if "plainto_tsquery" in sql:
             return fts_rows or []
-        if n == 1:
+        if "payloads" in sql and "embedding" in sql:
             return vec_rows or []
-        return edge_rows or []
+        if "interpretive_edges" in sql:
+            return edge_rows or []
+        if "source_agent" in sql:
+            return source_rows or []
+        return []  # WordGraph or other internal queries
 
     cur.fetchall.side_effect = fetchall_side_effect
     conn.cursor.return_value = cur
@@ -202,3 +208,110 @@ def test_recall_result_default_fields():
     assert r.synthesis is None
     assert r.from_cache is False
     assert r.inference_used is False
+
+
+def test_memory_hit_trust_tier_defaults_to_zero():
+    h = MemoryHit(memory_id="x", narrative="text", tags=["a"], score=0.5, source="fts")
+    assert h.trust_tier == 0
+
+
+# ── trust_tier in recall results ──────────────────────────────────────────────
+
+
+def test_recall_hit_trust_tier_populated():
+    """Hits have trust_tier derived from source_agent in the DB."""
+    fts_rows = [("id-1", "Python async patterns", json.dumps(["python"]), 0.9)]
+    source_rows = [("id-1", "cc/sprint")]
+    conn = _make_pg_conn(fts_rows=fts_rows, source_rows=source_rows)
+    with patch("psycopg2.connect", return_value=conn):
+        result = recall(
+            "python async", db_url="postgresql://fake/db", force_fallback=True
+        )
+    assert len(result.hits) >= 1
+    assert result.hits[0].trust_tier == 1  # "cc/sprint" → tier_1
+
+
+def test_recall_hit_trust_tier_zero_when_no_source_agent():
+    """Hits with no source_agent (legacy) get trust_tier=0."""
+    fts_rows = [("id-1", "some narrative", json.dumps(["tag"]), 0.8)]
+    source_rows = [("id-1", None)]
+    conn = _make_pg_conn(fts_rows=fts_rows, source_rows=source_rows)
+    with patch("psycopg2.connect", return_value=conn):
+        result = recall("query", db_url="postgresql://fake/db", force_fallback=True)
+    assert result.hits[0].trust_tier == 0
+
+
+def test_recall_hit_trust_tier_zero_when_not_in_source_lookup():
+    """Hits missing from source lookup fall back to trust_tier=0."""
+    fts_rows = [("id-missing", "narrative", json.dumps(["tag"]), 0.7)]
+    source_rows = []  # source lookup returns nothing
+    conn = _make_pg_conn(fts_rows=fts_rows, source_rows=source_rows)
+    with patch("psycopg2.connect", return_value=conn):
+        result = recall("query", db_url="postgresql://fake/db", force_fallback=True)
+    assert result.hits[0].trust_tier == 0
+
+
+# ── min_trust_tier filtering ──────────────────────────────────────────────────
+
+
+def test_recall_min_trust_tier_keeps_matching_hits():
+    """min_trust_tier=2 keeps tier_1 and tier_2 results."""
+    fts_rows = [("id-cc", "cc narrative", json.dumps(["t"]), 0.9)]
+    source_rows = [("id-cc", "cc/sprint")]
+    conn = _make_pg_conn(fts_rows=fts_rows, source_rows=source_rows)
+    with patch("psycopg2.connect", return_value=conn):
+        result = recall(
+            "query",
+            min_trust_tier=2,
+            db_url="postgresql://fake/db",
+            force_fallback=True,
+        )
+    ids = [h.memory_id for h in result.hits]
+    assert "id-cc" in ids  # tier_1 passes min_trust_tier=2
+
+
+def test_recall_min_trust_tier_filters_tier_0():
+    """min_trust_tier filter removes tier_0 (legacy) hits."""
+    fts_rows = [
+        ("id-legacy", "legacy narrative", json.dumps(["t"]), 0.9),
+    ]
+    source_rows = [("id-legacy", None)]  # tier_0
+    conn = _make_pg_conn(fts_rows=fts_rows, source_rows=source_rows)
+    with patch("psycopg2.connect", return_value=conn):
+        result = recall(
+            "query",
+            min_trust_tier=2,
+            db_url="postgresql://fake/db",
+            force_fallback=True,
+        )
+    assert result.hits == []
+
+
+def test_recall_min_trust_tier_filters_tier_3():
+    """min_trust_tier=2 removes tier_3 (autonomous) hits."""
+    fts_rows = [("id-auto", "autonomous narrative", json.dumps(["t"]), 0.9)]
+    source_rows = [("id-auto", "librarian-recall")]  # tier_3
+    conn = _make_pg_conn(fts_rows=fts_rows, source_rows=source_rows)
+    with patch("psycopg2.connect", return_value=conn):
+        result = recall(
+            "query",
+            min_trust_tier=2,
+            db_url="postgresql://fake/db",
+            force_fallback=True,
+        )
+    assert result.hits == []
+
+
+def test_recall_no_filter_returns_all_tiers():
+    """Without min_trust_tier, hits of any trust tier are returned."""
+    fts_rows = [
+        ("id-1", "narrative 1", json.dumps(["t"]), 0.9),
+        ("id-2", "narrative 2", json.dumps(["t"]), 0.8),
+    ]
+    source_rows = [("id-1", "cc/sprint"), ("id-2", None)]  # tier_1 and tier_0
+    conn = _make_pg_conn(fts_rows=fts_rows, source_rows=source_rows)
+    with patch("psycopg2.connect", return_value=conn):
+        result = recall("query", db_url="postgresql://fake/db", force_fallback=True)
+    ids = [h.memory_id for h in result.hits]
+    assert "id-1" in ids
+    assert "id-2" in ids

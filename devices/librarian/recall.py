@@ -52,6 +52,7 @@ class MemoryHit:
     score: float  # RRF-merged relevance
     source: str  # "fts" | "vector" | "graph"
     linked_content: str | None = None  # from link following
+    trust_tier: int = 0  # 0=unknown, 1=highest, 3=lowest known
 
 
 @dataclass
@@ -297,6 +298,7 @@ def recall(
     escalate: bool = False,
     db_url: str | None = None,
     force_fallback: bool = False,
+    min_trust_tier: int | None = None,
 ) -> RecallResult:
     """Recall what the system knows about query.
 
@@ -309,6 +311,9 @@ def recall(
         escalate:       If True, run inference synthesis on top hits.
         db_url:         PostgreSQL URL; None → IGOR_HOME_DB_URL env var.
         force_fallback: Use hash embeddings (testing, no OpenAI).
+        min_trust_tier: If set, filter hits to trust tiers 1..min_trust_tier.
+                        tier_0 (unknown) always excluded when filter is active.
+                        See devices/librarian/trust.py for tier definitions.
     """
     result = RecallResult(query=query)
 
@@ -372,6 +377,34 @@ def recall(
                     linked_content=linked,
                 )
             )
+
+        # ── 5.5. Trust scoring ───────────────────────────────────────────────
+        from devices.librarian.trust import derive_trust_tier, passes_min_tier
+
+        if hits:
+            hit_ids = [h.memory_id for h in hits]
+            placeholders = ",".join(["%s"] * len(hit_ids))
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        f"SELECT id, source_agent FROM clan.memories"
+                        f" WHERE id IN ({placeholders})",
+                        hit_ids,
+                    )
+                    source_by_id: dict[str, str | None] = {
+                        str(row[0]): row[1] for row in cur.fetchall()
+                    }
+            except Exception as e:
+                log.warning("recall: trust lookup failed: %s", e)
+                source_by_id = {}
+
+            for h in hits:
+                h.trust_tier = derive_trust_tier(source_by_id.get(h.memory_id))
+
+            if min_trust_tier is not None:
+                hits = [
+                    h for h in hits if passes_min_tier(h.trust_tier, min_trust_tier)
+                ]
 
         result.hits = hits
 
