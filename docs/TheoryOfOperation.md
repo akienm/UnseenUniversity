@@ -155,16 +155,36 @@ Memory lives in `clan.memories` — shared across all Igor instances. Instance-p
 
 **Why memory types instead of a flat store?** The NE applies different spreading-activation weights by type. PROCEDURAL nodes trigger tool calls rather than NE reasoning. FACTUAL nodes have inertia; high-inertia nodes require CC pre-approval before editing. Type separates "what kind of thing this is" from "what the content says."
 
-### 3.5 Word Graph and Spreading Activation
+### 3.5 Two-Tier Semantic Search
 
-`devices/igor/cognition/word_graph.py`
+The rack uses two distinct semantic search mechanisms, by design (D-shared-memory-service-2026-05-28):
 
-A weighted undirected graph where nodes are words/bigrams and edges encode co-occurrence strength. Used for:
+**Tier 1 — Igor's word graph** (`devices/igor/cognition/word_graph.py`):
 
-- **Memory retrieval**: given a query, spread activation from seed tokens through the graph; highest-scoring memory nodes surface as the arc.
-- **Embedding**: `tokenize(text) → seed → spread → L2-normalize` produces a semantic vector without an external embedding model.
+A weighted undirected graph where nodes are words/bigrams and edges encode co-occurrence strength. Igor's *primary* retrieval path:
 
-NLP tokenization (splitting text into content words) is an internal utility here, not a separate device.
+- `tokenize(text)` → seed nodes in the graph
+- Spreading activation propagates outward through co-occurrence edges
+- `L2-normalize` produces a semantic vector — no external API required
+- Used every NE cycle for memory arc selection; fast, local, offline-capable
+
+**Tier 2 — Rack embedding engine** (`devices/scraps/embedding_engine.py`):
+
+OpenAI `text-embedding-3-small` (1536-dim) with a hash-based fallback (384-dim, fully deterministic). The rack's *shared* semantic embedder:
+
+- **Igor's second pass**: provides a higher-fidelity vector check when spreading activation is ambiguous
+- **Everyone else's first pass**: CC, Librarian, and other agents use this directly — they don't have a word graph
+- Called at **write time** by `devices/librarian/memory_writer.py` — embeddings are pre-computed and stored alongside memories in `payloads JSONB`
+- Called at **query time** by `devices/librarian/recall.py` — cosine similarity against stored embeddings for "what do I know about X?" queries
+- The word graph is also compared against these embeddings as a training signal (`_log_wg_comparison`)
+
+**Architectural debt**: The embedding engine lives inside `devices/scraps/` (a ticket validator device). The decision calls for it to migrate to Librarian-owned as part of the shared memory service. Tracked as `T-librarian-retrieval-service`.
+
+**The full retrieval stack** (Librarian recall):
+1. FTS on `narrative` text (free, instant)
+2. Tag overlap scoring
+3. Vector similarity via pre-computed embeddings (cosine distance, no inference at query time)
+4. Optional LLM escalation for nuance (writes result back so next recall is cheaper)
 
 ### 3.6 pe_chain (Plan → Execute chain)
 

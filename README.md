@@ -111,10 +111,10 @@ Every component that connects to the rack is a device. Devices register via the 
 |---|---|
 | `igor` | The cognition agent. Narrative engine, working-memory workspace (TWM), memory cortex, pe_chain coding workflow, Hebbian engram system. Not a monolith — all subsystems are sub-devices within `devices/igor/`. |
 | `claude` | Claude Code session device. Each CC session registers as CC.0, CC.1, etc. The shim bridges the CC tool interface to the bus. |
-| `librarian` | Research and retrieval. Answers "what do I know about X?" for all agents. FTS on narrative + tags; optional LLM escalation when nuance is needed. |
+| `librarian` | Research and retrieval. Answers "what do I know about X?" for all agents via FTS + vector similarity. The rack's shared memory service (D-shared-memory-service-2026-05-28) — runs independent of Igor; any agent can write memories and query them through Librarian's retrieval interface. |
 | `granny` | Ticket orchestrator. Filing-time audit gate, tag → worker routing via a weighted capability graph (Hebbian: successful routes gain weight), CC dispatch. Named after Granny Weatherwax. |
 | `nanny` | Scheduler and world-interaction dispatcher. Cron jobs, periodic tasks, calendar, IoT. Knows what agents exist and which ticket types they handle. Named after Nanny Ogg. |
-| `scraps` | Ticket gatekeeper. Rule-based validation before state transitions; optional Qwen 8 fuzzy pass when rules are ambiguous. Script-only — no inference in the critical path. Named after the Igors' dog. |
+| `scraps` | Ticket gatekeeper + rack embedding engine. Rule-based ticket validation before state transitions; also houses `embedding_engine.py` (OpenAI `text-embedding-3-small`) which is the rack's shared semantic embedder, used by Librarian at memory write and query time. Named after the Igors' dog. |
 | `akien` | The human on the rack. Gives Akien's traffic a `comms://akien/` address with inbox, outbox, and ideas mailboxes. Not a daemon; just an addressable presence. |
 
 ### Work and data
@@ -142,7 +142,11 @@ Every component that connects to the rack is a device. Devices register via the 
 | `rack_test` | Instrumented test fixture for rack contract testing. Used in tests, not production. |
 | `template` | Hello-world starter for building a new device. Copy this to `devices/<your-device>/` and fill in the contract. |
 
-> **Note on tokenization:** Text tokenization (NLP word-splitting for the spreading-activation memory embedding) is not a separate device. It lives in `devices/igor/cognition/word_graph.py` as an internal Igor cognitive utility.
+> **Two-tier semantic search architecture** (D-shared-memory-service-2026-05-28):
+> - **Igor's pass 1** — `devices/igor/cognition/word_graph.py`: spreading activation over co-occurrence edges. Fast, local, no API calls. Igor-internal only.
+> - **Igor's pass 2 / everyone else's pass 1** — `devices/scraps/embedding_engine.py`: OpenAI `text-embedding-3-small` (1536-dim, hash fallback). The rack's shared embedder. Used by Librarian at both write time (`memory_writer.py`) and query time (`recall.py`).
+>
+> The embedding engine currently lives inside `scraps/` (architectural debt — the decision calls for it to migrate to Librarian-owned). Tracked as `T-librarian-retrieval-service`.
 
 ---
 
