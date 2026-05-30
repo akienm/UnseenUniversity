@@ -2442,7 +2442,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
         try:
             _log_path = (
                 __import__("pathlib").Path.home()
-                / ".TheIgors"
+                / ".unseen_university"
                 / "logs"
                 / "cognition_metrics.log"
             )

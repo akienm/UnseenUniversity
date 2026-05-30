@@ -6,7 +6,7 @@ When Igor gets HTTP 400 "not a valid model ID", this tool:
   1. Fetches the current OR /models list
   2. Finds the closest still-valid replacement for each configured model env var
   3. Updates os.environ in-process (takes effect for the rest of the session)
-  4. Logs each rename to ~/.TheIgors/logs/or_model_refresh.log
+  4. Logs each rename to ~/.unseen_university/logs/or_model_refresh.log
 
 Does NOT write .env — in-process update only (safe; change is logged for manual sync).
 

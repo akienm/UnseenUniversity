@@ -8,7 +8,7 @@ embed(text) → list[float] | None
 
 cosine_similarity(a, b) → float
 
-Cache location: ~/.TheIgors/cache/embeddings/<sha256>.json
+Cache location: ~/.unseen_university/cache/embeddings/<sha256>.json
 Key: sha256(model:text)   Value: JSON array of floats
 """
 

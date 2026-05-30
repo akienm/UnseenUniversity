@@ -321,7 +321,7 @@ def machines_inertia():
     return compute_inertia(
         machines_row_count(),
         table_name="infra.machines",
-        fill_hint="run machine_manager.register_self() on each node, or seed from ~/.TheIgors/local/machines.json",
+        fill_hint="run machine_manager.register_self() on each node, or seed from ~/.unseen_university/local/machines.json",
     )
 
 

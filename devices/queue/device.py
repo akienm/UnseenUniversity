@@ -27,7 +27,7 @@ _START_TIME = time.time()
 TICKETS_ROOT_ID = "TICKETS_ROOT"
 GATE_FILE = Path(
     os.environ.get(
-        "QUEUE_GATE_FILE", Path.home() / ".TheIgors/cc_channel/queue_gate.json"
+        "QUEUE_GATE_FILE", Path.home() / ".unseen_university/cc_channel/queue_gate.json"
     )
 )
 

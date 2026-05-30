@@ -1150,7 +1150,7 @@ class Igor(IgorBase):
                     "habit_type": "proactive",
                     "schedule": "interval:86400",  # once per day
                     "action": (
-                        "Check ~/.TheIgors/backups/ for the most recent backup timestamp. "
+                        "Check ~/.unseen_university/backups/ for the most recent backup timestamp. "
                         "If last backup > IGOR_BACKUP_INTERVAL_H hours ago (default 24h), "
                         "emit ACTION_IMPULSE to trigger PROC_BACKUP_RUN."
                     ),
@@ -1168,12 +1168,12 @@ class Igor(IgorBase):
                     "habit_type": "action",
                     "action": (
                         "Run two commands: "
-                        "(1) pg_dump -d Igor-wild-0001 -F c -f ~/.TheIgors/backups/igor_{id}_$(date +%Y%m%d_%H%M%S).dump  "
-                        "(2) tar czf ~/.TheIgors/backups/igor_{id}_$(date +%Y%m%d_%H%M%S).tar.gz "
-                        "~/.TheIgors/milieu_global.json "
-                        "~/.TheIgors/igor_{id}/warm_context.0.json "
-                        "~/.TheIgors/SOUL.md "
-                        "~/.TheIgors/igor_{id}/IDENTITY.md "
+                        "(1) pg_dump -d Igor-wild-0001 -F c -f ~/.unseen_university/backups/igor_{id}_$(date +%Y%m%d_%H%M%S).dump  "
+                        "(2) tar czf ~/.unseen_university/backups/igor_{id}_$(date +%Y%m%d_%H%M%S).tar.gz "
+                        "~/.unseen_university/milieu_global.json "
+                        "~/.unseen_university/igor_{id}/warm_context.0.json "
+                        "~/.unseen_university/SOUL.md "
+                        "~/.unseen_university/igor_{id}/IDENTITY.md "
                         "2>/dev/null. "
                         "Log result to ring: BACKUP_OK|size=Xmb or BACKUP_FAIL|reason=..."
                     ),
@@ -1340,7 +1340,7 @@ class Igor(IgorBase):
         console.print(
             "\n[bold yellow]Igor cannot start with integrity violations.[/]\n"
             "[dim]Restore the database from a backup, or contact akien.[/]\n"
-            "[dim]Check ~/.TheIgors/Igor-wild-0001/ for backup files.[/]"
+            "[dim]Check ~/.unseen_university/Igor-wild-0001/ for backup files.[/]"
         )
         sys.exit(1)
 
@@ -1350,8 +1350,8 @@ class Igor(IgorBase):
         """
         Export SOUL.md (CP1-CP6) and IDENTITY.md (ID1-ID14) from the live DB.
 
-        SOUL.md  → ~/.TheIgors/SOUL.md              (shared; same for all instances)
-        IDENTITY.md → ~/.TheIgors/<instance_dir>/IDENTITY.md  (instance-specific)
+        SOUL.md  → ~/.unseen_university/SOUL.md              (shared; same for all instances)
+        IDENTITY.md → ~/.unseen_university/<instance_dir>/IDENTITY.md  (instance-specific)
 
         Written on every boot so files reflect current DB state.
         """
@@ -1410,7 +1410,7 @@ class Igor(IgorBase):
 
         # ── boot_notes.md — install if not already present ───────────────────
         # Source: devices/igor/cognition/boot_notes.md (static, update manually)
-        # Dest: ~/.TheIgors/<instance_dir>/boot_notes.md (read by build_boot_message)
+        # Dest: ~/.unseen_university/<instance_dir>/boot_notes.md (read by build_boot_message)
         boot_notes_src = Path(__file__).parent / "cognition" / "boot_notes.md"
         boot_notes_dst = instance_dir / "boot_notes.md"
         if boot_notes_src.exists() and not boot_notes_dst.exists():
@@ -1465,7 +1465,7 @@ class Igor(IgorBase):
         )
 
     def _instance_dir(self) -> Path:
-        """~/.TheIgors/<instance_id>/ — canonical instance dir from paths singleton."""
+        """~/.unseen_university/<instance_id>/ — canonical instance dir from paths singleton."""
         d = _paths().instance
         d.mkdir(parents=True, exist_ok=True)
         return d
@@ -2786,7 +2786,7 @@ class Igor(IgorBase):
         """
         Serialize warm working memory to disk before shutdown.
 
-        Writes ~/.TheIgors/<instance_dir>/warm_context.0.json.
+        Writes ~/.unseen_university/<instance_dir>/warm_context.0.json.
         Rotates: .0 → .1 before writing so the previous save is never clobbered.
         Worst case (crash mid-write): lose current session; prior session in .1.
         """
@@ -9220,7 +9220,7 @@ class Igor(IgorBase):
         """
         /implement #N — write an implementation brief for Claude Code to pick up.
         Phase 1 (manual-assist): Igor fetches the ticket, writes a task brief to
-        ~/.TheIgors/<instance>/workspace/impl_#N.md, then tells Akien to hand it
+        ~/.unseen_university/<instance>/workspace/impl_#N.md, then tells Akien to hand it
         to Claude Code. Zero cloud cost — Claude Code handles the actual edits.
         """
         from .tools.github import get_work_order

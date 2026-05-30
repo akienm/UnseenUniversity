@@ -8,7 +8,7 @@ top-connected concept hubs, density ratio.
 reading_graph_baseline(book_title, deposit): reports and deposits FACTUAL node.
 Called before second-pass or lever-detection work to establish baseline.
 
-Forensic log: ~/.TheIgors/logs/tool_calls.log
+Forensic log: ~/.unseen_university/logs/tool_calls.log
 """
 
 from __future__ import annotations

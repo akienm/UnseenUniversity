@@ -3,7 +3,7 @@ import sys
 """
 Forensic Logger — WO3: Cognition Stabilization Phase 3.
 
-CSB-format structured logs at ~/.TheIgors/logs/ for post-mortem analysis.
+CSB-format structured logs at ~/.unseen_university/logs/ for post-mortem analysis.
 All logs are newest-first (prepend, not append). Rotate at 10MB.
 
 Log files:
@@ -879,7 +879,7 @@ def _purge_old_pipeline_traces(today: str) -> None:
 # ── Inference I/O log ─────────────────────────────────────────────────────────
 # Full prompt+response for every model call. Daily rotating, append-only
 # (not prepend — entries can be large). Purge after 2 days.
-# File: ~/.TheIgors/logs/inference_io.YYYYMMDD.log
+# File: ~/.unseen_university/logs/inference_io.YYYYMMDD.log
 # Gate: IGOR_LOG_INFERENCE_IO (default true — disable to save disk)
 
 _INFERENCE_IO_PROMPT_CAP = 16 * 1024  # 16 KB max per prompt

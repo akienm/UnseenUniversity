@@ -727,7 +727,7 @@ def check_claude_balance(caller_source: str = "") -> str:
     Navigates to https://console.anthropic.com/settings/billing using the
     employer's Chrome profile, extracts the balance dollar amount, and writes
     {"balance_usd": X.XX, "fetched_at": ISO-timestamp} to
-    ~/.TheIgors/cc_channel/anthropic_balance.json.
+    ~/.unseen_university/cc_channel/anthropic_balance.json.
 
     caller_source: session source — only trusted direct channels (repl, web)
     may use the employer's browser session. Discord is excluded.
@@ -946,7 +946,7 @@ registry.register(
             "Check the current Anthropic credit balance by scraping the console billing page. "
             "Navigates to https://console.anthropic.com/settings/billing using the employer's "
             "logged-in Chrome profile and extracts the credit balance. "
-            "Writes {balance_usd, fetched_at} to ~/.TheIgors/cc_channel/anthropic_balance.json. "
+            "Writes {balance_usd, fetched_at} to ~/.unseen_university/cc_channel/anthropic_balance.json. "
             "Only available from trusted direct sessions (repl, web UI) — not from Discord."
         ),
         parameters={

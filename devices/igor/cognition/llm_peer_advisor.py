@@ -23,7 +23,7 @@ and the inference gateway.
 
 From Akien 2026-04-14: 'maybe we send those to the igor logging
 console so i can see them.' Every reasoning conversation gets a JSONL
-transcript at ~/.TheIgors/local/logs/reasoning_conversations/ with
+transcript at ~/.unseen_university/local/logs/reasoning_conversations/ with
 one line per utterance. Akien can tail -f or grep these to spot-check
 what Igor couldn't solve alone — the conversations expose the training
 signal.

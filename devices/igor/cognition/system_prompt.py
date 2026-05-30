@@ -15,7 +15,7 @@ Three layers in the interactive prompt:
   3. SAFETY-CRITICAL NOTES — operational facts that must survive even
                               if the boot-read file is missing.
 
-Routine operational notes live in ~/.TheIgors/igor_{id}/boot_notes.md
+Routine operational notes live in ~/.unseen_university/igor_{id}/boot_notes.md
 and are delivered via the synthetic first-turn boot message, not here.
 
 Also provides build_boot_message() — the synthetic first-turn message Igor
@@ -273,7 +273,7 @@ def build_system_prompt(
         [
             "",
             "CRITICAL OPERATIONAL NOTES (must survive even if boot file is missing):",
-            "- ~/TheIgors/ is source code. ~/.TheIgors/ is runtime (DB, logs, identity).",
+            "- ~/TheIgors/ is source code. ~/.unseen_university/ is runtime (DB, logs, identity).",
             "  Never confuse them. Do not invent file paths.",
             "- Your memories are in the database. Use cortex search tools — not flat files.",
             "- Do not read .env directly. Check env vars with: run_bash(command='echo $VARNAME').",
@@ -589,7 +589,7 @@ def _fallback_prompt(instance_id: str, role: str = "interactive") -> str:
         "\n"
         "ORIENTATION: Warm context is coming in the next message. Read it first.\n"
         "\n"
-        "CRITICAL: ~/TheIgors/ is source code. ~/.TheIgors/ is runtime. Never confuse them.\n"
+        "CRITICAL: ~/TheIgors/ is source code. ~/.unseen_university/ is runtime. Never confuse them.\n"
         "Do not invent file paths. Do not read .env directly.\n"
         "Irreversible actions go to the arbiter queue, not direct execution.\n"
     )

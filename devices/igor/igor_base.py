@@ -163,7 +163,7 @@ except ImportError:
 class IgorBase(_BASE):  # type: ignore[valid-type,misc]
     """Igor-specific base — DiagnosticBase with paths().logs routing and self.log compat."""
 
-    # JSON operational logs go to ~/.TheIgors/<device_id>/log/json/
+    # JSON operational logs go to ~/.unseen_university/<device_id>/log/json/
     try:
         from pathlib import Path as _Path
 
@@ -211,7 +211,7 @@ class IgorBase(_BASE):  # type: ignore[valid-type,misc]
         tokens_in: int = 0,
         tokens_out: int = 0,
     ) -> None:
-        """Log an LLM inference call to ~/.TheIgors/logs/llm_io/YYYYMMDD.log.
+        """Log an LLM inference call to ~/.unseen_university/logs/llm_io/YYYYMMDD.log.
 
         Dual-write: file log (existing) + infra.llm_calls DB row
         (T-universal-llm-lineage — queryable without reading log files).
@@ -276,7 +276,7 @@ class IgorBase(_BASE):  # type: ignore[valid-type,misc]
             pass
 
     def log_state_snapshot(self, label: str, state: Dict[str, Any]) -> None:
-        """Log an arbitrary state snapshot to ~/.TheIgors/logs/snapshots/YYYYMMDD.log."""
+        """Log an arbitrary state snapshot to ~/.unseen_university/logs/snapshots/YYYYMMDD.log."""
         try:
             log_dir = paths().runtime / "logs" / "snapshots"
             log_dir.mkdir(parents=True, exist_ok=True)

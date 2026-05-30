@@ -26,7 +26,7 @@ from ..igor_base import IgorBase
 _log = logging.getLogger(__name__)
 
 RELAY_DIR = Path(
-    os.environ.get("IGOR_RELAY_DIR", Path.home() / ".TheIgors" / "sudo_relay")
+    os.environ.get("IGOR_RELAY_DIR", Path.home() / ".unseen_university" / "sudo_relay")
 )
 DAEMON_LOG = RELAY_DIR / "daemon.log"
 PENDING = RELAY_DIR / "pending.sh"

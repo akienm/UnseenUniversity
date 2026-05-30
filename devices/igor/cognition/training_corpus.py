@@ -3,12 +3,12 @@ Training Corpus Manager — WO#138 / D038.
 
 Manages a staged training corpus for the word graph:
   - Fetch text from URLs (Gutenberg, other sources) or scan local directory
-  - Store temporarily in ~/.TheIgors/training_corpus/ while training
+  - Store temporarily in ~/.unseen_university/training_corpus/ while training
   - Evict when complete; evict early by priority if disk is tight
   - Track progress via a cursor so training can resume after interruption
 
 Storage layout:
-    ~/.TheIgors/training_corpus/
+    ~/.unseen_university/training_corpus/
         index.json          — registry: {book_id: metadata}
         {book_id}.txt       — raw text (deleted after training unless keep=True)
 

@@ -534,7 +534,7 @@ def learn_about(user_input: str) -> str:
             lines.append(f"Web: {len(url_pairs)} AI-discovered URL(s) queued.")
         else:
             lines.append(
-                "Web: browser AI discovery returned no URLs — check ~/.TheIgors/logs/browser_use.log."
+                "Web: browser AI discovery returned no URLs — check ~/.unseen_university/logs/browser_use.log."
             )
     except Exception as e:
         lines.append(f"Web: browser discovery error ({e}) — check browser_use.log.")
@@ -671,7 +671,7 @@ def drain_learn_queue(**_kwargs) -> str:
         return (
             f"Background queue runner started. "
             f"{len(pending)} item(s) to process (topics: {topic_str or '?'}). "
-            f"60s between launches. Check ~/.TheIgors/logs/drain_learn_queue.log for progress."
+            f"60s between launches. Check ~/.unseen_university/logs/drain_learn_queue.log for progress."
         )
     return "Failed to launch queue runner — check logs."
 
@@ -680,7 +680,7 @@ registry.register(
     Tool(
         name="drain_learn_queue",
         description=(
-            "Start the background learning queue runner. Drains ~/.TheIgors/learn_queue.json "
+            "Start the background learning queue runner. Drains ~/.unseen_university/learn_queue.json "
             "by launching book_learner for each pending item at 60-second intervals. "
             "Safe to call multiple times — won't spawn duplicates. "
             "Use after 'go learn about X tonight' to kick off overnight processing."
@@ -1418,8 +1418,8 @@ def review_turn_traces(**_kwargs) -> str:
     from datetime import datetime, timezone
 
     log_dirs = [
-        paths().runtime / "logs",  # ~/.TheIgors/logs/ (legacy)
-        paths().logs,  # ~/.TheIgors/local/logs/ (current)
+        paths().runtime / "logs",  # ~/.unseen_university/logs/ (legacy)
+        paths().logs,  # ~/.unseen_university/local/logs/ (current)
     ]
     escapes = _parse_turn_trace_logs(log_dirs, since_hours=24)
     if not escapes:

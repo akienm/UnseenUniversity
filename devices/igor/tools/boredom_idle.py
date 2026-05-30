@@ -16,7 +16,7 @@ Design:
     at half the normal rate (tombstone so we don't spin silently)
 
 Called by PROC_BOREDOM_TRIGGER (cognitive habit, schedule=10min).
-Forensic log: ~/.TheIgors/logs/boredom_idle.log
+Forensic log: ~/.unseen_university/logs/boredom_idle.log
 """
 
 import json

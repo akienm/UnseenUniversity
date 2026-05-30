@@ -1,10 +1,10 @@
 """paths.py — PathManager singleton (D108).
 
-Single source of truth for all ~/.TheIgors/* path references.
-Replaces every hardcoded Path.home() / ".TheIgors" in the codebase.
+Single source of truth for all ~/.unseen_university/* path references.
+Replaces every hardcoded Path.home() / ".unseen_university" in the codebase.
 
 Env vars:
-    IGOR_RUNTIME_ROOT  — override the default ~/.TheIgors root
+    IGOR_RUNTIME_ROOT  — override the default ~/.unseen_university root
     IGOR_INSTANCE_ID   — override the default instance folder (Igor-wild-0001)
 
 Usage:
@@ -33,7 +33,7 @@ class _BootstrapPathManager:
         if root_env:
             self._runtime = Path(root_env).expanduser().resolve()
         else:
-            self._runtime = Path.home() / ".TheIgors"
+            self._runtime = Path.home() / ".unseen_university"
 
         self._instance_id = os.getenv("IGOR_INSTANCE_ID", "Igor-wild-0001")
 
@@ -41,7 +41,7 @@ class _BootstrapPathManager:
 
     @property
     def runtime(self) -> Path:
-        """~/.TheIgors (or IGOR_RUNTIME_ROOT override)."""
+        """~/.unseen_university (or IGOR_RUNTIME_ROOT override)."""
         return self._runtime
 
     @property
@@ -148,7 +148,7 @@ class _BootstrapPathManager:
 
     @property
     def instance(self) -> Path:
-        """Instance dir, e.g. ~/.TheIgors/Igor-wild-0001."""
+        """Instance dir, e.g. ~/.unseen_university/Igor-wild-0001."""
         return self._runtime / self._instance_id
 
     @property
@@ -199,7 +199,7 @@ class _BootstrapPathManager:
           3. macOS    (sys.platform == 'darwin'):  ~/OneDrive/AkiensMedia/Ebooks
              (falls back to ~/Library/CloudStorage/OneDrive-Personal/AkiensMedia/Ebooks
               if the primary path doesn't exist — newer macOS OneDrive layout)
-          4. Linux: ~/.TheIgors/akien/onedrive/AkiensMedia/Ebooks  (CIFS mount)
+          4. Linux: ~/.unseen_university/akien/onedrive/AkiensMedia/Ebooks  (CIFS mount)
         """
         import sys
 
@@ -243,7 +243,7 @@ class _BootstrapPathManager:
 
     @property
     def source_root(self) -> Path:
-        """Repo root (~/TheIgors). This file lives at devices/igor/paths.py."""
+        """Repo root (~/dev/src/UnseenUniversity). This file lives at devices/igor/paths.py."""
         return Path(__file__).resolve().parent.parent.parent
 
 

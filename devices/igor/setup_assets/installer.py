@@ -1,7 +1,7 @@
 """
 installer.py — D321 entry point for Igor (UnseenUniversity edition).
 
-Called by the ~/TheIgors/igor bash launcher after venv is ensured.
+Called by the ~/dev/src/UnseenUniversity/igor bash launcher after venv is ensured.
 Runs the Igor restart loop: launches devices.igor.main, handles exit codes,
 detects crash loops.
 

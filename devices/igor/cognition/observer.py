@@ -46,7 +46,7 @@ def observe(label: str, value, context: dict = None) -> None:
     context: optional key/value dict of related values
 
     Writes to:
-        1. ~/.TheIgors/logs/metrics.log   (forensic layer — always on)
+        1. ~/.unseen_university/logs/metrics.log   (forensic layer — always on)
         2. cortex EXPERIENTIAL memory     (self-observation — if cortex wired in)
     """
     try:

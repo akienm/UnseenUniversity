@@ -1,7 +1,7 @@
 """
 Slow query analysis tool.
 
-Parses ~/.TheIgors/logs/db_queries.log, groups by normalized SQL pattern,
+Parses ~/.unseen_university/logs/db_queries.log, groups by normalized SQL pattern,
 and surfaces the top offenders by frequency and by worst elapsed time.
 
 Registered tool: analyze_slow_queries()

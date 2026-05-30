@@ -259,8 +259,12 @@ def _cfg_files(instance_dir: Path) -> list[Path]:
     Return the ordered list of cfg files to load for a given instance dir (D319).
 
     Load order (last wins): swarm.cfg → igor.cfg → igor.models.cfg →
-    igor.switches.cfg → igor.credentials.cfg → igor.context.*.cfg (sorted)
-    → igor.context.*.confidential.cfg (sorted)
+    igor.switches.cfg → igor.credentials.cfg → config.cfg →
+    igor.context.*.cfg (sorted) → igor.context.*.confidential.cfg (sorted)
+
+    config.cfg is the new unified config (Phase 4 migration target). When
+    present it overrides the split legacy files but context overrides still
+    win at the end.
 
     Returns only files that actually exist.
     """
@@ -272,6 +276,7 @@ def _cfg_files(instance_dir: Path) -> list[Path]:
         instance_dir / "igor.models.cfg",
         instance_dir / "igor.switches.cfg",
         instance_dir / "igor.credentials.cfg",
+        instance_dir / "config.cfg",
     ]
     files = [p for p in fixed_order if p.exists()]
     files += sorted(instance_dir.glob("igor.context.*.cfg"))
@@ -375,7 +380,9 @@ def load_igor_env_into_environ(
     if instance_id is None:
         instance_id = os.environ.get("IGOR_INSTANCE_ID", "Igor-wild-0001")
 
-    runtime_root = Path.home() / ".TheIgors"
+    runtime_root = Path(
+        os.environ.get("IGOR_RUNTIME_ROOT", str(Path.home() / ".unseen_university"))
+    )
     instance_dir = runtime_root / instance_id
     if not instance_dir.is_dir():
         return {}

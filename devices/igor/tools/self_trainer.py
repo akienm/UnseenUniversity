@@ -12,7 +12,7 @@ Registered as a tool (run_self_training_pass) so SchedulerSource can fire it via
 a PROC habit with schedule_interval_sec.
 
 Basket concern keys (D250): none — this is a background batch pass, no basket thread.
-Log: ~/.TheIgors/logs/cognition_metrics.log via log_cognition_metric.
+Log: ~/.unseen_university/logs/cognition_metrics.log via log_cognition_metric.
 """
 
 from __future__ import annotations

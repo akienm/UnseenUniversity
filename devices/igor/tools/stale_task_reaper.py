@@ -8,7 +8,7 @@ Observed failure mode (2026-03-29): T-book-learner-hash-lookup TASK_SET promoted
 every 20min by consolidation for 195+ min, causing NE arc loop + console spam.
 
 Called by PROC_STALE_TASK_REAPER (cognitive habit, schedule 45min).
-Forensic log: ~/.TheIgors/logs/stale_task_reaper.log
+Forensic log: ~/.unseen_university/logs/stale_task_reaper.log
 """
 
 import json

@@ -18,7 +18,7 @@ is performed — Igor's own self_test_log.jsonl tracks internal health.
 Configuration via environment variables:
   IGOR_TMUX_SESSION  — tmux session name (default: igor)
   IGOR_LAUNCHER      — path to igor launcher (default: igor from PATH)
-  IGOR_HOME          — Igor runtime dir (default: ~/.TheIgors/Igor-wild-0001)
+  IGOR_HOME          — Igor runtime dir (default: ~/.unseen_university/Igor-wild-0001)
 """
 
 from __future__ import annotations

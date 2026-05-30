@@ -781,7 +781,7 @@ class UserInputSource(BasePushSource):
 
 class MachinesWatcher(BasePushSource):
     """
-    Watches ~/.TheIgors/local/machines.json for changes.
+    Watches ~/.unseen_university/local/machines.json for changes.
 
     Pushes a high-salience TWM observation on first run (so Igor always
     knows the current machine inventory) and again whenever the file's

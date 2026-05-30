@@ -173,7 +173,7 @@ def _read_channel_messages(hours: int = 24) -> list[dict]:
 
     # Fallback to JSONL if no Postgres results
     if not messages:
-        jsonl = Path(os.path.expanduser("~/.TheIgors/cc_channel/messages.jsonl"))
+        jsonl = Path(os.path.expanduser("~/.unseen_university/cc_channel/messages.jsonl"))
         if jsonl.exists():
             cutoff = (datetime.now() - timedelta(hours=hours)).isoformat()
             try:

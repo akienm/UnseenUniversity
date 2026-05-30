@@ -242,7 +242,7 @@ class InferenceDevice(BaseDevice):
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
-                "HTTP-Referer": "https://github.com/akienm/TheIgors",
+                "HTTP-Referer": "https://github.com/akienm/UnseenUniversity",
                 "X-Title": "agent-datacenter-inference",
             },
             method="POST",

@@ -14,7 +14,7 @@ self_trainer: what Igor knows → FACTUAL memories.
 output_trainer: how Igor responds → RESPONSE habits.
 
 Basket concern keys (D250): none — background batch pass.
-Log: ~/.TheIgors/logs/cognition_metrics.log via log_cognition_metric.
+Log: ~/.unseen_university/logs/cognition_metrics.log via log_cognition_metric.
 
 Filters vs self_trainer:
   - Shorter inputs (10–80 chars): specific questions → direct canned answers

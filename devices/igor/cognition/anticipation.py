@@ -10,7 +10,7 @@ Mechanism:
   predict_valence(tags) → float             — weighted average from matching history
   weighted_ticket_score(priority, tags) → float — sort key for foreman selection
 
-Storage: JSON at ~/.TheIgors/cc_channel/closure_history.json
+Storage: JSON at ~/.unseen_university/cc_channel/closure_history.json
   Simple, crash-safe, no Igor DB dependency. One entry per closed ticket.
 
 Calibration:

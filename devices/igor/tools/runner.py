@@ -208,7 +208,7 @@ def restart_self(note: str = "") -> str:
     """
     Signal Igor to restart cleanly on the next main-loop iteration.
 
-    Writes ~/.TheIgors/igor_<instance_id>/restart.flag — the main loop
+    Writes ~/.unseen_university/igor_<instance_id>/restart.flag — the main loop
     checks this flag at the top of each idle cycle and exits with code 42,
     which the bash wrapper catches and relaunches.
 
@@ -496,7 +496,7 @@ def exit_self(note: str = "") -> str:
     """
     Signal Igor to exit cleanly (no restart) on the next main-loop iteration.
 
-    Writes ~/.TheIgors/igor_<instance_id>/exit.flag — the main loop exits with
+    Writes ~/.unseen_university/igor_<instance_id>/exit.flag — the main loop exits with
     code 0, which the bash/PS wrapper does NOT restart (only exit code 42 triggers
     a restart).
 

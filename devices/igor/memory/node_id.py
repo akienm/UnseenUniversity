@@ -14,7 +14,7 @@ the counter increments so every ID is unique without sleeping.
 Registry: every generated ID is registered in node_registry (Postgres) and cached
 in Redis if available.
 
-Forensic log: ~/.TheIgors/logs/node_registry.log
+Forensic log: ~/.unseen_university/logs/node_registry.log
 """
 
 import os
@@ -315,7 +315,7 @@ def _get_redis():
 
 # ── Forensic logging ──────────────────────────────────────────────────────────
 
-_LOG_DIR = Path.home() / ".TheIgors" / "logs"
+_LOG_DIR = Path.home() / ".unseen_university" / "logs"
 _LOG_FILE = _LOG_DIR / "node_registry.log"
 
 

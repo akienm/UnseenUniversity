@@ -59,7 +59,7 @@ def post_to_channel(
 ) -> None:
     """Post a message to the Igor channel.
 
-    Writes to Postgres channel_messages (primary) and ~/.TheIgors/cc_channel/messages.jsonl
+    Writes to Postgres channel_messages (primary) and ~/.unseen_university/cc_channel/messages.jsonl
     (fallback). Both writes are best-effort — failures are silently swallowed so the
     caller is never interrupted by a channel write error.
 

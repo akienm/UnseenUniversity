@@ -11,7 +11,7 @@ Required Ollama models (checked and auto-pulled at boot):
   llama3.2:1b       — local preparse + tier.2 reasoning (override: OLLAMA_LOCAL_MODEL)
 
 Runs in a daemon thread at startup so Igor is not blocked.
-Logs results to ~/.TheIgors/claudecode/changes.log (CSB format, newest first)
+Logs results to ~/.unseen_university/claudecode/changes.log (CSB format, newest first)
 and writes a summary to ring memory for NE integration.
 """
 

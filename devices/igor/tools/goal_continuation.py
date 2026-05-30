@@ -25,7 +25,7 @@ run_goal_continuation():
 
 Called by PROC_GOAL_CONTINUATION (scheduler, schedule_interval_sec=120).
 Rate-limited: skips if step already at 4+ (hand-off to LLM from there).
-Forensic log: ~/.TheIgors/logs/goal_continuation.log
+Forensic log: ~/.unseen_university/logs/goal_continuation.log
 """
 
 import json
@@ -41,7 +41,7 @@ from .channel_post import post_to_channel as _post_to_channel
 
 _DB_URL = _paths().home_db_url
 _CC_QUEUE = Path.home() / "TheIgors" / "lab" / "claudecode" / "cc_queue.py"
-_CHANNEL_FILE = Path.home() / ".TheIgors" / "cc_channel" / "messages.jsonl"
+_CHANNEL_FILE = Path.home() / ".unseen_university" / "cc_channel" / "messages.jsonl"
 
 # D259 human-author gate: set of authors treated as human-driven.
 # Must match _HUMAN_AUTHORS in main.py.

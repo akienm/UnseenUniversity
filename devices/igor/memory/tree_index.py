@@ -21,7 +21,7 @@ Public API:
   TreeIndex.list_all() → list[dict]
   TreeIndex.trees_at_node(node_id) → list[dict]  — trees whose facia IS this node
 
-Forensic log: ~/.TheIgors/logs/tree_index.log
+Forensic log: ~/.unseen_university/logs/tree_index.log
 """
 
 import json
@@ -37,7 +37,7 @@ _log = logging.getLogger(__name__)
 _DB_URL = _paths().home_db_url
 _MACHINE_ID = os.getenv("IGOR_SWARM_NAME", "akiendelllinux")
 
-_LOG_DIR = Path.home() / ".TheIgors" / "logs"
+_LOG_DIR = Path.home() / ".unseen_university" / "logs"
 
 # Default traversal rules applied when not explicitly overridden
 _DEFAULT_RULES = {

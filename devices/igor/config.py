@@ -44,7 +44,9 @@ def _load_cfg_files() -> None:
     _loaded = True
 
     instance_id = os.getenv("IGOR_INSTANCE_ID", "Igor-wild-0001")
-    runtime_root = Path(os.getenv("IGOR_RUNTIME_ROOT", str(Path.home() / ".TheIgors")))
+    runtime_root = Path(
+        os.getenv("IGOR_RUNTIME_ROOT", str(Path.home() / ".unseen_university"))
+    )
     instance_dir = runtime_root / instance_id
 
     try:

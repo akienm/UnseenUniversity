@@ -14,7 +14,7 @@ run_after_action_review():
   - Deduplicates via turn_id stored in metadata
 
 Called by PROC_AFTER_ACTION (schedule_interval_sec=7200, every 2h).
-Forensic log: ~/.TheIgors/logs/after_action_review.log
+Forensic log: ~/.unseen_university/logs/after_action_review.log
 """
 
 from __future__ import annotations

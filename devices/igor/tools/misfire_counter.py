@@ -5,7 +5,7 @@ A misfire is:
   1. run_bash exit code 127 (command not found) where command matches a registered tool name
   2. Any tool call that errors with the same error type N times in a rolling window
 
-Storage: misfire_log.jsonl in ~/.TheIgors/logs/
+Storage: misfire_log.jsonl in ~/.unseen_university/logs/
   Each entry: {timestamp, counter_key, error_type, count, threshold_exceeded}
 
 Surfacing: when count > threshold, log_error + flag for habit repair review (audit Step 12).
@@ -51,7 +51,7 @@ class MisfireCounter(IgorBase):
     ):
         """
         Args:
-            log_path: Path to misfire_log.jsonl. Defaults to ~/.TheIgors/logs/misfire_log.jsonl
+            log_path: Path to misfire_log.jsonl. Defaults to ~/.unseen_university/logs/misfire_log.jsonl
             threshold: Counter threshold (default 3)
             window_hours: Rolling window duration in hours (default 24)
         """

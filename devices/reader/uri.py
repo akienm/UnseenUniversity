@@ -41,7 +41,7 @@ _CONTENT_MAX_CHARS = int(os.environ.get("READER_CONTENT_MAX_CHARS", "4000"))
 _DEFAULT_CALIBRE_PATH = Path(
     os.environ.get(
         "CALIBRE_LIBRARY_PATH",
-        Path.home() / ".TheIgors/akien/onedrive/AkiensMedia/Ebooks",
+        Path.home() / ".unseen_university/akien/onedrive/AkiensMedia/Ebooks",
     )
 )
 

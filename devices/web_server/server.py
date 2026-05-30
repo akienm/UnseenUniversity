@@ -121,10 +121,10 @@ _RUNTIME_ROOT = Path(
     or Path.home() / ".unseen_university"
 )
 _INSTANCE_DIR = _RUNTIME_ROOT / os.environ.get("IGOR_INSTANCE_ID", "Igor-wild-0001")
-# Web UI dist: env var override, or default to TheIgors sibling (dev layout).
+# Web UI dist: env var override, or default to UU sibling (dev layout).
 _DIST_DIR = Path(
     os.environ.get("ADC_WEB_UI_DIST")
-    or Path.home() / "TheIgors" / "wild_igor" / "web_ui" / "dist"
+    or Path(__file__).resolve().parents[2] / "wild_igor" / "web_ui" / "dist"
 )
 
 # ── Logging ──────────────────────────────────────────────────────────────────

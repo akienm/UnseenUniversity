@@ -7,7 +7,7 @@ ttl:   12 minutes (720 seconds)
 invalidate_on: new TWM observations since cache entry was written
                (current max obs id > stored max_twm_id)
 
-Cache location: ~/.TheIgors/cache/reasoning/<sha256>.json
+Cache location: ~/.unseen_university/cache/reasoning/<sha256>.json
 
 Primary use: NarrativeEngine._call_ollama() — skip repeated Ollama calls when
 TWM content hasn't changed since the last NE run.

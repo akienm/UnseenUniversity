@@ -11,7 +11,7 @@ Sources (in priority order):
 
 Cloud tier definition: tier.3, tier.3.5, tier.4, tier.5 (anything above tier.2/Ollama).
 
-Forensic log: ~/.TheIgors/logs/escalation_stats.log
+Forensic log: ~/.unseen_university/logs/escalation_stats.log
 """
 
 import json

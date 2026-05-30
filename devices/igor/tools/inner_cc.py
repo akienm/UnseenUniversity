@@ -72,7 +72,7 @@ THEIGORS CODEBASE CONVENTIONS:
   Tier ladder — tier.1=habit(no LLM) → tier.2=Ollama(local) → tier.3=OR-cheap →
                 tier.3.5=OR-interactive → tier.4=OR-sonnet → tier.5=inhibited
   Memory types — ROOT, CORE_PATTERN, IDENTITY, PROCEDURAL, INTERPRETIVE, FACTUAL, EPISODIC
-  Source/runtime split — ~/TheIgors/ = source code; ~/.TheIgors/ = runtime data (never confuse)
+  Source/runtime split — ~/TheIgors/ = source code; ~/.unseen_university/ = runtime data (never confuse)
   LLMs are graph trainers — every call should deposit nodes so next time stays local
 
 LANGUAGES IN SCOPE: Python, bash, DOS batch (.bat/.cmd), PowerShell (.ps1)

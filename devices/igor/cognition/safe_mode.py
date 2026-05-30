@@ -108,7 +108,7 @@ def _alert_cc(stuck_cycles: int) -> None:
                 "To restore normal operation:\n"
                 "  1. Investigate cognition logs for root cause\n"
                 "  2. Remove IGOR_SAFE_MODE=true from "
-                "~/.TheIgors/<instance>/igor.switches.cfg\n"
+                "~/.unseen_university/<instance>/igor.switches.cfg\n"
                 "  3. Restart Igor\n"
             ),
             urgency="high",

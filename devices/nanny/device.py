@@ -482,7 +482,7 @@ class NannyOggDevice(BaseDevice):
             import os
             import sys
 
-            sys.path.insert(0, str(Path.home() / "TheIgors"))
+            
             queue_py = Path(os.environ.get("CC_WORKFLOW_TOOLS", "")) / "cc_queue.py"
             if not queue_py.exists():
                 return
@@ -508,7 +508,7 @@ class NannyOggDevice(BaseDevice):
             import os
             import sys
 
-            sys.path.insert(0, str(Path.home() / "TheIgors"))
+            
             from lab.claudecode.channel import post_to_channel
 
             post_to_channel(channel, "nanny-ogg", message)

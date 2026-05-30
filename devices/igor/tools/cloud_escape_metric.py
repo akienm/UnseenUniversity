@@ -8,7 +8,7 @@ cloud_escape_rate_report(**_): scans turn_trace logs for last 7 days,
   returns formatted report string and deposits a FACTUAL node to cortex.
 
 Also exports cloud_escape_rate_data() for programmatic access.
-Forensic log: ~/.TheIgors/logs/tool_calls.log
+Forensic log: ~/.unseen_university/logs/tool_calls.log
 """
 
 from __future__ import annotations

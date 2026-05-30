@@ -56,7 +56,7 @@ Search pipeline (SearchRequest dataclass):
                      GIN index m037 on narrative tsvector.
    Phase 2 (rerank): if Ollama available, cosine similarity between query
                      embedding and candidate embeddings. Embedding cache at
-                     ~/.TheIgors/cache/embeddings/.
+                     ~/.unseen_university/cache/embeddings/.
 
 Spreading activation (D233):
    Two-layer: word_graph (hop_decay=0.6, depth=2) + memory/interpretive

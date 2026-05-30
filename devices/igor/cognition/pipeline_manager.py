@@ -3,8 +3,8 @@ pipeline_manager.py — D096: Pipeline and job state via filesystem convention.
 
 Convention:
   - State is represented by a file at:
-      ~/.TheIgors/{instance}/{category}/{name}/{state}.now   (transient/active)
-      ~/.TheIgors/{instance}/{category}/{name}/{state}.txt   (terminal/permanent)
+      ~/.unseen_university/{instance}/{category}/{name}/{state}.now   (transient/active)
+      ~/.unseen_university/{instance}/{category}/{name}/{state}.txt   (terminal/permanent)
 
   - File mtime IS the timestamp — no redundant timestamp field in the contents.
   - Only one .now file exists per entry at a time (old .now removed on transition).

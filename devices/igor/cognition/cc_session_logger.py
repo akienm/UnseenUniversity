@@ -3,7 +3,7 @@ import logging
 CC Session Logger — D094: cc-direct-habit-execution.
 
 Logs every direct habit call (Claude Code → Igor via /api/execute_habit) to a
-daily session log at ~/.TheIgors/logs/cc_session_YYYYMMDD.log.
+daily session log at ~/.unseen_university/logs/cc_session_YYYYMMDD.log.
 
 Newest-first (prepend), consistent with all other forensic logs.
 Format: timestamp|direction|execute_habit|habit_id|args=...|result=...|NNNms

@@ -2,7 +2,7 @@
 memory_snapshot.py — Nightly memory-count snapshot tool.
 
 Fires nightly (PROC habit gates to hour >= 22, once per day).
-Records memory counts by type to ~/.TheIgors/logs/memory_count.log
+Records memory counts by type to ~/.unseen_university/logs/memory_count.log
 for trend tracking — see if the memory base grows, stagnates, or shrinks.
 
 T-nightly-memory-count.
@@ -21,7 +21,7 @@ from devices.igor.tools.registry import Tool, registry
 from ..paths import paths as _paths
 log = logging.getLogger(__name__)
 
-_STAMP_FILE = Path.home() / ".TheIgors" / "logs" / "memory_count.last_run"
+_STAMP_FILE = Path.home() / ".unseen_university" / "logs" / "memory_count.last_run"
 _DB_URL = _paths().home_db_url
 
 
@@ -104,7 +104,7 @@ registry.register(
         description=(
             "Take a nightly snapshot of memory counts by type. "
             "Self-gates: only runs after 22:00 local time, once per day. "
-            "Logs to ~/.TheIgors/logs/memory_count.log for trend tracking."
+            "Logs to ~/.unseen_university/logs/memory_count.log for trend tracking."
         ),
         parameters={"type": "object", "properties": {}, "required": []},
         fn=run_memory_snapshot,

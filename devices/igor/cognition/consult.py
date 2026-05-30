@@ -34,7 +34,7 @@ cloud). Override with tier_override="tier.3.5" for harder consults.
 
 Logging:
 - igor.consult logger at INFO — console-visible; does NOT broadcast to web
-- Forensic log file ~/.TheIgors/local/logs/consults.log — one JSON line per turn
+- Forensic log file ~/.unseen_university/local/logs/consults.log — one JSON line per turn
 """
 
 from __future__ import annotations
@@ -78,7 +78,7 @@ _CONSULT_LOG_NAME = (
     "consults.log.test" if os.getenv("IGOR_TEST_MODE", "").strip() else "consults.log"
 )
 _CONSULT_LOG_DEFAULT = str(
-    Path.home() / ".TheIgors" / "local" / "logs" / _CONSULT_LOG_NAME
+    Path.home() / ".unseen_university" / "local" / "logs" / _CONSULT_LOG_NAME
 )
 # os.getenv with an explicit empty-string env value returns "", not the
 # default — guard against that so an unset/empty override falls back to

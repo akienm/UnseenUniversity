@@ -1,8 +1,8 @@
 """
 Cluster SSH tools — run commands on remote cluster machines via SSH.
 
-Uses the Igor-wild-0001 user and the keypair at ~/.TheIgors/igor_id_rsa.
-Machine inventory is read from ~/.TheIgors/local/machines.json (ssh:true entries only).
+Uses the Igor-wild-0001 user and the keypair at ~/.unseen_university/igor_id_rsa.
+Machine inventory is read from ~/.unseen_university/local/machines.json (ssh:true entries only).
 
 Two tools registered:
   ssh_exec(machine, command)  — run a shell command on a named machine
@@ -927,9 +927,9 @@ registry.register(
 # Git pull first; on success, touch restart.flag for every instance dir found.
 _LINUX_UPDATE_CMD = (
     "cd ~/TheIgors && git pull --rebase origin main"
-    ' && for d in ~/.TheIgors/*/; do touch "${d}restart.flag"; done'
+    ' && for d in ~/.unseen_university/*/; do touch "${d}restart.flag"; done'
     " && echo PULL_OK"
-    " && ls ~/.TheIgors/ | wc -l"
+    " && ls ~/.unseen_university/ | wc -l"
 )
 _WINDOWS_UPDATE_CMD = (
     "cd C:\\automation\\local\\TheIgors;"
@@ -938,7 +938,7 @@ _WINDOWS_UPDATE_CMD = (
     " if ($LASTEXITCODE -eq 0) {"
     " git stash pop;"
     " $dirs = Get-ChildItem C:\\Users -Directory |"
-    " ForEach-Object { Join-Path $_.FullName '.TheIgors' } |"
+    " ForEach-Object { Join-Path $_.FullName '.unseen_university' } |"
     " Where-Object { Test-Path $_ } |"
     " ForEach-Object { Get-ChildItem $_ -Directory };"
     " $dirs | ForEach-Object { New-Item -Force -ItemType File -Path (Join-Path $_.FullName 'restart.flag') | Out-Null };"
@@ -1000,7 +1000,7 @@ def _update_swarm() -> str:
 
     For each SSH-capable remote box:
       - Run git pull --rebase origin main
-      - On success: touch ~/.TheIgors/*/restart.flag for each instance dir
+      - On success: touch ~/.unseen_university/*/restart.flag for each instance dir
       - On failure: skip restart flags, report error
 
     For local box: direct subprocess, same logic.
@@ -1087,7 +1087,7 @@ registry.register(
         description=(
             "D204: Coordinated swarm update — git pull + Igor restart on all cluster boxes. "
             "For each SSH-capable box: pull origin/main, then touch restart.flag for every "
-            "Igor instance dir (glob ~/.TheIgors/*/). Local box handled directly (no SSH). "
+            "Igor instance dir (glob ~/.unseen_university/*/). Local box handled directly (no SSH). "
             "Git pull failure on any box skips restart flags for that box. "
             "Returns per-box audit log."
         ),
@@ -1103,13 +1103,13 @@ registry.register(
 # ── Tool: stop_swarm (T-stop-swarm-engram) ────────────────────────────────────
 
 _LINUX_STOP_CMD = (
-    'for d in ~/.TheIgors/*/; do touch "${d}exit.flag"; done'
+    'for d in ~/.unseen_university/*/; do touch "${d}exit.flag"; done'
     " && echo STOP_OK"
-    " && ls ~/.TheIgors/ | wc -l"
+    " && ls ~/.unseen_university/ | wc -l"
 )
 _WINDOWS_STOP_CMD = (
     "$dirs = Get-ChildItem C:\\Users -Directory |"
-    " ForEach-Object { Join-Path $_.FullName '.TheIgors' } |"
+    " ForEach-Object { Join-Path $_.FullName '.unseen_university' } |"
     " Where-Object { Test-Path $_ } |"
     " ForEach-Object { Get-ChildItem $_ -Directory };"
     " $dirs | ForEach-Object { New-Item -Force -ItemType File -Path (Join-Path $_.FullName 'exit.flag') | Out-Null };"
@@ -1122,7 +1122,7 @@ def stop_swarm(**_) -> str:
     """
     T-stop-swarm-engram: Gracefully stop all Igor instances across the swarm.
 
-    Drops exit.flag in every instance dir (~/.TheIgors/*/) on each online box.
+    Drops exit.flag in every instance dir (~/.unseen_university/*/) on each online box.
     The main loop checks exit.flag at each idle cycle and exits with code 0.
     Code 0 = the bash wrapper does NOT restart (unlike code 42 / restart.flag).
 
@@ -1201,7 +1201,7 @@ registry.register(
         name="stop_swarm",
         description=(
             "T-stop-swarm-engram: Gracefully stop all Igor instances across the swarm. "
-            "Drops exit.flag in ~/.TheIgors/*/ on every online box via SSH. "
+            "Drops exit.flag in ~/.unseen_university/*/ on every online box via SSH. "
             "exit.flag causes Igor to exit with code 0 (no restart). "
             "Use for maintenance windows. Analogous to update_swarm."
         ),

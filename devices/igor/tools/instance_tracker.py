@@ -4,7 +4,7 @@ instance_tracker.py — T-instance-tracking-startup (#424)
 Igor records his own boot and shutdown history so we always know which
 commit / pid / host is running. Both file AND database:
 
-  - JSONL at ~/.TheIgors/<instance>/instance_log.jsonl is the always-works
+  - JSONL at ~/.unseen_university/<instance>/instance_log.jsonl is the always-works
     fallback that survives Postgres downtime. Append-only.
   - instance_log table in Igor's home DB is the queryable surface.
 

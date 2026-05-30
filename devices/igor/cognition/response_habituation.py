@@ -5,7 +5,7 @@ Passively tracks frequency of words Igor produces in outgoing responses.
 High-frequency words decay faster (more habituated = less novel signal).
 Rare words stay sharp longer.
 
-Storage: ~/.TheIgors/<instance>/response_habituation.json (see paths().instance_dir)
+Storage: ~/.unseen_university/<instance>/response_habituation.json (see paths().instance_dir)
 Gate: IGOR_RESPONSE_HABITUATION (default true)
 
 Design note: kept separate from the word_graph to avoid bloat — the word graph

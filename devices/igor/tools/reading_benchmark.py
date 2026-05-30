@@ -290,7 +290,7 @@ def comparison_table(results: list[PassResult], baseline_idx: int = 0) -> str:
 def save_results(results: list[PassResult], output_dir: str | None = None) -> str:
     """Save benchmark results to JSON + markdown table."""
     if output_dir is None:
-        output_dir = os.path.expanduser("~/.TheIgors/benchmark_results")
+        output_dir = os.path.expanduser("~/.unseen_university/benchmark_results")
     os.makedirs(output_dir, exist_ok=True)
 
     timestamp = time.strftime("%Y%m%d_%H%M%S")

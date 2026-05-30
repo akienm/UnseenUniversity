@@ -28,7 +28,7 @@ import re
 
 from devices.igor.tools.registry import Tool, registry
 
-_LOGS_DIR = pathlib.Path(os.path.expanduser("~/.TheIgors/logs"))
+_LOGS_DIR = pathlib.Path(os.path.expanduser("~/.unseen_university/logs"))
 _REASONING_LOG = _LOGS_DIR / "reasoning_calls.log"
 
 # Tiers considered "cloud escalations" worth analyzing
