@@ -39,7 +39,7 @@ of these in practice. Default model: Sonnet.
 ## Skip / gate logic
 
 `audit-smell` does NOT run when:
-- Diff is doc-only (`*.md`, `*.txt`, `lab/docs/`, `docs/`).
+- Diff is doc-only (`*.md`, `*.txt`, `docs/`).
 - Ticket carries `audit-skip-smell` tag (declared at filing time).
 - Diff size is below the threshold (default: <30 lines changed AND no
   new files). Override via env var `AUDIT_SMELL_MIN_LINES`.

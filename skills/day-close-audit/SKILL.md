@@ -442,14 +442,14 @@ Exit code 0 = all OK. Any UNREFERENCED or STUB_NEAR_GATE findings → ticket or 
 
 ## Step 18.6 — Capability map drift check
 
-`lab/docs/capability_map.md` is the "what's built today vs planned vs broken" doc. It rots fast. When it's >7 days old, the audit always re-verifies §1 (live), §2 (gated off), and §4 (known broken) against:
+`~/TheIgors/docs/capability_map.md` is the "what's built today vs planned vs broken" doc. It rots fast. When it's >7 days old, the audit always re-verifies §1 (live), §2 (gated off), and §4 (known broken) against:
 - Palace `theigors/subsystem_index/*` for live subsystems
 - `~/.unseen_university/Igor-wild-0001/igor.switches.cfg` for gate state
 - `cc_queue.py list` for in_progress / pending / awaiting_approval status
 - Latest `pytest` summary for known failures
 
 ```bash
-AGE_DAYS=$(( ( $(date +%s) - $(stat -c %Y ~/TheIgors/lab/docs/capability_map.md) ) / 86400 ))
+AGE_DAYS=$(( ( $(date +%s) - $(stat -c %Y ~/TheIgors/docs/capability_map.md 2>/dev/null || date +%s) ) / 86400 ))
 echo "capability_map.md age: ${AGE_DAYS} days"
 if [ "$AGE_DAYS" -gt 7 ]; then
   echo "⚠ capability_map.md is stale — re-verify §1, §2, §4 claims and update Last-updated date."

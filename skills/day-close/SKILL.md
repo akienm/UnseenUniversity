@@ -196,7 +196,7 @@ conn.close()
 
 Always stage doc directories by name (never `git add -A`):
 ```bash
-git add lab/design_docs/ lab/design_docs_for_igor/ lab/docs/ lab/notes.log
+git add lab/design_docs/ lab/design_docs_for_igor/ docs/ lab/notes.log
 git commit -m "docs: day-close YYYY-MM-DD — <theme>
 
 Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"

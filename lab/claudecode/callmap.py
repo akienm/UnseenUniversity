@@ -4,7 +4,7 @@ WHAT IT IS
 ──────────
 A static analyzer that, for each "API-like" function in the designated
 source roots, finds every caller in the repo and emits a markdown index
-to lab/docs/callmap.md.
+to docs/callmap.md.
 
 Forward axis (concept → location) is handled by docs-in-code (top-of-file
 canonical docstrings). Callmap fills the reverse axis: function → who
@@ -39,7 +39,7 @@ Known blind spots:
     type may not name the right method.
 
 Usage:
-  python3 lab/claudecode/callmap.py             # regenerate lab/docs/callmap.md
+  python3 lab/claudecode/callmap.py             # regenerate docs/callmap.md
   python3 lab/claudecode/callmap.py --check     # exit 1 if regenerated differs from on-disk
 
 Wire as audit check:
@@ -94,7 +94,7 @@ NOISE_NAMES = {
     "run",
 }
 
-OUTPUT_PATH = REPO_ROOT / "lab" / "docs" / "callmap.md"
+OUTPUT_PATH = REPO_ROOT / "docs" / "callmap.md"
 
 
 # ── Data model ─────────────────────────────────────────────────────────────
@@ -492,7 +492,7 @@ def main() -> int:
     parser.add_argument(
         "--output",
         default=str(OUTPUT_PATH),
-        help="output markdown file (default lab/docs/callmap.md)",
+        help="output markdown file (default docs/callmap.md)",
     )
     args = parser.parse_args()
 

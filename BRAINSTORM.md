@@ -109,23 +109,23 @@ more formal than it needs to be. Underlying skill file is still named `decided`.
 Working title: **Compiled Inference**
 
 Proposed chapters:
-1. **Compiled Inference** — the concept, the token ladder, the ownership gap *(draft: lab/docs/Compiled_Inference.md)*
-2. **Levers** — the keystone patterns for making AI development work at scale *(draft: lab/docs/Deterministic_AI_Development_Levers_A_layer_on_top_of_skills.md)*
+1. **Compiled Inference** — the concept, the token ladder, the ownership gap *(draft: deleted)*
+2. **Levers** — the keystone patterns for making AI development work at scale *(draft: docs/Deterministic_AI_Development_Levers_A_layer_on_top_of_skills.md)*
 3. **The Audit Pyramid** — QE process encoded as compiled inference; each layer targets a different failure class at the cheapest model that can catch it *(needs standalone draft)*
 4. **Skills and Workflow** — the daily rhythm; a day-in-the-life before zooming out *(needs standalone draft)*
 5. **The Platform: The Unseen University** — the substrate; why it's built the way it is *(needs draft)*
 6. **What We Built On The Platform** — Igor; the instantiation of all prior chapters as a running system *(needs draft)*
 
 Open questions:
-- Where does `lab/docs/QE_in_the_Age_of_AI.md` land? Preface, intro, or scattered into multiple chapters? (Akien to re-read and decide)
+- Where does `docs/QE_in_the_Age_of_AI.md` land? Preface, intro, or scattered into multiple chapters? (Akien to re-read and decide)
 - Intended audience: technical practitioners or broader?
 - Workflow chapter: standalone or integrated into Levers?
 
-Book ticket draft at `lab/docs/ticket_draft_compiled_inference_book.md` — file properly from main machine.
+Book ticket draft deleted — file from main machine when ready.
 
 ---
 
-### Files in lab/docs/ from this session
+### Files from this session (now in docs/)
 
 | File | Purpose |
 |---|---|
