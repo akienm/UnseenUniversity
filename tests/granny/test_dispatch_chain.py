@@ -85,10 +85,9 @@ class TestDefaultRoutingEdges:
 class TestGrannyRoutePostsDispatch:
     """route_ticket() must post a GRANNY_DISPATCH message for cc-routed tags.
 
-    Uses the default skeleton edges (no dispatch_fn registered), which is the
-    code path executed when the device is used standalone or before GrannyDaemon
-    has registered the cc worker.  The message format is what cc_task_listener
-    parses, so getting the GRANNY_DISPATCH prefix right here is load-bearing.
+    _dispatch_to_cc posts GRANNY_DISPATCH to the channel AND spawns a claude
+    subprocess.  Tests patch subprocess.Popen to prevent real spawns; they
+    capture the channel message via the _post_to_channel mock and verify format.
     """
 
     def _ticket(self, tags: list[str], id: str = "T-smoke") -> dict:
@@ -117,10 +116,13 @@ class TestGrannyRoutePostsDispatch:
         device = self._make_device()
         posted: list[str] = []
 
-        with patch.object(
-            device,
-            "_post_to_channel",
-            side_effect=lambda channel, msg: posted.append(msg),
+        with (
+            patch.object(
+                device,
+                "_post_to_channel",
+                side_effect=lambda channel, msg: posted.append(msg),
+            ),
+            patch("devices.granny.device.subprocess.Popen"),
         ):
             dispatched, worker = device.route_ticket(self._ticket(["Platform"]))
 
@@ -137,10 +139,13 @@ class TestGrannyRoutePostsDispatch:
         device = self._make_device()
         posted: list[str] = []
 
-        with patch.object(
-            device,
-            "_post_to_channel",
-            side_effect=lambda channel, msg: posted.append(msg),
+        with (
+            patch.object(
+                device,
+                "_post_to_channel",
+                side_effect=lambda channel, msg: posted.append(msg),
+            ),
+            patch("devices.granny.device.subprocess.Popen"),
         ):
             dispatched, worker = device.route_ticket(
                 self._ticket(["tests"], id="T-tests-smoke")
@@ -159,10 +164,13 @@ class TestGrannyRoutePostsDispatch:
         device = self._make_device()
         posted: list[str] = []
 
-        with patch.object(
-            device,
-            "_post_to_channel",
-            side_effect=lambda channel, msg: posted.append(msg),
+        with (
+            patch.object(
+                device,
+                "_post_to_channel",
+                side_effect=lambda channel, msg: posted.append(msg),
+            ),
+            patch("devices.granny.device.subprocess.Popen"),
         ):
             device.route_ticket(self._ticket(["Platform"], id="T-parse-test"))
 
