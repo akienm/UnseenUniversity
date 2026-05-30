@@ -58,18 +58,39 @@ Pub/sub: subscribers IDLE on their own mailbox. The bus delivers by appending to
 
 ### 2.1 The device contract
 
-Every device inherits from `BaseDevice` (in `unseen_university/device.py`). The contract:
+Every device inherits from `BaseDevice` (in `unseen_university/device.py`). The abstract interface has 15 methods in four groups:
 
 ```python
-class BaseDevice:
-    device_id: str          # unique rack address prefix
-    def start(self): ...    # idempotent — safe to call if already running
-    def stop(self): ...     # clean shutdown
-    def health(self): ...   # returns DeviceHealth(status, detail)
-    def self_test(self): ... # smoke test; called by agentctl status
+class BaseDevice(ABC):
+    device_id: str          # unique rack address prefix (from DEVICE_ID or class name)
+
+    # Identity
+    def who_am_i(self) -> dict: ...        # required keys: device_id, name, version
+    def interface_version(self) -> str: ... # INTERFACE_VERSION this device was built against
+
+    # Capability & routing
+    def requirements(self) -> dict: ...    # required key: deps (list[str])
+    def capabilities(self) -> dict: ...    # can_send, can_receive, emitted_keywords
+    def comms(self) -> dict: ...           # comms:// address, mode, push/pull/nudge flags
+    def where_and_how(self) -> dict: ...   # host, pid, launch_command
+
+    # Observability
+    def health(self) -> dict: ...          # status: healthy|degraded|unhealthy, detail, checked_at
+    def uptime(self) -> float: ...         # seconds since start
+    def startup_errors(self) -> list: ...  # errors from most recent startup
+    def logs(self) -> dict: ...            # subsystem → log path
+    def update_info(self) -> dict: ...     # current_version, update_available
+
+    # Lifecycle control
+    def restart(self) -> None: ...         # graceful restart
+    def block(self, reason: str) -> None: ... # suppress auto-relaunch
+    def halt(self) -> None: ...            # immediate stop
+    def recovery(self) -> None: ...        # attempt recovery from degraded state
 ```
 
-**Why OOP-first?** A single `start/stop/health/self_test` entry point per device makes lifecycle management uniform. The framework can iterate all devices — restart, drain, upgrade — without knowing their internals.
+`start`, `stop`, and `self_test` are **not** part of the abstract interface and do not exist in `BaseDevice`. Lifecycle is controlled via `restart`/`halt`/`recovery`/`block`.
+
+**Why OOP-first?** A single well-known entry point per device makes lifecycle management (`restart`/`halt`/`recovery`) and observability (`health`/`uptime`/`logs`) uniform. The framework can iterate all devices — restart, drain, upgrade — without knowing their internals.
 
 A **shim** (`BaseShim`) is the transport adapter. It handles the announce protocol and wraps the device's capabilities as MCP tools. The device itself is transport-agnostic.
 
@@ -365,15 +386,12 @@ Gaps found in this review become tickets. That is the intended use of this docum
 **Check 4 — safety gates in DB** (should return 0 rows):
 
 ```
-              id
--------------------------------
- SYSCFG_IGOR_ARBITER_ENABLED
- SYSCFG_IGOR_SELF_EDIT_ENABLED
- SYSCFG_IGOR_TIER5_ENABLED
-(3 rows)
+ id
+----
+(0 rows)
 ```
 
-**GAP:** Doc claims these IDs do not exist in `clan.memories`; all 3 are present. Safety gate state is stored in the DB, contradicting the "filesystem-only" claim. Filed: T-theory-safety-gates-in-db.
+**RESOLVED (T-theory-safety-gates-in-db):** Three stale nodes (`SYSCFG_IGOR_ARBITER_ENABLED`, `SYSCFG_IGOR_SELF_EDIT_ENABLED`, `SYSCFG_IGOR_TIER5_ENABLED`) were present from before the `T-safety-gates-above-env-sync` filter was added to `env_sync.py`. They were pre-fix artifacts written by the old `push_vars_to_graph` before `SAFETY_GATE_NAMES` exclusion was in place. The hydration code was already refusing them (defense-in-depth). The nodes were deleted from `clan.memories` on 2026-05-30; DB state and doc are now consistent.
 
 ---
 
