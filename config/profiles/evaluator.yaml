@@ -1,0 +1,39 @@
+# Evaluator rack device profile.
+# Runs 3-judge LLM panel against stored rubrics; results feed provenance trust scoring.
+
+profile_version: "1.0"
+agent_type: evaluator
+description: "Evaluator rack device — LLM judge panel for agent output quality assessment"
+inherits: []
+
+allowed_devices:
+  - inference
+
+device_permissions:
+  inference:
+    mode: read_write
+    rate_limit_per_min: 60
+
+default_channels:
+  - shared
+
+state_refs: {}
+
+acl:
+  inbound:
+    allow:
+      - skeleton
+      - shared
+      - "*"
+    deny: []
+  outbound:
+    allow:
+      - "*"
+    deny: []
+
+visibility: secondary
+
+surfaces:
+  console: false
+  inference: true
+  mcp: true

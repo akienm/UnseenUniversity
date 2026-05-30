@@ -13,6 +13,8 @@ from unseen_university.device import BaseDevice, INTERFACE_VERSION
 from unseen_university.shim import BaseShim
 from devices.browser_use.device import BrowserUseDevice
 from devices.browser_use.shim import BrowserUseShim
+from devices.evaluator.device import EvaluatorDevice
+from devices.evaluator.shim import EvaluatorShim
 from devices.claude.device import ClaudeDevice
 from devices.claude.shim import ClaudeShim
 from devices.discord_bot.device import DiscordBotDevice
@@ -48,6 +50,7 @@ ALL_DEVICE_CLASSES = [
     RackTestDevice,
     ScrapsDevice,
     SensorDevice,
+    EvaluatorDevice,
 ]
 
 ALL_SHIM_CLASSES = [
@@ -62,6 +65,7 @@ ALL_SHIM_CLASSES = [
     RackTestShim,
     ScrapsShim,
     SensorShim,
+    EvaluatorShim,
 ]
 
 
