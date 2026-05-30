@@ -331,5 +331,62 @@ This document is also an alignment artifact. Review each section against the cod
 2. **Are there components not listed here?** Absent components are invisible to the mental model.
 3. **Do the memory node types match what's actually in the DB?** Run: `SELECT memory_type, count(*) FROM clan.memories GROUP BY memory_type` and compare to §3.4.
 4. **Are the safety gates actually filesystem-only?** Run: `SELECT id FROM clan.memories WHERE id IN ('SYSCFG_IGOR_TIER5_ENABLED', 'SYSCFG_IGOR_ARBITER_ENABLED', 'SYSCFG_IGOR_SELF_EDIT_ENABLED')` — should return 0 rows.
+5. **Does the BaseDevice contract exist in practice?** Verify `start`, `stop`, `health`, `self_test` appear in at least 3 concrete device classes in `devices/`.
+6. **Is the log hierarchy respected?** Check that `datacenter_logs/` contains only `<device>/<subsystem>/` paths — no flat files or mystery device names.
 
 Gaps found in this review become tickets. That is the intended use of this document.
+
+### Last run: 2026-05-30
+
+**Check 3 — memory node types** (vs §3.4):
+
+```
+ memory_type   | count
+----------------+-------
+ EPISODIC       | 70363
+ FACTUAL        | 44849
+ INTERPRETIVE   |  3101
+ GOAL           |  2933
+ EXPERIENTIAL   |  2560
+ REFERENCE      |   638
+ PROCEDURAL     |   504
+ CREDENTIAL_REF |   167
+ IDENTITY       |    30
+ CORE_PATTERN   |    13
+ ROLE_MODEL     |     9
+ ROOT           |     5
+(12 rows)
+```
+
+**GAP:** §3.4 documents 6 types; DB has 12. Six types are absent from the doc: `EXPERIENTIAL` (2,560 nodes), `CREDENTIAL_REF` (167), `IDENTITY` (30), `CORE_PATTERN` (13), `ROLE_MODEL` (9), `ROOT` (5). Filed: T-theory-doc-memory-types.
+
+---
+
+**Check 4 — safety gates in DB** (should return 0 rows):
+
+```
+              id
+-------------------------------
+ SYSCFG_IGOR_ARBITER_ENABLED
+ SYSCFG_IGOR_SELF_EDIT_ENABLED
+ SYSCFG_IGOR_TIER5_ENABLED
+(3 rows)
+```
+
+**GAP:** Doc claims these IDs do not exist in `clan.memories`; all 3 are present. Safety gate state is stored in the DB, contradicting the "filesystem-only" claim. Filed: T-theory-safety-gates-in-db.
+
+---
+
+**Check 5 — BaseDevice contract in practice:**
+
+Inspected `unseen_university/device.py`: the abstract base defines `health`, `restart`, `halt`, `recovery` — but does **not** declare `start`, `stop`, or `self_test` as abstract methods. Across 5 sampled device classes: `health` is universal; `start`/`stop` appear only in `discord_bot`; `self_test` appears only in `granny`. The 4-method contract shown in §2.1 is aspirational, not enforced by the base class.
+
+**GAP:** §2.1 contract snippet (`start/stop/health/self_test`) does not match the actual 15-method abstract interface. Lifecycle uniformity is not enforced. Filed: T-theory-basedevice-contract-mismatch.
+
+---
+
+**Check 6 — log hierarchy:**
+
+`datacenter_logs/` contains: `queue/log/json/` ✓, `librarian/curation.jsonl` ✗ (flat file, no subsystem dir), `d/log/json/` ✗ (single-char device name — test debris), `_minimaldevice/log/json/` ✗ (test scaffold debris), `unknown/log/json/` ✗ (fallback name — a device ran without `DEVICE_ID` set).
+
+**GAP:** `librarian` bypasses the subsystem level; three mystery device directories indicate test debris or missing `DEVICE_ID`. Filed: T-theory-log-hierarchy-anomalies.
