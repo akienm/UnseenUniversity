@@ -34,7 +34,7 @@ class TestLoadIgorEnvIntoEnviron(unittest.TestCase):
     def test_loads_switches_cfg_into_environ(self):
         with TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
-            inst = tmp_path / ".TheIgors" / "Igor-test-0001"
+            inst = tmp_path / ".unseen_university" / "Igor-test-0001"
             inst.mkdir(parents=True)
             (inst / "igor.switches.cfg").write_text(
                 "IGOR_CLOUD_PROGRAMMING=true\nIGOR_TURN_PIPELINE=false\n"
@@ -54,7 +54,7 @@ class TestLoadIgorEnvIntoEnviron(unittest.TestCase):
     def test_returns_empty_when_no_cfg_files_present(self):
         with TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
-            inst = tmp_path / ".TheIgors" / "Igor-test-0002"
+            inst = tmp_path / ".unseen_university" / "Igor-test-0002"
             inst.mkdir(parents=True)
             with patch("pathlib.Path.home", return_value=tmp_path):
                 applied = load_igor_env_into_environ(instance_id="Igor-test-0002")
@@ -63,7 +63,7 @@ class TestLoadIgorEnvIntoEnviron(unittest.TestCase):
     def test_default_does_not_overwrite_existing_environ(self):
         with TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
-            inst = tmp_path / ".TheIgors" / "Igor-test-0003"
+            inst = tmp_path / ".unseen_university" / "Igor-test-0003"
             inst.mkdir(parents=True)
             (inst / "igor.switches.cfg").write_text("IGOR_CLOUD_PROGRAMMING=false\n")
             os.environ["IGOR_CLOUD_PROGRAMMING"] = "true"  # pre-existing
@@ -76,7 +76,7 @@ class TestLoadIgorEnvIntoEnviron(unittest.TestCase):
     def test_overwrite_true_replaces_existing_environ(self):
         with TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
-            inst = tmp_path / ".TheIgors" / "Igor-test-0004"
+            inst = tmp_path / ".unseen_university" / "Igor-test-0004"
             inst.mkdir(parents=True)
             (inst / "igor.switches.cfg").write_text("IGOR_CLOUD_PROGRAMMING=false\n")
             os.environ["IGOR_CLOUD_PROGRAMMING"] = "true"
@@ -90,7 +90,7 @@ class TestLoadIgorEnvIntoEnviron(unittest.TestCase):
     def test_resolves_instance_id_from_environ_when_not_passed(self):
         with TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
-            inst = tmp_path / ".TheIgors" / "Igor-test-0005"
+            inst = tmp_path / ".unseen_university" / "Igor-test-0005"
             inst.mkdir(parents=True)
             (inst / "igor.switches.cfg").write_text("IGOR_CLOUD_PROGRAMMING=true\n")
             os.environ["IGOR_INSTANCE_ID"] = "Igor-test-0005"

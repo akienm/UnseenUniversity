@@ -30,7 +30,9 @@ def _prompt(label: str, default: str) -> str:
 
 
 def run() -> None:
-    runtime_root = os.getenv("IGOR_RUNTIME_ROOT", str(Path.home() / ".TheIgors"))
+    runtime_root = os.getenv(
+        "IGOR_RUNTIME_ROOT", str(Path.home() / ".unseen_university")
+    )
     runtime = Path(runtime_root).expanduser().resolve()
 
     print("[igor] First-start setup")

@@ -33,7 +33,7 @@ def _load_cfg() -> None:
     """Hydrate os.environ from igor.switches.cfg + igor.cfg files (best effort)."""
     try:
         runtime_root = Path(
-            os.environ.get("IGOR_RUNTIME_ROOT", Path.home() / ".TheIgors")
+            os.environ.get("IGOR_RUNTIME_ROOT", Path.home() / ".unseen_university")
         )
         instance_id = os.environ.get("IGOR_INSTANCE_ID", "Igor-wild-0001")
         instance_dir = runtime_root / instance_id
@@ -61,7 +61,9 @@ def _load_cfg() -> None:
 
 def restart_loop(igor_args: list[str]) -> None:
     """Main Igor restart loop."""
-    runtime_root = Path(os.environ.get("IGOR_RUNTIME_ROOT", Path.home() / ".TheIgors"))
+    runtime_root = Path(
+        os.environ.get("IGOR_RUNTIME_ROOT", Path.home() / ".unseen_university")
+    )
     instance_id = os.environ.get("IGOR_INSTANCE_ID", "Igor-wild-0001")
     instance_dir = runtime_root / instance_id
     instance_dir.mkdir(parents=True, exist_ok=True)

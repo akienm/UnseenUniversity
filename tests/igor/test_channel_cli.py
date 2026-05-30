@@ -11,7 +11,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-CHANNEL = Path(__file__).resolve().parents[1] / "lab" / "claudecode" / "channel.py"
+CHANNEL = Path(__file__).resolve().parents[2] / "lab" / "claudecode" / "channel.py"
 
 
 def _run(args, runtime_root):

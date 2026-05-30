@@ -23,6 +23,8 @@ D-granny-nanny-2026-05-28
 from __future__ import annotations
 
 import os
+import shutil
+import subprocess
 import threading
 import time
 from dataclasses import dataclass, field
@@ -153,6 +155,7 @@ class GrannyWeatherwaxDevice(BaseDevice):
         self._edges: dict[str, list[RoutingEdge]] = {}  # tag → edges
         self._workers: dict[str, WorkerNode] = {}
         self._ticket_status: dict[str, str] = {}  # ticket_id → status
+        self._cc_pids: dict[str, int] = {}  # ticket_id → spawned CC worker pid
         self._errors: list[str] = []
         self._lock = threading.Lock()
         self._log = self._get_logger()
@@ -434,10 +437,58 @@ class GrannyWeatherwaxDevice(BaseDevice):
             log.addHandler(h)
         return log
 
+    def _dispatch_to_cc(self, ticket: dict) -> bool:
+        """Dispatch a ticket to CC: post GRANNY_DISPATCH + spawn claude worker."""
+        tid = ticket.get("id", "?")
+        title = ticket.get("title", "")[:60]
+        size = ticket.get("size", "S")
+        tags = ",".join(ticket.get("tags", []))
+
+        self._post_to_channel(
+            "shared",
+            f"GRANNY_DISPATCH|ticket={tid}|worker=cc|size={size}|tags={tags}|title={title}",
+        )
+
+        # Dedup: if a CC process for this ticket is still alive, skip
+        existing_pid = self._cc_pids.get(tid)
+        if existing_pid:
+            try:
+                os.kill(existing_pid, 0)  # signal 0 = existence check
+                self._log.info(
+                    "CC worker already running for %s (pid=%d)", tid, existing_pid
+                )
+                return True
+            except OSError:
+                del self._cc_pids[tid]
+
+        claude_bin = shutil.which("claude")
+        if not claude_bin:
+            self._log.error(
+                "claude binary not found — cannot spawn CC worker for %s", tid
+            )
+            return False
+
+        try:
+            proc = subprocess.Popen(
+                [claude_bin, "--dangerously-skip-permissions", f"/sprint-ticket {tid}"],
+                start_new_session=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            self._cc_pids[tid] = proc.pid
+            self._log.info("spawned CC worker for %s (pid=%d)", tid, proc.pid)
+            return True
+        except Exception as e:
+            self._log.error("failed to spawn CC worker for %s: %s", tid, e)
+            return False
+
     def _load_default_routing(self) -> None:
         for tag, worker_ids in _DEFAULT_ROUTING.items():
             for worker_id in worker_ids:
-                edge = RoutingEdge(tag=tag, worker_id=worker_id)
+                dispatch_fn = self._dispatch_to_cc if worker_id == "cc" else None
+                edge = RoutingEdge(
+                    tag=tag, worker_id=worker_id, dispatch_fn=dispatch_fn
+                )
                 self._edges.setdefault(tag, []).append(edge)
 
     def _post_to_channel(self, channel: str, message: str) -> None:

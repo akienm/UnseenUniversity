@@ -42,8 +42,9 @@ transparently switch to the ADC queue rack device when that ships.
 - `/sprint` (no args) → calls `/query-ticket` logic internally
 - Never call `cc_queue.py next` or `cc_queue.py list` directly to pick work
 
-The worker daemon (`worker_daemon.sh`) is **suspended** — no autonomous CC
-sprinting until the ADC queue device design is decided.
+Autonomous CC sprinting is handled by **Granny**: when she routes a ticket to
+`worker=cc`, she spawns `claude --dangerously-skip-permissions /sprint-ticket T-xxx`
+directly. The old `worker_daemon.sh` is retired — Granny is the dispatcher.
 
 ---
 

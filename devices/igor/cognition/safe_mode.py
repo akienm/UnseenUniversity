@@ -63,7 +63,9 @@ def _write_safe_mode_flag() -> None:
         switches_cfg: Path = _paths().instance / "igor.switches.cfg"
     except Exception:
         switches_cfg = (
-            Path(os.getenv("IGOR_RUNTIME_ROOT", str(Path.home() / ".TheIgors")))
+            Path(
+                os.getenv("IGOR_RUNTIME_ROOT", str(Path.home() / ".unseen_university"))
+            )
             / os.getenv("IGOR_INSTANCE_ID", "Igor-wild-0001")
             / "igor.switches.cfg"
         )
