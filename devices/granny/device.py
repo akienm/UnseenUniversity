@@ -58,6 +58,7 @@ _DEFAULT_ROUTING: dict[str, list[str]] = {
     "Scraps": ["scraps"],
     "Platform": ["cc"],
     "Infrastructure": ["cc"],
+    "tests": ["cc"],
     "Training": ["igor"],
     "Research": ["librarian"],
 }
