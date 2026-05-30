@@ -88,14 +88,15 @@ KNOWN_IGORBASE_ANCESTORS = {
 }
 
 # Names that the audit explicitly exempts even with no IgorBase ancestry.
-# Reserved for primitives whose responsibilities are too narrow to benefit
-# from inheritance (and where adding it would add overhead — e.g. __slots__
-# classes used in hot paths) or run before IgorBase is importable
-# (boot utilities).
+# Reserved for: primitives too narrow to benefit from inheritance (__slots__
+# hot-path classes), boot utilities that run before IgorBase is importable,
+# and self-contained singletons that intentionally use AgentBase to avoid
+# pulling in the loguru/DiagnosticBase chain (registry.py design contract).
 EXEMPT_CLASS_NAMES = {
     "AgentBase",  # IS the base — definitionally exempt
     "TimerHandle",  # lightweight slotted timer in logging_setup.py
     "PathManager",  # paths.py — boot-time utility, runs before IgorBase is safe
+    "ToolRegistry",  # registry.py is intentionally self-contained (AgentBase only); uses no IgorBase features
 }
 
 # Only enforce on these subdirectories
