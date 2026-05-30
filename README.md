@@ -5,9 +5,23 @@ devices into. The cognition is yours; the bus, the registry, and the plug-in
 contract are here.
 
 This README is a kit-assembly guide for someone building their own
-Igor-shaped agent. The cognition that makes Igor *Igor* is intentionally
-not in the kit — that's the body and brain you put on top.
+agent(s). I started by building an agent, then I started moving out all the parts
+that could be common to all agents, as this made debugging simpler. And the tools
+more widely available. 
 
+Igor is one possible agent in the rack, There's also The Librarian, Granny Weatherwax,
+Nanny Ogg, and scraps the dog. Taken from Diskworld by Terry Pratchett, they are:
+
+- The Bus: An MCP interface system that connects all the parts. Each component interfaces with the bus and provides an addressee to send to. Everything on The Bus is a comms:// device.
+- The Racks: A collection of components with interface shims (bus devices) that perform various agenic and support functions.
+- Bus Device: CC.0: The first instance of Claude Code. This device has it's own shim to interface with the rest of the devices as well. There can be n Claude Code devices attached as minions, being CC.1, CC.2 and so on. The CC shim handles the details.
+- Bus Device: Igor: An experement in cognition. A 'rackmount' device in the UnseenUniversity
+- Bus Device: The Librarian: First and foremost a rack device that replies to calls to the database over MCP. A general purpose agent for research and retreival tasks.
+- Bus Device: Scraps: A graph tree and script only agent. Given mechanical tasks that don't require inference.
+- Bus Device: Nanny Ogg: Scheduling agent
+- Bus Device: Granny Weatherwax: Build Orchestrator
+- Bus Device: Database
+- Bus Device: Discord
 ---
 
 ## What this is
