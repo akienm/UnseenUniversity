@@ -1,6 +1,8 @@
 # Framework Overview
 
-*Migrated from ClaudeAndAkien 2026-04-27. Updated for UnseenUniversity.*
+*Migrated from ClaudeAndAkien 2026-04-27. Updated for UnseenUniversity Phase 5.*
+
+> For the complete architecture with design rationale, see [`TheoryOfOperation.md`](TheoryOfOperation.md).
 
 ---
 

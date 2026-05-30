@@ -1,78 +1,170 @@
 # UnseenUniversity
 
-Runtime substrate for agent deployments. **Not a framework** — a rack you plug
-devices into. The cognition is yours; the bus, the registry, and the plug-in
-contract are here.
+Runtime substrate for agent deployments. **Not a framework** — a rack you plug devices into. The cognition is yours; the bus, the registry, and the plug-in contract are here.
 
-This README is a kit-assembly guide for someone building their own
-agent(s). I started by building an agent, then I started moving out all the parts
-that could be common to all agents, as this made debugging simpler. And the tools
-more widely available. 
+Named after the Discworld wizards' university. The devices are named after Discworld characters.
 
-Igor is one possible agent in the rack, There are also several others taken from Diskworld by Terry Pratchett, they are:
+---
 
-- The Bus: An MCP interface system that connects all the parts. Each component interfaces with the bus and provides an addressee to send to. Everything on The Bus is a comms:// device.
-- The Racks: A collection of components with interface shims ('device' + it's shim = bus device) that perform various agenic and support functions.
-- Rack Device - Coding: CC.0, The first instance of Claude Code. This device has it's own shim to interface with the rest of the devices as well. There can be n Claude Code devices attached as minions, being CC.1, CC.2 and so on. The CC shim handles the details.
-- Rack Device - Experimental Graph Tree Reasoning: Igor, An experement in graph tree cognition. 
-- Rack Device - Build Orchestrator (Escalating LLMs): Granny Weatherwax 
-- Rack Device - Database: Postgres (MCP Served by the librarian)
-- Rack Device - Discord: MCP Interface to discord
-- Rack Device - Scheduling agent (Graph tree/scripts): Nanny Ogg
-- Rack Device - Utility Agent (LLM driven): The Librarian, First and foremost a rack device that replies to calls to the database over MCP. A general purpose agent for research and retreival tasks.
-- Rack Device - Utility Agent (Graph tree/scripts): Scraps. Given mechanical tasks that don't require inference.
+## Quick orientation
+
+Two ways to read this document:
+
+- **Installing or building something?** Start at [Getting Started](#getting-started).
+- **Trying to understand how it works?** Read [Architecture](#architecture), then see [`docs/TheoryOfOperation.md`](docs/TheoryOfOperation.md) for the full design rationale down to memory node level.
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Python ≥ 3.11
+- Postgres running locally (`docker run -p 5432:5432 -e POSTGRES_PASSWORD=choose_a_password postgres` works)
+
+### Install
+
+```bash
+git clone https://github.com/akienm/UnseenUniversity
+cd UnseenUniversity
+pip install -e .
+```
+
+### Bootstrap a rack
+
+```bash
+agentctl init --instance my-first-agent
+```
+
+This starts the skeleton (MCP aggregator), starts the IMAP bus, registers the Postgres device, and prints a health summary.
+
+### Plug in an agent
+
+```python
+from unseen_university.announce import DatacenterClient, IdentityEnvelope
+from unseen_university.bus.imap_server import IMAPServer
+
+server = IMAPServer()
+server.start()
+
+identity = IdentityEnvelope(
+    agent_id="my-agent",
+    instance="my-agent-0001",
+    box="my-laptop",
+    box_n=0,
+    pid=1,
+    interface_version="1.0",
+    surfaces=["console", "inference"],
+)
+client = DatacenterClient(identity=identity, imap_server=server)
+client.announce()
+print("Bound tools:", [t.name for t in client.get_tools()])
+```
+
+Expected output: the list of capabilities the broker bound for your agent type. From here, build cognition on top — that's your agent. The rack is the substrate.
+
+### Skill installer (Claude Code users)
+
+```bash
+agentctl skills deploy    # push master skills to ~/.claude/skills/
+agentctl skills status    # show what's deployed vs master
+```
 ---
 
 ## What this is
 
-A portable, dependency-free substrate that any agent can run on:
+A portable substrate that any agent can run on:
 
 - **Skeleton** — MCP aggregator on localhost; flat-file device registry; health rollup
 - **IMAP bus** — `comms://` addressing; pub/sub via IDLE; 24hr message retention
 - **Announce protocol** — agents send an identity envelope, get a manifest of bound capabilities back
-- **Device contract** — `BaseDevice` / `BaseShim`; every agent component is a device
+- **Device contract** — `BaseDevice` / `BaseShim`; every component is a device
 - **Profile system** — declarative YAML per agent type; canonical → runtime; deep-merge inheritance
 - **Installer** — agentctl + skill deployer + device manifest
 
-The substrate is reusable across projects. Igor is one tenant; CC is another;
-your future agents are more.
+The substrate is reusable across projects. Igor is one tenant; Claude Code is another; your agents can be more.
 
 ## What this is NOT
 
-- **Not Igor.** Igor's cognition (NE, TWM, milieu, basal ganglia, engrams,
-  reasoning workflow) lives in TheIgors and runs *on* this rack. Don't look
-  for cognition here.
-- **Not a seed memory corpus.** You build your own genesis; the rack provides
-  the storage device, not its contents.
-- **Not a monolith.** Each device is independently runnable, debuggable, and
-  replaceable.
-- **Not TheIgors.** That repo is Akien's research workspace; this is the
-  portable substrate underneath.
+- **Not Igor's cognition.** Igor's narrative engine, working memory (TWM), memory cortex, pe_chain, and engrams live in `devices/igor/` in this repo and run *on* this rack. They are devices like everything else.
+- **Not a seed memory corpus.** You bring your own genesis memory. The rack provides the storage device, not its contents.
+- **Not a monolith.** Each device is independently runnable, debuggable, and replaceable.
 
 ---
 
-## The hierarchy you'll see in addresses
+## Devices
+
+Every component that connects to the rack is a device. Devices register via the flat-file registry, report health to the rollup loop, and communicate via `comms://` addresses.
+
+### Core infrastructure
+
+| Device | What it does |
+|---|---|
+| `postgres` | Home DB (clan-shared cross-instance memory, channels, registry) and local DB (per-instance scratch). The only required device. |
+| `inference` | LLM inference dispatch. Supports OpenRouter (cloud) and Ollama (local). Igor and other agents route all LLM calls through this device. |
+| `web_server` | HTTP dashboard and REST API. Rack status, agent list, channel viewer, and feed endpoints. |
+| `sensor` | System telemetry: CPU, memory, disk, SMART. Monitors rack health and surfaces alerts. |
+
+### Agents
+
+| Device | What it does |
+|---|---|
+| `igor` | The cognition agent. Narrative engine, working-memory workspace (TWM), memory cortex, pe_chain coding workflow, Hebbian engram system. Not a monolith — all subsystems are sub-devices within `devices/igor/`. |
+| `claude` | Claude Code session device. Each CC session registers as CC.0, CC.1, etc. The shim bridges the CC tool interface to the bus. |
+| `librarian` | Research and retrieval. Answers "what do I know about X?" for all agents. FTS on narrative + tags; optional LLM escalation when nuance is needed. |
+| `granny` | Ticket orchestrator. Filing-time audit gate, tag → worker routing via a weighted capability graph (Hebbian: successful routes gain weight), CC dispatch. Named after Granny Weatherwax. |
+| `nanny` | Scheduler and world-interaction dispatcher. Cron jobs, periodic tasks, calendar, IoT. Knows what agents exist and which ticket types they handle. Named after Nanny Ogg. |
+| `scraps` | Ticket gatekeeper. Rule-based validation before state transitions; optional Qwen 8 fuzzy pass when rules are ambiguous. Script-only — no inference in the critical path. Named after the Igors' dog. |
+| `akien` | The human on the rack. Gives Akien's traffic a `comms://akien/` address with inbox, outbox, and ideas mailboxes. Not a daemon; just an addressable presence. |
+
+### Work and data
+
+| Device | What it does |
+|---|---|
+| `queue` | Work ticket queue served via MCP. Postgres-backed, stateless. `queue_next(worker)` is atomic — reads and marks `in_progress` in a single serializable transaction. No separate claim step. |
+| `reader` | Unified URI reader. Accepts `https://`, `calibre://`, `file://`, `blob://`. Caches to blob store; routes to summary or node output mode. |
+| `summarizer` | URL or document → tiered output: exec (1-3 sentences), detail (paragraph), chunks (500-word blocks). |
+| `workspace` | Workspace management for agent file operations. |
+
+### Communication
+
+| Device | What it does |
+|---|---|
+| `discord_bot` | Discord integration. Posts to and reads from Discord channels. |
+| `browser_use` | Browser automation. Handles web interaction tasks that require a real browser. |
+| `swadl` | SWADL testing framework integration stub. |
+
+### Dev and test
+
+| Device | What it does |
+|---|---|
+| `installer` | Skill deployer (rsync `UnseenUniversity/skills/` → `~/.claude/skills/`) and device manifest manager. |
+| `rack_test` | Instrumented test fixture for rack contract testing. Used in tests, not production. |
+| `template` | Hello-world starter for building a new device. Copy this to `devices/<your-device>/` and fill in the contract. |
+
+> **Note on tokenization:** Text tokenization (NLP word-splitting for the spreading-activation memory embedding) is not a separate device. It lives in `devices/igor/cognition/word_graph.py` as an internal Igor cognitive utility.
+
+---
+
+## Architecture
+
+### The address hierarchy
 
 ```
-clan         shared knowledge across all instances of an agent type
-  └─ <agent-type>      lineage (e.g. "igor", "cc")
-       └─ <instance>   one running process (e.g. "wild-0001", "cc.0")
-            └─ <coa>   center of attention; one stack within an instance
+clan           shared knowledge across all instances of an agent type
+  └─ <type>    lineage (e.g. "igor", "cc")
+       └─ <id> one running process (e.g. "wild-0001", "cc.0")
+            └─ <coa>  center of attention — one stack within an instance
 ```
 
-Storage sits in two tiers:
+Storage in two tiers:
 
 - **`home_db`** — clan-shared Postgres (cross-instance memory, channels, registry)
 - **`local_db`** — per-instance scratch (Postgres or flat-file; instance-private)
 
-A **swarm-box** is one physical machine running one or more instances.
-Multiple swarm-boxes share the same `home_db`.
+A **swarm-box** is one machine running one or more instances. Multiple swarm-boxes share the same `home_db`.
 
----
-
-## The bus shape
-
-### Envelopes
+### The bus
 
 Every message on the bus is an envelope:
 
@@ -87,92 +179,55 @@ Every message on the bus is an envelope:
 }
 ```
 
-The bus routes by `to`. Subscribers IDLE on their own mailbox and react.
-Designed for durability and replay — every envelope persists for 24h.
+The bus routes by `to`. Subscribers IDLE on their mailbox and react. Every envelope persists 24h for durability and replay.
 
-### `comms://` addressing
+`comms://` addressing:
 
 ```
-comms://<lineage>.<instance>          primary mailbox
-comms://<lineage>.<instance>/console  console surface
-comms://<lineage>.<instance>/mcp      MCP surface
+comms://<lineage>.<instance>           primary mailbox
+comms://<lineage>.<instance>/console   console surface
+comms://<lineage>.<instance>/mcp       MCP surface
 comms://<lineage>.<instance>/inference internal inference channel
-comms://<channel-name>                shared / multi-party channel
+comms://<channel-name>                 shared / multi-party channel
 ```
 
-The router peels suffix-style addresses with longest-prefix-wins so
-`comms://cc.0/console` resolves cleanly even when `cc.0` is also
-registered.
+Longest-prefix-wins routing: `comms://cc.0/console` resolves cleanly even when `cc.0` is also registered.
 
 ### The announce protocol
 
 How an agent plugs in:
 
 1. Agent constructs an `IdentityEnvelope` (lineage, instance, surfaces, box).
-2. Agent sends it to `comms://announce`.
-3. The `AnnounceBroker` looks up the agent's profile, builds a `Manifest`
-   (bound tools, channel subscriptions, state refs, ACL), and replies on
-   `comms://announce-events`.
-4. Agent caches the manifest. Future tool calls resolve via the manifest
-   (`comms://` addresses + permission overlays).
+2. Sends it to `comms://announce`.
+3. `AnnounceBroker` looks up the agent's profile, builds a `Manifest` (bound tools, channel subscriptions, state refs, ACL), and replies on `comms://announce-events`.
+4. Agent caches the manifest. Future tool calls resolve via it.
 
-The full protocol — round-trip, error contract, invalidation, IDLE-driven
-push — lives in `UnseenUniversity/announce/` with full docstrings on each
-module.
+Full protocol lives in `UnseenUniversity/announce/` with docstrings on each module.
 
----
+### Two consumer shapes
 
-## Plugging in: two consumer shapes
-
-The same announce protocol serves two kinds of agent.
-
-### Igor-shape: `DatacenterClient`
-
-Long-running Python process. Imports the client directly:
+**Igor-shape — long-running process:**
 
 ```python
 from unseen_university.announce import DatacenterClient, IdentityEnvelope
 
-identity = IdentityEnvelope(
-    agent_id="my-agent",
-    instance="my-instance-0001",
-    box="my-laptop",
-    box_n=0,
-    pid=os.getpid(),
-    interface_version="1.0",
-    surfaces=["console", "inference"],
-)
 client = DatacenterClient(identity=identity, imap_server=imap_server)
-client.announce()                           # blocks until manifest arrives
-binding = client.get_tool("inference")      # ToolBinding(name, address, ...)
+client.announce()
+binding = client.get_tool("inference")
 ```
 
-Igor wires this in `Igor.__init__` and stashes the client on the cortex so
-every cognition path can resolve tool addresses uniformly.
-
-### CC-shape: MCP wrapper
-
-Stateless invocation. Claude Code spawns a subprocess that exposes the
-announce protocol as MCP tools:
+**CC-shape — stateless MCP wrapper:**
 
 ```bash
-# .mcp.json fragment
-{
-  "mcpServers": {
-    "announce": { "command": "datacenter_mcp" }
-  }
-}
+# .mcp.json
+{ "mcpServers": { "announce": { "command": "datacenter_mcp" } } }
 ```
 
-Available tools: `announce_tool`, `manifest_tool`, `check_for_invalidate_tool`.
-CC calls them like any other MCP tool; the wrapper holds a singleton
-`DatacenterClient` under the hood.
+Tools: `announce_tool`, `manifest_tool`, `check_for_invalidate_tool`. CC calls them like any MCP tool; the wrapper holds a singleton `DatacenterClient` underneath.
 
----
+### Shims
 
-## Shims and installers
-
-A **shim** is the per-device transport adapter. The base contract:
+A **shim** is the per-device transport adapter:
 
 ```python
 from unseen_university.skeleton import BaseShim
@@ -181,100 +236,25 @@ class MyShim(BaseShim):
     device_id = "my-device"
     def install(self): ...   # idempotent local setup
     def connect(self): ...   # announce + cache manifest
-    # Plus capability-reading forwarders pulled from the manifest
 ```
 
-`agentctl` is the CLI surface:
+### Profiles
 
-```bash
-agentctl init                   # bootstrap an empty rack on a clean machine
-agentctl status                 # rack health from the running skeleton
-agentctl skills deploy          # push master skills to ~/.claude/skills/
-```
-
-The skill installer pushes a curated set of slash commands from
-`UnseenUniversity/skills/` to `~/.claude/skills/` on the local box. The
-manifest at `UnseenUniversity/skills/manifest.json` controls what lands
-where (machine-agnostic vs lineage-specific; per-host filtering). User-added
-local skills not listed in the manifest are never touched.
-
-The `RsyncBackend` (in `devices/installer/backends.py`) is the default
-deployment mechanism: idempotent rsync from `UnseenUniversity/skills/<name>/`
-to `~/.claude/skills/<name>/` with a manifest-aware allowlist.
-
----
-
-## Profiles
-
-Each agent type carries a YAML profile that declares what it's allowed to
-plug into:
+Each agent type carries a YAML profile declaring what it can plug into:
 
 ```yaml
 # config/profiles/igor.yaml
 profile_version: "1.0"
 agent_type: igor
-description: "Master cognition tenant — full inference, memory, web, browser_use"
-inherits: []        # slice 5: deep-merge with __replace__ marker
 allowed_devices:
   - inference
   - postgres
   - browser_use
-  - swadl
   - discord_bot
   - web_server
 ```
 
-Canonical profiles live at `UnseenUniversity/config/profiles/<agent-type>.yaml`.
-Runtime copies sync to `~/.unseen_university/profiles/<agent-type>.yaml` on
-install. Inheritance uses deep-merge; child YAMLs can override individual
-keys via the `__replace__` sentinel for explicit list-replacement.
-
----
-
-## Smoke test — stand up a fresh agent in 5 minutes
-
-Prerequisites: Python ≥ 3.11, Postgres running locally.
-
-```bash
-# 1. Install the substrate
-pip install -e .
-
-# 2. Bootstrap a fresh rack
-agentctl init --instance my-first-agent
-
-# 3. Define a profile (config/profiles/my-first-agent.yaml)
-cat > ~/.unseen_university/profiles/my-first-agent.yaml <<'EOF'
-profile_version: "1.0"
-agent_type: my-first-agent
-description: "Smoke test agent"
-allowed_devices:
-  - inference
-EOF
-
-# 4. Plug in via Python
-python3 -c "
-from unseen_university.announce import DatacenterClient, IdentityEnvelope
-from unseen_university.bus.imap_server import IMAPServer
-
-server = IMAPServer()
-server.start()
-identity = IdentityEnvelope(
-    agent_id='my-first-agent',
-    instance='my-first-agent-0001',
-    box='my-laptop',
-    box_n=0,
-    pid=1,
-    interface_version='1.0',
-)
-client = DatacenterClient(identity=identity, imap_server=server)
-client.announce()
-print('Bound tools:', [t.name for t in client.get_tools()])
-"
-```
-
-Expected output: a list of capabilities the broker has bound for your
-agent type. From here, build cognition on top — that's *your* agent; the
-rack is just the substrate.
+Canonical profiles in `UnseenUniversity/config/profiles/`. Runtime copies sync to `~/.unseen_university/profiles/` on install.
 
 ---
 
@@ -282,18 +262,18 @@ rack is just the substrate.
 
 | Path | What it is |
 |---|---|
-| `UnseenUniversity/announce/` | Announce protocol — envelopes, broker, client, manifest, listener |
-| `UnseenUniversity/bus/` | IMAP server + envelope shape + comms:// router |
-| `UnseenUniversity/skeleton/` | MCP aggregator + flat-file registry + health |
-| `UnseenUniversity/cli/` | `agentctl` command-line interface |
-| `UnseenUniversity/skills/` | Master skill set (deployed to ~/.claude/skills/) |
-| `devices/<name>/` | Per-device implementations (one subdir each) |
-| `devices/installer/` | The skill installer (manifest + shim + backends) |
+| `announce/` | Announce protocol — envelopes, broker, client, manifest, listener |
+| `bus/` | IMAP server + envelope shape + `comms://` router |
+| `skeleton/` | MCP aggregator + flat-file registry + health |
+| `cli/` | `agentctl` CLI |
+| `skills/` | Master skill set (deployed to `~/.claude/skills/`) |
+| `devices/<name>/` | Per-device implementations |
+| `devices/igor/` | Igor's full cognition stack (NE, TWM, cortex, pe_chain, tools) |
+| `devices/installer/` | Skill installer (manifest + shim + rsync backends) |
 | `config/profiles/` | Canonical agent-type profiles (YAML) |
-| `docs/` | Framework overview, getting started, decisions |
+| `docs/` | Architecture docs, getting started, decisions, TheoryOfOperation |
 
-The component-level docstrings at the top of each module are the
-canonical spec for that component. This README is the assembly map.
+Component-level docstrings at the top of each module are the canonical spec for that component. This README is the assembly map.
 
 ---
 
@@ -306,11 +286,10 @@ canonical spec for that component. This README is the assembly map.
 | 2 | Igor on the rack | ✅ done |
 | 3 | Claude on the rack + YGM | ✅ done |
 | 4 | Discord + SWADL + browser-use + installer | ✅ done |
-| 5 | Cleanup (superseded TheIgors plumbing) | in progress |
+| 5 | Cleanup — retire TheIgors plumbing, unify runtime paths | in progress |
 
 ---
 
-## Spec
+## Full design rationale
 
-Full design spec: `D-agent-datacenter-spec-2026-04-27` in TheIgors palace.
-Component-level decisions land in `docs/decisions/`.
+See [`docs/TheoryOfOperation.md`](docs/TheoryOfOperation.md) for the full architecture outline: why each design decision was made, how the memory system is structured down to node-type level, and how the pieces compose.

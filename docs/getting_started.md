@@ -1,6 +1,8 @@
 # Getting Started
 
-*Migrated from ClaudeAndAkien 2026-04-27. Updated for UnseenUniversity Phase 0.*
+*Migrated from ClaudeAndAkien 2026-04-27. Updated for UnseenUniversity Phase 5.*
+
+> **More complete install steps are in the [README](../README.md#getting-started).**
 
 UnseenUniversity turns an empty machine into a rack: devices plug in, the IMAP bus
 routes messages, and every agent (Claude, Igor, or custom) runs as a first-class device.
