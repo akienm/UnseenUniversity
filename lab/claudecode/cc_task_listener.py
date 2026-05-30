@@ -144,6 +144,15 @@ def _post_ack(ticket_id: str, status: str) -> None:
 class TaskListener:
     """Polls shared channel for GRANNY_DISPATCH messages and dispatches tickets."""
 
+    def __init__(self) -> None:
+        import threading
+
+        self._stop_event = threading.Event()
+
+    def stop(self) -> None:
+        """Signal the run() loop to exit on next sleep boundary."""
+        self._stop_event.set()
+
     def poll_once(self) -> int:
         """Run one poll cycle. Returns count of tickets dispatched."""
         hwm = _read_hwm()
@@ -170,16 +179,16 @@ class TaskListener:
         return dispatched
 
     def run(self) -> None:
-        """Poll indefinitely until KeyboardInterrupt."""
+        """Poll until stop() is called or KeyboardInterrupt."""
         log.info("cc_task_listener: starting (poll_interval=%ds)", _POLL_INTERVAL)
-        while True:
+        while not self._stop_event.is_set():
             try:
                 n = self.poll_once()
                 if n:
                     log.info("cc_task_listener: %d ticket(s) dispatched", n)
             except Exception as exc:
                 log.error("cc_task_listener: poll error: %s", exc)
-            time.sleep(_POLL_INTERVAL)
+            self._stop_event.wait(_POLL_INTERVAL)
 
 
 if __name__ == "__main__":

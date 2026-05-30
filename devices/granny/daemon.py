@@ -139,6 +139,7 @@ class GrannyDaemon:
         self._total_dispatched: int = 0
         self._total_errors: int = 0
         self._last_poll: Optional[float] = None
+        self._task_listener: Optional[object] = None
 
         # Build device with CC dispatch wired
         from devices.granny.device import GrannyWeatherwaxDevice
@@ -171,6 +172,7 @@ class GrannyDaemon:
         )
         self._thread.start()
         log.info("GrannyDaemon: started (poll_interval=%ds)", POLL_INTERVAL_SEC)
+        self._start_task_listener()
         self._post_channel(
             "Granny Weatherwax daemon started — watching for sprint tickets."
         )
@@ -183,9 +185,29 @@ class GrannyDaemon:
             },
         )
 
+    def _start_task_listener(self) -> None:
+        try:
+            from lab.claudecode.cc_task_listener import TaskListener
+
+            self._task_listener = TaskListener()
+            t = threading.Thread(
+                target=self._task_listener.run,
+                name="cc-task-listener",
+                daemon=True,
+            )
+            t.start()
+            log.info("GrannyDaemon: cc_task_listener started")
+        except Exception as e:
+            log.warning("GrannyDaemon: cc_task_listener failed to start: %s", e)
+
     def stop(self) -> None:
         """Signal daemon to stop and wait for thread to exit."""
         self._stop_event.set()
+        if self._task_listener:
+            try:
+                self._task_listener.stop()
+            except Exception:
+                pass
         if self._thread:
             self._thread.join(timeout=5)
         _post_rack("/api/agents/deregister", {"agent_id": "granny-weatherwax"})
