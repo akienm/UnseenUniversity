@@ -3,20 +3,20 @@ audit_check_hardcoded_instance.py — T-hardcoded-instance-refs audit check
 
 Fails if Igor's runtime code (devices/igor/) reintroduces hardcoded
 'Igor-wild-0001' strings or 'choose_a_password' credentials outside the
-known-exempt files: paths.py (canonical default), machine_manager.py
-(SQL schema default), cluster_ssh.py (ssh user constant + windows user
-env default), cognition/{job_manager,response_habituation,pipeline_manager}.py
-(docstrings), network/channels/file_inbox.py (docstring), memory/node_id.py
-(default instance constant), main.py (user-facing help text + instance_id
-echo), and tools/{notebook,cluster_ssh,google_calendar,ebook_reader}.py
-(docstrings), arbiter/queue.py (docstring).
+known-exempt files: paths.py (canonical default), cluster_ssh.py (ssh user
+constant + windows user env default), cognition/{job_manager,response_habituation,
+pipeline_manager,machine_manager}.py (docstrings), network/channels/file_inbox.py
+(docstring), memory/node_id.py (default instance constant), main.py (user-facing
+help text + instance_id echo), tools/{notebook,cluster_ssh,google_calendar,
+ebook_reader}.py (docstrings), arbiter/queue.py (docstring), setup_assets/
+installer.py (bootstrap before config exists), config.cfg.template (documentation
+template).
 
 Exit 0: clean (no unexpected matches).
 Exit 1: dirty (print violations).
 
-The exempt list is the settled baseline from the T-hardcoded-instance-refs
-sprint 2026-04-15. New matches mean a regression — either something
-re-hardcoded or a new file needs an exempt-list update.
+The exempt list is the settled baseline. New matches mean a regression —
+either something re-hardcoded or a new file needs an exempt-list update.
 """
 
 import subprocess
@@ -40,6 +40,8 @@ EXEMPT_SUFFIXES: set[str] = {
     "devices/igor/arbiter/queue.py",
     "devices/igor/config.py",  # defines the os.getenv default — canonical source
     "devices/igor/env_sync.py",  # boot-time env hydration helper — same default-fallback pattern as config.py
+    "devices/igor/setup_assets/installer.py",  # bootstrap launcher before config exists; paths() unavailable
+    "devices/igor/config.cfg.template",  # documentation template showing placeholder defaults for users
 }
 
 PATTERNS: list[str] = [

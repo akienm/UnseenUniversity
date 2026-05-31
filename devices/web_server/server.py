@@ -99,6 +99,8 @@ def _kill_process(pid: int) -> None:
         pass
 
 
+import contextlib
+
 import uvicorn
 from starlette.applications import Starlette
 from starlette.requests import Request
@@ -1052,11 +1054,184 @@ def _no_db_msg() -> str:
     return '<div class="no-db">IGOR_HOME_DB_URL not set — DB unavailable</div>'
 
 
+def _load_device_registry() -> list[dict]:
+    """Read the flat-file device registry from _RUNTIME_ROOT/devices.json."""
+    registry_path = _RUNTIME_ROOT / "devices.json"
+    try:
+        data = json.loads(registry_path.read_text())
+        return list(data.values()) if isinstance(data, dict) else []
+    except Exception as exc:
+        log.debug("device registry read failed: %s", exc)
+        return []
+
+
+_RACK_PAGE_BODY = """
+<p id="rack-ts" style="color:#555;font-size:0.8rem;margin-bottom:1rem">Loading...</p>
+
+<h2>Web Server</h2>
+<table id="ws-table">
+  <tr><th>Uptime</th><th>Boot</th><th>PID</th><th>WS clients</th><th>Threads</th></tr>
+  <tr id="ws-row"><td colspan="5" style="color:#888">loading...</td></tr>
+</table>
+
+<h2>OpenRouter Budget</h2>
+<div id="budget-inner" style="color:#888">loading...</div>
+
+<h2>Rack Devices</h2>
+<p style="color:#666;font-size:0.82rem;margin:0 0 0.5rem">
+  From flat-file registry. Expand to see full device record and any pushed stats.</p>
+<div id="devices-wrap" style="color:#888">loading...</div>
+
+<h2>Machines</h2>
+<div id="machines-wrap" style="color:#888">loading...</div>
+
+<p style="margin-top:1.5rem;font-size:0.75rem;color:#555">
+  Auto-refreshes every 10s &middot; <a href="/rack">Force refresh</a></p>
+
+<script>
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function badge(s){
+  var c=s==='online'?'ok':s==='blocked'||s==='offline'?'err':'warn';
+  return '<span class="'+c+'">'+esc(s)+'</span>';
+}
+function renderWS(ws){
+  document.getElementById('ws-row').innerHTML=
+    '<td>'+ws.uptime_s+'s</td><td>'+esc(ws.boot_ts)+'</td><td>'+ws.pid+'</td>'+
+    '<td>'+ws.ws_clients+'</td><td>'+ws.active_threads+'</td>';
+}
+function renderBudget(b){
+  var el=document.getElementById('budget-inner');
+  if(!b){el.innerHTML='<p style="color:#888">No budget data (DB unavailable)</p>';return;}
+  var c=b.balance>15?'ok':b.balance>5?'warn':'err';
+  el.innerHTML='<table><tr><th>Balance</th><th>Purchased</th><th>Used</th><th>As of</th></tr>'+
+    '<tr><td class="'+c+'">$'+b.balance.toFixed(2)+'</td>'+
+    '<td>$'+b.purchased.toFixed(2)+'</td><td>$'+b.used.toFixed(2)+'</td>'+
+    '<td>'+esc(b.as_of)+'</td></tr></table>';
+}
+function deviceDetail(dev){
+  var d={id:dev.id,name:dev.name,status:dev.status,mailbox:dev.mailbox,
+         registered_at:dev.registered_at,config:dev.config};
+  if(dev.last_heartbeat_ago_s!==undefined) d.last_heartbeat_ago_s=dev.last_heartbeat_ago_s;
+  if(dev.agent_stats) d.pushed_stats=dev.agent_stats;
+  return JSON.stringify(d,null,2);
+}
+function deviceCard(dev){
+  var hb=dev.last_heartbeat_ago_s!==undefined
+    ?' <span style="color:#666;font-size:0.78rem">(hb '+dev.last_heartbeat_ago_s+'s ago)</span>':'';
+  return '<details style="margin:0.2rem 0">'+
+    '<summary style="cursor:pointer">'+
+      '<strong>'+esc(dev.name||dev.id)+'</strong> '+badge(dev.status)+hb+
+      ' <span style="color:#666;font-size:0.78rem">'+esc(dev.mailbox)+'</span>'+
+    '</summary>'+
+    '<pre style="margin:0.4rem 0 0.4rem 1.5rem;font-size:0.82rem">'+esc(deviceDetail(dev))+'</pre>'+
+    '</details>';
+}
+function renderDevices(devices){
+  var el=document.getElementById('devices-wrap');
+  if(!devices||!devices.length){
+    el.innerHTML='<p style="color:#888">No devices in registry.</p>';return;
+  }
+  el.innerHTML=devices.map(deviceCard).join('');
+}
+function renderMachines(machines,devices,localHostname){
+  var el=document.getElementById('machines-wrap');
+  if(!machines||!machines.length){
+    el.innerHTML='<p style="color:#888">No machines (DB unavailable or no machines registered)</p>';return;
+  }
+  var rows=machines.map(function(m){
+    var c=m.status==='online'?'ok':'err';
+    var roles=(m.roles||[]).join(', ')||'—';
+    var devBlock='';
+    if(m.hostname===localHostname){
+      if(devices&&devices.length){
+        devBlock='<tr><td colspan="6" style="padding:0.2rem 0.6rem 0.6rem 2rem;background:#1e1e30">'+
+          '<div style="font-size:0.78rem;color:#7ec8e3;margin-bottom:0.3rem">Registered devices:</div>'+
+          devices.map(deviceCard).join('')+'</td></tr>';
+      } else {
+        devBlock='<tr><td colspan="6" style="padding:0.15rem 0.6rem 0.3rem 2rem;color:#555;font-size:0.8rem">'+
+          'No devices in local registry.</td></tr>';
+      }
+    } else {
+      devBlock='<tr><td colspan="6" style="padding:0.1rem 0.6rem 0.2rem 2rem;color:#555;font-size:0.78rem">'+
+        '(remote — device registry not accessible from here)</td></tr>';
+    }
+    return '<tr><td>'+esc(m.display_name)+'</td><td>'+esc(m.hostname)+'</td>'+
+      '<td>'+esc(m.ip||'—')+'</td><td>'+esc(m.os)+'</td>'+
+      '<td class="'+c+'">'+esc(m.status)+'</td><td>'+esc(roles)+'</td></tr>'+devBlock;
+  });
+  el.innerHTML='<table><tr><th>Name</th><th>Hostname</th><th>IP</th>'+
+    '<th>OS</th><th>Status</th><th>Roles</th></tr>'+rows.join('')+'</table>';
+}
+async function refresh(){
+  try{
+    var data=await(await fetch('/api/rack/health')).json();
+    document.getElementById('rack-ts').textContent='Last updated: '+data.ts;
+    renderWS(data.web_server);
+    renderBudget(data.budget);
+    renderDevices(data.devices);
+    renderMachines(data.machines,data.devices,data.local_hostname);
+  }catch(e){
+    document.getElementById('rack-ts').textContent='Error loading rack health: '+e;
+  }
+}
+refresh();
+setInterval(refresh,10000);
+</script>
+"""
+
+
 async def _page_rack(request: Request):
-    """GET /rack — rack health: machines, OR budget, web server."""
+    """GET /rack — rack health page (JS-driven; data from /api/rack/health)."""
+    return HTMLResponse(_html_wrap("Rack Health", _RACK_PAGE_BODY))
+
+
+async def _api_rack_health(request: Request):
+    """GET /api/rack/health — full rack health snapshot consumed by /rack page JS.
+
+    Returns web server stats, registered devices from the flat-file registry
+    (with any stats pushed via /api/agents/{id}/stats), machines and OR budget
+    from DB, and local_hostname for machine-to-device grouping in JS.
+    """
+    import socket as _socket
+
+    now = time.monotonic()
+    with _client_lock:
+        ws_clients = sum(len(qs) for qs in _session_clients.values())
+    web_server_stats = {
+        "uptime_s": round(now - _boot_ts, 1),
+        "boot_ts": _boot_wall,
+        "pid": os.getpid(),
+        "ws_clients": ws_clients,
+        "active_threads": threading.active_count(),
+    }
+
+    raw_devices = _load_device_registry()
+    with _agents_lock:
+        agent_stats_snap = dict(_agent_stats)
+        agents_snap = dict(_agents)
+
+    devices = []
+    for rec in raw_devices:
+        dev_id = rec.get("id", "")
+        entry: dict = {
+            "id": dev_id,
+            "name": rec.get("name", dev_id),
+            "status": rec.get("status", "unknown"),
+            "mailbox": rec.get("mailbox", ""),
+            "registered_at": rec.get("registered_at", ""),
+            "config": rec.get("config", {}),
+            "agent_stats": agent_stats_snap.get(dev_id),
+        }
+        if dev_id in agents_snap:
+            hb = agents_snap[dev_id].get("last_heartbeat")
+            if hb is not None:
+                entry["last_heartbeat_ago_s"] = round(now - hb, 1)
+        devices.append(entry)
+    devices.sort(key=lambda d: (0 if d["status"] == "online" else 1, d["name"]))
+
+    machines: list[dict] = []
+    budget = None
     conn = _db_conn()
-    rows_html = ""
-    budget_html = ""
     if conn:
         try:
             with conn.cursor() as cur:
@@ -1065,59 +1240,40 @@ async def _page_rack(request: Request):
                     " FROM infra.machines ORDER BY status DESC, display_name"
                 )
                 cols = [d[0] for d in cur.description]
-                machines = [dict(zip(cols, r)) for r in cur.fetchall()]
-            rows = []
-            for m in machines:
-                status_cls = "ok" if m["status"] == "online" else "err"
-                roles = ", ".join(m.get("roles") or []) or "—"
-                rows.append(
-                    f'<tr><td>{m["display_name"]}</td>'
-                    f'<td>{m["hostname"]}</td>'
-                    f'<td>{m["ip"] or "—"}</td>'
-                    f'<td>{m["os"]}</td>'
-                    f'<td class="{status_cls}">{m["status"]}</td>'
-                    f"<td>{roles}</td></tr>"
-                )
-            rows_html = (
-                "<h2>Machines</h2>"
-                "<table><tr><th>Name</th><th>Hostname</th><th>IP</th>"
-                "<th>OS</th><th>Status</th><th>Roles</th></tr>"
-                + "".join(rows)
-                + "</table>"
-            )
+                for row in cur.fetchall():
+                    m = dict(zip(cols, row))
+                    if m.get("updated_at"):
+                        m["updated_at"] = str(m["updated_at"])[:19]
+                    machines.append(m)
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT balance, purchased, used, timestamp"
                     " FROM infra.balance_history ORDER BY timestamp DESC LIMIT 1"
                 )
-                row = cur.fetchone()
-            if row:
-                balance, purchased, used, ts = row
-                bal_cls = "ok" if balance > 15 else "warn" if balance > 5 else "err"
-                budget_html = (
-                    "<h2>OpenRouter Budget</h2>"
-                    "<table><tr><th>Balance</th><th>Purchased</th><th>Used</th><th>As of</th></tr>"
-                    f'<tr><td class="{bal_cls}">${balance:.2f}</td>'
-                    f"<td>${purchased:.2f}</td><td>${used:.2f}</td>"
-                    f"<td>{str(ts)[:19]}</td></tr></table>"
-                )
+                brow = cur.fetchone()
+                if brow:
+                    balance, purchased, used, bts = brow
+                    budget = {
+                        "balance": float(balance),
+                        "purchased": float(purchased),
+                        "used": float(used),
+                        "as_of": str(bts)[:19],
+                    }
         except Exception as exc:
-            rows_html = f'<p class="err">DB error: {exc}</p>'
+            log.debug("rack health DB query failed: %s", exc)
         finally:
             conn.close()
-    else:
-        rows_html = _no_db_msg()
 
-    now = time.monotonic()
-    uptime = round(now - _boot_ts)
-    ws_html = (
-        "<h2>Web Server</h2>"
-        "<table><tr><th>Uptime</th><th>Boot</th><th>PID</th><th>WS clients</th></tr>"
-        f"<tr><td>{uptime}s</td><td>{_boot_wall}</td><td>{os.getpid()}</td>"
-        f"<td>{sum(len(q) for q in _session_clients.values())}</td></tr></table>"
+    return JSONResponse(
+        {
+            "web_server": web_server_stats,
+            "devices": devices,
+            "machines": machines,
+            "budget": budget,
+            "local_hostname": _socket.gethostname(),
+            "ts": _ts(),
+        }
     )
-    body = ws_html + budget_html + rows_html
-    return HTMLResponse(_html_wrap("Rack Health", body))
 
 
 async def _page_palace(request: Request):
@@ -1519,10 +1675,12 @@ async def _api_feeds(request: Request):
 
 
 def _make_app() -> Starlette:
-    async def on_startup():
+    @contextlib.asynccontextmanager
+    async def _lifespan(app: Starlette):
         global _loop
         _loop = asyncio.get_running_loop()
         _init_comms()
+        yield
 
     routes = [
         Route("/", _index),
@@ -1550,7 +1708,8 @@ def _make_app() -> Starlette:
         # Comms
         Route("/api/comms/channels", _api_comms_channels),
         Route("/api/comms/health", _api_comms_health),
-        # Palace browser (read-only)
+        # Rack health API + page
+        Route("/api/rack/health", _api_rack_health),
         Route("/rack", _page_rack),
         Route("/palace", _page_palace),
         Route("/palace-edit/{node_path:path}", _page_palace_edit_get, methods=["GET"]),
@@ -1574,7 +1733,7 @@ def _make_app() -> Starlette:
             Mount("/assets", app=StaticFiles(directory=str(assets_dir)), name="assets")
         )
 
-    return Starlette(routes=routes, on_startup=[on_startup])
+    return Starlette(routes=routes, lifespan=_lifespan)
 
 
 # ── PID file management ─────────────────────────────────────────────────────
