@@ -1015,6 +1015,40 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "m056_channel_derived_from",
         "ALTER TABLE infra.channel_messages ADD COLUMN IF NOT EXISTS derived_from TEXT[] DEFAULT NULL",
     ),
+    # ── T-inference-budget-ledger: per-agent inference spend tracking
+    # clan schema: shared across all agent instances, written by InferenceDevice.dispatch()
+    # on every call. Enforcing for openrouter; tracking-only for ollama/anthropic_max.
+    (
+        "m057_budget_ledger",
+        "CREATE TABLE IF NOT EXISTS clan.budget_ledger ("
+        " id            BIGSERIAL PRIMARY KEY,"
+        " agent_id      TEXT NOT NULL,"
+        " instance_id   TEXT NOT NULL DEFAULT '',"
+        " coa_id        TEXT NOT NULL DEFAULT '',"
+        " session_id    TEXT NOT NULL DEFAULT '',"
+        " provider      TEXT NOT NULL,"
+        " model         TEXT NOT NULL,"
+        " input_tokens  INTEGER NOT NULL DEFAULT 0,"
+        " output_tokens INTEGER NOT NULL DEFAULT 0,"
+        " cost_usd      NUMERIC(12,6),"
+        " ts            TIMESTAMPTZ NOT NULL DEFAULT NOW()"
+        ")",
+    ),
+    (
+        "m057_budget_ledger_idx",
+        "CREATE INDEX IF NOT EXISTS budget_ledger_agent_session_idx"
+        " ON clan.budget_ledger (agent_id, session_id)",
+    ),
+    (
+        "m057_budget_limits",
+        "CREATE TABLE IF NOT EXISTS clan.budget_limits ("
+        " agent_id   TEXT NOT NULL,"
+        " scope      TEXT NOT NULL,"
+        " limit_usd  NUMERIC(12,6) NOT NULL,"
+        " updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),"
+        " PRIMARY KEY (agent_id, scope)"
+        ")",
+    ),
 ]
 
 
