@@ -33,24 +33,46 @@ UnseenUniversity is a **rack** — a place where devices plug in and communicate
 
 ### 1.3 Bus
 
-`UnseenUniversity/bus/` — IMAP server + `comms://` router + envelope model.
+`UnseenUniversity/bus/` — IMAP server + `comms://` router + envelope model. Transport: Dovecot IMAP in production; asyncio in-process stub in test mode (`AGENT_DATACENTER_TEST_MODE=1`).
 
-Every message is an **envelope**:
+Every message is an **envelope** (`bus/envelope.py`):
 
 ```json
 {
-  "from":    "comms://igor.wild-0001/inference",
-  "to":      "comms://inference.local/cheap-ollama",
-  "kind":    "inference.request",
-  "payload": { ... },
-  "id":      "ulid-...",
-  "ts":      "ISO-8601"
+  "from_device":    "comms://igor.wild-0001/inference",
+  "to_device":      "comms://inference.local/cheap-ollama",
+  "sent_at":        "2026-05-31T00:00:00+00:00",
+  "schema_version": "1.0",
+  "payload": {
+    "kind": "inference.request",
+    "...":  "device-specific fields"
+  }
 }
 ```
 
-Address resolution: longest-prefix-wins. `comms://cc.0/console` resolves to the `/console` surface of `cc.0`'s mailbox even when `cc.0` is also registered as a top-level address.
+The rigid envelope fields are exactly `from_device`, `to_device`, `sent_at`, `schema_version`, and `payload`. Everything else goes in the open `payload` dict. `kind` is a payload convention, not a rigid field.
 
-Pub/sub: subscribers IDLE on their own mailbox. The bus delivers by appending to the target mailbox; the IDLE connection wakes the subscriber.
+**Address resolution:** longest-prefix-wins. `comms://cc.0/console` resolves to the `/console` surface of `cc.0`'s mailbox even when `cc.0` is also registered as a top-level address.
+
+**IDLE receive model:** The bus receive primitive is `IMAPServer.idle_wait(mailbox, timeout_s)`. It blocks until a message arrives or the timeout expires. The shim's `start()` launches a bus-facing component (e.g. `AnnounceListener.run_forever`, `HealthAggregator.run_forever`) that drives this loop:
+
+```python
+while not stop.is_set():
+    woke = imap.idle_wait(mailbox, timeout_s=25 * 60)
+    if woke:
+        self.pump()   # fetch_unseen() + process
+    # timeout → re-enter (keepalive; RFC 2177 servers may drop IDLE after 29 min)
+```
+
+Agents never poll their mailboxes directly — the bus-facing component calls `idle_wait`; the shim owns that component's lifecycle. In production, `idle_wait` polls Dovecot at 2s intervals (true IMAP IDLE is a noted follow-on; see `imap_server.py:idle_wait`). In test mode it uses `threading.Event` and wakes instantly on `append()`.
+
+**Request/response:** The bus has no separate RPC mechanism — none is needed. Every envelope carries `from_device`; the responder appends its reply to `to_device=env.from_device`, and the requester's `idle_wait` delivers it. The announce → manifest flow is the canonical working example:
+
+1. Agent appends an `IdentityEnvelope` to `comms://announce` (its own mailbox as `from_device`)
+2. `AnnounceListener` receives via `idle_wait`, resolves the profile, appends a Manifest reply back to `env.from_device`
+3. Agent's IDLE loop wakes; `fetch_unseen()` returns the manifest
+
+When a device needs the reply to go to a *different* address than `from_device`, the convention is to include `reply_to` in the payload. This is a payload convention, not a rigid envelope field.
 
 ---
 

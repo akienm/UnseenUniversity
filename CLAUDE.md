@@ -32,6 +32,18 @@ This is the portable agent runtime substrate. It is **not** TheIgors.
 
 ---
 
+## Bus + shim model — what the rack gives for free
+
+A CC session misdiagnosing "agent-to-agent RPC" as a missing capability is a known false pattern. The rack already has everything needed.
+
+**IDLE push — agents don't poll.** `IMAPServer.idle_wait(mailbox)` is the receive primitive. A device's bus-facing component (`AnnounceListener`, `HealthAggregator`, etc.) runs an `idle_wait` loop in a background thread started by `shim.start()`. When a message arrives the loop wakes, calls `fetch_unseen()`, and dispatches. `BaseShim` itself has no `idle_wait` — the lifecycle is `start/stop/restart/self_test/rollback`. The IDLE loop lives in the component the shim launches, not in the shim class.
+
+**Request/response is built in.** Every envelope carries `from_device` (sender) and `to_device` (destination). To do request/response: append to target, let it append its reply to `env.from_device`, and your `idle_wait` delivers it. No RPC library needed. The announce → manifest flow (`comms://announce` → reply to caller's mailbox) is the canonical live example. When the reply should go to a *different* address than `from_device`, include `reply_to` in the payload by convention (payload field, not a rigid envelope field).
+
+**Canonical reference:** `unseen_university/announce/listener.py` `AnnounceListener.run_forever()` — the complete IDLE loop pattern in ~15 lines.
+
+---
+
 ## Workflow — picking what to work on
 
 **Use `/query-ticket` to ask what's next.** It is the single canonical entry
