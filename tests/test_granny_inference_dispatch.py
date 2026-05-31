@@ -11,6 +11,14 @@ import pytest
 from devices.minion.shim import WorkerResult
 
 
+@pytest.fixture(autouse=True)
+def _no_channel(monkeypatch):
+    """Prevent tests from posting to the real shared channel."""
+    monkeypatch.setattr(
+        "unseen_university.channel.post_to_channel", lambda *a, **kw: None
+    )
+
+
 def _ticket(tid="T-test", tags=None, worker=""):
     return {
         "id": tid,
