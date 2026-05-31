@@ -204,6 +204,8 @@ All audit levels emit structured telemetry to the palace (theigors/audits/<level
 
 /export-chat -- exports current Claude Code chat window to a dated markdown file (works around tmux scrollback limits)
 
+/factory-create -- scaffold a factory spec from 6 questions (name, description, owner_id, members, eval rubric, daily budget) → produces config/factories/<name>.yaml; then calls python run validate and python run instantiate. A factory is one level above the agent scaffold: it declares a set of agents wired under a single orchestrator with a shared owner escalation chain.
+
 /fixit -- shorthand for /sorted + /sprint-batch on the just-filed tickets in one go
 
 /goal -- create, list, update, block, and retire G-xxx goals; the layer above decisions that anchors all design work to measurable outcomes
