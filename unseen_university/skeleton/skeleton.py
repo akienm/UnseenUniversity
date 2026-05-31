@@ -29,6 +29,7 @@ from unseen_university.announce import (
     AnnounceBroker,
     AnnounceListener,
 )
+from unseen_university.announce.provenance import ProvenanceService
 from unseen_university.announce.channels import ChannelRegistry
 from unseen_university.announce.manifest import INVALIDATE_MAILBOX
 from unseen_university.device import BaseDevice, INTERFACE_VERSION
@@ -96,10 +97,13 @@ class Skeleton(BaseDevice):
             log.warning("announce: could not create shared channel mailbox: %s", exc)
 
         self._channel_registry = ChannelRegistry()
+        provenance = ProvenanceService()
+        provenance.clear_all()  # expire all tokens from any prior rack process
         self._announce_broker = AnnounceBroker(
             profiles_dir=profiles_dir,
             registry=self._registry,
             devices=self._devices,
+            provenance=provenance,
         )
         self._announce_listener = AnnounceListener(
             broker=self._announce_broker,

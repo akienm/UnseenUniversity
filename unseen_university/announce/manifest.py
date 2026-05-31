@@ -83,6 +83,10 @@ class Manifest:
 
     expires_at: str | None = None
     visibility: str = "secondary"  # "primary" | "secondary" — tab ordering hint
+    token: str | None = (
+        None  # rack-issued provenance token (None when service not wired)
+    )
+    system_prompt: str = ""  # rack orientation text injected at announce time
 
     def to_dict(self) -> dict:
         return asdict(self)

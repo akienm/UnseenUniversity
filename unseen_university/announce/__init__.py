@@ -7,6 +7,7 @@ and the AnnounceListener publishes the reply on comms://announce-events.
 """
 
 from .broker import AnnounceBroker, AnnounceError, ManifestAssembler
+from .provenance import ProvenanceService
 from .client import (
     AnnounceRejectedError,
     AnnounceTimeoutError,
@@ -32,6 +33,7 @@ __all__ = [
     "ANNOUNCE_MAILBOX",
     "AnnounceBroker",
     "AnnounceError",
+    "ProvenanceService",
     "AnnounceIdleLoop",
     "AnnounceListener",
     "AnnounceMcpServer",

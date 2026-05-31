@@ -34,10 +34,38 @@ from .manifest import (
     registry_etag_from_dict,
 )
 from .profile import ProfileNotFoundError, load_profile, profile_yaml_etag
+from .provenance import ProvenanceService
 
 log = logging.getLogger(__name__)
 
 _DEFAULT_INTERFACE = "imap_envelope"
+
+# Canonical profiles directory — same resolution as igor_shim._CANONICAL_PROFILES_DIR.
+_CANONICAL_PROFILES_DIR = Path(__file__).parent.parent.parent / "config" / "profiles"
+
+# Fixed assembly order for well-known system prompt sections.
+_PROMPT_SECTION_ORDER = ["rack", "recall", "channels", "agents", "questions"]
+
+
+def _load_base_system_sections() -> dict:
+    """Load system_prompt_sections from the canonical base.yaml.
+
+    Returns an empty dict if base.yaml is absent or unreadable — callers
+    degrade gracefully to an empty system_prompt rather than failing.
+    """
+    path = _CANONICAL_PROFILES_DIR / "base.yaml"
+    if not path.exists():
+        log.debug("broker: base.yaml not found at %s — no default system prompt", path)
+        return {}
+    try:
+        import yaml  # type: ignore[import]
+
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            return dict(data.get("system_prompt_sections", {}) or {})
+    except Exception as exc:
+        log.warning("broker: failed to load base.yaml system_prompt_sections: %s", exc)
+    return {}
 
 
 class AnnounceError(Exception):
@@ -63,10 +91,13 @@ class AnnounceBroker:
         profiles_dir: Path | str | None = None,
         registry=None,
         devices: dict | None = None,
+        provenance: ProvenanceService | None = None,
     ) -> None:
         self._profiles_dir = Path(profiles_dir) if profiles_dir else None
         self._registry = registry
         self._devices: dict = devices or {}
+        self._provenance = provenance
+        self._base_system_sections: dict = _load_base_system_sections()
 
     def resolve_announce(self, envelope: IdentityEnvelope) -> Manifest:
         """
@@ -91,12 +122,14 @@ class AnnounceBroker:
             profile=profile,
             online_devices=online_devices,
             live_devices=self._devices,
+            base_system_sections=self._base_system_sections,
         )
 
         tools = assembler.build_tool_bindings()
         subscriptions = assembler.build_channel_subscriptions()
         state_refs = assembler.build_state_refs()
         acl = assembler.build_acl()
+        system_prompt = assembler.build_system_prompt()
 
         primary_addr = f"comms://{envelope.primary_mailbox}"
         surface_addresses = {
@@ -104,6 +137,12 @@ class AnnounceBroker:
             for surface, active in profile.get("surfaces", {}).items()
             if active
         }
+
+        token = None
+        if self._provenance is not None:
+            token = self._provenance.issue_token(
+                envelope.agent_id, envelope.instance, envelope.ts
+            )
 
         return Manifest(
             schema_version=MANIFEST_SCHEMA_VERSION,
@@ -126,6 +165,8 @@ class AnnounceBroker:
             profile_etag=p_etag,
             registry_etag=r_etag,
             visibility=profile.get("visibility", "secondary"),
+            token=token,
+            system_prompt=system_prompt,
         )
 
     def _online_devices(self) -> list[dict]:
@@ -160,10 +201,12 @@ class ManifestAssembler:
         profile: dict,
         online_devices: list[dict],
         live_devices: dict,
+        base_system_sections: dict | None = None,
     ) -> None:
         self._profile = profile
         self._online = {d["device_id"]: d for d in online_devices}
         self._live = live_devices
+        self._base_sections: dict = base_system_sections or {}
 
     def build_tool_bindings(self) -> list[ToolBinding]:
         allowed = set(self._profile.get("allowed_devices", []))
@@ -231,6 +274,28 @@ class ManifestAssembler:
             outbound_allow=outbound.get("allow", []),
             outbound_deny=outbound.get("deny", []),
         )
+
+    def build_system_prompt(self) -> str:
+        """
+        Assemble the manifest system_prompt from base sections + profile overrides.
+
+        The profile's system_prompt_sections dict is merged over the base sections
+        (profile values replace base values for matching keys; new keys are appended
+        after the standard section order).  Returns an empty string when both base
+        and profile have no sections.
+        """
+        profile_sections = self._profile.get("system_prompt_sections") or {}
+        merged = {**self._base_sections, **profile_sections}
+        if not merged:
+            return ""
+        parts: list[str] = []
+        for key in _PROMPT_SECTION_ORDER:
+            if key in merged:
+                parts.append(str(merged[key]).rstrip())
+        for key, value in merged.items():
+            if key not in _PROMPT_SECTION_ORDER:
+                parts.append(str(value).rstrip())
+        return "\n\n".join(parts)
 
     @staticmethod
     def _device_address(device_id: str, device) -> str:
