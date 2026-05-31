@@ -11,6 +11,8 @@ import pytest
 
 from unseen_university.device import BaseDevice, INTERFACE_VERSION
 from unseen_university.shim import BaseShim
+from devices.auditor.device import AuditorDevice
+from devices.auditor.shim import AuditorShim
 from devices.browser_use.device import BrowserUseDevice
 from devices.browser_use.shim import BrowserUseShim
 from devices.evaluator.device import EvaluatorDevice
@@ -19,53 +21,81 @@ from devices.claude.device import ClaudeDevice
 from devices.claude.shim import ClaudeShim
 from devices.discord_bot.device import DiscordBotDevice
 from devices.discord_bot.shim import DiscordBotShim
+from devices.granny.device import GrannyWeatherwaxDevice
+from devices.granny.shim import GrannyShim
 from devices.igor.device import IgorDevice
 from devices.igor.shim import IgorShim
 from devices.inference.device import InferenceDevice
 from devices.inference.shim import InferenceShim
+from devices.minion.device import MinionDevice
+from devices.minion.shim import MinionShim
+from devices.nanny.device import NannyOggDevice
 from devices.postgres.device import PostgresDevice
+from devices.queue.device import QueueDevice
 from devices.rack_test.device import RackTestDevice
 from devices.rack_test.shim import RackTestShim
+from devices.reader.device import ReaderDevice
 from devices.scraps.scraps_device import ScrapsDevice
 from devices.scraps.shim import ScrapsShim
 from devices.sensor.device import SensorDevice
 from devices.sensor.shim import SensorShim
+from devices.summarizer.device import SummarizerDevice
+from devices.summarizer.shim import SummarizerShim
 from devices.swadl.device import SwadlDevice
 from devices.swadl.shim import SwadlShim
 from devices.template.device import TemplateDevice
 from devices.template.shim import TemplateShim
+from devices.web_server.device import WebServerDevice
+from devices.web_server.shim import WebServerShim
+from devices.workspace.device import WorkspaceDevice
+from devices.workspace.shim import WorkspaceShim
 from fixtures.stub_devices import StubDevice, StubShim
 
 # Extend this list as each device phase ships
 ALL_DEVICE_CLASSES = [
-    PostgresDevice,
-    TemplateDevice,
-    StubDevice,
+    AuditorDevice,
     BrowserUseDevice,
-    IgorDevice,
-    InferenceDevice,
     ClaudeDevice,
     DiscordBotDevice,
-    SwadlDevice,
+    EvaluatorDevice,
+    GrannyWeatherwaxDevice,
+    IgorDevice,
+    InferenceDevice,
+    MinionDevice,
+    NannyOggDevice,
+    PostgresDevice,
+    QueueDevice,
     RackTestDevice,
+    ReaderDevice,
     ScrapsDevice,
     SensorDevice,
-    EvaluatorDevice,
+    StubDevice,
+    SummarizerDevice,
+    SwadlDevice,
+    TemplateDevice,
+    WebServerDevice,
+    WorkspaceDevice,
 ]
 
 ALL_SHIM_CLASSES = [
-    TemplateShim,
-    StubShim,
+    AuditorShim,
     BrowserUseShim,
-    IgorShim,
-    InferenceShim,
     ClaudeShim,
     DiscordBotShim,
-    SwadlShim,
+    EvaluatorShim,
+    GrannyShim,
+    IgorShim,
+    InferenceShim,
+    MinionShim,
     RackTestShim,
     ScrapsShim,
     SensorShim,
-    EvaluatorShim,
+    StubShim,
+    SummarizerShim,
+    SwadlShim,
+    TemplateShim,
+    WebServerShim,
+    WorkspaceShim,
 ]
 
 

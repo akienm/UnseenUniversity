@@ -9,10 +9,18 @@ Verifies the DRM-blocked path in book_learner:
 from __future__ import annotations
 
 import hashlib
+import sys
 import types
+from pathlib import Path
 from unittest.mock import MagicMock, call, patch
 
 import pytest
+
+# book_learner lives in lab/claudecode — add to path so the module is importable
+# as "book_learner" (bare name), which the patch strings below depend on.
+_LAB_CLAUDECODE = str(Path(__file__).resolve().parents[2] / "lab" / "claudecode")
+if _LAB_CLAUDECODE not in sys.path:
+    sys.path.insert(0, _LAB_CLAUDECODE)
 
 
 def _make_args(run: bool = True, calibre_id: int = 42) -> types.SimpleNamespace:
@@ -35,10 +43,6 @@ def _drm_handle(calibre_id: int = 42) -> dict:
 class TestHandleDrmBlocked:
     def test_no_deposit_in_dry_run(self):
         """With args.run=False, no Cortex or DB calls made."""
-        import sys
-
-        sys.path.insert(0, "/home/akien/TheIgors/lab/claudecode")
-
         from book_learner import _handle_drm_blocked
 
         args = _make_args(run=False)
@@ -50,10 +54,6 @@ class TestHandleDrmBlocked:
 
     def test_deposits_one_drm_blocked_memory(self):
         """With args.run=True, exactly one BOOK_DRM_BLOCKED memory is deposited."""
-        import sys
-
-        sys.path.insert(0, "/home/akien/TheIgors/lab/claudecode")
-
         from book_learner import _handle_drm_blocked
 
         args = _make_args(run=True, calibre_id=99)
@@ -84,10 +84,6 @@ class TestHandleDrmBlocked:
 
     def test_marks_reading_list_failed(self):
         """With args.run=True and calibre_id set, reading_list updated to failed."""
-        import sys
-
-        sys.path.insert(0, "/home/akien/TheIgors/lab/claudecode")
-
         from book_learner import _handle_drm_blocked
 
         args = _make_args(run=True, calibre_id=55)

@@ -18,7 +18,7 @@ set -u
 if [[ -n "${CC_WORKFLOW_TOOLS:-}" ]]; then
     REPO_ROOT="$(dirname "$(dirname "${CC_WORKFLOW_TOOLS}")")"
 else
-    REPO_ROOT="${IGOR_REPO_ROOT:-$HOME/TheIgors}"
+    REPO_ROOT="${IGOR_REPO_ROOT:-$HOME/dev/src/UnseenUniversity}"
 fi
 IGOR_ADMIN="$REPO_ROOT/lab/claudecode/igor_admin.py"
 

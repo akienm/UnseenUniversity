@@ -6,6 +6,8 @@ import json
 import time
 from unittest.mock import MagicMock, patch
 
+from devices.inference.sources import SourceRegistry
+
 # ── budget_gate unit tests ────────────────────────────────────────────────────
 
 
@@ -141,7 +143,7 @@ class TestDispatchBudgetGate:
         from devices.inference.device import InferenceDevice
         from devices.inference.shim import InferenceRequest, InferenceResponse
 
-        dev = InferenceDevice(mode="openrouter")
+        dev = InferenceDevice(mode="openrouter", sources=SourceRegistry())
         req = InferenceRequest(
             messages=[{"role": "user", "content": "hi"}], model="gpt-4o-mini"
         )
@@ -169,7 +171,7 @@ class TestDispatchBudgetGate:
         from devices.inference.device import InferenceDevice
         from devices.inference.shim import InferenceRequest
 
-        dev = InferenceDevice(mode="ollama")
+        dev = InferenceDevice(mode="ollama", sources=SourceRegistry())
         req = InferenceRequest(messages=[{"role": "user", "content": "hi"}])
 
         fake_raw = {

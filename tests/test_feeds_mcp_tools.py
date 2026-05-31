@@ -230,6 +230,11 @@ class TestGrannyDaemonFeedPublish:
         with (
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
             patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(True, None, 0.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             daemon.run_once()
         calls = daemon._imap.append.call_args_list
@@ -248,6 +253,11 @@ class TestGrannyDaemonFeedPublish:
         with (
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
             patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(True, None, 0.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             daemon.run_once()
         calls = daemon._imap.append.call_args_list
@@ -267,6 +277,11 @@ class TestGrannyDaemonFeedPublish:
         with (
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
             patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(True, None, 0.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             daemon.run_once()
         calls = daemon._imap.append.call_args_list

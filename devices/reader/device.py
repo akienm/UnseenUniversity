@@ -218,7 +218,7 @@ class ReaderDevice(BaseDevice):
     def comms(self) -> dict:
         return {
             "address": f"comms://{self.DEVICE_ID}/inbox",
-            "mode": "read",
+            "mode": "read_only",
             "supports_push": False,
             "supports_pull": True,
             "supports_nudge": False,
@@ -228,7 +228,13 @@ class ReaderDevice(BaseDevice):
         return INTERFACE_VERSION
 
     def health(self) -> dict:
-        return {"status": "healthy", "detail": "inference lazy-loaded"}
+        from datetime import datetime, timezone
+
+        return {
+            "status": "healthy",
+            "detail": "inference lazy-loaded",
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+        }
 
     def uptime(self) -> float:
         return time.time() - _START_TIME

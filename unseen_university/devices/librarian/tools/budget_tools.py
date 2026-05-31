@@ -10,6 +10,69 @@ from datetime import datetime, timezone
 
 SCHEMAS = [
     {
+        "name": "budget_summary",
+        "description": (
+            "Return per-agent inference spend from the budget ledger, grouped by session, "
+            "CoA, or instance. Shows token counts and cost_usd for OR calls. "
+            "Use to answer 'how much has igor spent this session?' or 'show me spend by coa'."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "agent_id": {
+                    "type": "string",
+                    "description": "Agent to query (e.g. 'igor', 'cc')",
+                },
+                "group_by": {
+                    "type": "string",
+                    "enum": ["session", "coa", "instance"],
+                    "description": "Dimension to group spend by (default: session)",
+                },
+            },
+            "required": ["agent_id"],
+        },
+    },
+    {
+        "name": "budget_limit_set",
+        "description": (
+            "Set or update a per-agent budget limit. scope='session' enforces a hard "
+            "USD cap per session_id for OpenRouter calls; scope='overall' is recorded "
+            "but not yet enforced. Returns ok/error."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "agent_id": {"type": "string", "description": "Agent to limit"},
+                "scope": {
+                    "type": "string",
+                    "enum": ["session", "overall"],
+                    "description": "Limit scope",
+                },
+                "limit_usd": {
+                    "type": "number",
+                    "description": "Hard limit in USD",
+                },
+            },
+            "required": ["agent_id", "scope", "limit_usd"],
+        },
+    },
+    {
+        "name": "budget_remaining",
+        "description": (
+            "Return remaining USD budget for an agent's session. "
+            "Shows remaining_usd, pct_used, limit_usd, and spent_usd. "
+            "remaining_usd is null when no session limit has been set."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "agent_id": {"type": "string", "description": "Agent to query"},
+                "session_id": {"type": "string", "description": "Session to check"},
+            },
+            "required": ["agent_id", "session_id"],
+        },
+    },
+    {
         "name": "check_openrouter_balance",
         "description": (
             "Fetch the current OpenRouter account balance from the OR API (cached 1h). "
@@ -196,7 +259,66 @@ def _openrouter_burn_rate(window_hours: float = 48.0) -> str:
     )
 
 
+def _budget_summary(agent_id: str, group_by: str = "session") -> str:
+    try:
+        from devices.inference.budget_ledger import budget_summary
+
+        rows = budget_summary(agent_id, group_by=group_by)
+    except Exception as exc:
+        return f"budget_summary error: {exc}"
+    if not rows:
+        return f"No ledger entries for agent_id={agent_id!r}."
+    lines = [f"Spend for {agent_id!r} grouped by {group_by}:"]
+    for r in rows:
+        cost = f"  cost=${r['cost_usd_total']:.4f}" if r["cost_usd_total"] else ""
+        lines.append(
+            f"  {r['group_key'] or '(none)'}: "
+            f"in={r['input_tokens']} out={r['output_tokens']}"
+            f"{cost}  calls={r['call_count']}"
+        )
+    return "\n".join(lines)
+
+
+def _budget_limit_set(agent_id: str, scope: str, limit_usd: float) -> str:
+    try:
+        from devices.inference.budget_ledger import budget_limit_set
+
+        ok = budget_limit_set(agent_id, scope, limit_usd)
+    except Exception as exc:
+        return f"budget_limit_set error: {exc}"
+    if ok:
+        return f"Budget limit set: {agent_id!r} {scope}=${limit_usd:.4f}"
+    return "Failed to set budget limit — DB unavailable."
+
+
+def _budget_remaining(agent_id: str, session_id: str) -> str:
+    try:
+        from devices.inference.budget_ledger import budget_remaining
+
+        info = budget_remaining(agent_id, session_id)
+    except Exception as exc:
+        return f"budget_remaining error: {exc}"
+    if info["limit_usd"] is None:
+        return (
+            f"No session limit set for {agent_id!r}. "
+            f"Spent so far: ${info['spent_usd']:.4f}"
+        )
+    return (
+        f"Budget for {agent_id!r} session={session_id!r}: "
+        f"${info['remaining_usd']:.4f} remaining "
+        f"({info['pct_used']:.1f}% used of ${info['limit_usd']:.4f} limit)"
+    )
+
+
 def dispatch(name: str, args: dict) -> str | None:
+    if name == "budget_summary":
+        return _budget_summary(args["agent_id"], args.get("group_by", "session"))
+    if name == "budget_limit_set":
+        return _budget_limit_set(
+            args["agent_id"], args["scope"], float(args["limit_usd"])
+        )
+    if name == "budget_remaining":
+        return _budget_remaining(args["agent_id"], args["session_id"])
     if name == "check_openrouter_balance":
         return _check_openrouter_balance()
     if name == "openrouter_burn_rate":

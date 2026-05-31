@@ -281,7 +281,7 @@ class SummarizerDevice(BaseDevice):
     def comms(self) -> dict:
         return {
             "address": f"comms://{self.DEVICE_ID}/inbox",
-            "mode": "read",
+            "mode": "read_only",
             "supports_push": False,
             "supports_pull": True,
             "supports_nudge": False,

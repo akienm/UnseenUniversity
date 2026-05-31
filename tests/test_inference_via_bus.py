@@ -16,6 +16,7 @@ import pytest
 
 from devices.inference.device import InferenceDevice, _parse_response
 from devices.inference.shim import InferenceRequest, InferenceResponse
+from devices.inference.sources import SourceRegistry
 
 # ── Fixtures and helpers ──────────────────────────────────────────────────────
 
@@ -131,6 +132,7 @@ class TestParseResponse:
 
 class TestDispatchOpenRouter:
     def _device(self, **kwargs) -> InferenceDevice:
+        kwargs.setdefault("sources", SourceRegistry())
         return InferenceDevice(mode="openrouter", **kwargs)
 
     def test_returns_response(self, monkeypatch):
@@ -208,7 +210,9 @@ class TestDispatchOpenRouter:
 
 class TestDispatchOllama:
     def _device(self) -> InferenceDevice:
-        return InferenceDevice(mode="ollama", endpoint="http://127.0.0.1:11434")
+        return InferenceDevice(
+            mode="ollama", endpoint="http://127.0.0.1:11434", sources=SourceRegistry()
+        )
 
     def test_returns_response(self):
         device = self._device()

@@ -52,6 +52,7 @@ _KNOWN_KEYS = frozenset(
         "acl",
         "surfaces",
         "visibility",
+        "system_prompt_sections",
     }
 )
 
