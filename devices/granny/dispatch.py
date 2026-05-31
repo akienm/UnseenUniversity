@@ -130,15 +130,16 @@ def cc_dispatch_fn(ticket: dict) -> bool:
 
 
 def inference_dispatch_fn(ticket: dict) -> bool:
-    """Dispatch a ticket to a cheap inference model via InferenceDevice.
+    """Dispatch a ticket to MinionDevice (cheap inference + tool loop).
 
-    Picks task_class based on ticket tags:
-      'minion' for tickets tagged 'minion' → qwen via OR
-      'worker' for all other sprint tickets → deepseek-v4-flash via OR
+    Picks task_class from ticket tags:
+      'minion' → qwen via OR
+      'worker' → deepseek-v4-flash via OR
 
-    Runs synchronously on the caller's thread — inference call blocks until
-    complete (default 60s timeout). Cost is logged at INFO and posted to channel.
-    Ticket is submitted for validation via cc_queue.py done (not auto-closed).
+    Runs synchronously — blocks until the tool loop completes or escalates.
+    DONE result  → submits ticket via cc_queue.py done (awaiting_validation).
+    ESCALATE     → sets worker=claude + resets to sprint + spawns CC fallback.
+                   The set-worker flag prevents Granny from re-routing to minion.
     """
     ticket_id = ticket.get("id", "")
     if not ticket_id:
@@ -185,69 +186,80 @@ def inference_dispatch_fn(ticket: dict) -> bool:
             "inference_dispatch_fn: channel post failed for %s: %s", ticket_id, e
         )
 
-    # Build prompt from ticket description
-    prompt = (
-        "You are a software engineering assistant.\n\n"
-        f"Complete the following task:\n\n"
-        f"Title: {ticket.get('title', '')}\n\n"
-        f"Description:\n{ticket.get('description', '')}"
-    )
-
-    # Run inference via InferenceDevice — rules engine selects model by task_class
+    # Run the tool loop via MinionDevice
     try:
-        from devices.inference.device import InferenceDevice
-        from devices.inference.shim import InferenceRequest
+        from devices.minion.device import MinionDevice
+        from devices.minion.shim import WorkerEnvelope
 
-        device = InferenceDevice()
-        req = InferenceRequest(
-            messages=[{"role": "user", "content": prompt}],
-            task_class=task_class,
-            agent_id=f"granny-{task_class}",
-            instance_id=ticket_id,
-            coa_id=task_class,
+        envelope = WorkerEnvelope(
+            ticket_id=ticket_id,
+            description=f"Title: {ticket.get('title', '')}\n\n{ticket.get('description', '')}",
+            session_id=ticket_id,  # one session per ticket → model affinity in rules engine
+            cwd=str(_UU_ROOT),
         )
-        resp = device.dispatch(req)
+        worker_result = MinionDevice().execute(envelope)
 
         log.info(
-            "inference_dispatch %s: task_class=%s model=%s in_tokens=%d out_tokens=%d"
-            " cost_usd=%.6f elapsed_ms=%d",
+            "inference_dispatch %s: signal=%r task_class=%s iterations=%d tools=%s",
             ticket_id,
+            worker_result.signal,
             task_class,
-            resp.model,
-            resp.input_tokens,
-            resp.output_tokens,
-            resp.cost_estimate,
-            resp.elapsed_ms,
+            worker_result.iterations,
+            worker_result.tools_called,
         )
 
-        # Post cost to channel for observability
+        # Post result to channel for observability
         try:
             from unseen_university.channel import post_to_channel
 
             post_to_channel(
-                f"INFERENCE_COST|ticket={ticket_id}|task_class={task_class}"
-                f"|model={resp.model}|in_tokens={resp.input_tokens}"
-                f"|out_tokens={resp.output_tokens}|cost_usd={resp.cost_estimate:.6f}",
+                f"MINION_RESULT|ticket={ticket_id}|signal={worker_result.signal}"
+                f"|task_class={task_class}|iterations={worker_result.iterations}",
                 author="granny-weatherwax",
                 channel="shared",
             )
         except Exception:
             pass
 
-        # Submit for validation — not auto-close; output needs human review
-        summary = f"{task_class}({resp.model}): {resp.text[:200].strip()}"
-        try:
-            subprocess.run(
-                [_PYTHON, str(_CC_QUEUE), "done", ticket_id, summary],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
-        except Exception as e:
-            log.warning("inference_dispatch %s: done call failed: %s", ticket_id, e)
+        if worker_result.signal == "DONE":
+            summary = f"minion({task_class}): {worker_result.notes[:200]}"
+            try:
+                subprocess.run(
+                    [_PYTHON, str(_CC_QUEUE), "done", ticket_id, summary],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+            except Exception as e:
+                log.warning("inference_dispatch %s: done call failed: %s", ticket_id, e)
+            return True
+
+        # ESCALATE — mark for CC routing so Granny won't re-dispatch to minion
+        log.warning(
+            "inference_dispatch %s: escalating to CC — %s: %s",
+            ticket_id,
+            worker_result.signal,
+            worker_result.notes[:200],
+        )
+        for cmd in (
+            [_PYTHON, str(_CC_QUEUE), "set-worker", "claude", ticket_id],
+            [_PYTHON, str(_CC_QUEUE), "setstatus", ticket_id, "sprint"],
+            [
+                _PYTHON,
+                str(_CC_QUEUE),
+                "log",
+                f"ESCALATED from {task_class}: {worker_result.signal} — {worker_result.notes[:300]}",
+            ],
+        ):
+            try:
+                subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            except Exception as e:
+                log.warning(
+                    "inference_dispatch %s: escalation cmd failed: %s", ticket_id, e
+                )
+        _launch_cc_instance(ticket_id)
+        return True
 
     except Exception as e:
-        log.error("inference_dispatch %s: inference failed: %s", ticket_id, e)
+        log.error("inference_dispatch %s: minion execution failed: %s", ticket_id, e)
         return False
-
-    return True
