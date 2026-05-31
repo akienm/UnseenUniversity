@@ -1,0 +1,34 @@
+# Example factory spec — canonical format reference.
+# Decision: D-agentic-os-platform-2026-05-30 / T-factory-template
+#
+# To instantiate:
+#   python run validate config/factories/example-factory.yaml
+#   python run instantiate config/factories/example-factory.yaml   (via factory-create skill)
+
+factory_id: research-orca
+factory_version: "1.0"
+description: "Research and knowledge management swarm — Librarian + Scraps wired under a human owner"
+status: pending   # pending | approved | active | halted | archived
+
+owner_id: comms://akien/         # human today; any comms:// agent tomorrow
+orchestrator: granny-pattern     # one agent holds the goal, routes to members
+
+members:
+  - agent_type: librarian
+  - agent_type: scraps
+  # To add a custom member: run /new-agent, then add its agent_type here.
+  # The instantiator warns if the profile is missing but does not block.
+
+eval_rubric: R-factory-output    # evaluator device rubric id (see devices/evaluator/)
+
+# Observe→learn→improve loop opt-in (omit or set to null to disable)
+observe_rubric: null             # rubric id the loop uses to score factory outputs continuously
+improve_threshold: 0.7           # score below which a Platform improvement ticket is filed
+
+budget_limits:                   # inherited by all member agents
+  daily_limit_usd: 5.00
+  per_call_usd: 0.10
+
+escalation:
+  timeout_secs: 300              # orchestrator escalates to owner after 5 min blocked
+  max_retries: 3
