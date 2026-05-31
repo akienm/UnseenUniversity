@@ -108,40 +108,29 @@ See the [device table in README.md](../README.md#devices) for the current full l
 
 ---
 
-## 3. Igor's Cognition Stack
+## 3. Platform Subsystems
 
-Igor is a device (`devices/igor/`). His cognition subsystems are sub-devices within that directory. They run on the rack like everything else; they are not special.
+### 3.1 Queue device
 
-### 3.1 Narrative Engine (NE)
+`devices/queue/` — Postgres-backed, stateless. `queue_next(worker)` is a single serializable transaction: read next eligible ticket → mark `in_progress` → return. No claim step; dispatch IS assignment.
 
-`devices/igor/cognition/narrative_engine.py`
+**Why no claim?** A separate claim step creates a window where a ticket is claimed but not started, requiring a timeout/reset mechanism. Atomic dispatch eliminates that window.
 
-The NE is the main loop of Igor's cognition. Each **NE cycle**:
+### 3.2 Granny Weatherwax — orchestrator
 
-1. Reads the working-memory workspace (TWM) for active observations.
-2. Spreads activation across the memory graph via the word graph.
-3. Selects a narrative arc (the most-activated path through memory).
-4. Calls the LLM with the arc as context.
-5. The LLM produces one of: `ACTION_IMPULSE`, `NARRATIVE_GAP`, `REFLECTION`, `NO_ACTION`.
-6. The result is deposited back into TWM.
+`devices/granny/` — The ticket gateway. Responsibilities:
 
-**Why a narrative arc, not a prompt?** Spreading activation surfaces what's most relevant to the current context without requiring the LLM to search memory explicitly. The arc is the retrieved context; the LLM does reasoning, not retrieval.
+1. **Filing-time audit gate**: checks required fields, valid size, description sections. Tickets that fail the gate don't enter the sprint queue.
+2. **Routing**: tag → worker via a weighted capability graph. Each `(tag, worker_id)` pair is a `RoutingEdge` with a weight. Successful dispatches strengthen the edge (Hebbian learning). Unknown tags escalate to CC.
+3. **Dispatch**: for CC tickets, posts `GRANNY_DISPATCH|ticket=T-xxx|...` to the shared channel.
 
-### 3.2 Working-Memory Workspace (TWM)
+### 3.3 cc_task_listener
 
-`devices/igor/memory/twm.py` and `instance.twm_observations` in Postgres.
+`lab/claudecode/cc_task_listener.py` — Polls the shared channel for `GRANNY_DISPATCH` messages and calls `cc_queue.py dispatch` to mark tickets `in_progress`. Runs as a background thread inside `GrannyDaemon`.
 
-TWM is a short-lived, high-salience workspace. Each observation has:
+**Why a listener instead of direct dispatch?** CC doesn't have a persistent inbound channel. The channel is the handoff point; the listener bridges the bus to CC's queue.
 
-- `content_csb` — the content in key|value format
-- `salience` — 0–1; higher = more likely to surface to NE
-- `expires_at` — observations decay; TWM is not permanent storage
-- `category` — `observation`, `goal`, `maintenance`, etc.
-- `thread_id` — groups related observations into a reasoning thread
-
-**Why not just use the LLM's context window?** Context windows are wiped each turn. TWM persists across turns, survives crashes (Postgres-backed), and can be inspected externally. It is Igor's "what's on my mind right now" that outlasts any single inference call.
-
-### 3.3 Memory Cortex
+### 3.4 Memory Cortex
 
 `devices/igor/memory/cortex.py` and `clan.memories` in Postgres.
 
@@ -152,7 +141,7 @@ Long-term memory. Each memory node:
 | `id` | yyyymmddhhmmss123456 < memory ID used to link back to from other memories
 | `name` | Unique string key (often human-readable: `PR_GOAL_ASPIRATIONAL_SUCK_LESS`) |
 | `narrative` | The content — what Igor knows or believes |
-| `memory_type` | See §3.4 |
+| `memory_type` | See §3.5 |
 | `metadata` | JSON blob — type-specific fields (goal_type, status, code_ref, etc.) |
 | `parent_id` | Forms a tree; child nodes inherit context from parents |
 | `inertia` | 0–1; how resistant to change (high = load-bearing, touch carefully) |
@@ -162,7 +151,7 @@ Long-term memory. Each memory node:
 
 Memory lives in `clan.memories` — shared across all Igor instances. Instance-private scratch lives in `instance.*` tables.
 
-### 3.4 Memory Node Types
+### 3.5 Memory Node Types
 
 | Type | What it stores | Examples |
 |---|---|---|
@@ -183,9 +172,9 @@ Memory lives in `clan.memories` — shared across all Igor instances. Instance-p
 
 **Why memory types instead of a flat store?** The NE applies different spreading-activation weights by type. PROCEDURAL nodes trigger tool calls rather than NE reasoning. FACTUAL nodes have inertia; high-inertia nodes require CC pre-approval before editing. Type separates "what kind of thing this is" from "what the content says."
 
-**Versioning:** any node type can act as a version facia — the head of an append-only version chain. REFERENCE nodes most commonly play this role. See §3.8 for the full facia pattern.
+**Versioning:** any node type can act as a version facia — the head of an append-only version chain. REFERENCE nodes most commonly play this role. See §3.7 for the full facia pattern.
 
-### 3.5 Two-Tier Semantic Search
+### 3.6 Two-Tier Semantic Search
 
 The rack uses two distinct semantic search mechanisms, by design (D-shared-memory-service-2026-05-28):
 
@@ -216,34 +205,7 @@ OpenAI `text-embedding-3-small` (1536-dim) with a hash-based fallback (384-dim, 
 3. Vector similarity via pre-computed embeddings (cosine distance, no inference at query time)
 4. Optional LLM escalation for nuance (writes result back so next recall is cheaper)
 
-### 3.6 pe_chain (Plan → Execute chain)
-
-`devices/igor/tools/pe_chain.py`
-
-The coding workflow. When Igor is assigned a ticket, pe_chain steps through phases:
-
-```
-INIT → CLAIM → READ → PLAN → FILTER → SITUATE →
-OBSERVE → STORE_OBSERVE_RESULTS → HYPOTHESIZE → IMPLEMENT → TEST → PROBE → CLOSE
-```
-
-Each phase writes to a `basket` (a dict in TWM) and reads from it. The basket is the shared state that survives crashes mid-chain.
-
-**Why a named phase chain?** Each phase can be stepped manually for debugging. A stuck HYPOTHESIZE phase is diagnosable without re-running the whole chain. The basket in TWM means a restarted Igor can resume mid-chain rather than starting over.
-
-### 3.7 Engrams
-
-`clan.memories WHERE memory_type='PROCEDURAL'`
-
-Engrams are compiled habits. Each is a PROCEDURAL memory node with:
-- `code_ref`: `"namespace:tool_name"` — the function to call when this habit fires
-- `schedule_interval_sec`: how often SchedulerSource fires it (absent = manual-only)
-
-The SchedulerSource in `devices/igor/cognition/push_sources.py` reads all PROCEDURAL memories with `schedule_interval_sec` and fires their `code_ref` tools on a timer.
-
-**Why habits in Postgres, not code?** Habits can be added, removed, or retimed at runtime without a code deploy. Igor can learn new habits; CC can seed new habits via `psql`. The habit system is data-driven.
-
-### 3.8 Versioning — the facia pattern
+### 3.7 Versioning — the facia pattern
 
 Every versioned artifact in the memory graph has a **facia** node: the node that currently represents the head of its version chain. The facia is the default resolution target when the rack looks up a versioned artifact by key.
 
@@ -272,33 +234,77 @@ To get the current version: look up the key → facia. To read history: traverse
 
 **Why not in-place update?** In-place rewrites destroy the audit trail silently. A facia redirect preserves every prior version without a separate log. The graph structure is the archive.
 
-**Why it feels familiar:** The facia pattern is the same trail/append model used in TWM (§3.2), pe_chain baskets (§3.6), and engrams (§3.7). New state appends; nothing is erased; history is a traversal, not a special query.
+The append-only model recurs across the system: new state appends, nothing is erased, history is a traversal, not a special query.
 
-REFERENCE nodes most commonly carry facia semantics — they are "pointer or frame" nodes by design (see §3.4 type table). Other node types (GOAL, INTERPRETIVE, FACTUAL) can also head a version chain when the versioned artifact is of that type.
+REFERENCE nodes most commonly carry facia semantics — they are "pointer or frame" nodes by design (see §3.5 type table). Other node types (GOAL, INTERPRETIVE, FACTUAL) can also head a version chain when the versioned artifact is of that type.
 
 ---
 
-## 4. The Queue and Dispatch Chain
+## 4. Igor — Reference Implementation
 
-### 4.1 Queue device
+Igor is a device (`devices/igor/`), the reference implementation of an agent built on the rack. His cognition subsystems use the platform abstractions defined in §1–3: the bus (§1.3), the queue (§3.1–3.3), and memory (§3.4–3.7). They run on the rack like everything else; they are not special.
 
-`devices/queue/` — Postgres-backed, stateless. `queue_next(worker)` is a single serializable transaction: read next eligible ticket → mark `in_progress` → return. No claim step; dispatch IS assignment.
+### 4.1 Narrative Engine (NE)
 
-**Why no claim?** A separate claim step creates a window where a ticket is claimed but not started, requiring a timeout/reset mechanism. Atomic dispatch eliminates that window.
+`devices/igor/cognition/narrative_engine.py`
 
-### 4.2 Granny Weatherwax — orchestrator
+The NE is the main loop of Igor's cognition. Each **NE cycle**:
 
-`devices/granny/` — The ticket gateway. Responsibilities:
+1. Reads the working-memory workspace (TWM) for active observations.
+2. Spreads activation across the memory graph via the word graph.
+3. Selects a narrative arc (the most-activated path through memory).
+4. Calls the LLM with the arc as context.
+5. The LLM produces one of: `ACTION_IMPULSE`, `NARRATIVE_GAP`, `REFLECTION`, `NO_ACTION`.
+6. The result is deposited back into TWM.
 
-1. **Filing-time audit gate**: checks required fields, valid size, description sections. Tickets that fail the gate don't enter the sprint queue.
-2. **Routing**: tag → worker via a weighted capability graph. Each `(tag, worker_id)` pair is a `RoutingEdge` with a weight. Successful dispatches strengthen the edge (Hebbian learning). Unknown tags escalate to CC.
-3. **Dispatch**: for CC tickets, posts `GRANNY_DISPATCH|ticket=T-xxx|...` to the shared channel.
+**Why a narrative arc, not a prompt?** Spreading activation surfaces what's most relevant to the current context without requiring the LLM to search memory explicitly. The arc is the retrieved context; the LLM does reasoning, not retrieval.
 
-### 4.3 cc_task_listener
+### 4.2 Working-Memory Workspace (TWM)
 
-`lab/claudecode/cc_task_listener.py` — Polls the shared channel for `GRANNY_DISPATCH` messages and calls `cc_queue.py dispatch` to mark tickets `in_progress`. Runs as a background thread inside `GrannyDaemon`.
+`devices/igor/memory/twm.py` and `instance.twm_observations` in Postgres.
 
-**Why a listener instead of direct dispatch?** CC doesn't have a persistent inbound channel. The channel is the handoff point; the listener bridges the bus to CC's queue.
+TWM is a short-lived, high-salience workspace. Each observation has:
+
+- `content_csb` — the content in key|value format
+- `salience` — 0–1; higher = more likely to surface to NE
+- `expires_at` — observations decay; TWM is not permanent storage
+- `category` — `observation`, `goal`, `maintenance`, etc.
+- `thread_id` — groups related observations into a reasoning thread
+
+**Why not just use the LLM's context window?** Context windows are wiped each turn. TWM persists across turns, survives crashes (Postgres-backed), and can be inspected externally. It is Igor's "what's on my mind right now" that outlasts any single inference call.
+
+TWM observations are append-only and never rewritten in place; see §3.7 for the facia/versioning pattern.
+
+### 4.3 pe_chain (Plan → Execute chain)
+
+`devices/igor/tools/pe_chain.py`
+
+The coding workflow. When Igor is assigned a ticket, pe_chain steps through phases:
+
+```
+INIT → CLAIM → READ → PLAN → FILTER → SITUATE →
+OBSERVE → STORE_OBSERVE_RESULTS → HYPOTHESIZE → IMPLEMENT → TEST → PROBE → CLOSE
+```
+
+Each phase writes to a `basket` (a dict in TWM) and reads from it. The basket is the shared state that survives crashes mid-chain.
+
+**Why a named phase chain?** Each phase can be stepped manually for debugging. A stuck HYPOTHESIZE phase is diagnosable without re-running the whole chain. The basket in TWM means a restarted Igor can resume mid-chain rather than starting over.
+
+The basket follows the same append-only pattern; see §3.7.
+
+### 4.4 Engrams
+
+`clan.memories WHERE memory_type='PROCEDURAL'`
+
+Engrams are compiled habits. Each is a PROCEDURAL memory node with:
+- `code_ref`: `"namespace:tool_name"` — the function to call when this habit fires
+- `schedule_interval_sec`: how often SchedulerSource fires it (absent = manual-only)
+
+The SchedulerSource in `devices/igor/cognition/push_sources.py` reads all PROCEDURAL memories with `schedule_interval_sec` and fires their `code_ref` tools on a timer.
+
+**Why habits in Postgres, not code?** Habits can be added, removed, or retimed at runtime without a code deploy. Igor can learn new habits; CC can seed new habits via `psql`. The habit system is data-driven.
+
+Engrams follow the same append-only/facia pattern; see §3.7.
 
 ---
 
@@ -392,7 +398,7 @@ This document is also an alignment artifact. Review each section against the cod
 
 1. **Does the code match the "why"?** If a design rule exists for a stated reason but the implementation no longer follows the rule, that's a ticket.
 2. **Are there components not listed here?** Absent components are invisible to the mental model.
-3. **Do the memory node types match what's actually in the DB?** Run: `SELECT memory_type, count(*) FROM clan.memories GROUP BY memory_type` and compare to §3.4.
+3. **Do the memory node types match what's actually in the DB?** Run: `SELECT memory_type, count(*) FROM clan.memories GROUP BY memory_type` and compare to §3.5.
 4. **Are the safety gates actually filesystem-only?** Run: `SELECT id FROM clan.memories WHERE id IN ('SYSCFG_IGOR_TIER5_ENABLED', 'SYSCFG_IGOR_ARBITER_ENABLED', 'SYSCFG_IGOR_SELF_EDIT_ENABLED')` — should return 0 rows.
 5. **Does the BaseDevice contract exist in practice?** Verify `start`, `stop`, `health`, `self_test` appear in at least 3 concrete device classes in `devices/`.
 6. **Is the log hierarchy respected?** Check that `datacenter_logs/` contains only `<device>/<subsystem>/` paths — no flat files or mystery device names.
@@ -401,7 +407,7 @@ Gaps found in this review become tickets. That is the intended use of this docum
 
 ### Last run: 2026-05-30
 
-**Check 3 — memory node types** (vs §3.4):
+**Check 3 — memory node types** (vs §3.5):
 
 ```
  memory_type   | count
@@ -421,7 +427,7 @@ Gaps found in this review become tickets. That is the intended use of this docum
 (12 rows)
 ```
 
-**RESOLVED (T-theory-doc-memory-types):** §3.4 previously documented 6 types; DB has 12. The six absent types — `EXPERIENTIAL`, `CREDENTIAL_REF`, `IDENTITY`, `CORE_PATTERN`, `ROLE_MODEL`, `ROOT` — were added to the §3.4 table on 2026-05-30. Doc and DB are now aligned.
+**RESOLVED (T-theory-doc-memory-types):** §3.5 previously documented 6 types; DB has 12. The six absent types — `EXPERIENTIAL`, `CREDENTIAL_REF`, `IDENTITY`, `CORE_PATTERN`, `ROLE_MODEL`, `ROOT` — were added to the §3.5 table on 2026-05-30. Doc and DB are now aligned.
 
 ---
 

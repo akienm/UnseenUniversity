@@ -4,7 +4,7 @@ Reads clan.memories, reasons about redundant/stale/underused content,
 writes archive_action proposals to instance.proposals.
 Librarian PROPOSES, Igor DECIDES — no direct writes to clan.memories.
 
-All findings logged to datacenter_logs/librarian/curation.jsonl.
+All findings logged to datacenter_logs/librarian/curation/curation.jsonl.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ _PG_URL = os.environ.get(
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 _LOG_ROOT = Path(os.environ.get("ADC_LOG_ROOT", "datacenter_logs"))
-_CURATION_LOG = _LOG_ROOT / "librarian" / "curation.jsonl"
+_CURATION_LOG = _LOG_ROOT / "librarian" / "curation" / "curation.jsonl"
 
 _FOCUS_QUALITY_LOG_DDL = """
 CREATE TABLE IF NOT EXISTS instance.focus_quality_log (

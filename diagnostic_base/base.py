@@ -36,7 +36,9 @@ def _json_file_sink(message) -> None:
     try:
         record = message.record
         extra = record["extra"]
-        device_id = extra.get("device_id", "unknown")
+        if "device_id" not in extra:
+            return
+        device_id = extra["device_id"]
         log_root = Path(extra.get("log_root", "datacenter_logs"))
 
         ts = record["time"]
