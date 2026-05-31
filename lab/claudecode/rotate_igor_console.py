@@ -4,7 +4,7 @@ rotate_igor_console.py — T-igor-console-midnight-rotate
 
 Re-point Igor's tmux pipe-pane to today's console log file. The igor
 launcher (~/bin/igor → /home/akien/TheIgors/igor) starts pipe-pane to
-$ADC_HOME/logs/Igor-wild-0001/YYYYMMDD.console.log AT SESSION START ONLY.
+$ADC_HOME/logs/Igor-wild-0001/YYYY-MM-DD.console.md AT SESSION START ONLY.
 Long-lived sessions keep appending to the launch-day file. This script
 rotates that pipe at day boundaries so each calendar day gets its own
 file.
@@ -30,7 +30,9 @@ from pathlib import Path
 
 def _adc_home() -> Path:
     return Path(
-        os.environ.get("UNSEEN_UNIVERSITY_HOME", str(Path.home() / ".unseen_university"))
+        os.environ.get(
+            "UNSEEN_UNIVERSITY_HOME", str(Path.home() / ".unseen_university")
+        )
     )
 
 
@@ -41,7 +43,7 @@ def _session_name() -> str:
 def target_log_path(now: datetime, adc_home: Path | None = None) -> Path:
     """Compute the expected console log path for the given date."""
     home = adc_home or _adc_home()
-    return home / "logs" / "Igor-wild-0001" / f"{now.strftime('%Y%m%d')}.console.log"
+    return home / "logs" / "Igor-wild-0001" / f"{now.strftime('%Y-%m-%d')}.console.md"
 
 
 def tmux_session_exists(session: str) -> bool:

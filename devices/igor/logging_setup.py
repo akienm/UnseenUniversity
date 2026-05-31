@@ -147,12 +147,13 @@ class ConsoleHandler(logging.Handler):
 
 class DailyConsoleFileHandler(logging.Handler):
     """
-    Writes colored log output to a daily YYYYMMDD.console.log file.
+    Writes colored log output to a daily YYYY-MM-DD.console.md file.
 
     Mirrors ConsoleHandler's Rich-based output — same style, same levels.
     Rolls over at midnight; prunes files older than retention_days.
-    Replaces the tmux pipe-pane capture (which caught non-logging terminal
-    sequences like bracketed-paste control codes).
+    Each new file starts with a markdown header (# Igor log — YYYY-MM-DD)
+    so Kate and other markdown tools open it with the same formatting used
+    for CC session logs.
 
     emit() is called under the handler's own lock (base Handler.handle()),
     so _roll() and the Rich console.print() are already serialized.
@@ -170,13 +171,17 @@ class DailyConsoleFileHandler(logging.Handler):
         log_dir.mkdir(parents=True, exist_ok=True)
 
     def _roll(self) -> None:
-        today = datetime.now().strftime("%Y%m%d")
+        today = datetime.now().strftime("%Y-%m-%d")
         if today == self._current_date:
             return
         if self._file:
             self._file.close()
-        path = self._log_dir / f"{today}.console.log"
+        path = self._log_dir / f"{today}.console.md"
+        is_new = not path.exists()
         self._file = path.open("a", encoding="utf-8")
+        if is_new:
+            self._file.write(f"# Igor log — {today}\n\n")
+            self._file.flush()
         from rich.console import Console
 
         self._console = Console(file=self._file, highlight=False, no_color=True)
@@ -185,9 +190,9 @@ class DailyConsoleFileHandler(logging.Handler):
 
     def _prune(self) -> None:
         cutoff = datetime.now() - timedelta(days=self._retention_days)
-        for f in self._log_dir.glob("????????.console.log"):
+        for f in self._log_dir.glob("????-??-??.console.md"):
             try:
-                if datetime.strptime(f.stem[:8], "%Y%m%d") < cutoff:
+                if datetime.strptime(f.stem[:10], "%Y-%m-%d") < cutoff:
                     f.unlink()
             except (ValueError, OSError) as e:
                 log.debug("_prune: strptime/unlink failed: %s", e)

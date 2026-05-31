@@ -8343,7 +8343,7 @@ class Igor(IgorBase):
 
         loginfo("[bold]LOG FILE SIZES[/]")
         total_log_bytes = 0
-        for log_file in sorted(LOG_DIR.glob("*.log")):
+        for log_file in sorted([*LOG_DIR.glob("*.log"), *LOG_DIR.glob("*.console.md")]):
             size = log_file.stat().st_size
             total_log_bytes += size
             size_kb = size // 1024
