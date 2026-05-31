@@ -1,0 +1,8 @@
+# Claude Code agent policy — allowed actions (tool names).
+# "*" grants all actions; production value for a fully-trusted coding agent.
+# See also: config/profiles/cc.yaml for device bindings.
+# Decision: D-agentic-os-platform-2026-05-30
+
+agent_type: cc
+allowed_actions:
+  - "*"

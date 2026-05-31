@@ -23,14 +23,39 @@ import logging
 import os
 import time
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from devices.policy.gate import PolicyGate
     from devices.policy.output_validators import OutputValidator
 
 log = logging.getLogger(__name__)
+
+
+@dataclass
+class AgentContext:
+    """Dispatch-time identity context. Pass as _policy to BaseShim.dispatch()."""
+
+    agent_id: str
+    token: object = field(default=None)
+
+
+class PolicyDeniedError(Exception):
+    """Raised by dispatch() when the policy gate denies a tool call.
+
+    Shape: action, reason, agent_id available as attributes.
+    """
+
+    def __init__(self, action: str, reason: str, agent_id: str = "") -> None:
+        self.action = action
+        self.reason = reason
+        self.agent_id = agent_id
+        super().__init__(
+            f"Policy denied: agent={agent_id!r} action={action!r} — {reason}"
+        )
 
 
 def _write_shim_trace(record: dict) -> None:
@@ -98,6 +123,7 @@ class BaseShim(ABC):
         """
 
     _output_validator: OutputValidator | None = None
+    _policy_gate: PolicyGate | None = None
 
     def validate_output(self, result: object) -> object:
         """Validate and redact sensitive content from a tool result.
@@ -113,13 +139,27 @@ class BaseShim(ABC):
             log.warning("output validation: %s [device=%s]", incident, self.device_id)
         return redacted
 
-    def dispatch(self, tool_name: str, **kwargs) -> object:
+    def dispatch(
+        self, tool_name: str, *, _policy: AgentContext | None = None, **kwargs
+    ) -> object:
         """Route a tool call through this shim and write a JSONL trace record.
+
+        When _policy is provided and _policy_gate is set, evaluates all three
+        governance checks (provenance, allowed_actions, budget) before dispatch.
+        Raises PolicyDeniedError on any denial — denial is NOT recorded in the
+        call-log, only in the governance log written by the gate.
 
         Writes to datacenter_logs/shim/trace/YYYYMMDD.jsonl (or
         UU_SHIM_TRACE_DIR if set). Log write is fire-and-forget — a failure
         never blocks the tool call.
         """
+        if _policy is not None and self._policy_gate is not None:
+            allowed, reason = self._policy_gate.check(
+                _policy.agent_id, tool_name, _policy.token
+            )
+            if not allowed:
+                raise PolicyDeniedError(tool_name, reason, _policy.agent_id)
+
         t0 = time.monotonic()
         error_type: str | None = None
         success = False

@@ -1,0 +1,8 @@
+# Igor agent policy — allowed actions (tool names).
+# "*" grants all actions; Igor has full-access to all bound devices.
+# See also: config/profiles/igor.yaml for device bindings.
+# Decision: D-agentic-os-platform-2026-05-30
+
+agent_type: igor
+allowed_actions:
+  - "*"
