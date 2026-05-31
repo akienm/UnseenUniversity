@@ -128,6 +128,51 @@ See the [device table in README.md](../README.md#devices) for the current full l
 
 **Why one directory per device?** Blast-radius containment. A broken import in one device cannot crash the whole rack on startup. Each device is independently deployable, testable, and replaceable.
 
+### 2.3 Security Tiers
+
+The rack uses a two-tier execution model. Tier determines the security perimeter, not the capability surface.
+
+**Tier 1 — Trusted agents (Igor, CC, Librarian, Granny, Nanny)**
+
+Enforcement: policy gate (`devices/policy/gate.py`) + path sandbox. All tool calls route through `BaseShim.dispatch()`, which traces every call to `datacenter_logs/shim/trace/YYYYMMDD.jsonl`. The policy gate runs before each dispatch and allows/denies based on the agent's manifest and the calling context.
+
+These agents run as host processes. The rack trusts them at the same level as any same-UID process on the machine — because they are same-UID processes. Prompt injection is the in-scope threat; process escape is not.
+
+**Tier 2 — Untrusted / external agents (ContainerShim)**
+
+Enforcement: the container boundary IS the security perimeter. `ContainerShim` (`unseen_university/skeleton/container_shim.py`) wraps the agent process in a Docker container with:
+
+- `--network=none`: the container has no TCP stack at all. It cannot reach the host's Postgres, IMAP, or any other network service directly. Bridge networking is explicitly rejected — a bridge gateway exposes host services to containers even when those services bind to `0.0.0.0`.
+- **Unix domain socket only**: the shim binds a socket at `HOST_DIR/uu-shim-<device_id>.sock` and mounts it into the container at `/var/run/uu-shim.sock`. This is the only channel in or out.
+- **docker.sock denied**: mounting `/var/run/docker.sock` grants full Docker API access and trivially escapes the container. `ContainerShim.start()` raises `ValueError` on any mount containing `docker.sock`, regardless of the profile.
+- **Resource limits**: `--cpus` and `--memory` from the profile's `container.resource_limits` block.
+
+Container spec is per-agent-profile (see `config/profiles/external_agent.yaml` for the reference). Existing tier-1 profiles are not affected — `container:` block is optional and ignored by tier-1 shims.
+
+**Lifecycle wiring**: `ContainerShim.start()` launches the container; `ContainerShim.stop()` halts it. The rack caller (typically the announce listener or a supervisor daemon) is responsible for invoking these on announce and deregister respectively. The skeleton's `register_device()` / `deregister_device()` manage the flat-file registry but do not call shim lifecycle methods — shim start/stop is the caller's responsibility at all tiers.
+
+**Why Docker, not a VM?** Docker provides process-level isolation sufficient for the threat model (prompt-injected agents; not physically-local adversaries). VMs are explicitly out of scope for v1. See `docs/security_known_limitations.md` for the full list of accepted gaps.
+
+**Why not enforce at the network layer for tier-1?** Same-UID same-machine trusted processes communicate at the process level. Inter-process network inspection would require deep packet interception and would add latency with no real security gain for processes that already share the OS context. The policy gate (IMAP message routing) is the correct enforcement layer for tier-1.
+
+### 2.4 Logging Convention
+
+Every device must log **state changes** and **interface crossings**.
+
+**State changes** include: ticket status transitions, device lifecycle events (start/stop/restart/halt), routing decisions, auth/trust events. **Interface crossings** include: channel post/read, DB write/read, subprocess spawn, MCP tool dispatch, and calls across device/shim boundaries.
+
+Log levels:
+- `INFO` — each interface crossing and significant state transition
+- `DEBUG` — high-frequency state changes (Hebbian edge weight updates, internal counter increments)
+- `WARNING` — recoverable degradation (channel post failed, fallback activated)
+- `ERROR` — unrecoverable within the current operation (binary not found, subprocess spawn failed)
+
+**Why?** Without a log at a crossing point, a bug at a device boundary is invisible — you cannot tell whether the problem is in the sender or the receiver, or whether the message crossed at all. Logs at crossings make `/diagnose` effective: given a ticket ID, the log chain shows exactly when it moved between devices and which device lost it.
+
+**Enforcement:** audit check AR-009 (`audit_check_interface_logging.py`) flags `BaseDevice` methods that invoke interface-crossing primitives (`subprocess.Popen/run/call`, `post_to_channel`) without a log call in the same method body. The check detects the "no log at all" case; the implementation target is INFO on success and WARNING on failure for each crossing.
+
+**Reference implementation:** `devices/granny/device.py` — `_post_to_channel`, `_dispatch_to_cc`, `register_worker`, `strengthen_edge`, `weaken_edge` all log their crossings and state changes.
+
 ---
 
 ## 3. Platform Subsystems

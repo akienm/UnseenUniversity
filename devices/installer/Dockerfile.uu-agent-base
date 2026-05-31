@@ -1,0 +1,31 @@
+# uu-agent-base — minimal base image for tier-2 (untrusted) agents.
+#
+# This image runs inside a ContainerShim container. Design constraints:
+#   - No network access at runtime (--network=none)
+#   - Communicates with the rack via /var/run/uu-shim.sock only
+#   - Minimal surface area: no ssh, no curl, no wget by default
+#
+# Build: docker build -f devices/installer/Dockerfile.uu-agent-base -t uu-agent-base .
+# Usage: ContainerShim(device_id="...", container_image="uu-agent-base")
+
+FROM python:3.11-slim
+
+# Remove network utilities to prevent accidental outbound attempts.
+# The --network=none Docker flag is the enforcement layer; this is defense-in-depth.
+RUN apt-get update && apt-get remove --purge -y \
+    curl wget openssh-client netcat-openbsd \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# Unix socket directory — shim bind-mounts to this path.
+RUN mkdir -p /var/run && chmod 755 /var/run
+
+WORKDIR /agent
+
+# Install only what the agent framework needs.
+COPY requirements.txt* ./
+RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+
+# Default entrypoint: wait for the shim to send commands via the socket.
+# Override with a specific agent entrypoint in derived images.
+CMD ["python", "-c", "import socket, time; s = socket.socket(socket.AF_UNIX); s.bind('/var/run/uu-shim.sock'); s.listen(1); conn, _ = s.accept(); print('agent connected'); conn.close()"]

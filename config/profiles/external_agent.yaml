@@ -1,0 +1,60 @@
+# External agent profile — reference for tier-2 (untrusted) agents.
+# Use ContainerShim when instantiating agents with this profile.
+# Decision: D-agentic-os-platform-2026-05-30
+# Ticket: T-container-shim
+
+profile_version: "1.0"
+agent_type: external_agent
+description: "Tier-2 untrusted agent — runs in a container, rack access via shim only"
+inherits: []
+
+# Devices this agent type may bind to.
+# Tier-2 agents get a restricted surface: no postgres, no discord_bot.
+allowed_devices:
+  - inference
+
+device_permissions:
+  inference:
+    mode: read_only
+    rate_limit_per_min: 10
+
+default_channels: []
+
+state_refs: {}
+
+acl:
+  inbound:
+    allow:
+      - skeleton
+    deny: []
+  outbound:
+    allow:
+      - inference
+    deny: []
+
+visibility: hidden
+
+surfaces:
+  console: false
+  inference: false
+  mcp: false
+
+# Container spec — used by ContainerShim.
+# ContainerShim is the only shim that reads these fields.
+# Tier-1 agents (igor, cc, librarian) use no container spec.
+container:
+  # Docker image to launch for this agent.
+  container_image: uu-agent-base
+
+  # Network model: "none" — no TCP stack; only communication is via the
+  # Unix socket at /var/run/uu-shim.sock inside the container.
+  # Do not change to "bridge" — bridge networking exposes host services.
+  network_policy: none
+
+  # Host:container bind mounts. docker.sock is never allowed.
+  allowed_mounts: []
+
+  # Resource limits applied to the container.
+  resource_limits:
+    cpu: "0.5"      # --cpus flag
+    memory: "512m"  # --memory flag
