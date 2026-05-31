@@ -24,6 +24,7 @@ import json
 import os
 import re
 import time
+import uuid
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from typing import Any
@@ -179,16 +180,17 @@ def write_memory(
             import psycopg2
             import psycopg2.extras
 
+            memory_id = str(uuid.uuid4())
             conn = psycopg2.connect(url)
             with conn.cursor() as cur:
                 cur.execute(
                     """
                     INSERT INTO clan.memories
-                        (memory_type, narrative, metadata, payloads, source_agent, timestamp)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    RETURNING id
+                        (id, memory_type, narrative, metadata, payloads, source_agent, timestamp)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
+                        memory_id,
                         memory_type,
                         content,
                         psycopg2.extras.Json(combined_meta),
@@ -197,8 +199,6 @@ def write_memory(
                         stored_at,
                     ),
                 )
-                row = cur.fetchone()
-                memory_id = str(row[0]) if row else "unknown"
             conn.commit()
             conn.close()
         except Exception as e:
