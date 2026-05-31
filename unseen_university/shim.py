@@ -5,12 +5,51 @@ The shim sits between the rack and a device's native interface. It owns:
   - Lifecycle: start, stop, restart, rollback
   - Self-test: verify the device is actually working
   - Translation: converts native errors/states into rack-understood signals
+  - Call tracing: dispatch() logs every inter-agent tool call to a JSONL file
 
 One shim per device. The rack calls the shim's lifecycle methods during
 registration, health rollup, and restart-loop management.
+
+Call tracing:
+  Call shim.dispatch("tool_name", **kwargs) instead of shim.tool_name(**kwargs)
+  to get automatic JSONL logging to datacenter_logs/shim/trace/YYYYMMDD.jsonl.
+  Override the log directory via UU_SHIM_TRACE_DIR env var (used in tests).
 """
 
+from __future__ import annotations
+
+import json
+import logging
+import os
+import time
 from abc import ABC, abstractmethod
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from devices.policy.output_validators import OutputValidator
+
+log = logging.getLogger(__name__)
+
+
+def _write_shim_trace(record: dict) -> None:
+    """Append one JSONL record to the shim trace log. Never raises."""
+    try:
+        trace_dir_env = os.environ.get("UU_SHIM_TRACE_DIR")
+        if trace_dir_env:
+            trace_dir = Path(trace_dir_env)
+        else:
+            trace_dir = (
+                Path(__file__).parent.parent / "datacenter_logs" / "shim" / "trace"
+            )
+        trace_dir.mkdir(parents=True, exist_ok=True)
+        date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
+        log_path = trace_dir / f"{date_str}.jsonl"
+        with open(log_path, "a") as f:
+            f.write(json.dumps(record) + "\n")
+    except Exception as exc:
+        log.debug("shim trace write failed (non-fatal): %s", exc)
 
 
 class BaseShim(ABC):
@@ -57,3 +96,52 @@ class BaseShim(ABC):
         Called when start() returns False. Undo any partial setup.
         Must be idempotent — safe to call even if start() did nothing.
         """
+
+    _output_validator: OutputValidator | None = None
+
+    def validate_output(self, result: object) -> object:
+        """Validate and redact sensitive content from a tool result.
+
+        Non-string results pass through unchanged. When _output_validator is
+        set, runs string results through the validator and logs each incident
+        at WARNING. Returns the (possibly redacted) result.
+        """
+        if self._output_validator is None or not isinstance(result, str):
+            return result
+        redacted, incidents = self._output_validator.validate(result)
+        for incident in incidents:
+            log.warning("output validation: %s [device=%s]", incident, self.device_id)
+        return redacted
+
+    def dispatch(self, tool_name: str, **kwargs) -> object:
+        """Route a tool call through this shim and write a JSONL trace record.
+
+        Writes to datacenter_logs/shim/trace/YYYYMMDD.jsonl (or
+        UU_SHIM_TRACE_DIR if set). Log write is fire-and-forget — a failure
+        never blocks the tool call.
+        """
+        t0 = time.monotonic()
+        error_type: str | None = None
+        success = False
+        try:
+            result = getattr(self, tool_name)(**kwargs)
+            success = True
+            return result
+        except AttributeError:
+            error_type = "AttributeError"
+            raise
+        except Exception as exc:
+            error_type = type(exc).__name__
+            raise
+        finally:
+            latency_ms = round((time.monotonic() - t0) * 1000, 2)
+            _write_shim_trace(
+                {
+                    "ts": datetime.now(timezone.utc).isoformat(),
+                    "device_id": self.device_id,
+                    "tool_name": tool_name,
+                    "latency_ms": latency_ms,
+                    "success": success,
+                    "error_type": error_type,
+                }
+            )
