@@ -14,7 +14,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.auditor.device import AuditorDevice, CHECKS_PATH, _SEVERITY_ORDER
+from devices.auditor.device import (
+    AuditorDevice,
+    CHECKS_CONFIG_DIR,
+    CHECKS_PATH,
+    _SEVERITY_ORDER,
+    _run_baseline,
+)
 
 SAMPLE_CHECKS = {
     "forever": [
@@ -59,12 +65,14 @@ SAMPLE_CHECKS = {
 
 @pytest.fixture
 def device(tmp_path):
-    """AuditorDevice with DB mocked out and a temp checks file."""
+    """AuditorDevice with DB mocked out, temp checks file, and no config dir checks."""
     checks_file = tmp_path / "audit_checks.json"
     checks_file.write_text(json.dumps(SAMPLE_CHECKS))
+    nonexistent = tmp_path / "no_config_checks"
     with (
         patch("devices.auditor.device._db_conn", MagicMock()),
         patch("devices.auditor.device.CHECKS_PATH", checks_file),
+        patch("devices.auditor.device.CHECKS_CONFIG_DIR", nonexistent),
     ):
         yield AuditorDevice()
 
@@ -351,3 +359,256 @@ class TestAuditorIntegration:
     def test_finding_history_returns_list(self, live_device):
         history = live_device.finding_history(days=1)
         assert isinstance(history, list)
+
+    @_skip_integration
+    def test_baseline_check_fires_on_synthetic_spike(self):
+        """Synthetic spike: insert rows to exceed 3x baseline, verify FAIL finding."""
+        import psycopg2
+
+        db_url = os.environ.get("IGOR_HOME_DB_URL")
+        conn = psycopg2.connect(db_url)
+        try:
+            cur = conn.cursor()
+            for i in range(30):
+                cur.execute(
+                    "INSERT INTO infra.llm_calls (ts, prompt_hash, model, instance_id) "
+                    "VALUES (NOW() - INTERVAL '10 minutes', %s, 'test', 'igor-drift-test')",
+                    (f"drift_test_{i}",),
+                )
+            conn.commit()
+
+            entry = {
+                "name": "igor-inference-rate-drift",
+                "kind": "baseline",
+                "severity": "med",
+                "metric_sql": "SELECT COUNT(*) FROM infra.llm_calls WHERE ts >= NOW() - INTERVAL '1 hour' AND instance_id = 'igor-drift-test'",
+                "baseline_sql": "SELECT 1",
+                "threshold_multiplier": 3.0,
+            }
+            status, detail = _run_baseline(entry)
+            assert status == "FAIL", f"expected FAIL, got {status}: {detail}"
+            assert "drift" in detail
+        finally:
+            cur.execute(
+                "DELETE FROM infra.llm_calls WHERE instance_id = 'igor-drift-test'"
+            )
+            conn.commit()
+            conn.close()
+
+    @_skip_integration
+    def test_baseline_check_passes_on_zero_baseline(self):
+        """Zero baseline → insufficient-baseline, not false FAIL."""
+        entry = {
+            "name": "cold-start-test",
+            "kind": "baseline",
+            "severity": "med",
+            "metric_sql": "SELECT 100",
+            "baseline_sql": "SELECT 0",
+            "threshold_multiplier": 3.0,
+        }
+        status, detail = _run_baseline(entry)
+        assert status == "PASS"
+        assert "insufficient-baseline" in detail
+
+
+class TestBaselineUnit:
+    """Unit tests for _run_baseline logic with mocked DB cursor."""
+
+    def _make_conn(self, metric_val, baseline_val):
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_conn.cursor.return_value = mock_cursor
+        mock_cursor.fetchone.side_effect = [(metric_val,), (baseline_val,)]
+        return mock_conn
+
+    def test_fail_when_current_exceeds_threshold(self):
+        entry = {
+            "metric_sql": "SELECT 1",
+            "baseline_sql": "SELECT 1",
+            "threshold_multiplier": 3.0,
+        }
+        with patch(
+            "devices.auditor.device._db_conn", return_value=self._make_conn(90, 10)
+        ):
+            status, detail = _run_baseline(entry)
+        assert status == "FAIL"
+        assert "drift" in detail
+        assert "9.00x" in detail
+
+    def test_pass_when_current_within_threshold(self):
+        entry = {
+            "metric_sql": "SELECT 1",
+            "baseline_sql": "SELECT 1",
+            "threshold_multiplier": 3.0,
+        }
+        with patch(
+            "devices.auditor.device._db_conn", return_value=self._make_conn(5, 10)
+        ):
+            status, detail = _run_baseline(entry)
+        assert status == "PASS"
+
+    def test_pass_on_zero_baseline(self):
+        entry = {
+            "metric_sql": "SELECT 1",
+            "baseline_sql": "SELECT 1",
+            "threshold_multiplier": 3.0,
+        }
+        with patch(
+            "devices.auditor.device._db_conn", return_value=self._make_conn(99, 0)
+        ):
+            status, detail = _run_baseline(entry)
+        assert status == "PASS"
+        assert "insufficient-baseline" in detail
+
+    def test_pass_on_null_baseline(self):
+        entry = {
+            "metric_sql": "SELECT 1",
+            "baseline_sql": "SELECT 1",
+            "threshold_multiplier": 3.0,
+        }
+        conn = MagicMock()
+        cur = MagicMock()
+        conn.cursor.return_value = cur
+        cur.fetchone.side_effect = [(50,), (None,)]
+        with patch("devices.auditor.device._db_conn", return_value=conn):
+            status, detail = _run_baseline(entry)
+        assert status == "PASS"
+        assert "insufficient-baseline" in detail
+
+    def test_error_on_missing_sql_fields(self):
+        entry = {"threshold_multiplier": 3.0}
+        with patch("devices.auditor.device._db_conn", MagicMock()):
+            status, detail = _run_baseline(entry)
+        assert status == "ERROR"
+        assert "metric_sql" in detail
+
+    def test_exact_threshold_is_pass(self):
+        """current == 3x baseline is not > threshold, so PASS."""
+        entry = {
+            "metric_sql": "SELECT 1",
+            "baseline_sql": "SELECT 1",
+            "threshold_multiplier": 3.0,
+        }
+        with patch(
+            "devices.auditor.device._db_conn", return_value=self._make_conn(30, 10)
+        ):
+            status, detail = _run_baseline(entry)
+        assert status == "PASS"
+
+
+class TestRunAllKindFilter:
+    """run_all(kind=...) must filter by check kind."""
+
+    @pytest.fixture
+    def device_with_baseline(self, tmp_path):
+        checks = {
+            "forever": [
+                {
+                    "name": "shell-check",
+                    "kind": "shell",
+                    "pattern": "echo ok",
+                    "severity": "med",
+                    "description": "shell",
+                    "ack_until": None,
+                    "mode": "forever",
+                },
+                {
+                    "name": "baseline-check",
+                    "kind": "baseline",
+                    "severity": "med",
+                    "description": "drift",
+                    "metric_sql": "SELECT 1",
+                    "baseline_sql": "SELECT 1",
+                    "threshold_multiplier": 3.0,
+                    "ack_until": None,
+                    "mode": "forever",
+                },
+            ],
+            "next_sweep": [],
+            "history": [],
+        }
+        checks_file = tmp_path / "checks.json"
+        checks_file.write_text(json.dumps(checks))
+        nonexistent = tmp_path / "no_config"
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_conn.cursor.return_value = mock_cursor
+        mock_cursor.fetchone.side_effect = [(5,), (10,), (5,), (10,)]
+        with (
+            patch("devices.auditor.device._db_conn", return_value=mock_conn),
+            patch("devices.auditor.device.CHECKS_PATH", checks_file),
+            patch("devices.auditor.device.CHECKS_CONFIG_DIR", nonexistent),
+        ):
+            yield AuditorDevice()
+
+    def test_kind_baseline_excludes_shell(self, device_with_baseline):
+        results = device_with_baseline.run_all(kind="baseline", severity_min="low")
+        names = [r["name"] for r in results]
+        assert "baseline-check" in names
+        assert "shell-check" not in names
+
+    def test_kind_shell_excludes_baseline(self, device_with_baseline):
+        results = device_with_baseline.run_all(kind="shell", severity_min="low")
+        names = [r["name"] for r in results]
+        assert "shell-check" in names
+        assert "baseline-check" not in names
+
+    def test_no_kind_filter_runs_all(self, device_with_baseline):
+        results = device_with_baseline.run_all(severity_min="low")
+        names = [r["name"] for r in results]
+        assert "shell-check" in names
+        assert "baseline-check" in names
+
+
+class TestConfigDirLoading:
+    """Checks from config/audit_checks/*.json are merged into _load_checks()."""
+
+    def test_config_dir_checks_merged(self, tmp_path):
+        main_checks = {
+            "forever": [
+                {
+                    "name": "main-check",
+                    "kind": "shell",
+                    "pattern": "echo ok",
+                    "severity": "med",
+                    "description": "from main file",
+                    "ack_until": None,
+                    "mode": "forever",
+                }
+            ],
+            "next_sweep": [],
+            "history": [],
+        }
+        config_checks = {
+            "forever": [
+                {
+                    "name": "config-check",
+                    "kind": "baseline",
+                    "severity": "med",
+                    "description": "from config dir",
+                    "metric_sql": "SELECT 1",
+                    "baseline_sql": "SELECT 1",
+                    "threshold_multiplier": 3.0,
+                    "ack_until": None,
+                    "mode": "forever",
+                }
+            ],
+            "next_sweep": [],
+        }
+        checks_file = tmp_path / "audit_checks.json"
+        checks_file.write_text(json.dumps(main_checks))
+        config_dir = tmp_path / "audit_checks"
+        config_dir.mkdir()
+        (config_dir / "baseline_checks.json").write_text(json.dumps(config_checks))
+
+        with (
+            patch("devices.auditor.device._db_conn", MagicMock()),
+            patch("devices.auditor.device.CHECKS_PATH", checks_file),
+            patch("devices.auditor.device.CHECKS_CONFIG_DIR", config_dir),
+        ):
+            d = AuditorDevice()
+            result = d._load_checks()
+
+        names = [c["name"] for c in result["forever"]]
+        assert "main-check" in names
+        assert "config-check" in names

@@ -1,0 +1,30 @@
+{
+  "forever": [
+    {
+      "name": "igor-inference-rate-drift",
+      "kind": "baseline",
+      "severity": "med",
+      "description": "Igor inference calls/hour vs 7-day hourly baseline. FAIL when current > 3x avg.",
+      "metric_sql": "SELECT COUNT(*) FROM infra.llm_calls WHERE ts >= NOW() - INTERVAL '1 hour' AND instance_id LIKE 'igor%'",
+      "baseline_sql": "SELECT AVG(hourly_ct) FROM (SELECT date_trunc('hour', ts) AS h, COUNT(*) AS hourly_ct FROM infra.llm_calls WHERE ts >= NOW() - INTERVAL '7 days' AND instance_id LIKE 'igor%' GROUP BY h) sub",
+      "threshold_multiplier": 3.0,
+      "added_by": "T-drift-detection",
+      "mode": "forever",
+      "ack_until": null
+    },
+    {
+      "name": "igor-memory-write-rate-drift",
+      "kind": "baseline",
+      "severity": "med",
+      "description": "Igor memory writes/hour vs 7-day hourly baseline. FAIL when current > 3x avg.",
+      "metric_sql": "SELECT COUNT(*) FROM clan.memories WHERE recorded_at >= NOW() - INTERVAL '1 hour' AND source_agent LIKE 'igor%'",
+      "baseline_sql": "SELECT AVG(hourly_ct) FROM (SELECT date_trunc('hour', recorded_at) AS h, COUNT(*) AS hourly_ct FROM clan.memories WHERE recorded_at >= NOW() - INTERVAL '7 days' AND source_agent LIKE 'igor%' GROUP BY h) sub",
+      "threshold_multiplier": 3.0,
+      "added_by": "T-drift-detection",
+      "mode": "forever",
+      "ack_until": null
+    }
+  ],
+  "next_sweep": [],
+  "_note": "tool-call-error-rate check deferred: depends on T-shim-traffic-spy (shim call-log table not yet shipped)"
+}

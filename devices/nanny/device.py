@@ -116,6 +116,14 @@ _DEFAULT_SCHEDULE: list[dict[str, Any]] = [
         },
         "enabled": True,
     },
+    {
+        "entry_id": "hourly_drift_detection",
+        "condition_type": "cron",
+        "condition_params": {"interval_hours": 1},
+        "action_type": "run_auditor_baseline",
+        "action_params": {"severity_min": "low"},
+        "enabled": True,
+    },
 ]
 
 # World-interaction ticket tags that Nanny routes to external agents
@@ -369,6 +377,8 @@ class NannyOggDevice(BaseDevice):
                 self.route_world_ticket(ticket)
             elif action == "dispatch_ticket":
                 self._dispatch_ticket(params.get("ticket_id", ""))
+            elif action == "run_auditor_baseline":
+                self._run_auditor_baseline(params)
 
             entry.last_fired = _now_iso()
             entry.fire_count += 1
@@ -482,7 +492,6 @@ class NannyOggDevice(BaseDevice):
             import os
             import sys
 
-            
             queue_py = Path(os.environ.get("CC_WORKFLOW_TOOLS", "")) / "cc_queue.py"
             if not queue_py.exists():
                 return
@@ -508,7 +517,6 @@ class NannyOggDevice(BaseDevice):
             import os
             import sys
 
-            
             from lab.claudecode.channel import post_to_channel
 
             post_to_channel(channel, "nanny-ogg", message)
@@ -519,3 +527,75 @@ class NannyOggDevice(BaseDevice):
     def _dispatch_ticket(self, ticket_id: str) -> None:
         """Dispatch a specific ticket to its executor."""
         self._post_to_channel("shared", f"NANNY_DISPATCH_TICKET:{ticket_id}")
+
+    def _run_auditor_baseline(self, params: dict) -> None:
+        """Run all baseline drift checks and file tickets for FAIL findings.
+
+        Interim bridge until T-learning-loop-generalized ships — nanny owns the
+        finding→ticket step because it can_send and the auditor is read_only.
+        """
+        try:
+            from devices.auditor.device import AuditorDevice
+
+            auditor = AuditorDevice()
+            severity_min = params.get("severity_min", "low")
+            findings = auditor.run_all(kind="baseline", severity_min=severity_min)
+            for finding in findings:
+                if finding.get("status") == "FAIL":
+                    self._file_drift_ticket(finding)
+        except Exception as e:
+            self._errors.append(f"_run_auditor_baseline failed: {e}")
+            self._log.error("_run_auditor_baseline failed: %s", e)
+
+    def _file_drift_ticket(self, finding: dict) -> None:
+        """File a cc_queue ticket for a drift FAIL. Date-scoped ID provides daily dedup."""
+        import json as _json
+        import subprocess
+        import sys
+
+        try:
+            queue_py = Path(os.environ.get("CC_WORKFLOW_TOOLS", "")) / "cc_queue.py"
+            if not queue_py.exists():
+                self._log.warning(
+                    "cc_queue.py not found — cannot file drift ticket for %s",
+                    finding.get("name", "?"),
+                )
+                return
+            today = datetime.now(timezone.utc).strftime("%Y%m%d")
+            check_name = finding.get("name", "unknown")
+            ticket_id = f"T-drift-{check_name}-{today}"
+            detail = finding.get("detail", "")
+            description = (
+                f"Baseline check FAIL — {detail}\n\n"
+                f"**Affected files:** The component emitting the metric tracked by "
+                f"`{check_name}`. Investigate call logs or memory writes to find the spike source.\n\n"
+                f"**Scope boundary:** IN — diagnose rate spike, confirm or adjust baseline "
+                f"threshold; OUT — changes to drift check definitions (file separately).\n\n"
+                f"**Completion criteria:** Rate returns to within normal baseline range and "
+                f"finding shows PASS on next hourly scan; or root cause documented and "
+                f"threshold adjusted."
+            )
+            ticket = {
+                "id": ticket_id,
+                "title": f"Drift spike: {check_name}",
+                "description": description,
+                "size": "S",
+                "worker": "claude",
+                "tags": ["Drift", "Platform"],
+                "target_difficulty": 1,
+                "status": "triage",
+            }
+            result = subprocess.run(
+                [sys.executable, str(queue_py), "add", _json.dumps(ticket)],
+                capture_output=True,
+                text=True,
+                timeout=15,
+                check=False,
+            )
+            self._log.info(
+                "Drift ticket filing for %s: %s", check_name, result.stdout.strip()
+            )
+        except Exception as e:
+            self._log.warning(
+                "_file_drift_ticket failed for %s: %s", finding.get("name", "?"), e
+            )

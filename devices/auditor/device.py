@@ -2,19 +2,25 @@
 AuditorDevice — codebase audit runner as a rack device.
 
 Loads registered checks from lab/claudecode/audit_checks.json and runs them on
-demand. Check results are persisted to adc.audit_findings for history queries.
-Suppression patterns live in adc.audit_allowlist.
+demand. Additional checks may be placed in config/audit_checks/*.json (merged
+at load time — no restart needed). Check results are persisted to
+adc.audit_findings for history queries. Suppression patterns live in
+adc.audit_allowlist.
 
 MCP tools exposed:
     run_check(name)                        — run one check by name → finding[]
-    run_all(severity_min='med')            — run all checks at/above severity → finding[]
+    run_all(severity_min='med', kind=None) — run all checks at/above severity → finding[]
     check_add(name, kind, pattern, ...)    — register a new forever check
     check_list()                           — list all registered checks
     allowlist_add(pattern, reason)         — add a suppression pattern
     finding_history(days=7)                — recent finding history
 
+Check kinds: shell, grep, sql, python, baseline.
+Baseline checks compare a metric_sql (current window) against a baseline_sql
+(rolling average) and FAIL when current > threshold_multiplier × baseline.
+
 Degrades gracefully when DB is unavailable — shell/grep/python checks still
-run; only history recording and allowlist features require the DB.
+run; only history recording, allowlist, and baseline checks require the DB.
 """
 
 from __future__ import annotations
@@ -35,6 +41,7 @@ _START_TIME = time.time()
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CHECKS_PATH = REPO_ROOT / "lab" / "claudecode" / "audit_checks.json"
+CHECKS_CONFIG_DIR = REPO_ROOT / "config" / "audit_checks"
 
 _SEVERITY_ORDER: dict[str, int] = {"high": 0, "med": 1, "low": 2}
 
@@ -141,11 +148,73 @@ def _run_python(entry: dict) -> tuple[str, str]:
     return "PASS", "falsy"
 
 
+def _run_baseline(entry: dict) -> tuple[str, str]:
+    """Baseline drift check: compare current metric to rolling average.
+
+    Entry fields (native, not JSON-encoded):
+      metric_sql          — SQL returning a single numeric count for the current window
+      baseline_sql        — SQL returning a single numeric avg over the baseline window
+      threshold_multiplier — FAIL when current > threshold × baseline (default 3.0)
+
+    Returns PASS when rate is normal or baseline data is insufficient.
+    Returns FAIL with current/baseline/ratio detail when drift exceeds threshold.
+    """
+    try:
+        import psycopg2  # noqa: F401
+    except ImportError:
+        return "ERROR", "psycopg2 not available"
+
+    metric_sql = entry.get("metric_sql", "")
+    baseline_sql = entry.get("baseline_sql", "")
+    threshold = float(entry.get("threshold_multiplier", 3.0))
+
+    if not metric_sql or not baseline_sql:
+        return "ERROR", "baseline check requires metric_sql and baseline_sql fields"
+
+    try:
+        conn = _db_conn()
+        cur = conn.cursor()
+
+        cur.execute(metric_sql)
+        metric_row = cur.fetchone()
+        current = (
+            float(metric_row[0]) if metric_row and metric_row[0] is not None else 0.0
+        )
+
+        cur.execute(baseline_sql)
+        baseline_row = cur.fetchone()
+        baseline_val = (
+            float(baseline_row[0])
+            if baseline_row and baseline_row[0] is not None
+            else 0.0
+        )
+
+        conn.close()
+    except Exception as exc:
+        return "ERROR", str(exc)[:200]
+
+    if baseline_val == 0.0:
+        return "PASS", f"insufficient-baseline (baseline=0, current={current:.1f})"
+
+    ratio = current / baseline_val
+    if ratio > threshold:
+        return (
+            "FAIL",
+            f"drift: current={current:.1f} baseline={baseline_val:.1f} ratio={ratio:.2f}x > {threshold}x threshold",
+        )
+
+    return (
+        "PASS",
+        f"current={current:.1f} baseline={baseline_val:.1f} ratio={ratio:.2f}x",
+    )
+
+
 _DISPATCH = {
     "grep": _run_grep,
     "sql": _run_sql,
     "shell": _run_shell,
     "python": _run_python,
+    "baseline": _run_baseline,
 }
 
 
@@ -200,9 +269,18 @@ class AuditorDevice(BaseDevice):
     # ── Internal helpers ──────────────────────────────────────────────────────
 
     def _load_checks(self) -> dict:
-        if not CHECKS_PATH.exists():
-            return {"forever": [], "next_sweep": [], "history": []}
-        return json.loads(CHECKS_PATH.read_text())
+        result: dict = {"forever": [], "next_sweep": [], "history": []}
+        if CHECKS_PATH.exists():
+            result = json.loads(CHECKS_PATH.read_text())
+        if CHECKS_CONFIG_DIR.exists():
+            for cfg_file in sorted(CHECKS_CONFIG_DIR.glob("*.json")):
+                try:
+                    data = json.loads(cfg_file.read_text())
+                    result["forever"].extend(data.get("forever", []))
+                    result["next_sweep"].extend(data.get("next_sweep", []))
+                except Exception as exc:
+                    log.warning("_load_checks: failed to parse %s — %s", cfg_file, exc)
+        return result
 
     def _run_one(self, check: dict) -> dict:
         name = check.get("name", "")
@@ -269,14 +347,20 @@ class AuditorDevice(BaseDevice):
         self._record(finding)
         return [finding]
 
-    def run_all(self, severity_min: str = "med") -> list[dict]:
-        """Run all checks at or above severity_min. Returns list of finding dicts."""
+    def run_all(self, severity_min: str = "med", kind: str | None = None) -> list[dict]:
+        """Run checks at or above severity_min, optionally filtered by kind.
+
+        kind='baseline' runs only drift-detection checks; omit to run all kinds.
+        Returns list of finding dicts.
+        """
         checks = self._load_checks()
         all_checks = checks.get("forever", []) + checks.get("next_sweep", [])
         min_order = _SEVERITY_ORDER.get(severity_min, _SEVERITY_ORDER["med"])
 
         results = []
         for check in all_checks:
+            if kind is not None and check.get("kind") != kind:
+                continue
             check_sev = check.get("severity", "med")
             if _SEVERITY_ORDER.get(check_sev, 99) <= min_order:
                 finding = self._run_one(check)

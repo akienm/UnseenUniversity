@@ -40,7 +40,7 @@ _TOOL_SCHEMAS = [
     },
     {
         "name": "run_all",
-        "description": "Run all checks at or above severity_min. Returns list of finding dicts.",
+        "description": "Run checks at or above severity_min, optionally filtered by kind. Returns list of finding dicts.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -48,7 +48,11 @@ _TOOL_SCHEMAS = [
                     "type": "string",
                     "description": "Minimum severity: 'high', 'med', or 'low'. Default: 'med'",
                     "default": "med",
-                }
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Optional: filter to only this check kind (e.g. 'baseline', 'shell', 'sql'). Omit to run all kinds.",
+                },
             },
         },
     },
@@ -137,7 +141,10 @@ def _dispatch(msg: dict) -> dict | None:
             if name == "run_check":
                 result = _device.run_check(name=args["name"])
             elif name == "run_all":
-                result = _device.run_all(severity_min=args.get("severity_min", "med"))
+                result = _device.run_all(
+                    severity_min=args.get("severity_min", "med"),
+                    kind=args.get("kind"),
+                )
             elif name == "check_add":
                 result = _device.check_add(
                     name=args["name"],
