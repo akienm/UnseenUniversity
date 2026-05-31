@@ -46,6 +46,14 @@ _PYTHON = sys.executable
 _UC_PORT = int(os.environ.get("IGOR_UC_PORT", "8082"))
 _UC_BASE = os.environ.get("IGOR_UC_BASE", f"http://localhost:{_UC_PORT}")
 
+_GRANNY_HOME = Path(os.environ.get("GRANNY_HOME", str(Path.home() / ".granny")))
+_GRANNY_PID_FILE = _GRANNY_HOME / "daemon.pid"
+
+
+def daemon_pid_file() -> Path:
+    """Return the PID file path for the GrannyDaemon standalone process."""
+    return _GRANNY_PID_FILE
+
 
 def _post_rack(path: str, body: dict, timeout: float = 3.0) -> bool:
     """POST JSON to rack server. Returns True on success, False on any failure."""
@@ -363,12 +371,17 @@ if __name__ == "__main__":
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
+    _GRANNY_HOME.mkdir(parents=True, exist_ok=True)
+    _GRANNY_PID_FILE.write_text(str(os.getpid()))
+    log.info("GrannyDaemon: wrote PID %d to %s", os.getpid(), _GRANNY_PID_FILE)
+
     daemon = get_daemon()
     daemon.start()
 
     def _handle_sig(sig, _frame):
         log.info("GrannyDaemon: received signal %s — shutting down", sig)
         daemon.stop()
+        _GRANNY_PID_FILE.unlink(missing_ok=True)
         sys.exit(0)
 
     signal.signal(signal.SIGTERM, _handle_sig)
@@ -380,3 +393,5 @@ if __name__ == "__main__":
             time.sleep(1)
     except KeyboardInterrupt:
         daemon.stop()
+    finally:
+        _GRANNY_PID_FILE.unlink(missing_ok=True)

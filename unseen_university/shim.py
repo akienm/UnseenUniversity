@@ -122,6 +122,15 @@ class BaseShim(ABC):
         Must be idempotent — safe to call even if start() did nothing.
         """
 
+    def ensure_daemon_running(self) -> bool:
+        """Check if the device's backing daemon is alive; start it if not.
+
+        Default: no-op — returns True. Override in shims that supervise an
+        external daemon process. The shim's watchdog calls this on every poll
+        cycle so the device is never 'down' as long as its shim is running.
+        """
+        return True
+
     _output_validator: OutputValidator | None = None
     _policy_gate: PolicyGate | None = None
 

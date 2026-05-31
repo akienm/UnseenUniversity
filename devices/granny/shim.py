@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import ssl
+import threading
 import urllib.request
 from typing import Optional
 
@@ -38,12 +39,52 @@ def _post_uc(path: str, body: dict, timeout: float = 5.0) -> Optional[dict]:
         return None
 
 
+_WATCHDOG_INTERVAL_SEC = int(os.environ.get("GRANNY_SHIM_WATCHDOG_INTERVAL", "30"))
+_BACKOFF_INITIAL_SEC = float(os.environ.get("GRANNY_SHIM_BACKOFF_INITIAL", "5"))
+_BACKOFF_MAX_SEC = float(os.environ.get("GRANNY_SHIM_BACKOFF_MAX", "120"))
+
+
 class GrannyShim(BaseShim):
     _device_id = "granny-weatherwax"
+
+    def __init__(self) -> None:
+        self._watchdog_stop = threading.Event()
+        self._watchdog_thread: Optional[threading.Thread] = None
+        self._backoff_sec: float = _BACKOFF_INITIAL_SEC
+        self._relaunch_count: int = 0
 
     @property
     def device_id(self) -> str:
         return self._device_id
+
+    def ensure_daemon_running(self) -> bool:
+        """Restart GrannyDaemon thread if it has stopped.
+
+        Called by the shim watchdog on each poll cycle so the device is never
+        'down' as long as the shim is running.
+        """
+        from devices.granny.daemon import get_daemon
+
+        daemon = get_daemon()
+        if daemon.is_running():
+            self._backoff_sec = _BACKOFF_INITIAL_SEC
+            return True
+        try:
+            daemon.start()
+            self._relaunch_count += 1
+            log.info(
+                "shim: relaunched granny daemon (relaunches=%d)", self._relaunch_count
+            )
+            return True
+        except Exception as exc:
+            log.error("shim: failed to relaunch granny daemon: %s", exc)
+            self._backoff_sec = min(self._backoff_sec * 2, _BACKOFF_MAX_SEC)
+            return False
+
+    def _watchdog_loop(self) -> None:
+        while not self._watchdog_stop.wait(timeout=_WATCHDOG_INTERVAL_SEC):
+            if not self.ensure_daemon_running():
+                self._watchdog_stop.wait(timeout=self._backoff_sec)
 
     def start(self) -> bool:
         # Register CC worker dispatch_fn on the routing device
@@ -94,9 +135,22 @@ class GrannyShim(BaseShim):
         except Exception as e:
             log.warning("GrannyShim: daemon start failed: %s", e)
 
+        self._watchdog_stop.clear()
+        self._watchdog_thread = threading.Thread(
+            target=self._watchdog_loop,
+            name="granny-shim-watchdog",
+            daemon=True,
+        )
+        self._watchdog_thread.start()
+        log.info("GrannyShim: watchdog started (interval=%ds)", _WATCHDOG_INTERVAL_SEC)
+
         return True  # shim always starts; registration is best-effort
 
     def stop(self) -> bool:
+        self._watchdog_stop.set()
+        if self._watchdog_thread:
+            self._watchdog_thread.join(timeout=3)
+
         try:
             from devices.granny.daemon import get_daemon
 

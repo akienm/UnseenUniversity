@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from devices.granny.device import GrannyWeatherwaxDevice, _audit_ticket
-from devices.granny.shim import GrannyShim
+from devices.granny.shim import GrannyShim, _BACKOFF_INITIAL_SEC
 
 # ── GrannyShim ────────────────────────────────────────────────────────────────
 
@@ -166,5 +166,73 @@ class TestGrannyShimDaemonLifecycle:
             shim.start()
             assert daemon_mod.get_daemon().is_running()
         finally:
-            daemon_mod.get_daemon().stop()
+            shim.stop()
             daemon_mod._daemon = None
+
+
+# ── ensure_daemon_running watchdog hook ───────────────────────────────────────
+
+
+class TestEnsureDaemonRunning:
+    def test_relaunches_stopped_daemon(self, caplog):
+        import logging
+
+        shim = GrannyShim()
+        mock_daemon = MagicMock()
+        mock_daemon.is_running.return_value = False
+
+        with (
+            patch("devices.granny.daemon.get_daemon", return_value=mock_daemon),
+            caplog.at_level(logging.INFO, logger="devices.granny.shim"),
+        ):
+            result = shim.ensure_daemon_running()
+
+        assert result is True
+        mock_daemon.start.assert_called_once()
+        assert any("relaunched granny daemon" in r.message for r in caplog.records)
+
+    def test_no_relaunch_when_running(self):
+        shim = GrannyShim()
+        mock_daemon = MagicMock()
+        mock_daemon.is_running.return_value = True
+
+        with patch("devices.granny.daemon.get_daemon", return_value=mock_daemon):
+            result = shim.ensure_daemon_running()
+
+        assert result is True
+        mock_daemon.start.assert_not_called()
+
+    def test_returns_false_and_backs_off_on_relaunch_failure(self):
+        shim = GrannyShim()
+        mock_daemon = MagicMock()
+        mock_daemon.is_running.return_value = False
+        mock_daemon.start.side_effect = Exception("IMAP down")
+
+        with patch("devices.granny.daemon.get_daemon", return_value=mock_daemon):
+            initial_backoff = shim._backoff_sec
+            result = shim.ensure_daemon_running()
+
+        assert result is False
+        assert shim._backoff_sec > initial_backoff
+
+    def test_relaunch_count_increments(self):
+        shim = GrannyShim()
+        mock_daemon = MagicMock()
+        mock_daemon.is_running.return_value = False
+
+        with patch("devices.granny.daemon.get_daemon", return_value=mock_daemon):
+            shim.ensure_daemon_running()
+            shim.ensure_daemon_running()
+
+        assert shim._relaunch_count == 2
+
+    def test_backoff_resets_after_healthy_check(self):
+        shim = GrannyShim()
+        shim._backoff_sec = 60.0
+        mock_daemon = MagicMock()
+        mock_daemon.is_running.return_value = True
+
+        with patch("devices.granny.daemon.get_daemon", return_value=mock_daemon):
+            shim.ensure_daemon_running()
+
+        assert shim._backoff_sec == _BACKOFF_INITIAL_SEC
