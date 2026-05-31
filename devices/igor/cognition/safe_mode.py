@@ -23,6 +23,8 @@ import logging
 import os
 from pathlib import Path
 
+from ..memory.node_id import _DEFAULT_INSTANCE as _INSTANCE_DEFAULT
+
 _log = logging.getLogger(__name__)
 
 THRESHOLD_DEFAULT = 30
@@ -66,7 +68,7 @@ def _write_safe_mode_flag() -> None:
             Path(
                 os.getenv("IGOR_RUNTIME_ROOT", str(Path.home() / ".unseen_university"))
             )
-            / os.getenv("IGOR_INSTANCE_ID", "Igor-wild-0001")
+            / os.getenv("IGOR_INSTANCE_ID", _INSTANCE_DEFAULT)
             / "igor.switches.cfg"
         )
 

@@ -156,7 +156,7 @@ def _ensure_schema() -> None:
                 roles           JSONB DEFAULT '[]',
                 aliases         JSONB DEFAULT '[]',
                 ssh_enabled     BOOLEAN DEFAULT false,
-                ssh_user        TEXT DEFAULT 'Igor-wild-0001',
+                ssh_user        TEXT DEFAULT NULL,
                 notes           TEXT,
                 updated_at      TEXT DEFAULT to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS')
             )

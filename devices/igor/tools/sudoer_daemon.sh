@@ -12,19 +12,19 @@
 #   bash sudoer_daemon.sh --test   — smoke-test the relay protocol and exit
 #
 # Protocol (Igor side):
-#   Write:  ~/.TheIgors/sudo_relay/pending.sh   (the commands to run as sudo)
-#   Poll:   ~/.TheIgors/sudo_relay/done          (appears when complete)
+#   Write:  ~/.unseen_university/sudo_relay/pending.sh   (the commands to run as sudo)
+#   Poll:   ~/.unseen_university/sudo_relay/done          (appears when complete)
 #   Read:   first line of done = exit code
 #   Clean:  rm done when finished reading
 #
 # Notes:
 #   - Only one pending.sh processed at a time (atomic: cp+rm then execute)
-#   - Log written to ~/.TheIgors/sudo_relay/daemon.log (newest entries appended)
+#   - Log written to ~/.unseen_university/sudo_relay/daemon.log (newest entries appended)
 #   - sudo -k is called on exit to drop privilege immediately
 
 set -euo pipefail
 
-RELAY_DIR="${HOME}/.TheIgors/sudo_relay"
+RELAY_DIR="${IGOR_RELAY_DIR:-${HOME}/.unseen_university/sudo_relay}"
 mkdir -p "${RELAY_DIR}"
 
 logtarget="${RELAY_DIR}/daemon.log"
