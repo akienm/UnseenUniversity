@@ -13,6 +13,7 @@ allowed_devices:
   - inference
   - browser_use
   - swadl
+  - workspace
 
 # Per-device permission overlay.
 device_permissions:
@@ -22,6 +23,8 @@ device_permissions:
   browser_use:
     mode: read_only
   swadl:
+    mode: read_write
+  workspace:
     mode: read_write
 
 # Channels joined by default.
@@ -53,3 +56,9 @@ surfaces:
   console: true
   inference: true
   mcp: true # CC consumes the skeleton MCP endpoint
+
+# Optional per-agent budget limits loaded into clan.budget_limits at session start.
+# null = no limit enforced. OR calls are rejected when session_limit_usd is hit.
+budget_limits:
+  session_limit_usd: null
+  overall_limit_usd: null

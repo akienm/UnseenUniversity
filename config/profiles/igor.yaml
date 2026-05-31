@@ -16,6 +16,7 @@ allowed_devices:
   - swadl
   - discord_bot
   - web_server
+  - workspace
 
 # Per-device permission overlay — broker defaults to read_write when absent.
 device_permissions:
@@ -29,6 +30,8 @@ device_permissions:
     rate_limit_per_min: 60
   discord_bot:
     mode: write_only
+  workspace:
+    mode: read_write
 
 # Channels joined by default (resolved against channel registry at announce time).
 default_channels:
@@ -60,3 +63,9 @@ surfaces:
   console: true
   inference: true
   mcp: false  # Igor does not expose MCP today
+
+# Optional per-agent budget limits loaded into clan.budget_limits at session start.
+# null = no limit enforced. OR calls are rejected when session_limit_usd is hit.
+budget_limits:
+  session_limit_usd: null
+  overall_limit_usd: null
