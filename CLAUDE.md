@@ -29,6 +29,14 @@ This is the portable agent runtime substrate. It is **not** TheIgors.
 - **datacenter_logs/<device>/<subsystem>/** is the log hierarchy. Never write to a flat
   root log file.
   *Why: flat root logs from multiple devices are ungreppable without knowing which device wrote what; hierarchy makes per-device debugging self-contained.*
+- **Log every state change and every interface crossing.** State changes: ticket status
+  transitions, device lifecycle events (start/stop/restart/halt), routing decisions,
+  auth/trust events. Interface crossings: channel post/read, DB write/read, subprocess
+  spawn, MCP tool dispatch, device/shim boundary method calls. Log at INFO for crossings,
+  DEBUG for high-frequency state changes (e.g. Hebbian edge weight updates).
+  *Why: without a log at the crossing point, a bug at a device boundary is invisible — you
+  can't tell whether the problem is in the sender or the receiver, or whether the message
+  crossed at all. Enforced by audit check AR-009.*
 
 ---
 
