@@ -35,6 +35,10 @@ class InferenceRequest:
     system: str = ""
     timeout: int = 60
     extra: dict = field(default_factory=dict)
+    # Routing hint for the rules engine.
+    # One of: "minion" | "worker" | "analyst" | "designer"
+    # "worker" is the default for sprint-ticket tasks.
+    task_class: str = "worker"
     # Agent context for budget ledger attribution and enforcement.
     agent_id: str = ""
     instance_id: str = ""

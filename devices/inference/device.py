@@ -29,6 +29,16 @@ from urllib.parse import urlparse
 
 from unseen_university.device import BaseDevice, INTERFACE_VERSION
 from devices.inference.shim import InferenceRequest, InferenceResponse
+from devices.inference.sources import (
+    SourceRegistry,
+    default_registry as _default_sources,
+)
+from devices.inference.models_registry import (
+    ModelsRegistry,
+    default_registry as _default_models,
+)
+from devices.inference.rules_engine import RulesEngine
+from devices.inference.health_monitor import HealthMonitor
 
 log = logging.getLogger(__name__)
 
@@ -77,12 +87,20 @@ class InferenceDevice(BaseDevice):
         self,
         mode: str = _MODE,
         endpoint: str = _ENDPOINT,
+        sources: SourceRegistry | None = None,
+        models: ModelsRegistry | None = None,
     ) -> None:
         super().__init__()
         self._mode = mode
         self._endpoint = endpoint or (_OLLAMA_DEFAULT if mode == "ollama" else "")
         self._blocked = False
         self._block_reason = ""
+        # Mini-rack: sources + models + rules + health
+        self._sources = sources or _default_sources()
+        self._models = models or _default_models()
+        self._rules = RulesEngine(self._sources, self._models)
+        self._health = HealthMonitor(self._sources)
+        self._health.start()
 
     # ── BaseDevice contract ───────────────────────────────────────────────────
 
@@ -221,54 +239,108 @@ class InferenceDevice(BaseDevice):
         return query_results(db_url, task_class=task_class, model=model, limit=limit)
 
     def dispatch(self, request: InferenceRequest) -> InferenceResponse:
-        """Send an inference request and return the response.
+        """Route and dispatch an inference request via the mini-rack rules engine.
 
-        Uses the device's configured mode (openrouter or ollama). Raises
-        RuntimeError on API error or if the device is blocked.
+        task_class on the request determines which Source + Model is selected.
+        Falls back to legacy _mode behaviour if rules engine yields no decision.
+        Raises RuntimeError on API error or if the device is blocked.
         """
         if self._blocked:
             raise RuntimeError(f"InferenceDevice blocked: {self._block_reason}")
-        if self._mode == "openrouter":
+
+        from devices.inference.budget_ledger import check_session_limit, debit
+
+        # Route via rules engine
+        decision = self._rules.route(
+            task_class=request.task_class or "worker",
+            session_id=request.session_id,
+        )
+
+        if decision is not None:
+            # Resolve model_id for the request
+            request = InferenceRequest(
+                messages=request.messages,
+                model=decision.model.model_id,
+                max_tokens=request.max_tokens,
+                temperature=request.temperature,
+                system=request.system,
+                timeout=request.timeout,
+                extra=request.extra,
+                task_class=request.task_class,
+                agent_id=request.agent_id,
+                instance_id=request.instance_id,
+                coa_id=request.coa_id,
+                session_id=request.session_id,
+            )
+            source = decision.source
+            provider_name = source.name
+            log.info(
+                "dispatch: %s → %s/%s (rule=%s)",
+                request.task_class,
+                decision.model.model_id,
+                provider_name,
+                decision.rule_label,
+            )
+        else:
+            # No rules decision — fall back to legacy _mode
+            log.warning(
+                "dispatch: rules engine returned no decision — falling back to legacy mode=%s",
+                self._mode,
+            )
+            source = self._sources.get(self._mode)
+            provider_name = self._mode
+
+        # OR-specific pre-call gates
+        if provider_name == "openrouter":
             from devices.inference.budget_gate import check_balance, record_spend
-            from devices.inference.budget_ledger import check_session_limit, debit
 
             ok, msg = check_balance()
             if not ok:
                 raise RuntimeError(f"OR budget gate: {msg}")
             if request.agent_id and request.session_id:
                 ok, msg = check_session_limit(
-                    request.agent_id, request.session_id, self._mode
+                    request.agent_id, request.session_id, provider_name
                 )
                 if not ok:
                     raise RuntimeError(f"budget limit: {msg}")
-        else:
-            from devices.inference.budget_ledger import debit
+
         t0 = time.time()
-        if self._mode == "openrouter":
+        if source is not None:
+            raw = source.call(request)
+        elif self._mode == "openrouter":
             raw = self._or_call(request)
         else:
             raw = self._ollama_call(request)
         elapsed_ms = round((time.time() - t0) * 1000)
+
         resp = _parse_response(raw, elapsed_ms=elapsed_ms)
-        if self._mode == "openrouter":
+
+        if provider_name == "openrouter":
+            from devices.inference.budget_gate import record_spend
+
             record_spend(
                 resp.model or request.model, resp.input_tokens, resp.output_tokens
             )
             cost_usd = resp.cost_estimate if resp.cost_estimate > 0 else None
         else:
             cost_usd = None
+
         debit(
             agent_id=request.agent_id,
             instance_id=request.instance_id,
             coa_id=request.coa_id,
             session_id=request.session_id,
-            provider=self._mode,
+            provider=provider_name,
             model=resp.model or request.model,
             input_tokens=resp.input_tokens,
             output_tokens=resp.output_tokens,
             cost_usd=cost_usd,
         )
         return resp
+
+    def source_health(self) -> dict[str, bool]:
+        """Return current health status of all registered sources."""
+        return {s.name: s.available for s in self._sources.all()}
 
     def _or_call(self, req: InferenceRequest) -> dict:
         api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
