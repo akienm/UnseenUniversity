@@ -7,9 +7,10 @@ No tool-use loops, no prompt assembly — callers own the prompt, this device ow
 
 | File | Purpose |
 |---|---|
-| `device.py` | `InferenceDevice` — `dispatch(InferenceRequest) → InferenceResponse`; OR budget gate wired into `dispatch()` |
+| `device.py` | `InferenceDevice` — `dispatch(InferenceRequest) → InferenceResponse`; OR budget gate wired into `dispatch()`; `capability_graph_query()` reads eval results |
 | `shim.py` | `InferenceShim` + `InferenceRequest` + `InferenceResponse` dataclasses |
 | `budget_gate.py` | Pre-call balance check, post-call spend record, low-balance channel alert |
+| `capability_graph.py` | `adc.model_eval_results` table — per-model quality/latency/cost data written by eval harness; queryable via `InferenceDevice.capability_graph_query()` |
 
 ## External interfaces
 

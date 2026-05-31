@@ -18,6 +18,7 @@ Health + comms:// registration are the secondary role (rack-visible contract).
 from __future__ import annotations
 
 import json
+import logging
 import os
 import socket
 import time
@@ -28,6 +29,8 @@ from urllib.parse import urlparse
 
 from unseen_university.device import BaseDevice, INTERFACE_VERSION
 from devices.inference.shim import InferenceRequest, InferenceResponse
+
+log = logging.getLogger(__name__)
 
 _START_TIME = time.time()
 _MODE = os.environ.get("INFERENCE_MODE", "openrouter")
@@ -110,6 +113,7 @@ class InferenceDevice(BaseDevice):
             "can_receive": True,
             "emitted_keywords": ["inference_response"],
             "mcp_endpoint": None,
+            "public_methods": ["dispatch", "capability_graph_query"],
         }
 
     def comms(self) -> dict:
@@ -192,6 +196,30 @@ class InferenceDevice(BaseDevice):
 
     # ── Inference dispatch ────────────────────────────────────────────────────
 
+    def capability_graph_query(
+        self,
+        task_class: str = "",
+        model: str = "",
+        limit: int = 50,
+    ) -> list[dict]:
+        """Query model eval results from the capability graph.
+
+        Returns rows from adc.model_eval_results, newest first.
+        Returns [] when IGOR_HOME_DB_URL is absent or the table doesn't exist yet.
+        """
+        from devices.inference.capability_graph import query_results
+
+        db_url = os.environ.get("IGOR_HOME_DB_URL", "")
+        if not db_url:
+            return []
+        log.info(
+            "capability_graph_query: task_class=%r model=%r limit=%d",
+            task_class,
+            model,
+            limit,
+        )
+        return query_results(db_url, task_class=task_class, model=model, limit=limit)
+
     def dispatch(self, request: InferenceRequest) -> InferenceResponse:
         """Send an inference request and return the response.
 
@@ -202,10 +230,19 @@ class InferenceDevice(BaseDevice):
             raise RuntimeError(f"InferenceDevice blocked: {self._block_reason}")
         if self._mode == "openrouter":
             from devices.inference.budget_gate import check_balance, record_spend
+            from devices.inference.budget_ledger import check_session_limit, debit
 
             ok, msg = check_balance()
             if not ok:
                 raise RuntimeError(f"OR budget gate: {msg}")
+            if request.agent_id and request.session_id:
+                ok, msg = check_session_limit(
+                    request.agent_id, request.session_id, self._mode
+                )
+                if not ok:
+                    raise RuntimeError(f"budget limit: {msg}")
+        else:
+            from devices.inference.budget_ledger import debit
         t0 = time.time()
         if self._mode == "openrouter":
             raw = self._or_call(request)
@@ -217,6 +254,20 @@ class InferenceDevice(BaseDevice):
             record_spend(
                 resp.model or request.model, resp.input_tokens, resp.output_tokens
             )
+            cost_usd = resp.cost_estimate if resp.cost_estimate > 0 else None
+        else:
+            cost_usd = None
+        debit(
+            agent_id=request.agent_id,
+            instance_id=request.instance_id,
+            coa_id=request.coa_id,
+            session_id=request.session_id,
+            provider=self._mode,
+            model=resp.model or request.model,
+            input_tokens=resp.input_tokens,
+            output_tokens=resp.output_tokens,
+            cost_usd=cost_usd,
+        )
         return resp
 
     def _or_call(self, req: InferenceRequest) -> dict:
@@ -298,6 +349,7 @@ def _parse_response(raw: dict, elapsed_ms: int = 0) -> InferenceResponse:
             finish_reason=finish_reason,
             input_tokens=usage.get("prompt_tokens", 0),
             output_tokens=usage.get("completion_tokens", 0),
+            cost_estimate=float(usage.get("cost") or 0.0),
             elapsed_ms=elapsed_ms,
             raw=raw,
         )

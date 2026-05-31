@@ -94,7 +94,13 @@ class EvaluatorDevice(BaseDevice):
             "can_send": False,
             "can_receive": True,
             "emitted_keywords": ["eval_result"],
-            "mcp_tools": ["evaluate", "rubric_create", "rubric_list", "eval_history"],
+            "mcp_tools": [
+                "evaluate",
+                "rubric_create",
+                "rubric_list",
+                "eval_history",
+                "model_eval_run",
+            ],
         }
 
     def comms(self) -> dict:
@@ -414,6 +420,162 @@ class EvaluatorDevice(BaseDevice):
                 continue
 
         return result
+
+    def model_eval_run(
+        self,
+        task: str,
+        models: list[str],
+        rubric_id: str = "",
+        task_class: str = "",
+        agent_id: str = "eval-harness",
+    ) -> dict:
+        """Run a task against multiple model stacks, record quality + cost + latency.
+
+        Each model receives the identical task prompt. If rubric_id is provided,
+        each output is scored by the 3-judge panel (EvaluatorDevice.evaluate()).
+        Results are written to adc.model_eval_results via the capability graph.
+
+        Returns {"run_group_id": str, "results": list[dict]}.
+        Raises RuntimeError when DB is unavailable.
+        """
+        import time as _time
+        from devices.inference.capability_graph import ensure_table, insert_result
+        from devices.inference.shim import InferenceRequest
+
+        db_url = self._get_db_url()
+        ensure_table(db_url)
+
+        run_group_id = f"RG-{uuid.uuid4().hex[:8]}"
+        log.info(
+            "model_eval_run: start group=%s task_class=%r models=%s",
+            run_group_id,
+            task_class,
+            models,
+        )
+
+        results = []
+        for model in models:
+            result_id = f"ME-{uuid.uuid4().hex[:8]}"
+            log.info(
+                "model_eval_run: dispatching model=%s group=%s",
+                model,
+                run_group_id,
+            )
+
+            req = InferenceRequest(
+                messages=[{"role": "user", "content": task}],
+                model=model,
+                max_tokens=2048,
+                temperature=0.0,
+                agent_id=agent_id,
+                session_id=run_group_id,
+            )
+
+            output_text = ""
+            input_tokens = 0
+            output_tokens = 0
+            cost_usd: float | None = None
+            latency_ms = 0
+            provider = "openrouter"
+            dispatch_error: str | None = None
+
+            try:
+                resp = self._get_inference().dispatch(req)
+                output_text = resp.text
+                input_tokens = resp.input_tokens
+                output_tokens = resp.output_tokens
+                cost_usd = resp.cost_estimate if resp.cost_estimate > 0 else None
+                latency_ms = resp.elapsed_ms
+                raw_model = resp.model or model
+                provider = raw_model.split("/")[0] if "/" in raw_model else "openrouter"
+                log.info(
+                    "model_eval_run: dispatch done model=%s latency_ms=%d"
+                    " tokens_in=%d tokens_out=%d cost_usd=%s",
+                    model,
+                    latency_ms,
+                    input_tokens,
+                    output_tokens,
+                    cost_usd,
+                )
+            except Exception as exc:
+                dispatch_error = str(exc)
+                log.warning("model_eval_run: dispatch failed model=%s: %s", model, exc)
+
+            quality_score: float | None = None
+            verdict: str | None = None
+            eval_id: str | None = None
+
+            if rubric_id and output_text:
+                log.info(
+                    "model_eval_run: scoring output model=%s rubric=%s",
+                    model,
+                    rubric_id,
+                )
+                try:
+                    eval_result = self.evaluate(
+                        output_text, rubric_id, agent_id=agent_id
+                    )
+                    quality_score = eval_result["score"]
+                    verdict = eval_result["verdict"]
+                    eval_id = eval_result["eval_id"]
+                    log.info(
+                        "model_eval_run: score model=%s quality=%.4f verdict=%s"
+                        " eval_id=%s",
+                        model,
+                        quality_score,
+                        verdict,
+                        eval_id,
+                    )
+                except Exception as exc:
+                    log.warning(
+                        "model_eval_run: evaluate failed model=%s: %s", model, exc
+                    )
+
+            log.info(
+                "model_eval_run: recording result=%s model=%s group=%s",
+                result_id,
+                model,
+                run_group_id,
+            )
+            insert_result(
+                db_url,
+                result_id=result_id,
+                run_group_id=run_group_id,
+                task_class=task_class,
+                model=model,
+                provider=provider,
+                task_text=task,
+                output_text=output_text,
+                quality_score=quality_score,
+                verdict=verdict,
+                eval_id=eval_id,
+                latency_ms=latency_ms,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                cost_usd=cost_usd,
+            )
+
+            entry: dict = {
+                "result_id": result_id,
+                "model": model,
+                "latency_ms": latency_ms,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "cost_usd": cost_usd,
+                "quality_score": quality_score,
+                "verdict": verdict,
+                "eval_id": eval_id,
+            }
+            if dispatch_error is not None:
+                entry["error"] = dispatch_error
+            results.append(entry)
+
+        log.info(
+            "model_eval_run: complete group=%s models_run=%d",
+            run_group_id,
+            len(results),
+        )
+        return {"run_group_id": run_group_id, "results": results}
 
     def eval_history(self, agent_id: str, limit: int = 20) -> list[dict]:
         """Return recent eval results for agent_id, newest first."""

@@ -35,6 +35,11 @@ class InferenceRequest:
     system: str = ""
     timeout: int = 60
     extra: dict = field(default_factory=dict)
+    # Agent context for budget ledger attribution and enforcement.
+    agent_id: str = ""
+    instance_id: str = ""
+    coa_id: str = ""
+    session_id: str = ""
 
 
 @dataclass
