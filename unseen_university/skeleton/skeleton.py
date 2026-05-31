@@ -40,6 +40,8 @@ from unseen_university.skeleton.health import (
     rack_health_async,
 )
 from config.device_config import DeviceConfig
+from devices.policy.gate import _write_governance_decision
+from skeleton.halt_registry import HaltRegistry
 from skeleton.registry import DeviceRegistry
 
 if TYPE_CHECKING:
@@ -57,10 +59,12 @@ class Skeleton(BaseDevice):
     def __init__(
         self,
         registry: DeviceRegistry | None = None,
+        halt_registry: HaltRegistry | None = None,
         imap_server: "IMAPServer | None" = None,
         profiles_dir: "Path | str | None" = None,
     ) -> None:
         self._registry = registry or DeviceRegistry()
+        self._halt_registry = halt_registry or HaltRegistry()
         self._imap_server = imap_server
         self._devices: dict[str, BaseDevice] = {}  # live device objects
         self._announce_broker: AnnounceBroker | None = None
@@ -148,6 +152,60 @@ class Skeleton(BaseDevice):
             if skel._imap_server is None:
                 return []
             return rack_channels(skel._imap_server)
+
+        @self._mcp.tool()
+        def agent_halt(agent_id: str, reason: str, from_device: str) -> dict:
+            """Halt agent_id — deny all subsequent tool calls via policy gate.
+
+            Requires from_device == 'skeleton'. Halt persists across rack restarts.
+            To un-halt, call agent_resume.
+            """
+            if from_device != skel.DEVICE_ID:
+                raise AuthError(
+                    f"agent_halt requires from_device == 'skeleton', got '{from_device}'",
+                    from_device=from_device,
+                    target=agent_id,
+                )
+            skel._halt_registry.set_halted(agent_id, True, reason)
+            _write_governance_decision(
+                {
+                    "ts": _now(),
+                    "agent_id": agent_id,
+                    "action": "agent_halt",
+                    "policy_checked": ["kill_switch"],
+                    "verdict": "halt",
+                    "reason": reason,
+                }
+            )
+            log.info("kill switch: halted agent %r (reason=%r)", agent_id, reason)
+            return {"ok": True, "agent_id": agent_id, "op": "halt", "reason": reason}
+
+        @self._mcp.tool()
+        def agent_resume(agent_id: str, from_device: str) -> dict:
+            """Resume a halted agent — restore normal policy gate evaluation.
+
+            Requires from_device == 'skeleton'. Self-resume is intentionally denied:
+            a halted agent must not be able to un-halt itself.
+            """
+            if from_device != skel.DEVICE_ID:
+                raise AuthError(
+                    f"agent_resume requires from_device == 'skeleton', got '{from_device}'",
+                    from_device=from_device,
+                    target=agent_id,
+                )
+            skel._halt_registry.set_halted(agent_id, False)
+            _write_governance_decision(
+                {
+                    "ts": _now(),
+                    "agent_id": agent_id,
+                    "action": "agent_resume",
+                    "policy_checked": ["kill_switch"],
+                    "verdict": "resume",
+                    "reason": "",
+                }
+            )
+            log.info("kill switch: resumed agent %r", agent_id)
+            return {"ok": True, "agent_id": agent_id, "op": "resume"}
 
     # ── Device registration ───────────────────────────────────────────────────
 

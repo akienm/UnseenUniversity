@@ -1,9 +1,10 @@
 """
 PolicyGate — pre-execution allow/deny gate for BaseShim.dispatch().
 
-Evaluated synchronously before every governed tool call. Three checks in order
+Evaluated synchronously before every governed tool call. Four checks in order
 (first failure wins, check order is intentional per ticket spec):
 
+  0. Halt: check_halted(agent_id) — agent has not been kill-switched
   1. Provenance: verify_token(token) — caller holds a rack-issued credential
   2. Allowed actions: action must appear in allowed_actions list (or "*")
   3. Budget: check_budget() returns (True, ...) — resources are available
@@ -66,10 +67,12 @@ class PolicyGate:
     into each shim via shim._policy_gate.
 
     Args:
-        policies_dir:  Directory holding <agent_id>.yaml policy files.
-                       Defaults to config/policies/ (or UU_POLICY_DIR env var).
-        verify_token:  callable(token) -> bool. None skips provenance check.
-        check_budget:  callable() -> (bool, str). None skips budget check.
+        policies_dir:   Directory holding <agent_id>.yaml policy files.
+                        Defaults to config/policies/ (or UU_POLICY_DIR env var).
+        verify_token:   callable(token) -> bool. None skips provenance check.
+        check_budget:   callable() -> (bool, str). None skips budget check.
+        check_halted:   callable(agent_id) -> (bool, str). None skips halt check.
+                        Returns (is_halted, reason); is_halted=True denies the call.
     """
 
     def __init__(
@@ -77,6 +80,7 @@ class PolicyGate:
         policies_dir: Path | str | None = None,
         verify_token: Callable | None = None,
         check_budget: Callable | None = None,
+        check_halted: Callable | None = None,
     ) -> None:
         if policies_dir is None:
             env_dir = os.environ.get(_UU_POLICY_DIR_ENV)
@@ -85,6 +89,7 @@ class PolicyGate:
             self._policies_dir = Path(policies_dir)
         self._verify_token = verify_token
         self._check_budget = check_budget
+        self._check_halted = check_halted
         self._policy_cache: dict[str, list[str]] = {}
 
     def check(self, agent_id: str, action: str, token: object) -> tuple[bool, str]:
@@ -92,9 +97,21 @@ class PolicyGate:
         Evaluate all policies for (agent_id, action, token).
 
         Returns (allowed, reason). Writes a governance record as a side effect.
-        Check order: provenance → allowed_actions → budget. First failure wins.
+        Check order: halt → provenance → allowed_actions → budget. First failure wins.
         """
         policies_checked: list[str] = []
+
+        # 0. Halt check (kill switch — highest-priority override)
+        if self._check_halted is not None:
+            policies_checked.append("halt")
+            is_halted, halt_reason = self._check_halted(agent_id)
+            if is_halted:
+                return self._deny(
+                    agent_id,
+                    action,
+                    policies_checked,
+                    f"agent halted: {halt_reason}",
+                )
 
         # 1. Provenance check
         if self._verify_token is not None:
