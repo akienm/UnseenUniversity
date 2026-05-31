@@ -47,6 +47,7 @@ def test_worker_envelope_defaults():
     assert env.session_id == ""
     assert env.escalation_history == []
     assert env.cwd == ""
+    assert env.task_class == "worker"
 
 
 def test_worker_result_signal_field():
@@ -54,6 +55,9 @@ def test_worker_result_signal_field():
     assert r.signal == "DONE"
     assert r.iterations == 0
     assert r.tools_called == []
+    assert r.input_tokens == 0
+    assert r.output_tokens == 0
+    assert r.cost_usd == 0.0
 
 
 # ── _parse_tool_call ──────────────────────────────────────────────────────────
@@ -258,6 +262,52 @@ def test_tool_loop_inference_error_escalates(tmp_path):
     result = loop.run(WorkerEnvelope(ticket_id="T-t", description="..."))
     assert result.signal == "ESCALATE: worker"
     assert "Inference error" in result.notes
+
+
+def test_tool_loop_uses_envelope_task_class(tmp_path):
+    """ToolLoop must forward envelope.task_class to InferenceRequest (not hard-code 'worker')."""
+    inf = MagicMock()
+    inf.dispatch.return_value = InferenceResponse(text="DONE: done", model="test/model")
+    loop = ToolLoop(inf, cwd=tmp_path)
+    env = WorkerEnvelope(ticket_id="T-t", description="go", task_class="minion")
+    loop.run(env)
+    req = inf.dispatch.call_args.args[0]
+    assert req.task_class == "minion"
+
+
+def test_tool_loop_accumulates_cost(tmp_path):
+    """Cost is summed from registry pricing across iterations; returned in WorkerResult."""
+    from devices.inference.models_registry import default_registry
+
+    model_id = "qwen/qwen3.5-9b"
+    spec = default_registry().get(model_id)
+    assert spec is not None, "qwen3.5-9b must exist in registry for this test"
+
+    inf = MagicMock()
+    # Two iterations: first a tool call, then DONE
+    inf.dispatch.side_effect = [
+        InferenceResponse(
+            text="<tool>Bash</tool><command>echo hi</command>",
+            model=model_id,
+            input_tokens=1000,
+            output_tokens=200,
+        ),
+        InferenceResponse(
+            text="DONE: finished",
+            model=model_id,
+            input_tokens=500,
+            output_tokens=50,
+        ),
+    ]
+    loop = ToolLoop(inf, cwd=tmp_path)
+    result = loop.run(
+        WorkerEnvelope(ticket_id="T-t", description="go", task_class="minion")
+    )
+
+    expected_cost = spec.cost_estimate(1500, 250)
+    assert result.input_tokens == 1500
+    assert result.output_tokens == 250
+    assert abs(result.cost_usd - expected_cost) < 1e-9
 
 
 # ── MinionDevice ──────────────────────────────────────────────────────────────

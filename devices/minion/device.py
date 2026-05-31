@@ -141,15 +141,22 @@ class MinionDevice(BaseDevice):
                 "iterations": result.iterations,
                 "tools": result.tools_called,
                 "elapsed_s": elapsed,
+                "cost_usd": result.cost_usd,
+                "input_tokens": result.input_tokens,
+                "output_tokens": result.output_tokens,
                 "at": _now(),
             }
         )
         log.info(
-            "MinionDevice.execute: %s → signal=%r iterations=%d elapsed=%.1fs",
+            "MinionDevice.execute: %s → signal=%r iterations=%d elapsed=%.1fs "
+            "cost_usd=%.4f in_tok=%d out_tok=%d",
             envelope.ticket_id,
             result.signal,
             result.iterations,
             elapsed,
+            result.cost_usd,
+            result.input_tokens,
+            result.output_tokens,
         )
         return result
 

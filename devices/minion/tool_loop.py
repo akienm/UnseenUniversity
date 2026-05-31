@@ -27,12 +27,24 @@ import subprocess
 from pathlib import Path
 
 from devices.inference.device import InferenceDevice
+from devices.inference.models_registry import default_registry as _default_registry
 from devices.inference.shim import InferenceRequest
 from devices.minion.shim import WorkerEnvelope, WorkerResult
 
 log = logging.getLogger(__name__)
 
 _MAX_ITERATIONS = int(os.environ.get("MINION_MAX_ITERATIONS", "20"))
+
+
+def _cost_from_tokens(model_id: str, input_tokens: int, output_tokens: int) -> float:
+    """Compute cost in USD from token counts using registry pricing.
+
+    Falls back to resp.cost_estimate caller-side when model_id is unknown.
+    Returns 0.0 when model is absent from registry.
+    """
+    spec = _default_registry().get(model_id)
+    return spec.cost_estimate(input_tokens, output_tokens) if spec else 0.0
+
 
 _SYSTEM_PROMPT = """You are a MINION-tier code worker in the Unseen University agent rack.
 
@@ -243,6 +255,9 @@ class ToolLoop:
         tools_called: list[str] = []
         iterations = 0
         consecutive_bash_failures = 0
+        total_input_tokens = 0
+        total_output_tokens = 0
+        total_cost_usd = 0.0
 
         while iterations < self._max_iterations:
             iterations += 1
@@ -257,7 +272,7 @@ class ToolLoop:
                 req = InferenceRequest(
                     messages=messages,
                     system=system,
-                    task_class="worker",
+                    task_class=envelope.task_class,
                     session_id=envelope.session_id,
                     max_tokens=4096,
                 )
@@ -270,7 +285,18 @@ class ToolLoop:
                     notes=f"Inference error on iteration {iterations}: {exc}",
                     iterations=iterations,
                     tools_called=tools_called,
+                    input_tokens=total_input_tokens,
+                    output_tokens=total_output_tokens,
+                    cost_usd=total_cost_usd,
                 )
+
+            total_input_tokens += resp.input_tokens
+            total_output_tokens += resp.output_tokens
+            # Use registry pricing for accurate cost; fall back to OR-reported estimate.
+            iter_cost = _cost_from_tokens(
+                resp.model, resp.input_tokens, resp.output_tokens
+            )
+            total_cost_usd += iter_cost if iter_cost > 0 else resp.cost_estimate
 
             messages.append({"role": "assistant", "content": text})
 
@@ -284,6 +310,9 @@ class ToolLoop:
                     notes=notes,
                     iterations=iterations,
                     tools_called=tools_called,
+                    input_tokens=total_input_tokens,
+                    output_tokens=total_output_tokens,
+                    cost_usd=total_cost_usd,
                 )
 
             # Parse and execute tool call
@@ -322,4 +351,7 @@ class ToolLoop:
             notes=f"Reached max iterations ({self._max_iterations}) without completing.",
             iterations=iterations,
             tools_called=tools_called,
+            input_tokens=total_input_tokens,
+            output_tokens=total_output_tokens,
+            cost_usd=total_cost_usd,
         )

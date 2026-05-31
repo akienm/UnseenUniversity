@@ -196,25 +196,33 @@ def inference_dispatch_fn(ticket: dict) -> bool:
             description=f"Title: {ticket.get('title', '')}\n\n{ticket.get('description', '')}",
             session_id=ticket_id,  # one session per ticket → model affinity in rules engine
             cwd=str(_UU_ROOT),
+            task_class=task_class,
         )
         worker_result = MinionDevice().execute(envelope)
 
         log.info(
-            "inference_dispatch %s: signal=%r task_class=%s iterations=%d tools=%s",
+            "inference_dispatch %s: signal=%r task_class=%s iterations=%d tools=%s "
+            "cost_usd=%.4f in_tok=%d out_tok=%d",
             ticket_id,
             worker_result.signal,
             task_class,
             worker_result.iterations,
             worker_result.tools_called,
+            worker_result.cost_usd,
+            worker_result.input_tokens,
+            worker_result.output_tokens,
         )
 
-        # Post result to channel for observability
+        # Post result + cost to channel for observability
         try:
             from unseen_university.channel import post_to_channel
 
             post_to_channel(
                 f"MINION_RESULT|ticket={ticket_id}|signal={worker_result.signal}"
-                f"|task_class={task_class}|iterations={worker_result.iterations}",
+                f"|task_class={task_class}|iterations={worker_result.iterations}"
+                f"|cost_usd={worker_result.cost_usd:.4f}"
+                f"|tokens_in={worker_result.input_tokens}"
+                f"|tokens_out={worker_result.output_tokens}",
                 author="granny-weatherwax",
                 channel="shared",
             )

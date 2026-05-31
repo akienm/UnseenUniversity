@@ -27,6 +27,9 @@ class WorkerEnvelope:
     escalation_history: list[dict] = field(default_factory=list)
     # Working directory for tool execution; empty = use ToolLoop default (cwd).
     cwd: str = ""
+    # Inference tier: "minion" | "worker" | "analyst" | "designer".
+    # Passed through to InferenceRequest so the rules engine picks the right model.
+    task_class: str = "worker"
 
 
 @dataclass
@@ -38,6 +41,9 @@ class WorkerResult:
     notes: str
     iterations: int = 0
     tools_called: list[str] = field(default_factory=list)
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cost_usd: float = 0.0
 
 
 class MinionShim(BaseShim):

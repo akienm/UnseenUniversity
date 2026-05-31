@@ -151,6 +151,23 @@ def test_inference_dispatch_minion_tag_uses_minion_envelope(MockDevice, mock_run
     # session_id == ticket_id for model affinity
     assert envelope.session_id == "T-test"
     assert envelope.ticket_id == "T-test"
+    # minion tag → task_class="minion" so rules engine picks qwen, not deepseek
+    assert envelope.task_class == "minion"
+
+
+@patch("devices.granny.dispatch.subprocess.run")
+@patch("devices.minion.device.MinionDevice")
+def test_inference_dispatch_non_minion_tag_uses_worker_envelope(MockDevice, mock_run):
+    from devices.granny.dispatch import inference_dispatch_fn
+
+    mock_run.return_value = MagicMock(returncode=0, stderr="", stdout="")
+    instance = MockDevice.return_value
+    instance.execute.return_value = WorkerResult(signal="DONE", notes="done")
+
+    inference_dispatch_fn(_ticket(tags=["Platform"]))
+
+    envelope = instance.execute.call_args.args[0]
+    assert envelope.task_class == "worker"
 
 
 @patch("devices.granny.dispatch.subprocess.run")
@@ -166,6 +183,39 @@ def test_inference_dispatch_cwd_is_repo_root(MockDevice, mock_run):
 
     envelope = instance.execute.call_args.args[0]
     assert envelope.cwd == str(_UU_ROOT)
+
+
+@patch("devices.granny.dispatch.subprocess.run")
+@patch("devices.minion.device.MinionDevice")
+def test_inference_dispatch_cost_in_channel_post(MockDevice, mock_run):
+    """Cost fields from WorkerResult must appear in the MINION_RESULT channel post."""
+    from unittest.mock import patch as upatch
+
+    from devices.granny.dispatch import inference_dispatch_fn
+
+    mock_run.return_value = MagicMock(returncode=0, stderr="", stdout="")
+    instance = MockDevice.return_value
+    instance.execute.return_value = WorkerResult(
+        signal="DONE",
+        notes="done",
+        cost_usd=0.0023,
+        input_tokens=1500,
+        output_tokens=300,
+    )
+
+    posted_msgs = []
+    with upatch(
+        "unseen_university.channel.post_to_channel",
+        side_effect=lambda msg, **kw: posted_msgs.append(msg),
+    ):
+        inference_dispatch_fn(_ticket(tags=["minion"]))
+
+    result_posts = [m for m in posted_msgs if "MINION_RESULT" in m]
+    assert result_posts, "expected a MINION_RESULT channel post"
+    post = result_posts[0]
+    assert "cost_usd=" in post
+    assert "tokens_in=1500" in post
+    assert "tokens_out=300" in post
 
 
 # ── guard rails ───────────────────────────────────────────────────────────────
