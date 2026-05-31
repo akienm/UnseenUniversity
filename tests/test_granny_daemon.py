@@ -143,6 +143,11 @@ class TestGrannyDaemonRunOnce:
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
             patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
             patch("devices.granny.daemon.MAX_CONCURRENT_CC", 10),
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(True, None, 0.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             count = daemon.run_once()
 
@@ -157,6 +162,11 @@ class TestGrannyDaemonRunOnce:
         with (
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
             patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(True, None, 0.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             count = daemon.run_once()
 
@@ -172,6 +182,11 @@ class TestGrannyDaemonRunOnce:
         with (
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
             patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(True, None, 0.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             count1 = daemon.run_once()  # dispatches T-a
             count2 = daemon.run_once()  # T-a blocked (in _dispatched_ids from cycle 1)
@@ -190,6 +205,11 @@ class TestGrannyDaemonRunOnce:
         with (
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
             patch("devices.granny.daemon._ticket_needs_cc", return_value=False),
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(True, None, 0.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             count = daemon.run_once()
 
@@ -207,6 +227,11 @@ class TestGrannyDaemonRunOnce:
         with (
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
             patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(True, None, 0.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             count = daemon.run_once()
 
@@ -223,6 +248,11 @@ class TestGrannyDaemonRunOnce:
         with (
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
             patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(True, None, 0.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             count = daemon.run_once()
 
@@ -272,6 +302,11 @@ class TestGrannyDaemonAlertCC:
         with (
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
             patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(True, None, 0.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             daemon.run_once()
         # append called for CC.0 alert + feeds/granny publish
@@ -291,6 +326,11 @@ class TestGrannyDaemonAlertCC:
         with (
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
             patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(True, None, 0.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             daemon.run_once()
         # append called for CC.0 alert + feeds/granny publish
@@ -309,6 +349,11 @@ class TestGrannyDaemonAlertCC:
         with (
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
             patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(True, None, 0.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             daemon.run_once()
             daemon.run_once()
