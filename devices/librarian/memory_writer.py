@@ -110,6 +110,8 @@ def write_memory(
     source_agent: str,
     memory_type: str = "FACTUAL",
     *,
+    source_token: str | None = None,
+    derived_from: list[str] | None = None,
     extra_tags: list[str] | None = None,
     payloads: dict[str, Any] | None = None,
     metadata: dict[str, Any] | None = None,
@@ -122,6 +124,8 @@ def write_memory(
         content:      The memory text.
         source_agent: Required — who wrote this memory (provenance).
         memory_type:  FACTUAL | EPISODIC | PROCEDURAL | SEMANTIC
+        source_token: Rack-issued provenance token from T-provenance-identity (nullable).
+        derived_from: IDs of source memories this one was summarized or derived from.
         extra_tags:   Caller-supplied tags merged with inferred tags.
         payloads:     Typed payloads dict; EmbeddingPayload added automatically.
         metadata:     Extra metadata fields merged into the DB row.
@@ -186,8 +190,9 @@ def write_memory(
                 cur.execute(
                     """
                     INSERT INTO clan.memories
-                        (id, memory_type, narrative, metadata, payloads, source_agent, timestamp)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        (id, memory_type, narrative, metadata, payloads,
+                         source_agent, source_token, derived_from, timestamp)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
                         memory_id,
@@ -196,6 +201,8 @@ def write_memory(
                         psycopg2.extras.Json(combined_meta),
                         psycopg2.extras.Json(combined_payloads),
                         source_agent,
+                        source_token,
+                        derived_from,
                         stored_at,
                     ),
                 )

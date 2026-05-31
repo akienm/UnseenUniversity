@@ -994,6 +994,27 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "m055_edge_type_idx",
         "CREATE INDEX IF NOT EXISTS idx_ie_edge_type ON clan.interpretive_edges (edge_type) WHERE edge_type IS NOT NULL",
     ),
+    # T-provenance-write-attribution: source_token + derived_from on clan.memories and infra.channel_messages
+    (
+        "m056_clan_source_token",
+        "ALTER TABLE clan.memories ADD COLUMN IF NOT EXISTS source_token VARCHAR(256) DEFAULT NULL",
+    ),
+    (
+        "m056_clan_derived_from",
+        "ALTER TABLE clan.memories ADD COLUMN IF NOT EXISTS derived_from TEXT[] DEFAULT NULL",
+    ),
+    (
+        "m056_channel_source_token",
+        "ALTER TABLE infra.channel_messages ADD COLUMN IF NOT EXISTS source_token VARCHAR(256) DEFAULT NULL",
+    ),
+    (
+        "m056_channel_source_agent",
+        "ALTER TABLE infra.channel_messages ADD COLUMN IF NOT EXISTS source_agent VARCHAR(128) DEFAULT NULL",
+    ),
+    (
+        "m056_channel_derived_from",
+        "ALTER TABLE infra.channel_messages ADD COLUMN IF NOT EXISTS derived_from TEXT[] DEFAULT NULL",
+    ),
 ]
 
 
@@ -1555,8 +1576,9 @@ class Cortex(IgorBase):
                  valence, arousal, dominance,
                  activation_count, friction_history, timestamp, metadata, portable,
                  links_weighted, last_accessed,
-                 source, confidence, context_of_encoding, updated_at, scope, payload)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 source, confidence, context_of_encoding, updated_at, scope, payload,
+                 source_agent, source_token, derived_from)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO UPDATE SET
                   narrative = EXCLUDED.narrative,
                   memory_type = EXCLUDED.memory_type,
@@ -1578,7 +1600,10 @@ class Cortex(IgorBase):
                   context_of_encoding = EXCLUDED.context_of_encoding,
                   updated_at = EXCLUDED.updated_at,
                   scope = EXCLUDED.scope,
-                  payload = EXCLUDED.payload
+                  payload = EXCLUDED.payload,
+                  source_agent = EXCLUDED.source_agent,
+                  source_token = EXCLUDED.source_token,
+                  derived_from = EXCLUDED.derived_from
             """,
                 (
                     memory.id,
@@ -1603,6 +1628,9 @@ class Cortex(IgorBase):
                     _now_iso,
                     memory.scope.value if memory.scope else "class",
                     json.dumps(memory.payload) if memory.payload is not None else None,
+                    memory.source_agent,
+                    memory.source_token,
+                    memory.derived_from,
                 ),
             )
         # D256: register node in node_registry + Redis cache (non-fatal)

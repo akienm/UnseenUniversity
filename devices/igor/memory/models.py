@@ -133,6 +133,10 @@ class Memory:
     payloads: Optional[Dict[str, Any]] = None
     # Multi-agent provenance — which agent wrote this memory (e.g. "igor", "librarian", "cc")
     source_agent: Optional[str] = None
+    # T-provenance-write-attribution: rack-issued token from T-provenance-identity (nullable until that ships)
+    source_token: Optional[str] = None
+    # Chain-of-custody: IDs of memories this one was summarized or derived from
+    derived_from: Optional[list] = None
 
     def __post_init__(self):
         if self.scope is None:
