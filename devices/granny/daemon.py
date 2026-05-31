@@ -38,6 +38,10 @@ from bus.imap_server import IMAPServer
 log = logging.getLogger(__name__)
 
 POLL_INTERVAL_SEC = int(os.environ.get("GRANNY_POLL_INTERVAL", "60"))
+MAX_CONCURRENT_CC = int(os.environ.get("GRANNY_MAX_CC", "1"))
+_USAGE_CACHE = Path.home() / ".claude" / "usage-cache.json"
+_RATE_LIMIT_PAUSE_PCT = float(os.environ.get("GRANNY_RATE_LIMIT_PAUSE", "90"))
+_RATE_LIMIT_7D_PAUSE_PCT = float(os.environ.get("GRANNY_RATE_LIMIT_7D_PAUSE", "90"))
 _UU_ROOT = Path(__file__).parent.parent.parent.resolve()
 # Always use UU's own cc_queue.py — never inherited CC_WORKFLOW_TOOLS.
 _CC_QUEUE = _UU_ROOT / "lab" / "claudecode" / "cc_queue.py"
@@ -82,59 +86,111 @@ _SKIP_STATUSES = {"in_progress", "done", "closed", "awaiting_validation"}
 
 
 def _load_sprint_tickets() -> list[dict]:
-    """Load tickets with status=sprint from cc_queue. Returns [] on error.
+    """Load tickets with status=sprint directly from Postgres. Returns [] on error.
 
-    cc_queue.py list has no --json flag; we parse its text output to extract
-    ticket IDs then call show <id> for full JSON per ticket.
+    Queries clan.memories directly — avoids O(N) subprocess calls on a large queue.
     """
     try:
-        list_result = subprocess.run(
-            [str(_PYTHON), str(_CC_QUEUE), "list"],
-            capture_output=True,
-            text=True,
-            timeout=15,
+        import psycopg2
+        import psycopg2.extras
+
+        db_url = os.environ.get(
+            "IGOR_HOME_DB_URL",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
-        if list_result.returncode != 0:
-            log.warning(
-                "GrannyDaemon: cc_queue list failed: %s", list_result.stderr[:200]
-            )
-            return []
-
-        # Extract ticket IDs from formatted output: "  ⬜ [T-foo-bar] (S) ..."
-        ids = re.findall(r"\[(T-[a-z0-9-]+)\]", list_result.stdout)
-
-        tickets = []
-        for tid in ids:
-            show_result = subprocess.run(
-                [str(_PYTHON), str(_CC_QUEUE), "show", tid],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
-            if show_result.returncode != 0:
-                continue
-            try:
-                t = json.loads(show_result.stdout)
-                if t.get("status") in _DISPATCHABLE_STATUSES and not t.get("gate"):
-                    tickets.append(t)
-            except json.JSONDecodeError:
-                pass
-        return tickets
+        conn = psycopg2.connect(db_url, connect_timeout=5)
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""SELECT metadata FROM clan.memories
+                   WHERE metadata->>'kind' = 'ticket'
+                   AND metadata->>'status' = 'sprint'
+                   AND (metadata->>'gate' IS NULL OR metadata->>'gate' = '')
+                   ORDER BY (metadata->>'priority')::float DESC NULLS LAST
+                   LIMIT 50""")
+            rows = cur.fetchall()
+        conn.close()
+        return [dict(r["metadata"]) for r in rows]
     except Exception as e:
         log.warning("GrannyDaemon: failed to load tickets: %s", e)
         return []
 
 
-def _ticket_needs_cc(ticket: dict) -> bool:
-    """Return True if this ticket should be routed to CC."""
-    worker = ticket.get("worker", "")
-    if worker == "claude":
-        return True
-    if worker and worker != "cc":
-        return False  # explicitly assigned to someone else
-    # No explicit worker — check tags
+def _check_rate_limit() -> tuple[bool, Optional[str], float]:
+    """Read usage cache. Returns (ok_to_dispatch, signal, pct). signal names which limit fired.
+
+    Also checks:
+    - Cache staleness: if cache is >5 min old and workers are active, treat as high usage.
+    - Extra usage disabled: if overage buffer is gone, lower effective pause threshold to 80%.
+    """
+    try:
+        import datetime
+
+        data = json.loads(_USAGE_CACHE.read_text())
+
+        # Staleness check — cache only updates on CC stop events
+        updated_at = data.get("updatedAt", "")
+        if updated_at:
+            age_seconds = (
+                datetime.datetime.now(datetime.timezone.utc)
+                - datetime.datetime.fromisoformat(updated_at)
+            ).total_seconds()
+            active = _count_active_cc_sessions()
+            if age_seconds > 300 and active > 0:
+                log.warning(
+                    "GrannyDaemon: usage cache is %.0fs old with %d active workers — assuming high usage",
+                    age_seconds,
+                    active,
+                )
+                return (False, "stale-cache", 0.0)
+
+        usage = data.get("usage", {})
+
+        # Extra usage disabled means no buffer — be more conservative (80% threshold)
+        extra = usage.get("extra_usage") or {}
+        buffer_gone = bool(extra.get("disabled_reason"))
+        effective_pause = 80.0 if buffer_gone else _RATE_LIMIT_PAUSE_PCT
+
+        five_pct = (usage.get("five_hour") or {}).get("utilization") or 0.0
+        if five_pct >= effective_pause:
+            signal = "5h-no-buffer" if buffer_gone else "5h"
+            return (False, signal, five_pct)
+        seven_pct = (usage.get("seven_day") or {}).get("utilization") or 0.0
+        if seven_pct >= _RATE_LIMIT_7D_PAUSE_PCT:
+            return (False, "7d", seven_pct)
+        return (True, None, five_pct)
+    except Exception:
+        return (True, None, 0.0)
+
+
+def _count_active_cc_sessions() -> int:
+    """Count tmux sessions with the cc-T-* prefix (Granny-spawned workers)."""
+    try:
+        result = subprocess.run(
+            ["tmux", "ls", "-F", "#{session_name}"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        return sum(1 for line in result.stdout.splitlines() if line.startswith("cc-"))
+    except Exception:
+        return 0
+
+
+_MINION_TAGS = frozenset({"minion"})
+
+
+def _ticket_is_minion(ticket: dict) -> bool:
+    """Return True if this ticket should be routed to a cheap minion model."""
     tags = set(ticket.get("tags", []))
-    return bool(tags & _CC_TAGS)
+    return bool(tags & _MINION_TAGS)
+
+
+def _ticket_needs_cc(ticket: dict) -> bool:
+    """Return True if this ticket must be routed to Claude CC.
+
+    Only explicit worker='claude' assignments use the CC path.
+    All other sprint tickets route to the inference path (deepseek-v4-flash via OR).
+    """
+    return ticket.get("worker") == "claude"
 
 
 class GrannyDaemon:
@@ -149,9 +205,9 @@ class GrannyDaemon:
         self._last_poll: Optional[float] = None
         self._task_listener: Optional[object] = None
 
-        # Build device with CC dispatch wired
+        # Build device with CC dispatch wired; store inference dispatch fn separately
         from devices.granny.device import GrannyWeatherwaxDevice
-        from devices.granny.dispatch import cc_dispatch_fn
+        from devices.granny.dispatch import cc_dispatch_fn, inference_dispatch_fn
 
         self._device = GrannyWeatherwaxDevice()
         self._device.register_worker(
@@ -159,6 +215,7 @@ class GrannyDaemon:
             list(_CC_TAGS),
             dispatch_fn=cc_dispatch_fn,
         )
+        self._inference_dispatch = inference_dispatch_fn
 
         self._alerted_ids: set[str] = set()
         try:
@@ -228,32 +285,66 @@ class GrannyDaemon:
 
     def run_once(self) -> int:
         """Run one poll cycle. Returns count of tickets dispatched. Testable without threads."""
+        ok, signal, rate_pct = _check_rate_limit()
+        if not ok:
+            threshold = (
+                _RATE_LIMIT_PAUSE_PCT if signal == "5h" else _RATE_LIMIT_7D_PAUSE_PCT
+            )
+            log.warning(
+                "GrannyDaemon: %s rate limit at %.0f%% — pausing until below %d%%",
+                signal,
+                rate_pct,
+                threshold,
+            )
+            return 0
+
+        active = _count_active_cc_sessions()
+        slots = max(0, MAX_CONCURRENT_CC - active)
+        if slots == 0:
+            log.info(
+                "GrannyDaemon: %d/%d CC workers active — at cap, skipping dispatch",
+                active,
+                MAX_CONCURRENT_CC,
+            )
+            return 0
+
         tickets = _load_sprint_tickets()
         dispatched = 0
         new_ids: set[str] = set()
 
         for ticket in tickets:
+            if slots <= 0:
+                log.info(
+                    "GrannyDaemon: CC cap (%d) reached mid-cycle — deferring remaining",
+                    MAX_CONCURRENT_CC,
+                )
+                break
+
             tid = ticket.get("id", "")
             if not tid:
                 continue
             if tid in self._dispatched_ids:
                 log.debug("GrannyDaemon: skipping already-dispatched %s", tid)
                 continue
-            if not _ticket_needs_cc(ticket):
-                log.debug("GrannyDaemon: %s not a CC ticket — skip", tid)
-                continue
+            if _ticket_needs_cc(ticket):
+                audit = self._device.intake_ticket(ticket)
+                if not audit.passed and not audit.escalate_to_cc:
+                    log.warning(
+                        "GrannyDaemon: %s failed audit — %s", tid, audit.reasons
+                    )
+                    self._alert_cc(tid, str(audit.reasons), "audit_fail")
+                    self._publish_feed("audit_fail", tid, str(audit.reasons))
+                    continue
+                ok, worker_id = self._device.route_ticket(ticket)
+            else:
+                # Non-CC tickets: route via InferenceDevice (deepseek or qwen)
+                ok = self._inference_dispatch(ticket)
+                worker_id = "inference"
 
-            audit = self._device.intake_ticket(ticket)
-            if not audit.passed and not audit.escalate_to_cc:
-                log.warning("GrannyDaemon: %s failed audit — %s", tid, audit.reasons)
-                self._alert_cc(tid, str(audit.reasons), "audit_fail")
-                self._publish_feed("audit_fail", tid, str(audit.reasons))
-                continue
-
-            ok, worker_id = self._device.route_ticket(ticket)
             if ok:
                 new_ids.add(tid)
                 dispatched += 1
+                slots -= 1
                 self._total_dispatched += 1
                 log.info("GrannyDaemon: dispatched %s → %s", tid, worker_id)
                 self._publish_feed("dispatch", tid, f"dispatched to {worker_id}")
@@ -280,6 +371,8 @@ class GrannyDaemon:
                 "total_dispatched": self._total_dispatched,
                 "total_errors": self._total_errors,
                 "poll_interval_sec": POLL_INTERVAL_SEC,
+                "max_concurrent_cc": MAX_CONCURRENT_CC,
+                "active_cc_sessions": _count_active_cc_sessions(),
                 "last_poll": self._last_poll,
                 "dispatched_this_cycle": len(self._dispatched_ids),
             },

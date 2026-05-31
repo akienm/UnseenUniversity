@@ -47,45 +47,32 @@ def _run_side_effect(ticket_map: dict):
     return _side_effect
 
 
+def _make_pg_conn(rows):
+    """Build a mock psycopg2 connection that returns the given row dicts."""
+    cursor = MagicMock()
+    cursor.fetchall.return_value = [{"metadata": r} for r in rows]
+    cursor.__enter__ = lambda s: s
+    cursor.__exit__ = MagicMock(return_value=False)
+    conn = MagicMock()
+    conn.cursor.return_value = cursor
+    return conn
+
+
 class TestLoadSprintTickets:
     def test_returns_sprint_tickets(self):
         from devices.granny.daemon import _load_sprint_tickets
 
         t_a = _ticket("T-a", status="sprint")
-        t_b = _ticket("T-b", status="pending")
-        with patch(
-            "subprocess.run", side_effect=_run_side_effect({"T-a": t_a, "T-b": t_b})
-        ):
+        conn = _make_pg_conn([t_a])
+        with patch("psycopg2.connect", return_value=conn):
             tickets = _load_sprint_tickets()
         assert len(tickets) == 1
         assert tickets[0]["id"] == "T-a"
-
-    def test_skips_gated_tickets(self):
-        from devices.granny.daemon import _load_sprint_tickets
-
-        t_a = _ticket("T-a", status="sprint")
-        t_b = _ticket("T-b", status="sprint", gate="T-a")
-        with patch(
-            "subprocess.run", side_effect=_run_side_effect({"T-a": t_a, "T-b": t_b})
-        ):
-            tickets = _load_sprint_tickets()
-        assert len(tickets) == 1
-        assert tickets[0]["id"] == "T-a"
-
-    def test_returns_empty_on_list_error(self):
-        from devices.granny.daemon import _load_sprint_tickets
-
-        with patch(
-            "subprocess.run",
-            return_value=MagicMock(returncode=1, stdout="", stderr="queue error"),
-        ):
-            tickets = _load_sprint_tickets()
-        assert tickets == []
 
     def test_returns_empty_on_exception(self):
         from devices.granny.daemon import _load_sprint_tickets
 
-        with patch("subprocess.run", side_effect=Exception("boom")):
+        with patch("psycopg2.connect", side_effect=Exception("db down")):
             tickets = _load_sprint_tickets()
         assert tickets == []
 
@@ -96,20 +83,22 @@ class TestTicketNeedsCC:
 
         assert _ticket_needs_cc({"worker": "claude", "tags": []}) is True
 
-    def test_worker_cc_with_matching_tag_returns_true(self):
+    def test_worker_cc_returns_false(self):
+        # 'cc' worker no longer routes to CC; only explicit 'claude' does
         from devices.granny.daemon import _ticket_needs_cc
 
-        assert _ticket_needs_cc({"worker": "cc", "tags": ["Platform"]}) is True
+        assert _ticket_needs_cc({"worker": "cc", "tags": ["Platform"]}) is False
 
     def test_explicit_non_cc_worker_returns_false(self):
         from devices.granny.daemon import _ticket_needs_cc
 
         assert _ticket_needs_cc({"worker": "nanny", "tags": ["Platform"]}) is False
 
-    def test_no_worker_cc_tag_returns_true(self):
+    def test_platform_tag_no_worker_returns_false(self):
+        # Sprint tickets without explicit worker='claude' default to inference path
         from devices.granny.daemon import _ticket_needs_cc
 
-        assert _ticket_needs_cc({"worker": "", "tags": ["Infrastructure"]}) is True
+        assert _ticket_needs_cc({"worker": "", "tags": ["Infrastructure"]}) is False
 
     def test_no_worker_no_matching_tag_returns_false(self):
         from devices.granny.daemon import _ticket_needs_cc
@@ -117,7 +106,7 @@ class TestTicketNeedsCC:
         assert _ticket_needs_cc({"worker": "", "tags": ["Unrelated"]}) is False
 
 
-def _make_bare_daemon(audit_passed=True, route_ok=True):
+def _make_bare_daemon(audit_passed=True, route_ok=True, inference_ok=True):
     """Construct a GrannyDaemon bypassing __init__, with mocked device and IMAP."""
     from devices.granny.daemon import GrannyDaemon
 
@@ -138,6 +127,7 @@ def _make_bare_daemon(audit_passed=True, route_ok=True):
     device.intake_ticket.return_value = audit
     device.route_ticket.return_value = (route_ok, "cc")
     daemon._device = device
+    daemon._inference_dispatch = MagicMock(return_value=inference_ok)
     return daemon
 
 
@@ -152,6 +142,7 @@ class TestGrannyDaemonRunOnce:
         with (
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
             patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+            patch("devices.granny.daemon.MAX_CONCURRENT_CC", 10),
         ):
             count = daemon.run_once()
 
@@ -192,7 +183,7 @@ class TestGrannyDaemonRunOnce:
         assert count2 == 0
         assert count3 == 1
 
-    def test_skips_non_cc_tickets(self):
+    def test_non_cc_routes_to_inference(self):
         daemon = self._make_daemon()
         tickets = [_ticket("T-a")]
 
@@ -202,8 +193,9 @@ class TestGrannyDaemonRunOnce:
         ):
             count = daemon.run_once()
 
-        assert count == 0
+        assert count == 1
         daemon._device.route_ticket.assert_not_called()
+        daemon._inference_dispatch.assert_called_once_with(tickets[0])
 
     def test_skips_failed_audit_with_no_escalation(self):
         daemon = self._make_daemon(audit_passed=False)
@@ -323,3 +315,133 @@ class TestGrannyDaemonAlertCC:
         # CC.0 alert is deduped — fires only once; feeds/granny publishes each cycle
         cc_calls = [c for c in daemon._imap.append.call_args_list if c[0][0] == "CC.0"]
         assert len(cc_calls) == 1
+
+
+class TestCheckRateLimit:
+    def _cache_text(self, five_pct=0.0, seven_pct=0.0):
+        return json.dumps(
+            {
+                "usage": {
+                    "five_hour": {"utilization": five_pct},
+                    "seven_day": {"utilization": seven_pct},
+                }
+            }
+        )
+
+    def test_ok_when_both_below_threshold(self):
+        from devices.granny.daemon import _check_rate_limit
+
+        mock_path = MagicMock()
+        mock_path.read_text.return_value = self._cache_text(50.0, 50.0)
+        with patch("devices.granny.daemon._USAGE_CACHE", mock_path):
+            ok, signal, pct = _check_rate_limit()
+        assert ok is True
+        assert signal is None
+
+    def test_5h_trip_returns_5h_signal(self):
+        from devices.granny.daemon import _check_rate_limit
+
+        mock_path = MagicMock()
+        mock_path.read_text.return_value = self._cache_text(
+            five_pct=95.0, seven_pct=10.0
+        )
+        with patch("devices.granny.daemon._USAGE_CACHE", mock_path):
+            ok, signal, pct = _check_rate_limit()
+        assert ok is False
+        assert signal == "5h"
+        assert pct == 95.0
+
+    def test_7d_trip_returns_7d_signal(self):
+        from devices.granny.daemon import _check_rate_limit
+
+        mock_path = MagicMock()
+        mock_path.read_text.return_value = self._cache_text(
+            five_pct=10.0, seven_pct=95.0
+        )
+        with patch("devices.granny.daemon._USAGE_CACHE", mock_path):
+            ok, signal, pct = _check_rate_limit()
+        assert ok is False
+        assert signal == "7d"
+        assert pct == 95.0
+
+    def test_5h_takes_precedence_when_both_trip(self):
+        from devices.granny.daemon import _check_rate_limit
+
+        mock_path = MagicMock()
+        mock_path.read_text.return_value = self._cache_text(
+            five_pct=95.0, seven_pct=95.0
+        )
+        with patch("devices.granny.daemon._USAGE_CACHE", mock_path):
+            ok, signal, pct = _check_rate_limit()
+        assert ok is False
+        assert signal == "5h"
+
+    def test_missing_cache_returns_ok(self):
+        from devices.granny.daemon import _check_rate_limit
+
+        mock_path = MagicMock()
+        mock_path.read_text.side_effect = FileNotFoundError
+        with patch("devices.granny.daemon._USAGE_CACHE", mock_path):
+            ok, signal, pct = _check_rate_limit()
+        assert ok is True
+
+    def test_7d_none_in_cache_treated_as_zero(self):
+        from devices.granny.daemon import _check_rate_limit
+
+        cache = json.dumps(
+            {"usage": {"five_hour": {"utilization": 10.0}, "seven_day": None}}
+        )
+        mock_path = MagicMock()
+        mock_path.read_text.return_value = cache
+        with patch("devices.granny.daemon._USAGE_CACHE", mock_path):
+            ok, signal, pct = _check_rate_limit()
+        assert ok is True
+
+
+class TestRunOnceRateLimit:
+    def test_5h_rate_limit_pauses_dispatch(self, caplog):
+        import logging
+
+        daemon = _make_bare_daemon()
+        with (
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(False, "5h", 95.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
+            caplog.at_level(logging.WARNING, logger="devices.granny.daemon"),
+        ):
+            count = daemon.run_once()
+        assert count == 0
+        assert "5h" in caplog.text
+
+    def test_7d_rate_limit_pauses_dispatch(self, caplog):
+        import logging
+
+        daemon = _make_bare_daemon()
+        with (
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(False, "7d", 14.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
+            caplog.at_level(logging.WARNING, logger="devices.granny.daemon"),
+        ):
+            count = daemon.run_once()
+        assert count == 0
+        assert "7d" in caplog.text
+
+    def test_no_rate_limit_proceeds_to_dispatch(self):
+        daemon = _make_bare_daemon()
+        tickets = [_ticket("T-a")]
+        with (
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(True, None, 21.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
+            patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
+            patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+        ):
+            count = daemon.run_once()
+        assert count == 1
