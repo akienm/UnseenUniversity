@@ -9,7 +9,7 @@ handled by IgorShim.
 
 Configuration via environment variables:
   IGOR_TMUX_SESSION    — tmux session name Igor runs in (default: igor)
-  IGOR_HOME            — Igor runtime dir (default: ~/.unseen_university/Igor-wild-0001)
+  IGOR_HOME            — Igor runtime dir (default: ~/.unseen_university/<IGOR_INSTANCE_ID>)
   IGOR_LAUNCHER        — path to igor launcher script (default: igor)
 # tags: Architecture, Infrastructure
 """
@@ -23,11 +23,13 @@ from datetime import datetime, timezone
 
 from unseen_university.device import BaseDevice, INTERFACE_VERSION
 
+from .paths import paths as _igor_paths
+
 _START_TIME = time.time()
 _DEFAULT_SESSION = os.environ.get("IGOR_TMUX_SESSION", "igor")
 _DEFAULT_HOME = os.environ.get(
     "IGOR_HOME",
-    os.path.expanduser("~/.unseen_university/Igor-wild-0001"),
+    str(_igor_paths().instance),
 )
 
 
