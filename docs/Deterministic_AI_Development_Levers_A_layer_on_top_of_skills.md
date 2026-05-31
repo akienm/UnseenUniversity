@@ -230,7 +230,7 @@ All audit levels emit structured telemetry to the palace (theigors/audits/<level
 
 /sprint-loop -- autonomous queue drain with pre-scheduled wakeup; schedules ScheduleWakeup before each batch so compact mid-sprint can't lose the loop; terminates when queue is empty
 
-/sprint-ticket -- single-ticket execution unit: capability check, claim, build, test, commit, close, savestate; called by /sprint and /sprint-batch
+/sprint-ticket -- single-ticket execution unit: capability check, claim, build, test, commit, close, savestate; called by /sprint and /sprint-batch. Step 5 now runs `repo_map.py` on affected files before the infrastructure brief — compact AST symbol map (classes, methods, top-level functions) for sprint orientation without reading full files.
 
 /test-fix -- test/fix/test-again loop for failing suites
 
