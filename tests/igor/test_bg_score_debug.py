@@ -15,8 +15,7 @@ Tests:
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch, call
-
+from unittest.mock import MagicMock
 
 
 def _make_habit(hid, trigger, habit_type="action", activation=0):
@@ -58,26 +57,17 @@ class TestBGScoreDebugWinnerPath(unittest.TestCase):
         basal_ganglia._refractory_map.clear()
 
     def _run(self, habits, text):
+        import devices.igor.cognition.forensic_logger as fl
         from devices.igor.cognition import basal_ganglia
 
         captures = {}
-
-        def fake_update(stage, data):
-            captures[stage] = data
-
-        with patch(
-            "igor.cognition.forensic_logger.turn_ctx_update", side_effect=fake_update
-        ):
-            # Patch forensic_logger inside basal_ganglia's lazy import path
-            import devices.igor.cognition.forensic_logger as fl
-
-            orig = fl.turn_ctx_update
-            fl.turn_ctx_update = fake_update
-            try:
-                parsed = _make_parsed(text)
-                result = basal_ganglia.select_habit(parsed, habits)
-            finally:
-                fl.turn_ctx_update = orig
+        orig = fl.turn_ctx_update
+        fl.turn_ctx_update = lambda stage, data: captures.update({stage: data})
+        try:
+            parsed = _make_parsed(text)
+            result = basal_ganglia.select_habit(parsed, habits)
+        finally:
+            fl.turn_ctx_update = orig
         return result, captures
 
     def test_winner_path_emits_bg_scoring(self):

@@ -67,7 +67,7 @@ class TestHandleDrmBlocked:
         with (
             patch("book_learner.IGOR_HOME_DB_URL", "postgresql://test"),
             patch("psycopg2.connect", return_value=mock_conn),
-            patch("igor.memory.cortex.Cortex", return_value=mock_cortex),
+            patch("devices.igor.memory.cortex.Cortex", return_value=mock_cortex),
         ):
             _handle_drm_blocked(handle, args)
 
@@ -101,7 +101,7 @@ class TestHandleDrmBlocked:
         with (
             patch("book_learner.IGOR_HOME_DB_URL", "postgresql://test"),
             patch("psycopg2.connect", return_value=mock_conn),
-            patch("igor.memory.cortex.Cortex", return_value=mock_cortex),
+            patch("devices.igor.memory.cortex.Cortex", return_value=mock_cortex),
         ):
             _handle_drm_blocked(handle, args)
 
