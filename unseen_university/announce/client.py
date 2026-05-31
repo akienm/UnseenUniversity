@@ -1,12 +1,15 @@
 """
 DatacenterClient — agent-side counterpart to AnnounceListener.
 
-An agent process instantiates a DatacenterClient with its IdentityEnvelope
-and a connection to the bus, calls announce(), and the client posts the
-envelope to comms://announce + polls comms://announce-events for the
-matching Manifest. Once cached, accessor methods expose tool bindings,
-state refs, channel subscriptions, and surface addresses without the
-caller having to re-parse the wire format.
+An agent process instantiates a DatacenterClient with its identity fields,
+calls announce(), and the client posts the envelope to comms://announce +
+polls comms://announce-events for the matching Manifest. Once cached,
+accessor methods expose tool bindings, state refs, channel subscriptions,
+and surface addresses without the caller having to re-parse the wire format.
+
+The IMAP bus connection is managed internally — callers supply only agent
+identity (agent_id, instance, surfaces). Transport is not a concern of
+call sites.
 
 Slice 3 scope: synchronous announce() with bounded poll. Slice 3b will
 add IDLE-driven wakeup so re-announce on invalidation is push-based.
@@ -19,11 +22,13 @@ in slice 3b).
 from __future__ import annotations
 
 import logging
+import os
+import socket
 import time
 from dataclasses import dataclass
 
+from bus.connection import make_bus_connection
 from bus.envelope import Envelope
-from bus.imap_server import IMAPServer
 
 from .envelope import ANNOUNCE_MAILBOX, IdentityEnvelope
 from .manifest import (
@@ -61,20 +66,40 @@ class DatacenterClient:
     Agent-side announce + manifest cache.
 
     Args:
-        identity:    IdentityEnvelope describing this process.
-        imap_server: bus.IMAPServer used for posting + polling.
-        from_device: identifier this client uses on outbound envelopes.
-                     Defaults to identity.primary_mailbox.
+        agent_id:          profile name (e.g. "igor", "cc").
+        instance:          unique instance string (e.g. "wild-0001").
+        surfaces:          active surfaces declared in identity envelope.
+        box:               hostname component; defaults to socket.gethostname().
+        box_n:             instance number on this box (default 0).
+        pid:               process id; defaults to os.getpid().
+        interface_version: announce protocol version (default "1.0").
+        from_device:       identifier used on outbound envelopes; defaults to
+                           the primary mailbox derived from identity.
     """
 
     def __init__(
         self,
-        identity: IdentityEnvelope,
-        imap_server: IMAPServer,
+        agent_id: str,
+        instance: str,
+        *,
+        surfaces: list[str] | None = None,
+        box: str | None = None,
+        box_n: int = 0,
+        pid: int | None = None,
+        interface_version: str = "1.0",
         from_device: str | None = None,
     ) -> None:
+        identity = IdentityEnvelope(
+            agent_id=agent_id,
+            instance=instance,
+            box=box or socket.gethostname(),
+            box_n=box_n,
+            pid=pid if pid is not None else os.getpid(),
+            interface_version=interface_version,
+            surfaces=surfaces or [],
+        )
         self._identity = identity
-        self._imap = imap_server
+        self._imap = make_bus_connection()
         self._from_device = from_device or identity.primary_mailbox
         self._manifest: dict | None = None
 
@@ -171,6 +196,11 @@ class DatacenterClient:
         return handled
 
     # ── Accessors ─────────────────────────────────────────────────────────────
+
+    @property
+    def identity(self) -> IdentityEnvelope:
+        """The IdentityEnvelope this client announced with."""
+        return self._identity
 
     @property
     def manifest(self) -> dict | None:

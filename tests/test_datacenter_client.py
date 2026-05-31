@@ -85,7 +85,14 @@ def igor_identity() -> IdentityEnvelope:
 
 
 def test_announce_returns_manifest(server, listener, igor_identity):
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
 
     # Pump the listener after the client posts so the reply is ready when we poll.
     # Simplest pattern: post → pump → announce reads the existing reply.
@@ -107,7 +114,14 @@ def test_announce_returns_manifest(server, listener, igor_identity):
 
 def test_announce_timeout_raises_when_no_listener(server, igor_identity):
     """No listener means no reply ever lands — must raise within the timeout."""
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
     with pytest.raises(AnnounceTimeoutError):
         client.announce(timeout=0.2, poll_interval=0.05)
 
@@ -122,7 +136,9 @@ def test_announce_error_envelope_raises(server, listener, profiles_dir):
         pid=1,
         interface_version="1.0",
     )
-    client = DatacenterClient(identity=bad_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id="not-a-real-agent", instance="x", box="testbox", box_n=0, pid=1
+    )
     posted = client._imap.append
 
     def post_then_pump(mailbox, env):
@@ -192,12 +208,26 @@ def _seed_manifest(client: DatacenterClient) -> None:
 
 
 def test_manifest_property_none_before_announce(server, igor_identity):
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
     assert client.manifest is None
 
 
 def test_get_tool_returns_binding_or_none(server, igor_identity):
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
     _seed_manifest(client)
     assert client.get_tool("inference").name == "inference"
     assert client.get_tool("inference").rate_limit_per_min == 60
@@ -205,21 +235,42 @@ def test_get_tool_returns_binding_or_none(server, igor_identity):
 
 
 def test_get_tools_returns_full_list(server, igor_identity):
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
     _seed_manifest(client)
     names = {t.name for t in client.get_tools()}
     assert names == {"inference", "postgres"}
 
 
 def test_get_state_ref_returns_ref_or_none(server, igor_identity):
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
     _seed_manifest(client)
     assert client.get_state_ref("twm").mode == "read_write"
     assert client.get_state_ref("nonexistent") is None
 
 
 def test_get_channels_returns_subscriptions(server, igor_identity):
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
     _seed_manifest(client)
     channels = client.get_channels()
     assert len(channels) == 1
@@ -227,7 +278,14 @@ def test_get_channels_returns_subscriptions(server, igor_identity):
 
 
 def test_get_acl_returns_acl_dataclass(server, igor_identity):
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
     _seed_manifest(client)
     acl = client.get_acl()
     assert acl is not None
@@ -235,20 +293,41 @@ def test_get_acl_returns_acl_dataclass(server, igor_identity):
 
 
 def test_get_surface_address_returns_address_or_none(server, igor_identity):
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
     _seed_manifest(client)
     assert client.get_surface_address("console") == "comms://testbox.0.console"
     assert client.get_surface_address("nonexistent") is None
 
 
 def test_get_primary_address(server, igor_identity):
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
     _seed_manifest(client)
     assert client.get_primary_address() == "comms://testbox.0"
 
 
 def test_accessors_return_empty_when_no_manifest(server, igor_identity):
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
     assert client.get_tools() == []
     assert client.get_state_refs() == []
     assert client.get_channels() == []
@@ -276,7 +355,14 @@ def test_announce_ignores_replies_addressed_to_other_agents(server, listener):
         pid=4242,
         interface_version="1.0",
     )
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
     posted = client._imap.append
 
     def post_then_pump(mailbox, env):
@@ -309,13 +395,27 @@ def _post_invalidate(server, target, reason="changed"):
 
 
 def test_check_for_invalidate_zero_when_no_envelopes(server, igor_identity):
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
     assert client.check_for_invalidate() == 0
 
 
 def test_invalidate_for_our_agent_triggers_reannounce(server, listener, igor_identity):
     """Post an invalidate for igor; check_for_invalidate re-announces."""
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
     posted = client._imap.append
 
     def post_then_pump(mailbox, env):
@@ -341,7 +441,14 @@ def test_invalidate_for_our_agent_triggers_reannounce(server, listener, igor_ide
 
 
 def test_invalidate_for_registry_triggers_reannounce(server, listener, igor_identity):
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
     posted = client._imap.append
 
     def post_then_pump(mailbox, env):
@@ -362,7 +469,14 @@ def test_invalidate_for_registry_triggers_reannounce(server, listener, igor_iden
 
 def test_invalidate_for_other_agent_ignored(server, listener, igor_identity):
     """target=cc when we are igor → no re-announce, manifest unchanged."""
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
     posted = client._imap.append
 
     def post_then_pump(mailbox, env):
@@ -387,7 +501,14 @@ def test_check_for_invalidate_handles_reannounce_timeout_gracefully(
     server, listener, igor_identity
 ):
     """Re-announce times out → keep stale manifest, return 0, no exception."""
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
     posted = client._imap.append
 
     def post_then_pump(mailbox, env):
@@ -415,7 +536,14 @@ def test_invalidate_coalesces_multiple_envelopes_in_one_pump(
     server, listener, igor_identity
 ):
     """3 invalidates posted at once → one re-announce satisfies them all."""
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
     posted = client._imap.append
 
     def post_then_pump(mailbox, env):

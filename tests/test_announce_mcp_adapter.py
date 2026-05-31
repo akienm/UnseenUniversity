@@ -64,7 +64,6 @@ def test_announce_tool_returns_manifest_dict(integration_rack):
     adapter = AnnounceMcpServer(
         instance_id="cc-test-1",
         agent_id="cc",
-        imap_server=server,
         box="testhost",
         box_n=2,
     )
@@ -89,7 +88,6 @@ def test_announce_tool_returns_error_dict_on_unknown_agent(integration_rack):
     adapter = AnnounceMcpServer(
         instance_id="ghost-1",
         agent_id="ghost-agent",  # no profile shipped
-        imap_server=server,
         box="testhost",
     )
     stop = threading.Event()
@@ -107,33 +105,22 @@ def test_announce_tool_returns_error_dict_on_unknown_agent(integration_rack):
 
 def test_announce_tool_returns_timeout_error_when_no_listener():
     """No skeleton, no listener → announce times out → error dict."""
-    server = IMAPServer()
-    server.start()
-    try:
-        adapter = AnnounceMcpServer(
-            instance_id="orphan",
-            agent_id="cc",
-            imap_server=server,
-        )
-        result = adapter.announce_tool(timeout=0.2)
-        assert result["ok"] is False
-        assert "timed out" in result["error"]
-    finally:
-        server.stop()
+    adapter = AnnounceMcpServer(
+        instance_id="orphan",
+        agent_id="cc",
+    )
+    result = adapter.announce_tool(timeout=0.2)
+    assert result["ok"] is False
+    assert "timed out" in result["error"]
 
 
 # ── manifest_tool ────────────────────────────────────────────────────────────
 
 
 def test_manifest_tool_returns_none_before_announce():
-    server = IMAPServer()
-    server.start()
-    try:
-        adapter = AnnounceMcpServer(imap_server=server)
-        result = adapter.manifest_tool()
-        assert result == {"ok": True, "manifest": None}
-    finally:
-        server.stop()
+    adapter = AnnounceMcpServer()
+    result = adapter.manifest_tool()
+    assert result == {"ok": True, "manifest": None}
 
 
 def test_manifest_tool_returns_cached_after_announce(integration_rack):
@@ -141,7 +128,6 @@ def test_manifest_tool_returns_cached_after_announce(integration_rack):
     adapter = AnnounceMcpServer(
         instance_id="cc-test-2",
         agent_id="cc",
-        imap_server=server,
         box="testhost",
         box_n=3,
     )
@@ -166,7 +152,6 @@ def test_check_for_invalidate_tool_returns_zero_when_idle(integration_rack):
     adapter = AnnounceMcpServer(
         instance_id="cc-test-3",
         agent_id="cc",
-        imap_server=server,
         box="testhost",
     )
     result = adapter.check_for_invalidate_tool(reannounce_timeout=0.2)
@@ -179,7 +164,6 @@ def test_check_for_invalidate_tool_handles_matching_envelope(integration_rack):
     adapter = AnnounceMcpServer(
         instance_id="cc-test-4",
         agent_id="cc",
-        imap_server=server,
         box="testhost",
         box_n=4,
     )
@@ -215,7 +199,6 @@ def test_singleton_reuse_across_calls(integration_rack):
     adapter = AnnounceMcpServer(
         instance_id="cc-test-5",
         agent_id="cc",
-        imap_server=server,
         box="testhost",
         box_n=5,
     )
@@ -236,15 +219,10 @@ def test_singleton_reuse_across_calls(integration_rack):
 
 
 def test_identity_defaults_use_hostname_and_pid():
-    server = IMAPServer()
-    server.start()
-    try:
-        adapter = AnnounceMcpServer(imap_server=server)
-        identity = adapter.identity
-        assert identity.agent_id == "cc"
-        assert identity.box  # non-empty hostname
-        assert identity.pid == os.getpid()
-        assert "console" in identity.surfaces
-        assert "mcp" in identity.surfaces
-    finally:
-        server.stop()
+    adapter = AnnounceMcpServer()
+    identity = adapter.identity
+    assert identity.agent_id == "cc"
+    assert identity.box  # non-empty hostname
+    assert identity.pid == os.getpid()
+    assert "console" in identity.surfaces
+    assert "mcp" in identity.surfaces

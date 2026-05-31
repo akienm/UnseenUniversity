@@ -29,7 +29,6 @@ from pathlib import Path
 from unseen_university.shim import BaseShim
 
 from .client import AnnounceTimeoutError, DatacenterClient
-from .envelope import IdentityEnvelope
 
 log = logging.getLogger(__name__)
 
@@ -45,7 +44,6 @@ class IgorShim(BaseShim):
 
     Args:
         instance_id:  e.g. "wild-0001" — distinguishes one Igor from another.
-        imap_server:  bus.IMAPServer the shim uses to announce.
         profiles_dir: runtime profiles directory (where profile YAMLs live).
         box:          hostname (defaults to socket.gethostname()).
         box_n:        instance number on this box (default 0).
@@ -56,7 +54,6 @@ class IgorShim(BaseShim):
     def __init__(
         self,
         instance_id: str,
-        imap_server,
         profiles_dir: Path | str,
         box: str | None = None,
         box_n: int = 0,
@@ -65,7 +62,6 @@ class IgorShim(BaseShim):
         import socket
 
         self._instance_id = instance_id
-        self._imap = imap_server
         self._profiles_dir = Path(profiles_dir)
         self._box = box or socket.gethostname()
         self._box_n = box_n
@@ -139,22 +135,19 @@ class IgorShim(BaseShim):
         Instantiate the DatacenterClient and announce. Returns the manifest dict.
         Raises ConnectionError if announce times out — caller decides retry.
         """
-        identity = IdentityEnvelope(
+        client = DatacenterClient(
             agent_id="igor",
             instance=self._instance_id,
             box=self._box,
             box_n=self._box_n,
-            pid=os.getpid(),
-            interface_version="1.0",
             surfaces=["console", "inference"],
         )
-        client = DatacenterClient(identity=identity, imap_server=self._imap)
         try:
             manifest = client.announce(timeout=timeout)
         except AnnounceTimeoutError as exc:
             raise ConnectionError(
                 f"igor-shim connect: announce timed out for "
-                f"{identity.primary_mailbox}: {exc}"
+                f"{client.identity.primary_mailbox}: {exc}"
             ) from exc
         self._client = client
         return manifest

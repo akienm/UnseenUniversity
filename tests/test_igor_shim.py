@@ -75,7 +75,6 @@ def test_install_creates_runtime_profile(server, tmp_path):
     runtime_profiles = tmp_path / "runtime"
     shim = IgorShim(
         instance_id="wild-test",
-        imap_server=server,
         profiles_dir=runtime_profiles,
     )
     assert not (runtime_profiles / "igor.yaml").exists()
@@ -87,7 +86,6 @@ def test_install_idempotent(server, tmp_path):
     runtime_profiles = tmp_path / "runtime"
     shim = IgorShim(
         instance_id="wild-test",
-        imap_server=server,
         profiles_dir=runtime_profiles,
     )
     shim.install()
@@ -103,7 +101,6 @@ def test_install_raises_when_canonical_missing(server, tmp_path):
     bogus_canonical = tmp_path / "no-such-canonical"
     shim = IgorShim(
         instance_id="wild-test",
-        imap_server=server,
         profiles_dir=runtime_profiles,
         canonical_profiles_dir=bogus_canonical,
     )
@@ -118,7 +115,6 @@ def test_connect_announces_and_caches_client(server, listener, tmp_path):
     runtime_profiles = tmp_path / "runtime"
     shim = IgorShim(
         instance_id="wild-test",
-        imap_server=server,
         profiles_dir=runtime_profiles,
         box="testhost",
         box_n=0,
@@ -143,7 +139,6 @@ def test_connect_raises_connection_error_on_timeout(server, tmp_path):
     runtime_profiles = tmp_path / "runtime"
     shim = IgorShim(
         instance_id="wild-test",
-        imap_server=server,
         profiles_dir=runtime_profiles,
     )
     with pytest.raises(ConnectionError, match="timed out"):
@@ -156,7 +151,6 @@ def test_connect_raises_connection_error_on_timeout(server, tmp_path):
 def test_capability_accessors_empty_before_connect(server, tmp_path):
     shim = IgorShim(
         instance_id="wild-test",
-        imap_server=server,
         profiles_dir=tmp_path / "runtime",
     )
     assert shim.client is None
@@ -172,7 +166,6 @@ def test_capability_accessors_empty_before_connect(server, tmp_path):
 def test_capability_accessors_forward_after_connect(server, listener, tmp_path):
     shim = IgorShim(
         instance_id="wild-test",
-        imap_server=server,
         profiles_dir=tmp_path / "runtime",
         box="testhost",
         box_n=0,
@@ -205,7 +198,6 @@ def test_capability_accessors_forward_after_connect(server, listener, tmp_path):
 def test_device_id_format(server, tmp_path):
     shim = IgorShim(
         instance_id="wild-0001",
-        imap_server=server,
         profiles_dir=tmp_path / "runtime",
     )
     assert shim.device_id == "igor-wild-0001"
@@ -214,7 +206,6 @@ def test_device_id_format(server, tmp_path):
 def test_self_test_failed_when_not_connected(server, tmp_path):
     shim = IgorShim(
         instance_id="wild-test",
-        imap_server=server,
         profiles_dir=tmp_path / "runtime",
     )
     result = shim.self_test()
@@ -225,7 +216,6 @@ def test_self_test_failed_when_not_connected(server, tmp_path):
 def test_self_test_passed_when_connected(server, listener, tmp_path):
     shim = IgorShim(
         instance_id="wild-test",
-        imap_server=server,
         profiles_dir=tmp_path / "runtime",
         box="testhost",
         box_n=0,
@@ -245,7 +235,6 @@ def test_self_test_passed_when_connected(server, listener, tmp_path):
 def test_start_stop_idempotent(server, tmp_path):
     shim = IgorShim(
         instance_id="wild-test",
-        imap_server=server,
         profiles_dir=tmp_path / "runtime",
     )
     assert shim.start() is True
@@ -258,7 +247,6 @@ def test_start_stop_idempotent(server, tmp_path):
 def test_rollback_drops_connection(server, listener, tmp_path):
     shim = IgorShim(
         instance_id="wild-test",
-        imap_server=server,
         profiles_dir=tmp_path / "runtime",
         box="testhost",
         box_n=0,

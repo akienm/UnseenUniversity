@@ -24,8 +24,6 @@ import logging
 import os
 import socket as _socket
 
-from bus.imap_server import IMAPServer
-
 from .client import (
     AnnounceRejectedError,
     AnnounceTimeoutError,
@@ -36,7 +34,6 @@ from .envelope import IdentityEnvelope
 log = logging.getLogger(__name__)
 
 DEFAULT_AGENT_ID = "cc"
-DEFAULT_INTERFACE_VERSION = "1.0"
 
 
 class AnnounceMcpServer:
@@ -51,9 +48,6 @@ class AnnounceMcpServer:
     Args:
         instance_id: e.g. session id. Defaults to "{box}-{pid}".
         agent_id:    profile name to announce as (default "cc").
-        imap_server: bus.IMAPServer instance. When None we instantiate
-                     and start a default IMAPServer (production: connects
-                     to the local Dovecot; test mode: spawns a stub).
         box / box_n: address components; default to socket.gethostname() / 0.
         surfaces:    list of active surfaces in identity envelope.
     """
@@ -62,27 +56,20 @@ class AnnounceMcpServer:
         self,
         instance_id: str | None = None,
         agent_id: str = DEFAULT_AGENT_ID,
-        imap_server: IMAPServer | None = None,
         box: str | None = None,
         box_n: int = 0,
         surfaces: list[str] | None = None,
     ) -> None:
-        if imap_server is None:
-            imap_server = IMAPServer()
-            imap_server.start()
-        self._imap = imap_server
         actual_box = box or _socket.gethostname()
         actual_instance = instance_id or f"{actual_box}-{os.getpid()}"
-        self._identity = IdentityEnvelope(
+        self._client = DatacenterClient(
             agent_id=agent_id,
             instance=actual_instance,
             box=actual_box,
             box_n=box_n,
             pid=os.getpid(),
-            interface_version=DEFAULT_INTERFACE_VERSION,
             surfaces=surfaces or ["console", "mcp"],
         )
-        self._client = DatacenterClient(identity=self._identity, imap_server=self._imap)
 
     # ── MCP-style tool methods ────────────────────────────────────────────────
 
@@ -122,7 +109,7 @@ class AnnounceMcpServer:
 
     @property
     def identity(self) -> IdentityEnvelope:
-        return self._identity
+        return self._client.identity
 
     @property
     def client(self) -> DatacenterClient:

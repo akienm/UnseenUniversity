@@ -85,7 +85,14 @@ class TestIgorDatacenterBoot(unittest.TestCase):
                     interface_version="1.0",
                     surfaces=["console", "inference"],
                 )
-                client = DatacenterClient(identity=identity, imap_server=server)
+                client = DatacenterClient(
+                    agent_id=identity.agent_id,
+                    instance=identity.instance,
+                    box=identity.box,
+                    box_n=identity.box_n,
+                    pid=identity.pid,
+                    surfaces=identity.surfaces,
+                )
                 stub = _IgorShape(instance_id="wild-0001", datacenter_client=client)
 
                 # Background pump drives the listener while announce() polls.
@@ -127,7 +134,13 @@ class TestIgorDatacenterBoot(unittest.TestCase):
                     pid=4242,
                     interface_version="1.0",
                 )
-                client = DatacenterClient(identity=identity, imap_server=server)
+                client = DatacenterClient(
+                    agent_id=identity.agent_id,
+                    instance=identity.instance,
+                    box=identity.box,
+                    box_n=identity.box_n,
+                    pid=identity.pid,
+                )
                 # Override the default 2s timeout so the test runs fast.
                 # We monkey-patch announce to use a 0.2s timeout instead.
                 _orig = client.announce

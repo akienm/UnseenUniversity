@@ -934,26 +934,13 @@ class Igor(IgorBase):
             return
 
         try:
-            import socket as _socket
+            from unseen_university.announce import DatacenterClient
 
-            from unseen_university.announce import (
-                DatacenterClient,
-                IdentityEnvelope,
-            )
-            from bus.imap_server import IMAPServer
-
-            server = IMAPServer()
-            server.start()
-            identity = IdentityEnvelope(
+            client = DatacenterClient(
                 agent_id="igor",
                 instance=self.instance_id,
-                box=_socket.gethostname(),
-                box_n=0,
-                pid=os.getpid(),
-                interface_version="1.0",
                 surfaces=["console", "inference"],
             )
-            client = DatacenterClient(identity=identity, imap_server=server)
             self.datacenter_manifest = client.announce(timeout=2.0)
             self.datacenter_client = client
             console.print(

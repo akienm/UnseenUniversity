@@ -83,7 +83,14 @@ def test_client_round_trip_via_skeleton(integration_rack):
         interface_version="1.0",
         surfaces=["console", "inference"],
     )
-    client = DatacenterClient(identity=igor_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=igor_identity.agent_id,
+        instance=igor_identity.instance,
+        box=igor_identity.box,
+        box_n=igor_identity.box_n,
+        pid=igor_identity.pid,
+        surfaces=igor_identity.surfaces,
+    )
 
     stop = threading.Event()
     pumper = _drive_pump_in_background(skel, stop)
@@ -139,7 +146,13 @@ def test_client_announce_unknown_agent_raises_via_error_envelope(integration_rac
         pid=1,
         interface_version="1.0",
     )
-    client = DatacenterClient(identity=bad_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=bad_identity.agent_id,
+        instance=bad_identity.instance,
+        box=bad_identity.box,
+        box_n=bad_identity.box_n,
+        pid=bad_identity.pid,
+    )
 
     stop = threading.Event()
     pumper = _drive_pump_in_background(skel, stop)
@@ -166,7 +179,14 @@ def test_client_round_trip_with_cc_profile(integration_rack):
         interface_version="1.0",
         surfaces=["console", "mcp"],
     )
-    client = DatacenterClient(identity=cc_identity, imap_server=server)
+    client = DatacenterClient(
+        agent_id=cc_identity.agent_id,
+        instance=cc_identity.instance,
+        box=cc_identity.box,
+        box_n=cc_identity.box_n,
+        pid=cc_identity.pid,
+        surfaces=cc_identity.surfaces,
+    )
 
     stop = threading.Event()
     pumper = _drive_pump_in_background(skel, stop)

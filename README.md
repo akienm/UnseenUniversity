@@ -41,22 +41,13 @@ This starts the skeleton (MCP aggregator), starts the IMAP bus, registers the Po
 ### Plug in an agent
 
 ```python
-from unseen_university.announce import DatacenterClient, IdentityEnvelope
-from unseen_university.bus.imap_server import IMAPServer
+from unseen_university.announce import DatacenterClient
 
-server = IMAPServer()
-server.start()
-
-identity = IdentityEnvelope(
+client = DatacenterClient(
     agent_id="my-agent",
     instance="my-agent-0001",
-    box="my-laptop",
-    box_n=0,
-    pid=1,
-    interface_version="1.0",
     surfaces=["console", "inference"],
 )
-client = DatacenterClient(identity=identity, imap_server=server)
 client.announce()
 print("Bound tools:", [t.name for t in client.get_tools()])
 ```
@@ -211,9 +202,9 @@ Full protocol lives in `UnseenUniversity/announce/` with docstrings on each modu
 **Igor-shape — long-running process:**
 
 ```python
-from unseen_university.announce import DatacenterClient, IdentityEnvelope
+from unseen_university.announce import DatacenterClient
 
-client = DatacenterClient(identity=identity, imap_server=imap_server)
+client = DatacenterClient(agent_id="igor", instance="wild-0001")
 client.announce()
 binding = client.get_tool("inference")
 ```

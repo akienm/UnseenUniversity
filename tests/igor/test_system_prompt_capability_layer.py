@@ -60,8 +60,13 @@ def _client_with_manifest(profile_etag="aaa", tools=None, state_refs=None):
         pid=1,
         interface_version="1.0",
     )
-    # Use a minimal IMAPServer stand-in — accessor methods don't touch IO.
-    client = DatacenterClient(identity=identity, imap_server=MagicMock())
+    client = DatacenterClient(
+        agent_id=identity.agent_id,
+        instance=identity.instance,
+        box=identity.box,
+        box_n=identity.box_n,
+        pid=identity.pid,
+    )
     default_tools = [
         {
             "name": "inference",
