@@ -272,6 +272,12 @@ class GrannyWeatherwaxDevice(BaseDevice):
                     tag=tag, worker_id=worker_id, dispatch_fn=dispatch_fn
                 )
                 self._edges.setdefault(tag, []).append(edge)
+        self._log.info(
+            "registered worker %s tags=%s has_dispatch_fn=%s",
+            worker_id,
+            handled_tags,
+            dispatch_fn is not None,
+        )
 
     # ── Ticket intake ──────────────────────────────────────────────────────────
 
@@ -285,6 +291,9 @@ class GrannyWeatherwaxDevice(BaseDevice):
         tid = ticket.get("id", "?")
         if not result.passed:
             self._log.warning("audit FAIL %s: %s", tid, result.reasons)
+            self.trace_record(
+                "granny_audit_fail", {"ticket_id": tid, "reasons": result.reasons}
+            )
             reasons_str = "; ".join(result.reasons)
             self._post_to_channel(
                 "shared",
@@ -359,6 +368,15 @@ class GrannyWeatherwaxDevice(BaseDevice):
                     best_edge.worker_id,
                     best_edge.weight,
                 )
+                self.trace_record(
+                    "granny_route",
+                    {
+                        "ticket_id": ticket.get("id"),
+                        "worker_id": best_edge.worker_id,
+                        "tag": best_edge.tag,
+                        "weight": best_edge.weight,
+                    },
+                )
             return (ok, best_edge.worker_id)
 
         except Exception as e:
@@ -378,6 +396,9 @@ class GrannyWeatherwaxDevice(BaseDevice):
                     edge.weight = min(edge.weight + delta, 10.0)
                     edge.fire_count += 1
                     edge.last_fired = _now_iso()
+                    self._log.debug(
+                        "strengthen %s→%s weight=%.2f", tag, worker_id, edge.weight
+                    )
                     return
 
     def weaken_edge(self, tag: str, worker_id: str, delta: float = 0.2) -> None:
@@ -389,6 +410,13 @@ class GrannyWeatherwaxDevice(BaseDevice):
             for edge in self._edges.get(tag, []):
                 if edge.worker_id == worker_id:
                     edge.weight = max(edge.weight - delta, 0.1)
+                    self._log.info(
+                        "weaken %s→%s weight=%.2f (delta=%.2f)",
+                        tag,
+                        worker_id,
+                        edge.weight,
+                        delta,
+                    )
                     return
 
     def get_edge_weights(self, tag: str) -> list[tuple[str, float]]:
@@ -408,6 +436,7 @@ class GrannyWeatherwaxDevice(BaseDevice):
             f"Granny: needs CC — {tid} ({title}): {reason}",
         )
         self._log.info("escalated %s: %s", tid, reason)
+        self.trace_record("granny_escalate", {"ticket_id": tid, "reason": reason})
 
     # ── Status tracking ────────────────────────────────────────────────────────
 
@@ -477,6 +506,7 @@ class GrannyWeatherwaxDevice(BaseDevice):
             )
             self._cc_pids[tid] = proc.pid
             self._log.info("spawned CC worker for %s (pid=%d)", tid, proc.pid)
+            self.trace_record("granny_dispatch_cc", {"ticket_id": tid, "pid": proc.pid})
             return True
         except Exception as e:
             self._log.error("failed to spawn CC worker for %s: %s", tid, e)
@@ -492,6 +522,7 @@ class GrannyWeatherwaxDevice(BaseDevice):
                 self._edges.setdefault(tag, []).append(edge)
 
     def _post_to_channel(self, channel: str, message: str) -> None:
+        self._log.info("channel → %s: %.120s", channel, message)
         try:
             from unseen_university.channel import post_to_channel
 

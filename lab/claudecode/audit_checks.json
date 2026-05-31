@@ -86,6 +86,18 @@
       "ack_until": null
     },
     {
+      "name": "basedevice-must-emit-traces",
+      "code": "AR-008",
+      "kind": "shell",
+      "pattern": "python3 lab/claudecode/audit_check_missing_traces.py",
+      "description": "T-audit-check-missing-traces: every rack device (BaseDevice subclass) must call trace_record() so /diagnose has structured JSONL traces. Severity MED \u2014 traces are observability infrastructure, not blocking.",
+      "severity": "med",
+      "added_by": "claude-code",
+      "added_at": "2026-05-31T14:30:00.000000",
+      "mode": "forever",
+      "ack_until": null
+    },
+    {
       "name": "negative-confidence-memories",
       "kind": "sql",
       "pattern": "SELECT memory_type, COUNT(*) FROM clan.memories WHERE (metadata->>'confidence')::float < 0 GROUP BY memory_type",
@@ -106,6 +118,18 @@
       "added_at": "2026-05-27T20:02:11.599566",
       "mode": "forever",
       "ack_until": null
+    },
+    {
+      "name": "basedevice-interface-logging",
+      "kind": "shell",
+      "pattern": "python3 lab/claudecode/audit_check_interface_logging.py",
+      "description": "BaseDevice methods that directly invoke interface-crossing primitives (subprocess spawn, post_to_channel) must contain a log call so the crossing is traceable. Flags the 'no log at all' case; partial logging is caught by code review.",
+      "severity": "med",
+      "added_by": "claude-code",
+      "added_at": "2026-05-31T14:31:28.746986+00:00",
+      "mode": "forever",
+      "ack_until": null,
+      "code": "AR-009"
     }
   ],
   "history": [
