@@ -518,7 +518,9 @@ class GrannyDaemon:
         try:
             from unseen_university.channel import post_to_channel
 
-            post_to_channel(msg, author="granny-weatherwax", channel="shared")
+            post_to_channel(
+                msg, author="granny-weatherwax", channel="granny-weatherwax"
+            )
         except Exception as e:
             log.warning("GrannyDaemon: channel post failed: %s", e)
 

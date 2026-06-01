@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -25,6 +26,28 @@ _JSONL_FALLBACK = (
     / "cc_channel"
     / "messages.jsonl"
 )
+
+_UC_PORT = int(os.environ.get("IGOR_UC_PORT", "8082"))
+_UC_BASE = os.environ.get("IGOR_UC_BASE", f"http://localhost:{_UC_PORT}")
+
+
+def _ws_push(message: str, author: str, channel: str) -> None:
+    """Best-effort push to web server WebSocket hub via /api/agents/{author}/send.
+
+    Never raises — if the web server is unreachable the Postgres write already happened.
+    """
+    try:
+        session_id = channel if channel.startswith("comms://") else f"comms://{channel}"
+        body = json.dumps({"content": message, "session_id": session_id}).encode()
+        req = urllib.request.Request(
+            f"{_UC_BASE}/api/agents/{author}/send",
+            data=body,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        urllib.request.urlopen(req, timeout=1.5)
+    except Exception:
+        pass  # web server offline or unreachable — Postgres write is the durable record
 
 
 def post_to_channel(
@@ -50,6 +73,7 @@ def post_to_channel(
         return
 
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    pg_ok = False
     try:
         import psycopg2
 
@@ -63,25 +87,28 @@ def post_to_channel(
                     (ts, author, "message", message, channel),
                 )
         conn.close()
-        return
+        pg_ok = True
     except Exception as exc:
         log.warning("channel post Postgres failed (%s): %s", author, exc)
 
-    # JSONL fallback — only reached when Postgres is configured but unavailable
-    try:
-        fallback = _JSONL_FALLBACK
-        fallback.parent.mkdir(parents=True, exist_ok=True)
-        entry = json.dumps(
-            {
-                "ts": ts,
-                "author": author,
-                "type": "message",
-                "content": message,
-                "channel": channel,
-            },
-            ensure_ascii=False,
-        )
-        with open(fallback, "a", encoding="utf-8") as f:
-            f.write(entry + "\n")
-    except Exception as exc:
-        log.warning("channel post JSONL fallback failed (%s): %s", author, exc)
+    if not pg_ok:
+        # JSONL fallback — only reached when Postgres is configured but unavailable
+        try:
+            fallback = _JSONL_FALLBACK
+            fallback.parent.mkdir(parents=True, exist_ok=True)
+            entry = json.dumps(
+                {
+                    "ts": ts,
+                    "author": author,
+                    "type": "message",
+                    "content": message,
+                    "channel": channel,
+                },
+                ensure_ascii=False,
+            )
+            with open(fallback, "a", encoding="utf-8") as f:
+                f.write(entry + "\n")
+        except Exception as exc:
+            log.warning("channel post JSONL fallback failed (%s): %s", author, exc)
+
+    _ws_push(message, author, channel)

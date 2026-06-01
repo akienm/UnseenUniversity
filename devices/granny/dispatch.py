@@ -119,7 +119,7 @@ def cc_dispatch_fn(ticket: dict) -> bool:
             f"GRANNY_DISPATCH|ticket={ticket_id}|worker=claude|size={size}"
             f"|tags={tags}|title={title}"
         )
-        post_to_channel(msg, author="granny-weatherwax", channel="shared")
+        post_to_channel(msg, author="granny-weatherwax", channel="granny-weatherwax")
         log.info("cc_dispatch_fn: channel post OK for %s", ticket_id)
     except Exception as e:
         log.warning("cc_dispatch_fn: channel post failed for %s: %s", ticket_id, e)
@@ -182,7 +182,7 @@ def inference_dispatch_fn(ticket: dict, on_complete=None) -> bool:
             f"GRANNY_DISPATCH|ticket={ticket_id}|worker={task_class}|size={size}"
             f"|tags={tags_str}|title={title}",
             author="granny-weatherwax",
-            channel="shared",
+            channel="granny-weatherwax",
         )
     except Exception as e:
         log.warning(
@@ -244,7 +244,7 @@ def inference_dispatch_fn(ticket: dict, on_complete=None) -> bool:
                 f"|tokens_in={worker_result.input_tokens}"
                 f"|tokens_out={worker_result.output_tokens}",
                 author="granny-weatherwax",
-                channel="shared",
+                channel="granny-weatherwax",
             )
         except Exception:
             pass
