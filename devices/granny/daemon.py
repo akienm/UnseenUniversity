@@ -209,6 +209,8 @@ class GrannyDaemon:
         from devices.granny.device import GrannyWeatherwaxDevice
         from devices.granny.dispatch import cc_dispatch_fn, inference_dispatch_fn
 
+        from devices.granny.pattern_tracker import PatternTracker
+
         self._device = GrannyWeatherwaxDevice()
         self._device.register_worker(
             "cc",
@@ -216,6 +218,7 @@ class GrannyDaemon:
             dispatch_fn=cc_dispatch_fn,
         )
         self._inference_dispatch = inference_dispatch_fn
+        self._pattern_tracker = PatternTracker()
 
         self._alerted_ids: set[str] = set()
         try:
@@ -338,7 +341,9 @@ class GrannyDaemon:
                 ok, worker_id = self._device.route_ticket(ticket)
             else:
                 # Non-CC tickets: route via InferenceDevice (deepseek or qwen)
-                ok = self._inference_dispatch(ticket)
+                ok = self._inference_dispatch(
+                    ticket, on_complete=self._record_inference_outcome
+                )
                 worker_id = "inference"
 
             if ok:
@@ -361,6 +366,24 @@ class GrannyDaemon:
         self._dispatched_ids = new_ids  # reset to only current-cycle dispatches
         self._last_poll = time.time()
         return dispatched
+
+    def _record_inference_outcome(
+        self, worker_result, task_class: str, ticket: dict
+    ) -> None:
+        """on_complete callback — records WorkerResult into PatternTracker."""
+        self._pattern_tracker.record(
+            ticket_id=ticket.get("id", ""),
+            tags=list(ticket.get("tags", [])),
+            task_class=task_class,
+            size=ticket.get("size", "?"),
+            signal=worker_result.signal,
+            iterations=worker_result.iterations,
+            cost_usd=worker_result.cost_usd,
+        )
+        if self._pattern_tracker.should_report():
+            report = self._pattern_tracker.format_report()
+            log.info("GrannyDaemon: %s", report)
+            self._post_channel(report)
 
     def _push_stats(self) -> None:
         """Push current stats to the rack server dashboard (best-effort)."""

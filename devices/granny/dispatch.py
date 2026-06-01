@@ -129,7 +129,7 @@ def cc_dispatch_fn(ticket: dict) -> bool:
     return True
 
 
-def inference_dispatch_fn(ticket: dict) -> bool:
+def inference_dispatch_fn(ticket: dict, on_complete=None) -> bool:
     """Dispatch a ticket to MinionDevice (cheap inference + tool loop).
 
     Picks task_class from ticket tags:
@@ -138,8 +138,11 @@ def inference_dispatch_fn(ticket: dict) -> bool:
 
     Runs synchronously — blocks until the tool loop completes or escalates.
     DONE result  → submits ticket via cc_queue.py done (awaiting_validation).
-    ESCALATE     → sets worker=claude + resets to sprint + spawns CC fallback.
-                   The set-worker flag prevents Granny from re-routing to minion.
+    ESCALATE     → blocks ticket for CC review. Never spawns CC automatically.
+
+    on_complete: optional callable(worker_result, task_class, ticket) called
+        after MinionDevice.execute() returns — used by GrannyDaemon to record
+        outcome signals into PatternTracker without modifying the return type.
     """
     ticket_id = ticket.get("id", "")
     if not ticket_id:
@@ -199,6 +202,16 @@ def inference_dispatch_fn(ticket: dict) -> bool:
             task_class=task_class,
         )
         worker_result = MinionDevice().execute(envelope)
+
+        if on_complete is not None:
+            try:
+                on_complete(worker_result, task_class, ticket)
+            except Exception as e:
+                log.warning(
+                    "inference_dispatch %s: on_complete callback failed: %s",
+                    ticket_id,
+                    e,
+                )
 
         log.info(
             "inference_dispatch %s: signal=%r task_class=%s iterations=%d tools=%s "
