@@ -6,7 +6,7 @@ IGOR_DEGRADE_SAFE_THRESHOLD (default 30), trip() is called once:
 
   1. Writes IGOR_SAFE_MODE=true to igor.switches.cfg (persistent)
   2. Sets os.environ["IGOR_SAFE_MODE"] = "true" (immediate effect)
-  3. Appends a high-urgency cc_inbox alert so CC surfaces it on next load
+  3. Posts SAFE_MODE_TRIP to the shared channel for observability
 
 Human-reset-only: the operator removes IGOR_SAFE_MODE=true from
 igor.switches.cfg and restarts Igor to clear the flag.
@@ -44,7 +44,7 @@ def trip(stuck_cycles: int) -> bool:
     """
     try:
         _write_safe_mode_flag()
-        _alert_cc(stuck_cycles)
+        _notify_channel(stuck_cycles)
         _log.warning(
             "SAFE_MODE_TRIP: stuck_cycles=%d threshold=%d — safe mode activated; "
             "human reset required (remove IGOR_SAFE_MODE=true from igor.switches.cfg)",
@@ -92,31 +92,15 @@ def _write_safe_mode_flag() -> None:
     os.environ[_SAFE_MODE_FLAG] = "true"
 
 
-def _alert_cc(stuck_cycles: int) -> None:
-    """Write a high-urgency cc_inbox entry so CC surfaces the alert."""
+def _notify_channel(stuck_cycles: int) -> None:
+    """Post SAFE_MODE_TRIP to the shared channel for observability."""
     try:
-        from lab.claudecode.cc_inbox import append as _inbox_append
+        from ..tools.channel_post import post_to_channel
 
-        _inbox_append(
-            kind="safe_mode_trip",
-            summary=(
-                f"[SAFE MODE] Igor has been stuck for {stuck_cycles} NE cycles "
-                "without recovery — degraded-safe mode activated"
-            ),
-            body=(
-                f"Igor's NarrativeEngine produced no result for {stuck_cycles} "
-                "consecutive cycles (cumulative, including dreaming resets). "
-                "Degraded-safe mode is now active:\n"
-                "  • IGOR_SAFE_MODE=true written to igor.switches.cfg\n"
-                "  • os.environ updated immediately\n\n"
-                "To restore normal operation:\n"
-                "  1. Investigate cognition logs for root cause\n"
-                "  2. Remove IGOR_SAFE_MODE=true from "
-                "~/.unseen_university/<instance>/igor.switches.cfg\n"
-                "  3. Restart Igor\n"
-            ),
-            urgency="high",
-            response_expected=True,
+        post_to_channel(
+            f"SAFE_MODE_TRIP|stuck_cycles={stuck_cycles}"
+            "|action=degraded_safe_mode_activated"
+            "|reset=remove_IGOR_SAFE_MODE_from_switches_cfg_and_restart",
         )
     except Exception as _e:
-        _log.error("SAFE_MODE_ALERT cc_inbox write failed: %s", _e)
+        _log.debug("SAFE_MODE_TRIP channel notify failed (non-fatal): %s", _e)

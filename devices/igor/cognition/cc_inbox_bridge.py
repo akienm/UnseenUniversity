@@ -32,10 +32,18 @@ def post_to_cc_inbox(
     summary: one-line summary shown in /readinbox list
     body: longer detail shown on request
     ticket_id: optional — surfaces in inbox display, lets CC pivot to ticket
-    urgency: low | normal | high
+    urgency: low | normal — "high" is clamped to "normal"; nothing from Igor
+             warrants interrupting CC's reasoning at high urgency
     response_expected: True if Igor is waiting for CC input (sets a flag CC
                        can use to prioritize which entries need a reply)
     """
+    if urgency == "high":
+        log.warning(
+            "cc_inbox post with urgency='high' downgraded to 'normal' — "
+            "Igor events are never high urgency (kind=%s)",
+            kind,
+        )
+        urgency = "normal"
     try:
         from lab.claudecode.cc_inbox import append as _append
 
