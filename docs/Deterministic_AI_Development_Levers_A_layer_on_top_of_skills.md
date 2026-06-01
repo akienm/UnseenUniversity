@@ -114,7 +114,7 @@ My workflow mostly falls out like this:
 
 /ticket -- any issues that come up along the way so we address them later.
 
-/sorted -- all issues under discussion are now resolved enough to go to sprint. Before filing tickets, /sorted extracts a testable hypothesis with three mandatory questions: (1) which goal (G-xxx or none, reason), (2) what observable difference, (3) how will we know. For M/L/XL decisions, it also auto-drafts a gated consequence-check ticket with predicted unintended effects and a gate condition. Then launches /audit-design to validate the design against 10 positive checks (goal frame, success observable, alternatives considered, constraints named, closing-pass done, no conflicts, palace-rules honored, scope decomposed, executor/tier named, encapsulation surface clear). Tickets anything we've been talking about that isn't ticketed, runs /audit-ticket on each draft, and gets it ready for sprinting.
+/sorted -- all issues under discussion are now resolved enough to go to sprint. Before filing tickets, /sorted extracts a testable hypothesis with three mandatory questions: (1) which goal (G-xxx or none, reason), (2) what observable difference, (3) how will we know. For M/L/XL decisions, it also auto-drafts a gated consequence-check ticket with predicted unintended effects and a gate condition. Then launches /audit-design to validate the design against 11 positive checks (goal frame, success observable, alternatives considered, constraints named, closing-pass done, no conflicts, palace-rules honored, scope decomposed, executor/tier named, encapsulation surface clear, no unbounded CC blackout path). Tickets anything we've been talking about that isn't ticketed, runs /audit-ticket on each draft, and gets it ready for sprinting.
 
 /sprint / /sprint-batch -- sprint a ticket or sprint a large batch of tickets. Sprint-batch calls sprint over and over. Topo-sorts by dependencies before starting. Per-ticket: capability-check → verify in_progress status (dispatch IS assignment, no claim) → infrastructure brief → pull+work → cleanup → test → commit+push → close → /savestate. /sprint also calls /savestate on completion.
 
@@ -140,7 +140,7 @@ We have a family of scoped audits, each targeting a different failure class and 
 
 **Daily cross-session** (/audit-day, Sonnet): run by /day-close. Inherits all 18 day-close-audit static checks plus: fix-one-leave-many sweep (function signature changed in N callers but M others missed), watch-for notes from prior runs (hit/age/expire), subsystem index vs. reality, inertia tag drift, TWM coverage gaps, habit health. Auto-drafts a scan-for-rest ticket to /tmp/ when fix-one-leave-many is detected.
 
-**Design-gate** (/audit-design, Opus): runs at the opening of a /sorted block. Reviews the design against 10 positive checks: positive-target goal, runtime-observable success, alternatives considered, constraints named, "what am I missing" closing pass done, no conflicts with recent decisions, palace-rules honored, scope decomposed into PRs, executor+inertia per piece, encapsulation surface clear (no subsystems reaching across boundaries they shouldn't). Blocks /sorted Step 3 on AMEND until fixed.
+**Design-gate** (/audit-design, Opus): runs at the opening of a /sorted block. Reviews the design against 11 positive checks: positive-target goal, runtime-observable success, alternatives considered, constraints named, "what am I missing" closing pass done, no conflicts with recent decisions, palace-rules honored, scope decomposed into PRs, executor+inertia per piece, encapsulation surface clear (no subsystems reaching across boundaries they shouldn't), no unbounded CC blackout path (spawn/dispatch/escalate keywords require an explicit spend cap or block/hold routing — see `C-no-cc-auto-spawn`). Blocks /sorted Step 3 on AMEND until fixed.
 
 **Expert panel** (/audit-expert, Opus): broadest-lens review. Each expert sees the whole codebase through their field's sharpest questions -- not "is this code clean?" but "is this system doing what this discipline demands?" Per expert: ≤5 severity-tagged observations, ≤2 watch-for notes (stored in palace with TTL ≤ 14 days), 0–1 candidate ticket drafts routed through /audit-ticket before filing.
 
@@ -174,7 +174,7 @@ All audit levels emit structured telemetry to the palace (theigors/audits/<level
 
 /audit-debris -- post-commit debris cleanup: temp files, debug artifacts, docstring rot, test DB cleanup, file placement
 
-/audit-design -- design-gate review before /sorted: 10 positive checks (goal frame, success observable, alternatives, constraints, closing-pass, conflicts, palace-rules, scope decomposition, executor/tier, encapsulation surface)
+/audit-design -- design-gate review before /sorted: 11 positive checks (goal frame, success observable, alternatives, constraints, closing-pass, conflicts, palace-rules, scope decomposition, executor/tier, encapsulation surface, no CC blackout path)
 
 /audit-expert -- 11-expert broadest-lens panel; weekly (3 random), monthly (full), on-demand by area
 
