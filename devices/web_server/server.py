@@ -151,6 +151,7 @@ PID_FILE = _RUNTIME_ROOT / "web_server.pid"
 
 _CHANNEL_DIR = _RUNTIME_ROOT / "local" / "cc_channel"
 _CHANNEL_FILE = _CHANNEL_DIR / "messages.jsonl"
+_AGENT_REGISTRY_FILE = _RUNTIME_ROOT / "agent_registry.json"
 
 # ── Boot timestamp ───────────────────────────────────────────────────────────
 
@@ -202,6 +203,39 @@ def _ensure_dirs():
     INBOX_DIR.mkdir(parents=True, exist_ok=True)
     OUTBOX_DIR.mkdir(parents=True, exist_ok=True)
     _CHANNEL_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _save_agents() -> None:
+    """Persist agent registrations to disk so they survive server restarts."""
+    with _agents_lock:
+        # Exclude last_heartbeat — it's a monotonic value meaningless across reboots
+        snapshot = {
+            aid: {k: v for k, v in info.items() if k != "last_heartbeat"}
+            for aid, info in _agents.items()
+        }
+    try:
+        _AGENT_REGISTRY_FILE.write_text(
+            json.dumps(snapshot, indent=2), encoding="utf-8"
+        )
+    except Exception as exc:
+        log.warning("agent registry save failed: %s", exc)
+
+
+def _load_agents() -> None:
+    """Load persisted agent registrations from disk at server startup."""
+    try:
+        data = json.loads(_AGENT_REGISTRY_FILE.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            return
+        with _agents_lock:
+            for aid, info in data.items():
+                if isinstance(info, dict):
+                    _agents[aid] = {**info, "last_heartbeat": None}
+        log.info("Restored %d agent registration(s) from disk", len(data))
+    except FileNotFoundError:
+        pass
+    except Exception as exc:
+        log.warning("agent registry load failed: %s", exc)
 
 
 def _bootstrap_mkcert() -> tuple[str, str] | None:
@@ -684,6 +718,7 @@ async def _api_agent_register(request: Request):
             "last_heartbeat": time.monotonic(),
         }
     log.info("Agent registered: %s (capabilities: %s)", agent_id, capabilities)
+    _save_agents()
     # T-uc-comms-default-channels: auto-create agent channel on connect
     if _comms:
         _comms.ensure_channel(
@@ -715,6 +750,7 @@ async def _api_agent_deregister(request: Request):
         _agents.pop(agent_id, None)
         _agent_stats.pop(agent_id, None)
     log.info("Agent deregistered: %s", agent_id)
+    _save_agents()
     _broadcast(
         json.dumps(
             {
@@ -1680,6 +1716,7 @@ def _make_app() -> Starlette:
         global _loop
         _loop = asyncio.get_running_loop()
         _init_comms()
+        _load_agents()
         yield
 
     routes = [
@@ -1871,6 +1908,7 @@ def main():
     # Start server
     _write_pid()
     _ensure_dirs()
+    _load_agents()
     log.info("Rack server starting on port %d", args.port)
 
     def _shutdown(signum, frame):

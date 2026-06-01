@@ -159,9 +159,12 @@ class TestWebSocketTmuxDelivery:
         _srv._agents["igor"] = _fake_agent("claude-main")
 
         mock_result = MagicMock(returncode=0, stdout="", stderr="")
-        with patch("devices.web_server.server._init_comms"):
+        with (
+            patch("devices.web_server.server._init_comms"),
+            patch("devices.web_server.server._load_agents"),
+            patch("subprocess.run", return_value=mock_result) as mock_run,
+        ):
             app = _srv._make_app()
-        with patch("subprocess.run", return_value=mock_result) as mock_run:
             with TestClient(app) as client:
                 with client.websocket_connect("/ws") as ws:
                     ws.send_json({"type": "join_session", "session_id": "comms://igor"})
