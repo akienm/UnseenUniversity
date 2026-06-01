@@ -142,7 +142,7 @@ def log_memory_retrieval(
 
 
 def synthesize_turn_trace(ctx: dict) -> None:
-    """Write a human-readable narrative trace for one turn to narrative_turn.YYYYMMDD.log.
+    """Write a human-readable narrative trace for one turn to narrative_turn.YYYYMMDD.md.
 
     Reads the enriched TurnContext (memory_retrieval, cascade_trace,
     voice_context_snapshot, response) and produces a chat-like sequence showing
@@ -223,8 +223,11 @@ def synthesize_turn_trace(ctx: dict) -> None:
 
         LOG_DIR.mkdir(parents=True, exist_ok=True)
         today = datetime.now().strftime("%Y%m%d")
-        path = LOG_DIR / f"narrative_turn.{today}.log"
+        path = LOG_DIR / f"narrative_turn.{today}.md"
+        is_new = not path.exists()
         with path.open("a", encoding="utf-8") as f:
+            if is_new:
+                f.write(f"# Igor narrative — {today}\n\n")
             f.write("\n".join(lines) + "\n")
 
         # Purge files older than 7 days
@@ -232,7 +235,7 @@ def synthesize_turn_trace(ctx: dict) -> None:
             from datetime import timedelta
 
             cutoff = (datetime.now() - timedelta(days=7)).strftime("%Y%m%d")
-            for p in LOG_DIR.glob("narrative_turn.*.log"):
+            for p in LOG_DIR.glob("narrative_turn.*.md"):
                 date_part = p.stem.split(".")[-1]
                 if date_part.isdigit() and date_part < cutoff:
                     p.unlink(missing_ok=True)
