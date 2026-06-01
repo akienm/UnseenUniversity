@@ -78,32 +78,39 @@ class TestLoadSprintTickets:
 
 
 class TestTicketNeedsCC:
+    """_ticket_needs_cc: only 'minion'-tagged tickets go to inference.
+    Everything else (worker=claude, worker=igor, worker unset) → CC.
+    Igor coding is retired — worker=igor is treated as worker=claude.
+    """
+
     def test_worker_claude_returns_true(self):
         from devices.granny.daemon import _ticket_needs_cc
 
         assert _ticket_needs_cc({"worker": "claude", "tags": []}) is True
 
-    def test_worker_cc_returns_false(self):
-        # 'cc' worker no longer routes to CC; only explicit 'claude' does
+    def test_worker_igor_returns_true(self):
+        # Igor coding retired — igor-assigned tickets go to CC, not inference
         from devices.granny.daemon import _ticket_needs_cc
 
-        assert _ticket_needs_cc({"worker": "cc", "tags": ["Platform"]}) is False
+        assert _ticket_needs_cc({"worker": "igor", "tags": ["Memory"]}) is True
 
-    def test_explicit_non_cc_worker_returns_false(self):
+    def test_no_worker_returns_true(self):
+        # Unassigned tickets default to CC
         from devices.granny.daemon import _ticket_needs_cc
 
-        assert _ticket_needs_cc({"worker": "nanny", "tags": ["Platform"]}) is False
+        assert _ticket_needs_cc({"worker": "", "tags": ["Infrastructure"]}) is True
 
-    def test_platform_tag_no_worker_returns_false(self):
-        # Sprint tickets without explicit worker='claude' default to inference path
+    def test_unrecognised_tag_returns_true(self):
+        # Unknown tags fall through to CC, not inference
         from devices.granny.daemon import _ticket_needs_cc
 
-        assert _ticket_needs_cc({"worker": "", "tags": ["Infrastructure"]}) is False
+        assert _ticket_needs_cc({"worker": "", "tags": ["Unrelated"]}) is True
 
-    def test_no_worker_no_matching_tag_returns_false(self):
+    def test_minion_tag_returns_false(self):
+        # Only explicit 'minion' tag routes to cheap inference workers
         from devices.granny.daemon import _ticket_needs_cc
 
-        assert _ticket_needs_cc({"worker": "", "tags": ["Unrelated"]}) is False
+        assert _ticket_needs_cc({"worker": "igor", "tags": ["minion"]}) is False
 
 
 def _make_bare_daemon(audit_passed=True, route_ok=True, inference_ok=True):

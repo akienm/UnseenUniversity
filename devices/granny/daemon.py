@@ -75,9 +75,44 @@ def _post_rack(path: str, body: dict, timeout: float = 3.0) -> bool:
         return False
 
 
-# Tags that Granny routes to CC by default (mirrors _DEFAULT_ROUTING cc paths)
+# Tags that Granny routes to CC — broad catch-all; only 'minion'-tagged tickets
+# go to cheap inference workers instead. Add tags here as new topic areas emerge.
 _CC_TAGS = frozenset(
-    {"Platform", "Infrastructure", "Cognition", "Database", "Training", "Research"}
+    {
+        "Platform",
+        "Infrastructure",
+        "Cognition",
+        "Database",
+        "Training",
+        "Research",
+        "Memory",
+        "Architecture",
+        "Device",
+        "Inference",
+        "CompiledInference",
+        "Archivist",
+        "Librarian",
+        "Scraps",
+        "Clan",
+        "Palace",
+        "Concepts",
+        "GoogleSecretary",
+        "SWADL",
+        "Security",
+        "Test",
+        "Workflow",
+        "Consequence",
+        "Performance",
+        "Migration",
+        "Cleanup",
+        "Queue",
+        "ADC",
+        "AgentDatacenter",
+        "Igor",
+        "Observability",
+        "Registry",
+        "Skeleton",
+    }
 )
 # Statuses that indicate a ticket is ready to dispatch
 _DISPATCHABLE_STATUSES = {"sprint"}
@@ -187,10 +222,12 @@ def _ticket_is_minion(ticket: dict) -> bool:
 def _ticket_needs_cc(ticket: dict) -> bool:
     """Return True if this ticket must be routed to Claude CC.
 
-    Only explicit worker='claude' assignments use the CC path.
-    All other sprint tickets route to the inference path (deepseek-v4-flash via OR).
+    Igor coding is retired — worker=igor is treated as worker=claude.
+    Only 'minion'-tagged tickets route to cheap inference workers.
+    Everything else (worker=claude, worker=igor, worker unset) → CC.
     """
-    return ticket.get("worker") == "claude"
+    tags = set(ticket.get("tags") or [])
+    return "minion" not in tags
 
 
 class GrannyDaemon:
@@ -339,8 +376,15 @@ class GrannyDaemon:
                     self._publish_feed("audit_fail", tid, str(audit.reasons))
                     continue
                 ok, worker_id = self._device.route_ticket(ticket)
+                # Fallback: no tag edge found but ticket is CC-bound — dispatch directly.
+                # Happens when ticket tags aren't yet registered in _CC_TAGS.
+                if not ok and worker_id == "no_route":
+                    from devices.granny.dispatch import cc_dispatch_fn
+
+                    ok = cc_dispatch_fn(ticket)
+                    worker_id = "cc"
             else:
-                # Non-CC tickets: route via InferenceDevice (deepseek or qwen)
+                # minion-tagged tickets: route via InferenceDevice (deepseek or qwen)
                 ok = self._inference_dispatch(
                     ticket, on_complete=self._record_inference_outcome
                 )
@@ -370,7 +414,7 @@ class GrannyDaemon:
     def _record_inference_outcome(
         self, worker_result, task_class: str, ticket: dict
     ) -> None:
-        """on_complete callback — records WorkerResult into PatternTracker."""
+        """on_complete callback — records WorkerResult into PatternTracker and escalation corpus."""
         self._pattern_tracker.record(
             ticket_id=ticket.get("id", ""),
             tags=list(ticket.get("tags", [])),
@@ -379,6 +423,21 @@ class GrannyDaemon:
             signal=worker_result.signal,
             iterations=worker_result.iterations,
             cost_usd=worker_result.cost_usd,
+            advisor_signal=worker_result.advisor_signal,
+        )
+        # Append non-DONE outcomes to escalation corpus for routing compiler analysis
+        from devices.granny.escalation_corpus import append_outcome
+
+        append_outcome(
+            ticket,
+            signal=worker_result.signal,
+            advisor_signal=worker_result.advisor_signal,
+            task_class=task_class,
+            iterations=worker_result.iterations,
+            cost_usd=worker_result.cost_usd,
+            tokens_in=worker_result.input_tokens,
+            tokens_out=worker_result.output_tokens,
+            excerpt=worker_result.notes,
         )
         if self._pattern_tracker.should_report():
             report = self._pattern_tracker.format_report()
