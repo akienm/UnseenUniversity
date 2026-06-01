@@ -9,6 +9,13 @@ automatically on next manifest read.
 from __future__ import annotations
 
 import json
+from pathlib import Path
+
+from skeleton.registry import DEFAULT_REGISTRY_PATH
+
+# Librarian has no BaseDevice subclass — self-declares its class here.
+_LIBRARIAN_AGENT_CLASS = "utility"
+_LIBRARIAN_DEVICE_ID = "librarian"
 
 # task_shape → {tool, when, example}
 # Ordered from most-commonly-reached for to least, to aid skimming.
@@ -96,8 +103,42 @@ SCHEMAS = [
 ]
 
 
+def _read_device_classes(registry_path: Path | None = None) -> list[dict]:
+    """Read device records from the flat-file registry; return [{device_id, agent_class, status}].
+
+    Always includes librarian's self-declaration. Gracefully returns only librarian
+    when the registry file is absent or unreadable.
+    """
+    librarian_entry = {
+        "device_id": _LIBRARIAN_DEVICE_ID,
+        "agent_class": _LIBRARIAN_AGENT_CLASS,
+        "status": "online",
+    }
+    path = registry_path or DEFAULT_REGISTRY_PATH
+    try:
+        raw = json.loads(Path(path).read_text())
+    except (OSError, json.JSONDecodeError):
+        return [librarian_entry]
+
+    devices = [librarian_entry]
+    for record in raw.values():
+        device_id = record.get("id") or record.get("device_id", "")
+        if not device_id or device_id == _LIBRARIAN_DEVICE_ID:
+            continue
+        devices.append(
+            {
+                "device_id": device_id,
+                "agent_class": record.get("agent_class", "utility"),
+                "status": record.get("status", "unknown"),
+            }
+        )
+    return devices
+
+
 def datacenter_manifest(
-    routing_only: bool = False, task_shape: str | None = None
+    routing_only: bool = False,
+    task_shape: str | None = None,
+    _registry_path: Path | None = None,
 ) -> str:
     if task_shape:
         entry = _ROUTING_MAP.get(task_shape)
@@ -119,6 +160,7 @@ def datacenter_manifest(
         result["tools"] = [
             s["name"] for s in _tools.SCHEMAS if s["name"] != "datacenter_manifest"
         ]
+        result["devices"] = _read_device_classes(_registry_path)
 
     return json.dumps(result)
 

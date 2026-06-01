@@ -16,6 +16,7 @@ Device record shape:
         "mailbox": str,          # comms:// URI
         "config": {...},         # DeviceConfig.to_dict()
         "registered_at": str,    # ISO 8601
+        "agent_class": str,      # "utility" | "specialized" | "general"
     }
 
 Address resolution (T-swarm-identity-layer):
@@ -61,7 +62,12 @@ class DeviceRegistry:
             self._atomic_write({})
 
     def register(
-        self, device_id: str, config: DeviceConfig, mailbox: str, name: str = ""
+        self,
+        device_id: str,
+        config: DeviceConfig,
+        mailbox: str,
+        name: str = "",
+        agent_class: str = "utility",
     ) -> None:
         data = self._load()
         data[device_id] = {
@@ -71,6 +77,7 @@ class DeviceRegistry:
             "mailbox": mailbox,
             "config": config.to_dict(),
             "registered_at": datetime.now(timezone.utc).isoformat(),
+            "agent_class": agent_class,
         }
         self._atomic_write(data)
         log.info("registered device %s at %s", device_id, mailbox)

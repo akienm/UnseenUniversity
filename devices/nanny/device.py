@@ -157,12 +157,15 @@ class NannyOggDevice(BaseDevice):
 
     # ── BaseDevice contract ────────────────────────────────────────────────────
 
+    AGENT_CLASS = "specialized"
+
     def who_am_i(self) -> dict:
         return {
             "device_id": self.DEVICE_ID,
             "name": "Nanny Ogg",
             "version": "0.1.0",
             "purpose": "Scheduler + world-interaction dispatcher. When/then engine for the rack.",
+            "agent_class": self.AGENT_CLASS,
         }
 
     def requirements(self) -> dict:

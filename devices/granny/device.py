@@ -163,12 +163,15 @@ class GrannyWeatherwaxDevice(BaseDevice):
 
     # ── BaseDevice contract ────────────────────────────────────────────────────
 
+    AGENT_CLASS = "specialized"
+
     def who_am_i(self) -> dict:
         return {
             "device_id": self.DEVICE_ID,
             "name": "Granny Weatherwax",
             "version": "0.1.0",
             "purpose": "Ticket gateway + coding orchestrator. What/who engine for the rack.",
+            "agent_class": self.AGENT_CLASS,
         }
 
     def requirements(self) -> dict:

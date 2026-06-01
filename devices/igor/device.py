@@ -78,12 +78,15 @@ class IgorDevice(BaseDevice):
 
     # ── BaseDevice contract ───────────────────────────────────────────────────
 
+    AGENT_CLASS = "general"
+
     def who_am_i(self) -> dict:
         return {
             "device_id": self.DEVICE_ID,
             "name": "Igor",
             "version": "wild-0001",
             "purpose": "Graph-matrix reasoning agent with persistent Postgres memory",
+            "agent_class": self.AGENT_CLASS,
         }
 
     def requirements(self) -> dict:

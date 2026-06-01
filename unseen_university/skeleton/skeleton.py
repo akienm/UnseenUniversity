@@ -78,6 +78,7 @@ class Skeleton(BaseDevice):
             DeviceConfig(manual_block_only=True),
             "comms://skeleton",
             name="Skeleton",
+            agent_class="utility",
         )
         # Wire the announce protocol when a bus is attached.
         if self._imap_server is not None:
@@ -234,8 +235,13 @@ class Skeleton(BaseDevice):
         cfg = config or DeviceConfig()
         mbox = mailbox or device.comms().get("address", f"comms://{device_id}/inbox")
 
+        identity = device.who_am_i()
         self._registry.register(
-            device_id, cfg, mbox, name=device.who_am_i().get("name", device_id)
+            device_id,
+            cfg,
+            mbox,
+            name=identity.get("name", device_id),
+            agent_class=identity.get("agent_class", "utility"),
         )
         self._devices[device_id] = device
 

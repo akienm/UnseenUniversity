@@ -132,6 +132,8 @@ class ScrapsDevice(BaseDevice):
 
     # ── BaseDevice contract ──────────────────────────────────────────────────
 
+    AGENT_CLASS = "utility"
+
     def who_am_i(self) -> dict:
         return {
             "device_id": self.DEVICE_ID,
@@ -141,6 +143,7 @@ class ScrapsDevice(BaseDevice):
                 "Ticket gatekeeper: validates content before state transitions. "
                 "Rule-based V1 with optional Qwen 8 fuzzy pass."
             ),
+            "agent_class": self.AGENT_CLASS,
         }
 
     def requirements(self) -> dict:

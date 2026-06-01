@@ -30,6 +30,8 @@ INTERFACE_VERSION = "1.0"
 class BaseDevice(DiagnosticBase, ABC):
     """Abstract base for all rack devices."""
 
+    AGENT_CLASS: str = "utility"
+
     def __init__(self, device_id: str = "", **kwargs):
         if not device_id:
             device_id = (
@@ -39,7 +41,9 @@ class BaseDevice(DiagnosticBase, ABC):
 
     @abstractmethod
     def who_am_i(self) -> dict:
-        """Return device identity. Required keys: device_id (str), name (str), version (str)."""
+        """Return device identity. Required keys: device_id (str), name (str), version (str).
+        Include agent_class (str): 'utility'|'specialized'|'general' — defaults to AGENT_CLASS.
+        """
 
     @abstractmethod
     def requirements(self) -> dict:

@@ -45,12 +45,15 @@ class MinionDevice(BaseDevice):
 
     # ── BaseDevice contract ───────────────────────────────────────────────────
 
+    AGENT_CLASS = "utility"
+
     def who_am_i(self) -> dict:
         return {
             "device_id": self.DEVICE_ID,
             "name": "Minion Worker",
             "version": "0.1.0",
             "purpose": "Execute sprint tickets via cheap inference + MCP tool loop",
+            "agent_class": self.AGENT_CLASS,
         }
 
     def requirements(self) -> dict:
