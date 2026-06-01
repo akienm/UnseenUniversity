@@ -84,12 +84,9 @@ def test_inference_dispatch_done_summary_includes_notes(MockDevice, mock_run):
 # ── ESCALATE path ─────────────────────────────────────────────────────────────
 
 
-@patch("devices.granny.dispatch._launch_cc_instance")
 @patch("devices.granny.dispatch.subprocess.run")
 @patch("devices.minion.device.MinionDevice")
-def test_inference_dispatch_escalate_sets_worker_claude(
-    MockDevice, mock_run, mock_launch
-):
+def test_inference_dispatch_escalate_holds_ticket(MockDevice, mock_run):
     from devices.granny.dispatch import inference_dispatch_fn
 
     mock_run.return_value = MagicMock(returncode=0, stderr="", stdout="")
@@ -101,25 +98,23 @@ def test_inference_dispatch_escalate_sets_worker_claude(
     result = inference_dispatch_fn(_ticket())
 
     assert result is True
-    # set-worker claude should be called
     cmds = [c.args[0] for c in mock_run.call_args_list if c.args]
+
+    # ticket must be blocked (held) — never set-worker or setstatus sprint
+    block_cmds = [c for c in cmds if "block" in c]
+    assert block_cmds, "ticket must be blocked on ESCALATE"
+    assert "T-test" in block_cmds[0]
+
+    # must never launch CC
     set_worker = [c for c in cmds if "set-worker" in c]
-    assert set_worker, "set-worker must be called on ESCALATE"
-    assert "claude" in set_worker[0]
-
-    # setstatus sprint should be called
-    setstatus = [c for c in cmds if "setstatus" in c]
-    assert setstatus, "setstatus must be called on ESCALATE"
-    assert "sprint" in setstatus[0]
-
-    # CC instance should be launched
-    mock_launch.assert_called_once()
+    assert not set_worker, "set-worker must NOT be called — no CC spawn"
+    setstatus_sprint = [c for c in cmds if "setstatus" in c and "sprint" in c]
+    assert not setstatus_sprint, "setstatus sprint must NOT be called"
 
 
-@patch("devices.granny.dispatch._launch_cc_instance")
 @patch("devices.granny.dispatch.subprocess.run")
 @patch("devices.minion.device.MinionDevice")
-def test_inference_dispatch_escalate_logs_reason(MockDevice, mock_run, mock_launch):
+def test_inference_dispatch_escalate_block_includes_reason(MockDevice, mock_run):
     from devices.granny.dispatch import inference_dispatch_fn
 
     mock_run.return_value = MagicMock(returncode=0, stderr="", stdout="")
@@ -130,12 +125,12 @@ def test_inference_dispatch_escalate_logs_reason(MockDevice, mock_run, mock_laun
 
     inference_dispatch_fn(_ticket())
 
-    # log command should include escalation notes
     cmds = [c.args[0] for c in mock_run.call_args_list if c.args]
-    log_cmds = [c for c in cmds if "log" in c]
-    assert log_cmds, "escalation log entry must be written"
-    log_arg = log_cmds[0][-1]
-    assert "ESCALATED" in log_arg
+    block_cmds = [c for c in cmds if "block" in c]
+    assert block_cmds, "block must be called on ESCALATE"
+    block_reason = block_cmds[0][-1]
+    assert "analyst" in block_reason
+    assert "auth middleware" in block_reason
     assert "analyst" in log_arg
 
 

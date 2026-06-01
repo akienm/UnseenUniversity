@@ -242,30 +242,21 @@ def inference_dispatch_fn(ticket: dict) -> bool:
                 log.warning("inference_dispatch %s: done call failed: %s", ticket_id, e)
             return True
 
-        # ESCALATE — mark for CC routing so Granny won't re-dispatch to minion
+        # ESCALATE — put ticket on hold for CC review. Never spawn CC automatically.
         log.warning(
-            "inference_dispatch %s: escalating to CC — %s: %s",
+            "inference_dispatch %s: %s — holding for CC review: %s",
             ticket_id,
             worker_result.signal,
             worker_result.notes[:200],
         )
-        for cmd in (
-            [_PYTHON, str(_CC_QUEUE), "set-worker", "claude", ticket_id],
-            [_PYTHON, str(_CC_QUEUE), "setstatus", ticket_id, "sprint"],
-            [
-                _PYTHON,
-                str(_CC_QUEUE),
-                "log",
-                f"ESCALATED from {task_class}: {worker_result.signal} — {worker_result.notes[:300]}",
-            ],
-        ):
+        hold_reason = f"{worker_result.signal}: {worker_result.notes[:300]}"
+        for cmd in ([_PYTHON, str(_CC_QUEUE), "block", ticket_id, hold_reason],):
             try:
                 subprocess.run(cmd, capture_output=True, text=True, timeout=10)
             except Exception as e:
                 log.warning(
                     "inference_dispatch %s: escalation cmd failed: %s", ticket_id, e
                 )
-        _launch_cc_instance(ticket_id)
         return True
 
     except Exception as e:
