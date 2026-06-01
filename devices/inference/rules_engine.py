@@ -6,10 +6,10 @@ first match wins. Health-aware: skips unavailable sources. Session-affinity:
 same session_id stays on same model once assigned.
 
 Default rules (lowest priority number = checked first):
-  1. minion   → qwen/qwen3.5-9b      via openrouter
-  2. worker   → deepseek-v4-flash    via openrouter
-  3. analyst  → qwen3.6-35b-a3b     via openrouter
-  4. designer → claude-haiku-4-5    via anthropic
+  1. minion   → qwen/qwen3.5-9b              via openrouter
+  2. worker   → qwen/qwen2.5-coder-32b-instruct via openrouter
+  3. analyst  → deepseek/deepseek-v3         via openrouter
+  4. designer → google/gemini-2.0-flash       via openrouter
   99. fallback → cheapest available worker model
 """
 
@@ -39,19 +39,19 @@ _DEFAULT_RULES: list[RoutingRule] = [
     RoutingRule(
         2,
         "worker",
-        "deepseek/deepseek-v4-flash",
+        "qwen/qwen2.5-coder-32b-instruct",
         "openrouter",
-        "worker→deepseek-v4-flash/OR",
+        "worker→qwen2.5-coder-32b/OR",
     ),
     RoutingRule(
-        3, "analyst", "qwen/qwen3.6-35b-a3b", "openrouter", "analyst→qwen3.6-35b-a3b/OR"
+        3, "analyst", "deepseek/deepseek-v3", "openrouter", "analyst→deepseek-v3/OR"
     ),
     RoutingRule(
         4,
         "designer",
-        "claude-haiku-4-5-20251001",
-        "anthropic",
-        "designer→haiku/anthropic",
+        "google/gemini-2.0-flash",
+        "openrouter",
+        "designer→gemini-2.0-flash/OR",
     ),
 ]
 
