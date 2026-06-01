@@ -457,6 +457,86 @@ def make_dc_proxy() -> PGDatabaseProxy:
     return PGDatabaseProxy(url, search_path="public")
 
 
+def make_global_proxy() -> PGDatabaseProxy:
+    """
+    Return PGDatabaseProxy for the Global KB — compiled-inference commons
+    shared across all UU deployments.
+
+    Distribution form: a forkable git repo of pattern files (write via git PR only).
+    Runtime form: a local Postgres DB materialized from the git repo at bootstrap.
+    Agents read from Postgres at runtime; writes go through the git contribution
+    flow (Archivist→PR→merge→materialize), not direct SQL.
+
+    Env var: UU_GLOBAL_KB_DB_URL
+    search_path: global,public
+    Status: not yet provisioned (2026-06). Factory wired; provision the DB and
+            set UU_GLOBAL_KB_DB_URL when T-global-kb-git-repo ships.
+    """
+    db_url = os.getenv("UU_GLOBAL_KB_DB_URL")
+    if not db_url:
+        raise RuntimeError(
+            "UU_GLOBAL_KB_DB_URL not set — export UU_GLOBAL_KB_DB_URL=postgresql://..."
+        )
+    sp = os.getenv("UU_GLOBAL_KB_SEARCH_PATH") or "global,public"
+    return PGDatabaseProxy(db_url, search_path=sp)
+
+
+def make_agent_proxy() -> PGDatabaseProxy:
+    """
+    Return PGDatabaseProxy for the CURRENT device's Agent DB (private long-term memory).
+
+    Identity comes from DEVICE_ID env var (default: "igor" for backward compat).
+    Env var looked up: {DEVICE_ID_UPPER}_AGENT_DB_URL
+      where DEVICE_ID_UPPER = DEVICE_ID.upper().replace('-','_').replace('.','_')
+    Falls back to IGOR_HOME_DB_URL (legacy Igor env var) when the device-specific
+    var is absent — covers Igor-only deployments during migration.
+
+    search_path: clan,infra,public (IGOR_HOME_SEARCH_PATH override respected)
+
+    IMPORTANT: to access another device's Agent DB, send a db_query_request
+    envelope via comms://{target_device} — never call make_agent_proxy() for
+    a device other than the one running this code. Criterion 3 of D-memory-scope-layers.
+    """
+    device_id = os.getenv("DEVICE_ID", "igor")
+    var_name = device_id.upper().replace("-", "_").replace(".", "_") + "_AGENT_DB_URL"
+    db_url = (
+        os.getenv(var_name) or os.getenv("IGOR_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
+    )
+    if not db_url:
+        raise RuntimeError(
+            f"{var_name} not set (and IGOR_HOME_DB_URL not set) — "
+            f"export {var_name}=postgresql://..."
+        )
+    sp = os.getenv("IGOR_HOME_SEARCH_PATH") or "clan,infra,public"
+    return PGDatabaseProxy(db_url, search_path=sp)
+
+
+def make_client_proxy(client_id: str) -> PGDatabaseProxy:
+    """
+    Return PGDatabaseProxy for a human client's private DB.
+
+    Each client has a SEPARATE Postgres instance (not just a schema) — cross-client
+    data isolation is enforced at the DB boundary, not by search_path alone.
+
+    Env var: {CLIENT_ID_UPPER}_CLIENT_DB_URL  e.g. AKIEN_CLIENT_DB_URL
+      where CLIENT_ID_UPPER = client_id.upper().replace('-','_').replace('.','_')
+    search_path: client,public
+
+    Status: not yet provisioned (2026-06). Factory wired; provision one Postgres
+            instance per human client and set the env var when ready.
+
+    No fallback — client DBs have no legacy path; failing fast on missing env var
+    prevents accidental cross-client data access.
+    """
+    id_upper = client_id.upper().replace("-", "_").replace(".", "_")
+    var_name = id_upper + "_CLIENT_DB_URL"
+    db_url = os.getenv(var_name)
+    if not db_url:
+        raise RuntimeError(f"{var_name} not set — export {var_name}=postgresql://...")
+    sp = os.getenv(id_upper + "_CLIENT_SEARCH_PATH") or "client,public"
+    return PGDatabaseProxy(db_url, search_path=sp)
+
+
 def make_db_proxy(db_path=None) -> PGDatabaseProxy:
     """Backward-compat alias for make_home_proxy(). Prefer make_home_proxy() or make_local_proxy()."""
     return make_home_proxy(db_path)
