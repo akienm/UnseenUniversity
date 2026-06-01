@@ -1,6 +1,7 @@
 # Theory of Operation
 
 **Status:** Living document — updated as architecture evolves.
+**Implementation status:** This document reflects the target architecture. Sections marked `[Pending: T-xxx]` describe functionality from in-flight tickets expected to ship by 2026-06-02.
 **Purpose:** Match the implementation to Akien's mental model. Gaps between this document and the code are candidates for tickets.
 
 This is an outline, not a tutorial. Each section names the piece, states what it does, explains *why* it is the way it is, and points at the code. Where the implementation diverges from this outline, the code wins — update this doc, don't patch the code to match the doc.
@@ -191,6 +192,8 @@ Log levels:
 2. **Routing**: tag → worker via a weighted capability graph. Each `(tag, worker_id)` pair is a `RoutingEdge` with a weight. Successful dispatches strengthen the edge (Hebbian learning). Unknown tags escalate to CC.
 3. **Dispatch**: for CC tickets, posts `GRANNY_DISPATCH|ticket=T-xxx|...` to the shared channel.
 
+**CC is the catch-all worker.** `_ticket_needs_cc` returns `True` for everything except `minion`-tagged tickets. The `_CC_TAGS` set is intentionally broad, but the operative logic is tag-based: only an explicit `minion` tag routes to cheap inference workers (OR deepseek/qwen). Igor-assigned tickets are treated as CC-bound — Igor coding was retired in 2026-05 (all sprint tickets go to CC). Any ticket without a recognized routing tag escalates to CC rather than to cheap inference. The inversion is intentional: the safe default is the capable worker, not the cheap one.
+
 ### 3.3 cc_task_listener
 
 `lab/claudecode/cc_task_listener.py` — Polls the shared channel for `GRANNY_DISPATCH` messages and calls `cc_queue.py dispatch` to mark tickets `in_progress`. Runs as a background thread inside `GrannyDaemon`.
@@ -305,6 +308,41 @@ The append-only model recurs across the system: new state appends, nothing is er
 
 REFERENCE nodes most commonly carry facia semantics — they are "pointer or frame" nodes by design (see §3.5 type table). Other node types (GOAL, INTERPRETIVE, FACTUAL) can also head a version chain when the versioned artifact is of that type.
 
+### 3.8 Agent Taxonomy [Pending: T-agent-taxonomy-concept]
+
+Agents on the rack are classified into three classes. The classification affects routing, capability dispatch, and memory access policy.
+
+| Class | Description | Examples | Memory access | Persistence |
+|---|---|---|---|---|
+| `utility` | Bounded, composable, no persistent state | Scraps, Google Secretary | None — stateless | No; per-call only |
+| `specialized` | Domain expert; owns a memory slice; long-lived | Granny, Nanny, Librarian, Vetinari | Owns a slice; others request access via channel | Yes |
+| `general-purpose` | Broad reasoning; full memory access | Igor, CC | Full access to all tiers (see §5.4) | Yes |
+
+The `agent_class` field is added to each device's registry manifest (`skeleton/registry.py`). The skeleton's capability routing reads `agent_class` when resolving tool dispatch and memory access requests.
+
+**Why classify?** Without a taxonomy, every routing and access-control decision is ad-hoc — "does this agent need memory?" is answered differently by every caller. The class label makes the decision explicit and measurable. A `utility` agent that tries to write memory is a contract violation, not an ambiguity.
+
+### 3.9 Archivist — Compiled Inference Proxy [Pending: T-archivist-device]
+
+`devices/archivist/` — Sits between every caller and the LLM. Intercepts inference calls rack-wide.
+
+**Two paths:**
+
+1. **Graph hit**: the Archivist's knowledge graph can answer the query. No LLM call is made. Answer goes directly to the caller.
+2. **Graph miss**: the LLM runs. Answer goes to the caller immediately. A learning payload also fans out to the overnight pipeline: Librarian edge maintenance → graph update. The miss that just happened compiles into a cheaper hit for next time.
+
+**Knowledge graph properties:**
+- Purely epistemic — observations are recorded as fact, not emotionally encoded. This distinguishes the Archivist's graph from Igor's graph trees, which carry emotional encoding as a load-bearing feature of his cognition. Do not conflate them.
+- Append-only, facia-versioned (see §3.7).
+
+**Librarian relationship:** Librarian remains the knowledge retrieval/research service. Archivist owns the inference proxy layer and the overnight learning pipeline. The two are separate devices with separate responsibilities.
+
+**Bootstrap:** All historical conversation logs can be fed through the learning engine in chunks to pre-populate the graph before the first live inference call. The graph does not start empty.
+
+**Economics:** Graph hit rate rises over time as the graph grows. LLM call rate falls. The system gets cheaper per inference call as it learns. This is the rack-level implementation of compiled inference applied to inference itself — the same principle the system uses everywhere else, turned inward.
+
+**Why?** Every inference call that misses has a chance to compile into a graph lookup. Without this layer, the cost of inference is flat; with it, the marginal cost per call trends toward zero for the queries the system has seen before. The economics improve automatically.
+
 ---
 
 ## 4. Igor — Reference Implementation
@@ -388,6 +426,8 @@ Tables shared across all Igor instances and CC instances:
 | `channel_messages` | Shared channel (CC ↔ Igor ↔ Granny ↔ others) |
 | `adc.palace` | Project knowledge, decisions, goals, day rollups |
 
+**Clan template and memory domain ownership [Pending: T-igor-clan-template]:** Igor is an instance of a clan template. The template carries baseline memories that every Igor instance starts with; per-instance memories layer on top and do not affect other instances. Memory domain ownership is assigned per device: Granny owns all memories related to builds and routing; Vetinari owns task-management and project-status memories. A device that owns a memory domain is the authoritative writer for that domain — other devices read, but do not write, without requesting access via the channel.
+
 ### 5.2 instance.* (per-instance)
 
 Tables private to one running Igor instance:
@@ -408,6 +448,29 @@ Runtime state that must survive a DB outage:
 | `~/.unseen_university/<instance>/igor.cfg` | Instance config (IGOR_INSTANCE_ID, DB URL, etc.) |
 | `~/.unseen_university/<instance>/igor.switches.cfg` | Safety gates (never in DB — see §6) |
 | `~/.unseen_university/claudecode/<date>.slate.txt` | CC daily work slate |
+
+### 5.4 Memory Scope Tiers [Pending: T-memory-scope-layers]
+
+Memory is organized into four tiers with separate Postgres DBs per tier. Tiers differ in ownership, access, and contribution model.
+
+| Tier | Scope | Storage | Owner | Access |
+|---|---|---|---|---|
+| **Global** | Universal patterns; any UU deployment | Forkable git repo; cloned at `uu bootstrap` | Community (PRs) | Read by all; write via PR |
+| **Local/Instance** | This deployment's shared working memory | `clan.memories` (current) | Rack-wide | All agents on this bus |
+| **Agent** | Per-device owned memory | Per-device Postgres schema | The device | Device owns; others request via channel |
+| **Client** | Per-human private memory | Separate Postgres DB per client | The human (Akien, Leah, etc.) | Client and explicitly granted agents |
+
+**Why separate tiers?** Tier separation prevents leakage in both directions. Client private data cannot bleed into global patterns. Global patterns cannot be polluted by deployment-specific state. The tiers make the privacy boundary explicit and enforced by DB separation, not convention.
+
+### 5.5 Global Knowledge Base [Pending: T-global-kb-git-repo]
+
+The global tier (§5.4) is stored as a git repository. New UU instances clone it at bootstrap via `uu bootstrap`; the local working copy is the seed for the Local tier.
+
+**Contribution flow:** when the Archivist's overnight pipeline identifies a locally-proven pattern that generalizes, it proposes it via `uu contrib submit`. The proposal creates a PR against the upstream global KB repo. Community review decides whether the pattern is universal enough to merge. Merged patterns become available to every UU deployment on their next `uu bootstrap --update`.
+
+**Content constraints:** the global KB is purely epistemic. No deployment-specific state, no personal data, no emotionally-encoded content. Only patterns that have proven useful in a local deployment and have been judged universal go in.
+
+**Why git?** Contribution, review, rollback, and history are all built-in. A bad merge can be reverted. A contribution's provenance is always visible. PRs are a well-understood review mechanism that works across organizations without requiring a shared access model.
 
 ---
 
