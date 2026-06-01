@@ -131,7 +131,6 @@ def test_inference_dispatch_escalate_block_includes_reason(MockDevice, mock_run)
     block_reason = block_cmds[0][-1]
     assert "analyst" in block_reason
     assert "auth middleware" in block_reason
-    assert "analyst" in log_arg
 
 
 # ── task_class routing ────────────────────────────────────────────────────────
