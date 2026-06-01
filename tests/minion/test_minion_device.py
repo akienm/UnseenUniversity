@@ -14,6 +14,7 @@ from devices.minion.shim import MinionShim, WorkerEnvelope, WorkerResult
 from devices.minion.tool_loop import (
     ToolLoop,
     _execute_tool,
+    _parse_advisor_signal,
     _parse_signal,
     _parse_tool_call,
 )
@@ -308,6 +309,144 @@ def test_tool_loop_accumulates_cost(tmp_path):
     assert result.input_tokens == 1500
     assert result.output_tokens == 250
     assert abs(result.cost_usd - expected_cost) < 1e-9
+
+
+# ── _parse_advisor_signal ─────────────────────────────────────────────────────
+
+
+def test_parse_advisor_signal_continue():
+    assert _parse_advisor_signal("CONTINUE") == ("CONTINUE", "")
+
+
+def test_parse_advisor_signal_reprompt():
+    sig, notes = _parse_advisor_signal(
+        "REPROMPT: Add the full file path to the description."
+    )
+    assert sig == "REPROMPT"
+    assert "full file path" in notes
+
+
+def test_parse_advisor_signal_upgrade():
+    sig, _ = _parse_advisor_signal("UPGRADE\nRequires cross-file reasoning.")
+    assert sig == "UPGRADE"
+
+
+def test_parse_advisor_signal_blocked():
+    sig, notes = _parse_advisor_signal(
+        "BLOCKED: ECONNREFUSED — no DB access in this env."
+    )
+    assert sig == "BLOCKED"
+    assert "ECONNREFUSED" in notes
+
+
+def test_parse_advisor_signal_confused():
+    sig, _ = _parse_advisor_signal("CONFUSED")
+    assert sig == "CONFUSED"
+
+
+def test_parse_advisor_signal_escalate():
+    sig, _ = _parse_advisor_signal("ESCALATE\nScope is wrong.")
+    assert sig == "ESCALATE"
+
+
+def test_parse_advisor_signal_unknown_returns_confused():
+    sig, notes = _parse_advisor_signal("I think you should try harder.")
+    assert sig == "CONFUSED"
+    assert "Unrecognised" in notes
+
+
+# ── ToolLoop round-based mode ─────────────────────────────────────────────────
+
+
+def _mock_responses(*texts):
+    """Build a mock InferenceDevice with sequential responses."""
+    inf = MagicMock()
+    inf.dispatch.side_effect = [
+        InferenceResponse(text=t, model="test/model") for t in texts
+    ]
+    return inf
+
+
+def test_tool_loop_round_transition_advisor_called(tmp_path):
+    """Round 1 exhausts → advisor called → CONTINUE → round 2 completes."""
+    tool_call = "<tool>Bash</tool><command>echo hi</command>"
+    # Round 1: 2 tool calls (no signal), then advisor: CONTINUE, Round 2: DONE
+    inf = _mock_responses(tool_call, tool_call, "CONTINUE", "DONE: finished in round 2")
+    loop = ToolLoop(inf, cwd=tmp_path, iterations_per_round=2, max_rounds=2)
+    result = loop.run(WorkerEnvelope(ticket_id="T-t", description="do it"))
+    assert result.signal == "DONE"
+    assert result.round_count == 2
+    assert result.advisor_calls == 1
+
+
+def test_tool_loop_reprompt_carried_into_round2(tmp_path):
+    """REPROMPT advisor signal → round 2 system prompt uses rewritten description."""
+    tool_call = "<tool>Bash</tool><command>echo hi</command>"
+    new_desc = "Updated: specify the exact file path: devices/foo.py"
+    inf = _mock_responses(
+        tool_call, tool_call, f"REPROMPT: {new_desc}", "DONE: done with new prompt"
+    )
+    loop = ToolLoop(inf, cwd=tmp_path, iterations_per_round=2, max_rounds=2)
+    result = loop.run(WorkerEnvelope(ticket_id="T-t", description="vague description"))
+    assert result.signal == "DONE"
+    assert result.advisor_signal == "REPROMPT"
+    # Round 2 inference request should contain the rewritten description
+    round2_req = inf.dispatch.call_args_list[3].args[0]
+    assert new_desc in round2_req.system
+
+
+def test_tool_loop_upgrade_returns_analyst_escalate(tmp_path):
+    """UPGRADE advisor signal → WorkerResult.signal == 'ESCALATE: analyst'."""
+    tool_call = "<tool>Bash</tool><command>echo hi</command>"
+    inf = _mock_responses(tool_call, tool_call, "UPGRADE\nNeeds cross-file reasoning.")
+    loop = ToolLoop(inf, cwd=tmp_path, iterations_per_round=2, max_rounds=2)
+    result = loop.run(WorkerEnvelope(ticket_id="T-t", description="design task"))
+    assert result.signal == "ESCALATE: analyst"
+    assert result.advisor_signal == "UPGRADE"
+
+
+def test_tool_loop_blocked_short_circuits_round2(tmp_path):
+    """BLOCKED advisor signal → ESCALATE: worker immediately, no round 2."""
+    tool_call = "<tool>Bash</tool><command>echo hi</command>"
+    inf = _mock_responses(tool_call, tool_call, "BLOCKED: ECONNREFUSED — no DB")
+    loop = ToolLoop(inf, cwd=tmp_path, iterations_per_round=2, max_rounds=2)
+    result = loop.run(WorkerEnvelope(ticket_id="T-t", description="db task"))
+    assert result.signal == "ESCALATE: worker"
+    assert "BLOCKED" in result.notes
+    assert result.advisor_signal == "BLOCKED"
+    assert inf.dispatch.call_count == 3  # 2 work + 1 advisor, no round 2
+
+
+def test_tool_loop_confused_escalates(tmp_path):
+    """CONFUSED advisor signal → ESCALATE: worker with CONFUSED in notes."""
+    tool_call = "<tool>Bash</tool><command>echo hi</command>"
+    inf = _mock_responses(tool_call, tool_call, "CONFUSED")
+    loop = ToolLoop(inf, cwd=tmp_path, iterations_per_round=2, max_rounds=2)
+    result = loop.run(WorkerEnvelope(ticket_id="T-t", description="mystery task"))
+    assert result.signal == "ESCALATE: worker"
+    assert "CONFUSED" in result.notes
+    assert result.advisor_calls == 1
+
+
+def test_tool_loop_context_reset_between_rounds(tmp_path):
+    """Round 2's first inference call should NOT contain round 1's full message history."""
+    tool_call = "<tool>Bash</tool><command>echo hi</command>"
+    inf = _mock_responses(tool_call, tool_call, "CONTINUE", "DONE: done")
+    loop = ToolLoop(inf, cwd=tmp_path, iterations_per_round=2, max_rounds=2)
+    loop.run(WorkerEnvelope(ticket_id="T-t", description="go"))
+    # Round 2 first call (index 3) should have a fresh messages list (just one user msg)
+    round2_req = inf.dispatch.call_args_list[3].args[0]
+    assert len(round2_req.messages) == 1
+
+
+def test_tool_loop_result_includes_round_count_and_advisor_fields(tmp_path):
+    """WorkerResult carries round_count, advisor_calls, advisor_signal."""
+    inf = _mock_responses("DONE: quick win")
+    loop = ToolLoop(inf, cwd=tmp_path, iterations_per_round=5, max_rounds=2)
+    result = loop.run(WorkerEnvelope(ticket_id="T-t", description="easy"))
+    assert result.round_count == 1
+    assert result.advisor_calls == 0
+    assert result.advisor_signal is None
 
 
 # ── MinionDevice ──────────────────────────────────────────────────────────────

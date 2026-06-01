@@ -44,6 +44,9 @@ class WorkerResult:
     input_tokens: int = 0
     output_tokens: int = 0
     cost_usd: float = 0.0
+    round_count: int = 0
+    advisor_calls: int = 0
+    advisor_signal: str | None = None
 
 
 class MinionShim(BaseShim):

@@ -215,7 +215,9 @@ class TestGrannyDaemonRunOnce:
 
         assert count == 1
         daemon._device.route_ticket.assert_not_called()
-        daemon._inference_dispatch.assert_called_once_with(tickets[0])
+        call_args = daemon._inference_dispatch.call_args
+        assert call_args.args[0] == tickets[0]
+        assert "on_complete" in call_args.kwargs
 
     def test_skips_failed_audit_with_no_escalation(self):
         daemon = self._make_daemon(audit_passed=False)

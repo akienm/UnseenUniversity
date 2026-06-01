@@ -230,9 +230,16 @@ def inference_dispatch_fn(ticket: dict, on_complete=None) -> bool:
         try:
             from unseen_university.channel import post_to_channel
 
+            advisor_part = (
+                f"|advisor_signal={worker_result.advisor_signal}"
+                if worker_result.advisor_signal
+                else ""
+            )
             post_to_channel(
                 f"MINION_RESULT|ticket={ticket_id}|signal={worker_result.signal}"
                 f"|task_class={task_class}|iterations={worker_result.iterations}"
+                f"|rounds={worker_result.round_count}|advisor_calls={worker_result.advisor_calls}"
+                f"{advisor_part}"
                 f"|cost_usd={worker_result.cost_usd:.4f}"
                 f"|tokens_in={worker_result.input_tokens}"
                 f"|tokens_out={worker_result.output_tokens}",
