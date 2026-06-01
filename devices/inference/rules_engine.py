@@ -153,3 +153,10 @@ class RulesEngine:
 
     def clear_session(self, session_id: str) -> None:
         self._session_map.pop(session_id, None)
+
+    def add_compiled_rule(self, rule: RoutingRule) -> None:
+        """Insert a compiled routing rule and re-sort by priority."""
+        self._rules = sorted(self._rules + [rule], key=lambda r: r.priority)
+        log.info(
+            "rules: compiled rule added — %s (priority=%d)", rule.label, rule.priority
+        )

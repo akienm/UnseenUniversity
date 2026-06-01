@@ -138,6 +138,7 @@ def test_daemon_record_inference_outcome_calls_tracker():
             signal="DONE",
             iterations=3,
             cost_usd=0.002,
+            advisor_signal=None,
         )
 
 

@@ -43,7 +43,7 @@ def test_registry_cheapest_in_tier():
 
 def test_registry_get_by_id():
     reg = default_registry()
-    spec = reg.get("deepseek/deepseek-v4-flash")
+    spec = reg.get("qwen/qwen2.5-coder-32b-instruct")
     assert spec is not None
     assert spec.tier == "worker"
     assert spec.source_name == "openrouter"
@@ -113,7 +113,7 @@ def test_rules_worker_routes_to_openrouter():
     decision = engine.route("worker")
     assert decision is not None
     assert decision.source is or_src
-    assert "deepseek" in decision.model.model_id
+    assert "qwen2.5-coder" in decision.model.model_id
 
 
 def test_rules_minion_routes_to_cheapest():
@@ -138,23 +138,19 @@ def test_rules_session_affinity_reuses_model():
     assert d2.session_affinity
 
 
-def test_rules_designer_routes_to_anthropic():
+def test_rules_designer_routes_to_openrouter():
     sources = SourceRegistry()
     or_src = MagicMock(spec=Source)
     or_src.name = "openrouter"
     or_src.available = True
     sources.register(or_src)
 
-    anthropic_src = MagicMock(spec=Source)
-    anthropic_src.name = "anthropic"
-    anthropic_src.available = True
-    sources.register(anthropic_src)
-
     models = default_registry()
     engine = RulesEngine(sources, models)
     decision = engine.route("designer")
     assert decision is not None
-    assert decision.source is anthropic_src
+    assert decision.source is or_src
+    assert "gemini" in decision.model.model_id
 
 
 # ── HealthMonitor ──────────────────────────────────────────────────────────────
