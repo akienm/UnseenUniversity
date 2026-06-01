@@ -56,6 +56,8 @@ def post_to_channel(
     channel: str = "shared",
     dedup_key: str | None = None,
     dedup_window_minutes: int = DEFAULT_DEDUP_WINDOW_MINUTES,
+    source_agent: str | None = None,
+    source_token: str | None = None,
 ) -> None:
     """Post a message to the Igor channel.
 
@@ -91,8 +93,18 @@ def post_to_channel(
         with conn_pg:
             with conn_pg.cursor() as c:
                 c.execute(
-                    "INSERT INTO channel_messages (ts, author, type, content, channel) VALUES (%s, %s, %s, %s, %s)",
-                    (ts, author, "message", message, channel),
+                    "INSERT INTO channel_messages"
+                    " (ts, author, type, content, channel, source_agent, source_token)"
+                    " VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                    (
+                        ts,
+                        author,
+                        "message",
+                        message,
+                        channel,
+                        source_agent,
+                        source_token,
+                    ),
                 )
         conn_pg.close()
     except Exception as _exc:

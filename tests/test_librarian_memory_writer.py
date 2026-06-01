@@ -122,6 +122,27 @@ def test_write_memory_with_code_payload():
     assert result["id"] == "no_db"  # no DB in test env
 
 
+def test_write_memory_with_source_token_accepted():
+    result = write_memory(
+        "provenance test",
+        source_agent="rack-agent",
+        source_token="tok_abc123",
+        force_fallback=True,
+    )
+    assert result["id"] == "no_db"
+
+
+def test_write_memory_with_derived_from_accepted():
+    result = write_memory(
+        "derived memory content",
+        source_agent="librarian-recall",
+        derived_from=["mem-id-a", "mem-id-b"],
+        db_url="",
+        force_fallback=True,
+    )
+    assert result["id"] == "no_db"
+
+
 def test_write_memory_stored_at_is_iso():
     result = write_memory("ts check", source_agent="ts-agent", force_fallback=True)
     from datetime import datetime

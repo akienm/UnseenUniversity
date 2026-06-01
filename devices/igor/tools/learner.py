@@ -1300,8 +1300,10 @@ def flag_top_gap(**_kwargs) -> str:
             with conn_pg:
                 with conn_pg.cursor() as c:
                     c.execute(
-                        "INSERT INTO channel_messages (ts, author, type, content, channel) VALUES (%s, %s, %s, %s, %s)",
-                        (ts, "igor", "message", message, "shared"),
+                        "INSERT INTO channel_messages"
+                        " (ts, author, type, content, channel, source_agent)"
+                        " VALUES (%s, %s, %s, %s, %s, %s)",
+                        (ts, "igor", "message", message, "shared", "igor"),
                     )
             conn_pg.close()
     except Exception as _exc:

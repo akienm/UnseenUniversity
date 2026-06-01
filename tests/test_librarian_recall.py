@@ -315,3 +315,48 @@ def test_recall_no_filter_returns_all_tiers():
     ids = [h.memory_id for h in result.hits]
     assert "id-1" in ids
     assert "id-2" in ids
+
+
+# ── T-provenance-write-attribution: derived_from in write-back ────────────────
+
+
+def test_recall_writeback_includes_derived_from():
+    """When escalation writes a synthesis back, derived_from carries hit IDs."""
+    fts_rows = [
+        ("src-id-1", "Python async patterns", json.dumps(["python"]), 0.9),
+        ("src-id-2", "asyncio event loop", json.dumps(["async"]), 0.8),
+    ]
+    conn = _make_pg_conn(fts_rows=fts_rows)
+
+    captured: dict = {}
+
+    def fake_write_memory(**kwargs):
+        captured.update(kwargs)
+        return {
+            "id": "written-id",
+            "tags": [],
+            "embedding_model": "test",
+            "source_agent": "librarian-recall",
+            "stored_at": "now",
+        }
+
+    with (
+        patch("psycopg2.connect", return_value=conn),
+        patch(
+            "devices.librarian.recall._escalate_and_synthesize",
+            return_value="synthesis text",
+        ),
+        patch("devices.librarian.recall.write_memory", fake_write_memory),
+    ):
+        result = recall(
+            "python async",
+            db_url="postgresql://fake/db",
+            escalate=True,
+            force_fallback=True,
+        )
+
+    assert "derived_from" in captured
+    assert isinstance(captured["derived_from"], list)
+    assert (
+        "src-id-1" in captured["derived_from"] or "src-id-2" in captured["derived_from"]
+    )

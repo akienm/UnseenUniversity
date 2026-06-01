@@ -333,9 +333,10 @@ def _channel_append(author: str, content: str, msg_type: str = "message"):
                 with conn:
                     with conn.cursor() as c:
                         c.execute(
-                            "INSERT INTO channel_messages (ts, author, type, content, channel) "
-                            "VALUES (%s, %s, %s, %s, %s)",
-                            (ts, author, msg_type, content, "shared"),
+                            "INSERT INTO channel_messages"
+                            " (ts, author, type, content, channel, source_agent)"
+                            " VALUES (%s, %s, %s, %s, %s, %s)",
+                            (ts, author, msg_type, content, "shared", author),
                         )
                 conn.close()
             except Exception as pg_e:

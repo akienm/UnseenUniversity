@@ -421,6 +421,7 @@ def recall(
                 write_memory(
                     content=f"recall synthesis: {query}\n\n{synthesis}",
                     source_agent="librarian-recall",
+                    derived_from=[h.memory_id for h in hits],
                     extra_tags=["recall-synthesis", "cached"],
                     db_url=url,
                 )
