@@ -3,8 +3,8 @@
 **date:** 2026-05-28
 **status:** open
 **spawned_tickets:** T-reader-uri-resolver, T-reader-summary-mode, T-reader-node-mode, T-reader-equivalence-test, T-consequence-reader-device
-**goal_link:** none: architectural simplification — move sharable reading pipeline out of Igor
-**concept_links:** none
+**goal_link:** G-factory-of-factories
+**concept_links:** C-prescient-agents-pa20
 
 ## Decision narrative
 Build a `ReaderDevice` rack device that accepts any URI (`https://`, `calibre://`, `file://`, `blob://`) through scheme-specific handlers, caches fetched content as a content-addressed local blob (~/.unseen_university/blobs/), and routes to two output modes: `format=summary` (exec/detail/chunks for Librarian/human consumption) and `format=nodes` (extracted memory nodes with provenance for any learning tree to ingest). Externalizes the reading pipeline as an isolatable, workbench-testable rack component, consolidating `SummarizerDevice` and Igor's internal `reading_tool.py`/`reading_engine.py`/`book_learner.py`. A URL is a URL whether it's https://, calibre://, or file:// — uniform fetch/cache/chunk pipeline, different output shape.
@@ -16,10 +16,10 @@ Running the ReaderDevice in either output mode on the same input produces semant
 Same URI → summary mode + node mode → embed both outputs → cosine similarity > 0.7 (Scraps hash-fallback embedding, CI-safe).
 
 ## Goal Link
-none: architectural simplification — moves sharable pieces out of Igor toward the factory model.
+G-factory-of-factories — externalizing reading into an isolatable device pushes toward the factory model where any component can be built/replaced independently
 
 ## Concept Links
-none (the assumption that externalizing for multiple agents is useful is itself the hypothesis being tested)
+C-prescient-agents-pa20 — the ReaderDevice serves the Observe layer of PA2.0 by providing uniform signal ingestion (any URI → structured nodes/summaries)
 
 ## Alternatives considered
 - Keep SummarizerDevice + Igor reading split: more debt, no generalization, parallel implementations diverge
