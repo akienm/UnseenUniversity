@@ -346,6 +346,9 @@ class GrannyDaemon:
                 active,
                 MAX_CONCURRENT_CC,
             )
+            self._post_channel(
+                f"GRANNY_THROTTLED|active={active}|max={MAX_CONCURRENT_CC}|reason=cc_cap"
+            )
             return 0
 
         tickets = _load_sprint_tickets()

@@ -499,3 +499,71 @@ class TestRunOnceRateLimit:
         ):
             count = daemon.run_once()
         assert count == 1
+
+
+class TestConcurrencyGate:
+    """run_once() must not dispatch when cc_max_concurrent sessions are already active,
+    and must post GRANNY_THROTTLED to the channel so the cap is visible in the feed."""
+
+    def test_at_cap_returns_zero(self):
+        daemon = _make_bare_daemon()
+        with (
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(True, None, 0.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=1),
+            patch("devices.granny.daemon.MAX_CONCURRENT_CC", 1),
+        ):
+            count = daemon.run_once()
+        assert count == 0
+
+    def test_at_cap_posts_throttled_to_channel(self):
+        daemon = _make_bare_daemon()
+        posted = []
+        daemon._post_channel = lambda msg: posted.append(msg)
+        with (
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(True, None, 0.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=1),
+            patch("devices.granny.daemon.MAX_CONCURRENT_CC", 1),
+        ):
+            daemon.run_once()
+        assert any(
+            "GRANNY_THROTTLED" in m for m in posted
+        ), f"expected GRANNY_THROTTLED in channel posts, got: {posted}"
+
+    def test_below_cap_dispatches_normally(self):
+        daemon = _make_bare_daemon()
+        tickets = [_ticket("T-a")]
+        with (
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(True, None, 0.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
+            patch("devices.granny.daemon.MAX_CONCURRENT_CC", 1),
+            patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
+            patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+        ):
+            count = daemon.run_once()
+        assert count == 1
+
+    def test_mid_cycle_cap_stops_after_first_dispatch(self):
+        """With MAX_CONCURRENT_CC=1 and 0 active sessions, only 1 of 2 tickets dispatches."""
+        daemon = _make_bare_daemon()
+        tickets = [_ticket("T-a"), _ticket("T-b")]
+        with (
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(True, None, 0.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
+            patch("devices.granny.daemon.MAX_CONCURRENT_CC", 1),
+            patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
+            patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+        ):
+            count = daemon.run_once()
+        assert count == 1
