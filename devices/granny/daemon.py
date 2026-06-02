@@ -54,6 +54,8 @@ _UC_BASE = os.environ.get("IGOR_UC_BASE", f"http://localhost:{_UC_PORT}")
 
 _GRANNY_HOME = Path(os.environ.get("GRANNY_HOME", str(Path.home() / ".granny")))
 _GRANNY_PID_FILE = _GRANNY_HOME / "daemon.pid"
+_DISPATCHED_CYCLE_FILE = _GRANNY_HOME / "dispatched_cycle.json"
+_STATS_CHANNEL_POST = "GRANNY_STATS"
 
 
 def daemon_pid_file() -> Path:
@@ -583,7 +585,7 @@ class GrannyDaemon:
         try:
             from devices.scraps.jobs.orphan_watchdog import OrphanWatchdog
 
-            reset = OrphanWatchdog().run()
+            reset = OrphanWatchdog(p90_fn=self._pattern_tracker.p90_minutes).run()
             if reset:
                 log.info(
                     "GrannyDaemon: orphan watchdog reset %d ticket(s): %s",

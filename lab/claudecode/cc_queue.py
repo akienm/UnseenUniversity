@@ -217,15 +217,18 @@ def set_status_in_progress(ticket_id: str) -> bool:
             """
             UPDATE clan.memories
             SET metadata = jsonb_set(
-                    jsonb_set(metadata, '{status}', '"in_progress"'),
-                    '{claimed_at}', to_jsonb(%s::text)
+                    jsonb_set(
+                        jsonb_set(metadata, '{status}', '"in_progress"'),
+                        '{claimed_at}', to_jsonb(%s::text)
+                    ),
+                    '{dispatched_at}', to_jsonb(%s::text)
                 ),
                 updated_at = %s
             WHERE id = %s
               AND metadata->>'status' = 'sprint'
               AND parent_id = %s
             """,
-            (now, now, ticket_id, TICKETS_ROOT_ID),
+            (now, now, now, ticket_id, TICKETS_ROOT_ID),
         )
         updated = cur.rowcount > 0
         conn.commit()

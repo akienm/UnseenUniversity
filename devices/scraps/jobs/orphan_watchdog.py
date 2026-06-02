@@ -48,10 +48,12 @@ class OrphanWatchdog:
         self,
         timeout_overrides: Optional[dict[str, int]] = None,
         db_url: Optional[str] = None,
+        p90_fn: Optional[callable] = None,
     ) -> None:
         self._timeouts = dict(_TIMEOUT_MINUTES)
         if timeout_overrides:
             self._timeouts.update(timeout_overrides)
+        self._p90_fn = p90_fn  # callable(size) -> float|None
         self._db_url = db_url or os.environ.get(
             "IGOR_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
@@ -91,6 +93,18 @@ class OrphanWatchdog:
 
     def _timeout_for(self, ticket: dict) -> int:
         size = ticket.get("size", "")
+        if self._p90_fn is not None:
+            try:
+                p90 = self._p90_fn(size)
+                if p90 is not None:
+                    calibrated = int(p90 * 3)
+                    log.debug(
+                        "orphan_watchdog: GRANNY_TIMEOUT_CALIBRATED|size=%s|p90=%.1fm|timeout=%dm",
+                        size, p90, calibrated,
+                    )
+                    return calibrated
+            except Exception as e:
+                log.debug("orphan_watchdog: p90_fn failed for size=%s: %s", size, e)
         return self._timeouts.get(size, _DEFAULT_TIMEOUT_MINUTES)
 
     def _reset_ticket(self, ticket_id: str) -> bool:

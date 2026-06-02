@@ -54,6 +54,7 @@ class PatternTracker:
         iterations: int = 0,
         cost_usd: float = 0.0,
         advisor_signal: str | None = None,
+        wall_minutes: float | None = None,
     ) -> None:
         """Append one outcome to the corpus and update in-memory aggregates."""
         entry = {
@@ -68,6 +69,8 @@ class PatternTracker:
         }
         if advisor_signal:
             entry["advisor_signal"] = advisor_signal
+        if wall_minutes is not None:
+            entry["wall_minutes"] = round(wall_minutes, 2)
 
         with self._lock:
             try:
@@ -127,6 +130,41 @@ class PatternTracker:
                 )
             patterns.sort(key=lambda p: p["escalate_pct"], reverse=True)
             return {"total_dispatches": self._dispatch_count, "patterns": patterns}
+
+    def p90_minutes(self, size: str, min_samples: int = 10) -> float | None:
+        """Return 90th-percentile wall_minutes for DONE tickets of this size class.
+
+        Returns None when fewer than min_samples DONE outcomes with wall_minutes
+        are available — caller should fall back to the fixed default timeout.
+        """
+        samples: list[float] = []
+        try:
+            if not self._path.exists():
+                return None
+            with self._path.open(encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        rec = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if (
+                        rec.get("size") == size
+                        and rec.get("signal") == "DONE"
+                        and rec.get("wall_minutes") is not None
+                    ):
+                        samples.append(float(rec["wall_minutes"]))
+        except OSError:
+            return None
+
+        if len(samples) < min_samples:
+            return None
+
+        samples.sort()
+        idx = int(len(samples) * 0.9)
+        return samples[min(idx, len(samples) - 1)]
 
     def should_report(self) -> bool:
         with self._lock:
