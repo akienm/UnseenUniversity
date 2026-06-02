@@ -29,8 +29,7 @@ log = logging.getLogger(__name__)
 
 # Repo root — where CC must run so it picks up CLAUDE.md and project context.
 _UU_ROOT = Path(__file__).parent.parent.parent.resolve()
-# Always use UU's own cc_queue.py — never inherited CC_WORKFLOW_TOOLS which
-# may point to the old TheIgors checkout.
+# Always use UU's own cc_queue.py — never inherited CC_WORKFLOW_TOOLS.
 _CC_QUEUE = _UU_ROOT / "lab" / "claudecode" / "cc_queue.py"
 _PYTHON = sys.executable  # same venv interpreter that started the daemon
 
