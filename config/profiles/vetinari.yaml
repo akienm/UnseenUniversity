@@ -1,0 +1,3 @@
+device: vetinari
+owner_id: comms://vetinari/
+escalation_threshold: 0.5

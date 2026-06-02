@@ -700,7 +700,7 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
     ),
     # T-memory-palace-schema: navigable tree of signposts — shared between Igor and CC.
     # Nodes are addresses (pointers to where information lives), not copies of the information.
-    # Tree structure via path (e.g. 'theigors/igor/cognition') and parent_path.
+    # Tree structure via path (e.g. 'unseenuniversity/igor/cognition') and parent_path.
     (
         "m042_memory_palace",
         "CREATE TABLE IF NOT EXISTS memory_palace ("

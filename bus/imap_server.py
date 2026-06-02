@@ -198,9 +198,12 @@ class _StubServer:
             asyncio.set_event_loop(self._loop)
 
             async def _serve():
+                # Use port 0 so the OS assigns a free port — avoids collisions
+                # with the live IMAP server when running tests alongside production.
                 self._server = await asyncio.start_server(
-                    _stub_handle_client, self.host, self.port
+                    _stub_handle_client, self.host, 0
                 )
+                self.port = self._server.sockets[0].getsockname()[1]
                 ready.set()
                 async with self._server:
                     await self._server.serve_forever()
@@ -318,6 +321,7 @@ class IMAPServer:
         if _TEST_MODE:
             self._stub = _StubServer(self.host, self.port)
             self._stub.start()
+            self.port = self._stub.port  # actual port after OS assignment
         # In production Dovecot is a system service — we just connect to it.
         self._client = _DovecotClient(self.host, self.port)
         # Ensure shared mailbox exists

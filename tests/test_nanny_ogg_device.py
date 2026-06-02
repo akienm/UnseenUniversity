@@ -42,9 +42,9 @@ def test_default_schedule_loaded():
     assert "dreaming_daily" in ids
 
 
-def test_default_schedule_has_four_entries():
+def test_default_schedule_has_five_entries():
     nanny = NannyOggDevice()
-    assert len(nanny.list_entries()) == 4
+    assert len(nanny.list_entries()) == 5
 
 
 # ── who_am_i / capabilities ────────────────────────────────────────────────────
@@ -469,7 +469,7 @@ def test_self_test_reports_entry_count():
     nanny = NannyOggDevice()
     result = nanny.self_test()
     assert result["passed"] is True
-    assert "4" in result["details"]
+    assert "5" in result["details"]
 
 
 # ── start / stop ───────────────────────────────────────────────────────────────

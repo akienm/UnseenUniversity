@@ -19,7 +19,7 @@ workers:
       time_window: '21:00-06:00'
       away_semaphore: CC.0.available.true
       usage_max_pct: 70
-      max_concurrent: 1
+      # max_concurrent removed — now derived from cc_concurrency_mode in cc.yaml
   DickSimnel.0:
     dispatch: channel
     address: comms://dicksimnel

@@ -11,7 +11,7 @@ Usage:
     which DB path it opened. File the migration ticket for that caller.
 
 CLEANUP: Remove the wiring from main.py and delete this file once the
-offending caller is identified (theigors/rules/safeguards — debug
+offending caller is identified (unseenuniversity/rules/safeguards — debug
 instrumentation must not stay in prod). T-sqlite-config-hunt.
 """
 

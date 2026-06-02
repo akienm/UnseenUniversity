@@ -242,12 +242,27 @@ class InferenceDevice(BaseDevice):
     def dispatch(self, request: InferenceRequest) -> InferenceResponse:
         """Route and dispatch an inference request via the mini-rack rules engine.
 
+        Dispatch order:
+          1. Pattern intercept (Level 2) — check archivist.knowledge_patterns first.
+             If a compiled habit matches, return cached response at $0.
+          2. Rules engine → Source + Model selection (cost cascade)
+          3. Cloud call
+
         task_class on the request determines which Source + Model is selected.
         Falls back to legacy _mode behaviour if rules engine yields no decision.
         Raises RuntimeError on API error or if the device is blocked.
         """
         if self._blocked:
             raise RuntimeError(f"InferenceDevice blocked: {self._block_reason}")
+
+        # Level 2: pattern intercept — $0 if matched
+        try:
+            from devices.inference.pattern_intercept import try_intercept
+            cached = try_intercept(request)
+            if cached is not None:
+                return cached
+        except Exception as exc:
+            log.debug("dispatch: pattern intercept error (non-fatal): %s", exc)
 
         from devices.inference.budget_ledger import check_session_limit, debit
 
