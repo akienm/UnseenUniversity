@@ -21,5 +21,5 @@ python run "Decided to defer scraps migration until after palace merge"
 ```
 
 **Env vars** (set by superclaude / .env):
-- `THEIGORS_HOME` — TheIgors repo root (default: `~/TheIgors`)
-- `IGOR_HOME` — runtime dir (default: `~/.TheIgors`)
+- `THEIGORS_HOME` — repo root (default: `~/dev/src/UnseenUniversity`)
+- `IGOR_HOME` — runtime dir (default: `~/.unseen_university`)

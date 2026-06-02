@@ -142,7 +142,7 @@ psql $ADC_PG -tAc \
    WHERE path LIKE 'palace.decisions.%'
    ORDER BY updated_at DESC
    LIMIT 10" 2>/dev/null \
-  || tail -10 ~/TheIgors/lab/design_docs_for_igor/decisions_log.dsb | sed 's/|/ — /g'
+  || tail -10 ~/dev/src/UnseenUniversity/lab/design_docs_for_igor/decisions_log.dsb | sed 's/|/ — /g'
 ```
 
 ## Step 4 — Channel (last 5)

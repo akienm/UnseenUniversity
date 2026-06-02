@@ -1,6 +1,6 @@
 ---
 name: day-close-audit
-description: Debris-and-hygiene check for TheIgors, run during /day-close. MANDATORY part of day-close — never skip. Checks for debris (temp files, leaked runtime state, dead code), tests, file placement, code smells, registry coherence, inertia check, thread hygiene, log sizes, OR burn rate, DB schema, duplication, habit health, TWM coverage, dependency hygiene, credential scan, and simplification review. Fix small issues now, ticket anything bigger.
+description: Debris-and-hygiene check for UU, run during /day-close. MANDATORY part of day-close — never skip. Checks for debris (temp files, leaked runtime state, dead code), tests, file placement, code smells, registry coherence, inertia check, thread hygiene, log sizes, OR burn rate, DB schema, duplication, habit health, TWM coverage, dependency hygiene, credential scan, and simplification review. Fix small issues now, ticket anything bigger.
 model: haiku
 model_exception: Step 17 (simplification review) requires Sonnet — escalate that step inline.
 ---
@@ -17,7 +17,7 @@ Ticket anything medium/large. After fixes: /commit, then continue day-close.
 ## Step 1 — Tests
 
 ```bash
-cd ~/TheIgors && source venv/bin/activate && python -m pytest tests/ -x -q 2>&1 | tail -20
+cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python -m pytest tests/ -x -q 2>&1 | tail -20
 ```
 
 If tests fail: **STOP**. Fix before proceeding. Offer to run `/test-fix`.
@@ -37,7 +37,7 @@ Note any misplaced files. Small fixes now; large restructures → ticket.
 ## Step 3 — Code smell scan
 
 ```bash
-cd ~/TheIgors && source venv/bin/activate && python3 - << 'EOF'
+cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python3 - << 'EOF'
 import ast, pathlib
 
 issues = []
@@ -69,7 +69,7 @@ For each finding: is there a log call in the except block? If not → add one no
 ## Step 4 — Registry coherence
 
 ```bash
-cd ~/TheIgors && source venv/bin/activate && python3 - << 'EOF'
+cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python3 - << 'EOF'
 import sys, os
 os.environ.setdefault("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
 )
@@ -91,7 +91,7 @@ Check: registered tools whose `fn` no longer exists? Tool functions in files NOT
 ## Step 5 — Inertia check
 
 ```bash
-cd ~/TheIgors && git log --oneline --name-only $(git log --format=%H --grep='audit' -1 2>/dev/null || git rev-list --max-parents=0 HEAD)..HEAD \
+cd ~/dev/src/UnseenUniversity && git log --oneline --name-only $(git log --format=%H --grep='audit' -1 2>/dev/null || git rev-list --max-parents=0 HEAD)..HEAD \
   | grep -E "brainstem/|memory/models\.py|cognition/reasoners/base\.py" | sort -u
 ```
 
@@ -102,7 +102,7 @@ HIGH-inertia files without a corresponding Dxxx decision → findings gap.
 ## Step 6 — Thread hygiene
 
 ```bash
-grep -rn "ThreadPoolExecutor" ~/TheIgors/wild_igor/igor/ 2>/dev/null || echo "None found — OK"
+grep -rn "ThreadPoolExecutor" ~/dev/src/UnseenUniversity/devices/igor/ 2>/dev/null || echo "None found — OK"
 ```
 
 Verify each usage has daemon=True or uses a queue pattern.
@@ -122,7 +122,7 @@ Any file > 10MB → rotate or truncate.
 ## Step 8 — OR burn rate
 
 ```bash
-cd ~/TheIgors && source venv/bin/activate && python3 - << 'EOF'
+cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python3 - << 'EOF'
 import os, sys
 sys.path.insert(0, ".")
 os.environ.setdefault("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
@@ -138,7 +138,7 @@ EOF
 ## Step 9 — DB schema spot-check
 
 ```bash
-cd ~/TheIgors && source venv/bin/activate && python3 - << 'EOF'
+cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python3 - << 'EOF'
 import os
 os.environ.setdefault("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
 import psycopg2
@@ -164,7 +164,7 @@ EOF
 ## Step 10 — Dead code / orphan detection
 
 ```bash
-cd ~/TheIgors && python3 - << 'EOF'
+cd ~/dev/src/UnseenUniversity && python3 - << 'EOF'
 import pathlib, re
 
 src = pathlib.Path("wild_igor/igor")
@@ -198,7 +198,7 @@ Flag files that nothing imports — candidates for removal (discuss with Akien f
 ## Step 11 — Duplication scan
 
 ```bash
-cd ~/TheIgors && python3 - << 'EOF'
+cd ~/dev/src/UnseenUniversity && python3 - << 'EOF'
 import pathlib, ast, hashlib, collections
 
 src = pathlib.Path("wild_igor/igor")
@@ -240,7 +240,7 @@ NOTE: code_ref dispatch resolves `code_ref.split(":")[-1]` → tool registry loo
 Check against registry, NOT source text (string-search produces false positives).
 
 ```bash
-cd ~/TheIgors && source venv/bin/activate && python3 - << 'EOF'
+cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python3 - << 'EOF'
 import os, sys, json
 sys.path.insert(0, ".")
 os.environ.setdefault("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
@@ -285,11 +285,11 @@ Dead `code_ref` habits → update or remove from DB.
 ## Step 13 — TWM push coverage
 
 ```bash
-grep -rn "twm_push\|TWM_PUSH\|PRIM_TWM_PUSH" ~/TheIgors/wild_igor/igor/ 2>/dev/null | grep -v "__pycache__" | grep -v "test_"
+grep -rn "twm_push\|TWM_PUSH\|PRIM_TWM_PUSH" ~/dev/src/UnseenUniversity/devices/igor/ 2>/dev/null | grep -v "__pycache__" | grep -v "test_"
 echo "---"
 # Flag significant cognitive events missing twm_push:
 grep -rn "def _run_turn\|habit_fired\|ne_cycle\|consolidation_pass\|memory_deposit" \
-    ~/TheIgors/wild_igor/igor/ --include="*.py" -l 2>/dev/null
+    ~/dev/src/UnseenUniversity/devices/igor/ --include="*.py" -l 2>/dev/null
 ```
 
 Review: do significant state changes (habit fire, NE completion, memory deposit) push to TWM?
@@ -300,7 +300,7 @@ If not → flag as TWM coverage gap (invisible to cognition).
 ## Step 14 — Dependency hygiene
 
 ```bash
-cd ~/TheIgors && python3 - << 'EOF'
+cd ~/dev/src/UnseenUniversity && python3 - << 'EOF'
 import pathlib, re, ast
 
 # Packages declared in requirements.txt
@@ -350,7 +350,7 @@ EOF
 ## Step 15 — Credential / hardcoded path scan
 
 ```bash
-cd ~/TheIgors && grep -rn \
+cd ~/dev/src/UnseenUniversity && grep -rn \
     -e "choose_a_password" \
     -e "api_key\s*=\s*['\"][a-zA-Z0-9_-]\{20,\}" \
     -e "password\s*=\s*['\"][^'\"]\{8,\}" \
@@ -368,7 +368,7 @@ Hardcoded credentials → must move to `.env`.
 Scan for partial implementations missing follow-up tickets:
 
 ```bash
-cd ~/TheIgors && grep -rn "# POC:\|# TODO:\|# LIMITATION:\|# HACK:" wild_igor/ lab/tools/ lab/claudecode/ --include="*.py" | grep -v __pycache__ | head -30
+cd ~/dev/src/UnseenUniversity && grep -rn "# POC:\|# TODO:\|# LIMITATION:\|# HACK:" wild_igor/ lab/tools/ lab/claudecode/ --include="*.py" | grep -v __pycache__ | head -30
 ```
 
 For each hit: verify there's a matching ticket in cc_queue. If not, flag it.
@@ -391,7 +391,7 @@ For each file modified since the last audit, ask:
 - Are there >3 similar blocks that should be one abstraction?
 
 ```bash
-cd ~/TheIgors && git diff --name-only $(git log --format=%H -1 --grep="audit" 2>/dev/null || git rev-list --max-parents=0 HEAD)..HEAD \
+cd ~/dev/src/UnseenUniversity && git diff --name-only $(git log --format=%H -1 --grep="audit" 2>/dev/null || git rev-list --max-parents=0 HEAD)..HEAD \
   | grep "\.py$" | grep "wild_igor/"
 ```
 
@@ -408,7 +408,7 @@ Run any checks registered via `audit_add.py`. These are checks added at the mome
 - `primary-classes-must-inherit-igorbase` — D125 enforcement
 
 ```bash
-cd ~/TheIgors && python3 lab/claudecode/audit_runner.py --drain 2>&1
+cd ~/dev/src/UnseenUniversity && python3 lab/claudecode/audit_runner.py --drain 2>&1
 ```
 
 The `--drain` flag moves any `next_sweep` entries to history after running so they don't repeat. Add findings to the report alongside the static-step findings. Severity: HIGH = fix or ticket immediately, MED = ticket if not trivial, LOW = note in findings.
@@ -431,7 +431,7 @@ Kinds: `grep` (regex across wild_igor/), `sql` (psql against home DB), `shell` (
 Verify that enabled switches (IGOR_*=true in igor.switches.cfg) have end-to-end wiring — no stubs, no placeholders, no NotImplementedError in the gated code path. Born from two incidents (2026-04-16b) where flipping switches without verifying output caused Igor to become incoherent and then crash.
 
 ```bash
-cd ~/TheIgors && python3 lab/claudecode/wiring_check.py
+cd ~/dev/src/UnseenUniversity && python3 lab/claudecode/wiring_check.py
 ```
 
 Exit code 0 = all OK. Any UNREFERENCED or STUB_NEAR_GATE findings → ticket or fix before the switch stays enabled.
@@ -442,14 +442,14 @@ Exit code 0 = all OK. Any UNREFERENCED or STUB_NEAR_GATE findings → ticket or 
 
 ## Step 18.6 — Capability map drift check
 
-`~/TheIgors/docs/capability_map.md` is the "what's built today vs planned vs broken" doc. It rots fast. When it's >7 days old, the audit always re-verifies §1 (live), §2 (gated off), and §4 (known broken) against:
+`~/dev/src/UnseenUniversity/docs/capability_map.md` is the "what's built today vs planned vs broken" doc. It rots fast. When it's >7 days old, the audit always re-verifies §1 (live), §2 (gated off), and §4 (known broken) against:
 - Palace `theigors/subsystem_index/*` for live subsystems
 - `~/.unseen_university/Igor-wild-0001/igor.switches.cfg` for gate state
 - `cc_queue.py list` for in_progress / pending / awaiting_approval status
 - Latest `pytest` summary for known failures
 
 ```bash
-AGE_DAYS=$(( ( $(date +%s) - $(stat -c %Y ~/TheIgors/docs/capability_map.md 2>/dev/null || date +%s) ) / 86400 ))
+AGE_DAYS=$(( ( $(date +%s) - $(stat -c %Y ~/dev/src/UnseenUniversity/docs/capability_map.md 2>/dev/null || date +%s) ) / 86400 ))
 echo "capability_map.md age: ${AGE_DAYS} days"
 if [ "$AGE_DAYS" -gt 7 ]; then
   echo "⚠ capability_map.md is stale — re-verify §1, §2, §4 claims and update Last-updated date."

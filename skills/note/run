@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 IGOR_HOME     = Path(os.environ.get("IGOR_HOME",     Path.home() / ".unseen_university"))
-THEIGORS_HOME = Path(os.environ.get("THEIGORS_HOME", Path.home() / "TheIgors"))
+UU_ROOT = Path(os.environ.get("UU_ROOT", Path.home() / "dev/src/UnseenUniversity"))
 
 
 def main() -> None:

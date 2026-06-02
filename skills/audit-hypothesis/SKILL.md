@@ -27,7 +27,7 @@ Called automatically by /decided after hypothesis extraction. Also standalone:
 
 For standalone on a filed decision:
 ```bash
-cat ~/TheIgors/lab/design_docs/decisions/<D-id>.md | grep -A 10 "## Hypothesis"
+cat ~/dev/src/UnseenUniversity/lab/design_docs/decisions/<D-id>.md | grep -A 10 "## Hypothesis"
 ```
 
 ---

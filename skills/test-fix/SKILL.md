@@ -1,6 +1,6 @@
 ---
 name: test-fix
-description: Bounded test-run-and-fix loop for TheIgors project. Runs tests, fixes failures, retries up to 3 times, then escalates to human. Use when Akien says /test-fix, "run and fix tests", "make the tests pass", or after implementation work completes.
+description: Bounded test-run-and-fix loop for this project. Runs tests, fixes failures, retries up to 3 times, then escalates to human. Use when Akien says /test-fix, "run and fix tests", "make the tests pass", or after implementation work completes.
 model: sonnet
 ---
 
@@ -15,7 +15,7 @@ Never brute-force. Never retry the same fix twice. Diagnose before acting.
 ## Pass 1
 
 ```bash
-cd ~/TheIgors && source venv/bin/activate && python -m pytest tests/ -x -q 2>&1 | tail -30
+cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python -m pytest tests/ -x -q 2>&1 | tail -30
 ```
 
 If all pass: done. Report "Tests pass. Ready for `/commit`."

@@ -26,7 +26,7 @@ scope sets which turns feed each decision.
 ```
 python -c "
 from datetime import datetime; from pathlib import Path; import os, re, sys
-slate = Path(os.environ.get('IGOR_HOME', Path.home()/'.TheIgors'))/'claudecode'/(datetime.now().strftime('%Y%m%d')+'.slate.txt')
+slate = Path(os.environ.get('IGOR_HOME', Path.home()/'.unseen_university'))/'claudecode'/(datetime.now().strftime('%Y%m%d')+'.slate.txt')
 if slate.exists():
     lines = [l for l in slate.read_text(encoding='utf-8').splitlines() if re.match(r'^(- D-|## In-flight|## Notes|DESIGN_START)', l)]
     print('\n'.join(lines[-20:]))
@@ -197,7 +197,7 @@ dump; the file becomes a generated echo once the palace migration ships):
 python -c "
 from datetime import datetime; from pathlib import Path; import os
 ts = datetime.now().isoformat(timespec='seconds')
-f = Path(os.environ.get('THEIGORS_HOME', Path.home()/'TheIgors'))/'lab'/'design_docs_for_igor'/'decisions_log.dsb'
+f = Path(os.environ.get("UU_ROOT", str(Path.home()/"dev/src/UnseenUniversity"))))/'lab'/'design_docs_for_igor'/'decisions_log.dsb'
 f.parent.mkdir(parents=True, exist_ok=True)
 f.open('a',encoding='utf-8').write(ts+' | D-... | <summary> | tickets: T-x, T-y, T-z\n')
 "
@@ -208,7 +208,7 @@ f.open('a',encoding='utf-8').write(ts+' | D-... | <summary> | tickets: T-x, T-y,
 ```
 python -c "
 from datetime import datetime; from pathlib import Path; import os
-slate = Path(os.environ.get('IGOR_HOME', Path.home()/'.TheIgors'))/'claudecode'/(datetime.now().strftime('%Y%m%d')+'.slate.txt')
+slate = Path(os.environ.get('IGOR_HOME', Path.home()/'.unseen_university'))/'claudecode'/(datetime.now().strftime('%Y%m%d')+'.slate.txt')
 slate.open('a',encoding='utf-8').write('- D-...: <summary> — T-x, T-y, T-z\n')
 "
 ```
@@ -218,7 +218,7 @@ slate.open('a',encoding='utf-8').write('- D-...: <summary> — T-x, T-y, T-z\n')
 ```
 python -c "
 from pathlib import Path; import os
-f = Path(os.environ.get('IGOR_HOME', Path.home()/'.TheIgors'))/'cc_channel'/'design_mode.json'
+f = Path(os.environ.get('IGOR_HOME', Path.home()/'.unseen_university'))/'cc_channel'/'design_mode.json'
 f.unlink(missing_ok=True)
 "
 ```

@@ -32,7 +32,7 @@ knowing if the system is actually improving.
 ### 1. Read the hypothesis
 
 ```bash
-DECISION_FILE=~/TheIgors/lab/design_docs/decisions/<D-id>.md
+DECISION_FILE=~/dev/src/UnseenUniversity/lab/design_docs/decisions/<D-id>.md
 grep -A 20 "## Hypothesis" "$DECISION_FILE"
 ```
 
@@ -83,7 +83,7 @@ Compare the hypothesis claim against the evidence. Choose one:
 Append to the decision's `.md` file:
 
 ```bash
-cat >> ~/TheIgors/lab/design_docs/decisions/<D-id>.md << EOF
+cat >> ~/dev/src/UnseenUniversity/lab/design_docs/decisions/<D-id>.md << EOF
 
 ## Outcome — $(date +%Y-%m-%d)
 **Verdict:** <confirmed / partially_confirmed / falsified / too_early / inconclusive>

@@ -1,6 +1,6 @@
 ---
 name: export-chat
-description: Dump the current CC session transcript to /home/akien/TheIgors/claude_chat_logs/YYYY-MM-DD.md for recovery if chat scrolls off the top. Run on demand; also supports --all for bulk backfill and --session <id> for a specific one.
+description: Dump the current CC session transcript to ~/dev/src/UnseenUniversity/claude_chat_logs/YYYY-MM-DD.md for recovery if chat scrolls off the top. Run on demand; also supports --all for bulk backfill and --session <id> for a specific one.
 model: haiku
 ---
 
@@ -13,15 +13,15 @@ Recovery snapshot. If something scrolls off the top of the chat, `/export-chat` 
 Run the helper script (default target is the most-recently-modified transcript — i.e. the current session):
 
 ```bash
-python3 /home/akien/TheIgors/lab/claudecode/export_chat.py
+python3 ~/dev/src/UnseenUniversity/lab/claudecode/export_chat.py
 ```
 
-Output: `/home/akien/TheIgors/claude_chat_logs/YYYY-MM-DD.md`. Overwrites today's file; appends with a separator if the same day already has content from a different session.
+Output: `~/dev/src/UnseenUniversity/claude_chat_logs/YYYY-MM-DD.md`. Overwrites today's file; appends with a separator if the same day already has content from a different session.
 
 ## Flags
 
 - `--session <session-id>` — render a specific session by id (the UUID filename minus `.jsonl`).
-- `--all` — render every transcript in `~/.claude/projects/-home-akien-TheIgors/*.jsonl`, each to its corresponding day's file. Idempotent — running multiple times just appends separators.
+- `--all` — render every transcript in `~/.claude/projects/-home-akien-dev-src-UnseenUniversity/*.jsonl`, each to its corresponding day's file. Idempotent — running multiple times just appends separators.
 - `--dry-run` — print what would be written, don't touch disk.
 
 ## What it renders
@@ -48,6 +48,6 @@ Output: `/home/akien/TheIgors/claude_chat_logs/YYYY-MM-DD.md`. Overwrites today'
 
 ## Source location
 
-- Transcripts: `~/.claude/projects/-home-akien-TheIgors/<session-id>.jsonl`
-- Script:      `/home/akien/TheIgors/lab/claudecode/export_chat.py`
-- Output:      `/home/akien/TheIgors/claude_chat_logs/YYYY-MM-DD.md`
+- Transcripts: `~/.claude/projects/-home-akien-dev-src-UnseenUniversity/<session-id>.jsonl`
+- Script:      `~/dev/src/UnseenUniversity/lab/claudecode/export_chat.py`
+- Output:      `~/dev/src/UnseenUniversity/claude_chat_logs/YYYY-MM-DD.md`

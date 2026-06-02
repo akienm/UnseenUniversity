@@ -100,7 +100,7 @@ practice — see `theigors/rules/collaboration`."
 days. Read the recent decisions log:
 
 ```bash
-tail -30 ~/TheIgors/lab/design_docs_for_igor/decisions_log.dsb
+tail -30 ~/dev/src/UnseenUniversity/lab/design_docs_for_igor/decisions_log.dsb
 ```
 
 **Fail when:** the new decision contradicts or undoes a recent one without
@@ -194,7 +194,7 @@ explicitly overridden inline).
 
 When called from `/decided`: the decision summary + scope are passed in
 the parent context. When called standalone with `<decision-id>`: read the
-decision file at `~/TheIgors/lab/design_docs/decisions/<decision-id>.md`
+decision file at `~/dev/src/UnseenUniversity/lab/design_docs/decisions/<decision-id>.md`
 plus the corresponding window of `decisions_log.dsb`.
 
 ### 2. Read prior watch-for notes

@@ -16,7 +16,7 @@ For commits outside of /sprint (one-off fixes, doc edits).
    ```
    If expired: STOP, tell Akien.
 
-2. **Test** (from TheIgors repo root):
+2. **Test** (from repo root):
    ```
    uv run pytest tests/ -x -q
    ```
