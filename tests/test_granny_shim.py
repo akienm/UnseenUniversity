@@ -107,9 +107,9 @@ class TestGrannyChannelMessages:
         g.intake_ticket(
             {
                 "id": "T-sec",
-                "title": "security change",
+                "title": "cross-device interface change",
                 "size": "M",
-                "tags": ["Security"],
+                "tags": ["CrossDevice"],
                 "description": "**Affected files:** x\n**Scope boundary:** y\n**Completion criteria:** z",
             }
         )

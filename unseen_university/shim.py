@@ -215,7 +215,31 @@ class BaseShim(ABC):
         UU_SHIM_TRACE_DIR if set). Log write is fire-and-forget — a failure
         never blocks the tool call.
         """
-        if _policy is not None and self._policy_gate is not None:
+        if _policy is not None:
+            if self._policy_gate is None:
+                # Policy device not yet initialized — fail closed (cold start window).
+                # Allowing tool calls before policy is ready would bypass the entire
+                # governance gate. Log and deny until policy device signals ready.
+                from devices.policy.gate import _write_governance_decision
+                _write_governance_decision({
+                    "ts": datetime.now(timezone.utc).isoformat(),
+                    "agent_id": _policy.agent_id,
+                    "action": tool_name,
+                    "policy_checked": ["coldstart_failclosed"],
+                    "verdict": "deny",
+                    "reason": "policy device not ready — shim fail-closed during cold start",
+                    "device_id": self.device_id,
+                })
+                log.warning(
+                    "shim cold-start deny: policy gate not ready — "
+                    "denying %r from agent %r on %s",
+                    tool_name, _policy.agent_id, self.device_id,
+                )
+                raise PolicyDeniedError(
+                    tool_name,
+                    "policy device not ready (cold start — shim fails closed)",
+                    _policy.agent_id,
+                )
             allowed, reason = self._policy_gate.check(
                 _policy.agent_id, tool_name, _policy.token
             )
