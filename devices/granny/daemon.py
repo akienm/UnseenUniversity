@@ -379,11 +379,7 @@ class GrannyDaemon:
             if _ticket_needs_cc(ticket):
                 audit = self._device.intake_ticket(ticket)
                 if not audit.passed and not audit.escalate_to_cc:
-                    log.warning(
-                        "GrannyDaemon: %s failed audit — %s", tid, audit.reasons
-                    )
-                    self._alert_cc(tid, str(audit.reasons), "audit_fail")
-                    self._publish_feed("audit_fail", tid, str(audit.reasons))
+                    self._hold_for_audit_fail(tid, audit.reasons)
                     continue
                 if audit.escalate_to_cc:
                     # HIGH-inertia: block the ticket and alert CC.0 for human approval.
@@ -493,6 +489,26 @@ class GrannyDaemon:
                 log.error("GrannyDaemon: poll cycle error: %s", e)
                 self._alert_cc("__cycle__", str(e), "poll_error")
             self._stop_event.wait(timeout=POLL_INTERVAL_SEC)
+
+    def _hold_for_audit_fail(self, ticket_id: str, reasons) -> None:
+        """Block ticket on audit failure and alert CC.0 so the description gets fixed."""
+        reasons_str = "; ".join(reasons) if isinstance(reasons, list) else str(reasons)
+        hold_reason = f"audit fail: {reasons_str[:300]}"
+        log.warning("GrannyDaemon: %s audit fail — %s", ticket_id, reasons_str)
+        try:
+            subprocess.run(
+                [_PYTHON, str(_CC_QUEUE), "block", ticket_id, hold_reason],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+        except Exception as e:
+            log.warning("GrannyDaemon: block call failed for %s: %s", ticket_id, e)
+        self._alert_cc(ticket_id, hold_reason, "audit_fail")
+        self._post_channel(
+            f"GRANNY_HOLD_AUDIT_FAIL|ticket={ticket_id}|reasons={reasons_str[:120]}"
+        )
+        self._publish_feed("audit_fail", ticket_id, reasons_str[:200])
 
     def _hold_for_cc_approval(self, ticket_id: str, reasons: str) -> None:
         """Block ticket and alert CC.0 — HIGH-inertia tickets need human approval."""

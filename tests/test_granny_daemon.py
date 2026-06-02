@@ -250,6 +250,31 @@ class TestGrannyDaemonRunOnce:
         assert count == 0
         daemon._device.route_ticket.assert_not_called()
 
+    def test_audit_fail_blocks_ticket_and_alerts_cc(self):
+        """Audit-fail tickets are blocked + CC.0 alerted, not silently skipped."""
+        daemon = self._make_daemon(audit_passed=False)
+        daemon._device.intake_ticket.return_value = MagicMock(
+            passed=False, escalate_to_cc=False, reasons=["missing Completion criteria"]
+        )
+        held = []
+        daemon._hold_for_audit_fail = lambda tid, reasons: held.append(tid)
+        tickets = [_ticket("T-bad-desc")]
+
+        with (
+            patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
+            patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+            patch(
+                "devices.granny.daemon._check_rate_limit",
+                return_value=(True, None, 0.0),
+            ),
+            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
+        ):
+            count = daemon.run_once()
+
+        assert count == 0
+        assert held == ["T-bad-desc"]
+        daemon._inference_dispatch.assert_not_called()
+
     def test_high_inertia_ticket_is_held_not_dispatched(self):
         """HIGH-inertia (escalate_to_cc=True) tickets are blocked for CC approval,
         never auto-dispatched to a new CC session."""
