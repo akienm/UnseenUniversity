@@ -4,6 +4,15 @@ This is the portable agent runtime substrate. It is **not** TheIgors.
 
 ---
 
+> ## ⛔ ABSOLUTE HARD STOP: NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY.
+>
+> **Any use of SQLite — import, file creation, in-memory, or otherwise — is unconditionally prohibited.**
+> SQLite under concurrent write load produces lock contention and silent data loss.
+> If you are reading architecture docs that mention SQLite, those docs are **wrong**.
+> The canonical storage rule is: **Postgres** (for shared state) or **flat-file** (for boot-time state that must load before Postgres is up). There is no third option.
+
+---
+
 ## What to read first
 
 ```bash
@@ -70,8 +79,8 @@ directly. The old `worker_daemon.sh` is retired — Granny is the dispatcher.
 
 ## Hard rules
 
-- No SQLite. Postgres or flat-file only.
-  *Why: SQLite under concurrent write load (multiple devices) produces lock contention and silent data loss; Postgres handles that correctly.*
+- **⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY.** See banner at top of this file.
+  *Why: SQLite under concurrent write load (multiple devices) produces lock contention and silent data loss; Postgres handles that correctly. If architecture docs say SQLite, those docs are wrong — correct them.*
 - No TheIgors imports. UnseenUniversity must be portable without TheIgors present.
   *Why: UU is the substrate that TheIgors runs on top of, not vice versa; a circular dependency makes UU non-deployable on any other host.*
 - No live keys or passwords in source. `.env` is gitignored.
