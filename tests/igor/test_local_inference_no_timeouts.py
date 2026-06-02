@@ -3,7 +3,7 @@ tests/test_local_inference_no_timeouts.py
 
 Unit tests for T-no-local-inference-timeouts.
 
-Enforces theigors/rules/local-inference-no-timeouts: every local-inference
+Enforces unseenuniversity/rules/local-inference-no-timeouts: every local-inference
 timeout default must be hour-scale (≥ 1 hour = 3600s). Sub-hour defaults
 are forbidden — they turn routine local slowness into a cloud-spend
 trigger, defeating the brain-modeled experimental premise.
@@ -40,7 +40,7 @@ def test_preparse_timeout_is_hour_scale():
 
     assert ollama_reasoner.PREPARSE_TIMEOUT >= _HOUR, (
         f"PREPARSE_TIMEOUT={ollama_reasoner.PREPARSE_TIMEOUT}s violates "
-        "theigors/rules/local-inference-no-timeouts (must be ≥ 3600s). "
+        "unseenuniversity/rules/local-inference-no-timeouts (must be ≥ 3600s). "
         "Sub-hour timeout escalates routine local slowness → defeats the rule."
     )
 

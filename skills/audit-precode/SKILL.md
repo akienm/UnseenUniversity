@@ -43,7 +43,7 @@ When the plan touches `brainstem/`, `memory/models.py`,
 ### 4. Preferred-paths check
 Load preferred pairs from palace:
 ```
-memory_get(path="theigors/rules/preferred_paths")
+memory_get(path="unseenuniversity/rules/preferred_paths")
 ```
 Then check each child node's `deprecated` field against the plan text.
 Match → AMEND with preferred alternative.

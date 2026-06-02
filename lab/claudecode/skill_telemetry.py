@@ -11,7 +11,7 @@ Storage (JSONL, no Postgres dependency):
   $IGOR_HOME/claudecode/violation_log.jsonl
   $IGOR_HOME/claudecode/outcome_log.jsonl
 
-Palace node at theigors/skill-telemetry/schema carries the canonical spec.
+Palace node at unseenuniversity/skill-telemetry/schema carries the canonical spec.
 
 T-skill-telemetry-schema — schema dataclasses + path helpers
 T-skill-telemetry-logger — append_violation / append_outcome / query functions

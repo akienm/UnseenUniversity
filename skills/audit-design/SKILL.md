@@ -33,7 +33,7 @@ Each check has a positive shape (what to look for) and an AMEND message
 ### Check 1 — Goal stated as positive target
 
 **Look for:** the decision summary names a thing to move *toward*, in approach-frame
-shape (`theigors/rules/approach-frame`). One sentence beginning with a verb that
+shape (`unseenuniversity/rules/approach-frame`). One sentence beginning with a verb that
 describes the desired state.
 
 **Fail when:** the summary opens with `no`, `don't`, `never`, `avoid`, `stop`,
@@ -41,7 +41,7 @@ describes the desired state.
 
 **AMEND:** "Decision summary names a prohibition without naming what to do
 instead. Reframe to a positive target — `<rewrite suggestion based on context>`.
-See `theigors/rules/approach-frame`."
+See `unseenuniversity/rules/approach-frame`."
 
 ### Check 2 — Success condition observable in the runtime
 
@@ -54,7 +54,7 @@ a database row, an end-to-end flow producing user-facing text. Not just
 
 **AMEND:** "Decision needs a runtime-observable success condition. What user-facing
 or system-observable signal will confirm this shipped? See
-`theigors/rules/budget` (verify-end-to-end-before-flipping-gates principle)."
+`unseenuniversity/rules/budget` (verify-end-to-end-before-flipping-gates principle)."
 
 ### Check 3 — Alternatives + why this one
 
@@ -79,7 +79,7 @@ pending tickets, and any deadline or freeze-window constraints.
 narrative is silent on them.
 
 **AMEND:** "Decision touches `<area>` which is HIGH-inertia / gated by `<flag>` —
-narrative must name that constraint. See `theigors/rules/safeguards`."
+narrative must name that constraint. See `unseenuniversity/rules/safeguards`."
 
 ### Check 5 — "What am I missing / what could be better" answered
 
@@ -92,7 +92,7 @@ the closing-question pass.
 
 **AMEND:** "Run the closing pass before /decided: 'What am I missing? What could
 we do better?' These two questions reliably surface gaps. Akien's standing
-practice — see `theigors/rules/collaboration`."
+practice — see `unseenuniversity/rules/collaboration`."
 
 ### Check 6 — Conflicts with last-30d decisions
 
@@ -113,12 +113,12 @@ direction?"
 ### Check 7 — Palace-rule conflicts
 
 **Look for:** the decision honors all current palace rules. Check against:
-- `theigors/rules/database` — Postgres only, no SQLite/file-store fallbacks
-- `theigors/rules/coding` — OOP-first when shared state crosses functions
-- `theigors/rules/docs-live-in-code` — load-bearing touches name primary file's docstring
-- `theigors/rules/memory` — memory distinctions become tags, not new types
-- `theigors/rules/igor-constraints` — no speculative `IGOR_*_ENABLED` flags
-- `theigors/rules/inherit-base-class` — every non-library class inherits from base (when this rule lands; gate Check 7 on its presence)
+- `unseenuniversity/rules/database` — Postgres only, no SQLite/file-store fallbacks
+- `unseenuniversity/rules/coding` — OOP-first when shared state crosses functions
+- `unseenuniversity/rules/docs-live-in-code` — load-bearing touches name primary file's docstring
+- `unseenuniversity/rules/memory` — memory distinctions become tags, not new types
+- `unseenuniversity/rules/igor-constraints` — no speculative `IGOR_*_ENABLED` flags
+- `unseenuniversity/rules/inherit-base-class` — every non-library class inherits from base (when this rule lands; gate Check 7 on its presence)
 
 **Fail when:** any rule conflict is present in the decision narrative or scope.
 
@@ -150,7 +150,7 @@ assignments are missing.
 
 **AMEND:** "Per-piece executor and inertia tier missing. Igor handles MEDIUM
 and LOW; CC authors HIGH-inertia diffs. Without this, /sprint can't route the
-work. See `theigors/rules/coding` (inertia tiers) + `theigors/rules/collaboration`
+work. See `unseenuniversity/rules/coding` (inertia tiers) + `unseenuniversity/rules/collaboration`
 (executor routing)."
 
 ---
@@ -163,7 +163,7 @@ work. See `theigors/rules/coding` (inertia tiers) + `theigors/rules/collaboratio
 audit-design: PASS
 Decision: <D-id or "draft">
 Checks: 9/9 passed
-Telemetry: theigors/audits/design/runs/<timestamp>
+Telemetry: unseenuniversity/audits/design/runs/<timestamp>
 ```
 
 ### AMEND
@@ -179,7 +179,7 @@ AMEND items:
   Check <#> — <name>: <one-line failure summary>
     Fix: <suggested rewrite or addition>
 
-Telemetry: theigors/audits/design/runs/<timestamp>
+Telemetry: unseenuniversity/audits/design/runs/<timestamp>
 ```
 
 When invoked from `/decided`: AMEND blocks Step 3 (drafting) until the
@@ -200,7 +200,7 @@ plus the corresponding window of `decisions_log.dsb`.
 ### 2. Read prior watch-for notes
 
 ```
-memory_get(path="theigors/audits/design/watch_next/<active-notes>")
+memory_get(path="unseenuniversity/audits/design/watch_next/<active-notes>")
 ```
 
 For each active note, check whether this decision matches the watch
@@ -226,13 +226,13 @@ AMEND — it's a separate gate.
 
 When a check passes only marginally (e.g., success-condition is observable
 but vague), write a watch-for note at
-`theigors/audits/design/watch_next/<id>` so the next decision in the same
+`unseenuniversity/audits/design/watch_next/<id>` so the next decision in the same
 area gets tighter scrutiny. (Telemetry helper required — see
 T-audit-telemetry-shape.)
 
 ### 6. Emit run record
 
-Per `theigors/audits/<level>/runs/<timestamp>` shape (see
+Per `unseenuniversity/audits/<level>/runs/<timestamp>` shape (see
 T-audit-telemetry-shape):
 
 ```yaml

@@ -18,7 +18,7 @@ these sections at filing time, and missing ones get flagged:
     <1-3 sentences: problem and proposed shape>
 
     **Affected files:** <comma-separated paths, or "TBD — discovery step in sprint" if genuinely unknown>
-    **Design rules:** <which palace checks under theigors/rules/ticket_design_checks/ apply — e.g. "no-sqlite, test-plan-or-why-not". "none apply" only after thinking about it.>
+    **Design rules:** <which palace checks under unseenuniversity/rules/ticket_design_checks/ apply — e.g. "no-sqlite, test-plan-or-why-not". "none apply" only after thinking about it.>
     **Scope boundary:** <what's explicitly in scope; what's explicitly out of scope>
     **Test plan:** <specific tests to add or run, OR "no tests because: <reason>" — always state one or the other>
 
@@ -46,11 +46,11 @@ rather than skipping — /audit-ticket flags blanks, not TBDs-with-reason.
 
 When the ticket touches memory shapes, read the relevant palace rule via:
 ```
-memory_get(path="theigors/rules/memory")
+memory_get(path="unseenuniversity/rules/memory")
 ```
 And for persistence-touching work:
 ```
-memory_get(path="theigors/rules/database")
+memory_get(path="unseenuniversity/rules/database")
 ```
 Those reads surface the rule text the ticket needs to match; the result
 feeds the "Design rules" field.
@@ -58,7 +58,7 @@ feeds the "Design rules" field.
 ### 3. Review the plan before creating
 
 Always state the plan back in one sentence before filing. Check:
-- Inertia levels of affected files (read `memory_get(path='theigors/rules/safeguards')` if unsure)
+- Inertia levels of affected files (read `memory_get(path='unseenuniversity/rules/safeguards')` if unsure)
 - Scope boundary — is it tight?
 - Test coverage — what specifically will be tested?
 

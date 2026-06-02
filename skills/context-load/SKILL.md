@@ -47,7 +47,7 @@ something changed since last session:
 HASH_FILE=${IGOR_HOME:-~/.unseen_university}/claudecode/rules_hash.txt
 CURRENT_HASH=$(psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
   "SELECT md5(string_agg(path || '|' || coalesce(content,''), '||' ORDER BY path))
-   FROM memory_palace WHERE path LIKE 'theigors/rules/%'")
+   FROM memory_palace WHERE path LIKE 'unseenuniversity/rules/%'")
 SAVED_HASH=$(cat "$HASH_FILE" 2>/dev/null | head -1)
 if [ "$CURRENT_HASH" = "$SAVED_HASH" ]; then
   echo "rules: unchanged since last session (hash=${CURRENT_HASH:0:8}...) — skipping full load"
@@ -55,7 +55,7 @@ else
   echo "rules: changed (${SAVED_HASH:0:8}... → ${CURRENT_HASH:0:8}...) — loading"
   psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -c \
     "SELECT title, content FROM memory_palace
-     WHERE path LIKE 'theigors/rules/%' ORDER BY path" -tA
+     WHERE path LIKE 'unseenuniversity/rules/%' ORDER BY path" -tA
   echo "$CURRENT_HASH" > "$HASH_FILE"
 fi
 ```
@@ -85,7 +85,7 @@ to where the real info lives (code, DB, tools, docs).
 
 Always use the MCP tools to query specific nodes during a session:
 ```
-memory_get(path="theigors/rules/coding")       # exact node read
+memory_get(path="unseenuniversity/rules/coding")       # exact node read
 memory_search(query="...")                     # topic lookup
 memory_list_by_type(type="RULE")               # typed listing
 ```

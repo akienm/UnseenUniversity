@@ -7,7 +7,7 @@ voice actor (when producing output). Every cognitive layer between
 "substrate has done its salience competition" and "voice emits prose"
 speaks this shape.
 
-## Axiomatic grounding (see theigors/architecture/principles and CP1-CP6)
+## Axiomatic grounding (see unseenuniversity/architecture/principles and CP1-CP6)
 
 - **CP1 "I don't know"** — selected_action may be None. Confidence may
   be low. A low-confidence blob MUST NOT commit; it must produce an

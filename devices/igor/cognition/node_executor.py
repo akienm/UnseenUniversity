@@ -211,7 +211,7 @@ def execute_node(
         # T-payload-comment-opcode: in-payload human-readable annotation.
         # Runtime treats as no-op; preserved for printers, audits, and
         # human readers. Pairs with Memory.metadata.comment for memory-level
-        # annotations (see theigors/rules/memory-comment-convention).
+        # annotations (see unseenuniversity/rules/memory-comment-convention).
         if op == "NOOP_COMMENT":
             if len(instruction) >= 2:
                 log.debug(

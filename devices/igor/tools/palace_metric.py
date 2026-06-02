@@ -7,7 +7,7 @@ Pattern for slow progress metrics stored in `clan.memory_palace`:
   - Sparkline: render_sparkline() reads a history node, extracts one key's
     values, returns an ASCII dot-line.
 
-First consumer: theigors/metrics/approach_frame_audit/* (T-approach-frame-sensor-node).
+First consumer: unseenuniversity/metrics/approach_frame_audit/* (T-approach-frame-sensor-node).
 Extended by T-slow-metrics-sensor-tree-pattern to migrate other slow metrics
 into the same shape.
 

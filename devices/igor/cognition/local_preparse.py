@@ -52,7 +52,7 @@ log = get_logger(__name__)
 # pick if qwen isn't pulled. Configurable via env var.
 _DEFAULT_MODEL = os.getenv("IGOR_LOCAL_PREPARSE_MODEL", "qwen2.5:0.5b")
 
-# rule: theigors/rules/local-inference-no-timeouts — local takes whatever
+# rule: unseenuniversity/rules/local-inference-no-timeouts — local takes whatever
 # time it takes; brain-modeled goal makes local-fast NOT a constraint.
 # Hour-scale sanity cap (catch a truly hung Ollama process), NOT a UX
 # deadline. The previous 1.0s default treated routine local slowness as a

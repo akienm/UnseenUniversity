@@ -1052,7 +1052,7 @@ def cmd_log(args):
 # Everything else routes to Igor (cheap in-process via engram chain / Qwen).
 # Explicit `worker` in input JSON always wins.
 #
-# Keep these heuristics synced with lab/theigors/rules/coding.md
+# Keep these heuristics synced with lab/unseenuniversity/rules/coding.md
 # ("Inertia levels") and decision D-worker-mode-routing-2026-04-21.
 
 _HIGH_INERTIA_TAGS = {"HIGH", "high-inertia", "HIGH-inertia", "high_inertia"}

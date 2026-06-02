@@ -406,7 +406,7 @@ def _schema_extraction_pass(conn) -> int:
         written = 0
         for tag, info in tags.items():
             tag_slug = tag.lower().replace(" ", "-")
-            palace_path = f"theigors/procedures/{tag_slug}-sprint-pattern"
+            palace_path = f"unseenuniversity/procedures/{tag_slug}-sprint-pattern"
             if _palace_path_exists(conn, palace_path):
                 log.debug(
                     "dreaming: schema %s already in palace — skipping", palace_path

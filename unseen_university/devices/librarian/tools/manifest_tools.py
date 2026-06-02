@@ -33,7 +33,7 @@ _ROUTING_MAP: dict[str, dict] = {
     "palace_read": {
         "tool": "memory_get",
         "when": "Read a specific palace node by path (rules, design decisions, subsystem docs)",
-        "example": 'memory_get(path="theigors/rules/coding")',
+        "example": 'memory_get(path="unseenuniversity/rules/coding")',
     },
     "palace_search": {
         "tool": "memory_search",

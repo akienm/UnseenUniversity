@@ -25,14 +25,14 @@ of these in practice. Default model: Sonnet.
 - **Ticket context**: the ticket's `description.Affected files` list and
   `tags`. Drives the diff-drift check and the audit-emphasis routing.
 - **Palace context**:
-  - `theigors/rules/inherit-base-class` — base-class inheritance rule
-  - `theigors/rules/preferred_paths` — deprecated → preferred pairs
-  - `theigors/rules/database` — Postgres-only / no-SQLite
-  - `theigors/rules/coding` — OOP-first
-  - `theigors/rules/igor-constraints` — no speculative flags
-  - `theigors/rules/memory` — no new memory tables
-  - `theigors/rules/docs-live-in-code` — top-of-file docstring on load-bearing
-- **Prior watch-for notes**: `theigors/audits/smell/watch_next/*`.
+  - `unseenuniversity/rules/inherit-base-class` — base-class inheritance rule
+  - `unseenuniversity/rules/preferred_paths` — deprecated → preferred pairs
+  - `unseenuniversity/rules/database` — Postgres-only / no-SQLite
+  - `unseenuniversity/rules/coding` — OOP-first
+  - `unseenuniversity/rules/igor-constraints` — no speculative flags
+  - `unseenuniversity/rules/memory` — no new memory tables
+  - `unseenuniversity/rules/docs-live-in-code` — top-of-file docstring on load-bearing
+- **Prior watch-for notes**: `unseenuniversity/audits/smell/watch_next/*`.
 
 ---
 
@@ -68,7 +68,7 @@ methods. Empty except + bare `pass` is the canonical hit.
 
 **AMEND**: "Bare except at `<file>:<line>` swallows errors silently. Add
 `self.log.warning(...)` with surrounding state (what was being attempted,
-what fell through). See `theigors/rules/inherit-base-class` for the log
+what fell through). See `unseenuniversity/rules/inherit-base-class` for the log
 handle that comes from inheritance."
 
 ### Check 2 — Silent-return-False / fanout=0 without WARNING
@@ -164,7 +164,7 @@ persistence outside the existing `clan.memories` / `memory_palace` /
 
 **AMEND**: "New memory table `<name>` at `<file>:<line>`. Project rule:
 memory distinctions become tags, not new types. Use `clan.memories`
-metadata tags or `memory_palace` subtree. See `theigors/rules/memory`."
+metadata tags or `memory_palace` subtree. See `unseenuniversity/rules/memory`."
 
 ### Check 9 — SQLite / file-store fallback
 
@@ -176,7 +176,7 @@ storage. Negation constructions ("no sqlite", "without fallback") pass.
 **Severity**: HIGH (palace rule violation: postgres-only)
 
 **AMEND**: "SQLite / file-store at `<file>:<line>`. Project rule:
-Postgres only, no fallbacks, no dual paths. See `theigors/rules/database`."
+Postgres only, no fallbacks, no dual paths. See `unseenuniversity/rules/database`."
 
 ### Check 10 — Backwards-compat shim without callers
 
@@ -216,7 +216,7 @@ bases don't include `IgorBase` / `AgentBase` and aren't in
 
 **AMEND**: "Class `<name>` at `<file>:<line>` doesn't inherit from
 IgorBase (Igor code) or AgentBase (shared/utility). The base class IS
-the logging+introspection layer. See `theigors/rules/inherit-base-class`."
+the logging+introspection layer. See `unseenuniversity/rules/inherit-base-class`."
 
 ### Check 13 — Shared state across functions without encapsulation
 
@@ -228,23 +228,23 @@ them. Excludes constants (frozen / Final-typed) and shared singletons.
 
 **AMEND**: "Module-level shared state `<name>` at `<file>:<line>` is
 read/written by `<funcs>`. Project rule: shared state across functions
-proposes a class. See `theigors/rules/coding`."
+proposes a class. See `unseenuniversity/rules/coding`."
 
 ### Check 14 — Top-of-file docstring stale on load-bearing edit
 
 **Detector**: Diff touches a file whose path matches the load-bearing
-list from `theigors/subsystem_index/<area>` AND the file's top-of-file
+list from `unseenuniversity/subsystem_index/<area>` AND the file's top-of-file
 docstring (first triple-quoted block) is unchanged in the diff.
 
 **Severity**: HIGH (docs-in-code rule)
 
 **AMEND**: "Load-bearing file `<file>` edited but top-of-file docstring
 unchanged. Update the docstring to reflect what changed. See
-`theigors/rules/docs-live-in-code`."
+`unseenuniversity/rules/docs-live-in-code`."
 
 ### Check 15 — Deprecated forms from preferred_paths
 
-**Detector**: For each child of `theigors/rules/preferred_paths/`, check
+**Detector**: For each child of `unseenuniversity/rules/preferred_paths/`, check
 the diff for the `deprecated` pattern. Each match flags an AMEND with
 the `preferred` form named.
 
@@ -252,7 +252,7 @@ the `preferred` form named.
 
 **AMEND**: "Deprecated form `<deprecated_pattern>` at `<file>:<line>`.
 Use `<preferred_pattern>` instead. Reason: `<why from palace node>`. See
-`theigors/rules/preferred_paths/<entry>`."
+`unseenuniversity/rules/preferred_paths/<entry>`."
 
 ### Check 16 — Fix-one-leave-many (call-graph walk)
 
@@ -298,7 +298,7 @@ description to include these files (with rationale) before commit."
 audit-smell: PASS
 Diff: <N> files, <M> lines changed
 Checks: 17/17 passed
-Telemetry: theigors/audits/smell/runs/<timestamp>
+Telemetry: unseenuniversity/audits/smell/runs/<timestamp>
 ```
 
 ### AMEND
@@ -320,7 +320,7 @@ MED severity (review before commit):
 LOW severity (warn):
   ...
 
-Telemetry: theigors/audits/smell/runs/<timestamp>
+Telemetry: unseenuniversity/audits/smell/runs/<timestamp>
 ```
 
 When invoked from `/sprint`: any HIGH AMEND blocks `git commit` until
@@ -344,7 +344,7 @@ palace context (the rules listed above).
 ### 3. Read prior watch-for notes
 
 ```
-memory_get(path="theigors/audits/smell/watch_next/<id>")
+memory_get(path="unseenuniversity/audits/smell/watch_next/<id>")
 ```
 
 For each active note, check whether this diff matches the watch
@@ -371,11 +371,11 @@ fail, so the AMEND output is complete in one round.
 
 When a check passes only marginally (e.g., diff drift on 1 file with a
 plausible explanation), write a watch-for note at
-`theigors/audits/smell/watch_next/<id>` with TTL 14 days.
+`unseenuniversity/audits/smell/watch_next/<id>` with TTL 14 days.
 
 ### 7. Emit run record
 
-Per the standard shape (`theigors/audits/smell/runs/<timestamp>`).
+Per the standard shape (`unseenuniversity/audits/smell/runs/<timestamp>`).
 
 ### 8. Return verdict
 
@@ -427,7 +427,7 @@ class SmellEngine(IgorBase):
 matched_pattern, amend_message)`.
 
 The helper inherits from `IgorBase` per
-`theigors/rules/inherit-base-class`. (Yes, the smell-checker class
+`unseenuniversity/rules/inherit-base-class`. (Yes, the smell-checker class
 inherits from the base class it checks for. That's intentional — the
 audit should pass its own checks.)
 
@@ -470,7 +470,7 @@ is mis-shaped).
 - Always emit a run record (or document the verdict equivalently until
   the telemetry helper lands).
 - The smell engine itself inherits from IgorBase (eat your own
-  dogfood per `theigors/rules/inherit-base-class`).
+  dogfood per `unseenuniversity/rules/inherit-base-class`).
 
 ---
 

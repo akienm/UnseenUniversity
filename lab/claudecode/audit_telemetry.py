@@ -5,11 +5,11 @@ Every audit skill (audit-design, audit-ticket, audit-precode, audit-smell,
 audit-debris, audit-day, audit-expert, audit-audits) calls emit_run_record()
 at the end of each run. Records land in the palace under:
 
-  theigors/audits/<level>/runs/<YYYY-MM-DD-HHMMSS>
+  unseenuniversity/audits/<level>/runs/<YYYY-MM-DD-HHMMSS>
 
 Watch-for notes (patterns to check on next run) are stored under:
 
-  theigors/audits/<level>/watch_next/<id>
+  unseenuniversity/audits/<level>/watch_next/<id>
 
 with a TTL field in content. read_runs() returns records within a time window.
 
@@ -141,14 +141,14 @@ def emit_run_record(level: str, record: AuditRunRecord) -> str:
 
     ts = record.ran_at.replace(":", "").replace("-", "").replace("T", "-").replace("Z", "")
     run_id = ts[:15]  # YYYYMMDD-HHMMSS
-    path = f"theigors/audits/{level}/runs/{run_id}"
-    parent = f"theigors/audits/{level}/runs"
+    path = f"unseenuniversity/audits/{level}/runs/{run_id}"
+    parent = f"unseenuniversity/audits/{level}/runs"
 
     conn = _connect()
     # Ensure parent nodes exist
-    _ensure_palace_node(conn, f"theigors/audits/{level}", "theigors/audits",
+    _ensure_palace_node(conn, f"unseenuniversity/audits/{level}", "unseenuniversity/audits",
                         f"audit-{level} records", f"Run records and watch_next for audit-{level}.")
-    _ensure_palace_node(conn, parent, f"theigors/audits/{level}",
+    _ensure_palace_node(conn, parent, f"unseenuniversity/audits/{level}",
                         f"audit-{level} runs", "Per-run records indexed by timestamp.")
     _ensure_palace_node(conn, path, parent,
                         f"audit-{level} run {run_id}",
@@ -159,7 +159,7 @@ def emit_run_record(level: str, record: AuditRunRecord) -> str:
 
 def emit_watch_next(level: str, note: str, ttl_days: int = 14, watch_id: str | None = None) -> str:
     """
-    Write a watch-for note under theigors/audits/<level>/watch_next/<id>.
+    Write a watch-for note under unseenuniversity/audits/<level>/watch_next/<id>.
     TTL is stored in content; expiry is enforced by read_watch_next().
     Returns the palace path.
     """
@@ -167,8 +167,8 @@ def emit_watch_next(level: str, note: str, ttl_days: int = 14, watch_id: str | N
         raise ValueError(f"Unknown audit level {level!r}")
 
     wid = watch_id or uuid.uuid4().hex[:8]
-    path = f"theigors/audits/{level}/watch_next/{wid}"
-    parent = f"theigors/audits/{level}/watch_next"
+    path = f"unseenuniversity/audits/{level}/watch_next/{wid}"
+    parent = f"unseenuniversity/audits/{level}/watch_next"
     now = datetime.now(timezone.utc)
     content = (
         f"written_at: {now.strftime('%Y-%m-%dT%H:%M:%SZ')}\n"
@@ -178,9 +178,9 @@ def emit_watch_next(level: str, note: str, ttl_days: int = 14, watch_id: str | N
         f"aged: false\n"
     )
     conn = _connect()
-    _ensure_palace_node(conn, f"theigors/audits/{level}", "theigors/audits",
+    _ensure_palace_node(conn, f"unseenuniversity/audits/{level}", "unseenuniversity/audits",
                         f"audit-{level} records", f"Run records and watch_next for audit-{level}.")
-    _ensure_palace_node(conn, parent, f"theigors/audits/{level}",
+    _ensure_palace_node(conn, parent, f"unseenuniversity/audits/{level}",
                         f"audit-{level} watch_next", "Watch-for notes for next run.")
     _ensure_palace_node(conn, path, parent, f"watch {wid}", content)
     conn.close()
@@ -197,7 +197,7 @@ def read_runs(level: str, since_days: int = 7) -> list[dict[str, Any]]:
 
     from datetime import timedelta
     cutoff = (datetime.now(timezone.utc) - timedelta(days=since_days)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    prefix = f"theigors/audits/{level}/runs/"
+    prefix = f"unseenuniversity/audits/{level}/runs/"
     conn = _connect()
     cur = conn.cursor()
     cur.execute(
@@ -219,7 +219,7 @@ def read_watch_next(level: str, include_expired: bool = False) -> list[dict[str,
     if level not in VALID_LEVELS:
         raise ValueError(f"Unknown audit level {level!r}")
 
-    prefix = f"theigors/audits/{level}/watch_next/"
+    prefix = f"unseenuniversity/audits/{level}/watch_next/"
     conn = _connect()
     cur = conn.cursor()
     cur.execute(

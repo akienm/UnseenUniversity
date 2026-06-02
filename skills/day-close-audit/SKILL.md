@@ -443,7 +443,7 @@ Exit code 0 = all OK. Any UNREFERENCED or STUB_NEAR_GATE findings → ticket or 
 ## Step 18.6 — Capability map drift check
 
 `~/dev/src/UnseenUniversity/docs/capability_map.md` is the "what's built today vs planned vs broken" doc. It rots fast. When it's >7 days old, the audit always re-verifies §1 (live), §2 (gated off), and §4 (known broken) against:
-- Palace `theigors/subsystem_index/*` for live subsystems
+- Palace `unseenuniversity/subsystem_index/*` for live subsystems
 - `~/.unseen_university/Igor-wild-0001/igor.switches.cfg` for gate state
 - `cc_queue.py list` for in_progress / pending / awaiting_approval status
 - Latest `pytest` summary for known failures

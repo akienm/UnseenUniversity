@@ -162,7 +162,7 @@ Cadence: weekly runs 3 random experts; monthly runs the full panel (with Ultravi
 
 **Meta-audit** (/audit-audits, Sonnet/Opus): audits the audit pyramid itself -- watch-for TTL compliance, telemetry sampling uniformity, check confidence calibration, cadence adherence, findings-to-ticket conversion rate. Runs monthly or on demand.
 
-All audit levels emit structured telemetry to the palace (theigors/audits/<level>/runs/<timestamp>). This creates a uniform time-series for trend analysis -- findings per week, checks fired vs. amended vs. discarded, watch-for hit rates.
+All audit levels emit structured telemetry to the palace (unseenuniversity/audits/<level>/runs/<timestamp>). This creates a uniform time-series for trend analysis -- findings per week, checks fired vs. amended vs. discarded, watch-for hit rates.
 
 ---
 
@@ -321,11 +321,11 @@ When the day's slate is done, we run /day-close.
 
 *Why:* Saves tokens. Key points are read in root MD files, then the code files are read at the top, then the functional code itself. Minimizes the number of files that have to be looked at.
 
-**Memory Palace:** A structured Postgres tree (theigors/rules/*, theigors/decisions/*, theigors/audits/*, theigors/infrastructure/*, etc.) that serves as the canonical index for conventions, rules, audit telemetry, and decision history. CLAUDE.md is a thin bootstrap shim; the palace is the source of truth.
+**Memory Palace:** A structured Postgres tree (unseenuniversity/rules/*, unseenuniversity/decisions/*, unseenuniversity/audits/*, unseenuniversity/infrastructure/*, etc.) that serves as the canonical index for conventions, rules, audit telemetry, and decision history. CLAUDE.md is a thin bootstrap shim; the palace is the source of truth.
 
 *Why:* Palace nodes can be read individually (memory_get), searched (memory_search), or bulk-loaded by type. The model spends zero tokens re-deriving conventions it already decided.
 
-**Preferred Paths:** A palace subtree (theigors/rules/preferred_paths/*) cataloging deprecated patterns alongside their preferred replacements -- e.g. raw psql calls vs. the MCP proxy, print() vs. the IgorBase logger, direct DB writes vs. cortex.store(). A scan tool watches 60 days of git history for regressions and surfaces candidates for review, never auto-filing.
+**Preferred Paths:** A palace subtree (unseenuniversity/rules/preferred_paths/*) cataloging deprecated patterns alongside their preferred replacements -- e.g. raw psql calls vs. the MCP proxy, print() vs. the IgorBase logger, direct DB writes vs. cortex.store(). A scan tool watches 60 days of git history for regressions and surfaces candidates for review, never auto-filing.
 
 **Levers Doc Sync Rule:** Whenever a skill file is edited or a new workflow capability is added, the levers doc must be updated to reflect the change before the sprint closes (sprint-ticket step 12.5). The levers doc is the single human-readable summary of how we work; it rots when sprints ship behavior changes without updating it. A forever audit check (levers-doc-skill-sync) fires LOW when skill files were modified in the last day without a corresponding levers doc update.
 

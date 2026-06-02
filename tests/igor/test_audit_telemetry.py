@@ -119,7 +119,7 @@ class TestAuditTelemetryIntegration(unittest.TestCase):
             findings=[AuditFinding(check="prefer-mcp", severity="high")],
         )
         path = emit_run_record("smell", record)
-        self.assertIn("theigors/audits/smell/runs/", path)
+        self.assertIn("unseenuniversity/audits/smell/runs/", path)
         # Read back
         runs = read_runs("smell", since_days=1)
         paths = [r["path"] for r in runs]
@@ -132,7 +132,7 @@ class TestAuditTelemetryIntegration(unittest.TestCase):
     def test_watch_next_emit_and_read(self):
         from lab.claudecode.audit_telemetry import emit_watch_next, read_watch_next
         path = emit_watch_next("day", "Watch for partial signature changes in tool_x", ttl_days=7, watch_id="test-w1")
-        self.assertIn("theigors/audits/day/watch_next/test-w1", path)
+        self.assertIn("unseenuniversity/audits/day/watch_next/test-w1", path)
         notes = read_watch_next("day")
         paths = [n["path"] for n in notes]
         self.assertIn(path, paths)
@@ -156,8 +156,8 @@ class TestAuditTelemetryIntegration(unittest.TestCase):
         cur.execute(
             "INSERT INTO memory_palace (path, parent_path, title, content, updated_at, updated_by) "
             "VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (path) DO UPDATE SET content=EXCLUDED.content",
-            ("theigors/audits/day/watch_next/test-expired-w2",
-             "theigors/audits/day/watch_next",
+            ("unseenuniversity/audits/day/watch_next/test-expired-w2",
+             "unseenuniversity/audits/day/watch_next",
              "watch test-expired-w2", content, old_ts, "test"),
         )
         cur.close()
@@ -165,11 +165,11 @@ class TestAuditTelemetryIntegration(unittest.TestCase):
 
         active = read_watch_next("day", include_expired=False)
         active_paths = [n["path"] for n in active]
-        self.assertNotIn("theigors/audits/day/watch_next/test-expired-w2", active_paths)
+        self.assertNotIn("unseenuniversity/audits/day/watch_next/test-expired-w2", active_paths)
 
         all_notes = read_watch_next("day", include_expired=True)
         all_paths = [n["path"] for n in all_notes]
-        self.assertIn("theigors/audits/day/watch_next/test-expired-w2", all_paths)
+        self.assertIn("unseenuniversity/audits/day/watch_next/test-expired-w2", all_paths)
 
 
 if __name__ == "__main__":

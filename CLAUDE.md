@@ -8,8 +8,8 @@ This is the portable agent runtime substrate. It is **not** TheIgors.
 
 ```bash
 # Spec decisions (in TheIgors palace, not this repo):
-# memory_get(path="theigors/decisions/D-agent-datacenter-spec-2026-04-27")
-# memory_get(path="theigors/decisions/D-adc-phase-0-2026-04-27")  ... phase-5
+# memory_get(path="unseenuniversity/decisions/D-agent-datacenter-spec-2026-04-27")
+# memory_get(path="unseenuniversity/decisions/D-adc-phase-0-2026-04-27")  ... phase-5
 ```
 
 ---

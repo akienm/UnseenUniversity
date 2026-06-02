@@ -52,7 +52,7 @@ def _get_client_and_model(call_type: str) -> tuple[object, str]:
     return _ollama, OLLAMA_LOCAL_MODEL
 
 
-# rule: theigors/rules/local-inference-no-timeouts — local takes whatever
+# rule: unseenuniversity/rules/local-inference-no-timeouts — local takes whatever
 # time it takes; brain-modeled goal makes local-fast NOT a constraint.
 # Sanity cap of 1hr to catch a truly hung process (e.g., model deadlock).
 # Preparse falls back to _rule_based_csb on hit, so the cap is the LATEST
@@ -92,7 +92,7 @@ if not _ollama_log.handlers:
 
 
 # NOTE: is_healthy is an HTTP availability ping (GET /api/tags), NOT
-# inference — so theigors/rules/local-inference-no-timeouts does NOT apply
+# inference — so unseenuniversity/rules/local-inference-no-timeouts does NOT apply
 # here. 5s is appropriate: a healthy Ollama answers /api/tags in <1s.
 def is_healthy(host: str | None = None, timeout: int = 5) -> bool:
     """Return True if Ollama is running at host (probes /api/tags).
@@ -600,7 +600,7 @@ class OllamaReasoner(LocalReasoner, IgorBase):
                     detail=f"devices/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
                 )
 
-        # rule: theigors/rules/local-inference-no-timeouts — local takes
+        # rule: unseenuniversity/rules/local-inference-no-timeouts — local takes
         # whatever time it takes; brain-modeled goal makes local-fast NOT a
         # constraint. Defaults are HOUR-scale sanity caps (catch a truly
         # hung Ollama process), NOT escalation triggers. The 90s default

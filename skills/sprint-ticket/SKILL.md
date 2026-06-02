@@ -17,7 +17,7 @@ caller's job at block-end.
 
 ### 1. Capability check
 
-Per theigors/rules/capability-protocol (workflow consumer side): scan the
+Per unseenuniversity/rules/capability-protocol (workflow consumer side): scan the
 ticket's tags and Affected files against the capability surface. If a
 minion or device on the rack would do the work better than CC inline,
 surface the delegate option as a one-line command **before** the claim.
@@ -63,9 +63,9 @@ First, state the plan in one to three sentences: what files will change,
 what tests will cover it, what the scope boundary is.
 
 Check inertia before touching anything — the authoritative list lives at
-`theigors/rules/safeguards` in the palace. Read it via:
+`unseenuniversity/rules/safeguards` in the palace. Read it via:
 ```
-memory_get(path="theigors/rules/safeguards")
+memory_get(path="unseenuniversity/rules/safeguards")
 ```
 When the plan touches a HIGH-inertia file, always pause and surface it to
 Akien for inline pre-approval before coding. Stamp the approval into the
@@ -109,8 +109,8 @@ git pull --rebase origin main
 If the working tree is dirty, stash first (`git stash -u`), pull, then pop.
 
 Then write the change. Code first, tests alongside (integration tests hit
-real Postgres per `theigors/rules/database` — no mocks), docstrings on
-load-bearing files per `theigors/rules/docs-live-in-code`.
+real Postgres per `unseenuniversity/rules/database` — no mocks), docstrings on
+load-bearing files per `unseenuniversity/rules/docs-live-in-code`.
 
 ### 7. Cleanup (REQUIRED)
 
@@ -153,7 +153,7 @@ Surface gaps inline as a single note before step 10. Do not block commit.
 
 ### 9. Teach Igor — palace deposit (default skip)
 
-Per theigors/rules/capability-protocol: ask "what from this sprint would I
+Per unseenuniversity/rules/capability-protocol: ask "what from this sprint would I
 deposit into Igor's palace?"
 
 **Default answer: skip.** Most sprint work is mechanical. Deposit only when

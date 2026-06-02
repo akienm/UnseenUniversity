@@ -12,7 +12,7 @@ Usage:
     from devices.igor.config import get, get_bool, get_int, get_float
 
     enabled = get_bool("IGOR_TURN_PIPELINE", False)
-    timeout = get_float("IGOR_OLLAMA_TIMEOUT_SECS", 7200.0)  # 2hr (rule: theigors/rules/local-inference-no-timeouts)
+    timeout = get_float("IGOR_OLLAMA_TIMEOUT_SECS", 7200.0)  # 2hr (rule: unseenuniversity/rules/local-inference-no-timeouts)
     model = get("OLLAMA_LOCAL_MODEL", "qwen2.5:7b")
 
 Config files are loaded once at import time and cached. Hot-reload

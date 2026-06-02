@@ -95,7 +95,7 @@ Note the tag (or absence) in output so downstream audit routing can act on it.
 
 ### 16. Two-sided build for capability tickets
 
-Enforces theigors/rules/capability-protocol/two-sided-build: a ticket that
+Enforces unseenuniversity/rules/capability-protocol/two-sided-build: a ticket that
 adds a new capability must ship handler AND skill consumer together — never
 just one half.
 
@@ -105,7 +105,7 @@ just one half.
   sense (not just referencing existing ones)
 
 **Skip when:** the description carries an explicit exemption line of the
-form `exempt from theigors/rules/capability-protocol/two-sided-build` with
+form `exempt from unseenuniversity/rules/capability-protocol/two-sided-build` with
 a stated reason (e.g. "consumes existing capability surface, doesn't create
 one" — pure skill-consumer tickets, OR "is the enforcer, not a consumer" —
 the rule-implementing ticket itself). Note the exemption in output.

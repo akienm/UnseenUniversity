@@ -149,7 +149,7 @@ try:
     import palace_sync as _palace_sync
 
     def sync_palace(dry_run: bool = False):
-        """Echo memory_palace DB → lab/theigors/ directory tree."""
+        """Echo memory_palace DB → lab/unseenuniversity/ directory tree."""
         _orig = sys.argv[:]
         try:
             sys.argv = [_orig[0]]

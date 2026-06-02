@@ -381,7 +381,7 @@ def _call_local_llm(prompt: str, cortex: Cortex) -> Optional[dict]:
 
 
 def _upsert_theme_palace(narrative: str, keywords: list, importance: float) -> None:
-    """Upsert a theigors/themes/* node in adc.palace for high-importance patterns.
+    """Upsert a unseenuniversity/themes/* node in adc.palace for high-importance patterns.
 
     Non-blocking: logs on failure, never raises.
     Existing nodes accumulate content (append bullet); new nodes are created fresh.
@@ -397,7 +397,7 @@ def _upsert_theme_palace(narrative: str, keywords: list, importance: float) -> N
         # slug from first keyword, max 40 chars, lowercase, alphanum+dash only
         slug_src = (keywords[0] if keywords else narrative[:40]).lower()
         slug = re.sub(r"[^a-z0-9]+", "-", slug_src).strip("-")[:40]
-        path = f"theigors/themes/{slug}"
+        path = f"unseenuniversity/themes/{slug}"
         bullet = f"- [{datetime.utcnow().strftime('%Y-%m-%d')}] (imp={importance:.2f}) {narrative}"
         import psycopg2
 

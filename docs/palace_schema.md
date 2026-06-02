@@ -275,8 +275,8 @@ Igor's palace lives in TheIgors postgres. It is **not merged** into this databas
 palace.projects.theigors
   title: TheIgors — federated palace pointer
   content: Igor's palace is at postgresql://igor:...@127.0.0.1/Igor-wild-0001,
-           table memory_palace, root path "theigors/".
-           Query via: psql -c "SELECT path, title FROM memory_palace WHERE path LIKE 'theigors/%' ORDER BY path"
+           table memory_palace, root path "unseenuniversity/".
+           Query via: psql -c "SELECT path, title FROM memory_palace WHERE path LIKE 'unseenuniversity/%' ORDER BY path"
            Or via MCP tools when Igor is running: mcp__igor__memory_get(path=...)
 ```
 
@@ -329,7 +329,7 @@ What each downstream ticket needs from this schema before it can start:
 
 1. **Create `palace` table + indexes** in rack Postgres (one migration script)
 2. **Seed `palace.shared.akien.*`** from CC auto-memory + CLAUDE.md
-3. **Seed `palace.shared.rules.*`** from TheIgors memory_palace `theigors/rules/*` (copy, not federate)
+3. **Seed `palace.shared.rules.*`** from TheIgors memory_palace `unseenuniversity/rules/*` (copy, not federate)
 4. **Seed `palace.projects.unseen_university.*`** (summary, map, standards) from CLAUDE.md + phase map
 5. **Add `palace.projects.theigors` pointer node** — federation pointer only
 6. **Seed `palace.decisions.*`** from existing `lab/design_docs/decisions/D-*.md` stubs (enriched)

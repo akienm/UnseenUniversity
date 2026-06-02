@@ -134,7 +134,7 @@ def filter_check_logging(plan_text: str) -> dict:
         "loginfo",
         "log_error",
         "forensic",
-        "~/.theigors/logs",
+        "~/.unseen_university/logs",
         "logs/",
     )
     has_logging = any(k in text_lower for k in log_keywords)

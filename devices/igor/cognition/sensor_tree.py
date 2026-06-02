@@ -224,7 +224,7 @@ class SensorTreeSource(BasePushSource):
             try:
                 from ..tools.palace_metric import append_history
 
-                history_path = f"theigors/metrics/sensors/{sensor_id}"
+                history_path = f"unseenuniversity/metrics/sensors/{sensor_id}"
                 with cortex._db() as conn:
                     append_history(
                         conn,

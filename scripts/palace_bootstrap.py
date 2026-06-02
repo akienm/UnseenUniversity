@@ -168,7 +168,7 @@ def _seed_rows() -> list[tuple]:
                 "  channel_read, channel_send, rack_health, traces_recent, habit_list,\n"
                 "  summarize, research, build_summary, datacenter_manifest.\n\n"
                 "Routing manifest: call datacenter_manifest(routing_only=True) for task-shape → tool map.\n\n"
-                "Skills: see ~/.claude/skills/ (CC) and TheIgors palace theigors/skills (Igor)."
+                "Skills: see ~/.claude/skills/ (CC) and UU palace unseenuniversity/skills (Igor)."
             ),
             tags=["shared", "capabilities"],
         ),
@@ -246,15 +246,15 @@ def _seed_rows() -> list[tuple]:
                 "It is NOT merged into this database — federation via pointer only.\n\n"
                 "Query Igor's palace:\n"
                 "  psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 \\\n"
-                "    -c \"SELECT path, title FROM memory_palace WHERE path LIKE 'theigors/%' ORDER BY path\"\n\n"
+                "    -c \"SELECT path, title FROM memory_palace WHERE path LIKE 'unseenuniversity/%' ORDER BY path\"\n\n"
                 "Via MCP (when Igor running):\n"
-                "  memory_get(path='theigors/rules/coding')\n"
+                "  memory_get(path='unseenuniversity/rules/coding')\n"
                 "  memory_search(query='...')"
             ),
             node_type="pointer",
             tags=["theigors", "projects"],
             extra={
-                "pointer_to": "postgresql://igor@127.0.0.1/Igor-wild-0001 clan.memory_palace theigors/*"
+                "pointer_to": "postgresql://igor@127.0.0.1/Igor-wild-0001 clan.memory_palace unseenuniversity/*"
             },
         ),
     ]

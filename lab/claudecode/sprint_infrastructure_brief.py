@@ -1,7 +1,7 @@
 """
 sprint_infrastructure_brief.py — Surface infrastructure brief for /sprint plan-review.
 
-Reads theigors/infrastructure/by_area/<area> palace nodes and returns a
+Reads unseenuniversity/infrastructure/by_area/<area> palace nodes and returns a
 one-screen summary of the relevant MCP tools, proxies, base classes, IMAP
 buses, and channels for the areas touched by a sprint plan.
 
@@ -65,7 +65,7 @@ class InfrastructureBrief(IgorBase):
             cur.execute(f"SET search_path TO {_SEARCH_PATH}")
             cur.execute(
                 "SELECT content FROM memory_palace WHERE path = %s",
-                (f"theigors/infrastructure/by_area/{area}",),
+                (f"unseenuniversity/infrastructure/by_area/{area}",),
             )
             row = cur.fetchone()
             cur.close()
@@ -90,7 +90,7 @@ class InfrastructureBrief(IgorBase):
             content = self._load_brief(area)
             if content is None:
                 lines.append(
-                    f"### {area}\n_(no palace entry — consider adding theigors/infrastructure/by_area/{area})_\n"
+                    f"### {area}\n_(no palace entry — consider adding unseenuniversity/infrastructure/by_area/{area})_\n"
                 )
                 continue
             lines.append(f"### {area}")

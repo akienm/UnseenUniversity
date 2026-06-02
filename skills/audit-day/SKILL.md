@@ -69,7 +69,7 @@ For each active watch-for note:
 ### Step 4 — Subsystem_index vs reality
 
 ```
-memory_get(path="theigors/subsystem_index")
+memory_get(path="unseenuniversity/subsystem_index")
 ```
 
 For each entry (area → primary file), verify the primary file still exists

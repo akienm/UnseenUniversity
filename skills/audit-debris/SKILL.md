@@ -76,9 +76,9 @@ was advanced to today. A changed load-bearing file with a stale `Updated` date
 
 ### 9. Subsystem_index drift
 When the staged diff includes a move or rename of a primary file listed in
-`theigors/subsystem_index`:
+`unseenuniversity/subsystem_index`:
 ```
-memory_get(path="theigors/subsystem_index")
+memory_get(path="unseenuniversity/subsystem_index")
 ```
 If the renamed file appears in the index, update the index node. Else: note.
 

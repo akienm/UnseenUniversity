@@ -18,13 +18,13 @@ it's the only layer reading *all* the audits' output as its input.
 
 ## Inputs (telemetry corpus, NOT codebase)
 
-- `theigors/audits/<level>/runs/*` — every audit's per-run records,
+- `unseenuniversity/audits/<level>/runs/*` — every audit's per-run records,
   bounded by analysis window (default 30 days; --since to override).
-- `theigors/audits/<level>/watch_next/*` — active and recently-expired
+- `unseenuniversity/audits/<level>/watch_next/*` — active and recently-expired
   watch-for notes from every audit.
-- `theigors/audits/overrides_log` — every override Akien stamped on a
+- `unseenuniversity/audits/overrides_log` — every override Akien stamped on a
   finding (with reason).
-- SensorTree counter trends — `theigors/metrics/audit_health/` (created
+- SensorTree counter trends — `unseenuniversity/metrics/audit_health/` (created
   by this skill on first run).
 
 **Hard rule: NO codebase reads.** The corpus IS the input. Re-reading
@@ -51,8 +51,8 @@ candidate: rule_promotion
 finding: <check name>
 window: <N> hits across <M> tickets
 override_rate: <pct>
-proposed_rule: theigors/rules/<name>
-proposed_check_shape: theigors/rules/ticket_design_checks/<name>
+proposed_rule: unseenuniversity/rules/<name>
+proposed_check_shape: unseenuniversity/rules/ticket_design_checks/<name>
 draft_narrative: <suggested first paragraph>
 draft_check_body: |
   applies_when: <inferred>
@@ -168,8 +168,8 @@ This is how budget pressure surfaces before it bites.
 - inflight slate items aged >5 days → flag
 
 **Output**: Habit-health metric updates to
-`theigors/metrics/audit_health/*` (counters + history per the SensorTree
-shape from `theigors/rules/metrics`). No tickets — the metric IS the
+`unseenuniversity/metrics/audit_health/*` (counters + history per the SensorTree
+shape from `unseenuniversity/rules/metrics`). No tickets — the metric IS the
 output.
 
 ### Analyzer 8 — Cross-layer coherence
@@ -220,7 +220,7 @@ SINCE=$(date -d "$WINDOW_DAYS days ago" -Iseconds)
 ```sql
 SELECT path, content, updated_at
 FROM clan.memory_palace
-WHERE path LIKE 'theigors/audits/%/runs/%'
+WHERE path LIKE 'unseenuniversity/audits/%/runs/%'
   AND updated_at >= '<since>'
 ORDER BY path
 ```
@@ -245,20 +245,20 @@ Sort by `(severity, expected_impact)` descending. Severity here means:
 ### 5. Write metric updates
 
 For Analyzer 7 (habit health), update SensorTree counters at
-`theigors/metrics/audit_health/*` directly. No `/decided` gate — these
+`unseenuniversity/metrics/audit_health/*` directly. No `/decided` gate — these
 are observations, not changes.
 
 ### 6. Write candidate proposals
 
 For Analyzers 1, 2, 4, 5, 6, 8: write each candidate to
-`theigors/audits/audits/candidates/<YYYY-MM-DD-HHMMSS>-<id>` palace
+`unseenuniversity/audits/audits/candidates/<YYYY-MM-DD-HHMMSS>-<id>` palace
 nodes. These are drafts — `/decided` reads them and decides whether to
 file as tickets, override, or discard.
 
 ### 7. Emit run record
 
 `audit-audits` IS an audit, so it emits its own run record at
-`theigors/audits/audits/runs/<timestamp>`. The recursion ends at one
+`unseenuniversity/audits/audits/runs/<timestamp>`. The recursion ends at one
 level — `audit-audits` analyzes the corpus including its own prior
 runs, but doesn't recurse into its own output.
 
@@ -274,9 +274,9 @@ Candidates: <K> CRITICAL, <L> HIGH, <P> MED, <Q> LOW
   ...
 Metric updates: <count> counters, <count> history rows
 Watch-for: <promoted>, <expired>, <aged>
-Telemetry: theigors/audits/audits/runs/<timestamp>
+Telemetry: unseenuniversity/audits/audits/runs/<timestamp>
 
-Next: review candidates at theigors/audits/audits/candidates/* via /decided.
+Next: review candidates at unseenuniversity/audits/audits/candidates/* via /decided.
 ```
 
 ---
@@ -325,7 +325,7 @@ class Candidate:
 ```
 
 The engine inherits from IgorBase per
-`theigors/rules/inherit-base-class`.
+`unseenuniversity/rules/inherit-base-class`.
 
 The engine and its tests land when this skill ships. The schema this
 analyzer reads is locked in `T-audit-telemetry-shape` — even though

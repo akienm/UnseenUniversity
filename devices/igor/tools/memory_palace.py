@@ -4,8 +4,8 @@ memory_palace.py — Navigable tree of signposts for TheIgors project.
 T-memory-palace-schema: Shared between Igor and CC. Each node is an address
 (pointer to where information lives), not a copy of the information itself.
 
-Tree structure: paths like 'theigors/igor/cognition' with parent_path
-'theigors/igor'. Nodes contain a title, brief content (the signpost), and
+Tree structure: paths like 'unseenuniversity/igor/cognition' with parent_path
+'unseenuniversity/igor'. Nodes contain a title, brief content (the signpost), and
 pointers (file paths, DB table names, tool names, URLs).
 
 Tools:
@@ -207,7 +207,7 @@ registry.register(
             "properties": {
                 "path": {
                     "type": "string",
-                    "description": "Tree path like 'theigors/igor/cognition'. Empty for root.",
+                    "description": "Tree path like 'unseenuniversity/igor/cognition'. Empty for root.",
                     "default": "",
                 },
             },
@@ -223,14 +223,14 @@ registry.register(
         description=(
             "Create or update a memory palace node. A node is a signpost: "
             "title, brief content, and pointers (file paths, DB tables, tools). "
-            "Nodes form a tree via path structure (e.g. 'theigors/igor/cognition')."
+            "Nodes form a tree via path structure (e.g. 'unseenuniversity/igor/cognition')."
         ),
         parameters={
             "type": "object",
             "properties": {
                 "path": {
                     "type": "string",
-                    "description": "Tree path like 'theigors/igor/cognition'.",
+                    "description": "Tree path like 'unseenuniversity/igor/cognition'.",
                 },
                 "title": {
                     "type": "string",
