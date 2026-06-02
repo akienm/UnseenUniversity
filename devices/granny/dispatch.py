@@ -39,53 +39,12 @@ _PYTHON = sys.executable  # same venv interpreter that started the daemon
 _MINION_TAGS = frozenset({"minion"})
 
 
-def _launch_cc_instance(ticket_id: str) -> None:
-    """Spawn 'claude -p /sprint-ticket <id>' in a named detached tmux session.
-
-    Session name: cc-{ticket_id}. Checks for an existing session first to
-    prevent double-launch. Best-effort — launch failure logs but does not
-    block the dispatch return value.
-    """
-    session = f"cc-{ticket_id}"
-    try:
-        already = subprocess.run(
-            ["tmux", "has-session", "-t", session], capture_output=True
-        )
-        if already.returncode == 0:
-            log.info("_launch_cc_instance: session %s already exists — skip", session)
-            return
-        subprocess.Popen(
-            [
-                "tmux",
-                "new-session",
-                "-d",
-                "-s",
-                session,
-                "-c",
-                str(_UU_ROOT),
-                "--",
-                "claude",
-                "--dangerously-skip-permissions",
-                "-p",
-                f"/sprint-ticket {ticket_id}",
-            ],
-        )
-        log.info(
-            "_launch_cc_instance: launched CC for %s (session=%s, wd=%s)",
-            ticket_id,
-            session,
-            _UU_ROOT,
-        )
-    except Exception as e:
-        log.warning("_launch_cc_instance: failed to launch CC for %s: %s", ticket_id, e)
-
-
 def cc_dispatch_fn(ticket: dict) -> bool:
-    """Dispatch a ticket to a CC instance.
+    """Post GRANNY_DISPATCH to the channel for a CC ticket.
 
-    1. Marks in_progress via cc_queue.py dispatch.
-    2. Posts GRANNY_DISPATCH to the shared channel for observability.
-    3. Spawns 'claude -p /sprint-ticket <id>' in a named tmux session.
+    Marks in_progress via cc_queue.py and posts the channel event.
+    Actual CC.0 dispatch (send-keys to claude-main) is handled by
+    T-granny-cc0-dispatch via the availability semaphore gate.
     """
     ticket_id = ticket.get("id", "")
     if not ticket_id:
@@ -124,8 +83,6 @@ def cc_dispatch_fn(ticket: dict) -> bool:
     except Exception as e:
         log.warning("cc_dispatch_fn: channel post failed for %s: %s", ticket_id, e)
 
-    # Launch the CC instance — best-effort, never blocks return value
-    _launch_cc_instance(ticket_id)
     return True
 
 

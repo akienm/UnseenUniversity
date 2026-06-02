@@ -151,12 +151,10 @@ class TestGrannyDaemonRunOnce:
         with (
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
             patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
-            patch("devices.granny.daemon.MAX_CONCURRENT_CC", 10),
             patch(
                 "devices.granny.daemon._check_rate_limit",
                 return_value=(True, None, 0.0),
             ),
-            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             count = daemon.run_once()
 
@@ -176,7 +174,6 @@ class TestGrannyDaemonRunOnce:
                 "devices.granny.daemon._check_rate_limit",
                 return_value=(True, None, 0.0),
             ),
-            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             count = daemon.run_once()
 
@@ -196,7 +193,6 @@ class TestGrannyDaemonRunOnce:
                 "devices.granny.daemon._check_rate_limit",
                 return_value=(True, None, 0.0),
             ),
-            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             count1 = daemon.run_once()  # dispatches T-a
             count2 = daemon.run_once()  # T-a blocked (in _dispatched_ids from cycle 1)
@@ -219,7 +215,6 @@ class TestGrannyDaemonRunOnce:
                 "devices.granny.daemon._check_rate_limit",
                 return_value=(True, None, 0.0),
             ),
-            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             count = daemon.run_once()
 
@@ -243,7 +238,6 @@ class TestGrannyDaemonRunOnce:
                 "devices.granny.daemon._check_rate_limit",
                 return_value=(True, None, 0.0),
             ),
-            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             count = daemon.run_once()
 
@@ -267,7 +261,6 @@ class TestGrannyDaemonRunOnce:
                 "devices.granny.daemon._check_rate_limit",
                 return_value=(True, None, 0.0),
             ),
-            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             count = daemon.run_once()
 
@@ -293,7 +286,6 @@ class TestGrannyDaemonRunOnce:
                 "devices.granny.daemon._check_rate_limit",
                 return_value=(True, None, 0.0),
             ),
-            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             count = daemon.run_once()
 
@@ -350,7 +342,6 @@ class TestGrannyDaemonAlertCC:
                 "devices.granny.daemon._check_rate_limit",
                 return_value=(True, None, 0.0),
             ),
-            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             daemon.run_once()
         # append called for CC.0 alert + feeds/granny publish
@@ -376,7 +367,6 @@ class TestGrannyDaemonAlertCC:
                 "devices.granny.daemon._check_rate_limit",
                 return_value=(True, None, 0.0),
             ),
-            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             daemon.run_once()
         cc_calls = [c for c in daemon._imap.append.call_args_list if c[0][0] == "CC.0"]
@@ -398,7 +388,6 @@ class TestGrannyDaemonAlertCC:
                 "devices.granny.daemon._check_rate_limit",
                 return_value=(True, None, 0.0),
             ),
-            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             daemon.run_once()
             daemon.run_once()
@@ -498,7 +487,6 @@ class TestRunOnceRateLimit:
                 "devices.granny.daemon._check_rate_limit",
                 return_value=(False, "5h", 95.0),
             ),
-            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
             caplog.at_level(logging.WARNING, logger="devices.granny.daemon"),
         ):
             count = daemon.run_once()
@@ -514,7 +502,6 @@ class TestRunOnceRateLimit:
                 "devices.granny.daemon._check_rate_limit",
                 return_value=(False, "7d", 14.0),
             ),
-            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
             caplog.at_level(logging.WARNING, logger="devices.granny.daemon"),
         ):
             count = daemon.run_once()
@@ -529,7 +516,6 @@ class TestRunOnceRateLimit:
                 "devices.granny.daemon._check_rate_limit",
                 return_value=(True, None, 21.0),
             ),
-            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
             patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
         ):
@@ -537,58 +523,41 @@ class TestRunOnceRateLimit:
         assert count == 1
 
 
-class TestConcurrencyGate:
-    """run_once() must not dispatch when cc_max_concurrent sessions are already active,
-    and must post GRANNY_THROTTLED to the channel so the cap is visible in the feed."""
+class TestCC0InProgress:
+    """_cc0_in_progress() returns True when a worker=claude/cc ticket is in_progress."""
 
-    def test_at_cap_returns_zero(self):
-        daemon = _make_bare_daemon()
-        with (
-            patch(
-                "devices.granny.daemon._check_rate_limit",
-                return_value=(True, None, 0.0),
-            ),
-            patch("devices.granny.daemon._count_active_cc_sessions", return_value=1),
-            patch("devices.granny.daemon.MAX_CONCURRENT_CC", 1),
-        ):
-            count = daemon.run_once()
-        assert count == 0
+    def test_returns_true_when_claude_ticket_in_progress(self):
+        from devices.granny.daemon import _cc0_in_progress
 
-    def test_at_cap_posts_throttled_to_channel(self):
-        daemon = _make_bare_daemon()
-        posted = []
-        daemon._post_channel = lambda msg: posted.append(msg)
-        with (
-            patch(
-                "devices.granny.daemon._check_rate_limit",
-                return_value=(True, None, 0.0),
-            ),
-            patch("devices.granny.daemon._count_active_cc_sessions", return_value=1),
-            patch("devices.granny.daemon.MAX_CONCURRENT_CC", 1),
-        ):
-            daemon.run_once()
-        assert any(
-            "GRANNY_THROTTLED" in m for m in posted
-        ), f"expected GRANNY_THROTTLED in channel posts, got: {posted}"
+        cursor = MagicMock()
+        cursor.fetchone.return_value = (1,)
+        cursor.__enter__ = lambda s: s
+        cursor.__exit__ = MagicMock(return_value=False)
+        conn = MagicMock()
+        conn.cursor.return_value = cursor
+        with patch("psycopg2.connect", return_value=conn):
+            assert _cc0_in_progress() is True
 
-    def test_below_cap_dispatches_normally(self):
-        daemon = _make_bare_daemon()
-        tickets = [_ticket("T-a")]
-        with (
-            patch(
-                "devices.granny.daemon._check_rate_limit",
-                return_value=(True, None, 0.0),
-            ),
-            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
-            patch("devices.granny.daemon.MAX_CONCURRENT_CC", 1),
-            patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
-            patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
-        ):
-            count = daemon.run_once()
-        assert count == 1
+    def test_returns_false_when_no_in_progress(self):
+        from devices.granny.daemon import _cc0_in_progress
 
-    def test_mid_cycle_cap_stops_after_first_dispatch(self):
-        """With MAX_CONCURRENT_CC=1 and 0 active sessions, only 1 of 2 tickets dispatches."""
+        cursor = MagicMock()
+        cursor.fetchone.return_value = None
+        cursor.__enter__ = lambda s: s
+        cursor.__exit__ = MagicMock(return_value=False)
+        conn = MagicMock()
+        conn.cursor.return_value = cursor
+        with patch("psycopg2.connect", return_value=conn):
+            assert _cc0_in_progress() is False
+
+    def test_returns_false_on_db_error(self):
+        from devices.granny.daemon import _cc0_in_progress
+
+        with patch("psycopg2.connect", side_effect=Exception("db down")):
+            assert _cc0_in_progress() is False
+
+    def test_two_tickets_dispatch_in_one_cycle(self):
+        """OR cascade is synchronous — no slot cap, both tickets dispatch."""
         daemon = _make_bare_daemon()
         tickets = [_ticket("T-a"), _ticket("T-b")]
         with (
@@ -596,10 +565,8 @@ class TestConcurrencyGate:
                 "devices.granny.daemon._check_rate_limit",
                 return_value=(True, None, 0.0),
             ),
-            patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
-            patch("devices.granny.daemon.MAX_CONCURRENT_CC", 1),
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
             patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
         ):
             count = daemon.run_once()
-        assert count == 1
+        assert count == 2

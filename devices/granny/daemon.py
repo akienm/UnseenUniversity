@@ -198,23 +198,28 @@ def _check_rate_limit() -> tuple[bool, Optional[str], float]:
         return (True, None, 0.0)
 
 
-def _list_cc_sessions() -> list:
-    """List tmux session names with the cc-* prefix (Granny-spawned workers)."""
+def _cc0_in_progress() -> bool:
+    """Return True when a worker=claude ticket is currently in_progress (CC.0 is busy)."""
     try:
-        result = subprocess.run(
-            ["tmux", "ls", "-F", "#{session_name}"],
-            capture_output=True,
-            text=True,
-            timeout=5,
+        import psycopg2
+
+        db_url = os.environ.get(
+            "IGOR_HOME_DB_URL",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
-        return [line for line in result.stdout.splitlines() if line.startswith("cc-")]
-    except Exception:
-        return []
-
-
-def _count_active_cc_sessions() -> int:
-    """Count tmux sessions with the cc-* prefix (Granny-spawned workers)."""
-    return len(_list_cc_sessions())
+        conn = psycopg2.connect(db_url, connect_timeout=5)
+        with conn.cursor() as cur:
+            cur.execute("""SELECT 1 FROM clan.memories
+                   WHERE metadata->>'kind' = 'ticket'
+                   AND metadata->>'status' = 'in_progress'
+                   AND metadata->>'worker' IN ('claude', 'cc')
+                   LIMIT 1""")
+            row = cur.fetchone()
+        conn.close()
+        return row is not None
+    except Exception as e:
+        log.debug("_cc0_in_progress: query failed (assuming not busy): %s", e)
+        return False
 
 
 _MINION_TAGS = frozenset({"minion"})
@@ -345,31 +350,11 @@ class GrannyDaemon:
             )
             return 0
 
-        active = _count_active_cc_sessions()
-        slots = max(0, MAX_CONCURRENT_CC - active)
-        if slots == 0:
-            log.info(
-                "GrannyDaemon: %d/%d CC workers active — at cap, skipping dispatch",
-                active,
-                MAX_CONCURRENT_CC,
-            )
-            self._post_channel(
-                f"GRANNY_THROTTLED|active={active}|max={MAX_CONCURRENT_CC}|reason=cc_cap"
-            )
-            return 0
-
         tickets = _load_sprint_tickets()
         dispatched = 0
         new_ids: set[str] = set()
 
         for ticket in tickets:
-            if slots <= 0:
-                log.info(
-                    "GrannyDaemon: CC cap (%d) reached mid-cycle — deferring remaining",
-                    MAX_CONCURRENT_CC,
-                )
-                break
-
             tid = ticket.get("id", "")
             if not tid:
                 continue
@@ -382,14 +367,13 @@ class GrannyDaemon:
                     self._hold_for_audit_fail(tid, audit.reasons)
                     continue
                 if audit.escalate_to_cc:
-                    # HIGH-inertia: block the ticket and alert CC.0 for human approval.
-                    # Never auto-dispatch — spawning CC for HIGH-inertia tickets caused
-                    # the runaway on 2026-06-01.
+                    # HIGH-inertia: block and alert CC.0 for human approval.
+                    # Never auto-dispatch.
                     self._hold_for_cc_approval(tid, str(audit.reasons))
                     ok = True
                     worker_id = "hold-for-cc"
                 else:
-                    # Audit passed: try OR cascade (analyst→worker→minion) first.
+                    # Audit passed: try OR cascade (analyst→worker→minion).
                     # Only blocks for CC if all OR tiers ESCALATE.
                     ok = self._inference_dispatch(
                         ticket, on_complete=self._record_inference_outcome
@@ -405,7 +389,6 @@ class GrannyDaemon:
             if ok:
                 new_ids.add(tid)
                 dispatched += 1
-                slots -= 1
                 self._total_dispatched += 1
                 log.info("GrannyDaemon: dispatched %s → %s", tid, worker_id)
                 self._publish_feed("dispatch", tid, f"dispatched to {worker_id}")
@@ -465,8 +448,7 @@ class GrannyDaemon:
                 "total_dispatched": self._total_dispatched,
                 "total_errors": self._total_errors,
                 "poll_interval_sec": POLL_INTERVAL_SEC,
-                "max_concurrent_cc": MAX_CONCURRENT_CC,
-                "active_cc_sessions": _count_active_cc_sessions(),
+                "cc0_in_progress": _cc0_in_progress(),
                 "last_poll": self._last_poll,
                 "dispatched_this_cycle": len(self._dispatched_ids),
             },
