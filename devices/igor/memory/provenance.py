@@ -90,6 +90,50 @@ def ensure_provenance(metadata: dict, source: str = "") -> dict:
     return metadata
 
 
+# Known source prefixes whose tokens are trusted without further verification.
+# When T-sec-hmac-key-isolation ships, add HMAC signature validation here.
+_TRUSTED_TOKEN_PREFIXES = frozenset(
+    {
+        "cc-",
+        "igor-",
+        "granny-",
+        "librarian-",
+        "archivist-",
+        "scraps-",
+        "system-",
+        "seed-",
+        "migration-",
+        "genesis-",
+        "self_training-",
+    }
+)
+_MAX_TOKEN_LEN = 256
+
+
+def verify_source_token(token: str) -> tuple[bool, str]:
+    """Validate a source_token before it is stored on a memory.
+
+    Permissive mode: invalid tokens are nullified (not rejected) so existing
+    writes don't break. Returns (is_valid, reason).
+
+    A token is valid when:
+    - It is non-empty and within the length limit
+    - It starts with a known trusted prefix
+
+    When T-sec-hmac-key-isolation ships, replace prefix check with
+    HMAC signature verification against the rack signing key.
+    """
+    if not token:
+        return False, "empty token"
+    if len(token) > _MAX_TOKEN_LEN:
+        return False, f"token too long ({len(token)} > {_MAX_TOKEN_LEN})"
+    lower = token.lower()
+    for prefix in _TRUSTED_TOKEN_PREFIXES:
+        if lower.startswith(prefix):
+            return True, "ok"
+    return False, f"unrecognized prefix (token: {token[:40]!r})"
+
+
 def provenance_report(metadata: dict) -> dict:
     """Return a dict of provenance coverage for this memory's metadata."""
     present = []

@@ -1569,10 +1569,22 @@ class Cortex(IgorBase):
         if not memory.metadata:
             memory.metadata = {}
         memory.metadata["_narrative_hint"] = (memory.narrative or "")[:60]
-        from .provenance import ensure_provenance
+        from .provenance import ensure_provenance, verify_source_token
 
         memory.metadata = ensure_provenance(memory.metadata, memory.source)
         memory.metadata.pop("_narrative_hint", None)
+        # T-provenance-write-enforce: verify source_token before storing.
+        # Permissive mode: invalid token is nullified (not rejected) so existing
+        # writes don't break. Prevents prompt-injected agents from forging tier_1.
+        if memory.source_token:
+            valid, reason = verify_source_token(memory.source_token)
+            if not valid:
+                log.warning(
+                    "PROVENANCE_TOKEN_INVALID: ticket=%s source_token nullified — %s",
+                    memory.id,
+                    reason,
+                )
+                memory.source_token = None
         # T-test-data-lifecycle: when IGOR_TEST_MODE=1, auto-stamp test_data
         # tag + TTL into metadata. Honors memory_node_shape principle —
         # everything lives in metadata, no columns. Opt-out: explicit
