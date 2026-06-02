@@ -247,17 +247,24 @@ class TestDispatchHaltEnforcement:
 
 
 class TestSkeletonKillSwitchTools:
-    def _make_skeleton(self, tmp_path: Path) -> tuple[Skeleton, HaltRegistry]:
+    def _make_skeleton(self, tmp_path: Path):
+        """Return (skel, halt_reg, token) — token is a valid proof for 'skeleton'."""
+        from unseen_university.announce.provenance import ProvenanceService
+
         registry = DeviceRegistry(path=tmp_path / "devices.json")
         halt_reg = HaltRegistry(path=tmp_path / "registry" / "halted.json")
-        skel = Skeleton(registry=registry, halt_registry=halt_reg)
-        return skel, halt_reg
+        prov = ProvenanceService(
+            registry_dir=tmp_path / "prov_registry",
+            secret_path=tmp_path / "rack.secret",
+        )
+        skel = Skeleton(registry=registry, halt_registry=halt_reg, provenance=prov)
+        token = prov.issue_token("skeleton", "test-session", 0.0)
+        return skel, halt_reg, token
 
     def test_agent_halt_tool_marks_halted(self, tmp_path: Path) -> None:
-        skel, halt_reg = self._make_skeleton(tmp_path)
-        # Call agent_halt via the registered MCP tool function directly
+        skel, halt_reg, token = self._make_skeleton(tmp_path)
         result = skel._mcp._tool_manager._tools["agent_halt"].fn(
-            agent_id="test-agent", reason="bad actor", from_device="skeleton"
+            agent_id="test-agent", reason="bad actor", from_device="skeleton", proof=token
         )
         assert result["ok"] is True
         halted, reason = halt_reg.is_halted("test-agent")
@@ -265,10 +272,10 @@ class TestSkeletonKillSwitchTools:
         assert reason == "bad actor"
 
     def test_agent_resume_tool_clears_halt(self, tmp_path: Path) -> None:
-        skel, halt_reg = self._make_skeleton(tmp_path)
+        skel, halt_reg, token = self._make_skeleton(tmp_path)
         halt_reg.set_halted("test-agent", True, "pre-halted")
         skel._mcp._tool_manager._tools["agent_resume"].fn(
-            agent_id="test-agent", from_device="skeleton"
+            agent_id="test-agent", from_device="skeleton", proof=token
         )
         halted, _ = halt_reg.is_halted("test-agent")
         assert not halted
@@ -276,28 +283,49 @@ class TestSkeletonKillSwitchTools:
     def test_agent_halt_requires_skeleton_caller(self, tmp_path: Path) -> None:
         from unseen_university.skeleton.exceptions import AuthError
 
-        skel, _ = self._make_skeleton(tmp_path)
+        skel, _, token = self._make_skeleton(tmp_path)
         with pytest.raises(AuthError):
             skel._mcp._tool_manager._tools["agent_halt"].fn(
-                agent_id="test-agent", reason="x", from_device="imposter"
+                agent_id="test-agent", reason="x", from_device="imposter", proof=token
             )
 
     def test_agent_resume_requires_skeleton_caller(self, tmp_path: Path) -> None:
         from unseen_university.skeleton.exceptions import AuthError
 
-        skel, halt_reg = self._make_skeleton(tmp_path)
+        skel, halt_reg, token = self._make_skeleton(tmp_path)
         halt_reg.set_halted("test-agent", True, "test")
         with pytest.raises(AuthError):
             skel._mcp._tool_manager._tools["agent_resume"].fn(
-                agent_id="test-agent", from_device="test-agent"
+                agent_id="test-agent", from_device="test-agent", proof=token
+            )
+
+    def test_agent_halt_requires_valid_proof(self, tmp_path: Path) -> None:
+        """Supplying a forged from_device='skeleton' without a valid proof is denied."""
+        from unseen_university.skeleton.exceptions import AuthError
+
+        skel, _, _ = self._make_skeleton(tmp_path)
+        with pytest.raises(AuthError, match="proof token"):
+            skel._mcp._tool_manager._tools["agent_halt"].fn(
+                agent_id="test-agent", reason="x", from_device="skeleton", proof="forged-token"
+            )
+
+    def test_agent_resume_requires_valid_proof(self, tmp_path: Path) -> None:
+        """A prompt-injected agent cannot resume by self-reporting from_device='skeleton'."""
+        from unseen_university.skeleton.exceptions import AuthError
+
+        skel, halt_reg, _ = self._make_skeleton(tmp_path)
+        halt_reg.set_halted("test-agent", True, "halted")
+        with pytest.raises(AuthError, match="proof token"):
+            skel._mcp._tool_manager._tools["agent_resume"].fn(
+                agent_id="test-agent", from_device="skeleton", proof=""
             )
 
     def test_halt_governance_record_written(
         self, tmp_path: Path, trace_dir: Path
     ) -> None:
-        skel, _ = self._make_skeleton(tmp_path)
+        skel, _, token = self._make_skeleton(tmp_path)
         skel._mcp._tool_manager._tools["agent_halt"].fn(
-            agent_id="test-agent", reason="audit test", from_device="skeleton"
+            agent_id="test-agent", reason="audit test", from_device="skeleton", proof=token
         )
         records = _governance_records(trace_dir)
         halt_records = [r for r in records if r.get("action") == "agent_halt"]

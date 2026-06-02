@@ -77,6 +77,7 @@ class Skeleton(BaseDevice):
         halt_registry: HaltRegistry | None = None,
         imap_server: "IMAPServer | None" = None,
         profiles_dir: "Path | str | None" = None,
+        provenance: "ProvenanceService | None" = None,
     ) -> None:
         self._registry = registry or DeviceRegistry()
         self._halt_registry = halt_registry or HaltRegistry()
@@ -85,6 +86,7 @@ class Skeleton(BaseDevice):
         self._announce_broker: AnnounceBroker | None = None
         self._announce_listener: AnnounceListener | None = None
         self._channel_registry: ChannelRegistry | None = None
+        self._provenance: ProvenanceService = provenance or ProvenanceService()
         self._mcp = FastMCP("unseen_university")
         self._setup_rack_tools()
         # Register self in the flat-file registry
@@ -117,13 +119,12 @@ class Skeleton(BaseDevice):
             log.warning("announce: could not create shared channel mailbox: %s", exc)
 
         self._channel_registry = ChannelRegistry()
-        provenance = ProvenanceService()
-        provenance.clear_all()  # expire all tokens from any prior rack process
+        self._provenance.clear_all()  # expire all tokens from any prior rack process
         self._announce_broker = AnnounceBroker(
             profiles_dir=profiles_dir,
             registry=self._registry,
             devices=self._devices,
-            provenance=provenance,
+            provenance=self._provenance,
         )
         self._announce_listener = AnnounceListener(
             broker=self._announce_broker,
@@ -170,12 +171,12 @@ class Skeleton(BaseDevice):
             return rack_channels(skel._imap_server)
 
         @self._mcp.tool()
-        def agent_halt(agent_id: str, reason: str, from_device: str) -> dict:
+        def agent_halt(agent_id: str, reason: str, from_device: str, proof: str = "") -> dict:
             """Halt agent_id — deny all subsequent tool calls via policy gate.
 
             Requires from_device to be a rack-admin agent (skeleton, cc, granny-weatherwax,
-            or RACK_ADMIN_AGENTS env override). Halt persists across rack restarts.
-            To un-halt, call agent_resume.
+            or RACK_ADMIN_AGENTS env override) AND a valid proof token issued at announce time.
+            Halt persists across rack restarts. To un-halt, call agent_resume.
             """
             admin_agents = _rack_admin_agents()
             if from_device not in admin_agents:
@@ -196,6 +197,24 @@ class Skeleton(BaseDevice):
                     from_device=from_device,
                     target=agent_id,
                 )
+            if not skel._provenance.verify(proof):
+                _write_governance_decision(
+                    {
+                        "ts": _now(),
+                        "agent_id": from_device,
+                        "action": "agent_halt",
+                        "policy_checked": ["provenance_token"],
+                        "verdict": "deny",
+                        "reason": "invalid or missing proof token",
+                        "target": agent_id,
+                    }
+                )
+                raise AuthError(
+                    "agent_halt: invalid proof token — caller must supply the token "
+                    "returned in its announce manifest",
+                    from_device=from_device,
+                    target=agent_id,
+                )
             skel._halt_registry.set_halted(agent_id, True, reason)
             _write_governance_decision(
                 {
@@ -211,11 +230,11 @@ class Skeleton(BaseDevice):
             return {"ok": True, "agent_id": agent_id, "op": "halt", "reason": reason}
 
         @self._mcp.tool()
-        def agent_resume(agent_id: str, from_device: str) -> dict:
+        def agent_resume(agent_id: str, from_device: str, proof: str = "") -> dict:
             """Resume a halted agent — restore normal policy gate evaluation.
 
-            Requires from_device to be a rack-admin agent. Self-resume is
-            intentionally denied: a halted agent must not un-halt itself.
+            Requires from_device to be a rack-admin agent AND a valid proof token.
+            Self-resume is intentionally denied: a halted agent must not un-halt itself.
             """
             admin_agents = _rack_admin_agents()
             if from_device not in admin_agents:
@@ -233,6 +252,24 @@ class Skeleton(BaseDevice):
                 raise AuthError(
                     f"agent_resume: caller {from_device!r} is not a rack-admin agent "
                     f"(allowed: {sorted(admin_agents)})",
+                    from_device=from_device,
+                    target=agent_id,
+                )
+            if not skel._provenance.verify(proof):
+                _write_governance_decision(
+                    {
+                        "ts": _now(),
+                        "agent_id": from_device,
+                        "action": "agent_resume",
+                        "policy_checked": ["provenance_token"],
+                        "verdict": "deny",
+                        "reason": "invalid or missing proof token",
+                        "target": agent_id,
+                    }
+                )
+                raise AuthError(
+                    "agent_resume: invalid proof token — caller must supply the token "
+                    "returned in its announce manifest",
                     from_device=from_device,
                     target=agent_id,
                 )
@@ -352,18 +389,18 @@ class Skeleton(BaseDevice):
 
         def make_control_tools(did: str, dev: BaseDevice) -> None:
             @skel._mcp.tool(name=f"{did}_halt")
-            def device_halt(from_device: str) -> dict:
-                f"""Halt device '{did}'. Requires from_device == 'skeleton' or == '{did}'."""
-                skel._check_caller_auth(from_device, did, "halt")
+            def device_halt(from_device: str, proof: str = "") -> dict:
+                f"""Halt device '{did}'. Requires from_device == 'skeleton' or == '{did}' AND valid proof token."""
+                skel._check_caller_auth(from_device, did, "halt", proof)
                 if did not in skel._devices:
                     return {"error": f"device '{did}' not online"}
                 dev.halt()
                 return {"ok": True, "device_id": did, "op": "halt"}
 
             @skel._mcp.tool(name=f"{did}_block")
-            def device_block(from_device: str, reason: str = "") -> dict:
-                f"""Block device '{did}'. Requires from_device == 'skeleton' or == '{did}'."""
-                skel._check_caller_auth(from_device, did, "block")
+            def device_block(from_device: str, reason: str = "", proof: str = "") -> dict:
+                f"""Block device '{did}'. Requires from_device == 'skeleton' or == '{did}' AND valid proof token."""
+                skel._check_caller_auth(from_device, did, "block", proof)
                 if did not in skel._devices:
                     return {"error": f"device '{did}' not online"}
                 dev.block(reason)
@@ -373,9 +410,14 @@ class Skeleton(BaseDevice):
         make_control_tools(device_id, device)
 
     def _check_caller_auth(
-        self, from_device: str, target_device_id: str, op: str
+        self, from_device: str, target_device_id: str, op: str, proof: str = ""
     ) -> None:
-        """Raise AuthError if from_device is not authorized to call op on target."""
+        """Raise AuthError if from_device is not authorized to call op on target.
+
+        Requires both:
+          1. from_device == 'skeleton' or == target_device_id
+          2. proof is a valid token in the ProvenanceService store
+        """
         if from_device not in (self.DEVICE_ID, target_device_id):
             log.warning(
                 "auth denied: from_device=%r attempted %s on %r",
@@ -387,6 +429,18 @@ class Skeleton(BaseDevice):
                 f"Unauthorized: {op} on '{target_device_id}' requires "
                 f"from_device == 'skeleton' or == '{target_device_id}', "
                 f"got '{from_device}'",
+                from_device=from_device,
+                target=target_device_id,
+            )
+        if not self._provenance.verify(proof):
+            log.warning(
+                "auth denied: %r attempted %s on %r — invalid proof token",
+                from_device,
+                op,
+                target_device_id,
+            )
+            raise AuthError(
+                f"Unauthorized: {op} on '{target_device_id}' requires a valid proof token",
                 from_device=from_device,
                 target=target_device_id,
             )

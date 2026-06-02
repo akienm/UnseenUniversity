@@ -166,25 +166,45 @@ def test_health_rollup_timeout(tmp_path):
 # ── Access control ────────────────────────────────────────────────────────────
 
 
+def _make_skeleton_with_token(tmp_path: Path, caller: str) -> tuple[Skeleton, str]:
+    """Return (skel, proof_token) — token is issued for caller."""
+    from unseen_university.announce.provenance import ProvenanceService
+
+    prov = ProvenanceService(
+        registry_dir=tmp_path / "prov_registry",
+        secret_path=tmp_path / "rack.secret",
+    )
+    registry = DeviceRegistry(path=tmp_path / "devices.json")
+    skel = Skeleton(registry=registry, provenance=prov)
+    token = prov.issue_token(caller, "test-session", 0.0)
+    return skel, token
+
+
 def test_auth_halt_skeleton_caller_allowed(tmp_path):
-    skel = _make_skeleton(tmp_path)
+    skel, token = _make_skeleton_with_token(tmp_path, "skeleton")
     skel.register_device(StubDevice())
-    # 'skeleton' is always allowed to halt any device
-    skel._check_caller_auth("skeleton", "stub", "halt")  # must not raise
+    skel._check_caller_auth("skeleton", "stub", "halt", token)  # must not raise
 
 
 def test_auth_halt_self_allowed(tmp_path):
-    skel = _make_skeleton(tmp_path)
+    skel, token = _make_skeleton_with_token(tmp_path, "stub")
     skel.register_device(StubDevice())
-    # A device can halt itself
-    skel._check_caller_auth("stub", "stub", "halt")  # must not raise
+    skel._check_caller_auth("stub", "stub", "halt", token)  # must not raise
 
 
 def test_auth_halt_third_party_raises(tmp_path):
-    skel = _make_skeleton(tmp_path)
+    skel, token = _make_skeleton_with_token(tmp_path, "CC.0")
     skel.register_device(StubDevice())
     with pytest.raises(AuthError):
-        skel._check_caller_auth("CC.0", "stub", "halt")
+        skel._check_caller_auth("CC.0", "stub", "halt", token)
+
+
+def test_auth_halt_missing_proof_raises(tmp_path):
+    """Correct from_device but missing proof token — must still be denied."""
+    skel, _ = _make_skeleton_with_token(tmp_path, "skeleton")
+    skel.register_device(StubDevice())
+    with pytest.raises(AuthError, match="proof token"):
+        skel._check_caller_auth("skeleton", "stub", "halt", "")
 
 
 # ── Announce bootstrap (slice 2) ──────────────────────────────────────────────
