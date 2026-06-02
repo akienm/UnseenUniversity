@@ -1,0 +1,28 @@
+# Granny configuration
+# This file defines how Granny dispatches workers to tickets.
+# Each worker entry specifies:
+#   - dispatch_method: 'tmux', 'channel', or 'direct'
+#   - session: for tmux workers (optional)
+#   - address: for channel workers (required for 'channel')
+#   - gates: conditions that must be met to dispatch
+#     - time_window: HH:MM-HH:MM (24-hour format)
+#     - away_semaphore: name of semaphore to check (optional)
+#     - usage_max_pct: maximum CPU usage percentage (optional)
+#     - max_concurrent: maximum concurrent instances (optional)
+#     - available_semaphore: name of semaphore to check (optional)
+
+workers:
+  CC.0:
+    dispatch: tmux
+    session: claude-main
+    gates:
+      time_window: '21:00-06:00'
+      away_semaphore: CC.0.available.true
+      usage_max_pct: 70
+      max_concurrent: 1
+  DickSimnel.0:
+    dispatch: channel
+    address: comms://dicksimnel
+    gates:
+      available_semaphore: DickSimnel.0.available.true
+      max_concurrent: 1
