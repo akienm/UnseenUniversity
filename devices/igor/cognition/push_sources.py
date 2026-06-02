@@ -2836,7 +2836,12 @@ class StaleChatLogBackfiller(BasePushSource):
             result = subprocess.run(
                 [
                     "python3",
-                    str(Path.home() / "TheIgors/lab/claudecode/cc_log_stop_hook.py"),
+                    str(
+                        paths().source_root
+                        / "lab"
+                        / "claudecode"
+                        / "cc_log_stop_hook.py"
+                    ),
                 ],
                 capture_output=True,
                 text=True,

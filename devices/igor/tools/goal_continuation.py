@@ -29,6 +29,7 @@ Forensic log: ~/.unseen_university/logs/goal_continuation.log
 """
 
 import json
+import os
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -40,7 +41,17 @@ from ..paths import paths as _paths
 from .channel_post import post_to_channel as _post_to_channel
 
 _DB_URL = _paths().home_db_url
-_CC_QUEUE = Path.home() / "TheIgors" / "lab" / "claudecode" / "cc_queue.py"
+_CC_QUEUE = (
+    Path(
+        os.environ.get(
+            "CC_WORKFLOW_TOOLS",
+            str(
+                Path.home() / "dev" / "src" / "UnseenUniversity" / "lab" / "claudecode"
+            ),
+        )
+    )
+    / "cc_queue.py"
+)
 _CHANNEL_FILE = Path.home() / ".unseen_university" / "cc_channel" / "messages.jsonl"
 
 # D259 human-author gate: set of authors treated as human-driven.

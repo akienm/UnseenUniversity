@@ -189,6 +189,7 @@ class InferenceDevice(BaseDevice):
     def where_and_how(self) -> dict:
         return {
             "host": "openrouter.ai" if self._mode == "openrouter" else "localhost",
+            "pid": os.getpid(),
             "endpoint": self._endpoint,
             "mode": self._mode,
             "launch_command": (

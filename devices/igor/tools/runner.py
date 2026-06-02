@@ -311,7 +311,7 @@ def _resolve_repo_path(repo_path: str = None, project_id: str = None) -> str:
             logging.getLogger(__name__).warning(
                 "bare except in devices/igor/tools/runner.py: %s", _bare_e
             )
-    return str(Path.home() / "TheIgors")
+    return str(Path.home() / "dev" / "src" / "UnseenUniversity")
 
 
 def git_log(repo_path: str = None, project_id: str = None, n: int = 20) -> str:

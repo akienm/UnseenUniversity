@@ -219,7 +219,7 @@ def run_test_extract(
             capture_output=True,
             text=True,
             timeout=60,
-            cwd=str(Path.home() / "TheIgors"),
+            cwd=str(Path.home() / "dev" / "src" / "UnseenUniversity"),
         )
         output = result.stdout + result.stderr
         failures = []

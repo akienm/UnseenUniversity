@@ -28,7 +28,8 @@ _PG_URL = os.environ.get(
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 
-_DEFAULT_DECISIONS_DIR = Path.home() / "TheIgors" / "lab" / "design_docs" / "decisions"
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+_DEFAULT_DECISIONS_DIR = _REPO_ROOT / "lab" / "design_docs" / "decisions"
 
 _UPSERT = """
 INSERT INTO {schema}.palace (path, title, content, node_type, updated_at, metadata)
@@ -108,8 +109,8 @@ def load_decisions(decisions_dir: Path) -> list[dict]:
             "date": date_str,
             "source_file": (
                 str(f)
-                if not f.is_relative_to(Path.home() / "TheIgors")
-                else str(f.relative_to(Path.home() / "TheIgors"))
+                if not f.is_relative_to(_REPO_ROOT)
+                else str(f.relative_to(_REPO_ROOT))
             ),
         }
         if spawned:

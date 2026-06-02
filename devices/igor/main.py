@@ -69,6 +69,7 @@ from .web.adc_shim import IgorADCShim
 from . import boot_check
 from .cognition.job_manager import JobManager
 from .paths import paths as _paths
+from .config import get as _config_get
 
 console = Console(force_terminal=True)
 
@@ -10002,29 +10003,14 @@ def main():
     if args.id:
         instance_id = args.id
     elif os.getenv("IGOR_INSTANCE_ID"):
-        # .env is re-sourced on every restart loop iteration — this lets the
-        # instance name change take effect on next code-42 restart without
-        # requiring the outer bash loop to be restarted.
+        # Env var wins — re-sourced on every restart loop iteration so instance
+        # name changes take effect on next code-42 restart without restarting
+        # the outer bash loop.
         instance_id = os.getenv("IGOR_INSTANCE_ID")
     else:
-        # Resume the most recently used DB rather than always spawning a new one.
-        # A fresh ID is only generated if no DB exists at all.
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
-        if _IGOR_DB_ENV:
-            # IGOR_DB_PATH set — instance_id derived from filename
-            instance_id = Path(_IGOR_DB_ENV).expanduser().stem
-            loginfo(f"[dim]Using IGOR_DB_PATH: {_IGOR_DB_ENV}[/]")
-        else:
-            existing_dbs = sorted(
-                DATA_DIR.glob("igor_wild_*.db"),
-                key=lambda p: p.stat().st_mtime,
-                reverse=True,
-            )
-            if existing_dbs:
-                instance_id = existing_dbs[0].stem
-                loginfo(f"[dim]Resuming existing instance: {instance_id}[/]")
-            else:
-                instance_id = _make_instance_id(args.host)
+        # Phase 6: fall back to config.cfg value (e.g. igor.cfg IGOR_INSTANCE_ID),
+        # then to the hardcoded default.  SQLite file discovery removed (Postgres era).
+        instance_id = _config_get("IGOR_INSTANCE_ID", "Igor-wild-0001")
 
     igor = Igor(instance_id=instance_id)
     igor.run()

@@ -226,12 +226,13 @@ def check_disk_usage() -> str:
     warn_gb = float(os.getenv("IGOR_DISK_WARN_GB", "1.0"))
     crit_gb = float(os.getenv("IGOR_DISK_CRITICAL_GB", "0.2"))
     from devices.igor.paths import paths as _igor_paths
+
     igor_home = _igor_paths().runtime
-    src_home = Path.home() / "TheIgors"
+    src_home = Path.home() / "dev" / "src" / "UnseenUniversity"
 
     check_paths = [
-        ("runtime (~/.TheIgors)", igor_home),
-        ("source (~/TheIgors)", src_home),
+        ("runtime (~/.unseen_university)", igor_home),
+        ("source (~/dev/src/UnseenUniversity)", src_home),
         ("disk (/)", Path("/")),
     ]
 

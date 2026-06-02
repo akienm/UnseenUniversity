@@ -3,7 +3,7 @@
 Single source of truth for all ~/.unseen_university/* path references.
 Replaces every hardcoded Path.home() / ".unseen_university" in the codebase.
 
-Env vars:
+Env vars (optional — code defaults are used when absent):
     IGOR_RUNTIME_ROOT  — override the default ~/.unseen_university root
     IGOR_INSTANCE_ID   — override the default instance folder (Igor-wild-0001)
 

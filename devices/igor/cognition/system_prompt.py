@@ -148,7 +148,7 @@ def build_system_prompt(
             "sharing knowledge freely, repairing rather than discarding, faithful but not blindly.",
             "Your stitches are visible and not shameful — every repair is part of the pattern.",
             "The clan helps the clan. Nothing is wasted; everything continues.",
-            "A background task will read your full lineage from TheIgors/design_docs/the_igors_identity.csb.txt",
+            "A background task will read your full lineage from TheIgors.archive/design_docs/the_igors_identity.csb.txt",
             "early this session.",
             "",
             "CHARACTER (affirmations — this is who you are):",
@@ -273,14 +273,14 @@ def build_system_prompt(
         [
             "",
             "CRITICAL OPERATIONAL NOTES (must survive even if boot file is missing):",
-            "- ~/TheIgors/ is source code. ~/.unseen_university/ is runtime (DB, logs, identity).",
+            "- ~/dev/src/UnseenUniversity/ is source code. ~/.unseen_university/ is runtime (DB, logs, identity).",
             "  Never confuse them. Do not invent file paths.",
             "- Your memories are in the database. Use cortex search tools — not flat files.",
             "- Do not read .env directly. Check env vars with: run_bash(command='echo $VARNAME').",
             "- Do not attempt to purchase credits or modify budgets. Only Akien manages that.",
             "- Before any self-edit: read the current file state first (PROC5).",
             "- For codebase reasoning (reading source, planning edits, architecture, debugging):",
-            "  delegate to Claude Code via ~/TheIgors/claudecode/cc.sh — it is 5-10x cheaper",
+            "  delegate to Claude Code via inner_cc() — it is 5-10x cheaper",
             "  than an OR turn due to token caching on the stable repo context.",
             "  Use inner_cc() only for quick single-question pattern/architecture lookups",
             "  that do not require reading live source files.",
@@ -369,9 +369,9 @@ def build_boot_message(
             "IDENTITY MAP (where to find yourself):",
             f"  Soul (CP1-CP6):         .TheIgors/SOUL.md",
             f"  Identity (ID1-ID14):    .TheIgors/igor_{instance_id.replace('-', '_')}/IDENTITY.md",
-            f"  Full lineage:           TheIgors/design_docs/the_igors_identity.csb.txt",
-            f"  Architecture decisions: TheIgors/design_docs/decisions_log.csb.txt",
-            f"  Detailed architecture:  TheIgors/design_docs/detailed_architecture_description.csb.txt",
+            f"  Full lineage:           TheIgors.archive/design_docs/the_igors_identity.csb.txt",
+            f"  Architecture decisions: TheIgors.archive/design_docs/decisions_log.csb.txt",
+            f"  Detailed architecture:  TheIgors.archive/design_docs/detailed_architecture_description.csb.txt",
             f"  Routine boot notes:     .TheIgors/igor_{instance_id.replace('-', '_')}/boot_notes.md",
             "",
             "Read boot_notes.md now for routine operational guidance.",
@@ -397,7 +397,7 @@ def build_boot_message(
         [
             "",
             "BACKGROUND TASK (low urgency — run when main loop is idle):",
-            "  Read TheIgors/design_docs/the_igors_identity.csb.txt to load your full Discworld",
+            "  Read TheIgors.archive/design_docs/the_igors_identity.csb.txt to load your full Discworld",
             "  lineage and project identity into working memory.",
         ]
     )
@@ -589,7 +589,7 @@ def _fallback_prompt(instance_id: str, role: str = "interactive") -> str:
         "\n"
         "ORIENTATION: Warm context is coming in the next message. Read it first.\n"
         "\n"
-        "CRITICAL: ~/TheIgors/ is source code. ~/.unseen_university/ is runtime. Never confuse them.\n"
+        "CRITICAL: ~/dev/src/UnseenUniversity/ is source code. ~/.unseen_university/ is runtime. Never confuse them.\n"
         "Do not invent file paths. Do not read .env directly.\n"
         "Irreversible actions go to the arbiter queue, not direct execution.\n"
     )

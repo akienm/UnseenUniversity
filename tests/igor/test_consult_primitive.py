@@ -419,7 +419,7 @@ class TestConsultLogPath:
             env={**__import__("os").environ, **env},
             capture_output=True,
             text=True,
-            cwd="/home/akien/TheIgors",
+            cwd=str(Path(__file__).resolve().parent.parent.parent),
         )
         return result.stdout.strip()
 

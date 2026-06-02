@@ -106,8 +106,11 @@ class MinionDevice(BaseDevice):
         return {"current_version": "0.1.0", "update_available": False}
 
     def where_and_how(self) -> dict:
+        import os
+
         return {
             "host": "localhost",
+            "pid": os.getpid(),
             "launch_command": "MinionDevice().execute(WorkerEnvelope(...))",
         }
 

@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path.home() / "TheIgors"))
+sys.path.insert(0, str(Path.home() / "TheIgors.archive"))
 
 
 def is_chat_server_up():

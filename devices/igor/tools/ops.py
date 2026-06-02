@@ -1153,8 +1153,8 @@ def run_tests() -> str:
     import subprocess
     from pathlib import Path
 
-    repo = Path.home() / "TheIgors"
-    venv_python = repo / "venv" / "bin" / "python"
+    repo = Path.home() / "dev" / "src" / "UnseenUniversity"
+    venv_python = repo / ".venv" / "bin" / "python3"
     ignore_args = [arg for path in _PREFLIGHT_IGNORE for arg in ("--ignore", path)]
     try:
         result = subprocess.run(
