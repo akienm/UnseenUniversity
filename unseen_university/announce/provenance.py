@@ -117,15 +117,25 @@ class ProvenanceService:
         return _hmac.new(self._secret, message, hashlib.sha256).hexdigest()
 
     def _load_or_create_secret(self) -> bytes:
+        # Security: rack.secret must be owner-only (0o600).
+        # Agent worker processes (CC, container shims) must NOT be able to read this file.
+        # The rack service runs as the rack user; workers run as separate user accounts
+        # or in containers with no access to ~/.unseen_university. Manual key rotation:
+        # delete rack.secret and restart the rack — ProvenanceService regenerates it
+        # and all existing tokens are automatically invalidated (clear_all on restart).
         if self._secret_path.exists():
             try:
+                # Enforce owner-only permission on every load — fixes files created
+                # before this guard was added (e.g. by earlier versions).
+                self._secret_path.chmod(0o600)
                 return bytes.fromhex(self._secret_path.read_text().strip())
             except (ValueError, OSError):
                 log.warning("provenance: rack secret unreadable — regenerating")
         raw = secrets.token_bytes(32)
         self._secret_path.parent.mkdir(parents=True, exist_ok=True)
         self._secret_path.write_text(raw.hex())
-        log.info("provenance: new rack secret generated at %s", self._secret_path)
+        self._secret_path.chmod(0o600)  # owner-only: rack workers must not read this
+        log.info("provenance: new rack secret generated at %s (permissions: 0o600)", self._secret_path)
         return raw
 
     def _load_store(self) -> dict:

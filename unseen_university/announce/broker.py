@@ -110,6 +110,11 @@ class AnnounceBroker:
         self._profiles_dir = Path(profiles_dir) if profiles_dir else None
         self._registry = registry
         self._devices: dict = devices or {}
+        # Security: ProvenanceService holds the HMAC rack secret at
+        # ~/.unseen_university/rack.secret (permissions: 0o600, owner-only).
+        # Agent worker processes (CC sessions, container shims) must NOT have
+        # read access to this file. They receive issued tokens; they never hold
+        # the signing key. See: T-sec-hmac-key-isolation.
         self._provenance = provenance
         self._base_system_sections: dict = _load_base_system_sections()
 
