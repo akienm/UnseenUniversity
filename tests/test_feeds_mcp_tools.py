@@ -202,13 +202,14 @@ def _make_bare_daemon(audit_passed=True, route_ok=True):
 
     audit = MagicMock()
     audit.passed = audit_passed
-    audit.escalate_to_cc = True
+    audit.escalate_to_cc = False
     audit.reasons = []
 
     device = MagicMock()
     device.intake_ticket.return_value = audit
     device.route_ticket.return_value = (route_ok, "cc")
     daemon._device = device
+    daemon._inference_dispatch = MagicMock(return_value=True)
     return daemon
 
 

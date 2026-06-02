@@ -386,13 +386,12 @@ class GrannyDaemon:
                     self._publish_feed("audit_fail", tid, str(audit.reasons))
                     continue
                 if audit.escalate_to_cc:
-                    # HIGH-inertia or explicit escalation: dispatch directly to CC.
-                    ok, worker_id = self._device.route_ticket(ticket)
-                    if not ok and worker_id == "no_route":
-                        from devices.granny.dispatch import cc_dispatch_fn
-
-                        ok = cc_dispatch_fn(ticket)
-                        worker_id = "cc"
+                    # HIGH-inertia: block the ticket and alert CC.0 for human approval.
+                    # Never auto-dispatch — spawning CC for HIGH-inertia tickets caused
+                    # the runaway on 2026-06-01.
+                    self._hold_for_cc_approval(tid, str(audit.reasons))
+                    ok = True
+                    worker_id = "hold-for-cc"
                 else:
                     # Audit passed: try OR cascade (analyst→worker→minion) first.
                     # Only blocks for CC if all OR tiers ESCALATE.
@@ -494,6 +493,27 @@ class GrannyDaemon:
                 log.error("GrannyDaemon: poll cycle error: %s", e)
                 self._alert_cc("__cycle__", str(e), "poll_error")
             self._stop_event.wait(timeout=POLL_INTERVAL_SEC)
+
+    def _hold_for_cc_approval(self, ticket_id: str, reasons: str) -> None:
+        """Block ticket and alert CC.0 — HIGH-inertia tickets need human approval."""
+        hold_reason = f"HIGH-inertia: needs CC approval — {reasons[:200]}"
+        try:
+            subprocess.run(
+                [_PYTHON, str(_CC_QUEUE), "block", ticket_id, hold_reason],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+        except Exception as e:
+            log.warning("GrannyDaemon: block call failed for %s: %s", ticket_id, e)
+        self._alert_cc(ticket_id, hold_reason, "high_inertia")
+        self._post_channel(
+            f"GRANNY_HOLD_HIGH_INERTIA|ticket={ticket_id}|reason={reasons[:120]}"
+        )
+        self._publish_feed("high_inertia", ticket_id, reasons[:200])
+        log.info(
+            "GrannyDaemon: %s blocked — HIGH-inertia, CC approval needed", ticket_id
+        )
 
     def _run_orphan_watchdog(self) -> None:
         """Invoke the Scraps orphan watchdog job. Best-effort — never raises."""

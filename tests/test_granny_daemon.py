@@ -127,7 +127,9 @@ def _make_bare_daemon(audit_passed=True, route_ok=True, inference_ok=True):
 
     audit = MagicMock()
     audit.passed = audit_passed
-    audit.escalate_to_cc = True
+    audit.escalate_to_cc = (
+        False  # HIGH-inertia=False by default; tests set True explicitly
+    )
     audit.reasons = []
 
     device = MagicMock()
@@ -159,7 +161,8 @@ class TestGrannyDaemonRunOnce:
             count = daemon.run_once()
 
         assert count == 2
-        assert daemon._device.route_ticket.call_count == 2
+        # audit-passing tickets now go through inference_dispatch, not route_ticket
+        assert daemon._inference_dispatch.call_count == 2
 
     def test_deduplicates_within_cycle(self):
         daemon = self._make_daemon()
@@ -178,7 +181,7 @@ class TestGrannyDaemonRunOnce:
             count = daemon.run_once()
 
         assert count == 1
-        assert daemon._device.route_ticket.call_count == 1
+        assert daemon._inference_dispatch.call_count == 1
 
     def test_dedup_blocks_immediate_re_dispatch(self):
         # After dispatching T-a in cycle 1, cycle 2 skips it (set carries over).
@@ -247,12 +250,16 @@ class TestGrannyDaemonRunOnce:
         assert count == 0
         daemon._device.route_ticket.assert_not_called()
 
-    def test_escalate_to_cc_routes_despite_audit_fail(self):
+    def test_high_inertia_ticket_is_held_not_dispatched(self):
+        """HIGH-inertia (escalate_to_cc=True) tickets are blocked for CC approval,
+        never auto-dispatched to a new CC session."""
         daemon = self._make_daemon()
         daemon._device.intake_ticket.return_value = MagicMock(
-            passed=False, escalate_to_cc=True, reasons=["needs cc"]
+            passed=False, escalate_to_cc=True, reasons=["HIGH-inertia: shim.py"]
         )
-        tickets = [_ticket("T-a")]
+        blocked = []
+        daemon._hold_for_cc_approval = lambda tid, reasons: blocked.append(tid)
+        tickets = [_ticket("T-high")]
 
         with (
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
@@ -266,6 +273,9 @@ class TestGrannyDaemonRunOnce:
             count = daemon.run_once()
 
         assert count == 1
+        assert blocked == ["T-high"]
+        daemon._inference_dispatch.assert_not_called()
+        daemon._device.route_ticket.assert_not_called()
 
 
 class TestGrannyDaemonAlertCC:
