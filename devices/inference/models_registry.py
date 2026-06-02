@@ -102,7 +102,32 @@ _SEED: list[ModelSpec] = [
         tags=["coding", "1m-context", "cacheable"],
         notes="Qwen3 Coder full model; 1M context; fallback analyst when DeepSeek unavailable",
     ),
-    # Designer tier — Akien + CC design sessions; fast, long-context
+    # Designer tier — Gemini Flash free tier ($0, rate-limited ~15 RPM)
+    # Boilerplate cleanup, public-repo tasks, log transforms → cost: $0.
+    ModelSpec(
+        model_id="gemini-2.0-flash",
+        source_name="google_free",
+        tier="designer",
+        input_cost_per_1m=0.0,
+        output_cost_per_1m=0.0,
+        context_window=1_048_576,
+        tags=["design", "fast", "1m-context", "free-tier"],
+        notes="Google AI Studio free tier. Use for boilerplate and public-repo tasks. ~15 RPM cap.",
+    ),
+    # Designer tier — Gemini Flash paid (native Google API, 75% auto-cache on >32k tokens)
+    # Routes through google source directly — NOT OpenRouter (would lose caching discount).
+    ModelSpec(
+        model_id="gemini-2.0-flash-paid",
+        source_name="google",
+        tier="designer",
+        input_cost_per_1m=0.10,
+        output_cost_per_1m=0.40,
+        context_window=1_048_576,
+        tags=["design", "architect", "fast", "1m-context", "cacheable"],
+        notes="Native Gemini API — 75% auto-cache discount on >32k token payloads. "
+              "Do NOT route through OpenRouter (loses caching). Primary paid designer tier.",
+    ),
+    # Designer tier — Gemini Flash via OpenRouter (fallback only — no caching benefit)
     ModelSpec(
         model_id="google/gemini-2.0-flash",
         source_name="openrouter",
@@ -110,8 +135,8 @@ _SEED: list[ModelSpec] = [
         input_cost_per_1m=0.10,
         output_cost_per_1m=0.40,
         context_window=1_048_576,
-        tags=["design", "architect", "fast", "1m-context"],
-        notes="Fast, 1M context; handles tool-result accumulation well; primary designer model",
+        tags=["design", "fast", "1m-context", "or-fallback"],
+        notes="OpenRouter fallback ONLY — no prompt caching. Use google_free or google source first.",
     ),
     ModelSpec(
         model_id="claude-sonnet-4-6",
@@ -120,8 +145,8 @@ _SEED: list[ModelSpec] = [
         input_cost_per_1m=3.00,
         output_cost_per_1m=15.00,
         context_window=200_000,
-        tags=["design", "architect", "claude", "heavy"],
-        notes="Heavier design work; use when Haiku isn't enough",
+        tags=["design", "architect", "claude", "heavy", "cacheable"],
+        notes="Direct Anthropic API with prompt caching. Heaviest tier — use when Gemini insufficient.",
     ),
 ]
 

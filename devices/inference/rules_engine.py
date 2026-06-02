@@ -6,10 +6,22 @@ first match wins. Health-aware: skips unavailable sources. Session-affinity:
 same session_id stays on same model once assigned.
 
 Default rules (lowest priority number = checked first):
-  1. minion   → qwen/qwen3.5-9b              via openrouter
-  2. worker   → qwen/qwen2.5-coder-32b-instruct via openrouter
-  3. analyst  → deepseek/deepseek-v3         via openrouter
-  4. designer → google/gemini-2.0-flash       via openrouter
+
+  Minion tier (trivial tasks, boilerplate):
+    1. minion → qwen3.5-9b / openrouter
+
+  Worker tier (sprint tickets, coding):
+    2. worker → qwen3-coder-30b / openrouter
+
+  Analyst tier (research, reasoning):
+    3. analyst → deepseek-v4-flash / openrouter
+
+  Designer tier (architecture, design — cost cascade):
+    4.  designer → gemini-2.0-flash / google_free   ($0, 15 RPM cap)
+    5.  designer → gemini-2.0-flash-paid / google   (paid, 75% auto-cache on >32k)
+    6.  designer → google/gemini-2.0-flash / openrouter  (no-cache fallback)
+    7.  designer → claude-sonnet-4-6 / anthropic     (heaviest, last resort)
+
   99. fallback → cheapest available worker model
 """
 
@@ -35,24 +47,17 @@ class RoutingRule:
 
 # Default ordered rules
 _DEFAULT_RULES: list[RoutingRule] = [
+    # Minion tier
     RoutingRule(1, "minion", "qwen/qwen3.5-9b", "openrouter", "minion→qwen3.5-9b/OR"),
-    RoutingRule(
-        2,
-        "worker",
-        "qwen/qwen2.5-coder-32b-instruct",
-        "openrouter",
-        "worker→qwen2.5-coder-32b/OR",
-    ),
-    RoutingRule(
-        3, "analyst", "deepseek/deepseek-v3", "openrouter", "analyst→deepseek-v3/OR"
-    ),
-    RoutingRule(
-        4,
-        "designer",
-        "google/gemini-2.0-flash",
-        "openrouter",
-        "designer→gemini-2.0-flash/OR",
-    ),
+    # Worker tier
+    RoutingRule(2, "worker", "qwen/qwen3-coder-30b-a3b-instruct", "openrouter", "worker→qwen3-coder-30b/OR"),
+    # Analyst tier
+    RoutingRule(3, "analyst", "deepseek/deepseek-v4-flash", "openrouter", "analyst→deepseek-v4-flash/OR"),
+    # Designer tier — cost cascade: free → paid-cached → OR-fallback → Anthropic
+    RoutingRule(4, "designer", "gemini-2.0-flash", "google_free", "designer→gemini-flash/google-free"),
+    RoutingRule(5, "designer", "gemini-2.0-flash-paid", "google", "designer→gemini-flash/google-paid"),
+    RoutingRule(6, "designer", "google/gemini-2.0-flash", "openrouter", "designer→gemini-flash/OR-fallback"),
+    RoutingRule(7, "designer", "claude-sonnet-4-6", "anthropic", "designer→claude-sonnet/anthropic"),
 ]
 
 

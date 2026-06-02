@@ -180,10 +180,12 @@ class OllamaSource(Source):
 
 
 class AnthropicSource(Source):
-    """Direct Anthropic API — used for designer-tier (Claude Max plan sessions)."""
+    """Direct Anthropic API — used for designer-tier (Claude API sessions)."""
 
     BASE_URL = "https://api.anthropic.com/v1/messages"
     API_VERSION = "2023-06-01"
+    # Prompt caching beta: cache_control on system + first user turn saves up to 90%.
+    BETA_HEADERS = "prompt-caching-2024-07-31"
 
     def __init__(self) -> None:
         super().__init__(name="anthropic")
@@ -202,7 +204,13 @@ class AnthropicSource(Source):
             return False
 
     def call(self, req: "InferenceRequest") -> dict:
-        system_blocks = [{"type": "text", "text": req.system}] if req.system else []
+        # System block with cache_control — marks prefix for caching on long contexts.
+        if req.system:
+            system_blocks = [
+                {"type": "text", "text": req.system, "cache_control": {"type": "ephemeral"}}
+            ]
+        else:
+            system_blocks = []
         payload: dict = {
             "model": req.model,
             "max_tokens": req.max_tokens,
@@ -218,6 +226,7 @@ class AnthropicSource(Source):
             headers={
                 "x-api-key": self._api_key(),
                 "anthropic-version": self.API_VERSION,
+                "anthropic-beta": self.BETA_HEADERS,
                 "Content-Type": "application/json",
             },
             method="POST",
@@ -225,12 +234,17 @@ class AnthropicSource(Source):
         try:
             with urllib.request.urlopen(http_req, timeout=req.timeout) as resp:
                 raw = json.loads(resp.read())
-            # Normalise to OpenAI-compatible shape so _parse_response works
             content = raw.get("content", [])
             text = "".join(
                 b.get("text", "") for b in content if b.get("type") == "text"
             )
             usage = raw.get("usage", {})
+            cache_read = usage.get("cache_read_input_tokens", 0)
+            if cache_read:
+                log.debug(
+                    "Anthropic cache hit: model=%s cache_read=%d prompt=%d",
+                    req.model, cache_read, usage.get("input_tokens", 0),
+                )
             return {
                 "choices": [
                     {
@@ -242,11 +256,142 @@ class AnthropicSource(Source):
                 "usage": {
                     "prompt_tokens": usage.get("input_tokens", 0),
                     "completion_tokens": usage.get("output_tokens", 0),
+                    "cache_read_input_tokens": cache_read,
                 },
             }
         except urllib.error.HTTPError as exc:
             err_body = exc.read().decode()[:400]
             raise RuntimeError(f"Anthropic {exc.code}: {err_body}") from exc
+
+
+class GoogleSource(Source):
+    """Native Google AI Studio / Gemini API.
+
+    Bypasses OpenRouter to retain:
+    - Automatic 75% prompt caching discount on payloads > 32k tokens
+    - Free tier safety valve (free_tier=True) for boilerplate / public tasks
+    - Direct connection for lowest latency on GoogleSecretary BPA loops
+
+    Model IDs use the canonical Google format (e.g. 'gemini-2.0-flash'),
+    not the OpenRouter namespaced form ('google/gemini-2.0-flash').
+
+    Auth: GOOGLE_AI_STUDIO_API_KEY env var (alias: GEMINI_API_KEY).
+    """
+
+    BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
+
+    def __init__(self, free_tier: bool = False) -> None:
+        name = "google_free" if free_tier else "google"
+        super().__init__(name=name)
+        self.free_tier = free_tier
+
+    def _api_key(self) -> str:
+        for var in ("GOOGLE_AI_STUDIO_API_KEY", "GEMINI_API_KEY"):
+            key = os.environ.get(var, "").strip()
+            if key:
+                return key
+        raise RuntimeError(
+            "Google API key not set — set GOOGLE_AI_STUDIO_API_KEY or GEMINI_API_KEY"
+        )
+
+    def _model_name(self, model_id: str) -> str:
+        """Strip 'google/' prefix if present; return bare model name for URL."""
+        return model_id.removeprefix("google/")
+
+    def ping(self) -> bool:
+        try:
+            with socket.create_connection(("generativelanguage.googleapis.com", 443), timeout=3):
+                return True
+        except OSError:
+            return False
+
+    def _to_google_messages(self, req: "InferenceRequest") -> tuple[list, dict | None]:
+        """Convert OpenAI-format messages to Google contents format.
+
+        Returns (contents, system_instruction_or_None).
+        Google uses role="model" where OpenAI uses role="assistant".
+        System messages are extracted and returned as system_instruction.
+        """
+        contents = []
+        system_instruction = None
+
+        for msg in req.messages:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            if role == "system":
+                # Accumulate system messages into system_instruction
+                existing = system_instruction["parts"][0]["text"] if system_instruction else ""
+                combined = f"{existing}\n{content}".strip() if existing else content
+                system_instruction = {"parts": [{"text": combined}]}
+            else:
+                google_role = "model" if role == "assistant" else "user"
+                contents.append({"role": google_role, "parts": [{"text": content}]})
+
+        if req.system:
+            existing = system_instruction["parts"][0]["text"] if system_instruction else ""
+            combined = f"{req.system}\n{existing}".strip() if existing else req.system
+            system_instruction = {"parts": [{"text": combined}]}
+
+        return contents, system_instruction
+
+    def call(self, req: "InferenceRequest") -> dict:
+        model_name = self._model_name(req.model)
+        api_key = self._api_key()
+        url = f"{self.BASE_URL}/{model_name}:generateContent?key={api_key}"
+
+        contents, system_instruction = self._to_google_messages(req)
+
+        payload: dict = {
+            "contents": contents,
+            "generationConfig": {
+                "maxOutputTokens": req.max_tokens,
+                "temperature": req.temperature,
+            },
+        }
+        if system_instruction:
+            payload["systemInstruction"] = system_instruction
+
+        body = json.dumps(payload).encode()
+        http_req = urllib.request.Request(
+            url,
+            data=body,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(http_req, timeout=req.timeout) as resp:
+                raw = json.loads(resp.read())
+        except urllib.error.HTTPError as exc:
+            err_body = exc.read().decode()[:400]
+            raise RuntimeError(f"Google {exc.code}: {err_body}") from exc
+
+        candidates = raw.get("candidates", [])
+        text = ""
+        finish_reason = "stop"
+        if candidates:
+            parts = candidates[0].get("content", {}).get("parts", [])
+            text = "".join(p.get("text", "") for p in parts)
+            finish_reason = candidates[0].get("finishReason", "STOP").lower()
+
+        usage_meta = raw.get("usageMetadata", {})
+        cached_tokens = usage_meta.get("cachedContentTokenCount", 0)
+        if cached_tokens:
+            log.debug(
+                "Google cache hit: model=%s cached_tokens=%d prompt=%d tier=%s",
+                model_name, cached_tokens,
+                usage_meta.get("promptTokenCount", 0),
+                "free" if self.free_tier else "paid",
+            )
+
+        return {
+            "choices": [{"message": {"content": text}, "finish_reason": finish_reason}],
+            "model": model_name,
+            "usage": {
+                "prompt_tokens": usage_meta.get("promptTokenCount", 0),
+                "completion_tokens": usage_meta.get("candidatesTokenCount", 0),
+                "cached_content_token_count": cached_tokens,
+            },
+        }
 
 
 # ── Registry ──────────────────────────────────────────────────────────────────
@@ -273,13 +418,21 @@ class SourceRegistry:
 
 
 def default_registry() -> SourceRegistry:
-    """Build the standard source registry from env."""
+    """Build the standard source registry from env.
+
+    Provider priority (cost-ascending):
+      1. ollama       — local, $0
+      2. google_free  — Google AI Studio free tier, $0 (rate-limited)
+      3. google       — Google AI Studio paid, ~$0.10-0.40/1M + 75% auto-cache
+      4. openrouter   — cloud fallback for non-Google models
+      5. anthropic    — direct Anthropic API with prompt caching
+    """
     reg = SourceRegistry()
+    reg.register(OllamaSource(
+        base_url=os.environ.get("INFERENCE_ENDPOINT", "http://127.0.0.1:11434")
+    ))
+    reg.register(GoogleSource(free_tier=True))   # google_free
+    reg.register(GoogleSource(free_tier=False))  # google
     reg.register(OpenRouterSource())
-    reg.register(
-        OllamaSource(
-            base_url=os.environ.get("INFERENCE_ENDPOINT", "http://127.0.0.1:11434")
-        )
-    )
     reg.register(AnthropicSource())
     return reg
