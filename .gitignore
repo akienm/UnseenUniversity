@@ -15,5 +15,9 @@ build/
 # Dev
 .venv/
 venv/
+test_env/
 .pytest_cache/
 .mypy_cache/
+.coverage
+coverage.xml
+*.cover
