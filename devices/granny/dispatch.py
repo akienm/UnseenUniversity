@@ -129,20 +129,25 @@ def cc_dispatch_fn(ticket: dict) -> bool:
     return True
 
 
+# Tier cascade for OR routing: tickets try each tier in order before going to CC.
+# minion-tagged tickets skip straight to minion (cheapest, simplest).
+# All other tickets start at analyst (most capable OR tier) and fall back.
+_OR_TIER_CASCADE = ("analyst", "worker", "minion")
+
+
 def inference_dispatch_fn(ticket: dict, on_complete=None) -> bool:
-    """Dispatch a ticket to MinionDevice (cheap inference + tool loop).
+    """Dispatch a ticket through the OR tier cascade: analyst → worker → minion → CC block.
 
-    Picks task_class from ticket tags:
-      'minion' → qwen via OR
-      'worker' → deepseek-v4-flash via OR
+    Each tier gets one full tool-loop run. On DONE, the ticket closes. On ESCALATE,
+    the next tier runs with the full escalation_history attached so it can learn
+    from the prior attempt. Only when all OR tiers are exhausted does the ticket
+    block for CC review.
 
-    Runs synchronously — blocks until the tool loop completes or escalates.
-    DONE result  → submits ticket via cc_queue.py done (awaiting_validation).
-    ESCALATE     → blocks ticket for CC review. Never spawns CC automatically.
+    minion-tagged tickets skip directly to the minion tier (single-tier run).
 
-    on_complete: optional callable(worker_result, task_class, ticket) called
-        after MinionDevice.execute() returns — used by GrannyDaemon to record
-        outcome signals into PatternTracker without modifying the return type.
+    on_complete: optional callable(worker_result, task_class, ticket) called after
+        each tier's execute() — used by GrannyDaemon to record outcomes into
+        PatternTracker.
     """
     ticket_id = ticket.get("id", "")
     if not ticket_id:
@@ -150,7 +155,9 @@ def inference_dispatch_fn(ticket: dict, on_complete=None) -> bool:
         return False
 
     tags = set(ticket.get("tags", []))
-    task_class = "minion" if (tags & _MINION_TAGS) else "worker"
+    # minion-tagged → start at last (cheapest) tier; others start at analyst
+    start_idx = len(_OR_TIER_CASCADE) - 1 if (tags & _MINION_TAGS) else 0
+    tier_sequence = _OR_TIER_CASCADE[start_idx:]
 
     # Mark in_progress via cc_queue
     try:
@@ -171,7 +178,7 @@ def inference_dispatch_fn(ticket: dict, on_complete=None) -> bool:
             "inference_dispatch_fn: cc_queue call failed for %s: %s", ticket_id, e
         )
 
-    # Post dispatch event to channel
+    # Post initial dispatch event
     try:
         from unseen_university.channel import post_to_channel
 
@@ -179,7 +186,7 @@ def inference_dispatch_fn(ticket: dict, on_complete=None) -> bool:
         size = ticket.get("size", "?")
         tags_str = ",".join(ticket.get("tags", []))
         post_to_channel(
-            f"GRANNY_DISPATCH|ticket={ticket_id}|worker={task_class}|size={size}"
+            f"GRANNY_DISPATCH|ticket={ticket_id}|worker={tier_sequence[0]}|size={size}"
             f"|tags={tags_str}|title={title}",
             author="granny-weatherwax",
             channel="granny-weatherwax",
@@ -189,96 +196,140 @@ def inference_dispatch_fn(ticket: dict, on_complete=None) -> bool:
             "inference_dispatch_fn: channel post failed for %s: %s", ticket_id, e
         )
 
-    # Run the tool loop via MinionDevice
+    # ── Tiered cascade ────────────────────────────────────────────────────────
     try:
         from devices.minion.device import MinionDevice
         from devices.minion.shim import WorkerEnvelope
 
-        envelope = WorkerEnvelope(
-            ticket_id=ticket_id,
-            description=f"Title: {ticket.get('title', '')}\n\n{ticket.get('description', '')}",
-            session_id=ticket_id,  # one session per ticket → model affinity in rules engine
-            cwd=str(_UU_ROOT),
-            task_class=task_class,
-        )
-        worker_result = MinionDevice().execute(envelope)
-
-        if on_complete is not None:
-            try:
-                on_complete(worker_result, task_class, ticket)
-            except Exception as e:
-                log.warning(
-                    "inference_dispatch %s: on_complete callback failed: %s",
-                    ticket_id,
-                    e,
-                )
-
-        log.info(
-            "inference_dispatch %s: signal=%r task_class=%s iterations=%d tools=%s "
-            "cost_usd=%.4f in_tok=%d out_tok=%d",
-            ticket_id,
-            worker_result.signal,
-            task_class,
-            worker_result.iterations,
-            worker_result.tools_called,
-            worker_result.cost_usd,
-            worker_result.input_tokens,
-            worker_result.output_tokens,
+        escalation_history: list[dict] = []
+        total_cost_usd: float = 0.0
+        description = (
+            f"Title: {ticket.get('title', '')}\n\n{ticket.get('description', '')}"
         )
 
-        # Post result + cost to channel for observability
-        try:
-            from unseen_university.channel import post_to_channel
-
-            advisor_part = (
-                f"|advisor_signal={worker_result.advisor_signal}"
-                if worker_result.advisor_signal
-                else ""
+        for tier in tier_sequence:
+            envelope = WorkerEnvelope(
+                ticket_id=ticket_id,
+                description=description,
+                session_id=ticket_id,
+                cwd=str(_UU_ROOT),
+                task_class=tier,
+                escalation_history=escalation_history,
             )
-            post_to_channel(
-                f"MINION_RESULT|ticket={ticket_id}|signal={worker_result.signal}"
-                f"|task_class={task_class}|iterations={worker_result.iterations}"
-                f"|rounds={worker_result.round_count}|advisor_calls={worker_result.advisor_calls}"
-                f"{advisor_part}"
-                f"|cost_usd={worker_result.cost_usd:.4f}"
-                f"|tokens_in={worker_result.input_tokens}"
-                f"|tokens_out={worker_result.output_tokens}",
-                author="granny-weatherwax",
-                channel="granny-weatherwax",
-            )
-        except Exception:
-            pass
+            worker_result = MinionDevice().execute(envelope)
+            total_cost_usd += worker_result.cost_usd
 
-        if worker_result.signal == "DONE":
-            summary = f"minion({task_class}): {worker_result.notes[:200]}"
+            log.info(
+                "inference_dispatch %s tier=%s: signal=%r iterations=%d "
+                "cost_usd=%.4f total_usd=%.4f",
+                ticket_id,
+                tier,
+                worker_result.signal,
+                worker_result.iterations,
+                worker_result.cost_usd,
+                total_cost_usd,
+            )
+
+            if on_complete is not None:
+                try:
+                    on_complete(worker_result, tier, ticket)
+                except Exception as e:
+                    log.warning(
+                        "inference_dispatch %s: on_complete callback failed: %s",
+                        ticket_id,
+                        e,
+                    )
+
+            # Post per-tier result for observability
             try:
-                subprocess.run(
-                    [_PYTHON, str(_CC_QUEUE), "done", ticket_id, summary],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                )
-            except Exception as e:
-                log.warning("inference_dispatch %s: done call failed: %s", ticket_id, e)
-            return True
+                from unseen_university.channel import post_to_channel
 
-        # ESCALATE — put ticket on hold for CC review. Never spawn CC automatically.
+                advisor_part = (
+                    f"|advisor_signal={worker_result.advisor_signal}"
+                    if worker_result.advisor_signal
+                    else ""
+                )
+                post_to_channel(
+                    f"MINION_RESULT|ticket={ticket_id}|signal={worker_result.signal}"
+                    f"|tier={tier}|iterations={worker_result.iterations}"
+                    f"|rounds={worker_result.round_count}"
+                    f"{advisor_part}"
+                    f"|cost_usd={worker_result.cost_usd:.4f}"
+                    f"|total_cost_usd={total_cost_usd:.4f}"
+                    f"|tokens_in={worker_result.input_tokens}"
+                    f"|tokens_out={worker_result.output_tokens}",
+                    author="granny-weatherwax",
+                    channel="granny-weatherwax",
+                )
+            except Exception:
+                pass
+
+            if worker_result.signal == "DONE":
+                summary = f"or-{tier}: {worker_result.notes[:200]}"
+                try:
+                    subprocess.run(
+                        [_PYTHON, str(_CC_QUEUE), "done", ticket_id, summary],
+                        capture_output=True,
+                        text=True,
+                        timeout=10,
+                    )
+                except Exception as e:
+                    log.warning(
+                        "inference_dispatch %s: done call failed: %s", ticket_id, e
+                    )
+                return True
+
+            # ESCALATE — record history and try next tier
+            escalation_history.append(
+                {
+                    "tier": tier,
+                    "signal": worker_result.signal,
+                    "notes": worker_result.notes[:300],
+                    "iterations": worker_result.iterations,
+                    "cost_usd": worker_result.cost_usd,
+                }
+            )
+            try:
+                from unseen_university.channel import post_to_channel
+
+                post_to_channel(
+                    f"OR_TIER_ESCALATE|ticket={ticket_id}|from={tier}"
+                    f"|signal={worker_result.signal}|remaining={list(_OR_TIER_CASCADE[_OR_TIER_CASCADE.index(tier)+1:])}",
+                    author="granny-weatherwax",
+                    channel="granny-weatherwax",
+                )
+            except Exception:
+                pass
+            log.warning(
+                "inference_dispatch %s: tier=%s → %s — escalating to next tier",
+                ticket_id,
+                tier,
+                worker_result.signal,
+            )
+
+        # All OR tiers exhausted — hold for CC
+        tier_summary = "; ".join(
+            f"{h['tier']}={h['signal']}({h['notes'][:80]})" for h in escalation_history
+        )
+        hold_reason = (
+            f"all OR tiers exhausted (total_cost=${total_cost_usd:.4f}): {tier_summary}"
+        )
         log.warning(
-            "inference_dispatch %s: %s — holding for CC review: %s",
+            "inference_dispatch %s: all tiers exhausted — blocking for CC: %s",
             ticket_id,
-            worker_result.signal,
-            worker_result.notes[:200],
+            hold_reason,
         )
-        hold_reason = f"{worker_result.signal}: {worker_result.notes[:300]}"
-        for cmd in ([_PYTHON, str(_CC_QUEUE), "block", ticket_id, hold_reason],):
-            try:
-                subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-            except Exception as e:
-                log.warning(
-                    "inference_dispatch %s: escalation cmd failed: %s", ticket_id, e
-                )
+        try:
+            subprocess.run(
+                [_PYTHON, str(_CC_QUEUE), "block", ticket_id, hold_reason],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+        except Exception as e:
+            log.warning("inference_dispatch %s: block call failed: %s", ticket_id, e)
         return True
 
     except Exception as e:
-        log.error("inference_dispatch %s: minion execution failed: %s", ticket_id, e)
+        log.error("inference_dispatch %s: cascade failed: %s", ticket_id, e)
         return False

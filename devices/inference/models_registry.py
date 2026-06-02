@@ -39,7 +39,9 @@ class ModelSpec:
         )
 
 
-# ── Seed data — current as of 2026-05-31 ──────────────────────────────────────
+# ── Seed data — updated 2026-06-02 ────────────────────────────────────────────
+# Pricing from OpenRouter as of 2026-05-31; verify at openrouter.ai/models before
+# production use — OR pricing changes frequently.
 
 _SEED: list[ModelSpec] = [
     # Minion tier — trivial tasks, boilerplate, simple transforms
@@ -64,6 +66,17 @@ _SEED: list[ModelSpec] = [
         tags=["coding", "swe-bench-verified"],
         notes="~28% SWE-bench verified; strong coding; primary worker model",
     ),
+    # Worker tier — large all-rounder fallback; less coding-specific but reliable
+    ModelSpec(
+        model_id="meta-llama/llama-3.1-70b-instruct",
+        source_name="openrouter",
+        tier="worker",
+        input_cost_per_1m=0.59,
+        output_cost_per_1m=0.79,
+        context_window=131_072,
+        tags=["coding", "general", "tool-calling"],
+        notes="All-rounder; good structural reasoning; fallback when Qwen2.5-Coder stalls",
+    ),
     # Analyst tier — research, eval, longer reasoning chains
     ModelSpec(
         model_id="deepseek/deepseek-v3",
@@ -74,6 +87,17 @@ _SEED: list[ModelSpec] = [
         context_window=655_360,
         tags=["coding", "reasoning", "swe-bench-verified"],
         notes="~42% SWE-bench verified; near-Claude-3.5-Sonnet coding; primary analyst model",
+    ),
+    # Analyst tier — massive context window; best for large-codebase ingest
+    ModelSpec(
+        model_id="google/gemini-flash-1.5",
+        source_name="openrouter",
+        tier="analyst",
+        input_cost_per_1m=0.075,
+        output_cost_per_1m=0.30,
+        context_window=1_000_000,
+        tags=["coding", "long-context", "fast"],
+        notes="1M context; cheap input; strong for large-context tickets; fallback analyst",
     ),
     # Designer tier — Akien + CC design sessions; fast, long-context
     ModelSpec(

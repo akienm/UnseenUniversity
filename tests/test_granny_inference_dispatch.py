@@ -159,7 +159,8 @@ def test_inference_dispatch_minion_tag_uses_minion_envelope(MockDevice, mock_run
 
 @patch("devices.granny.dispatch.subprocess.run")
 @patch("devices.minion.device.MinionDevice")
-def test_inference_dispatch_non_minion_tag_uses_worker_envelope(MockDevice, mock_run):
+def test_inference_dispatch_non_minion_tag_uses_analyst_envelope(MockDevice, mock_run):
+    """Non-minion tickets now start the cascade at analyst tier."""
     from devices.granny.dispatch import inference_dispatch_fn
 
     mock_run.return_value = MagicMock(returncode=0, stderr="", stdout="")
@@ -169,7 +170,7 @@ def test_inference_dispatch_non_minion_tag_uses_worker_envelope(MockDevice, mock
     inference_dispatch_fn(_ticket(tags=["Platform"]))
 
     envelope = instance.execute.call_args.args[0]
-    assert envelope.task_class == "worker"
+    assert envelope.task_class == "analyst"
 
 
 @patch("devices.granny.dispatch.subprocess.run")
