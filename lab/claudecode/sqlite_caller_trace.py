@@ -1,10 +1,10 @@
 """sqlite_caller_trace.py — Debug patch: log sqlite3.connect() callstacks.
 
 Activated by env var IGOR_TRACE_SQLITE_CALLERS=1.
-Writes to ~/.TheIgors/local/logs/sqlite_caller_trace.log.
+Writes to ~/.unseen_university/local/logs/sqlite_caller_trace.log.
 
 Usage:
-    Set IGOR_TRACE_SQLITE_CALLERS=1 in ~/.TheIgors/Igor-wild-0001/.env, then
+    Set IGOR_TRACE_SQLITE_CALLERS=1 in ~/.unseen_university/Igor-wild-0001/.env, then
     restart Igor and run a user turn that previously triggered:
       sqlite3.OperationalError: no such table: config
     Read the log to find which module+function called sqlite3.connect() and
@@ -23,7 +23,7 @@ import traceback
 import threading
 from pathlib import Path
 
-_LOG_PATH = Path(os.path.expanduser("~/.TheIgors/local/logs/sqlite_caller_trace.log"))
+_LOG_PATH = Path(os.path.expanduser("~/.unseen_university/local/logs/sqlite_caller_trace.log"))
 _lock = threading.Lock()
 _original_connect = sqlite3.connect
 _installed = False

@@ -23,7 +23,7 @@ from typing import Any
 
 # ── Log file mapping by component ──────────────────────────────────────────────
 
-_IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".TheIgors"))
+_IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
 _LOG_DIR = _IGOR_HOME / "logs"
 
 _COMPONENT_LOGS: dict[str, list[str]] = {

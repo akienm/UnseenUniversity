@@ -48,7 +48,7 @@ REPO = Path(__file__).parent.parent
 sys.path.insert(0, str(REPO))
 
 # Load config: try installer's cfg loader first, fall back to .env
-_instance_dir = Path.home() / ".TheIgors" / "Igor-wild-0001"
+_instance_dir = Path.home() / ".unseen_university" / "Igor-wild-0001"
 try:
     from installer import load_cfg
 
@@ -66,7 +66,7 @@ except Exception:
 from devices.igor.cognition import milieu as _milieu_mod
 from devices.igor.memory.cortex import Cortex
 
-_CLOUD_OK_OVERRIDE_FILE = Path.home() / ".TheIgors" / "cloud_ok_override.json"
+_CLOUD_OK_OVERRIDE_FILE = Path.home() / ".unseen_university" / "cloud_ok_override.json"
 
 
 def _should_use_local(explicit_local: bool = False) -> bool:
@@ -101,11 +101,11 @@ from devices.igor.tools.ebook_reader import DRM_FAILED, open_book, read_chunk
 
 DB_PATH = Path(
     os.environ.get(
-        "IGOR_DB_PATH", Path.home() / ".TheIgors" / "Igor-wild-0001" / "wild-0001.db"
+        "IGOR_DB_PATH", Path.home() / ".unseen_university" / "Igor-wild-0001" / "wild-0001.db"
     )
 )
 IGOR_HOME_DB_URL = os.environ["IGOR_HOME_DB_URL"]
-PROGRESS_DIR = Path.home() / ".TheIgors" / "book_learner_progress"
+PROGRESS_DIR = Path.home() / ".unseen_university" / "book_learner_progress"
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 OPENROUTER_REFERER = "https://github.com/akienm/TheIgors"
 

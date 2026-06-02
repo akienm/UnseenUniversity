@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 
 _CHANNEL_MESSAGES_TABLE = "channel_messages"
 _JSONL_FALLBACK = (
-    Path(os.environ.get("IGOR_HOME", str(Path.home() / ".TheIgors")))
+    Path(os.environ.get("IGOR_HOME", str(Path.home() / ".unseen_university")))
     / "cc_channel"
     / "messages.jsonl"
 )

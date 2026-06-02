@@ -367,12 +367,12 @@ def build_boot_message(
         [
             "",
             "IDENTITY MAP (where to find yourself):",
-            f"  Soul (CP1-CP6):         .TheIgors/SOUL.md",
-            f"  Identity (ID1-ID14):    .TheIgors/igor_{instance_id.replace('-', '_')}/IDENTITY.md",
+            f"  Soul (CP1-CP6):         .unseen_university/SOUL.md",
+            f"  Identity (ID1-ID14):    .unseen_university/igor_{instance_id.replace('-', '_')}/IDENTITY.md",
             f"  Full lineage:           TheIgors.archive/design_docs/the_igors_identity.csb.txt",
             f"  Architecture decisions: TheIgors.archive/design_docs/decisions_log.csb.txt",
             f"  Detailed architecture:  TheIgors.archive/design_docs/detailed_architecture_description.csb.txt",
-            f"  Routine boot notes:     .TheIgors/igor_{instance_id.replace('-', '_')}/boot_notes.md",
+            f"  Routine boot notes:     .unseen_university/igor_{instance_id.replace('-', '_')}/boot_notes.md",
             "",
             "Read boot_notes.md now for routine operational guidance.",
         ]

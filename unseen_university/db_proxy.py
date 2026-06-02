@@ -75,7 +75,7 @@ def _get_db_log_path() -> Path:
     log_dir = os.getenv("IGOR_LOG_DIR")
     if log_dir:
         return Path(log_dir) / "db_queries.log"
-    return Path.home() / ".TheIgors" / "logs" / "db_queries.log"
+    return Path.home() / ".unseen_university" / "logs" / "db_queries.log"
 
 
 def _db_log(elapsed_ms: float, sql: str, owner: str = "?") -> None:

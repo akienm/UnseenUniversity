@@ -508,7 +508,7 @@ def initialize_genesis(cortex: Cortex, instance_id: str = "wild-0001") -> str:
             "PROC10",
             "Change requests go in ~/.unseen_university/claudecode/change_request.txt (Igor and Akien both write here). "
             "Completed changes are logged to ~/.unseen_university/claudecode/changes.log in CSB format, newest first. "
-            "Use write_file tool with path '.TheIgors/claudecode/change_request.txt' to append requests.",
+            "Use write_file tool with path '~/.unseen_university/claudecode/change_request.txt' to append requests.",
             "CP3",
             {
                 "trigger": "before_requesting_changes",

@@ -92,7 +92,7 @@ class IgorDevice(BaseDevice):
     def requirements(self) -> dict:
         return {
             "deps": ["python3.12+", "psycopg2", "click", "fastmcp"],
-            "system": ["tmux", "postgresql", "TheIgors repo at ~/TheIgors"],
+            "system": ["tmux", "postgresql", "UU repo at ~/dev/src/UnseenUniversity"],
         }
 
     def capabilities(self) -> dict:

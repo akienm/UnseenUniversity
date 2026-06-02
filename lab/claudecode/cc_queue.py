@@ -1254,7 +1254,7 @@ WORKER_PIDS_PATH = os.path.expanduser(
 DAEMON_PID_FILE = os.path.expanduser(
     "~/.unseen_university/cc_channel/worker_daemon.pid"
 )
-DAEMON_SCRIPT = os.path.expanduser("~/TheIgors/lab/claudecode/worker_daemon.sh")
+DAEMON_SCRIPT = os.path.expanduser("~/.unseen_university/bin/worker_daemon.sh")
 
 
 def _load_worker_pids():

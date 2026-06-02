@@ -1,6 +1,6 @@
 """conftest.py — pytest session fixtures for TheIgors tests.
 
-Prevents tests from creating directories in the live ~/.TheIgors/ instance.
+Prevents tests from creating directories in the live ~/.unseen_university/ instance.
 Uses property patching rather than env vars so subprocesses are unaffected.
 
 Test schema lifecycle (T-test-postgres-schema):
@@ -115,7 +115,7 @@ def _redirect_inbox_to_test_dir(tmp_path_factory):
 
     Without this, tests that call FileInboxChannel().acquire() trigger
     paths().inbox.mkdir(parents=True, exist_ok=True), which creates
-    ~/.TheIgors/Igor-wild-0001/inbox/ (the default instance when
+    ~/.unseen_university/Igor-wild-0001/inbox/ (the default instance when
     IGOR_INSTANCE_ID is not set in the test environment).
     """
     test_inbox = tmp_path_factory.mktemp("igor_test_inbox")
