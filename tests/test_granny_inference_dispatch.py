@@ -11,14 +11,6 @@ import pytest
 from devices.minion.shim import WorkerResult
 
 
-@pytest.fixture(autouse=True)
-def _no_channel(monkeypatch):
-    """Prevent tests from posting to the real shared channel."""
-    monkeypatch.setattr(
-        "unseen_university.channel.post_to_channel", lambda *a, **kw: None
-    )
-
-
 def _ticket(tid="T-test", tags=None, worker=""):
     return {
         "id": tid,
@@ -84,9 +76,12 @@ def test_inference_dispatch_done_summary_includes_notes(MockDevice, mock_run):
 # ── ESCALATE path ─────────────────────────────────────────────────────────────
 
 
+@patch("devices.granny.dispatch._launch_cc_instance")
 @patch("devices.granny.dispatch.subprocess.run")
 @patch("devices.minion.device.MinionDevice")
-def test_inference_dispatch_escalate_holds_ticket(MockDevice, mock_run):
+def test_inference_dispatch_escalate_sets_worker_claude(
+    MockDevice, mock_run, mock_launch
+):
     from devices.granny.dispatch import inference_dispatch_fn
 
     mock_run.return_value = MagicMock(returncode=0, stderr="", stdout="")
@@ -98,23 +93,25 @@ def test_inference_dispatch_escalate_holds_ticket(MockDevice, mock_run):
     result = inference_dispatch_fn(_ticket())
 
     assert result is True
+    # set-worker claude should be called
     cmds = [c.args[0] for c in mock_run.call_args_list if c.args]
-
-    # ticket must be blocked (held) — never set-worker or setstatus sprint
-    block_cmds = [c for c in cmds if "block" in c]
-    assert block_cmds, "ticket must be blocked on ESCALATE"
-    assert "T-test" in block_cmds[0]
-
-    # must never launch CC
     set_worker = [c for c in cmds if "set-worker" in c]
-    assert not set_worker, "set-worker must NOT be called — no CC spawn"
-    setstatus_sprint = [c for c in cmds if "setstatus" in c and "sprint" in c]
-    assert not setstatus_sprint, "setstatus sprint must NOT be called"
+    assert set_worker, "set-worker must be called on ESCALATE"
+    assert "claude" in set_worker[0]
+
+    # setstatus sprint should be called
+    setstatus = [c for c in cmds if "setstatus" in c]
+    assert setstatus, "setstatus must be called on ESCALATE"
+    assert "sprint" in setstatus[0]
+
+    # CC instance should be launched
+    mock_launch.assert_called_once()
 
 
+@patch("devices.granny.dispatch._launch_cc_instance")
 @patch("devices.granny.dispatch.subprocess.run")
 @patch("devices.minion.device.MinionDevice")
-def test_inference_dispatch_escalate_block_includes_reason(MockDevice, mock_run):
+def test_inference_dispatch_escalate_logs_reason(MockDevice, mock_run, mock_launch):
     from devices.granny.dispatch import inference_dispatch_fn
 
     mock_run.return_value = MagicMock(returncode=0, stderr="", stdout="")
@@ -125,12 +122,13 @@ def test_inference_dispatch_escalate_block_includes_reason(MockDevice, mock_run)
 
     inference_dispatch_fn(_ticket())
 
+    # log command should include escalation notes
     cmds = [c.args[0] for c in mock_run.call_args_list if c.args]
-    block_cmds = [c for c in cmds if "block" in c]
-    assert block_cmds, "block must be called on ESCALATE"
-    block_reason = block_cmds[0][-1]
-    assert "analyst" in block_reason
-    assert "auth middleware" in block_reason
+    log_cmds = [c for c in cmds if "log" in c]
+    assert log_cmds, "escalation log entry must be written"
+    log_arg = log_cmds[0][-1]
+    assert "ESCALATED" in log_arg
+    assert "analyst" in log_arg
 
 
 # ── task_class routing ────────────────────────────────────────────────────────
@@ -159,8 +157,7 @@ def test_inference_dispatch_minion_tag_uses_minion_envelope(MockDevice, mock_run
 
 @patch("devices.granny.dispatch.subprocess.run")
 @patch("devices.minion.device.MinionDevice")
-def test_inference_dispatch_non_minion_tag_uses_analyst_envelope(MockDevice, mock_run):
-    """Non-minion tickets now start the cascade at analyst tier."""
+def test_inference_dispatch_non_minion_tag_uses_worker_envelope(MockDevice, mock_run):
     from devices.granny.dispatch import inference_dispatch_fn
 
     mock_run.return_value = MagicMock(returncode=0, stderr="", stdout="")
@@ -170,7 +167,7 @@ def test_inference_dispatch_non_minion_tag_uses_analyst_envelope(MockDevice, moc
     inference_dispatch_fn(_ticket(tags=["Platform"]))
 
     envelope = instance.execute.call_args.args[0]
-    assert envelope.task_class == "analyst"
+    assert envelope.task_class == "worker"
 
 
 @patch("devices.granny.dispatch.subprocess.run")
