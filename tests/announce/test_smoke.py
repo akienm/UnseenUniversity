@@ -78,6 +78,7 @@ def test_announce_handshake_returns_manifest(rack):
         pid=9999,
         interface_version="1.0",
         surfaces=["console", "inference"],
+        proof={"shared_secret": "test-rack-secret"},
     )
     env = Envelope.now(
         from_device=identity.primary_mailbox,
