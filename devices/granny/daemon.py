@@ -39,6 +39,8 @@ log = logging.getLogger(__name__)
 
 POLL_INTERVAL_SEC = int(os.environ.get("GRANNY_POLL_INTERVAL", "60"))
 MAX_CONCURRENT_CC = int(os.environ.get("GRANNY_MAX_CC", "1"))
+# How often to run the orphan watchdog (in poll cycles; default every 10 cycles = 10 min)
+_ORPHAN_CHECK_EVERY_N_CYCLES = int(os.environ.get("GRANNY_ORPHAN_CHECK_CYCLES", "10"))
 _USAGE_CACHE = Path.home() / ".claude" / "usage-cache.json"
 _RATE_LIMIT_PAUSE_PCT = float(os.environ.get("GRANNY_RATE_LIMIT_PAUSE", "90"))
 _RATE_LIMIT_7D_PAUSE_PCT = float(os.environ.get("GRANNY_RATE_LIMIT_7D_PAUSE", "90"))
@@ -477,17 +479,36 @@ class GrannyDaemon:
 
     def _run(self) -> None:
         """Main daemon loop — polls until stop_event set."""
+        cycle = 0
         while not self._stop_event.is_set():
             try:
                 n = self.run_once()
                 if n:
                     log.info("GrannyDaemon: poll cycle — %d ticket(s) dispatched", n)
                 self._push_stats()
+                cycle += 1
+                if cycle % _ORPHAN_CHECK_EVERY_N_CYCLES == 0:
+                    self._run_orphan_watchdog()
             except Exception as e:
                 self._total_errors += 1
                 log.error("GrannyDaemon: poll cycle error: %s", e)
                 self._alert_cc("__cycle__", str(e), "poll_error")
             self._stop_event.wait(timeout=POLL_INTERVAL_SEC)
+
+    def _run_orphan_watchdog(self) -> None:
+        """Invoke the Scraps orphan watchdog job. Best-effort — never raises."""
+        try:
+            from devices.scraps.jobs.orphan_watchdog import OrphanWatchdog
+
+            reset = OrphanWatchdog().run()
+            if reset:
+                log.info(
+                    "GrannyDaemon: orphan watchdog reset %d ticket(s): %s",
+                    len(reset),
+                    reset,
+                )
+        except Exception as e:
+            log.warning("GrannyDaemon: orphan watchdog failed: %s", e)
 
     def _alert_cc(self, ticket_id: str, reason: str, kind: str) -> None:
         """Send a one-shot alert to CC.0 on unresolvable issues. Deduped per ticket+kind."""
