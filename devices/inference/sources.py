@@ -63,12 +63,38 @@ class OpenRouterSource(Source):
         except OSError:
             return False
 
+    def _is_cacheable(self, model_id: str) -> bool:
+        """Return True if this model supports OR prefix caching."""
+        try:
+            from devices.inference.models_registry import default_registry
+
+            spec = default_registry().get(model_id)
+            return spec.cacheable if spec else False
+        except Exception:
+            return False
+
     def call(self, req: "InferenceRequest") -> dict:
-        messages = (
-            [{"role": "system", "content": req.system}] + req.messages
-            if req.system
-            else req.messages
-        )
+        if req.system:
+            if self._is_cacheable(req.model):
+                # Wrap system prompt as a content-array with cache_control so OR
+                # caches this prefix. Cache hits appear as cache_read_input_tokens
+                # in the response usage — saving up to 90% on repeat iterations.
+                sys_msg = {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": req.system,
+                            "cache_control": {"type": "ephemeral"},
+                        }
+                    ],
+                }
+            else:
+                sys_msg = {"role": "system", "content": req.system}
+            messages = [sys_msg] + req.messages
+        else:
+            messages = req.messages
+
         payload: dict = {
             "model": req.model,
             "messages": messages,
@@ -90,7 +116,17 @@ class OpenRouterSource(Source):
         )
         try:
             with urllib.request.urlopen(http_req, timeout=req.timeout) as resp:
-                return json.loads(resp.read())
+                result = json.loads(resp.read())
+            usage = result.get("usage", {})
+            cache_read = usage.get("cache_read_input_tokens", 0)
+            if cache_read:
+                log.debug(
+                    "OR cache hit: model=%s cache_read=%d prompt=%d",
+                    req.model,
+                    cache_read,
+                    usage.get("prompt_tokens", 0),
+                )
+            return result
         except urllib.error.HTTPError as exc:
             err_body = exc.read().decode()[:400]
             raise RuntimeError(f"OpenRouter {exc.code}: {err_body}") from exc

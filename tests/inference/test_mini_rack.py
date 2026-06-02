@@ -184,3 +184,134 @@ def test_inference_request_task_class_settable():
         task_class="minion",
     )
     assert req.task_class == "minion"
+
+
+# ── Prompt caching ─────────────────────────────────────────────────────────────
+
+
+def test_cacheable_model_wraps_system_as_content_array():
+    """For cacheable models, system message uses content-array + cache_control."""
+    src = OpenRouterSource()
+    captured = {}
+
+    def _fake_urlopen(req, timeout=None):
+        import json
+
+        body = json.loads(req.data)
+        captured["messages"] = body["messages"]
+        resp = MagicMock()
+        resp.__enter__ = lambda s: s
+        resp.__exit__ = MagicMock(return_value=False)
+        resp.read.return_value = json.dumps(
+            {
+                "choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}],
+                "usage": {
+                    "prompt_tokens": 100,
+                    "completion_tokens": 10,
+                    "cache_read_input_tokens": 80,
+                },
+            }
+        ).encode()
+        return resp
+
+    req = InferenceRequest(
+        messages=[{"role": "user", "content": "hello"}],
+        system="You are a helpful coder.",
+        model="deepseek/deepseek-v4-flash",
+    )
+    with (
+        patch.object(src, "_api_key", return_value="test-key"),
+        patch("urllib.request.urlopen", side_effect=_fake_urlopen),
+    ):
+        src.call(req)
+
+    sys_msg = captured["messages"][0]
+    assert sys_msg["role"] == "system"
+    assert isinstance(
+        sys_msg["content"], list
+    ), "cacheable model should use content array"
+    assert sys_msg["content"][0]["cache_control"] == {"type": "ephemeral"}
+    assert sys_msg["content"][0]["text"] == "You are a helpful coder."
+
+
+def test_non_cacheable_model_uses_string_system():
+    """Non-cacheable models get a plain string system message."""
+    src = OpenRouterSource()
+    captured = {}
+
+    def _fake_urlopen(req, timeout=None):
+        import json
+
+        body = json.loads(req.data)
+        captured["messages"] = body["messages"]
+        resp = MagicMock()
+        resp.__enter__ = lambda s: s
+        resp.__exit__ = MagicMock(return_value=False)
+        resp.read.return_value = json.dumps(
+            {
+                "choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}],
+                "usage": {"prompt_tokens": 100, "completion_tokens": 10},
+            }
+        ).encode()
+        return resp
+
+    req = InferenceRequest(
+        messages=[{"role": "user", "content": "hello"}],
+        system="You are a helpful coder.",
+        model="google/gemini-2.0-flash",  # no cacheable tag
+    )
+    with (
+        patch.object(src, "_api_key", return_value="test-key"),
+        patch("urllib.request.urlopen", side_effect=_fake_urlopen),
+    ):
+        src.call(req)
+
+    sys_msg = captured["messages"][0]
+    assert sys_msg["role"] == "system"
+    assert isinstance(
+        sys_msg["content"], str
+    ), "non-cacheable model should use plain string"
+
+
+def test_cache_read_tokens_logged_at_debug(caplog):
+    """cache_read_input_tokens > 0 produces a DEBUG log line."""
+    import logging
+
+    src = OpenRouterSource()
+
+    def _fake_urlopen(req, timeout=None):
+        import json
+
+        resp = MagicMock()
+        resp.__enter__ = lambda s: s
+        resp.__exit__ = MagicMock(return_value=False)
+        resp.read.return_value = json.dumps(
+            {
+                "choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}],
+                "usage": {
+                    "prompt_tokens": 100,
+                    "completion_tokens": 10,
+                    "cache_read_input_tokens": 80,
+                },
+            }
+        ).encode()
+        return resp
+
+    req = InferenceRequest(
+        messages=[{"role": "user", "content": "hello"}],
+        model="deepseek/deepseek-v4-flash",
+    )
+    with (
+        patch.object(src, "_api_key", return_value="test-key"),
+        patch("urllib.request.urlopen", side_effect=_fake_urlopen),
+        caplog.at_level(logging.DEBUG, logger="devices.inference.sources"),
+    ):
+        src.call(req)
+
+    assert any("cache hit" in r.message.lower() for r in caplog.records)
+
+
+def test_cacheable_property_on_modelspec():
+    reg = default_registry()
+    assert reg.get("deepseek/deepseek-v4-flash").cacheable is True
+    assert reg.get("google/gemini-2.0-flash").cacheable is False

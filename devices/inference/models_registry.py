@@ -11,7 +11,7 @@ Tiers:
   analyst  — larger reasoning models, research and eval
   designer — Claude via Anthropic direct, design sessions with Akien
 
-Seeded with current OR pricing as of 2026-05-31.
+Tag 'cacheable': model supports prefix caching (cache_control on system message).
 """
 
 from __future__ import annotations
@@ -32,6 +32,10 @@ class ModelSpec:
     tags: list[str] = field(default_factory=list)
     notes: str = ""
 
+    @property
+    def cacheable(self) -> bool:
+        return "cacheable" in self.tags
+
     def cost_estimate(self, input_tokens: int, output_tokens: int) -> float:
         return (
             input_tokens / 1_000_000 * self.input_cost_per_1m
@@ -51,7 +55,7 @@ _SEED: list[ModelSpec] = [
         input_cost_per_1m=0.04,
         output_cost_per_1m=0.15,
         context_window=262_144,
-        tags=["coding", "cheap", "fast"],
+        tags=["coding", "cheap", "fast", "cacheable"],
         notes="Confirmed working 2026-06-02; fast and cheap; good for simple well-specified tasks",
     ),
     # Worker tier — dedicated coding model, MoE architecture, very cheap
@@ -62,7 +66,7 @@ _SEED: list[ModelSpec] = [
         input_cost_per_1m=0.07,
         output_cost_per_1m=0.28,
         context_window=156_000,
-        tags=["coding", "fast"],
+        tags=["coding", "fast", "cacheable"],
         notes="Qwen3 dedicated coder; replaces deprecated qwen2.5-coder-32b slug",
     ),
     # Worker tier — large all-rounder fallback; strong tool-calling
@@ -73,7 +77,7 @@ _SEED: list[ModelSpec] = [
         input_cost_per_1m=0.071,
         output_cost_per_1m=0.284,
         context_window=262_144,
-        tags=["coding", "general", "large"],
+        tags=["coding", "general", "large", "cacheable"],
         notes="Huge MoE model; strong reasoning; fallback when smaller coder stalls",
     ),
     # Analyst tier — DeepSeek V4 Flash: 1M context, cheapest strong coding model
@@ -84,7 +88,7 @@ _SEED: list[ModelSpec] = [
         input_cost_per_1m=0.098,
         output_cost_per_1m=0.392,
         context_window=1_048_576,
-        tags=["coding", "reasoning", "1m-context"],
+        tags=["coding", "reasoning", "1m-context", "cacheable"],
         notes="DeepSeek V4 Flash; replaces deprecated deepseek-v3 slug; 1M context, strong coding",
     ),
     # Analyst tier — Qwen3 Coder main; 1M context, competitive with V4 Flash
@@ -95,7 +99,7 @@ _SEED: list[ModelSpec] = [
         input_cost_per_1m=0.22,
         output_cost_per_1m=0.88,
         context_window=1_048_576,
-        tags=["coding", "1m-context"],
+        tags=["coding", "1m-context", "cacheable"],
         notes="Qwen3 Coder full model; 1M context; fallback analyst when DeepSeek unavailable",
     ),
     # Designer tier — Akien + CC design sessions; fast, long-context
