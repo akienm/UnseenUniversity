@@ -197,6 +197,20 @@ class GrannyShim(BaseShim):
     def rollback(self) -> None:
         pass
 
+    def health_surface(self) -> dict[str, str]:
+        """Return Granny's health status: relaunch count + daemon liveness."""
+        fields: dict[str, str] = {
+            **super().health_surface(),
+            "relaunch_count": str(self._relaunch_count),
+        }
+        try:
+            from devices.granny.daemon import get_daemon
+
+            fields["daemon"] = "running" if get_daemon().is_running() else "stopped"
+        except Exception:
+            fields["daemon"] = "unknown"
+        return fields
+
     # ── MCP tool surface ───────────────────────────────────────────────────────
 
     def intake_ticket(self, ticket: dict) -> dict:

@@ -28,6 +28,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+_CIRCUIT_STATE_FILE = Path(
+    os.environ.get(
+        "UU_CIRCUIT_STATE_FILE",
+        str(Path.home() / ".unseen_university" / "circuit_state.json"),
+    )
+)
+
 if TYPE_CHECKING:
     from devices.policy.gate import PolicyGate
     from devices.policy.output_validators import OutputValidator
@@ -130,6 +137,52 @@ class BaseShim(ABC):
         cycle so the device is never 'down' as long as its shim is running.
         """
         return True
+
+    def health_surface(self) -> dict[str, str]:
+        """Return key/value health status pairs for this device.
+
+        Default returns the dynamic cache populated by _post_status().
+        Override to add static fields:
+            def health_surface(self):
+                return {**super().health_surface(), "my_field": "value"}
+        """
+        return dict(self.__dict__.get("_health_cache_store", {}))
+
+    def check_circuit(self) -> bool:
+        """Return True if this device's circuit breaker is OPEN (paused).
+
+        Reads circuit_state.json (UU_CIRCUIT_STATE_FILE). Returns False when
+        the file doesn't exist or this device's entry is absent or CLOSED.
+        """
+        try:
+            data = json.loads(_CIRCUIT_STATE_FILE.read_text())
+            state = data.get(self.device_id, "CLOSED")
+            log.debug("circuit check: device=%s state=%s", self.device_id, state)
+            return state == "OPEN"
+        except FileNotFoundError:
+            return False
+        except Exception as exc:
+            log.debug("circuit check failed (non-fatal): %s", exc)
+            return False
+
+    def _post_status(self, key: str, value: str) -> None:
+        """Cache a status key=value and post it to this device's channel.
+
+        Updates the health_surface() cache and posts to channel so the web
+        pane can show TTL-aged status without polling the device directly.
+        """
+        try:
+            self._health_cache_store[key] = str(value)
+        except AttributeError:
+            self._health_cache_store: dict[str, str] = {key: str(value)}
+        try:
+            from unseen_university.channel import post_to_channel
+
+            post_to_channel(
+                f"{key}={value}", author=self.device_id, channel=self.device_id
+            )
+        except Exception as exc:
+            log.debug("_post_status channel write failed (non-fatal): %s", exc)
 
     _output_validator: OutputValidator | None = None
     _policy_gate: PolicyGate | None = None
