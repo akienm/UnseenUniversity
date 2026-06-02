@@ -53,6 +53,21 @@ log = logging.getLogger(__name__)
 _START_TIME = time.time()
 
 
+_RACK_ADMIN_AGENTS_DEFAULT = frozenset({"skeleton", "cc", "granny-weatherwax"})
+
+
+def _rack_admin_agents() -> frozenset[str]:
+    """Return the set of agent IDs allowed to call privileged rack operations.
+
+    Configurable via RACK_ADMIN_AGENTS env var (comma-separated IDs).
+    Defaults to skeleton, cc, granny-weatherwax.
+    """
+    env = os.environ.get("RACK_ADMIN_AGENTS", "")
+    if env.strip():
+        return frozenset(a.strip() for a in env.split(",") if a.strip())
+    return _RACK_ADMIN_AGENTS_DEFAULT
+
+
 class Skeleton(BaseDevice):
     DEVICE_ID = "skeleton"
 
@@ -158,12 +173,26 @@ class Skeleton(BaseDevice):
         def agent_halt(agent_id: str, reason: str, from_device: str) -> dict:
             """Halt agent_id — deny all subsequent tool calls via policy gate.
 
-            Requires from_device == 'skeleton'. Halt persists across rack restarts.
+            Requires from_device to be a rack-admin agent (skeleton, cc, granny-weatherwax,
+            or RACK_ADMIN_AGENTS env override). Halt persists across rack restarts.
             To un-halt, call agent_resume.
             """
-            if from_device != skel.DEVICE_ID:
+            admin_agents = _rack_admin_agents()
+            if from_device not in admin_agents:
+                _write_governance_decision(
+                    {
+                        "ts": _now(),
+                        "agent_id": from_device,
+                        "action": "agent_halt",
+                        "policy_checked": ["rack_admin"],
+                        "verdict": "deny",
+                        "reason": f"from_device {from_device!r} not in rack_admin_agents",
+                        "target": agent_id,
+                    }
+                )
                 raise AuthError(
-                    f"agent_halt requires from_device == 'skeleton', got '{from_device}'",
+                    f"agent_halt: caller {from_device!r} is not a rack-admin agent "
+                    f"(allowed: {sorted(admin_agents)})",
                     from_device=from_device,
                     target=agent_id,
                 )
@@ -185,12 +214,25 @@ class Skeleton(BaseDevice):
         def agent_resume(agent_id: str, from_device: str) -> dict:
             """Resume a halted agent — restore normal policy gate evaluation.
 
-            Requires from_device == 'skeleton'. Self-resume is intentionally denied:
-            a halted agent must not be able to un-halt itself.
+            Requires from_device to be a rack-admin agent. Self-resume is
+            intentionally denied: a halted agent must not un-halt itself.
             """
-            if from_device != skel.DEVICE_ID:
+            admin_agents = _rack_admin_agents()
+            if from_device not in admin_agents:
+                _write_governance_decision(
+                    {
+                        "ts": _now(),
+                        "agent_id": from_device,
+                        "action": "agent_resume",
+                        "policy_checked": ["rack_admin"],
+                        "verdict": "deny",
+                        "reason": f"from_device {from_device!r} not in rack_admin_agents",
+                        "target": agent_id,
+                    }
+                )
                 raise AuthError(
-                    f"agent_resume requires from_device == 'skeleton', got '{from_device}'",
+                    f"agent_resume: caller {from_device!r} is not a rack-admin agent "
+                    f"(allowed: {sorted(admin_agents)})",
                     from_device=from_device,
                     target=agent_id,
                 )
