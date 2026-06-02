@@ -92,7 +92,6 @@ def _launch_terminal(cfg: configparser.ConfigParser) -> None:
     # Try to import channel tooling; degrade gracefully if unavailable.
     try:
         sys.path.insert(0, str(UU_ROOT))
-        sys.path.insert(0, str(Path.home() / "TheIgors"))
         from lab.claudecode.channel import post_to_channel, read_channel
 
         def _ask(question: str) -> str:
@@ -147,6 +146,35 @@ def _ensure_granny_running() -> None:
         pass  # granny is best-effort; never block uu startup
 
 
+def _cmd_bootstrap(args: list[str]) -> None:
+    """uu bootstrap [--global-kb [<url>]] [--local-kb <path>] [--update]"""
+    do_kb = "--global-kb" in args or "--local-kb" in " ".join(args)
+    if not do_kb:
+        print("uu bootstrap: nothing to do (try --global-kb)")
+        return
+
+    kb_url = None
+    local_dir = None
+    for i, arg in enumerate(args):
+        if arg == "--global-kb" and i + 1 < len(args) and not args[i + 1].startswith("-"):
+            kb_url = args[i + 1]
+        if arg.startswith("--local-kb="):
+            local_dir = Path(arg.split("=", 1)[1])
+        elif arg == "--local-kb" and i + 1 < len(args):
+            local_dir = Path(args[i + 1])
+
+    sys.path.insert(0, str(UU_ROOT))
+    try:
+        from unseen_university.global_kb import bootstrap
+
+        print(f"uu bootstrap: importing global KB {'from ' + kb_url if kb_url else 'from local dir'}...")
+        count = bootstrap(url=kb_url, local_dir=local_dir)
+        print(f"uu bootstrap: {count} patterns imported.")
+    except Exception as e:
+        print(f"uu bootstrap: failed — {e}")
+        sys.exit(1)
+
+
 def main() -> None:
     args = sys.argv[1:]
 
@@ -160,6 +188,11 @@ def main() -> None:
         if VENV_PYTHON.exists():
             os.execv(str(VENV_PYTHON), [str(VENV_PYTHON), __file__] + args)
         # If venv python not available, continue with system python
+
+    # Handle subcommands before parsing frontend flags
+    if args and args[0] == "bootstrap":
+        _cmd_bootstrap(args[1:])
+        return
 
     # Parse --frontend flag
     frontend_override = None
