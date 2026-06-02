@@ -49,7 +49,7 @@ _LOG_FILE = _RUNTIME_ROOT / "logs" / "granny_weatherwax.log"
 # itself works (contracts between devices, rack topology, cross-device APIs)
 # belong here.
 _CC_ESCALATION_TAGS = frozenset(
-    {"RackContract", "CrossDevice", "DeviceInterface", "Security", "DataMigration"}
+    {"RackContract", "CrossDevice", "DeviceInterface", "DataMigration"}
 )
 
 # Default routing: maps ticket tags → worker IDs (deterministic common cases).
