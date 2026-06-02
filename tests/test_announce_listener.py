@@ -81,6 +81,8 @@ def test_pump_publishes_manifest_for_valid_envelope(server, listener):
         box_n=0,
         pid=4242,
         interface_version="1.0",
+
+        proof={"shared_secret": "test-rack-secret"},
         surfaces=["console"],
     )
     _send_announce(server, identity.to_dict())
@@ -162,6 +164,8 @@ def test_pump_processes_multiple_envelopes_in_one_call(server, listener):
             box_n=n,
             pid=1000 + n,
             interface_version="1.0",
+
+            proof={"shared_secret": "test-rack-secret"},
         )
         _send_announce(server, identity.to_dict())
 

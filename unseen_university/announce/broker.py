@@ -68,6 +68,20 @@ def _load_base_system_sections() -> dict:
     return {}
 
 
+# Agent IDs whose announces require a non-empty proof field.
+# These agents have known launch paths and can supply a shared secret.
+# Extend via RACK_PROTECTED_AGENTS env var (comma-separated) at deploy time.
+import os as _os
+_PROTECTED_AGENTS_DEFAULT = frozenset({"igor", "cc", "skeleton"})
+
+
+def _protected_agents() -> frozenset[str]:
+    env = _os.environ.get("RACK_PROTECTED_AGENTS", "")
+    if env.strip():
+        return frozenset(a.strip() for a in env.split(",") if a.strip())
+    return _PROTECTED_AGENTS_DEFAULT
+
+
 class AnnounceError(Exception):
     """Raised when the broker cannot assemble a manifest."""
 
@@ -106,6 +120,15 @@ class AnnounceBroker:
         Raises AnnounceError when the agent's profile is missing or the
         broker is in an inconsistent state.
         """
+        # T-announce-proof-validation: protected agent IDs must supply a non-empty proof.
+        # This blocks identity impersonation (ContainerShim-tier announcing as 'igor').
+        # Full challenge-response PKI is a follow-on; v1 just rejects empty proof.
+        if envelope.agent_id in _protected_agents() and not envelope.proof:
+            raise AnnounceError(
+                f"announce rejected: agent_id={envelope.agent_id!r} is protected — "
+                f"a non-empty proof field is required (got empty proof)"
+            )
+
         try:
             profile = load_profile(envelope.agent_id, profiles_dir=self._profiles_dir)
         except ProfileNotFoundError as exc:

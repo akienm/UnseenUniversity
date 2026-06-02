@@ -78,6 +78,8 @@ def test_round_trip_via_imap_stub(integration_rack):
         box_n=0,
         pid=12345,
         interface_version="1.0",
+
+        proof={"shared_secret": "test-rack-secret"},
         surfaces=["console", "inference"],
     )
     _post_envelope(server, identity)

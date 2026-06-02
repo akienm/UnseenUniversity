@@ -88,6 +88,7 @@ class DatacenterClient:
         pid: int | None = None,
         interface_version: str = "1.0",
         from_device: str | None = None,
+        proof: dict | None = None,
     ) -> None:
         identity = IdentityEnvelope(
             agent_id=agent_id,
@@ -97,6 +98,7 @@ class DatacenterClient:
             pid=pid if pid is not None else os.getpid(),
             interface_version=interface_version,
             surfaces=surfaces or [],
+            proof=proof or {},
         )
         self._identity = identity
         self._imap = make_bus_connection()

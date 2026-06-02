@@ -66,6 +66,8 @@ def test_announce_tool_returns_manifest_dict(integration_rack):
         agent_id="cc",
         box="testhost",
         box_n=2,
+
+        proof={"shared_secret": "test-rack-secret"},
     )
 
     stop = threading.Event()
@@ -130,6 +132,8 @@ def test_manifest_tool_returns_cached_after_announce(integration_rack):
         agent_id="cc",
         box="testhost",
         box_n=3,
+
+        proof={"shared_secret": "test-rack-secret"},
     )
     stop = threading.Event()
     pumper = _drive_pump(skel, stop)
@@ -166,6 +170,8 @@ def test_check_for_invalidate_tool_handles_matching_envelope(integration_rack):
         agent_id="cc",
         box="testhost",
         box_n=4,
+
+        proof={"shared_secret": "test-rack-secret"},
     )
     stop = threading.Event()
     pumper = _drive_pump(skel, stop)
@@ -201,6 +207,8 @@ def test_singleton_reuse_across_calls(integration_rack):
         agent_id="cc",
         box="testhost",
         box_n=5,
+
+        proof={"shared_secret": "test-rack-secret"},
     )
     initial_client = adapter.client
 

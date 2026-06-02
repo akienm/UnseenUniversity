@@ -79,12 +79,14 @@ def test_client_round_trip_via_skeleton(integration_rack):
         instance="wild-0001",
         box="testhost",
         box_n=0,
+        proof={"shared_secret": "test-rack-secret"},
         pid=8888,
         interface_version="1.0",
         surfaces=["console", "inference"],
     )
     client = DatacenterClient(
         agent_id=igor_identity.agent_id,
+        proof={"shared_secret": "test-rack-secret"},
         instance=igor_identity.instance,
         box=igor_identity.box,
         box_n=igor_identity.box_n,
@@ -178,6 +180,7 @@ def test_client_round_trip_with_cc_profile(integration_rack):
         pid=9999,
         interface_version="1.0",
         surfaces=["console", "mcp"],
+        proof={"shared_secret": "test-rack-secret"},
     )
     client = DatacenterClient(
         agent_id=cc_identity.agent_id,
@@ -186,6 +189,7 @@ def test_client_round_trip_with_cc_profile(integration_rack):
         box_n=cc_identity.box_n,
         pid=cc_identity.pid,
         surfaces=cc_identity.surfaces,
+        proof=cc_identity.proof,
     )
 
     stop = threading.Event()

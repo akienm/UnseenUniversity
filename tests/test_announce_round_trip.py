@@ -64,6 +64,7 @@ def igor_envelope() -> IdentityEnvelope:
         box_n=0,
         pid=9999,
         interface_version="1.0",
+        proof={"shared_secret": "test-rack-secret"},
         surfaces=["console", "inference"],
     )
 

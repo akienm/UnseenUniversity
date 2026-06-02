@@ -59,6 +59,7 @@ class AnnounceMcpServer:
         box: str | None = None,
         box_n: int = 0,
         surfaces: list[str] | None = None,
+        proof: dict | None = None,
     ) -> None:
         actual_box = box or _socket.gethostname()
         actual_instance = instance_id or f"{actual_box}-{os.getpid()}"
@@ -69,6 +70,7 @@ class AnnounceMcpServer:
             box_n=box_n,
             pid=os.getpid(),
             surfaces=surfaces or ["console", "mcp"],
+            proof=proof or {},
         )
 
     # ── MCP-style tool methods ────────────────────────────────────────────────
