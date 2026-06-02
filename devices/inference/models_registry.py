@@ -39,9 +39,8 @@ class ModelSpec:
         )
 
 
-# ── Seed data — updated 2026-06-02 ────────────────────────────────────────────
-# Pricing from OpenRouter as of 2026-05-31; verify at openrouter.ai/models before
-# production use — OR pricing changes frequently.
+# ── Seed data — verified against openrouter.ai/api/v1/models on 2026-06-02 ───
+# Pricing volatile — re-verify at openrouter.ai/models before production use.
 
 _SEED: list[ModelSpec] = [
     # Minion tier — trivial tasks, boilerplate, simple transforms
@@ -53,51 +52,51 @@ _SEED: list[ModelSpec] = [
         output_cost_per_1m=0.15,
         context_window=262_144,
         tags=["coding", "cheap", "fast"],
-        notes="Fastest and cheapest; good for simple, well-specified tasks",
+        notes="Confirmed working 2026-06-02; fast and cheap; good for simple well-specified tasks",
     ),
-    # Worker tier — sprint tickets, general coding
+    # Worker tier — dedicated coding model, MoE architecture, very cheap
     ModelSpec(
-        model_id="qwen/qwen2.5-coder-32b-instruct",
+        model_id="qwen/qwen3-coder-30b-a3b-instruct",
         source_name="openrouter",
         tier="worker",
         input_cost_per_1m=0.07,
-        output_cost_per_1m=0.12,
-        context_window=131_072,
-        tags=["coding", "swe-bench-verified"],
-        notes="~28% SWE-bench verified; strong coding; primary worker model",
+        output_cost_per_1m=0.28,
+        context_window=156_000,
+        tags=["coding", "fast"],
+        notes="Qwen3 dedicated coder; replaces deprecated qwen2.5-coder-32b slug",
     ),
-    # Worker tier — large all-rounder fallback; less coding-specific but reliable
+    # Worker tier — large all-rounder fallback; strong tool-calling
     ModelSpec(
-        model_id="meta-llama/llama-3.1-70b-instruct",
+        model_id="qwen/qwen3-235b-a22b-2507",
         source_name="openrouter",
         tier="worker",
-        input_cost_per_1m=0.59,
-        output_cost_per_1m=0.79,
-        context_window=131_072,
-        tags=["coding", "general", "tool-calling"],
-        notes="All-rounder; good structural reasoning; fallback when Qwen2.5-Coder stalls",
+        input_cost_per_1m=0.071,
+        output_cost_per_1m=0.284,
+        context_window=262_144,
+        tags=["coding", "general", "large"],
+        notes="Huge MoE model; strong reasoning; fallback when smaller coder stalls",
     ),
-    # Analyst tier — research, eval, longer reasoning chains
+    # Analyst tier — DeepSeek V4 Flash: 1M context, cheapest strong coding model
     ModelSpec(
-        model_id="deepseek/deepseek-v3",
+        model_id="deepseek/deepseek-v4-flash",
         source_name="openrouter",
         tier="analyst",
-        input_cost_per_1m=0.14,
-        output_cost_per_1m=0.28,
-        context_window=655_360,
-        tags=["coding", "reasoning", "swe-bench-verified"],
-        notes="~42% SWE-bench verified; near-Claude-3.5-Sonnet coding; primary analyst model",
+        input_cost_per_1m=0.098,
+        output_cost_per_1m=0.392,
+        context_window=1_048_576,
+        tags=["coding", "reasoning", "1m-context"],
+        notes="DeepSeek V4 Flash; replaces deprecated deepseek-v3 slug; 1M context, strong coding",
     ),
-    # Analyst tier — massive context window; best for large-codebase ingest
+    # Analyst tier — Qwen3 Coder main; 1M context, competitive with V4 Flash
     ModelSpec(
-        model_id="google/gemini-flash-1.5",
+        model_id="qwen/qwen3-coder",
         source_name="openrouter",
         tier="analyst",
-        input_cost_per_1m=0.075,
-        output_cost_per_1m=0.30,
-        context_window=1_000_000,
-        tags=["coding", "long-context", "fast"],
-        notes="1M context; cheap input; strong for large-context tickets; fallback analyst",
+        input_cost_per_1m=0.22,
+        output_cost_per_1m=0.88,
+        context_window=1_048_576,
+        tags=["coding", "1m-context"],
+        notes="Qwen3 Coder full model; 1M context; fallback analyst when DeepSeek unavailable",
     ),
     # Designer tier — Akien + CC design sessions; fast, long-context
     ModelSpec(

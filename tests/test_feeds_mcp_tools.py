@@ -268,11 +268,13 @@ class TestGrannyDaemonFeedPublish:
         assert env.payload["ticket_id"] == "T-bad"
 
     def test_route_fail_publishes_feed_event(self):
+        # Audit-passing tickets now go through inference_dispatch; route_fail
+        # fires when inference_dispatch returns False.
         daemon = _make_bare_daemon()
         daemon._device.intake_ticket.return_value = MagicMock(
             passed=True, escalate_to_cc=False, reasons=[]
         )
-        daemon._device.route_ticket.return_value = (False, "cc")
+        daemon._inference_dispatch = MagicMock(return_value=False)
         tickets = [_ticket("T-noway")]
         with (
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),

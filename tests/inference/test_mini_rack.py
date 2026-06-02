@@ -43,7 +43,7 @@ def test_registry_cheapest_in_tier():
 
 def test_registry_get_by_id():
     reg = default_registry()
-    spec = reg.get("qwen/qwen2.5-coder-32b-instruct")
+    spec = reg.get("qwen/qwen3-coder-30b-a3b-instruct")
     assert spec is not None
     assert spec.tier == "worker"
     assert spec.source_name == "openrouter"
@@ -113,7 +113,7 @@ def test_rules_worker_routes_to_openrouter():
     decision = engine.route("worker")
     assert decision is not None
     assert decision.source is or_src
-    assert "qwen2.5-coder" in decision.model.model_id
+    assert "qwen3-coder" in decision.model.model_id
 
 
 def test_rules_minion_routes_to_cheapest():
