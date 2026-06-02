@@ -82,9 +82,9 @@ def post_to_channel(
             with conn.cursor() as cur:
                 cur.execute(
                     f"INSERT INTO {_CHANNEL_MESSAGES_TABLE}"
-                    " (ts, author, type, content, channel)"
-                    " VALUES (%s, %s, %s, %s, %s)",
-                    (ts, author, "message", message, channel),
+                    " (ts, author, type, content, channel, source_agent)"
+                    " VALUES (%s, %s, %s, %s, %s, %s)",
+                    (ts, author, "message", message, channel, author),
                 )
         conn.close()
         pg_ok = True

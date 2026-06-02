@@ -127,6 +127,7 @@ def test_write_memory_with_source_token_accepted():
         "provenance test",
         source_agent="rack-agent",
         source_token="tok_abc123",
+        db_url="",
         force_fallback=True,
     )
     assert result["id"] == "no_db"

@@ -346,7 +346,7 @@ def test_recall_writeback_includes_derived_from():
             "devices.librarian.recall._escalate_and_synthesize",
             return_value="synthesis text",
         ),
-        patch("devices.librarian.recall.write_memory", fake_write_memory),
+        patch("devices.librarian.memory_writer.write_memory", fake_write_memory),
     ):
         result = recall(
             "python async",
