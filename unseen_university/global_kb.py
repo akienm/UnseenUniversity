@@ -18,7 +18,7 @@ from typing import Iterator
 
 log = logging.getLogger(__name__)
 
-_DEFAULT_KB_URL = "https://github.com/akienm/unseen-university-kb.git"
+_DEFAULT_KB_URL = "https://github.com/akienm/unseen-university-kb"
 _LOCAL_KB_DIR_NAME = "global-kb"
 
 
