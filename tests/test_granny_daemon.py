@@ -326,11 +326,13 @@ class TestGrannyDaemonAlertCC:
         assert envelope.payload["ticket_id"] == "T-bad"
 
     def test_run_once_alerts_on_route_fail(self):
+        # Audit-passing tickets now go through inference_dispatch (OR cascade).
+        # A route_fail occurs when inference_dispatch returns False.
         daemon = _make_bare_daemon()
         daemon._device.intake_ticket.return_value = MagicMock(
             passed=True, escalate_to_cc=False, reasons=[]
         )
-        daemon._device.route_ticket.return_value = (False, "cc")
+        daemon._inference_dispatch = MagicMock(return_value=False)
         tickets = [_ticket("T-route-fail")]
         with (
             patch("devices.granny.daemon._load_sprint_tickets", return_value=tickets),
@@ -342,7 +344,6 @@ class TestGrannyDaemonAlertCC:
             patch("devices.granny.daemon._count_active_cc_sessions", return_value=0),
         ):
             daemon.run_once()
-        # append called for CC.0 alert + feeds/granny publish
         cc_calls = [c for c in daemon._imap.append.call_args_list if c[0][0] == "CC.0"]
         assert len(cc_calls) == 1
         envelope = cc_calls[0][0][1]

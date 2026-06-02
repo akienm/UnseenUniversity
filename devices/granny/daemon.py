@@ -383,20 +383,27 @@ class GrannyDaemon:
                     self._alert_cc(tid, str(audit.reasons), "audit_fail")
                     self._publish_feed("audit_fail", tid, str(audit.reasons))
                     continue
-                ok, worker_id = self._device.route_ticket(ticket)
-                # Fallback: no tag edge found but ticket is CC-bound — dispatch directly.
-                # Happens when ticket tags aren't yet registered in _CC_TAGS.
-                if not ok and worker_id == "no_route":
-                    from devices.granny.dispatch import cc_dispatch_fn
+                if audit.escalate_to_cc:
+                    # HIGH-inertia or explicit escalation: dispatch directly to CC.
+                    ok, worker_id = self._device.route_ticket(ticket)
+                    if not ok and worker_id == "no_route":
+                        from devices.granny.dispatch import cc_dispatch_fn
 
-                    ok = cc_dispatch_fn(ticket)
-                    worker_id = "cc"
+                        ok = cc_dispatch_fn(ticket)
+                        worker_id = "cc"
+                else:
+                    # Audit passed: try OR cascade (analyst→worker→minion) first.
+                    # Only blocks for CC if all OR tiers ESCALATE.
+                    ok = self._inference_dispatch(
+                        ticket, on_complete=self._record_inference_outcome
+                    )
+                    worker_id = "or-cascade"
             else:
-                # minion-tagged tickets: route via InferenceDevice (deepseek or qwen)
+                # minion-tagged tickets: skip directly to minion tier in cascade.
                 ok = self._inference_dispatch(
                     ticket, on_complete=self._record_inference_outcome
                 )
-                worker_id = "inference"
+                worker_id = "or-minion"
 
             if ok:
                 new_ids.add(tid)
