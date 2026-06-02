@@ -304,10 +304,8 @@ class GrannyWeatherwaxDevice(BaseDevice):
             )
         elif result.escalate_to_cc:
             self._log.info("audit ESCALATE %s: HIGH-inertia", tid)
-            self._post_to_channel(
-                "shared",
-                f"Granny: {tid} has HIGH-inertia tags — escalating to CC for approval",
-            )
+            # Caller (daemon._hold_for_cc_approval) posts the channel message.
+            # Don't post here too — that creates the duplicate we saw in June 2026.
         return result
 
     # ── Routing ────────────────────────────────────────────────────────────────

@@ -68,7 +68,11 @@ class GoogleSecretaryDevice(BaseDevice):
     @property
     def dispatcher(self) -> GoogleSecretaryDispatcher:
         if self._dispatcher is None:
-            self._dispatcher = GoogleSecretaryDispatcher(home=self._home)
+            # Wire shim's credential provider so dispatcher can make authenticated calls.
+            self._dispatcher = GoogleSecretaryDispatcher(
+                home=self._home,
+                credentials_provider=self.shim.get_credentials,
+            )
         return self._dispatcher
 
     @property
