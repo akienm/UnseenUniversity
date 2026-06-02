@@ -86,6 +86,74 @@ def cc_dispatch_fn(ticket: dict) -> bool:
     return True
 
 
+def cc0_dispatch_fn(ticket: dict, session: str = "claude-main") -> bool:
+    """Dispatch to CC.0 via tmux send-keys to the claude-main session.
+
+    Sends /sprint-ticket <id> to the running claude session.
+    Posts GRANNY_CC0_OFFER to the channel for observability.
+    Called only when CC.0 is available (all gates passed).
+    """
+    ticket_id = ticket.get("id", "")
+    if not ticket_id:
+        log.warning("cc0_dispatch_fn: ticket has no id — skipping")
+        return False
+
+    # Mark in_progress via cc_queue
+    try:
+        result = subprocess.run(
+            [_PYTHON, str(_CC_QUEUE), "dispatch", ticket_id],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode != 0 and "already" not in result.stderr.lower():
+            log.warning(
+                "cc0_dispatch_fn: cc_queue dispatch %s failed: %s",
+                ticket_id,
+                result.stderr[:200],
+            )
+    except Exception as e:
+        log.warning("cc0_dispatch_fn: cc_queue call failed for %s: %s", ticket_id, e)
+
+    # Post GRANNY_CC0_OFFER to channel
+    try:
+        from unseen_university.channel import post_to_channel
+
+        title = ticket.get("title", "")[:60]
+        size = ticket.get("size", "?")
+        tags = ",".join(ticket.get("tags", []))
+        msg = (
+            f"GRANNY_CC0_OFFER|ticket={ticket_id}|session={session}|size={size}"
+            f"|tags={tags}|title={title}"
+        )
+        post_to_channel(msg, author="granny-weatherwax", channel="granny-weatherwax")
+        log.info("cc0_dispatch_fn: channel offer posted for %s", ticket_id)
+    except Exception as e:
+        log.warning("cc0_dispatch_fn: channel post failed for %s: %s", ticket_id, e)
+
+    # Send /sprint-ticket to the running claude session via tmux send-keys
+    try:
+        subprocess.run(
+            [
+                "tmux",
+                "send-keys",
+                "-t",
+                session,
+                f"/sprint-ticket {ticket_id}",
+                "Enter",
+            ],
+            capture_output=True,
+            timeout=5,
+            check=False,
+        )
+        log.info("cc0_dispatch_fn: tmux send-keys OK for %s → %s", ticket_id, session)
+    except Exception as e:
+        log.warning("cc0_dispatch_fn: tmux send-keys failed for %s: %s", ticket_id, e)
+        # Continue anyway — ticket is marked in_progress and offer was posted
+
+    return True
+
+
 # Tier cascade for OR routing: tickets try each tier in order before going to CC.
 # minion-tagged tickets skip straight to minion (cheapest, simplest).
 # All other tickets start at analyst (most capable OR tier) and fall back.

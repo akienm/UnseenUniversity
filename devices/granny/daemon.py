@@ -242,6 +242,63 @@ def _ticket_needs_cc(ticket: dict) -> bool:
     return "minion" not in tags
 
 
+def _cc0_available() -> bool:
+    """Return True when all CC.0 dispatch gates pass (from granny.yaml config).
+
+    Gates checked via dispatch_config.evaluate_worker_gates:
+      1. CC.0.available.false absent (no explicit block)
+      2. CC.0.available.true present (opt-in)
+      3. Claude usage < usage_max_pct (default 70%)
+      4. No in_progress worker=claude ticket (max_concurrent: 1)
+    """
+    try:
+        from devices.granny.dispatch_config import (
+            get_worker_config,
+            load_dispatch_config,
+        )
+        from datetime import datetime
+
+        config = load_dispatch_config()
+        cc0_config = get_worker_config("CC.0", config)
+        if not cc0_config:
+            log.debug("_cc0_available: CC.0 not in granny.yaml config")
+            return False
+
+        # Gather context for gate evaluation
+        ctx = {
+            "now": datetime.now(),
+            "usage_pct": _get_usage_pct(),
+            "cc0_busy": _cc0_in_progress(),
+        }
+
+        from devices.granny.dispatch_config import evaluate_worker_gates
+
+        result = evaluate_worker_gates("CC.0", cc0_config, ctx)
+        if result:
+            log.debug("_cc0_available: gates passed for CC.0")
+        else:
+            log.debug("_cc0_available: gates failed for CC.0")
+        return result
+    except Exception as e:
+        log.debug("_cc0_available: gate check failed: %s", e)
+        return False
+
+
+def _get_usage_pct() -> float:
+    """Get Claude's 5-hour usage percentage from cache (set by shim). Default 0.0."""
+    try:
+        import json
+
+        usage_cache = _USAGE_CACHE
+        if usage_cache.exists():
+            data = json.loads(usage_cache.read_text())
+            pct = float(data.get("usage_pct", 0.0))
+            return pct
+    except Exception as e:
+        log.debug("_get_usage_pct: failed to read cache: %s", e)
+    return 0.0
+
+
 class GrannyDaemon:
     """Background polling daemon that routes sprint-ready tickets to workers."""
 
@@ -362,23 +419,31 @@ class GrannyDaemon:
                 log.debug("GrannyDaemon: skipping already-dispatched %s", tid)
                 continue
             if _ticket_needs_cc(ticket):
-                audit = self._device.intake_ticket(ticket)
-                if not audit.passed and not audit.escalate_to_cc:
-                    self._hold_for_audit_fail(tid, audit.reasons)
-                    continue
-                if audit.escalate_to_cc:
-                    # HIGH-inertia: block and alert CC.0 for human approval.
-                    # Never auto-dispatch.
-                    self._hold_for_cc_approval(tid, str(audit.reasons))
-                    ok = True
-                    worker_id = "hold-for-cc"
+                # Try CC.0 first if available (semaphore + usage gate + not busy)
+                if _cc0_available():
+                    from devices.granny.dispatch import cc0_dispatch_fn
+
+                    ok = cc0_dispatch_fn(ticket, session="claude-main")
+                    worker_id = "cc-0"
                 else:
-                    # Audit passed: try OR cascade (analyst→worker→minion).
-                    # Only blocks for CC if all OR tiers ESCALATE.
-                    ok = self._inference_dispatch(
-                        ticket, on_complete=self._record_inference_outcome
-                    )
-                    worker_id = "or-cascade"
+                    # Fall back to audit + OR cascade
+                    audit = self._device.intake_ticket(ticket)
+                    if not audit.passed and not audit.escalate_to_cc:
+                        self._hold_for_audit_fail(tid, audit.reasons)
+                        continue
+                    if audit.escalate_to_cc:
+                        # HIGH-inertia: block and alert CC.0 for human approval.
+                        # Never auto-dispatch.
+                        self._hold_for_cc_approval(tid, str(audit.reasons))
+                        ok = True
+                        worker_id = "hold-for-cc"
+                    else:
+                        # Audit passed: try OR cascade (analyst→worker→minion).
+                        # Only blocks for CC if all OR tiers ESCALATE.
+                        ok = self._inference_dispatch(
+                            ticket, on_complete=self._record_inference_outcome
+                        )
+                        worker_id = "or-cascade"
             else:
                 # minion-tagged tickets: skip directly to minion tier in cascade.
                 ok = self._inference_dispatch(
