@@ -63,6 +63,26 @@ def daemon_pid_file() -> Path:
     return _GRANNY_PID_FILE
 
 
+def _load_dispatched_ids() -> set[str]:
+    """Read dispatched_cycle.json. Returns empty set on missing/corrupt file."""
+    try:
+        if _DISPATCHED_CYCLE_FILE.exists():
+            data = json.loads(_DISPATCHED_CYCLE_FILE.read_text())
+            return set(data.get("ids", []))
+    except Exception as e:
+        log.debug("_load_dispatched_ids: %s", e)
+    return set()
+
+
+def _save_dispatched_ids(ids: set[str]) -> None:
+    """Persist dispatched_cycle ids to disk. Best-effort — never raises."""
+    try:
+        _DISPATCHED_CYCLE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _DISPATCHED_CYCLE_FILE.write_text(json.dumps({"ids": list(ids)}))
+    except Exception as e:
+        log.debug("_save_dispatched_ids: %s", e)
+
+
 def _post_rack(path: str, body: dict, timeout: float = 3.0) -> bool:
     """POST JSON to rack server. Returns True on success, False on any failure."""
     try:
@@ -245,16 +265,17 @@ def _ticket_needs_cc(ticket: dict) -> bool:
 
 
 def _cc0_available() -> bool:
-    """Return True when all CC.0 dispatch gates pass (from granny.yaml config).
+    """Return True when all CC.0 dispatch gates pass.
 
-    Gates checked via dispatch_config.evaluate_worker_gates:
-      1. CC.0.available.false absent (no explicit block)
-      2. CC.0.available.true present (opt-in)
-      3. Claude usage < usage_max_pct (default 70%)
-      4. No in_progress worker=claude ticket (max_concurrent: 1)
+    Gates checked:
+      1. CC.0 in granny.yaml config
+      2. time_window, semaphore, usage_max_pct gates from granny.yaml
+      3. cc_concurrency_mode from cc.yaml: cc0_only → block when another CC is in_progress
     """
     try:
         from devices.granny.dispatch_config import (
+            evaluate_worker_gates,
+            get_cc_concurrency_mode,
             get_worker_config,
             load_dispatch_config,
         )
@@ -266,21 +287,25 @@ def _cc0_available() -> bool:
             log.debug("_cc0_available: CC.0 not in granny.yaml config")
             return False
 
-        # Gather context for gate evaluation
         ctx = {
             "now": datetime.now(),
             "usage_pct": _get_usage_pct(),
-            "cc0_busy": _cc0_in_progress(),
+            "cc0_busy": False,  # max_concurrent gate removed from granny.yaml; handled below
         }
 
-        from devices.granny.dispatch_config import evaluate_worker_gates
-
-        result = evaluate_worker_gates("CC.0", cc0_config, ctx)
-        if result:
-            log.debug("_cc0_available: gates passed for CC.0")
-        else:
+        if not evaluate_worker_gates("CC.0", cc0_config, ctx):
             log.debug("_cc0_available: gates failed for CC.0")
-        return result
+            return False
+
+        # Concurrency check derived from cc.yaml cc_concurrency_mode.
+        # cc0_only → block dispatch when any CC session is already in_progress.
+        mode = get_cc_concurrency_mode()
+        if mode == "cc0_only" and _cc0_in_progress():
+            log.debug("_cc0_available: cc0_only mode — another CC session already in_progress")
+            return False
+
+        log.debug("_cc0_available: gates passed for CC.0 (mode=%s)", mode)
+        return True
     except Exception as e:
         log.debug("_cc0_available: gate check failed: %s", e)
         return False
@@ -307,7 +332,8 @@ class GrannyDaemon:
     def __init__(self) -> None:
         self._stop_event = threading.Event()
         self._thread: Optional[threading.Thread] = None
-        self._dispatched_ids: set[str] = set()
+        self._dispatched_ids: set[str] = _load_dispatched_ids()
+        self._start_time: Optional[float] = None
         self._total_dispatched: int = 0
         self._total_errors: int = 0
         self._last_poll: Optional[float] = None
@@ -343,12 +369,17 @@ class GrannyDaemon:
         if self._thread and self._thread.is_alive():
             return
         self._stop_event.clear()
+        self._start_time = time.time()
         self._thread = threading.Thread(
             target=self._run, name="granny-daemon", daemon=True
         )
         self._thread.start()
         log.info("GrannyDaemon: started (poll_interval=%ds)", POLL_INTERVAL_SEC)
         self._start_task_listener()
+        self._post_channel(
+            f"{_STATS_CHANNEL_POST}|event=start|total_dispatched={self._total_dispatched}"
+            f"|total_errors={self._total_errors}|dispatched_ids={len(self._dispatched_ids)}"
+        )
         self._post_channel(
             "Granny Weatherwax daemon started — watching for sprint tickets."
         )
@@ -386,7 +417,12 @@ class GrannyDaemon:
                 pass
         if self._thread:
             self._thread.join(timeout=5)
+        uptime = int(time.time() - self._start_time) if self._start_time else 0
         _post_rack("/api/agents/deregister", {"agent_id": "granny-weatherwax"})
+        self._post_channel(
+            f"{_STATS_CHANNEL_POST}|event=stop|total_dispatched={self._total_dispatched}"
+            f"|total_errors={self._total_errors}|uptime_sec={uptime}"
+        )
         self._post_channel("Granny Weatherwax daemon stopped.")
         log.info("GrannyDaemon: stopped")
 
@@ -470,6 +506,7 @@ class GrannyDaemon:
                 )
 
         self._dispatched_ids = new_ids  # reset to only current-cycle dispatches
+        _save_dispatched_ids(self._dispatched_ids)
         self._last_poll = time.time()
         return dispatched
 

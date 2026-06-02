@@ -31,6 +31,11 @@ _CONFIG_PATH = Path(
         "GRANNY_CONFIG_PATH", str(_UU_ROOT / "config" / "profiles" / "granny.yaml")
     )
 )
+_CC_PROFILE_PATH = Path(
+    os.environ.get(
+        "CC_PROFILE_PATH", str(_UU_ROOT / "config" / "profiles" / "cc.yaml")
+    )
+)
 
 
 def load_dispatch_config() -> dict:
@@ -148,3 +153,20 @@ def get_worker_config(worker_id: str, config: Optional[dict] = None) -> Optional
     if config is None:
         config = load_dispatch_config()
     return (config.get("workers") or {}).get(worker_id)
+
+
+def load_cc_profile(profile_path: Optional[Path] = None) -> dict:
+    """Load cc.yaml agent profile. Returns {} on any error."""
+    path = profile_path or _CC_PROFILE_PATH
+    try:
+        if path.exists():
+            return yaml.safe_load(path.read_text()) or {}
+    except Exception as e:
+        log.warning("dispatch_config: failed to load cc.yaml: %s", e)
+    return {}
+
+
+def get_cc_concurrency_mode(profile_path: Optional[Path] = None) -> str:
+    """Return cc_concurrency_mode from cc.yaml. Defaults to 'cc0_only'."""
+    profile = load_cc_profile(profile_path)
+    return profile.get("cc_concurrency_mode", "cc0_only")

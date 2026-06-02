@@ -251,3 +251,72 @@ class TestLoadDispatchConfig:
         }
         assert get_worker_config("CC.0", config)["dispatch"] == "tmux"
         assert get_worker_config("Igor", config) is None
+
+
+# ── cc.yaml profile / concurrency mode ────────────────────────────────────────
+
+
+class TestCcConcurrencyMode:
+    def test_reads_cc0_only_from_profile(self, tmp_path):
+        from devices.granny.dispatch_config import get_cc_concurrency_mode
+
+        cc_yaml = tmp_path / "cc.yaml"
+        cc_yaml.write_text("cc_concurrency_mode: cc0_only\n")
+        assert get_cc_concurrency_mode(cc_yaml) == "cc0_only"
+
+    def test_reads_cc0_plus_cc1_from_profile(self, tmp_path):
+        from devices.granny.dispatch_config import get_cc_concurrency_mode
+
+        cc_yaml = tmp_path / "cc.yaml"
+        cc_yaml.write_text("cc_concurrency_mode: cc0_plus_cc1\n")
+        assert get_cc_concurrency_mode(cc_yaml) == "cc0_plus_cc1"
+
+    def test_defaults_to_cc0_only_when_missing(self, tmp_path):
+        from devices.granny.dispatch_config import get_cc_concurrency_mode
+
+        assert get_cc_concurrency_mode(tmp_path / "nonexistent.yaml") == "cc0_only"
+
+    def test_defaults_to_cc0_only_when_field_absent(self, tmp_path):
+        from devices.granny.dispatch_config import get_cc_concurrency_mode
+
+        cc_yaml = tmp_path / "cc.yaml"
+        cc_yaml.write_text("profile_version: '1.0'\nagent_type: cc\n")
+        assert get_cc_concurrency_mode(cc_yaml) == "cc0_only"
+
+    def test_cc0_only_blocks_second_dispatch(self, tmp_path, monkeypatch):
+        """cc0_only mode: _cc0_available returns False when another CC is in_progress."""
+        import devices.granny.daemon as d
+
+        cc_yaml = tmp_path / "cc.yaml"
+        cc_yaml.write_text("cc_concurrency_mode: cc0_only\n")
+
+        granny_yaml = tmp_path / "granny.yaml"
+        granny_yaml.write_text(
+            "workers:\n  CC.0:\n    dispatch: tmux\n    gates:\n      usage_max_pct: 90\n"
+        )
+
+        import devices.granny.dispatch_config as dc
+        monkeypatch.setattr(dc, "_CONFIG_PATH", granny_yaml)
+        monkeypatch.setattr(dc, "_CC_PROFILE_PATH", cc_yaml)
+        monkeypatch.setattr(d, "_get_usage_pct", lambda: 0.0)
+        monkeypatch.setattr(d, "_cc0_in_progress", lambda: True)  # busy!
+        # Semaphore: no away/available gates in this config so availability.is_available not called
+        assert d._cc0_available() is False
+
+    def test_cc0_only_allows_when_not_busy(self, tmp_path, monkeypatch):
+        import devices.granny.daemon as d
+
+        cc_yaml = tmp_path / "cc.yaml"
+        cc_yaml.write_text("cc_concurrency_mode: cc0_only\n")
+
+        granny_yaml = tmp_path / "granny.yaml"
+        granny_yaml.write_text(
+            "workers:\n  CC.0:\n    dispatch: tmux\n    gates:\n      usage_max_pct: 90\n"
+        )
+
+        import devices.granny.dispatch_config as dc
+        monkeypatch.setattr(dc, "_CONFIG_PATH", granny_yaml)
+        monkeypatch.setattr(dc, "_CC_PROFILE_PATH", cc_yaml)
+        monkeypatch.setattr(d, "_get_usage_pct", lambda: 0.0)
+        monkeypatch.setattr(d, "_cc0_in_progress", lambda: False)
+        assert d._cc0_available() is True
