@@ -36,9 +36,16 @@ log_root = ~/.unseen_university/logs
 # Values: librarian, igor, superclaude
 default_frontend = librarian
 
+# ── Runtime root ─────────────────────────────────────────────────────────────
+# Override the default runtime directory (~/.unseen_university).
+# Rarely needed — only change if you run multiple independent installations.
+# Env var IGOR_RUNTIME_ROOT overrides this at launch time (env always wins).
+# runtime_root = ~/.unseen_university
+
 # ── Instance identity ────────────────────────────────────────────────────────
 # Name given to this UU installation during the first-run wizard.
 # Set automatically by the wizard — do not edit unless you know why.
+# Default: Igor-wild-0001. Env var IGOR_INSTANCE_ID overrides at launch time.
 instance_name =
 
 # ── Feature flags ────────────────────────────────────────────────────────────
