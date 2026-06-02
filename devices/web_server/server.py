@@ -1025,6 +1025,19 @@ async def _api_comms_health(request: Request):
     return JSONResponse(_comms.health())
 
 
+async def _api_granny_health(request: Request):
+    """GET /api/granny/health — Granny Weatherwax operational health snapshot."""
+    try:
+        from devices.granny.health import granny_health_snapshot
+
+        snapshot = granny_health_snapshot()
+        log.info("_api_granny_health: snapshot served")
+        return JSONResponse(snapshot)
+    except Exception as e:
+        log.warning("_api_granny_health: %s", e)
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
 # ── Palace browser ───────────────────────────────────────────────────────────
 # Read-only palace / rack views. Require IGOR_HOME_DB_URL. Graceful when absent.
 
@@ -1746,6 +1759,7 @@ def _make_app() -> Starlette:
         # Comms
         Route("/api/comms/channels", _api_comms_channels),
         Route("/api/comms/health", _api_comms_health),
+        Route("/api/granny/health", _api_granny_health),
         # Rack health API + page
         Route("/api/rack/health", _api_rack_health),
         Route("/rack", _page_rack),

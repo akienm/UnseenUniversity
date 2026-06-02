@@ -196,8 +196,8 @@ def _check_rate_limit() -> tuple[bool, Optional[str], float]:
         return (True, None, 0.0)
 
 
-def _count_active_cc_sessions() -> int:
-    """Count tmux sessions with the cc-T-* prefix (Granny-spawned workers)."""
+def _list_cc_sessions() -> list:
+    """List tmux session names with the cc-* prefix (Granny-spawned workers)."""
     try:
         result = subprocess.run(
             ["tmux", "ls", "-F", "#{session_name}"],
@@ -205,9 +205,14 @@ def _count_active_cc_sessions() -> int:
             text=True,
             timeout=5,
         )
-        return sum(1 for line in result.stdout.splitlines() if line.startswith("cc-"))
+        return [line for line in result.stdout.splitlines() if line.startswith("cc-")]
     except Exception:
-        return 0
+        return []
+
+
+def _count_active_cc_sessions() -> int:
+    """Count tmux sessions with the cc-* prefix (Granny-spawned workers)."""
+    return len(_list_cc_sessions())
 
 
 _MINION_TAGS = frozenset({"minion"})
