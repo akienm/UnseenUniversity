@@ -134,6 +134,12 @@ def send(text: str, session_id: str = "shared") -> bool:
     not-surfacing). Now logs at WARNING on any failure so 'reply present
     in console, missing in web' is observable from tools.log.
     """
+    log.info(
+        "web_send: interface crossing session=%s len=%d: %s",
+        session_id,
+        len(text or ""),
+        (text or "")[:80].replace("\n", " "),
+    )
     try:
         ok = uc_client.send_message(text, session_id=session_id)
         if not ok:
