@@ -190,29 +190,35 @@ class DickSimnelDevice(BaseDevice):
             log.debug("DickSimnel: cc_queue error: %s", exc)
             return None
 
-    def _find_next_ticket(self) -> dict | None:
-        """Return next sprint ticket assigned to worker=dicksimnel, or None."""
-        tickets = self._run_queue_cmd("list", "--json")
-        if not isinstance(tickets, list):
-            return None
-        for t in tickets:
-            if (
-                t.get("status") == "sprint"
-                and t.get("worker") in ("dicksimnel", "DickSimnel.0", "")
-                and t.get("id") != self._active_ticket
-            ):
-                return t
-        return None
+    def _claim_next_ticket(self) -> dict | None:
+        """Atomically claim the next sprint ticket assigned worker=dicksimnel.
 
-    def _claim_ticket(self, ticket_id: str) -> bool:
-        """Set ticket status to in_progress. Returns True on success."""
-        result = self._run_queue_cmd("setstatus", ticket_id, "in_progress")
-        if result:
-            log.info("DickSimnel: claimed ticket %s", ticket_id)
-            self._active_ticket = ticket_id
-            return True
-        log.warning("DickSimnel: failed to claim ticket %s", ticket_id)
-        return False
+        Uses cc_queue.py next --worker dicksimnel which marks in_progress and
+        returns the ticket JSON. This is the canonical claim pattern — no
+        separate find+claim race condition.
+
+        Returns the ticket dict or None if no ticket is available.
+        """
+        try:
+            result = subprocess.run(
+                ["python3", str(_CC_QUEUE), "next", "--worker", "dicksimnel"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
+            )
+            if result.returncode != 0:
+                log.debug("DickSimnel: next --worker returned no ticket: %s", result.stderr[:100])
+                return None
+            ticket = json.loads(result.stdout)
+            if not ticket:
+                return None
+            self._active_ticket = ticket.get("id")
+            log.info("DickSimnel: claimed ticket %s", self._active_ticket)
+            return ticket
+        except (json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
+            log.debug("DickSimnel: claim failed: %s", exc)
+            return None
 
     def _post_result(self, ticket_id: str, result_text: str) -> None:
         """Close ticket with inference result as the completion note."""
@@ -286,16 +292,13 @@ class DickSimnelDevice(BaseDevice):
             log.debug("DickSimnel: ticket %s still active — skipping poll", self._active_ticket)
             return
 
-        ticket = self._find_next_ticket()
+        ticket = self._claim_next_ticket()
         if ticket is None:
-            log.debug("DickSimnel: no tickets available")
+            log.debug("DickSimnel: no tickets available for worker=dicksimnel")
             return
 
         ticket_id = ticket["id"]
-        log.info("DickSimnel: found ticket %s — %s", ticket_id, ticket.get("title", "?"))
-
-        if not self._claim_ticket(ticket_id):
-            return
+        log.info("DickSimnel: working ticket %s — %s", ticket_id, ticket.get("title", "?"))
 
         result = self._run_inference(ticket)
         if result:

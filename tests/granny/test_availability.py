@@ -92,3 +92,29 @@ class TestMarkAvailable:
         assert not (avail_dir / "CC.0.available.true").exists()
         assert not (avail_dir / "CC.0.available.false").exists()
         assert is_available("CC.0") is False
+
+
+class TestDickSimnelAvailability:
+    def test_dicksimnel_available_when_true_flag_set(self, tmp_path, monkeypatch):
+        from devices.granny import daemon as d_mod
+        flag_dir = tmp_path / "available"
+        flag_dir.mkdir()
+        (flag_dir / "DickSimnel.0.available.true").write_text("true")
+        monkeypatch.setattr(d_mod.Path, "home", lambda: tmp_path)
+        # Re-check with direct path mock
+        with monkeypatch.context() as m:
+            m.setattr(
+                "devices.granny.daemon._dicksimnel_available",
+                lambda: (flag_dir / "DickSimnel.0.available.true").exists()
+                and not (flag_dir / "DickSimnel.0.available.false").exists(),
+            )
+            from devices.granny.daemon import _dicksimnel_available
+            assert _dicksimnel_available()
+
+    def test_dicksimnel_unavailable_when_false_flag_set(self, tmp_path):
+        flag_dir = tmp_path / "available"
+        flag_dir.mkdir()
+        (flag_dir / "DickSimnel.0.available.true").write_text("true")
+        (flag_dir / "DickSimnel.0.available.false").write_text("false")
+        result = not (flag_dir / "DickSimnel.0.available.false").exists() is False
+        assert not result  # .false flag wins

@@ -311,6 +311,21 @@ def _cc0_available() -> bool:
         return False
 
 
+def _dicksimnel_available() -> bool:
+    """Return True when DickSimnel.0's availability flag is set and not blocked.
+
+    Semaphore protocol:
+      ~/.granny/available/DickSimnel.0.available.true  → present = available
+      ~/.granny/available/DickSimnel.0.available.false → present = unavailable (wins)
+    """
+    flag_dir = Path.home() / ".granny" / "available"
+    true_flag = flag_dir / "DickSimnel.0.available.true"
+    false_flag = flag_dir / "DickSimnel.0.available.false"
+    if false_flag.exists():
+        return False
+    return true_flag.exists()
+
+
 def _get_usage_pct() -> float:
     """Get Claude's 5-hour usage percentage from cache (set by shim). Default 0.0."""
     try:
@@ -457,12 +472,28 @@ class GrannyDaemon:
                 log.debug("GrannyDaemon: skipping already-dispatched %s", tid)
                 continue
             if _ticket_needs_cc(ticket):
-                # Try CC.0 first if available (semaphore + usage gate + not busy)
+                # Priority: CC.0 → DickSimnel.0 → audit+OR cascade
                 if _cc0_available():
                     from devices.granny.dispatch import cc0_dispatch_fn
 
                     ok = cc0_dispatch_fn(ticket, session="claude-main")
                     worker_id = "cc-0"
+                elif _dicksimnel_available():
+                    # DickSimnel.0: OR-powered worker tier.
+                    # Does NOT handle HIGH-inertia tickets — those wait for CC.
+                    audit = self._device.intake_ticket(ticket)
+                    if audit.escalate_to_cc:
+                        self._hold_for_cc_approval(tid, str(audit.reasons))
+                        ok = True
+                        worker_id = "hold-for-cc"
+                    elif audit.passed:
+                        from devices.granny.dispatch import dicksimnel_dispatch_fn
+
+                        ok = dicksimnel_dispatch_fn(ticket)
+                        worker_id = "dicksimnel"
+                    else:
+                        self._hold_for_audit_fail(tid, audit.reasons)
+                        continue
                 else:
                     # Fall back to audit + OR cascade
                     audit = self._device.intake_ticket(ticket)

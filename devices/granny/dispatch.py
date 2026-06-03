@@ -129,6 +129,51 @@ def cc_dispatch_fn(ticket: dict) -> bool:
     return True
 
 
+def dicksimnel_dispatch_fn(ticket: dict) -> bool:
+    """Route a ticket to DickSimnel.0 (OR-powered worker tier).
+
+    Sets worker=dicksimnel on the ticket and keeps status=sprint so
+    DickSimnel's poll loop can claim it via 'cc_queue.py next --worker dicksimnel'.
+
+    DickSimnel runs inference (worker task_class) and closes the ticket
+    with the result. This function returns immediately — dispatch is async.
+    """
+    ticket_id = ticket.get("id", "")
+    if not ticket_id:
+        log.warning("dicksimnel_dispatch_fn: ticket has no id — skipping")
+        return False
+
+    # Tag the ticket for DickSimnel so its poll loop picks it up
+    try:
+        subprocess.run(
+            [_PYTHON, str(_CC_QUEUE), "set-worker", "dicksimnel", ticket_id],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except Exception as e:
+        log.warning("dicksimnel_dispatch_fn: set-worker failed for %s: %s", ticket_id, e)
+        return False
+
+    # Post observability event to shared channel
+    try:
+        from unseen_university.channel import post_to_channel
+
+        title = ticket.get("title", "")[:60]
+        size = ticket.get("size", "?")
+        tags = ",".join(ticket.get("tags", []))
+        msg = (
+            f"GRANNY_DISPATCH|ticket={ticket_id}|worker=dicksimnel|size={size}"
+            f"|tags={tags}|title={title}"
+        )
+        post_to_channel(msg, author="granny-weatherwax", channel="shared")
+    except Exception as e:
+        log.warning("dicksimnel_dispatch_fn: channel post failed for %s: %s", ticket_id, e)
+
+    log.info("dicksimnel_dispatch_fn: ticket %s tagged for DickSimnel.0", ticket_id)
+    return True
+
+
 def inference_dispatch_fn(ticket: dict) -> bool:
     """Dispatch a ticket to MinionDevice (cheap inference + tool loop).
 

@@ -120,77 +120,59 @@ class TestDickSimnelDevice:
         assert d.health()["status"] == "unhealthy"
         assert "test block" in d.health()["detail"]
 
-    def test_find_next_ticket_returns_sprint_ticket(self):
+    def test_claim_next_ticket_returns_ticket_on_success(self):
         d = self._device()
-        tickets = [
-            {"id": "T-done", "status": "done", "worker": "dicksimnel"},
-            {"id": "T-work", "status": "sprint", "worker": "dicksimnel", "title": "Fix something"},
-        ]
-        d._run_queue_cmd = MagicMock(return_value=tickets)
-        found = d._find_next_ticket()
-        assert found is not None
-        assert found["id"] == "T-work"
-
-    def test_find_next_skips_active_ticket(self):
-        d = self._device()
-        d._active_ticket = "T-work"
-        tickets = [
-            {"id": "T-work", "status": "sprint", "worker": "dicksimnel"},
-        ]
-        d._run_queue_cmd = MagicMock(return_value=tickets)
-        assert d._find_next_ticket() is None
-
-    def test_find_next_skips_non_sprint(self):
-        d = self._device()
-        tickets = [
-            {"id": "T-triage", "status": "triage", "worker": "dicksimnel"},
-            {"id": "T-hold", "status": "hold", "worker": "dicksimnel"},
-        ]
-        d._run_queue_cmd = MagicMock(return_value=tickets)
-        assert d._find_next_ticket() is None
-
-    def test_claim_ticket_sets_active(self):
-        d = self._device()
-        d._run_queue_cmd = MagicMock(return_value={"ok": True})
-        assert d._claim_ticket("T-abc")
+        ticket = {"id": "T-abc", "title": "Fix it", "status": "in_progress", "worker": "dicksimnel"}
+        import json
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=json.dumps(ticket))
+            result = d._claim_next_ticket()
+        assert result is not None
+        assert result["id"] == "T-abc"
         assert d._active_ticket == "T-abc"
+
+    def test_claim_next_ticket_returns_none_on_empty(self):
+        d = self._device()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=1, stderr="no ticket", stdout="")
+            result = d._claim_next_ticket()
+        assert result is None
+        assert d._active_ticket is None
 
     def test_poll_and_work_skips_when_blocked(self):
         d = self._device()
         d._blocked = True
-        d._find_next_ticket = MagicMock()
+        d._claim_next_ticket = MagicMock()
         d._poll_and_work()
-        d._find_next_ticket.assert_not_called()
+        d._claim_next_ticket.assert_not_called()
 
     def test_poll_and_work_skips_when_active(self):
         d = self._device()
         d._active_ticket = "T-running"
-        d._find_next_ticket = MagicMock()
+        d._claim_next_ticket = MagicMock()
         d._poll_and_work()
-        d._find_next_ticket.assert_not_called()
+        d._claim_next_ticket.assert_not_called()
 
     def test_poll_and_work_full_cycle(self):
         d = self._device()
-        ticket = {"id": "T-new", "title": "Fix bug", "status": "sprint",
+        ticket = {"id": "T-new", "title": "Fix bug", "status": "in_progress",
                   "worker": "dicksimnel", "description": "Fix the thing", "tags": [], "size": "S"}
-        d._find_next_ticket = MagicMock(return_value=ticket)
-        d._claim_ticket = MagicMock(return_value=True)
+        d._claim_next_ticket = MagicMock(return_value=ticket)
         d._run_inference = MagicMock(return_value="## Analysis\nFixed it.")
         d._post_result = MagicMock()
 
         d._poll_and_work()
 
-        d._claim_ticket.assert_called_once_with("T-new")
+        d._claim_next_ticket.assert_called_once()
         d._run_inference.assert_called_once_with(ticket)
         d._post_result.assert_called_once()
-        assert d._active_ticket is None  # cleared after work
+        assert d._active_ticket is None
 
     def test_poll_and_work_declines_on_inference_failure(self):
         d = self._device()
-        ticket = {"id": "T-fail", "title": "T", "status": "sprint",
+        ticket = {"id": "T-fail", "title": "T", "status": "in_progress",
                   "worker": "dicksimnel", "description": "", "tags": [], "size": "S"}
-        d._find_next_ticket = MagicMock(return_value=ticket)
-        d._claim_ticket = MagicMock(return_value=True)
+        d._claim_next_ticket = MagicMock(return_value=ticket)
         d._run_inference = MagicMock(return_value=None)
         d._decline_ticket = MagicMock()
 
