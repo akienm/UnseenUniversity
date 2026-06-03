@@ -40,11 +40,22 @@ def test_default_schedule_loaded():
     assert "alignment_review_5_cycles" in ids
     assert "consequence_gate_monitor" in ids
     assert "dreaming_daily" in ids
+    assert "nightly_test_run" in ids
 
 
-def test_default_schedule_has_five_entries():
+def test_default_schedule_has_six_entries():
     nanny = NannyOggDevice()
-    assert len(nanny.list_entries()) == 5
+    assert len(nanny.list_entries()) == 6
+
+
+def test_nightly_test_run_fires_at_0200():
+    nanny = NannyOggDevice()
+    entries = [e for e in nanny.list_entries() if e.entry_id == "nightly_test_run"]
+    assert entries
+    entry = entries[0]
+    assert entry.condition_type == "cron"
+    assert entry.condition_params.get("hour") == 2
+    assert entry.action_type == "run_test_suite"
 
 
 # ── who_am_i / capabilities ────────────────────────────────────────────────────
@@ -469,7 +480,7 @@ def test_self_test_reports_entry_count():
     nanny = NannyOggDevice()
     result = nanny.self_test()
     assert result["passed"] is True
-    assert "5" in result["details"]
+    assert "6" in result["details"]
 
 
 # ── start / stop ───────────────────────────────────────────────────────────────
@@ -497,3 +508,78 @@ def test_recovery_clears_errors_and_restarts():
         nanny.recovery()
     assert nanny._errors == []
     mock_restart.assert_called_once()
+
+
+# ── _cc_session_active ────────────────────────────────────────────────────────
+
+
+def test_cc_session_not_active_when_no_flag(tmp_path):
+    nanny = NannyOggDevice()
+    with patch("devices.nanny.device.Path") as mock_path_cls:
+        mock_path_cls.home.return_value = tmp_path
+        result = nanny._cc_session_active()
+    assert result is False
+
+
+def test_cc_session_active_when_true_flag_exists(tmp_path):
+    flag_dir = tmp_path / ".granny" / "available"
+    flag_dir.mkdir(parents=True)
+    (flag_dir / "CC.0.available.true").write_text("true")
+    nanny = NannyOggDevice()
+    with patch("devices.nanny.device.Path") as mock_path_cls:
+        mock_path_cls.home.return_value = tmp_path
+        result = nanny._cc_session_active()
+    assert result is True
+
+
+# ── _run_test_suite ────────────────────────────────────────────────────────────
+
+
+def test_run_test_suite_skips_when_cc_active(tmp_path):
+    nanny = NannyOggDevice()
+    posts = []
+    with patch.object(nanny, "_cc_session_active", return_value=True):
+        with patch.object(nanny, "_post_to_channel", side_effect=lambda ch, msg: posts.append(msg)):
+            nanny._run_test_suite({})
+    assert any("NIGHTLY_TEST_SKIPPED" in p for p in posts)
+
+
+def test_run_test_suite_posts_result_on_success(tmp_path):
+    nanny = NannyOggDevice()
+    posts = []
+    fake_result = MagicMock()
+    fake_result.stdout = "5 passed, 1 failed in 12.34s\n"
+    fake_result.stderr = ""
+    with patch.object(nanny, "_cc_session_active", return_value=False):
+        with patch.object(nanny, "_post_to_channel", side_effect=lambda ch, msg: posts.append(msg)):
+            with patch("subprocess.run", return_value=fake_result):
+                nanny._run_test_suite({"timeout": 30})
+    assert any("NIGHTLY_TEST_RESULT" in p for p in posts)
+    result_post = next(p for p in posts if "NIGHTLY_TEST_RESULT" in p)
+    assert "passed=5" in result_post
+    assert "failed=1" in result_post
+
+
+def test_run_test_suite_posts_timeout_on_timeout():
+    nanny = NannyOggDevice()
+    posts = []
+    with patch.object(nanny, "_cc_session_active", return_value=False):
+        with patch.object(nanny, "_post_to_channel", side_effect=lambda ch, msg: posts.append(msg)):
+            with patch("subprocess.run", side_effect=__import__("subprocess").TimeoutExpired("pytest", 30)):
+                nanny._run_test_suite({"timeout": 30})
+    assert any("timeout" in p for p in posts)
+
+
+def test_fire_entry_dispatches_run_test_suite():
+    nanny = NannyOggDevice()
+    entry = ScheduleEntry(
+        entry_id="test_run",
+        condition_type="cron",
+        condition_params={"hour": 2, "minute": 0},
+        action_type="run_test_suite",
+        action_params={"timeout": 60},
+    )
+    called_with = []
+    with patch.object(nanny, "_run_test_suite", side_effect=lambda p: called_with.append(p)):
+        nanny.fire_entry(entry)
+    assert called_with == [{"timeout": 60}]

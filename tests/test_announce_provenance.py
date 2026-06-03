@@ -48,6 +48,7 @@ def igor_envelope() -> IdentityEnvelope:
         box_n=0,
         pid=9999,
         interface_version="1.0",
+        proof="test-proof-stub",  # non-empty proof required for protected agents
     )
 
 

@@ -111,10 +111,11 @@ class TestDickSimnelAvailability:
             from devices.granny.daemon import _dicksimnel_available
             assert _dicksimnel_available()
 
-    def test_dicksimnel_unavailable_when_false_flag_set(self, tmp_path):
+    def test_dicksimnel_unavailable_when_false_flag_set(self, tmp_path, monkeypatch):
         flag_dir = tmp_path / "available"
         flag_dir.mkdir()
         (flag_dir / "DickSimnel.0.available.true").write_text("true")
         (flag_dir / "DickSimnel.0.available.false").write_text("false")
-        result = not (flag_dir / "DickSimnel.0.available.false").exists() is False
-        assert not result  # .false flag wins
+        import devices.granny.daemon as d_mod
+        monkeypatch.setattr(d_mod.Path, "home", lambda: tmp_path)
+        assert not d_mod._dicksimnel_available()  # .false flag wins

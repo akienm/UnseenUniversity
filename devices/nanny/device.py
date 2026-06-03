@@ -79,6 +79,14 @@ class AgentRegistration:
 
 _DEFAULT_SCHEDULE: list[dict[str, Any]] = [
     {
+        "entry_id": "nightly_test_run",
+        "condition_type": "cron",
+        "condition_params": {"hour": 2, "minute": 0},  # 02:00 every night
+        "action_type": "run_test_suite",
+        "action_params": {"timeout": 300, "ignore": ["tests/e2e"]},
+        "enabled": True,
+    },
+    {
         "entry_id": "weekly_audit_friday",
         "condition_type": "cron",
         "condition_params": {"weekday": 4, "hour": 18, "minute": 0},  # Friday 18:00
@@ -382,6 +390,8 @@ class NannyOggDevice(BaseDevice):
                 self._dispatch_ticket(params.get("ticket_id", ""))
             elif action == "run_auditor_baseline":
                 self._run_auditor_baseline(params)
+            elif action == "run_test_suite":
+                self._run_test_suite(params)
 
             entry.last_fired = _now_iso()
             entry.fire_count += 1
@@ -514,15 +524,67 @@ class NannyOggDevice(BaseDevice):
         except Exception as e:
             self._log.warning("consequence gate check failed: %s", e)
 
+    def _cc_session_active(self) -> bool:
+        """Return True if a CC session appears active (skip test run during human work)."""
+        flag_dir = Path.home() / ".granny" / "available"
+        return (flag_dir / "CC.0.available.true").exists()
+
+    def _run_test_suite(self, params: dict) -> None:
+        """Run pytest suite if no CC session is active, post NIGHTLY_TEST_RESULT to channel."""
+        import re
+        import subprocess
+        import sys
+        import time
+
+        if self._cc_session_active():
+            self._log.info("_run_test_suite: CC session active — skipping")
+            self._post_to_channel("shared", "NIGHTLY_TEST_SKIPPED|reason=cc_session_active")
+            return
+
+        timeout = int(params.get("timeout", 300))
+        ignore_paths = params.get("ignore", ["tests/e2e"])
+        repo_root = Path(__file__).parent.parent.parent
+
+        cmd = [sys.executable, "-m", "pytest", "tests/", "-q", "--tb=no",
+               f"--timeout={timeout}"]
+        for ign in ignore_paths:
+            cmd += ["--ignore", ign]
+
+        t0 = time.time()
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=timeout + 60,
+                cwd=str(repo_root),
+            )
+            duration = int(time.time() - t0)
+            output = result.stdout + result.stderr
+            passed = int(m.group(1)) if (m := re.search(r"(\d+) passed", output)) else 0
+            failed = int(m.group(1)) if (m := re.search(r"(\d+) failed", output)) else 0
+            error = int(m.group(1)) if (m := re.search(r"(\d+) error", output)) else 0
+            self._post_to_channel(
+                "shared",
+                f"NIGHTLY_TEST_RESULT|passed={passed}|failed={failed}|error={error}|duration={duration}s",
+            )
+            self._log.info(
+                "test suite: passed=%d failed=%d error=%d in %ds", passed, failed, error, duration
+            )
+        except subprocess.TimeoutExpired:
+            self._post_to_channel(
+                "shared", f"NIGHTLY_TEST_RESULT|status=timeout|timeout={timeout}s"
+            )
+            self._log.warning("test suite timed out after %ds", timeout)
+        except Exception as exc:
+            self._log.error("_run_test_suite failed: %s", exc)
+
     def _post_to_channel(self, channel: str, message: str) -> None:
         """Post a message to the specified channel."""
         try:
-            import os
-            import sys
+            from unseen_university.channel import post_to_channel
 
-            from lab.claudecode.channel import post_to_channel
-
-            post_to_channel(channel, "nanny-ogg", message)
+            post_to_channel(message, author="nanny-ogg", channel=channel)
             self._log.info("channel post → %s: %s", channel, message)
         except Exception as e:
             self._log.warning("channel post failed (%s): %s", channel, e)
