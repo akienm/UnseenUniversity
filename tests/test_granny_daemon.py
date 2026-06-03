@@ -407,6 +407,77 @@ class TestGrannyDaemonAlertCC:
         assert len(cc_calls) == 1
 
 
+class TestAlertedIdsPersistence:
+    def test_alert_persists_to_disk(self, tmp_path, monkeypatch):
+        """_alert_cc saves alerted dedup key to disk after first alert."""
+        import devices.granny.daemon as mod
+
+        monkeypatch.setattr(mod, "_ALERTED_IDS_FILE", tmp_path / "alerted_ids.json")
+        daemon = _make_bare_daemon()
+        daemon._alert_cc("T-foo", "reason", "audit_fail")
+        data = json.loads((tmp_path / "alerted_ids.json").read_text())
+        assert "T-foo:audit_fail" in data["keys"]
+
+    def test_alert_loads_from_disk_on_init(self, tmp_path, monkeypatch):
+        """After restart, previously alerted keys are not re-sent."""
+        import devices.granny.daemon as mod
+
+        alerted_file = tmp_path / "alerted_ids.json"
+        alerted_file.write_text(json.dumps({"keys": ["T-old:high_inertia"]}))
+        monkeypatch.setattr(mod, "_ALERTED_IDS_FILE", alerted_file)
+
+        loaded = mod._load_alerted_ids()
+        assert "T-old:high_inertia" in loaded
+
+    def test_alert_cc_skip_after_restart(self, tmp_path, monkeypatch):
+        """Simulate restart: pre-populate disk, load into new daemon, verify dedup."""
+        import devices.granny.daemon as mod
+
+        alerted_file = tmp_path / "alerted_ids.json"
+        alerted_file.write_text(json.dumps({"keys": ["T-sec:high_inertia"]}))
+        monkeypatch.setattr(mod, "_ALERTED_IDS_FILE", alerted_file)
+
+        daemon = _make_bare_daemon()
+        daemon._alerted_ids = mod._load_alerted_ids()
+        daemon._alert_cc("T-sec", "HIGH-inertia", "high_inertia")
+        # IMAP should NOT be called — already alerted before restart
+        daemon._imap.append.assert_not_called()
+
+    def test_hold_for_cc_approval_channel_post_deduped(self, tmp_path, monkeypatch):
+        """Channel post in _hold_for_cc_approval fires only once per ticket+kind."""
+        import devices.granny.daemon as mod
+
+        monkeypatch.setattr(mod, "_ALERTED_IDS_FILE", tmp_path / "alerted_ids.json")
+        daemon = _make_bare_daemon()
+        channel_posts = []
+        daemon._post_channel = lambda msg: channel_posts.append(msg)
+        daemon._publish_feed = MagicMock()
+
+        with patch("subprocess.run"):
+            daemon._hold_for_cc_approval("T-hi", "Security tag")
+            daemon._hold_for_cc_approval("T-hi", "Security tag")  # second call
+
+        hi_posts = [p for p in channel_posts if "T-hi" in p]
+        assert len(hi_posts) == 1, "channel post must fire only once per ticket"
+
+    def test_hold_for_audit_fail_channel_post_deduped(self, tmp_path, monkeypatch):
+        """Channel post in _hold_for_audit_fail fires only once per ticket+kind."""
+        import devices.granny.daemon as mod
+
+        monkeypatch.setattr(mod, "_ALERTED_IDS_FILE", tmp_path / "alerted_ids.json")
+        daemon = _make_bare_daemon()
+        channel_posts = []
+        daemon._post_channel = lambda msg: channel_posts.append(msg)
+        daemon._publish_feed = MagicMock()
+
+        with patch("subprocess.run"):
+            daemon._hold_for_audit_fail("T-bad", ["missing section"])
+            daemon._hold_for_audit_fail("T-bad", ["missing section"])  # second call
+
+        bad_posts = [p for p in channel_posts if "T-bad" in p]
+        assert len(bad_posts) == 1, "channel post must fire only once per ticket"
+
+
 class TestCheckRateLimit:
     def _cache_text(self, five_pct=0.0, seven_pct=0.0):
         return json.dumps(

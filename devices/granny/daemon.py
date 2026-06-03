@@ -55,6 +55,7 @@ _UC_BASE = os.environ.get("IGOR_UC_BASE", f"http://localhost:{_UC_PORT}")
 _GRANNY_HOME = Path(os.environ.get("GRANNY_HOME", str(Path.home() / ".granny")))
 _GRANNY_PID_FILE = _GRANNY_HOME / "daemon.pid"
 _DISPATCHED_CYCLE_FILE = _GRANNY_HOME / "dispatched_cycle.json"
+_ALERTED_IDS_FILE = _GRANNY_HOME / "alerted_ids.json"
 _STATS_CHANNEL_POST = "GRANNY_STATS"
 
 
@@ -81,6 +82,26 @@ def _save_dispatched_ids(ids: set[str]) -> None:
         _DISPATCHED_CYCLE_FILE.write_text(json.dumps({"ids": list(ids)}))
     except Exception as e:
         log.debug("_save_dispatched_ids: %s", e)
+
+
+def _load_alerted_ids() -> set[str]:
+    """Read alerted_ids.json. Returns empty set on missing/corrupt file."""
+    try:
+        if _ALERTED_IDS_FILE.exists():
+            data = json.loads(_ALERTED_IDS_FILE.read_text())
+            return set(data.get("keys", []))
+    except Exception as e:
+        log.debug("_load_alerted_ids: %s", e)
+    return set()
+
+
+def _save_alerted_ids(keys: set[str]) -> None:
+    """Persist alerted dedup keys to disk. Best-effort — never raises."""
+    try:
+        _ALERTED_IDS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _ALERTED_IDS_FILE.write_text(json.dumps({"keys": list(keys)}))
+    except Exception as e:
+        log.debug("_save_alerted_ids: %s", e)
 
 
 def _post_rack(path: str, body: dict, timeout: float = 3.0) -> bool:
@@ -369,7 +390,7 @@ class GrannyDaemon:
         self._inference_dispatch = inference_dispatch_fn
         self._pattern_tracker = PatternTracker()
 
-        self._alerted_ids: set[str] = set()
+        self._alerted_ids: set[str] = _load_alerted_ids()
         try:
             self._imap: Optional[IMAPServer] = IMAPServer()
             self._imap.start()
@@ -621,10 +642,12 @@ class GrannyDaemon:
             )
         except Exception as e:
             log.warning("GrannyDaemon: block call failed for %s: %s", ticket_id, e)
+        already_alerted = f"{ticket_id}:audit_fail" in self._alerted_ids
         self._alert_cc(ticket_id, hold_reason, "audit_fail")
-        self._post_channel(
-            f"GRANNY_HOLD_AUDIT_FAIL|ticket={ticket_id}|reasons={reasons_str[:120]}"
-        )
+        if not already_alerted:
+            self._post_channel(
+                f"GRANNY_HOLD_AUDIT_FAIL|ticket={ticket_id}|reasons={reasons_str[:120]}"
+            )
         self._publish_feed("audit_fail", ticket_id, reasons_str[:200])
 
     def _hold_for_cc_approval(self, ticket_id: str, reasons: str) -> None:
@@ -639,10 +662,12 @@ class GrannyDaemon:
             )
         except Exception as e:
             log.warning("GrannyDaemon: block call failed for %s: %s", ticket_id, e)
+        already_alerted = f"{ticket_id}:high_inertia" in self._alerted_ids
         self._alert_cc(ticket_id, hold_reason, "high_inertia")
-        self._post_channel(
-            f"GRANNY_HOLD_HIGH_INERTIA|ticket={ticket_id}|reason={reasons[:120]}"
-        )
+        if not already_alerted:
+            self._post_channel(
+                f"GRANNY_HOLD_HIGH_INERTIA|ticket={ticket_id}|reason={reasons[:120]}"
+            )
         self._publish_feed("high_inertia", ticket_id, reasons[:200])
         log.info(
             "GrannyDaemon: %s blocked — HIGH-inertia, CC approval needed", ticket_id
@@ -683,6 +708,7 @@ class GrannyDaemon:
             )
             self._imap.append("CC.0", envelope)
             self._alerted_ids.add(dedup_key)
+            _save_alerted_ids(self._alerted_ids)
             log.info("GrannyDaemon: alerted CC.0 — %s %s", ticket_id, kind)
         except Exception as e:
             log.warning(
