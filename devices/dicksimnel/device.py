@@ -125,7 +125,7 @@ class DickSimnelDevice(BaseDevice):
         return {
             "can_send": True,
             "can_receive": True,
-            "emitted_keywords": ["DICKSIMNEL_DONE", "DICKSIMNEL_DECLINE", "DICKSIMNEL_ERROR"],
+            "emitted_keywords": ["DICKSIMNEL_WORKING", "DICKSIMNEL_DONE", "DICKSIMNEL_DECLINE", "DICKSIMNEL_ESCALATE", "DICKSIMNEL_ERROR"],
             "task_class": "worker",
         }
 
@@ -216,11 +216,23 @@ class DickSimnelDevice(BaseDevice):
             if not ticket:
                 return None
             self._active_ticket = ticket.get("id")
+            self._channel_event(
+                f"DICKSIMNEL_WORKING ticket={self._active_ticket}"
+                f" title={ticket.get('title', '?')!r}"
+            )
             log.info("DickSimnel: claimed ticket %s", self._active_ticket)
             return ticket
         except (json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
             log.debug("DickSimnel: claim failed: %s", exc)
             return None
+
+    def _channel_event(self, message: str) -> None:
+        """Post a lifecycle event to the shared channel. Non-fatal if unavailable."""
+        try:
+            from unseen_university.channel import post_to_channel
+            post_to_channel(message, author="dicksimnel", channel="shared")
+        except Exception as exc:
+            log.warning("DickSimnel: channel post failed: %s", exc)
 
     def _post_result(self, ticket_id: str, result_text: str) -> None:
         """Close ticket with inference result as the completion note."""
@@ -228,11 +240,13 @@ class DickSimnelDevice(BaseDevice):
         note = result_text[:2000]
         self._run_queue_cmd("close", ticket_id, f"DickSimnel.0: {note}")
         self._tickets_processed += 1
+        self._channel_event(f"DICKSIMNEL_DONE ticket={ticket_id} summary={result_text[:100]!r}")
         log.info("DickSimnel: closed ticket %s", ticket_id)
 
     def _decline_ticket(self, ticket_id: str, reason: str) -> None:
         """Return ticket to sprint status with a decline note."""
         self._run_queue_cmd("setstatus", ticket_id, "sprint")
+        self._channel_event(f"DICKSIMNEL_DECLINE ticket={ticket_id} reason={reason!r}")
         log.info("DickSimnel: declined ticket %s — %s", ticket_id, reason)
         self._tickets_declined += 1
         self._active_ticket = None
@@ -243,16 +257,10 @@ class DickSimnelDevice(BaseDevice):
         Posts DICKSIMNEL_ESCALATE to shared channel, resets worker=claude,
         resets status=sprint. CC picks it up with Dick's analysis as context.
         """
-        try:
-            from unseen_university.channel import post_to_channel
-            summary = (analysis[:300] + "...") if len(analysis) > 300 else analysis
-            post_to_channel(
-                f"DICKSIMNEL_ESCALATE ticket={ticket_id} reason={reason!r} analysis={summary!r}",
-                author="dicksimnel",
-                channel="shared",
-            )
-        except Exception as exc:
-            log.warning("DickSimnel: channel post failed on escalate: %s", exc)
+        summary = (analysis[:300] + "...") if len(analysis) > 300 else analysis
+        self._channel_event(
+            f"DICKSIMNEL_ESCALATE ticket={ticket_id} reason={reason!r} analysis={summary!r}"
+        )
         self._run_queue_cmd("set-worker", "claude", ticket_id)
         self._run_queue_cmd("setstatus", ticket_id, "sprint")
         log.info("DickSimnel: escalated ticket %s to CC — %s", ticket_id, reason)
