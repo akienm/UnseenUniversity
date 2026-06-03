@@ -92,6 +92,14 @@ class WorkerNode:
     worker_id: str
     handled_tags: list[str]
     dispatch_fn: Callable[[dict], bool] | None = None
+    roles: frozenset = field(default_factory=frozenset)  # roles this worker accepts
+    availability_fn: Callable[[], bool] | None = None   # None = always available
+    skip_audit: bool = False  # True for CC — it is the audit approver
+
+    def is_available(self) -> bool:
+        if self.availability_fn is None:
+            return True
+        return bool(self.availability_fn())
 
 
 @dataclass
@@ -296,13 +304,25 @@ class GrannyWeatherwaxDevice(BaseDevice):
         worker_id: str,
         handled_tags: list[str],
         dispatch_fn: Callable[[dict], bool] | None = None,
+        roles: tuple | list | frozenset = (),
+        availability_fn: Callable[[], bool] | None = None,
+        skip_audit: bool = False,
     ) -> None:
-        """Register a worker that handles tickets with the given tags."""
+        """Register a worker that handles tickets with the given tags and roles.
+
+        roles: capability declaration — which role-ladder tiers this worker accepts.
+               Workers self-declare; Granny does not hardcode the mapping.
+        availability_fn: called at dispatch time; None means always available.
+        skip_audit: True for CC — it is the audit approver, never blocked by it.
+        """
         with self._lock:
             self._workers[worker_id] = WorkerNode(
                 worker_id=worker_id,
                 handled_tags=handled_tags,
                 dispatch_fn=dispatch_fn,
+                roles=frozenset(roles),
+                availability_fn=availability_fn,
+                skip_audit=skip_audit,
             )
             for tag in handled_tags:
                 edge = RoutingEdge(
@@ -310,11 +330,17 @@ class GrannyWeatherwaxDevice(BaseDevice):
                 )
                 self._edges.setdefault(tag, []).append(edge)
         self._log.info(
-            "registered worker %s tags=%s has_dispatch_fn=%s",
+            "registered worker %s roles=%s tags=%s has_dispatch_fn=%s",
             worker_id,
+            sorted(roles),
             handled_tags,
             dispatch_fn is not None,
         )
+
+    def get_workers_for_role(self, role: str) -> list[WorkerNode]:
+        """Return all registered workers that declared they handle this role."""
+        with self._lock:
+            return [w for w in self._workers.values() if role in w.roles]
 
     # ── Ticket intake ──────────────────────────────────────────────────────────
 

@@ -208,6 +208,10 @@ def dicksimnel_dispatch_fn(ticket: dict) -> bool:
         log.warning("dicksimnel_dispatch_fn: set-worker failed for %s: %s", ticket_id, e)
         return False
 
+    # creator role → analyst model tier; all others → worker tier
+    role = (ticket.get("role") or "").lower()
+    task_class = "analyst" if role == "creator" else "worker"
+
     # Post observability event to shared channel
     try:
         from unseen_university.channel import post_to_channel
@@ -216,14 +220,14 @@ def dicksimnel_dispatch_fn(ticket: dict) -> bool:
         size = ticket.get("size", "?")
         tags = ",".join(ticket.get("tags", []))
         msg = (
-            f"GRANNY_DISPATCH|ticket={ticket_id}|worker=dicksimnel|size={size}"
-            f"|tags={tags}|title={title}"
+            f"GRANNY_DISPATCH|ticket={ticket_id}|worker=dicksimnel|task_class={task_class}"
+            f"|size={size}|tags={tags}|title={title}"
         )
         post_to_channel(msg, author="granny-weatherwax", channel="shared")
     except Exception as e:
         log.warning("dicksimnel_dispatch_fn: channel post failed for %s: %s", ticket_id, e)
 
-    log.info("dicksimnel_dispatch_fn: ticket %s tagged for DickSimnel.0", ticket_id)
+    log.info("dicksimnel_dispatch_fn: ticket %s tagged for DickSimnel.0 (task_class=%s)", ticket_id, task_class)
     return True
 
 

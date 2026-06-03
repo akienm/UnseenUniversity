@@ -40,15 +40,23 @@ log = logging.getLogger(__name__)
 POLL_INTERVAL_SEC = int(os.environ.get("GRANNY_POLL_INTERVAL", "60"))
 MAX_CONCURRENT_CC = int(os.environ.get("GRANNY_MAX_CC", "1"))
 
-# Role ladder: roles that require CC.0 or DickSimnel.0 — never OR cascade.
-_CC_ONLY_ROLES = {"builder", "creator", "master", "guru"}
-# Backward-compat: infer role from worker field when ticket has no role field.
+# Role ladder — infer role from worker field when ticket has no explicit role.
 _WORKER_TO_ROLE = {
     "claude": "master",
     "cc": "master",
     "dicksimnel": "builder",
     "igor": "apprentice",
 }
+_VALID_ROLES = frozenset({"apprentice", "builder", "creator", "master", "guru"})
+
+
+def _infer_role(ticket: dict) -> str:
+    """Return role from ticket, falling back to worker-inferred role."""
+    raw = (ticket.get("role") or "").strip().lower()
+    if raw in _VALID_ROLES:
+        return raw
+    worker = (ticket.get("worker") or "").lower()
+    return _WORKER_TO_ROLE.get(worker, "apprentice")
 # How often to run the orphan watchdog (in poll cycles; default every 10 cycles = 10 min)
 _ORPHAN_CHECK_EVERY_N_CYCLES = int(os.environ.get("GRANNY_ORPHAN_CHECK_CYCLES", "10"))
 _USAGE_CACHE = Path.home() / ".claude" / "usage-cache.json"
@@ -385,19 +393,41 @@ class GrannyDaemon:
         self._last_poll: Optional[float] = None
         self._task_listener: Optional[object] = None
 
-        # Build device with CC dispatch wired; store inference dispatch fn separately
+        # Build device and register workers — workers self-declare their role capabilities.
+        # Granny does capability matching at dispatch time; no worker IDs baked in here.
         from devices.granny.device import GrannyWeatherwaxDevice
-        from devices.granny.dispatch import cc_dispatch_fn, inference_dispatch_fn
-
+        from devices.granny.dispatch import (
+            cc0_dispatch_fn,
+            cc_dispatch_fn,
+            dicksimnel_dispatch_fn,
+            inference_dispatch_fn,
+        )
         from devices.granny.pattern_tracker import PatternTracker
 
         self._device = GrannyWeatherwaxDevice()
+        self._inference_dispatch = inference_dispatch_fn
+
+        self._device.register_worker(
+            "CC.0",
+            list(_CC_TAGS),
+            dispatch_fn=lambda t: cc0_dispatch_fn(t, session="claude-main"),
+            roles=("master", "guru"),
+            availability_fn=_cc0_available,
+            skip_audit=True,
+        )
+        self._device.register_worker(
+            "DickSimnel.0",
+            list(_CC_TAGS),
+            dispatch_fn=dicksimnel_dispatch_fn,
+            roles=("builder", "creator"),
+            availability_fn=_dicksimnel_available,
+        )
+        # Legacy CC routing edge (tag-based, not role-based) — kept for route_ticket()
         self._device.register_worker(
             "cc",
             list(_CC_TAGS),
             dispatch_fn=cc_dispatch_fn,
         )
-        self._inference_dispatch = inference_dispatch_fn
         self._pattern_tracker = PatternTracker()
 
         self._alerted_ids: set[str] = _load_alerted_ids()
@@ -502,67 +532,58 @@ class GrannyDaemon:
             if tid in self._dispatched_ids:
                 log.debug("GrannyDaemon: skipping already-dispatched %s", tid)
                 continue
-            if _ticket_needs_cc(ticket):
-                # Priority: CC.0 → DickSimnel.0 → audit+OR cascade
-                if _cc0_available():
-                    from devices.granny.dispatch import cc0_dispatch_fn
 
-                    ok = cc0_dispatch_fn(ticket, session="claude-main")
-                    worker_id = "cc-0"
-                elif _dicksimnel_available():
-                    # DickSimnel.0: OR-powered worker tier.
-                    # Does NOT handle HIGH-inertia tickets — those wait for CC.
-                    audit = self._device.intake_ticket(ticket)
-                    if audit.escalate_to_cc:
-                        self._hold_for_cc_approval(tid, str(audit.reasons))
-                        ok = True
-                        worker_id = "hold-for-cc"
-                    elif audit.passed:
-                        from devices.granny.dispatch import dicksimnel_dispatch_fn
+            ok = False
+            worker_id = "no_route"
 
-                        ok = dicksimnel_dispatch_fn(ticket)
-                        worker_id = "dicksimnel"
-                    else:
-                        self._hold_for_audit_fail(tid, audit.reasons)
-                        continue
-                else:
-                    # No CC or DS available.
-                    # Role≥builder must wait for a real worker — never fall through
-                    # to OR cascade, which always ESCALATEs on them and parks them
-                    # in hold with no useful result.
-                    # OR cascade only fires for apprentice/unassigned tickets.
-                    worker = ticket.get("worker", "")
-                    role = ticket.get("role", "") or _WORKER_TO_ROLE.get(worker, "apprentice")
-                    if role in _CC_ONLY_ROLES:
-                        log.debug(
-                            "GrannyDaemon: %s needs CC (worker=%s role=%s), no worker available — deferring",
-                            tid, worker, role,
-                        )
-                        continue
-                    # Apprentice/unassigned: audit + OR cascade
-                    audit = self._device.intake_ticket(ticket)
-                    if not audit.passed and not audit.escalate_to_cc:
-                        self._hold_for_audit_fail(tid, audit.reasons)
-                        continue
-                    if audit.escalate_to_cc:
-                        # HIGH-inertia: block and alert CC.0 for human approval.
-                        # Never auto-dispatch.
-                        self._hold_for_cc_approval(tid, str(audit.reasons))
-                        ok = True
-                        worker_id = "hold-for-cc"
-                    else:
-                        # Audit passed: try OR cascade (analyst→worker→minion).
-                        # Only blocks for CC if all OR tiers ESCALATE.
-                        ok = self._inference_dispatch(
-                            ticket, on_complete=self._record_inference_outcome
-                        )
-                        worker_id = "or-cascade"
-            else:
-                # minion-tagged tickets: skip directly to minion tier in cascade.
+            if not _ticket_needs_cc(ticket):
+                # minion-tagged: straight to OR cascade
                 ok = self._inference_dispatch(
                     ticket, on_complete=self._record_inference_outcome
                 )
                 worker_id = "or-minion"
+            else:
+                role = _infer_role(ticket)
+                candidates = self._device.get_workers_for_role(role)
+                available = [w for w in candidates if w.is_available()]
+
+                if available:
+                    worker = available[0]
+                    if not worker.skip_audit:
+                        audit = self._device.intake_ticket(ticket)
+                        if audit.escalate_to_cc:
+                            self._hold_for_cc_approval(tid, str(audit.reasons))
+                            ok, worker_id = True, "hold-for-cc"
+                        elif not audit.passed:
+                            self._hold_for_audit_fail(tid, audit.reasons)
+                            continue
+                        else:
+                            ok = worker.dispatch_fn(ticket)
+                            worker_id = worker.worker_id
+                    else:
+                        ok = worker.dispatch_fn(ticket)
+                        worker_id = worker.worker_id
+                elif role == "apprentice":
+                    # OR cascade fallback for apprentice when no worker registered
+                    audit = self._device.intake_ticket(ticket)
+                    if audit.escalate_to_cc:
+                        self._hold_for_cc_approval(tid, str(audit.reasons))
+                        ok, worker_id = True, "hold-for-cc"
+                    elif not audit.passed:
+                        self._hold_for_audit_fail(tid, audit.reasons)
+                        continue
+                    else:
+                        ok = self._inference_dispatch(
+                            ticket, on_complete=self._record_inference_outcome
+                        )
+                        worker_id = "or-cascade"
+                else:
+                    # builder/creator/master/guru: specific worker not running — defer
+                    log.debug(
+                        "GrannyDaemon: %s role=%s — worker not available, deferring",
+                        tid, role,
+                    )
+                    continue
 
             if ok:
                 new_ids.add(tid)

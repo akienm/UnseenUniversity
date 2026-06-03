@@ -147,6 +147,7 @@ def _make_bare_daemon(audit_passed=True, route_ok=True, inference_ok=True):
     device = MagicMock()
     device.intake_ticket.return_value = audit
     device.route_ticket.return_value = (route_ok, "cc")
+    device.get_workers_for_role.return_value = []  # no registered workers → apprentice fallback
     daemon._device = device
     daemon._inference_dispatch = MagicMock(return_value=inference_ok)
     return daemon

@@ -173,12 +173,16 @@ class TestRoleDisplayInFormatLine:
 
 
 class TestGrannyDeferralWithRole:
-    """Verify Granny's _WORKER_TO_ROLE and _CC_ONLY_ROLES match cc_queue constants."""
+    """Verify Granny's _WORKER_TO_ROLE and role inference match cc_queue constants."""
 
-    def test_granny_cc_only_roles_covers_builder(self):
-        from devices.granny.daemon import _CC_ONLY_ROLES
+    def test_builder_role_not_apprentice_no_or_fallback(self):
+        # builder is not "apprentice" — so it defers rather than OR-cascading
+        # when no worker is available (tested end-to-end in test_granny_daemon.py).
+        from devices.granny.daemon import _infer_role, _VALID_ROLES
 
-        assert "builder" in _CC_ONLY_ROLES
+        assert "builder" in _VALID_ROLES
+        assert _infer_role({"role": "builder", "worker": ""}) == "builder"
+        assert _infer_role({"role": "builder", "worker": ""}) != "apprentice"
 
     def test_granny_worker_to_role_consistent_with_queue(self):
         from devices.granny.daemon import _WORKER_TO_ROLE as G_MAP
