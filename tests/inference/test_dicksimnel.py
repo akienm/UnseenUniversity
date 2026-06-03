@@ -180,3 +180,76 @@ class TestDickSimnelDevice:
 
         d._decline_ticket.assert_called_once()
         assert d._active_ticket is None
+
+
+# ── skill_load + _build_system_prompt ─────────────────────────────────────────
+
+
+class TestDickSimnelSkillLoad:
+    def _device(self):
+        from devices.dicksimnel.device import DickSimnelDevice
+        d = DickSimnelDevice()
+        d._shim = MagicMock()
+        d._shim.is_blocked.return_value = False
+        return d
+
+    def test_skill_load_returns_content_when_found(self, tmp_path):
+        from devices.dicksimnel.device import DickSimnelDevice
+        skill_dir = tmp_path / "sprint-ticket"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("# Sprint Procedure\nStep 1. Do the thing.")
+        d = DickSimnelDevice()
+        d._shim = MagicMock()
+        with patch("devices.dicksimnel.device._SKILLS_DIR", tmp_path):
+            content = d.skill_load("sprint-ticket")
+        assert content is not None
+        assert "Step 1" in content
+
+    def test_skill_load_returns_none_when_missing(self, tmp_path):
+        d = self._device()
+        with patch("devices.dicksimnel.device._SKILLS_DIR", tmp_path):
+            assert d.skill_load("sprint-ticket") is None
+
+    def test_build_system_prompt_includes_skill_when_found(self, tmp_path):
+        from devices.dicksimnel.device import DickSimnelDevice
+        skill_dir = tmp_path / "sprint-ticket"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("SKILL_CONTENT_MARKER")
+        d = DickSimnelDevice()
+        d._shim = MagicMock()
+        with patch("devices.dicksimnel.device._SKILLS_DIR", tmp_path):
+            prompt = d._build_system_prompt({})
+        assert "SKILL_CONTENT_MARKER" in prompt
+        assert "Sprint Procedure" in prompt
+
+    def test_build_system_prompt_falls_back_to_base_when_skill_missing(self, tmp_path):
+        from devices.dicksimnel.device import SYSTEM_PROMPT
+        d = self._device()
+        with patch("devices.dicksimnel.device._SKILLS_DIR", tmp_path):
+            prompt = d._build_system_prompt({})
+        assert prompt == SYSTEM_PROMPT
+
+    def test_run_inference_uses_skill_prompt(self, tmp_path):
+        from devices.dicksimnel.device import DickSimnelDevice
+        skill_dir = tmp_path / "sprint-ticket"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("SKILL_MARKER")
+        d = DickSimnelDevice()
+        d._shim = MagicMock()
+
+        captured = []
+        mock_response = MagicMock()
+        mock_response.text = "done"
+        mock_response.output_tokens = 10
+        mock_response.cost_estimate = 0.001
+
+        def mock_dispatch(req):
+            captured.append(req.system)
+            return mock_response
+
+        with patch("devices.dicksimnel.device._SKILLS_DIR", tmp_path):
+            with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
+                d._run_inference({"id": "T-test", "title": "Test", "tags": [], "description": "x"})
+
+        assert captured, "dispatch was not called"
+        assert "SKILL_MARKER" in captured[0]

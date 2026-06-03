@@ -39,6 +39,7 @@ _DB_URL = os.environ.get(
     "IGOR_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
+_SKILLS_DIR = Path.home() / ".claude" / "skills"
 
 SYSTEM_PROMPT = """\
 You are DickSimnel, an autonomous software engineering agent in the UnseenUniversity rack.
@@ -239,6 +240,38 @@ class DickSimnelDevice(BaseDevice):
 
     # ── Inference ─────────────────────────────────────────────────────────────
 
+    def skill_load(self, name: str) -> str | None:
+        """Load a skill file from ~/.claude/skills/<name>/SKILL.md.
+
+        Returns the file content, or None if not found/unreadable.
+        Best-effort — missing skills warn and fall back gracefully.
+        """
+        skill_path = _SKILLS_DIR / name / "SKILL.md"
+        if not skill_path.exists():
+            log.debug("DickSimnel: skill %r not found at %s", name, skill_path)
+            return None
+        try:
+            content = skill_path.read_text()
+            log.info("DickSimnel: loaded skill %r (%d chars)", name, len(content))
+            return content
+        except Exception as exc:
+            log.warning("DickSimnel: skill load failed for %r: %s", name, exc)
+            return None
+
+    def _build_system_prompt(self, ticket: dict) -> str:
+        """Build the system prompt, prepending sprint-ticket SKILL.md if available."""
+        skill_content = self.skill_load("sprint-ticket")
+        if skill_content:
+            return (
+                "## Sprint Procedure\n"
+                "You are following the sprint-ticket skill procedure. "
+                "Execute each step in order:\n\n"
+                + skill_content
+                + "\n\n---\n\n"
+                + SYSTEM_PROMPT
+            )
+        return SYSTEM_PROMPT
+
     def _run_inference(self, ticket: dict) -> str | None:
         """Run the ticket through the inference proxy (worker tier). Returns result text."""
         try:
@@ -259,7 +292,7 @@ class DickSimnelDevice(BaseDevice):
             req = InferenceRequest(
                 model="",  # let rules engine pick via task_class
                 messages=[{"role": "user", "content": prompt}],
-                system=SYSTEM_PROMPT,
+                system=self._build_system_prompt(ticket),
                 task_class="worker",
                 agent_id="dicksimnel",
                 max_tokens=4096,
