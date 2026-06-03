@@ -44,3 +44,9 @@ class ScrapsShim(BaseShim):
 
     def rollback(self) -> None:
         pass
+
+    def _handle_non_skill(self, text: str) -> str:
+        import hashlib
+        _BARKS = ["Woof!", "Grr!", "Bark!", "Yip!", "Ruff!"]
+        idx = int(hashlib.md5(text.encode()).hexdigest(), 16) % len(_BARKS)
+        return _BARKS[idx]

@@ -129,6 +129,68 @@ class BaseShim(ABC):
         Must be idempotent — safe to call even if start() did nothing.
         """
 
+    # ── Common skill interface ─────────────────────────────────────────────────
+
+    def handle_command(self, cmd: str) -> str:
+        """Route a chat command to the appropriate skill handler.
+
+        Commands starting with '/' are dispatched to registered skill handlers.
+        Everything else goes to _handle_non_skill() — override for device personality.
+        """
+        cmd = cmd.strip()
+        if cmd.startswith("/"):
+            parts = cmd.split(None, 1)
+            verb = parts[0].lower()
+            args = parts[1] if len(parts) > 1 else ""
+            handler = self._skill_handlers().get(verb)
+            if handler:
+                return handler(args)
+            known = ", ".join(sorted(self._skill_handlers()))
+            return f"Unknown skill {verb!r}. Known: {known}"
+        return self._handle_non_skill(cmd)
+
+    def _skill_handlers(self) -> dict:
+        """Return verb → handler mapping. Override to add device-specific skills."""
+        return {
+            "/help":   self._skill_help,
+            "/health": self._skill_health,
+            "/stop":   self._skill_stop,
+            "/resume": self._skill_resume,
+            "/feed":   self._skill_feed,
+        }
+
+    def _skill_help(self, args: str = "") -> str:
+        verbs = sorted(self._skill_handlers())
+        return f"{self.device_id} skills: " + "  ".join(verbs)
+
+    def _skill_health(self, args: str = "") -> str:
+        surface = self.health_surface()
+        if not surface:
+            return f"{self.device_id}: no health data"
+        return "\n".join(f"{k}={v}" for k, v in sorted(surface.items()))
+
+    def _skill_stop(self, args: str = "") -> str:
+        ok = self.stop()
+        return f"{self.device_id}: stopped" if ok else f"{self.device_id}: stop failed"
+
+    def _skill_resume(self, args: str = "") -> str:
+        ok = self.start()
+        return f"{self.device_id}: resumed" if ok else f"{self.device_id}: resume failed"
+
+    def _skill_feed(self, args: str = "") -> str:
+        return f"{self.device_id}: no feed entries"
+
+    def _handle_non_skill(self, text: str) -> str:
+        """Handle non-skill input. Override for device personality."""
+        return f"{self.device_id}: not a skill — try /help"
+
+    @staticmethod
+    def _tokenize(text: str) -> list:
+        """Return token-id list for text. Character-ordinal encoding — test utility only."""
+        return [ord(c) for c in text]
+
+    # ── Daemon supervision ─────────────────────────────────────────────────────
+
     def ensure_daemon_running(self) -> bool:
         """Check if the device's backing daemon is alive; start it if not.
 
