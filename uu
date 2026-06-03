@@ -165,6 +165,30 @@ def _install_skills() -> None:
     print(f"uu bootstrap --skills: {count} skills installed to {dst}")
 
 
+def _install_path() -> None:
+    """Add UU_ROOT to PATH in ~/.bashrc and ~/.zshrc (idempotent)."""
+    marker = f"# UnseenUniversity launchers"
+    line = f'export PATH="$PATH:{UU_ROOT}"'
+    block = f"\n{marker}\n{line}\n"
+    shells = [Path.home() / ".bashrc", Path.home() / ".zshrc"]
+    updated = []
+    for rc in shells:
+        if not rc.exists():
+            continue
+        content = rc.read_text()
+        if str(UU_ROOT) in content:
+            print(f"uu bootstrap --path: {rc.name} already has UU_ROOT on PATH — skipped")
+            continue
+        rc.write_text(content + block)
+        updated.append(rc.name)
+    if updated:
+        print(f"uu bootstrap --path: PATH updated in {', '.join(updated)}")
+        print(f"  Added: {line}")
+        print("  Reload with: source ~/.bashrc  (or open a new terminal)")
+    else:
+        print("uu bootstrap --path: PATH already configured in all shell profiles")
+
+
 def _cmd_contrib(args: list[str]) -> None:
     """uu contrib [scan | list | submit <id>]"""
     sys.path.insert(0, str(UU_ROOT))
@@ -213,13 +237,17 @@ def _cmd_contrib(args: list[str]) -> None:
 
 
 def _cmd_bootstrap(args: list[str]) -> None:
-    """uu bootstrap [--global-kb [<url>]] [--local-kb <path>] [--update]"""
+    """uu bootstrap [--path] [--skills] [--global-kb [<url>]] [--local-kb <path>]"""
     do_kb = "--global-kb" in args or "--local-kb" in " ".join(args)
+    if "--path" in args:
+        _install_path()
     if "--skills" in args:
         _install_skills()
 
+    if not do_kb and "--path" not in args and "--skills" not in args:
+        print("uu bootstrap: nothing to do (try --path, --skills, or --global-kb)")
+        return
     if not do_kb:
-        print("uu bootstrap: nothing to do (try --global-kb)")
         return
 
     kb_url = None
