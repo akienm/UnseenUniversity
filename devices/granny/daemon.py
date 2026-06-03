@@ -516,7 +516,21 @@ class GrannyDaemon:
                         self._hold_for_audit_fail(tid, audit.reasons)
                         continue
                 else:
-                    # Fall back to audit + OR cascade
+                    # No CC or DS available.
+                    # worker=claude tickets and role≥builder must wait for CC — never
+                    # fall through to OR cascade, which always ESOALATEs on them and
+                    # parks them in hold with no useful result.
+                    # OR cascade only fires for apprentice/unassigned tickets.
+                    worker = ticket.get("worker", "")
+                    role = ticket.get("role", "")
+                    _cc_only_roles = {"builder", "creator", "master", "guru"}
+                    if worker == "claude" or role in _cc_only_roles:
+                        log.debug(
+                            "GrannyDaemon: %s needs CC (worker=%s role=%s), no worker available — deferring",
+                            tid, worker, role,
+                        )
+                        continue
+                    # Apprentice/unassigned: audit + OR cascade
                     audit = self._device.intake_ticket(ticket)
                     if not audit.passed and not audit.escalate_to_cc:
                         self._hold_for_audit_fail(tid, audit.reasons)

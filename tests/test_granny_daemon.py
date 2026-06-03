@@ -652,3 +652,55 @@ class TestCC0InProgress:
         ):
             count = daemon.run_once()
         assert count == 2
+
+
+class TestCCWorkerDeferral:
+    """worker=claude tickets must not fall through to OR cascade when no worker is available."""
+
+    def test_claude_worker_ticket_deferred_not_held(self):
+        """worker=claude + no CC/DS → ticket stays in sprint (skipped), not held."""
+        daemon = _make_bare_daemon()
+        ticket = _ticket("T-cc-only", worker="claude", tags=["Platform"])
+        held = []
+        with (
+            patch("devices.granny.daemon._check_rate_limit", return_value=(True, None, 0.0)),
+            patch("devices.granny.daemon._load_sprint_tickets", return_value=[ticket]),
+            patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+            patch.object(daemon, "_hold_for_cc_approval", side_effect=lambda *a: held.append(a)),
+            patch.object(daemon, "_hold_for_audit_fail", side_effect=lambda *a: held.append(a)),
+            patch.object(daemon, "_inference_dispatch", return_value=False),
+        ):
+            count = daemon.run_once()
+        assert count == 0
+        assert held == [], "worker=claude ticket must not be held when no worker available"
+
+    def test_builder_role_ticket_deferred_not_held(self):
+        """role=builder + no CC/DS → ticket skipped, not sent to OR cascade."""
+        daemon = _make_bare_daemon()
+        ticket = {**_ticket("T-builder"), "role": "builder", "worker": ""}
+        held = []
+        or_called = []
+        with (
+            patch("devices.granny.daemon._check_rate_limit", return_value=(True, None, 0.0)),
+            patch("devices.granny.daemon._load_sprint_tickets", return_value=[ticket]),
+            patch("devices.granny.daemon._ticket_needs_cc", return_value=True),
+            patch.object(daemon, "_hold_for_cc_approval", side_effect=lambda *a: held.append(a)),
+            patch.object(daemon, "_inference_dispatch", side_effect=lambda *a, **kw: or_called.append(a) or False),
+        ):
+            daemon.run_once()
+        assert held == []
+        assert or_called == [], "builder-role ticket must not reach OR cascade"
+
+    def test_apprentice_role_ticket_reaches_or_cascade(self):
+        """role=apprentice + no CC/DS → audit + OR cascade fires as before."""
+        daemon = _make_bare_daemon()
+        ticket = {**_ticket("T-apprentice", tags=["minion"]), "role": "apprentice", "worker": ""}
+        or_called = []
+        with (
+            patch("devices.granny.daemon._check_rate_limit", return_value=(True, None, 0.0)),
+            patch("devices.granny.daemon._load_sprint_tickets", return_value=[ticket]),
+            patch("devices.granny.daemon._ticket_needs_cc", return_value=False),
+            patch.object(daemon, "_inference_dispatch", side_effect=lambda *a, **kw: or_called.append(a) or True),
+        ):
+            daemon.run_once()
+        assert len(or_called) == 1, "apprentice/minion ticket must reach OR cascade"
