@@ -8,6 +8,18 @@ from unittest.mock import MagicMock, patch, call
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def _no_live_dispatch(monkeypatch):
+    """Prevent tests from firing real tmux commands to live CC/DS sessions.
+
+    Without this, _cc0_available() reads granny.yaml + semaphore files and can
+    return True on a developer machine with claude-main running, causing tests
+    to send /sprint-ticket T-bad (etc.) to the live session via tmux send-keys.
+    """
+    monkeypatch.setattr("devices.granny.daemon._cc0_available", lambda: False)
+    monkeypatch.setattr("devices.granny.daemon._dicksimnel_available", lambda: False)
+
+
 def _ticket(id="T-abc", status="sprint", worker="", tags=None, gate=None):
     t = {
         "id": id,
@@ -181,8 +193,9 @@ class TestGrannyDaemonRunOnce:
         assert daemon._inference_dispatch.call_count == 1
 
     def test_dedup_blocks_immediate_re_dispatch(self):
-        # After dispatching T-a in cycle 1, cycle 2 skips it (set carries over).
-        # Cycle 3 can dispatch T-a again because cycle 2 produced an empty set.
+        # |= accumulation: T-a dispatched in cycle 1 stays blocked for all
+        # subsequent cycles in the same daemon run. It won't be re-dispatched
+        # until the daemon restarts and dispatched_cycle.json is cleared.
         daemon = self._make_daemon()
         tickets = [_ticket("T-a")]
 
@@ -194,15 +207,13 @@ class TestGrannyDaemonRunOnce:
                 return_value=(True, None, 0.0),
             ),
         ):
-            count1 = daemon.run_once()  # dispatches T-a
-            count2 = daemon.run_once()  # T-a blocked (in _dispatched_ids from cycle 1)
-            count3 = (
-                daemon.run_once()
-            )  # T-a eligible again (cycle 2 produced empty set)
+            count1 = daemon.run_once()  # dispatches T-a → _dispatched_ids = {T-a}
+            count2 = daemon.run_once()  # T-a in set → skip
+            count3 = daemon.run_once()  # T-a still in set → skip (|= accumulates)
 
         assert count1 == 1
         assert count2 == 0
-        assert count3 == 1
+        assert count3 == 0  # stays blocked — |= never forgets within a run
 
     def test_non_cc_routes_to_inference(self):
         daemon = self._make_daemon()

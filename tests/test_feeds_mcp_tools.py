@@ -225,6 +225,12 @@ def _ticket(id="T-abc", status="sprint", worker="claude", tags=None):
 
 
 class TestGrannyDaemonFeedPublish:
+    @pytest.fixture(autouse=True)
+    def _no_live_dispatch(self, monkeypatch):
+        """Prevent tests from firing real tmux commands to live CC/DS sessions."""
+        monkeypatch.setattr("devices.granny.daemon._cc0_available", lambda: False)
+        monkeypatch.setattr("devices.granny.daemon._dicksimnel_available", lambda: False)
+
     def test_dispatch_publishes_feed_event(self):
         daemon = _make_bare_daemon(audit_passed=True, route_ok=True)
         tickets = [_ticket("T-ok")]
