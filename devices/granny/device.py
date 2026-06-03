@@ -101,12 +101,24 @@ class AuditResult:
     passed: bool
     reasons: list[str] = field(default_factory=list)
     escalate_to_cc: bool = False
+    warnings: list[str] = field(default_factory=list)  # advisory; never blocks
 
 
 # ── Audit checks ───────────────────────────────────────────────────────────────
 
 _REQUIRED_FIELDS = ("id", "title", "description", "size")
 _VALID_SIZES = {"S", "M", "L", "XL"}
+
+# Role-fit ceiling: max ticket size allowed per role without a warning.
+_ROLE_SIZE_CEILING: dict[str, set[str]] = {
+    "apprentice": {"S"},
+    "builder": {"S", "M"},
+    "creator": {"M", "L"},
+    "master": {"S", "M", "L", "XL"},
+    "guru": {"S", "M", "L", "XL"},
+}
+# Architectural concern tags that warn when assigned to apprentice/builder.
+_ARCHITECTURAL_TAGS = frozenset({"Architecture", "Memory", "Clan", "Platform"})
 
 
 def _audit_ticket(ticket: dict[str, Any]) -> AuditResult:
@@ -137,8 +149,30 @@ def _audit_ticket(ticket: dict[str, Any]) -> AuditResult:
             f"platform-level tags require CC approval: {tags & _CC_ESCALATION_TAGS}"
         )
 
+    # Advisory role-fit warnings — never block, just surface.
+    warnings: list[str] = []
+    raw_role = (ticket.get("role") or "").strip().lower()
+    worker = (ticket.get("worker") or "").lower()
+    _w2r = {"claude": "master", "cc": "master", "dicksimnel": "builder", "igor": "apprentice"}
+    role = raw_role if raw_role in _ROLE_SIZE_CEILING else _w2r.get(worker, "apprentice")
+    allowed_sizes = _ROLE_SIZE_CEILING.get(role, {"S", "M", "L", "XL"})
+    if size and size not in allowed_sizes:
+        warnings.append(
+            f"scope likely exceeds role ceiling — ticket is {size} but {role!r} "
+            f"ceiling is {'/'.join(sorted(allowed_sizes))}; consider master or guru"
+        )
+    if role in ("apprentice", "builder") and tags & _ARCHITECTURAL_TAGS:
+        overlap = tags & _ARCHITECTURAL_TAGS
+        warnings.append(
+            f"architectural tags {overlap} on {role!r} role — "
+            "consider creator or master for platform-wide changes"
+        )
+
     return AuditResult(
-        passed=not reasons or escalate, reasons=reasons, escalate_to_cc=escalate
+        passed=not reasons or escalate,
+        reasons=reasons,
+        escalate_to_cc=escalate,
+        warnings=warnings,
     )
 
 

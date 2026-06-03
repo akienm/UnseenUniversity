@@ -260,3 +260,71 @@ def test_health_healthy_by_default(granny):
 def test_health_degraded_on_error(granny):
     granny._errors.append("something broke")
     assert granny.health()["status"] == "degraded"
+
+
+# ── Role-fit advisory warnings (T-audit-role-fit) ─────────────────────────────
+
+
+def test_audit_result_has_warnings_field():
+    """AuditResult carries warnings separate from blocking reasons."""
+    result = _audit_ticket(_make_ticket())
+    assert hasattr(result, "warnings")
+    assert isinstance(result.warnings, list)
+
+
+def test_builder_xl_ticket_warns_scope_exceeds_ceiling():
+    result = _audit_ticket(_make_ticket(size="XL", worker="dicksimnel"))
+    assert any("scope likely exceeds role ceiling" in w for w in result.warnings)
+
+
+def test_builder_l_ticket_warns_scope_exceeds_ceiling():
+    result = _audit_ticket(_make_ticket(size="L", worker="dicksimnel"))
+    assert any("scope likely exceeds role ceiling" in w for w in result.warnings)
+
+
+def test_builder_s_ticket_no_ceiling_warning():
+    result = _audit_ticket(_make_ticket(size="S", worker="dicksimnel"))
+    assert not any("scope likely exceeds role ceiling" in w for w in result.warnings)
+
+
+def test_builder_m_ticket_no_ceiling_warning():
+    result = _audit_ticket(_make_ticket(size="M", worker="dicksimnel"))
+    assert not any("scope likely exceeds role ceiling" in w for w in result.warnings)
+
+
+def test_master_xl_ticket_no_ceiling_warning():
+    result = _audit_ticket(_make_ticket(size="XL", worker="claude"))
+    assert not any("scope likely exceeds role ceiling" in w for w in result.warnings)
+
+
+def test_apprentice_l_ticket_warns_scope_exceeds_ceiling():
+    result = _audit_ticket(_make_ticket(size="L", worker="igor"))
+    assert any("scope likely exceeds role ceiling" in w for w in result.warnings)
+
+
+def test_builder_with_architecture_tag_warns():
+    result = _audit_ticket(_make_ticket(size="S", worker="dicksimnel", tags=["Architecture"]))
+    assert any("architectural tags" in w.lower() for w in result.warnings)
+
+
+def test_apprentice_with_platform_tag_warns():
+    result = _audit_ticket(_make_ticket(size="S", worker="igor", tags=["Platform"]))
+    assert any("architectural tags" in w.lower() for w in result.warnings)
+
+
+def test_master_with_architecture_tag_no_warning():
+    result = _audit_ticket(_make_ticket(size="M", worker="claude", tags=["Architecture"]))
+    assert not any("architectural tags" in w.lower() for w in result.warnings)
+
+
+def test_ceiling_warning_is_advisory_not_blocking():
+    """Ceiling warnings do not set passed=False."""
+    result = _audit_ticket(_make_ticket(size="XL", worker="dicksimnel"))
+    assert result.warnings  # warning exists
+    assert result.passed is True  # but still passes
+
+
+def test_explicit_role_field_used_over_worker():
+    """Explicit role=master overrides worker=dicksimnel for ceiling check."""
+    result = _audit_ticket(_make_ticket(size="XL", worker="dicksimnel", role="master"))
+    assert not any("scope likely exceeds role ceiling" in w for w in result.warnings)
