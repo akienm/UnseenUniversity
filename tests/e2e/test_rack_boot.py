@@ -74,6 +74,9 @@ def test_skeleton_registers_itself(running_rack):
 # ── Announce → Manifest ───────────────────────────────────────────────────────
 
 
+_PROTECTED = frozenset({"igor", "cc", "skeleton"})
+
+
 def _send_announce(server: IMAPServer, agent_id: str) -> None:
     identity = IdentityEnvelope(
         agent_id=agent_id,
@@ -83,6 +86,7 @@ def _send_announce(server: IMAPServer, agent_id: str) -> None:
         pid=9999,
         interface_version="1.0",
         surfaces=["console", "inference"],
+        proof={"v": "e2e-test"} if agent_id in _PROTECTED else {},
     )
     env = Envelope.now(
         from_device=identity.primary_mailbox,

@@ -356,32 +356,43 @@ class TestDispatchedIdsAccumulation:
                 daemon._alerted_ids = set()
                 daemon._pattern_tracker = MagicMock()
                 daemon._pattern_tracker.p90_minutes.return_value = 120
+                # role dispatch requires _device; empty registry → apprentice OR cascade
+                daemon._device = MagicMock()
+                daemon._device.get_workers_for_role.return_value = []
+                audit = MagicMock()
+                audit.passed = True
+                audit.escalate_to_cc = False
+                audit.reasons = []
+                daemon._device.intake_ticket.return_value = audit
 
         ticket_a = {"id": "T-acc-a", "title": "A", "tags": ["Platform"]}
         ticket_b = {"id": "T-acc-b", "title": "B", "tags": ["Platform"]}
 
         call_count = {"n": 0}
 
-        def _dispatch(ticket, session=None):
+        def _dispatch(ticket, **kwargs):
             call_count["n"] += 1
             return True
+
+        # Tickets with no role/worker infer "apprentice" → OR cascade → _inference_dispatch
+        daemon._inference_dispatch = _dispatch
 
         with patch("devices.granny.daemon._load_sprint_tickets", return_value=[ticket_a]):
             with patch("devices.granny.daemon._cc0_available", return_value=True):
                 with patch("devices.granny.daemon._dicksimnel_available", return_value=False):
                     with patch("devices.granny.daemon._check_rate_limit", return_value=(True, None, 0.0)):
-                        with patch("devices.granny.dispatch.cc0_dispatch_fn", side_effect=_dispatch):
-                            daemon.run_once()
+                        daemon.run_once()
 
         # First call dispatched ticket_a → should be in _dispatched_ids
         assert "T-acc-a" in daemon._dispatched_ids
+
+        daemon._inference_dispatch = _dispatch
 
         with patch("devices.granny.daemon._load_sprint_tickets", return_value=[ticket_a, ticket_b]):
             with patch("devices.granny.daemon._cc0_available", return_value=True):
                 with patch("devices.granny.daemon._dicksimnel_available", return_value=False):
                     with patch("devices.granny.daemon._check_rate_limit", return_value=(True, None, 0.0)):
-                        with patch("devices.granny.dispatch.cc0_dispatch_fn", side_effect=_dispatch):
-                            daemon.run_once()
+                        daemon.run_once()
 
         # Second call: T-acc-a was already in _dispatched_ids → skipped; T-acc-b dispatched once
         # Total dispatches: 1 (first call) + 1 (second call, T-acc-b only) = 2
