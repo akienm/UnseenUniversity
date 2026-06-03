@@ -203,6 +203,7 @@ def _tool_read(path: str) -> str:
         content = p.read_text(errors="replace")
         return content[:3000] + ("...(truncated)" if len(content) > 3000 else "")
     except Exception as exc:
+        log.warning("ToolLoop Read failed for %s: %s", p, exc)
         return f"ERROR: {exc}"
 
 
@@ -229,6 +230,7 @@ def _tool_edit(input_text: str) -> str:
         p.write_text(content.replace(old_string, new_string, 1))
         return f"OK: edited {p}"
     except Exception as exc:
+        log.warning("ToolLoop Edit failed for %s: %s", file_path, exc)
         return f"ERROR: {exc}"
 
 
@@ -247,4 +249,5 @@ def _tool_write(input_text: str) -> str:
         p.write_text(content)
         return f"OK: wrote {len(content)} chars to {p}"
     except Exception as exc:
+        log.warning("ToolLoop Write failed for %s: %s", file_path, exc)
         return f"ERROR: {exc}"
