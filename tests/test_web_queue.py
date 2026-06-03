@@ -22,10 +22,11 @@ def _mock_conn(rows: list[tuple]):
 
 
 _TICKET_ROWS = [
-    ("T-web-ui-queue-view", "Web UI: show open ticket queue", "sprint", "M", "claude", "", 0.7),
-    ("T-cpu-peg-notify", "Scraps: notify CC when CPU pegged", "sprint", "S", "claude", "", 0.6),
-    ("T-something-blocked", "A blocked ticket", "hold", "S", "claude", "waiting for X", 0.4),
-    ("T-in-flight", "Currently working", "in_progress", "M", "claude", "", 0.8),
+    ("T-web-ui-queue-view", "Web UI: show open ticket queue", "sprint", "M", "claude", "", 0.7, "master"),
+    ("T-cpu-peg-notify", "Scraps: notify CC when CPU pegged", "sprint", "S", "claude", "", 0.6, "master"),
+    ("T-something-blocked", "A blocked ticket", "hold", "S", "claude", "waiting for X", 0.4, "builder"),
+    ("T-in-flight", "Currently working", "in_progress", "M", "claude", "", 0.8, "master"),
+    ("T-akien-setup", "Akien: install something", "akien", "S", "akien", "", 0.5, "guru"),
 ]
 
 
@@ -51,6 +52,17 @@ class TestApiQueue:
                 data = client.get("/api/queue").json()
         assert "tickets" in data
         assert data["count"] == len(_TICKET_ROWS)
+
+    def test_tickets_include_role_field(self):
+        from starlette.testclient import TestClient
+        conn = _mock_conn(_TICKET_ROWS)
+        app = _make_app()
+        with patch("devices.web_server.server._db_conn", return_value=conn):
+            with TestClient(app) as client:
+                data = client.get("/api/queue").json()
+        roles = {t["role"] for t in data["tickets"]}
+        assert "master" in roles
+        assert "guru" in roles
 
     def test_grouped_by_status(self):
         from starlette.testclient import TestClient
@@ -80,7 +92,7 @@ class TestApiQueue:
             with TestClient(app) as client:
                 data = client.get("/api/queue").json()
         t = data["tickets"][0]
-        for field in ("id", "title", "status", "size", "worker", "gate"):
+        for field in ("id", "title", "status", "size", "worker", "gate", "role"):
             assert field in t
 
 
@@ -144,3 +156,33 @@ class TestPageQueue:
             with TestClient(app) as client:
                 html = client.get("/queue").text
         assert "30000" in html or "reload" in html
+
+    def test_role_column_in_table(self):
+        from starlette.testclient import TestClient
+        conn = _mock_conn(_TICKET_ROWS)
+        app = _make_app()
+        with patch("devices.web_server.server._db_conn", return_value=conn):
+            with TestClient(app) as client:
+                html = client.get("/queue").text
+        assert "Role" in html
+        assert "master" in html
+
+    def test_my_tickets_filter_shows_guru_only(self):
+        from starlette.testclient import TestClient
+        conn = _mock_conn(_TICKET_ROWS)
+        app = _make_app()
+        with patch("devices.web_server.server._db_conn", return_value=conn):
+            with TestClient(app) as client:
+                html = client.get("/queue?view=mine").text
+        assert "T-akien-setup" in html
+        assert "T-web-ui-queue-view" not in html
+
+    def test_my_tickets_tab_links_present(self):
+        from starlette.testclient import TestClient
+        conn = _mock_conn(_TICKET_ROWS)
+        app = _make_app()
+        with patch("devices.web_server.server._db_conn", return_value=conn):
+            with TestClient(app) as client:
+                html = client.get("/queue").text
+        assert "view=mine" in html
+        assert "My Tickets" in html

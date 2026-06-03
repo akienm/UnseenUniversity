@@ -1749,7 +1749,8 @@ def _load_queue_tickets() -> list[dict]:
                     metadata->>'size'     AS size,
                     metadata->>'worker'   AS worker,
                     metadata->>'gate'     AS gate,
-                    (metadata->>'priority')::float AS priority
+                    (metadata->>'priority')::float AS priority,
+                    metadata->>'role'     AS role
                 FROM clan.memories
                 WHERE parent_id = 'TICKETS_ROOT'
                   AND metadata->>'kind' = 'ticket'
@@ -1774,6 +1775,7 @@ def _load_queue_tickets() -> list[dict]:
                 "worker": r[4] or "",
                 "gate": r[5] or "",
                 "priority": float(r[6]) if r[6] is not None else 0.5,
+                "role": r[7] or "",
             }
             for r in rows
         ]
@@ -1794,21 +1796,66 @@ async def _api_queue(request: Request):
     return JSONResponse({"tickets": tickets, "grouped": grouped, "count": len(tickets)})
 
 
+def _queue_table(tickets: list[dict]) -> str:
+    """Render a list of tickets as an HTML table with role column."""
+    _ROLE_BADGE = {"guru": "🧑", "master": "🤖", "builder": "🔧", "creator": "🔧"}
+    rows = []
+    for t in tickets:
+        gate_cell = f'<span style="color:#888;font-size:0.8rem">{t["gate"]}</span>' if t["gate"] else ""
+        role = t.get("role") or ""
+        role_cell = f'{_ROLE_BADGE.get(role, "")} <span style="color:#aaa;font-size:0.8rem">{role}</span>' if role else ""
+        rows.append(
+            f'<tr><td style="font-family:monospace;white-space:nowrap">{t["id"]}</td>'
+            f"<td>{t['title']}</td>"
+            f'<td class="badge">{t["size"]}</td>'
+            f'<td style="color:#888">{t["worker"]}</td>'
+            f"<td>{role_cell}</td>"
+            f"<td>{gate_cell}</td></tr>"
+        )
+    return (
+        "<table><tr><th>ID</th><th>Title</th><th>Size</th><th>Worker</th>"
+        "<th>Role</th><th>Gate</th></tr>"
+        + "".join(rows)
+        + "</table>"
+    )
+
+
 async def _page_queue(request: Request):
-    """GET /queue — open ticket queue as HTML, grouped by status."""
+    """GET /queue — open ticket queue as HTML, grouped by status.
+    ?view=mine  — show only guru/akien tickets (My Tickets)."""
     log.info("queue: page request from %s", request.client)
     conn = _db_conn()
     if not conn:
         return HTMLResponse(_html_wrap("Queue", _no_db_msg()))
 
     tickets = _load_queue_tickets()
+    view = request.query_params.get("view", "all")
+    is_mine = view == "mine"
 
-    if not tickets:
-        body = "<p>No open tickets.</p>"
-        return HTMLResponse(_html_wrap("Queue", body))
+    tab_style = "display:inline-block;padding:0.3rem 1rem;margin-right:0.5rem;border-radius:4px;text-decoration:none;"
+    active_tab = "background:#333;color:#fff;"
+    inactive_tab = "background:#1a1a1a;color:#888;border:1px solid #333;"
+    tabs = (
+        f'<div style="margin-bottom:1rem">'
+        f'<a href="/queue" style="{tab_style}{inactive_tab if is_mine else active_tab}">All Open</a>'
+        f'<a href="/queue?view=mine" style="{tab_style}{active_tab if is_mine else inactive_tab}">🧑 My Tickets (guru)</a>'
+        f"</div>"
+    )
+
+    if is_mine:
+        display_tickets = [t for t in tickets if t.get("role") == "guru" or t.get("worker") == "akien"]
+        title = "My Tickets"
+    else:
+        display_tickets = tickets
+        title = "Queue"
+
+    if not display_tickets:
+        msg = "<p>No guru/akien tickets right now.</p>" if is_mine else "<p>No open tickets.</p>"
+        body = tabs + msg
+        return HTMLResponse(_html_wrap(title, body))
 
     grouped: dict[str, list] = {}
-    for t in tickets:
+    for t in display_tickets:
         grouped.setdefault(t["status"], []).append(t)
 
     sections = []
@@ -1817,21 +1864,10 @@ async def _page_queue(request: Request):
     for status in order:
         group = grouped[status]
         cls = _STATUS_CLASS.get(status, "")
-        rows = []
-        for t in group:
-            gate_cell = f'<span style="color:#888;font-size:0.8rem">{t["gate"]}</span>' if t["gate"] else ""
-            rows.append(
-                f'<tr><td style="font-family:monospace">{t["id"]}</td>'
-                f"<td>{t['title']}</td>"
-                f'<td class="badge">{t["size"]}</td>'
-                f'<td style="color:#888">{t["worker"]}</td>'
-                f"<td>{gate_cell}</td></tr>"
-            )
         sections.append(
-            f'<h2><span class="{cls}">{status}</span> <span style="color:#888;font-size:0.85rem">({len(group)})</span></h2>'
-            "<table><tr><th>ID</th><th>Title</th><th>Size</th><th>Worker</th><th>Gate</th></tr>"
-            + "".join(rows)
-            + "</table>"
+            f'<h2><span class="{cls}">{status}</span>'
+            f' <span style="color:#888;font-size:0.85rem">({len(group)})</span></h2>'
+            + _queue_table(group)
         )
 
     refresh_js = (
@@ -1847,11 +1883,12 @@ async def _page_queue(request: Request):
         "</script>"
     )
     body = (
-        f"<p style='color:#888'>{len(tickets)} open tickets</p>"
+        tabs
+        + f"<p style='color:#888'>{len(display_tickets)} ticket(s)</p>"
         + "".join(sections)
         + refresh_js
     )
-    return HTMLResponse(_html_wrap("Queue", body))
+    return HTMLResponse(_html_wrap(title, body))
 
 
 # ── Feeds route ──────────────────────────────────────────────────────────────
