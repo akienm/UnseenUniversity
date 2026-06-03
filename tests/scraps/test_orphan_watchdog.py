@@ -164,55 +164,6 @@ class TestOrphanWatchdogEdgeCases:
         assert result == []
 
 
-class TestGrannyDaemonOrphanIntegration:
-    """GrannyDaemon._run_orphan_watchdog calls OrphanWatchdog.run()."""
-
-    def test_watchdog_called_every_n_cycles(self):
-        import devices.granny.daemon as daemon_mod
-        from devices.granny.daemon import GrannyDaemon
-
-        d = GrannyDaemon.__new__(GrannyDaemon)
-        d._stop_event = MagicMock()
-        d._total_errors = 0
-        d._dispatched_ids = set()
-
-        called = []
-
-        def _mock_run_once():
-            return 0
-
-        def _mock_push_stats():
-            pass
-
-        def _mock_orphan():
-            called.append(1)
-
-        d.run_once = _mock_run_once
-        d._push_stats = _mock_push_stats
-        d._run_orphan_watchdog = _mock_orphan
-
-        # Simulate 10 cycles then stop
-        cycle_count = [0]
-        original_wait = None
-
-        def _stop_after_10(timeout):
-            cycle_count[0] += 1
-            if cycle_count[0] >= 10:
-                d._stop_event.is_set.return_value = True
-
-        d._stop_event.is_set.return_value = False
-        d._stop_event.wait.side_effect = _stop_after_10
-
-        with patch.object(daemon_mod, "_ORPHAN_CHECK_EVERY_N_CYCLES", 5):
-            d._run()
-
-        # Should have fired at cycle 5 and cycle 10 → 2 calls
-        assert len(called) == 2
-
-    def test_watchdog_error_does_not_crash_daemon(self):
-        from devices.granny.daemon import GrannyDaemon
-        from devices.scraps.jobs.orphan_watchdog import OrphanWatchdog
-
-        d = GrannyDaemon.__new__(GrannyDaemon)
-        with patch.object(OrphanWatchdog, "run", side_effect=Exception("db down")):
-            d._run_orphan_watchdog()  # must not raise
+# Note: GrannyDaemon class was removed in the Granny rules-engine rewrite.
+# The orphan watchdog is now a standalone scraps job, not integrated into Granny.
+# Tests for standalone OrphanWatchdog.run() are in the classes above.
