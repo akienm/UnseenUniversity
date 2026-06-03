@@ -1,47 +1,79 @@
-"""Tests for DickSimnel ToolLoop (T-dicksimnel-toolloop)."""
+"""Tests for DickSimnel ToolLoop — native OR tool calling (T-dicksimnel-native-tool-use)."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 
-# ── _parse_tool_calls ─────────────────────────────────────────────────────────
+# ── helpers ───────────────────────────────────────────────────────────────────
 
 
-def test_parse_single_bash_call():
-    from devices.dicksimnel.toolloop import _parse_tool_calls
-    text = "Let me run tests.\n<TOOL:Bash>pytest tests/ -q</TOOL>\nDone."
-    calls = _parse_tool_calls(text)
-    assert calls == [("Bash", "pytest tests/ -q")]
+def _make_mock_response(text: str, tool_calls=None, tokens: int = 100) -> MagicMock:
+    r = MagicMock()
+    r.text = text
+    r.tool_calls = tool_calls
+    r.output_tokens = tokens
+    r.cost_estimate = 0.001
+    return r
 
 
-def test_parse_multiple_tool_calls():
-    from devices.dicksimnel.toolloop import _parse_tool_calls
-    text = (
-        "<TOOL:Read>/tmp/foo.py</TOOL>\n"
-        "<TOOL:Bash>echo hello</TOOL>"
-    )
-    calls = _parse_tool_calls(text)
-    assert len(calls) == 2
-    assert calls[0] == ("Read", "/tmp/foo.py")
-    assert calls[1] == ("Bash", "echo hello")
+def _bash_call(command: str, call_id: str = "call_abc") -> dict:
+    return {
+        "id": call_id,
+        "type": "function",
+        "function": {"name": "Bash", "arguments": json.dumps({"command": command})},
+    }
 
 
-def test_parse_no_tool_calls_returns_empty():
-    from devices.dicksimnel.toolloop import _parse_tool_calls
-    assert _parse_tool_calls("DONE: all fixed") == []
+# ── _parse_response extracts tool_calls ───────────────────────────────────────
 
 
-def test_parse_multiline_bash():
-    from devices.dicksimnel.toolloop import _parse_tool_calls
-    text = "<TOOL:Bash>git add x.py\ngit commit -m 'fix'\n</TOOL>"
-    calls = _parse_tool_calls(text)
-    assert calls[0][0] == "Bash"
-    assert "git add" in calls[0][1]
+def test_parse_response_extracts_tool_calls():
+    from devices.inference.device import _parse_response
+
+    raw = {
+        "choices": [{
+            "message": {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [
+                    {
+                        "id": "call_xyz",
+                        "type": "function",
+                        "function": {"name": "Bash", "arguments": '{"command": "ls -la"}'},
+                    }
+                ],
+            },
+            "finish_reason": "tool_calls",
+        }],
+        "model": "qwen/qwen3-coder-30b",
+        "usage": {"prompt_tokens": 50, "completion_tokens": 20},
+    }
+    resp = _parse_response(raw)
+    assert resp.tool_calls is not None
+    assert len(resp.tool_calls) == 1
+    assert resp.tool_calls[0]["function"]["name"] == "Bash"
+    assert resp.finish_reason == "tool_calls"
+
+
+def test_parse_response_no_tool_calls_stays_none():
+    from devices.inference.device import _parse_response
+
+    raw = {
+        "choices": [{
+            "message": {"role": "assistant", "content": "DONE: all good"},
+            "finish_reason": "stop",
+        }],
+        "model": "qwen/qwen3-coder-30b",
+        "usage": {},
+    }
+    resp = _parse_response(raw)
+    assert resp.tool_calls is None
+    assert resp.text == "DONE: all good"
 
 
 # ── _execute_tool ─────────────────────────────────────────────────────────────
@@ -49,20 +81,20 @@ def test_parse_multiline_bash():
 
 def test_execute_bash_returns_output():
     from devices.dicksimnel.toolloop import _execute_tool
-    result = _execute_tool("Bash", "echo toolloop_test")
+    result = _execute_tool("Bash", {"command": "echo toolloop_test"})
     assert "toolloop_test" in result
 
 
 def test_execute_bash_denylist_blocks_rm_rf():
     from devices.dicksimnel.toolloop import _execute_tool
-    result = _execute_tool("Bash", "rm -rf /tmp/test")
+    result = _execute_tool("Bash", {"command": "rm -rf /tmp/test"})
     assert "ERROR" in result
     assert "denylist" in result
 
 
 def test_execute_bash_denylist_blocks_force_push():
     from devices.dicksimnel.toolloop import _execute_tool
-    result = _execute_tool("Bash", "git push --force origin main")
+    result = _execute_tool("Bash", {"command": "git push --force origin main"})
     assert "ERROR" in result
 
 
@@ -70,13 +102,13 @@ def test_execute_read_existing_file(tmp_path):
     from devices.dicksimnel.toolloop import _execute_tool
     f = tmp_path / "test.py"
     f.write_text("def hello(): pass")
-    result = _execute_tool("Read", str(f))
+    result = _execute_tool("Read", {"path": str(f)})
     assert "def hello" in result
 
 
 def test_execute_read_missing_file():
     from devices.dicksimnel.toolloop import _execute_tool
-    result = _execute_tool("Read", "/nonexistent/path/file.py")
+    result = _execute_tool("Read", {"path": "/nonexistent/path/file.py"})
     assert "ERROR" in result
     assert "not found" in result
 
@@ -85,8 +117,7 @@ def test_execute_edit_replaces_text(tmp_path):
     from devices.dicksimnel.toolloop import _execute_tool
     f = tmp_path / "code.py"
     f.write_text("def old_name(): pass\n")
-    params = json.dumps({"file_path": str(f), "old_string": "old_name", "new_string": "new_name"})
-    result = _execute_tool("Edit", params)
+    result = _execute_tool("Edit", {"file_path": str(f), "old_string": "old_name", "new_string": "new_name"})
     assert "OK" in result
     assert "new_name" in f.read_text()
 
@@ -95,8 +126,7 @@ def test_execute_edit_fails_on_ambiguous_match(tmp_path):
     from devices.dicksimnel.toolloop import _execute_tool
     f = tmp_path / "dup.py"
     f.write_text("foo\nfoo\n")
-    params = json.dumps({"file_path": str(f), "old_string": "foo", "new_string": "bar"})
-    result = _execute_tool("Edit", params)
+    result = _execute_tool("Edit", {"file_path": str(f), "old_string": "foo", "new_string": "bar"})
     assert "ERROR" in result
     assert "2" in result
 
@@ -104,49 +134,42 @@ def test_execute_edit_fails_on_ambiguous_match(tmp_path):
 def test_execute_write_creates_file(tmp_path):
     from devices.dicksimnel.toolloop import _execute_tool
     new_file = tmp_path / "new.py"
-    params = json.dumps({"file_path": str(new_file), "content": "x = 1\n"})
-    result = _execute_tool("Write", params)
+    result = _execute_tool("Write", {"file_path": str(new_file), "content": "x = 1\n"})
     assert "OK" in result
     assert new_file.read_text() == "x = 1\n"
 
 
 def test_execute_unknown_tool_returns_error():
     from devices.dicksimnel.toolloop import _execute_tool
-    result = _execute_tool("Teleport", "somewhere")
+    result = _execute_tool("Teleport", {"destination": "somewhere"})
     assert "ERROR" in result
     assert "unknown tool" in result
 
 
-# ── ToolLoop.run ─────────────────────────────────────────────────────────────
-
-
-def _make_mock_response(text: str, tokens: int = 100) -> MagicMock:
-    r = MagicMock()
-    r.text = text
-    r.output_tokens = tokens
-    r.cost_estimate = 0.001
-    return r
+# ── ToolLoop.run ──────────────────────────────────────────────────────────────
 
 
 def test_toolloop_done_on_first_turn():
-    """Model emits DONE: on the first turn — loop completes in one call."""
+    """Model returns no tool_calls on turn 1 — loop completes immediately."""
     from devices.dicksimnel.toolloop import ToolLoop
     responses = [_make_mock_response("DONE: fixed it")]
     with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=responses):
         loop = ToolLoop()
         result = loop.run({"id": "T-1", "title": "Fix", "tags": [], "description": "x"}, "system")
     assert result is not None
-    assert result.startswith("DONE:")
+    assert "DONE" in result
 
 
 def test_toolloop_multi_turn_bash_then_done():
-    """Bash call on turn 1 → result injected → DONE on turn 2."""
+    """Tool call on turn 1 → result injected as role:tool → done on turn 2."""
     from devices.dicksimnel.toolloop import ToolLoop
+    tc = _bash_call("echo hello", "call_1")
     responses = [
-        _make_mock_response("<TOOL:Bash>echo hello</TOOL>"),
+        _make_mock_response("", tool_calls=[tc]),
         _make_mock_response("DONE: ran hello"),
     ]
     dispatch_calls = []
+
     def mock_dispatch(req):
         dispatch_calls.append(req)
         return responses.pop(0)
@@ -156,16 +179,56 @@ def test_toolloop_multi_turn_bash_then_done():
         result = loop.run({"id": "T-2", "title": "Greet", "tags": [], "description": "y"}, "sys")
 
     assert len(dispatch_calls) == 2
-    # Second call should include the tool result in the messages
     second_messages = dispatch_calls[1].messages
-    user_messages = [m for m in second_messages if m["role"] == "user"]
-    assert any("TOOL_RESULT:Bash" in m["content"] for m in user_messages)
+    tool_messages = [m for m in second_messages if m.get("role") == "tool"]
+    assert len(tool_messages) == 1
+    assert tool_messages[0]["tool_call_id"] == "call_1"
+    assert "hello" in tool_messages[0]["content"]
     assert result is not None
     assert "DONE" in result
 
 
+def test_toolloop_tool_result_uses_role_tool():
+    """Tool results land as role:tool messages, not role:user."""
+    from devices.dicksimnel.toolloop import ToolLoop
+    tc = _bash_call("echo ping", "call_ping")
+    responses = [
+        _make_mock_response("", tool_calls=[tc]),
+        _make_mock_response("DONE: done"),
+    ]
+    dispatch_calls = []
+
+    def mock_dispatch(req):
+        dispatch_calls.append(req)
+        return responses.pop(0)
+
+    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
+        ToolLoop().run({"id": "T-r", "title": "T", "tags": [], "description": "d"}, "s")
+
+    second_messages = dispatch_calls[1].messages
+    roles = [m["role"] for m in second_messages]
+    assert "tool" in roles
+    assert "user" not in roles[2:]  # after the initial user turn, no more user messages
+
+
+def test_toolloop_sends_tool_definitions_in_request():
+    """ToolLoop includes TOOL_DEFINITIONS in every InferenceRequest."""
+    from devices.dicksimnel.toolloop import ToolLoop, TOOL_DEFINITIONS
+    responses = [_make_mock_response("DONE: ok")]
+    captured = []
+
+    def mock_dispatch(req):
+        captured.append(req)
+        return responses.pop(0)
+
+    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
+        ToolLoop().run({"id": "T-t", "title": "T", "tags": [], "description": "d"}, "s")
+
+    assert captured[0].tools == TOOL_DEFINITIONS
+
+
 def test_toolloop_no_tool_calls_returns_text():
-    """Model returns plain text with no tools and no DONE — loop treats it as implicit done."""
+    """Plain text response with no tool_calls is treated as done."""
     from devices.dicksimnel.toolloop import ToolLoop
     responses = [_make_mock_response("I analyzed the ticket. No changes needed.")]
     with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=responses):
@@ -185,20 +248,21 @@ def test_toolloop_inference_failure_returns_none():
 
 
 def test_toolloop_max_turns_respected():
-    """Loop stops at max_turns even without DONE signal."""
+    """Loop stops at max_turns even with continuous tool calls."""
     from devices.dicksimnel.toolloop import ToolLoop
-
+    tc = _bash_call("echo still going", "call_loop")
     call_count = [0]
-    def always_bash(req):
-        call_count[0] += 1
-        return _make_mock_response("<TOOL:Bash>echo still going</TOOL>")
 
-    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=always_bash):
+    def always_tool(req):
+        call_count[0] += 1
+        return _make_mock_response("", tool_calls=[tc])
+
+    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=always_tool):
         loop = ToolLoop(max_turns=3)
         result = loop.run({"id": "T-5", "title": "T", "tags": [], "description": "d"}, "s")
 
     assert call_count[0] == 3
-    assert result is not None  # returns last assistant message
+    assert result is not None
 
 
 # ── DickSimnelDevice._run_inference uses ToolLoop ────────────────────────────

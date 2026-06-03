@@ -44,6 +44,8 @@ class InferenceRequest:
     instance_id: str = ""
     coa_id: str = ""
     session_id: str = ""
+    # OpenAI-format tool definitions; when set, included in the API payload.
+    tools: list | None = field(default=None)
 
 
 @dataclass
@@ -58,6 +60,8 @@ class InferenceResponse:
     cost_estimate: float = 0.0
     elapsed_ms: int = 0
     raw: dict = field(default_factory=dict)
+    # Populated when the model returns tool calls (native tool use).
+    tool_calls: list | None = field(default=None)
 
 
 log = logging.getLogger(__name__)

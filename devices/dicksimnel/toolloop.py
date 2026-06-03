@@ -1,19 +1,17 @@
 """
-ToolLoop — multi-turn ReAct inference loop with tool execution.
+ToolLoop — multi-turn ReAct inference loop using native OR tool calling.
 
 DickSimnel uses ToolLoop to work sprint tickets: inference reasons about
-the ticket, calls tools (Bash/Read/Edit/Write), sees results, and continues
-until it emits a DONE signal or hits the turn cap.
+the ticket, calls tools (Bash/Read/Edit/Write) via the standard OpenAI
+tool-use protocol, sees results, and continues until the model stops
+calling tools (finish_reason='stop') or hits the turn cap.
 
-Tool call format in inference output:
-  <TOOL:Bash>shell command</TOOL>
-  <TOOL:Read>/absolute/path/to/file.py</TOOL>
-  <TOOL:Edit>{"file_path": "...", "old_string": "...", "new_string": "..."}</TOOL>
-  <TOOL:Write>{"file_path": "...", "content": "..."}</TOOL>
+Tool call format: standard OpenAI function-calling (tools= in request,
+tool_calls in response). No XML parsing.
 
 Termination:
-  DONE: <summary>   — successful completion; summary becomes the ticket close note
-  None return       — inference failed or timed out
+  response.tool_calls is None/empty  — model finished; text is the result
+  None return                         — inference failed or timed out
 """
 
 from __future__ import annotations
@@ -31,8 +29,6 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 MAX_TURNS = 20
 DONE_PREFIX = "DONE:"
 
-_TOOL_PATTERN = re.compile(r"<TOOL:(\w+)>(.*?)</TOOL>", re.DOTALL)
-
 # Bash commands blocked by the safety denylist
 _BASH_DENYLIST = re.compile(
     r"\brm\s+-rf\b"
@@ -46,41 +42,87 @@ _BASH_DENYLIST = re.compile(
     re.IGNORECASE,
 )
 
-TOOL_DESCRIPTION = """\
-## Available tools
+TOOL_DEFINITIONS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "Bash",
+            "description": "Execute a shell command. Returns stdout+stderr (first 2000 chars).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "command": {"type": "string", "description": "Shell command to execute"},
+                },
+                "required": ["command"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "Read",
+            "description": "Read a file. Returns content (first 3000 chars).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Absolute path to file"},
+                },
+                "required": ["path"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "Edit",
+            "description": "Replace exact text in a file. old_string must be unique in the file.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path": {"type": "string"},
+                    "old_string": {"type": "string"},
+                    "new_string": {"type": "string"},
+                },
+                "required": ["file_path", "old_string", "new_string"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "Write",
+            "description": "Write a complete file (creates or overwrites).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path": {"type": "string"},
+                    "content": {"type": "string"},
+                },
+                "required": ["file_path", "content"],
+            },
+        },
+    },
+]
 
-Call tools by embedding XML tags in your response:
-
-<TOOL:Bash>shell command here</TOOL>
-  Execute a shell command. Returns stdout+stderr (first 2000 chars).
-
-<TOOL:Read>/absolute/path/to/file.py</TOOL>
-  Read a file. Returns content (first 3000 chars).
-
-<TOOL:Edit>{"file_path": "/abs/path.py", "old_string": "exact old text", "new_string": "new text"}</TOOL>
-  Replace exact text in a file. old_string must be unique in the file.
-
-<TOOL:Write>{"file_path": "/abs/path.py", "content": "full file content"}</TOOL>
-  Write a complete file (creates or overwrites).
-
-## Termination
-
-When the ticket is fully done (code written, tests green, committed, closed), start your
-final message with:
-  DONE: <one-line summary of what was accomplished>
-
+SYSTEM_RULES = """\
 ## Rules
 
-- Always run tests after code changes: <TOOL:Bash>.venv/bin/python3 -m pytest tests/ -q --tb=short 2>&1 | tail -15</TOOL>
+- Always run tests after code changes: use Bash with `.venv/bin/python3 -m pytest tests/ -q --tb=short 2>&1 | tail -15`
 - Stage files specifically by name — never git add -A or git add .
 - Commit message must include: Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 - Never force-push
 - Use absolute paths for Read/Edit/Write
+
+## Completion
+
+When the ticket is fully done (code written, tests green, committed, ticket closed), respond with plain text starting with:
+  DONE: <one-line summary of what was accomplished>
+Do not call any more tools after the ticket is closed.
 """
 
 
 class ToolLoop:
-    """Multi-turn ReAct inference loop with Bash/Read/Edit/Write execution."""
+    """Multi-turn ReAct inference loop using native OR tool calling."""
 
     def __init__(self, max_turns: int = MAX_TURNS) -> None:
         self._max_turns = max_turns
@@ -88,8 +130,8 @@ class ToolLoop:
     def run(self, ticket: dict, system_prompt: str) -> str | None:
         """Work a ticket through the tool loop.
 
-        Returns the DONE summary text, or the last assistant message if no
-        DONE signal, or None if inference failed entirely.
+        Returns the model's final text when it stops calling tools, or the
+        last assistant content if max_turns is hit, or None if inference failed.
         """
         from devices.inference.device import InferenceDevice
         from devices.inference.shim import InferenceRequest
@@ -102,7 +144,7 @@ class ToolLoop:
             f"Description:\n{ticket.get('description', ticket.get('title', ''))}"
         )
         messages = [{"role": "user", "content": user_msg}]
-        full_system = system_prompt + "\n\n" + TOOL_DESCRIPTION
+        full_system = system_prompt + "\n\n" + SYSTEM_RULES
 
         for turn in range(self._max_turns):
             log.info("ToolLoop turn %d/%d — ticket %s", turn + 1, self._max_turns, ticket_id)
@@ -110,6 +152,7 @@ class ToolLoop:
                 model="",
                 messages=messages,
                 system=full_system,
+                tools=TOOL_DEFINITIONS,
                 task_class="worker",
                 agent_id="dicksimnel",
                 max_tokens=4096,
@@ -121,55 +164,63 @@ class ToolLoop:
                 log.error("ToolLoop inference failed on turn %d: %s", turn + 1, exc)
                 return None
 
-            text = response.text
-            log.debug("ToolLoop turn %d: %d chars", turn + 1, len(text))
+            tool_calls = response.tool_calls
+            log.debug(
+                "ToolLoop turn %d: %d chars, %d tool calls",
+                turn + 1,
+                len(response.text or ""),
+                len(tool_calls) if tool_calls else 0,
+            )
 
-            if text.lstrip().startswith(DONE_PREFIX):
-                log.info("ToolLoop: DONE on turn %d for %s", turn + 1, ticket_id)
-                return text
-
-            tool_calls = _parse_tool_calls(text)
             if not tool_calls:
-                log.info("ToolLoop: no tool calls on turn %d — treating as implicit DONE", turn + 1)
-                return text
+                log.info("ToolLoop: done on turn %d for %s", turn + 1, ticket_id)
+                return response.text
 
-            results = []
-            for tool_name, tool_input in tool_calls:
-                result = _execute_tool(tool_name, tool_input)
-                log.info("ToolLoop: %s → %d chars result", tool_name, len(result))
-                results.append(f"<TOOL_RESULT:{tool_name}>\n{result}\n</TOOL_RESULT>")
-
-            messages.append({"role": "assistant", "content": text})
+            # Append the assistant message (content may be null on tool-call turns)
             messages.append({
-                "role": "user",
-                "content": "\n\n".join(results) + "\n\nContinue with the next step.",
+                "role": "assistant",
+                "content": response.text or None,
+                "tool_calls": tool_calls,
             })
 
+            # Execute each tool and return results as role:tool messages
+            for tc in tool_calls:
+                tc_id = tc.get("id", "")
+                fn = tc.get("function", {})
+                name = fn.get("name", "")
+                try:
+                    args = json.loads(fn.get("arguments", "{}"))
+                except json.JSONDecodeError:
+                    args = {}
+                result = _execute_tool(name, args)
+                log.info("ToolLoop: %s → %d chars result", name, len(result))
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tc_id,
+                    "content": result,
+                })
+
         log.warning("ToolLoop: hit max turns (%d) for %s", self._max_turns, ticket_id)
-        # Return the last assistant message as best-effort result
         for msg in reversed(messages):
-            if msg["role"] == "assistant":
-                return msg["content"]
+            if msg.get("role") == "assistant":
+                return msg.get("content") or ""
         return None
 
 
 # ── Tool dispatch ─────────────────────────────────────────────────────────────
 
 
-def _parse_tool_calls(text: str) -> list[tuple[str, str]]:
-    return [(m.group(1), m.group(2).strip()) for m in _TOOL_PATTERN.finditer(text)]
-
-
-def _execute_tool(name: str, input_text: str) -> str:
+def _execute_tool(name: str, args: dict) -> str:
+    """Dispatch a tool call. args is a parsed dict from the model's tool_call."""
     try:
         if name == "Bash":
-            return _tool_bash(input_text)
+            return _tool_bash(args.get("command", ""))
         if name == "Read":
-            return _tool_read(input_text)
+            return _tool_read(args.get("path", ""))
         if name == "Edit":
-            return _tool_edit(input_text)
+            return _tool_edit(args)
         if name == "Write":
-            return _tool_write(input_text)
+            return _tool_write(args)
         return f"ERROR: unknown tool {name!r}"
     except Exception as exc:
         log.warning("ToolLoop _execute_tool %s raised: %s", name, exc)
@@ -207,14 +258,10 @@ def _tool_read(path: str) -> str:
         return f"ERROR: {exc}"
 
 
-def _tool_edit(input_text: str) -> str:
-    try:
-        params = json.loads(input_text)
-    except json.JSONDecodeError as exc:
-        return f"ERROR: invalid JSON for Edit: {exc}"
-    file_path = params.get("file_path", "")
-    old_string = params.get("old_string", "")
-    new_string = params.get("new_string", "")
+def _tool_edit(args: dict) -> str:
+    file_path = args.get("file_path", "")
+    old_string = args.get("old_string", "")
+    new_string = args.get("new_string", "")
     if not file_path:
         return "ERROR: file_path required"
     p = Path(file_path)
@@ -234,13 +281,9 @@ def _tool_edit(input_text: str) -> str:
         return f"ERROR: {exc}"
 
 
-def _tool_write(input_text: str) -> str:
-    try:
-        params = json.loads(input_text)
-    except json.JSONDecodeError as exc:
-        return f"ERROR: invalid JSON for Write: {exc}"
-    file_path = params.get("file_path", "")
-    content = params.get("content", "")
+def _tool_write(args: dict) -> str:
+    file_path = args.get("file_path", "")
+    content = args.get("content", "")
     if not file_path:
         return "ERROR: file_path required"
     try:

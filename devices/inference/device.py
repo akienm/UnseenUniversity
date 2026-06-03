@@ -373,6 +373,8 @@ class InferenceDevice(BaseDevice):
             "max_tokens": req.max_tokens,
             "temperature": req.temperature,
         }
+        if req.tools:
+            payload["tools"] = req.tools
         payload.update(req.extra)
         body = json.dumps(payload).encode()
         http_req = urllib.request.Request(
@@ -428,8 +430,10 @@ def _parse_response(raw: dict, elapsed_ms: int = 0) -> InferenceResponse:
     choices = raw.get("choices")
     if choices:
         choice = choices[0]
-        text = (choice.get("message") or {}).get("content") or ""
+        msg = choice.get("message") or {}
+        text = msg.get("content") or ""
         finish_reason = choice.get("finish_reason") or "stop"
+        tool_calls = msg.get("tool_calls") or None
         usage = raw.get("usage") or {}
         return InferenceResponse(
             text=text,
@@ -440,6 +444,7 @@ def _parse_response(raw: dict, elapsed_ms: int = 0) -> InferenceResponse:
             cost_estimate=float(usage.get("cost") or 0.0),
             elapsed_ms=elapsed_ms,
             raw=raw,
+            tool_calls=tool_calls,
         )
     # Ollama /api/chat native format
     msg = raw.get("message") or {}
