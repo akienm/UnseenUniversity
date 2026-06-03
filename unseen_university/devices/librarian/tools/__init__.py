@@ -17,6 +17,7 @@ from . import (
     proposal_tools,
     research_tools,
     scraps_tools,
+    search_tools,
     ticket_tools,
 )
 
@@ -36,6 +37,7 @@ SCHEMAS: list[dict] = (
     + proposal_tools.SCHEMAS
     + budget_tools.SCHEMAS
     + scraps_tools.SCHEMAS
+    + search_tools.SCHEMAS
 )
 
 
@@ -57,6 +59,7 @@ def dispatch(name: str, args: dict) -> str:
         proposal_tools,
         budget_tools,
         scraps_tools,
+        search_tools,
     ):
         result = module.dispatch(name, args)
         if result is not None:
