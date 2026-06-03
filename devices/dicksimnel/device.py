@@ -313,43 +313,20 @@ class DickSimnelDevice(BaseDevice):
         return SYSTEM_PROMPT
 
     def _run_inference(self, ticket: dict) -> str | None:
-        """Run the ticket through the inference proxy (worker tier). Returns result text."""
+        """Work a ticket through the ReAct ToolLoop. Returns result text or None."""
+        from devices.dicksimnel.toolloop import ToolLoop
+        ticket_id = ticket.get("id", "?")
+        log.info("DickSimnel: starting ToolLoop for ticket %s", ticket_id)
         try:
-            from devices.inference.device import InferenceDevice
-            from devices.inference.shim import InferenceRequest
-
-            description = ticket.get("description", ticket.get("title", "No description"))
-            ticket_id = ticket.get("id", "?")
-
-            prompt = (
-                f"Ticket ID: {ticket_id}\n"
-                f"Title: {ticket.get('title', 'No title')}\n"
-                f"Size: {ticket.get('size', '?')}\n"
-                f"Tags: {', '.join(ticket.get('tags', []))}\n\n"
-                f"Description:\n{description}"
-            )
-
-            req = InferenceRequest(
-                model="",  # let rules engine pick via task_class
-                messages=[{"role": "user", "content": prompt}],
-                system=self._build_system_prompt(ticket),
-                task_class="worker",
-                agent_id="dicksimnel",
-                max_tokens=4096,
-                timeout=120,
-            )
-
-            device = InferenceDevice()
-            log.info("DickSimnel: dispatching ticket %s to inference proxy", ticket_id)
-            response = device.dispatch(req)
-            log.info(
-                "DickSimnel: inference done for %s — %d output tokens, $%.4f",
-                ticket_id, response.output_tokens, response.cost_estimate,
-            )
-            return response.text
-
+            loop = ToolLoop()
+            result = loop.run(ticket, self._build_system_prompt(ticket))
+            if result:
+                log.info("DickSimnel: ToolLoop finished for %s (%d chars)", ticket_id, len(result))
+            else:
+                log.warning("DickSimnel: ToolLoop returned None for %s", ticket_id)
+            return result
         except Exception as exc:
-            log.error("DickSimnel: inference failed for ticket %s: %s", ticket.get("id", "?"), exc)
+            log.error("DickSimnel: ToolLoop failed for ticket %s: %s", ticket_id, exc)
             return None
 
     # ── Main work cycle ────────────────────────────────────────────────────────
