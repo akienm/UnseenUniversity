@@ -345,6 +345,60 @@ The `agent_class` field is added to each device's registry manifest (`skeleton/r
 
 ---
 
+### 3.10 Registered Dispatcher Pattern (C-registered-dispatcher)
+
+A recurring shape in the rack: a **queue of work items** + a **registry of capable handlers** + **dispatch rules** — and nothing else. Granny is the canonical implementation; the pattern recurs across devices and is the target shape for new devices.
+
+**The three stacks:**
+
+| Stack | What it holds | Granny example |
+|---|---|---|
+| Work queue | Items waiting to be handled | `cc_queue.py` sprint tickets |
+| Handler registry | Handlers that have self-declared their capabilities | `GrannyWeatherwaxDevice._workers` dict |
+| Routing rules | How to match a work item to a handler | `get_workers_for_role(role)` + `is_available()` |
+
+**The key invariant:** handlers self-declare capabilities at startup. The dispatcher does not know about specific workers at build time; it only knows how to match. Adding a new handler type requires no changes to the dispatcher — only the handler needs to call `register_worker(roles=[...])`.
+
+**Two variants:**
+
+1. **Capability matching** — handler declares a set of roles/tags it accepts. The dispatcher does a set intersection: which handlers accept this work item? Picks the first available one. Used by Granny for role-based ticket dispatch.
+
+   ```python
+   workers = device.get_workers_for_role(role)
+   available = [w for w in workers if w.is_available()]
+   if available:
+       available[0].dispatch_fn(ticket)
+   ```
+
+2. **Sequential filter pipeline** (Chain of Responsibility) — an ordered sequence of handlers, each attempting the work and passing to the next on failure. Used by Granny's OR cascade (analyst → worker → minion) and by Inference's multi-tier escalation.
+
+   ```python
+   for tier in (analyst, worker, minion):
+       result = tier.run(ticket)
+       if result != ESCALATE:
+           return result
+   ```
+
+**When to use capability matching vs. filter pipeline:**
+- Capability matching: handlers are equally capable for a role, availability is the tiebreaker. Adding a second CC instance (CC.1) requires zero dispatcher changes.
+- Filter pipeline: handlers are tiered by cost or power — try the cheapest/fastest first, escalate only when it can't handle the item. The pipeline encodes a quality/cost trade-off.
+
+**Device fit inventory:**
+
+| Device | Pattern variant | Status |
+|---|---|---|
+| Granny (ticket dispatch) | Capability matching | ✓ canonical — implemented T-granny-dispatch-role-map |
+| Granny (OR cascade) | Filter pipeline | ✓ implemented — analyst → worker → minion tiers |
+| Inference | Filter pipeline | partial — tiers are hardcoded, not self-registered |
+| GoogleSecretary | neither — bespoke | refactor candidate (T-google-secretary-registered-dispatcher) |
+| Librarian | neither — direct tool call | refactor candidate if routing grows |
+
+**Why this pattern and not a bespoke orchestrator?** A bespoke orchestrator encodes routing in code — adding a worker means editing the dispatcher. The Registered Dispatcher encodes it in data: the handler's declaration. The dispatcher becomes infrastructure rather than a feature. New agents join the rack by self-registering; no existing code changes.
+
+**Concept node:** `palace.concepts.registered-dispatcher` (C-registered-dispatcher)
+
+---
+
 ## 4. Igor — Reference Implementation
 
 Igor is a device (`devices/igor/`), the reference implementation of an agent built on the rack. His cognition subsystems use the platform abstractions defined in §1–3: the bus (§1.3), the queue (§3.1–3.3), and memory (§3.4–3.7). They run on the rack like everything else; they are not special.
