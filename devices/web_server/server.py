@@ -1067,16 +1067,19 @@ async def _api_comms_health(request: Request):
 
 
 async def _api_granny_health(request: Request):
-    """GET /api/granny/health — Granny Weatherwax operational health snapshot."""
+    """GET /api/granny/health — Granny daemon liveness check."""
     try:
-        from devices.granny.health import granny_health_snapshot
-
-        snapshot = granny_health_snapshot()
-        log.info("_api_granny_health: snapshot served")
-        return JSONResponse(snapshot)
+        from pathlib import Path
+        pid_file = Path.home() / ".granny" / "daemon.pid"
+        if pid_file.exists():
+            import os
+            pid = int(pid_file.read_text().strip())
+            os.kill(pid, 0)  # existence check
+            return JSONResponse({"status": "running", "pid": pid})
+        return JSONResponse({"status": "not_running"}, status_code=503)
     except Exception as e:
         log.warning("_api_granny_health: %s", e)
-        return JSONResponse({"error": str(e)}, status_code=500)
+        return JSONResponse({"status": "unknown", "error": str(e)}, status_code=503)
 
 
 # ── Palace browser ───────────────────────────────────────────────────────────

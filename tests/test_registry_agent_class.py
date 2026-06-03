@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 
 from config.device_config import DeviceConfig
-from devices.granny.device import GrannyWeatherwaxDevice
 from devices.igor.device import IgorDevice
 from devices.minion.device import MinionDevice
 from devices.nanny.device import NannyOggDevice
@@ -54,7 +53,6 @@ def test_list_devices_includes_agent_class(tmp_path: Path) -> None:
     "device_cls, expected_class",
     [
         (IgorDevice, "general"),
-        (GrannyWeatherwaxDevice, "specialized"),
         (NannyOggDevice, "specialized"),
         (MinionDevice, "utility"),
         (ScrapsDevice, "utility"),

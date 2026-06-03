@@ -96,26 +96,18 @@ class TestMarkAvailable:
 
 class TestDickSimnelAvailability:
     def test_dicksimnel_available_when_true_flag_set(self, tmp_path, monkeypatch):
-        from devices.granny import daemon as d_mod
+        import devices.granny.availability as avail
         flag_dir = tmp_path / "available"
         flag_dir.mkdir()
         (flag_dir / "DickSimnel.0.available.true").write_text("true")
-        monkeypatch.setattr(d_mod.Path, "home", lambda: tmp_path)
-        # Re-check with direct path mock
-        with monkeypatch.context() as m:
-            m.setattr(
-                "devices.granny.daemon._dicksimnel_available",
-                lambda: (flag_dir / "DickSimnel.0.available.true").exists()
-                and not (flag_dir / "DickSimnel.0.available.false").exists(),
-            )
-            from devices.granny.daemon import _dicksimnel_available
-            assert _dicksimnel_available()
+        monkeypatch.setattr(avail, "_AVAILABLE_DIR", flag_dir)
+        assert avail.is_available("DickSimnel.0")
 
     def test_dicksimnel_unavailable_when_false_flag_set(self, tmp_path, monkeypatch):
+        import devices.granny.availability as avail
         flag_dir = tmp_path / "available"
         flag_dir.mkdir()
         (flag_dir / "DickSimnel.0.available.true").write_text("true")
         (flag_dir / "DickSimnel.0.available.false").write_text("false")
-        import devices.granny.daemon as d_mod
-        monkeypatch.setattr(d_mod.Path, "home", lambda: tmp_path)
-        assert not d_mod._dicksimnel_available()  # .false flag wins
+        monkeypatch.setattr(avail, "_AVAILABLE_DIR", flag_dir)
+        assert not avail.is_available("DickSimnel.0")  # .false flag wins

@@ -71,9 +71,8 @@ def contract_device(request, tmp_path):
         return ScrapsDevice()
 
     if name == "granny":
-        from devices.granny.device import GrannyWeatherwaxDevice
-
-        return GrannyWeatherwaxDevice()
+        # Granny is now a rules-engine daemon; no standalone Device class
+        pytest.skip("granny runs as daemon process, not a BaseDevice subclass")
 
     if name == "postgres":
         from devices.postgres.device import PostgresDevice
