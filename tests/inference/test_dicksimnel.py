@@ -182,6 +182,103 @@ class TestDickSimnelDevice:
         assert d._active_ticket is None
 
 
+# ── escalation ───────────────────────────────────────────────────────────────
+
+
+class TestDickSimnelEscalation:
+    def _device(self):
+        from devices.dicksimnel.device import DickSimnelDevice
+        d = DickSimnelDevice()
+        d._shim = MagicMock()
+        d._shim.is_blocked.return_value = False
+        return d
+
+    def test_should_escalate_high_inertia_tags(self):
+        d = self._device()
+        hit, reason = d._should_escalate({"tags": ["Security", "Routing"]}, None)
+        assert hit
+        assert "Security" in reason
+
+    def test_should_escalate_low_confidence_in_result(self):
+        d = self._device()
+        result = "## Analysis\nFoo\n\n## Confidence\nlow — too many moving parts"
+        hit, reason = d._should_escalate({"tags": []}, result)
+        assert hit
+        assert "confidence=low" in reason
+
+    def test_should_not_escalate_high_confidence(self):
+        d = self._device()
+        result = "## Analysis\nFoo\n\n## Confidence\nhigh"
+        hit, reason = d._should_escalate({"tags": []}, result)
+        assert not hit
+
+    def test_should_not_escalate_no_tags_no_result(self):
+        d = self._device()
+        hit, reason = d._should_escalate({"tags": ["DickSimnel"]}, None)
+        assert not hit
+
+    def test_escalate_ticket_resets_worker_and_status(self):
+        d = self._device()
+        d._run_queue_cmd = MagicMock(return_value=None)
+        with patch("unseen_university.channel.post_to_channel"):
+            d._escalate_ticket("T-test", "Security tag", "some analysis")
+        calls = [str(c) for c in d._run_queue_cmd.call_args_list]
+        assert any("set-worker" in c and "claude" in c for c in calls)
+        assert any("setstatus" in c and "sprint" in c for c in calls)
+        assert d._active_ticket is None
+        assert d._tickets_declined == 1
+
+    def test_escalate_ticket_posts_to_channel(self):
+        d = self._device()
+        d._run_queue_cmd = MagicMock(return_value=None)
+        with patch("unseen_university.channel.post_to_channel") as mock_post:
+            d._escalate_ticket("T-test", "Security tag")
+        mock_post.assert_called_once()
+        args = mock_post.call_args
+        assert "DICKSIMNEL_ESCALATE" in args[0][0]
+        assert "T-test" in args[0][0]
+
+    def test_poll_escalates_pre_inference_on_high_inertia(self):
+        d = self._device()
+        ticket = {"id": "T-sec", "title": "Security fix", "tags": ["Security"],
+                  "description": "Fix auth", "status": "in_progress", "worker": "dicksimnel"}
+        d._claim_next_ticket = MagicMock(return_value=ticket)
+        d._run_inference = MagicMock()
+        d._escalate_ticket = MagicMock()
+        d._poll_and_work()
+        d._run_inference.assert_not_called()
+        d._escalate_ticket.assert_called_once()
+        assert "Security" in d._escalate_ticket.call_args[0][1]
+
+    def test_poll_escalates_post_inference_on_low_confidence(self):
+        d = self._device()
+        ticket = {"id": "T-hard", "title": "Hard thing", "tags": [],
+                  "description": "...", "status": "in_progress", "worker": "dicksimnel"}
+        d._claim_next_ticket = MagicMock(return_value=ticket)
+        d._run_inference = MagicMock(
+            return_value="## Analysis\nComplex\n\n## Confidence\nlow — unclear scope"
+        )
+        d._escalate_ticket = MagicMock()
+        d._post_result = MagicMock()
+        d._poll_and_work()
+        d._escalate_ticket.assert_called_once()
+        d._post_result.assert_not_called()
+
+    def test_poll_closes_on_high_confidence(self):
+        d = self._device()
+        ticket = {"id": "T-easy", "title": "Easy fix", "tags": [],
+                  "description": "...", "status": "in_progress", "worker": "dicksimnel"}
+        d._claim_next_ticket = MagicMock(return_value=ticket)
+        d._run_inference = MagicMock(
+            return_value="## Analysis\nSimple.\n\n## Confidence\nhigh"
+        )
+        d._post_result = MagicMock()
+        d._escalate_ticket = MagicMock()
+        d._poll_and_work()
+        d._post_result.assert_called_once()
+        d._escalate_ticket.assert_not_called()
+
+
 # ── skill_load + _build_system_prompt ─────────────────────────────────────────
 
 

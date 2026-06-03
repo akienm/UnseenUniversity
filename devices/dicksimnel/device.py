@@ -40,6 +40,7 @@ _DB_URL = os.environ.get(
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 _SKILLS_DIR = Path.home() / ".claude" / "skills"
+_HIGH_INERTIA_TAGS = frozenset({"Security", "Provenance", "Database", "Auth", "Brainstem"})
 
 SYSTEM_PROMPT = """\
 You are DickSimnel, an autonomous software engineering agent in the UnseenUniversity rack.
@@ -231,12 +232,51 @@ class DickSimnelDevice(BaseDevice):
 
     def _decline_ticket(self, ticket_id: str, reason: str) -> None:
         """Return ticket to sprint status with a decline note."""
-        self._run_queue_cmd(
-            "setstatus", ticket_id, "sprint",
-        )
+        self._run_queue_cmd("setstatus", ticket_id, "sprint")
         log.info("DickSimnel: declined ticket %s — %s", ticket_id, reason)
         self._tickets_declined += 1
         self._active_ticket = None
+
+    def _escalate_ticket(self, ticket_id: str, reason: str, analysis: str = "") -> None:
+        """Hand ticket off to CC with analysis note.
+
+        Posts DICKSIMNEL_ESCALATE to shared channel, resets worker=claude,
+        resets status=sprint. CC picks it up with Dick's analysis as context.
+        """
+        try:
+            from unseen_university.channel import post_to_channel
+            summary = (analysis[:300] + "...") if len(analysis) > 300 else analysis
+            post_to_channel(
+                f"DICKSIMNEL_ESCALATE ticket={ticket_id} reason={reason!r} analysis={summary!r}",
+                author="dicksimnel",
+                channel="shared",
+            )
+        except Exception as exc:
+            log.warning("DickSimnel: channel post failed on escalate: %s", exc)
+        self._run_queue_cmd("set-worker", "claude", ticket_id)
+        self._run_queue_cmd("setstatus", ticket_id, "sprint")
+        log.info("DickSimnel: escalated ticket %s to CC — %s", ticket_id, reason)
+        self._tickets_declined += 1
+        self._active_ticket = None
+
+    def _should_escalate(self, ticket: dict, result: str | None) -> tuple[bool, str]:
+        """Return (True, reason) if this ticket should be escalated to CC.
+
+        Two triggers:
+        - HIGH-inertia tags present (checked pre-inference, saves cost)
+        - Inference result contains '## Confidence' section with 'low'
+        """
+        tags = set(ticket.get("tags", []))
+        inertia_hit = tags & _HIGH_INERTIA_TAGS
+        if inertia_hit:
+            return True, f"HIGH-inertia tags: {sorted(inertia_hit)}"
+        if result and "## Confidence" in result:
+            for line in result.split("## Confidence", 1)[1].strip().splitlines():
+                if line.strip():
+                    if "low" in line.lower():
+                        return True, f"confidence=low: {line.strip()}"
+                    break
+        return False, ""
 
     # ── Inference ─────────────────────────────────────────────────────────────
 
@@ -333,11 +373,23 @@ class DickSimnelDevice(BaseDevice):
         ticket_id = ticket["id"]
         log.info("DickSimnel: working ticket %s — %s", ticket_id, ticket.get("title", "?"))
 
+        # Pre-inference: bail on HIGH-inertia tags (saves cost; CC handles these)
+        should_esc, esc_reason = self._should_escalate(ticket, None)
+        if should_esc:
+            self._escalate_ticket(ticket_id, esc_reason)
+            return
+
         result = self._run_inference(ticket)
-        if result:
-            self._post_result(ticket_id, result)
-        else:
+        if result is None:
             self._decline_ticket(ticket_id, "inference proxy unavailable or returned empty")
+            return
+
+        # Post-inference: check confidence level
+        should_esc, esc_reason = self._should_escalate(ticket, result)
+        if should_esc:
+            self._escalate_ticket(ticket_id, esc_reason, analysis=result)
+        else:
+            self._post_result(ticket_id, result)
 
         self._active_ticket = None
 
