@@ -1092,6 +1092,7 @@ _NAV = (
     '<a href="/questions">Questions</a> · '
     '<a href="/hypotheses">Hypotheses</a> · '
     '<a href="/outcomes">Outcomes</a> · '
+    '<a href="/queue">Queue</a> · '
     '<a href="/dashboard">Dashboard</a>'
     "</nav>"
 )
@@ -1713,6 +1714,143 @@ async def _page_outcomes(request: Request):
     return HTMLResponse(_simple_palace_list("Outcomes", "palace.outcomes."))
 
 
+# ── Queue route ──────────────────────────────────────────────────────────────
+
+_STATUS_ORDER = ["in_progress", "sprint", "design", "triage", "hold", "pending", "dependency", "approval", "akien"]
+_STATUS_CLASS = {
+    "in_progress": "ok",
+    "sprint": "ok",
+    "hold": "warn",
+    "pending": "warn",
+    "dependency": "warn",
+    "triage": "",
+    "design": "",
+    "approval": "warn",
+    "akien": "warn",
+}
+
+
+def _load_queue_tickets() -> list[dict]:
+    """Load open tickets from clan.memories. Returns [] when DB unavailable."""
+    conn = _db_conn()
+    if not conn:
+        return []
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    name,
+                    narrative,
+                    metadata->>'status'   AS status,
+                    metadata->>'size'     AS size,
+                    metadata->>'worker'   AS worker,
+                    metadata->>'gate'     AS gate,
+                    (metadata->>'priority')::float AS priority
+                FROM clan.memories
+                WHERE parent_id = 'TICKETS_ROOT'
+                  AND metadata->>'kind' = 'ticket'
+                  AND metadata->>'status' NOT IN ('closed', 'cancelled')
+                ORDER BY
+                    CASE metadata->>'status'
+                        WHEN 'in_progress' THEN 0
+                        WHEN 'sprint'      THEN 1
+                        ELSE 2
+                    END,
+                    (metadata->>'priority')::float DESC NULLS LAST,
+                    name
+                """
+            )
+            rows = cur.fetchall()
+        return [
+            {
+                "id": r[0] or "",
+                "title": r[1] or "",
+                "status": r[2] or "unknown",
+                "size": r[3] or "?",
+                "worker": r[4] or "",
+                "gate": r[5] or "",
+                "priority": float(r[6]) if r[6] is not None else 0.5,
+            }
+            for r in rows
+        ]
+    except Exception as exc:
+        log.debug("queue: DB query failed — %s", exc)
+        return []
+    finally:
+        conn.close()
+
+
+async def _api_queue(request: Request):
+    """GET /api/queue — open tickets as JSON, grouped by status."""
+    log.info("queue: API request from %s", request.client)
+    tickets = _load_queue_tickets()
+    grouped: dict[str, list] = {}
+    for t in tickets:
+        grouped.setdefault(t["status"], []).append(t)
+    return JSONResponse({"tickets": tickets, "grouped": grouped, "count": len(tickets)})
+
+
+async def _page_queue(request: Request):
+    """GET /queue — open ticket queue as HTML, grouped by status."""
+    log.info("queue: page request from %s", request.client)
+    conn = _db_conn()
+    if not conn:
+        return HTMLResponse(_html_wrap("Queue", _no_db_msg()))
+
+    tickets = _load_queue_tickets()
+
+    if not tickets:
+        body = "<p>No open tickets.</p>"
+        return HTMLResponse(_html_wrap("Queue", body))
+
+    grouped: dict[str, list] = {}
+    for t in tickets:
+        grouped.setdefault(t["status"], []).append(t)
+
+    sections = []
+    seen_statuses = set(grouped.keys())
+    order = [s for s in _STATUS_ORDER if s in seen_statuses] + sorted(seen_statuses - set(_STATUS_ORDER))
+    for status in order:
+        group = grouped[status]
+        cls = _STATUS_CLASS.get(status, "")
+        rows = []
+        for t in group:
+            gate_cell = f'<span style="color:#888;font-size:0.8rem">{t["gate"]}</span>' if t["gate"] else ""
+            rows.append(
+                f'<tr><td style="font-family:monospace">{t["id"]}</td>'
+                f"<td>{t['title']}</td>"
+                f'<td class="badge">{t["size"]}</td>'
+                f'<td style="color:#888">{t["worker"]}</td>'
+                f"<td>{gate_cell}</td></tr>"
+            )
+        sections.append(
+            f'<h2><span class="{cls}">{status}</span> <span style="color:#888;font-size:0.85rem">({len(group)})</span></h2>'
+            "<table><tr><th>ID</th><th>Title</th><th>Size</th><th>Worker</th><th>Gate</th></tr>"
+            + "".join(rows)
+            + "</table>"
+        )
+
+    refresh_js = (
+        "<script>"
+        "setTimeout(()=>location.reload(),30000);"
+        "document.addEventListener('DOMContentLoaded',()=>{"
+        "const el=document.createElement('span');"
+        "el.id='refresh-countdown';"
+        "el.style='color:#888;font-size:0.8rem;margin-left:1rem';"
+        "document.querySelector('h1').appendChild(el);"
+        "let s=30;const t=setInterval(()=>{el.textContent='(refresh in '+s+'s)';if(--s<0)clearInterval(t);},1000);"
+        "});"
+        "</script>"
+    )
+    body = (
+        f"<p style='color:#888'>{len(tickets)} open tickets</p>"
+        + "".join(sections)
+        + refresh_js
+    )
+    return HTMLResponse(_html_wrap("Queue", body))
+
+
 # ── Feeds route ──────────────────────────────────────────────────────────────
 
 _feeds_imap = None
@@ -1817,6 +1955,9 @@ def _make_app() -> Starlette:
         Route("/questions", _page_questions),
         Route("/hypotheses", _page_hypotheses),
         Route("/outcomes", _page_outcomes),
+        # Queue
+        Route("/api/queue", _api_queue),
+        Route("/queue", _page_queue),
         # Feeds
         Route("/feeds/{device}", _api_feeds),
     ]
