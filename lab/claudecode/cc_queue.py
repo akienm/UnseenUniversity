@@ -1685,8 +1685,8 @@ def cmd_set_worker(args):
         print("Usage: set-worker <worker> <ticket-id> [<ticket-id> ...]")
         sys.exit(1)
     worker, ids = args[0], args[1:]
-    if worker not in ("igor", "claude"):
-        print(f"Unknown worker '{worker}' — use igor or claude")
+    if worker not in ("igor", "claude", "dicksimnel"):
+        print(f"Unknown worker '{worker}' — use igor, claude, or dicksimnel")
         sys.exit(1)
     tasks = _load()
     idx = {t["id"]: t for t in tasks}
