@@ -17,13 +17,16 @@ rules:
       tags_any: [Security, Provenance, Auth, Brainstem, Database]
     route_to: CC.0
 
-  # Role routing
+  # Role ladder: guru=Akien, master=CC.0, builder=DickSimnel
   - when:
-      role_in: [master, guru]
+      role_in: [guru]
+    route_to: akien       # post NEEDS_AKIEN channel nudge, set worker=akien, do not dispatch
+  - when:
+      role_in: [master]
     route_to: CC.0
   - when:
       role_in: [builder, creator]
     route_to: DickSimnel.0
 
-  # Default fallback — anything not matched above goes to CC
+  # Default fallback — no role = conservative, goes to CC
   - route_to: CC.0

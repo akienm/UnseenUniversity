@@ -27,8 +27,13 @@ class TestMatchRule:
         ticket = {"id": "T-1", "tags": ["Platform"], "role": "master"}
         assert match_rule(ticket, _rules()) == "CC.0"
 
-    def test_guru_role_routes_to_cc(self):
+    def test_guru_role_routes_to_akien(self):
+        # guru = Akien; Granny posts NEEDS_AKIEN channel nudge, does not dispatch to CC/DS
         ticket = {"id": "T-1", "tags": [], "role": "guru"}
+        assert match_rule(ticket, _rules()) == "akien"
+
+    def test_master_role_does_not_route_to_akien(self):
+        ticket = {"id": "T-1", "tags": [], "role": "master"}
         assert match_rule(ticket, _rules()) == "CC.0"
 
     def test_builder_role_routes_to_dicksimnel(self):
@@ -126,6 +131,32 @@ class TestRunOnce:
                     with patch("devices.granny.daemon._dispatch_cc0", return_value=False):
                         result = run_once(_config(), set())
         assert "T-fail" not in result
+
+    def test_guru_ticket_dispatches_to_akien_not_cc_or_ds(self):
+        ticket = {"id": "T-guru", "tags": [], "role": "guru", "status": "sprint",
+                  "title": "Needs Akien"}
+        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]):
+            with patch("devices.granny.daemon._dispatch_akien", return_value=True) as mock_akien:
+                with patch("devices.granny.daemon._dispatch_cc0") as mock_cc:
+                    with patch("devices.granny.daemon._dispatch_dicksimnel") as mock_ds:
+                        with patch("devices.granny.daemon._post_channel"):
+                            result = run_once(_config(), set())
+        assert "T-guru" in result
+        mock_akien.assert_called_once()
+        mock_cc.assert_not_called()
+        mock_ds.assert_not_called()
+
+    def test_guru_ticket_skips_availability_check(self):
+        # Akien dispatch bypasses is_available — guru tickets don't go through worker availability
+        ticket = {"id": "T-guru2", "tags": [], "role": "guru", "status": "sprint",
+                  "title": "Human needed"}
+        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]):
+            with patch("devices.granny.availability.is_available", return_value=False) as mock_avail:
+                with patch("devices.granny.daemon._dispatch_akien", return_value=True):
+                    with patch("devices.granny.daemon._post_channel"):
+                        result = run_once(_config(), set())
+        assert "T-guru2" in result
+        mock_avail.assert_not_called()
 
     def test_high_inertia_ticket_routes_to_cc_not_dicksimnel(self):
         ticket = {"id": "T-sec", "tags": ["Security"], "role": "builder",

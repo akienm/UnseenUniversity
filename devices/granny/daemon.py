@@ -74,7 +74,8 @@ def _default_config() -> dict:
         },
         "rules": [
             {"when": {"tags_any": ["Security", "Provenance", "Auth", "Brainstem", "Database"]}, "route_to": "CC.0"},
-            {"when": {"role_in": ["master", "guru"]}, "route_to": "CC.0"},
+            {"when": {"role_in": ["guru"]}, "route_to": "akien"},
+            {"when": {"role_in": ["master"]}, "route_to": "CC.0"},
             {"when": {"role_in": ["builder", "creator"]}, "route_to": "DickSimnel.0"},
             {"route_to": "CC.0"},
         ],
@@ -181,6 +182,26 @@ def _dispatch_cc0(ticket: dict, session: str = "claude-main") -> bool:
     return True
 
 
+def _dispatch_akien(ticket: dict) -> bool:
+    """Hold a guru-role ticket for human attention: set worker=akien, post channel nudge."""
+    tid = ticket["id"]
+    r = subprocess.run(
+        [_PYTHON, str(_CC_QUEUE), "set-worker", "akien", tid],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
+    )
+    if r.returncode != 0:
+        log.warning("Granny: set-worker akien failed for %s: %s", tid, r.stderr[:100])
+        return False
+    _post_channel(
+        f"NEEDS_AKIEN|ticket={tid}|title={ticket.get('title', '?')[:60]}"
+    )
+    log.info("Granny: %s → needs Akien (guru role — not dispatched to CC or DickSimnel)", tid)
+    return True
+
+
 def _dispatch_dicksimnel(ticket: dict, worker_name: str = "dicksimnel") -> bool:
     tid = ticket["id"]
     r = subprocess.run(
@@ -241,21 +262,26 @@ def run_once(config: dict, dispatched: set[str]) -> set[str]:
             continue
 
         target = match_rule(ticket, rules)
-        wcfg = workers_cfg.get(target, {})
 
-        if not is_available(target):
-            log.debug("Granny: %s unavailable — deferring %s", target, tid)
-            continue
-
-        if wcfg.get("one_at_a_time") and _cc0_busy():
-            log.debug("Granny: CC.0 busy — deferring %s", tid)
-            continue
-
-        dispatch_kind = wcfg.get("dispatch", "set_worker")
-        if dispatch_kind == "tmux_send_keys":
-            ok = _dispatch_cc0(ticket, wcfg.get("session", "claude-main"))
+        # guru tickets go to Akien — no availability check, no CC/DickSimnel dispatch
+        if target == "akien":
+            ok = _dispatch_akien(ticket)
         else:
-            ok = _dispatch_dicksimnel(ticket, wcfg.get("worker_name", "dicksimnel"))
+            wcfg = workers_cfg.get(target, {})
+
+            if not is_available(target):
+                log.debug("Granny: %s unavailable — deferring %s", target, tid)
+                continue
+
+            if wcfg.get("one_at_a_time") and _cc0_busy():
+                log.debug("Granny: CC.0 busy — deferring %s", tid)
+                continue
+
+            dispatch_kind = wcfg.get("dispatch", "set_worker")
+            if dispatch_kind == "tmux_send_keys":
+                ok = _dispatch_cc0(ticket, wcfg.get("session", "claude-main"))
+            else:
+                ok = _dispatch_dicksimnel(ticket, wcfg.get("worker_name", "dicksimnel"))
 
         if ok:
             new_dispatched.add(tid)

@@ -1715,13 +1715,14 @@ COMMANDS["set-epic"] = cmd_set_epic
 
 
 def cmd_set_worker(args):
-    """Assign worker (igor|claude) to one or more tickets: set-worker <worker> <id> [<id> ...]"""
+    """Assign worker to one or more tickets: set-worker <worker> <id> [<id> ...]"""
     if len(args) < 2:
         print("Usage: set-worker <worker> <ticket-id> [<ticket-id> ...]")
         sys.exit(1)
     worker, ids = args[0], args[1:]
-    if worker not in ("igor", "claude", "dicksimnel"):
-        print(f"Unknown worker '{worker}' — use igor, claude, or dicksimnel")
+    known = ("igor", "claude", "dicksimnel", "akien")
+    if worker not in known:
+        print(f"Unknown worker '{worker}' — use one of: {', '.join(known)}")
         sys.exit(1)
     tasks = _load()
     idx = {t["id"]: t for t in tasks}
@@ -1735,6 +1736,31 @@ def cmd_set_worker(args):
 
 
 COMMANDS["set-worker"] = cmd_set_worker
+
+
+def cmd_set_role(args):
+    """Set the role field on one or more tickets: set-role <role> <id> [<id> ...]
+    Role ladder: guru (Akien), master (CC.0), builder (DickSimnel), creator (alias builder)."""
+    if len(args) < 2:
+        print("Usage: set-role <role> <ticket-id> [<ticket-id> ...]")
+        sys.exit(1)
+    role, ids = args[0], args[1:]
+    known = ("guru", "master", "builder", "creator")
+    if role not in known:
+        print(f"Unknown role '{role}' — use one of: {', '.join(known)}")
+        sys.exit(1)
+    tasks = _load()
+    idx = {t["id"]: t for t in tasks}
+    for tid in ids:
+        if tid not in idx:
+            print(f"  not found: {tid}")
+            continue
+        idx[tid]["role"] = role
+        print(f"  {tid} → role={role}")
+    _save(tasks)
+
+
+COMMANDS["set-role"] = cmd_set_role
 
 
 def cmd_needs_review(args):
