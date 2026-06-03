@@ -393,6 +393,50 @@ class DickSimnelDevice(BaseDevice):
 
         self._active_ticket = None
 
+    # ── Chat interface ─────────────────────────────────────────────────────────
+
+    def chat(self, message: str) -> str:
+        """Handle a direct message from Akien.
+
+        Skill verbs (/help, /health, etc.) route to BaseShim.handle_command().
+        Freeform text goes to a short conversational inference call.
+        """
+        message = message.strip()
+        if message.startswith("/"):
+            return self._shim.handle_command(message)
+        return self._chat_inference(message)
+
+    def _chat_inference(self, message: str) -> str:
+        """Run a short conversational inference call. Returns response text."""
+        try:
+            from devices.inference.device import InferenceDevice
+            from devices.inference.shim import InferenceRequest
+
+            system = (
+                "You are DickSimnel, an autonomous software engineering agent in the "
+                "UnseenUniversity rack. You are in a direct conversation with Akien, "
+                "your operator. Answer questions about your work, reasoning, and ticket "
+                "status concisely. Current active ticket: "
+                + (self._active_ticket or "none")
+                + f". Tickets processed: {self._tickets_processed}."
+                + f" Tickets escalated: {self._tickets_declined}."
+            )
+            req = InferenceRequest(
+                model="",
+                messages=[{"role": "user", "content": message}],
+                system=system,
+                task_class="worker",
+                agent_id="dicksimnel",
+                max_tokens=512,
+                timeout=30,
+            )
+            response = InferenceDevice().dispatch(req)
+            log.info("DickSimnel: chat response for %r — %d tokens", message[:40], response.output_tokens)
+            return response.text
+        except Exception as exc:
+            log.warning("DickSimnel: chat inference failed: %s", exc)
+            return f"DickSimnel: inference unavailable — {exc}"
+
     # ── Start/stop (delegate to shim) ─────────────────────────────────────────
 
     def start(self) -> bool:

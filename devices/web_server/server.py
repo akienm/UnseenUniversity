@@ -184,6 +184,8 @@ _session_clients: dict = {}  # session_id → [asyncio.Queue, ...]
 _client_session: dict = {}  # id(ws) → session_id
 _session_history: dict = {}  # session_id → [{...}, ...] (capped at 50)
 _client_lock = threading.Lock()
+_ds_chat_history: list = []  # DickSimnel chat log (capped at 100)
+_ds_chat_lock = threading.Lock()
 _loop: Optional[asyncio.AbstractEventLoop] = None
 
 # ── Thread-safe queue: web messages → attached agent ─────────────────────────
@@ -995,6 +997,45 @@ async def _ws_endpoint(ws: WebSocket):
 # ── Starlette app factory ───────────────────────────────────────────────────
 
 
+async def _api_dicksimnel_chat_post(request: Request):
+    """POST /api/dicksimnel/chat — send a message to DickSimnel, get a response."""
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "invalid JSON"}, status_code=400)
+    message = (body.get("message") or "").strip()
+    if not message:
+        return JSONResponse({"error": "empty message"}, status_code=400)
+    try:
+        from devices.dicksimnel.device import DickSimnelDevice
+        device = DickSimnelDevice()
+        response = device.chat(message)
+    except Exception as exc:
+        log.warning("_api_dicksimnel_chat: device error: %s", exc)
+        response = f"DickSimnel unavailable: {exc}"
+    ts = _ts()
+    entry = {"role": "user", "content": message, "ts": ts}
+    reply = {"role": "dicksimnel", "content": response, "ts": ts}
+    with _ds_chat_lock:
+        _ds_chat_history.extend([entry, reply])
+        if len(_ds_chat_history) > 100:
+            del _ds_chat_history[:-100]
+    log.info("_api_dicksimnel_chat: message=%r response_len=%d", message[:40], len(response))
+    return JSONResponse({"response": response, "ts": ts})
+
+
+async def _api_dicksimnel_chat_get(request: Request):
+    """GET /api/dicksimnel/chat — return recent DickSimnel conversation history."""
+    try:
+        limit = int(request.query_params.get("limit", "20"))
+    except ValueError:
+        limit = 20
+    limit = max(1, min(limit, 100))
+    with _ds_chat_lock:
+        messages = list(_ds_chat_history[-limit:])
+    return JSONResponse({"messages": messages, "count": len(messages)})
+
+
 async def _api_comms_channels(request: Request):
     """GET /api/comms/channels — list all registered comms channels."""
     if not _comms:
@@ -1757,6 +1798,8 @@ def _make_app() -> Starlette:
         Route("/api/agents/{agent_id}/send", _api_agent_send, methods=["POST"]),
         Route("/api/agents/{agent_id}/poll", _api_agent_poll),
         # Comms
+        Route("/api/dicksimnel/chat", _api_dicksimnel_chat_post, methods=["POST"]),
+        Route("/api/dicksimnel/chat", _api_dicksimnel_chat_get, methods=["GET"]),
         Route("/api/comms/channels", _api_comms_channels),
         Route("/api/comms/health", _api_comms_health),
         Route("/api/granny/health", _api_granny_health),
