@@ -536,7 +536,7 @@ class GrannyDaemon:
                     "route_fail", tid, f"route failed, worker={worker_id}"
                 )
 
-        self._dispatched_ids = new_ids  # reset to only current-cycle dispatches
+        self._dispatched_ids |= new_ids  # accumulate — holds from prior cycles must not re-escalate
         _save_dispatched_ids(self._dispatched_ids)
         self._last_poll = time.time()
         return dispatched

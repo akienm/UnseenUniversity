@@ -80,6 +80,59 @@ def _launch_cc_instance(ticket_id: str) -> None:
         log.warning("_launch_cc_instance: failed to launch CC for %s: %s", ticket_id, e)
 
 
+def cc0_dispatch_fn(ticket: dict, session: str = "claude-main") -> bool:
+    """Dispatch a ticket to an existing interactive CC session via tmux send-keys.
+
+    Uses send-keys rather than spawning a new session — Granny must NEVER spawn
+    a new CC process (memory note 2026-05-31: send-keys only, never spawn).
+
+    Returns True if the send-keys call succeeded (ticket accepted into CC queue),
+    False if the tmux session doesn't exist or the call fails.
+    """
+    ticket_id = ticket.get("id", "")
+    if not ticket_id:
+        log.warning("cc0_dispatch_fn: ticket has no id — skipping")
+        return False
+
+    try:
+        # Verify the session exists before sending
+        check = subprocess.run(
+            ["tmux", "has-session", "-t", session],
+            capture_output=True,
+            timeout=5,
+        )
+        if check.returncode != 0:
+            log.warning("cc0_dispatch_fn: session %r not found — cannot dispatch %s", session, ticket_id)
+            return False
+
+        subprocess.run(
+            ["tmux", "send-keys", "-t", session, f"/sprint-ticket {ticket_id}", "Enter"],
+            capture_output=True,
+            timeout=5,
+        )
+        log.info("cc0_dispatch_fn: sent /sprint-ticket %s → session=%s", ticket_id, session)
+    except Exception as e:
+        log.warning("cc0_dispatch_fn: send-keys failed for %s: %s", ticket_id, e)
+        return False
+
+    try:
+        from unseen_university.channel import post_to_channel
+
+        title = ticket.get("title", "")[:60]
+        size = ticket.get("size", "?")
+        tags = ",".join(ticket.get("tags", []))
+        post_to_channel(
+            f"GRANNY_DISPATCH|ticket={ticket_id}|worker=cc0|session={session}"
+            f"|size={size}|tags={tags}|title={title}",
+            author="granny-weatherwax",
+            channel="shared",
+        )
+    except Exception as e:
+        log.warning("cc0_dispatch_fn: channel post failed for %s: %s", ticket_id, e)
+
+    return True
+
+
 def cc_dispatch_fn(ticket: dict) -> bool:
     """Dispatch a ticket to a CC instance.
 

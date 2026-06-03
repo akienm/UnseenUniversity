@@ -322,3 +322,69 @@ class TestTaskListenerDispatchChain:
         finally:
             self._cleanup(conn, msg_id)
             conn.close()
+
+
+# ── Dispatched-IDs accumulation (re-escalation regression) ───────────────────
+
+
+class TestDispatchedIdsAccumulation:
+    """Tickets held in a prior cycle must not be re-escalated next cycle.
+
+    Root cause of the 2026-06-02 overnight loop: _dispatched_ids was reset
+    (=) instead of accumulated (|=) each cycle, so held tickets re-appeared
+    on the next poll and triggered fresh escalation messages.
+    """
+
+    def test_dispatched_ids_accumulate_across_calls(self, tmp_path):
+        """run_once twice: second call must skip tickets dispatched in first."""
+        from unittest.mock import MagicMock, patch
+
+        from devices.granny.daemon import GrannyDaemon
+
+        with patch("devices.granny.daemon._load_dispatched_ids", return_value=set()):
+            with patch("devices.granny.daemon.GrannyDaemon.__init__", lambda self: None):
+                daemon = GrannyDaemon.__new__(GrannyDaemon)
+                daemon._dispatched_ids = set()
+                daemon._stop_event = __import__("threading").Event()
+                daemon._thread = None
+                daemon._start_time = None
+                daemon._total_dispatched = 0
+                daemon._total_errors = 0
+                daemon._last_poll = None
+                daemon._task_listener = None
+                daemon._imap = None
+                daemon._alerted_ids = set()
+                daemon._pattern_tracker = MagicMock()
+                daemon._pattern_tracker.p90_minutes.return_value = 120
+
+        ticket_a = {"id": "T-acc-a", "title": "A", "tags": ["Platform"]}
+        ticket_b = {"id": "T-acc-b", "title": "B", "tags": ["Platform"]}
+
+        call_count = {"n": 0}
+
+        def _dispatch(ticket, session=None):
+            call_count["n"] += 1
+            return True
+
+        with patch("devices.granny.daemon._load_sprint_tickets", return_value=[ticket_a]):
+            with patch("devices.granny.daemon._cc0_available", return_value=True):
+                with patch("devices.granny.daemon._dicksimnel_available", return_value=False):
+                    with patch("devices.granny.daemon._check_rate_limit", return_value=(True, None, 0.0)):
+                        with patch("devices.granny.dispatch.cc0_dispatch_fn", side_effect=_dispatch):
+                            daemon.run_once()
+
+        # First call dispatched ticket_a → should be in _dispatched_ids
+        assert "T-acc-a" in daemon._dispatched_ids
+
+        with patch("devices.granny.daemon._load_sprint_tickets", return_value=[ticket_a, ticket_b]):
+            with patch("devices.granny.daemon._cc0_available", return_value=True):
+                with patch("devices.granny.daemon._dicksimnel_available", return_value=False):
+                    with patch("devices.granny.daemon._check_rate_limit", return_value=(True, None, 0.0)):
+                        with patch("devices.granny.dispatch.cc0_dispatch_fn", side_effect=_dispatch):
+                            daemon.run_once()
+
+        # Second call: T-acc-a was already in _dispatched_ids → skipped; T-acc-b dispatched once
+        # Total dispatches: 1 (first call) + 1 (second call, T-acc-b only) = 2
+        assert call_count["n"] == 2
+        assert "T-acc-a" in daemon._dispatched_ids
+        assert "T-acc-b" in daemon._dispatched_ids
