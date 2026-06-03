@@ -196,8 +196,8 @@ class DickSimnelDevice(BaseDevice):
         """Atomically claim the next sprint ticket assigned worker=dicksimnel.
 
         Uses cc_queue.py next --worker dicksimnel which marks in_progress and
-        returns the ticket JSON. This is the canonical claim pattern — no
-        separate find+claim race condition.
+        returns the ticket ID (bare string). Then fetches the full ticket dict
+        via cc_queue.py show <id>.
 
         Returns the ticket dict or None if no ticket is available.
         """
@@ -212,10 +212,23 @@ class DickSimnelDevice(BaseDevice):
             if result.returncode != 0:
                 log.debug("DickSimnel: next --worker returned no ticket: %s", result.stderr[:100])
                 return None
-            ticket = json.loads(result.stdout)
-            if not ticket:
+            ticket_id = result.stdout.strip()
+            if not ticket_id:
                 return None
-            self._active_ticket = ticket.get("id")
+            # next prints the bare ticket ID; fetch the full dict via show
+            show = subprocess.run(
+                ["python3", str(_CC_QUEUE), "show", ticket_id],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
+            )
+            if show.returncode == 0:
+                ticket = json.loads(show.stdout)
+            else:
+                log.warning("DickSimnel: show failed for %s — working with minimal dict", ticket_id)
+                ticket = {"id": ticket_id, "title": ticket_id, "description": ""}
+            self._active_ticket = ticket.get("id") or ticket_id
             self._channel_event(
                 f"DICKSIMNEL_WORKING ticket={self._active_ticket}"
                 f" title={ticket.get('title', '?')!r}"
@@ -223,7 +236,7 @@ class DickSimnelDevice(BaseDevice):
             log.info("DickSimnel: claimed ticket %s", self._active_ticket)
             return ticket
         except (json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
-            log.debug("DickSimnel: claim failed: %s", exc)
+            log.warning("DickSimnel: claim failed: %s", exc)
             return None
 
     def _channel_event(self, message: str) -> None:

@@ -124,8 +124,10 @@ class TestDickSimnelDevice:
         d = self._device()
         ticket = {"id": "T-abc", "title": "Fix it", "status": "in_progress", "worker": "dicksimnel"}
         import json
-        with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=0, stdout=json.dumps(ticket))
+        # next returns bare ID; show returns full JSON
+        next_resp = MagicMock(returncode=0, stdout="T-abc\n")
+        show_resp = MagicMock(returncode=0, stdout=json.dumps(ticket))
+        with patch("subprocess.run", side_effect=[next_resp, show_resp]):
             result = d._claim_next_ticket()
         assert result is not None
         assert result["id"] == "T-abc"
