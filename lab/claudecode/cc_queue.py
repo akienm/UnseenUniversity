@@ -79,6 +79,18 @@ DIFFICULTY_TIERS = {
     5: "Teacher",
 }
 
+# Role ladder: minimum capability level required to execute a ticket.
+# apprentice → OR cascade ok; builder+ → needs CC.0 or DickSimnel.0.
+VALID_ROLES = {"apprentice", "builder", "creator", "master", "guru"}
+
+# Backward-compat inference when role field is absent.
+_WORKER_TO_ROLE = {
+    "claude": "master",
+    "cc": "master",
+    "dicksimnel": "builder",
+    "igor": "apprentice",
+}
+
 STATUS_ORDER = {
     # Canonical statuses (what happens next):
     "triage": 0,
@@ -340,7 +352,9 @@ def _format_task_line(t: dict) -> str:
     gh_tag = f" GH#{t['github_issue']}" if t.get("github_issue") else ""
     diff = t.get("target_difficulty", 1)
     tier_tag = f" [{DIFFICULTY_TIERS.get(diff, '?')}({diff})]" if diff != 1 else ""
-    return f"  {icon} [{t['id']}] ({size}){epic}{worker_tag}{created_by_tag}{gh_tag}{tier_tag} {t['title']}  [{t['status']}]"
+    role = _infer_role(t)
+    role_tag = f" [{role}]" if role and role != "apprentice" else ""
+    return f"  {icon} [{t['id']}] ({size}){epic}{worker_tag}{created_by_tag}{gh_tag}{tier_tag}{role_tag} {t['title']}  [{t['status']}]"
 
 
 def _print_task(t: dict) -> None:
@@ -1093,6 +1107,19 @@ def _infer_worker(t: dict) -> str:
     return "igor"
 
 
+def _infer_role(t: dict) -> str:
+    """Return the role for a ticket, inferring from `worker` when `role` is absent.
+
+    Role encodes the minimum capability level needed to execute the ticket.
+    Returns a string from VALID_ROLES; defaults to 'apprentice'.
+    """
+    role = (t.get("role") or "").strip().lower()
+    if role in VALID_ROLES:
+        return role
+    worker = (t.get("worker") or "").lower()
+    return _WORKER_TO_ROLE.get(worker, "apprentice")
+
+
 def _scraps_validate(ticket: dict) -> bool:
     """Pre-flight: call ScrapsDevice.validate_ticket(); degrade gracefully if offline.
 
@@ -1174,6 +1201,14 @@ def cmd_add(args):
         nt.setdefault("decision_id", None)
         nt.setdefault("gate", None)
         nt.setdefault("target_difficulty", 1)
+        # Set role: explicit value wins; otherwise infer from worker.
+        if not nt.get("role"):
+            nt["role"] = _infer_role(nt)
+        elif nt["role"] not in VALID_ROLES:
+            print(
+                f"  blocked: {nt['id']} — role must be one of {sorted(VALID_ROLES)}, got {nt['role']!r}"
+            )
+            continue
         try:
             diff = int(nt["target_difficulty"])
         except (ValueError, TypeError):

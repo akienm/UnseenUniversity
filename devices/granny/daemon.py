@@ -39,6 +39,16 @@ log = logging.getLogger(__name__)
 
 POLL_INTERVAL_SEC = int(os.environ.get("GRANNY_POLL_INTERVAL", "60"))
 MAX_CONCURRENT_CC = int(os.environ.get("GRANNY_MAX_CC", "1"))
+
+# Role ladder: roles that require CC.0 or DickSimnel.0 — never OR cascade.
+_CC_ONLY_ROLES = {"builder", "creator", "master", "guru"}
+# Backward-compat: infer role from worker field when ticket has no role field.
+_WORKER_TO_ROLE = {
+    "claude": "master",
+    "cc": "master",
+    "dicksimnel": "builder",
+    "igor": "apprentice",
+}
 # How often to run the orphan watchdog (in poll cycles; default every 10 cycles = 10 min)
 _ORPHAN_CHECK_EVERY_N_CYCLES = int(os.environ.get("GRANNY_ORPHAN_CHECK_CYCLES", "10"))
 _USAGE_CACHE = Path.home() / ".claude" / "usage-cache.json"
@@ -517,14 +527,13 @@ class GrannyDaemon:
                         continue
                 else:
                     # No CC or DS available.
-                    # worker=claude tickets and role≥builder must wait for CC — never
-                    # fall through to OR cascade, which always ESOALATEs on them and
-                    # parks them in hold with no useful result.
+                    # Role≥builder must wait for a real worker — never fall through
+                    # to OR cascade, which always ESCALATEs on them and parks them
+                    # in hold with no useful result.
                     # OR cascade only fires for apprentice/unassigned tickets.
                     worker = ticket.get("worker", "")
-                    role = ticket.get("role", "")
-                    _cc_only_roles = {"builder", "creator", "master", "guru"}
-                    if worker == "claude" or role in _cc_only_roles:
+                    role = ticket.get("role", "") or _WORKER_TO_ROLE.get(worker, "apprentice")
+                    if role in _CC_ONLY_ROLES:
                         log.debug(
                             "GrannyDaemon: %s needs CC (worker=%s role=%s), no worker available — deferring",
                             tid, worker, role,
