@@ -2154,7 +2154,7 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
   <div class="main-panel active" id="panel-comms">
   <div id="channel-bar">
     <span class="channel-tab active" data-channel="comms://shared" onclick="switchChannel('comms://shared')">
-      Shared <input type="checkbox" title="Notify on new messages" onclick="event.stopPropagation(); toggleNotify('comms://shared', this)">
+      Public <input type="checkbox" title="Notify on new messages" onclick="event.stopPropagation(); toggleNotify('comms://shared', this)">
     </span>
     <button id="new-channel-btn" onclick="newChannel()" title="New channel">+</button>
   </div>
