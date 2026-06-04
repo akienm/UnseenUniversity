@@ -1312,7 +1312,111 @@ def _load_device_registry() -> list[dict]:
         return []
 
 
+async def _api_device_list(request: Request):
+    """GET /api/device/list — known device IDs from registry + recent channel authors."""
+    devices: set[str] = set()
+    for rec in _load_device_registry():
+        if rec.get("id"):
+            devices.add(rec["id"])
+    conn = _db_conn()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT DISTINCT author FROM channel_messages"
+                    " WHERE ts > now() - interval '7 days' AND author IS NOT NULL"
+                )
+                for row in cur.fetchall():
+                    if row[0]:
+                        devices.add(row[0])
+        except Exception as exc:
+            log.debug("device_list: DB query failed: %s", exc)
+        finally:
+            conn.close()
+    return JSONResponse({"devices": sorted(devices)})
+
+
+async def _api_device_events(request: Request):
+    """GET /api/device/{id}/events — recent channel events for a device.
+
+    kind=announce: events this device posted to the shared channel (e.g. GRANNY_DISPATCH).
+    kind=health:   events posted to this device's own channel (key=value status messages).
+    Falls back to in-memory session history when DB is unavailable.
+    """
+    device_id = request.path_params.get("id", "")
+    if not device_id:
+        return JSONResponse({"error": "missing device id"}, status_code=400)
+    kind = request.query_params.get("kind", "announce")
+    if kind not in ("announce", "health"):
+        return JSONResponse({"error": "kind must be announce or health"}, status_code=400)
+    try:
+        limit = min(int(request.query_params.get("limit", "30")), 100)
+    except (ValueError, TypeError):
+        limit = 30
+
+    events: list[dict] = []
+    conn = _db_conn()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                if kind == "announce":
+                    cur.execute(
+                        "SELECT ts, author, content FROM channel_messages"
+                        " WHERE channel = 'shared' AND author = %s"
+                        " ORDER BY ts DESC LIMIT %s",
+                        (device_id, limit),
+                    )
+                else:
+                    cur.execute(
+                        "SELECT ts, author, content FROM channel_messages"
+                        " WHERE channel = %s"
+                        " ORDER BY ts DESC LIMIT %s",
+                        (device_id, limit),
+                    )
+                for row in cur.fetchall():
+                    events.append({"ts": str(row[0])[:19], "author": row[1] or "", "content": row[2] or ""})
+        except Exception as exc:
+            log.debug("device_events: DB query failed device=%s kind=%s: %s", device_id, kind, exc)
+        finally:
+            conn.close()
+
+    if not events:
+        # Fallback to in-memory session history (populated by WS pushes; empty after restart)
+        session_id = "comms://shared" if kind == "announce" else f"comms://{device_id}"
+        with _client_lock:
+            hist = list(_session_history.get(session_id, []))
+        if kind == "announce":
+            hist = [m for m in hist if m.get("author") == device_id]
+        events = [
+            {"ts": m.get("ts", ""), "author": m.get("author", ""), "content": m.get("content", "")}
+            for m in reversed(hist[-limit:])
+        ]
+
+    return JSONResponse({"device": device_id, "kind": kind, "events": events})
+
+
 _RACK_PAGE_BODY = """
+<style>
+.tab-bar{display:flex;flex-wrap:wrap;gap:0.25rem;margin-bottom:1rem;border-bottom:2px solid #333;padding-bottom:0.4rem}
+.tab-btn{background:#1e1e30;border:1px solid #444;color:#aaa;padding:0.25rem 0.7rem;cursor:pointer;border-radius:4px 4px 0 0;font-size:0.82rem;outline:none}
+.tab-btn.active,.tab-btn:hover{background:#141425;border-color:#7ec8e3;color:#7ec8e3}
+.dev-sections{display:flex;flex-direction:column;gap:0.7rem;margin-top:0.4rem}
+.dev-section{background:#141425;border:1px solid #333;border-radius:4px;padding:0.6rem 0.8rem}
+.dev-section h3{margin:0 0 0.35rem;font-size:0.85rem;color:#7ec8e3;border-bottom:1px solid #2a2a40;padding-bottom:0.2rem}
+.ev-feed{max-height:200px;overflow-y:auto;font-size:0.76rem;font-family:monospace;white-space:pre-wrap;color:#ccc}
+.ev-feed p{margin:0.1rem 0}
+.ev-ts{color:#555}
+.kv-table td{padding:0.1rem 0.4rem 0.1rem 0;font-size:0.82rem}
+.kv-key{color:#aaa}.kv-val{color:#7ec8e3}
+.chat-hist{max-height:150px;overflow-y:auto;font-size:0.8rem;border:1px solid #2a2a40;padding:0.4rem;margin-bottom:0.3rem;color:#ccc}
+</style>
+
+<div id="tab-bar" class="tab-bar">
+  <button class="tab-btn active" data-tab="summary" onclick="setTab('summary')">Summary</button>
+</div>
+<div id="tab-content">
+<div id="tab-pane-summary">
+
 <p id="rack-ts" style="color:#555;font-size:0.8rem;margin-bottom:1rem">Loading...</p>
 
 <h2>Web Server</h2>
@@ -1326,7 +1430,7 @@ _RACK_PAGE_BODY = """
 
 <h2>Rack Devices</h2>
 <p style="color:#666;font-size:0.82rem;margin:0 0 0.5rem">
-  From flat-file registry. Expand to see full device record and any pushed stats.</p>
+  From flat-file registry. Click a device tab above for live feeds.</p>
 <div id="devices-wrap" style="color:#888">loading...</div>
 
 <h2>Machines</h2>
@@ -1334,6 +1438,9 @@ _RACK_PAGE_BODY = """
 
 <p style="margin-top:1.5rem;font-size:0.75rem;color:#555">
   Auto-refreshes every 10s &middot; <a href="/rack">Force refresh</a></p>
+
+</div><!-- end tab-pane-summary -->
+</div><!-- end tab-content -->
 
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -1375,6 +1482,7 @@ function deviceCard(dev){
 }
 function renderDevices(devices){
   var el=document.getElementById('devices-wrap');
+  if(!el) return;
   if(!devices||!devices.length){
     el.innerHTML='<p style="color:#888">No devices in registry.</p>';return;
   }
@@ -1423,19 +1531,9 @@ async function toggleCircuit(deviceId, currentState){
 function renderCircuitButton(deviceId, circuitState){
   var st = (circuitState||{})[deviceId]||'CLOSED';
   var label = st==='OPEN' ? '🔴 OPEN' : '🟢 CLOSED';
-  return '<button onclick="toggleCircuit(\''+deviceId+'\',\''+st+'\')" style="font-size:0.75rem;cursor:pointer;margin-left:0.5rem">CB: '+label+'</button>';
+  return '<button onclick="toggleCircuit(\''+deviceId+'\',\''+st+'\')" style="font-size:0.75rem;cursor:pointer">CB: '+label+'</button>';
 }
 var _circuitState={};
-function renderDevicesWithCircuit(devices, circuitState){
-  if(!devices||!devices.length){document.getElementById('devices-list').textContent='No devices registered.';return;}
-  var rows=devices.map(function(d){
-    var hbAge=d.last_heartbeat_ago_s!=null?'HB: '+d.last_heartbeat_ago_s+'s ago':'no HB';
-    var mb=d.mailbox?'<br><small>mailbox: '+d.mailbox+'</small>':'';
-    var cb=renderCircuitButton(d.id, circuitState);
-    return '<tr><td>'+d.id+'</td><td>'+d.status+'</td><td>'+hbAge+'</td><td>'+mb+'</td><td>'+cb+'</td></tr>';
-  });
-  document.getElementById('devices-list').innerHTML='<table><tr><th>ID</th><th>Status</th><th>Heartbeat</th><th>Mailbox</th><th>Breaker</th></tr>'+rows.join('')+'</table>';
-}
 async function refresh(){
   try{
     var data=await(await fetch('/api/rack/health')).json();
@@ -1443,14 +1541,135 @@ async function refresh(){
     document.getElementById('rack-ts').textContent='Last updated: '+data.ts;
     renderWS(data.web_server);
     renderBudget(data.budget);
-    renderDevicesWithCircuit(data.devices, _circuitState);
+    renderDevices(data.devices);
     renderMachines(data.machines,data.devices,data.local_hostname);
   }catch(e){
     document.getElementById('rack-ts').textContent='Error loading rack health: '+e;
   }
 }
+
+// ── Device tabs ──────────────────────────────────────────────────────────────
+var _activeTab='summary';
+var _devHealth={};
+var _healthTTL=5*60*1000;
+
+function setTab(id){
+  _activeTab=id;
+  document.querySelectorAll('.tab-btn').forEach(function(b){
+    b.classList.toggle('active',b.dataset.tab===id);
+  });
+  document.querySelectorAll('[id^="tab-pane-"]').forEach(function(p){
+    p.style.display=(p.id==='tab-pane-'+id)?'':'none';
+  });
+  if(id!=='summary') refreshDevice(id);
+}
+
+function ensureDeviceTab(id){
+  if(document.getElementById('tab-pane-'+id)) return;
+  var btn=document.createElement('button');
+  btn.className='tab-btn'; btn.dataset.tab=id; btn.textContent=id;
+  btn.onclick=function(){setTab(id);};
+  document.getElementById('tab-bar').appendChild(btn);
+  var pane=document.createElement('div');
+  pane.id='tab-pane-'+id; pane.style.display='none';
+  pane.innerHTML=devicePaneHTML(id);
+  document.getElementById('tab-content').appendChild(pane);
+}
+
+function devicePaneHTML(id){
+  var ei=esc(id);
+  return '<h2>'+ei+'</h2><div class="dev-sections">'+
+    '<div class="dev-section"><h3>Announce</h3>'+
+      '<div id="ann-'+ei+'" class="ev-feed"><em style="color:#555">Loading...</em></div></div>'+
+    '<div class="dev-section"><h3>Health / Status</h3>'+
+      '<div id="hlt-'+ei+'"><em style="color:#555">Loading...</em></div></div>'+
+    '<div class="dev-section"><h3>Controls</h3>'+
+      '<div id="ctl-'+ei+'"><em style="color:#555">Loading...</em></div></div>'+
+    '<div class="dev-section"><h3>Chat</h3>'+
+      '<div id="ch-'+ei+'" class="chat-hist"></div>'+
+      '<form onsubmit="sendDevChat(event,\''+ei+'\')" style="display:flex;gap:0.3rem;margin-top:0.2rem">'+
+        '<input id="chi-'+ei+'" style="flex:1;font-size:0.82rem" placeholder="Message '+ei+'...">'+
+        '<button type="submit" style="font-size:0.8rem">Send</button>'+
+      '</form></div>'+
+    '</div>';
+}
+
+async function loadDeviceTabs(){
+  try{
+    var data=await(await fetch('/api/device/list')).json();
+    (data.devices||[]).forEach(ensureDeviceTab);
+  }catch(e){}
+}
+
+async function refreshDevice(id){
+  if(_activeTab!==id) return;
+  try{
+    var annR=await fetch('/api/device/'+encodeURIComponent(id)+'/events?kind=announce&limit=30').then(function(r){return r.json();});
+    var hltR=await fetch('/api/device/'+encodeURIComponent(id)+'/events?kind=health&limit=30').then(function(r){return r.json();});
+    renderAnnounce(id, annR.events||[]);
+    renderHealthEvents(id, hltR.events||[]);
+    renderCtl(id);
+  }catch(e){}
+  setTimeout(function(){if(_activeTab===id)refreshDevice(id);},10000);
+}
+
+function renderAnnounce(id, events){
+  var el=document.getElementById('ann-'+esc(id));
+  if(!el) return;
+  if(!events||!events.length){el.innerHTML='<p style="color:#666">No recent activity.</p>';return;}
+  el.innerHTML=events.map(function(e){
+    return '<p><span class="ev-ts">'+esc(e.ts)+'</span> '+esc(e.content)+'</p>';
+  }).join('');
+  el.scrollTop=0;
+}
+
+function renderHealthEvents(id, events){
+  var el=document.getElementById('hlt-'+esc(id));
+  if(!el) return;
+  var now=Date.now();
+  var kv=_devHealth[id]||{};
+  (events||[]).forEach(function(e){
+    var ts=new Date(e.ts+'Z').getTime();
+    if(isNaN(ts)) ts=now;
+    e.content.split('|').forEach(function(p){
+      var m=p.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+      if(m) kv[m[1]]={v:m[2],ts:ts};
+    });
+  });
+  Object.keys(kv).forEach(function(k){if(now-kv[k].ts>_healthTTL)delete kv[k];});
+  _devHealth[id]=kv;
+  var keys=Object.keys(kv).sort();
+  if(!keys.length){el.innerHTML='<p style="color:#666">No health data.</p>';return;}
+  el.innerHTML='<table class="kv-table">'+keys.map(function(k){
+    return '<tr><td class="kv-key">'+esc(k)+'</td><td class="kv-val">'+esc(kv[k].v)+'</td></tr>';
+  }).join('')+'</table>';
+}
+
+function renderCtl(id){
+  var el=document.getElementById('ctl-'+esc(id));
+  if(!el) return;
+  el.innerHTML=renderCircuitButton(id, _circuitState);
+}
+
+async function sendDevChat(event, id){
+  event.preventDefault();
+  var inp=document.getElementById('chi-'+id);
+  var msg=(inp.value||'').trim();
+  if(!msg) return;
+  inp.value='';
+  var hist=document.getElementById('ch-'+id);
+  if(hist){hist.innerHTML+='<div><strong>you:</strong> '+esc(msg)+'</div>';hist.scrollTop=hist.scrollHeight;}
+  try{
+    await fetch('/api/agents/'+encodeURIComponent(id)+'/send',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({content:msg,session_id:'comms://'+id})
+    });
+  }catch(e){console.warn('chat send failed',e);}
+}
+
 refresh();
 setInterval(refresh,10000);
+loadDeviceTabs();
 </script>
 """
 
@@ -2259,6 +2478,9 @@ def _make_app() -> Starlette:
         Route("/inference/models", _page_inference_models),
         # Feeds
         Route("/feeds/{device}", _api_feeds),
+        # Per-device events + known devices list
+        Route("/api/device/list", _api_device_list),
+        Route("/api/device/{id}/events", _api_device_events),
     ]
 
     # Serve compiled Svelte assets if the UI has been built

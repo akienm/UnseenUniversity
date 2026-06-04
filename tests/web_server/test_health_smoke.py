@@ -84,3 +84,47 @@ def test_rack_page_contains_devices_section(client):
 def test_rack_page_contains_machines_section(client):
     html = client.get("/rack").text
     assert "Machines" in html
+
+
+def test_device_list_returns_200(client):
+    resp = client.get("/api/device/list")
+    assert resp.status_code == 200
+
+
+def test_device_list_has_devices_key(client):
+    data = client.get("/api/device/list").json()
+    assert "devices" in data
+    assert isinstance(data["devices"], list)
+
+
+def test_device_events_announce_returns_200(client):
+    resp = client.get("/api/device/granny-weatherwax/events?kind=announce&limit=5")
+    assert resp.status_code == 200
+
+
+def test_device_events_health_returns_200(client):
+    resp = client.get("/api/device/granny-weatherwax/events?kind=health&limit=5")
+    assert resp.status_code == 200
+
+
+def test_device_events_has_required_keys(client):
+    data = client.get("/api/device/granny-weatherwax/events?kind=announce").json()
+    assert "device" in data
+    assert "kind" in data
+    assert "events" in data
+    assert isinstance(data["events"], list)
+
+
+def test_device_events_invalid_kind_returns_400(client):
+    resp = client.get("/api/device/granny-weatherwax/events?kind=bogus")
+    assert resp.status_code == 400
+
+
+def test_rack_page_has_tab_bar(client):
+    html = client.get("/rack").text
+    assert "tab-bar" in html
+
+
+def test_rack_page_has_four_section_css(client):
+    html = client.get("/rack").text
+    assert "dev-section" in html
