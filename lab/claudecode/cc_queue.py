@@ -1131,7 +1131,9 @@ def _scraps_validate(ticket: dict) -> bool:
     try:
         from devices.scraps.scraps_device import ScrapsDevice
 
-        result = ScrapsDevice().validate_ticket(ticket)
+        # silent=True: cc_queue already reports issues to stdout; channel post is redundant
+        # and would write to the real Postgres channel during test runs.
+        result = ScrapsDevice().validate_ticket(ticket, silent=True)
     except Exception as exc:
         print(f"Scraps offline — validation skipped ({exc})")
         return True

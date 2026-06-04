@@ -30,6 +30,8 @@ from lab.claudecode.cc_queue import (
     cmd_claim,
 )
 
+_NO_CHANNEL = patch("unseen_university.channel.post_to_channel")
+
 
 def _make_ticket(**kwargs) -> dict:
     base = {
@@ -51,7 +53,8 @@ def _make_ticket(**kwargs) -> dict:
 class TestScrapsValidateHelper:
     def test_invalid_ticket_returns_false_and_prints_issues(self, capsys):
         ticket = {"id": "T-x", "title": "Test ticket", "description": ""}
-        result = _scraps_validate(ticket)
+        with _NO_CHANNEL:
+            result = _scraps_validate(ticket)
         assert result is False
         out = capsys.readouterr().out
         assert "Scraps validation failed" in out
@@ -59,7 +62,8 @@ class TestScrapsValidateHelper:
 
     def test_valid_ticket_returns_true_and_stamps_scraps_validated(self):
         ticket = _make_ticket()
-        result = _scraps_validate(ticket)
+        with _NO_CHANNEL:
+            result = _scraps_validate(ticket)
         assert result is True
         assert "scraps_validated" in ticket
         assert ticket["scraps_validated"]  # non-empty ISO timestamp
@@ -70,7 +74,8 @@ class TestScrapsValidateHelper:
             side_effect=Exception("connection refused"),
         ):
             ticket = _make_ticket()
-            result = _scraps_validate(ticket)
+            with _NO_CHANNEL:
+                result = _scraps_validate(ticket)
         assert result is True
         out = capsys.readouterr().out
         assert "Scraps offline" in out
@@ -96,6 +101,7 @@ class TestCmdAddScrapsGate:
             patch("lab.claudecode.cc_queue._save", mock_save),
             patch("lab.claudecode.cc_queue._log"),
             patch("sys.stdout", buf),
+            _NO_CHANNEL,
         ):
             cmd_add([json.dumps(ticket)])
 
