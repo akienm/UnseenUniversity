@@ -44,27 +44,8 @@ _HIGH_INERTIA_TAGS = frozenset({"Security", "Provenance", "Database", "Auth", "B
 
 SYSTEM_PROMPT = """\
 You are DickSimnel, an autonomous software engineering agent in the UnseenUniversity rack.
-Your task is to implement a sprint ticket from the queue.
-
-For each ticket you receive:
-1. Analyze the problem and affected files described in the ticket
-2. Produce a concrete implementation plan with specific code changes
-3. Write the actual code/changes needed
-4. Identify what tests should be added or updated
-
-Be specific and concrete. Your output will be used directly to implement the ticket.
-Format your response as:
-## Analysis
-(what the ticket is asking for)
-
-## Implementation
-(specific code changes with file paths and line numbers)
-
-## Tests
-(what tests to add/update)
-
-## Confidence
-(high/medium/low — with reason if not high)
+Work sprint tickets by reading, editing, and testing code.
+Always use tools to take action — never describe what you plan to do without doing it.
 """
 
 
@@ -247,47 +228,21 @@ class DickSimnelDevice(BaseDevice):
         except Exception as exc:
             log.warning("DickSimnel: channel post failed: %s", exc)
 
-    # Phrases that indicate the result is planning text, not a completion.
-    # If the result starts with any of these, it's an OR planning response, not a done.
-    _PLANNING_PREFIXES = (
-        "I'll implement",
-        "I will implement",
-        "Let me implement",
-        "Let me start",
-        "I'll start",
-        "I will start",
-        "I need to",
-        "I'll analyze",
-        "I'll create",
-        "I'll build",
-        "To implement",
-        "Let me analyze",
-    )
-
-    def _is_planning_text(self, result_text: str) -> bool:
-        """Return True when result looks like planning/analysis, not completion."""
-        stripped = result_text.strip()
-        for prefix in self._PLANNING_PREFIXES:
-            if stripped.startswith(prefix):
-                return True
-        return False
-
     def _post_result(self, ticket_id: str, result_text: str) -> None:
         """Close ticket with inference result as the completion note.
 
         Validates before closing:
-        1. Planning-text guard — if result starts with a planning phrase, the
-           ToolLoop returned the model's opening rather than a completion.
-           Escalate to CC in that case.
+        1. DONE: gate — ToolLoop must return text starting with 'DONE:'; anything
+           else means the model stopped without completing the work. Escalate to CC.
         2. Close-failure guard — if cc_queue close() returns None (DB error or
            ticket not found), escalate rather than silently treating as done.
         """
-        if self._is_planning_text(result_text):
+        if not result_text.strip().startswith("DONE:"):
             log.warning(
-                "DickSimnel: %s result looks like planning text — escalating to CC",
+                "DickSimnel: %s result missing DONE: prefix — escalating to CC",
                 ticket_id,
             )
-            self._escalate_ticket(ticket_id, "result is planning text, not completion", analysis=result_text)
+            self._escalate_ticket(ticket_id, "result missing DONE: prefix — not a completion", analysis=result_text)
             return
 
         note = result_text[:2000]
@@ -328,20 +283,13 @@ class DickSimnelDevice(BaseDevice):
     def _should_escalate(self, ticket: dict, result: str | None) -> tuple[bool, str]:
         """Return (True, reason) if this ticket should be escalated to CC.
 
-        Two triggers:
-        - HIGH-inertia tags present (checked pre-inference, saves cost)
-        - Inference result contains '## Confidence' section with 'low'
+        One trigger: HIGH-inertia tags present (checked pre-inference, saves cost).
+        Post-inference quality gating is handled by the DONE: gate in _post_result.
         """
         tags = set(ticket.get("tags", []))
         inertia_hit = tags & _HIGH_INERTIA_TAGS
         if inertia_hit:
             return True, f"HIGH-inertia tags: {sorted(inertia_hit)}"
-        if result and "## Confidence" in result:
-            for line in result.split("## Confidence", 1)[1].strip().splitlines():
-                if line.strip():
-                    if "low" in line.lower():
-                        return True, f"confidence=low: {line.strip()}"
-                    break
         return False, ""
 
     # ── Inference ─────────────────────────────────────────────────────────────
@@ -365,16 +313,13 @@ class DickSimnelDevice(BaseDevice):
             return None
 
     def _build_system_prompt(self, ticket: dict) -> str:
-        """Build the system prompt, prepending sprint-ticket SKILL.md if available."""
+        """Build the system prompt. sprint-ticket skill is the sole procedural guide."""
         skill_content = self.skill_load("sprint-ticket")
         if skill_content:
             return (
-                "## Sprint Procedure\n"
-                "You are following the sprint-ticket skill procedure. "
-                "Execute each step in order:\n\n"
+                "You are DickSimnel, an autonomous software engineering agent in the "
+                "UnseenUniversity rack. Execute the sprint-ticket procedure below exactly.\n\n"
                 + skill_content
-                + "\n\n---\n\n"
-                + SYSTEM_PROMPT
             )
         return SYSTEM_PROMPT
 

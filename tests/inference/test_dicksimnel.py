@@ -202,19 +202,6 @@ class TestDickSimnelEscalation:
         assert hit
         assert "Security" in reason
 
-    def test_should_escalate_low_confidence_in_result(self):
-        d = self._device()
-        result = "## Analysis\nFoo\n\n## Confidence\nlow — too many moving parts"
-        hit, reason = d._should_escalate({"tags": []}, result)
-        assert hit
-        assert "confidence=low" in reason
-
-    def test_should_not_escalate_high_confidence(self):
-        d = self._device()
-        result = "## Analysis\nFoo\n\n## Confidence\nhigh"
-        hit, reason = d._should_escalate({"tags": []}, result)
-        assert not hit
-
     def test_should_not_escalate_no_tags_no_result(self):
         d = self._device()
         hit, reason = d._should_escalate({"tags": ["DickSimnel"]}, None)
@@ -253,28 +240,12 @@ class TestDickSimnelEscalation:
         d._escalate_ticket.assert_called_once()
         assert "Security" in d._escalate_ticket.call_args[0][1]
 
-    def test_poll_escalates_post_inference_on_low_confidence(self):
-        d = self._device()
-        ticket = {"id": "T-hard", "title": "Hard thing", "tags": [],
-                  "description": "...", "status": "in_progress", "worker": "dicksimnel"}
-        d._claim_next_ticket = MagicMock(return_value=ticket)
-        d._run_inference = MagicMock(
-            return_value="## Analysis\nComplex\n\n## Confidence\nlow — unclear scope"
-        )
-        d._escalate_ticket = MagicMock()
-        d._post_result = MagicMock()
-        d._poll_and_work()
-        d._escalate_ticket.assert_called_once()
-        d._post_result.assert_not_called()
-
-    def test_poll_closes_on_high_confidence(self):
+    def test_poll_closes_on_done_result(self):
         d = self._device()
         ticket = {"id": "T-easy", "title": "Easy fix", "tags": [],
                   "description": "...", "status": "in_progress", "worker": "dicksimnel"}
         d._claim_next_ticket = MagicMock(return_value=ticket)
-        d._run_inference = MagicMock(
-            return_value="## Analysis\nSimple.\n\n## Confidence\nhigh"
-        )
+        d._run_inference = MagicMock(return_value="DONE: fixed the bug, tests pass")
         d._post_result = MagicMock()
         d._escalate_ticket = MagicMock()
         d._poll_and_work()
@@ -293,24 +264,24 @@ class TestPostResultGuards:
         d._shim.is_blocked.return_value = False
         return d
 
-    def test_planning_text_escalates_not_done(self):
+    def test_missing_done_prefix_escalates(self):
         d = self._device()
         with patch.object(d, "_escalate_ticket") as mock_esc:
             with patch.object(d, "_run_queue_cmd") as mock_cmd:
                 with patch.object(d, "_channel_event"):
-                    d._post_result("T-x", "I'll implement the versioned registry. Let me start by analyzing...")
+                    d._post_result("T-x", "I'll implement the versioned registry first.")
         mock_esc.assert_called_once()
         escalate_reason = mock_esc.call_args[0][1]
-        assert "planning" in escalate_reason.lower() or "completion" in escalate_reason.lower()
+        assert "DONE:" in escalate_reason or "prefix" in escalate_reason
         mock_cmd.assert_not_called()  # close must not be called
 
-    def test_genuine_result_closes_ticket(self):
+    def test_done_prefix_closes_ticket(self):
         d = self._device()
         close_resp = {"status": "closed"}
         with patch.object(d, "_run_queue_cmd", return_value=close_resp) as mock_cmd:
             with patch.object(d, "_channel_event"):
                 with patch.object(d, "_escalate_ticket") as mock_esc:
-                    d._post_result("T-x", "## Analysis\nShipped. Commit abc123. Tests pass.")
+                    d._post_result("T-x", "DONE: shipped. Commit abc123. Tests pass.")
         mock_cmd.assert_called_once_with("close", "T-x", mock_cmd.call_args[0][2])
         mock_esc.assert_not_called()
         assert d._tickets_processed == 1
@@ -320,7 +291,7 @@ class TestPostResultGuards:
         with patch.object(d, "_run_queue_cmd", return_value=None):  # close fails
             with patch.object(d, "_escalate_ticket") as mock_esc:
                 with patch.object(d, "_channel_event"):
-                    d._post_result("T-x", "## Result\nDone. Tests pass.")
+                    d._post_result("T-x", "DONE: fixed it.")
         mock_esc.assert_called_once()
         reason = mock_esc.call_args[0][1]
         assert "close" in reason.lower() or "failed" in reason.lower()
@@ -330,16 +301,8 @@ class TestPostResultGuards:
         with patch.object(d, "_run_queue_cmd", return_value=None):
             with patch.object(d, "_escalate_ticket"):
                 with patch.object(d, "_channel_event"):
-                    d._post_result("T-x", "## Result\nDone.")
+                    d._post_result("T-x", "DONE: fixed.")
         assert d._tickets_processed == 0
-
-    def test_is_planning_text_catches_known_phrases(self):
-        d = self._device()
-        assert d._is_planning_text("I'll implement this now.")
-        assert d._is_planning_text("Let me start by analyzing the code.")
-        assert d._is_planning_text("I need to update the registry.")
-        assert not d._is_planning_text("## Analysis\nShipped commit abc.")
-        assert not d._is_planning_text("Done. All tests pass.")
 
 
 # ── skill_load + _build_system_prompt ─────────────────────────────────────────
@@ -380,7 +343,7 @@ class TestDickSimnelSkillLoad:
         with patch("devices.dicksimnel.device._SKILLS_DIR", tmp_path):
             prompt = d._build_system_prompt({})
         assert "SKILL_CONTENT_MARKER" in prompt
-        assert "Sprint Procedure" in prompt
+        assert "DickSimnel" in prompt
 
     def test_build_system_prompt_falls_back_to_base_when_skill_missing(self, tmp_path):
         from devices.dicksimnel.device import SYSTEM_PROMPT

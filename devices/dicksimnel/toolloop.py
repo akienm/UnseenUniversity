@@ -173,6 +173,20 @@ class ToolLoop:
             )
 
             if not tool_calls:
+                if turn == 0 and not (response.text or "").strip().startswith("DONE:"):
+                    # Turn 1 returned no tools and no DONE: — model went into planning mode.
+                    # Inject a correction and continue so it will actually call tools.
+                    log.warning("ToolLoop: turn 1 no tools for %s — injecting correction", ticket_id)
+                    messages.append({"role": "assistant", "content": response.text or ""})
+                    messages.append({
+                        "role": "user",
+                        "content": (
+                            "You described what you plan to do, but you must call a tool "
+                            "to take action. Please begin now — read a file, run a command, "
+                            "or make an edit."
+                        ),
+                    })
+                    continue
                 log.info("ToolLoop: done on turn %d for %s", turn + 1, ticket_id)
                 return response.text
 

@@ -227,15 +227,47 @@ def test_toolloop_sends_tool_definitions_in_request():
     assert captured[0].tools == TOOL_DEFINITIONS
 
 
-def test_toolloop_no_tool_calls_returns_text():
-    """Plain text response with no tool_calls is treated as done."""
+def test_toolloop_correction_injected_on_turn1_planning():
+    """Turn 1 with no tool_calls and no DONE: prefix → correction injected, loop continues."""
     from devices.dicksimnel.toolloop import ToolLoop
-    responses = [_make_mock_response("I analyzed the ticket. No changes needed.")]
-    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=responses):
+    responses = [
+        _make_mock_response("Let me analyze the ticket first."),  # turn 1: planning, no tools
+        _make_mock_response("DONE: fixed it"),                    # turn 2: done after correction
+    ]
+    dispatch_calls = []
+
+    def mock_dispatch(req):
+        dispatch_calls.append(req)
+        return responses.pop(0)
+
+    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
         loop = ToolLoop()
-        result = loop.run({"id": "T-3", "title": "T", "tags": [], "description": "d"}, "s")
-    assert result is not None
-    assert "analyzed" in result
+        result = loop.run({"id": "T-corr", "title": "T", "tags": [], "description": "d"}, "s")
+
+    assert len(dispatch_calls) == 2
+    second_messages = dispatch_calls[1].messages
+    user_messages = [m for m in second_messages if m["role"] == "user"]
+    assert len(user_messages) == 2  # original + correction
+    assert "call a tool" in user_messages[1]["content"]
+    assert result == "DONE: fixed it"
+
+
+def test_toolloop_no_correction_when_done_on_turn1():
+    """Turn 1 with DONE: prefix and no tool_calls → done immediately, no correction."""
+    from devices.dicksimnel.toolloop import ToolLoop
+    responses = [_make_mock_response("DONE: nothing needed")]
+    dispatch_calls = []
+
+    def mock_dispatch(req):
+        dispatch_calls.append(req)
+        return responses.pop(0)
+
+    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
+        loop = ToolLoop()
+        result = loop.run({"id": "T-done1", "title": "T", "tags": [], "description": "d"}, "s")
+
+    assert len(dispatch_calls) == 1
+    assert result == "DONE: nothing needed"
 
 
 def test_toolloop_inference_failure_returns_none():
