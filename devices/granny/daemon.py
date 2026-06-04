@@ -178,6 +178,18 @@ def _dispatch_cc0(ticket: dict, session: str = "claude-main") -> bool:
         ["tmux", "send-keys", "-t", session, f"\r\r\r/sprint-ticket {tid}\r"],
         check=False,
     )
+    # Mark in_progress immediately — dispatch IS assignment (CLAUDE.md).
+    # Without this, _cc0_busy() returns False on the next poll cycle because
+    # CC hasn't had time to run setstatus yet, causing a second ticket to fire.
+    r = subprocess.run(
+        [_PYTHON, str(_CC_QUEUE), "setstatus", tid, "in_progress"],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
+    )
+    if r.returncode != 0:
+        log.warning("Granny: setstatus in_progress failed for %s: %s", tid, r.stderr[:80])
     log.info("Granny: dispatched %s → CC.0 (send-keys → %s)", tid, session)
     return True
 

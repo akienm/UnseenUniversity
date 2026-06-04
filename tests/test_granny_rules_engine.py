@@ -158,6 +158,33 @@ class TestRunOnce:
         assert "T-guru2" in result
         mock_avail.assert_not_called()
 
+    def test_dispatch_cc0_marks_ticket_in_progress(self):
+        # _dispatch_cc0 must mark the ticket in_progress immediately so _cc0_busy()
+        # returns True on the NEXT poll cycle — cross-cycle handshake.
+        import subprocess as _sp
+        ticket = {"id": "T-cc-mark", "tags": [], "role": "master", "status": "sprint",
+                  "title": "Mark it"}
+        run_calls = []
+
+        def fake_run(cmd, **kwargs):
+            run_calls.append(cmd)
+            m = MagicMock()
+            m.returncode = 0
+            return m
+
+        with (
+            patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]),
+            patch("devices.granny.availability.is_available", return_value=True),
+            patch("devices.granny.daemon._cc0_busy", return_value=False),
+            patch("subprocess.run", side_effect=fake_run),
+            patch("devices.granny.daemon._post_channel"),
+        ):
+            run_once(_config(), set())
+
+        setstatus_calls = [c for c in run_calls if "setstatus" in str(c)]
+        assert setstatus_calls, "setstatus in_progress must be called after send-keys dispatch"
+        assert any("in_progress" in str(c) for c in setstatus_calls)
+
     def test_one_at_a_time_prevents_second_dispatch_same_cycle(self):
         # Even when _cc0_busy() says not busy, the second CC ticket must be deferred
         # because the first was dispatched in the same cycle and CC hasn't had time
