@@ -457,12 +457,44 @@ def _post_channel(msg: str) -> None:
 # ── Dispatched-set persistence ────────────────────────────────────────────────
 
 
+def _prune_dispatched(ids: set[str]) -> set[str]:
+    """Return only the IDs still in dispatched/acked/in_progress in the DB.
+
+    Tickets that returned to sprint/done/triage/hold become eligible for
+    re-dispatch. Fails open — on DB error returns the original set unchanged.
+    """
+    if not ids:
+        return ids
+    try:
+        import psycopg2
+
+        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
+        with conn.cursor() as cur:
+            cur.execute(
+                """SELECT metadata->>'id' AS tid FROM clan.memories
+                   WHERE metadata->>'kind' = 'ticket'
+                   AND metadata->>'id' = ANY(%s)
+                   AND metadata->>'status' IN ('dispatched', 'acked', 'in_progress')""",
+                (list(ids),),
+            )
+            active = {row[0] for row in cur.fetchall() if row[0]}
+        conn.close()
+        pruned = ids - active
+        if pruned:
+            log.debug("Granny: pruned %d stale dispatched IDs: %s", len(pruned), sorted(pruned))
+        return active
+    except Exception as exc:
+        log.warning("Granny: dispatched-set prune failed (fail open): %s", exc)
+        return ids
+
+
 def _load_dispatched() -> set[str]:
     try:
         data = json.loads(_DISPATCHED_FILE.read_text())
-        return set(data.get("ids", []))
+        ids = set(data.get("ids", []))
     except Exception:
         return set()
+    return _prune_dispatched(ids)
 
 
 def _save_dispatched(ids: set[str]) -> None:
