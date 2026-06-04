@@ -71,6 +71,7 @@ def _load_base_system_sections() -> dict:
 # Agent IDs whose announces require a non-empty proof field.
 # These agents have known launch paths and can supply a shared secret.
 # Extend via RACK_PROTECTED_AGENTS env var (comma-separated) at deploy time.
+# Instance-based names (e.g. "igor-wild-0001") are protected by their base prefix.
 import os as _os
 _PROTECTED_AGENTS_DEFAULT = frozenset({"igor", "cc", "skeleton"})
 
@@ -80,6 +81,11 @@ def _protected_agents() -> frozenset[str]:
     if env.strip():
         return frozenset(a.strip() for a in env.split(",") if a.strip())
     return _PROTECTED_AGENTS_DEFAULT
+
+
+def _is_protected(agent_id: str) -> bool:
+    """Return True if agent_id requires proof. Handles instance-based names."""
+    return agent_id.split("-")[0] in _protected_agents()
 
 
 class AnnounceError(Exception):
@@ -128,18 +134,27 @@ class AnnounceBroker:
         # T-announce-proof-validation: protected agent IDs must supply a non-empty proof.
         # This blocks identity impersonation (ContainerShim-tier announcing as 'igor').
         # Full challenge-response PKI is a follow-on; v1 just rejects empty proof.
-        if envelope.agent_id in _protected_agents() and not envelope.proof:
+        if _is_protected(envelope.agent_id) and not envelope.proof:
             raise AnnounceError(
                 f"announce rejected: agent_id={envelope.agent_id!r} is protected — "
                 f"a non-empty proof field is required (got empty proof)"
             )
 
+        profile_agent_id = envelope.agent_id
         try:
-            profile = load_profile(envelope.agent_id, profiles_dir=self._profiles_dir)
-        except ProfileNotFoundError as exc:
-            raise AnnounceError(str(exc)) from exc
+            profile = load_profile(profile_agent_id, profiles_dir=self._profiles_dir)
+        except ProfileNotFoundError:
+            # Instance-based names (e.g. "igor-wild-0001") fall back to base profile.
+            base = profile_agent_id.split("-")[0]
+            if base == profile_agent_id:
+                raise
+            try:
+                profile = load_profile(base, profiles_dir=self._profiles_dir)
+                profile_agent_id = base
+            except ProfileNotFoundError as exc:
+                raise AnnounceError(str(exc)) from exc
 
-        p_etag = profile_yaml_etag(envelope.agent_id, profiles_dir=self._profiles_dir)
+        p_etag = profile_yaml_etag(profile_agent_id, profiles_dir=self._profiles_dir)
 
         online_devices = self._online_devices()
         r_etag = registry_etag_from_dict(

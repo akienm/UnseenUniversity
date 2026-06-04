@@ -129,7 +129,7 @@ def test_connect_announces_and_caches_client(server, listener, tmp_path):
         stop.set()
         pumper.join(timeout=1.0)
 
-    assert manifest["issued_to"]["agent_id"] == "igor"
+    assert manifest["issued_to"]["agent_id"] == "igor-wild-test"
     assert shim.client is not None
     assert shim.manifest is manifest
 

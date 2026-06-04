@@ -137,7 +137,7 @@ class IgorShim(BaseShim):
         proof: optional shared-secret dict for protected-agent validation.
         """
         client = DatacenterClient(
-            agent_id="igor",
+            agent_id=f"igor-{self._instance_id}",
             instance=self._instance_id,
             box=self._box,
             box_n=self._box_n,
