@@ -266,12 +266,14 @@ class TestDispatchPolicyGate:
         result = shim.dispatch("echo", msg="hi")
         assert result == "echo:hi"
 
-    def test_no_gate_wired_skips_check(self, trace_dir: Path) -> None:
+    def test_no_gate_wired_fails_closed(self, trace_dir: Path) -> None:
         shim = _StubShim()
-        # _policy_gate is None (default)
+        # _policy_gate is None → cold-start fail-closed: deny any _policy call
         ctx = AgentContext(agent_id="nobody", token=None)
-        result = shim.dispatch("echo", _policy=ctx, msg="hi")
-        assert result == "echo:hi"
+        with pytest.raises(PolicyDeniedError) as exc_info:
+            shim.dispatch("echo", _policy=ctx, msg="hi")
+        assert exc_info.value.agent_id == "nobody"
+        assert "cold start" in exc_info.value.reason.lower()
 
     def test_invalid_token_raises_policy_denied_error(
         self, trace_dir: Path, policy_dir: Path
