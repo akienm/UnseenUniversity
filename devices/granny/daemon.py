@@ -392,6 +392,57 @@ def _escalate_stale_dispatched() -> int:
     return count
 
 
+_STALE_INPROGRESS_TIMEOUT_S = int(os.environ.get("GRANNY_STALE_INPROGRESS_TIMEOUT", str(2 * 3600)))
+
+
+def _reset_stale_inprogress() -> int:
+    """Reset claude/cc tickets stuck in 'in_progress' past _STALE_INPROGRESS_TIMEOUT_S.
+
+    Uses cc_queue.py reset --timeout so each reset increments a counter that
+    automatically holds the ticket after 3 resets, capping retry-loop token spend.
+    Returns the number of tickets reset.
+    """
+    try:
+        import psycopg2
+        import psycopg2.extras
+
+        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """SELECT metadata->>'id' AS tid FROM clan.memories
+                   WHERE metadata->>'kind' = 'ticket'
+                   AND metadata->>'status' = 'in_progress'
+                   AND metadata->>'worker' IN ('claude', 'cc')
+                   AND updated_at < now() - interval '%s seconds'""",
+                (_STALE_INPROGRESS_TIMEOUT_S,),
+            )
+            stale = [row["tid"] for row in cur.fetchall() if row["tid"]]
+        conn.close()
+    except Exception as exc:
+        log.warning("Granny: stale-inprogress query failed: %s", exc)
+        return 0
+
+    count = 0
+    for tid in stale:
+        r = subprocess.run(
+            [_PYTHON, str(_CC_QUEUE), "reset", "--timeout", tid],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
+        )
+        if r.returncode != 0:
+            log.warning("Granny: stale-inprogress reset failed for %s: %s", tid, r.stderr[:80])
+        else:
+            log.warning(
+                "Granny: reset stale-inprogress ticket %s (stuck >%ds) via --timeout",
+                tid, _STALE_INPROGRESS_TIMEOUT_S,
+            )
+        count += 1
+
+    return count
+
+
 def _post_channel(msg: str) -> None:
     try:
         from unseen_university.channel import post_to_channel
@@ -434,13 +485,14 @@ def run_once(config: dict, dispatched: set[str], *, imap=None) -> set[str]:
 
     granny_mailbox = config.get("granny_mailbox", _GRANNY_MAILBOX_DEFAULT)
 
-    # Process pending handshake replies and run the stale-dispatch watchdog
+    # Process pending handshake replies and run stale-ticket watchdogs
     # before looking for new work, so transitions land before the busy-check.
     if imap is not None:
         replied = _process_handshake_replies(imap, granny_mailbox)
         if replied:
             log.debug("Granny: processed %d handshake reply(s)", replied)
     _escalate_stale_dispatched()
+    _reset_stale_inprogress()
 
     rules = config.get("rules", [])
     workers_cfg = config.get("workers", {})

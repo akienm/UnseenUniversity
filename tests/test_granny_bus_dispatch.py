@@ -25,6 +25,7 @@ from devices.granny.daemon import (
     _dispatch_bus,
     _escalate_stale_dispatched,
     _process_handshake_replies,
+    _reset_stale_inprogress,
     run_once,
     _default_config,
 )
@@ -227,6 +228,47 @@ class TestEscalateStaleDispatched:
     def test_db_failure_returns_zero(self):
         with patch("psycopg2.connect", side_effect=OSError("DB down")):
             count = _escalate_stale_dispatched()
+        assert count == 0
+
+
+# ── _reset_stale_inprogress ───────────────────────────────────────────────────
+
+
+class TestResetStaleInprogress:
+    def _capture_cmds(self, pg_rows):
+        """Return (count, all_subprocess_cmds) after running _reset_stale_inprogress."""
+        cmds = []
+
+        def _run(cmd, **kwargs):
+            cmds.append(list(cmd))
+            return _OK
+
+        conn = _make_pg_conn(pg_rows)
+        with patch("psycopg2.connect", return_value=conn), \
+             patch("devices.granny.daemon.subprocess.run", side_effect=_run):
+            count = _reset_stale_inprogress()
+        return count, cmds
+
+    def test_resets_stale_ticket_via_timeout_flag(self):
+        count, cmds = self._capture_cmds([{"tid": "T-stuck"}])
+        assert count == 1
+        # Must use reset --timeout, NOT setstatus sprint — circuit breaker depends on this
+        assert any("reset" in cmd and "--timeout" in cmd and "T-stuck" in cmd for cmd in cmds), \
+            "reset --timeout <tid> must be called (not setstatus sprint) to engage circuit breaker"
+
+    def test_reset_calls_include_ticket_id(self):
+        _, cmds = self._capture_cmds([{"tid": "T-abc"}])
+        assert any("T-abc" in cmd and "--timeout" in cmd for cmd in cmds)
+
+    def test_no_stale_tickets_returns_zero(self):
+        conn = _make_pg_conn([])
+        with patch("psycopg2.connect", return_value=conn):
+            count = _reset_stale_inprogress()
+        assert count == 0
+
+    def test_db_failure_returns_zero(self):
+        with patch("psycopg2.connect", side_effect=OSError("DB down")):
+            count = _reset_stale_inprogress()
         assert count == 0
 
 
