@@ -568,26 +568,18 @@ def wg_neighbors(
 
 
 def dispatch(name: str, args: dict, pg_url: str = _PG_URL) -> str | None:
-    if name == "traces_recent":
-        return traces_recent(args.get("limit", 10), args.get("since_minutes"), pg_url)
-    if name == "traces_get":
-        return traces_get(args["trace_id"], pg_url)
-    if name == "tail_heat":
-        return tail_heat(args["node_id"], pg_url)
-    if name == "hot_nodes":
-        return hot_nodes(args.get("limit", 10), args.get("since_hours", 2.0), pg_url)
-    if name == "hot_attractors":
-        return hot_attractors(args.get("limit", 10), pg_url)
-    if name == "habit_list":
-        return habit_list(args.get("query"), args.get("limit", 30), pg_url)
-    if name == "turn_trace_recent":
-        return turn_trace_recent(args.get("limit", 5), args.get("since_minutes"))
-    if name == "consult_sessions_recent":
-        return consult_sessions_recent(
-            args.get("limit", 10), args.get("since_minutes"), args.get("session_id")
-        )
-    if name == "wg_neighbors":
-        return wg_neighbors(
-            args["word"], args.get("limit", 20), args.get("min_score", 0.1), pg_url
-        )
-    return None
+    _handlers = {
+        "traces_recent":         lambda a: traces_recent(a.get("limit", 10), a.get("since_minutes"), pg_url),
+        "traces_get":            lambda a: traces_get(a["trace_id"], pg_url),
+        "tail_heat":             lambda a: tail_heat(a["node_id"], pg_url),
+        "hot_nodes":             lambda a: hot_nodes(a.get("limit", 10), a.get("since_hours", 2.0), pg_url),
+        "hot_attractors":        lambda a: hot_attractors(a.get("limit", 10), pg_url),
+        "habit_list":            lambda a: habit_list(a.get("query"), a.get("limit", 30), pg_url),
+        "turn_trace_recent":     lambda a: turn_trace_recent(a.get("limit", 5), a.get("since_minutes")),
+        "consult_sessions_recent": lambda a: consult_sessions_recent(
+            a.get("limit", 10), a.get("since_minutes"), a.get("session_id")
+        ),
+        "wg_neighbors":          lambda a: wg_neighbors(a["word"], a.get("limit", 20), a.get("min_score", 0.1), pg_url),
+    }
+    handler = _handlers.get(name)
+    return handler(args) if handler else None

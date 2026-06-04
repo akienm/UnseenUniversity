@@ -4,8 +4,8 @@
 
 workers:
   CC.0:
-    dispatch: bus
-    mailbox: cc.0              # cc_worker_listener.py polls this for dispatch envelopes
+    dispatch: tmux_send_keys
+    session: claude-main       # revert: bus dispatch requires Dovecot IMAP (not yet installed)
     one_at_a_time: true        # defer if a claude ticket is already in_progress
   DickSimnel.0:
     dispatch: set_worker

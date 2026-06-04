@@ -222,21 +222,15 @@ def palace_search(
 
 
 def dispatch(name: str, args: dict, pg_url: str = _PG_URL) -> str | None:
-    if name == "palace_ls":
-        return palace_ls(args.get("prefix", ""), args.get("limit", 50), pg_url)
-    if name == "palace_read":
-        return palace_read(args["path"], pg_url)
-    if name == "palace_write":
-        return palace_write(
-            args["path"],
-            args["title"],
-            args["content"],
-            args.get("node_type", "doc"),
-            args.get("tags"),
-            pg_url,
-        )
-    if name == "palace_search":
-        return palace_search(
-            args["query"], args.get("tags"), args.get("limit", 10), pg_url
-        )
+    _handlers = {
+        "palace_ls":     lambda a: palace_ls(a.get("prefix", ""), a.get("limit", 50), pg_url),
+        "palace_read":   lambda a: palace_read(a["path"], pg_url),
+        "palace_write":  lambda a: palace_write(
+            a["path"], a["title"], a["content"],
+            a.get("node_type", "doc"), a.get("tags"), pg_url,
+        ),
+        "palace_search": lambda a: palace_search(a["query"], a.get("tags"), a.get("limit", 10), pg_url),
+    }
+    handler = _handlers.get(name)
+    return handler(args) if handler else None
     return None

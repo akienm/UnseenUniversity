@@ -180,18 +180,13 @@ def _request_compaction(preserve_instructions: str) -> str:
 def dispatch(
     name: str, args: dict, pg_url: str = _PG_URL, cc_send_url: str = _CC_SEND_URL
 ) -> str | None:
-    if name == "channel_read":
-        return channel_read(
-            args.get("channel", "shared"),
-            args.get("limit", 20),
-            args.get("since_id"),
-            args.get("author"),
-            pg_url,
-        )
-    if name == "channel_send":
-        return channel_send(args["content"], args.get("channel", "shared"), cc_send_url)
-    if name == "cc_send":
-        return channel_send(args["content"], "shared", cc_send_url)
-    if name == "request_compaction":
-        return _request_compaction(args.get("preserve_instructions", ""))
-    return None
+    _handlers = {
+        "channel_read":       lambda a: channel_read(
+            a.get("channel", "shared"), a.get("limit", 20), a.get("since_id"), a.get("author"), pg_url,
+        ),
+        "channel_send":       lambda a: channel_send(a["content"], a.get("channel", "shared"), cc_send_url),
+        "cc_send":            lambda a: channel_send(a["content"], "shared", cc_send_url),
+        "request_compaction": lambda a: _request_compaction(a.get("preserve_instructions", "")),
+    }
+    handler = _handlers.get(name)
+    return handler(args) if handler else None

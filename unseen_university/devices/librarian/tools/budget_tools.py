@@ -311,16 +311,12 @@ def _budget_remaining(agent_id: str, session_id: str) -> str:
 
 
 def dispatch(name: str, args: dict) -> str | None:
-    if name == "budget_summary":
-        return _budget_summary(args["agent_id"], args.get("group_by", "session"))
-    if name == "budget_limit_set":
-        return _budget_limit_set(
-            args["agent_id"], args["scope"], float(args["limit_usd"])
-        )
-    if name == "budget_remaining":
-        return _budget_remaining(args["agent_id"], args["session_id"])
-    if name == "check_openrouter_balance":
-        return _check_openrouter_balance()
-    if name == "openrouter_burn_rate":
-        return _openrouter_burn_rate(float(args.get("window_hours", 48.0)))
-    return None
+    _handlers = {
+        "budget_summary":          lambda a: _budget_summary(a["agent_id"], a.get("group_by", "session")),
+        "budget_limit_set":        lambda a: _budget_limit_set(a["agent_id"], a["scope"], float(a["limit_usd"])),
+        "budget_remaining":        lambda a: _budget_remaining(a["agent_id"], a["session_id"]),
+        "check_openrouter_balance": lambda a: _check_openrouter_balance(),
+        "openrouter_burn_rate":    lambda a: _openrouter_burn_rate(float(a.get("window_hours", 48.0))),
+    }
+    handler = _handlers.get(name)
+    return handler(args) if handler else None
