@@ -247,6 +247,60 @@ class TestCheckHasStructuredSection:
         assert "structured section" in issues[0]
 
 
+class TestCheckHasIntention:
+    def test_missing_field_returns_issue(self):
+        issues = validation_rules.check_has_intention({})
+        assert issues
+        assert "intention" in issues[0]
+
+    def test_none_value_returns_issue(self):
+        issues = validation_rules.check_has_intention({"intention": None})
+        assert issues
+
+    def test_empty_string_returns_issue(self):
+        issues = validation_rules.check_has_intention({"intention": ""})
+        assert issues
+
+    def test_whitespace_only_returns_issue(self):
+        issues = validation_rules.check_has_intention({"intention": "   "})
+        assert issues
+
+    def test_valid_intention_passes(self):
+        issues = validation_rules.check_has_intention(
+            {"intention": "I intend that the ticket schema enforces IBD root artifacts."}
+        )
+        assert issues == []
+
+
+class TestRunAllWithAdvisory:
+    def test_valid_ticket_no_issues(self):
+        blocking, advisory = validation_rules.run_all_with_advisory(
+            {
+                "intention": "I intend that retry logic is added.",
+                "title": "Add retry logic to IMAP handler",
+                "description": "**Affected files:** broker.py — adds exponential backoff retry.",
+            }
+        )
+        assert blocking == []
+        assert advisory == []
+
+    def test_missing_intention_is_advisory_only(self):
+        blocking, advisory = validation_rules.run_all_with_advisory(
+            {
+                "title": "Add retry logic to IMAP handler",
+                "description": "**Affected files:** broker.py — adds retry logic.",
+            }
+        )
+        assert blocking == []
+        assert advisory  # missing intention is advisory, not blocking
+
+    def test_run_all_unchanged_by_advisory(self):
+        # run_all() must not include advisory checks — backward compat
+        issues = validation_rules.run_all({"intention": "I intend this."})
+        # run_all only checks description, title, structure — not intention
+        assert all("intention" not in i for i in issues)
+
+
 class TestRunAll:
     def test_fully_valid_ticket_passes(self):
         issues = validation_rules.run_all(_VALID_TICKET)

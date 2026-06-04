@@ -1168,6 +1168,15 @@ def _check_description_contracts(ticket_id: str, description: str) -> None:
         )
 
 
+def _check_intention_field(ticket_id: str, intention: str | None) -> None:
+    """Warn when intention: field is missing or doesn't start with 'I intend'. Non-blocking."""
+    if not intention or not str(intention).strip():
+        print(
+            f"  WARNING ({ticket_id}): missing intention: field — add 'I intend that...' "
+            "statement (IBD root artifact; D-intention-based-development-2026-06-04)"
+        )
+
+
 def cmd_add(args):
     """Add tasks from a JSON file (array of task objects) or inline JSON string."""
     if not args:
@@ -1202,6 +1211,7 @@ def cmd_add(args):
         nt.setdefault("github_issue", None)
         nt.setdefault("decision_id", None)
         nt.setdefault("gate", None)
+        nt.setdefault("intention", None)
         nt.setdefault("target_difficulty", 1)
         # Set role: explicit value wins; otherwise infer from worker.
         if not nt.get("role"):
@@ -1227,6 +1237,7 @@ def cmd_add(args):
             print(f"  blocked: {nt['id']} — fix issues above to add.")
             continue
         _check_description_contracts(nt["id"], nt.get("description", ""))
+        _check_intention_field(nt["id"], nt.get("intention"))
         # Embed status prefix in title for one-grep searchability
         nt["title"] = _with_status_prefix(nt["status"], nt["title"])
         tasks.append(nt)

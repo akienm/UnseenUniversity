@@ -55,9 +55,31 @@ def check_has_structured_section(ticket: dict) -> list[str]:
     ]
 
 
+def check_has_intention(ticket: dict) -> list[str]:
+    """Advisory: warn when intention: field is absent or empty.
+
+    Not in run_all() — this is a warning-level check for IBD adoption
+    (D-intention-based-development-2026-06-04). Enforcement tightens once
+    the workflow is fully wired to populate the field.
+    """
+    intention = (ticket.get("intention") or "").strip()
+    if not intention:
+        return ["intention: field missing — add 'I intend that...' statement"]
+    return []
+
+
 def run_all(ticket: dict) -> list[str]:
     issues: list[str] = []
     issues.extend(check_nonempty_description(ticket))
     issues.extend(check_nongeneric_title(ticket))
     issues.extend(check_has_structured_section(ticket))
     return issues
+
+
+def run_all_with_advisory(ticket: dict) -> tuple[list[str], list[str]]:
+    """Returns (blocking_issues, advisory_warnings).
+
+    blocking_issues: from run_all() — caller should refuse if non-empty.
+    advisory_warnings: from advisory checks — caller should surface but not block.
+    """
+    return run_all(ticket), check_has_intention(ticket)
