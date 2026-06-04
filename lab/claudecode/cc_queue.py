@@ -98,6 +98,8 @@ STATUS_ORDER = {
     "approval": 2,
     "akien": 3,
     "sprint": 4,
+    "dispatched": 4.5,
+    "acked": 4.75,
     "in_progress": 5,
     "awaiting_validation": 6,
     "hold": 7,
