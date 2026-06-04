@@ -1,0 +1,9 @@
+# Librarian device configuration.
+# indexer_paths: list of folders/files the folder_indexer Scraps job will index.
+# Supports ~ expansion. Only .py .md .txt .yaml .yml .json .rst .toml are indexed.
+
+indexer_paths:
+  - ~/dev/src/UnseenUniversity/devices
+  - ~/dev/src/UnseenUniversity/unseen_university
+  - ~/dev/src/UnseenUniversity/docs
+  - ~/dev/src/UnseenUniversity/lab/design_docs
