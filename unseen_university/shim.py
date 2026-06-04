@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import threading
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -82,6 +83,115 @@ def _write_shim_trace(record: dict) -> None:
             f.write(json.dumps(record) + "\n")
     except Exception as exc:
         log.debug("shim trace write failed (non-fatal): %s", exc)
+
+
+class _DispatchHandshake:
+    """Manages the ack→prod→(started|timeout) lifecycle for one dispatch event.
+
+    Protocol (envelope kinds over send_fn):
+      1. dispatch_ack     — sent immediately in start(); Granny marks ticket acked
+      2. dispatch_started — sent when deliver_fn returns True; Granny marks in_progress
+      3. dispatch_timeout — sent after timeout_at seconds with no pickup; Granny escalates
+
+    All three carry {kind, ticket_id, from_device} so Granny can correlate the response.
+    """
+
+    PROD_INTERVAL: float = 120.0  # seconds between deliver_fn probes
+    TIMEOUT_AT: float = 600.0     # seconds from ack until timeout envelope
+
+    def __init__(
+        self,
+        ticket_id: str,
+        from_device: str,
+        device_id: str,
+        send_fn,      # (to_device: str, payload: dict) -> None
+        deliver_fn,   # (ticket_id: str) -> bool — True means app accepted
+        *,
+        prod_interval: float = PROD_INTERVAL,
+        timeout_at: float = TIMEOUT_AT,
+    ) -> None:
+        self._ticket_id = ticket_id
+        self._from_device = from_device
+        self._device_id = device_id
+        self._send_fn = send_fn
+        self._deliver_fn = deliver_fn
+        self._prod_interval = prod_interval
+        self._timeout_at = timeout_at
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+
+    def start(self) -> None:
+        """Send ack synchronously, then launch the background prod loop."""
+        self._send_fn(
+            self._from_device,
+            {
+                "kind": "dispatch_ack",
+                "ticket_id": self._ticket_id,
+                "from_device": self._device_id,
+            },
+        )
+        log.info("dispatch_ack: ticket=%s to=%s", self._ticket_id, self._from_device)
+        self._thread = threading.Thread(
+            target=self._prod_loop,
+            daemon=True,
+            name=f"dispatch-{self._ticket_id}",
+        )
+        self._thread.start()
+
+    def _prod_loop(self) -> None:
+        started_at = time.monotonic()
+        while not self._stop.is_set():
+            # Wait one prod interval; return immediately on cancel
+            if self._stop.wait(timeout=self._prod_interval):
+                return
+            # Try to deliver the work to the app
+            if self._deliver_fn(self._ticket_id):
+                self._send_fn(
+                    self._from_device,
+                    {
+                        "kind": "dispatch_started",
+                        "ticket_id": self._ticket_id,
+                        "from_device": self._device_id,
+                    },
+                )
+                log.info(
+                    "dispatch_started: ticket=%s to=%s",
+                    self._ticket_id,
+                    self._from_device,
+                )
+                self._stop.set()
+                return
+            # Timeout check comes after a failed delivery attempt
+            if time.monotonic() - started_at >= self._timeout_at:
+                self._send_fn(
+                    self._from_device,
+                    {
+                        "kind": "dispatch_timeout",
+                        "ticket_id": self._ticket_id,
+                        "from_device": self._device_id,
+                    },
+                )
+                log.warning(
+                    "dispatch_timeout: ticket=%s to=%s",
+                    self._ticket_id,
+                    self._from_device,
+                )
+                self._stop.set()
+                return
+
+    def cancel(self) -> None:
+        """Cancel the handshake (idempotent — safe to call after completion)."""
+        self._stop.set()
+
+    def join(self, timeout: float | None = None) -> None:
+        """Wait for the prod loop thread to exit (used in tests)."""
+        if self._thread is not None:
+            self._thread.join(timeout=timeout)
+
+    @property
+    def is_active(self) -> bool:
+        """True while the prod loop is still running."""
+        return not self._stop.is_set()
 
 
 class BaseShim(ABC):
@@ -333,3 +443,76 @@ class BaseShim(ABC):
                     "error_type": error_type,
                 }
             )
+
+    # ── Dispatch handshake ─────────────────────────────────────────────────────
+
+    def receive_dispatch(
+        self,
+        envelope,
+        *,
+        send_fn,
+        deliver_fn=None,
+        prod_interval: float = _DispatchHandshake.PROD_INTERVAL,
+        timeout_at: float = _DispatchHandshake.TIMEOUT_AT,
+    ) -> "_DispatchHandshake":
+        """Handle an incoming dispatch envelope from the bus.
+
+        Immediately sends a dispatch_ack envelope back to the sender, then
+        starts a background prod loop that calls deliver_fn every prod_interval
+        seconds. When deliver_fn returns True the shim sends dispatch_started
+        and stops. If timeout_at seconds elapse with no pickup, the shim sends
+        dispatch_timeout and stops.
+
+        envelope must have .from_device and .payload["ticket_id"] (bus.Envelope)
+        or the equivalent dict keys ({"from_device": ..., "payload": {...}}).
+
+        send_fn(to_device, payload) — bus send is injected so BaseShim stays
+        transport-agnostic. In production the caller wires this to an IMAP
+        append via bus/; in tests it can be a list-append spy.
+
+        deliver_fn(ticket_id) -> bool — True when the app has accepted the
+        work. Default: always returns True (started fires after first prod).
+
+        Returns the _DispatchHandshake so callers can cancel on shutdown.
+        """
+        if hasattr(envelope, "from_device"):
+            from_device = envelope.from_device
+            ticket_id = envelope.payload["ticket_id"]
+        else:
+            from_device = envelope["from_device"]
+            ticket_id = envelope["payload"]["ticket_id"]
+
+        if deliver_fn is None:
+            deliver_fn = lambda tid: True  # noqa: E731
+
+        hs = _DispatchHandshake(
+            ticket_id=ticket_id,
+            from_device=from_device,
+            device_id=self.device_id,
+            send_fn=send_fn,
+            deliver_fn=deliver_fn,
+            prod_interval=prod_interval,
+            timeout_at=timeout_at,
+        )
+        hs.start()
+
+        if not hasattr(self, "_active_handshakes"):
+            self._active_handshakes: dict[str, _DispatchHandshake] = {}
+        self._active_handshakes[ticket_id] = hs
+        log.info(
+            "dispatch received: ticket=%s from=%s — ack sent",
+            ticket_id,
+            from_device,
+        )
+        return hs
+
+    def _cancel_active_handshakes(self) -> None:
+        """Cancel all in-flight dispatch handshakes and clear the registry.
+
+        Call from stop() to ensure prod loops don't outlive the shim.
+        Safe to call multiple times (idempotent).
+        """
+        handshakes = getattr(self, "_active_handshakes", {})
+        for hs in list(handshakes.values()):
+            hs.cancel()
+        handshakes.clear()
