@@ -23,6 +23,7 @@ class GrannyShim(BaseShim):
         self._watchdog_stop = threading.Event()
         self._watchdog_thread: Optional[threading.Thread] = None
         self._daemon = None
+        self._relaunch_count: int = 0
 
     @property
     def device_id(self) -> str:
@@ -65,3 +66,14 @@ class GrannyShim(BaseShim):
 
     def rollback(self) -> None:
         pass
+
+    def health_surface(self) -> dict:
+        base = super().health_surface()
+        result = {"relaunch_count": str(self._relaunch_count), **base}
+        try:
+            from devices.granny.daemon import get_daemon
+            daemon = get_daemon()
+            result["daemon"] = "running" if daemon.is_running() else "stopped"
+        except Exception:
+            result["daemon"] = "unknown"
+        return result

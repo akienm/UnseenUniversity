@@ -130,10 +130,11 @@ class IgorShim(BaseShim):
         shutil.copy(canonical, runtime)
         log.info("igor-shim install: copied %s → %s", canonical, runtime)
 
-    def connect(self, timeout: float = 5.0) -> dict:
+    def connect(self, timeout: float = 5.0, proof: dict | None = None) -> dict:
         """
         Instantiate the DatacenterClient and announce. Returns the manifest dict.
         Raises ConnectionError if announce times out — caller decides retry.
+        proof: optional shared-secret dict for protected-agent validation.
         """
         client = DatacenterClient(
             agent_id="igor",
@@ -141,6 +142,7 @@ class IgorShim(BaseShim):
             box=self._box,
             box_n=self._box_n,
             surfaces=["console", "inference"],
+            proof=proof or {},
         )
         try:
             manifest = client.announce(timeout=timeout)

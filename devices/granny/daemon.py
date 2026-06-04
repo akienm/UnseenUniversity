@@ -446,6 +446,36 @@ def _reset_stale_inprogress() -> int:
     return count
 
 
+class _DaemonStatus:
+    """Lightweight daemon status object returned by get_daemon()."""
+
+    def is_running(self) -> bool:
+        pid_file = Path.home() / ".granny" / "daemon.pid"
+        try:
+            pid = int(pid_file.read_text().strip())
+            os.kill(pid, 0)
+            return True
+        except Exception:
+            return False
+
+
+def get_daemon() -> _DaemonStatus:
+    """Return a status object for the Granny daemon (checks PID file)."""
+    return _DaemonStatus()
+
+
+def _dicksimnel_available() -> bool:
+    """Return True if DickSimnel's .true flag exists and .false flag does not."""
+    try:
+        flag_dir = Path.home() / ".granny" / "available"
+        return (
+            (flag_dir / "DickSimnel.0.available.true").exists()
+            and not (flag_dir / "DickSimnel.0.available.false").exists()
+        )
+    except Exception:
+        return False
+
+
 def _post_channel(msg: str) -> None:
     try:
         from unseen_university.channel import post_to_channel

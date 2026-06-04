@@ -35,6 +35,7 @@ def _make_envelope(agent_id: str = "igor") -> IdentityEnvelope:
         pid=9999,
         interface_version="1.0",
         surfaces=["console"],
+        proof={"shared_secret": "test-rack-secret"},
     )
 
 

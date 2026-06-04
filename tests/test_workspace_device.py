@@ -245,6 +245,7 @@ def test_workspace_appears_in_igor_manifest(tmp_path: Path) -> None:
         pid=9999,
         interface_version="1.0",
         surfaces=["console", "inference"],
+        proof={"shared_secret": "test-rack-secret"},
     )
 
     manifest = broker.resolve_announce(envelope)

@@ -28,3 +28,18 @@ def _restore_sqlite3():
     """
     sys.modules["sqlite3"] = _real_sqlite3
     yield
+
+
+@pytest.fixture(autouse=True)
+def _preserve_igor_home_db_url():
+    """Preserve IGOR_HOME_DB_URL across tests.
+
+    Some tests pop IGOR_HOME_DB_URL for isolation. This fixture guarantees
+    restoration after every test so order-dependent failures don't cascade.
+    """
+    saved = os.environ.get("IGOR_HOME_DB_URL")
+    yield
+    if saved is not None:
+        os.environ["IGOR_HOME_DB_URL"] = saved
+    elif "IGOR_HOME_DB_URL" in os.environ:
+        del os.environ["IGOR_HOME_DB_URL"]

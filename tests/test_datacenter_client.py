@@ -78,6 +78,7 @@ def igor_identity() -> IdentityEnvelope:
         pid=4242,
         interface_version="1.0",
         surfaces=["console", "inference"],
+        proof={"shared_secret": "test-rack-secret"},
     )
 
 
@@ -92,6 +93,7 @@ def test_announce_returns_manifest(server, listener, igor_identity):
         box_n=igor_identity.box_n,
         pid=igor_identity.pid,
         surfaces=igor_identity.surfaces,
+        proof=igor_identity.proof,
     )
 
     # Pump the listener after the client posts so the reply is ready when we poll.
@@ -121,6 +123,7 @@ def test_announce_timeout_raises_when_no_listener(server, igor_identity):
         box_n=igor_identity.box_n,
         pid=igor_identity.pid,
         surfaces=igor_identity.surfaces,
+        proof=igor_identity.proof,
     )
     with pytest.raises(AnnounceTimeoutError):
         client.announce(timeout=0.2, poll_interval=0.05)
@@ -215,6 +218,7 @@ def test_manifest_property_none_before_announce(server, igor_identity):
         box_n=igor_identity.box_n,
         pid=igor_identity.pid,
         surfaces=igor_identity.surfaces,
+        proof=igor_identity.proof,
     )
     assert client.manifest is None
 
@@ -227,6 +231,7 @@ def test_get_tool_returns_binding_or_none(server, igor_identity):
         box_n=igor_identity.box_n,
         pid=igor_identity.pid,
         surfaces=igor_identity.surfaces,
+        proof=igor_identity.proof,
     )
     _seed_manifest(client)
     assert client.get_tool("inference").name == "inference"
@@ -242,6 +247,7 @@ def test_get_tools_returns_full_list(server, igor_identity):
         box_n=igor_identity.box_n,
         pid=igor_identity.pid,
         surfaces=igor_identity.surfaces,
+        proof=igor_identity.proof,
     )
     _seed_manifest(client)
     names = {t.name for t in client.get_tools()}
@@ -256,6 +262,7 @@ def test_get_state_ref_returns_ref_or_none(server, igor_identity):
         box_n=igor_identity.box_n,
         pid=igor_identity.pid,
         surfaces=igor_identity.surfaces,
+        proof=igor_identity.proof,
     )
     _seed_manifest(client)
     assert client.get_state_ref("twm").mode == "read_write"
@@ -270,6 +277,7 @@ def test_get_channels_returns_subscriptions(server, igor_identity):
         box_n=igor_identity.box_n,
         pid=igor_identity.pid,
         surfaces=igor_identity.surfaces,
+        proof=igor_identity.proof,
     )
     _seed_manifest(client)
     channels = client.get_channels()
@@ -285,6 +293,7 @@ def test_get_acl_returns_acl_dataclass(server, igor_identity):
         box_n=igor_identity.box_n,
         pid=igor_identity.pid,
         surfaces=igor_identity.surfaces,
+        proof=igor_identity.proof,
     )
     _seed_manifest(client)
     acl = client.get_acl()
@@ -300,6 +309,7 @@ def test_get_surface_address_returns_address_or_none(server, igor_identity):
         box_n=igor_identity.box_n,
         pid=igor_identity.pid,
         surfaces=igor_identity.surfaces,
+        proof=igor_identity.proof,
     )
     _seed_manifest(client)
     assert client.get_surface_address("console") == "comms://testbox.0.console"
@@ -314,6 +324,7 @@ def test_get_primary_address(server, igor_identity):
         box_n=igor_identity.box_n,
         pid=igor_identity.pid,
         surfaces=igor_identity.surfaces,
+        proof=igor_identity.proof,
     )
     _seed_manifest(client)
     assert client.get_primary_address() == "comms://testbox.0"
@@ -327,6 +338,7 @@ def test_accessors_return_empty_when_no_manifest(server, igor_identity):
         box_n=igor_identity.box_n,
         pid=igor_identity.pid,
         surfaces=igor_identity.surfaces,
+        proof=igor_identity.proof,
     )
     assert client.get_tools() == []
     assert client.get_state_refs() == []
@@ -354,6 +366,7 @@ def test_announce_ignores_replies_addressed_to_other_agents(server, listener):
         box_n=0,
         pid=4242,
         interface_version="1.0",
+        proof={"shared_secret": "test-rack-secret"},
     )
     client = DatacenterClient(
         agent_id=igor_identity.agent_id,
@@ -362,6 +375,7 @@ def test_announce_ignores_replies_addressed_to_other_agents(server, listener):
         box_n=igor_identity.box_n,
         pid=igor_identity.pid,
         surfaces=igor_identity.surfaces,
+        proof=igor_identity.proof,
     )
     posted = client._imap.append
 
@@ -402,6 +416,7 @@ def test_check_for_invalidate_zero_when_no_envelopes(server, igor_identity):
         box_n=igor_identity.box_n,
         pid=igor_identity.pid,
         surfaces=igor_identity.surfaces,
+        proof=igor_identity.proof,
     )
     assert client.check_for_invalidate() == 0
 
@@ -415,6 +430,7 @@ def test_invalidate_for_our_agent_triggers_reannounce(server, listener, igor_ide
         box_n=igor_identity.box_n,
         pid=igor_identity.pid,
         surfaces=igor_identity.surfaces,
+        proof=igor_identity.proof,
     )
     posted = client._imap.append
 
@@ -448,6 +464,7 @@ def test_invalidate_for_registry_triggers_reannounce(server, listener, igor_iden
         box_n=igor_identity.box_n,
         pid=igor_identity.pid,
         surfaces=igor_identity.surfaces,
+        proof=igor_identity.proof,
     )
     posted = client._imap.append
 
@@ -476,6 +493,7 @@ def test_invalidate_for_other_agent_ignored(server, listener, igor_identity):
         box_n=igor_identity.box_n,
         pid=igor_identity.pid,
         surfaces=igor_identity.surfaces,
+        proof=igor_identity.proof,
     )
     posted = client._imap.append
 
@@ -508,6 +526,7 @@ def test_check_for_invalidate_handles_reannounce_timeout_gracefully(
         box_n=igor_identity.box_n,
         pid=igor_identity.pid,
         surfaces=igor_identity.surfaces,
+        proof=igor_identity.proof,
     )
     posted = client._imap.append
 
@@ -543,6 +562,7 @@ def test_invalidate_coalesces_multiple_envelopes_in_one_pump(
         box_n=igor_identity.box_n,
         pid=igor_identity.pid,
         surfaces=igor_identity.surfaces,
+        proof=igor_identity.proof,
     )
     posted = client._imap.append
 

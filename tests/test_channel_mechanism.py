@@ -180,6 +180,7 @@ def test_listener_registers_subscriptions_after_announce(tmp_path: Path):
                 box_n=0,
                 pid=1,
                 interface_version="1.0",
+                proof={"shared_secret": "test-rack-secret"},
             ).to_dict(),
         )
         server.append("announce", env)

@@ -124,7 +124,7 @@ def test_connect_announces_and_caches_client(server, listener, tmp_path):
     stop = threading.Event()
     pumper = _drive_pump_in_background(listener, stop)
     try:
-        manifest = shim.connect(timeout=2.0)
+        manifest = shim.connect(timeout=2.0, proof={"shared_secret": "test-rack-secret"})
     finally:
         stop.set()
         pumper.join(timeout=1.0)
@@ -173,7 +173,7 @@ def test_capability_accessors_forward_after_connect(server, listener, tmp_path):
     stop = threading.Event()
     pumper = _drive_pump_in_background(listener, stop)
     try:
-        shim.connect(timeout=2.0)
+        shim.connect(timeout=2.0, proof={"shared_secret": "test-rack-secret"})
     finally:
         stop.set()
         pumper.join(timeout=1.0)
@@ -223,7 +223,7 @@ def test_self_test_passed_when_connected(server, listener, tmp_path):
     stop = threading.Event()
     pumper = _drive_pump_in_background(listener, stop)
     try:
-        shim.connect(timeout=2.0)
+        shim.connect(timeout=2.0, proof={"shared_secret": "test-rack-secret"})
     finally:
         stop.set()
         pumper.join(timeout=1.0)
@@ -254,7 +254,7 @@ def test_rollback_drops_connection(server, listener, tmp_path):
     stop = threading.Event()
     pumper = _drive_pump_in_background(listener, stop)
     try:
-        shim.connect(timeout=2.0)
+        shim.connect(timeout=2.0, proof={"shared_secret": "test-rack-secret"})
     finally:
         stop.set()
         pumper.join(timeout=1.0)
