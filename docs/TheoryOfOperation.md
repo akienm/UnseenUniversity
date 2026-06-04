@@ -10,6 +10,8 @@ This is an outline, not a tutorial. Each section names the piece, states what it
 
 ## 1. The Rack
 
+*I intend that the rack is a composable substrate — an address space, a bus, a registry, and a health layer — so every capability is a pluggable device and the framework never needs to know what's plugged in.*
+
 ### 1.1 What it is
 
 UnseenUniversity is a **rack** — a place where devices plug in and communicate. Not a framework you extend; a substrate you build on top of. The rack provides:
@@ -78,6 +80,8 @@ When a device needs the reply to go to a *different* address than `from_device`,
 ---
 
 ## 2. Devices
+
+*I intend that every device exposes a uniform lifecycle and observability contract so the rack can manage, restart, and inspect any device without knowing its internals.*
 
 ### 2.1 The device contract
 
@@ -177,6 +181,8 @@ Log levels:
 ---
 
 ## 3. Platform Subsystems
+
+*I intend that each platform subsystem is a separately deployable device with a narrow, replaceable responsibility — so any subsystem can be upgraded or swapped without touching its callers.*
 
 ### 3.1 Queue device
 
@@ -401,6 +407,8 @@ A recurring shape in the rack: a **queue of work items** + a **registry of capab
 
 ## 4. Igor — Reference Implementation
 
+*I intend that Igor demonstrates what it looks like to build a cognition-bearing agent on the rack using the same bus, queue, and memory abstractions available to every other device — not a special case, a reference implementation.*
+
 Igor is a device (`devices/igor/`), the reference implementation of an agent built on the rack. His cognition subsystems use the platform abstractions defined in §1–3: the bus (§1.3), the queue (§3.1–3.3), and memory (§3.4–3.7). They run on the rack like everything else; they are not special.
 
 ### 4.1 Narrative Engine (NE)
@@ -469,6 +477,8 @@ Engrams follow the same append-only/facia pattern; see §3.7.
 
 ## 5. Storage Architecture
 
+*I intend that storage is organized into tiers by scope — clan-shared, per-instance, flat-file, and client-private — so the right data lives at the right isolation level by default and the privacy boundary is structural, not conventional.*
+
 ### 5.1 clan.* (cross-instance)
 
 Tables shared across all Igor instances and CC instances:
@@ -530,6 +540,8 @@ The global tier (§5.4) is stored as a git repository. New UU instances clone it
 
 ## 6. Safety Architecture
 
+*I intend that the safety perimeter is structurally inaccessible to Igor's own cognition — filesystem-only gates and cycle counters that no prompt injection or runaway loop can disable from the inside.*
+
 ### 6.1 Safety gates
 
 Three named switches live only in `igor.switches.cfg` on the filesystem:
@@ -554,6 +566,8 @@ The NE tracks consecutive cycles without human interaction. After 5 cycles on an
 
 ## 7. Claude Code on the Rack
 
+*I intend that CC is a first-class rack device — registered, lifecycle-managed, and skill-driven — so its behavior is compiled and deterministic rather than ad-hoc and conversational.*
+
 ### 7.1 CC as a device
 
 `devices/claude/` — CC registers on the rack like any other device. The shim handles the announce protocol. Multiple CC instances can be active simultaneously: CC.0 (main), CC.1, CC.2 (minions).
@@ -577,6 +591,8 @@ Hooks in `~/.claude/settings.json` run on every matching tool call regardless of
 ---
 
 ## 8. Alignment: Where to Look for Gaps
+
+*I intend that this document is a falsifiable alignment artifact — every section can be checked against the running system, and every gap found here becomes a ticket.*
 
 This document is also an alignment artifact. Review each section against the code and ask:
 
