@@ -39,8 +39,9 @@ def _ws_push(message: str, author: str, channel: str) -> None:
     try:
         session_id = channel if channel.startswith("comms://") else f"comms://{channel}"
         body = json.dumps({"content": message, "session_id": session_id}).encode()
+        # ws_only=1: tells the web server to broadcast only (Postgres already written above)
         req = urllib.request.Request(
-            f"{_UC_BASE}/api/agents/{author}/send",
+            f"{_UC_BASE}/api/agents/{author}/send?ws_only=1",
             data=body,
             headers={"Content-Type": "application/json"},
             method="POST",

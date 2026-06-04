@@ -434,13 +434,19 @@ def _canonical_session_id(sid: str) -> str:
     return sid if sid.startswith("comms://") else f"comms://{sid}"
 
 
-def agent_send(text: str, agent_id: str, session_id: str = "shared"):
-    """An agent sends a response to the web UI."""
+def agent_send(text: str, agent_id: str, session_id: str = "shared", persist: bool = True):
+    """An agent sends a response to the web UI.
+
+    persist=False skips _channel_append — used when the caller (channel.py
+    _ws_push via post_to_channel) already wrote to Postgres directly, so
+    _channel_append would produce a duplicate DB entry.
+    """
     session_id = _canonical_session_id(session_id)
     log.info(
-        "uc_deliver: agent_send agent=%s session=%s len=%d: %s",
+        "uc_deliver: agent_send agent=%s session=%s persist=%s len=%d: %s",
         agent_id,
         session_id,
+        persist,
         len(text),
         text[:80].replace("\n", " "),
     )
@@ -453,7 +459,8 @@ def agent_send(text: str, agent_id: str, session_id: str = "shared"):
     }
     _add_to_history(session_id, msg)
     _broadcast_to_session(session_id, json.dumps(msg))
-    _channel_append(agent_id, text)
+    if persist:
+        _channel_append(agent_id, text)
 
 
 # ── Route handlers ───────────────────────────────────────────────────────────
@@ -787,8 +794,14 @@ async def _api_agent_stats(request: Request):
 
 
 async def _api_agent_send(request: Request):
-    """POST /api/agents/{id}/send — agent sends a message to web UI."""
+    """POST /api/agents/{id}/send — agent sends a message to web UI.
+
+    ?ws_only=1 — broadcast to WebSocket only; skip _channel_append persistence.
+    Used by channel.py's _ws_push which already wrote to Postgres directly.
+    Omitting the param (default) writes to JSONL+Postgres for direct callers.
+    """
     agent_id = request.path_params.get("agent_id", "")
+    ws_only = request.query_params.get("ws_only") == "1"
     try:
         body = await request.json()
     except Exception:
@@ -804,12 +817,13 @@ async def _api_agent_send(request: Request):
         )
         return JSONResponse({"error": "empty content"}, status_code=400)
     log.info(
-        "uc_deliver: POST accepted agent=%s session=%s len=%d",
+        "uc_deliver: POST accepted agent=%s session=%s ws_only=%s len=%d",
         agent_id,
         session_id,
+        ws_only,
         len(content),
     )
-    agent_send(content, agent_id, session_id)
+    agent_send(content, agent_id, session_id, persist=not ws_only)
     return JSONResponse({"status": "ok"})
 
 
