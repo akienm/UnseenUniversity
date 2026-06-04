@@ -1011,6 +1011,63 @@ async def _ws_endpoint(ws: WebSocket):
 # ── Starlette app factory ───────────────────────────────────────────────────
 
 
+def _handle_slash_ticket(description: str, device_name: str) -> str:
+    """File a ticket via cc_queue.py and return a confirmation string with the T-id.
+
+    Called from any device chat handler that receives '/ticket <description>'.
+    Tags the ticket with the originating device name and role=master.
+    """
+    import subprocess as _sp, json as _json, tempfile, uuid
+
+    ticket_id = "T-" + uuid.uuid4().hex[:8]
+    ticket = {
+        "id": ticket_id,
+        "title": description[:80],
+        "size": "S",
+        "tags": [device_name, "UserFiled"],
+        "status": "sprint",
+        "role": "master",
+        "worker": "claude",
+        "description": (
+            f"{description}\n\n"
+            f"**Affected files:** TBD — discovery step in sprint\n"
+            f"**Design rules:** none apply\n"
+            f"**Scope boundary:** as described above\n"
+            f"**Completion criteria:** TBD — to be refined by sprint owner"
+        ),
+        "intention": f"I intend that '{description[:60]}' is addressed.",
+    }
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            _json.dump([ticket], f)
+            tmp = f.name
+        r = _sp.run(
+            ["python3", str(_CC_QUEUE), "add", tmp],
+            capture_output=True, text=True, timeout=15,
+            env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
+        )
+        if r.returncode != 0:
+            log.warning("slash /ticket failed: %s", r.stderr[:200])
+            return f"Bark! Ticket filing failed: {r.stderr[:100]}"
+        log.info("slash /ticket: filed %s from device=%s", ticket_id, device_name)
+        return f"Bark! Ticket filed: {ticket_id} — {description[:60]}"
+    except Exception as exc:
+        log.warning("slash /ticket exception: %s", exc)
+        return f"Bark! Ticket filing error: {exc}"
+
+
+def _handle_chat_slash_commands(message: str, device_name: str) -> str | None:
+    """Check for /ticket slash command. Returns response string or None if not a command."""
+    stripped = message.strip()
+    lower = stripped.lower()
+    if lower == "/ticket" or lower.startswith("/ticket "):
+        description = stripped[len("/ticket"):].strip()
+        if not description:
+            return "Bark! Usage: /ticket <description of the problem>"
+        return _handle_slash_ticket(description, device_name)
+    return None
+
+
 async def _api_dicksimnel_chat_post(request: Request):
     """POST /api/dicksimnel/chat — send a message to DickSimnel, get a response."""
     try:
@@ -1020,13 +1077,20 @@ async def _api_dicksimnel_chat_post(request: Request):
     message = (body.get("message") or "").strip()
     if not message:
         return JSONResponse({"error": "empty message"}, status_code=400)
-    try:
-        from devices.dicksimnel.device import DickSimnelDevice
-        device = DickSimnelDevice()
-        response = device.chat(message)
-    except Exception as exc:
-        log.warning("_api_dicksimnel_chat: device error: %s", exc)
-        response = f"DickSimnel unavailable: {exc}"
+
+    # Handle slash commands before routing to the device
+    slash_response = _handle_chat_slash_commands(message, "dicksimnel")
+    if slash_response is not None:
+        response = slash_response
+    else:
+        try:
+            from devices.dicksimnel.device import DickSimnelDevice
+            device = DickSimnelDevice()
+            response = device.chat(message)
+        except Exception as exc:
+            log.warning("_api_dicksimnel_chat: device error: %s", exc)
+            response = f"DickSimnel unavailable: {exc}"
+
     ts = _ts()
     entry = {"role": "user", "content": message, "ts": ts}
     reply = {"role": "dicksimnel", "content": response, "ts": ts}

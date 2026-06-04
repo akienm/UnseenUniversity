@@ -108,3 +108,37 @@ class TestGrannyCircuitGate:
             result = run_once(_default_config(), set())
 
         assert "T-nofile" in result
+
+
+class TestChatSlashTicket:
+    def _make_app(self):
+        import devices.web_server.server as _srv
+        with patch("devices.web_server.server._init_comms"):
+            return _srv._make_app()
+
+    def test_slash_ticket_creates_entry_and_returns_id(self):
+        from devices.web_server.server import _handle_chat_slash_commands
+        with patch("devices.web_server.server._handle_slash_ticket", return_value="Bark! Ticket filed: T-abc12345 — broken foo"):
+            resp = _handle_chat_slash_commands("/ticket broken foo", "dicksimnel")
+        assert resp is not None
+        assert "T-abc12345" in resp
+
+    def test_slash_ticket_empty_description_returns_usage(self):
+        from devices.web_server.server import _handle_chat_slash_commands
+        resp = _handle_chat_slash_commands("/ticket ", "dicksimnel")
+        assert resp is not None
+        assert "Usage" in resp
+
+    def test_regular_message_returns_none(self):
+        from devices.web_server.server import _handle_chat_slash_commands
+        resp = _handle_chat_slash_commands("hello world", "dicksimnel")
+        assert resp is None
+
+    def test_slash_ticket_in_chat_post_intercepted(self):
+        from starlette.testclient import TestClient
+        app = self._make_app()
+        with TestClient(app) as client, \
+             patch("devices.web_server.server._handle_slash_ticket", return_value="Bark! Ticket filed: T-xyz99 — test problem") as mock_file:
+            resp = client.post("/api/dicksimnel/chat", json={"message": "/ticket test problem"})
+        assert resp.status_code == 200
+        assert "T-xyz99" in resp.json()["response"]
