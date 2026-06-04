@@ -226,26 +226,18 @@ def _dispatch(msg: dict) -> dict | None:
         params = msg.get("params", {})
         name = params.get("name", "")
         args = params.get("arguments", {})
+        _handlers = {
+            "queue_next":  lambda a: _device.queue_next(worker=a["worker"]),
+            "queue_peek":  lambda a: _device.queue_peek(worker=a["worker"]),
+            "queue_show":  lambda a: _device.queue_show(ticket_id=a["ticket_id"]),
+            "queue_list":  lambda a: _device.queue_list(worker=a.get("worker"), status=a.get("status", "sprint")),
+            "send_to":     lambda a: _feeds_send_to(a["receiver"], a["message"]),
+            "send_feed":   lambda a: _feeds_send_feed(a["event"], a.get("sender", "cc")),
+            "view_feed":   lambda a: _feeds_view_feed(a["sender"], a.get("limit", 20)),
+        }
         try:
-            if name == "queue_next":
-                result = _device.queue_next(worker=args["worker"])
-            elif name == "queue_peek":
-                result = _device.queue_peek(worker=args["worker"])
-            elif name == "queue_show":
-                result = _device.queue_show(ticket_id=args["ticket_id"])
-            elif name == "queue_list":
-                result = _device.queue_list(
-                    worker=args.get("worker"),
-                    status=args.get("status", "sprint"),
-                )
-            elif name == "send_to":
-                result = _feeds_send_to(args["receiver"], args["message"])
-            elif name == "send_feed":
-                result = _feeds_send_feed(args["event"], args.get("sender", "cc"))
-            elif name == "view_feed":
-                result = _feeds_view_feed(args["sender"], args.get("limit", 20))
-            else:
-                result = f"ERROR: unknown tool {name!r}"
+            handler = _handlers.get(name)
+            result = handler(args) if handler else f"ERROR: unknown tool {name!r}"
         except Exception as exc:
             result = f"ERROR: {exc}"
 
