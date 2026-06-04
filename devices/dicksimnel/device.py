@@ -247,11 +247,56 @@ class DickSimnelDevice(BaseDevice):
         except Exception as exc:
             log.warning("DickSimnel: channel post failed: %s", exc)
 
+    # Phrases that indicate the result is planning text, not a completion.
+    # If the result starts with any of these, it's an OR planning response, not a done.
+    _PLANNING_PREFIXES = (
+        "I'll implement",
+        "I will implement",
+        "Let me implement",
+        "Let me start",
+        "I'll start",
+        "I will start",
+        "I need to",
+        "I'll analyze",
+        "I'll create",
+        "I'll build",
+        "To implement",
+        "Let me analyze",
+    )
+
+    def _is_planning_text(self, result_text: str) -> bool:
+        """Return True when result looks like planning/analysis, not completion."""
+        stripped = result_text.strip()
+        for prefix in self._PLANNING_PREFIXES:
+            if stripped.startswith(prefix):
+                return True
+        return False
+
     def _post_result(self, ticket_id: str, result_text: str) -> None:
-        """Close ticket with inference result as the completion note."""
-        # Truncate to avoid huge notes
+        """Close ticket with inference result as the completion note.
+
+        Validates before closing:
+        1. Planning-text guard — if result starts with a planning phrase, the
+           ToolLoop returned the model's opening rather than a completion.
+           Escalate to CC in that case.
+        2. Close-failure guard — if cc_queue close() returns None (DB error or
+           ticket not found), escalate rather than silently treating as done.
+        """
+        if self._is_planning_text(result_text):
+            log.warning(
+                "DickSimnel: %s result looks like planning text — escalating to CC",
+                ticket_id,
+            )
+            self._escalate_ticket(ticket_id, "result is planning text, not completion", analysis=result_text)
+            return
+
         note = result_text[:2000]
-        self._run_queue_cmd("close", ticket_id, f"DickSimnel.0: {note}")
+        close_result = self._run_queue_cmd("close", ticket_id, f"DickSimnel.0: {note}")
+        if close_result is None:
+            log.warning("DickSimnel: close failed for %s — escalating to CC", ticket_id)
+            self._escalate_ticket(ticket_id, "close command failed", analysis=result_text[:300])
+            return
+
         self._tickets_processed += 1
         self._channel_event(f"DICKSIMNEL_DONE ticket={ticket_id} summary={result_text[:100]!r}")
         log.info("DickSimnel: closed ticket %s", ticket_id)

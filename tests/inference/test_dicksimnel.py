@@ -281,6 +281,66 @@ class TestDickSimnelEscalation:
         d._escalate_ticket.assert_not_called()
 
 
+# ── _post_result reliability guards ──────────────────────────────────────────
+
+
+class TestPostResultGuards:
+    def _device(self):
+        from devices.dicksimnel.device import DickSimnelDevice
+        d = DickSimnelDevice()
+        d._shim = MagicMock()
+        d._shim.is_blocked.return_value = False
+        return d
+
+    def test_planning_text_escalates_not_done(self):
+        d = self._device()
+        with patch.object(d, "_escalate_ticket") as mock_esc:
+            with patch.object(d, "_run_queue_cmd") as mock_cmd:
+                with patch.object(d, "_channel_event"):
+                    d._post_result("T-x", "I'll implement the versioned registry. Let me start by analyzing...")
+        mock_esc.assert_called_once()
+        escalate_reason = mock_esc.call_args[0][1]
+        assert "planning" in escalate_reason.lower() or "completion" in escalate_reason.lower()
+        mock_cmd.assert_not_called()  # close must not be called
+
+    def test_genuine_result_closes_ticket(self):
+        d = self._device()
+        close_resp = {"status": "closed"}
+        with patch.object(d, "_run_queue_cmd", return_value=close_resp) as mock_cmd:
+            with patch.object(d, "_channel_event"):
+                with patch.object(d, "_escalate_ticket") as mock_esc:
+                    d._post_result("T-x", "## Analysis\nShipped. Commit abc123. Tests pass.")
+        mock_cmd.assert_called_once_with("close", "T-x", mock_cmd.call_args[0][2])
+        mock_esc.assert_not_called()
+        assert d._tickets_processed == 1
+
+    def test_close_failure_escalates(self):
+        d = self._device()
+        with patch.object(d, "_run_queue_cmd", return_value=None):  # close fails
+            with patch.object(d, "_escalate_ticket") as mock_esc:
+                with patch.object(d, "_channel_event"):
+                    d._post_result("T-x", "## Result\nDone. Tests pass.")
+        mock_esc.assert_called_once()
+        reason = mock_esc.call_args[0][1]
+        assert "close" in reason.lower() or "failed" in reason.lower()
+
+    def test_close_failure_does_not_increment_processed(self):
+        d = self._device()
+        with patch.object(d, "_run_queue_cmd", return_value=None):
+            with patch.object(d, "_escalate_ticket"):
+                with patch.object(d, "_channel_event"):
+                    d._post_result("T-x", "## Result\nDone.")
+        assert d._tickets_processed == 0
+
+    def test_is_planning_text_catches_known_phrases(self):
+        d = self._device()
+        assert d._is_planning_text("I'll implement this now.")
+        assert d._is_planning_text("Let me start by analyzing the code.")
+        assert d._is_planning_text("I need to update the registry.")
+        assert not d._is_planning_text("## Analysis\nShipped commit abc.")
+        assert not d._is_planning_text("Done. All tests pass.")
+
+
 # ── skill_load + _build_system_prompt ─────────────────────────────────────────
 
 
