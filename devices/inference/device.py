@@ -362,11 +362,25 @@ class InferenceDevice(BaseDevice):
         api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
         if not api_key:
             raise RuntimeError("OPENROUTER_API_KEY not set")
-        messages = (
-            [{"role": "system", "content": req.system}] + req.messages
-            if req.system
-            else req.messages
-        )
+        spec = self._models.get(req.model)
+        apply_cache = spec is not None and spec.cacheable and bool(req.system)
+        if req.system:
+            if apply_cache:
+                system_msg: dict = {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": req.system,
+                            "cache_control": {"type": "ephemeral"},
+                        }
+                    ],
+                }
+            else:
+                system_msg = {"role": "system", "content": req.system}
+            messages = [system_msg] + req.messages
+        else:
+            messages = req.messages
         payload: dict = {
             "model": req.model,
             "messages": messages,
