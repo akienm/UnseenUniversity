@@ -12,6 +12,9 @@ import pytest
 from unseen_university.channel import post_to_channel
 
 
+_NO_WS = patch("unseen_university.channel._ws_push")
+
+
 class TestPostToChannelPostgres:
     def test_writes_to_postgres_when_db_url_set(self, tmp_path):
         mock_conn = MagicMock()
@@ -24,6 +27,7 @@ class TestPostToChannelPostgres:
         with (
             patch.dict(os.environ, {"IGOR_HOME_DB_URL": "postgresql://test/db"}),
             patch("psycopg2.connect", return_value=mock_conn) as mock_connect,
+            _NO_WS,
         ):
             post_to_channel("hello from granny", author="granny-weatherwax")
 
@@ -48,6 +52,7 @@ class TestPostToChannelPostgres:
         with (
             patch.dict(os.environ, {"IGOR_HOME_DB_URL": "postgresql://test/db"}),
             patch("psycopg2.connect", return_value=mock_conn),
+            _NO_WS,
         ):
             post_to_channel("msg", author="scraps", channel="scraps-audit")
 
@@ -65,6 +70,7 @@ class TestPostToChannelJsonlFallback:
                 os.environ, {"IGOR_HOME_DB_URL": "", "IGOR_HOME": str(tmp_path)}
             ),
             patch("unseen_university.channel._JSONL_FALLBACK", fallback),
+            _NO_WS,
         ):
             post_to_channel("message when no db configured", author="granny-weatherwax")
 
@@ -81,6 +87,7 @@ class TestPostToChannelJsonlFallback:
             ),
             patch("psycopg2.connect", side_effect=Exception("connection refused")),
             patch("unseen_university.channel._JSONL_FALLBACK", fallback),
+            _NO_WS,
         ):
             post_to_channel("fallback on error", author="scraps")
 
@@ -96,6 +103,40 @@ class TestPostToChannelJsonlFallback:
                 "unseen_university.channel._JSONL_FALLBACK",
                 Path("/nonexistent/path/messages.jsonl"),
             ),
+            _NO_WS,
         ):
             # Must not raise
             post_to_channel("silent failure", author="test")
+
+    def test_ws_push_not_called_on_jsonl_fallback(self, tmp_path):
+        # _ws_push must NOT fire when Postgres is down — web server's DB writes
+        # would also fail, and the noise polutes the real channel during test runs.
+        fallback = tmp_path / "cc_channel" / "messages.jsonl"
+        with (
+            patch.dict(
+                os.environ,
+                {"IGOR_HOME_DB_URL": "postgresql://bad/db", "IGOR_HOME": str(tmp_path)},
+            ),
+            patch("psycopg2.connect", side_effect=Exception("pg down")),
+            patch("unseen_university.channel._JSONL_FALLBACK", fallback),
+            patch("unseen_university.channel._ws_push") as mock_ws,
+        ):
+            post_to_channel("fallback msg", author="scraps")
+
+        mock_ws.assert_not_called()
+
+    def test_ws_push_called_on_successful_postgres_write(self, tmp_path):
+        mock_conn = MagicMock()
+        mock_conn.__enter__ = MagicMock(return_value=mock_conn)
+        mock_conn.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
+
+        with (
+            patch.dict(os.environ, {"IGOR_HOME_DB_URL": "postgresql://test/db"}),
+            patch("psycopg2.connect", return_value=mock_conn),
+            patch("unseen_university.channel._ws_push") as mock_ws,
+        ):
+            post_to_channel("good msg", author="granny-weatherwax")
+
+        mock_ws.assert_called_once_with("good msg", "granny-weatherwax", "shared")

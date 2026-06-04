@@ -91,7 +91,11 @@ def post_to_channel(
     except Exception as exc:
         log.warning("channel post Postgres failed (%s): %s", author, exc)
 
-    if not pg_ok:
+    if pg_ok:
+        # Real-time push only on successful Postgres write — if PG is down, the web
+        # server's own DB writes would also fail, so pushing is pointless.
+        _ws_push(message, author, channel)
+    else:
         # JSONL fallback — only reached when Postgres is configured but unavailable
         try:
             fallback = _JSONL_FALLBACK
@@ -110,5 +114,3 @@ def post_to_channel(
                 f.write(entry + "\n")
         except Exception as exc:
             log.warning("channel post JSONL fallback failed (%s): %s", author, exc)
-
-    _ws_push(message, author, channel)
