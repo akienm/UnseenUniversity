@@ -102,7 +102,7 @@ def test_claim_no_ticket_no_channel_post():
 
 def test_post_result_posts_done():
     d = _device()
-    d._run_queue_cmd = MagicMock(return_value=None)
+    d._run_queue_cmd = MagicMock(return_value={"status": "closed"})
     with patch("unseen_university.channel.post_to_channel") as mock_post:
         d._post_result("T-done", "DONE: fixed the bug nicely")
 
@@ -115,7 +115,7 @@ def test_post_result_posts_done():
 
 def test_post_result_done_includes_summary():
     d = _device()
-    d._run_queue_cmd = MagicMock(return_value=None)
+    d._run_queue_cmd = MagicMock(return_value={"status": "closed"})
     with patch("unseen_university.channel.post_to_channel") as mock_post:
         d._post_result("T-x", "DONE: rewrote the parser and added tests")
 
@@ -125,7 +125,7 @@ def test_post_result_done_includes_summary():
 
 def test_post_result_channel_failure_still_increments_counter():
     d = _device()
-    d._run_queue_cmd = MagicMock(return_value=None)
+    d._run_queue_cmd = MagicMock(return_value={"status": "closed"})
     with patch("unseen_university.channel.post_to_channel", side_effect=RuntimeError("down")):
         d._post_result("T-x", "DONE: fixed")
 

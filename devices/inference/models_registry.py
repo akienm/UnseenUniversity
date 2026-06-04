@@ -159,6 +159,31 @@ _SEED: list[ModelSpec] = [
         notes="OpenRouter fallback ONLY — no prompt caching. Use google_free or google source first.",
         created_at="2026-06-02T00:00:00Z",
     ),
+    # Ollama Cloud (flat-rate via Ollama Pro $20/mo subscription)
+    # These models are preferred over usage-based OR when the subscription is active.
+    # Set OLLAMA_PRO_API_KEY to enable. Model IDs match ollama.com library names.
+    ModelSpec(
+        model_id="qwen2.5-coder:32b",
+        source_name="ollama_cloud",
+        tier="worker",
+        input_cost_per_1m=0.0,
+        output_cost_per_1m=0.0,
+        context_window=32_768,
+        tags=["coding", "flat-rate", "ollama-pro"],
+        notes="Ollama Pro flat-rate: qwen2.5-coder 32B. Preferred over OR when OLLAMA_PRO_API_KEY set.",
+        created_at="2026-06-04T00:00:00Z",
+    ),
+    ModelSpec(
+        model_id="llama3.3:70b",
+        source_name="ollama_cloud",
+        tier="analyst",
+        input_cost_per_1m=0.0,
+        output_cost_per_1m=0.0,
+        context_window=128_000,
+        tags=["general", "reasoning", "flat-rate", "ollama-pro"],
+        notes="Ollama Pro flat-rate: Llama 3.3 70B. Strong general-purpose analyst.",
+        created_at="2026-06-04T00:00:00Z",
+    ),
     ModelSpec(
         model_id="claude-sonnet-4-6",
         source_name="anthropic",

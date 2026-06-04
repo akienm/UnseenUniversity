@@ -1,20 +1,23 @@
 """
 rules_engine.py — Routing policy for the inference proxy mini-rack.
 
-Maps task_class → (Source, ModelSpec). Rules are checked in priority order;
-first match wins. Health-aware: skips unavailable sources. Session-affinity:
-same session_id stays on same model once assigned.
+Maps task_class → (Source, ModelSpec). Within a task_class, flat_rate sources
+are preferred over usage_based regardless of rule priority number. Priority is
+the tiebreaker only when billing_type is equal. Health-aware: skips unavailable
+sources. Session-affinity: same session_id stays on same model once assigned.
 
-Default rules (lowest priority number = checked first):
+Default rules — flat_rate (Ollama Pro) preferred, usage_based (OR) as fallback:
 
   Minion tier (trivial tasks, boilerplate):
-    1. minion → qwen3.5-9b / openrouter
+    1. minion → qwen3.5-9b / openrouter (usage_based)
 
   Worker tier (sprint tickets, coding):
-    2. worker → qwen3-coder-30b / openrouter
+    2. worker → qwen3-coder-30b / openrouter (usage_based)
+   10. worker → qwen2.5-coder:32b / ollama_cloud (flat_rate — preferred when key set)
 
   Analyst tier (research, reasoning):
-    3. analyst → deepseek-v4-flash / openrouter
+    3. analyst → deepseek-v4-flash / openrouter (usage_based)
+   11. analyst → llama3.3:70b / ollama_cloud (flat_rate — preferred when key set)
 
   Designer tier (architecture, design — cost cascade):
     4.  designer → gemini-2.0-flash / google_free   ($0, 15 RPM cap)
@@ -46,13 +49,19 @@ class RoutingRule:
 
 
 # Default ordered rules
+# Note: within a task_class, flat_rate sources are preferred regardless of priority
+# number — priority is only the tiebreaker when billing_type is equal.
 _DEFAULT_RULES: list[RoutingRule] = [
     # Minion tier
     RoutingRule(1, "minion", "qwen/qwen3.5-9b", "openrouter", "minion→qwen3.5-9b/OR"),
-    # Worker tier
+    # Worker tier — usage-based fallback (Ollama Cloud preferred when key set)
     RoutingRule(2, "worker", "qwen/qwen3-coder-30b-a3b-instruct", "openrouter", "worker→qwen3-coder-30b/OR"),
-    # Analyst tier
+    # Worker tier — Ollama Pro flat-rate (active when OLLAMA_PRO_API_KEY set)
+    RoutingRule(10, "worker", "qwen2.5-coder:32b", "ollama_cloud", "worker→qwen2.5-coder:32b/ollama-pro"),
+    # Analyst tier — usage-based fallback
     RoutingRule(3, "analyst", "deepseek/deepseek-v4-flash", "openrouter", "analyst→deepseek-v4-flash/OR"),
+    # Analyst tier — Ollama Pro flat-rate
+    RoutingRule(11, "analyst", "llama3.3:70b", "ollama_cloud", "analyst→llama3.3:70b/ollama-pro"),
     # Designer tier — cost cascade: free → paid-cached → OR-fallback → Anthropic
     RoutingRule(4, "designer", "gemini-2.0-flash", "google_free", "designer→gemini-flash/google-free"),
     RoutingRule(5, "designer", "gemini-2.0-flash-paid", "google", "designer→gemini-flash/google-paid"),
@@ -117,22 +126,36 @@ class RulesEngine:
                 source_name,
             )
 
-        # Explicit rules
+        # Explicit rules — collect all available candidates, then sort:
+        #   flat_rate sources preferred, tiebreak by priority (lower = higher priority)
+        candidates: list[tuple[RoutingRule, Source, ModelSpec]] = []
         for rule in self._rules:
             if rule.task_class != task_class:
                 continue
             source = self._sources.get(rule.source_name)
             model = self._models.get(rule.model_id)
             if source and model and source.available:
-                if session_id:
-                    self._session_map[session_id] = (rule.model_id, rule.source_name)
-                log.info("rules: %s → %s", task_class, rule.label)
-                return RoutingDecision(source, model, rule.label)
-            log.debug(
-                "rules: rule %r skipped — source %r unavailable",
-                rule.label,
-                rule.source_name,
+                candidates.append((rule, source, model))
+            else:
+                log.debug(
+                    "rules: rule %r skipped — source %r unavailable",
+                    rule.label,
+                    rule.source_name,
+                )
+
+        if candidates:
+            # billing_rank: flat_rate=0 (preferred), usage_based=1 (fallback)
+            candidates.sort(
+                key=lambda x: (
+                    0 if getattr(x[1], "billing_type", "usage_based") == "flat_rate" else 1,
+                    x[0].priority,
+                )
             )
+            rule, source, model = candidates[0]
+            if session_id:
+                self._session_map[session_id] = (rule.model_id, rule.source_name)
+            log.info("rules: %s → %s", task_class, rule.label)
+            return RoutingDecision(source, model, rule.label)
 
         # Tier fallback — try cheapest available model in same tier
         for spec in self._models.by_tier(task_class):

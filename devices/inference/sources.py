@@ -31,6 +31,8 @@ class Source:
 
     name: str
     available: bool = True
+    # "flat_rate" = subscription (prefer over usage-based); "usage_based" = pay-per-token
+    billing_type: str = "usage_based"
 
     def ping(self) -> bool:
         raise NotImplementedError
@@ -101,6 +103,8 @@ class OpenRouterSource(Source):
             "max_tokens": req.max_tokens,
             "temperature": req.temperature,
         }
+        if req.tools:
+            payload["tools"] = req.tools
         payload.update(req.extra)
         body = json.dumps(payload).encode()
         http_req = urllib.request.Request(
@@ -394,6 +398,82 @@ class GoogleSource(Source):
         }
 
 
+class OllamaCloudSource(Source):
+    """Ollama Pro cloud API — flat-rate subscription ($20/mo Pro plan).
+
+    Uses the OpenAI-compatible endpoint at api.ollama.com (or OLLAMA_CLOUD_ENDPOINT).
+    Auth via OLLAMA_PRO_API_KEY. Disabled (available=False) when key is not set.
+
+    billing_type="flat_rate": preferred over usage-based sources when routing.
+    """
+
+    DEFAULT_ENDPOINT = "https://api.ollama.com/v1/chat/completions"
+
+    def __init__(self) -> None:
+        api_key = os.environ.get("OLLAMA_PRO_API_KEY", "").strip()
+        endpoint = os.environ.get(
+            "OLLAMA_CLOUD_ENDPOINT", self.DEFAULT_ENDPOINT
+        )
+        super().__init__(
+            name="ollama_cloud",
+            available=bool(api_key),
+            billing_type="flat_rate",
+        )
+        self._api_key_val = api_key
+        self._endpoint = endpoint
+
+    def _api_key(self) -> str:
+        key = os.environ.get("OLLAMA_PRO_API_KEY", "").strip() or self._api_key_val
+        if not key:
+            raise RuntimeError("OLLAMA_PRO_API_KEY not set")
+        return key
+
+    def ping(self) -> bool:
+        if not os.environ.get("OLLAMA_PRO_API_KEY", "").strip():
+            return False
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(self._endpoint)
+            host = parsed.hostname or "api.ollama.com"
+            port = parsed.port or 443
+            with socket.create_connection((host, port), timeout=3):
+                return True
+        except OSError:
+            return False
+
+    def call(self, req: "InferenceRequest") -> dict:
+        messages = (
+            [{"role": "system", "content": req.system}] + req.messages
+            if req.system
+            else req.messages
+        )
+        payload: dict = {
+            "model": req.model,
+            "messages": messages,
+            "max_tokens": req.max_tokens,
+            "temperature": req.temperature,
+        }
+        if req.tools:
+            payload["tools"] = req.tools
+        payload.update(req.extra)
+        body = json.dumps(payload).encode()
+        http_req = urllib.request.Request(
+            self._endpoint,
+            data=body,
+            headers={
+                "Authorization": f"Bearer {self._api_key()}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(http_req, timeout=req.timeout) as resp:
+                return json.loads(resp.read())
+        except urllib.error.HTTPError as exc:
+            err_body = exc.read().decode()[:400]
+            raise RuntimeError(f"OllamaCloud {exc.code}: {err_body}") from exc
+
+
 # ── Registry ──────────────────────────────────────────────────────────────────
 
 
@@ -420,14 +500,19 @@ class SourceRegistry:
 def default_registry() -> SourceRegistry:
     """Build the standard source registry from env.
 
-    Provider priority (cost-ascending):
-      1. ollama       — local, $0
-      2. google_free  — Google AI Studio free tier, $0 (rate-limited)
-      3. google       — Google AI Studio paid, ~$0.10-0.40/1M + 75% auto-cache
-      4. openrouter   — cloud fallback for non-Google models
-      5. anthropic    — direct Anthropic API with prompt caching
+    Provider priority (cost-ascending, flat-rate preferred):
+      1. ollama_cloud — Ollama Pro flat-rate ($20/mo); active when OLLAMA_PRO_API_KEY set
+      2. ollama       — local, $0
+      3. google_free  — Google AI Studio free tier, $0 (rate-limited)
+      4. google       — Google AI Studio paid, ~$0.10-0.40/1M + 75% auto-cache
+      5. openrouter   — cloud fallback for non-Google models
+      6. anthropic    — direct Anthropic API with prompt caching
+
+    Routing prefers flat_rate sources (ollama_cloud) over usage_based within
+    the same tier — see RulesEngine.route().
     """
     reg = SourceRegistry()
+    reg.register(OllamaCloudSource())
     reg.register(OllamaSource(
         base_url=os.environ.get("INFERENCE_ENDPOINT", "http://127.0.0.1:11434")
     ))
