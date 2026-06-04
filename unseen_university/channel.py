@@ -55,6 +55,8 @@ def post_to_channel(
     message: str,
     author: str = "rack",
     channel: str = "shared",
+    *,
+    push_ws: bool = True,
 ) -> None:
     """Post a message to the shared channel.
 
@@ -66,6 +68,10 @@ def post_to_channel(
         message: Human-readable message content.
         author: Device ID or name that produced the message.
         channel: Target channel name (default 'shared').
+        push_ws: If False, skip the _ws_push real-time broadcast entirely.
+            Use this when the caller has already done (or doesn't need) the
+            WebSocket push, and you want to guarantee exactly one Postgres row
+            regardless of the web server's ws_only support.
     """
     db_url = os.environ.get("IGOR_HOME_DB_URL", "")
     if not db_url:
@@ -92,7 +98,7 @@ def post_to_channel(
     except Exception as exc:
         log.warning("channel post Postgres failed (%s): %s", author, exc)
 
-    if pg_ok:
+    if pg_ok and push_ws:
         # Real-time push only on successful Postgres write — if PG is down, the web
         # server's own DB writes would also fail, so pushing is pointless.
         _ws_push(message, author, channel)

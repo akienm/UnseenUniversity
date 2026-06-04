@@ -140,3 +140,46 @@ class TestPostToChannelJsonlFallback:
             post_to_channel("good msg", author="granny-weatherwax")
 
         mock_ws.assert_called_once_with("good msg", "granny-weatherwax", "shared")
+
+
+class TestPushWsParam:
+    """push_ws=False guarantees exactly one Postgres row — no _ws_push side-channel."""
+
+    def _mock_conn(self):
+        mock_conn = MagicMock()
+        mock_conn.__enter__ = MagicMock(return_value=mock_conn)
+        mock_conn.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
+        return mock_conn
+
+    def test_push_ws_false_skips_ws_push(self):
+        with (
+            patch.dict(os.environ, {"IGOR_HOME_DB_URL": "postgresql://test/db"}),
+            patch("psycopg2.connect", return_value=self._mock_conn()),
+            patch("unseen_university.channel._ws_push") as mock_ws,
+        ):
+            post_to_channel("granny msg", author="granny-weatherwax", push_ws=False)
+
+        mock_ws.assert_not_called()
+
+    def test_push_ws_true_default_calls_ws_push(self):
+        with (
+            patch.dict(os.environ, {"IGOR_HOME_DB_URL": "postgresql://test/db"}),
+            patch("psycopg2.connect", return_value=self._mock_conn()),
+            patch("unseen_university.channel._ws_push") as mock_ws,
+        ):
+            post_to_channel("granny msg", author="granny-weatherwax")
+
+        mock_ws.assert_called_once()
+
+    def test_push_ws_false_still_writes_postgres(self):
+        mock_conn = self._mock_conn()
+        with (
+            patch.dict(os.environ, {"IGOR_HOME_DB_URL": "postgresql://test/db"}),
+            patch("psycopg2.connect", return_value=mock_conn) as mock_connect,
+            patch("unseen_university.channel._ws_push"),
+        ):
+            post_to_channel("granny msg", author="granny-weatherwax", push_ws=False)
+
+        mock_connect.assert_called_once()  # Postgres write still happens

@@ -395,7 +395,10 @@ def _escalate_stale_dispatched() -> int:
 def _post_channel(msg: str) -> None:
     try:
         from unseen_university.channel import post_to_channel
-        post_to_channel(msg, author="granny-weatherwax", channel="shared")
+        # push_ws=False: Granny writes directly to Postgres only.
+        # The web server's ws_only path previously created a duplicate row
+        # when the server was running stale code without ws_only support.
+        post_to_channel(msg, author="granny-weatherwax", channel="shared", push_ws=False)
     except Exception as e:
         log.debug("Granny: channel post failed: %s", e)
 
