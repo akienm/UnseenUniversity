@@ -158,6 +158,31 @@ class TestRunOnce:
         assert "T-guru2" in result
         mock_avail.assert_not_called()
 
+    def test_one_at_a_time_prevents_second_dispatch_same_cycle(self):
+        # Even when _cc0_busy() says not busy, the second CC ticket must be deferred
+        # because the first was dispatched in the same cycle and CC hasn't had time
+        # to mark it in_progress yet.
+        tickets = [
+            {"id": "T-first", "tags": [], "role": "master", "status": "sprint", "title": "First"},
+            {"id": "T-second", "tags": [], "role": "master", "status": "sprint", "title": "Second"},
+        ]
+        dispatched_ids = []
+
+        def fake_cc(ticket, session="claude-main"):
+            dispatched_ids.append(ticket["id"])
+            return True
+
+        with patch("devices.granny.daemon._sprint_tickets", return_value=tickets):
+            with patch("devices.granny.availability.is_available", return_value=True):
+                with patch("devices.granny.daemon._cc0_busy", return_value=False):
+                    with patch("devices.granny.daemon._dispatch_cc0", side_effect=fake_cc):
+                        with patch("devices.granny.daemon._post_channel"):
+                            result = run_once(_config(), set())
+
+        assert dispatched_ids == ["T-first"], "second CC ticket must be deferred to next cycle"
+        assert "T-first" in result
+        assert "T-second" not in result
+
     def test_high_inertia_ticket_routes_to_cc_not_dicksimnel(self):
         ticket = {"id": "T-sec", "tags": ["Security"], "role": "builder",
                   "status": "sprint", "title": "Secure it"}

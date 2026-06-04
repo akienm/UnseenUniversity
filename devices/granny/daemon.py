@@ -256,6 +256,11 @@ def run_once(config: dict, dispatched: set[str]) -> set[str]:
     tickets = _sprint_tickets()
     new_dispatched = set(dispatched)
 
+    # Track workers that already received a ticket this cycle so one_at_a_time is
+    # honoured within the cycle — not just via the DB status (which CC hasn't
+    # updated yet by the time the second ticket is evaluated).
+    dispatched_this_cycle: set[str] = set()
+
     for ticket in tickets:
         tid = ticket.get("id", "")
         if not tid or tid in dispatched:
@@ -273,8 +278,10 @@ def run_once(config: dict, dispatched: set[str]) -> set[str]:
                 log.debug("Granny: %s unavailable — deferring %s", target, tid)
                 continue
 
-            if wcfg.get("one_at_a_time") and _cc0_busy():
-                log.debug("Granny: CC.0 busy — deferring %s", tid)
+            if wcfg.get("one_at_a_time") and (
+                target in dispatched_this_cycle or _cc0_busy()
+            ):
+                log.debug("Granny: %s one-at-a-time — deferring %s", target, tid)
                 continue
 
             dispatch_kind = wcfg.get("dispatch", "set_worker")
@@ -285,6 +292,7 @@ def run_once(config: dict, dispatched: set[str]) -> set[str]:
 
         if ok:
             new_dispatched.add(tid)
+            dispatched_this_cycle.add(target)
             _post_channel(
                 f"GRANNY_DISPATCH|ticket={tid}|worker={target}"
                 f"|title={ticket.get('title','?')[:60]}"
