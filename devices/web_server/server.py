@@ -1080,6 +1080,80 @@ async def _api_comms_health(request: Request):
     return JSONResponse(_comms.health())
 
 
+_CIRCUIT_STATE_FILE = Path(
+    os.environ.get("UU_CIRCUIT_STATE_FILE", str(Path.home() / ".unseen_university" / "circuit_state.json"))
+)
+
+
+def _read_circuit_state() -> dict:
+    try:
+        return json.loads(_CIRCUIT_STATE_FILE.read_text())
+    except FileNotFoundError:
+        return {}
+    except Exception as exc:
+        log.warning("circuit: read failed: %s", exc)
+        return {}
+
+
+def _write_circuit_state(state: dict) -> None:
+    try:
+        _CIRCUIT_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _CIRCUIT_STATE_FILE.write_text(json.dumps(state, indent=2))
+    except Exception as exc:
+        log.warning("circuit: write failed: %s", exc)
+
+
+async def _api_circuit_get(request: Request):
+    """GET /api/circuit — return full circuit state dict."""
+    return JSONResponse(_read_circuit_state())
+
+
+async def _api_circuit_set(request: Request):
+    """POST /api/circuit/{device} — set breaker to OPEN or CLOSED.
+
+    Body: {"state": "OPEN"|"CLOSED"}
+    CC.0 OPEN: also calls stop_cc_minions to kill cc-T-* sessions.
+    Posts CIRCUIT_OPEN|device=<id> or CIRCUIT_CLOSE|device=<id> to shared channel.
+    """
+    device_id = request.path_params.get("device_id", "")
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "invalid JSON"}, status_code=400)
+    new_state = body.get("state", "").upper()
+    if new_state not in ("OPEN", "CLOSED"):
+        return JSONResponse({"error": "state must be OPEN or CLOSED"}, status_code=400)
+
+    state = _read_circuit_state()
+    old_state = state.get(device_id, "CLOSED")
+    state[device_id] = new_state
+    _write_circuit_state(state)
+
+    log.info("circuit: %s → %s (was %s)", device_id, new_state, old_state)
+
+    # Channel notification
+    try:
+        from unseen_university.channel import post_to_channel
+        kind = "CIRCUIT_OPEN" if new_state == "OPEN" else "CIRCUIT_CLOSE"
+        post_to_channel(f"{kind}|device={device_id}", author="granny-weatherwax", channel="shared", push_ws=False)
+    except Exception as exc:
+        log.debug("circuit: channel post failed: %s", exc)
+
+    # CC.0 special: kill cc-T-* sessions when opening
+    if device_id == "CC.0" and new_state == "OPEN":
+        try:
+            import subprocess as _sp
+            _sp.run(
+                ["python3", str(Path(__file__).resolve().parents[2] / "lab" / "claudecode" / "stop_cc_minions.py")],
+                check=False, timeout=15,
+            )
+            log.info("circuit: CC.0 OPEN — stop_cc_minions called")
+        except Exception as exc:
+            log.warning("circuit: stop_cc_minions failed: %s", exc)
+
+    return JSONResponse({"device": device_id, "state": new_state, "previous": old_state})
+
+
 async def _api_granny_health(request: Request):
     """GET /api/granny/health — Granny daemon liveness check."""
     try:
@@ -1271,13 +1345,41 @@ function renderMachines(machines,devices,localHostname){
   el.innerHTML='<table><tr><th>Name</th><th>Hostname</th><th>IP</th>'+
     '<th>OS</th><th>Status</th><th>Roles</th></tr>'+rows.join('')+'</table>';
 }
+async function toggleCircuit(deviceId, currentState){
+  var newState = currentState==='OPEN' ? 'CLOSED' : 'OPEN';
+  if(!confirm('Set '+deviceId+' circuit breaker to '+newState+'?')) return;
+  try{
+    await fetch('/api/circuit/'+encodeURIComponent(deviceId), {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({state:newState})
+    });
+    refresh();
+  }catch(e){ alert('Circuit update failed: '+e); }
+}
+function renderCircuitButton(deviceId, circuitState){
+  var st = (circuitState||{})[deviceId]||'CLOSED';
+  var label = st==='OPEN' ? '🔴 OPEN' : '🟢 CLOSED';
+  return '<button onclick="toggleCircuit(\''+deviceId+'\',\''+st+'\')" style="font-size:0.75rem;cursor:pointer;margin-left:0.5rem">CB: '+label+'</button>';
+}
+var _circuitState={};
+function renderDevicesWithCircuit(devices, circuitState){
+  if(!devices||!devices.length){document.getElementById('devices-list').textContent='No devices registered.';return;}
+  var rows=devices.map(function(d){
+    var hbAge=d.last_heartbeat_ago_s!=null?'HB: '+d.last_heartbeat_ago_s+'s ago':'no HB';
+    var mb=d.mailbox?'<br><small>mailbox: '+d.mailbox+'</small>':'';
+    var cb=renderCircuitButton(d.id, circuitState);
+    return '<tr><td>'+d.id+'</td><td>'+d.status+'</td><td>'+hbAge+'</td><td>'+mb+'</td><td>'+cb+'</td></tr>';
+  });
+  document.getElementById('devices-list').innerHTML='<table><tr><th>ID</th><th>Status</th><th>Heartbeat</th><th>Mailbox</th><th>Breaker</th></tr>'+rows.join('')+'</table>';
+}
 async function refresh(){
   try{
     var data=await(await fetch('/api/rack/health')).json();
+    _circuitState=data.circuit_state||{};
     document.getElementById('rack-ts').textContent='Last updated: '+data.ts;
     renderWS(data.web_server);
     renderBudget(data.budget);
-    renderDevices(data.devices);
+    renderDevicesWithCircuit(data.devices, _circuitState);
     renderMachines(data.machines,data.devices,data.local_hostname);
   }catch(e){
     document.getElementById('rack-ts').textContent='Error loading rack health: '+e;
@@ -1380,6 +1482,7 @@ async def _api_rack_health(request: Request):
             "machines": machines,
             "budget": budget,
             "local_hostname": _socket.gethostname(),
+            "circuit_state": _read_circuit_state(),
             "ts": _ts(),
         }
     )
@@ -2067,6 +2170,9 @@ def _make_app() -> Starlette:
         Route("/api/comms/channels", _api_comms_channels),
         Route("/api/comms/health", _api_comms_health),
         Route("/api/granny/health", _api_granny_health),
+        # Circuit breakers
+        Route("/api/circuit", _api_circuit_get),
+        Route("/api/circuit/{device_id}", _api_circuit_set, methods=["POST"]),
         # Rack health API + page
         Route("/api/rack/health", _api_rack_health),
         Route("/rack", _page_rack),

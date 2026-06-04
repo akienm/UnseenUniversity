@@ -61,6 +61,9 @@ _CONFIG_PATH = _UU_ROOT / "config" / "granny.yaml"
 _PID_FILE = _GRANNY_HOME / "daemon.pid"
 
 POLL_INTERVAL_S = int(os.environ.get("GRANNY_POLL_INTERVAL", "60"))
+_CIRCUIT_STATE_FILE = Path(
+    os.environ.get("UU_CIRCUIT_STATE_FILE", str(Path.home() / ".unseen_university" / "circuit_state.json"))
+)
 
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -552,6 +555,18 @@ def run_once(config: dict, dispatched: set[str], *, imap=None) -> set[str]:
             if not is_available(target):
                 log.debug("Granny: %s unavailable — deferring %s", target, tid)
                 continue
+
+            # Circuit breaker check — skip and post GRANNY_THROTTLED when open
+            try:
+                circuit = json.loads(_CIRCUIT_STATE_FILE.read_text())
+                if circuit.get(target) == "OPEN":
+                    log.info("Granny: %s circuit OPEN — skipping %s", target, tid)
+                    _post_channel(f"GRANNY_THROTTLED|reason=circuit_open|worker={target}|ticket={tid}")
+                    continue
+            except FileNotFoundError:
+                pass
+            except Exception as exc:
+                log.debug("Granny: circuit check failed (non-fatal): %s", exc)
 
             if wcfg.get("one_at_a_time") and (
                 target in dispatched_this_cycle or _cc0_busy()
