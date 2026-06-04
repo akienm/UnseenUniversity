@@ -14,12 +14,24 @@ Rule format (config/granny.yaml):
 
   workers:
     CC.0:
-      dispatch: tmux_send_keys
-      session: claude-main
+      dispatch: bus
+      mailbox: cc.0          # worker's IMAP mailbox — replies return to granny.0
       one_at_a_time: true
     DickSimnel.0:
       dispatch: set_worker
       worker_name: dicksimnel
+
+  granny_mailbox: granny.0   # Granny's reply mailbox (default: granny.0)
+
+Bus dispatch (new path):
+  1. Granny sends a dispatch envelope to worker mailbox → setstatus dispatched
+  2. Worker shim acks → Granny marks acked
+  3. Worker shim sends started → Granny marks in_progress
+  4. Worker shim sends timeout → Granny marks escalated
+  Watchdog: dispatched tickets older than DISPATCH_ACK_TIMEOUT_S → escalated
+
+Legacy path (kept for machines without bus):
+  dispatch: tmux_send_keys  → directly sends /sprint-ticket via send-keys
 
 Run as: python -m devices.granny.daemon
 """
@@ -110,7 +122,12 @@ def _sprint_tickets() -> list[dict]:
 
 
 def _cc0_busy() -> bool:
-    """True when a worker=claude ticket is already in_progress."""
+    """True when a worker=claude ticket is in dispatched, acked, or in_progress.
+
+    Includes dispatched/acked so that bus-dispatched tickets prevent a second
+    dispatch before the handshake completes. Without this, the 60s poll would
+    fire a second ticket while the first is still in the ack window.
+    """
     try:
         import psycopg2
 
@@ -119,7 +136,7 @@ def _cc0_busy() -> bool:
             cur.execute(
                 """SELECT 1 FROM clan.memories
                    WHERE metadata->>'kind' = 'ticket'
-                   AND metadata->>'status' = 'in_progress'
+                   AND metadata->>'status' IN ('dispatched', 'acked', 'in_progress')
                    AND metadata->>'worker' IN ('claude', 'cc')
                    LIMIT 1"""
             )
@@ -230,6 +247,151 @@ def _dispatch_dicksimnel(ticket: dict, worker_name: str = "dicksimnel") -> bool:
     return True
 
 
+# ── Bus dispatch + handshake response ────────────────────────────────────────
+
+# Granny escalates a dispatched ticket if no ack arrives within this window.
+DISPATCH_ACK_TIMEOUT_S = int(os.environ.get("GRANNY_DISPATCH_ACK_TIMEOUT", "180"))
+
+_GRANNY_MAILBOX_DEFAULT = "granny.0"
+
+
+def _dispatch_bus(ticket: dict, imap, worker_mailbox: str, granny_mailbox: str) -> bool:
+    """Send a dispatch envelope to the worker's bus mailbox and mark dispatched.
+
+    The handshake is async — Granny does not wait for ack here. Replies arrive
+    in granny_mailbox and are processed by _process_handshake_replies on the
+    next poll cycle.
+    """
+    from bus.envelope import Envelope
+
+    tid = ticket["id"]
+    env = Envelope.now(
+        from_device=granny_mailbox,
+        to_device=worker_mailbox,
+        payload={
+            "kind": "dispatch",
+            "ticket_id": tid,
+        },
+    )
+    try:
+        imap.append(worker_mailbox, env)
+    except Exception as exc:
+        log.warning("Granny: bus send failed for %s → %s: %s", tid, worker_mailbox, exc)
+        return False
+
+    r = subprocess.run(
+        [_PYTHON, str(_CC_QUEUE), "setstatus", tid, "dispatched"],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
+    )
+    if r.returncode != 0:
+        log.warning("Granny: setstatus dispatched failed for %s: %s", tid, r.stderr[:80])
+    log.info(
+        "Granny: dispatched %s → %s via bus (granny_mailbox=%s)",
+        tid, worker_mailbox, granny_mailbox,
+    )
+    return True
+
+
+def _process_handshake_replies(imap, granny_mailbox: str) -> int:
+    """Fetch all pending handshake replies from Granny's mailbox and apply transitions.
+
+    Expected reply kinds (from BaseShim._DispatchHandshake):
+      dispatch_ack     → setstatus acked
+      dispatch_started → setstatus in_progress
+      dispatch_timeout → setstatus escalated
+
+    Returns the number of replies processed.
+    """
+    try:
+        envelopes = imap.fetch_unseen(granny_mailbox)
+    except Exception as exc:
+        log.warning("Granny: reply fetch failed (mailbox=%s): %s", granny_mailbox, exc)
+        return 0
+
+    count = 0
+    for env in envelopes:
+        payload = getattr(env, "payload", {}) if not isinstance(env, dict) else env.get("payload", {})
+        kind = payload.get("kind", "")
+        tid = payload.get("ticket_id", "")
+        if not tid or kind not in ("dispatch_ack", "dispatch_started", "dispatch_timeout"):
+            continue
+
+        new_status = {
+            "dispatch_ack": "acked",
+            "dispatch_started": "in_progress",
+            "dispatch_timeout": "escalated",
+        }[kind]
+
+        r = subprocess.run(
+            [_PYTHON, str(_CC_QUEUE), "setstatus", tid, new_status],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
+        )
+        if r.returncode != 0:
+            log.warning(
+                "Granny: setstatus %s failed for %s: %s", new_status, tid, r.stderr[:80]
+            )
+        else:
+            log.info(
+                "Granny: handshake reply %s for %s → status=%s",
+                kind, tid, new_status,
+            )
+        count += 1
+
+    return count
+
+
+def _escalate_stale_dispatched() -> int:
+    """Escalate tickets stuck in 'dispatched' past DISPATCH_ACK_TIMEOUT_S.
+
+    Uses updated_at from the DB — no local timestamp file needed.
+    Returns the number of tickets escalated.
+    """
+    try:
+        import psycopg2
+        import psycopg2.extras
+
+        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """SELECT metadata->>'id' AS tid FROM clan.memories
+                   WHERE metadata->>'kind' = 'ticket'
+                   AND metadata->>'status' = 'dispatched'
+                   AND updated_at < now() - interval '%s seconds'""",
+                (DISPATCH_ACK_TIMEOUT_S,),
+            )
+            stale = [row["tid"] for row in cur.fetchall() if row["tid"]]
+        conn.close()
+    except Exception as exc:
+        log.warning("Granny: stale-dispatched query failed: %s", exc)
+        return 0
+
+    count = 0
+    for tid in stale:
+        r = subprocess.run(
+            [_PYTHON, str(_CC_QUEUE), "setstatus", tid, "escalated"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
+        )
+        if r.returncode != 0:
+            log.warning("Granny: escalate-stale setstatus failed for %s: %s", tid, r.stderr[:80])
+        else:
+            log.warning(
+                "Granny: escalated stale-dispatched ticket %s (no ack within %ds)",
+                tid, DISPATCH_ACK_TIMEOUT_S,
+            )
+        count += 1
+
+    return count
+
+
 def _post_channel(msg: str) -> None:
     try:
         from unseen_university.channel import post_to_channel
@@ -259,9 +421,23 @@ def _save_dispatched(ids: set[str]) -> None:
 # ── Poll cycle ────────────────────────────────────────────────────────────────
 
 
-def run_once(config: dict, dispatched: set[str]) -> set[str]:
-    """Single poll cycle. Returns updated dispatched set."""
+def run_once(config: dict, dispatched: set[str], *, imap=None) -> set[str]:
+    """Single poll cycle. Returns updated dispatched set.
+
+    imap — optional IMAPServer for bus dispatch; when None, bus dispatch is
+    skipped and only legacy (tmux_send_keys / set_worker) paths are used.
+    """
     from devices.granny.availability import is_available
+
+    granny_mailbox = config.get("granny_mailbox", _GRANNY_MAILBOX_DEFAULT)
+
+    # Process pending handshake replies and run the stale-dispatch watchdog
+    # before looking for new work, so transitions land before the busy-check.
+    if imap is not None:
+        replied = _process_handshake_replies(imap, granny_mailbox)
+        if replied:
+            log.debug("Granny: processed %d handshake reply(s)", replied)
+    _escalate_stale_dispatched()
 
     rules = config.get("rules", [])
     workers_cfg = config.get("workers", {})
@@ -297,7 +473,21 @@ def run_once(config: dict, dispatched: set[str]) -> set[str]:
                 continue
 
             dispatch_kind = wcfg.get("dispatch", "set_worker")
-            if dispatch_kind == "tmux_send_keys":
+            if dispatch_kind == "bus":
+                if imap is None:
+                    log.warning(
+                        "Granny: dispatch=bus configured for %s but no imap — "
+                        "skipping %s (start Granny with bus enabled)",
+                        target, tid,
+                    )
+                    continue
+                ok = _dispatch_bus(
+                    ticket,
+                    imap,
+                    wcfg.get("mailbox", f"{target.lower().replace('.', '-')}"),
+                    granny_mailbox,
+                )
+            elif dispatch_kind == "tmux_send_keys":
                 ok = _dispatch_cc0(ticket, wcfg.get("session", "claude-main"))
             else:
                 ok = _dispatch_dicksimnel(ticket, wcfg.get("worker_name", "dicksimnel"))
@@ -318,18 +508,40 @@ def run_once(config: dict, dispatched: set[str]) -> set[str]:
 # ── Main loop ─────────────────────────────────────────────────────────────────
 
 
+def _make_imap_if_bus_configured(config: dict):
+    """Return a connected IMAPServer when any worker uses dispatch=bus; else None."""
+    workers_cfg = config.get("workers", {})
+    needs_bus = any(
+        v.get("dispatch") == "bus" for v in workers_cfg.values() if isinstance(v, dict)
+    )
+    if not needs_bus:
+        return None
+    try:
+        from bus.connection import make_bus_connection
+        return make_bus_connection()
+    except Exception as exc:
+        log.warning("Granny: bus connection failed — falling back to legacy dispatch: %s", exc)
+        return None
+
+
 def run_loop() -> None:
     log.info("Granny: rules-engine daemon starting (poll=%ds)", POLL_INTERVAL_S)
     _GRANNY_HOME.mkdir(parents=True, exist_ok=True)
     dispatched = _load_dispatched()
     cycle = 0
 
+    config = _load_config()
+    imap = _make_imap_if_bus_configured(config)
+    if imap is not None:
+        log.info("Granny: bus dispatch enabled (reply mailbox=%s)",
+                 config.get("granny_mailbox", _GRANNY_MAILBOX_DEFAULT))
+
     while True:
         cycle += 1
         config = _load_config()
         log.debug("Granny: poll cycle %d (%d dispatched so far)", cycle, len(dispatched))
         try:
-            dispatched = run_once(config, dispatched)
+            dispatched = run_once(config, dispatched, imap=imap)
         except Exception as e:
             log.error("Granny: poll cycle %d error: %s", cycle, e)
         _save_dispatched(dispatched)
