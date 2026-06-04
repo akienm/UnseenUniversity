@@ -127,7 +127,8 @@ class TestDickSimnelDevice:
         # next returns bare ID; show returns full JSON
         next_resp = MagicMock(returncode=0, stdout="T-abc\n")
         show_resp = MagicMock(returncode=0, stdout=json.dumps(ticket))
-        with patch("subprocess.run", side_effect=[next_resp, show_resp]):
+        with patch("subprocess.run", side_effect=[next_resp, show_resp]), \
+             patch("unseen_university.channel.post_to_channel"):
             result = d._claim_next_ticket()
         assert result is not None
         assert result["id"] == "T-abc"
