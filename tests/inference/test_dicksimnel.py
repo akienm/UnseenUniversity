@@ -345,6 +345,26 @@ class TestDickSimnelSkillLoad:
         assert "SKILL_CONTENT_MARKER" in prompt
         assert "DickSimnel" in prompt
 
+    def test_build_system_prompt_includes_ibd_preamble(self, tmp_path):
+        from devices.dicksimnel.device import DickSimnelDevice
+        skill_dir = tmp_path / "sprint-ticket"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("SKILL_CONTENT")
+        d = DickSimnelDevice()
+        d._shim = MagicMock()
+        with patch("devices.dicksimnel.device._SKILLS_DIR", tmp_path):
+            prompt = d._build_system_prompt({})
+        assert "I intend that" in prompt
+        assert "hypothesis" in prompt
+
+    def test_ibd_preamble_absent_when_skill_missing(self, tmp_path):
+        from devices.dicksimnel.device import DickSimnelDevice
+        d = DickSimnelDevice()
+        d._shim = MagicMock()
+        with patch("devices.dicksimnel.device._SKILLS_DIR", tmp_path):
+            prompt = d._build_system_prompt({})
+        assert "I intend that" not in prompt
+
     def test_build_system_prompt_falls_back_to_base_when_skill_missing(self, tmp_path):
         from devices.dicksimnel.device import SYSTEM_PROMPT
         d = self._device()

@@ -312,6 +312,15 @@ class DickSimnelDevice(BaseDevice):
             log.warning("DickSimnel: skill load failed for %r: %s", name, exc)
             return None
 
+    _IBD_PREAMBLE = (
+        "Before executing the sprint-ticket skill steps below, do three things:\n"
+        "1. State in one sentence the intention for this ticket: "
+        "'I intend that...'\n"
+        "2. State the hypothesis: what should be observably different when this ships?\n"
+        "3. Write the test that validates the hypothesis.\n"
+        "Then proceed with sprint-ticket as written.\n\n"
+    )
+
     def _build_system_prompt(self, ticket: dict) -> str:
         """Build the system prompt. sprint-ticket skill is the sole procedural guide."""
         skill_content = self.skill_load("sprint-ticket")
@@ -319,6 +328,7 @@ class DickSimnelDevice(BaseDevice):
             return (
                 "You are DickSimnel, an autonomous software engineering agent in the "
                 "UnseenUniversity rack. Execute the sprint-ticket procedure below exactly.\n\n"
+                + self._IBD_PREAMBLE
                 + skill_content
             )
         return SYSTEM_PROMPT
