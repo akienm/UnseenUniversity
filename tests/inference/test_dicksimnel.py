@@ -213,8 +213,7 @@ class TestDickSimnelEscalation:
         with patch("unseen_university.channel.post_to_channel"):
             d._escalate_ticket("T-test", "Security tag", "some analysis")
         calls = [str(c) for c in d._run_queue_cmd.call_args_list]
-        assert any("set-worker" in c and "claude" in c for c in calls)
-        assert any("setstatus" in c and "sprint" in c for c in calls)
+        assert any("setstatus" in c and "escalated" in c for c in calls)
         assert d._active_ticket is None
         assert d._tickets_declined == 1
 

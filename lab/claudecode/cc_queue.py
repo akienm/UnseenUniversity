@@ -102,6 +102,7 @@ STATUS_ORDER = {
     "acked": 4.75,
     "in_progress": 5,
     "awaiting_validation": 6,
+    "escalated": 6.5,  # failed at current tier — awaiting higher-tier pickup
     "hold": 7,
     "dependency": 8,
     "pending": 9,
@@ -1736,8 +1737,8 @@ def cmd_set_worker(args):
         sys.exit(1)
     worker, ids = args[0], args[1:]
     known = ("igor", "claude", "dicksimnel", "akien")
-    if worker not in known:
-        print(f"Unknown worker '{worker}' — use one of: {', '.join(known)}")
+    if worker and worker not in known:
+        print(f"Unknown worker '{worker}' — use one of: {', '.join(known)} or '' to clear")
         sys.exit(1)
     tasks = _load()
     idx = {t["id"]: t for t in tasks}
@@ -1745,8 +1746,9 @@ def cmd_set_worker(args):
         if tid not in idx:
             print(f"  not found: {tid}")
             continue
-        idx[tid]["worker"] = worker
-        print(f"  {tid} → worker={worker}")
+        idx[tid]["worker"] = worker or None
+        label = worker if worker else "(cleared)"
+        print(f"  {tid} → worker={label}")
     _save(tasks)
 
 

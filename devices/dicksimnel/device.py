@@ -274,8 +274,7 @@ class DickSimnelDevice(BaseDevice):
         self._channel_event(
             f"DICKSIMNEL_ESCALATE ticket={ticket_id} reason={reason!r} analysis={summary!r}"
         )
-        self._run_queue_cmd("set-worker", "claude", ticket_id)
-        self._run_queue_cmd("setstatus", ticket_id, "sprint")
+        self._run_queue_cmd("setstatus", ticket_id, "escalated")
         log.info("DickSimnel: escalated ticket %s to CC — %s", ticket_id, reason)
         self._tickets_declined += 1
         self._active_ticket = None

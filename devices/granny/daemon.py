@@ -56,7 +56,6 @@ _DB_URL = os.environ.get(
 )
 _PYTHON = sys.executable
 _GRANNY_HOME = Path.home() / ".granny"
-_DISPATCHED_FILE = _GRANNY_HOME / "dispatched_cycle.json"
 _CONFIG_PATH = _UU_ROOT / "config" / "granny.yaml"
 _PID_FILE = _GRANNY_HOME / "daemon.pid"
 
@@ -111,7 +110,7 @@ def _sprint_tickets() -> list[dict]:
             cur.execute(
                 """SELECT metadata FROM clan.memories
                    WHERE metadata->>'kind' = 'ticket'
-                   AND metadata->>'status' = 'sprint'
+                   AND metadata->>'status' IN ('sprint', 'escalated')
                    AND (metadata->>'gate' IS NULL OR metadata->>'gate' = '')
                    ORDER BY (metadata->>'priority')::float DESC NULLS LAST
                    LIMIT 50"""
@@ -487,61 +486,11 @@ def _post_channel(msg: str) -> None:
         log.debug("Granny: channel post failed: %s", e)
 
 
-# ── Dispatched-set persistence ────────────────────────────────────────────────
-
-
-def _prune_dispatched(ids: set[str]) -> set[str]:
-    """Return only the IDs still in dispatched/acked/in_progress in the DB.
-
-    Tickets that returned to sprint/done/triage/hold become eligible for
-    re-dispatch. Fails open — on DB error returns the original set unchanged.
-    """
-    if not ids:
-        return ids
-    try:
-        import psycopg2
-
-        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
-        with conn.cursor() as cur:
-            cur.execute(
-                """SELECT metadata->>'id' AS tid FROM clan.memories
-                   WHERE metadata->>'kind' = 'ticket'
-                   AND metadata->>'id' = ANY(%s)
-                   AND metadata->>'status' IN ('dispatched', 'acked', 'in_progress')""",
-                (list(ids),),
-            )
-            active = {row[0] for row in cur.fetchall() if row[0]}
-        conn.close()
-        pruned = ids - active
-        if pruned:
-            log.debug("Granny: pruned %d stale dispatched IDs: %s", len(pruned), sorted(pruned))
-        return active
-    except Exception as exc:
-        log.warning("Granny: dispatched-set prune failed (fail open): %s", exc)
-        return ids
-
-
-def _load_dispatched() -> set[str]:
-    try:
-        data = json.loads(_DISPATCHED_FILE.read_text())
-        ids = set(data.get("ids", []))
-    except Exception:
-        return set()
-    return _prune_dispatched(ids)
-
-
-def _save_dispatched(ids: set[str]) -> None:
-    try:
-        _DISPATCHED_FILE.write_text(json.dumps({"ids": sorted(ids)}))
-    except Exception as e:
-        log.warning("Granny: save dispatched failed: %s", e)
-
-
 # ── Poll cycle ────────────────────────────────────────────────────────────────
 
 
-def run_once(config: dict, dispatched: set[str], *, imap=None) -> set[str]:
-    """Single poll cycle. Returns updated dispatched set.
+def run_once(config: dict, *, imap=None) -> None:
+    """Single poll cycle. Ticket status is the authoritative state — no side files.
 
     imap — optional IMAPServer for bus dispatch; when None, bus dispatch is
     skipped and only legacy (tmux_send_keys / set_worker) paths are used.
@@ -562,7 +511,6 @@ def run_once(config: dict, dispatched: set[str], *, imap=None) -> set[str]:
     rules = config.get("rules", [])
     workers_cfg = config.get("workers", {})
     tickets = _sprint_tickets()
-    new_dispatched = set(dispatched)
 
     # Track workers that already received a ticket this cycle so one_at_a_time is
     # honoured within the cycle — not just via the DB status (which CC hasn't
@@ -571,10 +519,17 @@ def run_once(config: dict, dispatched: set[str], *, imap=None) -> set[str]:
 
     for ticket in tickets:
         tid = ticket.get("id", "")
-        if not tid or tid in dispatched:
+        if not tid:
             continue
 
-        target = match_rule(ticket, rules)
+        status = ticket.get("status", "sprint")
+
+        # Escalated tickets: always route to CC.0 — never back to builder tier.
+        # DickSimnel already tried and failed; only master+ should handle them.
+        if status == "escalated":
+            target = "CC.0"
+        else:
+            target = match_rule(ticket, rules)
 
         # guru tickets go to Akien — no availability check, no CC/DickSimnel dispatch
         if target == "akien":
@@ -625,7 +580,6 @@ def run_once(config: dict, dispatched: set[str], *, imap=None) -> set[str]:
                 ok = _dispatch_dicksimnel(ticket, wcfg.get("worker_name", "dicksimnel"))
 
         if ok:
-            new_dispatched.add(tid)
             dispatched_this_cycle.add(target)
             _post_channel(
                 f"GRANNY_DISPATCH|ticket={tid}|worker={target}"
@@ -633,8 +587,6 @@ def run_once(config: dict, dispatched: set[str], *, imap=None) -> set[str]:
             )
         else:
             log.warning("Granny: dispatch failed for %s → %s", tid, target)
-
-    return new_dispatched
 
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
@@ -659,7 +611,6 @@ def _make_imap_if_bus_configured(config: dict):
 def run_loop() -> None:
     log.info("Granny: rules-engine daemon starting (poll=%ds)", POLL_INTERVAL_S)
     _GRANNY_HOME.mkdir(parents=True, exist_ok=True)
-    dispatched = _load_dispatched()
     cycle = 0
 
     config = _load_config()
@@ -671,12 +622,11 @@ def run_loop() -> None:
     while True:
         cycle += 1
         config = _load_config()
-        log.debug("Granny: poll cycle %d (%d dispatched so far)", cycle, len(dispatched))
+        log.debug("Granny: poll cycle %d", cycle)
         try:
-            dispatched = run_once(config, dispatched, imap=imap)
+            run_once(config, imap=imap)
         except Exception as e:
             log.error("Granny: poll cycle %d error: %s", cycle, e)
-        _save_dispatched(dispatched)
         time.sleep(POLL_INTERVAL_S)
 
 
