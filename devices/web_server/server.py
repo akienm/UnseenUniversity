@@ -1891,6 +1891,78 @@ async def _page_queue(request: Request):
     return HTMLResponse(_html_wrap(title, body))
 
 
+# ── Inference models history routes (T-inference-models-version-ui) ──────────
+
+
+def _inference_registry():
+    """Return the default ModelsRegistry. Lazy import — inference may be absent."""
+    try:
+        from devices.inference.models_registry import default_registry
+        return default_registry()
+    except Exception:
+        return None
+
+
+async def _api_inference_model_history(request: Request):
+    """GET /api/inference/models/{id}/history — versioned history for one model."""
+    model_id = request.path_params.get("model_id", "")
+    log.info("inference: model history request for %r", model_id)
+    reg = _inference_registry()
+    if reg is None:
+        return JSONResponse({"model_id": model_id, "history": [], "error": "registry unavailable"})
+    history = reg.list_model_history(model_id)
+    return JSONResponse({"model_id": model_id, "history": history, "count": len(history)})
+
+
+async def _page_inference_models(request: Request):
+    """GET /inference/models — model registry with inline version history."""
+    log.info("inference: models page request")
+    reg = _inference_registry()
+    if reg is None:
+        return HTMLResponse(_html_wrap("Inference Models", "<p>Inference device unavailable.</p>"))
+
+    models = sorted(reg.all(), key=lambda m: (m.tier, m.input_cost_per_1m))
+    sections = []
+    current_tier = None
+    for spec in models:
+        if spec.tier != current_tier:
+            current_tier = spec.tier
+            sections.append(f"<h2 style='color:#aaa;margin-top:1.5rem'>{spec.tier}</h2>")
+        history = reg.list_model_history(spec.model_id)
+        hist_html = ""
+        if history:
+            rows = "".join(
+                f"<tr><td style='color:#888;font-size:0.8rem'>{h.get('created_at','?')}</td>"
+                f"<td style='color:#aaa;font-size:0.8rem'>→ retired {h.get('retired_at','?')}</td>"
+                f"<td style='color:#888;font-size:0.8rem'>{h.get('notes','')[:80]}</td></tr>"
+                for h in reversed(history)
+            )
+            hist_html = (
+                f"<details style='margin-top:0.3rem'>"
+                f"<summary style='color:#888;font-size:0.8rem;cursor:pointer'>"
+                f"{len(history)} prior version(s)</summary>"
+                f"<table style='margin-top:0.3rem'><tr><th>Created</th><th>Retired</th><th>Notes</th></tr>"
+                f"{rows}</table></details>"
+            )
+        sections.append(
+            f"<div style='border:1px solid #333;border-radius:4px;padding:0.75rem;margin-bottom:0.5rem'>"
+            f"<code style='color:#7ec8e3'>{spec.model_id}</code>"
+            f" <span class='badge'>{spec.tier}</span>"
+            f" <span style='color:#888;font-size:0.85rem'>{spec.source_name}</span>"
+            f" <span style='color:#888;font-size:0.85rem'>${spec.input_cost_per_1m}/1M in</span>"
+            f"<br><span style='color:#aaa;font-size:0.85rem'>{spec.notes}</span>"
+            + (f"<br><span style='color:#666;font-size:0.8rem'>added {spec.created_at}</span>" if spec.created_at else "")
+            + hist_html
+            + "</div>"
+        )
+
+    body = (
+        f"<p style='color:#888'>{len(models)} model(s) registered</p>"
+        + "".join(sections)
+    )
+    return HTMLResponse(_html_wrap("Inference Models", body))
+
+
 # ── Feeds route ──────────────────────────────────────────────────────────────
 
 _feeds_imap = None
@@ -1998,6 +2070,9 @@ def _make_app() -> Starlette:
         # Queue
         Route("/api/queue", _api_queue),
         Route("/queue", _page_queue),
+        # Inference model history
+        Route("/api/inference/models/{model_id:path}/history", _api_inference_model_history),
+        Route("/inference/models", _page_inference_models),
         # Feeds
         Route("/feeds/{device}", _api_feeds),
     ]
