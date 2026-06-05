@@ -8,6 +8,12 @@ agent_type: igor
 description: "Master cognition tenant — full access to inference, memory, web, browser_use"
 inherits: []  # v1: inheritance not processed; slice 5 will add deep-merge
 
+# Clan template declaration (C-clan-template, D-clan-template-memory-ownership-2026-06-01).
+# All Igor instances share the 'igor' clan-layer memories; each instance has its own
+# agent-layer memories layered on top. Two instances can coexist without memory collision.
+template_id: igor
+memory_domain: cognition  # Igor owns: NE cycles, ring memories, personal milieu
+
 # Devices this agent type may bind to.
 allowed_devices:
   - inference

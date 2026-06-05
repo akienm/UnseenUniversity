@@ -11,6 +11,9 @@
 #     - max_concurrent: maximum concurrent instances (optional)
 #     - available_semaphore: name of semaphore to check (optional)
 
+template_id: granny
+memory_domain: build  # Granny owns: sprint outcomes, escalation history, queue ops
+
 workers:
   CC.0:
     dispatch: tmux

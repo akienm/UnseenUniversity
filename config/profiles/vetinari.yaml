@@ -1,3 +1,5 @@
 device: vetinari
 owner_id: comms://vetinari/
 escalation_threshold: 0.5
+template_id: vetinari
+memory_domain: task_management  # Vetinari owns: project status, stakeholder tracking, roadmap
