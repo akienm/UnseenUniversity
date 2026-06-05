@@ -1,22 +1,14 @@
+"""Vetinari — meta-orchestrator device for the agent collective.
+
+Lord Vetinari manages the whole rack without anyone noticing. He knows what
+every factory and agent is doing, holds owner_id for factories without a more
+specific owner, makes high-level resource allocation decisions, and reports to
+Akien when human decisions are required.
+
+PA2.0 Layer 3: factory lifecycle management, agent health rollup, budget
+reallocation, cross-factory goal tracking. See C-prescient-agents-pa20 and
+G-factory-of-factories.
 """
-Vetinari device - the meta-orchestrator for the agent collective.
-"""
-from typing import Any, Dict, List
-from devices.base import BaseDevice
-from devices.vetinari.vetinari import Vetinari
+from devices.vetinari.device import VetinariDevice
 
-
-class VetinariDevice(BaseDevice):
-    """Vetinari device implementation."""
-
-    def __init__(self, config: Dict[str, Any]):
-        super().__init__(config)
-        self.vetinari = Vetinari(config)
-
-    def process(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Process incoming data and make decisions."""
-        return self.vetinari.process(data)
-
-    def get_status(self) -> Dict[str, Any]:
-        """Get the current status of Vetinari."""
-        return self.vetinari.get_status()
+__all__ = ["VetinariDevice"]
