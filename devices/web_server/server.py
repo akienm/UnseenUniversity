@@ -186,6 +186,8 @@ _session_history: dict = {}  # session_id → [{...}, ...] (capped at 50)
 _client_lock = threading.Lock()
 _ds_chat_history: list = []  # DickSimnel chat log (capped at 100)
 _ds_chat_lock = threading.Lock()
+_sr_chat_history: list = []  # SudoRelay chat log (capped at 100)
+_sr_chat_lock = threading.Lock()
 _loop: Optional[asyncio.AbstractEventLoop] = None
 
 # ── Thread-safe queue: web messages → attached agent ─────────────────────────
@@ -1112,6 +1114,72 @@ async def _api_dicksimnel_chat_get(request: Request):
     with _ds_chat_lock:
         messages = list(_ds_chat_history[-limit:])
     return JSONResponse({"messages": messages, "count": len(messages)})
+
+
+async def _api_sudo_relay_chat_post(request: Request):
+    """POST /api/sudo-relay/chat — send a slash command to the sudo relay device."""
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "invalid JSON"}, status_code=400)
+    message = (body.get("message") or "").strip()
+    if not message:
+        return JSONResponse({"error": "empty message"}, status_code=400)
+
+    slash_response = _handle_chat_slash_commands(message, "sudo-relay")
+    if slash_response is not None:
+        response = slash_response
+    else:
+        try:
+            from devices.sudo_relay.device import SudoRelayDevice
+            device = SudoRelayDevice()
+            response = device.handle_chat(message)
+        except Exception as exc:
+            log.warning("_api_sudo_relay_chat: device error: %s", exc)
+            response = f"sudo-relay unavailable: {exc}"
+
+    ts = _ts()
+    entry = {"role": "user", "content": message, "ts": ts}
+    reply = {"role": "sudo-relay", "content": response, "ts": ts}
+    with _sr_chat_lock:
+        _sr_chat_history.extend([entry, reply])
+        if len(_sr_chat_history) > 100:
+            del _sr_chat_history[:-100]
+    log.info("_api_sudo_relay_chat: message=%r response_len=%d", message[:40], len(response))
+    return JSONResponse({"response": response, "ts": ts})
+
+
+async def _api_sudo_relay_chat_get(request: Request):
+    """GET /api/sudo-relay/chat — return recent sudo relay conversation history."""
+    try:
+        limit = int(request.query_params.get("limit", "20"))
+    except ValueError:
+        limit = 20
+    limit = max(1, min(limit, 100))
+    with _sr_chat_lock:
+        messages = list(_sr_chat_history[-limit:])
+    return JSONResponse({"messages": messages, "count": len(messages)})
+
+
+async def _api_sudo_relay_feed(request: Request):
+    """GET /api/sudo-relay/feed — last N lines of the sudo relay daemon.log."""
+    try:
+        limit = int(request.query_params.get("limit", "50"))
+    except ValueError:
+        limit = 50
+    limit = max(1, min(limit, 200))
+
+    from config.device_config import unseen_university_home
+    log_path = unseen_university_home() / "sudo_relay" / "daemon.log"
+    if not log_path.exists():
+        return JSONResponse({"lines": [], "path": str(log_path), "exists": False})
+    try:
+        text = log_path.read_text(encoding="utf-8", errors="replace")
+        lines = [ln for ln in text.splitlines() if ln.strip()][-limit:]
+        return JSONResponse({"lines": lines, "path": str(log_path), "exists": True})
+    except Exception as exc:
+        log.warning("_api_sudo_relay_feed: read error: %s", exc)
+        return JSONResponse({"error": str(exc)}, status_code=500)
 
 
 async def _api_comms_channels(request: Request):
@@ -2450,6 +2518,9 @@ def _make_app() -> Starlette:
         # Comms
         Route("/api/dicksimnel/chat", _api_dicksimnel_chat_post, methods=["POST"]),
         Route("/api/dicksimnel/chat", _api_dicksimnel_chat_get, methods=["GET"]),
+        Route("/api/sudo-relay/chat", _api_sudo_relay_chat_post, methods=["POST"]),
+        Route("/api/sudo-relay/chat", _api_sudo_relay_chat_get, methods=["GET"]),
+        Route("/api/sudo-relay/feed", _api_sudo_relay_feed),
         Route("/api/comms/channels", _api_comms_channels),
         Route("/api/comms/health", _api_comms_health),
         Route("/api/granny/health", _api_granny_health),
