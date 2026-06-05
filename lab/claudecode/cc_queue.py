@@ -1714,6 +1714,29 @@ def cmd_migrate_statuses(args):
         print("Nothing to migrate.")
 
 
+def cmd_append_note(args):
+    """Append a note block to a ticket's description: append-note <id> <text>
+
+    Appends the text on a new line preceded by a blank line. Used by DickSimnel
+    and other devices to attach escalation summaries without overwriting description.
+    """
+    if len(args) < 2:
+        print("Usage: append-note <id> <text>")
+        sys.exit(1)
+    tid = args[0]
+    note = " ".join(args[1:])
+    tasks = _load()
+    t = _find(tasks, tid)
+    if not t:
+        print(f"Task {tid} not found.")
+        sys.exit(1)
+    existing = t.get("description") or ""
+    t["description"] = existing.rstrip("\n") + "\n\n" + note
+    _save(tasks)
+    _log({"action": "append_note", "id": tid, "note_len": len(note)})
+    print(f"Note appended to {tid}")
+
+
 COMMANDS = {
     "list": cmd_list,
     "show": cmd_show,
@@ -1725,6 +1748,7 @@ COMMANDS = {
     "approve": cmd_approve,
     "log": cmd_log,
     "add": cmd_add,
+    "append-note": cmd_append_note,
     "flush_decision": cmd_flush_decision,
     "flush_session": cmd_flush_session,
     "worker-launch": cmd_worker_launch,

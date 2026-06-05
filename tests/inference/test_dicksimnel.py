@@ -217,6 +217,19 @@ class TestDickSimnelEscalation:
         assert d._active_ticket is None
         assert d._tickets_declined == 1
 
+    def test_escalate_ticket_writes_structured_summary(self):
+        d = self._device()
+        d._run_queue_cmd = MagicMock(return_value=None)
+        with patch("unseen_university.channel.post_to_channel"):
+            d._escalate_ticket("T-sum", "inference failed", "tried three approaches")
+        append_calls = [c for c in d._run_queue_cmd.call_args_list if "append-note" in str(c)]
+        assert append_calls, "append-note must be called at escalation"
+        note_text = str(append_calls[0])
+        assert "Escalation summary" in note_text
+        assert "tried three approaches" in note_text
+        assert "inference failed" in note_text
+        assert "What now?" in note_text
+
     def test_escalate_ticket_posts_to_channel(self):
         d = self._device()
         d._run_queue_cmd = MagicMock(return_value=None)

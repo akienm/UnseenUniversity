@@ -265,14 +265,21 @@ class DickSimnelDevice(BaseDevice):
         self._active_ticket = None
 
     def _escalate_ticket(self, ticket_id: str, reason: str, analysis: str = "") -> None:
-        """Hand ticket off to CC with analysis note.
+        """Hand ticket off to CC with structured escalation summary.
 
-        Posts DICKSIMNEL_ESCALATE to shared channel, resets worker=claude,
-        resets status=sprint. CC picks it up with Dick's analysis as context.
+        Appends a structured summary to the ticket body so CC starts informed,
+        then posts to channel and sets status=escalated.
         """
-        summary = (analysis[:300] + "...") if len(analysis) > 300 else analysis
+        tried = (analysis[:500] + "...") if len(analysis) > 500 else analysis or "(no analysis captured)"
+        summary_block = (
+            "## Escalation summary\n"
+            f"**What was tried:** {tried}\n"
+            f"**Where it broke:** {reason}\n"
+            "**What now?**"
+        )
+        self._run_queue_cmd("append-note", ticket_id, summary_block)
         self._channel_event(
-            f"DICKSIMNEL_ESCALATE ticket={ticket_id} reason={reason!r} analysis={summary!r}"
+            f"DICKSIMNEL_ESCALATE ticket={ticket_id} reason={reason!r}"
         )
         self._run_queue_cmd("setstatus", ticket_id, "escalated")
         log.info("DickSimnel: escalated ticket %s to CC — %s", ticket_id, reason)
