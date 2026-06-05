@@ -153,6 +153,73 @@ def test_rules_designer_routes_to_openrouter():
     assert "gemini" in decision.model.model_id
 
 
+def test_rules_worker_prefers_ollama_cloud_over_or():
+    """Worker routes to ollama_cloud (flat_rate) over openrouter (usage_based) when both available."""
+    sources = SourceRegistry()
+    or_src = MagicMock(spec=Source)
+    or_src.name = "openrouter"
+    or_src.available = True
+    or_src.billing_type = "usage_based"
+    sources.register(or_src)
+
+    cloud_src = MagicMock(spec=Source)
+    cloud_src.name = "ollama_cloud"
+    cloud_src.available = True
+    cloud_src.billing_type = "flat_rate"
+    sources.register(cloud_src)
+
+    models = default_registry()
+    engine = RulesEngine(sources, models)
+    decision = engine.route("worker")
+    assert decision is not None
+    assert decision.source is cloud_src, "flat_rate ollama_cloud must be preferred over usage_based OR"
+
+
+def test_rules_batch_routes_to_local_ollama_at_night():
+    """Batch task class uses local_ollama during night hours (02:00)."""
+    sources = SourceRegistry()
+    local_src = MagicMock(spec=Source)
+    local_src.name = "local_ollama"
+    local_src.available = True
+    local_src.billing_type = "free"
+    sources.register(local_src)
+
+    or_src = MagicMock(spec=Source)
+    or_src.name = "openrouter"
+    or_src.available = True
+    or_src.billing_type = "usage_based"
+    sources.register(or_src)
+
+    models = default_registry()
+    engine = RulesEngine(sources, models)
+    decision = engine.route("batch", hour=2)  # 02:00 — night window
+    assert decision is not None
+    assert decision.source is local_src, "local_ollama must be used for batch at 02:00"
+
+
+def test_rules_batch_skips_local_ollama_during_day():
+    """Batch task class skips local_ollama outside the 00:00-06:00 window."""
+    sources = SourceRegistry()
+    local_src = MagicMock(spec=Source)
+    local_src.name = "local_ollama"
+    local_src.available = True
+    local_src.billing_type = "free"
+    sources.register(local_src)
+
+    cloud_src = MagicMock(spec=Source)
+    cloud_src.name = "ollama_cloud"
+    cloud_src.available = True
+    cloud_src.billing_type = "flat_rate"
+    sources.register(cloud_src)
+
+    models = default_registry()
+    engine = RulesEngine(sources, models)
+    decision = engine.route("batch", hour=14)  # 14:00 — daytime
+    assert decision is not None
+    assert decision.source is not local_src, "local_ollama must be skipped for batch at 14:00"
+    assert decision.source is cloud_src
+
+
 # ── HealthMonitor ──────────────────────────────────────────────────────────────
 
 

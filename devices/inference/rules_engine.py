@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from datetime import datetime
 
 from devices.inference.models_registry import ModelSpec, ModelsRegistry
 from devices.inference.sources import Source, SourceRegistry
@@ -67,7 +68,18 @@ _DEFAULT_RULES: list[RoutingRule] = [
     RoutingRule(5, "designer", "gemini-2.0-flash-paid", "google", "designer→gemini-flash/google-paid"),
     RoutingRule(6, "designer", "google/gemini-2.0-flash", "openrouter", "designer→gemini-flash/OR-fallback"),
     RoutingRule(7, "designer", "claude-sonnet-4-6", "anthropic", "designer→claude-sonnet/anthropic"),
+    # Batch tier — off-hours knowledge integration. Cost cascade: free local → flat-rate cloud → OR.
+    # Intended for night-mode (00:00-06:00); route() applies a time-of-day gate.
+    RoutingRule(1, "batch", "qwen2.5-coder:32b", "local_ollama", "batch→qwen2.5-coder/local-ollama"),
+    RoutingRule(2, "batch", "qwen2.5-coder:32b", "ollama_cloud", "batch→qwen2.5-coder/ollama-pro"),
+    RoutingRule(3, "batch", "qwen/qwen3-coder-30b-a3b-instruct", "openrouter", "batch→qwen3-coder-30b/OR"),
 ]
+
+
+def _is_night_mode(hour: int | None = None) -> bool:
+    """Return True if current local hour is in the 00:00–06:00 off-hours window."""
+    h = hour if hour is not None else datetime.now().hour
+    return 0 <= h < 6
 
 
 @dataclass
@@ -98,12 +110,25 @@ class RulesEngine:
             {}
         )  # session_id → (model_id, source_name)
 
-    def route(self, task_class: str, session_id: str = "") -> RoutingDecision | None:
+    def route(
+        self, task_class: str, session_id: str = "", hour: int | None = None
+    ) -> RoutingDecision | None:
         """
         Return the best (Source, ModelSpec) for this task_class.
 
+        hour: inject local hour (0–23) for testing; defaults to current local hour.
+              Used to apply the night-mode gate for batch tasks.
+
         Returns None only if no source is available at all.
         """
+        # Batch tasks are only dispatched locally during night-mode (00:00-06:00).
+        # Outside that window, degrade to ollama_cloud → OR (no local GPU contention).
+        night = _is_night_mode(hour)
+        if task_class == "batch" and not night:
+            log.debug("rules: batch outside night-mode window — skipping local_ollama")
+            effective_rules = [r for r in self._rules if r.source_name != "local_ollama"]
+        else:
+            effective_rules = self._rules
         # Session affinity — same session stays on same model
         if session_id and session_id in self._session_map:
             model_id, source_name = self._session_map[session_id]
@@ -129,7 +154,7 @@ class RulesEngine:
         # Explicit rules — collect all available candidates, then sort:
         #   flat_rate sources preferred, tiebreak by priority (lower = higher priority)
         candidates: list[tuple[RoutingRule, Source, ModelSpec]] = []
-        for rule in self._rules:
+        for rule in effective_rules:
             if rule.task_class != task_class:
                 continue
             source = self._sources.get(rule.source_name)
