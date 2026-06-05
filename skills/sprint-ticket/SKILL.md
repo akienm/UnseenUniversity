@@ -52,6 +52,20 @@ python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py show <id> | grep '"status"'
 If status is not `in_progress`, something went wrong — do not proceed; surface
 to Akien. Then add the ticket ID to today's slate under `## Planned` or `## Ad hoc`.
 
+### 2.3. Anticipatory pre-brief
+
+Run both brief scripts immediately after confirming in_progress — before reading any files:
+```bash
+python3 ${CC_WORKFLOW_TOOLS}/sprint_preflight_brief.py <id>
+python3 ${CC_WORKFLOW_TOOLS}/pre_inference_assemble.py <id>
+```
+
+`sprint_preflight_brief.py` surfaces: reset history, open/closed sibling tickets, file-proximity matches.
+
+`pre_inference_assemble.py` surfaces: matched design patterns (by keyword overlap against `docs/design_patterns_inventory.md`), file symbol maps for affected files, domain terms. Read the symbol map instead of opening each file manually — it replaces exploratory file-discovery tool calls.
+
+Combined token budget: ~800 tokens max. Read both before forming the plan.
+
 ### 3. Select executor
 - **CC inline**: default for code changes in this repo
 - **Haiku subagent**: mechanical/checklist work (use the Agent tool, subagent_type=general-purpose with a Haiku model override)
