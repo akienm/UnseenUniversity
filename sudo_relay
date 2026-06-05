@@ -6,18 +6,11 @@ can request privileged operations (apt install, etc.) without embedding
 sudo in their own processes.
 
 Usage:
-  ./sudo_relay             # start daemon in tmux session 'sudo-relay'
+  ./sudo_relay             # start daemon, attach current terminal to it
+  ./sudo_relay --no-attach # start detached (for automation/shim use)
   ./sudo_relay --status    # print whether the daemon is running
   ./sudo_relay --stop      # kill the daemon session
   ./sudo_relay --help
-
-# TODO: T-sudo-relay-tmux-window
-# Future: when Vetinari directs a non-technical user through install,
-# this launcher will open a dedicated visible tmux window ('sudo-relay')
-# so Vetinari can say "switch to the 'sudo-relay' window and enter your
-# password". The daemon output will be visible there for debugging.
-# The user-facing credential prompt will appear in that window.
-# Ticket: T-sudo-relay-tmux-window
 """
 
 import os
@@ -36,19 +29,28 @@ def _session_exists() -> bool:
     return r.returncode == 0
 
 
-def _start_daemon() -> None:
+def _start_daemon(attach: bool = True) -> None:
     if not DAEMON_SCRIPT.exists():
         print(f"sudo_relay: daemon script not found at {DAEMON_SCRIPT}")
         sys.exit(1)
-    subprocess.run(
-        ["tmux", "new-session", "-d", "-s", TMUX_SESSION, "-x", "220", "-y", "50"],
-        check=True, cwd=UU_ROOT,
-    )
-    subprocess.run(
-        ["tmux", "send-keys", "-t", TMUX_SESSION, f"bash {DAEMON_SCRIPT}", "Enter"],
-        check=True,
-    )
-    print(f"sudo_relay: daemon started in tmux session '{TMUX_SESSION}'")
+    if attach:
+        # Take over the current terminal — password prompt is visible here.
+        # exec replaces this process with tmux; returns only on session exit.
+        os.execvp("tmux", [
+            "tmux", "new-session", "-s", TMUX_SESSION,
+            "-x", "220", "-y", "50",
+            "bash", str(DAEMON_SCRIPT),
+        ])
+    else:
+        subprocess.run(
+            ["tmux", "new-session", "-d", "-s", TMUX_SESSION, "-x", "220", "-y", "50"],
+            check=True, cwd=UU_ROOT,
+        )
+        subprocess.run(
+            ["tmux", "send-keys", "-t", TMUX_SESSION, f"bash {DAEMON_SCRIPT}", "Enter"],
+            check=True,
+        )
+        print(f"sudo_relay: daemon started in tmux session '{TMUX_SESSION}' (detached)")
 
 
 def _stop() -> None:
@@ -81,10 +83,14 @@ def main() -> None:
         _stop()
         sys.exit(0)
 
+    attach = "--no-attach" not in args
     if _session_exists():
-        print(f"sudo_relay: session '{TMUX_SESSION}' already running")
+        if attach:
+            os.execvp("tmux", ["tmux", "attach-session", "-t", TMUX_SESSION])
+        else:
+            print(f"sudo_relay: session '{TMUX_SESSION}' already running")
     else:
-        _start_daemon()
+        _start_daemon(attach=attach)
 
 
 if __name__ == "__main__":
