@@ -370,7 +370,7 @@ def _escalate_stale_dispatched() -> int:
                 """SELECT metadata->>'id' AS tid FROM clan.memories
                    WHERE metadata->>'kind' = 'ticket'
                    AND metadata->>'status' = 'dispatched'
-                   AND updated_at < now() - interval '%s seconds'""",
+                   AND updated_at::timestamptz < now() - interval '%s seconds'""",
                 (DISPATCH_ACK_TIMEOUT_S,),
             )
             stale = [row["tid"] for row in cur.fetchall() if row["tid"]]
@@ -421,7 +421,7 @@ def _reset_stale_inprogress() -> int:
                    WHERE metadata->>'kind' = 'ticket'
                    AND metadata->>'status' = 'in_progress'
                    AND metadata->>'worker' IN ('claude', 'cc')
-                   AND updated_at < now() - interval '%s seconds'""",
+                   AND updated_at::timestamptz < now() - interval '%s seconds'""",
                 (_STALE_INPROGRESS_TIMEOUT_S,),
             )
             stale = [row["tid"] for row in cur.fetchall() if row["tid"]]
