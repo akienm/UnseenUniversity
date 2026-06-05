@@ -99,6 +99,33 @@ def _default_config() -> dict:
 # ── Queue ─────────────────────────────────────────────────────────────────────
 
 
+def _setstatus_direct(tid: str, status: str) -> bool:
+    """Set ticket status via direct Postgres UPDATE — no subprocess overhead.
+
+    Replaces the cc_queue.py setstatus subprocess calls in _dispatch_cc0 and
+    _process_handshake_replies. Direct DB write avoids Python startup + Postgres
+    connection overhead that caused intermittent 10s timeouts in those paths.
+    Returns True on success, False on error (logs warning, never raises).
+    """
+    try:
+        import psycopg2
+        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """UPDATE clan.memories
+                       SET metadata = jsonb_set(metadata, '{status}', %s::jsonb)
+                       WHERE id = %s""",
+                    (f'"{status}"', tid),
+                )
+        conn.close()
+        log.debug("Granny: _setstatus_direct %s → %s", tid, status)
+        return True
+    except Exception as exc:
+        log.warning("Granny: _setstatus_direct %s → %s failed: %s", tid, status, exc)
+        return False
+
+
 def _sprint_tickets() -> list[dict]:
     """Load sprint tickets directly from Postgres. Returns [] on error."""
     try:
@@ -200,15 +227,8 @@ def _dispatch_cc0(ticket: dict, session: str = "claude-main") -> bool:
     # Mark in_progress immediately — dispatch IS assignment (CLAUDE.md).
     # Without this, _cc0_busy() returns False on the next poll cycle because
     # CC hasn't had time to run setstatus yet, causing a second ticket to fire.
-    r = subprocess.run(
-        [_PYTHON, str(_CC_QUEUE), "setstatus", tid, "in_progress"],
-        capture_output=True,
-        text=True,
-        timeout=10,
-        env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
-    )
-    if r.returncode != 0:
-        log.warning("Granny: setstatus in_progress failed for %s: %s", tid, r.stderr[:80])
+    # Direct DB write (not subprocess) to avoid 10s timeout under load.
+    _setstatus_direct(tid, "in_progress")
     log.info("Granny: dispatched %s → CC.0 (send-keys → %s)", tid, session)
     return True
 
@@ -281,15 +301,7 @@ def _dispatch_bus(ticket: dict, imap, worker_mailbox: str, granny_mailbox: str) 
         log.warning("Granny: bus send failed for %s → %s: %s", tid, worker_mailbox, exc)
         return False
 
-    r = subprocess.run(
-        [_PYTHON, str(_CC_QUEUE), "setstatus", tid, "dispatched"],
-        capture_output=True,
-        text=True,
-        timeout=10,
-        env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
-    )
-    if r.returncode != 0:
-        log.warning("Granny: setstatus dispatched failed for %s: %s", tid, r.stderr[:80])
+    _setstatus_direct(tid, "dispatched")
     log.info(
         "Granny: dispatched %s → %s via bus (granny_mailbox=%s)",
         tid, worker_mailbox, granny_mailbox,
@@ -327,16 +339,10 @@ def _process_handshake_replies(imap, granny_mailbox: str) -> int:
             "dispatch_timeout": "escalated",
         }[kind]
 
-        r = subprocess.run(
-            [_PYTHON, str(_CC_QUEUE), "setstatus", tid, new_status],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
-        )
-        if r.returncode != 0:
+        ok = _setstatus_direct(tid, new_status)
+        if not ok:
             log.warning(
-                "Granny: setstatus %s failed for %s: %s", new_status, tid, r.stderr[:80]
+                "Granny: _setstatus_direct %s failed for %s (see above)", new_status, tid
             )
         else:
             log.info(
