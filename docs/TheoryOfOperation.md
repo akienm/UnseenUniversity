@@ -36,6 +36,8 @@ UnseenUniversity is a **rack** — a place where devices plug in and communicate
 
 ### 1.3 Bus
 
+> **Mental model:** The bus *is* the rack's internal network. Every device speaks to every other device through it — nothing communicates out-of-band. A shim is each device's interface to that network: it handles announce, routing, capability advertisement, and wake-on-demand so the device itself never touches transport. IMAP is the current transport implementation; it is an implementation detail, not the concept. Swap IMAP for any other transport by changing only `bus/` — nothing else moves.
+
 `UnseenUniversity/bus/` — IMAP server + `comms://` router + envelope model. Transport: Dovecot IMAP in production; asyncio in-process stub in test mode (`AGENT_DATACENTER_TEST_MODE=1`).
 
 Every message is an **envelope** (`bus/envelope.py`):
@@ -119,7 +121,7 @@ class BaseDevice(ABC):
 
 **Why OOP-first?** A single well-known entry point per device makes lifecycle management (`restart`/`halt`/`recovery`) and observability (`health`/`uptime`/`logs`) uniform. The framework can iterate all devices — restart, drain, upgrade — without knowing their internals.
 
-A **shim** (`BaseShim`) is the transport adapter. It handles the announce protocol and wraps the device's capabilities as MCP tools. The device itself is transport-agnostic.
+A **shim** (`BaseShim`) is each device's interface to the bus network. It handles the announce protocol, wraps capabilities as MCP tools, and owns the device's lifecycle on the rack. The device focuses on its domain logic; the shim makes it easy for the device to talk to everything else. See §1.3 for the bus mental model.
 
 ### 2.2 Device directory
 
