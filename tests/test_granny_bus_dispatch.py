@@ -25,7 +25,6 @@ from devices.granny.daemon import (
     _dispatch_bus,
     _escalate_stale_dispatched,
     _process_handshake_replies,
-    _prune_dispatched,
     _reset_stale_inprogress,
     run_once,
     _default_config,
@@ -91,50 +90,6 @@ def _make_pg_conn(rows: list[dict]):
         "cursor": lambda self, **kw: cur,
         "close": lambda self: None,
     })()
-
-
-# ── _prune_dispatched ─────────────────────────────────────────────────────────
-
-
-class TestPruneDispatched:
-    def _conn_with_active(self, active_ids: list[str]):
-        """Fake conn where fetchall returns rows for the given active_ids."""
-        rows = [(tid,) for tid in active_ids]
-        cur = type("Cur", (), {
-            "execute": lambda s, *a: None,
-            "fetchall": lambda s: rows,
-            "__enter__": lambda s: s,
-            "__exit__": lambda s, *a: None,
-        })()
-        return type("Conn", (), {
-            "cursor": lambda self, **kw: cur,
-            "close": lambda self: None,
-        })()
-
-    def test_inactive_ids_removed(self):
-        conn = self._conn_with_active(["T-active"])
-        with patch("psycopg2.connect", return_value=conn):
-            result = _prune_dispatched({"T-active", "T-sprint-now"})
-        assert result == {"T-active"}
-        assert "T-sprint-now" not in result
-
-    def test_all_active_ids_kept(self):
-        conn = self._conn_with_active(["T-a", "T-b"])
-        with patch("psycopg2.connect", return_value=conn):
-            result = _prune_dispatched({"T-a", "T-b"})
-        assert result == {"T-a", "T-b"}
-
-    def test_empty_input_skips_db(self):
-        with patch("psycopg2.connect") as mock_pg:
-            result = _prune_dispatched(set())
-        mock_pg.assert_not_called()
-        assert result == set()
-
-    def test_db_failure_fails_open(self):
-        with patch("psycopg2.connect", side_effect=OSError("DB down")):
-            original = {"T-x", "T-y"}
-            result = _prune_dispatched(original)
-        assert result == original, "DB failure must return original set unchanged (fail open)"
 
 
 # ── _dispatch_bus ──────────────────────────────────────────────────────────────
@@ -358,7 +313,7 @@ class TestRunOnceBusDispatch:
              patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
              patch("devices.granny.daemon._post_channel"), \
              patch("devices.granny.daemon.subprocess.run", side_effect=mock_run):
-            run_once(self._bus_config(), set(), imap=imap)
+            run_once(self._bus_config(), imap=imap)
 
         assert imap._boxes.get("cc.0"), "no envelope sent to cc.0"
         assert imap._boxes["cc.0"][0].payload["kind"] == "dispatch"
@@ -372,7 +327,7 @@ class TestRunOnceBusDispatch:
         with patch("devices.granny.daemon._sprint_tickets", return_value=[]), \
              patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
              patch("devices.granny.daemon.subprocess.run", side_effect=mock_run):
-            run_once(self._bus_config(), set(), imap=imap)
+            run_once(self._bus_config(), imap=imap)
 
         assert ["T-reply", "acked"] in calls
 
@@ -386,7 +341,6 @@ class TestRunOnceBusDispatch:
              patch("devices.granny.daemon._post_channel"):
             import logging
             with caplog.at_level(logging.WARNING, logger="devices.granny.daemon"):
-                result = run_once(self._bus_config(), set(), imap=None)
+                run_once(self._bus_config(), imap=None)
 
-        assert "T-nobus" not in result
         assert any("no imap" in r.message for r in caplog.records)

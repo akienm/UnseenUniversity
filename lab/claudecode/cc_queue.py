@@ -52,6 +52,7 @@ import sys
 import time
 import urllib.request
 from datetime import datetime, timezone
+from pathlib import Path
 
 IGOR_FLUSH_URL = "https://localhost:8080/api/cc_send"
 
@@ -435,6 +436,33 @@ def cmd_show(args):
         print(f"Task {args[0]} not found.")
         sys.exit(1)
     print(json.dumps(t, indent=2))
+    _show_token_log(args[0])
+
+
+def _show_token_log(ticket_id: str) -> None:
+    """Append per-sprint token consumption from sprint_tokens.log, if any."""
+    igor_home = Path(os.environ.get("IGOR_HOME", str(Path.home() / ".unseen_university")))
+    log_path = igor_home / "claudecode" / "sprint_tokens.log"
+    if not log_path.exists():
+        return
+    entries = [
+        ln for ln in log_path.read_text(encoding="utf-8").splitlines()
+        if ln and ln.split("|")[1] == ticket_id
+    ]
+    if not entries:
+        return
+    print("\nToken consumption (sprints):")
+    for entry in entries:
+        parts = entry.split("|")
+        if len(parts) < 7:
+            continue
+        ts, tid, inp, cache_w, cache_r, out, model = parts[:7]
+        total_in = int(inp) + int(cache_w) + int(cache_r)
+        print(
+            f"  {ts[:19]}  in={total_in:>7} "
+            f"(write={int(cache_w):>6} read={int(cache_r):>6})  "
+            f"out={int(out):>6}  [{model}]"
+        )
 
 
 class LegacyDirectClaimError(Exception):

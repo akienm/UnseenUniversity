@@ -35,7 +35,7 @@ class TestPostToCcInboxBridge:
         assert kwargs["summary"] == "test summary"
         assert kwargs["body"] == "test body"
         assert kwargs["ticket_id"] == "T-test"
-        assert kwargs["urgency"] == "high"
+        assert kwargs["urgency"] == "normal"  # bridge downgrades high → normal (calm signals)
         assert kwargs["response_expected"] is True
 
     def test_non_fatal_on_append_exception(self):
