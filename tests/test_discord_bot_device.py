@@ -115,6 +115,20 @@ class TestDiscordBotShimContract(unittest.TestCase):
             s.rollback()
         s._device.stop.assert_called_once()
 
+    def test_start_registers_with_skeleton_registry(self):
+        from unittest.mock import MagicMock
+        mock_registry = MagicMock()
+        s = DiscordBotShim(registry=mock_registry)
+        with patch("devices.discord_bot.shim._bot") as mock_bot:
+            mock_bot.is_running.return_value = False
+            with patch("devices.discord_bot.device._bot") as mock_dev_bot:
+                mock_dev_bot.is_running.return_value = False
+                mock_dev_bot.start = MagicMock()
+                s.start()
+        mock_registry.register.assert_called_once()
+        call_kwargs = mock_registry.register.call_args
+        assert call_kwargs.kwargs.get("device_id") == "discord-bot" or call_kwargs.args[0] == "discord-bot"
+
 
 if __name__ == "__main__":
     unittest.main()

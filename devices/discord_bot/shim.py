@@ -10,6 +10,8 @@ import logging
 import os
 
 from unseen_university.shim import BaseShim
+from config.device_config import DeviceConfig
+from skeleton.registry import DeviceRegistry
 
 from .device import DiscordBotDevice
 from . import bot as _bot
@@ -20,8 +22,9 @@ log = logging.getLogger(__name__)
 class DiscordBotShim(BaseShim):
     DEVICE_ID = "discord-bot"
 
-    def __init__(self) -> None:
+    def __init__(self, registry: DeviceRegistry | None = None) -> None:
         self._device = DiscordBotDevice()
+        self._registry = registry or DeviceRegistry()
 
     @property
     def device_id(self) -> str:
@@ -34,6 +37,14 @@ class DiscordBotShim(BaseShim):
     def start(self) -> bool:
         try:
             self._device.start()
+            self._registry.register(
+                device_id="discord-bot",
+                config=DeviceConfig(),
+                mailbox="comms://discord-bot/inbox",
+                name="DiscordBot",
+                agent_class="utility",
+            )
+            log.info("DiscordBotShim: started, registered with skeleton")
             return _bot.is_running() or not os.environ.get("DISCORD_BOT_TOKEN")
         except Exception:
             log.exception("DiscordBotShim.start() failed")
