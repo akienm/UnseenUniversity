@@ -43,11 +43,14 @@ preserve: Read today's slate: ${IGOR_HOME:-~/.unseen_university}/claudecode/YYYY
 ───────────────────────────────────────────────────────────────
 ```
 
-Then fire the self-compact via tmux. **Two separate send-keys calls** —
+Then fire the self-compact via tmux. **Three interrupt signals first, then the command** —
+interrupt Enters ensure the command survives concurrent typing (verified 2026-06-05);
 single-call variants do not fire /compact reliably (verified 2026-05-03):
 
 ```bash
 DATESTAMP=$(date +%Y%m%d)
+tmux send-keys -t claude-main Enter Enter Enter
+sleep 0.5
 tmux send-keys -t claude-main "/compact preserve: Read today's slate: ${IGOR_HOME:-~/.unseen_university}/claudecode/${DATESTAMP}.slate.txt. In-flight and Next: see slate."
 sleep 0.5
 tmux send-keys -t claude-main ENTER
