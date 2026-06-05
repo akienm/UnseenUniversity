@@ -46,6 +46,10 @@ class InferenceRequest:
     session_id: str = ""
     # OpenAI-format tool definitions; when set, included in the API payload.
     tools: list | None = field(default=None)
+    # Tier escalation: hop counter (0 = first attempt) and prior attempt summary.
+    # Hard ceiling: dispatch() rejects requests with escalation_hop >= 2.
+    escalation_hop: int = 0
+    prior_attempt: str = ""
 
 
 @dataclass

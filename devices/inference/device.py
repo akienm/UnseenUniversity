@@ -255,6 +255,44 @@ class InferenceDevice(BaseDevice):
         if self._blocked:
             raise RuntimeError(f"InferenceDevice blocked: {self._block_reason}")
 
+        # Tier escalation: enforce 2-hop ceiling and prepend attempt summary
+        _MAX_ESCALATION_HOPS = 2
+        if request.escalation_hop >= _MAX_ESCALATION_HOPS:
+            raise RuntimeError(
+                f"InferenceDevice: escalation ceiling reached "
+                f"({request.escalation_hop}/{_MAX_ESCALATION_HOPS} hops) — "
+                f"cannot escalate further"
+            )
+        if request.escalation_hop > 0 and request.prior_attempt:
+            # Prepend structured handoff to system prompt
+            attempt_summary = (
+                f"\n\n## Prior attempt summary (hop {request.escalation_hop})\n"
+                f"**What was tried:** {request.prior_attempt}\n"
+                "**What now?**\n"
+            )
+            request = InferenceRequest(
+                messages=request.messages,
+                model=request.model,
+                max_tokens=request.max_tokens,
+                temperature=request.temperature,
+                system=(request.system or "") + attempt_summary,
+                timeout=request.timeout,
+                extra=request.extra,
+                task_class=request.task_class,
+                agent_id=request.agent_id,
+                instance_id=request.instance_id,
+                coa_id=request.coa_id,
+                session_id=request.session_id,
+                tools=request.tools,
+                escalation_hop=request.escalation_hop,
+                prior_attempt=request.prior_attempt,
+            )
+            log.info(
+                "dispatch: tier-escalation hop=%d prior_summary_len=%d",
+                request.escalation_hop,
+                len(request.prior_attempt),
+            )
+
         # Level 2: pattern intercept — $0 if matched
         try:
             from devices.inference.pattern_intercept import try_intercept
