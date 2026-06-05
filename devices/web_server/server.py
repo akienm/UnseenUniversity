@@ -195,6 +195,20 @@ import queue
 
 incoming: queue.Queue = queue.Queue()
 
+# Per-agent queues — messages routed to specific agents at put-time.
+# Created on agent registration; drained by /api/agents/{id}/poll.
+# Prevents message theft when multiple agents poll the same global queue.
+_agent_queues: dict[str, "queue.Queue[dict]"] = {}
+_agent_queues_lock = __import__("threading").Lock()
+
+
+def _get_agent_queue(agent_id: str) -> "queue.Queue[dict]":
+    """Return the queue for agent_id, creating it if necessary."""
+    with _agent_queues_lock:
+        if agent_id not in _agent_queues:
+            _agent_queues[agent_id] = queue.Queue()
+        return _agent_queues[agent_id]
+
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -488,11 +502,12 @@ async def _api_upload(request: Request):
     dest = INBOX_DIR / safe_name
     content = await file.read()
     dest.write_bytes(content)
-    incoming.put(
+    _get_agent_queue("igor").put(
         {
             "content": f"[File uploaded: {safe_name}]",
             "filename": safe_name,
             "author": "web-user",
+            "to_agent": "igor",
         }
     )
     _broadcast(json.dumps({"type": "file_dropped", "filename": safe_name, "ts": _ts()}))
@@ -531,7 +546,9 @@ async def _api_cc_send(request: Request):
         return JSONResponse({"error": "empty content"}, status_code=400)
     global _last_input_ts
     _last_input_ts = time.monotonic()
-    incoming.put({"content": content, "author": "claude-code"})
+    to_agent = body.get("to_agent", "igor").strip() or "igor"
+    msg = {"content": content, "author": "claude-code", "to_agent": to_agent}
+    _get_agent_queue(to_agent).put(msg)  # routed — only to_agent's poll receives it
     _broadcast(
         json.dumps(
             {
@@ -730,6 +747,7 @@ async def _api_agent_register(request: Request):
             "last_heartbeat": time.monotonic(),
         }
     log.info("Agent registered: %s (capabilities: %s)", agent_id, capabilities)
+    _get_agent_queue(agent_id)  # ensure per-agent queue exists before first poll
     _save_agents()
     # T-uc-comms-default-channels: auto-create agent channel on connect
     if _comms:
@@ -832,16 +850,18 @@ async def _api_agent_send(request: Request):
 async def _api_agent_poll(request: Request):
     """GET /api/agents/{id}/poll — agent polls for incoming messages.
 
-    Returns messages from the incoming queue addressed to this agent.
-    Non-blocking: returns empty list if no messages.
+    Returns only messages routed to this agent via _get_agent_queue().
+    Non-blocking: returns empty list if no messages addressed to this agent.
     """
+    agent_id = request.path_params.get("agent_id", "")
     messages = []
-    try:
-        while not incoming.empty():
-            msg = incoming.get_nowait()
-            messages.append(msg)
-    except Exception as e:
-        log.debug("incoming queue drain error (non-fatal): %s", e)
+    if agent_id:
+        q = _get_agent_queue(agent_id)
+        try:
+            while not q.empty():
+                messages.append(q.get_nowait())
+        except Exception as e:
+            log.debug("agent poll drain error for %s (non-fatal): %s", agent_id, e)
     return JSONResponse({"messages": messages})
 
 
