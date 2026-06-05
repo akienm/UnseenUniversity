@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import logging
 import os
+import subprocess
+import sys
 import threading
 from pathlib import Path
 from typing import Optional
@@ -14,6 +16,16 @@ log = logging.getLogger(__name__)
 
 _WATCHDOG_INTERVAL_SEC = int(os.environ.get("GRANNY_SHIM_WATCHDOG_INTERVAL", "30"))
 _GRANNY_HOME = Path.home() / ".granny"
+_UU_ROOT = Path(__file__).resolve().parents[2]
+_TMUX_SESSION = "granny"
+
+
+def _session_exists() -> bool:
+    r = subprocess.run(
+        ["tmux", "has-session", "-t", _TMUX_SESSION],
+        capture_output=True,
+    )
+    return r.returncode == 0
 
 
 class GrannyShim(BaseShim):
@@ -23,6 +35,7 @@ class GrannyShim(BaseShim):
         self._watchdog_stop = threading.Event()
         self._watchdog_thread: Optional[threading.Thread] = None
         self._daemon = None
+        # Diagnostic counter — intentionally in-memory; resets on shim restart.
         self._relaunch_count: int = 0
 
     @property
@@ -34,10 +47,20 @@ class GrannyShim(BaseShim):
         return run_loop  # daemon runs as a blocking loop; use subprocess in rack context
 
     def start(self) -> bool:
-        log.info("GrannyShim: daemon runs as standalone process via ./granny")
+        """Start the self-heal watchdog thread. Daemon itself starts via ./granny."""
+        if self._watchdog_thread is None or not self._watchdog_thread.is_alive():
+            self._watchdog_stop.clear()
+            self._watchdog_thread = threading.Thread(
+                target=self._watchdog_loop,
+                daemon=True,
+                name="granny-watchdog",
+            )
+            self._watchdog_thread.start()
+            log.info("GrannyShim: watchdog started (interval=%ds)", _WATCHDOG_INTERVAL_SEC)
         return True
 
     def stop(self) -> bool:
+        self._watchdog_stop.set()
         pid_file = _GRANNY_HOME / "daemon.pid"
         if pid_file.exists():
             try:
@@ -51,7 +74,7 @@ class GrannyShim(BaseShim):
 
     def restart(self) -> bool:
         self.stop()
-        return True
+        return self.start()
 
     def self_test(self) -> dict:
         pid_file = _GRANNY_HOME / "daemon.pid"
@@ -61,8 +84,8 @@ class GrannyShim(BaseShim):
                 os.kill(pid, 0)  # signal 0 = existence check
                 return {"passed": True, "details": f"daemon running (pid={pid})"}
             except (ProcessLookupError, ValueError):
-                pass
-        return {"passed": False, "details": "daemon not running (no pid file or stale)"}
+                return {"passed": False, "details": f"stale pid file — daemon dead (pid={pid_file.read_text().strip()!r})"}
+        return {"passed": False, "details": "daemon not running (no pid file)"}
 
     def rollback(self) -> None:
         pass
@@ -77,3 +100,80 @@ class GrannyShim(BaseShim):
         except Exception:
             result["daemon"] = "unknown"
         return result
+
+    # ── Self-heal watchdog ────────────────────────────────────────────────────
+
+    def _watchdog_loop(self) -> None:
+        """Periodically check for dead daemon + pending sprint tickets → restart."""
+        while not self._watchdog_stop.wait(_WATCHDOG_INTERVAL_SEC):
+            try:
+                self._watchdog_loop_once()
+            except Exception as exc:
+                log.warning("GrannyShim: watchdog error: %s", exc)
+
+    def _watchdog_loop_once(self) -> None:
+        """One watchdog iteration — extracted for testability."""
+        result = self.self_test()
+        if result["passed"]:
+            return
+        # Only self-heal when a stale PID file exists (daemon was running before).
+        # No PID file = Granny was never started on this host; don't auto-start.
+        pid_file = _GRANNY_HOME / "daemon.pid"
+        if not pid_file.exists():
+            log.debug("GrannyShim: watchdog: no pid file — skipping restart")
+            return
+        if self._has_pending_tickets():
+            log.warning(
+                "GrannyShim: watchdog detected stale daemon with pending sprint tickets — restarting"
+            )
+            self._restart_daemon()
+        else:
+            log.debug("GrannyShim: watchdog: daemon dead but no pending tickets — skip restart")
+
+    def _restart_daemon(self) -> None:
+        """Kill stale tmux session if present, then start a fresh one."""
+        try:
+            if _session_exists():
+                subprocess.run(
+                    ["tmux", "kill-session", "-t", _TMUX_SESSION],
+                    capture_output=True,
+                )
+            venv_python = _UU_ROOT / ".venv" / "bin" / "python"
+            if not venv_python.exists():
+                venv_python = Path(sys.executable)
+            subprocess.run(
+                ["tmux", "new-session", "-d", "-s", _TMUX_SESSION, "-x", "220", "-y", "50"],
+                check=True,
+                cwd=_UU_ROOT,
+            )
+            subprocess.run(
+                ["tmux", "send-keys", "-t", _TMUX_SESSION,
+                 f"{venv_python} -m devices.granny.daemon", "Enter"],
+                check=True,
+            )
+            self._relaunch_count += 1
+            log.info("GrannyShim: daemon restarted (relaunch #%d)", self._relaunch_count)
+        except Exception as exc:
+            log.error("GrannyShim: _restart_daemon failed: %s", exc)
+
+    def _has_pending_tickets(self) -> bool:
+        """Return True when at least one sprint-status ticket exists in the queue."""
+        try:
+            import psycopg2  # type: ignore[import-untyped]
+            db_url = os.environ.get(
+                "IGOR_HOME_DB_URL",
+                "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            )
+            conn = psycopg2.connect(db_url, connect_timeout=5)
+            with conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """SELECT 1 FROM clan.memories
+                           WHERE metadata->>'status' = 'sprint'
+                             AND metadata->>'kind' = 'ticket'
+                           LIMIT 1"""
+                    )
+                    return cur.fetchone() is not None
+        except Exception as exc:
+            log.debug("GrannyShim: _has_pending_tickets failed: %s", exc)
+            return False  # fail-safe: don't restart if we can't confirm there's work
