@@ -1225,6 +1225,16 @@ def cmd_add(args):
     existing_ids = {t["id"] for t in tasks}
     added = 0
     for nt in new_tasks:
+        # Guard: reject IDs that were corrupted by CC's privacy filter at write-time.
+        # The filter replaces values it classifies as credentials with the literal
+        # string '[REDACTED-CREDENTIAL]', which then gets stored in the DB as the ID.
+        if not nt.get("id") or str(nt["id"]).startswith("[REDACTED"):
+            print(
+                f"  blocked: ticket has corrupted id={nt.get('id')!r} "
+                "(CC privacy filter replaced the real ID at write-time — "
+                "re-file with a plain T-<kebab-slug> id)"
+            )
+            continue
         if nt["id"] in existing_ids:
             print(f"  skip (exists): {nt['id']}")
             continue
