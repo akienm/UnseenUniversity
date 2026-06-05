@@ -1275,6 +1275,31 @@ def flag_top_gap(**_kwargs) -> str:
     if not question:
         return f"[flag_top_gap] could not parse question from: {content[:80]}"
 
+    # Suppress self-referential blockage gaps when standing goals (AGED_INTENT) are present.
+    # These are not genuine causal unknowns — they're the NE signalling "I don't know
+    # what to do" when idle standing goals are available. Broadcasting them to channel
+    # creates a self-reinforcing loop. Defense layer: even if _process_gaps() lets one
+    # through, don't shout it to the channel.
+    _q_lower = question.lower()
+    if (
+        "cognitive" in _q_lower
+        and any(w in _q_lower for w in ("blockage", "blockages", "blocking", "blocked"))
+    ):
+        try:
+            _aged_check = _local_db_proxy()
+            with _aged_check() as _ac:
+                _aged_row = _ac.execute(
+                    """SELECT 1 FROM twm_observations
+                       WHERE content_csb LIKE %s
+                         AND (expires_at IS NULL OR expires_at > to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS'))
+                       LIMIT 1""",
+                    ("AGED_INTENT|%",),
+                ).fetchone()
+            if _aged_row:
+                return f"[flag_top_gap] suppressed: blockage gap with standing goals present — {question[:60]}"
+        except Exception as _se:
+            pass  # if check fails, fall through and flag normally
+
     # Cooldown — don't spam the same question
     now = _time.time()
     if (

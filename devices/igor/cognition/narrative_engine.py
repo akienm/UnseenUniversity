@@ -232,6 +232,10 @@ _NE_CONTENT_PREFIXES = (
     "NARRATIVE_GAP|",  # gap registry entries — managed by _process_gaps(), not synthesis
 )
 
+# Terms that identify self-referential "cognitive blockage" gaps — suppressed when
+# AGED_INTENT standing goals are present in TWM (the goals are the answer, not a gap).
+_BLOCKAGE_TERMS_NE = frozenset({"blockage", "blockages", "blocking", "blocked", "impeded"})
+
 # diagnostic_filter: keywords that mark self-referential/operational noise
 # (change.20a.2, expanded in WO7)
 _SELF_DIAG_KEYWORDS = (
@@ -1355,7 +1359,9 @@ Reply with ONLY a JSON object — no other text:
     {{"question": "<causal unknown — max 15 words; e.g. 'why did X happen after Y'>", "salience": <0.0-1.0>, "threat_level": <0.0-1.0>}}
   ]
 }}
-NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what happens next. Omit entry (empty list) if none."""
+NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what happens next. Omit entry (empty list) if none.
+
+STANDING GOALS (AGED_INTENT): When AGED_INTENT observations appear in the TWM, they are actionable standing goals Igor pursues when idle (read queue, self-study, ask questions, etc.). These are NOT blockages — they are the answer to "what should I do?" When AGED_INTENT is the only pending work and no urgent impulses exist, emit an action_impulse to execute one of them (e.g., "check reading queue", "study codebase", "formulate questions for Akien"). Do NOT emit a narrative_gap about cognitive blockage when AGED_INTENT goals are the only unresolved work."""
 
     # ── Traversal cursor (#236) ────────────────────────────────────────────────
 
@@ -1489,6 +1495,7 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
 
         # Read existing gap entries from active TWM
         existing_gaps: list[dict] = []
+        _has_aged_intent = False
         try:
             all_obs = self.cortex.twm_read(limit=100, include_integrated=False)
             existing_gaps = [
@@ -1496,6 +1503,10 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
                 for o in all_obs
                 if o.get("content_csb", "").startswith("NARRATIVE_GAP|")
             ]
+            _has_aged_intent = any(
+                o.get("content_csb", "").startswith("AGED_INTENT|")
+                for o in all_obs
+            )
         except Exception as _bare_e:
             log_error(
                 kind="BARE_EXCEPT",
@@ -1645,6 +1656,20 @@ NARRATIVE_GAPS: list genuine causal unknowns that matter for predicting what hap
             q_words = {w.lower() for w in question.split() if len(w) > 3}
             is_duplicate = any(len(q_words & ex_kw) >= 2 for ex_kw in existing_keywords)
             if is_duplicate:
+                continue
+
+            # Suppress self-referential blockage gaps when standing goals are available.
+            # When AGED_INTENT entries are in TWM, "cognitive blockage" is not a genuine
+            # causal unknown — the standing goals ARE the answer. Pushing a blockage gap
+            # at salience=1.0 creates a self-reinforcing loop that crowds them out.
+            if _has_aged_intent and (
+                q_words & _BLOCKAGE_TERMS_NE
+                and "cognitive" in question.lower()
+            ):
+                log_error(
+                    kind="NE_STANDING_GOAL_SUPPRESS",
+                    detail=f"narrative_engine: suppressed blockage gap (AGED_INTENT present): {question[:80]}",
+                )
                 continue
 
             # Step 4 (#307): arousal amplifies initial gap salience
