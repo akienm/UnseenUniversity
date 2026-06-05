@@ -23,6 +23,19 @@ Fallback:
 rm -f ${IGOR_HOME:-~/.unseen_university}/Igor-wild-0001/debug_session.flag
 ```
 
+### 1.5. Mark CC.0 unavailable — prevents Granny dispatch during compact
+
+```bash
+GRANNY_AVAIL=${GRANNY_AVAIL_DIR:-~/.granny/available}
+mkdir -p "$GRANNY_AVAIL"
+rm -f "$GRANNY_AVAIL/CC.0.available.true"
+touch "$GRANNY_AVAIL/CC.0.available.false"
+```
+
+Granny checks `is_available('CC.0')` before dispatching. With `.false` present,
+she defers rather than sending into the void. `/context-load` restores `.true`
+on session resume.
+
 ### 2. Emit preserve string + fire self-compact
 
 Always emit the preserve block AND fire /compact via the tmux send-keys

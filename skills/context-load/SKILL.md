@@ -6,6 +6,18 @@ model: haiku
 
 # context-load — Session startup
 
+## Step 0 — Restore CC.0 availability (cleared by /autocompact before compact)
+
+```bash
+GRANNY_AVAIL=${GRANNY_AVAIL_DIR:-~/.granny/available}
+mkdir -p "$GRANNY_AVAIL"
+rm -f "$GRANNY_AVAIL/CC.0.available.false"
+touch "$GRANNY_AVAIL/CC.0.available.true"
+```
+
+This is the resume side of the compact availability gate. Always runs — safe to
+call even when the .false file doesn't exist (idempotent).
+
 ## Step 0.25 — Stale slate check (soft prompt to close previous day)
 ```bash
 python3 ${CC_WORKFLOW_TOOLS}/stale_slate_check.py
