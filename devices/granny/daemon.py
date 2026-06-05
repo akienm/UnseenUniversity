@@ -99,12 +99,14 @@ def _default_config() -> dict:
 # ── Queue ─────────────────────────────────────────────────────────────────────
 
 
-def _setstatus_direct(tid: str, status: str) -> bool:
-    """Set ticket status via direct Postgres UPDATE — no subprocess overhead.
+def _setstatus_direct(tid: str, status: str, worker: str | None = None) -> bool:
+    """Set ticket status (and optionally worker) via direct Postgres UPDATE.
 
     Replaces the cc_queue.py setstatus subprocess calls in _dispatch_cc0 and
     _process_handshake_replies. Direct DB write avoids Python startup + Postgres
     connection overhead that caused intermittent 10s timeouts in those paths.
+    When worker is provided, also sets metadata.worker so _cc0_busy() detects
+    the ticket on the next poll cycle.
     Returns True on success, False on error (logs warning, never raises).
     """
     try:
@@ -112,14 +114,25 @@ def _setstatus_direct(tid: str, status: str) -> bool:
         conn = psycopg2.connect(_DB_URL, connect_timeout=5)
         with conn:
             with conn.cursor() as cur:
-                cur.execute(
-                    """UPDATE clan.memories
-                       SET metadata = jsonb_set(metadata, '{status}', %s::jsonb)
-                       WHERE id = %s""",
-                    (f'"{status}"', tid),
-                )
+                if worker:
+                    cur.execute(
+                        """UPDATE clan.memories
+                           SET metadata = jsonb_set(
+                               jsonb_set(metadata, '{status}', %s::jsonb),
+                               '{worker}', %s::jsonb
+                           )
+                           WHERE id = %s""",
+                        (f'"{status}"', f'"{worker}"', tid),
+                    )
+                else:
+                    cur.execute(
+                        """UPDATE clan.memories
+                           SET metadata = jsonb_set(metadata, '{status}', %s::jsonb)
+                           WHERE id = %s""",
+                        (f'"{status}"', tid),
+                    )
         conn.close()
-        log.debug("Granny: _setstatus_direct %s → %s", tid, status)
+        log.debug("Granny: _setstatus_direct %s → %s (worker=%s)", tid, status, worker)
         return True
     except Exception as exc:
         log.warning("Granny: _setstatus_direct %s → %s failed: %s", tid, status, exc)
@@ -224,11 +237,11 @@ def _dispatch_cc0(ticket: dict, session: str = "claude-main") -> bool:
         ["tmux", "send-keys", "-t", session, f"\r\r\r/sprint-ticket {tid}\r"],
         check=False,
     )
-    # Mark in_progress immediately — dispatch IS assignment (CLAUDE.md).
-    # Without this, _cc0_busy() returns False on the next poll cycle because
-    # CC hasn't had time to run setstatus yet, causing a second ticket to fire.
+    # Mark in_progress + worker='claude' immediately — dispatch IS assignment.
+    # Without worker, _cc0_busy() misses this ticket (queries worker IN ('claude','cc')),
+    # causing a second dispatch on the next 60s poll cycle.
     # Direct DB write (not subprocess) to avoid 10s timeout under load.
-    _setstatus_direct(tid, "in_progress")
+    _setstatus_direct(tid, "in_progress", worker="claude")
     log.info("Granny: dispatched %s → CC.0 (send-keys → %s)", tid, session)
     return True
 
