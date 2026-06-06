@@ -279,7 +279,7 @@ class GoogleSource(Source):
     Model IDs use the canonical Google format (e.g. 'gemini-2.0-flash'),
     not the OpenRouter namespaced form ('google/gemini-2.0-flash').
 
-    Auth: GOOGLE_AI_STUDIO_API_KEY env var (alias: GEMINI_API_KEY).
+    Auth: GOOGLE_AI_STUDIO_API_KEY env var (aliases: GOOGLE_STUDIO_API_KEY, GEMINI_API_KEY).
     """
 
     BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
@@ -290,12 +290,12 @@ class GoogleSource(Source):
         self.free_tier = free_tier
 
     def _api_key(self) -> str:
-        for var in ("GOOGLE_AI_STUDIO_API_KEY", "GEMINI_API_KEY"):
+        for var in ("GOOGLE_AI_STUDIO_API_KEY", "GOOGLE_STUDIO_API_KEY", "GEMINI_API_KEY"):
             key = os.environ.get(var, "").strip()
             if key:
                 return key
         raise RuntimeError(
-            "Google API key not set — set GOOGLE_AI_STUDIO_API_KEY or GEMINI_API_KEY"
+            "Google API key not set — set GOOGLE_AI_STUDIO_API_KEY, GOOGLE_STUDIO_API_KEY, or GEMINI_API_KEY"
         )
 
     def _model_name(self, model_id: str) -> str:
@@ -402,7 +402,7 @@ class OllamaCloudSource(Source):
     """Ollama Pro cloud API — flat-rate subscription ($20/mo Pro plan).
 
     Uses the OpenAI-compatible endpoint at api.ollama.com (or OLLAMA_CLOUD_ENDPOINT).
-    Auth via OLLAMA_PRO_API_KEY. Disabled (available=False) when key is not set.
+    Auth via OLLAMA_PRO_API_KEY (alias: OLLAMA_API_KEY). Disabled (available=False) when key is not set.
 
     billing_type="flat_rate": preferred over usage-based sources when routing.
     """
@@ -410,7 +410,10 @@ class OllamaCloudSource(Source):
     DEFAULT_ENDPOINT = "https://api.ollama.com/v1/chat/completions"
 
     def __init__(self) -> None:
-        api_key = os.environ.get("OLLAMA_PRO_API_KEY", "").strip()
+        api_key = (
+            os.environ.get("OLLAMA_PRO_API_KEY", "").strip()
+            or os.environ.get("OLLAMA_API_KEY", "").strip()
+        )
         endpoint = os.environ.get(
             "OLLAMA_CLOUD_ENDPOINT", self.DEFAULT_ENDPOINT
         )
@@ -423,13 +426,20 @@ class OllamaCloudSource(Source):
         self._endpoint = endpoint
 
     def _api_key(self) -> str:
-        key = os.environ.get("OLLAMA_PRO_API_KEY", "").strip() or self._api_key_val
+        key = (
+            os.environ.get("OLLAMA_PRO_API_KEY", "").strip()
+            or os.environ.get("OLLAMA_API_KEY", "").strip()
+            or self._api_key_val
+        )
         if not key:
-            raise RuntimeError("OLLAMA_PRO_API_KEY not set")
+            raise RuntimeError("OLLAMA_PRO_API_KEY or OLLAMA_API_KEY not set")
         return key
 
     def ping(self) -> bool:
-        if not os.environ.get("OLLAMA_PRO_API_KEY", "").strip():
+        if not (
+            os.environ.get("OLLAMA_PRO_API_KEY", "").strip()
+            or os.environ.get("OLLAMA_API_KEY", "").strip()
+        ):
             return False
         try:
             from urllib.parse import urlparse
