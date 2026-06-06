@@ -23,15 +23,16 @@ Rule format (config/granny.yaml):
 
   granny_mailbox: granny.0   # Granny's reply mailbox (default: granny.0)
 
-Bus dispatch (new path):
+Bus dispatch (D-cc-shim-assignment-model-2026-06-06):
   1. Granny sends a dispatch envelope to worker mailbox → setstatus dispatched
   2. Worker shim acks → Granny marks acked
   3. Worker shim sends started → Granny marks in_progress
   4. Worker shim sends timeout → Granny marks escalated
   Watchdog: dispatched tickets older than DISPATCH_ACK_TIMEOUT_S → escalated
 
-Legacy path (kept for machines without bus):
-  dispatch: tmux_send_keys  → directly sends /sprint-ticket via send-keys
+Granny is transport-agnostic: she sends bus envelopes and sets worker fields.
+All tmux/session knowledge lives in the worker's shim (e.g. CCWorkerListener),
+not here. See devices/granny/cc_worker_listener.py for CC delivery.
 
 Run as: python -m devices.granny.daemon
 """
@@ -42,20 +43,12 @@ import json
 import logging
 import os
 import signal
-import socket
 import subprocess
 import sys
 import time
 from pathlib import Path
 
 log = logging.getLogger(__name__)
-
-# Primary CC session name used by Granny for dispatch and in default config.
-# Granny dispatches TO the existing CC.0 session — always .cc.0, not auto-N.
-_CC_DEFAULT_SESSION = (
-    os.environ.get("CC_TMUX_SESSION")
-    or socket.gethostname().split(".")[0].lower() + ".cc.0"
-)
 
 _UU_ROOT = Path(__file__).resolve().parents[2]
 _CC_QUEUE = _UU_ROOT / "lab" / "claudecode" / "cc_queue.py"
@@ -91,7 +84,7 @@ def _load_config() -> dict:
 def _default_config() -> dict:
     return {
         "workers": {
-            "CC.0": {"dispatch": "tmux_send_keys", "session": _CC_DEFAULT_SESSION, "one_at_a_time": True},
+            "CC.0": {"dispatch": "bus", "mailbox": "cc.0", "one_at_a_time": True},
             "DickSimnel.0": {"dispatch": "set_worker", "worker_name": "dicksimnel"},
         },
         "rules": [
@@ -233,25 +226,6 @@ def match_rule(ticket: dict, rules: list[dict]) -> str:
 
 
 # ── Dispatch ──────────────────────────────────────────────────────────────────
-
-
-def _dispatch_cc0(ticket: dict, session: str = _CC_DEFAULT_SESSION) -> bool:
-    tid = ticket["id"]
-    check = subprocess.run(["tmux", "has-session", "-t", session], capture_output=True)
-    if check.returncode != 0:
-        log.warning("Granny: tmux session %r not found — cannot dispatch %s", session, tid)
-        return False
-    subprocess.run(
-        ["tmux", "send-keys", "-t", session, f"\r\r\r/sprint-ticket {tid}\r"],
-        check=False,
-    )
-    # Mark in_progress + worker='claude' immediately — dispatch IS assignment.
-    # Without worker, _cc0_busy() misses this ticket (queries worker IN ('claude','cc')),
-    # causing a second dispatch on the next 60s poll cycle.
-    # Direct DB write (not subprocess) to avoid 10s timeout under load.
-    _setstatus_direct(tid, "in_progress", worker="claude")
-    log.info("Granny: dispatched %s → CC.0 (send-keys → %s)", tid, session)
-    return True
 
 
 def _dispatch_akien(ticket: dict) -> bool:
@@ -601,8 +575,6 @@ def run_once(config: dict, *, imap=None) -> None:
                     wcfg.get("mailbox", f"{target.lower().replace('.', '-')}"),
                     granny_mailbox,
                 )
-            elif dispatch_kind == "tmux_send_keys":
-                ok = _dispatch_cc0(ticket, wcfg.get("session", _CC_DEFAULT_SESSION))
             else:
                 ok = _dispatch_dicksimnel(ticket, wcfg.get("worker_name", "dicksimnel"))
 
@@ -631,7 +603,7 @@ def _make_imap_if_bus_configured(config: dict):
         from bus.connection import make_bus_connection
         return make_bus_connection()
     except Exception as exc:
-        log.warning("Granny: bus connection failed — falling back to legacy dispatch: %s", exc)
+        log.warning("Granny: bus connection failed — CC.0 dispatch unavailable: %s", exc)
         return None
 
 
