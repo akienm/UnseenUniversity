@@ -173,32 +173,55 @@ mkdir -p "${IGOR_HOME}/logs"
 # Start rack server if not already running (D335)
 start_rack_server
 
-# Launch inside tmux so Claude Code inherits $TMUX and $TMUX_PANE.
-# This is REQUIRED for self-compaction via tmux send-keys to work —
-# without it, Claude Code runs outside tmux and can't target its own pane.
-CLAUDE_TMUX_SESSION="${CLAUDE_TMUX_SESSION:-claude-main}"
-export CLAUDE_TMUX_SESSION
+# Derive tmux session name: <hostname>.cc.N (T-cc-session-hostname-naming).
+# CC_TMUX_SESSION env var wins if already set (explicit override).
+# CLAUDE_TMUX_SESSION is the legacy override name — also accepted.
+# When already inside tmux, use the current session name rather than detecting.
+# Outside tmux: find the first N where <hostname>.cc.N doesn't exist yet.
+_CC_HOSTNAME=$(hostname | cut -d. -f1 | tr '[:upper:]' '[:lower:]')
+if [[ -n "${CC_TMUX_SESSION:-}" ]]; then
+    _CC_SESSION="$CC_TMUX_SESSION"
+elif [[ -n "${CLAUDE_TMUX_SESSION:-}" ]]; then
+    _CC_SESSION="$CLAUDE_TMUX_SESSION"
+elif [[ -n "${TMUX:-}" ]]; then
+    _CC_SESSION=$(tmux display-message -p '#{session_name}')
+else
+    _CC_SESSION=""
+    for _n in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+        _CANDIDATE="${_CC_HOSTNAME}.cc.${_n}"
+        if ! tmux has-session -t "$_CANDIDATE" 2>/dev/null; then
+            _CC_SESSION="$_CANDIDATE"
+            break
+        fi
+    done
+    _CC_SESSION="${_CC_SESSION:-${_CC_HOSTNAME}.cc.0}"
+fi
+# Export both names so CC (CC_TMUX_SESSION) and legacy tooling (CLAUDE_TMUX_SESSION) agree.
+export CC_TMUX_SESSION="$_CC_SESSION"
+export CLAUDE_TMUX_SESSION="$_CC_SESSION"
 
 # Unique session name: hostname-yymmdd.HHMMSS — used for both display name
 # and remote-control handle so Igor/tools can reach this session by name.
 SESSION_NAME="$(hostname)-$(date +%y%m%d.%H%M%S)"
 
 if [[ -n "${TMUX:-}" ]]; then
-    # Already inside tmux — launch directly
+    # Already inside tmux — launch directly; CC_TMUX_SESSION already in env.
     exec claude --dangerously-skip-permissions \
         -n "$SESSION_NAME" \
         --remote-control "$SESSION_NAME" \
         "$@"
 else
-    # Outside tmux — create session (or reuse) and launch Claude inside it
-    tmux new-session -d -s "$CLAUDE_TMUX_SESSION" 2>/dev/null || true
+    # Outside tmux — create session (or reuse) and launch Claude inside it.
+    # tmux new-session inherits the calling env; CC_TMUX_SESSION is also injected
+    # explicitly into CLAUDE_CMD so shell rc files can't shadow it.
+    tmux new-session -d -s "$CC_TMUX_SESSION" 2>/dev/null || true
     # Build the command string with proper quoting
-    CLAUDE_CMD="cd $(printf '%q' "$PWD") && claude --dangerously-skip-permissions"
+    CLAUDE_CMD="CC_TMUX_SESSION=$(printf '%q' "$CC_TMUX_SESSION") cd $(printf '%q' "$PWD") && claude --dangerously-skip-permissions"
     CLAUDE_CMD+=" -n $(printf '%q' "$SESSION_NAME")"
     CLAUDE_CMD+=" --remote-control $(printf '%q' "$SESSION_NAME")"
     for arg in "$@"; do
         CLAUDE_CMD+=" $(printf '%q' "$arg")"
     done
-    tmux send-keys -t "$CLAUDE_TMUX_SESSION" "$CLAUDE_CMD" Enter
-    exec tmux attach -t "$CLAUDE_TMUX_SESSION"
+    tmux send-keys -t "$CC_TMUX_SESSION" "$CLAUDE_CMD" Enter
+    exec tmux attach -t "$CC_TMUX_SESSION"
 fi
