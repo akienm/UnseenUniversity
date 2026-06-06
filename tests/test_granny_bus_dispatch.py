@@ -344,3 +344,70 @@ class TestRunOnceBusDispatch:
                 run_once(self._bus_config(), imap=None)
 
         assert any("no imap" in r.message for r in caplog.records)
+
+
+# ── DickSimnel bus dispatch ────────────────────────────────────────────────────
+
+
+class TestDickSimnelBusDispatch:
+    """Verify that builder-tier tickets route to DickSimnel via bus envelope, not set-worker."""
+
+    def test_default_config_dicksimnel_uses_bus(self):
+        cfg = _default_config()
+        ds = cfg["workers"]["DickSimnel.0"]
+        assert ds["dispatch"] == "bus"
+        assert ds["mailbox"] == "dicksimnel.0"
+
+    def test_builder_ticket_envelope_lands_in_dicksimnel_mailbox(self):
+        imap = _FakeIMAP()
+        ticket = {"id": "T-build", "tags": [], "role": "builder"}
+
+        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("devices.granny.availability.is_available", return_value=True), \
+             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("devices.granny.daemon._setstatus_direct", return_value=True), \
+             patch("devices.granny.daemon._post_channel"):
+            run_once(_default_config(), imap=imap)
+
+        assert imap._boxes.get("dicksimnel.0"), "no dispatch envelope sent to dicksimnel.0"
+        env = imap._boxes["dicksimnel.0"][0]
+        assert env.payload["kind"] == "dispatch"
+        assert env.payload["ticket_id"] == "T-build"
+        assert env.from_device == "granny.0"
+
+    def test_builder_ticket_does_not_call_set_worker(self):
+        imap = _FakeIMAP()
+        ticket = {"id": "T-build2", "tags": [], "role": "builder"}
+        set_worker_calls = []
+
+        def _run(cmd, **kwargs):
+            if "set-worker" in cmd:
+                set_worker_calls.append(list(cmd))
+            return _OK
+
+        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("devices.granny.availability.is_available", return_value=True), \
+             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("devices.granny.daemon._setstatus_direct", return_value=True), \
+             patch("devices.granny.daemon._post_channel"), \
+             patch("devices.granny.daemon.subprocess.run", side_effect=_run):
+            run_once(_default_config(), imap=imap)
+
+        assert not set_worker_calls, f"set-worker must not be called for bus dispatch; got: {set_worker_calls}"
+
+    def test_creator_ticket_also_routes_to_dicksimnel_via_bus(self):
+        imap = _FakeIMAP()
+        ticket = {"id": "T-create", "tags": [], "role": "creator"}
+
+        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("devices.granny.availability.is_available", return_value=True), \
+             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("devices.granny.daemon._setstatus_direct", return_value=True), \
+             patch("devices.granny.daemon._post_channel"):
+            run_once(_default_config(), imap=imap)
+
+        assert imap._boxes.get("dicksimnel.0"), "creator ticket must route to dicksimnel.0 via bus"
+        assert imap._boxes["dicksimnel.0"][0].payload["ticket_id"] == "T-create"

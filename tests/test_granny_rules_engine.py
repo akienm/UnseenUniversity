@@ -102,15 +102,23 @@ class TestRunOnce:
                             run_once(_config())
         mock_cc.assert_called_once()
 
-    def test_dispatches_to_dicksimnel_via_set_worker(self):
+    def test_dispatches_to_dicksimnel_via_bus(self):
         ticket = {"id": "T-ds", "tags": [], "role": "builder", "status": "sprint",
                   "title": "Build it"}
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]):
-            with patch("devices.granny.availability.is_available", return_value=True):
-                with patch("devices.granny.daemon._dispatch_dicksimnel", return_value=True) as mock_ds:
-                    with patch("devices.granny.daemon._post_channel"):
-                        run_once(_config())
-        mock_ds.assert_called_once()
+        imap = MagicMock()
+        imap.fetch_unseen.return_value = []
+
+        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("devices.granny.availability.is_available", return_value=True), \
+             patch("devices.granny.daemon._dispatch_bus", return_value=True) as mock_bus, \
+             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("devices.granny.daemon._post_channel"):
+            run_once(_config(), imap=imap)
+
+        mock_bus.assert_called_once()
+        # Third positional arg is worker_mailbox
+        assert mock_bus.call_args[0][2] == "dicksimnel.0"
 
     def test_dispatch_failure_does_not_raise(self):
         ticket = {"id": "T-fail", "tags": [], "role": "master", "status": "sprint",

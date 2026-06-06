@@ -8,8 +8,8 @@ workers:
     session: claude-main       # revert: bus dispatch requires Dovecot IMAP (not yet installed)
     one_at_a_time: true        # defer if a claude ticket is already in_progress
   DickSimnel.0:
-    dispatch: set_worker
-    worker_name: dicksimnel    # DickSimnel polls and claims itself
+    dispatch: bus
+    mailbox: dicksimnel.0
 
 rules:
   # HIGH-inertia tags always go to CC — no exceptions, no silent routing

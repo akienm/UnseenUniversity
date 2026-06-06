@@ -85,7 +85,7 @@ def _default_config() -> dict:
     return {
         "workers": {
             "CC.0": {"dispatch": "bus", "mailbox": "cc.0", "one_at_a_time": True},
-            "DickSimnel.0": {"dispatch": "set_worker", "worker_name": "dicksimnel"},
+            "DickSimnel.0": {"dispatch": "bus", "mailbox": "dicksimnel.0"},
         },
         "rules": [
             {"when": {"tags_any": ["Security", "Provenance", "Auth", "Brainstem", "Database"]}, "route_to": "CC.0"},
