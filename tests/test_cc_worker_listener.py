@@ -139,6 +139,109 @@ class TestCCWorkerListenerPollOnce:
         assert not imap._boxes.get("granny.0")
 
 
+class TestPriorityHaltInterrupt:
+    """Priority/HALT envelopes fire the tmux interrupt sequence immediately."""
+
+    def _listener(self, imap, tmux_ok=True):
+        listener = CCWorkerListener(
+            imap=imap,
+            cc_mailbox="cc.0",
+            granny_mailbox="granny.0",
+            tmux_session="test-session",
+            poll_interval=999,
+        )
+        tmux_rc = 0 if tmux_ok else 1
+
+        def _mock_run(cmd, **kwargs):
+            return MagicMock(returncode=tmux_rc)
+
+        return listener, _mock_run
+
+    def _inject(self, imap, kind, message="STOP now"):
+        env = Envelope.now(
+            from_device="granny.0",
+            to_device="cc.0",
+            payload={"kind": kind, "message": message},
+        )
+        imap.append("cc.0", env)
+
+    def test_priority_envelope_fires_interrupt(self):
+        imap = _FakeIMAP()
+        self._inject(imap, "priority", "urgent: human override")
+        listener, mock_run = self._listener(imap)
+        sent = []
+
+        def _capture_run(cmd, **kwargs):
+            sent.append(cmd)
+            return MagicMock(returncode=0)
+
+        with patch("subprocess.run", side_effect=_capture_run):
+            listener._poll_once()
+
+        injected = [c for c in sent if "send-keys" in c]
+        assert len(injected) == 1
+        assert "urgent: human override" in injected[0][-1]
+        assert injected[0][-1].startswith("\r\r\r")
+
+    def test_halt_envelope_fires_interrupt(self):
+        imap = _FakeIMAP()
+        self._inject(imap, "halt", "HALT: system shutdown")
+        listener, mock_run = self._listener(imap)
+        sent = []
+
+        def _capture_run(cmd, **kwargs):
+            sent.append(cmd)
+            return MagicMock(returncode=0)
+
+        with patch("subprocess.run", side_effect=_capture_run):
+            listener._poll_once()
+
+        injected = [c for c in sent if "send-keys" in c]
+        assert len(injected) == 1
+        assert "HALT: system shutdown" in injected[0][-1]
+
+    def test_interrupt_skipped_when_session_not_found(self):
+        imap = _FakeIMAP()
+        self._inject(imap, "halt", "stop please")
+        listener, _ = self._listener(imap, tmux_ok=False)
+        sent = []
+
+        def _capture_run(cmd, **kwargs):
+            sent.append(cmd)
+            return MagicMock(returncode=1)
+
+        with patch("subprocess.run", side_effect=_capture_run):
+            listener._poll_once()
+
+        # has-session ran; send-keys did NOT
+        assert not any("send-keys" in c for c in sent)
+
+    def test_interrupt_message_defaults_to_kind_and_sender(self):
+        """Envelope with no message field gets a default message body."""
+        imap = _FakeIMAP()
+        env = Envelope.now(
+            from_device="igor.0",
+            to_device="cc.0",
+            payload={"kind": "halt"},  # no 'message' key
+        )
+        imap.append("cc.0", env)
+        listener, _ = self._listener(imap)
+        sent = []
+
+        def _capture_run(cmd, **kwargs):
+            sent.append(cmd)
+            return MagicMock(returncode=0)
+
+        with patch("subprocess.run", side_effect=_capture_run):
+            listener._poll_once()
+
+        injected = [c for c in sent if "send-keys" in c]
+        assert len(injected) == 1
+        # default body contains kind and sender
+        assert "halt" in injected[0][-1]
+        assert "igor.0" in injected[0][-1]
+
+
 class TestCCShimAdapter:
     def test_device_id_returns_mailbox(self):
         adapter = _CCShimAdapter(device_id="cc.0")

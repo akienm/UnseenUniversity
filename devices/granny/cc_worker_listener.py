@@ -106,22 +106,28 @@ class CCWorkerListener:
 
         for env in envelopes:
             kind = env.payload.get("kind") if hasattr(env, "payload") else None
-            if kind != "dispatch":
-                continue
-            ticket_id = env.payload.get("ticket_id") if hasattr(env, "payload") else None
-            log.info(
-                "CCWorkerListener: dispatch envelope received ticket=%s from=%s",
-                ticket_id,
-                env.from_device,
-            )
-            self._shim.receive_dispatch(
-                env,
-                send_fn=self._make_send_fn(),
-                deliver_fn=self._make_deliver_fn(),
-            )
-            if ticket_id:
-                self._add_ack_note(ticket_id)
-                self._start_nag_thread(ticket_id)
+            if kind == "dispatch":
+                ticket_id = env.payload.get("ticket_id") if hasattr(env, "payload") else None
+                log.info(
+                    "CCWorkerListener: dispatch envelope received ticket=%s from=%s",
+                    ticket_id,
+                    env.from_device,
+                )
+                self._shim.receive_dispatch(
+                    env,
+                    send_fn=self._make_send_fn(),
+                    deliver_fn=self._make_deliver_fn(),
+                )
+                if ticket_id:
+                    self._add_ack_note(ticket_id)
+                    self._start_nag_thread(ticket_id)
+            elif kind in ("priority", "halt"):
+                message = env.payload.get("message") or f"[{kind} from {env.from_device}]"
+                log.info(
+                    "CCWorkerListener: %s envelope received from=%s message=%r",
+                    kind, env.from_device, message,
+                )
+                self._fire_interrupt(message)
 
     def _make_send_fn(self):
         imap = self._imap
@@ -161,6 +167,24 @@ class CCWorkerListener:
             return True
 
         return deliver_fn
+
+    # ── Priority / HALT interrupt ────────────────────────────────────────────────
+
+    def _fire_interrupt(self, message: str) -> None:
+        """Inject 3x Enter then message body into the CC tmux session — synchronous."""
+        session = self._tmux_session
+        check = subprocess.run(
+            ["tmux", "has-session", "-t", session],
+            capture_output=True,
+        )
+        if check.returncode != 0:
+            log.warning("CCWorkerListener: interrupt skipped — tmux session %r not found", session)
+            return
+        subprocess.run(
+            ["tmux", "send-keys", "-t", session, f"\r\r\r{message}\r"],
+            check=False,
+        )
+        log.info("CCWorkerListener: interrupt injected into %s: %r", session, message)
 
     # ── Ack note ────────────────────────────────────────────────────────────────
 
