@@ -65,27 +65,29 @@ concurrent typing (verified 2026-06-05); single-call variants do not fire reliab
 
 ```bash
 DATESTAMP=$(date +%Y%m%d)
+# Use CC_TMUX_SESSION if set (new naming: <hostname>.cc.N); fall back to claude-main
+_CC_SESSION="${CC_TMUX_SESSION:-claude-main}"
 
 # 1. Switch to Haiku for the compaction summary
-tmux send-keys -t claude-main Enter Enter Enter
+tmux send-keys -t "$_CC_SESSION" Enter Enter Enter
 sleep 0.5
-tmux send-keys -t claude-main "/model haiku"
+tmux send-keys -t "$_CC_SESSION" "/model haiku"
 sleep 0.5
-tmux send-keys -t claude-main ENTER
+tmux send-keys -t "$_CC_SESSION" ENTER
 sleep 2
 
 # 2. Fire the compaction (runs on Haiku)
-tmux send-keys -t claude-main "/compact preserve: Read today's slate: ${IGOR_HOME:-~/.unseen_university}/claudecode/${DATESTAMP}.slate.txt. In-flight and Next: see slate."
+tmux send-keys -t "$_CC_SESSION" "/compact preserve: Read today's slate: ${IGOR_HOME:-~/.unseen_university}/claudecode/${DATESTAMP}.slate.txt. In-flight and Next: see slate."
 sleep 0.5
-tmux send-keys -t claude-main ENTER
+tmux send-keys -t "$_CC_SESSION" ENTER
 
 # 3. Queue the return to Sonnet — typed into the box during compaction, then
 #    submitted after it finishes. The sleep must outlast the compaction; it is a
 #    heuristic, not a guarantee.
 sleep 12
-tmux send-keys -t claude-main "/model sonnet"
+tmux send-keys -t "$_CC_SESSION" "/model sonnet"
 sleep 0.5
-tmux send-keys -t claude-main ENTER
+tmux send-keys -t "$_CC_SESSION" ENTER
 ```
 
 The step-3 return is best-effort (the `sleep 12` must outlast compaction). The

@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import os
 import signal
+import socket
 import subprocess
 import sys
 import time
@@ -24,7 +25,17 @@ from pathlib import Path
 _UU_ROOT = Path(__file__).parent.parent.parent.resolve()
 sys.path.insert(0, str(_UU_ROOT))
 
-_PROTECTED_SESSIONS = frozenset({"claude-main", "granny", "web-server", "igor"})
+_HOSTNAME = socket.gethostname().split(".")[0].lower()
+_PROTECTED_SESSIONS = frozenset({
+    # New naming: <hostname>.cc.N — protect all primary CC instances on this host.
+    # Minion sessions are named cc-T-<slug> so the cc.N suffix never collides.
+    _HOSTNAME + ".cc.0",
+    _HOSTNAME + ".cc.1",
+    "claude-main",  # legacy name, safe to keep during transition
+    "granny",
+    "web-server",
+    "igor",
+})
 
 
 def _list_cc_sessions() -> list[str]:

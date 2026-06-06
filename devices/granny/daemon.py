@@ -42,12 +42,20 @@ import json
 import logging
 import os
 import signal
+import socket
 import subprocess
 import sys
 import time
 from pathlib import Path
 
 log = logging.getLogger(__name__)
+
+# Primary CC session name used by Granny for dispatch and in default config.
+# Granny dispatches TO the existing CC.0 session — always .cc.0, not auto-N.
+_CC_DEFAULT_SESSION = (
+    os.environ.get("CC_TMUX_SESSION")
+    or socket.gethostname().split(".")[0].lower() + ".cc.0"
+)
 
 _UU_ROOT = Path(__file__).resolve().parents[2]
 _CC_QUEUE = _UU_ROOT / "lab" / "claudecode" / "cc_queue.py"
@@ -83,7 +91,7 @@ def _load_config() -> dict:
 def _default_config() -> dict:
     return {
         "workers": {
-            "CC.0": {"dispatch": "tmux_send_keys", "session": "claude-main", "one_at_a_time": True},
+            "CC.0": {"dispatch": "tmux_send_keys", "session": _CC_DEFAULT_SESSION, "one_at_a_time": True},
             "DickSimnel.0": {"dispatch": "set_worker", "worker_name": "dicksimnel"},
         },
         "rules": [
@@ -227,7 +235,7 @@ def match_rule(ticket: dict, rules: list[dict]) -> str:
 # ── Dispatch ──────────────────────────────────────────────────────────────────
 
 
-def _dispatch_cc0(ticket: dict, session: str = "claude-main") -> bool:
+def _dispatch_cc0(ticket: dict, session: str = _CC_DEFAULT_SESSION) -> bool:
     tid = ticket["id"]
     check = subprocess.run(["tmux", "has-session", "-t", session], capture_output=True)
     if check.returncode != 0:
@@ -594,7 +602,7 @@ def run_once(config: dict, *, imap=None) -> None:
                     granny_mailbox,
                 )
             elif dispatch_kind == "tmux_send_keys":
-                ok = _dispatch_cc0(ticket, wcfg.get("session", "claude-main"))
+                ok = _dispatch_cc0(ticket, wcfg.get("session", _CC_DEFAULT_SESSION))
             else:
                 ok = _dispatch_dicksimnel(ticket, wcfg.get("worker_name", "dicksimnel"))
 

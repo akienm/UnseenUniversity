@@ -10,6 +10,8 @@ cross-talk. CC.0 is the fallback broadcast when no session is specified.
 """
 
 import os
+import socket
+import subprocess
 from pathlib import Path
 
 GLOBAL_MAILBOX = "CC.0"
@@ -21,7 +23,31 @@ SESSION_ID_ENV_VAR = "CLAUDE_SESSION_ID"
 # and injects /autocompact every COMPACT_EVERY_N closes. The baseline file is
 # external state (shim-owned) so the count survives across CC turns/sessions.
 COMPACT_EVERY_N = int(os.environ.get("CC_COMPACT_EVERY_N", "5"))
-TMUX_SESSION = os.environ.get("CC_TMUX_SESSION", "claude-main")
+
+
+def _detect_session_name() -> str:
+    """Return <hostname>.cc.N — lowest N with no existing tmux session.
+
+    Called at CC startup (before the session is created) so N-detection is
+    correct. Inside a running session CC_TMUX_SESSION is set, bypassing this.
+    """
+    hostname = socket.gethostname().split(".")[0].lower()
+    try:
+        result = subprocess.run(
+            ["tmux", "list-sessions", "-F", "#{session_name}"],
+            capture_output=True, text=True, timeout=2,
+        )
+        existing = set(result.stdout.splitlines())
+    except Exception:
+        existing = set()
+    for n in range(16):
+        name = f"{hostname}.cc.{n}"
+        if name not in existing:
+            return name
+    return f"{hostname}.cc.0"
+
+
+TMUX_SESSION = os.environ.get("CC_TMUX_SESSION") or _detect_session_name()
 
 
 def _igor_home() -> Path:

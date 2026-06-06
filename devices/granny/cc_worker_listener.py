@@ -21,6 +21,7 @@ from __future__ import annotations
 import logging
 import os
 import signal
+import socket
 import subprocess
 import sys
 import threading
@@ -31,7 +32,10 @@ log = logging.getLogger(__name__)
 
 _GRANNY_MAILBOX_DEFAULT = os.environ.get("GRANNY_MAILBOX", "granny.0")
 _CC_MAILBOX_DEFAULT = os.environ.get("CC_MAILBOX", "cc.0")
-_CC_SESSION_DEFAULT = os.environ.get("CC_TMUX_SESSION", "claude-main")
+_CC_SESSION_DEFAULT = (
+    os.environ.get("CC_TMUX_SESSION")
+    or socket.gethostname().split(".")[0].lower() + ".cc.0"
+)
 _POLL_INTERVAL_S = int(os.environ.get("CC_LISTENER_POLL_INTERVAL", "5"))
 _PID_FILE = Path.home() / ".granny" / "cc_worker_listener.pid"
 
