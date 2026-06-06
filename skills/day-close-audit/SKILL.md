@@ -462,6 +462,43 @@ Drift findings → fix the doc inline (small) or ticket the reorg work (large).
 
 ---
 
+## Step 18.7 — Completion audit (verify closed tickets were actually built)
+
+Check that recently-closed tickets' completion criteria are met in the actual repo.
+This is the verification half of the ticket-quality loop — catches fake completions.
+
+```bash
+python3 lab/claudecode/completion_audit.py list --days 1
+```
+
+For each ticket returned with criteria (the "Auditable" section):
+
+1. Read the **Completion criteria** field.
+2. For each verifiable criterion (file exists, function present, grep match): check it with Bash.
+   - `grep -r "pattern" path` — content/code checks
+   - `ls path` or `cat path | grep "text"` — file existence/content
+3. For behavioral criteria ("runs and shows X in transcript") — verdict: `cannot-verify`.
+4. Record each verdict:
+
+```bash
+python3 lab/claudecode/completion_audit.py log-result <ticket-id> <pass|fail|cannot-verify> "<one-line reason>"
+```
+
+**Findings:**
+- `fail` → **HIGH severity** finding: "T-xxx completion criteria not met: <reason>". Draft a re-open ticket.
+- `pass` → note inline, no action needed.
+- `cannot-verify` → note inline, no action needed (behavioral criteria require live observation).
+
+After all tickets checked, print summary:
+
+```bash
+python3 lab/claudecode/completion_audit.py summary --days 1
+```
+
+Add to the findings report: `Completion audit: N pass, N fail, N cannot-verify`
+
+---
+
 ## Step 19 — Evaluate findings + fix
 
 For each finding across Steps 1–18.6:
@@ -494,6 +531,7 @@ Credentials:     OK | <N> hardcoded
 Simplification:  <N> candidates — <brief list>
 Wiring:          OK | <N> switches with stubs/missing refs
 Cap-map drift:   fresh | stale (<N>d old — re-verify §1/§2/§4)
+Completion audit: <N> pass, <N> fail, <N> cannot-verify | FAIL: T-xxx — <reason>
 
 Fixed now:  <list>
 Ticketed:   <list>
