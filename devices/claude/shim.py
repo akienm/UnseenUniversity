@@ -65,6 +65,13 @@ _HOOK_COMMAND = (
     f"cd {_REPO_ROOT} && python3 -m devices.claude.ygm_check 2>/dev/null || true"
 )
 
+# Compaction-cadence Stop hook (D-compact-cadence-hook-2026-06-05): fires
+# /autocompact every N ticket-closes. Harness-enforced so the model can't defer.
+_STOP_HOOK_ID = "compact-cadence"
+_STOP_HOOK_COMMAND = (
+    f"cd {_REPO_ROOT} && python3 -m devices.claude.cc_compact_cadence 2>/dev/null || true"
+)
+
 
 def _load_settings() -> dict:
     if not os.path.exists(_SETTINGS_PATH):
@@ -93,6 +100,49 @@ def _hook_registered(settings: dict) -> bool:
         if isinstance(hook, dict) and hook.get("id") == _HOOK_ID:
             return True
     return False
+
+
+def _stop_hook_registered(settings: dict) -> bool:
+    """True when the compaction-cadence Stop hook is present.
+
+    Stop entries are nested: each list item is {"hooks": [{...}, ...]}. We tag
+    our entry with id=_STOP_HOOK_ID and dedup on it so we never clobber the
+    other Stop hooks (cc_log_stop_hook, update-usage) already registered.
+    """
+    for entry in settings.get("hooks", {}).get("Stop", []):
+        if not isinstance(entry, dict):
+            continue
+        for hook in entry.get("hooks", []):
+            if isinstance(hook, dict) and hook.get("id") == _STOP_HOOK_ID:
+                return True
+    return False
+
+
+def _register_stop_hook(settings: dict) -> None:
+    """Append the compaction-cadence Stop hook (id-deduped, never clobbers others)."""
+    if _stop_hook_registered(settings):
+        return
+    hooks = settings.setdefault("hooks", {})
+    hooks.setdefault("Stop", []).append(
+        {"hooks": [{"id": _STOP_HOOK_ID, "type": "command", "command": _STOP_HOOK_COMMAND}]}
+    )
+
+
+def _remove_stop_hook(settings: dict) -> None:
+    """Remove only our compaction-cadence Stop entry, leaving other Stop hooks intact."""
+    stop = settings.get("hooks", {}).get("Stop", [])
+    kept = []
+    for entry in stop:
+        if isinstance(entry, dict) and any(
+            isinstance(h, dict) and h.get("id") == _STOP_HOOK_ID
+            for h in entry.get("hooks", [])
+        ):
+            continue
+        kept.append(entry)
+    if stop:
+        settings["hooks"]["Stop"] = kept
+        if not kept:
+            del settings["hooks"]["Stop"]
 
 
 class ClaudeShim(BaseShim):
@@ -176,16 +226,26 @@ class ClaudeShim(BaseShim):
             log.error("Could not read %s: %s", _SETTINGS_PATH, exc)
             return False
 
-        if _hook_registered(settings):
-            log.info("YGM hook already registered in %s", _SETTINGS_PATH)
-            return True
+        ygm_already = _hook_registered(settings)
+        if not ygm_already:
+            hooks = settings.setdefault("hooks", {})
+            hooks.setdefault("UserPromptSubmit", []).append(_hook_entry())
 
-        hooks = settings.setdefault("hooks", {})
-        hooks.setdefault("UserPromptSubmit", []).append(_hook_entry())
+        # Compaction-cadence Stop hook — register alongside YGM (idempotent).
+        stop_already = _stop_hook_registered(settings)
+        if not stop_already:
+            _register_stop_hook(settings)
+
+        if ygm_already and stop_already:
+            log.info("YGM + compaction-cadence hooks already registered in %s", _SETTINGS_PATH)
+            return True
 
         try:
             _save_settings(settings)
-            log.info("YGM hook registered in %s", _SETTINGS_PATH)
+            log.info(
+                "Hooks registered in %s (ygm=%s, compact-cadence=%s)",
+                _SETTINGS_PATH, not ygm_already, not stop_already,
+            )
             return True
         except OSError as exc:
             log.error("Could not write %s: %s", _SETTINGS_PATH, exc)
@@ -202,18 +262,28 @@ class ClaudeShim(BaseShim):
         after = [
             h for h in before if not (isinstance(h, dict) and h.get("id") == _HOOK_ID)
         ]
-        if len(after) == len(before):
-            return True  # already removed
+        ygm_changed = len(after) != len(before)
+        if ygm_changed:
+            hooks["UserPromptSubmit"] = after
+            if not after:
+                del hooks["UserPromptSubmit"]
 
-        hooks["UserPromptSubmit"] = after
-        if not after:
-            del hooks["UserPromptSubmit"]
-        if not hooks:
-            del settings["hooks"]
+        # Remove our compaction-cadence Stop hook (leaves other Stop hooks intact).
+        stop_changed = _stop_hook_registered(settings)
+        if stop_changed:
+            _remove_stop_hook(settings)
+
+        if not ygm_changed and not stop_changed:
+            return True  # nothing of ours to remove
+        if not settings.get("hooks"):
+            settings.pop("hooks", None)
 
         try:
             _save_settings(settings)
-            log.info("YGM hook removed from %s", _SETTINGS_PATH)
+            log.info(
+                "Hooks removed from %s (ygm=%s, compact-cadence=%s)",
+                _SETTINGS_PATH, ygm_changed, stop_changed,
+            )
             return True
         except OSError as exc:
             log.error("Could not write %s: %s", _SETTINGS_PATH, exc)
@@ -241,14 +311,21 @@ class ClaudeShim(BaseShim):
                 "details": f"{_SETTINGS_PATH} does not exist yet (start() will create it); {adc_status}",
             }
 
-        if _hook_registered(settings):
+        ygm_ok = _hook_registered(settings)
+        stop_ok = _stop_hook_registered(settings)
+        if ygm_ok and stop_ok:
             return {
                 "passed": True,
-                "details": f"YGM hook '{_HOOK_ID}' registered in {_SETTINGS_PATH}; {adc_status}",
+                "details": f"YGM '{_HOOK_ID}' + compaction-cadence '{_STOP_HOOK_ID}' registered in {_SETTINGS_PATH}; {adc_status}",
             }
+        missing = []
+        if not ygm_ok:
+            missing.append(f"YGM '{_HOOK_ID}'")
+        if not stop_ok:
+            missing.append(f"compaction-cadence '{_STOP_HOOK_ID}'")
         return {
             "passed": False,
-            "details": f"YGM hook '{_HOOK_ID}' not found in {_SETTINGS_PATH} — call start(); {adc_status}",
+            "details": f"missing hook(s): {', '.join(missing)} in {_SETTINGS_PATH} — call start(); {adc_status}",
         }
 
     def rollback(self) -> None:

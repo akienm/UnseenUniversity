@@ -143,7 +143,10 @@ class TestClaudeShimSelfTestWithADC:
             json.dumps(
                 {
                     "hooks": {
-                        "UserPromptSubmit": [{"id": "ygm-nudge", "command": "test"}]
+                        "UserPromptSubmit": [{"id": "ygm-nudge", "command": "test"}],
+                        "Stop": [
+                            {"hooks": [{"id": "compact-cadence", "type": "command", "command": "test"}]}
+                        ],
                     }
                 }
             )
@@ -164,7 +167,10 @@ class TestClaudeShimSelfTestWithADC:
             json.dumps(
                 {
                     "hooks": {
-                        "UserPromptSubmit": [{"id": "ygm-nudge", "command": "test"}]
+                        "UserPromptSubmit": [{"id": "ygm-nudge", "command": "test"}],
+                        "Stop": [
+                            {"hooks": [{"id": "compact-cadence", "type": "command", "command": "test"}]}
+                        ],
                     }
                 }
             )
