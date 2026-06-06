@@ -36,7 +36,7 @@ fi
 
 run_setup_wizard() {
     local instance_dir="${IGOR_HOME}/Igor-wild-0001"
-    local env_file="${instance_dir}/.env"
+    local creds_file="${instance_dir}/igor.credentials.cfg"
 
     echo "╔════════════════════════════════════════════════════════════════════════════════╗"
     echo "║ First-time setup — superclaude                                                 ║"
@@ -64,11 +64,12 @@ run_setup_wizard() {
     # Create instance directory if needed
     mkdir -p "$instance_dir"
 
-    # If .env doesn't exist, create a template
-    if [[ ! -f "$env_file" ]]; then
-        echo "Creating template .env at $env_file"
-        cat > "$env_file" << 'ENVEOF'
-# Igor instance configuration — edit with your API keys
+    # Create template credentials file if missing
+    if [[ ! -f "$creds_file" ]]; then
+        echo "Creating template credentials at $creds_file"
+        cat > "$creds_file" << 'CREDSEOF'
+# igor.credentials.cfg — Igor instance credentials
+# Edit with your API keys. Never commit this file.
 
 # REQUIRED: Anthropic API key for Claude Code
 ANTHROPIC_API_KEY=""
@@ -76,23 +77,27 @@ ANTHROPIC_API_KEY=""
 # OPTIONAL: OpenRouter key (fallback if Anthropic balance is low)
 OPENROUTER_API_KEY=""
 
+# OPTIONAL: Free-tier inference keys
+GOOGLE_STUDIO_API_KEY=""
+OLLAMA_API_KEY=""
+
 # OPTIONAL: Local inference (KoboldCpp or Ollama)
 KOBOLDCPP_HOST="localhost"
 KOBOLDCPP_PORT="5001"
 
-# OPTIONAL: Database URL (defaults to local sqlite)
+# OPTIONAL: Database URL
 IGOR_SWARM_DB_URL=""
 
 # OPTIONAL: Instance ID (defaults to Igor-wild-0001)
 IGOR_INSTANCE_ID="Igor-wild-0001"
-ENVEOF
+CREDSEOF
 
         echo "✓ Template created"
     fi
 
     echo ""
-    echo "Please edit your .env file with your API keys:"
-    echo "  $env_file"
+    echo "Please edit your credentials file with your API keys:"
+    echo "  $creds_file"
     echo ""
     echo "Then re-run: superclaude"
     echo ""
@@ -102,14 +107,14 @@ ENVEOF
 # ─ Load config ──────────────────────────────────────────────────────────────
 
 require_api_key() {
-    # Load .env if it exists (sources ANTHROPIC_API_KEY and other env vars).
+    # Load igor.credentials.cfg (canonical; .env is deprecated).
     # Always succeeds — Claude Code will validate API key at startup.
-    local env_file="${IGOR_HOME}/Igor-wild-0001/.env"
+    local creds_file="${IGOR_HOME}/Igor-wild-0001/igor.credentials.cfg"
 
-    if [[ -f "$env_file" ]]; then
+    if [[ -f "$creds_file" ]]; then
         set -a
         # shellcheck disable=SC1090
-        source "$env_file"
+        source "$creds_file"
         set +a
     fi
 
