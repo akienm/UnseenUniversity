@@ -1,7 +1,8 @@
-"""Tests for DickSimnelDevice — availability flag, poll loop, inference integration."""
+"""Tests for DickSimnelDevice, DickSimnelShim, and DickSimnelWorkerListener."""
 
 from __future__ import annotations
 
+import collections
 import json
 import threading
 import time
@@ -9,6 +10,33 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+
+# ── Fake bus ──────────────────────────────────────────────────────────────────
+
+
+class _FakeBus:
+    def __init__(self):
+        self._boxes: dict[str, list] = collections.defaultdict(list)
+        self._read: dict[str, int] = collections.defaultdict(int)
+
+    def append(self, mailbox: str, envelope) -> None:
+        self._boxes[mailbox].append(envelope)
+
+    def fetch_unseen(self, mailbox: str) -> list:
+        seen = self._read[mailbox]
+        new = self._boxes[mailbox][seen:]
+        self._read[mailbox] = len(self._boxes[mailbox])
+        return new
+
+    def inject(self, mailbox: str, kind: str, ticket_id: str) -> None:
+        from bus.envelope import Envelope
+        env = Envelope.now(
+            from_device="granny.0",
+            to_device=mailbox,
+            payload={"kind": kind, "ticket_id": ticket_id},
+        )
+        self.append(mailbox, env)
 
 
 # ── DickSimnelShim ────────────────────────────────────────────────────────────
@@ -50,23 +78,17 @@ class TestDickSimnelShim:
         blocked_flag.write_text("false")
         assert shim.is_blocked()
 
-    def test_worker_callback_called_by_poll(self, tmp_path, monkeypatch):
-        from devices.dicksimnel import shim as shim_mod
+    def test_start_creates_and_starts_listener(self, tmp_path, monkeypatch):
+        from devices.dicksimnel.shim import DickSimnelShim
+        monkeypatch.setattr("devices.dicksimnel.shim._FLAG_DIR", tmp_path)
+        monkeypatch.setattr("devices.dicksimnel.shim._AVAILABLE_FLAG", tmp_path / "av.true")
 
-        monkeypatch.setattr(shim_mod, "_FLAG_DIR", tmp_path)
-        monkeypatch.setattr(shim_mod, "_AVAILABLE_FLAG", tmp_path / "av.true")
-        monkeypatch.setattr(shim_mod, "_BLOCKED_FLAG", tmp_path / "av.false")
-        monkeypatch.setattr(shim_mod, "_POLL_INTERVAL_S", 0.05)
-
-        called = threading.Event()
-        def _cb():
-            called.set()
-
-        s = shim_mod.DickSimnelShim(worker_callback=_cb)
-        s.start()
-        called.wait(timeout=1.0)
-        s.stop()
-        assert called.is_set()
+        shim = DickSimnelShim()
+        shim._connect_bus = lambda: None  # no real bus in tests
+        assert shim.start()
+        assert shim._listener is not None
+        shim.stop()
+        assert shim._listener is None
 
     def test_self_test_passes_when_inference_importable(self, tmp_path, monkeypatch):
         from devices.dicksimnel.shim import DickSimnelShim
@@ -120,69 +142,20 @@ class TestDickSimnelDevice:
         assert d.health()["status"] == "unhealthy"
         assert "test block" in d.health()["detail"]
 
-    def test_claim_next_ticket_returns_ticket_on_success(self):
+    def test_fetch_ticket_returns_dict(self):
         d = self._device()
-        ticket = {"id": "T-abc", "title": "Fix it", "status": "in_progress", "worker": "dicksimnel"}
-        import json
-        # next returns bare ID; show returns full JSON
-        next_resp = MagicMock(returncode=0, stdout="T-abc\n")
+        ticket = {"id": "T-abc", "title": "Fix it", "status": "dispatched"}
         show_resp = MagicMock(returncode=0, stdout=json.dumps(ticket))
-        with patch("subprocess.run", side_effect=[next_resp, show_resp]), \
-             patch("unseen_university.channel.post_to_channel"):
-            result = d._claim_next_ticket()
+        with patch("subprocess.run", return_value=show_resp):
+            result = d._fetch_ticket("T-abc")
         assert result is not None
         assert result["id"] == "T-abc"
-        assert d._active_ticket == "T-abc"
 
-    def test_claim_next_ticket_returns_none_on_empty(self):
+    def test_fetch_ticket_returns_none_on_fail(self):
         d = self._device()
-        with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=1, stderr="no ticket", stdout="")
-            result = d._claim_next_ticket()
+        with patch("subprocess.run", return_value=MagicMock(returncode=1, stderr="not found", stdout="")):
+            result = d._fetch_ticket("T-missing")
         assert result is None
-        assert d._active_ticket is None
-
-    def test_poll_and_work_skips_when_blocked(self):
-        d = self._device()
-        d._blocked = True
-        d._claim_next_ticket = MagicMock()
-        d._poll_and_work()
-        d._claim_next_ticket.assert_not_called()
-
-    def test_poll_and_work_skips_when_active(self):
-        d = self._device()
-        d._active_ticket = "T-running"
-        d._claim_next_ticket = MagicMock()
-        d._poll_and_work()
-        d._claim_next_ticket.assert_not_called()
-
-    def test_poll_and_work_full_cycle(self):
-        d = self._device()
-        ticket = {"id": "T-new", "title": "Fix bug", "status": "in_progress",
-                  "worker": "dicksimnel", "description": "Fix the thing", "tags": [], "size": "S"}
-        d._claim_next_ticket = MagicMock(return_value=ticket)
-        d._run_inference = MagicMock(return_value="## Analysis\nFixed it.")
-        d._post_result = MagicMock()
-
-        d._poll_and_work()
-
-        d._claim_next_ticket.assert_called_once()
-        d._run_inference.assert_called_once_with(ticket)
-        d._post_result.assert_called_once()
-        assert d._active_ticket is None
-
-    def test_poll_and_work_declines_on_inference_failure(self):
-        d = self._device()
-        ticket = {"id": "T-fail", "title": "T", "status": "in_progress",
-                  "worker": "dicksimnel", "description": "", "tags": [], "size": "S"}
-        d._claim_next_ticket = MagicMock(return_value=ticket)
-        d._run_inference = MagicMock(return_value=None)
-        d._decline_ticket = MagicMock()
-
-        d._poll_and_work()
-
-        d._decline_ticket.assert_called_once()
-        assert d._active_ticket is None
 
 
 # ── escalation ───────────────────────────────────────────────────────────────
@@ -239,30 +212,6 @@ class TestDickSimnelEscalation:
         args = mock_post.call_args
         assert "DICKSIMNEL_ESCALATE" in args[0][0]
         assert "T-test" in args[0][0]
-
-    def test_poll_escalates_pre_inference_on_high_inertia(self):
-        d = self._device()
-        ticket = {"id": "T-sec", "title": "Security fix", "tags": ["Security"],
-                  "description": "Fix auth", "status": "in_progress", "worker": "dicksimnel"}
-        d._claim_next_ticket = MagicMock(return_value=ticket)
-        d._run_inference = MagicMock()
-        d._escalate_ticket = MagicMock()
-        d._poll_and_work()
-        d._run_inference.assert_not_called()
-        d._escalate_ticket.assert_called_once()
-        assert "Security" in d._escalate_ticket.call_args[0][1]
-
-    def test_poll_closes_on_done_result(self):
-        d = self._device()
-        ticket = {"id": "T-easy", "title": "Easy fix", "tags": [],
-                  "description": "...", "status": "in_progress", "worker": "dicksimnel"}
-        d._claim_next_ticket = MagicMock(return_value=ticket)
-        d._run_inference = MagicMock(return_value="DONE: fixed the bug, tests pass")
-        d._post_result = MagicMock()
-        d._escalate_ticket = MagicMock()
-        d._poll_and_work()
-        d._post_result.assert_called_once()
-        d._escalate_ticket.assert_not_called()
 
 
 # ── _post_result reliability guards ──────────────────────────────────────────
@@ -414,49 +363,7 @@ class TestDickSimnelSkillLoad:
 
 
 class TestORCostGate:
-    """OR balance floor check and google_free worker routing rule."""
-
-    def _device(self):
-        from devices.dicksimnel.device import DickSimnelDevice
-        d = DickSimnelDevice()
-        d._shim = MagicMock()
-        d._shim.is_blocked.return_value = False
-        return d
-
-    def test_poll_skips_when_balance_at_floor(self, monkeypatch):
-        """When OR balance == floor, cycle is skipped without claiming a ticket."""
-        import devices.dicksimnel.device as m
-        d = self._device()
-        d._claim_next_ticket = MagicMock()
-
-        fake_bal = {"balance": 5.0, "purchased": 100.0, "used": 95.0, "fetched_at": 0}
-        with patch("devices.dicksimnel.device.fetch_balance", return_value=fake_bal), \
-             patch("devices.dicksimnel.device._OR_BALANCE_FLOOR", 5.0):
-            d._poll_and_work()
-
-        d._claim_next_ticket.assert_not_called()
-
-    def test_poll_proceeds_when_balance_above_floor(self):
-        """When balance is above floor, cycle proceeds to claim."""
-        d = self._device()
-        d._claim_next_ticket = MagicMock(return_value=None)
-
-        fake_bal = {"balance": 50.0, "purchased": 100.0, "used": 50.0, "fetched_at": 0}
-        with patch("devices.dicksimnel.device.fetch_balance", return_value=fake_bal), \
-             patch("devices.dicksimnel.device._OR_BALANCE_FLOOR", 5.0):
-            d._poll_and_work()
-
-        d._claim_next_ticket.assert_called_once()
-
-    def test_poll_proceeds_when_balance_check_unavailable(self):
-        """fetch_balance() raising is fail-open — cycle proceeds."""
-        d = self._device()
-        d._claim_next_ticket = MagicMock(return_value=None)
-
-        with patch("devices.dicksimnel.device.fetch_balance", side_effect=OSError("network")):
-            d._poll_and_work()
-
-        d._claim_next_ticket.assert_called_once()
+    """OR balance floor check (in listener) and google_free worker routing rule."""
 
     def test_worker_google_free_rule_exists(self):
         """google_free source is in the worker routing rules."""
@@ -497,3 +404,147 @@ class TestORCostGate:
         decision = engine.route("worker")
         assert decision is not None
         assert decision.source.name == "google_free"
+
+
+# ── DickSimnelWorkerListener ──────────────────────────────────────────────────
+
+
+class TestDickSimnelWorkerListener:
+    """Bus dispatch listener works tickets synchronously on envelope receipt."""
+
+    def _listener(self, bus=None, device=None, poll_interval=999):
+        from devices.dicksimnel.worker_listener import DickSimnelWorkerListener
+        return DickSimnelWorkerListener(
+            bus=bus or _FakeBus(),
+            device_mailbox="dicksimnel.0",
+            granny_mailbox="granny.0",
+            device=device,
+            poll_interval=poll_interval,
+        )
+
+    def _mock_device(self, ticket=None):
+        device = MagicMock()
+        t = ticket or {"id": "T-test", "title": "Test", "tags": [], "description": ""}
+        device._fetch_ticket.return_value = t
+        device._should_escalate.return_value = (False, "")
+        device._run_inference.return_value = "DONE: done"
+        return device
+
+    def test_dispatch_sends_ack_to_granny(self):
+        bus = _FakeBus()
+        bus.inject("dicksimnel.0", "dispatch", "T-abc")
+        device = self._mock_device()
+        listener = self._listener(bus=bus, device=device)
+
+        with patch("devices.dicksimnel.worker_listener.fetch_balance", return_value=None):
+            listener._poll_once()
+
+        acks = [e for e in bus._boxes.get("granny.0", [])
+                if e.payload.get("kind") == "dispatch_ack"]
+        assert len(acks) == 1
+        assert acks[0].payload["ticket_id"] == "T-abc"
+
+    def test_dispatch_calls_run_inference(self):
+        bus = _FakeBus()
+        bus.inject("dicksimnel.0", "dispatch", "T-work")
+        ticket = {"id": "T-work", "title": "Do work", "tags": [], "description": "fix"}
+        device = self._mock_device(ticket=ticket)
+        listener = self._listener(bus=bus, device=device)
+
+        with patch("devices.dicksimnel.worker_listener.fetch_balance", return_value=None):
+            listener._poll_once()
+
+        device._run_inference.assert_called_once_with(ticket)
+
+    def test_dispatch_started_sent_before_inference(self):
+        """dispatch_ack then dispatch_started are both sent, in order."""
+        bus = _FakeBus()
+        bus.inject("dicksimnel.0", "dispatch", "T-seq")
+        device = self._mock_device()
+        listener = self._listener(bus=bus, device=device)
+
+        with patch("devices.dicksimnel.worker_listener.fetch_balance", return_value=None):
+            listener._poll_once()
+
+        reply_kinds = [e.payload["kind"] for e in bus._boxes.get("granny.0", [])]
+        assert "dispatch_ack" in reply_kinds
+        assert "dispatch_started" in reply_kinds
+        assert reply_kinds.index("dispatch_ack") < reply_kinds.index("dispatch_started")
+
+    def test_halt_envelope_stops_listener(self):
+        from bus.envelope import Envelope
+        bus = _FakeBus()
+        env = Envelope.now(
+            from_device="granny.0",
+            to_device="dicksimnel.0",
+            payload={"kind": "halt"},
+        )
+        bus.append("dicksimnel.0", env)
+        listener = self._listener(bus=bus)
+
+        assert not listener._stop.is_set()
+        listener._poll_once()
+        assert listener._stop.is_set()
+
+    def test_receive_failure_is_silent(self):
+        class _BrokenBus:
+            def fetch_unseen(self, _):
+                raise OSError("bus down")
+
+        listener = self._listener(bus=_BrokenBus())
+        listener._poll_once()  # must not raise
+
+    def test_balance_at_floor_declines_without_inference(self):
+        bus = _FakeBus()
+        bus.inject("dicksimnel.0", "dispatch", "T-floor")
+        device = self._mock_device()
+        listener = self._listener(bus=bus, device=device)
+
+        with patch("devices.dicksimnel.worker_listener.fetch_balance",
+                   return_value={"balance": 5.0}), \
+             patch("devices.dicksimnel.worker_listener._OR_BALANCE_FLOOR", 5.0):
+            listener._poll_once()
+
+        device._run_inference.assert_not_called()
+        device._channel_event.assert_called_once()
+        assert "DECLINE" in device._channel_event.call_args[0][0]
+
+    def test_balance_above_floor_proceeds_to_inference(self):
+        bus = _FakeBus()
+        bus.inject("dicksimnel.0", "dispatch", "T-go")
+        device = self._mock_device()
+        listener = self._listener(bus=bus, device=device)
+
+        with patch("devices.dicksimnel.worker_listener.fetch_balance",
+                   return_value={"balance": 50.0}), \
+             patch("devices.dicksimnel.worker_listener._OR_BALANCE_FLOOR", 5.0):
+            listener._poll_once()
+
+        device._run_inference.assert_called_once()
+
+    def test_balance_check_raises_proceeds_fail_open(self):
+        bus = _FakeBus()
+        bus.inject("dicksimnel.0", "dispatch", "T-nobal")
+        device = self._mock_device()
+        listener = self._listener(bus=bus, device=device)
+
+        with patch("devices.dicksimnel.worker_listener.fetch_balance",
+                   side_effect=OSError("network")):
+            listener._poll_once()
+
+        device._run_inference.assert_called_once()
+
+    def test_high_inertia_escalates_without_inference(self):
+        bus = _FakeBus()
+        bus.inject("dicksimnel.0", "dispatch", "T-sec")
+        ticket = {"id": "T-sec", "title": "Security fix", "tags": ["Security"], "description": ""}
+        device = self._mock_device(ticket=ticket)
+        device._should_escalate.return_value = (True, "HIGH-inertia tags: ['Security']")
+        listener = self._listener(bus=bus, device=device)
+
+        with patch("devices.dicksimnel.worker_listener.fetch_balance", return_value=None):
+            listener._poll_once()
+
+        device._run_inference.assert_not_called()
+        device._escalate_ticket.assert_called_once()
+        assert "Security" in device._escalate_ticket.call_args[0][1]

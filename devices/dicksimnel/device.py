@@ -1,18 +1,19 @@
 """
-DickSimnelDevice — OR-powered autonomous ticket worker (worker tier).
+DickSimnelDevice — bus-dispatched autonomous ticket worker (worker tier).
 
-DickSimnel is the Sonnet/worker-tier replacement for CC in the headless
-automated pipeline. It:
-  1. Polls cc_queue for sprint tickets assigned to worker=dicksimnel
-  2. Claims one ticket at a time (respects concurrency limit)
-  3. Routes the ticket through the inference proxy (worker task_class)
-  4. Posts the inference result as a ticket note / closes with result
+DickSimnel receives sprint tickets via Granny bus dispatch envelopes on the
+dicksimnel.0 mailbox. On dispatch:
+  1. Sends dispatch_ack to Granny (handled by DickSimnelWorkerListener)
+  2. Fetches the ticket, checks HIGH-inertia tags, runs inference
+  3. Posts result (closes ticket) or escalates to CC
+
+The device is dormant between dispatches — no polling.
 
 v0.1 scope: inference-backed analysis + ticket state management.
             Actual file-patching (code execution) is v0.2.
 
 Availability:
-  ~/.granny/available/DickSimnel.0.available.true  → Granny will offer tickets
+  ~/.granny/available/DickSimnel.0.available.true  → Granny will dispatch
   ~/.granny/available/DickSimnel.0.available.false → Granny skips DickSimnel
 """
 
@@ -25,16 +26,9 @@ import subprocess
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
-
 from unseen_university.device import BaseDevice, INTERFACE_VERSION
 
 from .shim import DickSimnelShim
-
-try:
-    from devices.inference.budget_gate import fetch_balance
-except ImportError:
-    fetch_balance = None  # type: ignore[assignment]
 
 log = logging.getLogger(__name__)
 
@@ -46,7 +40,6 @@ _DB_URL = os.environ.get(
 )
 _SKILLS_DIR = Path.home() / ".claude" / "skills"
 _HIGH_INERTIA_TAGS = frozenset({"Security", "Provenance", "Database", "Auth", "Brainstem"})
-_OR_BALANCE_FLOOR = float(os.environ.get("DICKSIMNEL_OR_FLOOR", "5.0"))
 
 SYSTEM_PROMPT = """\
 You are DickSimnel, an autonomous software engineering agent in the UnseenUniversity rack.
@@ -57,18 +50,18 @@ Always use tools to take action — never describe what you plan to do without d
 
 class DickSimnelDevice(BaseDevice):
     """
-    DickSimnel.0 — OR-powered sprint ticket worker.
+    DickSimnel.0 — bus-dispatched sprint ticket worker.
 
-    One active ticket at a time. Polls cc_queue every POLL_INTERVAL seconds
-    for sprint tickets assigned to worker=dicksimnel.
+    Dormant between dispatches. Granny sends {kind:dispatch, ticket_id} to
+    dicksimnel.0; the shim's DickSimnelWorkerListener wakes, works one ticket
+    synchronously, and returns to listening.
     """
 
     DEVICE_ID = "dicksimnel"
-    POLL_INTERVAL = 30
 
     def __init__(self) -> None:
         super().__init__()
-        self._shim = DickSimnelShim(worker_callback=self._poll_and_work)
+        self._shim = DickSimnelShim(device=self)
         self._active_ticket: str | None = None
         self._blocked = False
         self._block_reason = ""
@@ -158,6 +151,24 @@ class DickSimnelDevice(BaseDevice):
 
     # ── Queue interaction ──────────────────────────────────────────────────────
 
+    def _fetch_ticket(self, ticket_id: str) -> dict | None:
+        """Fetch full ticket dict by ID. Returns None on error or not found."""
+        try:
+            result = subprocess.run(
+                ["python3", str(_CC_QUEUE), "show", ticket_id],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
+            )
+            if result.returncode != 0:
+                log.warning("DickSimnel: show failed for %s: %s", ticket_id, result.stderr[:100])
+                return None
+            return json.loads(result.stdout)
+        except (json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
+            log.warning("DickSimnel: fetch_ticket error for %s: %s", ticket_id, exc)
+            return None
+
     def _run_queue_cmd(self, *args) -> dict | list | None:
         """Run cc_queue.py with args; return parsed JSON or None on error."""
         if not _CC_QUEUE.exists():
@@ -177,53 +188,6 @@ class DickSimnelDevice(BaseDevice):
             return json.loads(result.stdout)
         except (json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
             log.debug("DickSimnel: cc_queue error: %s", exc)
-            return None
-
-    def _claim_next_ticket(self) -> dict | None:
-        """Atomically claim the next sprint ticket assigned worker=dicksimnel.
-
-        Uses cc_queue.py next --worker dicksimnel which marks in_progress and
-        returns the ticket ID (bare string). Then fetches the full ticket dict
-        via cc_queue.py show <id>.
-
-        Returns the ticket dict or None if no ticket is available.
-        """
-        try:
-            result = subprocess.run(
-                ["python3", str(_CC_QUEUE), "next", "--worker", "dicksimnel"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-                env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
-            )
-            if result.returncode != 0:
-                log.debug("DickSimnel: next --worker returned no ticket: %s", result.stderr[:100])
-                return None
-            ticket_id = result.stdout.strip()
-            if not ticket_id:
-                return None
-            # next prints the bare ticket ID; fetch the full dict via show
-            show = subprocess.run(
-                ["python3", str(_CC_QUEUE), "show", ticket_id],
-                capture_output=True,
-                text=True,
-                timeout=10,
-                env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
-            )
-            if show.returncode == 0:
-                ticket = json.loads(show.stdout)
-            else:
-                log.warning("DickSimnel: show failed for %s — working with minimal dict", ticket_id)
-                ticket = {"id": ticket_id, "title": ticket_id, "description": ""}
-            self._active_ticket = ticket.get("id") or ticket_id
-            self._channel_event(
-                f"DICKSIMNEL_WORKING ticket={self._active_ticket}"
-                f" title={ticket.get('title', '?')!r}"
-            )
-            log.info("DickSimnel: claimed ticket %s", self._active_ticket)
-            return ticket
-        except (json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
-            log.warning("DickSimnel: claim failed: %s", exc)
             return None
 
     def _channel_event(self, message: str) -> None:
@@ -361,61 +325,6 @@ class DickSimnelDevice(BaseDevice):
         except Exception as exc:
             log.error("DickSimnel: ToolLoop failed for ticket %s: %s", ticket_id, exc)
             return None
-
-    # ── Main work cycle ────────────────────────────────────────────────────────
-
-    def _poll_and_work(self) -> None:
-        """Called by shim poll loop. Claim and work one ticket per cycle."""
-        if self._blocked:
-            return
-        if self._shim.is_blocked():
-            log.debug("DickSimnel: .false flag set — skipping this cycle")
-            return
-        if self._active_ticket is not None:
-            log.debug("DickSimnel: ticket %s still active — skipping poll", self._active_ticket)
-            return
-
-        # OR balance floor: skip this cycle when balance is critically low.
-        # Fail-open: if fetch_balance is unavailable or raises, proceed anyway.
-        try:
-            if fetch_balance is not None:
-                bal = fetch_balance()
-                if bal is not None and bal["balance"] <= _OR_BALANCE_FLOOR:
-                    log.warning(
-                        "DickSimnel: OR balance $%.2f at/below floor $%.2f — skipping cycle",
-                        bal["balance"], _OR_BALANCE_FLOOR,
-                    )
-                    return
-        except Exception as exc:
-            log.debug("DickSimnel: budget check unavailable: %s", exc)
-
-        ticket = self._claim_next_ticket()
-        if ticket is None:
-            log.debug("DickSimnel: no tickets available for worker=dicksimnel")
-            return
-
-        ticket_id = ticket["id"]
-        log.info("DickSimnel: working ticket %s — %s", ticket_id, ticket.get("title", "?"))
-
-        # Pre-inference: bail on HIGH-inertia tags (saves cost; CC handles these)
-        should_esc, esc_reason = self._should_escalate(ticket, None)
-        if should_esc:
-            self._escalate_ticket(ticket_id, esc_reason)
-            return
-
-        result = self._run_inference(ticket)
-        if result is None:
-            self._decline_ticket(ticket_id, "inference proxy unavailable or returned empty")
-            return
-
-        # Post-inference: check confidence level
-        should_esc, esc_reason = self._should_escalate(ticket, result)
-        if should_esc:
-            self._escalate_ticket(ticket_id, esc_reason, analysis=result)
-        else:
-            self._post_result(ticket_id, result)
-
-        self._active_ticket = None
 
     # ── Chat interface ─────────────────────────────────────────────────────────
 
