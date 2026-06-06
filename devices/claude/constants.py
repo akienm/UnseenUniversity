@@ -25,11 +25,20 @@ SESSION_ID_ENV_VAR = "CLAUDE_SESSION_ID"
 COMPACT_EVERY_N = int(os.environ.get("CC_COMPACT_EVERY_N", "5"))
 
 
+def _igor_home() -> Path:
+    return Path(os.environ.get("IGOR_HOME", str(Path.home() / ".unseen_university")))
+
+
+def cc_session_path() -> Path:
+    """Flat file written by superclaude holding the active CC tmux session name."""
+    return _igor_home() / "claudecode" / "cc_session.txt"
+
+
 def _detect_session_name() -> str:
     """Return <hostname>.cc.N — lowest N with no existing tmux session.
 
-    Called at CC startup (before the session is created) so N-detection is
-    correct. Inside a running session CC_TMUX_SESSION is set, bypassing this.
+    For startup use only (find a free slot before the session exists).
+    To find the *running* session, use _resolve_session_name() instead.
     """
     hostname = socket.gethostname().split(".")[0].lower()
     try:
@@ -47,11 +56,53 @@ def _detect_session_name() -> str:
     return f"{hostname}.cc.0"
 
 
-TMUX_SESSION = os.environ.get("CC_TMUX_SESSION") or _detect_session_name()
+def _find_existing_cc_session() -> str | None:
+    """Scan running tmux sessions for hostname.cc.N or legacy claude-main."""
+    hostname = socket.gethostname().split(".")[0].lower()
+    try:
+        result = subprocess.run(
+            ["tmux", "list-sessions", "-F", "#{session_name}"],
+            capture_output=True, text=True, timeout=2,
+        )
+        sessions = result.stdout.splitlines()
+        for name in sessions:
+            if name.startswith(f"{hostname}.cc."):
+                return name
+        if "claude-main" in sessions:
+            return "claude-main"
+    except Exception:
+        pass
+    return None
 
 
-def _igor_home() -> Path:
-    return Path(os.environ.get("IGOR_HOME", str(Path.home() / ".unseen_university")))
+def _resolve_session_name() -> str:
+    """Return the active CC tmux session name.
+
+    Priority (why each level exists):
+      1. CC_TMUX_SESSION env var — set by superclaude, present when the hook
+         subprocess inherits it from a correctly-started session.
+      2. cc_session.txt flat file — written by superclaude at startup; survives
+         across hook subprocess spawns even when env var is absent (e.g. session
+         started before hostname-naming change shipped).
+      3. tmux session scan — finds hostname.cc.N or legacy claude-main when
+         neither env var nor file is available (migration safety net).
+      4. _detect_session_name() slot-find — startup fallback when no session
+         exists yet and we need a name to create one.
+    """
+    if name := os.environ.get("CC_TMUX_SESSION"):
+        return name
+    try:
+        name = cc_session_path().read_text(encoding="utf-8").strip()
+        if name:
+            return name
+    except (FileNotFoundError, OSError):
+        pass
+    if name := _find_existing_cc_session():
+        return name
+    return _detect_session_name()
+
+
+TMUX_SESSION = _resolve_session_name()
 
 
 def sprint_tokens_log_path() -> Path:
