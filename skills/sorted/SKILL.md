@@ -106,6 +106,27 @@ per the `/ticket` description template:
 }
 ```
 
+### 3.5. Advisor review for L/XL drafts (D-sorted-advisor-probe-2026-06-06)
+
+When any ticket in the current batch is L or XL size, call `advisor()` **before**
+running /audit-ticket. This is the proactive Opus judgment step — cheap relative
+to a sprint reset cycle.
+
+**Trigger:** `size == "L" or size == "XL"` for at least one draft in the batch.
+**Skip:** S-only batches — overhead exceeds benefit for small-scope tickets.
+
+Call `advisor()` with the draft ticket(s) as context:
+
+> "I'm about to file this L/XL ticket via /sorted. Review the completion criteria
+> and scope boundary. Are the completion criteria machine-verifiable? Is the scope
+> minimal? What am I missing?"
+
+Apply any amendments the advisor returns — especially to **Completion criteria**
+and **Scope boundary** — before proceeding to Step 4. If the advisor recommends
+splitting the ticket, treat it as a SPLIT verdict and create child drafts.
+
+Surface the advisor's key feedback inline as a one-line note before continuing.
+
 ### 4. Run /audit-ticket on each draft
 
 Always invoke /audit-ticket once per drafted ticket — filing-time quality is the
@@ -263,6 +284,7 @@ Multiple decisions in one session:
 - /audit-ticket runs on EVERY draft, not just the first or biggest.
 - HIGH-inertia approvals land in the ticket body before filing; they are not kept in CC's conversational memory.
 - Every M/L/XL decision — and every S-only decision where Step 2.6 extracted a behavioral hypothesis — gets a consequence-check ticket (Step 5.5). Consequence-checking is tracked work, not an informal afterthought.
+- Any batch containing an L or XL ticket gets an `advisor()` review (Step 3.5) before /audit-ticket runs. S-only batches skip this.
 
 ## Hard rules
 
