@@ -13,7 +13,8 @@ Default rules — flat_rate (Ollama Pro) preferred, usage_based (OR) as fallback
 
   Worker tier (sprint tickets, coding):
     2. worker → qwen3-coder-30b / openrouter (usage_based)
-   10. worker → qwen2.5-coder:32b / ollama_cloud (flat_rate — preferred when key set)
+    3. worker → gemini-2.0-flash / google_free (flat_rate — preferred when GOOGLE_AI_STUDIO_API_KEY set)
+   10. worker → qwen2.5-coder:32b / ollama_cloud (flat_rate — preferred when OLLAMA_PRO_API_KEY set)
 
   Analyst tier (research, reasoning):
     3. analyst → deepseek-v4-flash / openrouter (usage_based)
@@ -55,8 +56,10 @@ class RoutingRule:
 _DEFAULT_RULES: list[RoutingRule] = [
     # Minion tier
     RoutingRule(1, "minion", "qwen/qwen3.5-9b", "openrouter", "minion→qwen3.5-9b/OR"),
-    # Worker tier — usage-based fallback (Ollama Cloud preferred when key set)
+    # Worker tier — usage-based fallback (flat-rate sources preferred by billing_rank sort)
     RoutingRule(2, "worker", "qwen/qwen3-coder-30b-a3b-instruct", "openrouter", "worker→qwen3-coder-30b/OR"),
+    # Worker tier — Google AI Studio free tier (active when GOOGLE_AI_STUDIO_API_KEY set)
+    RoutingRule(3, "worker", "gemini-2.0-flash", "google_free", "worker→gemini-flash/google-free"),
     # Worker tier — Ollama Pro flat-rate (active when OLLAMA_PRO_API_KEY set)
     RoutingRule(10, "worker", "qwen2.5-coder:32b", "ollama_cloud", "worker→qwen2.5-coder:32b/ollama-pro"),
     # Analyst tier — usage-based fallback

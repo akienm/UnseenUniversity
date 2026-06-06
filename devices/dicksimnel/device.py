@@ -31,6 +31,11 @@ from unseen_university.device import BaseDevice, INTERFACE_VERSION
 
 from .shim import DickSimnelShim
 
+try:
+    from devices.inference.budget_gate import fetch_balance
+except ImportError:
+    fetch_balance = None  # type: ignore[assignment]
+
 log = logging.getLogger(__name__)
 
 _START_TIME = time.time()
@@ -41,6 +46,7 @@ _DB_URL = os.environ.get(
 )
 _SKILLS_DIR = Path.home() / ".claude" / "skills"
 _HIGH_INERTIA_TAGS = frozenset({"Security", "Provenance", "Database", "Auth", "Brainstem"})
+_OR_BALANCE_FLOOR = float(os.environ.get("DICKSIMNEL_OR_FLOOR", "5.0"))
 
 SYSTEM_PROMPT = """\
 You are DickSimnel, an autonomous software engineering agent in the UnseenUniversity rack.
@@ -368,6 +374,20 @@ class DickSimnelDevice(BaseDevice):
         if self._active_ticket is not None:
             log.debug("DickSimnel: ticket %s still active — skipping poll", self._active_ticket)
             return
+
+        # OR balance floor: skip this cycle when balance is critically low.
+        # Fail-open: if fetch_balance is unavailable or raises, proceed anyway.
+        try:
+            if fetch_balance is not None:
+                bal = fetch_balance()
+                if bal is not None and bal["balance"] <= _OR_BALANCE_FLOOR:
+                    log.warning(
+                        "DickSimnel: OR balance $%.2f at/below floor $%.2f — skipping cycle",
+                        bal["balance"], _OR_BALANCE_FLOOR,
+                    )
+                    return
+        except Exception as exc:
+            log.debug("DickSimnel: budget check unavailable: %s", exc)
 
         ticket = self._claim_next_ticket()
         if ticket is None:

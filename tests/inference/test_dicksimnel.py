@@ -408,3 +408,92 @@ class TestDickSimnelSkillLoad:
 
         assert captured, "dispatch was not called"
         assert "SKILL_MARKER" in captured[0]
+
+
+# ── OR cost gate ──────────────────────────────────────────────────────────────
+
+
+class TestORCostGate:
+    """OR balance floor check and google_free worker routing rule."""
+
+    def _device(self):
+        from devices.dicksimnel.device import DickSimnelDevice
+        d = DickSimnelDevice()
+        d._shim = MagicMock()
+        d._shim.is_blocked.return_value = False
+        return d
+
+    def test_poll_skips_when_balance_at_floor(self, monkeypatch):
+        """When OR balance == floor, cycle is skipped without claiming a ticket."""
+        import devices.dicksimnel.device as m
+        d = self._device()
+        d._claim_next_ticket = MagicMock()
+
+        fake_bal = {"balance": 5.0, "purchased": 100.0, "used": 95.0, "fetched_at": 0}
+        with patch("devices.dicksimnel.device.fetch_balance", return_value=fake_bal), \
+             patch("devices.dicksimnel.device._OR_BALANCE_FLOOR", 5.0):
+            d._poll_and_work()
+
+        d._claim_next_ticket.assert_not_called()
+
+    def test_poll_proceeds_when_balance_above_floor(self):
+        """When balance is above floor, cycle proceeds to claim."""
+        d = self._device()
+        d._claim_next_ticket = MagicMock(return_value=None)
+
+        fake_bal = {"balance": 50.0, "purchased": 100.0, "used": 50.0, "fetched_at": 0}
+        with patch("devices.dicksimnel.device.fetch_balance", return_value=fake_bal), \
+             patch("devices.dicksimnel.device._OR_BALANCE_FLOOR", 5.0):
+            d._poll_and_work()
+
+        d._claim_next_ticket.assert_called_once()
+
+    def test_poll_proceeds_when_balance_check_unavailable(self):
+        """fetch_balance() raising is fail-open — cycle proceeds."""
+        d = self._device()
+        d._claim_next_ticket = MagicMock(return_value=None)
+
+        with patch("devices.dicksimnel.device.fetch_balance", side_effect=OSError("network")):
+            d._poll_and_work()
+
+        d._claim_next_ticket.assert_called_once()
+
+    def test_worker_google_free_rule_exists(self):
+        """google_free source is in the worker routing rules."""
+        from devices.inference.rules_engine import _DEFAULT_RULES
+        worker_rules = [r for r in _DEFAULT_RULES if r.task_class == "worker"]
+        google_free_rules = [r for r in worker_rules if r.source_name == "google_free"]
+        assert google_free_rules, "expected a worker→google_free rule"
+        assert google_free_rules[0].model_id == "gemini-2.0-flash"
+
+    def test_worker_google_free_preferred_over_openrouter_when_available(self):
+        """google_free (flat_rate) sorts before openrouter (usage_based) for worker tier."""
+        from devices.inference.rules_engine import RulesEngine, _DEFAULT_RULES
+        from devices.inference.sources import GoogleSource, OpenRouterSource
+        from unittest.mock import MagicMock
+
+        google_src = MagicMock()
+        google_src.name = "google_free"
+        google_src.available = True
+        google_src.billing_type = "flat_rate"
+
+        or_src = MagicMock()
+        or_src.name = "openrouter"
+        or_src.available = True
+        or_src.billing_type = "usage_based"
+
+        fake_sources = {"google_free": google_src, "openrouter": or_src}
+        fake_models = MagicMock()
+        fake_model = MagicMock()
+        fake_models.get = lambda mid: fake_model
+        fake_models.by_tier = lambda t: []
+
+        engine = RulesEngine.__new__(RulesEngine)
+        engine._rules = _DEFAULT_RULES
+        engine._sources = fake_sources
+        engine._models = fake_models
+        engine._session_map = {}
+
+        decision = engine.route("worker")
+        assert decision is not None
+        assert decision.source.name == "google_free"
