@@ -13,10 +13,11 @@ Usage:
   ./sudo_relay --help
 """
 
-import os
 import subprocess
 import sys
 from pathlib import Path
+
+from unseen_university.shim import BaseShim
 
 UU_ROOT = Path(__file__).resolve().parent
 DAEMON_SCRIPT = UU_ROOT / "devices" / "igor" / "tools" / "sudoer_daemon.sh"
@@ -33,24 +34,13 @@ def _start_daemon(attach: bool = True) -> None:
     if not DAEMON_SCRIPT.exists():
         print(f"sudo_relay: daemon script not found at {DAEMON_SCRIPT}")
         sys.exit(1)
-    if attach:
-        # Take over the current terminal — password prompt is visible here.
-        # exec replaces this process with tmux; returns only on session exit.
-        os.execvp("tmux", [
-            "tmux", "new-session", "-s", TMUX_SESSION,
-            "-x", "220", "-y", "50",
-            "bash", str(DAEMON_SCRIPT),
-        ])
-    else:
-        subprocess.run(
-            ["tmux", "new-session", "-d", "-s", TMUX_SESSION, "-x", "220", "-y", "50"],
-            check=True, cwd=UU_ROOT,
-        )
-        subprocess.run(
-            ["tmux", "send-keys", "-t", TMUX_SESSION, f"bash {DAEMON_SCRIPT}", "Enter"],
-            check=True,
-        )
-        print(f"sudo_relay: daemon started in tmux session '{TMUX_SESSION}' (detached)")
+    BaseShim.spawn_foreground_session(
+        TMUX_SESSION,
+        ["bash", str(DAEMON_SCRIPT)],
+        no_attach=not attach,
+    )
+    # Detached path only — exec above replaces the process in the attach path.
+    print(f"sudo_relay: daemon started in tmux session '{TMUX_SESSION}' (detached)")
 
 
 def _stop() -> None:
@@ -86,7 +76,7 @@ def main() -> None:
     attach = "--no-attach" not in args
     if _session_exists():
         if attach:
-            os.execvp("tmux", ["tmux", "attach-session", "-t", TMUX_SESSION])
+            BaseShim.spawn_foreground_session(TMUX_SESSION, [], no_attach=False)
         else:
             print(f"sudo_relay: session '{TMUX_SESSION}' already running")
     else:

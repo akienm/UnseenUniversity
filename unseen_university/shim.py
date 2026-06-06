@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import subprocess
 import threading
 import time
 from abc import ABC, abstractmethod
@@ -300,6 +301,54 @@ class BaseShim(ABC):
         return [ord(c) for c in text]
 
     # ── Daemon supervision ─────────────────────────────────────────────────────
+
+    @staticmethod
+    def spawn_foreground_session(
+        session_name: str,
+        cmd: list[str],
+        *,
+        no_attach: bool = False,
+    ) -> None:
+        """Start cmd in a named tmux session, attaching when a terminal is available.
+
+        With a tty and no_attach=False: exec() into tmux, replacing the caller's
+        process with the tmux session. The call does not return on success.
+
+        Without a tty or with no_attach=True: create a detached tmux session and
+        send the command to it via send-keys. Returns after the session is created.
+
+        When the session already exists: attach (exec path) or return silently
+        (detached path) — a second process is never started.
+        """
+        import sys as _sys
+
+        session_exists = subprocess.run(
+            ["tmux", "has-session", "-t", session_name],
+            capture_output=True,
+        ).returncode == 0
+
+        attach = (not no_attach) and _sys.stdin.isatty()
+
+        if session_exists:
+            if attach:
+                os.execvp("tmux", ["tmux", "attach-session", "-t", session_name])
+            return
+
+        if attach:
+            os.execvp(
+                "tmux",
+                ["tmux", "new-session", "-s", session_name, "-x", "220", "-y", "50", *cmd],
+            )
+        else:
+            subprocess.run(
+                ["tmux", "new-session", "-d", "-s", session_name, "-x", "220", "-y", "50"],
+                check=True,
+            )
+            subprocess.run(
+                ["tmux", "send-keys", "-t", session_name, " ".join(cmd), "Enter"],
+                check=True,
+            )
+        log.info("spawn_foreground_session: session=%s detached", session_name)
 
     def ensure_daemon_running(self) -> bool:
         """Check if the device's backing daemon is alive; start it if not.
