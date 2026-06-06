@@ -162,6 +162,30 @@ Example finding:
 
 **Match pattern:** `skills/([a-z0-9_-]+)/` anywhere in the description text.
 
+### 18. Hold-status dependency gate (D-hold-gate-enforcement-2026-06-06)
+
+When the drafted ticket has `status: hold`, the description must name what it
+is blocked on. Accept either:
+- A ticket reference — `T-<slug>` anywhere in the description, OR
+- An explicit Akien action — text matching `Akien:` (case-insensitive) in the
+  description
+
+**Both absent → AMEND:**
+```
+[hold-gate] status=hold but no named dependency found.
+  Add one of:
+  - "Blocked on: T-<slug>" with the ticket ID this depends on, OR
+  - "Akien: <specific action required>" with the action Akien must take
+```
+
+**Why this fires:** Vague holds (imagined external impact, hypothetical future
+components, over-cautious concerns unrelated to this project) accumulate and
+confuse the queue. A hold is only valid when there is a specific named thing
+that must happen first.
+
+**Skip when:** `status` is anything other than `hold`. This check does not fire
+on sprint, design, triage, or any other status.
+
 ## Output format
 
 ```
@@ -180,6 +204,7 @@ Findings:
 - [split] 3+ verbs in one ticket (proposed: T-a + T-b)
 - [audit-emphasis] <tag or "none">
 - [feedback-loop] skills/<name>/ missing: <property list> (advisory — does not block)
+- [hold-gate] status=hold but no named dependency (T-xxx) or Akien: action found
 
 Amended ticket (if AMEND): <diff from input>
 Child proposals (if SPLIT): <list>
@@ -211,3 +236,4 @@ This fires on every audit-ticket run, no exceptions.
 - HIGH-inertia rollback plan is required — ask Akien if unclear.
 - Emit per-run telemetry:
   `from lab.claudecode.audit_telemetry import emit_run_record, AuditRunRecord`
+- Hold-status tickets without a named dependency (T-xxx) or Akien: action → AMEND, no exceptions.
