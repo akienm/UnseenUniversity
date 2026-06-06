@@ -964,12 +964,16 @@ async def _ws_endpoint(ws: WebSocket):
                     if content:
                         global _last_input_ts
                         _last_input_ts = time.monotonic()
-                        incoming.put(
+                        # Always route to Igor with comms://igor so Igor's reply
+                        # returns to the Igor session regardless of which channel
+                        # tab the user was on when they sent (T-web-channel-mismatch-ux).
+                        # current_session is the VIEW tab — not the target agent.
+                        _get_agent_queue("igor").put(
                             {
                                 "content": content,
                                 "author": author,
                                 "client_id": id(ws),
-                                "session_id": current_session,
+                                "session_id": "comms://igor",
                             }
                         )
                         umsg = {
@@ -982,7 +986,7 @@ async def _ws_endpoint(ws: WebSocket):
                         _add_to_history(current_session, umsg)
                         _broadcast_to_session(current_session, json.dumps(umsg))
                         _channel_append("comms://akien/web", content)
-                        _deliver_to_tmux(content, author, current_session)
+                        _deliver_to_tmux(content, author, "comms://igor")
         except Exception as e:
             log.debug("ws receive error: %s", e)
 

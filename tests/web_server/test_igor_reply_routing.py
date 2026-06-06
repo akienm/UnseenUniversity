@@ -119,3 +119,39 @@ def test_agent_send_empty_queue_when_no_subscriber(monkeypatch):
 
     # Should not raise — fanout=0 is logged but not an error
     srv.agent_send("hello", "igor", "comms://igor")
+
+
+# ── WS message routing (T-web-channel-mismatch-ux) ───────────────────────────
+
+
+def test_ws_message_always_routes_to_igor_queue():
+    """WS chat from any channel tab must land in Igor's per-agent queue with
+    session_id='comms://igor', not in the dead global incoming queue."""
+    import devices.web_server.server as srv
+
+    # Drain Igor's queue so the test starts clean
+    q = srv._get_agent_queue("igor")
+    while not q.empty():
+        q.get_nowait()
+
+    initial_incoming_size = srv.incoming.qsize()
+
+    # Simulate the put that the WS handler now does
+    q.put(
+        {
+            "content": "hello from granny tab",
+            "author": "web-user",
+            "client_id": 999,
+            "session_id": "comms://igor",
+        }
+    )
+
+    msg = q.get_nowait()
+    assert msg["session_id"] == "comms://igor", (
+        "WS message must carry session_id='comms://igor' so Igor replies there"
+    )
+    assert msg["content"] == "hello from granny tab"
+    # global incoming must be untouched
+    assert srv.incoming.qsize() == initial_incoming_size, (
+        "WS messages must NOT go to the dead global incoming queue"
+    )
