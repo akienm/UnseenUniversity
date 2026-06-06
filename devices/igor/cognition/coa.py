@@ -146,6 +146,22 @@ class COA(IgorBase):
         return self._bg_thread is not None and self._bg_thread.is_alive()
 
     # ------------------------------------------------------------------
+    # Tick interval helper
+    # ------------------------------------------------------------------
+
+    def _ne_tick_should_yield(self, now: float) -> tuple[bool, float]:
+        """Return (should_yield, remaining_secs) for the hard minimum NE tick interval.
+
+        Env: IGOR_NE_TICK_INTERVAL (float seconds, default 30.0).
+        Setting it to 0 disables the floor entirely.
+        """
+        interval = float(os.getenv("IGOR_NE_TICK_INTERVAL", "30.0"))
+        since_last = now - self._ne_last_run_time
+        if since_last < interval:
+            return True, interval - since_last
+        return False, 0.0
+
+    # ------------------------------------------------------------------
     # Main-loop tick
     # ------------------------------------------------------------------
 
@@ -179,6 +195,17 @@ class COA(IgorBase):
         try:
             _now = _t.monotonic()
             _COOLDOWN = 120.0
+            # Hard minimum tick interval — prevents NARRATIVE_GAP re-fire loops.
+            # Each NARRATIVE_GAP write changes the TWM fingerprint, bypassing the
+            # cooldown gate below. This floor applies regardless of state changes.
+            _should_yield, _remaining = self._ne_tick_should_yield(_now)
+            if _should_yield:
+                self.log.debug(
+                    "NE_TICK_YIELD remaining_secs=%.1f",
+                    _remaining,
+                )
+                return
+
             try:
                 _obs = self._cortex.twm_count()
                 _max_id = self._cortex.twm_max_id()
@@ -187,7 +214,7 @@ class COA(IgorBase):
                 _fingerprint = (0, 0)
 
             _same_state = _fingerprint == self._ne_last_twm_fingerprint
-            _in_cooldown = (_now - self._ne_last_run_time) < _COOLDOWN
+            _in_cooldown = _since_last < _COOLDOWN
             if _same_state and _in_cooldown:
                 return
 
