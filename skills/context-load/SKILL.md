@@ -174,6 +174,21 @@ python3 ${CC_WORKFLOW_TOOLS}/channel.py read 5
 python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py list 2>/dev/null | grep "🟠"
 ```
 
+## Step 5.5 — Stall check (graceful degradation)
+
+Surface any tickets stuck in_progress beyond the 2-hour threshold:
+```bash
+STALLS=$(python3 ${CC_WORKFLOW_TOOLS}/stall_check.py 2>/dev/null)
+if [ -n "$STALLS" ]; then
+  echo "⚠️  STALLED:"
+  echo "$STALLS"
+fi
+```
+
+When stalls appear: always surface them in the briefing with the [STALL?] prefix
+and the age in hours. Offer to `/stall-check --all` for the full list.
+Silent when no stalls. Never blocks context-load (fail-open on DB errors).
+
 ## Step 5.6 — Unread CC inbox
 
 Always check the inbox — pushes from Igor subsystems (pe_chain escalations,

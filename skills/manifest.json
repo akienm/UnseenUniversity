@@ -34,6 +34,7 @@
     "savestateauto":     {"category": "machine-agnostic", "machines": ["*"], "deploy": false},
     "skills-sync":       {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "sprint":            {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
+    "stall-check":       {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "sprint-batch":      {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "sprint-loop":       {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "sprint-ticket":     {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
