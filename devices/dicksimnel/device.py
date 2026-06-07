@@ -226,9 +226,15 @@ class DickSimnelDevice(BaseDevice):
         note = result_text[:2000]
         close_result = self._run_queue_cmd("close", ticket_id, f"DickSimnel.0: {note}")
         if close_result is None:
-            log.warning("DickSimnel: close failed for %s — escalating to CC", ticket_id)
-            self._escalate_ticket(ticket_id, "close command failed", analysis=result_text[:300])
-            return
+            # close() returns None on error and when ticket is already closed.
+            # Check the actual status before escalating — double-close is success.
+            show_result = self._run_queue_cmd("show", ticket_id)
+            if show_result and show_result.get("status") in ("done", "closed"):
+                log.info("DickSimnel: ticket %s already closed — treating as success", ticket_id)
+            else:
+                log.warning("DickSimnel: close failed for %s — escalating to CC", ticket_id)
+                self._escalate_ticket(ticket_id, "close command failed", analysis=result_text[:300])
+                return
 
         self._tickets_processed += 1
         self._channel_event(f"DICKSIMNEL_DONE ticket={ticket_id} summary={result_text[:100]!r}")

@@ -285,6 +285,44 @@ class TestPostResultGuards:
         mock_cmd.assert_not_called()
         assert d._tickets_processed == 0
 
+    def test_already_closed_ticket_counts_as_success(self):
+        """Double-close: close() returns None but show() reveals already closed → success."""
+        d = self._device()
+
+        def fake_cmd(*args):
+            if args[0] == "close":
+                return None  # close fails because already closed
+            if args[0] == "show":
+                return {"status": "closed"}
+            return None
+
+        with patch.object(d, "_run_queue_cmd", side_effect=fake_cmd):
+            with patch.object(d, "_escalate_ticket") as mock_esc:
+                with patch.object(d, "_channel_event"):
+                    d._post_result("T-already-done", "DONE: DickSimnel already closed it")
+
+        mock_esc.assert_not_called()
+        assert d._tickets_processed == 1, "double-close must increment _tickets_processed"
+
+    def test_already_done_ticket_counts_as_success(self):
+        """Double-close with status='done' also treats as success."""
+        d = self._device()
+
+        def fake_cmd(*args):
+            if args[0] == "close":
+                return None
+            if args[0] == "show":
+                return {"status": "done"}
+            return None
+
+        with patch.object(d, "_run_queue_cmd", side_effect=fake_cmd):
+            with patch.object(d, "_escalate_ticket") as mock_esc:
+                with patch.object(d, "_channel_event"):
+                    d._post_result("T-done", "DONE: already done")
+
+        mock_esc.assert_not_called()
+        assert d._tickets_processed == 1
+
 
 # ── skill_load + _build_system_prompt ─────────────────────────────────────────
 
