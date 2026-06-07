@@ -964,16 +964,18 @@ async def _ws_endpoint(ws: WebSocket):
                     if content:
                         global _last_input_ts
                         _last_input_ts = time.monotonic()
-                        # Always route to Igor with comms://igor so Igor's reply
-                        # returns to the Igor session regardless of which channel
-                        # tab the user was on when they sent (T-web-channel-mismatch-ux).
-                        # current_session is the VIEW tab — not the target agent.
+                        # Routing: session_id stays comms://igor so Igor's reply
+                        # always surfaces in the Igor feed (T-web-channel-mismatch-ux).
+                        # Thread-context isolation: context_session carries the actual
+                        # channel the user is in so _get_thread_id keys the per-channel
+                        # buffer, not one shared pool for all web messages.
                         _get_agent_queue("igor").put(
                             {
                                 "content": content,
                                 "author": author,
                                 "client_id": id(ws),
                                 "session_id": "comms://igor",
+                                "context_session": current_session,
                             }
                         )
                         umsg = {

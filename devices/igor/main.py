@@ -2171,8 +2171,11 @@ class Igor(IgorBase):
         if msg.source == "discord":
             return f"discord:{ri.get('channel_id', 'unknown')}"
         if msg.source == "web":
-            # #119: thread_id keyed by session_id so each session has isolated history
-            return f"web:{ri.get('session_id', ri.get('client_id', 'unknown'))}"
+            # context_session carries the actual channel the user is in (e.g. comms://igor,
+            # comms://shared). Prefer it over session_id, which is hardcoded to comms://igor
+            # for reply routing and would collapse all channels into one shared buffer.
+            key = ri.get("context_session") or ri.get("session_id") or ri.get("client_id", "unknown")
+            return f"web:{key}"
         if msg.source == "gmail":
             # Thread per sender address (simple; upgrade to In-Reply-To later)
             return f"gmail:{msg.author}"
@@ -7642,6 +7645,7 @@ class Igor(IgorBase):
                 reply_info={
                     "client_id": _raw.get("client_id"),
                     "session_id": _raw.get("session_id", "shared"),
+                    "context_session": _raw.get("context_session"),
                 },
                 received_at=time.monotonic(),
             )

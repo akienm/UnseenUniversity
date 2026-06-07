@@ -143,6 +143,7 @@ def test_ws_message_always_routes_to_igor_queue():
             "author": "web-user",
             "client_id": 999,
             "session_id": "comms://igor",
+            "context_session": "comms://shared",
         }
     )
 
@@ -154,4 +155,95 @@ def test_ws_message_always_routes_to_igor_queue():
     # global incoming must be untouched
     assert srv.incoming.qsize() == initial_incoming_size, (
         "WS messages must NOT go to the dead global incoming queue"
+    )
+
+
+# ── context_session isolation (T-web-thread-context-scope) ───────────────────
+
+
+def test_ws_message_carries_context_session():
+    """Queue message includes context_session for per-channel thread isolation.
+
+    session_id stays comms://igor for reply routing; context_session carries the
+    actual channel so _get_thread_id in Igor can key thread buffers per-channel.
+    """
+    import devices.web_server.server as srv
+
+    q = srv._get_agent_queue("igor")
+    while not q.empty():
+        q.get_nowait()
+
+    q.put(
+        {
+            "content": "test message",
+            "author": "akien",
+            "client_id": 1234,
+            "session_id": "comms://igor",
+            "context_session": "comms://shared",
+        }
+    )
+
+    msg = q.get_nowait()
+    assert msg["session_id"] == "comms://igor", "routing must stay on comms://igor"
+    assert msg["context_session"] == "comms://shared", (
+        "context_session must carry the actual channel for thread isolation"
+    )
+
+
+def test_get_thread_id_uses_context_session():
+    """_get_thread_id prefers context_session over session_id for web messages."""
+    from devices.igor.main import Igor
+    from unittest.mock import MagicMock
+
+    class FakeMsg:
+        source = "web"
+        reply_info = {
+            "session_id": "comms://igor",
+            "context_session": "comms://shared",
+            "client_id": 42,
+        }
+
+    igor = MagicMock(spec=Igor)
+    thread_id = Igor._get_thread_id(igor, FakeMsg())
+    assert thread_id == "web:comms://shared", (
+        f"expected 'web:comms://shared' got '{thread_id}'"
+    )
+
+
+def test_get_thread_id_falls_back_to_session_id_when_no_context_session():
+    """_get_thread_id falls back to session_id when context_session absent."""
+    from devices.igor.main import Igor
+    from unittest.mock import MagicMock
+
+    class FakeMsg:
+        source = "web"
+        reply_info = {
+            "session_id": "comms://igor",
+            "client_id": 42,
+        }
+
+    igor = MagicMock(spec=Igor)
+    thread_id = Igor._get_thread_id(igor, FakeMsg())
+    assert thread_id == "web:comms://igor"
+
+
+def test_get_thread_id_different_channels_get_different_thread_ids():
+    """Two messages from different channels get different thread_ids."""
+    from devices.igor.main import Igor
+    from unittest.mock import MagicMock
+
+    class MsgIgor:
+        source = "web"
+        reply_info = {"session_id": "comms://igor", "context_session": "comms://igor"}
+
+    class MsgShared:
+        source = "web"
+        reply_info = {"session_id": "comms://igor", "context_session": "comms://shared"}
+
+    igor = MagicMock(spec=Igor)
+    tid_igor = Igor._get_thread_id(igor, MsgIgor())
+    tid_shared = Igor._get_thread_id(igor, MsgShared())
+
+    assert tid_igor != tid_shared, (
+        "comms://igor and comms://shared messages must have distinct thread_ids"
     )
