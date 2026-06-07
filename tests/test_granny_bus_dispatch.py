@@ -77,6 +77,21 @@ def _mock_run_factory():
     return side_effect, calls
 
 
+def _mock_setstatus_factory():
+    """Returns (side_effect_fn, setstatus_calls_list) for _setstatus_direct.
+
+    _setstatus_direct replaced subprocess.run setstatus calls — patch this
+    instead of subprocess.run to capture status transitions.
+    """
+    calls = []
+
+    def fake_setstatus(tid, status, worker=None):
+        calls.append([tid, status])
+        return True
+
+    return fake_setstatus, calls
+
+
 def _make_pg_conn(rows: list[dict]):
     """Minimal fake psycopg2 connection that returns rows from fetchall."""
     cur = type("Cur", (), {
@@ -116,9 +131,9 @@ class TestDispatchBus:
     def test_sets_status_dispatched(self):
         imap = _FakeIMAP()
         ticket = {"id": "T-xyz"}
-        mock_run, calls = _mock_run_factory()
+        fake_ss, calls = _mock_setstatus_factory()
 
-        with patch("devices.granny.daemon.subprocess.run", side_effect=mock_run):
+        with patch("devices.granny.daemon._setstatus_direct", side_effect=fake_ss):
             _dispatch_bus(ticket, imap, "cc.0", "granny.0")
 
         assert ["T-xyz", "dispatched"] in calls
@@ -151,9 +166,9 @@ class TestProcessHandshakeReplies:
     def _run_with_reply(self, kind: str, ticket_id: str = "T-h"):
         imap = _FakeIMAP()
         imap.inject_reply(_GRANNY_MAILBOX_DEFAULT, kind, ticket_id)
-        mock_run, calls = _mock_run_factory()
+        fake_ss, calls = _mock_setstatus_factory()
 
-        with patch("devices.granny.daemon.subprocess.run", side_effect=mock_run):
+        with patch("devices.granny.daemon._setstatus_direct", side_effect=fake_ss):
             count = _process_handshake_replies(imap, _GRANNY_MAILBOX_DEFAULT)
 
         return count, calls
@@ -305,14 +320,15 @@ class TestRunOnceBusDispatch:
     def test_dispatch_sends_envelope_and_sets_dispatched(self):
         imap = _FakeIMAP()
         ticket = {"id": "T-run", "tags": [], "role": "master"}
-        mock_run, calls = _mock_run_factory()
+        fake_ss, calls = _mock_setstatus_factory()
 
         with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
              patch("devices.granny.availability.is_available", return_value=True), \
              patch("devices.granny.daemon._cc0_busy", return_value=False), \
              patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
              patch("devices.granny.daemon._post_channel"), \
-             patch("devices.granny.daemon.subprocess.run", side_effect=mock_run):
+             patch("devices.granny.daemon._setstatus_direct", side_effect=fake_ss):
             run_once(self._bus_config(), imap=imap)
 
         assert imap._boxes.get("cc.0"), "no envelope sent to cc.0"
@@ -322,11 +338,12 @@ class TestRunOnceBusDispatch:
     def test_ack_reply_transitions_to_acked(self):
         imap = _FakeIMAP()
         imap.inject_reply("granny.0", "dispatch_ack", "T-reply")
-        mock_run, calls = _mock_run_factory()
+        fake_ss, calls = _mock_setstatus_factory()
 
         with patch("devices.granny.daemon._sprint_tickets", return_value=[]), \
              patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-             patch("devices.granny.daemon.subprocess.run", side_effect=mock_run):
+             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("devices.granny.daemon._setstatus_direct", side_effect=fake_ss):
             run_once(self._bus_config(), imap=imap)
 
         assert ["T-reply", "acked"] in calls
