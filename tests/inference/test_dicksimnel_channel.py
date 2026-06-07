@@ -45,56 +45,50 @@ def test_channel_event_swallows_exception(caplog):
     assert any("channel post failed" in r.message for r in caplog.records)
 
 
-# ── _claim_next_ticket posts WORKING ─────────────────────────────────────────
+# ── DickSimnelWorkerListener posts WORKING on dispatch ────────────────────────
+# _claim_next_ticket was removed in T-dicksimnel-worker-listener — dispatch is
+# now bus-push via DickSimnelWorkerListener._handle_dispatch(). Channel event
+# coverage moves here.
 
 
-def test_claim_posts_working():
-    d = _device()
-    ticket = {"id": "T-test", "title": "Fix the thing", "status": "in_progress"}
-    with patch("subprocess.run", return_value=_mock_subprocess(ticket)), \
-         patch("unseen_university.channel.post_to_channel") as mock_post:
-        result = d._claim_next_ticket()
+class TestDickSimnelWorkerListenerChannelEvent:
+    def _listener(self):
+        from devices.dicksimnel.worker_listener import DickSimnelWorkerListener
+        device = _device()
+        bus = MagicMock()
+        bus.fetch_unseen.return_value = []
+        listener = DickSimnelWorkerListener(bus=bus, device=device)
+        return listener, device
 
-    assert result == ticket
-    assert mock_post.called
-    msg = mock_post.call_args[0][0]
-    assert "DICKSIMNEL_WORKING" in msg
-    assert "T-test" in msg
-    assert mock_post.call_args[1]["author"] == "dicksimnel"
+    def test_handle_dispatch_posts_working_event(self):
+        listener, device = self._listener()
+        ticket = {"id": "T-w", "title": "Build the widget", "tags": [], "description": "d"}
+        device._fetch_ticket = MagicMock(return_value=ticket)
+        device._should_escalate = MagicMock(return_value=(False, ""))
+        device._run_inference = MagicMock(return_value="DONE: built it")
+        device._post_result = MagicMock()
 
+        with patch("unseen_university.channel.post_to_channel") as mock_post:
+            listener._handle_dispatch("T-w", "granny.0")
 
-def test_claim_working_includes_title():
-    d = _device()
-    ticket = {"id": "T-abc", "title": "My important ticket", "status": "in_progress"}
-    with patch("subprocess.run", return_value=_mock_subprocess(ticket)), \
-         patch("unseen_university.channel.post_to_channel") as mock_post:
-        d._claim_next_ticket()
+        events = [c[0][0] for c in mock_post.call_args_list]
+        assert any("DICKSIMNEL_WORKING" in e and "T-w" in e for e in events), \
+            f"expected DICKSIMNEL_WORKING event, got: {events}"
 
-    msg = mock_post.call_args[0][0]
-    assert "My important ticket" in msg
+    def test_handle_dispatch_working_event_includes_title(self):
+        listener, device = self._listener()
+        ticket = {"id": "T-t", "title": "My ticket title", "tags": [], "description": "d"}
+        device._fetch_ticket = MagicMock(return_value=ticket)
+        device._should_escalate = MagicMock(return_value=(False, ""))
+        device._run_inference = MagicMock(return_value="DONE: done")
+        device._post_result = MagicMock()
 
+        with patch("unseen_university.channel.post_to_channel") as mock_post:
+            listener._handle_dispatch("T-t", "granny.0")
 
-def test_claim_channel_failure_still_returns_ticket():
-    d = _device()
-    ticket = {"id": "T-x", "title": "t", "status": "in_progress"}
-    with patch("subprocess.run", return_value=_mock_subprocess(ticket)), \
-         patch("unseen_university.channel.post_to_channel", side_effect=RuntimeError("down")):
-        result = d._claim_next_ticket()
-
-    assert result == ticket
-
-
-def test_claim_no_ticket_no_channel_post():
-    d = _device()
-    mock_fail = MagicMock()
-    mock_fail.returncode = 1
-    mock_fail.stderr = "no ticket"
-    with patch("subprocess.run", return_value=mock_fail), \
-         patch("unseen_university.channel.post_to_channel") as mock_post:
-        result = d._claim_next_ticket()
-
-    assert result is None
-    mock_post.assert_not_called()
+        events = [c[0][0] for c in mock_post.call_args_list]
+        assert any("My ticket title" in e for e in events), \
+            f"title missing from channel events: {events}"
 
 
 # ── _post_result posts DONE ──────────────────────────────────────────────────
