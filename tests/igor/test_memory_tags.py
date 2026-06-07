@@ -160,3 +160,70 @@ def test_tag_tree_includes_hierarchy(tmp_path):
     assert root is not None
     assert root["_count"] >= 2
     assert root["y"]["_count"] >= 1
+
+
+# ── T-unified-memory-node-pilot: top-level tags + triggers columns ─────────────
+
+
+def _query_memory_cols(cx, mid: str, *cols: str) -> dict:
+    """Query specific columns from memories for a given id using Cortex's connection."""
+    col_list = ", ".join(cols)
+    with cx._conn() as conn:
+        rows = conn.execute(f"SELECT {col_list} FROM memories WHERE id = %s", (mid,)).fetchall()
+    if not rows:
+        return {}
+    row = rows[0]
+    return dict(zip(cols, row)) if not hasattr(row, "keys") else dict(row)
+
+
+def test_store_populates_tags_column():
+    """Memory stored with metadata.tags → top-level tags column populated."""
+    cx = _cortex()
+    mid = _store_factual(cx, "tags column test", metadata={"tags": ["content", "test"]})
+    row = _query_memory_cols(cx, mid, "tags")
+    assert "content" in row["tags"], f"expected 'content' in tags column, got: {row['tags']}"
+    assert "test" in row["tags"]
+
+
+def test_store_empty_metadata_gives_empty_tags_column():
+    """Memory with no metadata.tags gets tags=[] in the column."""
+    cx = _cortex()
+    mid = _store_factual(cx, "no tags memory")
+    row = _query_memory_cols(cx, mid, "tags")
+    assert row["tags"] == [] or row["tags"] is None
+
+
+def test_reading_source_gets_auto_index_trigger():
+    """Memory with source='reading' gets triggers.auto_index=true automatically."""
+    from devices.igor.memory.models import Memory, MemoryType
+    cx = _cortex()
+    mid = f"T-trigger-{uuid.uuid4().hex[:8]}"
+    m = Memory(
+        id=mid,
+        narrative="auto index trigger test",
+        memory_type=MemoryType.FACTUAL,
+        source="reading",
+    )
+    cx.store(m)
+    row = _query_memory_cols(cx, mid, "triggers")
+    assert row["triggers"].get("auto_index") is True, (
+        f"reading source must get auto_index trigger, got: {row['triggers']}"
+    )
+
+
+def test_non_reading_source_no_auto_index_trigger():
+    """Memory with source='interaction' does NOT get auto_index trigger."""
+    from devices.igor.memory.models import Memory, MemoryType
+    cx = _cortex()
+    mid = f"T-notrigger-{uuid.uuid4().hex[:8]}"
+    m = Memory(
+        id=mid,
+        narrative="no auto index trigger",
+        memory_type=MemoryType.FACTUAL,
+        source="interaction",
+    )
+    cx.store(m)
+    row = _query_memory_cols(cx, mid, "triggers")
+    assert not row["triggers"].get("auto_index"), (
+        f"non-reading source must not get auto_index, got: {row['triggers']}"
+    )

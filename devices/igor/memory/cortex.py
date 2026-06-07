@@ -191,6 +191,29 @@ class SearchRequest:
     threshold: float = 0.0
 
 
+def _derive_tags(memory) -> list:
+    """Extract the tags array from memory.metadata for the top-level tags column.
+
+    metadata.tags stays in place (expand-only). This column enables fast GIN-indexed
+    containment queries (tags @> '["content"]') without metadata deserialization.
+    """
+    return memory.metadata.get("tags", []) if memory.metadata else []
+
+
+def _derive_triggers(memory) -> dict:
+    """Build the triggers dict for the top-level triggers column.
+
+    Triggers unify scattered gating mechanisms. Concrete example (pilot):
+    reading-source memories get auto_index=true to mark them as proactively
+    indexable by recall/search. Other memory types inherit any explicit
+    triggers already in metadata, or get an empty dict.
+    """
+    base = (memory.metadata or {}).get("triggers", {})
+    if memory.source == "reading" and "auto_index" not in base:
+        return {**base, "auto_index": True}
+    return base
+
+
 def _safe_memory_type(value: str) -> MemoryType:
     """Return MemoryType for value, falling back to FACTUAL for unknown types."""
     try:
@@ -1049,6 +1072,30 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         " PRIMARY KEY (agent_id, scope)"
         ")",
     ),
+    # ── T-unified-memory-node-pilot: top-level tags + triggers columns
+    # Expand-only: metadata.tags retained for backward compat; new column is
+    # the fast-indexed path. Triggers unifies scattered gating mechanisms
+    # (ticket gate, goal salience, habit activation) into one evaluatable field.
+    (
+        "m058_memories_tags",
+        "ALTER TABLE clan.memories ADD COLUMN IF NOT EXISTS tags jsonb DEFAULT '[]'::jsonb",
+    ),
+    (
+        "m058_memories_triggers",
+        "ALTER TABLE clan.memories ADD COLUMN IF NOT EXISTS triggers jsonb DEFAULT '{}'::jsonb",
+    ),
+    (
+        "m058_memories_tags_gin",
+        "CREATE INDEX IF NOT EXISTS idx_memories_tags_gin ON clan.memories USING GIN (tags)",
+    ),
+    (
+        "m058_backfill_tags",
+        # jsonb_exists() avoids psycopg2 treating '?' as a parameter placeholder.
+        # LIKE '[%]' skips non-JSON-array values (bare strings like "Cognition").
+        "UPDATE clan.memories SET tags = (metadata->>'tags')::jsonb "
+        "WHERE jsonb_exists(metadata, 'tags') AND metadata->>'tags' LIKE '[%]' "
+        "AND (tags IS NULL OR tags = '[]'::jsonb)",
+    ),
 ]
 
 
@@ -1623,8 +1670,9 @@ class Cortex(IgorBase):
                  activation_count, friction_history, timestamp, metadata, portable,
                  links_weighted, last_accessed,
                  source, confidence, context_of_encoding, updated_at, scope, payload,
-                 source_agent, source_token, derived_from)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 source_agent, source_token, derived_from,
+                 tags, triggers)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO UPDATE SET
                   narrative = EXCLUDED.narrative,
                   memory_type = EXCLUDED.memory_type,
@@ -1649,7 +1697,9 @@ class Cortex(IgorBase):
                   payload = EXCLUDED.payload,
                   source_agent = EXCLUDED.source_agent,
                   source_token = EXCLUDED.source_token,
-                  derived_from = EXCLUDED.derived_from
+                  derived_from = EXCLUDED.derived_from,
+                  tags = EXCLUDED.tags,
+                  triggers = EXCLUDED.triggers
             """,
                 (
                     memory.id,
@@ -1677,6 +1727,8 @@ class Cortex(IgorBase):
                     memory.source_agent,
                     memory.source_token,
                     memory.derived_from,
+                    json.dumps(_derive_tags(memory)),
+                    json.dumps(_derive_triggers(memory)),
                 ),
             )
         # D256: register node in node_registry + Redis cache (non-fatal)
@@ -1769,6 +1821,7 @@ class Cortex(IgorBase):
                     _now_iso,
                     memory.scope.value if memory.scope else "class",
                     json.dumps(memory.payload) if memory.payload is not None else None,
+                    json.dumps(_derive_tags(memory)),
                 )
             )
 
@@ -1779,8 +1832,9 @@ class Cortex(IgorBase):
                     (id, narrative, memory_type, parent_id, children_ids, link_ids,
                      valence, arousal, dominance, activation_count, friction_history,
                      timestamp, metadata, portable, links_weighted, last_accessed,
-                     source, confidence, context_of_encoding, updated_at, scope, payload)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                     source, confidence, context_of_encoding, updated_at, scope, payload,
+                     tags)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (id) DO UPDATE SET
                       narrative = EXCLUDED.narrative,
                       memory_type = EXCLUDED.memory_type,
@@ -1802,7 +1856,8 @@ class Cortex(IgorBase):
                       context_of_encoding = EXCLUDED.context_of_encoding,
                       updated_at = EXCLUDED.updated_at,
                       scope = EXCLUDED.scope,
-                      payload = EXCLUDED.payload""",
+                      payload = EXCLUDED.payload,
+                      tags = EXCLUDED.tags""",
                     rows,
                 )
 
