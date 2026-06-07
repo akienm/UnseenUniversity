@@ -78,29 +78,35 @@ class TestRunOnce:
         ticket = {"id": "T-new", "tags": [], "role": "master", "status": "sprint"}
         with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]):
             with patch("devices.granny.availability.is_available", return_value=False):
-                with patch("devices.granny.daemon._dispatch_cc0") as mock_cc:
+                with patch("devices.granny.daemon._dispatch_bus") as mock_bus:
                     run_once(_config())
-        mock_cc.assert_not_called()
+        mock_bus.assert_not_called()
 
     def test_skips_cc0_when_busy(self):
         ticket = {"id": "T-new", "tags": [], "role": "master", "status": "sprint"}
         with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]):
             with patch("devices.granny.availability.is_available", return_value=True):
                 with patch("devices.granny.daemon._cc0_busy", return_value=True):
-                    with patch("devices.granny.daemon._dispatch_cc0") as mock_cc:
+                    with patch("devices.granny.daemon._dispatch_bus") as mock_bus:
                         run_once(_config())
-        mock_cc.assert_not_called()
+        mock_bus.assert_not_called()
 
-    def test_dispatches_to_cc0_via_send_keys(self):
+    def test_dispatches_to_cc0_via_bus(self):
         ticket = {"id": "T-cc", "tags": [], "role": "master", "status": "sprint",
                   "title": "Fix it"}
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]):
-            with patch("devices.granny.availability.is_available", return_value=True):
-                with patch("devices.granny.daemon._cc0_busy", return_value=False):
-                    with patch("devices.granny.daemon._dispatch_cc0", return_value=True) as mock_cc:
-                        with patch("devices.granny.daemon._post_channel"):
-                            run_once(_config())
-        mock_cc.assert_called_once()
+        imap = MagicMock()
+        imap.fetch_unseen.return_value = []
+        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("devices.granny.availability.is_available", return_value=True), \
+             patch("devices.granny.daemon._cc0_busy", return_value=False), \
+             patch("devices.granny.daemon._dispatch_bus", return_value=True) as mock_bus, \
+             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("devices.granny.daemon._post_channel"):
+            run_once(_config(), imap=imap)
+        mock_bus.assert_called_once()
+        # Third positional arg is worker_mailbox — default config has CC.0 mailbox "cc.0"
+        assert mock_bus.call_args[0][2] == "cc.0"
 
     def test_dispatches_to_dicksimnel_via_bus(self):
         ticket = {"id": "T-ds", "tags": [], "role": "builder", "status": "sprint",
@@ -123,23 +129,27 @@ class TestRunOnce:
     def test_dispatch_failure_does_not_raise(self):
         ticket = {"id": "T-fail", "tags": [], "role": "master", "status": "sprint",
                   "title": "Fail"}
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]):
-            with patch("devices.granny.availability.is_available", return_value=True):
-                with patch("devices.granny.daemon._cc0_busy", return_value=False):
-                    with patch("devices.granny.daemon._dispatch_cc0", return_value=False):
-                        run_once(_config())  # must not raise
+        imap = MagicMock()
+        imap.fetch_unseen.return_value = []
+        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("devices.granny.availability.is_available", return_value=True), \
+             patch("devices.granny.daemon._cc0_busy", return_value=False), \
+             patch("devices.granny.daemon._dispatch_bus", return_value=False), \
+             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0):
+            run_once(_config(), imap=imap)  # must not raise
 
     def test_guru_ticket_dispatches_to_akien_not_cc_or_ds(self):
         ticket = {"id": "T-guru", "tags": [], "role": "guru", "status": "sprint",
                   "title": "Needs Akien"}
         with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]):
             with patch("devices.granny.daemon._dispatch_akien", return_value=True) as mock_akien:
-                with patch("devices.granny.daemon._dispatch_cc0") as mock_cc:
+                with patch("devices.granny.daemon._dispatch_bus") as mock_bus:
                     with patch("devices.granny.daemon._dispatch_dicksimnel") as mock_ds:
                         with patch("devices.granny.daemon._post_channel"):
                             run_once(_config())
         mock_akien.assert_called_once()
-        mock_cc.assert_not_called()
+        mock_bus.assert_not_called()
         mock_ds.assert_not_called()
 
     def test_guru_ticket_skips_availability_check(self):
@@ -152,29 +162,21 @@ class TestRunOnce:
                         run_once(_config())
         mock_avail.assert_not_called()
 
-    def test_dispatch_cc0_marks_ticket_in_progress(self):
+    def test_dispatch_cc0_calls_bus_dispatch(self):
         ticket = {"id": "T-cc-mark", "tags": [], "role": "master", "status": "sprint",
                   "title": "Mark it"}
-        run_calls = []
-
-        def fake_run(cmd, **kwargs):
-            run_calls.append(cmd)
-            m = MagicMock()
-            m.returncode = 0
-            return m
-
-        with (
-            patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]),
-            patch("devices.granny.availability.is_available", return_value=True),
-            patch("devices.granny.daemon._cc0_busy", return_value=False),
-            patch("subprocess.run", side_effect=fake_run),
-            patch("devices.granny.daemon._post_channel"),
-        ):
-            run_once(_config())
-
-        setstatus_calls = [c for c in run_calls if "setstatus" in str(c)]
-        assert setstatus_calls, "setstatus in_progress must be called after send-keys dispatch"
-        assert any("in_progress" in str(c) for c in setstatus_calls)
+        imap = MagicMock()
+        imap.fetch_unseen.return_value = []
+        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("devices.granny.availability.is_available", return_value=True), \
+             patch("devices.granny.daemon._cc0_busy", return_value=False), \
+             patch("devices.granny.daemon._dispatch_bus", return_value=True) as mock_bus, \
+             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("devices.granny.daemon._post_channel"):
+            run_once(_config(), imap=imap)
+        mock_bus.assert_called_once()
+        assert mock_bus.call_args[0][2] == "cc.0", "CC.0 must dispatch to cc.0 mailbox"
 
     def test_one_at_a_time_prevents_second_dispatch_same_cycle(self):
         tickets = [
@@ -182,49 +184,65 @@ class TestRunOnce:
             {"id": "T-second", "tags": [], "role": "master", "status": "sprint", "title": "Second"},
         ]
         dispatched_ids = []
+        imap = MagicMock()
+        imap.fetch_unseen.return_value = []
 
-        def fake_cc(ticket, session="claude-main"):
+        def fake_bus(ticket, imap, worker_mailbox, granny_mailbox):
             dispatched_ids.append(ticket["id"])
             return True
 
-        with patch("devices.granny.daemon._sprint_tickets", return_value=tickets):
-            with patch("devices.granny.availability.is_available", return_value=True):
-                with patch("devices.granny.daemon._cc0_busy", return_value=False):
-                    with patch("devices.granny.daemon._dispatch_cc0", side_effect=fake_cc):
-                        with patch("devices.granny.daemon._post_channel"):
-                            run_once(_config())
+        with patch("devices.granny.daemon._sprint_tickets", return_value=tickets), \
+             patch("devices.granny.availability.is_available", return_value=True), \
+             patch("devices.granny.daemon._cc0_busy", return_value=False), \
+             patch("devices.granny.daemon._dispatch_bus", side_effect=fake_bus), \
+             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("devices.granny.daemon._post_channel"):
+            run_once(_config(), imap=imap)
 
         assert dispatched_ids == ["T-first"], "second CC ticket must be deferred to next cycle"
 
     def test_high_inertia_ticket_routes_to_cc_not_dicksimnel(self):
         ticket = {"id": "T-sec", "tags": ["Security"], "role": "builder",
                   "status": "sprint", "title": "Secure it"}
-        dispatched_to = []
-        def fake_cc(ticket, session="claude-main"):
-            dispatched_to.append("cc0")
+        dispatched_mailboxes = []
+        imap = MagicMock()
+        imap.fetch_unseen.return_value = []
+
+        def fake_bus(ticket, imap, worker_mailbox, granny_mailbox):
+            dispatched_mailboxes.append(worker_mailbox)
             return True
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]):
-            with patch("devices.granny.availability.is_available", return_value=True):
-                with patch("devices.granny.daemon._cc0_busy", return_value=False):
-                    with patch("devices.granny.daemon._dispatch_cc0", side_effect=fake_cc):
-                        with patch("devices.granny.daemon._post_channel"):
-                            run_once(_config())
-        assert dispatched_to == ["cc0"]
+
+        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("devices.granny.availability.is_available", return_value=True), \
+             patch("devices.granny.daemon._cc0_busy", return_value=False), \
+             patch("devices.granny.daemon._dispatch_bus", side_effect=fake_bus), \
+             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("devices.granny.daemon._post_channel"):
+            run_once(_config(), imap=imap)
+        assert dispatched_mailboxes == ["cc.0"], f"Security tag must route to cc.0, got {dispatched_mailboxes}"
 
     def test_escalated_ticket_routes_to_cc_not_dicksimnel(self):
         """Escalated tickets bypass DickSimnel and go directly to CC."""
         ticket = {"id": "T-esc", "tags": [], "role": "builder", "status": "escalated",
                   "title": "DickSimnel failed this"}
-        dispatched_to = []
-        def fake_cc(ticket, session="claude-main"):
-            dispatched_to.append("cc0")
+        dispatched_mailboxes = []
+        imap = MagicMock()
+        imap.fetch_unseen.return_value = []
+
+        def fake_bus(ticket, imap, worker_mailbox, granny_mailbox):
+            dispatched_mailboxes.append(worker_mailbox)
             return True
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]):
-            with patch("devices.granny.availability.is_available", return_value=True):
-                with patch("devices.granny.daemon._cc0_busy", return_value=False):
-                    with patch("devices.granny.daemon._dispatch_cc0", side_effect=fake_cc):
-                        with patch("devices.granny.daemon._dispatch_dicksimnel") as mock_ds:
-                            with patch("devices.granny.daemon._post_channel"):
-                                run_once(_config())
-        assert dispatched_to == ["cc0"], "escalated tickets must go to CC"
+
+        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("devices.granny.availability.is_available", return_value=True), \
+             patch("devices.granny.daemon._cc0_busy", return_value=False), \
+             patch("devices.granny.daemon._dispatch_bus", side_effect=fake_bus), \
+             patch("devices.granny.daemon._dispatch_dicksimnel") as mock_ds, \
+             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("devices.granny.daemon._post_channel"):
+            run_once(_config(), imap=imap)
+        assert dispatched_mailboxes == ["cc.0"], "escalated tickets must go to CC (cc.0)"
         mock_ds.assert_not_called()
