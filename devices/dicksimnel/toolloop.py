@@ -126,16 +126,22 @@ class ToolLoop:
 
     def __init__(self, max_turns: int = MAX_TURNS) -> None:
         self._max_turns = max_turns
+        self._turn_log: list[dict] = []
 
     def run(self, ticket: dict, system_prompt: str) -> str | None:
         """Work a ticket through the tool loop.
 
         Returns the model's final text when it stops calling tools, or the
         last assistant content if max_turns is hit, or None if inference failed.
+
+        Populates self._turn_log after each run — list of dicts with keys:
+          turn (int), had_tool_calls (bool), tool_names (list[str])
+        Cleared at the start of each run() call.
         """
         from devices.inference.device import InferenceDevice
         from devices.inference.shim import InferenceRequest
 
+        self._turn_log = []
         ticket_id = ticket.get("id", "?")
         user_msg = (
             f"Ticket ID: {ticket_id}\n"
@@ -171,6 +177,13 @@ class ToolLoop:
                 len(response.text or ""),
                 len(tool_calls) if tool_calls else 0,
             )
+            self._turn_log.append({
+                "turn": turn + 1,
+                "had_tool_calls": bool(tool_calls),
+                "tool_names": [
+                    tc.get("function", {}).get("name", "") for tc in (tool_calls or [])
+                ],
+            })
 
             if not tool_calls:
                 if turn == 0 and not (response.text or "").strip().startswith("DONE:"):

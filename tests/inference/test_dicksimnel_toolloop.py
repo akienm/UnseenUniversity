@@ -330,3 +330,82 @@ def test_run_inference_uses_toolloop():
 
     mock_loop.run.assert_called_once()
     assert result == "DONE: fixed"
+
+
+def test_toolloop_turn_log_populated():
+    """_turn_log is populated after run() and cleared on re-run."""
+    from devices.dicksimnel.toolloop import ToolLoop
+
+    bash_call = _bash_call("echo hi", "call_1")
+    responses = [
+        _make_mock_response("thinking...", [bash_call]),
+        _make_mock_response("DONE: done"),
+    ]
+
+    loop = ToolLoop(max_turns=5)
+    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=responses):
+        loop.run({"id": "T-log", "title": "T", "tags": [], "description": "d"}, "sys")
+
+    assert len(loop._turn_log) == 2
+    assert loop._turn_log[0]["had_tool_calls"] is True
+    assert "Bash" in loop._turn_log[0]["tool_names"]
+    assert loop._turn_log[1]["had_tool_calls"] is False
+
+
+def test_toolloop_turn_log_cleared_on_rerun():
+    """_turn_log is cleared at the start of each run() — no stale entries."""
+    from devices.dicksimnel.toolloop import ToolLoop
+
+    loop = ToolLoop(max_turns=5)
+    loop._turn_log = [{"turn": 99, "had_tool_calls": True, "tool_names": ["Bash"]}]
+
+    responses = [_make_mock_response("DONE: quick")]
+    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=responses):
+        loop.run({"id": "T-clear", "title": "T", "tags": [], "description": "d"}, "sys")
+
+    assert len(loop._turn_log) == 1
+    assert loop._turn_log[0]["turn"] == 1
+
+
+# ── Integration smoke test (DICKSIMNEL_LIVE_OR=1 required) ───────────────────
+
+
+@pytest.mark.integration
+class TestToolLoopLiveOR:
+    """Real OR call smoke test — skipped unless DICKSIMNEL_LIVE_OR=1."""
+
+    _SKIP = pytest.mark.skipif(
+        __import__("os").getenv("DICKSIMNEL_LIVE_OR") != "1",
+        reason="DICKSIMNEL_LIVE_OR=1 required for live OR integration test",
+    )
+
+    @_SKIP
+    def test_echo_ticket_returns_done_with_tool_calls(self):
+        """ToolLoop completes a minimal echo ticket against real OR.
+
+        Confirms:
+        - OR returns tool_calls in OpenAI format for the configured model
+        - The loop terminates with a DONE: prefix
+        - At least one tool_calls entry appeared (Bash tool was invoked)
+        """
+        from devices.dicksimnel.toolloop import ToolLoop
+
+        ticket = {
+            "id": "T-smoke-test",
+            "title": "echo hello",
+            "description": (
+                "Run: echo hello via the Bash tool and return DONE: hello echoed"
+            ),
+            "tags": [],
+        }
+        loop = ToolLoop(max_turns=10)
+        result = loop.run(ticket, "You are a minimal test worker.")
+
+        assert result is not None, "ToolLoop returned None — inference failed"
+        assert result.startswith("DONE:"), (
+            f"Expected DONE: prefix, got: {result[:80]!r}"
+        )
+        tool_call_turns = [t for t in loop._turn_log if t["had_tool_calls"]]
+        assert tool_call_turns, (
+            f"No tool_calls seen in any turn. turn_log: {loop._turn_log}"
+        )

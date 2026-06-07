@@ -33,6 +33,7 @@ pythonpath = [".", "tests", "lab"]
 addopts = "--import-mode=importlib"
 markers = [
     "docker: tests that require Docker installed and running (deselect with -m 'not docker')",
+    "integration: tests that require live external services (deselect with -m 'not integration')",
 ]
 
 [project.scripts]
