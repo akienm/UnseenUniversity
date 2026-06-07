@@ -407,6 +407,26 @@ class BaseShim(ABC):
 
     _output_validator: OutputValidator | None = None
     _policy_gate: PolicyGate | None = None
+    _notifier: "NotificationDispatcher | None" = None  # type: ignore[name-defined]
+
+    def filter_incoming(self, sender: str, summary: str) -> "DeliveryMode":  # type: ignore[name-defined]
+        """Deliver an incoming message through the notification filter.
+
+        When _notifier is set, delegates to NotificationDispatcher.deliver()
+        which applies config + state-linked defaults and executes delivery
+        (SILENT/QUIET/LOUD). When _notifier is not set, returns QUIET and
+        logs the message — default behaviour before a shim wires its notifier.
+
+        Call this in the device's message-receive loop instead of handling
+        delivery ad-hoc. Logs at INFO for every message (AR-009).
+        """
+        if self._notifier is not None:
+            from .notify import DeliveryMode
+            return self._notifier.deliver(sender, summary)
+        # No notifier configured — log and treat as QUIET (message in mailbox)
+        from .notify import DeliveryMode
+        log.info("notif: %s → QUIET (reason: no-notifier-configured)", sender)
+        return DeliveryMode.QUIET
 
     def validate_output(self, result: object) -> object:
         """Validate and redact sensitive content from a tool result.
