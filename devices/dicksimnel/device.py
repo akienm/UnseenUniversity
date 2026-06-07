@@ -207,6 +207,14 @@ class DickSimnelDevice(BaseDevice):
         2. Close-failure guard — if cc_queue close() returns None (DB error or
            ticket not found), escalate rather than silently treating as done.
         """
+        if result_text.strip().startswith("MAX_TURNS:"):
+            log.warning(
+                "DickSimnel: %s hit max turns — escalating to CC",
+                ticket_id,
+            )
+            self._escalate_ticket(ticket_id, "max turns hit without completing", analysis=result_text)
+            return
+
         if not result_text.strip().startswith("DONE:"):
             log.warning(
                 "DickSimnel: %s result missing DONE: prefix — escalating to CC",

@@ -215,10 +215,7 @@ class ToolLoop:
                 })
 
         log.warning("ToolLoop: hit max turns (%d) for %s", self._max_turns, ticket_id)
-        for msg in reversed(messages):
-            if msg.get("role") == "assistant":
-                return msg.get("content") or ""
-        return None
+        return f"MAX_TURNS: hit {self._max_turns} turns without DONE: prefix"
 
 
 # ── Tool dispatch ─────────────────────────────────────────────────────────────

@@ -295,6 +295,23 @@ def test_toolloop_max_turns_respected():
 
     assert call_count[0] == 3
     assert result is not None
+    assert result.startswith("MAX_TURNS:"), f"expected MAX_TURNS: sentinel, got: {result!r}"
+
+
+def test_toolloop_max_turns_sentinel_content():
+    """MAX_TURNS: sentinel includes the turn count for diagnostics."""
+    from devices.dicksimnel.toolloop import ToolLoop
+    tc = _bash_call("echo loop", "call_sentinel")
+
+    def always_tool(req):
+        return _make_mock_response("", tool_calls=[tc])
+
+    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=always_tool):
+        loop = ToolLoop(max_turns=2)
+        result = loop.run({"id": "T-s", "title": "T", "tags": [], "description": "d"}, "s")
+
+    assert result is not None
+    assert "2" in result, "turn count must appear in sentinel for diagnostics"
 
 
 # ── DickSimnelDevice._run_inference uses ToolLoop ────────────────────────────

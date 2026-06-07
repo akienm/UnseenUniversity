@@ -265,6 +265,26 @@ class TestPostResultGuards:
                     d._post_result("T-x", "DONE: fixed.")
         assert d._tickets_processed == 0
 
+    def test_max_turns_sentinel_escalates_with_clear_reason(self):
+        d = self._device()
+        with patch.object(d, "_escalate_ticket") as mock_esc:
+            with patch.object(d, "_run_queue_cmd") as mock_cmd:
+                with patch.object(d, "_channel_event"):
+                    d._post_result("T-x", "MAX_TURNS: hit 20 turns without DONE: prefix")
+        mock_esc.assert_called_once()
+        reason = mock_esc.call_args[0][1]
+        assert "max turns" in reason.lower(), f"reason must mention max turns, got: {reason!r}"
+        mock_cmd.assert_not_called()
+
+    def test_max_turns_sentinel_does_not_close_ticket(self):
+        d = self._device()
+        with patch.object(d, "_escalate_ticket"):
+            with patch.object(d, "_run_queue_cmd") as mock_cmd:
+                with patch.object(d, "_channel_event"):
+                    d._post_result("T-x", "MAX_TURNS: hit 20 turns without DONE: prefix")
+        mock_cmd.assert_not_called()
+        assert d._tickets_processed == 0
+
 
 # ── skill_load + _build_system_prompt ─────────────────────────────────────────
 
