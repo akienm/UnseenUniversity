@@ -93,8 +93,6 @@ class COA(IgorBase):
         self._total_stuck_cycles: int = (
             0  # cumulative (not reset by dreaming); watchdog
         )
-        self._safe_mode_triggered: bool = False  # one-shot; prevents re-trip
-
         # Background-COA state (unused in root COA)
         self._task_queue: list[Any] = []
         self._bg_thread: threading.Thread | None = None
@@ -376,21 +374,6 @@ class COA(IgorBase):
                                 )
                             except Exception as _stuck_dream_e:
                                 self.log.error("NE_STUCK_DREAMING: %s", _stuck_dream_e)
-                        # T-igor-degrade-safe: trip watchdog on prolonged cumulative stuck
-                        _degrade_threshold = int(
-                            os.getenv("IGOR_DEGRADE_SAFE_THRESHOLD", "30")
-                        )
-                        if (
-                            self._total_stuck_cycles >= _degrade_threshold
-                            and not self._safe_mode_triggered
-                        ):
-                            try:
-                                from .safe_mode import trip as _trip_safe_mode
-
-                                if _trip_safe_mode(self._total_stuck_cycles):
-                                    self._safe_mode_triggered = True
-                            except Exception as _sm_e:
-                                self.log.error("SAFE_MODE_TRIP: %s", _sm_e)
                 except Exception as _bare_e:
                     self.log.error("BARE_EXCEPT: %s", _bare_e)
                 # NE grader — fresh-context quality evaluation (T-igor-ne-grader-pass)
