@@ -10,7 +10,7 @@ Evaluated synchronously before every governed tool call. Four checks in order
   3. Budget: check_budget() returns (True, ...) — resources are available
 
 Every decision (allow AND deny) is appended to
-datacenter_logs/shim/trace/governance_YYYYMMDD.jsonl —
+~/.unseen_university/datacenter_logs/shim/trace/governance_YYYYMMDD.jsonl —
 the decision bill of materials: agent_id, action, policies_checked, verdict,
 reason, ts.
 
@@ -45,7 +45,7 @@ def _governance_trace_dir() -> Path:
     env = os.environ.get(_UU_SHIM_TRACE_DIR_ENV)
     if env:
         return Path(env)
-    return Path(__file__).parent.parent.parent / "datacenter_logs" / "shim" / "trace"
+    return Path.home() / ".unseen_university" / "datacenter_logs" / "shim" / "trace"
 
 
 def _write_governance_decision(record: dict) -> None:

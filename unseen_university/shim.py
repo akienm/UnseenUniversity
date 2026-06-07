@@ -12,7 +12,7 @@ registration, health rollup, and restart-loop management.
 
 Call tracing:
   Call shim.dispatch("tool_name", **kwargs) instead of shim.tool_name(**kwargs)
-  to get automatic JSONL logging to datacenter_logs/shim/trace/YYYYMMDD.jsonl.
+  to get automatic JSONL logging to ~/.unseen_university/datacenter_logs/shim/trace/YYYYMMDD.jsonl.
   Override the log directory via UU_SHIM_TRACE_DIR env var (used in tests).
 """
 
@@ -75,7 +75,7 @@ def _write_shim_trace(record: dict) -> None:
             trace_dir = Path(trace_dir_env)
         else:
             trace_dir = (
-                Path(__file__).parent.parent / "datacenter_logs" / "shim" / "trace"
+                Path.home() / ".unseen_university" / "datacenter_logs" / "shim" / "trace"
             )
         trace_dir.mkdir(parents=True, exist_ok=True)
         date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
@@ -432,7 +432,7 @@ class BaseShim(ABC):
         Raises PolicyDeniedError on any denial — denial is NOT recorded in the
         call-log, only in the governance log written by the gate.
 
-        Writes to datacenter_logs/shim/trace/YYYYMMDD.jsonl (or
+        Writes to ~/.unseen_university/datacenter_logs/shim/trace/YYYYMMDD.jsonl (or
         UU_SHIM_TRACE_DIR if set). Log write is fire-and-forget — a failure
         never blocks the tool call.
         """

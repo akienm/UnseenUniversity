@@ -163,7 +163,7 @@ except ImportError:
 class IgorBase(_BASE):  # type: ignore[valid-type,misc]
     """Igor-specific base — DiagnosticBase with paths().logs routing and self.log compat."""
 
-    # JSON operational logs go to ~/.unseen_university/<device_id>/log/json/
+    # JSON operational logs go to ~/.unseen_university/datacenter_logs/
     try:
         from pathlib import Path as _Path
 
@@ -171,7 +171,7 @@ class IgorBase(_BASE):  # type: ignore[valid-type,misc]
     except Exception:
         from pathlib import Path as _Path
 
-        _log_root = _Path("datacenter_logs")
+        _log_root = _Path.home() / ".unseen_university" / "datacenter_logs"
 
     _log_instance: Optional[_IgorSafeLogger] = None
 
