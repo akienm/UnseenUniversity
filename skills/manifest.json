@@ -26,6 +26,7 @@
     "goal":              {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "new-agent":         {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "note":              {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
+    "notify":            {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "outcome":           {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "question":          {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
     "readinbox":         {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
