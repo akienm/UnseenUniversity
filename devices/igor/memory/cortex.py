@@ -158,6 +158,7 @@ Updated 2026-04-29T17:08:53Z
 import logging
 import json
 import os
+import threading
 import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
@@ -1120,6 +1121,12 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
     (
         "m059_reading_list_tags_gin",
         "CREATE INDEX IF NOT EXISTS idx_reading_list_tags_gin ON clan.reading_list USING GIN (tags)",
+    ),
+    (
+        "m060_traversal_timing",
+        "CREATE TABLE IF NOT EXISTS instance.traversal_timing "
+        "(id SERIAL PRIMARY KEY, tree_name TEXT, node_count INT, "
+        "search_time_ms REAL, recorded_at TIMESTAMPTZ DEFAULT NOW())",
     ),
 ]
 
@@ -4107,6 +4114,31 @@ class Cortex(IgorBase):
 
         return anchors[:5]
 
+    def _record_traversal_timing(
+        self, tree_name: str, node_count: int, elapsed_ms: float
+    ) -> None:
+        """Write traversal timing to instance.traversal_timing in a daemon thread.
+
+        Fire-and-forget — any DB failure is logged at DEBUG and swallowed so
+        traversal callers are never blocked by instrumentation.
+        """
+        local_db = self._local_db
+
+        def _write() -> None:
+            try:
+                with local_db() as conn:
+                    conn.execute(
+                        "INSERT INTO traversal_timing "
+                        "(tree_name, node_count, search_time_ms) VALUES (%s, %s, %s)",
+                        (tree_name, node_count, round(elapsed_ms, 3)),
+                    )
+            except Exception as exc:
+                logging.getLogger(__name__).debug(
+                    "traversal_timing write failed: %s", exc
+                )
+
+        threading.Thread(target=_write, daemon=True).start()
+
     def traverse_from(
         self,
         anchor_ids: list[str],
@@ -4119,6 +4151,7 @@ class Cortex(IgorBase):
         Anchor nodes themselves are included at score 1.0.
         D200: per-hop DB fetch delegates to db_proxy.fetch_by_ids().
         """
+        _t0 = time.monotonic()
         _SKIP = {MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value}
         visited: dict[str, float] = {mid: 1.0 for mid in anchor_ids}
         frontier: list[tuple[str, float]] = [(mid, 1.0) for mid in anchor_ids]
@@ -4167,6 +4200,7 @@ class Cortex(IgorBase):
             frontier = next_frontier
 
         if len(fetched_mems) <= len(anchor_ids):
+            self._record_traversal_timing("bfs", 0, (time.monotonic() - _t0) * 1000)
             return []  # No traversal beyond anchors — graph likely sparse
 
         results = []
@@ -4176,6 +4210,7 @@ class Cortex(IgorBase):
             m.relevance_score = visited.get(m.id, 0.0)  # type: ignore[attr-defined]
             results.append(m)
         results.sort(key=lambda m: getattr(m, "relevance_score", 0.0), reverse=True)
+        self._record_traversal_timing("bfs", len(results), (time.monotonic() - _t0) * 1000)
         return results[:limit]
 
     def _upsert_embedding(self, memory_id: str, embedding_json: str) -> None:
@@ -5881,7 +5916,9 @@ class Cortex(IgorBase):
         track_meaning_layer (#244): if True, set self._last_traverse_meaning_to_me = True
             whenever an edge with layer='meaning_to_me' is followed.
         """
+        _t0 = time.monotonic()
         if not from_ids:
+            self._record_traversal_timing("interpretive", 0, (time.monotonic() - _t0) * 1000)
             return []
 
         if track_meaning_layer:
@@ -5962,6 +5999,7 @@ class Cortex(IgorBase):
                     # convergence node is collected but not descended — it's the lever
 
         if not result_ids:
+            self._record_traversal_timing("interpretive", 0, (time.monotonic() - _t0) * 1000)
             return []
 
         # Fetch the actual Memory objects
@@ -5991,6 +6029,7 @@ class Cortex(IgorBase):
                             mem.metadata = {}
                         mem.metadata["meaning_to_me"] = True
                     memories.append(mem)
+        self._record_traversal_timing("interpretive", len(memories), (time.monotonic() - _t0) * 1000)
         return memories
 
     # ── Lists (D095) ────────────────────────────────────────────────────────────
