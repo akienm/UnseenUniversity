@@ -107,14 +107,22 @@ CREDSEOF
 # ─ Load config ──────────────────────────────────────────────────────────────
 
 require_api_key() {
-    # Load igor.credentials.cfg (canonical; .env is deprecated).
-    # Always succeeds — Claude Code will validate API key at startup.
-    local creds_file="${IGOR_HOME}/Igor-wild-0001/igor.credentials.cfg"
+    # Load credentials in precedence order: instance config first, personal keys second.
+    # Personal keys win on any duplicate (loaded last). T-credentials-split-structure.
+    local instance_creds="${IGOR_HOME}/Igor-wild-0001/igor.credentials.cfg"
+    local personal_creds="${IGOR_HOME}/akien/akien.credentials.cfg"
 
-    if [[ -f "$creds_file" ]]; then
+    if [[ -f "$instance_creds" ]]; then
         set -a
         # shellcheck disable=SC1090
-        source "$creds_file"
+        source "$instance_creds"
+        set +a
+    fi
+
+    if [[ -f "$personal_creds" ]]; then
+        set -a
+        # shellcheck disable=SC1090
+        source "$personal_creds"
         set +a
     fi
 
