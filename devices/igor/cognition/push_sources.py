@@ -1903,6 +1903,7 @@ class BoredomSource(BasePushSource):
             salience=0.6,
             urgency=0.55,
             ttl_seconds=900,
+            category="boredom_detected",
             metadata={
                 "type": "boredom_detected",
                 "mean_arousal": mean_arousal,
