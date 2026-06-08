@@ -502,13 +502,15 @@ class VetinariDevice(BaseDevice):
         else:
             new_status = directive.get("status", "active")
 
-        # Update directive flat-file state
+        # Update directive flat-file state + fire completion signal (once)
+        fire_completion = False
         for d in directives:
             if d.get("id") == directive_id:
                 d["progress"] = counts
                 d["status"] = new_status
                 if new_status == "completed" and not d.get("completed_at"):
                     d["completed_at"] = _now()
+                    fire_completion = True
 
         path = _pending_directives_path()
         if path.exists():
@@ -524,6 +526,8 @@ class VetinariDevice(BaseDevice):
             counts["closed"],
             counts["missing"],
         )
+        if fire_completion:
+            self._notify_directive_complete(directive_id, child_count=len(child_ids))
         return counts
 
     def get_directive_status(self, directive_id: str) -> str:
@@ -583,6 +587,25 @@ class VetinariDevice(BaseDevice):
         except Exception as exc:
             log.warning("VetinariDevice: audit log read error: %s", exc)
         return entries
+
+    def _notify_directive_complete(self, directive_id: str, child_count: int = 0) -> None:
+        """Post VETINARI_COMPLETE to channel when a directive finishes.
+
+        Idempotency is enforced by the caller (check_directive_progress guards
+        on completed_at not yet set). Only fires once per directive lifetime.
+        """
+        msg = (
+            f"VETINARI_COMPLETE directive={directive_id} "
+            f"tickets={child_count}"
+        )
+        self._channel_post(msg)
+        self._audit_log(
+            event="COMPLETE",
+            reason=f"all {child_count} child tickets closed",
+            context={"child_count": child_count},
+            directive_id=directive_id,
+        )
+        log.info("VetinariDevice: VETINARI_COMPLETE posted for directive %r", directive_id)
 
     # ── Internal ──────────────────────────────────────────────────────────────
 
