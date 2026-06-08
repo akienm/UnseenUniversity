@@ -97,6 +97,33 @@ def _default_config() -> dict:
     }
 
 
+# ── Role constants (mirrors cc_queue.py; test_cc_queue_role verifies sync) ────
+
+_VALID_ROLES: frozenset[str] = frozenset(
+    {"apprentice", "builder", "creator", "master", "guru"}
+)
+
+_WORKER_TO_ROLE: dict[str, str] = {
+    "claude": "master",
+    "cc": "master",
+    "dicksimnel": "builder",
+    "igor": "apprentice",
+}
+
+
+def _infer_role(t: dict) -> str:
+    """Return the role for a ticket, inferring from worker when role is absent.
+
+    Mirrors cc_queue._infer_role — test_cc_queue_role.TestGrannyDeferralWithRole
+    verifies these stay in sync with cc_queue constants.
+    """
+    role = (t.get("role") or "").strip().lower()
+    if role in _VALID_ROLES:
+        return role
+    worker = (t.get("worker") or "").lower()
+    return _WORKER_TO_ROLE.get(worker, "apprentice")
+
+
 # ── Queue ─────────────────────────────────────────────────────────────────────
 
 
