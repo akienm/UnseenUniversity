@@ -93,6 +93,8 @@ def _route_worker(tags: list[str]) -> str:
     return "claude"
 
 
+CLARIFY_THRESHOLD = float(os.environ.get("VETINARI_CLARIFY_THRESHOLD", "0.7"))
+
 _OR_BASE = "https://openrouter.ai/api/v1"
 _OR_REFERER = "https://github.com/akienm/TheIgors"
 _OR_MODEL = os.environ.get("VETINARI_LLM_MODEL", "openai/gpt-4o-mini")
@@ -159,6 +161,39 @@ def _parse_subtasks(raw: str) -> list[dict]:
     if not result:
         raise ValueError("LLM returned empty subtask list")
     return result
+
+
+def _parse_decompose_response(raw: str) -> tuple:
+    """Parse LLM response; return (confidence, subtasks, clarification_question).
+
+    Handles both formats for backward compatibility:
+    - JSON array  → confidence=1.0, no question (old format, no retry needed)
+    - JSON object → {confidence, subtasks, clarification_question}
+
+    Raises ValueError on unparseable or structurally wrong responses.
+    """
+    text = raw.strip()
+    if text.startswith("```"):
+        text = "\n".join(l for l in text.splitlines() if not l.startswith("```")).strip()
+    try:
+        result = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"LLM response not valid JSON: {exc}\nRaw: {raw[:200]}") from exc
+
+    if isinstance(result, list):
+        if not result:
+            raise ValueError("LLM returned empty subtask list")
+        return (1.0, result, "")
+
+    if isinstance(result, dict):
+        confidence = float(result.get("confidence", 1.0))
+        subtasks = result.get("subtasks") or []
+        question = result.get("clarification_question", "")
+        if not subtasks and confidence >= CLARIFY_THRESHOLD:
+            raise ValueError("LLM returned no subtasks at high confidence")
+        return (confidence, subtasks, question)
+
+    raise ValueError(f"LLM response must be array or object, got {type(result).__name__}")
 
 
 def _write_tickets_to_queue(subtasks: list[dict], decision_id: str = "") -> list[str]:
@@ -416,12 +451,14 @@ class VetinariDevice(BaseDevice):
         call = llm_fn or _call_llm_or
 
         # Attempt decompose — retry once on parse failure
+        confidence: float = 1.0
         subtasks: list[dict] = []
+        question: str = ""
         last_exc: Exception | None = None
         for attempt in range(2):
             try:
                 raw = call(text)
-                subtasks = _parse_subtasks(raw)
+                confidence, subtasks, question = _parse_decompose_response(raw)
                 break
             except Exception as exc:
                 last_exc = exc
@@ -434,6 +471,31 @@ class VetinariDevice(BaseDevice):
             raise ValueError(
                 f"decompose_directive: LLM failed after 2 attempts: {last_exc}"
             )
+
+        # CP1: if confidence below threshold, ask Akien before proceeding
+        if confidence < CLARIFY_THRESHOLD:
+            clarify_q = question or f"Please clarify this directive: {text[:120]!r}"
+            self._post_clarification_question(directive_id, clarify_q)
+            for d in directives:
+                if d.get("id") == directive_id:
+                    d["status"] = "awaiting_clarification"
+                    d["clarification_question"] = clarify_q
+            path = _pending_directives_path()
+            tmp = path.with_suffix(".json.tmp")
+            tmp.write_text(json.dumps(directives, indent=2))
+            tmp.rename(path)
+            self._audit_log(
+                event="CLARIFY",
+                reason=f"confidence={confidence:.2f} < threshold={CLARIFY_THRESHOLD}",
+                context={"question": clarify_q},
+                directive_id=directive_id,
+            )
+            log.info(
+                "VetinariDevice: CP1 — directive %r needs clarification (confidence=%.2f)",
+                directive_id,
+                confidence,
+            )
+            return []
 
         # Write tickets to cc_queue and collect IDs
         child_ids = _write_tickets_to_queue(subtasks, decision_id=directive_id)
@@ -537,6 +599,63 @@ class VetinariDevice(BaseDevice):
         if directive is None:
             return "unknown"
         return directive.get("status", "active")
+
+    # ── CP1 clarification loop (T-vetinari-clarification-loop) ──────────────
+
+    def _post_clarification_question(self, directive_id: str, question: str) -> None:
+        """Post a clarification request to the channel (CP1: ask rather than guess)."""
+        msg = (
+            f"VETINARI_CLARIFY directive={directive_id} "
+            f"question={question!r}"
+        )
+        self._channel_post(msg)
+        log.info(
+            "VetinariDevice: CP1 clarification posted for directive %r: %s",
+            directive_id,
+            question[:80],
+        )
+
+    def handle_clarification_reply(
+        self,
+        directive_id: str,
+        reply_text: str,
+        llm_fn=None,
+    ) -> list[str]:
+        """Process Akien's clarification reply: enrich directive text and re-decompose.
+
+        Appends the clarification context to the directive's text field, resets
+        status to allow re-decomposition, then calls decompose_directive() again.
+        Returns the list of ticket IDs created (may be empty if still ambiguous).
+        """
+        directives = self.get_pending_directives()
+        directive = next((d for d in directives if d.get("id") == directive_id), None)
+        if directive is None:
+            raise ValueError(f"directive {directive_id!r} not found")
+
+        enriched = directive.get("text", "") + f"\n\nClarification from Akien: {reply_text}"
+
+        for d in directives:
+            if d.get("id") == directive_id:
+                d["text"] = enriched
+                d["status"] = "pending"
+
+        path = _pending_directives_path()
+        if path.exists():
+            tmp = path.with_suffix(".json.tmp")
+            tmp.write_text(json.dumps(directives, indent=2))
+            tmp.rename(path)
+
+        self._audit_log(
+            event="CLARIFY_REPLY",
+            reason="Akien provided clarification; re-attempting decompose",
+            context={"reply_preview": reply_text[:100]},
+            directive_id=directive_id,
+        )
+        log.info(
+            "VetinariDevice: clarification reply received for %r — re-decomposing",
+            directive_id,
+        )
+        return self.decompose_directive(directive_id, llm_fn=llm_fn)
 
     # ── CP3/CP6 audit log (T-vetinari-cp-audit) ──────────────────────────────
 
