@@ -33,6 +33,7 @@ class DickSimnelShim(BaseShim):
     """
 
     def __init__(self, device=None) -> None:
+        """device — optional InferenceDevice; injected for testability, real path uses default_device()."""
         self._device = device
         self._listener = None
         self._flag_written = False
@@ -44,12 +45,14 @@ class DickSimnelShim(BaseShim):
     # ── Availability flag ──────────────────────────────────────────────────────
 
     def _write_available(self) -> None:
+        """Write .true flag so Granny considers DickSimnel available for dispatch."""
         _FLAG_DIR.mkdir(parents=True, exist_ok=True)
         _AVAILABLE_FLAG.write_text("true")
         self._flag_written = True
         log.info("DickSimnelShim: availability flag written at %s", _AVAILABLE_FLAG)
 
     def _remove_available(self) -> None:
+        """Remove .true flag; Granny will defer future dispatches until start() is called again."""
         try:
             _AVAILABLE_FLAG.unlink()
             log.info("DickSimnelShim: availability flag removed")
@@ -77,6 +80,7 @@ class DickSimnelShim(BaseShim):
     # ── BaseShim contract ──────────────────────────────────────────────────────
 
     def start(self) -> bool:
+        """Write availability flag, connect to bus, and launch the worker listener thread."""
         from devices.dicksimnel.worker_listener import DickSimnelWorkerListener
         self._write_available()
         bus = self._connect_bus()
@@ -86,6 +90,7 @@ class DickSimnelShim(BaseShim):
         return True
 
     def stop(self) -> bool:
+        """Stop the worker listener and remove the availability flag."""
         self._remove_available()
         if self._listener is not None:
             self._listener.stop()
@@ -94,6 +99,7 @@ class DickSimnelShim(BaseShim):
         return True
 
     def restart(self) -> bool:
+        """Stop then start — reconnects bus and refreshes the listener thread."""
         return self.stop() and self.start()
 
     def self_test(self) -> dict:

@@ -125,6 +125,7 @@ class ToolLoop:
     """Multi-turn ReAct inference loop using native OR tool calling."""
 
     def __init__(self, max_turns: int = MAX_TURNS) -> None:
+        """max_turns caps inference cost — hit it means escalation, not silent truncation."""
         self._max_turns = max_turns
         self._turn_log: list[dict] = []
 
@@ -235,7 +236,7 @@ class ToolLoop:
 
 
 def _execute_tool(name: str, args: dict) -> str:
-    """Dispatch a tool call. args is a parsed dict from the model's tool_call."""
+    """Route a tool call to the appropriate handler; return string result for the model."""
     try:
         if name == "Bash":
             return _tool_bash(args.get("command", ""))
@@ -252,6 +253,7 @@ def _execute_tool(name: str, args: dict) -> str:
 
 
 def _tool_bash(command: str) -> str:
+    """Run a shell command; denylist blocks destructive patterns before subprocess is called."""
     if _BASH_DENYLIST.search(command):
         log.warning("ToolLoop Bash denylist blocked: %r", command[:80])
         return "ERROR: command blocked by safety denylist"
@@ -271,6 +273,7 @@ def _tool_bash(command: str) -> str:
 
 
 def _tool_read(path: str) -> str:
+    """Read and return a file's content (truncated to 3000 chars to stay inside model context)."""
     p = Path(path.strip())
     if not p.exists():
         return f"ERROR: file not found: {p}"
@@ -283,6 +286,7 @@ def _tool_read(path: str) -> str:
 
 
 def _tool_edit(args: dict) -> str:
+    """Exact-string replacement; rejects non-unique old_string to prevent silent mass-edits."""
     file_path = args.get("file_path", "")
     old_string = args.get("old_string", "")
     new_string = args.get("new_string", "")
@@ -306,6 +310,7 @@ def _tool_edit(args: dict) -> str:
 
 
 def _tool_write(args: dict) -> str:
+    """Write a complete file, creating parent dirs; overwrites any existing content."""
     file_path = args.get("file_path", "")
     content = args.get("content", "")
     if not file_path:

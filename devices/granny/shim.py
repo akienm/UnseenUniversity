@@ -21,6 +21,7 @@ _TMUX_SESSION = "granny"
 
 
 def _session_exists() -> bool:
+    """Return True if a tmux session named 'granny' is currently active."""
     r = subprocess.run(
         ["tmux", "has-session", "-t", _TMUX_SESSION],
         capture_output=True,
@@ -32,6 +33,7 @@ class GrannyShim(BaseShim):
     _device_id = "granny-weatherwax"
 
     def __init__(self) -> None:
+        """Watchdog state is in-memory only; _relaunch_count resets on shim restart by design."""
         self._watchdog_stop = threading.Event()
         self._watchdog_thread: Optional[threading.Thread] = None
         self._daemon = None
@@ -43,6 +45,7 @@ class GrannyShim(BaseShim):
         return self._device_id
 
     def _get_daemon(self):
+        """Return the daemon run_loop callable; caller is responsible for subprocess wrapping."""
         from devices.granny.daemon import run_loop
         return run_loop  # daemon runs as a blocking loop; use subprocess in rack context
 
@@ -60,6 +63,7 @@ class GrannyShim(BaseShim):
         return True
 
     def stop(self) -> bool:
+        """Signal the watchdog to exit and send SIGTERM to the daemon process."""
         self._watchdog_stop.set()
         pid_file = _GRANNY_HOME / "daemon.pid"
         if pid_file.exists():
@@ -73,10 +77,12 @@ class GrannyShim(BaseShim):
         return True
 
     def restart(self) -> bool:
+        """Stop the watchdog + daemon, then re-launch both cleanly."""
         self.stop()
         return self.start()
 
     def self_test(self) -> dict:
+        """Check whether the daemon process is alive by signalling its PID file entry."""
         pid_file = _GRANNY_HOME / "daemon.pid"
         if pid_file.exists():
             try:
@@ -88,9 +94,11 @@ class GrannyShim(BaseShim):
         return {"passed": False, "details": "daemon not running (no pid file)"}
 
     def rollback(self) -> None:
+        """No state to undo — Granny daemon is started externally and is not affected by shim rollback."""
         pass
 
     def health_surface(self) -> dict:
+        """Extend base health with daemon running/stopped status and relaunch count."""
         base = super().health_surface()
         result = {"relaunch_count": str(self._relaunch_count), **base}
         try:
