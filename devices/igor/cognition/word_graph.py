@@ -353,6 +353,10 @@ class WordGraph(IgorBase):
         self._cache = GraphCache(self._db, self._local_db, pending_store=self._pending)
         # G-WG2: predict_next cache — avoid re-querying wg_edges on repeated context
         self._predict_cache: dict[tuple, list] = {}
+        # T-wg-spread-via-cortex: cortex back-reference for spread_word_graph delegation.
+        # Set externally (main.py) after cortex init: wg._cortex = cortex.
+        # When None, spread_from_words and predict_next degrade gracefully.
+        self._cortex = None
         # G-WG3: doc_count write batching — flush every N docs instead of every index()
         self._pending_doc_count: int = 0
         self._DOC_FLUSH_EVERY: int = 10
@@ -552,8 +556,10 @@ class WordGraph(IgorBase):
         """
         Given context text, return top-N co-occurring words by accumulated weight.
 
-        lang: if specified, only return predictions tagged with that language.
-              None (default) returns across all languages — enables code-switching.
+        T-wg-spread-via-cortex: delegates to cortex.spread_word_graph() (depth=1,
+        hop_decay=1.0) when _cortex is wired. lang parameter is accepted for
+        compatibility but not applied (WORD_GRAPH nodes don't carry lang metadata;
+        that's a future ticket). Degrades gracefully when _cortex is None.
 
         milieu_state: optional dict with 'arousal' key in [0.0, 1.0].
             High arousal steepens the gradient — top candidates pull harder relative
@@ -565,66 +571,37 @@ class WordGraph(IgorBase):
         if not words:
             return []
 
-        w_ph = ",".join(["%s"] * len(words))
-        fetch = n * 3 if milieu_state else n  # fetch extra when milieu tilt applied
-
-        # G-WG2: LRU-style cache — skip DB aggregation on repeated context
-        # Key excludes milieu_state (tilt applied post-fetch, not in SQL)
-        _cache_key = (tuple(sorted(words)), lang, fetch)
-        if _cache_key in self._predict_cache:
-            rows = self._predict_cache[_cache_key]
-        else:
-            rows = None
-
-        if rows is None:
-            if lang is not None:
-                # Lang-filtered: join wg_word_lang to restrict results by language
-                with self._db() as conn:
-                    rows = conn.execute(
-                        f"""
-                        SELECT e.word_b, SUM(e.similarity) AS total
-                        FROM wg_edges e
-                        JOIN wg_word_lang l ON e.word_b = l.word
-                        WHERE e.word_a IN ({w_ph}) AND l.lang = %s
-                        GROUP BY e.word_b
-                        ORDER BY total DESC
-                        LIMIT %s
-                    """,
-                        words + [lang, fetch],
-                    ).fetchall()
+        if self._cortex is not None:
+            fetch = n * 3 if milieu_state else n
+            # G-WG2: LRU cache keyed on (words, lang, fetch) — same shape as before
+            _cache_key = (tuple(sorted(words)), lang, fetch)
+            if _cache_key in self._predict_cache:
+                counts = dict(self._predict_cache[_cache_key])
             else:
-                # wg_edges is ~1.5M rows — query directly, no Redis needed
-                with self._db() as conn:
-                    rows = conn.execute(
-                        f"""
-                        SELECT word_b, SUM(similarity) AS total
-                        FROM wg_edges
-                        WHERE word_a IN ({w_ph})
-                        GROUP BY word_b
-                        ORDER BY total DESC
-                        LIMIT %s
-                    """,
-                        words + [fetch],
-                    ).fetchall()
-            # G-WG2: store in cache; evict half when full
-            if len(self._predict_cache) >= self._PREDICT_CACHE_MAX:
-                evict = list(self._predict_cache.keys())[: self._PREDICT_CACHE_MAX // 2]
-                for k in evict:
-                    del self._predict_cache[k]
-            self._predict_cache[_cache_key] = rows
+                seed = {w: 1.0 for w in words}
+                # depth=1, hop_decay=1.0: equivalent to direct-neighbor aggregation
+                spread = self._cortex.spread_word_graph(seed, depth=1, hop_decay=1.0, max_frontier=len(words))
+                # Exclude seed words (mirrors wg_edges word_b-only select)
+                seed_set = set(words)
+                counts = {w: s for w, s in spread.items() if w not in seed_set}
+                rows_for_cache = list(counts.items())
+                if len(self._predict_cache) >= self._PREDICT_CACHE_MAX:
+                    evict = list(self._predict_cache.keys())[: self._PREDICT_CACHE_MAX // 2]
+                    for k in evict:
+                        del self._predict_cache[k]
+                self._predict_cache[_cache_key] = rows_for_cache
+            if not counts:
+                return []
+            if milieu_state is not None:
+                arousal = float(milieu_state.get("arousal", 0.5))
+                exponent = 0.5 + arousal * 1.5
+                counts = {w: v**exponent for w, v in counts.items()}
+            return sorted(counts.items(), key=lambda x: x[1], reverse=True)[:n]
 
-        if not rows:
-            return []
-
-        counts = {r[0]: float(r[1]) for r in rows}
-
-        # G37: milieu tilt — arousal sharpens gradient (temperature-like)
-        if milieu_state is not None:
-            arousal = float(milieu_state.get("arousal", 0.5))
-            exponent = 0.5 + arousal * 1.5  # [0,1] → [0.5, 2.0]
-            counts = {w: v**exponent for w, v in counts.items()}
-
-        return sorted(counts.items(), key=lambda x: x[1], reverse=True)[:n]
+        get_logger(__name__).warning(
+            "predict_next: _cortex not wired — returning empty predictions"
+        )
+        return []
 
     def gradient_flatness(self, context_text: str, n: int = 5) -> float:
         """
@@ -646,7 +623,7 @@ class WordGraph(IgorBase):
         # normalise against rough expected max (empirical: ~50 co-occurrences typical)
         normalised = min(
             max_weight / 1.0, 1.0
-        )  # TODO: tune threshold post-wg_edges cutover
+        )
         return 1.0 - normalised
 
     def predict_next_with_flatness(
@@ -667,7 +644,7 @@ class WordGraph(IgorBase):
             return predictions, 1.0
         normalised = min(
             max_weight / 1.0, 1.0
-        )  # TODO: tune threshold post-wg_edges cutover
+        )
         return predictions, 1.0 - normalised
 
     # ── D233: spreading activation ─────────────────────────────────────────────
@@ -679,54 +656,26 @@ class WordGraph(IgorBase):
         depth: int = 2,
         max_frontier: int = 300,
     ) -> dict:
-        """D233: Spread activation from seed words through wg_edges.
+        """D233: Spread activation from seed words through WORD_GRAPH memory nodes.
+
+        T-wg-spread-via-cortex: delegates to cortex.spread_word_graph() which traverses
+        links_weighted edges on WORD_GRAPH memory nodes instead of the flat wg_edges table.
 
         Returns dict[word, activation_score] with multi-source summed activations.
         hop_decay: multiplier applied per hop (default 0.6).
         depth: number of hops to propagate.
-        max_frontier: cap on the number of words carried into each hop. Keeps
-            the wg_edges IN-clause from exploding on large/dense graphs. Top-N
-            by activation score are kept; the rest are still merged into scores
-            but dropped from the next hop's query.
+        max_frontier: cap on the number of words carried into each hop.
 
-        Used by cortex.spreading_activation() as the word-graph layer.
+        Degrades gracefully when _cortex is None (returns seed scores only, logs warning).
         """
-        scores: dict = dict(seed_words)
-        current_frontier = dict(seed_words)
-        for _ in range(depth):
-            if not current_frontier:
-                break
-            if len(current_frontier) > max_frontier:
-                current_frontier = dict(
-                    sorted(
-                        current_frontier.items(), key=lambda kv: kv[1], reverse=True
-                    )[:max_frontier]
-                )
-            words_list = list(current_frontier.keys())
-            ph = ",".join(["%s"] * len(words_list))
-            try:
-                with self._db() as conn:
-                    rows = conn.execute(
-                        f"SELECT word_a, word_b, similarity FROM wg_edges"
-                        f" WHERE word_a IN ({ph})",
-                        words_list,
-                    ).fetchall()
-            except Exception as _e:
-                get_logger(__name__).warning(
-                    "bare except in devices/igor/cognition/word_graph.py spread_from_words: %s",
-                    _e,
-                )
-                break
-            next_frontier: dict = {}
-            for row in rows:
-                word_a, word_b, sim = row[0], row[1], float(row[2])
-                spread = current_frontier.get(word_a, 0.0) * sim * hop_decay
-                if spread > 0:
-                    next_frontier[word_b] = next_frontier.get(word_b, 0.0) + spread
-            for w, s in next_frontier.items():
-                scores[w] = scores.get(w, 0.0) + s
-            current_frontier = next_frontier
-        return scores
+        if self._cortex is not None:
+            return self._cortex.spread_word_graph(
+                seed_words, hop_decay=hop_decay, depth=depth, max_frontier=max_frontier
+            )
+        get_logger(__name__).warning(
+            "spread_from_words: _cortex not wired — returning seed scores only"
+        )
+        return dict(seed_words)
 
     def words_to_doc_ids(self, word_scores: dict, limit: int = 50) -> dict:
         """D233: Bridge — map word activation scores to doc_id activations.

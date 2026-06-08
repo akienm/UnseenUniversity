@@ -2171,6 +2171,116 @@ class Cortex(IgorBase):
             pass
         return node_id
 
+    def spread_word_graph(
+        self,
+        seed_words: dict,
+        hop_decay: float = 0.6,
+        depth: int = 2,
+        max_frontier: int = 300,
+    ) -> dict:
+        """T-wg-spread-via-cortex: Spread activation through WORD_GRAPH nodes using links_weighted.
+
+        Replaces word_graph.spread_from_words() — uses WORD_GRAPH memory nodes instead of
+        the flat wg_edges table. Same semantics: multi-hop BFS with hop_decay per hop.
+
+        seed_words: dict[word, activation_score]
+        Returns: dict[word, activation_score] for all reachable words including seeds.
+        Uses a single connection for all queries to minimise connection-open overhead.
+        """
+        if not seed_words:
+            return {}
+
+        _log = logging.getLogger(__name__)
+        words = list(seed_words.keys())
+
+        try:
+            with self._conn() as conn:
+                # Phase 1: Resolve seed words → WORD_GRAPH memory IDs
+                ph = ",".join(["%s"] * len(words))
+                rows = conn.execute(
+                    f"SELECT metadata->>'word', id FROM memories"
+                    f" WHERE memory_type='WORD_GRAPH' AND metadata->>'word' IN ({ph})",
+                    words,
+                ).fetchall()
+                word_to_id: dict = {}
+                for r in rows:
+                    if r[0]:
+                        word_to_id[r[0]] = r[1]
+
+                if not word_to_id:
+                    return dict(seed_words)
+
+                # Seed ID scores from word activations
+                id_scores: dict = {}
+                for word, score in seed_words.items():
+                    if word in word_to_id:
+                        id_scores[word_to_id[word]] = id_scores.get(word_to_id[word], 0.0) + score
+
+                # Phase 2: BFS through links_weighted for `depth` hops
+                current_frontier = dict(id_scores)
+                id_to_word: dict = {v: k for k, v in word_to_id.items()}
+
+                for _ in range(depth):
+                    if not current_frontier:
+                        break
+                    if len(current_frontier) > max_frontier:
+                        current_frontier = dict(
+                            sorted(current_frontier.items(), key=lambda kv: kv[1], reverse=True)[
+                                :max_frontier
+                            ]
+                        )
+                    mem_ids = list(current_frontier.keys())
+                    _ph = ",".join(["%s"] * len(mem_ids))
+                    lw_rows = conn.execute(
+                        f"SELECT id, links_weighted, metadata->>'word'"
+                        f" FROM memories WHERE memory_type='WORD_GRAPH' AND id IN ({_ph})",
+                        mem_ids,
+                    ).fetchall()
+
+                    next_frontier: dict = {}
+                    for lw_row in lw_rows:
+                        mem_id, lw_raw, word = lw_row[0], lw_row[1], lw_row[2]
+                        if word:
+                            id_to_word[mem_id] = word
+                        try:
+                            links = json.loads(lw_raw or "{}")
+                        except Exception:
+                            continue
+                        base = current_frontier.get(mem_id, 0.0)
+                        for target_id, sim in links.items():
+                            spread = base * float(sim) * hop_decay
+                            if spread > 0:
+                                next_frontier[target_id] = next_frontier.get(target_id, 0.0) + spread
+
+                    for nid, s in next_frontier.items():
+                        id_scores[nid] = id_scores.get(nid, 0.0) + s
+
+                    # Resolve words for this hop's target IDs (those not yet in id_to_word).
+                    # Limit to top max_frontier by score to bound query size on deep/wide graphs.
+                    new_ids = [nid for nid in next_frontier if nid not in id_to_word]
+                    if new_ids:
+                        new_ids.sort(key=lambda nid: next_frontier.get(nid, 0.0), reverse=True)
+                        new_ids = new_ids[:max_frontier]
+                        _ph_w = ",".join(["%s"] * len(new_ids))
+                        word_rows = conn.execute(
+                            f"SELECT id, metadata->>'word' FROM memories WHERE id IN ({_ph_w})",
+                            new_ids,
+                        ).fetchall()
+                        for r in word_rows:
+                            if r[1]:
+                                id_to_word[r[0]] = r[1]
+
+                    current_frontier = next_frontier
+
+                # Phase 3: id_to_word is now populated for all frontier nodes at each hop
+                # (words were fetched eagerly per-hop above).
+
+        except Exception as _e:
+            _log.warning("spread_word_graph failed: %s", _e)
+            return dict(seed_words)
+
+        return {id_to_word[nid]: score for nid, score in id_scores.items() if nid in id_to_word}
+
     def get_by_type(
         self,
         memory_type: MemoryType,
@@ -3928,7 +4038,7 @@ class Cortex(IgorBase):
                         for w in tokenize(m.narrative):
                             seed_word_scores[w] = seed_word_scores.get(w, 0.0) + 1.0
                 if seed_word_scores:
-                    wg_activations = word_graph.spread_from_words(
+                    wg_activations = self.spread_word_graph(
                         seed_word_scores, hop_decay=0.6, depth=depth
                     )
                     doc_activations = word_graph.words_to_doc_ids(wg_activations)
@@ -6321,7 +6431,14 @@ class Cortex(IgorBase):
         # Never calve core pattern nodes
         if memory.id in self._CALVING_PROTECTED:
             return
-        threshold = int(_os.getenv("IGOR_CALVING_THRESHOLD", "1000"))
+        # WORD_GRAPH trees use a higher threshold (interim while timing data is gathered).
+        # Currently latent — WORD_GRAPH nodes are stored flat (no parent_id), so
+        # _maybe_calve never fires for them until they become tree-structured.
+        _TYPE_THRESHOLDS = {MemoryType.WORD_GRAPH.value: 5000}
+        threshold = _TYPE_THRESHOLDS.get(
+            memory.memory_type.value if hasattr(memory.memory_type, "value") else str(memory.memory_type),
+            int(_os.getenv("IGOR_CALVING_THRESHOLD", "1000")),
+        )
         root_id = self._find_tree_root(memory.id)
         # Never calve from the ROOT tree — CP structure is sacred
         if root_id == "ROOT":

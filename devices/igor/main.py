@@ -588,6 +588,9 @@ class Igor(IgorBase):
             # T-twm-leap-on-lever: wire word graph into cortex so twm_push can
             # run the associative leap sweep on each new observation.
             self.cortex.word_graph = self._word_graph
+            # T-wg-spread-via-cortex: back-reference so spread_from_words/predict_next
+            # delegate to cortex.spread_word_graph (WORD_GRAPH nodes) instead of wg_edges.
+            self._word_graph._cortex = self.cortex
             # T-learning-retrieval-signal: register word graph for retrieval reinforcement
             try:
                 from .cognition.hebbian_bridge import set_word_graph as _hb_set_wg
@@ -635,6 +638,12 @@ class Igor(IgorBase):
                 else:
                     # Postgres-backed (T-sqlite-out-word-graph-db).
                     self._generation_graph = WordGraph(name="generation_graph")
+                # T-wg-spread-via-cortex: wire cortex so predict_next uses WORD_GRAPH nodes.
+                # RedisWordGraph wraps an inner _sqlite WordGraph — wire both.
+                self._generation_graph._cortex = self.cortex
+                _inner = getattr(self._generation_graph, "_sqlite", None)
+                if _inner is not None:
+                    _inner._cortex = self.cortex
                 console.print(
                     f"[dim]Generation graph ready "
                     f"({len(self._generation_graph._word_to_ids)} words) [G37][/]"
