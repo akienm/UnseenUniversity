@@ -90,6 +90,19 @@ class ScrapsDevice(BaseDevice):
 
     # ── Primary API ──────────────────────────────────────────────────────────
 
+    def embed_text(self, text: str, model: str = "auto") -> dict[str, Any]:
+        """Compute a text embedding. Returns {vector, model, dimension}.
+
+        model='auto' selects OpenAI text-embedding-3-small when OPENAI_API_KEY
+        is set, falling back to hash-sha256-384 otherwise. 'auto' is the only
+        supported value; other values are silently treated as 'auto'.
+
+        Caller owns any DB write — this method only computes.
+        """
+        from devices.scraps.embedding_engine import embed as _embed
+
+        return _embed(text)
+
     def validate_ticket(self, ticket: dict, *, silent: bool = False) -> dict[str, Any]:
         """Validate ticket content; return {valid, issues, validated_at}.
 
@@ -154,7 +167,7 @@ class ScrapsDevice(BaseDevice):
             "can_send": True,
             "can_receive": False,
             "emitted_keywords": ["scraps_validated"],
-            "mcp_endpoint": "scraps_validate_ticket",
+            "mcp_endpoints": ["scraps_validate_ticket", "scraps_embed_text"],
         }
 
     def comms(self) -> dict:

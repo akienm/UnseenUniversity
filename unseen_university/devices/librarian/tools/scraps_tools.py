@@ -1,10 +1,35 @@
-"""Scraps tools — ticket validation via ScrapsDevice."""
+"""Scraps tools — ticket validation and text embedding via ScrapsDevice."""
 
 from __future__ import annotations
 
 import json
 
 SCHEMAS = [
+    {
+        "name": "scraps_embed_text",
+        "description": (
+            "Compute a text embedding via ScrapsDevice. "
+            "Returns {vector: [float, ...], model: str, dimension: int}. "
+            "Uses OpenAI text-embedding-3-small when OPENAI_API_KEY is set; "
+            "falls back to a deterministic hash-sha256-384 vector otherwise. "
+            "Caller owns any DB write — this tool only computes the vector."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "description": "Text to embed.",
+                },
+                "model": {
+                    "type": "string",
+                    "description": "Embedding model. Only 'auto' is currently supported (default).",
+                    "default": "auto",
+                },
+            },
+            "required": ["text"],
+        },
+    },
     {
         "name": "scraps_validate_ticket",
         "description": (
@@ -32,6 +57,19 @@ SCHEMAS = [
 ]
 
 
+def scraps_embed_text(args: dict) -> str:
+    text = args.get("text")
+    if not isinstance(text, str) or not text:
+        return json.dumps({"error": "text must be a non-empty string"})
+    try:
+        from devices.scraps.scraps_device import ScrapsDevice
+
+        result = ScrapsDevice().embed_text(text, model=args.get("model", "auto"))
+        return json.dumps(result)
+    except Exception as exc:
+        return json.dumps({"error": str(exc)})
+
+
 def scraps_validate_ticket(args: dict) -> str:
     ticket = args.get("ticket")
     if not isinstance(ticket, dict):
@@ -46,6 +84,8 @@ def scraps_validate_ticket(args: dict) -> str:
 
 
 def dispatch(name: str, args: dict) -> str | None:
+    if name == "scraps_embed_text":
+        return scraps_embed_text(args)
     if name == "scraps_validate_ticket":
         return scraps_validate_ticket(args)
     return None

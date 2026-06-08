@@ -224,3 +224,39 @@ class TestScrapsChannelPosts:
     def test_capabilities_can_send_true(self):
         d = ScrapsDevice()
         assert d.capabilities()["can_send"] is True
+
+
+# ── embed_text ────────────────────────────────────────────────────────────────
+
+
+class TestEmbedText:
+    def test_returns_vector_model_dimension(self):
+        d = ScrapsDevice()
+        result = d.embed_text("hello world")
+        assert "vector" in result
+        assert "model" in result
+        assert "dimension" in result
+
+    def test_vector_length_matches_dimension(self):
+        d = ScrapsDevice()
+        result = d.embed_text("test string")
+        assert len(result["vector"]) == result["dimension"]
+
+    def test_fallback_fires_without_openai_key(self, monkeypatch):
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.delenv("OPENAI_KEY", raising=False)
+        d = ScrapsDevice()
+        result = d.embed_text("fallback test")
+        assert result["model"] == "hash-sha256-384"
+        assert result["dimension"] == 384
+
+    def test_model_param_accepted(self):
+        d = ScrapsDevice()
+        result = d.embed_text("hello", model="auto")
+        assert "vector" in result
+
+    def test_capabilities_lists_embed_endpoint(self):
+        d = ScrapsDevice()
+        caps = d.capabilities()
+        assert "scraps_embed_text" in caps["mcp_endpoints"]
+        assert "scraps_validate_ticket" in caps["mcp_endpoints"]
