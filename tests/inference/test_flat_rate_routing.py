@@ -245,3 +245,78 @@ def test_openrouter_no_tools_field_when_tools_none():
         src.call(req)
 
     assert "tools" not in captured["body"]
+
+
+# ── GoogleSource free-tier billing_type (T-inference-proxy-mini-rack) ─────────
+
+
+def test_google_free_source_billing_type_is_flat_rate():
+    """GoogleSource(free_tier=True) must be flat_rate so rules engine prefers it over OR."""
+    from devices.inference.sources import GoogleSource
+    src = GoogleSource(free_tier=True)
+    assert src.billing_type == "flat_rate", (
+        "google_free must be flat_rate — otherwise worker tasks route to paid OR "
+        "even when Google AI Studio key is set"
+    )
+
+
+def test_google_paid_source_billing_type_is_usage_based():
+    """GoogleSource(free_tier=False) is usage_based — billed per token."""
+    from devices.inference.sources import GoogleSource
+    src = GoogleSource(free_tier=False)
+    assert src.billing_type == "usage_based"
+
+
+def test_worker_routes_to_google_free_when_ollama_cloud_unavailable():
+    """Production path: ollama_cloud unavailable (no key), google_free available → worker uses free tier.
+
+    This is the DickSimnel use case: OLLAMA_PRO_API_KEY unset, GOOGLE_STUDIO_API_KEY set.
+    Worker tasks must NOT fall through to paid OpenRouter.
+    """
+    import os
+    from devices.inference.models_registry import ModelSpec, ModelsRegistry
+    from devices.inference.rules_engine import RoutingRule, RulesEngine
+    from devices.inference.sources import Source, SourceRegistry
+
+    # Simulate production: google_free available, ollama_cloud NOT available, OR available
+    reg = SourceRegistry()
+
+    google_src = MagicMock(spec=Source)
+    google_src.name = "google_free"
+    google_src.available = True
+    google_src.billing_type = "flat_rate"  # the fix
+    reg.register(google_src)
+
+    ollama_src = MagicMock(spec=Source)
+    ollama_src.name = "ollama_cloud"
+    ollama_src.available = False  # no OLLAMA_PRO_API_KEY
+    ollama_src.billing_type = "flat_rate"
+    reg.register(ollama_src)
+
+    or_src = MagicMock(spec=Source)
+    or_src.name = "openrouter"
+    or_src.available = True
+    or_src.billing_type = "usage_based"
+    reg.register(or_src)
+
+    models = ModelsRegistry([
+        ModelSpec("gemini-2.0-flash", "google_free", "worker", 0.0, 0.0, 1_048_576),
+        ModelSpec("qwen2.5-coder:32b", "ollama_cloud", "worker", 0.0, 0.0, 32768),
+        ModelSpec("qwen/qwen3-coder-30b-a3b-instruct", "openrouter", "worker", 0.07, 0.28, 156_000),
+    ])
+
+    rules = [
+        RoutingRule(2, "worker", "qwen/qwen3-coder-30b-a3b-instruct", "openrouter", "worker→qwen3-coder/OR"),
+        RoutingRule(3, "worker", "gemini-2.0-flash", "google_free", "worker→gemini-flash/google-free"),
+        RoutingRule(10, "worker", "qwen2.5-coder:32b", "ollama_cloud", "worker→qwen2.5/ollama-pro"),
+    ]
+
+    engine = RulesEngine(reg, models, rules)
+    decision = engine.route("worker")
+
+    assert decision is not None
+    assert decision.source is google_src, (
+        f"Expected google_free (flat_rate, free) but got {decision.source.name!r} — "
+        "worker tasks must prefer free providers over paid OR"
+    )
+    assert decision.model.model_id == "gemini-2.0-flash"

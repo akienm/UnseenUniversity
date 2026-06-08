@@ -376,8 +376,13 @@ class InferenceDevice(BaseDevice):
                 resp.model or request.model, resp.input_tokens, resp.output_tokens
             )
             cost_usd = resp.cost_estimate if resp.cost_estimate > 0 else None
+        elif decision is not None and (resp.input_tokens or resp.output_tokens):
+            cost_usd = decision.model.cost_estimate(
+                input_tokens=resp.input_tokens or 0,
+                output_tokens=resp.output_tokens or 0,
+            )
         else:
-            cost_usd = None
+            cost_usd = 0.0
 
         debit(
             agent_id=request.agent_id,

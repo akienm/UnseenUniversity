@@ -10,6 +10,7 @@ Log file:  ~/.unseen_university/cc_channel/log.jsonl
 Statuses (what happens next):
     triage      — needs classification; any agent can triage
     design      — needs design work before sprinting
+    open_questions — has numbered Q1:/Q2: questions without matching A1:/A2: answers; Akien answers, status flips to sprint
     approval    — plan submitted, awaiting Akien sign-off
     akien       — requires Akien to take an external action
     sprint      — ready to pick up and work
@@ -96,6 +97,7 @@ STATUS_ORDER = {
     # Canonical statuses (what happens next):
     "triage": 0,
     "design": 1,
+    "open_questions": 1.5,
     "approval": 2,
     "akien": 3,
     "sprint": 4,
@@ -332,6 +334,7 @@ def _format_task_line(t: dict) -> str:
     STATUS_ICON = {
         "triage": "🔍",
         "design": "📐",
+        "open_questions": "❓",
         "approval": "🟠",
         "akien": "👤",
         "sprint": "⬜",

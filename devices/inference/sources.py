@@ -288,6 +288,8 @@ class GoogleSource(Source):
         name = "google_free" if free_tier else "google"
         super().__init__(name=name)
         self.free_tier = free_tier
+        if free_tier:
+            self.billing_type = "flat_rate"
 
     def _api_key(self) -> str:
         for var in ("GOOGLE_AI_STUDIO_API_KEY", "GOOGLE_STUDIO_API_KEY", "GEMINI_API_KEY"):
