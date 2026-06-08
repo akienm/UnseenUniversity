@@ -1128,6 +1128,11 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "(id SERIAL PRIMARY KEY, tree_name TEXT, node_count INT, "
         "search_time_ms REAL, recorded_at TIMESTAMPTZ DEFAULT NOW())",
     ),
+    (
+        "m061_wg_word_idx",
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_memories_word_graph_word "
+        "ON clan.memories ((metadata->>'word')) WHERE memory_type = 'WORD_GRAPH'",
+    ),
 ]
 
 
@@ -2116,6 +2121,56 @@ class Cortex(IgorBase):
             ).fetchall()
         return [self._to_memory(r) for r in rows]
 
+    def get_or_create_word_memory(self, word: str) -> str:
+        """Get or create a WORD_GRAPH memory for a word. Returns memory_id. Idempotent.
+
+        Bypasses store() for efficiency — WORD_GRAPH nodes are infrastructure scaffolding
+        and don't need provenance stamping, tags, or calving checks.
+        Unique index idx_memories_word_graph_word (m061) enforces the word uniqueness
+        constraint at the DB level; this method uses select-then-insert with exception
+        handling to handle concurrent creates without relying on ON CONFLICT expression index matching.
+        """
+        from datetime import timezone
+        from .node_id import new_node_id as _new_node_id, register_node as _register_node
+
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT id FROM memories WHERE memory_type='WORD_GRAPH' AND metadata->>'word' = %s",
+                (word,),
+            ).fetchone()
+            if row:
+                return row[0]
+            node_id = _new_node_id()
+            now_iso = datetime.now(timezone.utc).isoformat()
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO memories
+                      (id, narrative, memory_type, metadata, timestamp, updated_at, scope,
+                       portable, valence, arousal, dominance, activation_count,
+                       children_ids, link_ids, friction_history, links_weighted,
+                       source, confidence)
+                    VALUES (%s, %s, 'WORD_GRAPH', %s::jsonb, %s, %s, 'class',
+                            1, 0.0, 0.0, 0.0, 0,
+                            '[]', '[]', '[]', '{}',
+                            'word_graph', 1.0)
+                    """,
+                    (node_id, word, json.dumps({"word": word}), now_iso, now_iso),
+                )
+            except Exception:
+                # Unique constraint violation — another concurrent insert won the race.
+                # Re-fetch to get the actual ID.
+                row = conn.execute(
+                    "SELECT id FROM memories WHERE memory_type='WORD_GRAPH' AND metadata->>'word' = %s",
+                    (word,),
+                ).fetchone()
+                return row[0] if row else node_id
+        try:
+            _register_node(node_id, "memories", node_id)
+        except Exception:
+            pass
+        return node_id
+
     def get_by_type(
         self,
         memory_type: MemoryType,
@@ -2704,7 +2759,7 @@ class Cortex(IgorBase):
             if req.memory_types is not None
             else self._route_types_from_query(_query_lower)
         )
-        _ALWAYS_EXCLUDE = (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value)
+        _ALWAYS_EXCLUDE = (MemoryType.ROOT.value, MemoryType.CORE_PATTERN.value, MemoryType.WORD_GRAPH.value)
 
         # T-igor-attractor-first-traversal: seed BFS from current TWM attractor, not all
         # CP/ID roots. Attractor is already focused on the user's message — small tree

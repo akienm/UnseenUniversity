@@ -30,6 +30,7 @@ class MemoryType(Enum):
         "CREDENTIAL_REF"  # #71: credential pointer — what exists + where, NOT the value
     )
     GOAL = "GOAL"  # D275: active goal node — TACTICAL (completable) or STRATEGIC (orientation)
+    WORD_GRAPH = "WORD_GRAPH"  # Low-level word node for spreading activation; migrated from wg_edges
 
 
 class MemoryScope(Enum):
@@ -70,6 +71,7 @@ BASE_INERTIA = {
     MemoryType.REFERENCE: 0.40,  # blobs are intentionally stored — higher base inertia
     MemoryType.CREDENTIAL_REF: 0.50,  # credential refs are stable until env changes
     MemoryType.GOAL: 0.15,  # D275: goals are ephemeral — low base inertia, kept hot via TWM
+    MemoryType.WORD_GRAPH: 0.05,  # word nodes are pure scaffolding — lowest base inertia
 }
 
 
