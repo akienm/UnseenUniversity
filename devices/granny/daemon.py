@@ -511,6 +511,13 @@ def run_once(config: dict, *, imap=None) -> None:
 
     rules = config.get("rules", [])
     workers_cfg = config.get("workers", {})
+
+    # Advance all active workflow scripts (external state, persisted per-workflow).
+    try:
+        from devices.granny.workflow_executor import get_executor
+        get_executor().tick(workers_cfg)
+    except Exception as exc:
+        log.warning("Granny: workflow executor tick failed (non-fatal): %s", exc)
     tickets = _sprint_tickets()
 
     # Track workers that already received a ticket this cycle so one_at_a_time is
