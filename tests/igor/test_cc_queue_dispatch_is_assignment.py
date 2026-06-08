@@ -101,15 +101,20 @@ class TestCmdNextMarksInProgress:
             )
             conn.commit()
 
-            # Call cmd_next and capture output
+            # Call cmd_next — pin next_ticket_id_for_worker to our test ticket so
+            # other higher-priority sprint tickets in the live queue don't win the
+            # race.  The mock isolates the selection step; we test only the atomic
+            # in_progress marking that cmd_next performs after selection.
             import io
 
             buf = io.StringIO()
-            with patch("sys.stdout", buf):
+            with patch("sys.stdout", buf), patch.object(
+                q, "next_ticket_id_for_worker", return_value=ticket_id
+            ):
                 q.cmd_next(["--worker", "claude", "--max-difficulty=1"])
             output = buf.getvalue().strip()
 
-            # Verify the ticket is now in_progress
+            # Verify the ticket is now in_progress in the DB
             cur.execute(
                 "SELECT metadata->>'status' FROM clan.memories WHERE id = %s",
                 (ticket_id,),
