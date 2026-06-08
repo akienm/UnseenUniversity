@@ -41,6 +41,11 @@ def _factory_registry_path() -> Path:
     return root / "vetinari" / "factories.json"
 
 
+def _pending_directives_path() -> Path:
+    root = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+    return root / "vetinari" / "pending_directives.json"
+
+
 class VetinariDevice(BaseDevice):
     """Meta-orchestrator device.
 
@@ -148,6 +153,53 @@ class VetinariDevice(BaseDevice):
     def get_owned_factories(self) -> list[dict]:
         """Return all factories owned by Vetinari."""
         return list(self._factories.values())
+
+    # ── Directive intake (T-vetinari-directive-intake) ────────────────────────
+
+    def accept_directive(self, directive: dict) -> bool:
+        """Append a directive to pending_directives.json. Idempotent by id field.
+
+        Returns True when added, False when a duplicate id was detected.
+        Atomic write: write to .tmp then rename, so a crash mid-write
+        leaves the file intact.
+        """
+        path = _pending_directives_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        directives: list[dict] = []
+        if path.exists():
+            try:
+                directives = json.loads(path.read_text())
+            except Exception as exc:
+                log.warning("VetinariDevice: pending_directives load error: %s", exc)
+                directives = []
+
+        directive_id = directive.get("id", "")
+        if directive_id and any(d.get("id") == directive_id for d in directives):
+            log.info("VetinariDevice: duplicate directive %r — skipping", directive_id)
+            return False
+
+        directives.append(directive)
+        tmp = path.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(directives, indent=2))
+        tmp.rename(path)
+        log.info(
+            "VetinariDevice: accepted directive %r (%d pending)",
+            directive_id,
+            len(directives),
+        )
+        return True
+
+    def get_pending_directives(self) -> list[dict]:
+        """Return all pending directives from flat file."""
+        path = _pending_directives_path()
+        if not path.exists():
+            return []
+        try:
+            return json.loads(path.read_text())
+        except Exception as exc:
+            log.warning("VetinariDevice: pending_directives read error: %s", exc)
+            return []
 
     # ── Internal ──────────────────────────────────────────────────────────────
 
