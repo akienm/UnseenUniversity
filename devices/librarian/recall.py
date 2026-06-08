@@ -289,6 +289,88 @@ def _escalate_and_synthesize(query: str, hits: list[MemoryHit]) -> str:
         return f"(synthesis failed: {e})"
 
 
+# ── Cross-type FTS (escalation path) ─────────────────────────────────────────
+
+
+def _cross_type_fts(
+    conn,
+    query: str,
+    limit_per_target: int = 5,
+) -> list[MemoryHit]:
+    """FTS across all registered node types (beyond clan.memories).
+
+    Called only from the escalation path (escalate=True) — conservative:
+    the default fast-path stays clan.memories-only for speed.
+    Returns MemoryHit objects with memory_id = "{node_type}:{pk}".
+    T-unified-node-rollout.
+    """
+    try:
+        from devices.librarian.node_registry import get_fts_targets
+    except ImportError:
+        return []
+
+    hits: list[MemoryHit] = []
+    targets = get_fts_targets()
+
+    for target in targets:
+        node_type = target["node_type"]
+        table = target["table"]
+        columns = target["columns"]
+        filter_sql = target.get("filter_sql")
+
+        if not columns:
+            continue
+
+        # Skip clan.memories — already handled by the primary FTS path
+        if table == "clan.memories":
+            continue
+
+        fts_expr = " || ' ' || ".join(f"coalesce({col}, '')" for col in columns)
+        where_clauses = [
+            f"to_tsvector('english', {fts_expr}) @@ plainto_tsquery('english', %s)"
+        ]
+        params: list = [query]
+
+        if filter_sql:
+            where_clauses.append(filter_sql)
+
+        sql = (
+            f"SELECT *,  ts_rank(to_tsvector('english', {fts_expr}), "
+            f"plainto_tsquery('english', %s)) AS _rank "
+            f"FROM {table} "
+            f"WHERE {' AND '.join(where_clauses)} "
+            f"ORDER BY _rank DESC LIMIT %s"
+        )
+        params = [query, query, limit_per_target]
+
+        try:
+            with conn.cursor() as cur:
+                cur.execute(sql, params)
+                rows = cur.fetchall()
+                col_names = [desc[0] for desc in cur.description]
+        except Exception as exc:
+            log.debug("cross_type_fts: query failed for %s: %s", table, exc)
+            continue
+
+        for row in rows:
+            row_dict = dict(zip(col_names, row))
+            rank = float(row_dict.get("_rank") or 0.0)
+            pk = str(row_dict.get("id", row_dict.get("path", "")))
+            narrative_parts = [str(row_dict.get(col, "")) for col in columns if row_dict.get(col)]
+            narrative = " | ".join(narrative_parts)[:400]
+            hits.append(
+                MemoryHit(
+                    memory_id=f"{node_type}:{pk}",
+                    narrative=narrative,
+                    score=rank,
+                )
+            )
+        if rows:
+            log.info("cross_type_fts: %s → %d hit(s) for %r", table, len(rows), query)
+
+    return hits
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 
@@ -407,6 +489,13 @@ def recall(
                 ]
 
         result.hits = hits
+
+        # ── 5.8. Cross-type FTS (escalation path — spans registered tables beyond clan.memories)
+        if escalate:
+            cross_hits = _cross_type_fts(conn, query)
+            if cross_hits:
+                hits = hits + cross_hits
+                log.info("recall: cross-type FTS added %d hits from registered tables", len(cross_hits))
 
         # ── 6-7. Optional escalation ─────────────────────────────────────────
         if escalate and hits:

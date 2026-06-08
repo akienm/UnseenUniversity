@@ -1096,6 +1096,31 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "WHERE jsonb_exists(metadata, 'tags') AND metadata->>'tags' LIKE '[%]' "
         "AND (tags IS NULL OR tags = '[]'::jsonb)",
     ),
+    # ── T-unified-node-rollout: extend tags+triggers to remaining tables
+    (
+        "m059_channel_messages_tags",
+        "ALTER TABLE infra.channel_messages ADD COLUMN IF NOT EXISTS tags jsonb DEFAULT '[]'::jsonb",
+    ),
+    (
+        "m059_channel_messages_triggers",
+        "ALTER TABLE infra.channel_messages ADD COLUMN IF NOT EXISTS triggers jsonb DEFAULT '{}'::jsonb",
+    ),
+    (
+        "m059_channel_messages_tags_gin",
+        "CREATE INDEX IF NOT EXISTS idx_channel_messages_tags_gin ON infra.channel_messages USING GIN (tags)",
+    ),
+    (
+        "m059_reading_list_tags",
+        "ALTER TABLE clan.reading_list ADD COLUMN IF NOT EXISTS tags jsonb DEFAULT '[]'::jsonb",
+    ),
+    (
+        "m059_reading_list_triggers",
+        "ALTER TABLE clan.reading_list ADD COLUMN IF NOT EXISTS triggers jsonb DEFAULT '{}'::jsonb",
+    ),
+    (
+        "m059_reading_list_tags_gin",
+        "CREATE INDEX IF NOT EXISTS idx_reading_list_tags_gin ON clan.reading_list USING GIN (tags)",
+    ),
 ]
 
 
