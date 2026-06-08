@@ -48,6 +48,46 @@ def _pending_directives_path() -> Path:
     return root / "vetinari" / "pending_directives.json"
 
 
+# ── Team routing (T-vetinari-team-dispatch) ───────────────────────────────────
+
+ROUTING_TABLE: dict[str, str] = {
+    # Build / code / infrastructure → CC
+    "build": "claude",
+    "code": "claude",
+    "architecture": "claude",
+    "platform": "claude",
+    "infrastructure": "claude",
+    "security": "claude",
+    "database": "claude",
+    "cognition": "claude",
+    # Research / memory / reading → Librarian
+    "research": "librarian",
+    "memory": "librarian",
+    "reading": "librarian",
+    "librarian": "librarian",
+    "watchlist": "librarian",
+    # Review / check / summarize → DickSimnel (token-light)
+    "review": "dicksimnel",
+    "check": "dicksimnel",
+    "summarize": "dicksimnel",
+    "summary": "dicksimnel",
+    "audit": "dicksimnel",
+}
+
+
+def _route_worker(tags: list[str]) -> str:
+    """Return the canonical worker name for a list of ticket tags.
+
+    Checks ROUTING_TABLE (case-insensitive) and returns the first match.
+    Defaults to 'claude' when no tag matches.
+    """
+    for tag in tags:
+        worker = ROUTING_TABLE.get(tag.lower())
+        if worker:
+            return worker
+    return "claude"
+
+
 _OR_BASE = "https://openrouter.ai/api/v1"
 _OR_REFERER = "https://github.com/akienm/TheIgors"
 _OR_MODEL = os.environ.get("VETINARI_LLM_MODEL", "openai/gpt-4o-mini")
@@ -131,12 +171,14 @@ def _write_tickets_to_queue(subtasks: list[dict], decision_id: str = "") -> list
         title = (sub.get("title") or f"untitled-{i}")[:80]
         slug = re.sub(r"[^a-z0-9]+", "-", title.lower())[:40].strip("-")
         ticket_id = f"T-vetinari-{slug}"
+        tags = sub.get("tags") or ["Vetinari"]
+        worker = _route_worker(tags)
         ticket = {
             "id": ticket_id,
             "title": title,
             "description": sub.get("description", "Vetinari-decomposed subtask."),
-            "worker": sub.get("worker", "claude"),
-            "tags": sub.get("tags", ["Vetinari"]),
+            "worker": worker,
+            "tags": tags,
             "size": sub.get("size", "M"),
             "status": "sprint",
             "decision_id": decision_id,
