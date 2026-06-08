@@ -146,7 +146,7 @@ class TestLlmViaLabel:
         from pathlib import Path
 
         src = (
-            Path(__file__).resolve().parent.parent / "devices/igor/main.py"
+            Path(__file__).resolve().parent.parent.parent / "devices/igor/main.py"
         ).read_text()
         assert 'f"llm_via_{_turn_habit.id}"' in src, (
             "main.py coherence source_label must emit 'llm_via_<id>' for "

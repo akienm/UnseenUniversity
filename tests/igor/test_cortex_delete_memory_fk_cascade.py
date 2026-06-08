@@ -129,7 +129,7 @@ def test_delete_memory_source_deletes_children_first():
     would start failing again and flooding logs at MB/sec.
     """
     src = (
-        Path(__file__).resolve().parent.parent / "devices/igor/memory/cortex.py"
+        Path(__file__).resolve().parent.parent.parent / "devices/igor/memory/cortex.py"
     ).read_text()
     # Locate delete_memory body and confirm ordering
     fn_idx = src.index("def delete_memory(self, memory_id: str)")
