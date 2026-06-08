@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""uurecall — multi-source recall: chat logs, tickets, code, and semantic search.
+"""uurecall — multi-source recall: chat logs, tickets, code, palace, and semantic search.
 
 Usage: uurecall.py <query words...>
 
 Searches in order:
   1. CC.0 chat logs  — literal grep, most recent first, up to 5 hits
-  2. Tickets         — id/title/description match against queue DB
+  2. Tickets         — id/title/description match against queue DB (all statuses)
   3. Code            — git grep in repo root, up to 5 lines
-  4. Semantic recall — librarian embedding search (labeled clearly)
+  4. Palace nodes    — Igor memory_palace + adc.palace literal match
+  5. Semantic recall — librarian embedding search (suppressed below score 0.4)
 
 Ticket IDs found across sources are de-duplicated: a ticket already shown
 in the Tickets section is suppressed in Semantic results.
@@ -26,6 +27,7 @@ _CC_TOOLS = Path(os.environ.get("CC_WORKFLOW_TOOLS", str(Path(__file__).parent))
 _CAP = 5
 
 _TICKET_RE = re.compile(r'\bT-[\w-]+')
+_SEMANTIC_THRESHOLD = 0.4
 
 
 def _divider(label: str) -> None:
@@ -160,8 +162,79 @@ def _search_code(query: str) -> None:
         print("  (git not found)")
 
 
+def _palace_where(tokens: list[str], col: str) -> tuple[str, list]:
+    """Build (clause, params) ANDing each token against a single column with ILIKE."""
+    parts = [f"{col} ILIKE %s" for _ in tokens]
+    params = [f"%{t}%" for t in tokens]
+    return " AND ".join(parts), params
+
+
+def _palace_query(cur, table: str, tokens: list[str], cap: int) -> list:
+    """Run a token-AND palace query against table (memory_palace or adc.palace)."""
+    cols = "path, title, left(content, 160)"
+    conds = []
+    params = []
+    for col in ("path", "title", "content"):
+        clause, p = _palace_where(tokens, col)
+        conds.append(f"({clause})")
+        params.extend(p)
+    where = " OR ".join(conds)
+    # order: path match wins, then title, then content
+    first_tok = f"%{tokens[0]}%"
+    order = (
+        f"CASE WHEN path ILIKE %s THEN 0 WHEN title ILIKE %s THEN 1 ELSE 2 END"
+    )
+    cur.execute(
+        f"SELECT {cols} FROM {table} WHERE {where} ORDER BY {order} LIMIT %s",
+        params + [first_tok, first_tok, cap],
+    )
+    return cur.fetchall()
+
+
+def _search_palace(query: str) -> None:
+    """Literal token-AND search across Igor memory_palace + adc.palace."""
+    _divider("Palace nodes")
+    db_url = os.environ.get("IGOR_HOME_DB_URL")
+    if not db_url:
+        print("  (IGOR_HOME_DB_URL not set — skipping)")
+        return
+    try:
+        import psycopg2
+        conn = psycopg2.connect(db_url)
+    except Exception as e:
+        print(f"  (palace unavailable: {e})")
+        return
+
+    tokens = query.lower().split()
+    hits = 0
+    try:
+        with conn.cursor() as cur:
+            for row in _palace_query(cur, "memory_palace", tokens, _CAP):
+                path, title, snippet = row
+                print(f"  [{path}] {title or ''}")
+                if snippet:
+                    print(f"    {snippet[:140].strip()}")
+                hits += 1
+            try:
+                for row in _palace_query(cur, "adc.palace", tokens, _CAP):
+                    path, title, snippet = row
+                    print(f"  [adc:{path}] {title or ''}")
+                    if snippet:
+                        print(f"    {snippet[:140].strip()}")
+                    hits += 1
+            except Exception:
+                pass  # adc.palace optional
+    except Exception as e:
+        print(f"  (palace query failed: {e})")
+    finally:
+        conn.close()
+
+    if hits == 0:
+        print("  (no hits)")
+
+
 def _search_semantic(query: str, seen_ids: set[str]) -> None:
-    """Librarian embedding recall — semantic only, de-duped against shown IDs."""
+    """Librarian embedding recall — semantic only, de-duped; suppresses score < 0.4."""
     _divider("Semantic (embedding)")
     try:
         from devices.librarian.recall import recall
@@ -170,7 +243,11 @@ def _search_semantic(query: str, seen_ids: set[str]) -> None:
             print("  (no semantic hits)")
             return
         shown = 0
+        suppressed = 0
         for hit in result.hits:
+            if hit.score is not None and hit.score < _SEMANTIC_THRESHOLD:
+                suppressed += 1
+                continue
             if hit.memory_id in seen_ids:
                 continue
             score = f"{hit.score:.3f}" if hit.score is not None else "n/a"
@@ -181,7 +258,10 @@ def _search_semantic(query: str, seen_ids: set[str]) -> None:
             if shown >= 3:
                 break
         if shown == 0:
-            print("  (all semantic hits already shown above)")
+            if suppressed > 0:
+                print(f"  (all hits below {_SEMANTIC_THRESHOLD} score threshold — no semantic match)")
+            else:
+                print("  (all semantic hits already shown above)")
     except Exception as e:
         print(f"  (semantic unavailable: {e})")
 
@@ -197,6 +277,7 @@ def main(argv):
     shown_ids = _search_tickets(query, log_ids)
     seen_ids = log_ids | shown_ids
     _search_code(query)
+    _search_palace(query)
     _search_semantic(query, seen_ids)
     print()
 

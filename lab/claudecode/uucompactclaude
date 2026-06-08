@@ -1,0 +1,24 @@
+#!/bin/bash
+# Haiku-dance compact: switch to Haiku, fire /compact, wait, return to Sonnet.
+# Called by /autocompact (Step 2). Canonical script — edit here, not in the skill.
+
+SESSION="${CC_TMUX_SESSION:-claude-main}"
+DATESTAMP=$(date +%Y%m%d)
+SLATE_PATH="${IGOR_HOME:-$HOME/.unseen_university}/claudecode/${DATESTAMP}.slate.txt"
+
+tmux send-keys -t "$SESSION" Enter Enter
+sleep 0.5
+tmux send-keys -t "$SESSION" "/model haiku"
+sleep 0.5
+tmux send-keys -t "$SESSION" Enter
+sleep 2
+
+tmux send-keys -t "$SESSION" "/compact preserve: Read today's slate: ${SLATE_PATH}. In-flight and Next: see slate."
+sleep 0.5
+tmux send-keys -t "$SESSION" Enter
+
+sleep 30
+
+tmux send-keys -t "$SESSION" "/model sonnet"
+sleep 0.5
+tmux send-keys -t "$SESSION" Enter
