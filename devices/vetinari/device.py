@@ -214,6 +214,25 @@ def _write_tickets_to_queue(subtasks: list[dict], decision_id: str = "") -> list
     return [t["id"] for t in tickets]
 
 
+def _query_ticket_status(ticket_id: str) -> str | None:
+    """Return ticket status from cc_queue.py show, or None on error/missing."""
+    import sys
+    try:
+        result = subprocess.run(
+            [sys.executable, str(_CC_QUEUE), "show", ticket_id],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode != 0:
+            return None
+        data = json.loads(result.stdout)
+        return data.get("status")
+    except Exception as exc:
+        log.warning("_query_ticket_status %r: %s", ticket_id, exc)
+        return None
+
+
 class VetinariDevice(BaseDevice):
     """Meta-orchestrator device.
 
@@ -442,6 +461,78 @@ class VetinariDevice(BaseDevice):
             child_ids,
         )
         return child_ids
+
+    # ── Directive progress tracking (T-vetinari-progress-tracking) ──────────
+
+    def check_directive_progress(self, directive_id: str) -> dict:
+        """Poll cc_queue for each child ticket; update directive state.
+
+        Returns a progress snapshot: {open, in_progress, closed, missing}.
+        Updates the directive record with latest snapshot and status.
+        'completed' only when all children are closed.
+        Gracefully handles missing tickets (counted as 'missing', not fatal).
+        """
+        directives = self.get_pending_directives()
+        directive = next((d for d in directives if d.get("id") == directive_id), None)
+        if directive is None:
+            return {"open": 0, "in_progress": 0, "closed": 0, "missing": 0}
+
+        child_ids = directive.get("child_ticket_ids", [])
+        counts: dict[str, int] = {"open": 0, "in_progress": 0, "closed": 0, "missing": 0}
+
+        for ticket_id in child_ids:
+            status = _query_ticket_status(ticket_id)
+            if status is None:
+                counts["missing"] += 1
+            elif status in ("done", "closed", "cancelled"):
+                counts["closed"] += 1
+            elif status == "in_progress":
+                counts["in_progress"] += 1
+            else:
+                counts["open"] += 1
+
+        # Determine directive status
+        total = len(child_ids)
+        if total == 0:
+            new_status = directive.get("status", "active")
+        elif counts["closed"] + counts["missing"] == total:
+            new_status = "completed"
+        elif counts["open"] + counts["in_progress"] > 0:
+            new_status = "active"
+        else:
+            new_status = directive.get("status", "active")
+
+        # Update directive flat-file state
+        for d in directives:
+            if d.get("id") == directive_id:
+                d["progress"] = counts
+                d["status"] = new_status
+                if new_status == "completed" and not d.get("completed_at"):
+                    d["completed_at"] = _now()
+
+        path = _pending_directives_path()
+        if path.exists():
+            tmp = path.with_suffix(".json.tmp")
+            tmp.write_text(json.dumps(directives, indent=2))
+            tmp.rename(path)
+        log.info(
+            "VetinariDevice: progress %r → %s (open=%d in_progress=%d closed=%d missing=%d)",
+            directive_id,
+            new_status,
+            counts["open"],
+            counts["in_progress"],
+            counts["closed"],
+            counts["missing"],
+        )
+        return counts
+
+    def get_directive_status(self, directive_id: str) -> str:
+        """Return current status for directive: 'active'|'completed'|'awaiting_clarification'|'unknown'."""
+        directives = self.get_pending_directives()
+        directive = next((d for d in directives if d.get("id") == directive_id), None)
+        if directive is None:
+            return "unknown"
+        return directive.get("status", "active")
 
     # ── CP3/CP6 audit log (T-vetinari-cp-audit) ──────────────────────────────
 

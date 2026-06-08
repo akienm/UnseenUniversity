@@ -30,6 +30,7 @@ log = logging.getLogger(__name__)
 
 _MAILBOX = os.environ.get("VETINARI_MAILBOX", "vetinari.inbox")
 _POLL_INTERVAL_S = int(os.environ.get("VETINARI_POLL_INTERVAL", "5"))
+_PROGRESS_POLL_INTERVAL_S = int(os.environ.get("VETINARI_PROGRESS_POLL_INTERVAL", "300"))  # 5 min
 
 
 def _now() -> str:
@@ -94,6 +95,7 @@ class DirectiveListener:
 
     def run_forever(self) -> None:
         log.info("DirectiveListener: started — mailbox=%s poll=%ds", self._mailbox, _POLL_INTERVAL_S)
+        _last_progress_poll = 0.0
         while not self._stop.is_set():
             try:
                 envelopes = self._imap.fetch_unseen(self._mailbox)
@@ -101,8 +103,24 @@ class DirectiveListener:
                     self._process(raw)
             except Exception as exc:
                 log.warning("DirectiveListener: fetch_unseen error: %s", exc)
+
+            # Periodic progress poll for active directives (~5 min)
+            now = time.time()
+            if now - _last_progress_poll >= _PROGRESS_POLL_INTERVAL_S:
+                self._poll_active_directives()
+                _last_progress_poll = now
+
             self._stop.wait(timeout=_POLL_INTERVAL_S)
         log.info("DirectiveListener: stopped")
+
+    def _poll_active_directives(self) -> None:
+        """Check progress for all directives in 'active' status. Fail-open."""
+        try:
+            for directive in self._device.get_pending_directives():
+                if directive.get("status") == "active" and directive.get("child_ticket_ids"):
+                    self._device.check_directive_progress(directive["id"])
+        except Exception as exc:
+            log.warning("DirectiveListener: progress poll failed: %s", exc)
 
     def _process(self, raw) -> None:
         try:
