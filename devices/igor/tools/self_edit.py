@@ -23,11 +23,16 @@ from pathlib import Path
 
 from .inertia_map import bucket_of as _im_bucket_of, weight_of as _im_weight_of
 from devices.igor.tools.registry import Tool, registry
+from devices.workspace.device import WorkspaceDevice
 from ..cognition.forensic_logger import log_self_edit
 from ..paths import paths
 
 SOURCE_ROOT = Path(__file__).parent.parent  # devices/igor/
 REPO_ROOT = SOURCE_ROOT.parent.parent  # UnseenUniversity/
+
+# Workspace device rooted at SOURCE_ROOT — routes source file reads through
+# the rack workspace interface for sandboxing and inspectability.
+_source_workspace = WorkspaceDevice(workspace_root=SOURCE_ROOT)
 
 # Paths Igor may READ but never WRITE (change.26).
 # Core patterns can only be changed by akien via Claude Code.
@@ -251,17 +256,12 @@ def list_source_files(path: str = ".") -> str:
 def read_source_file(path: str) -> str:
     """Read one of Igor's own source files."""
     try:
-        target = _resolve(path)
-        if not target.exists():
-            return f"Error: File not found: {path}"
-        if not target.is_file():
-            return f"Error: Not a file: {path}"
-
         inertia, label = _get_inertia(path)
-        content = target.read_text(encoding="utf-8")
+        result = _source_workspace.workspace_read_file(path)
+        if result["status"] != "ok":
+            return f"Error: {result.get('message', result)}"
         warning = _inertia_warning(path, inertia, label)
-
-        return f"[igor/{path}] (inertia={inertia:.2f}, {label}){warning}\n\n{content}"
+        return f"[igor/{path}] (inertia={inertia:.2f}, {label}){warning}\n\n{result['content']}"
     except PermissionError as e:
         return f"Error: {e}"
     except Exception as e:

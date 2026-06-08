@@ -25,11 +25,17 @@ import sys
 from pathlib import Path
 
 from devices.igor.tools.registry import Tool, registry
+from devices.workspace.device import WorkspaceDevice
 
 WORKSPACE = Path(__file__).parent.parent.parent / "workspace"
 WORKSPACE.mkdir(exist_ok=True)
 
 DEFAULT_TIMEOUT = 30  # seconds
+
+# Workspace device for bash execution — sandboxed to WORKSPACE dir.
+# Routes run_bash through the rack workspace interface so calls are
+# inspectable via the workspace device rather than raw subprocess.
+_workspace = WorkspaceDevice(workspace_root=WORKSPACE)
 
 
 import time
@@ -42,9 +48,28 @@ from ..cognition.reasoners.ollama_reasoner import (
 
 
 def _run(args: list[str], timeout: int, input_text: str = "") -> str:
-    """
-    Execute a subprocess and return combined stdout/stderr.
-    """
+    """Execute a subprocess and return combined stdout/stderr."""
+    # Bash commands go through workspace device; Python runner keeps direct subprocess
+    # (workspace_run_bash is shell=True; Python -c variant needs separate handling).
+    if args and args[0] == "bash" and args[1] == "-c":
+        result = _workspace.workspace_run_bash(args[2], timeout_sec=float(timeout))
+        if result["status"] == "error":
+            return f"[ERROR] {result.get('message', result)}"
+        parts = []
+        if result.get("stdout"):
+            parts.append(result["stdout"])
+        if result.get("stderr"):
+            parts.append(f"[stderr]\n{result['stderr']}")
+        if result.get("returncode", 0) != 0:
+            rc = result["returncode"]
+            parts.append(f"[exit code: {rc}]")
+            if rc == 127:
+                from .misfire_counter import get_misfire_counter
+                counter = get_misfire_counter()
+                counter.record_bash_exit(args[2], rc)
+        return "\n".join(parts).strip() or "(no output)"
+
+    # Non-bash (Python -c, etc.) — keep direct subprocess
     try:
         result = subprocess.run(
             args,
@@ -62,10 +87,8 @@ def _run(args: list[str], timeout: int, input_text: str = "") -> str:
         if result.returncode != 0:
             parts.append(f"[exit code: {result.returncode}]")
 
-        # Track exit code 127 (command not found) as misfire
         if result.returncode == 127 and args:
             from .misfire_counter import get_misfire_counter
-
             command_str = " ".join(args) if isinstance(args, list) else str(args)
             counter = get_misfire_counter()
             counter.record_bash_exit(command_str, result.returncode)
