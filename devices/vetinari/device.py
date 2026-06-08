@@ -48,6 +48,11 @@ def _pending_directives_path() -> Path:
     return root / "vetinari" / "pending_directives.json"
 
 
+def _audit_log_path() -> Path:
+    root = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+    return root / "vetinari" / "audit.jsonl"
+
+
 # ── Team routing (T-vetinari-team-dispatch) ───────────────────────────────────
 
 ROUTING_TABLE: dict[str, str] = {
@@ -424,6 +429,12 @@ class VetinariDevice(BaseDevice):
         tmp = path.with_suffix(".json.tmp")
         tmp.write_text(json.dumps(directives, indent=2))
         tmp.rename(path)
+        self._audit_log(
+            event="DECOMPOSE",
+            reason=f"decomposed directive into {len(child_ids)} tickets",
+            context={"child_ticket_ids": child_ids, "directive_text_preview": text[:100]},
+            directive_id=directive_id,
+        )
         log.info(
             "VetinariDevice: directive %r decomposed → %d tickets: %s",
             directive_id,
@@ -431,6 +442,56 @@ class VetinariDevice(BaseDevice):
             child_ids,
         )
         return child_ids
+
+    # ── CP3/CP6 audit log (T-vetinari-cp-audit) ──────────────────────────────
+
+    def _audit_log(
+        self,
+        event: str,
+        reason: str,
+        context: dict,
+        directive_id: str = "",
+    ) -> None:
+        """Append a structured audit entry to audit.jsonl (CP3/CP6 compliance).
+
+        Format: one JSON object per line — {ts, directive_id, event, reason, context}.
+        Append-only; never deletes. Every dispatch and escalation decision is logged
+        with a 'reason' so the reasoning is auditable (CP3) and escalations are
+        traceable (CP6).
+        """
+        path = _audit_log_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        entry = {
+            "ts": _now(),
+            "directive_id": directive_id,
+            "event": event,
+            "reason": reason,
+            "context": context,
+        }
+        with path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(entry) + "\n")
+        log.debug("VetinariDevice: audit %s directive=%r reason=%r", event, directive_id, reason[:80])
+
+    def get_audit_log(self, directive_id: str | None = None) -> list[dict]:
+        """Return audit log entries, optionally filtered by directive_id."""
+        path = _audit_log_path()
+        if not path.exists():
+            return []
+        entries = []
+        try:
+            for line in path.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                    if directive_id is None or entry.get("directive_id") == directive_id:
+                        entries.append(entry)
+                except json.JSONDecodeError:
+                    log.warning("VetinariDevice: malformed audit entry skipped")
+        except Exception as exc:
+            log.warning("VetinariDevice: audit log read error: %s", exc)
+        return entries
 
     # ── Internal ──────────────────────────────────────────────────────────────
 
@@ -445,6 +506,11 @@ class VetinariDevice(BaseDevice):
             f"detail={health.get('detail','')!r}"
         )
         self._channel_post(msg)
+        self._audit_log(
+            event="ESCALATE",
+            reason=f"eval_score={eval_score:.3f} < threshold={self._escalation_threshold}",
+            context={"factory_id": factory_id, "health": health},
+        )
         log.info(
             "VetinariDevice: escalated factory %s to Akien — eval_score=%.3f < threshold=%.3f",
             factory_id,
