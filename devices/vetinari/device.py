@@ -19,7 +19,9 @@ from __future__ import annotations
 import json
 import logging
 import os
+import subprocess
 import time
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -44,6 +46,125 @@ def _factory_registry_path() -> Path:
 def _pending_directives_path() -> Path:
     root = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
     return root / "vetinari" / "pending_directives.json"
+
+
+_OR_BASE = "https://openrouter.ai/api/v1"
+_OR_REFERER = "https://github.com/akienm/TheIgors"
+_OR_MODEL = os.environ.get("VETINARI_LLM_MODEL", "openai/gpt-4o-mini")
+_DECOMPOSE_PROMPT_PATH = Path(__file__).parent / "decompose_prompt.txt"
+_CC_QUEUE = Path(__file__).resolve().parents[2] / "lab" / "claudecode" / "cc_queue.py"
+
+
+def _call_llm_or(directive_text: str) -> str:
+    """Call OpenRouter to decompose a directive. Returns raw response text."""
+    api_key = os.environ.get("OPENROUTER_API_KEY", "")
+    if not api_key:
+        raise ValueError("OPENROUTER_API_KEY not set — cannot call LLM for decompose")
+
+    system = (
+        _DECOMPOSE_PROMPT_PATH.read_text()
+        if _DECOMPOSE_PROMPT_PATH.exists()
+        else "Decompose the directive into JSON work tickets."
+    )
+    payload = json.dumps(
+        {
+            "model": _OR_MODEL,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": directive_text},
+            ],
+            "temperature": 0.2,
+            "max_tokens": 2000,
+        }
+    ).encode()
+    req = urllib.request.Request(
+        f"{_OR_BASE}/chat/completions",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": _OR_REFERER,
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        data = json.loads(resp.read().decode())
+    return data["choices"][0]["message"]["content"]
+
+
+def _parse_subtasks(raw: str) -> list[dict]:
+    """Parse LLM response into a list of subtask dicts.
+
+    Strips markdown fences before parsing. Raises ValueError on invalid JSON
+    or if the result is not a list.
+    """
+    text = raw.strip()
+    # Strip ```json ... ``` or ``` ... ``` fences
+    if text.startswith("```"):
+        lines = text.splitlines()
+        text = "\n".join(
+            l for l in lines if not l.startswith("```")
+        ).strip()
+    try:
+        result = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"LLM response is not valid JSON: {exc}\nRaw: {raw[:300]}") from exc
+    if not isinstance(result, list):
+        raise ValueError(f"LLM response is not a JSON array: {type(result)}")
+    if not result:
+        raise ValueError("LLM returned empty subtask list")
+    return result
+
+
+def _write_tickets_to_queue(subtasks: list[dict], decision_id: str = "") -> list[str]:
+    """Write subtasks to cc_queue via subprocess. Returns list of ticket IDs.
+
+    Generates ticket IDs from slugified titles. Writes a temp JSON batch
+    file and calls cc_queue.py add. Idempotent per ID.
+    """
+    import re
+    import sys
+    import tempfile
+
+    tickets = []
+    for i, sub in enumerate(subtasks):
+        title = (sub.get("title") or f"untitled-{i}")[:80]
+        slug = re.sub(r"[^a-z0-9]+", "-", title.lower())[:40].strip("-")
+        ticket_id = f"T-vetinari-{slug}"
+        ticket = {
+            "id": ticket_id,
+            "title": title,
+            "description": sub.get("description", "Vetinari-decomposed subtask."),
+            "worker": sub.get("worker", "claude"),
+            "tags": sub.get("tags", ["Vetinari"]),
+            "size": sub.get("size", "M"),
+            "status": "sprint",
+            "decision_id": decision_id,
+            "priority": 0.5,
+        }
+        tickets.append(ticket)
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".json", prefix="vetinari_batch_", delete=False
+    ) as f:
+        json.dump(tickets, f)
+        tmp_path = f.name
+
+    try:
+        result = subprocess.run(
+            [sys.executable, str(_CC_QUEUE), "add", tmp_path],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"cc_queue.py add failed: {result.stderr.strip()}"
+            )
+    finally:
+        Path(tmp_path).unlink(missing_ok=True)
+
+    return [t["id"] for t in tickets]
 
 
 class VetinariDevice(BaseDevice):
@@ -200,6 +321,74 @@ class VetinariDevice(BaseDevice):
         except Exception as exc:
             log.warning("VetinariDevice: pending_directives read error: %s", exc)
             return []
+
+    # ── Directive decomposition (T-vetinari-decompose) ───────────────────────
+
+    def decompose_directive(
+        self,
+        directive_id: str,
+        llm_fn=None,
+    ) -> list[str]:
+        """Decompose a pending directive into cc_queue tickets.
+
+        Loads the directive from pending_directives.json, calls llm_fn
+        (defaults to _call_llm_or) to produce a list of subtask dicts,
+        writes each to cc_queue via cc_queue.py add, stores child_ticket_ids,
+        and transitions the directive status from pending → active.
+
+        Returns list of ticket IDs created.
+        Raises ValueError when directive_id is not found.
+        LLM parse errors: retry once, then raise.
+        """
+        # Load directive
+        directives = self.get_pending_directives()
+        directive = next((d for d in directives if d.get("id") == directive_id), None)
+        if directive is None:
+            raise ValueError(f"directive {directive_id!r} not found in pending_directives")
+
+        text = directive.get("text", "")
+        call = llm_fn or _call_llm_or
+
+        # Attempt decompose — retry once on parse failure
+        subtasks: list[dict] = []
+        last_exc: Exception | None = None
+        for attempt in range(2):
+            try:
+                raw = call(text)
+                subtasks = _parse_subtasks(raw)
+                break
+            except Exception as exc:
+                last_exc = exc
+                log.warning(
+                    "VetinariDevice: decompose attempt %d failed: %s",
+                    attempt + 1,
+                    exc,
+                )
+        else:
+            raise ValueError(
+                f"decompose_directive: LLM failed after 2 attempts: {last_exc}"
+            )
+
+        # Write tickets to cc_queue and collect IDs
+        child_ids = _write_tickets_to_queue(subtasks, decision_id=directive_id)
+
+        # Update directive state → active
+        for d in directives:
+            if d.get("id") == directive_id:
+                d["status"] = "active"
+                d["child_ticket_ids"] = child_ids
+                d["decomposed_at"] = _now()
+        path = _pending_directives_path()
+        tmp = path.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(directives, indent=2))
+        tmp.rename(path)
+        log.info(
+            "VetinariDevice: directive %r decomposed → %d tickets: %s",
+            directive_id,
+            len(child_ids),
+            child_ids,
+        )
+        return child_ids
 
     # ── Internal ──────────────────────────────────────────────────────────────
 
