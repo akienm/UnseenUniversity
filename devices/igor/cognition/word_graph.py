@@ -40,7 +40,6 @@ from pathlib import Path
 
 from ..igor_base import get_logger
 from ..memory.db_proxy import DatabaseProxy, make_home_proxy, make_local_proxy
-from ..memory.graph_cache import GraphCache
 from ..memory.pending_replies import PendingReplyStore
 from ..igor_base import IgorBase
 
@@ -337,20 +336,8 @@ class WordGraph(IgorBase):
         # Could move into a cortex migration; left here as the only caller.
         from ..memory.db_proxy import PGDatabaseProxy
 
-        if isinstance(self._db, PGDatabaseProxy):
-            with self._db() as conn:
-                conn.execute(
-                    "CREATE INDEX IF NOT EXISTS idx_wgc_a_unigram"
-                    " ON wg_cooccur(word_a) WHERE strpos(word_a, '__') = 0"
-                )
-                conn.execute(
-                    "CREATE INDEX IF NOT EXISTS idx_wgc_b_unigram"
-                    " ON wg_cooccur(word_b) WHERE strpos(word_b, '__') = 0"
-                )
         # D126 Step 3: PendingReplyStore — resilience queue for failed home DB writes
         self._pending = PendingReplyStore(self._local_db, self._db)
-        # D126 Step 2: GraphCache — Redis hot-cache for wg_cooccur; gates on IGOR_REDIS_URL
-        self._cache = GraphCache(self._db, self._local_db, pending_store=self._pending)
         # G-WG2: predict_next cache — avoid re-querying wg_edges on repeated context
         self._predict_cache: dict[tuple, list] = {}
         # T-wg-spread-via-cortex: cortex back-reference for spread_word_graph delegation.
@@ -744,57 +731,16 @@ class WordGraph(IgorBase):
     def top_hubs(
         self, n: int = 10, words_only: bool = True, lang: str | None = None
     ) -> list[tuple[str, int]]:
-        """
-        Return the N most-connected words by co-occurrence neighbour count.
-        words_only=True skips bigram tokens (a__b) to keep results readable.
-        lang: optional filter to a specific language.
-        """
-        conditions: list[str] = []
-        params: list = []
-        join = ""
-
-        if words_only:
-            conditions.append("strpos(c.word_a, '__') = 0")
-        if lang is not None:
-            join = " JOIN wg_word_lang l ON c.word_a = l.word"
-            conditions.append("l.lang = %s")
-            params.append(lang)
-
-        where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
-        params.append(n)
-
-        with self._db() as conn:
-            rows = conn.execute(
-                f"SELECT c.word_a, COUNT(*) AS degree"
-                f" FROM wg_cooccur c{join}{where}"
-                f" GROUP BY c.word_a ORDER BY degree DESC LIMIT %s",
-                params,
-            ).fetchall()
-        return [(r[0], r[1]) for r in rows]
+        """T-wg-cooccur-retire: wg_cooccur archived — returns empty list."""
+        get_logger(__name__).debug("top_hubs: wg_cooccur retired, returning []")
+        return []
 
     def bridge_words(
         self, word_a: str, word_b: str, n: int = 10
     ) -> list[tuple[str, float]]:
-        """
-        Find words that co-occur with BOTH word_a and word_b — the connective
-        tissue between two concepts. Ranked by combined co-occurrence weight.
-        Works across language boundaries (cross-language bridges are valid).
-        Returns [] if either word is not in the graph.
-        """
-        with self._db() as conn:
-            rows = conn.execute(
-                """
-                SELECT ca.word_b, ca.score + cb.score AS combined
-                FROM wg_cooccur ca
-                JOIN wg_cooccur cb ON ca.word_b = cb.word_b
-                WHERE ca.word_a = %s AND cb.word_a = %s
-                  AND strpos(ca.word_b, '__') = 0
-                ORDER BY combined DESC
-                LIMIT %s
-            """,
-                (word_a.lower(), word_b.lower(), n),
-            ).fetchall()
-        return [(r[0], float(r[1])) for r in rows]
+        """T-wg-cooccur-retire: wg_cooccur archived — returns empty list."""
+        get_logger(__name__).debug("bridge_words: wg_cooccur retired, returning []")
+        return []
 
     def domain_exclusive(self, doc_prefix: str, n: int = 10) -> list[str]:
         """
@@ -870,37 +816,7 @@ class WordGraph(IgorBase):
     _REINFORCE_TOKEN_CAP = 40
 
     def reinforce_text(self, text: str, boost: float = 0.05, lang: str = "en") -> None:
-        """
-        Boost co-occurrence edges for words in text — the comprehension signal loop.
-
-        G37: called on the generation graph when we receive a positive comprehension
-        signal (the other person heard what we meant). Strengthens the word paths
-        that produced a well-received reply. Opposite of index() which sets initial
-        weights — this nudges weights up based on observed success.
-
-        boost: small positive delta per edge (default 0.05 — 20× smaller than
-               reinforce() doc boost, because text-level signals are coarser).
-        Capped at 2.0 per edge to prevent runaway dominance.
-
-        G-WG4: unique token list capped at _REINFORCE_TOKEN_CAP to prevent
-        O(n²) pair explosion on long replies (200 tokens → 39800 pairs → slow).
-        """
-        tokens = tokenize_with_bigrams(text, lang=lang)
-        unique = list(dict.fromkeys(tokens))
-        if len(unique) < 2:
-            return
-        # G-WG4: cap tokens to bound pair count (n*(n-1)) at a safe level
-        if len(unique) > self._REINFORCE_TOKEN_CAP:
-            unique = unique[: self._REINFORCE_TOKEN_CAP]
-        with self._lock:
-            with self._db() as conn:
-                conn.executemany(
-                    """
-                    UPDATE wg_cooccur SET score = CASE WHEN score + %s > 2.0 THEN 2.0 ELSE score + %s END
-                    WHERE word_a = %s AND word_b = %s
-                """,
-                    [(boost, boost, w, w2) for w in unique for w2 in unique if w != w2],
-                )
+        """T-wg-cooccur-retire: wg_cooccur archived — no-op."""
 
     # ── Persistence ────────────────────────────────────────────────────────────
     # Postgres writes inside index() / build_idf() are synchronous via the

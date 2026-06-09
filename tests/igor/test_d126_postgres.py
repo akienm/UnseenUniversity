@@ -183,7 +183,6 @@ class TestWordGraphPostgresCompat(unittest.TestCase):
         wg = WordGraph(name="test")
         self.assertIsNotNone(wg)
         self.assertIsNotNone(wg._pending)
-        self.assertIsNotNone(wg._cache)
 
 
 # Migration-script test removed in T-sqlite-out-word-graph-db: SQLite

@@ -241,6 +241,11 @@ def test_equivalence_vs_wg_edges_production():
     try:
         with pg_conn.cursor() as cur:
             cur.execute("SET search_path = clan, public")
+            try:
+                cur.execute("SELECT 1 FROM wg_edges LIMIT 1")
+            except Exception:
+                pg_conn.close()
+                pytest.skip("wg_edges archived (T-wg-cooccur-retire) — equivalence check no longer applicable")
             cur.execute(
                 "SELECT DISTINCT word_a FROM wg_edges"
                 " WHERE word_a IN (SELECT metadata->>'word' FROM memories WHERE memory_type='WORD_GRAPH')"

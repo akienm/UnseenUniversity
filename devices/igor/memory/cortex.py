@@ -1133,6 +1133,14 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_memories_word_graph_word "
         "ON clan.memories ((metadata->>'word')) WHERE memory_type = 'WORD_GRAPH'",
     ),
+    (
+        "m062_wg_cooccur_archive",
+        "ALTER TABLE IF EXISTS clan.wg_cooccur RENAME TO wg_cooccur_archive",
+    ),
+    (
+        "m062_wg_edges_archive",
+        "ALTER TABLE IF EXISTS clan.wg_edges RENAME TO wg_edges_archive",
+    ),
 ]
 
 
