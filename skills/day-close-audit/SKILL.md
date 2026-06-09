@@ -115,7 +115,13 @@ Verify each usage has daemon=True or uses a queue pattern.
 du -sh ~/.unseen_university/logs/*.log 2>/dev/null | sort -rh | head -10
 ```
 
-Any file > 10MB → rotate or truncate.
+Any file > 10MB → rotate automatically:
+```bash
+python3 ~/dev/src/UnseenUniversity/lab/claudecode/rotate_logs.py
+```
+
+`rotate_logs.py` renames files >10MB to `.log.1` (one backup kept) and recreates an empty log.
+Safe to call on every day-close — silent when all logs are under 10MB.
 
 ---
 
