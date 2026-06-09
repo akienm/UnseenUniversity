@@ -1,9 +1,13 @@
 """
-LearningPipeline — overnight knowledge-graph building pipeline for the Archivist.
+InferenceAccumulator — in-memory accumulator for archivist inference miss payloads.
 
-Receives learning payloads from the proxy (query + response pairs) and
-accumulates them for overnight processing. Processing stub for now — the
-graph build logic ships in T-inference-learning-pipeline.
+Receives (query, response) pairs from ArchivistProxy on cache misses and
+accumulates them for overnight processing into archivist.knowledge_patterns.
+Processing is a stub until the pattern-compiler ships.
+
+Distinct from devices/librarian/learning_pipeline.py (LearningPipeline), which
+is the canonical knowledge-graph builder writing to clan.memories. These serve
+different schemas and different purposes (T-resolve-dual-learning-pipeline).
 
 Graph store schema (Postgres, no SQLite):
   archivist.knowledge_patterns  — compiled query patterns (the graph nodes)
@@ -46,14 +50,17 @@ CREATE TABLE IF NOT EXISTS archivist.learning_queue (
 );
 """
 
+# Backward-compat alias — callers that used the old class name still work.
+# Rename target: InferenceAccumulator (T-resolve-dual-learning-pipeline).
+LearningPipeline = None  # replaced below
 
-class LearningPipeline:
-    """
-    Accumulates inference miss payloads for overnight graph-tree building.
 
-    Queue is in-memory for the stub phase. Overnight processing converts
-    accumulated (query, response) pairs into archivist.knowledge_patterns rows,
-    progressively absorbing more queries locally.
+class InferenceAccumulator:
+    """In-memory accumulator for archivist inference miss payloads.
+
+    Stub phase: enqueue() records misses; process_overnight() will compile
+    them into archivist.knowledge_patterns once the pattern-compiler ships.
+    Canonical knowledge-graph builder is devices/librarian/learning_pipeline.py.
     """
 
     def __init__(self) -> None:
@@ -72,14 +79,13 @@ class LearningPipeline:
         return len(self._queue)
 
     def process_overnight(self) -> int:
-        """
-        Process all queued payloads into the knowledge graph.
-
-        Stub — logs intent, drains queue, returns count. Full graph-build
-        logic ships in T-inference-learning-pipeline.
-        """
+        """Stub — drains queue, returns count. Full compiler ships later."""
         count = len(self._queue)
         log.info("learning: overnight processing started (payload_count=%d)", count)
         self._queue.clear()
         log.info("learning: overnight processing complete (processed=%d)", count)
         return count
+
+
+# Alias for callers that still import LearningPipeline from this module.
+LearningPipeline = InferenceAccumulator

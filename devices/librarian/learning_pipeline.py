@@ -6,6 +6,10 @@ nodes that could answer similar queries without hitting an LLM next time.
 
 CRITICAL CONSTRAINT: This graph is PURELY EPISTEMIC — no emotional encoding.
 Igor's graph carries emotional valence; this layer is pure observation.
+
+ADR (T-resolve-dual-learning-pipeline): this is the canonical LearningPipeline.
+devices/archivist/learning_pipeline.py is InferenceAccumulator — different
+schema (archivist.knowledge_patterns vs clan.memories), different purpose.
 """
 
 import json
