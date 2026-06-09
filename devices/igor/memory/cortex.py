@@ -1803,6 +1803,24 @@ class Cortex(IgorBase):
                 self._maybe_calve(memory)
             except Exception as _calve_e:
                 logging.getLogger(__name__).debug("calving check: %s", _calve_e)
+        # T-igor-deferred-node-state: auto-mark unresolved when confidence is thin
+        # and no links are being provided. Runs non-fatally — never blocks store.
+        try:
+            _low_conf = memory.confidence < self._UNRESOLVED_CONFIDENCE_THRESHOLD
+            _thin_links = len(memory.links or {}) < self._UNRESOLVED_LINK_THRESHOLD and not link_to
+            if _low_conf and _thin_links:
+                self.mark_unresolved(memory.id)
+            elif link_to:
+                # Accumulate evidence for any watched nodes we're linking to.
+                for _linked in (link_to or []):
+                    _linked_id = _linked if isinstance(_linked, str) else getattr(_linked, "id", None)
+                    if _linked_id:
+                        try:
+                            self.accumulate_unresolved(_linked_id)
+                        except Exception:
+                            pass
+        except Exception as _dns_e:
+            logging.getLogger(__name__).debug("deferred_node store check: %s", _dns_e)
         return memory
 
     def store_batch(self, memories: list) -> list:
@@ -2430,6 +2448,124 @@ class Cortex(IgorBase):
             memory.friction_history.append(friction)
             memory.last_accessed = datetime.now()  # #128
             self.store(memory)
+
+    # ── T-igor-deferred-node-state: unresolved node state + watchlist ────────
+
+    # Nodes with confidence below this AND fewer links than UNRESOLVED_LINK_THRESHOLD
+    # are auto-marked unresolved at store() time.
+    _UNRESOLVED_CONFIDENCE_THRESHOLD: float = 0.25
+    _UNRESOLVED_LINK_THRESHOLD: int = 2
+    # Edge accumulations needed before an unresolved node resolves.
+    _WATCH_RESOLUTION_EDGE_COUNT: int = 3
+    # Context passes without accumulation before the node drops off the watchlist.
+    _WATCH_DECAY_PASS_COUNT: int = 10
+
+    def mark_unresolved(self, memory_id: str) -> None:
+        """Mark a memory as unresolved — evidence too thin for confident retrieval."""
+        with self._conn() as conn:
+            conn.execute(
+                """UPDATE memories SET
+                     metadata = jsonb_set(jsonb_set(jsonb_set(jsonb_set(
+                       metadata,
+                       '{node_state}', '"unresolved"'),
+                       '{watch}', 'true'),
+                       '{watch_edge_count}', '0'),
+                       '{watch_pass_count}', '0'),
+                     updated_at = NOW()
+                   WHERE id = %s""",
+                (memory_id,),
+            )
+
+    def is_unresolved(self, memory_id: str) -> bool:
+        """Return True if the memory is currently in unresolved state."""
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT metadata->>'node_state' FROM memories WHERE id = %s",
+                (memory_id,),
+            ).fetchone()
+        return row is not None and row[0] == "unresolved"
+
+    def accumulate_unresolved(self, memory_id: str, edge_count: int = 1) -> bool:
+        """Add edge evidence to an unresolved node. Returns True when it resolves."""
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT metadata FROM memories WHERE id = %s"
+                " AND metadata->>'node_state' = 'unresolved'",
+                (memory_id,),
+            ).fetchone()
+            if not row:
+                return False
+            md = dict(row[0])
+            new_count = int(md.get("watch_edge_count", 0)) + edge_count
+            if new_count >= self._WATCH_RESOLUTION_EDGE_COUNT:
+                conn.execute(
+                    """UPDATE memories SET
+                         metadata = metadata - 'node_state' - 'watch'
+                                             - 'watch_edge_count' - 'watch_pass_count',
+                         updated_at = NOW()
+                       WHERE id = %s""",
+                    (memory_id,),
+                )
+                log.info("deferred_node: resolved %s after %d edges", memory_id, new_count)
+                return True
+            conn.execute(
+                "UPDATE memories SET"
+                " metadata = jsonb_set(metadata, '{watch_edge_count}', to_jsonb(%s::int)),"
+                " updated_at = NOW() WHERE id = %s",
+                (new_count, memory_id),
+            )
+            return False
+
+    def resolve_node(self, memory_id: str) -> None:
+        """Explicitly resolve a node — clears all unresolved/watch state."""
+        with self._conn() as conn:
+            conn.execute(
+                """UPDATE memories SET
+                     metadata = metadata - 'node_state' - 'watch'
+                                         - 'watch_edge_count' - 'watch_pass_count',
+                     updated_at = NOW()
+                   WHERE id = %s""",
+                (memory_id,),
+            )
+
+    def tick_watch_pass(self, memory_id: str) -> bool:
+        """Increment the pass counter for a watched node. Returns True if decayed off watchlist."""
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT metadata FROM memories WHERE id = %s"
+                " AND (metadata->>'watch')::boolean = true",
+                (memory_id,),
+            ).fetchone()
+            if not row:
+                return False
+            md = dict(row[0])
+            pass_count = int(md.get("watch_pass_count", 0)) + 1
+            if pass_count >= self._WATCH_DECAY_PASS_COUNT:
+                conn.execute(
+                    """UPDATE memories SET
+                         metadata = metadata - 'node_state' - 'watch'
+                                             - 'watch_edge_count' - 'watch_pass_count',
+                         updated_at = NOW()
+                       WHERE id = %s""",
+                    (memory_id,),
+                )
+                log.info("deferred_node: decayed %s off watchlist after %d passes", memory_id, pass_count)
+                return True
+            conn.execute(
+                "UPDATE memories SET"
+                " metadata = jsonb_set(metadata, '{watch_pass_count}', to_jsonb(%s::int)),"
+                " updated_at = NOW() WHERE id = %s",
+                (pass_count, memory_id),
+            )
+            return False
+
+    def get_watched_nodes(self) -> list:
+        """Return IDs of all currently watched (unresolved) nodes."""
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT id FROM memories WHERE (metadata->>'watch')::boolean = true"
+            ).fetchall()
+        return [r[0] for r in rows]
 
     # ── T-memory-tag-metadata: tag:<name> as lightweight relationship layer ───
 
@@ -3269,6 +3405,13 @@ class Cortex(IgorBase):
                 _rc_arousal = getattr(req.emotional_context, "arousal", None)
                 self._flag_for_reconsolidation(result, milieu_arousal=_rc_arousal)
                 _emit_search_trace(query, result)
+                # T-igor-deferred-node-state: filter unresolved nodes from results.
+                # An unresolved node has insufficient evidence — returning it would
+                # be a premature low-confidence guess, which is what we're avoiding.
+                result = [
+                    _m for _m in result
+                    if (_m.metadata or {}).get("node_state") != "unresolved"
+                ]
                 for _m in result:
                     log_memory_retrieval(
                         mem_id=str(getattr(_m, "id", "?")),
