@@ -212,7 +212,7 @@ class COA(IgorBase):
                 _fingerprint = (0, 0)
 
             _same_state = _fingerprint == self._ne_last_twm_fingerprint
-            _in_cooldown = _since_last < _COOLDOWN
+            _in_cooldown = (_now - self._ne_last_run_time) < _COOLDOWN
             if _same_state and _in_cooldown:
                 return
 
