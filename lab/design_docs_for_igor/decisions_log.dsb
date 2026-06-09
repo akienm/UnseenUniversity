@@ -7,3 +7,4 @@
 2026-06-09T16:49:37 | D-nanny-ogg-device-2026-06-09 | Nanny Ogg device — pure cron/scheduler, no inference | tickets: T-nanny-ogg-scaffold, T-nanny-ogg-os-cron, T-nanny-ogg-quotes, T-consequence-nanny-ogg-device
 2026-06-09T16:49:37 | D-ponder-stibbons-device-2026-06-09 | Ponder Stibbons device — human-facing coordinator | tickets: T-ponder-scaffold, T-consequence-ponder-device
 2026-06-09T16:49:37 | D-semantic-indexing-2026-06-09 | Comprehensive semantic indexing — auto-embed + code index + session memory | tickets: T-auto-embed-on-creation, T-code-index-schema, T-cc-log-session-memory, T-consequence-semantic-indexing
+2026-06-09T17:26:28 | D-uu-root-env-var-2026-06-09 | UU_ROOT env var — portable repo root with auto-detection | tickets: T-uu-root-auto-detect, T-uu-root-migrate-skills
