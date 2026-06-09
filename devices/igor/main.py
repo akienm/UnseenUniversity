@@ -11,6 +11,7 @@ Updated 2026-04-29T17:08:53Z
 """
 
 import argparse
+import json
 import logging
 import os
 import queue
@@ -19,6 +20,7 @@ import signal
 import sys
 import threading
 import time
+import traceback
 from datetime import datetime
 from pathlib import Path
 
@@ -3351,6 +3353,10 @@ class Igor(IgorBase):
                     kind="MAIN_LOOP_CRASH",
                     detail=f"Unhandled exception in main loop: {type(_loop_exc).__name__}: {_loop_exc}",
                 )
+                # Write crashdump so CC can diagnose without waiting for restart
+                _crashdump = _write_crashdump(_loop_exc, _full_tb, self.instance_id)
+                if _crashdump:
+                    log_error(kind="CRASHDUMP_WRITTEN", detail=str(_crashdump))
                 try:
                     self._shutdown(
                         reason=f"main loop crash: {type(_loop_exc).__name__}"
@@ -9978,6 +9984,44 @@ def _make_instance_id(host: str = "wild") -> str:
         s.append(_ID_CHARS[n % 34])
         n //= 34
     return f"igor_{host}_{''.join(reversed(s))}"
+
+
+def _write_crashdump(exception: Exception, tb_str: str, instance_id: str) -> Path:
+    """Write exception details to a crashdump file before exit.
+
+    Called synchronously in the except block so CC can read the file
+    without waiting for restart.
+    """
+    try:
+        crashdump_dir = Path(
+            os.environ.get("IGOR_HOME", str(Path.home() / ".unseen_university"))
+        ) / "crashdumps"
+        crashdump_dir.mkdir(parents=True, exist_ok=True)
+
+        crashdump_file = crashdump_dir / f"crash_{datetime.now().isoformat()}.jsonl"
+        crashdump_file.write_text(
+            json.dumps(
+                {
+                    "ts": datetime.now().isoformat(),
+                    "instance": instance_id,
+                    "error": str(exception),
+                    "type": type(exception).__name__,
+                    "traceback": tb_str,
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        return crashdump_file
+    except Exception as _e:
+        # If crashdump writing fails, log it but don't crash — the original
+        # exception is more important.
+        try:
+            from .cognition.forensic_logger import log_error as _le
+            _le(kind="CRASHDUMP_WRITE_FAIL", detail=str(_e))
+        except Exception:
+            pass  # Last resort: silent fail
+        return None
 
 
 def main():
