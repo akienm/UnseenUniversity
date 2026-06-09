@@ -4,3 +4,6 @@
 2026-06-08T16:31:39 | D-uurecall-search-gaps-2026-06-08 | uurecall: fix literal search gaps, suppress semantic noise, add palace source | tickets: T-uurecall-search-gaps, T-consequence-uurecall-search-gaps
 2026-06-09T15:44:55 | D-comms-fascia-ux-2026-06-09 | Comms page UX redesign — Public landing + device fascia pages | tickets: T-comms-public-landing, T-device-fascia-page, T-consequence-comms-fascia-ux
 2026-06-09T15:44:55 | D-hubert-device-2026-06-09 | Hubert rack device + Control Station as pure breaker panel | tickets: T-hubert-device-scaffold, T-hubert-wire-dev-tools, T-control-station-breakers-only, T-consequence-hubert-device
+2026-06-09T16:49:37 | D-nanny-ogg-device-2026-06-09 | Nanny Ogg device — pure cron/scheduler, no inference | tickets: T-nanny-ogg-scaffold, T-nanny-ogg-os-cron, T-nanny-ogg-quotes, T-consequence-nanny-ogg-device
+2026-06-09T16:49:37 | D-ponder-stibbons-device-2026-06-09 | Ponder Stibbons device — human-facing coordinator | tickets: T-ponder-scaffold, T-consequence-ponder-device
+2026-06-09T16:49:37 | D-semantic-indexing-2026-06-09 | Comprehensive semantic indexing — auto-embed + code index + session memory | tickets: T-auto-embed-on-creation, T-code-index-schema, T-cc-log-session-memory, T-consequence-semantic-indexing
