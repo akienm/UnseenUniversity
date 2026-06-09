@@ -49,6 +49,38 @@ _STATUS_LABEL = {
 _SIZE_ORDER = {"S": 0, "M": 1, "L": 2, "XL": 3}
 
 
+def _gate_clear(gate_val: str | None, all_tickets: list) -> bool:
+    """Inline gate check — mirrors cc_queue._gate_clear without import."""
+    import re as _re
+    from datetime import date as _date
+
+    if not gate_val:
+        return True
+    first_token = gate_val.split()[0] if gate_val.strip() else ""
+    if _re.fullmatch(r"\d{4}-\d{2}-\d{2}", first_token):
+        try:
+            return _date.fromisoformat(first_token) <= _date.today()
+        except ValueError:
+            pass
+    for t in all_tickets:
+        if t["id"] in gate_val:
+            return t.get("status") in _TERMINAL
+    return False
+
+
+def _effective_status(t: dict, all_tickets: list) -> str:
+    """Return display status — reclassifies gated sprint tickets as 'dependency'."""
+    status = t.get("status", "unknown")
+    if status == "sprint" and t.get("gate") and not _gate_clear(t.get("gate"), all_tickets):
+        return "dependency"
+    return status
+
+
+def _gate_label(t: dict) -> str:
+    gate = t.get("gate") or ""
+    return f" [gate: {gate}]" if gate else ""
+
+
 def _load_tickets() -> list[dict]:
     """Load all tickets by importing cc_queue._load() directly."""
     cc_tools = os.environ.get(
@@ -99,7 +131,7 @@ def view_mytickets(tickets: list[dict]) -> None:
 
     by_status: dict[str, list[dict]] = defaultdict(list)
     for t in mine:
-        by_status[t.get("status", "unknown")].append(t)
+        by_status[_effective_status(t, tickets)].append(t)
 
     print("MY TICKETS — Akien (guru role)")
     for status in _STATUS_ORDER:
@@ -123,7 +155,7 @@ def view_opentickets(tickets: list[dict]) -> None:
 
     by_status: dict[str, list[dict]] = defaultdict(list)
     for t in open_tickets:
-        by_status[t.get("status", "unknown")].append(t)
+        by_status[_effective_status(t, tickets)].append(t)
 
     counts: dict[str, int] = {}
 
@@ -158,7 +190,8 @@ def view_opentickets(tickets: list[dict]) -> None:
         for t in group[:limit]:
             role = t.get("role", "")
             role_tag = f" [{role}]" if role else ""
-            print(f"  {t['id']:40s} ({_size(t)}){role_tag}  {_title_clean(t)}")
+            gate_tag = _gate_label(t)
+            print(f"  {t['id']:40s} ({_size(t)}){role_tag}{gate_tag}  {_title_clean(t)}")
         if len(group) > limit:
             print(f"  … and {len(group) - limit} more")
 
