@@ -1489,6 +1489,93 @@ async def _api_device_events(request: Request):
     return JSONResponse({"device": device_id, "kind": kind, "events": events})
 
 
+async def _api_device_console(request: Request):
+    """GET /api/device/{id}/console — last N lines of this device's log file.
+
+    Resolution order (first match wins):
+      1. {runtime}/logs/{device_id}/YYYY-MM-DD.console.md  (today, per-instance)
+      2. {runtime}/logs/{device_id}/YYYY-MM-DD.console.md  (glob: any instance dir matching)
+      3. {runtime}/logs/{device_id}.log
+      4. {runtime}/logs/{device_id_underscored}.log
+      5. {runtime}/datacenter_logs/{device_id}/**/*.log    (newest file)
+    """
+    device_id = request.path_params.get("id", "")
+    if not device_id:
+        return JSONResponse({"error": "missing device id"}, status_code=400)
+    limit = min(int(request.query_params.get("limit", 1000)), 2000)
+
+    import glob as _glob
+    from datetime import datetime as _dt
+
+    today = _dt.now().strftime("%Y-%m-%d")
+    candidates: list[Path] = []
+
+    # 1. exact instance dir match
+    exact_dir = _RUNTIME_ROOT / "logs" / device_id
+    if exact_dir.is_dir():
+        candidates.append(exact_dir / f"{today}.console.md")
+        for f in sorted(exact_dir.glob("*.console.md"), reverse=True):
+            candidates.append(f)
+
+    # 2. glob: dirs that start with device_id (e.g. Igor-wild-0001 for 'igor')
+    for d in sorted((_RUNTIME_ROOT / "logs").glob(f"{device_id}*"), reverse=True):
+        if d.is_dir():
+            candidates.append(d / f"{today}.console.md")
+            for f in sorted(d.glob("*.console.md"), reverse=True):
+                candidates.append(f)
+    # also case-insensitive: Igor for igor
+    for d in sorted((_RUNTIME_ROOT / "logs").glob(f"{device_id.capitalize()}*"), reverse=True):
+        if d.is_dir():
+            candidates.append(d / f"{today}.console.md")
+            for f in sorted(d.glob("*.console.md"), reverse=True):
+                candidates.append(f)
+
+    # 3-4. flat log files
+    candidates += [
+        _RUNTIME_ROOT / "logs" / f"{device_id}.log",
+        _RUNTIME_ROOT / "logs" / f"{device_id.replace('-', '_')}.log",
+    ]
+
+    # 5. datacenter_logs newest .log
+    dc_dir = _RUNTIME_ROOT / "datacenter_logs" / device_id
+    if dc_dir.is_dir():
+        logs = sorted(dc_dir.rglob("*.log"), key=lambda p: p.stat().st_mtime, reverse=True)
+        candidates += logs[:3]
+
+    for path in candidates:
+        if path.exists() and path.is_file():
+            try:
+                lines = path.read_text(errors="replace").splitlines()
+                tail = lines[-limit:] if len(lines) > limit else lines
+                log.info("FASCIA_BOX_LOAD device=%s box=console status=ok source=%s lines=%d",
+                         device_id, path.name, len(tail))
+                return JSONResponse({"lines": tail, "source": str(path.name), "total": len(lines)})
+            except Exception as exc:
+                log.warning("FASCIA_BOX_LOAD device=%s box=console status=err source=%s error=%s",
+                            device_id, path, exc)
+
+    log.info("FASCIA_BOX_LOAD device=%s box=console status=not_found", device_id)
+    return JSONResponse({"lines": [], "source": None, "total": 0})
+
+
+async def _api_device_breaker(request: Request):
+    """POST /api/device/{id}/breaker — stub circuit breaker toggle.
+
+    Body: {"state": "OPEN"|"CLOSED"}
+    Logs the toggle; real kill wiring is T-control-station-breakers-only.
+    """
+    device_id = request.path_params.get("id", "")
+    if not device_id:
+        return JSONResponse({"error": "missing device id"}, status_code=400)
+    try:
+        body = await request.json()
+        state = body.get("state", "CLOSED").upper()
+    except Exception:
+        state = "CLOSED"
+    log.info("BREAKER_TOGGLE device=%s state=%s", device_id, state)
+    return JSONResponse({"device": device_id, "state": state, "status": "ok"})
+
+
 _RACK_PAGE_BODY = """
 <style>
 .tab-bar{display:flex;flex-wrap:wrap;gap:0.25rem;margin-bottom:1rem;border-bottom:2px solid #333;padding-bottom:0.4rem}
@@ -2578,6 +2665,8 @@ def _make_app() -> Starlette:
         # Per-device events + known devices list
         Route("/api/device/list", _api_device_list),
         Route("/api/device/{id}/events", _api_device_events),
+        Route("/api/device/{id}/console", _api_device_console),
+        Route("/api/device/{id}/breaker", _api_device_breaker, methods=["POST"]),
     ]
 
     # Serve compiled Svelte assets if the UI has been built
@@ -2859,6 +2948,15 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     .channel-tab.active { color: #7ec8e3; border-color: #1a1a30; background: #1a1a2e;
                           font-weight: bold; }
     .channel-tab.has-new { color: #90ee90; }
+    .fascia-box { background:#141425; border:1px solid #333; border-radius:4px;
+      margin-bottom:0.6rem; resize:vertical; overflow:auto; min-height:80px; }
+    .fascia-box-head { font-size:0.82rem; color:#7ec8e3; padding:0.3rem 0.6rem;
+      border-bottom:1px solid #2a2a40; font-weight:bold; }
+    .fascia-box-body { padding:0.4rem 0.6rem; font-size:0.82rem; }
+    .fascia-console-body { font-family:monospace; font-size:0.75rem; color:#aaa;
+      white-space:pre-wrap; max-height:220px; overflow-y:auto; }
+    .fascia-kv-table td { padding:0.1rem 0.4rem 0.1rem 0; }
+    .fascia-kv-key { color:#aaa; } .fascia-kv-val { color:#7ec8e3; }
     .channel-tab input[type="checkbox"] { accent-color: #7ec8e3; cursor: pointer;
                                            width: 12px; height: 12px; }
     #new-channel-btn { font-family: monospace; font-size: 0.82rem; padding: 0.1rem 0.5rem;
@@ -2916,9 +3014,30 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     <button id="new-channel-btn" onclick="newChannel()" title="New channel">+</button>
   </div>
   <div id="chat"></div>
-  <div id="fascia-stub" style="display:none;padding:2rem">
-    <h2 id="fascia-stub-title" style="color:#7ec8e3;font-size:1.1rem;margin-bottom:0.8rem"></h2>
-    <p style="color:#888;font-size:0.9rem">Fascia page loading&#8230; (T-device-fascia-page)</p>
+  <div id="panel-fascia" style="display:none;overflow-y:auto;padding:0.6rem 0.8rem;flex:1">
+    <h2 id="fascia-title" style="color:#7ec8e3;font-size:1rem;margin:0 0 0.6rem"></h2>
+    <div class="fascia-box" id="fascia-status">
+      <div class="fascia-box-head">Status</div>
+      <div class="fascia-box-body" id="fascia-status-body"><em style="color:#555">Loading&#8230;</em></div>
+    </div>
+    <div class="fascia-box" id="fascia-chat">
+      <div class="fascia-box-head">Chat</div>
+      <div class="fascia-box-body">
+        <div id="fascia-chat-hist" style="overflow-y:auto;max-height:140px;font-size:0.82rem;color:#ccc;margin-bottom:0.3rem"><em style="color:#555">Loading&#8230;</em></div>
+        <div style="display:flex;gap:0.3rem">
+          <input id="fascia-chat-input" style="flex:1;font-size:0.82rem;background:#0d0d1e;border:1px solid #333;color:#ccc;padding:0.2rem 0.4rem" placeholder="Message device&#8230;" autocomplete="off">
+          <button onclick="fasciaChat()" style="font-size:0.8rem">Send</button>
+        </div>
+      </div>
+    </div>
+    <div class="fascia-box" id="fascia-console">
+      <div class="fascia-box-head">Console <span id="fascia-console-src" style="font-size:0.7rem;color:#555"></span></div>
+      <div class="fascia-box-body fascia-console-body" id="fascia-console-body"><em style="color:#555">Loading&#8230;</em></div>
+    </div>
+    <div class="fascia-box" id="fascia-settings">
+      <div class="fascia-box-head">Settings</div>
+      <div class="fascia-box-body" id="fascia-settings-body"><em style="color:#555">Loading&#8230;</em></div>
+    </div>
   </div>
   <div id="status-bar">idle</div>
   <div id="name-row">
@@ -3063,23 +3182,148 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
       return m ? m[1] + m[2] + m[3] : '';
     }
 
+    // ── Fascia page (device tabs) ─────────────────────────────────────────────
+    var _fasciaDevice = null;
+    var _fasciaHealth = {};  // device -> {key: {v, ts}}
+    var _fasciaHealthTTL = 7 * 24 * 60 * 60 * 1000;  // 1 week stale-key removal
+
+    function _fasciaEsc(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    async function _loadFasciaBox_status(deviceId) {
+      const el = document.getElementById('fascia-status-body');
+      try {
+        const r = await fetch('/api/device/'+encodeURIComponent(deviceId)+'/events?kind=health&limit=50');
+        const d = await r.json();
+        const now = Date.now();
+        const kv = _fasciaHealth[deviceId] || {};
+        (d.events || []).forEach(e => {
+          const ts = new Date(e.ts + 'Z').getTime() || now;
+          (e.content || '').split('|').forEach(p => {
+            const m = p.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+            if (m) kv[m[1]] = {v: m[2], ts};
+          });
+        });
+        Object.keys(kv).forEach(k => { if (now - kv[k].ts > _fasciaHealthTTL) delete kv[k]; });
+        _fasciaHealth[deviceId] = kv;
+        const keys = Object.keys(kv).sort();
+        if (!keys.length) { el.innerHTML = '<p style="color:#666">No health data.</p>'; return; }
+        el.innerHTML = '<table class="fascia-kv-table">' + keys.map(k =>
+          '<tr><td class="fascia-kv-key">'+_fasciaEsc(k)+'</td><td class="fascia-kv-val">'+_fasciaEsc(kv[k].v)+'</td></tr>'
+        ).join('') + '</table>';
+      } catch(e) {
+        el.innerHTML = '<p style="color:#c66">Status unavailable: '+_fasciaEsc(e)+'</p>';
+      }
+    }
+
+    async function _loadFasciaBox_chat(deviceId) {
+      const hist = document.getElementById('fascia-chat-hist');
+      try {
+        const r = await fetch('/api/device/'+encodeURIComponent(deviceId)+'/events?kind=announce&limit=30');
+        const d = await r.json();
+        const evs = d.events || [];
+        if (!evs.length) { hist.innerHTML = '<em style="color:#555">No recent messages.</em>'; return; }
+        hist.innerHTML = evs.map(e =>
+          '<p style="margin:0.1rem 0"><span style="color:#555">'+_fasciaEsc(e.ts.slice(11,19)||'')+'</span> '+_fasciaEsc(e.content)+'</p>'
+        ).join('');
+        hist.scrollTop = hist.scrollHeight;
+      } catch(e) {
+        hist.innerHTML = '<p style="color:#c66">Chat unavailable: '+_fasciaEsc(e)+'</p>';
+      }
+    }
+
+    async function _loadFasciaBox_console(deviceId) {
+      const el = document.getElementById('fascia-console-body');
+      const src = document.getElementById('fascia-console-src');
+      try {
+        const r = await fetch('/api/device/'+encodeURIComponent(deviceId)+'/console?limit=1000');
+        const d = await r.json();
+        if (src) src.textContent = d.source ? '('+d.source+')' : '';
+        if (!d.lines || !d.lines.length) { el.innerHTML = '<em style="color:#555">No log data found.</em>'; return; }
+        el.textContent = d.lines.join('\n');
+        el.scrollTop = el.scrollHeight;
+      } catch(e) {
+        el.innerHTML = '<p style="color:#c66">Console unavailable: '+_fasciaEsc(e)+'</p>';
+        if (src) src.textContent = '';
+      }
+    }
+
+    async function _loadFasciaBox_settings(deviceId) {
+      const el = document.getElementById('fascia-settings-body');
+      try {
+        const state = await fetch('/api/rack/health').then(r=>r.json())
+          .then(d => (d.circuit_state||{})[deviceId] || 'CLOSED').catch(()=>'CLOSED');
+        const label = state === 'OPEN' ? '🔴 OPEN' : '🟢 CLOSED';
+        el.innerHTML = '<div style="margin-bottom:0.5rem"><strong style="color:#aaa">Circuit Breaker:</strong> '+
+          '<button onclick="fasciaBreaker(\''+_fasciaEsc(deviceId)+'\',\''+state+'\')" '+
+          'style="font-size:0.8rem;cursor:pointer;margin-left:0.4rem">CB: '+label+'</button></div>'+
+          '<p style="color:#555;font-size:0.78rem">Env vars and device parameters coming soon.</p>';
+      } catch(e) {
+        el.innerHTML = '<p style="color:#c66">Settings unavailable: '+_fasciaEsc(e)+'</p>';
+      }
+    }
+
+    async function loadFascia(deviceId) {
+      _fasciaDevice = deviceId;
+      const title = document.getElementById('fascia-title');
+      if (title) title.textContent = deviceId + ' Feed';
+      // Reset all boxes to loading state
+      ['fascia-status-body','fascia-console-body','fascia-settings-body'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '<em style="color:#555">Loading&#8230;</em>';
+      });
+      document.getElementById('fascia-chat-hist').innerHTML = '<em style="color:#555">Loading&#8230;</em>';
+      // Load each box independently — failure in one does not affect others
+      _loadFasciaBox_status(deviceId);
+      _loadFasciaBox_chat(deviceId);
+      _loadFasciaBox_console(deviceId);
+      _loadFasciaBox_settings(deviceId);
+    }
+
+    async function fasciaBreaker(deviceId, currentState) {
+      const newState = currentState === 'OPEN' ? 'CLOSED' : 'OPEN';
+      try {
+        await fetch('/api/device/'+encodeURIComponent(deviceId)+'/breaker', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({state: newState})
+        });
+        _loadFasciaBox_settings(deviceId);
+      } catch(e) { alert('Breaker toggle failed: '+e); }
+    }
+
+    function fasciaChat() {
+      if (!_fasciaDevice) return;
+      const inp = document.getElementById('fascia-chat-input');
+      const text = (inp ? inp.value : '').trim();
+      if (!text) return;
+      const name = document.getElementById('sender-name') ?
+        document.getElementById('sender-name').value : 'akien';
+      if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({type:'message', content:text, author:name,
+          session_id:'comms://'+_fasciaDevice}));
+        if (inp) inp.value = '';
+        setTimeout(() => _loadFasciaBox_chat(_fasciaDevice), 500);
+      }
+    }
+
     function switchChannel(ch) {
       if (!channelMsgs[ch]) channelMsgs[ch] = [];
       currentChannel = ch;
       const isPublic = (ch === 'comms://shared');
       chat.style.display = isPublic ? '' : 'none';
-      const stub = document.getElementById('fascia-stub');
-      if (stub) {
-        stub.style.display = isPublic ? 'none' : '';
-        const title = document.getElementById('fascia-stub-title');
-        if (title) title.textContent = ch.replace('comms://', '') + ' Feed';
-      }
+      const fascia = document.getElementById('panel-fascia');
+      if (fascia) fascia.style.display = isPublic ? 'none' : '';
       const inputRow = document.getElementById('input-row');
       const nameRow = document.getElementById('name-row');
       if (inputRow) inputRow.style.display = isPublic ? '' : 'none';
       if (nameRow) nameRow.style.display = isPublic ? '' : 'none';
       _renderChannelBar();
-      if (isPublic) _renderChannel(ch);
+      if (isPublic) {
+        _renderChannel(ch);
+      } else {
+        loadFascia(ch.replace('comms://', ''));
+      }
       if (ws && ws.readyState === 1)
         ws.send(JSON.stringify({type: 'join_session', session_id: ch}));
     }
