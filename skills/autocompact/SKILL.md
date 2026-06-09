@@ -64,30 +64,10 @@ concurrent typing (verified 2026-06-05); single-call variants do not fire reliab
 (verified 2026-05-03):
 
 ```bash
-DATESTAMP=$(date +%Y%m%d)
-# Use CC_TMUX_SESSION if set (new naming: <hostname>.cc.N); fall back to claude-main
-_CC_SESSION="${CC_TMUX_SESSION:-claude-main}"
-
-# 1. Switch to Haiku for the compaction summary
-tmux send-keys -t "$_CC_SESSION" Enter Enter Enter
-sleep 0.5
-tmux send-keys -t "$_CC_SESSION" "/model haiku"
-sleep 0.5
-tmux send-keys -t "$_CC_SESSION" ENTER
-sleep 2
-
-# 2. Fire the compaction (runs on Haiku)
-tmux send-keys -t "$_CC_SESSION" "/compact preserve: Read today's slate: ${IGOR_HOME:-~/.unseen_university}/claudecode/${DATESTAMP}.slate.txt. In-flight and Next: see slate."
-sleep 0.5
-tmux send-keys -t "$_CC_SESSION" ENTER
-
-# 3. Queue the return to Sonnet — typed into the box during compaction, then
-#    submitted after it finishes. The sleep must outlast the compaction; it is a
-#    heuristic, not a guarantee.
-sleep 12
-tmux send-keys -t "$_CC_SESSION" "/model sonnet"
-sleep 0.5
-tmux send-keys -t "$_CC_SESSION" ENTER
+# nohup + & required: the script drives the session via tmux send-keys.
+# Running it directly blocks the Bash tool, creating a deadlock.
+# Detaching lets the tool return immediately; the script runs outside the session.
+nohup ${CC_WORKFLOW_TOOLS}/uucompactclaude &
 ```
 
 The step-3 return is best-effort (the `sleep 12` must outlast compaction). The

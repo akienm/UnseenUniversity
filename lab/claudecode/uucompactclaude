@@ -9,8 +9,6 @@ SLATE_PATH="${IGOR_HOME:-$HOME/.unseen_university}/claudecode/${DATESTAMP}.slate
 tmux send-keys -t "$SESSION" Enter Enter
 sleep 0.5
 tmux send-keys -t "$SESSION" "/model haiku"
-sleep 0.5
-tmux send-keys -t "$SESSION" Enter
 sleep 1
 tmux send-keys -t "$SESSION" Enter
 sleep 2
