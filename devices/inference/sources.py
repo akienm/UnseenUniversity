@@ -284,12 +284,15 @@ class GoogleSource(Source):
 
     BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 
+    _RATE_LIMIT_TTL = 60  # seconds to mark unavailable after a 429
+
     def __init__(self, free_tier: bool = False) -> None:
         name = "google_free" if free_tier else "google"
         super().__init__(name=name)
         self.free_tier = free_tier
         if free_tier:
             self.billing_type = "flat_rate"
+        self._rate_limited_until: float = 0.0
 
     def _api_key(self) -> str:
         for var in ("GOOGLE_AI_STUDIO_API_KEY", "GOOGLE_STUDIO_API_KEY", "GEMINI_API_KEY"):
@@ -305,6 +308,9 @@ class GoogleSource(Source):
         return model_id.removeprefix("google/")
 
     def ping(self) -> bool:
+        import time
+        if time.time() < self._rate_limited_until:
+            return False
         try:
             with socket.create_connection(("generativelanguage.googleapis.com", 443), timeout=3):
                 return True
@@ -370,6 +376,15 @@ class GoogleSource(Source):
             with urllib.request.urlopen(http_req, timeout=req.timeout) as resp:
                 raw = json.loads(resp.read())
         except urllib.error.HTTPError as exc:
+            if exc.code == 429:
+                import time
+                self._rate_limited_until = time.time() + self._RATE_LIMIT_TTL
+                self.available = False
+                log.warning(
+                    "GoogleSource %s: 429 rate-limited — marking unavailable for %ds",
+                    self.name,
+                    self._RATE_LIMIT_TTL,
+                )
             err_body = exc.read().decode()[:400]
             raise RuntimeError(f"Google {exc.code}: {err_body}") from exc
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import urllib.error
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -136,14 +137,16 @@ class TestGoogleSourceCall:
         assert result["choices"][0]["message"]["content"] == "Hello back"
         assert result["usage"]["prompt_tokens"] == 20
 
-    def test_url_contains_model_and_key(self, monkeypatch):
+    def test_url_contains_model_key_in_header_not_url(self, monkeypatch):
         from devices.inference.sources import GoogleSource
         monkeypatch.setenv("GOOGLE_AI_STUDIO_API_KEY", "mykey123")
         src = GoogleSource()
-        captured = []
+        captured_url = []
+        captured_headers = []
 
         def _fake_urlopen(req, timeout=None):
-            captured.append(req.full_url)
+            captured_url.append(req.full_url)
+            captured_headers.append(dict(req.headers))
             mock_resp = MagicMock()
             mock_resp.read.return_value = _fake_google_response()
             mock_ctx = MagicMock()
@@ -153,10 +156,13 @@ class TestGoogleSourceCall:
         with patch("urllib.request.urlopen", _fake_urlopen):
             src.call(self._req(model="gemini-2.0-flash"))
 
-        assert captured
-        url = captured[0]
+        assert captured_url
+        url = captured_url[0]
         assert "gemini-2.0-flash:generateContent" in url
-        assert "key=mykey123" in url
+        assert "key=" not in url  # key must NOT appear in URL
+        # Key must appear in header (urllib capitalises header names)
+        headers = captured_headers[0]
+        assert headers.get("X-goog-api-key") == "mykey123"
 
     def test_cached_tokens_logged_in_usage(self, monkeypatch):
         from devices.inference.sources import GoogleSource
@@ -257,3 +263,71 @@ class TestDefaultSourceRegistry:
     def test_anthropic_has_caching_header(self):
         from devices.inference.sources import AnthropicSource
         assert "prompt-caching" in AnthropicSource().BETA_HEADERS
+
+
+# ── GoogleSource: 429 rate-limit handling ─────────────────────────────────────
+
+
+class TestGoogleSource429RateLimit:
+    def _source(self, monkeypatch):
+        from devices.inference.sources import GoogleSource
+        monkeypatch.setenv("GOOGLE_AI_STUDIO_API_KEY", "test-key")
+        return GoogleSource()
+
+    def _req(self):
+        from devices.inference.shim import InferenceRequest
+        return InferenceRequest(model="gemini-2.0-flash", messages=[{"role": "user", "content": "hi"}])
+
+    def _patch_429(self):
+        err = urllib.error.HTTPError(
+            url="https://generativelanguage.googleapis.com/test",
+            code=429,
+            msg="Too Many Requests",
+            hdrs={},
+            fp=MagicMock(read=lambda: b"rate limit exceeded"),
+        )
+        return patch("urllib.request.urlopen", side_effect=err)
+
+    def test_429_marks_source_unavailable(self, monkeypatch):
+        src = self._source(monkeypatch)
+        assert src.available is True
+
+        with self._patch_429():
+            with pytest.raises(RuntimeError, match="Google 429"):
+                src.call(self._req())
+
+        assert src.available is False
+
+    def test_429_sets_rate_limit_ttl(self, monkeypatch):
+        import time
+        src = self._source(monkeypatch)
+        before = time.time()
+
+        with self._patch_429():
+            with pytest.raises(RuntimeError):
+                src.call(self._req())
+
+        assert src._rate_limited_until >= before + 59
+
+    def test_ping_returns_false_during_rate_limit(self, monkeypatch):
+        import time
+        src = self._source(monkeypatch)
+        src._rate_limited_until = time.time() + 60  # simulate active rate limit
+
+        with patch("socket.create_connection"):  # TCP would succeed
+            result = src.ping()
+
+        assert result is False
+
+    def test_ping_returns_true_after_ttl_expiry(self, monkeypatch):
+        import time
+        src = self._source(monkeypatch)
+        src._rate_limited_until = time.time() - 1  # TTL expired
+
+        mock_sock = MagicMock()
+        mock_sock.__enter__ = MagicMock(return_value=mock_sock)
+        mock_sock.__exit__ = MagicMock(return_value=False)
+        with patch("socket.create_connection", return_value=mock_sock):
+            result = src.ping()
+
+        assert result is True
