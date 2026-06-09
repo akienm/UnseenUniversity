@@ -342,8 +342,7 @@ class GoogleSource(Source):
 
     def call(self, req: "InferenceRequest") -> dict:
         model_name = self._model_name(req.model)
-        api_key = self._api_key()
-        url = f"{self.BASE_URL}/{model_name}:generateContent?key={api_key}"
+        url = f"{self.BASE_URL}/{model_name}:generateContent"
 
         contents, system_instruction = self._to_google_messages(req)
 
@@ -361,7 +360,10 @@ class GoogleSource(Source):
         http_req = urllib.request.Request(
             url,
             data=body,
-            headers={"Content-Type": "application/json"},
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": self._api_key(),
+            },
             method="POST",
         )
         try:
