@@ -2912,12 +2912,14 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
   </div>
   <div class="main-panel active" id="panel-comms">
   <div id="channel-bar">
-    <span class="channel-tab active" data-channel="comms://shared" onclick="switchChannel('comms://shared')">
-      Public <input type="checkbox" title="Notify on new messages" onclick="event.stopPropagation(); toggleNotify('comms://shared', this)">
-    </span>
+    <span class="channel-tab active" data-channel="comms://shared" onclick="switchChannel('comms://shared')">Public</span>
     <button id="new-channel-btn" onclick="newChannel()" title="New channel">+</button>
   </div>
   <div id="chat"></div>
+  <div id="fascia-stub" style="display:none;padding:2rem">
+    <h2 id="fascia-stub-title" style="color:#7ec8e3;font-size:1.1rem;margin-bottom:0.8rem"></h2>
+    <p style="color:#888;font-size:0.9rem">Fascia page loading&#8230; (T-device-fascia-page)</p>
+  </div>
   <div id="status-bar">idle</div>
   <div id="name-row">
     <span id="conn-led" title="Connection status">*</span>
@@ -3035,9 +3037,7 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
           const tab = document.createElement('span');
           tab.className = 'channel-tab'; tab.dataset.channel = ch;
           const label = ch.replace('comms://', '');
-          const checked = channelNotify[ch] ? 'checked' : '';
-          tab.innerHTML = label + ' <input type="checkbox" title="Notify" ' + checked +
-            ' onclick="event.stopPropagation(); toggleNotify(\'' + ch + '\', this)">';
+          tab.textContent = label;
           tab.onclick = () => switchChannel(ch);
           channelBar.insertBefore(tab, document.getElementById('new-channel-btn'));
         }
@@ -3066,7 +3066,20 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     function switchChannel(ch) {
       if (!channelMsgs[ch]) channelMsgs[ch] = [];
       currentChannel = ch;
-      _renderChannelBar(); _renderChannel(ch);
+      const isPublic = (ch === 'comms://shared');
+      chat.style.display = isPublic ? '' : 'none';
+      const stub = document.getElementById('fascia-stub');
+      if (stub) {
+        stub.style.display = isPublic ? 'none' : '';
+        const title = document.getElementById('fascia-stub-title');
+        if (title) title.textContent = ch.replace('comms://', '') + ' Feed';
+      }
+      const inputRow = document.getElementById('input-row');
+      const nameRow = document.getElementById('name-row');
+      if (inputRow) inputRow.style.display = isPublic ? '' : 'none';
+      if (nameRow) nameRow.style.display = isPublic ? '' : 'none';
+      _renderChannelBar();
+      if (isPublic) _renderChannel(ch);
       if (ws && ws.readyState === 1)
         ws.send(JSON.stringify({type: 'join_session', session_id: ch}));
     }
