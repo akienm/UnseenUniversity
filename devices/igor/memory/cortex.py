@@ -1150,6 +1150,48 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "CREATE INDEX IF NOT EXISTS idx_memories_watch_flag "
         "ON memories (id) WHERE (metadata->>'watch')::boolean = true",
     ),
+    (
+        "m065_embedding_queue",
+        """CREATE TABLE IF NOT EXISTS clan.embedding_queue (
+            memory_id TEXT PRIMARY KEY REFERENCES clan.memories(id) ON DELETE CASCADE,
+            queued_at TIMESTAMPTZ DEFAULT now(),
+            status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'done', 'error')),
+            error_msg TEXT
+        )""",
+    ),
+    (
+        "m065_embedding_queue_idx",
+        "CREATE INDEX IF NOT EXISTS idx_embedding_queue_pending "
+        "ON clan.embedding_queue (queued_at) WHERE status = 'pending'",
+    ),
+    (
+        "m066_embedding_queue_fn",
+        """CREATE OR REPLACE FUNCTION clan.queue_memory_for_embedding()
+        RETURNS TRIGGER LANGUAGE plpgsql AS $$
+        BEGIN
+            IF NEW.narrative IS NOT NULL AND NEW.narrative != '' THEN
+                INSERT INTO clan.embedding_queue (memory_id, queued_at, status)
+                VALUES (NEW.id, now(), 'pending')
+                ON CONFLICT (memory_id) DO NOTHING;
+            END IF;
+            RETURN NEW;
+        END;
+        $$""",
+    ),
+    (
+        "m067_embedding_queue_trigger",
+        """CREATE OR REPLACE TRIGGER trg_queue_memory_embedding
+        AFTER INSERT ON clan.memories
+        FOR EACH ROW EXECUTE FUNCTION clan.queue_memory_for_embedding()""",
+    ),
+    (
+        "m068_embedding_queue_backfill",
+        """INSERT INTO clan.embedding_queue (memory_id, queued_at, status)
+        SELECT id, now(), 'pending' FROM clan.memories
+        WHERE narrative IS NOT NULL AND narrative != ''
+          AND (payloads IS NULL OR NOT (payloads ? 'embedding'))
+        ON CONFLICT DO NOTHING""",
+    ),
 ]
 
 
