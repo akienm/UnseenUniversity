@@ -8,7 +8,7 @@ Free for local files, variable cost for web (uses NetworkProxy).
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -125,7 +125,7 @@ class DirectURLChannel(Channel, IgorBase):
                 file_path=str(path),
                 format=fmt,
                 size_bytes=len(blob),
-                retrieved_at=datetime.utcnow().isoformat() + "Z",
+                retrieved_at=datetime.now(timezone.utc).isoformat(),
             )
 
             return AcquireResult(
@@ -176,7 +176,7 @@ class DirectURLChannel(Channel, IgorBase):
                 url=url,
                 format=fmt,
                 size_bytes=len(blob),
-                retrieved_at=datetime.utcnow().isoformat() + "Z",
+                retrieved_at=datetime.now(timezone.utc).isoformat(),
             )
 
             return AcquireResult(

@@ -7,7 +7,7 @@ Free, high reliability.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from ..igor_base import IgorBase
@@ -102,7 +102,7 @@ class FileInboxChannel(Channel, IgorBase):
                 file_path=str(file_path),
                 format=fmt,
                 size_bytes=len(blob),
-                retrieved_at=datetime.utcnow().isoformat() + "Z",
+                retrieved_at=datetime.now(timezone.utc).isoformat(),
             )
 
             return AcquireResult(
