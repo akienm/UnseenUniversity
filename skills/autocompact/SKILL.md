@@ -23,6 +23,15 @@ Fallback:
 rm -f ${IGOR_HOME:-~/.unseen_university}/Igor-wild-0001/debug_session.flag
 ```
 
+### 1.3. Deposit session content to clan.memories (T-cc-log-session-memory)
+
+Makes today's Done+Notes content semantically searchable via the auto-embed pipeline.
+Non-fatal — autocompact continues even if the deposit fails.
+
+```bash
+python3 ${CC_WORKFLOW_TOOLS}/session_memory_deposit.py 2>/dev/null || true
+```
+
 ### 1.5. Mark CC.0 unavailable — prevents Granny dispatch during compact
 
 ```bash
