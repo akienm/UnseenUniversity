@@ -3057,46 +3057,23 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
   <div class="main-panel" id="panel-control">
     <div id="ctrl-body">
       <h2 style="color:#7ec8e3;font-size:1rem;margin-bottom:.8rem">Control Station</h2>
-      <div class="ctrl-grid">
-        <div class="ctrl-card">
-          <h3>Rack Health</h3>
-          <a href="/rack">Device status &amp; OR budget</a>
-          <p>All registered machines, heartbeats, and burn rate.</p>
+      <p style="color:#555;font-size:0.8rem;margin-bottom:1rem">
+        Dev tools have moved to the <strong style="color:#7ec8e3">Hubert</strong> feed tab.
+      </p>
+      <div style="display:flex;flex-direction:column;gap:0.8rem;max-width:480px">
+        <div class="ctrl-card" style="border-color:#c66">
+          <h3 style="color:#e88">⚠ Master Kill</h3>
+          <p style="color:#888;font-size:0.82rem">Stops all devices immediately.</p>
+          <button onclick="ctrlKill('all')" style="background:#3a1010;border:1px solid #c66;color:#e88;padding:0.3rem 0.8rem;cursor:pointer;font-size:0.85rem">Kill Everything</button>
+        </div>
+        <div class="ctrl-card" style="border-color:#a84">
+          <h3 style="color:#da8">Soft Off</h3>
+          <p style="color:#888;font-size:0.82rem">Stops all devices except rack and web server.</p>
+          <button onclick="ctrlKill('soft')" style="background:#2a1e08;border:1px solid #a84;color:#da8;padding:0.3rem 0.8rem;cursor:pointer;font-size:0.85rem">Soft Kill</button>
         </div>
         <div class="ctrl-card">
-          <h3>Goals</h3>
-          <a href="/goals">Goals tree</a>
-          <p>Akien&apos;s goals &amp; values (palace.shared.akien.goals).</p>
-        </div>
-        <div class="ctrl-card">
-          <h3>Decisions</h3>
-          <a href="/decisions">All decisions</a>
-          <p>Design decisions (D-xxx) and their spawned tickets.</p>
-        </div>
-        <div class="ctrl-card">
-          <h3>Questions</h3>
-          <a href="/questions">Open questions</a>
-          <p>Unresolved questions filed during design sessions.</p>
-        </div>
-        <div class="ctrl-card">
-          <h3>Hypotheses</h3>
-          <a href="/hypotheses">Hypotheses</a>
-          <p>Testable claims filed with decisions.</p>
-        </div>
-        <div class="ctrl-card">
-          <h3>Outcomes</h3>
-          <a href="/outcomes">Outcomes</a>
-          <p>Post-ship outcome records — did the hypothesis hold?</p>
-        </div>
-        <div class="ctrl-card">
-          <h3>Palace Browser</h3>
-          <a href="/palace">Browse all palace nodes</a>
-          <p>Full adc.palace tree — goals, sessions, decisions, rules.</p>
-        </div>
-        <div class="ctrl-card">
-          <h3>Tools</h3>
-          <a href="/dashboard">System dashboard</a>
-          <a href="/metrics">Metrics</a>
+          <h3>Device Breakers</h3>
+          <div id="ctrl-breakers"><em style="color:#555;font-size:0.82rem">Loading&#8230;</em></div>
         </div>
       </div>
     </div>
@@ -3120,6 +3097,62 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
       document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
       document.getElementById('panel-' + name).classList.add('active');
       document.querySelector('.main-tab[data-tab="' + name + '"]').classList.add('active');
+      if (name === 'control') _loadBreakers();
+    }
+
+    // ── Control Station breakers ──
+    async function _loadBreakers() {
+      const el = document.getElementById('ctrl-breakers');
+      if (!el) return;
+      try {
+        const [devData, rackData] = await Promise.all([
+          fetch('/api/device/list').then(r=>r.json()).catch(()=>({devices:[]})),
+          fetch('/api/rack/health').then(r=>r.json()).catch(()=>({circuit_state:{}}))
+        ]);
+        const devices = devData.devices || [];
+        const cs = rackData.circuit_state || {};
+        if (!devices.length) { el.innerHTML = '<em style="color:#555">No devices registered.</em>'; return; }
+        el.innerHTML = '<table style="width:100%;border-collapse:collapse">' +
+          devices.map(d => {
+            const state = (cs[d] || 'CLOSED').toUpperCase();
+            const label = state === 'OPEN' ? '🔴 OPEN' : '🟢 CLOSED';
+            return '<tr style="border-bottom:1px solid #1a1a30"><td style="padding:0.25rem 0.5rem;color:#aaa;font-size:0.82rem">'+d+'</td>'+
+              '<td style="padding:0.25rem 0.5rem"><button onclick="ctrlBreaker(\''+d+'\',\''+state+'\')" '+
+              'style="font-size:0.78rem;cursor:pointer">CB: '+label+'</button></td></tr>';
+          }).join('') + '</table>';
+      } catch(e) {
+        el.innerHTML = '<p style="color:#c66">Breakers unavailable: '+e+'</p>';
+      }
+    }
+
+    async function ctrlBreaker(deviceId, currentState) {
+      const newState = currentState === 'OPEN' ? 'CLOSED' : 'OPEN';
+      try {
+        await fetch('/api/device/'+encodeURIComponent(deviceId)+'/breaker', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({state: newState})
+        });
+        _loadBreakers();
+      } catch(e) { alert('Breaker toggle failed: '+e); }
+    }
+
+    function ctrlKill(mode) {
+      const msg = mode === 'all'
+        ? 'Kill ALL devices including rack and web server?'
+        : 'Stop all devices except rack and web server?';
+      if (!confirm(msg)) return;
+      // Stub: logs action; real kill wiring is future work
+      fetch('/api/rack/health').then(r=>r.json()).then(d => {
+        const devices = Object.keys(d.devices || {});
+        const targets = mode === 'soft'
+          ? devices.filter(d => d !== 'rack' && d !== 'web_server')
+          : devices;
+        targets.forEach(dev => fetch('/api/device/'+encodeURIComponent(dev)+'/breaker', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({state:'OPEN'})
+        }));
+        setTimeout(_loadBreakers, 300);
+      }).catch(()=>{});
     }
 
     // ── Name persistence ──
