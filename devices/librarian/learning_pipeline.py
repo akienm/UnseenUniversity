@@ -122,11 +122,14 @@ class LearningPipeline:
         return facts if facts["common_patterns"] or facts["response_templates"] else None
 
     def _store_knowledge_node(self, query_class: str, facts: dict, conn=None) -> None:
-        """Store epistemically-pure knowledge node in adc.palace.
+        """Store epistemically-pure knowledge node in adc.palace + clan.memories embedding.
 
-        When conn is provided (called from run_once), writes within that
+        When conn is provided (called from run_once), palace write is within that
         transaction — caller commits. When conn is None (standalone/bootstrap),
         opens its own connection and commits immediately.
+
+        Embedding write to clan.memories is always best-effort (supplemental for
+        semantic recall — failure never blocks the authoritative palace write).
         """
         path = f"librarian.knowledge.{query_class.replace(' ', '_')}"
         title = f"Knowledge: {query_class}"
@@ -152,6 +155,20 @@ class LearningPipeline:
                     own_conn.commit()
             except Exception as e:
                 _log.warning("failed to store knowledge node: %s", e)
+                return
+
+        # Supplemental: embed content into clan.memories so semantic recall finds it.
+        try:
+            from devices.librarian.memory_writer import write_memory
+            write_memory(
+                content=f"{title}\n{content}",
+                source_agent="librarian.learning_pipeline",
+                memory_type="FACTUAL",
+                metadata={"palace_path": path, "query_class": query_class},
+                db_url=self._db_url or None,
+            )
+        except Exception as e:
+            _log.warning("embedding write failed (supplemental — palace write OK): %s", e)
 
 
 def run_pipeline(db_url: str = None) -> dict:
