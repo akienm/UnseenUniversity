@@ -3168,7 +3168,8 @@ class Cortex(IgorBase):
         all_memories = [
             m
             for m in all_memories
-            if not (
+            if m.memory_type.value not in _ALWAYS_EXCLUDE
+            and not (
                 m.metadata.get("source") == "narrative_engine"
                 and any(kw in m.narrative.lower() for kw in _NE_DIAG)
             )
