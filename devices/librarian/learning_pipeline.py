@@ -32,10 +32,13 @@ class LearningPipeline:
         return psycopg2.connect(self._db_url)
 
     def run_once(self) -> dict:
-        """Consume available queue entries and return stats."""
+        """Consume available queue entries and return stats.
+
+        All stores and the mark-processed UPDATE share one transaction so a
+        store failure rolls back both — no silent data loss on partial batch.
+        """
         try:
             with self._conn() as conn:
-                # Fetch unprocessed learning queue entries
                 with conn.cursor() as cur:
                     cur.execute(
                         """SELECT id, payload, created_at FROM inferenceproxy_learningqueue
@@ -46,7 +49,7 @@ class LearningPipeline:
                     return {"entries_processed": 0, "nodes_built": 0}
 
                 stats = {"entries_processed": 0, "nodes_built": 0}
-                query_classes = defaultdict(list)  # cls_name -> [(req, resp, ptr), ...]
+                query_classes = defaultdict(list)
 
                 for qid, payload, created_at in rows:
                     try:
@@ -60,18 +63,18 @@ class LearningPipeline:
                         _log.warning("failed to parse queue entry %s: %s", qid, e)
                         continue
 
-                # Build nodes for query classes with 3+ examples
+                # Build + store nodes within the same transaction — if any store
+                # raises, conn rolls back and rows are NOT marked processed.
                 for cls_name, examples in query_classes.items():
                     if len(examples) >= 3:
-                        # Epistemic extraction: pure facts, no emotional encoding
                         requests = [e[0] for e in examples]
                         responses = [e[1] for e in examples]
                         facts = self._extract_facts(cls_name, requests, responses)
                         if facts:
-                            self._store_knowledge_node(cls_name, facts)
+                            self._store_knowledge_node(cls_name, facts, conn=conn)
                             stats["nodes_built"] += 1
 
-                # Mark processed
+                # Mark processed only after all stores succeed.
                 with conn.cursor() as cur:
                     for qid, _, _ in rows:
                         cur.execute(
@@ -118,25 +121,37 @@ class LearningPipeline:
 
         return facts if facts["common_patterns"] or facts["response_templates"] else None
 
-    def _store_knowledge_node(self, query_class: str, facts: dict) -> None:
-        """Store epistemically-pure knowledge node in adc.palace."""
-        try:
-            with self._conn() as conn:
-                with conn.cursor() as cur:
-                    path = f"librarian.knowledge.{query_class.replace(' ', '_')}"
-                    title = f"Knowledge: {query_class}"
-                    content = json.dumps(facts)
-                    cur.execute(
-                        """INSERT INTO adc.palace (path, title, content, updated_at)
-                           VALUES (%s, %s, %s, NOW())
-                           ON CONFLICT (path) DO UPDATE SET
-                             content = excluded.content,
-                             updated_at = NOW()""",
-                        (path, title, content),
-                    )
-                conn.commit()
-        except Exception as e:
-            _log.warning("failed to store knowledge node: %s", e)
+    def _store_knowledge_node(self, query_class: str, facts: dict, conn=None) -> None:
+        """Store epistemically-pure knowledge node in adc.palace.
+
+        When conn is provided (called from run_once), writes within that
+        transaction — caller commits. When conn is None (standalone/bootstrap),
+        opens its own connection and commits immediately.
+        """
+        path = f"librarian.knowledge.{query_class.replace(' ', '_')}"
+        title = f"Knowledge: {query_class}"
+        content = json.dumps(facts)
+
+        def _execute(c):
+            with c.cursor() as cur:
+                cur.execute(
+                    """INSERT INTO adc.palace (path, title, content, updated_at)
+                       VALUES (%s, %s, %s, NOW())
+                       ON CONFLICT (path) DO UPDATE SET
+                         content = excluded.content,
+                         updated_at = NOW()""",
+                    (path, title, content),
+                )
+
+        if conn is not None:
+            _execute(conn)
+        else:
+            try:
+                with self._conn() as own_conn:
+                    _execute(own_conn)
+                    own_conn.commit()
+            except Exception as e:
+                _log.warning("failed to store knowledge node: %s", e)
 
 
 def run_pipeline(db_url: str = None) -> dict:
