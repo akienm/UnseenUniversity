@@ -1141,6 +1141,10 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "m062_wg_edges_archive",
         "ALTER TABLE IF EXISTS clan.wg_edges RENAME TO wg_edges_archive",
     ),
+    (
+        "m063_wg_portable_zero",
+        "UPDATE memories SET portable = 0 WHERE memory_type = 'WORD_GRAPH' AND portable = 1",
+    ),
 ]
 
 
@@ -2177,7 +2181,7 @@ class Cortex(IgorBase):
                        children_ids, link_ids, friction_history, links_weighted,
                        source, confidence)
                     VALUES (%s, %s, 'WORD_GRAPH', %s::jsonb, %s, %s, 'class',
-                            1, 0.0, 0.0, 0.0, 0,
+                            0, 0.0, 0.0, 0.0, 0,
                             '[]', '[]', '[]', '{}',
                             'word_graph', 1.0)
                     """,
@@ -2486,17 +2490,25 @@ class Cortex(IgorBase):
         return row is not None and row[0] == "unresolved"
 
     def accumulate_unresolved(self, memory_id: str, edge_count: int = 1) -> bool:
-        """Add edge evidence to an unresolved node. Returns True when it resolves."""
+        """Add edge evidence to an unresolved node. Returns True when it resolves.
+
+        Atomic: single UPDATE owns the counter. No read-modify-write race — the
+        DB is the button; callers just press it.
+        """
         with self._conn() as conn:
             row = conn.execute(
-                "SELECT metadata FROM memories WHERE id = %s"
-                " AND metadata->>'node_state' = 'unresolved'",
-                (memory_id,),
+                "UPDATE memories "
+                "SET metadata = jsonb_set("
+                "    metadata, '{watch_edge_count}',"
+                "    to_jsonb(COALESCE((metadata->>'watch_edge_count')::int, 0) + %s)"
+                "), updated_at = NOW() "
+                "WHERE id = %s AND metadata->>'node_state' = 'unresolved' "
+                "RETURNING (metadata->>'watch_edge_count')::int AS new_count",
+                (edge_count, memory_id),
             ).fetchone()
             if not row:
                 return False
-            md = dict(row[0])
-            new_count = int(md.get("watch_edge_count", 0)) + edge_count
+            new_count = row["new_count"]
             if new_count >= self._WATCH_RESOLUTION_EDGE_COUNT:
                 conn.execute(
                     """UPDATE memories SET
@@ -2508,12 +2520,6 @@ class Cortex(IgorBase):
                 )
                 log.info("deferred_node: resolved %s after %d edges", memory_id, new_count)
                 return True
-            conn.execute(
-                "UPDATE memories SET"
-                " metadata = jsonb_set(metadata, '{watch_edge_count}', to_jsonb(%s::int)),"
-                " updated_at = NOW() WHERE id = %s",
-                (new_count, memory_id),
-            )
             return False
 
     def resolve_node(self, memory_id: str) -> None:
