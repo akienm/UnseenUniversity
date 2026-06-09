@@ -203,6 +203,14 @@ python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py close <id> "what was built"
 python run done-slate <id> "what was built"
 ```
 
+Then check whether closing this ticket completes a decision's spawned_tickets list:
+```bash
+python3 ~/dev/src/UnseenUniversity/lab/claudecode/outcome_check.py <id>
+```
+When all spawned_tickets in a decision are now closed, this prints:
+`🏁 Decision D-xxx is fully shipped — run /outcome D-xxx: <hypothesis>`
+Surface this to Akien and offer to run /outcome. Silent when the decision is incomplete.
+
 ### 12. Retroactive incidental ticket
 
 When the commit includes changes unrelated to the claimed ticket, always
