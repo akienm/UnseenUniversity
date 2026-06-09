@@ -228,6 +228,12 @@ class NannyOggDevice(BaseDevice):
     def update_info(self) -> dict:
         return {"current_version": "0.1.0", "update_available": False}
 
+    def handle_unknown_prompt(self, prompt: str) -> str:
+        """Return a Nanny Ogg quote for any prompt that isn't a scheduling command."""
+        from devices.nanny.quotes import random_quote
+        self._log.info("UNKNOWN_PROMPT prompt=%r — returning quote", prompt[:80])
+        return random_quote()
+
     def where_and_how(self) -> dict:
         import os
 
