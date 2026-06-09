@@ -12,7 +12,17 @@ from datetime import datetime
 from pathlib import Path
 
 IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
-CC_TOOLS  = Path(os.environ.get("CC_WORKFLOW_TOOLS", ""))
+
+def _cc_tools() -> Path:
+    if val := os.environ.get("CC_WORKFLOW_TOOLS", "").strip():
+        return Path(val)
+    try:
+        from unseen_university._uu_root import uu_root
+        return Path(uu_root()) / "lab" / "claudecode"
+    except Exception:
+        return Path("")
+
+CC_TOOLS = _cc_tools()
 
 
 def main() -> None:
