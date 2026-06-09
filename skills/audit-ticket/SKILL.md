@@ -186,6 +186,26 @@ that must happen first.
 **Skip when:** `status` is anything other than `hold`. This check does not fire
 on sprint, design, triage, or any other status.
 
+### 19. Decision consequence gate (M/L/XL with decision_id)
+
+When `decision_id` is set AND any ticket in the batch is M, L, or XL:
+
+1. Check whether the batch includes a `T-consequence-{slug}` ticket.
+2. If not: check queue for an already-closed consequence ticket for this decision:
+   ```bash
+   python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py list 2>/dev/null | grep "T-consequence" | grep -i "<decision-slug>"
+   ```
+3. If neither present → **AMEND**:
+   ```
+   [consequence-gate] M/L/XL decision D-xxx has no consequence-check ticket in this batch or queue.
+     Add T-consequence-{decision-slug} per /sorted Step 5.5 (mandatory for M/L/XL).
+   ```
+
+**Skip when:** every ticket is S AND no behavioral hypothesis was extracted in Step 2.6.
+**Skip when:** a closed consequence ticket already exists in the queue for this decision.
+
+*Why: the gap-scan audit (2026-06-09) found 12 open designs with all impl closed but no consequence verification. This gate prevents new gaps forming at filing time.*
+
 ## Output format
 
 ```

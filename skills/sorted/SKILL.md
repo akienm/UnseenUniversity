@@ -150,11 +150,11 @@ python "${CC_WORKFLOW_TOOLS}/cc_queue.py" add /tmp/sorted_batch_<decision-id>.js
 `cc_queue.py` is the canonical writer — always go through it so the slate
 echo and session record stay consistent.
 
-### 5.5. Draft consequence-check ticket (M/L/XL decisions, or S-only with behavioral hypothesis)
+### 5.5. Draft consequence-check ticket (MANDATORY for M/L/XL; required for S with behavioral hypothesis)
 
-When any ticket in the batch is M, L, or XL size — or the decision narrative explicitly mentions MEDIUM+ inertia files — or a behavioral hypothesis was extracted in Step 2.6 (Q2 answer is present) — draft a gated consequence-check follow-on ticket.
+**Mandatory for every M, L, or XL decision — no exceptions, no waiver.** Also mandatory for S-only decisions where Step 2.6 extracted a behavioral hypothesis (Q2 answer is present) or the narrative mentions MEDIUM+ inertia files.
 
-**Skip when:** every ticket in the batch is S AND no behavioral hypothesis was extracted in Step 2.6 AND the decision narrative mentions no MEDIUM+ inertia files.
+**Skip only when:** every ticket in the batch is S AND no behavioral hypothesis was extracted in Step 2.6 AND the decision narrative mentions no MEDIUM+ inertia files. This is the only valid skip — it never applies to M/L/XL decisions.
 
 **Gate field:** For M/L/XL or MEDIUM+ inertia decisions, use `<YYYY-MM-DD — 14 days from today>`. For S-only batches where the hypothesis triggered the ticket, set the gate to the ID of the last ticket in the batch (e.g., `T-<last-ticket-slug>`) so verification fires only after the batch ships.
 
@@ -283,7 +283,8 @@ Multiple decisions in one session:
 - Every ticket in a /sorted batch carries `decision_id` — no orphaned tickets.
 - /audit-ticket runs on EVERY draft, not just the first or biggest.
 - HIGH-inertia approvals land in the ticket body before filing; they are not kept in CC's conversational memory.
-- Every M/L/XL decision — and every S-only decision where Step 2.6 extracted a behavioral hypothesis — gets a consequence-check ticket (Step 5.5). Consequence-checking is tracked work, not an informal afterthought.
+- Every M/L/XL decision — and every S-only decision where Step 2.6 extracted a behavioral hypothesis — gets a consequence-check ticket (Step 5.5). This is non-negotiable: no M/L/XL decision closes without one.
+- Design status moves to `closed` only when: (a) all spawned_tickets are closed AND (b) at least one T-consequence-{slug} for this decision is also closed. Before writing `**status:** closed` to the decision .md file, verify: `python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py list 2>/dev/null | grep "T-consequence"` for the decision slug shows a closed entry. If not, file the consequence ticket first.
 - Any batch containing an L or XL ticket gets an `advisor()` review (Step 3.5) before /audit-ticket runs. S-only batches skip this.
 
 ## Hard rules
@@ -292,3 +293,5 @@ Multiple decisions in one session:
 - DISCARD verdicts from /audit-ticket block filing until Akien explicitly overrides.
 - Every distinct decision gets its own D-id. Single-session doesn't mean single-decision.
 - Decisions are append-only. New context becomes a new decision, linked via metadata.
+- **Consequence-check ticket is MANDATORY for every M/L/XL decision.** No skip condition applies to M+ decisions. A design batch missing a consequence ticket is incomplete, not filed.
+- **Design status only moves to `closed` when a consequence ticket for it is also closed.** Writing `**status:** closed` without a verified closed consequence ticket is a workflow violation.
