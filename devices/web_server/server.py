@@ -3249,9 +3249,30 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
       }
     }
 
+    var _HUBERT_TOOLS = [
+      {title:'Rack Health',  href:'/rack',        desc:'Device status &amp; OR budget'},
+      {title:'Goals',        href:'/goals',        desc:'Goals tree (palace.shared.akien.goals)'},
+      {title:'Decisions',    href:'/decisions',    desc:'Design decisions (D-xxx) and spawned tickets'},
+      {title:'Questions',    href:'/questions',    desc:'Unresolved questions from design sessions'},
+      {title:'Hypotheses',   href:'/hypotheses',   desc:'Testable claims filed with decisions'},
+      {title:'Outcomes',     href:'/outcomes',     desc:'Post-ship outcome records'},
+      {title:'Palace',       href:'/palace',       desc:'Full adc.palace tree'},
+      {title:'Dashboard',    href:'/dashboard',    desc:'System dashboard'},
+    ];
+
     async function _loadFasciaBox_settings(deviceId) {
       const el = document.getElementById('fascia-settings-body');
       try {
+        // Hubert's settings box shows dev process tools instead of generic params
+        if (deviceId === 'hubert') {
+          el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem">' +
+            _HUBERT_TOOLS.map(t =>
+              '<div style="background:#1a1a2e;border:1px solid #2a2a40;border-radius:3px;padding:0.4rem 0.6rem">'+
+              '<a href="'+t.href+'" style="color:#7ec8e3;font-size:0.82rem;font-weight:bold">'+t.title+'</a>'+
+              '<p style="color:#555;font-size:0.75rem;margin:0.15rem 0 0">'+t.desc+'</p></div>'
+            ).join('') + '</div>';
+          return;
+        }
         const state = await fetch('/api/rack/health').then(r=>r.json())
           .then(d => (d.circuit_state||{})[deviceId] || 'CLOSED').catch(()=>'CLOSED');
         const label = state === 'OPEN' ? '🔴 OPEN' : '🟢 CLOSED';
