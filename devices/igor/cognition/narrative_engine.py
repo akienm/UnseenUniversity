@@ -747,6 +747,16 @@ class NarrativeEngine(IgorBase):
         if _reconsolidated > 0:
             print(f"{_cts()}[NE] reconsolidated: {_reconsolidated} memory/ies updated")
 
+        # T-deferred-node-watchlist-drain: decay watched nodes each NE cycle.
+        # tick_watch_pass() was defined but had no caller — nodes accumulated indefinitely.
+        try:
+            _watched = self.cortex.get_watched_nodes()
+            _decayed = sum(1 for wid in _watched if self.cortex.tick_watch_pass(wid))
+            if _decayed > 0:
+                print(f"{_cts()}[NE] watchlist: {_decayed}/{len(_watched)} node(s) decayed off watch")
+        except Exception as _wl_e:
+            log.warning("bare except in narrative_engine.py watchlist drain: %s", _wl_e)
+
         # T-sleep-memory-auditor: chain prior-version reading memories to newer
         # deposits that cover the same point. Gated on IGOR_MEMORY_AUDITOR_ENABLED
         # so a restart with the env var off keeps existing behavior identical.

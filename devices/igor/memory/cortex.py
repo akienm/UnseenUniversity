@@ -1145,6 +1145,11 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
         "m063_wg_portable_zero",
         "UPDATE memories SET portable = 0 WHERE memory_type = 'WORD_GRAPH' AND portable = 1",
     ),
+    (
+        "m064_watch_flag_idx",
+        "CREATE INDEX IF NOT EXISTS idx_memories_watch_flag "
+        "ON memories (id) WHERE (metadata->>'watch')::boolean = true",
+    ),
 ]
 
 
@@ -2110,10 +2115,12 @@ class Cortex(IgorBase):
         """
         #71/#123: Return class-scoped memories — the set an offspring instance should inherit.
         Uses scope='class' (set by #123 migration from memory_type + portable flag).
+        WORD_GRAPH excluded: 57K scaffolding nodes are infrastructure, not inheritable knowledge.
         """
         with self._conn() as conn:
             rows = conn.execute(
                 f"SELECT {_MEM_COLS_NO_EMBED} FROM memories WHERE scope = 'class' "
+                "AND memory_type != 'WORD_GRAPH' "
                 "ORDER BY id"
             ).fetchall()
         return [self._to_memory(r) for r in rows]
