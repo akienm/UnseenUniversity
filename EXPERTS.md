@@ -75,3 +75,13 @@
 - Is the scheduling and timing infrastructure device-agnostic — can hundreds of agents run without per-agent human oversight?
 - Are skill contracts checkable at ticket-filing time, not only discovered at runtime?
 - Is the dispatch model correct for scale: workers request work atomically, no direct claiming, no races?
+
+## UX Designer (Norman / G-invisible-tools)
+**Lens:** Would a first-time user with no documentation be able to accomplish their goals?
+**Key questions:**
+- Does the UI surface only what the user needs right now — nothing more, nothing less?
+- Can a new user onboard from zero (download, `./igor`, open browser) without asking anyone for help?
+- Does each page or view have a single clear job, or is it a junk drawer?
+- Are affordances (buttons, tabs, inputs) shaped and labeled so their purpose is self-evident without tooltips or docs?
+- What is the first thing a new user sees, and does it correctly orient them to what the system does?
+- Is complexity hidden behind progressive disclosure rather than dumped on the first screen?
