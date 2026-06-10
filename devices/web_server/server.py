@@ -1328,6 +1328,99 @@ async def _api_granny_health(request: Request):
         return JSONResponse({"status": "unknown", "error": str(e)}, status_code=503)
 
 
+# ── Nanny Ogg cron API ────────────────────────────────────────────────────────
+
+def _nanny_cron_backend():
+    from devices.nanny.cron_backend import get_cron_backend
+    return get_cron_backend()
+
+
+async def _api_nanny_cron_list(request: Request):
+    """GET /api/nanny/cron — list cron jobs."""
+    try:
+        backend = _nanny_cron_backend()
+        jobs = backend.list_jobs()
+        return JSONResponse({
+            "jobs": [
+                {
+                    "job_id": j.job_id,
+                    "expr": j.expr,
+                    "cmd": j.cmd,
+                    "enabled": j.enabled,
+                }
+                for j in jobs
+            ]
+        })
+    except Exception as e:
+        log.warning("_api_nanny_cron_list: %s", e)
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+async def _api_nanny_cron_add(request: Request):
+    """POST /api/nanny/cron — add a cron job. Body: {expr, cmd}"""
+    try:
+        body = await request.json()
+        expr = body.get("expr", "").strip()
+        cmd = body.get("cmd", "").strip()
+        if not expr or not cmd:
+            return JSONResponse({"error": "expr and cmd are required"}, status_code=400)
+        if len(expr.split()) != 5:
+            return JSONResponse({"error": "expr must have 5 fields"}, status_code=400)
+        backend = _nanny_cron_backend()
+        job = backend.add_job(expr, cmd)
+        log.info("NANNY_CRON_ADD job_id=%s expr=%r cmd=%r", job.job_id, expr, cmd)
+        return JSONResponse({"job_id": job.job_id, "expr": job.expr, "cmd": job.cmd})
+    except Exception as e:
+        log.warning("_api_nanny_cron_add: %s", e)
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+async def _api_nanny_cron_disable(request: Request):
+    """POST /api/nanny/cron/{job_id}/disable — disable a cron job."""
+    job_id = request.path_params.get("job_id", "")
+    try:
+        backend = _nanny_cron_backend()
+        ok = backend.disable_job(job_id)
+        log.info("NANNY_CRON_DISABLE job_id=%s ok=%s", job_id, ok)
+        return JSONResponse({"job_id": job_id, "disabled": ok})
+    except Exception as e:
+        log.warning("_api_nanny_cron_disable job_id=%s: %s", job_id, e)
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+async def _api_nanny_cron_enable(request: Request):
+    """POST /api/nanny/cron/{job_id}/enable — enable a disabled cron job."""
+    job_id = request.path_params.get("job_id", "")
+    try:
+        backend = _nanny_cron_backend()
+        ok = backend.enable_job(job_id)
+        log.info("NANNY_CRON_ENABLE job_id=%s ok=%s", job_id, ok)
+        return JSONResponse({"job_id": job_id, "enabled": ok})
+    except Exception as e:
+        log.warning("_api_nanny_cron_enable job_id=%s: %s", job_id, e)
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+async def _api_nanny_cron_run(request: Request):
+    """POST /api/nanny/cron/{job_id}/run — run a cron job immediately."""
+    job_id = request.path_params.get("job_id", "")
+    try:
+        backend = _nanny_cron_backend()
+        result = backend.run_now(job_id)
+        if result is None:
+            return JSONResponse({"error": f"job {job_id} not found"}, status_code=404)
+        log.info("NANNY_CRON_RUN_NOW job_id=%s returncode=%s", job_id, result.returncode)
+        return JSONResponse({
+            "job_id": job_id,
+            "returncode": result.returncode,
+            "stdout": result.stdout[:1000],
+            "stderr": result.stderr[:500],
+        })
+    except Exception as e:
+        log.warning("_api_nanny_cron_run job_id=%s: %s", job_id, e)
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
 # ── Palace browser ───────────────────────────────────────────────────────────
 # Read-only palace / rack views. Require IGOR_HOME_DB_URL. Graceful when absent.
 
@@ -2637,6 +2730,12 @@ def _make_app() -> Starlette:
         Route("/api/comms/channels", _api_comms_channels),
         Route("/api/comms/health", _api_comms_health),
         Route("/api/granny/health", _api_granny_health),
+        # Nanny Ogg cron management
+        Route("/api/nanny/cron", _api_nanny_cron_list, methods=["GET"]),
+        Route("/api/nanny/cron", _api_nanny_cron_add, methods=["POST"]),
+        Route("/api/nanny/cron/{job_id}/disable", _api_nanny_cron_disable, methods=["POST"]),
+        Route("/api/nanny/cron/{job_id}/enable", _api_nanny_cron_enable, methods=["POST"]),
+        Route("/api/nanny/cron/{job_id}/run", _api_nanny_cron_run, methods=["POST"]),
         # Circuit breakers
         Route("/api/circuit", _api_circuit_get),
         Route("/api/circuit/{device_id}", _api_circuit_set, methods=["POST"]),
@@ -3293,6 +3392,72 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
       {title:'Dashboard',    href:'/dashboard',    desc:'System dashboard'},
     ];
 
+    async function _loadNannyCronPanel(el) {
+      try {
+        const r = await fetch('/api/nanny/cron');
+        const d = await r.json();
+        if (d.error) { el.innerHTML = '<p style="color:#c66">Cron unavailable: '+_fasciaEsc(d.error)+'</p>'; return; }
+        const jobs = d.jobs || [];
+        var html = '<div style="margin-bottom:0.5rem"><strong style="color:#aaa;font-size:0.82rem">Cron Jobs</strong></div>';
+        if (!jobs.length) {
+          html += '<p style="color:#555;font-size:0.78rem">No cron jobs found.</p>';
+        } else {
+          html += '<table style="width:100%;border-collapse:collapse;font-size:0.78rem">';
+          html += '<tr><th style="text-align:left;color:#555;padding:0.1rem 0.3rem">#</th><th style="text-align:left;color:#555">Schedule</th><th style="text-align:left;color:#555">Command</th><th style="color:#555">Actions</th></tr>';
+          for (var j of jobs) {
+            var statusColor = j.enabled ? '#7ec8e3' : '#555';
+            var cmd = _fasciaEsc(j.cmd.length > 40 ? j.cmd.slice(0,40)+'…' : j.cmd);
+            html += '<tr style="border-top:1px solid #222">';
+            html += '<td style="color:'+statusColor+';padding:0.15rem 0.3rem">'+_fasciaEsc(j.job_id)+'</td>';
+            html += '<td style="color:'+statusColor+';font-family:monospace">'+_fasciaEsc(j.expr)+'</td>';
+            html += '<td style="color:'+statusColor+';font-family:monospace;max-width:180px;overflow:hidden;text-overflow:ellipsis">'+cmd+'</td>';
+            html += '<td style="white-space:nowrap">';
+            if (j.enabled) {
+              html += '<button onclick="nannyCronAction(\''+j.job_id+'\',\'disable\')" style="font-size:0.72rem;margin:0 0.15rem">Pause</button>';
+              html += '<button onclick="nannyCronAction(\''+j.job_id+'\',\'run\')" style="font-size:0.72rem">Run</button>';
+            } else {
+              html += '<button onclick="nannyCronAction(\''+j.job_id+'\',\'enable\')" style="font-size:0.72rem">Resume</button>';
+            }
+            html += '</td></tr>';
+          }
+          html += '</table>';
+        }
+        html += '<div style="margin-top:0.6rem;display:flex;gap:0.3rem;align-items:center">';
+        html += '<input id="nanny-cron-expr" placeholder="* * * * *" style="width:110px;font-size:0.78rem;background:#0d0d1e;border:1px solid #333;color:#ccc;padding:0.2rem 0.3rem;font-family:monospace">';
+        html += '<input id="nanny-cron-cmd" placeholder="command" style="flex:1;font-size:0.78rem;background:#0d0d1e;border:1px solid #333;color:#ccc;padding:0.2rem 0.3rem;font-family:monospace">';
+        html += '<button onclick="nannyCronAdd()" style="font-size:0.78rem">Add</button>';
+        html += '</div>';
+        el.innerHTML = html;
+      } catch(e) {
+        el.innerHTML = '<p style="color:#c66">Cron panel error: '+_fasciaEsc(e)+'</p>';
+      }
+    }
+
+    async function nannyCronAction(jobId, action) {
+      try {
+        const r = await fetch('/api/nanny/cron/'+encodeURIComponent(jobId)+'/'+action, {method:'POST'});
+        const d = await r.json();
+        if (d.error) { alert('Cron error: '+d.error); return; }
+        // Refresh the panel
+        await _loadFasciaBox_settings('nanny-ogg');
+      } catch(e) { alert('Cron action failed: '+e); }
+    }
+
+    async function nannyCronAdd() {
+      const expr = (document.getElementById('nanny-cron-expr')||{}).value||'';
+      const cmd  = (document.getElementById('nanny-cron-cmd')||{}).value||'';
+      if (!expr || !cmd) { alert('Both schedule expression and command are required.'); return; }
+      try {
+        const r = await fetch('/api/nanny/cron', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({expr, cmd})
+        });
+        const d = await r.json();
+        if (d.error) { alert('Add failed: '+d.error); return; }
+        await _loadFasciaBox_settings('nanny-ogg');
+      } catch(e) { alert('Add cron failed: '+e); }
+    }
+
     async function _loadFasciaBox_settings(deviceId) {
       const el = document.getElementById('fascia-settings-body');
       try {
@@ -3304,6 +3469,11 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
               '<a href="'+t.href+'" style="color:#7ec8e3;font-size:0.82rem;font-weight:bold">'+t.title+'</a>'+
               '<p style="color:#555;font-size:0.75rem;margin:0.15rem 0 0">'+t.desc+'</p></div>'
             ).join('') + '</div>';
+          return;
+        }
+        // Nanny Ogg's settings box is a cron manager
+        if (deviceId === 'nanny-ogg') {
+          await _loadNannyCronPanel(el);
           return;
         }
         const state = await fetch('/api/rack/health').then(r=>r.json())
