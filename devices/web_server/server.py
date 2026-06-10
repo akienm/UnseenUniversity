@@ -3088,6 +3088,11 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     .channel-tab.has-new { color: #90ee90; }
     .fascia-box { background:#141425; border:1px solid #333; border-radius:4px;
       margin-bottom:0.6rem; resize:vertical; overflow:auto; min-height:80px; }
+    .fascia-box-grow { flex:1; display:flex; flex-direction:column; min-height:0;
+      resize:none; overflow:hidden; margin-bottom:0.6rem;
+      background:#141425; border:1px solid #333; border-radius:4px; }
+    .fascia-box-grow .fascia-box-body-grow { flex:1; display:flex; flex-direction:column;
+      min-height:0; padding:0.4rem 0.6rem; }
     .fascia-box-head { font-size:0.82rem; color:#7ec8e3; padding:0.3rem 0.6rem;
       border-bottom:1px solid #2a2a40; font-weight:bold; }
     .fascia-box-body { padding:0.4rem 0.6rem; font-size:0.82rem; }
@@ -3152,19 +3157,19 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     <button id="new-channel-btn" onclick="newChannel()" title="New channel">+</button>
   </div>
   <div id="chat"></div>
-  <div id="panel-fascia" style="display:none;overflow-y:auto;padding:0.6rem 0.8rem;flex:1">
-    <h2 id="fascia-title" style="color:#7ec8e3;font-size:1rem;margin:0 0 0.6rem"></h2>
+  <div id="panel-fascia" style="display:none;flex-direction:column;padding:0.6rem 0.8rem;flex:1;overflow:hidden">
+    <h2 id="fascia-title" style="color:#7ec8e3;font-size:1rem;margin:0 0 0.6rem;flex-shrink:0"></h2>
     <div class="fascia-box" id="fascia-status">
       <div class="fascia-box-head">Status</div>
       <div class="fascia-box-body" id="fascia-status-body"><em style="color:#555">Loading&#8230;</em></div>
     </div>
-    <div class="fascia-box" id="fascia-chat">
-      <div class="fascia-box-head">Chat</div>
-      <div class="fascia-box-body">
-        <div id="fascia-chat-hist" style="overflow-y:auto;max-height:140px;font-size:0.82rem;color:#ccc;margin-bottom:0.3rem"><em style="color:#555">Loading&#8230;</em></div>
-        <div style="display:flex;gap:0.3rem">
-          <input id="fascia-chat-input" style="flex:1;font-size:0.82rem;background:#0d0d1e;border:1px solid #333;color:#ccc;padding:0.2rem 0.4rem" placeholder="Message device&#8230;" autocomplete="off">
-          <button onclick="fasciaChat()" style="font-size:0.8rem">Send</button>
+    <div class="fascia-box-grow" id="fascia-chat">
+      <div class="fascia-box-head">Feed</div>
+      <div class="fascia-box-body-grow">
+        <div id="fascia-chat-hist" style="flex:1;overflow-y:auto;min-height:60px;font-size:0.82rem;color:#ccc;margin-bottom:0.3rem"><em style="color:#555">Loading&#8230;</em></div>
+        <div style="display:flex;gap:0.3rem;flex-shrink:0">
+          <textarea id="fascia-chat-input" rows="2" style="flex:1;font-size:0.82rem;background:#0d0d1e;border:1px solid #333;color:#ccc;padding:0.2rem 0.4rem;resize:vertical;font-family:monospace" placeholder="Message device&#8230;" autocomplete="off"></textarea>
+          <button onclick="fasciaChat()" style="font-size:0.8rem;align-self:flex-end">Send</button>
         </div>
       </div>
     </div>
@@ -3391,16 +3396,20 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     async function _loadFasciaBox_chat(deviceId) {
       const hist = document.getElementById('fascia-chat-hist');
       try {
-        const r = await fetch('/api/device/'+encodeURIComponent(deviceId)+'/events?kind=announce&limit=30');
+        // kind=health: messages in the device's own channel (comms://deviceId) — conversations
+        const r = await fetch('/api/device/'+encodeURIComponent(deviceId)+'/events?kind=health&limit=50');
         const d = await r.json();
         const evs = d.events || [];
         if (!evs.length) { hist.innerHTML = '<em style="color:#555">No recent messages.</em>'; return; }
-        hist.innerHTML = evs.map(e =>
-          '<p style="margin:0.1rem 0"><span style="color:#555">'+_fasciaEsc(e.ts.slice(11,19)||'')+'</span> '+_fasciaEsc(e.content)+'</p>'
-        ).join('');
+        hist.innerHTML = evs.map(e => {
+          const authorCls = e.author === deviceId ? 'color:#7ec8e3' : 'color:#90ee90';
+          return '<p style="margin:0.15rem 0"><span style="color:#555">'+_fasciaEsc(e.ts.slice(11,19)||'')+'</span>'
+            +' <span style="'+authorCls+'">'+_fasciaEsc(e.author||'')+'</span>'
+            +' '+_fasciaEsc(e.content)+'</p>';
+        }).join('');
         hist.scrollTop = hist.scrollHeight;
       } catch(e) {
-        hist.innerHTML = '<p style="color:#c66">Chat unavailable: '+_fasciaEsc(e)+'</p>';
+        hist.innerHTML = '<p style="color:#c66">Feed unavailable: '+_fasciaEsc(e)+'</p>';
       }
     }
 
@@ -3578,13 +3587,13 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
             <div class="fascia-box-head">Status</div>
             <div class="fascia-box-body" id="fascia-status-body"><em style="color:#555">Loading&#8230;</em></div>
           </div>
-          <div class="fascia-box" id="fascia-chat">
-            <div class="fascia-box-head">Chat</div>
-            <div class="fascia-box-body">
-              <div id="fascia-chat-hist" style="overflow-y:auto;max-height:140px;font-size:0.82rem;color:#ccc;margin-bottom:0.3rem"><em style="color:#555">Loading&#8230;</em></div>
-              <div style="display:flex;gap:0.3rem">
-                <input id="fascia-chat-input" style="flex:1;font-size:0.82rem;background:#0d0d1e;border:1px solid #333;color:#ccc;padding:0.2rem 0.4rem" placeholder="Message device&#8230;" autocomplete="off">
-                <button onclick="fasciaChat()" style="font-size:0.8rem">Send</button>
+          <div class="fascia-box-grow" id="fascia-chat">
+            <div class="fascia-box-head">Feed</div>
+            <div class="fascia-box-body-grow">
+              <div id="fascia-chat-hist" style="flex:1;overflow-y:auto;min-height:60px;font-size:0.82rem;color:#ccc;margin-bottom:0.3rem"><em style="color:#555">Loading&#8230;</em></div>
+              <div style="display:flex;gap:0.3rem;flex-shrink:0">
+                <textarea id="fascia-chat-input" rows="2" style="flex:1;font-size:0.82rem;background:#0d0d1e;border:1px solid #333;color:#ccc;padding:0.2rem 0.4rem;resize:vertical;font-family:monospace" placeholder="Message device&#8230;" autocomplete="off"></textarea>
+                <button onclick="fasciaChat()" style="font-size:0.8rem;align-self:flex-end">Send</button>
               </div>
             </div>
           </div>
@@ -3637,13 +3646,21 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
       }
     }
 
+    // Ctrl+Enter sends from the feed textarea; plain Enter inserts newline
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        const inp = document.getElementById('fascia-chat-input');
+        if (inp && document.activeElement === inp) { e.preventDefault(); fasciaChat(); }
+      }
+    });
+
     function switchChannel(ch) {
       if (!channelMsgs[ch]) channelMsgs[ch] = [];
       currentChannel = ch;
       const isPublic = (ch === 'comms://shared');
       chat.style.display = isPublic ? '' : 'none';
       const fascia = document.getElementById('panel-fascia');
-      if (fascia) fascia.style.display = isPublic ? 'none' : '';
+      if (fascia) fascia.style.display = isPublic ? 'none' : 'flex';
       const inputRow = document.getElementById('input-row');
       const nameRow = document.getElementById('name-row');
       if (inputRow) inputRow.style.display = isPublic ? '' : 'none';
