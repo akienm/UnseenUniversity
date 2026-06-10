@@ -1629,7 +1629,6 @@ class Cortex(IgorBase):
         _mlog = logging.getLogger(__name__)
         for name, sql in _SCHEMA_MIGRATIONS:
             if name in applied:
-                _mlog.debug("[migration] skip %s (already applied)", name)
                 continue
             try:
                 conn.execute(sql)
