@@ -3488,7 +3488,7 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
         // kind=health: messages in the device's own channel (comms://deviceId) — conversations
         const r = await fetch('/api/device/'+encodeURIComponent(deviceId)+'/events?kind=health&limit=50');
         const d = await r.json();
-        const evs = d.events || [];
+        const evs = (d.events || []).reverse();  // reverse DESC→ASC so newest is at bottom
         if (!evs.length) { hist.innerHTML = '<em style="color:#555">No recent messages.</em>'; return; }
         hist.innerHTML = evs.map(e => {
           const authorCls = e.author === deviceId ? 'color:#7ec8e3' : 'color:#90ee90';
@@ -3496,7 +3496,7 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
             +' <span style="'+authorCls+'">'+_fasciaEsc(e.author||'')+'</span>'
             +' '+_fasciaEsc(e.content)+'</p>';
         }).join('');
-        hist.scrollTop = hist.scrollHeight;
+        hist.scrollTop = hist.scrollHeight;  // auto-scroll to newest (now at bottom)
       } catch(e) {
         hist.innerHTML = '<p style="color:#c66">Feed unavailable: '+_fasciaEsc(e)+'</p>';
       }
