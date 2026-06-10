@@ -1669,6 +1669,32 @@ async def _api_device_breaker(request: Request):
     return JSONResponse({"device": device_id, "state": state, "status": "ok"})
 
 
+_SCREENSHOT_DIR = (
+    _RUNTIME_ROOT / "datacenter_logs" / "web_server" / "screenshots"
+)
+
+
+async def _api_device_screenshot(request: Request):
+    """GET /api/device/{id}/screenshot — serve cached fascia screenshot as PNG.
+
+    Returns the last-captured screenshot PNG for the device, or 404.
+    Screenshots are written by Nanny Ogg's periodic capture sweep.
+    """
+    from starlette.responses import FileResponse
+
+    device_id = request.path_params.get("id", "")
+    if not device_id:
+        return JSONResponse({"error": "missing device id"}, status_code=400)
+
+    path = _SCREENSHOT_DIR / f"{device_id}.png"
+    if not path.exists():
+        log.debug("SCREENSHOT_MISS device=%s", device_id)
+        return JSONResponse({"error": "no cached screenshot"}, status_code=404)
+
+    log.info("FASCIA_BOX_LOAD device=%s box=screenshot status=hit", device_id)
+    return FileResponse(str(path), media_type="image/png")
+
+
 _RACK_PAGE_BODY = """
 <style>
 .tab-bar{display:flex;flex-wrap:wrap;gap:0.25rem;margin-bottom:1rem;border-bottom:2px solid #333;padding-bottom:0.4rem}
@@ -2766,6 +2792,7 @@ def _make_app() -> Starlette:
         Route("/api/device/{id}/events", _api_device_events),
         Route("/api/device/{id}/console", _api_device_console),
         Route("/api/device/{id}/breaker", _api_device_breaker, methods=["POST"]),
+        Route("/api/device/{id}/screenshot", _api_device_screenshot),
     ]
 
     # Serve compiled Svelte assets if the UI has been built
@@ -3488,16 +3515,83 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
       }
     }
 
+    async function _isDeviceOnline(deviceId) {
+      try {
+        const r = await fetch('/api/rack/health');
+        const d = await r.json();
+        const dev = (d.devices||[]).find(x => x.id === deviceId);
+        if (!dev) return null;  // unknown
+        return dev.status === 'online';
+      } catch(e) { return null; }
+    }
+
+    async function _showOfflineScreenshot(deviceId) {
+      const panel = document.getElementById('panel-fascia');
+      if (!panel) return;
+      // Try to fetch the cached screenshot
+      const imgUrl = '/api/device/'+encodeURIComponent(deviceId)+'/screenshot';
+      const imgR = await fetch(imgUrl).catch(()=>null);
+      const title = document.getElementById('fascia-title');
+      if (title) title.textContent = deviceId + ' Feed (offline)';
+      if (imgR && imgR.ok) {
+        // Show screenshot with greyed overlay
+        panel.innerHTML = '<div style="position:relative;display:inline-block;max-width:100%">' +
+          '<img src="'+imgUrl+'" style="max-width:100%;display:block;filter:grayscale(0.7) brightness(0.5);border:1px solid #333" alt="'+_fasciaEsc(deviceId)+' last screenshot">' +
+          '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.3)">' +
+          '<span style="color:#7ec8e3;font-size:0.9rem;background:#141425;padding:0.4rem 0.8rem;border-radius:4px;border:1px solid #444">'+_fasciaEsc(deviceId)+' is offline — showing last known state</span>' +
+          '</div></div>';
+      } else {
+        // No screenshot available
+        panel.innerHTML = '<div style="padding:1rem;color:#555;text-align:center">' +
+          '<p style="font-size:1rem;color:#7ec8e3">'+_fasciaEsc(deviceId)+'</p>' +
+          '<p style="font-size:0.85rem">Device is offline. No cached screenshot available.</p></div>';
+      }
+    }
+
     async function loadFascia(deviceId) {
       _fasciaDevice = deviceId;
       const title = document.getElementById('fascia-title');
       if (title) title.textContent = deviceId + ' Feed';
+      // Check device status — show cached screenshot when offline
+      const online = await _isDeviceOnline(deviceId);
+      if (online === false) {
+        await _showOfflineScreenshot(deviceId);
+        return;
+      }
+      // Restore normal 4-box layout (in case we replaced it with screenshot)
+      const panel = document.getElementById('panel-fascia');
+      if (panel && !document.getElementById('fascia-status')) {
+        panel.innerHTML = `<h2 id="fascia-title" style="color:#7ec8e3;font-size:1rem;margin:0 0 0.6rem">${_fasciaEsc(deviceId)} Feed</h2>
+          <div class="fascia-box" id="fascia-status">
+            <div class="fascia-box-head">Status</div>
+            <div class="fascia-box-body" id="fascia-status-body"><em style="color:#555">Loading&#8230;</em></div>
+          </div>
+          <div class="fascia-box" id="fascia-chat">
+            <div class="fascia-box-head">Chat</div>
+            <div class="fascia-box-body">
+              <div id="fascia-chat-hist" style="overflow-y:auto;max-height:140px;font-size:0.82rem;color:#ccc;margin-bottom:0.3rem"><em style="color:#555">Loading&#8230;</em></div>
+              <div style="display:flex;gap:0.3rem">
+                <input id="fascia-chat-input" style="flex:1;font-size:0.82rem;background:#0d0d1e;border:1px solid #333;color:#ccc;padding:0.2rem 0.4rem" placeholder="Message device&#8230;" autocomplete="off">
+                <button onclick="fasciaChat()" style="font-size:0.8rem">Send</button>
+              </div>
+            </div>
+          </div>
+          <div class="fascia-box" id="fascia-console">
+            <div class="fascia-box-head">Console <span id="fascia-console-src" style="font-size:0.7rem;color:#555"></span></div>
+            <div class="fascia-box-body fascia-console-body" id="fascia-console-body"><em style="color:#555">Loading&#8230;</em></div>
+          </div>
+          <div class="fascia-box" id="fascia-settings">
+            <div class="fascia-box-head">Settings</div>
+            <div class="fascia-box-body" id="fascia-settings-body"><em style="color:#555">Loading&#8230;</em></div>
+          </div>`;
+      }
       // Reset all boxes to loading state
       ['fascia-status-body','fascia-console-body','fascia-settings-body'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = '<em style="color:#555">Loading&#8230;</em>';
       });
-      document.getElementById('fascia-chat-hist').innerHTML = '<em style="color:#555">Loading&#8230;</em>';
+      const chatHist = document.getElementById('fascia-chat-hist');
+      if (chatHist) chatHist.innerHTML = '<em style="color:#555">Loading&#8230;</em>';
       // Load each box independently — failure in one does not affect others
       _loadFasciaBox_status(deviceId);
       _loadFasciaBox_chat(deviceId);

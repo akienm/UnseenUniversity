@@ -140,6 +140,14 @@ _DEFAULT_SCHEDULE: list[dict[str, Any]] = [
         "action_params": {},
         "enabled": True,
     },
+    {
+        "entry_id": "periodic_screenshot_capture",
+        "condition_type": "cron",
+        "condition_params": {"interval_hours": 1},  # every hour
+        "action_type": "run_screenshot_capture",
+        "action_params": {},
+        "enabled": True,
+    },
 ]
 
 # World-interaction ticket tags that Nanny routes to external agents
@@ -408,6 +416,8 @@ class NannyOggDevice(BaseDevice):
                 self._run_test_suite(params)
             elif action == "run_code_sweep":
                 self._run_code_sweep(params)
+            elif action == "run_screenshot_capture":
+                self._run_screenshot_capture(params)
 
             entry.last_fired = _now_iso()
             entry.fire_count += 1
@@ -652,6 +662,20 @@ class NannyOggDevice(BaseDevice):
         except Exception as e:
             self._errors.append(f"_run_code_sweep failed: {e}")
             self._log.error("_run_code_sweep failed: %s", e)
+
+    def _run_screenshot_capture(self, params: dict) -> None:
+        """Capture fascia screenshots for all online devices."""
+        try:
+            from devices.web_server.screenshot_capture import capture_all
+
+            results = capture_all()
+            ok_count = sum(1 for v in results.values() if v)
+            total = len(results)
+            msg = f"SCREENSHOT_CAPTURE_RESULT|ok={ok_count}|total={total}"
+            self._post_to_channel("shared", msg)
+            self._log.info("screenshot capture: ok=%d total=%d", ok_count, total)
+        except Exception as e:
+            self._log.warning("_run_screenshot_capture failed: %s", e)
 
     def _file_drift_ticket(self, finding: dict) -> None:
         """File a cc_queue ticket for a drift FAIL. Date-scoped ID provides daily dedup."""
