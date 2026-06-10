@@ -146,8 +146,8 @@ class TestIsNovel(unittest.TestCase):
         cortex = _make_mock_cortex()
         cortex._conn.return_value.execute.return_value.fetchall.return_value = []
 
-        with patch("igor.cognition.embedder.embed", return_value=[0.1] * 768), patch(
-            "igor.cognition.embedder.cosine_similarity", return_value=0.5
+        with patch("devices.igor.cognition.embedder.embed", return_value=[0.1] * 768), patch(
+            "devices.igor.cognition.embedder.cosine_similarity", return_value=0.5
         ):
             result = _is_novel("new narrative", cortex, MemoryType.EXPERIENTIAL, 0.90)
         self.assertTrue(result)
