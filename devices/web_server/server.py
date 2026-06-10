@@ -1500,11 +1500,21 @@ def _load_device_registry() -> list[dict]:
 
 
 async def _api_device_list(request: Request):
-    """GET /api/device/list — known device IDs from registry + recent channel authors."""
+    """GET /api/device/list — known device IDs from source tree + registry + recent channel authors."""
     devices: set[str] = set()
+    # Source-tree scan: every subdir of devices/ with at least one .py file is a known device.
+    _src_devices_dir = Path(__file__).resolve().parent.parent
+    try:
+        for d in _src_devices_dir.iterdir():
+            if d.is_dir() and not d.name.startswith("_") and any(d.glob("*.py")):
+                devices.add(d.name)
+    except Exception as exc:
+        log.debug("device_list: source scan failed: %s", exc)
+    # Runtime registry (adds online status context; IDs already covered by source scan mostly)
     for rec in _load_device_registry():
         if rec.get("id"):
             devices.add(rec["id"])
+    # Recent channel authors (catches any device not yet in source tree)
     conn = _db_conn()
     if conn:
         try:
@@ -1520,6 +1530,8 @@ async def _api_device_list(request: Request):
             log.debug("device_list: DB query failed: %s", exc)
         finally:
             conn.close()
+    # Exclude the web server itself from the nav list
+    devices.discard("web_server")
     return JSONResponse({"devices": sorted(devices)})
 
 
@@ -3844,8 +3856,20 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
       } catch(e) {}
     }
 
+    async function seedDeviceTabs() {
+      try {
+        const data = await (await fetch('/api/device/list')).json();
+        (data.devices || []).forEach(id => {
+          const ch = 'comms://' + id;
+          if (!channelMsgs[ch]) channelMsgs[ch] = [];
+        });
+        _renderChannelBar();
+      } catch(e) {}
+    }
+
     connect();
     loadChannels();
+    seedDeviceTabs();
   </script>
 </body>
 </html>
