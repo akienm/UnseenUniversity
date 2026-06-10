@@ -1,21 +1,17 @@
 """
-Bus connection factory — keeps IMAPServer construction out of announce/.
+Bus connection factory.
 
-Production: creates a DovecotClient connection via start().
-Test mode:  returns an unstarted IMAPServer; all operations use the shared
-            in-process _STUB_MAILBOXES dict so no stub server is needed.
+Returns a PgBus connected to the Postgres message bus. The bus schema
+(bus.mailboxes, bus.messages) is created on first start() call.
+
+Callers receive a started bus ready for append/fetch_unseen/idle_wait.
 """
-
-import os
-
-_TEST_MODE = os.environ.get("AGENT_DATACENTER_TEST_MODE", "") == "1"
 
 
 def make_bus_connection():
-    """Return an IMAPServer ready for agent bus operations."""
-    from .imap_server import IMAPServer
+    """Return a PgBus ready for agent bus operations."""
+    from .pg_bus import PgBus
 
-    server = IMAPServer()
-    if not _TEST_MODE:
-        server.start()
-    return server
+    bus = PgBus()
+    bus.start()
+    return bus

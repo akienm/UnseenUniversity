@@ -303,6 +303,11 @@ class _DovecotClient:
 class IMAPServer:
     """
     Unified IMAP bus interface. Selects Dovecot or stub based on AGENT_DATACENTER_TEST_MODE.
+
+    .. deprecated::
+        Use ``bus.pg_bus.PgBus`` (via ``bus.connection.make_bus_connection``) instead.
+        IMAPServer will be removed after one deprecation cycle.
+        D-bus-postgres-transport-2026-06-10
     """
 
     SHARED_MAILBOX = "Shared"
@@ -312,6 +317,13 @@ class IMAPServer:
         host: str = "127.0.0.1",
         port: int = 10143 if _TEST_MODE else 143,
     ) -> None:
+        import warnings
+        warnings.warn(
+            "IMAPServer is deprecated; use PgBus via make_bus_connection() instead"
+            " (D-bus-postgres-transport-2026-06-10)",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.host = host
         self.port = port
         self._stub: _StubServer | None = None
