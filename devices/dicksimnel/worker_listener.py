@@ -23,6 +23,7 @@ log = logging.getLogger(__name__)
 
 _POLL_INTERVAL_S = int(os.environ.get("DICKSIMNEL_LISTENER_POLL_INTERVAL", "5"))
 _OR_BALANCE_FLOOR = float(os.environ.get("DICKSIMNEL_OR_FLOOR", "5.0"))
+_FAILURE_THRESHOLD = 5  # consecutive receive failures before requesting reconnect
 
 try:
     from devices.inference.budget_gate import fetch_balance
@@ -40,6 +41,7 @@ class DickSimnelWorkerListener:
         granny_mailbox: str = "granny.0",
         device=None,
         poll_interval: float = _POLL_INTERVAL_S,
+        on_bus_failure=None,
     ) -> None:
         self._bus = bus
         self._device_mailbox = device_mailbox
@@ -48,6 +50,10 @@ class DickSimnelWorkerListener:
         self._poll_interval = poll_interval
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
+        self._consecutive_failures = 0
+        # Callable[[DickSimnelWorkerListener], None] — called after _FAILURE_THRESHOLD
+        # consecutive receive failures. Shim injects this to handle reconnect.
+        self.on_bus_failure = on_bus_failure
 
     def start(self) -> None:
         self._thread = threading.Thread(target=self._run, daemon=True, name="dicksimnel-listener")
@@ -77,8 +83,16 @@ class DickSimnelWorkerListener:
         try:
             envelopes = self._bus.fetch_unseen(self._device_mailbox)
         except Exception as exc:
-            log.warning("DickSimnelWorkerListener: receive failed: %s", exc)
+            self._consecutive_failures += 1
+            log.warning(
+                "DickSimnelWorkerListener: receive failed (%d/%d): %s",
+                self._consecutive_failures, _FAILURE_THRESHOLD, exc,
+            )
+            if self._consecutive_failures >= _FAILURE_THRESHOLD and self.on_bus_failure:
+                self._consecutive_failures = 0
+                self.on_bus_failure(self)
             return
+        self._consecutive_failures = 0
 
         for env in envelopes:
             payload = env.payload if hasattr(env, "payload") else {}

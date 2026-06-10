@@ -16,8 +16,12 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from unseen_university.shim import BaseShim
+
+if TYPE_CHECKING:
+    from devices.dicksimnel.worker_listener import DickSimnelWorkerListener
 
 log = logging.getLogger(__name__)
 
@@ -25,6 +29,7 @@ _FLAG_DIR = Path.home() / ".granny" / "available"
 _DEVICE_NAME = "DickSimnel.0"
 _AVAILABLE_FLAG = _FLAG_DIR / f"{_DEVICE_NAME}.available.true"
 _BLOCKED_FLAG = _FLAG_DIR / f"{_DEVICE_NAME}.available.false"
+_MAX_RECONNECT_ATTEMPTS = 3
 
 
 class DickSimnelShim(BaseShim):
@@ -37,6 +42,7 @@ class DickSimnelShim(BaseShim):
         self._device = device
         self._listener = None
         self._flag_written = False
+        self._reconnect_count = 0
 
     @property
     def device_id(self) -> str:
@@ -83,8 +89,13 @@ class DickSimnelShim(BaseShim):
         """Write availability flag, connect to bus, and launch the worker listener thread."""
         from devices.dicksimnel.worker_listener import DickSimnelWorkerListener
         self._write_available()
+        self._reconnect_count = 0
         bus = self._connect_bus()
-        self._listener = DickSimnelWorkerListener(bus=bus, device=self._device)
+        self._listener = DickSimnelWorkerListener(
+            bus=bus,
+            device=self._device,
+            on_bus_failure=self._handle_bus_failure,
+        )
         self._listener.start()
         log.info("DickSimnelShim: started")
         return True
@@ -101,6 +112,40 @@ class DickSimnelShim(BaseShim):
     def restart(self) -> bool:
         """Stop then start — reconnects bus and refreshes the listener thread."""
         return self.stop() and self.start()
+
+    def _handle_bus_failure(self, listener: "DickSimnelWorkerListener") -> None:
+        """Called by the listener after _FAILURE_THRESHOLD consecutive receive failures.
+
+        Attempts to rebuild the bus connection in-place so the listener resumes
+        without a thread restart. After _MAX_RECONNECT_ATTEMPTS failures the shim
+        removes the availability flag and silences the listener — manual restart required.
+        """
+        self._reconnect_count += 1
+        if self._reconnect_count > _MAX_RECONNECT_ATTEMPTS:
+            log.error(
+                "DickSimnelShim: bus reconnect failed %d times — removing availability flag;"
+                " manual shim.restart() required",
+                _MAX_RECONNECT_ATTEMPTS,
+            )
+            self._remove_available()
+            listener._bus = None  # silence polling — no more warnings
+            return
+
+        log.warning(
+            "DickSimnelShim: bus failure — reconnect attempt %d/%d",
+            self._reconnect_count, _MAX_RECONNECT_ATTEMPTS,
+        )
+        new_bus = self._connect_bus()
+        if new_bus is not None:
+            listener._bus = new_bus
+            self._reconnect_count = 0
+            log.info("DickSimnelShim: bus reconnected successfully")
+        else:
+            log.warning(
+                "DickSimnelShim: reconnect attempt %d/%d failed — will retry after next"
+                " failure burst",
+                self._reconnect_count, _MAX_RECONNECT_ATTEMPTS,
+            )
 
     def self_test(self) -> dict:
         """Verify flag dir is writable and InferenceDevice is importable."""

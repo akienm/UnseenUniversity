@@ -184,3 +184,97 @@ def test_poll_once_ignores_non_dispatch_envelopes():
     with patch.object(listener, "_handle_dispatch") as mock_handle:
         listener._poll_once()
     mock_handle.assert_not_called()
+
+
+# ── Bus reconnect watchdog ────────────────────────────────────────────────────
+
+
+def test_consecutive_failures_below_threshold_no_callback():
+    """Failures below threshold do not trigger on_bus_failure."""
+    bus = MagicMock()
+    bus.fetch_unseen.side_effect = ConnectionRefusedError("refused")
+    callback = MagicMock()
+    listener = DickSimnelWorkerListener(bus=bus, on_bus_failure=callback)
+    from devices.dicksimnel.worker_listener import _FAILURE_THRESHOLD
+    for _ in range(_FAILURE_THRESHOLD - 1):
+        listener._poll_once()
+    callback.assert_not_called()
+    assert listener._consecutive_failures == _FAILURE_THRESHOLD - 1
+
+
+def test_consecutive_failures_at_threshold_triggers_callback():
+    """Exactly _FAILURE_THRESHOLD failures calls on_bus_failure with the listener."""
+    bus = MagicMock()
+    bus.fetch_unseen.side_effect = ConnectionRefusedError("refused")
+    callback = MagicMock()
+    listener = DickSimnelWorkerListener(bus=bus, on_bus_failure=callback)
+    from devices.dicksimnel.worker_listener import _FAILURE_THRESHOLD
+    for _ in range(_FAILURE_THRESHOLD):
+        listener._poll_once()
+    callback.assert_called_once_with(listener)
+    assert listener._consecutive_failures == 0  # reset after callback
+
+
+def test_success_resets_failure_counter():
+    """A successful fetch resets _consecutive_failures to zero."""
+    bus = MagicMock()
+    bus.fetch_unseen.side_effect = [
+        ConnectionRefusedError("refused"),
+        ConnectionRefusedError("refused"),
+        [],  # success
+    ]
+    listener = DickSimnelWorkerListener(bus=bus)
+    listener._poll_once()
+    listener._poll_once()
+    assert listener._consecutive_failures == 2
+    listener._poll_once()
+    assert listener._consecutive_failures == 0
+
+
+def test_no_callback_set_failures_dont_raise():
+    """When on_bus_failure is None, threshold failures are logged but don't raise."""
+    bus = MagicMock()
+    bus.fetch_unseen.side_effect = ConnectionRefusedError("refused")
+    listener = DickSimnelWorkerListener(bus=bus, on_bus_failure=None)
+    from devices.dicksimnel.worker_listener import _FAILURE_THRESHOLD
+    for _ in range(_FAILURE_THRESHOLD + 2):
+        listener._poll_once()  # must not raise
+
+
+# ── Shim reconnect handler ────────────────────────────────────────────────────
+
+
+def test_shim_handle_bus_failure_reconnects_successfully():
+    """On first failure, shim reconnects and updates listener._bus."""
+    from devices.dicksimnel.shim import DickSimnelShim
+    new_bus = MagicMock()
+    shim = DickSimnelShim()
+    shim._connect_bus = MagicMock(return_value=new_bus)
+    listener = MagicMock()
+    shim._handle_bus_failure(listener)
+    assert listener._bus is new_bus
+    assert shim._reconnect_count == 0  # reset on success
+
+
+def test_shim_handle_bus_failure_failed_reconnect_increments_count():
+    """When _connect_bus returns None, reconnect count increments."""
+    from devices.dicksimnel.shim import DickSimnelShim
+    shim = DickSimnelShim()
+    shim._connect_bus = MagicMock(return_value=None)
+    listener = MagicMock()
+    shim._handle_bus_failure(listener)
+    assert shim._reconnect_count == 1
+    listener._bus = object()  # unchanged — not overwritten on failure
+
+
+def test_shim_handle_bus_failure_stops_after_max_attempts():
+    """After _MAX_RECONNECT_ATTEMPTS failed reconnects, shim removes availability flag."""
+    from devices.dicksimnel.shim import DickSimnelShim, _MAX_RECONNECT_ATTEMPTS
+    shim = DickSimnelShim()
+    shim._connect_bus = MagicMock(return_value=None)
+    shim._remove_available = MagicMock()
+    listener = MagicMock()
+    for _ in range(_MAX_RECONNECT_ATTEMPTS + 1):
+        shim._handle_bus_failure(listener)
+    shim._remove_available.assert_called_once()
+    assert listener._bus is None  # silenced
