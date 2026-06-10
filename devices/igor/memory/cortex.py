@@ -1192,6 +1192,24 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
           AND (payloads IS NULL OR NOT (payloads ? 'embedding'))
         ON CONFLICT DO NOTHING""",
     ),
+    (
+        "m069_code_index",
+        """CREATE TABLE IF NOT EXISTS clan.code_index (
+            id SERIAL PRIMARY KEY,
+            path TEXT NOT NULL,
+            symbol TEXT NOT NULL,
+            kind TEXT NOT NULL CHECK (kind IN ('function', 'class', 'method', 'async_function')),
+            summary TEXT,
+            content_hash TEXT,
+            embedding JSONB,
+            updated_at TIMESTAMPTZ DEFAULT now(),
+            UNIQUE (path, symbol)
+        )""",
+    ),
+    (
+        "m070_code_index_path_idx",
+        "CREATE INDEX IF NOT EXISTS idx_code_index_path ON clan.code_index (path)",
+    ),
 ]
 
 

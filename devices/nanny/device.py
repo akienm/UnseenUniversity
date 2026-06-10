@@ -132,6 +132,14 @@ _DEFAULT_SCHEDULE: list[dict[str, Any]] = [
         "action_params": {"severity_min": "low"},
         "enabled": True,
     },
+    {
+        "entry_id": "nightly_code_sweep",
+        "condition_type": "cron",
+        "condition_params": {"hour": 4, "minute": 0},  # 04:00 every night
+        "action_type": "run_code_sweep",
+        "action_params": {},
+        "enabled": True,
+    },
 ]
 
 # World-interaction ticket tags that Nanny routes to external agents
@@ -398,6 +406,8 @@ class NannyOggDevice(BaseDevice):
                 self._run_auditor_baseline(params)
             elif action == "run_test_suite":
                 self._run_test_suite(params)
+            elif action == "run_code_sweep":
+                self._run_code_sweep(params)
 
             entry.last_fired = _now_iso()
             entry.fire_count += 1
@@ -617,6 +627,31 @@ class NannyOggDevice(BaseDevice):
         except Exception as e:
             self._errors.append(f"_run_auditor_baseline failed: {e}")
             self._log.error("_run_auditor_baseline failed: %s", e)
+
+    def _run_code_sweep(self, params: dict) -> None:
+        """Run the AST code sweep and post results to channel."""
+        try:
+            import os
+            from devices.nanny.sweeps.code_sweep import run_sweep
+
+            db_url = os.environ.get(
+                "IGOR_HOME_DB_URL",
+                "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            )
+            result = run_sweep(db_url=db_url)
+            msg = (
+                f"CODE_SWEEP_RESULT|inserted={result['inserted']}|"
+                f"updated={result['updated']}|unchanged={result['unchanged']}|"
+                f"errors={result['errors']}"
+            )
+            self._post_to_channel("shared", msg)
+            self._log.info(
+                "code sweep: inserted=%d updated=%d unchanged=%d errors=%d",
+                result["inserted"], result["updated"], result["unchanged"], result["errors"],
+            )
+        except Exception as e:
+            self._errors.append(f"_run_code_sweep failed: {e}")
+            self._log.error("_run_code_sweep failed: %s", e)
 
     def _file_drift_ticket(self, finding: dict) -> None:
         """File a cc_queue ticket for a drift FAIL. Date-scoped ID provides daily dedup."""
