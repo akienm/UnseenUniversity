@@ -34,6 +34,7 @@ from claudecode.reading_campaign import (  # noqa: E402
     create_campaign,
     enqueue_item_blocks,
     expand_campaign_from_master_list,
+    get_campaign_schema,
     mark_block_done,
     mark_block_failed,
 )
@@ -217,6 +218,32 @@ class TestMasterListParser(unittest.TestCase):
                 self.assertEqual(it["priority"], i)
         finally:
             path.unlink(missing_ok=True)
+
+
+class TestTargetSchema(unittest.TestCase):
+    """T-competition-pipeline-configurable: target_schema routes deposits."""
+
+    def setUp(self):
+        self.cid_clan = f"test-clan-{uuid.uuid4().hex[:8]}"
+        self.cid_comp = f"test-comp-{uuid.uuid4().hex[:8]}"
+
+    def tearDown(self):
+        _cleanup(self.cid_clan)
+        _cleanup(self.cid_comp)
+
+    def test_default_target_schema_is_clan(self):
+        result = create_campaign(self.cid_clan, budget_usd=1.00, notes="pytest")
+        self.assertEqual(result["target_schema"], "clan")
+        stored = get_campaign_schema(self.cid_clan)
+        self.assertEqual(stored, "clan")
+
+    def test_competition_target_schema_stored(self):
+        result = create_campaign(
+            self.cid_comp, budget_usd=1.00, notes="pytest", target_schema="competition"
+        )
+        self.assertEqual(result["target_schema"], "competition")
+        stored = get_campaign_schema(self.cid_comp)
+        self.assertEqual(stored, "competition")
 
 
 if __name__ == "__main__":

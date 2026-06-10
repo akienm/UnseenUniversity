@@ -41,6 +41,78 @@ def _get_db() -> DatabaseProxy:
     return _db
 
 
+def _deposit_to_schema(
+    nodes: list,
+    schema: str,
+    book_title: str,
+    book_author: str,
+    chunk_pos: int,
+    model_used: str = "",
+) -> int:
+    """Deposit extracted nodes directly into `{schema}.memories`.
+
+    Used when target_schema != 'clan' so we bypass Cortex and its HOME DB
+    proxy without any search_path entanglement. Writes only the columns
+    needed by classifier training: id, narrative, memory_type, source,
+    metadata, timestamp. Returns count of successfully inserted rows.
+    """
+    import hashlib as _hl
+    import psycopg2 as _pg
+
+    db_url = os.environ.get(
+        "IGOR_HOME_DB_URL",
+        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+    )
+    _MT_MAP = {
+        "procedural": "PROCEDURAL",
+        "factual": "FACTUAL",
+        "interpretive": "INTERPRETIVE",
+        "mechanism": "INTERPRETIVE",
+        "lever": "PROCEDURAL",
+        "situated": "INTERPRETIVE",
+        "tension": "INTERPRETIVE",
+    }
+    conn = _pg.connect(db_url)
+    deposited = 0
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                for node in nodes:
+                    narrative = (node.get("narrative") or "").strip()
+                    if not narrative:
+                        continue
+                    confidence = float(node.get("confidence", 0.6))
+                    if confidence < 0.60:
+                        continue
+                    ntype = node.get("type", "factual").strip().lower()
+                    memory_type = _MT_MAP.get(ntype, "FACTUAL")
+                    ts = _now_iso()
+                    node_id = (
+                        "COMP_"
+                        + _hl.md5(f"{book_title}:{chunk_pos}:{narrative}".encode()).hexdigest()[:12]
+                    )
+                    import json as _json
+                    meta = _json.dumps({
+                        "book_title": book_title,
+                        "book_author": book_author,
+                        "chunk_pos": chunk_pos,
+                        "model_used": model_used,
+                        "source_schema": "competition",
+                    })
+                    cur.execute(
+                        f"INSERT INTO {schema}.memories "
+                        "  (id, narrative, memory_type, source, metadata, timestamp, holdout) "
+                        "VALUES (%s, %s, %s, %s, %s::jsonb, %s, %s) "
+                        "ON CONFLICT (id) DO NOTHING",
+                        (node_id, narrative, memory_type, book_title, meta, ts, False),
+                    )
+                    if cur.rowcount > 0:
+                        deposited += 1
+    finally:
+        conn.close()
+    return deposited
+
+
 def _get_cortex() -> Cortex:
     global _cortex
     if _cortex is None:
@@ -185,6 +257,7 @@ def process_one_chunk(
     use_local: bool = True,
     chunk_size: int = 15,
     model: str = "",
+    target_schema: str = "clan",
 ) -> dict:
     """Process a SINGLE chunk at a specific position within a blob.
 
@@ -282,17 +355,27 @@ def process_one_chunk(
 
     deposited = 0
     if nodes:
-        deposited = _deposit_nodes(
-            nodes,
-            cortex,
-            book_title,
-            chunk_pos=chunk_pos,
-            chapter_node_id=chapter_node_id,
-            pass2=(pass_number == 2),
-            model_used=model_used,
-            author=book_author,
-            campaign_id=source,
-        )
+        if target_schema != "clan":
+            deposited = _deposit_to_schema(
+                nodes,
+                schema=target_schema,
+                book_title=book_title,
+                book_author=book_author,
+                chunk_pos=chunk_pos,
+                model_used=model_used,
+            )
+        else:
+            deposited = _deposit_nodes(
+                nodes,
+                cortex,
+                book_title,
+                chunk_pos=chunk_pos,
+                chapter_node_id=chapter_node_id,
+                pass2=(pass_number == 2),
+                model_used=model_used,
+                author=book_author,
+                campaign_id=source,
+            )
 
     return {
         "node_count": deposited,

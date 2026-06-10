@@ -70,13 +70,19 @@ log = logging.getLogger(__name__)
 
 _SCHEMA_CAMPAIGNS = """
 CREATE TABLE IF NOT EXISTS infra.reading_campaigns (
-    campaign_id  TEXT PRIMARY KEY,
-    created_at   TEXT NOT NULL,
-    budget_usd   NUMERIC(10, 2) NOT NULL,
-    spent_usd    NUMERIC(12, 6) DEFAULT 0,
-    status       TEXT DEFAULT 'active',
-    notes        TEXT
+    campaign_id   TEXT PRIMARY KEY,
+    created_at    TEXT NOT NULL,
+    budget_usd    NUMERIC(10, 2) NOT NULL,
+    spent_usd     NUMERIC(12, 6) DEFAULT 0,
+    status        TEXT DEFAULT 'active',
+    notes         TEXT,
+    target_schema TEXT DEFAULT 'clan'
 )
+"""
+
+_MIGRATE_CAMPAIGNS_ADD_SCHEMA = """
+ALTER TABLE infra.reading_campaigns
+    ADD COLUMN IF NOT EXISTS target_schema TEXT DEFAULT 'clan'
 """
 
 _SCHEMA_BLOCKS = """
@@ -128,6 +134,7 @@ def _ensure_schema() -> None:
             with conn.cursor() as cur:
                 cur.execute("SET search_path TO infra,clan,public")
                 cur.execute(_SCHEMA_CAMPAIGNS)
+                cur.execute(_MIGRATE_CAMPAIGNS_ADD_SCHEMA)
                 cur.execute(_SCHEMA_BLOCKS)
                 for idx in _SCHEMA_INDEXES:
                     cur.execute(idx)
@@ -142,8 +149,14 @@ def create_campaign(
     campaign_id: str,
     budget_usd: float,
     notes: str = "",
+    target_schema: str = "clan",
 ) -> dict:
-    """Create a campaign envelope. Idempotent on campaign_id."""
+    """Create a campaign envelope. Idempotent on campaign_id.
+
+    target_schema controls where extracted memories are deposited.
+    Defaults to 'clan' (production). Pass 'competition' to route to the
+    isolated competition schema (T-competition-pipeline-configurable).
+    """
     _ensure_schema()
     conn = _conn()
     try:
@@ -151,15 +164,35 @@ def create_campaign(
             with conn.cursor() as cur:
                 cur.execute("SET search_path TO infra")
                 cur.execute(
-                    "INSERT INTO reading_campaigns (campaign_id, created_at, budget_usd, notes) "
-                    "VALUES (%s, %s, %s, %s) "
+                    "INSERT INTO reading_campaigns "
+                    "  (campaign_id, created_at, budget_usd, notes, target_schema) "
+                    "VALUES (%s, %s, %s, %s, %s) "
                     "ON CONFLICT (campaign_id) DO UPDATE SET "
-                    "budget_usd = EXCLUDED.budget_usd, notes = EXCLUDED.notes",
-                    (campaign_id, _now_iso(), budget_usd, notes),
+                    "  budget_usd = EXCLUDED.budget_usd, "
+                    "  notes = EXCLUDED.notes, "
+                    "  target_schema = EXCLUDED.target_schema",
+                    (campaign_id, _now_iso(), budget_usd, notes, target_schema),
                 )
     finally:
         conn.close()
-    return {"campaign_id": campaign_id, "budget_usd": budget_usd}
+    return {"campaign_id": campaign_id, "budget_usd": budget_usd, "target_schema": target_schema}
+
+
+def get_campaign_schema(campaign_id: str) -> str:
+    """Return the target_schema for a campaign (default: 'clan')."""
+    conn = _conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SET search_path TO infra")
+            cur.execute(
+                "SELECT COALESCE(target_schema, 'clan') FROM reading_campaigns "
+                "WHERE campaign_id = %s",
+                (campaign_id,),
+            )
+            row = cur.fetchone()
+            return row[0] if row else "clan"
+    finally:
+        conn.close()
 
 
 def campaign_spent(campaign_id: str) -> float:
@@ -575,7 +608,7 @@ def _blob_for(item_source: str, title: str, author: str) -> Path:
     return bp
 
 
-def _process_block_local(block: dict) -> dict:
+def _process_block_local(block: dict, target_schema: str = "clan") -> dict:
     """Process a block via the existing local qwen path. Returns result dict.
 
     Raises on hard failure; caller handles retry policy.
@@ -588,11 +621,12 @@ def _process_block_local(block: dict) -> dict:
         chunk_pos=block["chunk_pos"],
         pass_number=1,
         use_local=True,
+        target_schema=target_schema,
     )
 
 
 def _process_block_cloud_retry(
-    block: dict, model: str = "anthropic/claude-sonnet-4"
+    block: dict, model: str = "anthropic/claude-sonnet-4", target_schema: str = "clan"
 ) -> dict:
     """One-retry path via cloud Sonnet. Returns result dict.
 
@@ -608,6 +642,7 @@ def _process_block_cloud_retry(
         pass_number=1,
         use_local=False,
         model=model,
+        target_schema=target_schema,
     )
 
 
@@ -630,12 +665,14 @@ def worker_loop(
     Returns rollup dict: processed_local, processed_cloud, failed, skipped_budget.
     """
     worker = _worker_id()
+    target_schema = get_campaign_schema(campaign_id)
     stats = {
         "processed_local": 0,
         "processed_cloud": 0,
         "failed": 0,
         "skipped_budget": 0,
         "idle_exits": 0,
+        "target_schema": target_schema,
     }
     idle_count = 0
     processed_total = 0
@@ -682,7 +719,7 @@ def worker_loop(
 
         # Local attempt
         try:
-            result = _process_block_local(block)
+            result = _process_block_local(block, target_schema=target_schema)
             if result.get("at_end"):
                 # Empty/past-end block: mark done with 0 nodes, no cost
                 mark_block_done(
@@ -721,7 +758,7 @@ def worker_loop(
             continue
 
         try:
-            result = _process_block_cloud_retry(block, model=sonnet_retry_model)
+            result = _process_block_cloud_retry(block, model=sonnet_retry_model, target_schema=target_schema)
             # Crude cost estimate — Sonnet is ~$3/MTok input, ~$15/MTok output
             # A chunk is ~800 tokens in, ~300 out = ~$0.007 per chunk.
             est_cost = 0.007
