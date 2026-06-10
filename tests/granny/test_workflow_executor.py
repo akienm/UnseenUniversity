@@ -149,7 +149,8 @@ def test_tick_marks_failed_on_escalated_ticket(two_step_state):
 
 def test_tick_advances_dispatched_to_done_on_closed(two_step_state):
     two_step_state["steps"]["step-1"]["status"] = "dispatched"
-    with patch("devices.granny.workflow_executor.get_ticket_status", return_value="closed"):
+    with patch("devices.granny.workflow_executor.get_ticket_status", return_value="closed"), \
+         patch("devices.granny.workflow_executor._dispatch_step", return_value=True):
         updated = tick_workflow(two_step_state, {})
     assert updated["steps"]["step-1"]["status"] == "done"
 
