@@ -1594,6 +1594,85 @@ async def _api_device_events(request: Request):
     return JSONResponse({"device": device_id, "kind": kind, "events": events})
 
 
+async def _api_device_status(request: Request):
+    """GET /api/device/{id}/status — structured status for fascia Status box.
+
+    Returns: online status, registered_at, uptime, agent activity (if connected),
+    and device-specific DB metrics (Igor: memory count, session cost, tier).
+    """
+    device_id = request.path_params.get("id", "")
+    if not device_id:
+        return JSONResponse({"error": "missing device id"}, status_code=400)
+
+    result: dict = {"device": device_id}
+
+    # Registry: online status + registered_at
+    registry = {r["id"]: r for r in _load_device_registry() if r.get("id")}
+    reg = registry.get(device_id, {})
+    result["status"] = reg.get("status", "unknown")
+    result["registered_at"] = reg.get("registered_at", "")
+    result["mailbox"] = reg.get("mailbox", "")
+
+    # Agent stats pushed via /api/agents/{id}/stats (or WS heartbeat)
+    with _agents_lock:
+        agent = _agents.get(device_id, {})
+        stats = _agent_stats.get(device_id, {})
+    if agent:
+        hb = agent.get("last_heartbeat")
+        if hb is not None:
+            result["last_heartbeat_ago_s"] = round(time.monotonic() - hb, 1)
+    if stats:
+        result["agent_stats"] = stats
+
+    # DB metrics per device
+    conn = _db_conn()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                if device_id == "igor":
+                    # Memory count
+                    try:
+                        cur.execute("SELECT COUNT(*) FROM clan.memories")
+                        result["memory_count"] = cur.fetchone()[0]
+                    except Exception:
+                        pass
+                    # Session cost (last 24h)
+                    try:
+                        cur.execute(
+                            "SELECT SUM(cost_usd) FROM infra.spend"
+                            " WHERE ts > now() - interval '24 hours'"
+                        )
+                        row = cur.fetchone()
+                        result["session_cost_24h_usd"] = float(row[0]) if row and row[0] else 0.0
+                    except Exception:
+                        pass
+                    # Uptime from instance record if available
+                    try:
+                        cur.execute(
+                            "SELECT started_at FROM instance.ring_memory"
+                            " ORDER BY id DESC LIMIT 1"
+                        )
+                        row = cur.fetchone()
+                        if row and row[0]:
+                            result["igor_started_at"] = str(row[0])[:19]
+                    except Exception:
+                        pass
+                # Recent channel activity (last post time)
+                cur.execute(
+                    "SELECT MAX(ts) FROM channel_messages WHERE author = %s",
+                    (device_id,),
+                )
+                row = cur.fetchone()
+                if row and row[0]:
+                    result["last_post_at"] = str(row[0])[:19]
+        except Exception as exc:
+            log.debug("device_status: DB failed for %s: %s", device_id, exc)
+        finally:
+            conn.close()
+
+    return JSONResponse(result)
+
+
 async def _api_device_console(request: Request):
     """GET /api/device/{id}/console — last N lines of this device's log file.
 
@@ -2801,6 +2880,7 @@ def _make_app() -> Starlette:
         Route("/feeds/{device}", _api_feeds),
         # Per-device events + known devices list
         Route("/api/device/list", _api_device_list),
+        Route("/api/device/{id}/status", _api_device_status),
         Route("/api/device/{id}/events", _api_device_events),
         Route("/api/device/{id}/console", _api_device_console),
         Route("/api/device/{id}/breaker", _api_device_breaker, methods=["POST"]),
@@ -3087,12 +3167,13 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
                           font-weight: bold; }
     .channel-tab.has-new { color: #90ee90; }
     .fascia-box { background:#141425; border:1px solid #333; border-radius:4px;
-      margin-bottom:0.6rem; resize:vertical; overflow:auto; min-height:80px; }
-    .fascia-box-grow { flex:1; display:flex; flex-direction:column; min-height:0;
-      resize:none; overflow:hidden; margin-bottom:0.6rem;
+      margin-bottom:0.6rem; resize:vertical; overflow:auto;
+      min-height:80px; flex-shrink:0; max-height:240px; }
+    .fascia-box-grow { flex:1; display:flex; flex-direction:column; min-height:120px;
+      resize:vertical; overflow:hidden; margin-bottom:0.6rem;
       background:#141425; border:1px solid #333; border-radius:4px; }
     .fascia-box-grow .fascia-box-body-grow { flex:1; display:flex; flex-direction:column;
-      min-height:0; padding:0.4rem 0.6rem; }
+      min-height:0; padding:0.4rem 0.6rem; overflow:hidden; }
     .fascia-box-head { font-size:0.82rem; color:#7ec8e3; padding:0.3rem 0.6rem;
       border-bottom:1px solid #2a2a40; font-weight:bold; }
     .fascia-box-body { padding:0.4rem 0.6rem; font-size:0.82rem; }
@@ -3370,23 +3451,31 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     async function _loadFasciaBox_status(deviceId) {
       const el = document.getElementById('fascia-status-body');
       try {
-        const r = await fetch('/api/device/'+encodeURIComponent(deviceId)+'/events?kind=health&limit=50');
-        const d = await r.json();
-        const now = Date.now();
-        const kv = _fasciaHealth[deviceId] || {};
-        (d.events || []).forEach(e => {
-          const ts = new Date(e.ts + 'Z').getTime() || now;
-          (e.content || '').split('|').forEach(p => {
-            const m = p.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
-            if (m) kv[m[1]] = {v: m[2], ts};
-          });
-        });
-        Object.keys(kv).forEach(k => { if (now - kv[k].ts > _fasciaHealthTTL) delete kv[k]; });
-        _fasciaHealth[deviceId] = kv;
-        const keys = Object.keys(kv).sort();
-        if (!keys.length) { el.innerHTML = '<p style="color:#666">No health data.</p>'; return; }
-        el.innerHTML = '<table class="fascia-kv-table">' + keys.map(k =>
-          '<tr><td class="fascia-kv-key">'+_fasciaEsc(k)+'</td><td class="fascia-kv-val">'+_fasciaEsc(kv[k].v)+'</td></tr>'
+        const d = await (await fetch('/api/device/'+encodeURIComponent(deviceId)+'/status')).json();
+        const rows = [];
+        const statusColor = d.status === 'online' ? '#90ee90' : d.status === 'offline' ? '#c66' : '#aaa';
+        rows.push(['status', '<span style="color:'+statusColor+'">'+_fasciaEsc(d.status||'unknown')+'</span>']);
+        if (d.registered_at) rows.push(['registered', _fasciaEsc(d.registered_at.slice(0,19))]);
+        if (d.mailbox) rows.push(['mailbox', _fasciaEsc(d.mailbox)]);
+        if (d.last_heartbeat_ago_s !== undefined)
+          rows.push(['heartbeat', _fasciaEsc(d.last_heartbeat_ago_s+'s ago')]);
+        if (d.last_post_at) rows.push(['last post', _fasciaEsc(d.last_post_at)]);
+        // Igor-specific metrics
+        if (d.igor_started_at) rows.push(['igor started', _fasciaEsc(d.igor_started_at)]);
+        if (d.memory_count !== undefined) rows.push(['memories', _fasciaEsc(String(d.memory_count))]);
+        if (d.session_cost_24h_usd !== undefined)
+          rows.push(['spend (24h)', '$'+_fasciaEsc(d.session_cost_24h_usd.toFixed(4))]);
+        // Agent activity
+        const act = d.agent_stats && d.agent_stats.activity;
+        if (act) {
+          if (act.tier) rows.push(['tier', _fasciaEsc(act.tier)]);
+          if (act.action) rows.push(['action', _fasciaEsc(act.action)]);
+          if (act.busy !== undefined)
+            rows.push(['busy', '<span style="color:'+(act.busy?'#ffb347':'#90ee90')+'">'+(act.busy?'yes':'idle')+'</span>']);
+        }
+        if (!rows.length) { el.innerHTML = '<p style="color:#666">No status data.</p>'; return; }
+        el.innerHTML = '<table class="fascia-kv-table">' + rows.map(([k,v]) =>
+          '<tr><td class="fascia-kv-key">'+_fasciaEsc(k)+'</td><td class="fascia-kv-val">'+v+'</td></tr>'
         ).join('') + '</table>';
       } catch(e) {
         el.innerHTML = '<p style="color:#c66">Status unavailable: '+_fasciaEsc(e)+'</p>';
