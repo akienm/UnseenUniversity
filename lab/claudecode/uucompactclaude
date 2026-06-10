@@ -6,13 +6,13 @@ SESSION="${CC_TMUX_SESSION:-claude-main}"
 DATESTAMP=$(date +%Y%m%d)
 SLATE_PATH="${IGOR_HOME:-$HOME/.unseen_university}/claudecode/${DATESTAMP}.slate.txt"
 
-sleep 5
+sleep 0.1
 tmux send-keys -t "$SESSION" Enter
-sleep 0.5
+sleep 0.1
 tmux send-keys -t "$SESSION" Enter
-sleep 0.5
+sleep 0.1
 tmux send-keys -t "$SESSION" Enter
-sleep 0.5
+sleep 0.1
 tmux send-keys -t "$SESSION" "/model haiku"
 sleep 1
 tmux send-keys -t "$SESSION" Enter
