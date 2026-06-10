@@ -133,9 +133,8 @@ class TestIsNovel(unittest.TestCase):
         from devices.igor.memory.models import MemoryType
 
         cortex = _make_mock_cortex()
-        with patch("igor.cognition.distillation._is_novel") as mock_novel:
-            mock_novel.return_value = True
-            result = mock_novel("some narrative", cortex, MemoryType.EXPERIENTIAL, 0.9)
+        with patch("devices.igor.cognition.embedder.embed", return_value=None):
+            result = _is_novel("some narrative", cortex, MemoryType.EXPERIENTIAL, 0.9)
         self.assertTrue(result)
 
     def test_novel_when_no_existing_nodes(self):
