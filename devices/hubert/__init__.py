@@ -10,4 +10,8 @@ the system that builds the system.
 Hubert is NOT Vetinari. Vetinari handles strategic optimization and the
 external world. Hubert is hands-on: build process, tooling, ticket queues,
 infrastructure.
+
+DB Schema (postgres-only, schema: hubert):
+  - hubert.audit_flags  — per-ticket-per-commit structural audit results
+    Migration: unseen_university/migrations/m_hubert_audit_flags.py
 """
