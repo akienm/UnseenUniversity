@@ -419,9 +419,10 @@ class DickSimnelDevice(BaseDevice):
                 if result:
                     log.info("DickSimnel: tier=%s finished for %s (%d chars)", tier_label, ticket_id, len(result))
                     last_result = result
-                    # If result starts with DONE: or ESCALATE: (intentional stop), stop cascading.
+                    # DONE: = success; ESCALATE: = intentional human handoff — stop cascade.
+                    # MAX_TURNS: or bare text = insufficient tier → continue to next tier.
                     stripped = result.strip()
-                    if stripped.startswith("DONE:") or stripped.startswith("ESCALATE:") or stripped.startswith("MAX_TURNS:"):
+                    if stripped.startswith("DONE:") or stripped.startswith("ESCALATE:"):
                         return result
                     # Otherwise — no DONE: prefix — try next tier with prior attempt as context
                     log.warning(
