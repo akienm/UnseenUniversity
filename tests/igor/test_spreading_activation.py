@@ -217,7 +217,7 @@ class TestCortexSpreadingActivation(unittest.TestCase):
         mock_wg.spread_from_words.return_value = {"memory": 0.5, "recall": 0.3}
         mock_wg.words_to_doc_ids.return_value = {"DOCX": 0.4}
 
-        with patch("igor.cognition.word_graph.tokenize", return_value=["memory", "recall", "testing"]):
+        with patch("devices.igor.cognition.word_graph.tokenize", return_value=["memory", "recall", "testing"]):
             result = cortex.spreading_activation(["ID1"], word_graph=mock_wg)
 
         mock_wg.spread_from_words.assert_called_once()
