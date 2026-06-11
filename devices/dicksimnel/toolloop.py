@@ -26,8 +26,9 @@ log = logging.getLogger(__name__)
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
-MAX_TURNS = 20
+MAX_TURNS = 30
 DONE_PREFIX = "DONE:"
+COST_CAP_USD = 3.00
 
 # Bash commands blocked by the safety denylist
 _BASH_DENYLIST = re.compile(
@@ -105,19 +106,19 @@ TOOL_DEFINITIONS = [
 ]
 
 SYSTEM_RULES = """\
+## Exit protocol
+
+Output DONE: when: code written, tests green, committed, ticket closed.
+Output ESCALATE: when: scope unclear, HIGH-inertia file, missing context.
+These are the only valid non-tool responses. Everything else is an error.
+
 ## Rules
 
-- Always run tests after code changes: use Bash with `.venv/bin/python3 -m pytest tests/ -q --tb=short 2>&1 | tail -15`
-- Stage files specifically by name — never git add -A or git add .
+- Run tests before commit: Bash `.venv/bin/python3 -m pytest tests/ -q --tb=short 2>&1 | tail -15`
+- Stage by name only — never git add -A or git add .
 - Commit message must include: Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 - Never force-push
 - Use absolute paths for Read/Edit/Write
-
-## Completion
-
-When the ticket is fully done (code written, tests green, committed, ticket closed), respond with plain text starting with:
-  DONE: <one-line summary of what was accomplished>
-Do not call any more tools after the ticket is closed.
 """
 
 
@@ -144,6 +145,7 @@ class ToolLoop:
 
         self._turn_log = []
         ticket_id = ticket.get("id", "?")
+        running_cost: float = 0.0
         user_msg = (
             f"Ticket ID: {ticket_id}\n"
             f"Title: {ticket.get('title', 'No title')}\n"
@@ -154,7 +156,8 @@ class ToolLoop:
         full_system = system_prompt + "\n\n" + SYSTEM_RULES
 
         for turn in range(self._max_turns):
-            log.info("ToolLoop turn %d/%d — ticket %s", turn + 1, self._max_turns, ticket_id)
+            log.info("ToolLoop turn %d/%d $%.4f/$%.2f — ticket %s",
+                     turn + 1, self._max_turns, running_cost, COST_CAP_USD, ticket_id)
             # Force tool use on turn 1 to prevent planning-mode narration.
             # After turn 1, auto lets the model decide (including returning DONE:).
             extra = {"tool_choice": "required"} if turn == 0 else {}
@@ -167,6 +170,7 @@ class ToolLoop:
                 agent_id="dicksimnel",
                 max_tokens=4096,
                 timeout=120,
+                temperature=0.0,
                 extra=extra,
                 foreground=True,
             )
@@ -176,12 +180,21 @@ class ToolLoop:
                 log.error("ToolLoop inference failed on turn %d: %s", turn + 1, exc)
                 return None
 
+            running_cost += response.cost_estimate
+            if running_cost >= COST_CAP_USD:
+                log.warning(
+                    "ToolLoop: cost cap hit $%.4f/$%.2f on turn %d for %s",
+                    running_cost, COST_CAP_USD, turn + 1, ticket_id,
+                )
+                return f"COST_EXCEEDED: ${running_cost:.2f} of ${COST_CAP_USD:.2f} cap — inference did not complete within cost constraint"
+
             tool_calls = response.tool_calls
             log.debug(
-                "ToolLoop turn %d: %d chars, %d tool calls",
+                "ToolLoop turn %d: %d chars, %d tool calls, $%.4f cumulative",
                 turn + 1,
                 len(response.text or ""),
                 len(tool_calls) if tool_calls else 0,
+                running_cost,
             )
             self._turn_log.append({
                 "turn": turn + 1,
@@ -189,6 +202,7 @@ class ToolLoop:
                 "tool_names": [
                     tc.get("function", {}).get("name", "") for tc in (tool_calls or [])
                 ],
+                "cost": response.cost_estimate,
             })
 
             if not tool_calls:

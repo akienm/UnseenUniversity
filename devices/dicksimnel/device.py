@@ -44,6 +44,17 @@ _HIGH_INERTIA_TAGS = frozenset({"Security", "Provenance", "Database", "Auth", "B
 # Capability map prepended to the sprint-ticket skill when loaded.
 # Tells OR models (Bash/Read/Edit/Write only) how to execute CC-specific steps.
 _CAPABILITY_MAP = """\
+## OUTPUT CONSTRAINT — ABSOLUTE
+
+Your only permitted text output is one of:
+  DONE: <one-line summary>
+  ESCALATE: <reason>
+
+Any other text — prose, narration, plans, explanations — is a protocol
+violation that triggers re-dispatch at higher model cost. Do not explain
+yourself. Do not summarize in prose. Call tools until the work is done,
+then output DONE: and stop.
+
 ## Your execution environment
 
 You are DickSimnel, a sprint-ticket worker. You have exactly four tools:
@@ -316,6 +327,14 @@ class DickSimnelDevice(BaseDevice):
             self._escalate_ticket(ticket_id, "max turns hit without completing", analysis=result_text)
             return
 
+        if result_text.strip().startswith("COST_EXCEEDED:"):
+            log.warning(
+                "DickSimnel: %s cost cap hit — escalating to CC: %s",
+                ticket_id, result_text.strip()[:120],
+            )
+            self._escalate_ticket(ticket_id, result_text.strip()[:200], analysis=result_text)
+            return
+
         if result_text.strip().startswith("ESCALATE:"):
             reason = result_text.strip()[len("ESCALATE:"):].strip()[:200]
             log.warning("DickSimnel: %s self-escalating — %s", ticket_id, reason)
@@ -457,17 +476,24 @@ class DickSimnelDevice(BaseDevice):
                 if result:
                     log.info("DickSimnel: tier=%s finished for %s (%d chars)", tier_label, ticket_id, len(result))
                     last_result = result
-                    # DONE: = success; ESCALATE: = intentional human handoff — stop cascade.
-                    # MAX_TURNS: or bare text = insufficient tier → continue to next tier.
                     stripped = result.strip()
-                    if stripped.startswith("DONE:") or stripped.startswith("ESCALATE:"):
+                    # DONE: = success; ESCALATE:/COST_EXCEEDED: = stop cascade, hand to CC.
+                    if stripped.startswith("DONE:") or stripped.startswith("ESCALATE:") or stripped.startswith("COST_EXCEEDED:"):
                         return result
-                    # Otherwise — no DONE: prefix — try next tier with prior attempt as context
+                    # MAX_TURNS: with tool calls = tier was working but ran out of turns.
+                    # Don't advance to a more expensive tier — escalate to CC with the log.
+                    had_tool_calls = any(e.get("had_tool_calls") for e in loop._turn_log)
+                    if stripped.startswith("MAX_TURNS:") and had_tool_calls:
+                        log.warning(
+                            "DickSimnel: tier=%s hit MAX_TURNS with tool calls for %s — escalating to CC (not advancing tier)",
+                            tier_label, ticket_id,
+                        )
+                        return result
+                    # No DONE:, no tool calls (blank stall or planning-mode prose) — try next tier.
                     log.warning(
                         "DickSimnel: tier=%s no DONE: for %s — trying next tier (prior attempt appended)",
                         tier_label, ticket_id,
                     )
-                    # Append prior attempt to ticket description for next tier context
                     prior_note = f"\n\n---\n**Prior attempt ({tier_label}) produced no DONE: result.**\n{result[:300]}"
                     ticket = dict(ticket)
                     ticket["description"] = ticket.get("description", "") + prior_note
