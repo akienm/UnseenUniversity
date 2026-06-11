@@ -191,37 +191,130 @@ class AnthropicSource(Source):
     # Prompt caching beta: cache_control on system + first user turn saves up to 90%.
     BETA_HEADERS = "prompt-caching-2024-07-31"
 
+    # Credentials file where the real key lives (outside of bashrc for non-CC processes)
+    _CREDS_FILE = os.path.expanduser(
+        "~/.unseen_university/akien/akien.credentials.cfg"
+    )
+
     def __init__(self) -> None:
         super().__init__(name="anthropic")
 
     def _api_key(self) -> str:
-        key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-        if not key:
-            raise RuntimeError("ANTHROPIC_API_KEY not set")
-        return key
+        # Check env first (ANTHROPIC_API_KEY, then REAL_ANTHROPIC_API_KEY)
+        for var in ("ANTHROPIC_API_KEY", "REAL_ANTHROPIC_API_KEY"):
+            key = os.environ.get(var, "").strip()
+            if key:
+                return key
+        # Fall back to reading from credentials file — for non-CC processes like DickSimnel
+        try:
+            for line in open(self._CREDS_FILE).read().splitlines():
+                for var in ("REAL_ANTHROPIC_API_KEY", "ANTHROPIC_API_KEY"):
+                    if line.startswith(var + "="):
+                        key = line.split("=", 1)[1].strip()
+                        if key:
+                            return key
+        except OSError:
+            pass
+        raise RuntimeError("ANTHROPIC_API_KEY not set (checked env + akien.credentials.cfg)")
 
     def ping(self) -> bool:
+        # No key → source unavailable regardless of connectivity
+        try:
+            if not self._api_key():
+                return False
+        except RuntimeError:
+            return False
         try:
             with socket.create_connection(("api.anthropic.com", 443), timeout=3):
                 return True
         except OSError:
             return False
 
+    @staticmethod
+    def _convert_tools(openai_tools: list) -> list:
+        """Convert OpenAI tool definitions to Anthropic format."""
+        out = []
+        for t in openai_tools:
+            fn = t.get("function", {})
+            out.append({
+                "name": fn["name"],
+                "description": fn.get("description", ""),
+                "input_schema": fn.get("parameters", {"type": "object", "properties": {}}),
+            })
+        return out
+
+    @staticmethod
+    def _convert_messages(openai_msgs: list) -> list:
+        """Convert OpenAI-format messages (including tool_calls/tool roles) to Anthropic format.
+
+        Consecutive tool-result messages are batched into a single user message with
+        multiple tool_result content blocks, as required by the Anthropic API.
+        """
+        out = []
+        i = 0
+        while i < len(openai_msgs):
+            msg = openai_msgs[i]
+            role = msg.get("role", "")
+
+            if role == "tool":
+                # Batch all consecutive tool messages into one user message
+                tool_results = []
+                while i < len(openai_msgs) and openai_msgs[i].get("role") == "tool":
+                    m = openai_msgs[i]
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": m.get("tool_call_id", ""),
+                        "content": m.get("content", ""),
+                    })
+                    i += 1
+                out.append({"role": "user", "content": tool_results})
+                continue
+
+            if role == "assistant":
+                content_blocks = []
+                if msg.get("content"):
+                    content_blocks.append({"type": "text", "text": msg["content"]})
+                for tc in msg.get("tool_calls") or []:
+                    fn = tc.get("function", {})
+                    try:
+                        inp = json.loads(fn.get("arguments", "{}"))
+                    except (json.JSONDecodeError, TypeError):
+                        inp = {}
+                    content_blocks.append({
+                        "type": "tool_use",
+                        "id": tc.get("id", ""),
+                        "name": fn.get("name", ""),
+                        "input": inp,
+                    })
+                if content_blocks:
+                    out.append({"role": "assistant", "content": content_blocks})
+                i += 1
+                continue
+
+            # user / system — pass through as text content
+            out.append({"role": role, "content": msg.get("content", "")})
+            i += 1
+        return out
+
     def call(self, req: "InferenceRequest") -> dict:
         # System block with cache_control — marks prefix for caching on long contexts.
+        system_blocks = []
         if req.system:
             system_blocks = [
                 {"type": "text", "text": req.system, "cache_control": {"type": "ephemeral"}}
             ]
-        else:
-            system_blocks = []
+
+        anthropic_messages = self._convert_messages(req.messages)
+
         payload: dict = {
             "model": req.model,
             "max_tokens": req.max_tokens,
-            "messages": req.messages,
+            "messages": anthropic_messages,
         }
         if system_blocks:
             payload["system"] = system_blocks
+        if req.tools:
+            payload["tools"] = self._convert_tools(req.tools)
         payload.update(req.extra)
         body = json.dumps(payload).encode()
         http_req = urllib.request.Request(
@@ -238,10 +331,26 @@ class AnthropicSource(Source):
         try:
             with urllib.request.urlopen(http_req, timeout=req.timeout) as resp:
                 raw = json.loads(resp.read())
-            content = raw.get("content", [])
+            content_blocks = raw.get("content", [])
             text = "".join(
-                b.get("text", "") for b in content if b.get("type") == "text"
+                b.get("text", "") for b in content_blocks if b.get("type") == "text"
             )
+            # Convert Anthropic tool_use blocks → OpenAI tool_calls format
+            tool_calls = None
+            tool_use_blocks = [b for b in content_blocks if b.get("type") == "tool_use"]
+            if tool_use_blocks:
+                tool_calls = [
+                    {
+                        "id": b["id"],
+                        "type": "function",
+                        "function": {
+                            "name": b["name"],
+                            "arguments": json.dumps(b.get("input", {})),
+                        },
+                    }
+                    for b in tool_use_blocks
+                ]
+
             usage = raw.get("usage", {})
             cache_read = usage.get("cache_read_input_tokens", 0)
             if cache_read:
@@ -249,13 +358,13 @@ class AnthropicSource(Source):
                     "Anthropic cache hit: model=%s cache_read=%d prompt=%d",
                     req.model, cache_read, usage.get("input_tokens", 0),
                 )
+            stop_reason = raw.get("stop_reason", "stop")
+            finish_reason = "tool_calls" if tool_calls else stop_reason
+            msg_out: dict = {"content": text}
+            if tool_calls:
+                msg_out["tool_calls"] = tool_calls
             return {
-                "choices": [
-                    {
-                        "message": {"content": text},
-                        "finish_reason": raw.get("stop_reason", "stop"),
-                    }
-                ],
+                "choices": [{"message": msg_out, "finish_reason": finish_reason}],
                 "model": raw.get("model", req.model),
                 "usage": {
                     "prompt_tokens": usage.get("input_tokens", 0),

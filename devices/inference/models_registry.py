@@ -185,6 +185,17 @@ _SEED: list[ModelSpec] = [
         created_at="2026-06-04T00:00:00Z",
     ),
     ModelSpec(
+        model_id="claude-haiku-4-5",
+        source_name="anthropic",
+        tier="worker",
+        input_cost_per_1m=0.80,
+        output_cost_per_1m=4.00,
+        context_window=200_000,
+        tags=["worker", "claude", "fast", "cheap", "cacheable"],
+        notes="Cheapest Anthropic model. Strong instruction-follower; use for sprint-ticket worker tier.",
+        created_at="2026-06-10T00:00:00Z",
+    ),
+    ModelSpec(
         model_id="claude-sonnet-4-6",
         source_name="anthropic",
         tier="designer",
