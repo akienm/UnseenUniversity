@@ -59,10 +59,10 @@ class RoutingRule:
 _DEFAULT_RULES: list[RoutingRule] = [
     # Minion tier
     RoutingRule(1, "minion", "qwen/qwen3.5-9b", "openrouter", "minion→qwen3.5-9b/OR"),
-    # Worker tier — Claude haiku via OpenRouter (primary; strong instruction-follower)
-    RoutingRule(1, "worker", "anthropic/claude-haiku-4.5", "openrouter", "worker→haiku/OR"),
-    # Worker tier — Claude sonnet via OR (escalation when haiku insufficient)
-    RoutingRule(2, "worker", "anthropic/claude-sonnet-4.6", "openrouter", "worker→sonnet/OR"),
+    # Worker tier — Claude sonnet via OR (primary; haiku proven insufficient for sprint-ticket)
+    RoutingRule(1, "worker", "anthropic/claude-sonnet-4.6", "openrouter", "worker→sonnet/OR"),
+    # Worker tier — Claude haiku via OR (escalation fallback; insufficient alone)
+    RoutingRule(2, "worker", "anthropic/claude-haiku-4.5", "openrouter", "worker→haiku/OR"),
     # Worker tier — Google AI Studio free tier (flat_rate — preferred over OR when key set)
     RoutingRule(3, "worker", "gemini-2.0-flash", "google_free", "worker→gemini-flash/google-free"),
     # Worker tier — qwen3-coder last usage fallback (proven weak on complex instructions)
