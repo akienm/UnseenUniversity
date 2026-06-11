@@ -4310,7 +4310,6 @@ class Igor(IgorBase):
                                     id=f"NB_{_nb_slug}",
                                     narrative=f"[Notebook] {_nb_hits[:600]}",
                                     memory_type=_MT.FACTUAL,
-                                    inertia=0.1,
                                 )
                             ] + list(relevant)
             except Exception as _bare_e:
@@ -4558,9 +4557,9 @@ class Igor(IgorBase):
                                 ]
                                 if not _path_new:
                                     continue
-                                # Score: hit count × avg inertia
+                                # Score: hit count × avg confidence
                                 _avg_inertia = sum(
-                                    getattr(m, "inertia", 0.5) for m in _path_new
+                                    getattr(m, "confidence", 0.5) for m in _path_new
                                 ) / len(_path_new)
                                 _score = len(_path_new) * _avg_inertia
                                 if _score > _best_score:
@@ -8209,7 +8208,7 @@ class Igor(IgorBase):
 
     def _cmd_core(self, _):
         patterns = get_core_patterns(self.cortex)
-        loginfo(f"\n[bold]Core Patterns (inertia ~{patterns[0].inertia:.2f}):[/]")
+        loginfo(f"\n[bold]Core Patterns (confidence ~{patterns[0].confidence:.2f}):[/]")
         for p in patterns:
             loginfo(f"  [{p.id}] {p.narrative}")
 
@@ -8273,8 +8272,8 @@ class Igor(IgorBase):
         for h in all_habits:
             if h.id in _GENESIS_PROTECTED:
                 continue
-            if h.inertia >= 0.80:
-                continue  # high inertia — skip
+            if h.confidence >= 0.80:
+                continue  # high confidence — skip
             # Flag never-activated habits compiled from cloud/CC messages
             _src = h.metadata.get("source", "")
             _trigger = h.metadata.get("trigger", "")
@@ -8346,7 +8345,7 @@ class Igor(IgorBase):
                 for _, mems in dup_groups:
                     oldest = sorted(mems, key=lambda m: m.timestamp)[:-1]
                     for m in oldest:
-                        if m.id not in _GENESIS_PROTECTED and m.inertia < 0.80:
+                        if m.id not in _GENESIS_PROTECTED and m.confidence < 0.80:
                             if self.cortex.delete_memory(m.id):
                                 pruned += 1
                 self.cortex.write_ring(
@@ -9876,7 +9875,7 @@ class Igor(IgorBase):
         for i, m in enumerate(path[:10]):
             _iw = (m.metadata or {}).get("investment_weight", 0.0)
             _iw_str = f"  [w={_iw:.2f}]" if _iw > 0.5 else ""
-            _inertia = getattr(m, "inertia", 0.5)
+            _inertia = getattr(m, "confidence", 0.5)
             _mtype = (
                 getattr(m.memory_type, "value", str(m.memory_type))
                 if hasattr(m, "memory_type")
@@ -9884,7 +9883,7 @@ class Igor(IgorBase):
             )
             loginfo(
                 f"  [{i+1:2d}] [dim]{_mtype[:4]}[/] {m.id[:14]}{_iw_str}  "
-                f"[dim]inertia={_inertia:.2f}[/]\n"
+                f"[dim]confidence={_inertia:.2f}[/]\n"
                 f"       {m.narrative[:100]}"
             )
 
@@ -9928,18 +9927,18 @@ class Igor(IgorBase):
             loginfo("  [dim]No convergence nodes found in current context.[/]")
             return
 
-        # Sort by investment_weight desc, then inertia
+        # Sort by investment_weight desc, then confidence
         def _lever_score(m):
             _iw = (m.metadata or {}).get("investment_weight", 0.0)
-            return (_iw, getattr(m, "inertia", 0.5))
+            return (_iw, getattr(m, "confidence", 0.5))
 
         levers_sorted = sorted(levers, key=_lever_score, reverse=True)[:8]
         for m in levers_sorted:
             _iw = (m.metadata or {}).get("investment_weight", 0.0)
             _iw_str = f"  w={_iw:.2f}" if _iw else ""
-            _inertia = getattr(m, "inertia", 0.5)
+            _inertia = getattr(m, "confidence", 0.5)
             loginfo(
-                f"  [bold cyan]{m.id[:16]}[/]{_iw_str}  inertia={_inertia:.2f}\n"
+                f"  [bold cyan]{m.id[:16]}[/]{_iw_str}  confidence={_inertia:.2f}\n"
                 f"    {m.narrative[:120]}"
             )
 

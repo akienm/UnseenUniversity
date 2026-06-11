@@ -3657,7 +3657,7 @@ class Cortex(IgorBase):
             if m.metadata.get("reconsolidate_pending"):
                 continue  # already flagged
             # importance proxy: activation_count/20 + base_inertia blended
-            _importance_proxy = min(1.0, m.activation_count / 20.0 + m.inertia * 0.3)
+            _importance_proxy = min(1.0, m.activation_count / 20.0 + m.confidence * 0.3)
             if _importance_proxy < 0.6:
                 continue
             m.metadata["reconsolidate_pending"] = True
@@ -4289,7 +4289,7 @@ class Cortex(IgorBase):
         return scores
 
     def _apply_recency_frequency_boost(self, memories: list) -> None:
-        """#128 + G45: apply small recency, frequency, inertia, and confidence multipliers."""
+        """#128 + G45: apply small recency, frequency, confidence, and certainty multipliers."""
         now = datetime.now()
         for m in memories:
             score = getattr(m, "relevance_score", 0.0) or 0.0
@@ -4301,12 +4301,12 @@ class Cortex(IgorBase):
             # Frequency: caps at 20 activations, max +10%
             freq = min(1.0, m.activation_count / 20.0)
             score *= 1.0 + 0.10 * freq
-            # G45: inertia weighting — established memories slightly preferred [0.90, 1.05]
-            # Low-inertia episodics (0.20) get -10%; high-inertia core patterns (0.95) get +4%
-            score *= 0.90 + 0.15 * m.inertia
-            # G45: confidence weighting (G46 field) — uncertain memories slightly penalized [0.90, 1.00]
-            confidence = getattr(m, "confidence", 1.0) or 1.0
-            score *= 0.90 + 0.10 * confidence
+            # G45: confidence weighting — established memories slightly preferred [0.90, 1.05]
+            # Low-confidence episodics (0.20) get -10%; high-confidence core patterns (0.95) get +4%
+            score *= 0.90 + 0.15 * m.confidence
+            # G46: certainty weighting (stored epistemic field) — uncertain memories slightly penalized [0.90, 1.00]
+            certainty = getattr(m, "certainty", 1.0) or 1.0
+            score *= 0.90 + 0.10 * certainty
             m.relevance_score = score  # type: ignore[attr-defined]
 
     # G9 / #60: spreading activation ──────────────────────────────────────────

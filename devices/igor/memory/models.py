@@ -57,8 +57,8 @@ def default_scope(memory_type: MemoryType) -> MemoryScope:
     )
 
 
-# Base inertia by type - network position, activation, and friction adjust these
-BASE_INERTIA = {
+# Base confidence by type - network position, activation, and friction adjust these
+BASE_CONFIDENCE = {
     MemoryType.ROOT: 1.0,
     MemoryType.CORE_PATTERN: 0.95,
     MemoryType.IDENTITY: 0.85,
@@ -67,12 +67,14 @@ BASE_INERTIA = {
     MemoryType.PROCEDURAL: 0.30,
     MemoryType.INTERPRETIVE: 0.25,
     MemoryType.EXPERIENTIAL: 0.20,
-    MemoryType.FACTUAL: 0.25,
-    MemoryType.REFERENCE: 0.40,  # blobs are intentionally stored — higher base inertia
+    MemoryType.FACTUAL: 0.65,
+    MemoryType.REFERENCE: 0.40,  # blobs are intentionally stored — higher base confidence
     MemoryType.CREDENTIAL_REF: 0.50,  # credential refs are stable until env changes
-    MemoryType.GOAL: 0.15,  # D275: goals are ephemeral — low base inertia, kept hot via TWM
-    MemoryType.WORD_GRAPH: 0.05,  # word nodes are pure scaffolding — lowest base inertia
+    MemoryType.GOAL: 0.15,  # D275: goals are ephemeral — low base confidence, kept hot via TWM
+    MemoryType.WORD_GRAPH: 0.05,  # word nodes are pure scaffolding — lowest base confidence
 }
+# Backwards compat alias — remove after all callsites updated
+BASE_INERTIA = BASE_CONFIDENCE
 
 
 PURPOSE_CATEGORIES = frozenset(
@@ -152,9 +154,9 @@ class Memory:
         return self.narrative
 
     @property
-    def inertia(self) -> float:
-        """Inertia emerges from network position, not declaration."""
-        base = BASE_INERTIA.get(self.memory_type, 0.25)
+    def confidence(self) -> float:
+        """Confidence emerges from network position, not declaration."""
+        base = BASE_CONFIDENCE.get(self.memory_type, 0.25)
         usage_boost = min(0.10, self.activation_count * 0.002)
         children_boost = min(0.10, len(self.children_ids) * 0.01)
         if self.friction_history:
@@ -177,6 +179,11 @@ class Memory:
             + arousal_boost
             + charged_boost,
         )
+
+    @property
+    def inertia(self) -> float:
+        """Backwards compat alias for confidence — remove after all callsites updated."""
+        return self.confidence
 
     @property
     def avg_friction(self) -> Optional[float]:
@@ -214,7 +221,7 @@ class Memory:
 
     def __repr__(self):
         return (
-            f"Memory({self.id}, {self.memory_type.value}, inertia={self.inertia:.2f})"
+            f"Memory({self.id}, {self.memory_type.value}, confidence={self.confidence:.2f})"
         )
 
     # T-memory-metadata-comment-convention: human-readable annotations live in

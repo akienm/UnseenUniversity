@@ -111,7 +111,7 @@ def build_system_prompt(
     # All CORE_PATTERN memories have base inertia 0.95. IDENTITY memories with
     # sufficient activation also qualify. Prepend so LLM reads them first.
 
-    anchors = [m for m in core_patterns + identities if m.inertia >= 0.95]
+    anchors = [m for m in core_patterns + identities if m.confidence >= 0.95]
     lines: list[str] = []
 
     # ── LAYER -1: DATACENTER CAPABILITIES (when a manifest is cached) ───────

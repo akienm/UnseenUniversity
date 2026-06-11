@@ -247,7 +247,7 @@ class MemorySurfacer(BasePushSource):
         for mem in new_candidates:
             csb = (
                 f"LTM|{mem.memory_type.value}|id={mem.id}|"
-                f"inertia={mem.inertia:.2f}|act={mem.activation_count}|"
+                f"confidence={mem.confidence:.2f}|act={mem.activation_count}|"
                 f"{mem.narrative[:200]}"
             )
             salience = min(0.6, 0.3 + mem.activation_count * 0.01)
@@ -995,7 +995,7 @@ class HabitCandidateSource(BasePushSource):
 
             csb = (
                 f"HABIT_CANDIDATE|id={mem.id}|type={mem.memory_type.value}"
-                f"|activations={mem.activation_count}|inertia={mem.inertia:.2f}"
+                f"|activations={mem.activation_count}|confidence={mem.confidence:.2f}"
                 f"|narrative={mem.narrative[:200]}"
             )
             obs_id = cortex.twm_push(

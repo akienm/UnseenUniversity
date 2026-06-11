@@ -499,8 +499,8 @@ def _score_habit(
     activation = getattr(habit, "activation_count", 0) or 0
     score += min(0.15, activation * 0.003)
 
-    # inertia_bonus: stable habits preferred (inertia is [0,1])
-    inertia = getattr(habit, "inertia", 0.0) or 0.0
+    # confidence_bonus: stable habits preferred (confidence is [0,1])
+    inertia = getattr(habit, "confidence", 0.0) or 0.0
     score += inertia * 0.10
 
     # valence_bonus: positive-valence habits preferred (valence is [0,1])
