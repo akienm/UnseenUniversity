@@ -41,10 +41,66 @@ _DB_URL = os.environ.get(
 _SKILLS_DIR = Path.home() / ".claude" / "skills"
 _HIGH_INERTIA_TAGS = frozenset({"Security", "Provenance", "Database", "Auth", "Brainstem"})
 
-SYSTEM_PROMPT = """\
-You are DickSimnel, an autonomous software engineering agent in the UnseenUniversity rack.
-Work sprint tickets by reading, editing, and testing code.
-Always use tools to take action — never describe what you plan to do without doing it.
+# Capability map prepended to the sprint-ticket skill when loaded.
+# Tells OR models (Bash/Read/Edit/Write only) how to execute CC-specific steps.
+_CAPABILITY_MAP = """\
+## Your execution environment
+
+You are DickSimnel, a sprint-ticket worker. You have exactly four tools:
+Bash, Read, Edit, Write. Working directory: ~/dev/src/UnseenUniversity
+
+## Tool mappings — when the sprint-ticket skill says X, do Y instead
+
+  memory_get(path="P")
+    → Bash: psql $IGOR_HOME_DB_URL -tAc "SELECT content FROM memory_palace WHERE path='P'"
+
+  mcp__igor__* / mcp__datacenter__* / mcp__librarian__*
+    → SKIP — MCP not wired yet; continue to the next step
+
+  /audit-precode, /audit-hypothesis, /audit-ticket (sub-skill invocations)
+    → SKIP — skill invocation unavailable; proceed
+
+  Agent tool / subagent spawn (e.g. step 8.5 grader)
+    → SKIP — no subagent capability; proceed to next step
+
+  python run X
+    → Bash: cd ~/dev/src/UnseenUniversity && python run X
+
+  ${CC_WORKFLOW_TOOLS}/X.py  OR  python3 ${CC_WORKFLOW_TOOLS}/X.py
+    → Bash: python3 ~/dev/src/UnseenUniversity/lab/claudecode/X.py
+
+  /savestate, /autocompact
+    → SKIP — session skills unavailable; output DONE: after ticket close instead
+
+  Step 3 "select executor": always execute inline — never delegate
+
+## Execution discipline
+
+- Call tools immediately. NEVER narrate or plan in prose — if you would describe
+  a bash command, call Bash with it instead.
+- Your only text output (outside tool calls) is the final DONE: or ESCALATE: line.
+
+## Completion
+
+After step 11 (close ticket):
+  DONE: <one-line summary of what was built>
+
+If blocked (scope unclear, HIGH-inertia file, missing context):
+  ESCALATE: <reason>
+
+"""
+
+# Fallback when sprint-ticket skill file is unavailable.
+SYSTEM_PROMPT = _CAPABILITY_MAP + """\
+## Workflow (fallback — sprint-ticket skill not loaded)
+
+1. Read ticket description.
+2. Explore relevant files (Read + Bash grep/find).
+3. Implement changes (Edit/Write).
+4. Run tests: python3 -m pytest tests/ -q --tb=short 2>&1 | tail -20
+5. Commit: git add <files> && git commit && git pull --rebase && git push
+6. Close: python3 ~/dev/src/UnseenUniversity/lab/claudecode/cc_queue.py close <id> "<summary>"
+7. Output: DONE: <summary>
 """
 
 
@@ -215,6 +271,12 @@ class DickSimnelDevice(BaseDevice):
             self._escalate_ticket(ticket_id, "max turns hit without completing", analysis=result_text)
             return
 
+        if result_text.strip().startswith("ESCALATE:"):
+            reason = result_text.strip()[len("ESCALATE:"):].strip()[:200]
+            log.warning("DickSimnel: %s self-escalating — %s", ticket_id, reason)
+            self._escalate_ticket(ticket_id, f"self-escalated: {reason}", analysis=result_text)
+            return
+
         if not result_text.strip().startswith("DONE:"):
             log.warning(
                 "DickSimnel: %s result missing DONE: prefix — escalating to CC",
@@ -312,15 +374,16 @@ class DickSimnelDevice(BaseDevice):
     )
 
     def _build_system_prompt(self, ticket: dict) -> str:
-        """Build the system prompt. sprint-ticket skill is the sole procedural guide."""
+        """Build system prompt: capability map + sprint-ticket skill.
+
+        The capability map tells OR models (Bash/Read/Edit/Write only) how to
+        execute each sprint-ticket step — mapping CC-specific calls (memory_get,
+        mcp__*, python run X) to their Bash equivalents, and flagging steps to skip.
+        Same workflow as CC; different tool surface.
+        """
         skill_content = self.skill_load("sprint-ticket")
         if skill_content:
-            return (
-                "You are DickSimnel, an autonomous software engineering agent in the "
-                "UnseenUniversity rack. Execute the sprint-ticket procedure below exactly.\n\n"
-                + self._IBD_PREAMBLE
-                + skill_content
-            )
+            return _CAPABILITY_MAP + self._IBD_PREAMBLE + skill_content
         return SYSTEM_PROMPT
 
     def _run_inference(self, ticket: dict) -> str | None:

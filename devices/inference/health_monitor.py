@@ -59,7 +59,7 @@ class HealthMonitor:
                 )
                 results[source.name] = available
                 if not available:
-                    log.warning("HealthMonitor: source %r is DOWN", source.name)
+                    log.debug("HealthMonitor: source %r is DOWN", source.name)
             except Exception as exc:
                 source.available = False
                 results[source.name] = False

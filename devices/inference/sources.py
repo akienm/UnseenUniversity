@@ -309,6 +309,9 @@ class GoogleSource(Source):
 
     def ping(self) -> bool:
         import time
+        # No key → source is functionally unavailable regardless of connectivity
+        if not any(os.environ.get(v, "").strip() for v in ("GOOGLE_AI_STUDIO_API_KEY", "GOOGLE_STUDIO_API_KEY", "GEMINI_API_KEY")):
+            return False
         if time.time() < self._rate_limited_until:
             return False
         try:

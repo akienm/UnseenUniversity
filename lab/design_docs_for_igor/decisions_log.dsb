@@ -12,3 +12,5 @@
 2026-06-10T11:34:42 | D-repo-auditor-device-2026-06-10 | Rack-mounted structural commit auditor for M/L ticket verification | tickets: T-repo-auditor-schema, T-repo-auditor-structural, T-repo-auditor-semantic-eval, T-repo-auditor-cron-surface, T-consequence-repo-auditor-device
 2026-06-10T15:53:19 | D-lever-memory-confidence-2026-06-10 | LEVER memory type + rename inertia→confidence + source-seeded confidence | tickets: T-memory-confidence-rename, T-lever-memory-type, T-memory-source-seed, T-consequence-lever-memory-confidence
 2026-06-10T16:44:58 | D-bus-postgres-transport-2026-06-10 | Replace IMAP bus with Postgres LISTEN/NOTIFY | tickets: T-bus-postgres-transport, T-consequence-bus-postgres-transport
+2026-06-10T17:20:16 | D-granny-tier-dispatch-2026-06-10 | Granny dispatch: cascading tier pickup + exact-match mode | tickets: T-granny-tier-cascade, T-granny-exact-match-mode, T-consequence-granny-tier-dispatch
+2026-06-10T17:44:28 | D-dicksimnel-escalation-chain-2026-06-10 | Dick escalation chain: summarize-before-escalate + tier routing | tickets: T-dicksimnel-tier-routing, T-dicksimnel-cc-parity-map, T-consequence-dicksimnel-escalation-chain
