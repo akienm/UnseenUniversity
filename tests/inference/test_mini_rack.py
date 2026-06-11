@@ -109,11 +109,12 @@ def _make_engine(or_available=True, ollama_available=False):
 
 
 def test_rules_worker_routes_to_openrouter():
+    # Worker tier now routes to Claude haiku via OR (priority 1) instead of qwen3-coder
     engine, or_src, _ = _make_engine(or_available=True)
     decision = engine.route("worker")
     assert decision is not None
     assert decision.source is or_src
-    assert "qwen3-coder" in decision.model.model_id
+    assert "haiku" in decision.model.model_id
 
 
 def test_rules_minion_routes_to_cheapest():

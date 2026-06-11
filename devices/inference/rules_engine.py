@@ -12,11 +12,12 @@ Default rules — flat_rate (Ollama Pro) preferred, usage_based (OR) as fallback
     1. minion → qwen3.5-9b / openrouter (usage_based)
 
   Worker tier (sprint tickets, coding):
-    1. worker → claude-haiku-4-5 / anthropic  (usage_based — primary; strong instruction-follower)
-    2. worker → claude-sonnet-4-6 / anthropic  (usage_based — escalation when haiku insufficient)
+    1. worker → anthropic/claude-haiku-4.5 / openrouter  (primary; strong instruction-follower, via OR)
+    2. worker → anthropic/claude-sonnet-4.6 / openrouter  (escalation when haiku insufficient)
     3. worker → gemini-2.0-flash / google_free (flat_rate — preferred when GOOGLE_AI_STUDIO_API_KEY set)
-    9. worker → qwen3-coder-30b / openrouter  (usage_based — last usage fallback; proven weak on complex prompts)
+    9. worker → qwen3-coder-30b / openrouter  (last usage fallback; proven weak on complex prompts)
    10. worker → qwen2.5-coder:32b / ollama_cloud (flat_rate — preferred when OLLAMA_PRO_API_KEY set)
+  NOTE: direct anthropic source kept for designer tier only (requires Anthropic credit balance)
 
   Analyst tier (research, reasoning):
     3. analyst → deepseek-v4-flash / openrouter (usage_based)
@@ -58,11 +59,11 @@ class RoutingRule:
 _DEFAULT_RULES: list[RoutingRule] = [
     # Minion tier
     RoutingRule(1, "minion", "qwen/qwen3.5-9b", "openrouter", "minion→qwen3.5-9b/OR"),
-    # Worker tier — Anthropic haiku primary (strong instruction-follower, usage_based)
-    RoutingRule(1, "worker", "claude-haiku-4-5", "anthropic", "worker→haiku/anthropic"),
-    # Worker tier — Anthropic sonnet escalation (usage_based)
-    RoutingRule(2, "worker", "claude-sonnet-4-6", "anthropic", "worker→sonnet/anthropic"),
-    # Worker tier — Google AI Studio free tier (flat_rate — preferred over Anthropic when key set)
+    # Worker tier — Claude haiku via OpenRouter (primary; strong instruction-follower)
+    RoutingRule(1, "worker", "anthropic/claude-haiku-4.5", "openrouter", "worker→haiku/OR"),
+    # Worker tier — Claude sonnet via OR (escalation when haiku insufficient)
+    RoutingRule(2, "worker", "anthropic/claude-sonnet-4.6", "openrouter", "worker→sonnet/OR"),
+    # Worker tier — Google AI Studio free tier (flat_rate — preferred over OR when key set)
     RoutingRule(3, "worker", "gemini-2.0-flash", "google_free", "worker→gemini-flash/google-free"),
     # Worker tier — qwen3-coder last usage fallback (proven weak on complex instructions)
     RoutingRule(9, "worker", "qwen/qwen3-coder-30b-a3b-instruct", "openrouter", "worker→qwen3-coder-30b/OR"),
