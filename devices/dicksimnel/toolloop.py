@@ -155,6 +155,9 @@ class ToolLoop:
 
         for turn in range(self._max_turns):
             log.info("ToolLoop turn %d/%d — ticket %s", turn + 1, self._max_turns, ticket_id)
+            # Force tool use on turn 1 to prevent planning-mode narration.
+            # After turn 1, auto lets the model decide (including returning DONE:).
+            extra = {"tool_choice": "required"} if turn == 0 else {}
             req = InferenceRequest(
                 model="",
                 messages=messages,
@@ -164,6 +167,7 @@ class ToolLoop:
                 agent_id="dicksimnel",
                 max_tokens=4096,
                 timeout=120,
+                extra=extra,
             )
             try:
                 response = InferenceDevice().dispatch(req)
