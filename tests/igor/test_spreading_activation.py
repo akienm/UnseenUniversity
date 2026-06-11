@@ -58,6 +58,8 @@ class TestWordGraphSpreadFromWords(unittest.TestCase):
         db_ctx.__enter__ = MagicMock(return_value=conn)
         db_ctx.__exit__ = MagicMock(return_value=False)
         wg._db = MagicMock(return_value=db_ctx)
+        # Set _cortex to None (required by spread_from_words method)
+        wg._cortex = None
         return wg, conn
 
     def test_empty_seeds_return_empty(self):
