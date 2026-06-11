@@ -149,7 +149,8 @@ class DickSimnelWorkerListener:
                     )
                     if self._device is not None:
                         self._device._channel_event(
-                            f"DICKSIMNEL_DECLINE ticket={ticket_id} reason='OR balance at floor'"
+                            f"DICKSIMNEL_DECLINE ticket={ticket_id} reason='OR balance at floor'",
+                            event_type="decline",
                         )
                         self._device._run_queue_cmd("setstatus", ticket_id, "sprint")
                     return
@@ -185,7 +186,8 @@ class DickSimnelWorkerListener:
         })
         self._device._active_ticket = ticket_id
         self._device._channel_event(
-            f"DICKSIMNEL_WORKING ticket={ticket_id} title={ticket.get('title', '?')!r}"
+            f"DICKSIMNEL_WORKING ticket={ticket_id} title={ticket.get('title', '?')!r}",
+            event_type="working",
         )
         log.info(
             "DickSimnelWorkerListener: working ticket %s — %s",
