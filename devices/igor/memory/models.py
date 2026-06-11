@@ -119,7 +119,7 @@ class Memory:
     source: str = (
         ""  # where this memory came from: genesis | cloud_directed | interaction | reading | user_seeded | self_edit | ""
     )
-    confidence: float = (
+    certainty: float = (
         1.0  # 0.0–1.0: how certain is this memory? (1.0 = fully trusted)
     )
     context_of_encoding: str = (

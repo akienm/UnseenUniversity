@@ -185,7 +185,7 @@ def _deposit_learning(conn, turn_id: str, author: str, learning: str) -> str:
         memory_type=MemoryType.FACTUAL,
         metadata=metadata,
         source="after_action_review",
-        confidence=0.75,
+        certainty=0.75,
         context_of_encoding=f"after_action_review|learned_from={author}",
     )
     cortex.store(mem)

@@ -58,7 +58,7 @@ _SYNC_COLS = (
     "links_weighted",
     "last_accessed",
     "source",
-    "confidence",
+    "certainty",
     "context_of_encoding",
     "updated_at",
 )
@@ -72,8 +72,8 @@ _UPSERT_SQL = """
                                   THEN EXCLUDED.narrative ELSE memories.narrative END,
         metadata           = CASE WHEN EXCLUDED.updated_at > COALESCE(memories.updated_at, '')
                                   THEN EXCLUDED.metadata ELSE memories.metadata END,
-        confidence         = CASE WHEN EXCLUDED.updated_at > COALESCE(memories.updated_at, '')
-                                  THEN EXCLUDED.confidence ELSE memories.confidence END,
+        certainty          = CASE WHEN EXCLUDED.updated_at > COALESCE(memories.updated_at, '')
+                                  THEN EXCLUDED.certainty ELSE memories.certainty END,
         source             = CASE WHEN EXCLUDED.updated_at > COALESCE(memories.updated_at, '')
                                   THEN EXCLUDED.source ELSE memories.source END,
         activation_count   = GREATEST(memories.activation_count, EXCLUDED.activation_count),

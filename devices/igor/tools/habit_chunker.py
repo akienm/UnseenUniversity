@@ -134,7 +134,7 @@ def _upsert_chunk(
         memory_type=MemoryType.PROCEDURAL,
         metadata=metadata,
         source="habit_chunker",
-        confidence=0.7,
+        certainty=0.7,
         context_of_encoding=f"habit_chunker scan {now[:10]}",
     )
     cortex.store(mem)

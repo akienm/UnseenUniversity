@@ -257,7 +257,7 @@ class MemoryChannel(EmitChannel):
                 narrative=str(value),
                 memory_type=mem_type,
                 source="engram",
-                confidence=0.7,
+                certainty=0.7,
                 context_of_encoding="engram_emit",
                 metadata={
                     "tags": tags,

@@ -123,7 +123,7 @@ def _ensure_node(
         metadata=metadata or {},
         portable=True,
         source="env_sync",
-        confidence=1.0,
+        certainty=1.0,
     )
     cortex.store(mem)
     return cortex.get(node_id) or mem
@@ -213,7 +213,7 @@ def push_vars_to_graph(cortex, vars_dict: dict) -> int:
             metadata={"env_key": key, "env_value": value, "scope": "global"},
             portable=True,
             source="env_sync",
-            confidence=1.0,
+            certainty=1.0,
         )
         cortex.store(mem)
         pushed += 1

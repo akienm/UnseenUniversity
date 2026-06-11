@@ -345,7 +345,7 @@ class OutputTrainer(IgorBase):
             memory_type=MemoryType.PROCEDURAL,
             metadata=metadata,
             source="output_training",
-            confidence=0.7,
+            certainty=0.7,
             context_of_encoding=f"output_training|tier={tier}",
         )
         cortex.store(mem)

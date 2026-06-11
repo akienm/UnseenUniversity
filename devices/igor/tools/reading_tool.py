@@ -271,7 +271,7 @@ def _create_run(
         ),
         memory_type=MemoryType.EPISODIC,
         source="reading_tool",
-        confidence=1.0,
+        certainty=1.0,
         context_of_encoding="reading_run|created",
         metadata={
             "run_id": run_id,
@@ -300,7 +300,7 @@ def _create_run(
             memory_type=MemoryType.EPISODIC,
             parent_id=run_node_id,
             source="reading_tool",
-            confidence=1.0,
+            certainty=1.0,
             context_of_encoding="reading_run|item",
             metadata={
                 "run_id": run_id,

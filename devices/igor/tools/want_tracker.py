@@ -110,7 +110,7 @@ def _want_extract_worker(response_text: str, user_input: str, cortex) -> None:
             narrative=narrative,
             memory_type=MemoryType.EPISODIC,
             source="want_tracker",
-            confidence=0.85,
+            certainty=0.85,
             context_of_encoding="want_tracker|post_response",
             portable=False,
             metadata={

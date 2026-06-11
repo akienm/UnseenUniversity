@@ -466,7 +466,7 @@ def _deposit_nodes(nodes: list, cortex, question: str) -> int:
                 narrative=narrative,
                 memory_type=mt,
                 source="inner_cc",
-                confidence=confidence,
+                certainty=confidence,
                 context_of_encoding=f"inner_cc|{ntype}|code_architecture",
                 metadata=meta,
             )

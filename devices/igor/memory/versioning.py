@@ -81,7 +81,7 @@ def version_before_update(cortex, memory) -> Optional[str]:
             arousal=existing.arousal,
             dominance=existing.dominance,
             source="version_snapshot",
-            confidence=existing.confidence,
+            certainty=existing.certainty,
             context_of_encoding=f"version|{memory.id}|seq={version_seq}",
             metadata=version_meta,
             payload=existing.payload,

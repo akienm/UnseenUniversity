@@ -6,7 +6,7 @@ checks matrix coverage for each input, and deposits the LLM response as a FACTUA
 memory wherever the matrix was thin.
 
 Gap signal: no memory narrative contains >= MIN_OVERLAP tokens from the input query.
-Deposit: FACTUAL memory, source="self_training", confidence=0.7.
+Deposit: FACTUAL memory, source="self_training", certainty=0.7.
 
 Registered as a tool (run_self_training_pass) so SchedulerSource can fire it via
 a PROC habit with schedule_interval_sec.
@@ -386,7 +386,7 @@ class SelfTrainer(IgorBase):
             memory_type=MemoryType.FACTUAL,
             metadata=metadata,
             source="self_training",
-            confidence=0.7,
+            certainty=0.7,
             context_of_encoding=f"self_training|tier={tier}",
         )
         cortex.store(mem)

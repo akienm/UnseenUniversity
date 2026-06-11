@@ -211,7 +211,7 @@ def _deposit_fact(
         narrative=narrative,
         memory_type=MemoryType.FACTUAL,
         source="reading_indexer",
-        confidence=confidence,
+        certainty=confidence,
         context_of_encoding=f"blob_extract|{title[:40]}|ch{chapter_idx}|chunk{chunk_idx}",
         metadata=metadata,
     )

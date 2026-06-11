@@ -671,7 +671,7 @@ class WorkflowB_EvaluateClaim(Workflow, IgorBase):
                 output=ClaimEvaluation(
                     claim=claim,
                     verdict=verdict_text or "unknown",
-                    confidence=confidence,
+                    certainty=confidence,
                     counter_evidence=counter or "",
                 ),
                 reason="peer provided verdict + confidence",
@@ -713,7 +713,7 @@ class WorkflowB_EvaluateClaim(Workflow, IgorBase):
         return ClaimEvaluation(
             claim=claim,
             verdict=verdict_text or "unknown",
-            confidence=_extract_confidence(text),
+            certainty=_extract_confidence(text),
             counter_evidence=_extract_field(
                 last_peer.content,
                 ["counter-evidence:", "counter:", "however:", "but:"],

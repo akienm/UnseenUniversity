@@ -195,7 +195,7 @@ def export_engram(
                 "valence": node.valence,
                 "arousal": node.arousal,
                 "source": node.source,
-                "confidence": node.confidence,
+                "certainty": node.certainty,
             }
             nodes.append(node_dict)
 
@@ -304,7 +304,7 @@ def import_engram(
             valence=node_dict.get("valence", 0.0),
             arousal=node_dict.get("arousal", 0.0),
             source="engram_import",
-            confidence=node_dict.get("confidence", 1.0),
+            certainty=node_dict.get("certainty", node_dict.get("confidence", 1.0)),
         )
         cortex.store(mem)
         imported += 1

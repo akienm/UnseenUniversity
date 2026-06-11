@@ -1041,7 +1041,7 @@ def _reading_extract_worker(
                 narrative=narrative,
                 memory_type=_MT.FACTUAL,
                 source="reading",
-                confidence=confidence,
+                certainty=confidence,
                 context_of_encoding=f"reading|{title[:40]}|ch{chapter}|pos{position}",
                 metadata=metadata,
             )

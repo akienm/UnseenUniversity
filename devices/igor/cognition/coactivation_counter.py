@@ -154,7 +154,7 @@ def record_retrieval_boost(word_graph, memory, arousal: float) -> None:
         return
 
     importance = getattr(memory, "importance", None) or getattr(
-        memory, "confidence", 0.0
+        memory, "certainty", 0.0
     )
     if (importance or 0.0) < 0.7:
         return

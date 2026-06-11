@@ -327,7 +327,7 @@ def ensure_sensor_root(cortex: "Cortex") -> None:
             memory_type=MemoryType.FACTUAL,
             parent_id="CP3",
             source="sensor_tree",
-            confidence=1.0,
+            certainty=1.0,
             metadata={"spine": True, "sensor_tree_root": True},
         )
         cortex.store(root)
@@ -374,7 +374,7 @@ def create_sensor(
         memory_type=MemoryType.FACTUAL,
         parent_id=SENSOR_TREE_ROOT,
         source="sensor_tree",
-        confidence=1.0,
+        certainty=1.0,
         metadata=meta,
     )
     cortex.store(sensor)

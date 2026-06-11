@@ -1005,7 +1005,7 @@ def annotate_learning(**kwargs) -> str:
     """
     Deposit a personal EXPERIENTIAL memory recording whether an approach worked.
     Triggered by 'this worked', 'didn't work', 'mark that', etc.
-    Stores source='user_annotated', confidence=0.95 so it outweighs generic FACTUAL.
+    Stores source='user_annotated', certainty=0.95 so it outweighs generic FACTUAL.
     """
     import uuid as _uuid
     import time as _time
@@ -1045,7 +1045,7 @@ def annotate_learning(**kwargs) -> str:
             activation_count=1,
             metadata=metadata,
             source="user_annotated",
-            confidence=0.95,  # high confidence — first-person experience
+            certainty=0.95,  # high confidence — first-person experience
             context_of_encoding="akien_annotation",
         )
         cortex.store(mem)

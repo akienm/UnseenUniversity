@@ -278,7 +278,7 @@ class EpisodeBinder(IgorBase):
                 arousal=episode.arousal,
                 dominance=episode.dominance,
                 source="episode_binder",
-                confidence=0.9,
+                certainty=0.9,
             )
             cortex.store(mem)
             logger.debug("Deposited episode %s", episode.episode_id)

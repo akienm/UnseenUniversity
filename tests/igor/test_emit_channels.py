@@ -188,8 +188,8 @@ class TestMemoryChannel:
             mock_log.warning.assert_called()
             mock_cortex.store.assert_not_called()
 
-    def test_memory_channel_sets_source_and_confidence(self):
-        """MemoryChannel should set source='engram' and confidence=0.7."""
+    def test_memory_channel_sets_source_and_certainty(self):
+        """MemoryChannel should set source='engram' and certainty=0.7."""
         channel = MemoryChannel()
         mock_cortex = Mock()
         basket = {"_cortex": mock_cortex}
@@ -200,7 +200,7 @@ class TestMemoryChannel:
         memory = call_args[0][0]
 
         assert memory.source == "engram"
-        assert memory.confidence == 0.7
+        assert memory.certainty == 0.7
 
     def test_memory_channel_non_bidirectional(self):
         """MemoryChannel should not be bidirectional."""

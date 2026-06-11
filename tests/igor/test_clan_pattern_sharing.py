@@ -29,7 +29,7 @@ def _make_memory(id_: str, narrative: str = "", parent_id: str = None, children=
     m.valence = 0.0
     m.arousal = 0.5
     m.source = "test"
-    m.confidence = 1.0
+    m.certainty = 1.0
     return m
 
 

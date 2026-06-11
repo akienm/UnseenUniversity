@@ -29,7 +29,7 @@ Three collaborating layers:
    children_ids, links_weighted (directed edges {id: weight}), activation_count,
    valence/arousal/dominance (emotional profile), embedding (nullable JSON),
    scope (class | instance | session), metadata (JSONB for arbitrary KV),
-   timestamp, last_accessed, source, confidence, context_of_encoding, payload.
+   timestamp, last_accessed, source, certainty, context_of_encoding, payload.
 
    Memory types (see models.py for canonical list + BASE_INERTIA):
      ROOT, CORE_PATTERN (CP1-CP6), IDENTITY (ID1-ID14), ROLE_MODEL,
@@ -355,7 +355,7 @@ CREATE TABLE IF NOT EXISTS memories (
     links_weighted      TEXT DEFAULT '{}',
     last_accessed       TEXT,
     source              TEXT,
-    confidence          REAL DEFAULT 1.0,
+    certainty           REAL DEFAULT 1.0,
     context_of_encoding TEXT,
     updated_at          TEXT,
     scope               TEXT DEFAULT 'class'
@@ -555,6 +555,7 @@ _SCHEMA_MIGRATIONS: list[tuple[str, str]] = [
     ),
     ("m007_source", "ALTER TABLE memories ADD COLUMN source TEXT DEFAULT ''"),
     ("m008_confidence", "ALTER TABLE memories ADD COLUMN confidence REAL DEFAULT 1.0"),
+    ("m008b_certainty", "ALTER TABLE memories RENAME COLUMN confidence TO certainty"),
     (
         "m009_context_of_encoding",
         "ALTER TABLE memories ADD COLUMN context_of_encoding TEXT DEFAULT ''",
@@ -1782,7 +1783,7 @@ class Cortex(IgorBase):
                  valence, arousal, dominance,
                  activation_count, friction_history, timestamp, metadata, portable,
                  links_weighted, last_accessed,
-                 source, confidence, context_of_encoding, updated_at, scope, payload,
+                 source, certainty, context_of_encoding, updated_at, scope, payload,
                  source_agent, source_token, derived_from,
                  tags, triggers)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -1803,7 +1804,7 @@ class Cortex(IgorBase):
                   links_weighted = EXCLUDED.links_weighted,
                   last_accessed = EXCLUDED.last_accessed,
                   source = EXCLUDED.source,
-                  confidence = EXCLUDED.confidence,
+                  certainty = EXCLUDED.certainty,
                   context_of_encoding = EXCLUDED.context_of_encoding,
                   updated_at = EXCLUDED.updated_at,
                   scope = EXCLUDED.scope,
@@ -1832,7 +1833,7 @@ class Cortex(IgorBase):
                     json.dumps(memory.links),
                     memory.last_accessed.isoformat() if memory.last_accessed else None,
                     memory.source,
-                    memory.confidence,
+                    memory.certainty,
                     memory.context_of_encoding,
                     _now_iso,
                     memory.scope.value if memory.scope else "class",
@@ -1871,10 +1872,10 @@ class Cortex(IgorBase):
                 self._maybe_calve(memory)
             except Exception as _calve_e:
                 logging.getLogger(__name__).debug("calving check: %s", _calve_e)
-        # T-igor-deferred-node-state: auto-mark unresolved when confidence is thin
+        # T-igor-deferred-node-state: auto-mark unresolved when certainty is thin
         # and no links are being provided. Runs non-fatally — never blocks store.
         try:
-            _low_conf = memory.confidence < self._UNRESOLVED_CONFIDENCE_THRESHOLD
+            _low_conf = memory.certainty < self._UNRESOLVED_CONFIDENCE_THRESHOLD
             _thin_links = len(memory.links or {}) < self._UNRESOLVED_LINK_THRESHOLD and not link_to
             if _low_conf and _thin_links:
                 self.mark_unresolved(memory.id)
@@ -1947,7 +1948,7 @@ class Cortex(IgorBase):
                     json.dumps(memory.links),
                     memory.last_accessed.isoformat() if memory.last_accessed else None,
                     memory.source,
-                    memory.confidence,
+                    memory.certainty,
                     memory.context_of_encoding,
                     _now_iso,
                     memory.scope.value if memory.scope else "class",
@@ -1963,7 +1964,7 @@ class Cortex(IgorBase):
                     (id, narrative, memory_type, parent_id, children_ids, link_ids,
                      valence, arousal, dominance, activation_count, friction_history,
                      timestamp, metadata, portable, links_weighted, last_accessed,
-                     source, confidence, context_of_encoding, updated_at, scope, payload,
+                     source, certainty, context_of_encoding, updated_at, scope, payload,
                      tags)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (id) DO UPDATE SET
@@ -1983,7 +1984,7 @@ class Cortex(IgorBase):
                       links_weighted = EXCLUDED.links_weighted,
                       last_accessed = EXCLUDED.last_accessed,
                       source = EXCLUDED.source,
-                      confidence = EXCLUDED.confidence,
+                      certainty = EXCLUDED.certainty,
                       context_of_encoding = EXCLUDED.context_of_encoding,
                       updated_at = EXCLUDED.updated_at,
                       scope = EXCLUDED.scope,
@@ -2245,7 +2246,7 @@ class Cortex(IgorBase):
                       (id, narrative, memory_type, metadata, timestamp, updated_at, scope,
                        portable, valence, arousal, dominance, activation_count,
                        children_ids, link_ids, friction_history, links_weighted,
-                       source, confidence)
+                       source, certainty)
                     VALUES (%s, %s, 'WORD_GRAPH', %s::jsonb, %s, %s, 'class',
                             0, 0.0, 0.0, 0.0, 0,
                             '[]', '[]', '[]', '{}',
@@ -4886,9 +4887,9 @@ class Cortex(IgorBase):
             ),
             # G46: provenance + epistemic fields
             source=row["source"] if "source" in keys and row["source"] else "",
-            confidence=(
-                float(row["confidence"])
-                if "confidence" in keys and row["confidence"] is not None
+            certainty=(
+                float(row["certainty"])
+                if "certainty" in keys and row["certainty"] is not None
                 else 1.0
             ),
             context_of_encoding=(
