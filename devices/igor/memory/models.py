@@ -78,6 +78,16 @@ BASE_CONFIDENCE = {
 # Backwards compat alias — remove after all callsites updated
 BASE_INERTIA = BASE_CONFIDENCE
 
+# Epistemic source: how well-established is this knowledge?
+# Scales BASE_CONFIDENCE at deposit time; network effects adjust from there.
+SOURCE_MULTIPLIER = {
+    "experimental": 1.0,   # you proved it yourself
+    "derived":       0.85,  # you reasoned to it
+    "unknown":       0.75,  # default — no source info
+    "read":          0.65,  # someone told you in a book
+    "observed":      0.50,  # you saw it happen once
+}
+
 
 PURPOSE_CATEGORIES = frozenset(
     {
@@ -143,6 +153,10 @@ class Memory:
     source_token: Optional[str] = None
     # Chain-of-custody: IDs of memories this one was summarized or derived from
     derived_from: Optional[list] = None
+    # Epistemological origin — how well-established is this knowledge?
+    # Values: experimental | derived | unknown | read | observed
+    # Scales BASE_CONFIDENCE via SOURCE_MULTIPLIER at deposit time.
+    epistemic_source: str = "unknown"
 
     def __post_init__(self):
         if self.scope is None:
@@ -158,7 +172,7 @@ class Memory:
     @property
     def confidence(self) -> float:
         """Confidence emerges from network position, not declaration."""
-        base = BASE_CONFIDENCE.get(self.memory_type, 0.25)
+        base = BASE_CONFIDENCE.get(self.memory_type, 0.25) * SOURCE_MULTIPLIER.get(self.epistemic_source, 0.75)
         usage_boost = min(0.10, self.activation_count * 0.002)
         children_boost = min(0.10, len(self.children_ids) * 0.01)
         if self.friction_history:

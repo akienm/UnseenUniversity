@@ -13,7 +13,7 @@ import unittest
 from pathlib import Path
 
 
-from devices.igor.memory.models import Memory, MemoryType, MemoryScope, BASE_CONFIDENCE, default_scope
+from devices.igor.memory.models import Memory, MemoryType, MemoryScope, BASE_CONFIDENCE, SOURCE_MULTIPLIER, default_scope
 
 
 def _make_cortex(db_path: str):
@@ -132,6 +132,54 @@ class TestMemoryScopeCortex(unittest.TestCase):
         self.assertNotIn(cred.id, ids)
 
 
+class TestEpistemicSourceMultiplier(unittest.TestCase):
+
+    def test_experimental_higher_than_read(self):
+        e = Memory("I tested this", MemoryType.FACTUAL, epistemic_source="experimental")
+        r = Memory("I read this", MemoryType.FACTUAL, epistemic_source="read")
+        self.assertGreater(e.confidence, r.confidence)
+
+    def test_derived_higher_than_observed(self):
+        d = Memory("I reasoned this", MemoryType.FACTUAL, epistemic_source="derived")
+        o = Memory("I saw this once", MemoryType.FACTUAL, epistemic_source="observed")
+        self.assertGreater(d.confidence, o.confidence)
+
+    def test_unknown_is_default(self):
+        m = Memory("no source info", MemoryType.FACTUAL)
+        self.assertEqual(m.epistemic_source, "unknown")
+
+    def test_multiplier_ordering(self):
+        sources = ["experimental", "derived", "unknown", "read", "observed"]
+        prev = float("inf")
+        for src in sources:
+            m = Memory("test", MemoryType.FACTUAL, epistemic_source=src)
+            self.assertLessEqual(m.confidence, prev, f"{src} should be <= prior")
+            prev = m.confidence
+
+    def test_source_multiplier_keys(self):
+        for key in ["experimental", "derived", "unknown", "read", "observed"]:
+            self.assertIn(key, SOURCE_MULTIPLIER)
+
+    def test_cortex_roundtrip_preserves_epistemic_source(self):
+        import os
+        import tempfile
+        from pathlib import Path
+        from devices.igor.memory.cortex import Cortex
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
+            db_path = f.name
+        try:
+            os.environ["IGOR_DB_PATH"] = db_path
+            cortex = Cortex(Path(db_path))
+            m = Memory("I personally verified this", MemoryType.FACTUAL, epistemic_source="experimental")
+            cortex.store(m)
+            loaded = cortex.get(m.id)
+            self.assertIsNotNone(loaded)
+            self.assertEqual(loaded.epistemic_source, "experimental")
+        finally:
+            os.unlink(db_path)
+            os.environ.pop("IGOR_DB_PATH", None)
+
+
 class TestLeverMemoryType(unittest.TestCase):
 
     def test_lever_enum_importable(self):
@@ -142,6 +190,11 @@ class TestLeverMemoryType(unittest.TestCase):
 
     def test_lever_memory_confidence_property(self):
         m = Memory("physics intuition applies to software architecture", MemoryType.LEVER)
+        # 0.85 base * 0.75 unknown-source multiplier
+        self.assertGreaterEqual(m.confidence, 0.85 * 0.75)
+
+    def test_lever_experimental_source_hits_full_base(self):
+        m = Memory("I proved this cross-domain pattern myself", MemoryType.LEVER, epistemic_source="experimental")
         self.assertGreaterEqual(m.confidence, 0.85)
 
     def test_lever_defaults_to_class_scope(self):

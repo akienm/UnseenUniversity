@@ -1730,6 +1730,8 @@ class Cortex(IgorBase):
         if not memory.metadata:
             memory.metadata = {}
         memory.metadata["_narrative_hint"] = (memory.narrative or "")[:60]
+        if memory.epistemic_source and memory.epistemic_source != "unknown":
+            memory.metadata["epistemic_source"] = memory.epistemic_source
         from .provenance import ensure_provenance, verify_source_token
 
         memory.metadata = ensure_provenance(memory.metadata, memory.source)
@@ -1925,6 +1927,8 @@ class Cortex(IgorBase):
             if not memory.metadata:
                 memory.metadata = {}
             memory.metadata["_narrative_hint"] = (memory.narrative or "")[:60]
+            if memory.epistemic_source and memory.epistemic_source != "unknown":
+                memory.metadata["epistemic_source"] = memory.epistemic_source
             memory.metadata = ensure_provenance(memory.metadata, memory.source)
             memory.metadata.pop("_narrative_hint", None)
             if is_test_mode():
@@ -4886,6 +4890,10 @@ class Cortex(IgorBase):
                 else default_scope(_safe_memory_type(row["memory_type"]))
             ),
             # G46: provenance + epistemic fields
+            epistemic_source=(
+                (row["metadata"] if isinstance(row["metadata"], dict) else json.loads(row["metadata"] or "{}")).get("epistemic_source", "unknown")
+                if "metadata" in keys and row["metadata"] else "unknown"
+            ),
             source=row["source"] if "source" in keys and row["source"] else "",
             certainty=(
                 float(row["certainty"])
