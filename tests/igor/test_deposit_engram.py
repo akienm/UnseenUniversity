@@ -207,6 +207,6 @@ class TestBuildMemory:
         mem = build_memory(engram)
         assert mem.memory_type == MemoryType.FACTUAL
         assert mem.narrative == engram.narrative
-        assert mem.confidence == 0.9
+        assert mem.certainty == 0.9
         assert "engram_tool" in mem.context_of_encoding
         assert "capability/channels" in mem.context_of_encoding

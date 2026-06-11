@@ -737,7 +737,7 @@ def _deposit_completion_record(
         narrative=narrative,
         memory_type=MemoryType.EPISODIC,
         source="book_learner",
-        confidence=1.0,
+        certainty=1.0,
         context_of_encoding="book_learner|completion",
         metadata=meta,
     )
@@ -760,7 +760,7 @@ def _ensure_book_node(cortex: Cortex, book_title: str, author: str) -> str:
             narrative=f"Book: {book_title} by {author}",
             memory_type=MemoryType.FACTUAL,
             source="book_learner",
-            confidence=1.0,
+            certainty=1.0,
             context_of_encoding="book_spine",
             metadata={
                 "book_title": book_title,
@@ -792,7 +792,7 @@ def _ensure_chapter_node(
             memory_type=MemoryType.FACTUAL,
             parent_id=book_node_id,
             source="book_learner",
-            confidence=1.0,
+            certainty=1.0,
             context_of_encoding="book_spine",
             metadata={
                 "book_title": book_title,
@@ -963,7 +963,7 @@ def _deposit_nodes(
                 parent_id=chapter_node_id or None,
                 arousal=arousal,
                 source="book_learner",
-                confidence=confidence,
+                certainty=confidence,
                 context_of_encoding=f"book_learner|{ntype}|{book_title[:40]}",
                 metadata=meta,
             )

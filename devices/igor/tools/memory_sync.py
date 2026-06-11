@@ -205,7 +205,7 @@ def _register_in_swarm(instance_id: str, home_db_url: str, swarm_conn) -> None:
             (id, narrative, memory_type, parent_id, metadata, portable,
              timestamp, updated_at, children_ids, link_ids, friction_history,
              links_weighted, valence, arousal, dominance, activation_count,
-             source, confidence, context_of_encoding)
+             source, certainty, context_of_encoding)
         VALUES (%s, %s, 'FACTUAL', 'SWARM_ROOT', %s, 0,
                 %s, %s, '[]', '[]', '[]', '{}',
                 0, 0, 0, 0, 'swarm_registration', 1.0, '')

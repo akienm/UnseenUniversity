@@ -106,7 +106,7 @@ def build_memory(engram: GroundingEngram) -> Any:
         metadata=metadata,
         parent_id=engram.parent_cp,
         source=engram.source,
-        confidence=engram.confidence,
+        certainty=engram.confidence,
         context_of_encoding=f"engram_tool:deposit grounding_domain={engram.grounding_domain}",
     )
 

@@ -64,7 +64,7 @@ MEM_COLS = (
     "id, narrative, memory_type, parent_id, children_ids, link_ids, "
     "valence, activation_count, friction_history, timestamp, metadata, "
     "arousal, dominance, portable, links_weighted, last_accessed, "
-    "source, confidence, context_of_encoding, scope, payload"
+    "source, certainty, context_of_encoding, scope, payload"
 )
 
 _DB_LOG_MAX_BYTES = 10 * 1024 * 1024  # 10 MB

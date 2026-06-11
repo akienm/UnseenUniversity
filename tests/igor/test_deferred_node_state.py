@@ -17,7 +17,7 @@ def _thin_memory(narrative: str = "thin evidence node xyz_deferred") -> Memory:
     return Memory(
         narrative=narrative,
         memory_type=MemoryType.FACTUAL,
-        confidence=0.1,  # below _UNRESOLVED_CONFIDENCE_THRESHOLD (0.25)
+        certainty=0.1,  # below _UNRESOLVED_CONFIDENCE_THRESHOLD (0.25)
         metadata={"test_data": "true"},
     )
 
@@ -27,7 +27,7 @@ def _solid_memory(narrative: str = "well-evidenced solid node xyz_deferred") -> 
     return Memory(
         narrative=narrative,
         memory_type=MemoryType.FACTUAL,
-        confidence=1.0,
+        certainty=1.0,
         metadata={"test_data": "true"},
     )
 
@@ -175,7 +175,7 @@ def test_search_excludes_unresolved_nodes(cortex):
     m = cortex.store(Memory(
         narrative="unique_unresolved_search_probe_xyz_deferred",
         memory_type=MemoryType.FACTUAL,
-        confidence=1.0,
+        certainty=1.0,
         metadata={"test_data": "true"},
     ))
     cortex.mark_unresolved(m.id)

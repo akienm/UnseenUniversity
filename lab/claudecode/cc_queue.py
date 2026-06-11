@@ -190,7 +190,7 @@ def _save(tasks):
                 """
                 INSERT INTO clan.memories
                   (id, narrative, memory_type, parent_id, metadata, timestamp,
-                   source, scope, confidence, updated_at)
+                   source, scope, certainty, updated_at)
                 VALUES (%s, %s, 'FACTUAL', %s, %s::jsonb, %s, 'cc_queue',
                         'class', 1.0, %s)
                 ON CONFLICT (id) DO UPDATE SET
