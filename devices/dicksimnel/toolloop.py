@@ -129,7 +129,7 @@ class ToolLoop:
         self._max_turns = max_turns
         self._turn_log: list[dict] = []
 
-    def run(self, ticket: dict, system_prompt: str) -> str | None:
+    def run(self, ticket: dict, system_prompt: str, model_override: str = "") -> str | None:
         """Work a ticket through the tool loop.
 
         Returns the model's final text when it stops calling tools, or the
@@ -159,7 +159,7 @@ class ToolLoop:
             # After turn 1, auto lets the model decide (including returning DONE:).
             extra = {"tool_choice": "required"} if turn == 0 else {}
             req = InferenceRequest(
-                model="",
+                model=model_override,
                 messages=messages,
                 system=full_system,
                 tools=TOOL_DEFINITIONS,

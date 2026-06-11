@@ -391,22 +391,55 @@ class DickSimnelDevice(BaseDevice):
         """
         return SYSTEM_PROMPT
 
+    # Internal tier cascade: try cheapest first, escalate within Dick before going to CC.
+    # "" = rules engine chooses (currently sonnet/OR at priority 1 for worker tier).
+    _TIER_CASCADE = [
+        ("", "rules engine default"),                        # tier 1: rules engine picks
+        ("anthropic/claude-sonnet-4.6", "sonnet explicit"),  # tier 2: force sonnet if tier 1 fails
+        ("anthropic/claude-opus-4.8", "opus explicit"),      # tier 3: force opus if sonnet fails
+    ]
+
     def _run_inference(self, ticket: dict) -> str | None:
-        """Work a ticket through the ReAct ToolLoop. Returns result text or None."""
+        """Work a ticket through the ReAct ToolLoop with internal tier escalation.
+
+        Tries tiers in _TIER_CASCADE order. Only escalates to CC after all tiers
+        have been tried — so haiku→sonnet→opus retry stays within Dick.
+        Returns the last result (for CC escalation message) or None if all tiers fail hard.
+        """
         from devices.dicksimnel.toolloop import ToolLoop
         ticket_id = ticket.get("id", "?")
-        log.info("DickSimnel: starting ToolLoop for ticket %s", ticket_id)
-        try:
-            loop = ToolLoop()
-            result = loop.run(ticket, self._build_system_prompt(ticket))
-            if result:
-                log.info("DickSimnel: ToolLoop finished for %s (%d chars)", ticket_id, len(result))
-            else:
-                log.warning("DickSimnel: ToolLoop returned None for %s", ticket_id)
-            return result
-        except Exception as exc:
-            log.error("DickSimnel: ToolLoop failed for ticket %s: %s", ticket_id, exc)
-            return None
+        system_prompt = self._build_system_prompt(ticket)
+        last_result: str | None = None
+
+        for model_id, tier_label in self._TIER_CASCADE:
+            log.info("DickSimnel: ToolLoop tier=%s model=%r for ticket %s", tier_label, model_id or "rules-engine", ticket_id)
+            try:
+                loop = ToolLoop()
+                result = loop.run(ticket, system_prompt, model_override=model_id)
+                if result:
+                    log.info("DickSimnel: tier=%s finished for %s (%d chars)", tier_label, ticket_id, len(result))
+                    last_result = result
+                    # If result starts with DONE: or ESCALATE: (intentional stop), stop cascading.
+                    stripped = result.strip()
+                    if stripped.startswith("DONE:") or stripped.startswith("ESCALATE:") or stripped.startswith("MAX_TURNS:"):
+                        return result
+                    # Otherwise — no DONE: prefix — try next tier with prior attempt as context
+                    log.warning(
+                        "DickSimnel: tier=%s no DONE: for %s — trying next tier (prior attempt appended)",
+                        tier_label, ticket_id,
+                    )
+                    # Append prior attempt to ticket description for next tier context
+                    prior_note = f"\n\n---\n**Prior attempt ({tier_label}) produced no DONE: result.**\n{result[:300]}"
+                    ticket = dict(ticket)
+                    ticket["description"] = ticket.get("description", "") + prior_note
+                else:
+                    log.warning("DickSimnel: tier=%s returned None for %s — trying next tier", tier_label, ticket_id)
+            except Exception as exc:
+                log.error("DickSimnel: tier=%s failed for %s: %s", tier_label, ticket_id, exc)
+
+        # All tiers tried — return last result (will be escalated to CC by caller)
+        log.warning("DickSimnel: all tiers exhausted for %s — escalating to CC", ticket_id)
+        return last_result
 
     # ── Chat interface ─────────────────────────────────────────────────────────
 
